@@ -190,10 +190,11 @@ class LihuiyuDevice(Service, ViewPort):
                 "default": 0,
                 "type": int,
                 "label": _("Phase Type"),
-                "style": "radio",
-                "choices": [_("Sequential"), _("Random"), _("Progressive"), _("Static")],
+                "style": "option",
+                "display": [_("Sequential"), _("Random"), _("Progressive"), _("Static")],
+                "choices": (0, 1, 2, 3),
                 "tip": "",
-                "section": "_00_" + _("General Options"),
+                "section": "_01_" + _("Plot Planner"),
             },
             {
                 "attr": "plot_phase_value",
@@ -202,7 +203,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "type": int,
                 "label": _("Phase Value"),
                 "tip": "",
-                "section": "_00_" + _("General Options"),
+                "section": "_01_" + _("Plot Planner"),
                 "trailer": _("/1000")
             },
             {
@@ -229,7 +230,7 @@ class LihuiyuDevice(Service, ViewPort):
                         ),
                     ]
                 ),
-                "section": "_00_" + _("General Options"),
+                "section": "_01_" + _("Plot Planner"),
             },
             {
                 "attr": "strict",
