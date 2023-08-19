@@ -69,7 +69,6 @@ from ..svgelements import (
     SVG_VALUE_XLINK,
     SVG_VALUE_XMLNS,
     SVG_VALUE_XMLNS_EV,
-    REGEX_DATA_URL,
     Circle,
     Close,
     Color,
@@ -1050,8 +1049,8 @@ class SVGProcessor:
                         lock=_lock,
                     )
                     e_list.append(node)
-            except OSError as e:
-                raise e
+            except OSError:
+                pass
         elif isinstance(element, SVG):
             # SVG is type of group, must go first
             if self.reverse:
