@@ -183,8 +183,8 @@ def compare():
                 counts[1] += 1
             else:
                 counts[2] += 1
-                outp.write(f'msgid "{key}"')
-                outp.write('msgstr ""')
+                outp.write(f'msgid "{key}"\n')
+                outp.write('msgstr ""\n\n')
     print (f"Done: examined={counts[0]}, found={counts[1]}, new={counts[2]}")
 
 
