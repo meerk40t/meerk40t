@@ -185,6 +185,46 @@ class LihuiyuDevice(Service, ViewPort):
                 "section": "_00_" + _("General Options"),
             },
             {
+                "attr": "plot_phase_type",
+                "object": self,
+                "default": 0,
+                "type": int,
+                "label": _("Phase Type"),
+                "style": "option",
+                "display": [
+                    _("Sequential"),
+                    _("Random"),
+                    _("Progressive"),
+                    _("Static"),
+                ],
+                "choices": (0, 1, 2, 3),
+                "tip": "\n".join(
+                    [
+                        _(
+                            "The PPI carry-forward algorithm is ambiguous when it comes to shifting from one location, typically it just maintained the count. However, in some rare cases this may artifact if the PPI is low enough to see individual dots. This feature allows very fine-grained control."
+                        ),
+                        "",
+                        _("Sequential: maintain phase between cuts"),
+                        _("Random: set the phase to a random value between cuts"),
+                        _("Progressive: linearly progress the phase between cuts"),
+                        _(
+                            "Static: always set the phase to the exact value between cuts"
+                        ),
+                    ]
+                ),
+                "section": "_01_" + _("Plot Planner"),
+            },
+            {
+                "attr": "plot_phase_value",
+                "object": self,
+                "default": 0,
+                "type": int,
+                "label": _("Phase Value"),
+                "tip": _("Value for progressive or static phase type"),
+                "section": "_01_" + _("Plot Planner"),
+                "trailer": _("/1000"),
+            },
+            {
                 "attr": "plot_shift",
                 "object": self,
                 "default": False,
@@ -208,7 +248,7 @@ class LihuiyuDevice(Service, ViewPort):
                         ),
                     ]
                 ),
-                "section": "_00_" + _("General Options"),
+                "section": "_01_" + _("Plot Planner"),
             },
             {
                 "attr": "strict",
@@ -956,6 +996,12 @@ class LihuiyuDevice(Service, ViewPort):
 
     def service_attach(self, *args, **kwargs):
         self.realize()
+
+    @signal_listener("plot_shift")
+    @signal_listener("plot_phase_type")
+    @signal_listener("plot_phase_value")
+    def plot_attributes_update(self, origin=None, *args):
+        self.driver.plot_attribute_update()
 
     @signal_listener("rotary_scale_x")
     @signal_listener("rotary_scale_y")

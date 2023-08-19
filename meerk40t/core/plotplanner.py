@@ -1,3 +1,5 @@
+import random
+
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 from ..device.basedevice import (
@@ -53,6 +55,8 @@ class PlotPlanner(Parameters):
         self.abort = False
         self.force_shift = False
         self.group_enabled = True  # Grouped Output Required for Lhymicro-gl.
+        self.phase_type = 0  # Sequential, random, progressive, static.
+        self.phase_value = 0
 
         self.queue = []
 
@@ -375,6 +379,7 @@ class PPI(PlotManipulation):
         super().__init__(planner)
         self.ppi_total = 0
         self.dot_left = 0
+        self._phase_set = 0
 
     def __str__(self):
         return f"{self.__class__.__name__}({str(self.ppi_total)},{str(self.dot_left)})"
@@ -393,6 +398,19 @@ class PPI(PlotManipulation):
         for x, y, on in plot:
             if x is None or y is None:
                 yield x, y, on
+                # Sequential, random, progressive, static.
+                if self.planner.phase_type == 1:
+                    # Random.
+                    self.ppi_total = random.randint(0,1000)
+                elif self.planner.phase_type == 2:
+                    # progressive
+                    self._phase_set += self.planner.phase_value
+                    self._phase_set %= 1000
+                    self.ppi_total = self._phase_set
+                elif self.planner.phase_type == 3:
+                    # static
+                    self._phase_set = self.planner.phase_value
+                    self.ppi_total = self._phase_set
                 continue
             if px is not None and py is not None:
                 assert abs(px - x) <= 1 or abs(py - y) <= 1
