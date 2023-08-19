@@ -191,13 +191,27 @@ class LihuiyuDevice(Service, ViewPort):
                 "type": int,
                 "label": _("Phase Type"),
                 "style": "option",
-                "display": [_("Sequential"), _("Random"), _("Progressive"), _("Static")],
+                "display": [
+                    _("Sequential"),
+                    _("Random"),
+                    _("Progressive"),
+                    _("Static"),
+                ],
                 "choices": (0, 1, 2, 3),
-                "tip": "The PPI carry-forward algorithm is ambiguous when it comes to shifting from one location, typically it just maintained the count. However, in some rare cases this may artifact if the PPI is low enough to see individual dots. This feature allows very fine-grained control.\n"
-                       "Sequential: maintain phase between cuts\n"
-                       "Random: set the phase to a random value between cuts\n"
-                       "Progressive: linearly progress the phase between cuts\n"
-                       "Static: always set the phase to the exact value between cuts\n",
+                "tip": "\n".join(
+                    [
+                        _(
+                            "The PPI carry-forward algorithm is ambiguous when it comes to shifting from one location, typically it just maintained the count. However, in some rare cases this may artifact if the PPI is low enough to see individual dots. This feature allows very fine-grained control."
+                        ),
+                        "",
+                        _("Sequential: maintain phase between cuts"),
+                        _("Random: set the phase to a random value between cuts"),
+                        _("Progressive: linearly progress the phase between cuts"),
+                        _(
+                            "Static: always set the phase to the exact value between cuts"
+                        ),
+                    ]
+                ),
                 "section": "_01_" + _("Plot Planner"),
             },
             {
@@ -206,9 +220,9 @@ class LihuiyuDevice(Service, ViewPort):
                 "default": 0,
                 "type": int,
                 "label": _("Phase Value"),
-                "tip": "Value for progressive or static phase type",
+                "tip": _("Value for progressive or static phase type"),
                 "section": "_01_" + _("Plot Planner"),
-                "trailer": _("/1000")
+                "trailer": _("/1000"),
             },
             {
                 "attr": "plot_shift",
