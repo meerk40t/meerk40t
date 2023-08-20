@@ -8826,7 +8826,7 @@ msgid "Raster Power"
 msgstr ""
 
 #: meerk40t/newly/device.py:411
-msgid "How what power level do we raster at?"
+msgid "At what power level we raster at?"
 msgstr ""
 
 #: meerk40t/newly/device.py:420
@@ -14871,7 +14871,7 @@ msgstr ""
 
 #: meerk40t/ruida/gui/ruidaoperationproperties.py:25
 msgid "Air Assist"
-msgstr ""
+msgstr "Luftzufuhr"
 
 #: meerk40t/ruida/gui/ruidaoperationproperties.py:26
 msgid "Trigger the per element air assist"

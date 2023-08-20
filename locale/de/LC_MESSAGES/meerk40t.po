@@ -293,7 +293,7 @@ msgid "Laser Power"
 msgstr "Laser-Leistung"
 
 #: meerk40t/balormk/device.py:844
-msgid "How what power level do we cut at?"
+msgid "At what power level we cut at?"
 msgstr "Bei welcher Laser-Leistung schneiden wir?"
 
 #: meerk40t/balormk/device.py:852
@@ -2953,15 +2953,15 @@ msgstr "Erneuere Klassifizierung"
 
 #: meerk40t/core/elements.py:7082 meerk40t/core/elements.py:7105
 msgid "Reclassify elements and create operations if necessary"
-msgstr ""
+msgstr "Erneute Klassifizierung mit Anlage neuer Arbeitsgänge"
 
 #: meerk40t/core/elements.py:7093
 msgid "Reclassify elements and use only existing operations"
-msgstr ""
+msgstr "Erneute Klassifizierung nur mit vorhandenen Arbeitsgängen"
 
 #: meerk40t/core/elements.py:7103
 msgid "Refresh ... (incl autogeneration)"
-msgstr ""
+msgstr "Erneute Klassifizierung mit Anlage neuer Arbeitsgänge"
 
 #: meerk40t/core/elements.py:7116
 msgid "Wood"
@@ -3119,7 +3119,7 @@ msgid "Append Home/Beep/Interrupt"
 msgstr "Füge 'Home + Beep + Nachricht' hinzu"
 
 msgid "Append Origin/Beep/Interrupt"
-msgstr "Füge 'Startposition + Beep + Nachricht' hinzu"
+msgstr "Füge 'Ursprung + Beep + Nachricht' hinzu"
 
 #: meerk40t/core/elements.py:7307
 msgid "Append Shutdown"
@@ -3251,6 +3251,9 @@ msgstr "Füge 'Input' hinzu"
 #: meerk40t/core/elements.py:7532
 msgid "Add Home/Beep/Interrupt"
 msgstr "Füge 'Home + Beep + Nachricht' hinzu"
+
+msgid "Add Origin/Beep/Interrupt"
+msgstr "Füge 'Startpunkt + Beep + Nachricht' hinzu"
 
 #: meerk40t/core/elements.py:7543
 msgid "Reload '{name}'"
@@ -7300,7 +7303,7 @@ msgid "Polyline"
 msgstr "Polyline"
 
 #: meerk40t/gui/wxmmain.py:740
-msgid "@
+msgid ""
 "Add a polyline element\n"
 "Left click: point/line\n"
 "Double click: complete\n"
@@ -16383,3 +16386,191 @@ msgstr "Import"
 
 msgid "Import a previously saved setting file"
 msgstr "Importiere die Einstellungen aus einer zuvor gesicherten Version"
+
+msgid "Enable all operations"
+msgstr "Alle Operationen aktivieren"
+
+msgid "Disable all operations"
+msgstr "Alle Operationen deaktivieren"
+
+msgid "Toggle all operations"
+msgstr "Alle Operationen umschalten"
+
+msgid "Toggle enabled-status of all operations"
+msgstr "Aktiviert-Status aller Operationen umschalten"
+
+msgid "Center selection on laserbed"
+msgstr "Zentriere Auswahl auf Laserbett"
+
+msgid "Optimize inner travel"
+msgstr "Optimiere innere Bewegungen"
+
+msgid "Optimize cuts"
+msgstr "Optimiere Schnitte"
+
+msgid "Optimize travel"
+msgstr "Optimiere Bewegungen"
+
+msgid "Merging cutcode"
+msgstr "Zusammenführen der Schnittbefehle"
+
+msgid "Copy data"
+msgstr "Daten kopieren"
+
+msgid "Preprocessing"
+msgstr "Vorverarbeitung"
+
+msgid "Validating"
+msgstr "Validierung"
+
+msgid "Generating lasercode"
+msgstr "Lasercode generieren"
+
+msgid "Preparing optimisation"
+msgstr "Optimierung vorbereiten"
+
+msgid "Optimising"
+msgstr "Optimieren"
+
+msgid "Clearing data"
+msgstr "Daten löschen"
+
+msgid "Show/Hide contained elements"
+msgstr "Enthaltene Elemente anzeigen/verbergen"
+
+msgid "Set placement loops"
+msgstr "Mehrere Job-Startpunkte festlegen"
+
+msgid "Loops {loopvalue}"
+msgstr "{loopvalue}x"
+
+msgid "Layout"
+msgstr "Layout"
+
+msgid "Distance between placements?"
+msgstr "Abstand zwischen den Job-Startpunkten?"
+
+msgid "How many additional placements on the X-Axis?\n(0 = as many as fit on the bed)"
+msgstr "Wie viele zusätzliche Job-Startpunkte auf der X-Achse?\n(0 = so viele wie auf das Laserbett passen)"
+
+msgid "Create placements horizontally"
+msgstr "Job-Startpunkte auf X-Achse erstellen"
+
+msgid "How many additional placements on the Y-Axis?\n(0 = as many as fit on the bed)"
+msgstr "Wie viele zusätzliche Job-Startpunkte auf der Y-Achse?\n(0 = so viele wie auf dem Laserbett passen)"
+
+msgid "Create placements vertically"
+msgstr "Job-Startpunkte auf Y-Achse erstellen"
+
+msgid "Delete {ecount} operations fully"
+msgstr "{ecount} Operationen vollständig löschen"
+
+msgid "Remove all elements that neither have a border nor a fill color"
+msgstr "Alle Elemente entfernen, die weder eine Umriss- noch eine Füllfarbe haben"
+
+msgid "Select all elements in scene, that have the same type as this node"
+msgstr "Alle Elemente in der Szene auswählen, die den gleichen Typ wie dieser Knoten haben"
+
+msgid "Execute Blob"
+msgstr "Binärdatei ausführen"
+
+msgid "Run the given blob on the current device"
+msgstr "Die ausgewählte Binärdatei auf dem aktuellen Gerät ausführen"
+
+msgid "Y-Coordinate for placement to append?"
+msgstr "Y-Koordinate für den neuen Job-Startpunkt?"
+
+msgid "X-Coordinate for placement to append?"
+msgstr "X-Koordinate für den neuen Job-Startpunkt?"
+
+msgid "Append Placement"
+msgstr "Job-Startpunkt anhängen"
+msgid "Unlevel groups if they just contain another group"
+msgstr "Gruppen eine Ebene tiefer setzen, wenn sie nur eine andere Gruppe enthalten"
+
+msgid "Scale speed settings"
+msgstr "Geschwindigkeit skalieren"
+
+msgid "Max speed = {speed}mm/s"
+msgstr "Maximale Geschwindigkeit = {speed}mm/s"
+
+msgid "Scale power settings"
+msgstr "Leistungseinstellungen skalieren"
+
+msgid "Max power = {power}ppi ({power_10}%)"
+msgstr "Maximale Leistung = {power}ppi ({power_10}%)"
+
+msgid "The file no longer exists!"
+msgstr "Die Datei existiert nicht mehr!"
+
+msgid "File does not exist."
+msgstr "Datei existiert nicht."
+
+msgid "Expand all children of this given node."
+msgstr "Alle Unterknoten dieses gegebenen Knotens anzeigen."
+
+msgid "Collapse all children of this given node."
+msgstr "Alle Unterknoten dieses gegebenen Knotens einklappen."
+
+msgid "Send laser to physical home-position"
+msgstr "Laser zur physischen Nullposition schicken"
+
+msgid "Send laser to logical home-position"
+msgstr "Laser zur logischen Nullposition schicken"
+
+msgid "Reset laser"
+msgstr "Laser zurücksetzen"
+
+msgid "Query status"
+msgstr "Status abfragen"
+
+msgid "Kills alarms and locks"
+msgstr "Alarme und Sperren quittieren"
+
+msgid "Clear log window"
+msgstr "Log-Fenster leeren"
+
+msgid "Enter a Gcode-Command and send it to the laser"
+msgstr "Gcode-Befehl eingeben und an Laser senden"
+
+msgid "Display active Gcode-parameters"
+msgstr "Aktive GCode-Parameter anzeigen"
+
+msgid "Display active GRBL-parameters"
+msgstr "Aktive GRBL-Parameter anzeigen"
+
+msgid "Show Build-Info"
+msgstr "Zeige Infos über den Laser-Controller an"
+
+msgid "Vector-Text"
+msgstr "Vektor-Text"
+
+msgid "Increase the font-size"
+msgstr "Die Schriftgröße vergrößern"
+
+msgid "Decrease the font-size"
+msgstr "Die Schriftgröße verkleinern"
+
+msgid "Fonts (double-click to use)"
+msgstr "Schriftarten (Doppelklick zum Verwenden)"
+
+msgid "Select to preview the font, double-click to apply it"
+msgstr "Wählen Sie einen Eintrag aus, um eine Vorschau zu sehen, mit einem Doppelklick wird sie verwendet"
+
+msgid "Show/Hide all fonts of type {info[0]}"
+msgstr "Alle Schriften vom Typ {info[0]} anzeigen/verbergen"
+
+msgid "Font-Selection"
+msgstr "Schriftauswahl"
+
+msgid "Importing fonts..."
+msgstr "Schriftarten importieren..."
+
+msgid "Choose image..."
+msgstr "Bild auswählen..."
+
+msgid "Choose from one of the existing images on your canvas to use as the test template"
+msgstr "Wählen Sie eines der vorhandenen Bilder auf der Arbeitsfläche aus,\num es als Testvorlage zu verwenden"
+
+msgid "(Yes=Empty and Create, No=Keep existing)"
+msgstr "(Ja=Leeren und Erstellen, Nein=Bestehende behalten)"
