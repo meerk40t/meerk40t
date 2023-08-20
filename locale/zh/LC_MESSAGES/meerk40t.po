@@ -8839,7 +8839,7 @@ msgid "Raster Power"
 msgstr "光栅功率"
 
 #: meerk40t/newly/device.py:411
-msgid "How what power level do we raster at?"
+msgid "At what power level we raster at?"
 msgstr "我们光栅时使用的功率是多少？"
 
 #: meerk40t/newly/device.py:420
