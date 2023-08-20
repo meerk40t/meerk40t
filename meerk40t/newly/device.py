@@ -431,7 +431,7 @@ class NewlyDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Raster Power"),
                 "trailer": "%",
-                "tip": _("How what power level do we raster at?"),
+                "tip": _("At what power level do we raster?"),
                 "subsection": "_30_Raster",
             },
             {
