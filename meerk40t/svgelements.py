@@ -199,7 +199,7 @@ PATTERN_TRANSFORM_UNITS = (
 )
 
 REGEX_IRI = re.compile(r"url\(#?(.*)\)")
-REGEX_DATA_URL = re.compile(r"^data:([^,]*),(.*)")
+REGEX_DATA_URL = re.compile(r"^data:([^,]*),")
 REGEX_FLOAT = re.compile(PATTERN_FLOAT)
 REGEX_COORD_PAIR = re.compile(
     "(%s)%s(%s)" % (PATTERN_FLOAT, PATTERN_COMMA, PATTERN_FLOAT)
@@ -570,12 +570,12 @@ class Length(object):
 
     Length class is lazy when solving values. Several conversion values are unknown by default and length simply
     stores that ambiguity. So we can have a length of 50% and without calling .value(relative_length=3000) it will
-    simply store as 50%. Likewise you can have absolute values like 30cm or 20in which are not knowable in pixels
+    simply store as 50%. Likewise, you can have absolute values like 30cm or 20in which are not knowable in pixels
     unless a PPI value is supplied. We can say .value(relative_length=30cm, PPI=96) and solve this for a value like
     12%. We can also convert values between knowable lengths. So 30cm is 300mm regardless whether we know how to
     convert this to pixels. 0% is 0 in any units or relative values. We can convert pixels to pc and pt without issue.
-    We can convert vh, vw, vmax, vmin values if we know viewbox values. We can convert em values if we know the font_size.
-    We can add values together if they are convertible units e.g. Length("20in") + Length("3cm").
+    We can convert vh, vw, vmax, vmin values if we know viewbox values. We can convert em values if we know the
+    font_size. We can add values together if they are convertible units e.g. Length("20in") + Length("3cm").
 
     If .value() cannot solve for the value with the given information then it will return a Length value. If it can
     be solved it will return a float.
@@ -2034,7 +2034,7 @@ class Point:
         self.y = y
 
     def __key(self):
-        return (self.x, self.y)
+        return self.x, self.y
 
     def __hash__(self):
         return hash(self.__key())
@@ -3995,7 +3995,7 @@ class PathSegment:
 
     These segments define a 1:1 relationship with the path_d or path data attribute, denoted in
     SVG by the 'd' attribute. These are moveto, closepath, lineto, and the curves which are cubic
-    bezier curves, quadratic bezier curves, and elliptical arc. These are classed as Move, Close,
+    Bézier curves, quadratic Bézier curves, and elliptical arc. These are classed as Move, Close,
     Line, CubicBezier, QuadraticBezier, and Arc. And in path_d are denoted as M, Z, L, C, Q, A.
 
     There are lowercase versions of these commands. And for C, and Q there are S and T which are
@@ -4003,7 +4003,7 @@ class PathSegment:
     versions of the line command.
 
     The major difference between paths in 1.1 and 2.0 is the use of Z to truncate a command to close.
-    "M0,0C 0,100 100,0 z is valid in 2.0 since the last z replaces the 0,0. These are read by
+    "M0,0C 0,100 100,0 z" is valid in 2.0 since the last z replaces the 0,0. These are read by
     svg.elements but they are not written.
     """
 
@@ -4485,7 +4485,7 @@ class Linear(PathSegment):
 
 class Close(Linear):
     """Represents close commands. If this exists at the end of the shape then the shape is closed.
-    the methodology of a single flag close fails in a couple ways. You can have multi-part shapes
+    the methodology of a single flag close fails in a couple ways. You can have multipart shapes
     which can close or not close several times.
     """
 
@@ -4605,7 +4605,7 @@ class QuadraticBezier(Curve):
 
     def bbox(self):
         """
-        Returns the bounding box for the quadratic bezier curve.
+        Returns the bounding box for the quadratic Bézier curve.
         """
         n = self.start.x - self.control.x
         d = self.start.x - 2 * self.control.x + self.end.x
@@ -4802,7 +4802,7 @@ class CubicBezier(Curve):
             return [Point(*_compute_point(position)) for position in positions]
 
     def bbox(self):
-        """returns the tight fitting bounding box of the bezier curve.
+        """returns the tight-fitting bounding box of the Bézier curve.
         Code by:
         https://github.com/mathandy/svgpathtools
         """
@@ -5597,7 +5597,7 @@ class Arc(Curve):
     def point_at_angle(self, angle):
         """
         find the point on the ellipse from the center at the given angle.
-        Note: For non-circular arcs this is different than point(t).
+        Note: For non-circular arcs this is different from point(t).
 
         :param angle: angle from center to find point
         :return: point found
@@ -5668,7 +5668,7 @@ class Arc(Curve):
         return Ellipse(self.center, self.rx, self.ry, self.get_rotation())
 
     def bbox(self):
-        """Find the bounding box of a arc.
+        """Find the bounding box of an arc.
         Code from: https://github.com/mathandy/svgpathtools
         """
         if self.sweep == 0:
@@ -5785,7 +5785,7 @@ class Path(Shape, MutableSequence):
                 self._segments.append(s)
         if SVG_ATTR_DATA in self.values:
             # Not sure what the purpose of pathd_loaded is.
-            # It is only set and checked here and you cannot have "d" attribute more than once anyway
+            # It is only set and checked here, and you cannot have "d" attribute more than once anyway
             if not self.values.get("pathd_loaded", False):
                 self.parse(self.values[SVG_ATTR_DATA])
                 self.values["pathd_loaded"] = True
@@ -5845,7 +5845,7 @@ class Path(Shape, MutableSequence):
         Connection 0 is the connection between getitem(0) and getitem(1)
 
         prefer_second is for those cases where failing the connection requires replacing
-        a existing value. It will prefer the authority of right side, second value.
+        an existing value. It will prefer the authority of right side, second value.
         """
         if index < 0 or index + 1 >= len(self._segments):
             return  # This connection doesn't exist.
@@ -6352,7 +6352,7 @@ class Path(Shape, MutableSequence):
         line to operation just before any non-zero length close.
 
         This is helpful because for some operations like reverse() because the
-        close must located at the very end of the path sequence. But, if it's
+        close must be located at the very end of the path sequence. But, if it's
         in effect a line-to and close, the line-to would need to start the sequence.
 
         But, for some operations this won't matter since it will still result in
@@ -7074,7 +7074,7 @@ class _RoundShape(Shape):
 
     def unit_matrix(self):
         """
-        return the unit matrix which could would transform the unit circle into this ellipse.
+        return the unit matrix which would transform the unit circle into this ellipse.
 
         One of the valid parameterizations for ellipses is that they are all affine transforms of the unit circle.
         This provides exactly such a matrix.
@@ -7130,7 +7130,7 @@ class _RoundShape(Shape):
     def point_at_angle(self, angle):
         """
         find the point on the ellipse from the center at the given angle.
-        Note: For non-circular arcs this is different than point(t).
+        Note: For non-circular arcs this is different from point(t).
 
         :param angle: angle from center to find point
         :return: point found
@@ -7742,7 +7742,7 @@ class Subpath:
 
     def d(self, relative=None, smooth=None):
         segments = self._path._segments[self._start : self._end + 1]
-        return Path.svg_d(segments, relative=relative, smooth=None)
+        return Path.svg_d(segments, relative=relative, smooth=smooth)
 
     def _reverse_segments(self, start, end):
         """Reverses segments between the given indexes in the subpath space."""
@@ -7873,7 +7873,7 @@ class Group(SVGElement, Transformable, list):
         if len(boxes) == 0:
             return None
         (xmins, ymins, xmaxs, ymaxs) = zip(*boxes)
-        return (min(xmins), min(ymins), max(xmaxs), max(ymaxs))
+        return min(xmins), min(ymins), max(xmaxs), max(ymaxs)
 
     def bbox(self, transformed=True, with_stroke=False):
         """
@@ -7988,7 +7988,7 @@ class Use(SVGElement, Transformable, list):
         if len(boxes) == 0:
             return None
         (xmins, ymins, xmaxs, ymaxs) = zip(*boxes)
-        return (min(xmins), min(ymins), max(xmaxs), max(ymaxs))
+        return min(xmins), min(ymins), max(xmaxs), max(ymaxs)
 
     def bbox(self, transformed=True, with_stroke=False):
         """
@@ -8531,7 +8531,7 @@ class Image(SVGElement, GraphicObject, Transformable):
             if match:
                 # Data URL
                 self.media_type = match.group(1).split(";")
-                self.data = match.group(2)
+                self.data = self.url[match.end(1) + 1 :]
                 if "base64" in self.media_type:
                     from base64 import b64decode
 
@@ -9140,7 +9140,7 @@ class SVG(Group):
                     and SVG_ATTR_DISPLAY in values
                     and values[SVG_ATTR_DISPLAY].lower() == SVG_VALUE_NONE
                 ):
-                    continue  # If the attributes flags our values to display=none, stop rendering.
+                    continue  # If the attributes flag our values to display=none, stop rendering.
                 if SVG_NAME_TAG == tag:
                     # The ordering for transformations on the SVG object are:
                     # explicit transform, parent transforms, attribute transforms, viewport transforms
