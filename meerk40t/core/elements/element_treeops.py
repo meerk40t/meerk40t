@@ -227,6 +227,7 @@ def init_tree(kernel):
             self.validate_selected_area()
             self.signal("element_property_update", changes)
             self.signal("refresh_scene", "Scene")
+            self.signal("warn_state_update", "")
 
     @tree_conditional(
         lambda node: hasattr(node, "output")
@@ -707,12 +708,21 @@ def init_tree(kernel):
 
     def selected_active_ops():
         result = 0
+        selected = 0
+        contained = 0
         for op in self.ops():
             try:
-                if op.selected and op.output:
-                    result += 1
+                if op.selected:
+                    selected += 1
+                    contained += len(op.children)
+                    if op.output:
+                        result += 1
             except AttributeError:
                 pass
+        if contained == 0:
+            result = 0
+        elif selected == 1:
+            result = 1
         return result
 
     @tree_separator_after()
@@ -841,6 +851,7 @@ def init_tree(kernel):
             except AttributeError:
                 pass
         self.signal("element_property_update", ops)
+        self.signal("warn_state_update", "")
 
     @tree_separator_before()
     @tree_operation(

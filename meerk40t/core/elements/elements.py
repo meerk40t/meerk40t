@@ -631,12 +631,36 @@ class Elemental(Service):
         #     pnode = pnode.parent
 
     def have_unassigned_elements(self):
-        emptyset = False
+        unassigned = False
         for node in self.elems():
             if len(node._references) == 0 and node.type not in ("file", "group"):
-                emptyset = True
+                unassigned = True
                 break
-        return emptyset
+        return unassigned
+
+    def have_unburnable_elements(self):
+        unassigned = False
+        nonburnt = False
+        for node in self.elems():
+            if len(node._references) == 0 and node.type not in ("file", "group"):
+                unassigned = True
+            else:
+                will_be_burnt = False
+                for refnode in node._references:
+                    op = refnode.parent
+                    if op is not None:
+                        try:
+                            if op.output:
+                                will_be_burnt = True
+                                break
+                        except AttributeError:
+                            pass
+                if not will_be_burnt:
+                    nonburnt = True
+            if nonburnt and unassigned:
+                break
+
+        return unassigned, nonburnt
 
     def length(self, v):
         return float(Length(v))
