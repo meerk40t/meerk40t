@@ -349,7 +349,6 @@ class MoshiDriver(Parameters):
         if self.pipe_channel:
             self.pipe_channel("Rapid Mode")
         self.state = DRIVER_STATE_RAPID
-        self.service.signal("driver;mode", self.state)
 
     def finished_mode(self, *values):
         """
@@ -558,7 +557,6 @@ class MoshiDriver(Parameters):
         self.program.vector_speed(speed, normal_speed)
         self.program.set_offset(0, offset_x, offset_y)
         self.state = DRIVER_STATE_PROGRAM
-        self.service.signal("driver;mode", self.state)
 
         self.program.move_abs(move_x, move_y)
         self.native_x = move_x
@@ -578,7 +576,6 @@ class MoshiDriver(Parameters):
         self.program.raster_speed(speed)
         self.program.set_offset(0, offset_x, offset_y)
         self.state = DRIVER_STATE_RASTER
-        self.service.signal("driver;mode", self.state)
 
         self.program.move_abs(move_x, move_y)
         self.native_x = move_x
