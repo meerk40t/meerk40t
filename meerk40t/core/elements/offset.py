@@ -358,13 +358,13 @@ def offset_path(
     def stitch_segments_at_index(
         offset, stitchpath, seg1_end, orgintersect, radial=False, closed=False
     ):
-        point_added = False
+        point_added = 0
         left_end = seg1_end
         lp = len(stitchpath)
         right_start = left_end + 1
         if right_start >= lp:
             if not closed:
-                return
+                return point_added
             # Look for the first segment
             right_start = right_start % lp
             while not isinstance(
@@ -379,10 +379,10 @@ def offset_path(
         needs_connector = False
         if isinstance(seg1, Close):
             # Close will be dealt with differently...
-            return False
+            return point_added
         if isinstance(seg1, Move):
             seg1.end = Point(seg2.start)
-            return False
+            return point_added
 
         if isinstance(seg1, Line):
             needs_connector = True
@@ -395,7 +395,7 @@ def offset_path(
                 )
                 if p is not None:
                     # We have an intersection
-                    if 0 <= s <= 1 and 0 <= t <= 1:
+                    if 0 <= abs(s) <= 1 and 0 <= abs(t) <= 1:
                         # We shorten the segments accordingly.
                         seg1.end = Point(p)
                         seg2.start = Point(p)
@@ -404,9 +404,22 @@ def offset_path(
                         ):
                             stitchpath._segments[right_start - 1].end = Point(p)
                         needs_connector = False
-                        # print ("Used interal intersect")
-                    else:
-                        if not radial:
+                        # print ("Used internal intersect")
+                    elif not radial:
+                        # is the intersect too far away for our purposes?
+                        odist = orgintersect.distance_to(p)
+                        if odist > abs(offset):
+                            angle = orgintersect.angle_to(p)
+                            p = orgintersect.polar_to(angle, abs(offset))
+
+                            newseg1 = Line(seg1.end, p)
+                            newseg2 = Line(p, seg2.start)
+                            stitchpath._segments.insert(left_end + 1, newseg2)
+                            stitchpath._segments.insert(left_end + 1, newseg1)
+                            point_added = 2
+                            needs_connector = False
+                            # print ("Used shortened external intersect")
+                        else:
                             seg1.end = Point(p)
                             seg2.start = Point(p)
                             if right_start > 0 and isinstance(
@@ -475,7 +488,7 @@ def offset_path(
                 # print ("Inserted a Line")
                 connect_seg = Line(Point(seg1.end), Point(seg2.start))
             stitchpath._segments.insert(left_end + 1, connect_seg)
-            point_added = True
+            point_added = 1
         elif needs_connector:
             # print ("Need connector but end points were identical")
             pass
@@ -484,7 +497,7 @@ def offset_path(
             pass
         return point_added
 
-    def close_subpath(sub_path, firstidx, lastidx):
+    def close_subpath(sub_path, firstidx, lastidx, offset, orgintersect):
         seg1 = None
         seg2 = None
         very_first = None
@@ -517,8 +530,26 @@ def offset_path(
             )
             if p is not None:
                 # We have an intersection and shorten the segments accordingly.
-                seg1.start = Point(p)
-                seg2.end = Point(p)
+                d = orgintersect.distance_to(p)
+                if 0 <= abs(s) <= 1 and 0 <= abs(t) <= 1:
+                    seg1.start = Point(p)
+                    seg2.end = Point(p)
+                    # print (f"Close subpath by adjusting inner lines, d={d:.2f} vs. offs={offset:.2f}")
+                elif d >= abs(offset):
+                    p = orgintersect.polar_to(
+                        angle=orgintersect.angle_to(p),
+                        distance=abs(offset),
+                    )
+                    segment = Line(p, seg1.start)
+                    sub_path._segments.insert(lastidx + 1, segment)
+                    segment = Line(seg2.end, p)
+                    sub_path._segments.insert(lastidx + 1, segment)
+                    # sub_path._segments.insert(firstidx, segment)
+                    # print (f"Close subpath with interim pt, d={d:.2f} vs. offs={offset:.2f}")
+                else:
+                    seg1.start = Point(p)
+                    seg2.end = Point(p)
+                    # print (f"Close subpath by adjusting lines, d={d:.2f} vs. offs={offset:.2f}")
             else:
                 segment = Line(very_last, very_first)
                 sub_path._segments.insert(lastidx + 1, segment)
@@ -621,7 +652,7 @@ def offset_path(
                         p._segments[last_point].end
                     )
                     if seglen > MINIMAL_LEN:
-                        close_subpath(p, first_point, last_point)
+                        close_subpath(p, first_point, last_point, offset, helper2)
                 last_point = None
                 first_point = None
             if segment.start is not None and segment.end is not None:
@@ -654,6 +685,7 @@ def offset_path(
                         # print ("Seems to be closed!")
                 # print (f"Regular point: {idx}, {type(segment).__name__}, {first_point}, {last_point}, {is_closed}")
             helper = Point(p._segments[idx].end)
+            helper2 = Point(p._segments[idx].start)
             left_end = idx
             #  print (f"Segment to deal with: {type(segment).__name__}")
             if isinstance(segment, Arc):
@@ -698,14 +730,14 @@ def offset_path(
             stitched = stitch_segments_at_index(
                 offset, p, left_end, helper, radial=radial_connector
             )
-            if stitched and last_point is not None:
-                last_point += 1
+            if last_point is not None:
+                last_point += stitched
         if last_point is not None and first_point is not None and is_closed:
             seglen = p._segments[first_point].start.distance_to(
                 p._segments[last_point].end
             )
             if seglen > MINIMAL_LEN:
-                close_subpath(p, first_point, last_point)
+                close_subpath(p, first_point, last_point, offset, helper2)
 
         results.append(p)
 
