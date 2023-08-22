@@ -350,8 +350,10 @@ class Planner(Service):
             operations = data  # unused.
             if command == "copy-selected":
                 operations = list(self.elements.ops(emphasized=True))
+                copy_selected = True
             else:
                 operations = list(self.elements.ops())
+                copy_selected = False
 
             def init_settings():
                 for prefix in ("prepend", "append"):
@@ -478,11 +480,17 @@ class Planner(Service):
             #     "blob",
             # )
             for c in operations:
+                isactive = True
                 try:
                     if not c.output:
-                        continue
+                        isactive = False
                 except AttributeError:
                     pass
+                if not isactive and copy_selected and len(operations) == 1:
+                    # If it's the only one we make an exception
+                    isactive = True
+                if not isactive:
+                    continue
                 if not hasattr(c, "type") or c.type is None:
                     # Node must be a type of node.
                     continue

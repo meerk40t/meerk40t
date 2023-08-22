@@ -361,7 +361,7 @@ class ShadowTree:
         self._freeze = False
         self.iconsize = 20
         self.iconstates = {}
-        # self.last_call = 0
+        self.last_call = 0
 
         fact = get_default_scale_factor()
         if fact > 1.0:
@@ -838,13 +838,22 @@ class ShadowTree:
         op_node = self.elements.get(type="branch ops")
         op_item = op_node._item
         self.wxtree.Expand(op_item)
-        if self.elements.have_unassigned_elements():
+        unassigned, unburnt = self.elements.have_unburnable_elements()
+        if unassigned or unburnt:
             self.wxtree.SetItemState(op_item, self.iconstates["warning"])
-            op_node._tooltip = _("You have unassigned elements, that won't be burned")
-            op_node._tooltip_translated = True
+            s1 = _("You have elements in disabled operations, that won't be burned")
+            s2 = _("You have unassigned elements, that won't be burned")
+            if unassigned and unburnt:
+                status = s1 + "\n" + s2
+            elif unburnt:
+                status = s1
+            elif unassigned:
+                status = s2
         else:
             self.wxtree.SetItemState(op_item, wx.TREE_ITEMSTATE_NONE)
-            op_node._tooltip = ""
+            status = ""
+        op_node._tooltip = status
+        op_node._tooltip_translated = True
 
     def freeze_tree(self, status=None):
         if status is None:
@@ -1519,7 +1528,8 @@ class ShadowTree:
 
         state_num = -1
         if node is self.elements.get(type="branch ops"):
-            if self.elements.have_unassigned_elements():
+            unassigned, unburnt = self.elements.have_unburnable_elements()
+            if unassigned or unburnt:
                 state_num = self.iconstates["warning"]
         else:
             # Has the node a lock attribute?
