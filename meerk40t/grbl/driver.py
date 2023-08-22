@@ -52,12 +52,12 @@ class GRBLDriver(Parameters):
         self._absolute = True
         self.feed_mode = None
         self.feed_convert = None
-        self._g94_feedrate()  # G93 DEFAULT, mm mode
+        self._g94_feedrate()  # G94 DEFAULT, mm mode
 
         self.unit_scale = None
         self.units = None
         self._g21_units_mm()
-        self._g91_absolute()
+        self._g90_absolute()
 
         self.out_pipe = None
         self.out_real = None
@@ -148,7 +148,7 @@ class GRBLDriver(Parameters):
         """
         if self.service.swap_xy:
             x, y = y, x
-        self._g91_absolute()
+        self._g90_absolute()
         self._clean()
         old_current = self.service.current
         x, y = self.service.physical_to_device_position(x, y)
@@ -169,7 +169,7 @@ class GRBLDriver(Parameters):
         """
         if self.service.swap_xy:
             dx, dy = dy, dx
-        self._g90_relative()
+        self._g91_relative()
         self._clean()
         old_current = self.service.current
 
@@ -248,7 +248,7 @@ class GRBLDriver(Parameters):
         """
         self.signal("grbl_red_dot", False)  # We are not using red-dot if we're cutting.
         self.clear_states()
-        self._g91_absolute()
+        self._g90_absolute()
         self._g94_feedrate()
         self._clean()
         if self.service.use_m3:
@@ -543,6 +543,16 @@ class GRBLDriver(Parameters):
         self.queue.clear()
         self.plot_planner.clear()
         self(f"\x18{self.line_end}", real=True)
+        self._g94_feedrate()
+        self._g21_units_mm()
+        self._g90_absolute()
+
+        self.power_dirty = True
+        self.speed_dirty = True
+        self.absolute_dirty = True
+        self.feedrate_dirty = True
+        self.units_dirty = True
+
         self.paused = False
 
     def clear_alarm(self):
@@ -588,7 +598,7 @@ class GRBLDriver(Parameters):
             (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
 
-    def _clean(self):
+    def _clean_motion(self):
         if self.absolute_dirty:
             if self._absolute:
                 self(f"G90{self.line_end}")
@@ -596,6 +606,7 @@ class GRBLDriver(Parameters):
                 self(f"G91{self.line_end}")
         self.absolute_dirty = False
 
+    def _clean_feed_mode(self):
         if self.feedrate_dirty:
             if self.feed_mode == 94:
                 self(f"G94{self.line_end}")
@@ -603,6 +614,7 @@ class GRBLDriver(Parameters):
                 self(f"G93{self.line_end}")
         self.feedrate_dirty = False
 
+    def _clean_units(self):
         if self.units_dirty:
             if self.units == 20:
                 self(f"G20{self.line_end}")
@@ -610,13 +622,18 @@ class GRBLDriver(Parameters):
                 self(f"G21{self.line_end}")
         self.units_dirty = False
 
-    def _g90_relative(self):
+    def _clean(self):
+        self._clean_motion()
+        self._clean_feed_mode()
+        self._clean_units()
+
+    def _g91_relative(self):
         if not self._absolute:
             return
         self._absolute = False
         self.absolute_dirty = True
 
-    def _g91_absolute(self):
+    def _g90_absolute(self):
         if self._absolute:
             return
         self._absolute = True
