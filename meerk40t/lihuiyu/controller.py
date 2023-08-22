@@ -355,6 +355,8 @@ class LihuiyuController:
                 self.write(queue_bytes)
             return self
         self.pipe_channel(f"realtime_write({str(bytes_to_write)})")
+        if b"*" in bytes_to_write:
+            self.abort_waiting = True
         with self._preempt_lock:
             self._preempt = bytearray(bytes_to_write) + self._preempt
         self.start()
@@ -424,6 +426,7 @@ class LihuiyuController:
         self._buffer = bytearray()
         self._queue = bytearray()
         self._realtime_buffer = bytearray()
+        self.abort_waiting = False
         self.context.signal("pipe;buffer", 0)
         self.update_state("terminate")
 
