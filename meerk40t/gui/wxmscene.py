@@ -1191,12 +1191,12 @@ class MeerK40tScenePanel(wx.Panel):
     def on_close(self, event):
         self.save_magnets()
 
-    @signal_listener("driver;mode")
+    @signal_listener("pipe;running")
     def on_driver_mode(self, origin, state):
-        if state == 0:
-            self.widget_scene.overrule_background = None
-        else:
+        if state:
             self.widget_scene.overrule_background = wx.RED
+        else:
+            self.widget_scene.overrule_background = None
         self.widget_scene.request_refresh_for_animation()
 
     @signal_listener("background")
