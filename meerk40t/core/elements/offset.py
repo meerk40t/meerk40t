@@ -67,7 +67,7 @@ def norm_vector(p1, p2, target_len):
     return normal_vector
 
 
-def is_clockwise(path):
+def is_clockwise(path, start=0):
     def poly_clockwise(poly):
         """
         returns True if the polygon is clockwise ordered, false if not
@@ -85,12 +85,21 @@ def is_clockwise(path):
             return False
 
     poly = []
-    for seg in path._segments:
+    idx = start
+    while idx < len(path._segments):
+        seg = path._segments[idx]
         if isinstance(seg, (Arc, Line, QuadraticBezier, CubicBezier)):
             if len(poly) == 0:
                 poly.append(seg.start)
             poly.append(seg.end)
-    res = poly_clockwise(poly)
+        else:
+            if len(poly) > 0:
+                break
+        idx += 1
+    if len(poly) == 0:
+        res = True
+    else:
+        res = poly_clockwise(poly)
     return res
 
 
@@ -200,12 +209,11 @@ def offset_quad(segment, offset=0, linearize=False, interpolation=500):
         return None
     cubic = CubicBezier(
         start=segment.start,
-        control1=segment.control,
-        control2=segment.control,
+        control1=segment.start + 2 / 3 * (segment.control - segment.start),
+        control2=segment.end + 2 / 3 * (segment.control - segment.end),
         end=segment.end,
     )
     newsegments = offset_cubic(cubic, offset, linearize, interpolation)
-
     return newsegments
 
 
@@ -345,9 +353,12 @@ def intersect_line_segments(w, z, x, y):
 def offset_path(
     path, offset_value=0, radial_connector=False, linearize=True, interpolation=500
 ):
+    MINIMAL_LEN = 5
+
     def stitch_segments_at_index(
         offset, stitchpath, seg1_end, orgintersect, radial=False, closed=False
     ):
+        point_added = False
         left_end = seg1_end
         lp = len(stitchpath)
         right_start = left_end + 1
@@ -368,10 +379,10 @@ def offset_path(
         needs_connector = False
         if isinstance(seg1, Close):
             # Close will be dealt with differently...
-            return
+            return False
         if isinstance(seg1, Move):
             seg1.end = Point(seg2.start)
-            return
+            return False
 
         if isinstance(seg1, Line):
             needs_connector = True
@@ -464,17 +475,59 @@ def offset_path(
                 # print ("Inserted a Line")
                 connect_seg = Line(Point(seg1.end), Point(seg2.start))
             stitchpath._segments.insert(left_end + 1, connect_seg)
+            point_added = True
         elif needs_connector:
             # print ("Need connector but end points were identical")
             pass
         else:
             # print ("No connector needed")
             pass
-        return
+        return point_added
+
+    def close_subpath(sub_path, firstidx, lastidx):
+        seg1 = None
+        seg2 = None
+        very_first = None
+        very_last = None
+        idx = firstidx
+        while idx < len(sub_path._segments) and very_first is None:
+            seg = sub_path._segments[idx]
+            if seg.start is not None:
+                very_first = Point(seg.start)
+                seg1 = seg
+                break
+            idx += 1
+        idx = lastidx
+        while idx >= 0 and very_last is None:
+            seg = sub_path._segments[idx]
+            if seg.end is not None:
+                seg2 = seg
+                very_last = Point(seg.end)
+                break
+            idx -= 1
+        if very_first is None or very_last is None:
+            return
+        seglen = very_first.distance_to(very_last)
+        if seglen > MINIMAL_LEN:
+            p, s, t = intersect_line_segments(
+                Point(seg1.start),
+                Point(seg1.end),
+                Point(seg2.start),
+                Point(seg2.end),
+            )
+            if p is not None:
+                # We have an intersection and shorten the segments accordingly.
+                seg1.start = Point(p)
+                seg2.end = Point(p)
+            else:
+                segment = Line(very_last, very_first)
+                sub_path._segments.insert(lastidx + 1, segment)
 
     results = []
     # This needs to be a continuous path
+    spct = 0
     for subpath in path.as_subpaths():
+        spct += 1
         p = Path(subpath)
         if not linearize:
             p.approximate_arcs_with_cubics()
@@ -486,12 +539,9 @@ def offset_path(
         #     offset = min(offset, bb[3] - bb[1])
         is_closed = False
         is_closed_by_pts = False
-        remember = False
-        remember_helper = None
         # Lets check the first and last valid point. If they are identical
         # we consider this to be a closed path even if it has no closed indicator.
         firstp_start = None
-        firstp_end = None
         lastp = None
         idx = 0
         while (idx < len(p)) and not isinstance(
@@ -499,7 +549,6 @@ def offset_path(
         ):
             idx += 1
         firstp_start = Point(p._segments[idx].start)
-        firstp_end = Point(p._segments[idx].end)
         idx = len(p._segments) - 1
         while idx >= 0 and not isinstance(
             p._segments[idx], (Arc, Line, QuadraticBezier, CubicBezier)
@@ -507,10 +556,8 @@ def offset_path(
             idx -= 1
         lastp = Point(p._segments[idx].end)
         if firstp_start.distance_to(lastp) < 1e-3:
-            remember = True
-            remember_helper = Point(lastp)
             is_closed = True
-            is_closed_by_pts = True
+            # print ("Seems to be closed!")
         # We need to establish if this is a closed path and if the first segment goes counterclockwise
         cw = False
         if not is_closed:
@@ -519,42 +566,96 @@ def offset_path(
                     is_closed = True
                     break
         if is_closed:
-            cw = is_clockwise(p)
+            cw = is_clockwise(p, 0)
             if cw:
-                offset = -1 * offset
+                offset = -1 * offset_value
         # print (f"Subpath: closed={is_closed}, clockwise={cw}")
         # Remember the complete subshape (could be multiple segements due to linearization)
-
+        last_point = None
+        first_point = None
+        is_closed = False
         for idx in range(len(p._segments) - 1, -1, -1):
             segment = p._segments[idx]
+            # print (f"Deal with seg {idx}: {type(segment).__name__} - {first_point}, {last_point}, {is_closed}")
             if isinstance(segment, Close):
-                if is_closed_by_pts:
-                    # it was already closed with the last and the first point, so we just skip it...
-                    p._segments.pop(idx)
-                    remember = False
-                    remember_helper = None
-                    continue
-                remember = True
                 # Lets add an additional line and replace the closed segment by this new segment
-                idx1 = idx
-                while (idx1 >= 0) and not isinstance(
-                    p._segments[idx1], (Arc, Line, QuadraticBezier, CubicBezier)
-                ):
+                # Look for the last two valid segments
+                last_point = None
+                first_point = None
+                pt_last = None
+                pt_first = None
+                idx1 = idx - 1
+                while idx1 >= 0:
+                    if isinstance(
+                        p._segments[idx1], (Arc, Line, QuadraticBezier, CubicBezier)
+                    ):
+                        pt_last = Point(p._segments[idx1].end)
+                        break
                     idx1 -= 1
-                idx2 = 0
-                while (idx2 < len(p)) and not isinstance(
-                    p._segments[idx2], (Arc, Line, QuadraticBezier, CubicBezier)
-                ):
-                    idx2 += 1
-                # We replace the close by a line
-                segment = Line(
-                    Point(p._segments[idx1].end), Point(p._segments[idx2].start)
-                )
-                p._segments[idx] = segment
-                remember_helper = Point(p._segments[idx2].start)
-
+                idx1 -= 1
+                while idx1 >= 0:
+                    if isinstance(
+                        p._segments[idx1], (Arc, Line, QuadraticBezier, CubicBezier)
+                    ):
+                        pt_first = Point(p._segments[idx1].start)
+                    else:
+                        break
+                    idx1 -= 1
+                if pt_last is not None and pt_first is not None:
+                    segment = Line(pt_last, pt_first)
+                    p._segments[idx] = segment
+                    last_point = idx
+                    is_closed = True
+                    cw = is_clockwise(p, max(0, idx1))
+                    if cw:
+                        offset = -1 * offset_value
+                else:
+                    # Invalid close?! Remove it
+                    p._segments.pop(idx)
+                    if last_point is not None:
+                        last_point -= 1
+                    continue
+            elif isinstance(segment, Move):
+                if last_point is not None and first_point is not None and is_closed:
+                    seglen = p._segments[first_point].start.distance_to(
+                        p._segments[last_point].end
+                    )
+                    if seglen > MINIMAL_LEN:
+                        close_subpath(p, first_point, last_point)
+                last_point = None
+                first_point = None
+            if segment.start is not None and segment.end is not None:
+                seglen = segment.start.distance_to(segment.end)
+                if seglen < MINIMAL_LEN:
+                    # print (f"Skipped: {seglen}")
+                    p._segments.pop(idx)
+                    if last_point is not None:
+                        last_point -= 1
+                    continue
+                first_point = idx
+                if last_point is None:
+                    last_point = idx
+                    is_closed = False
+                    offset = offset_value
+                    # We need to establish if this is a closed path and if it goes counterclockwise
+                    # Let establish the range and check whether this is closed
+                    idx1 = last_point - 1
+                    fpt = None
+                    while idx1 >= 0:
+                        seg = p._segments[idx1]
+                        if isinstance(seg, (Line, Arc, QuadraticBezier, CubicBezier)):
+                            fpt = seg.start
+                        idx1 -= 1
+                    if fpt is not None and segment.end.distance_to(fpt) < MINIMAL_LEN:
+                        is_closed = True
+                        cw = is_clockwise(p, max(0, idx1))
+                        if cw:
+                            offset = -1 * offset_value
+                        # print ("Seems to be closed!")
+                # print (f"Regular point: {idx}, {type(segment).__name__}, {first_point}, {last_point}, {is_closed}")
             helper = Point(p._segments[idx].end)
             left_end = idx
+            #  print (f"Segment to deal with: {type(segment).__name__}")
             if isinstance(segment, Arc):
                 arclinearize = linearize
                 # Arc is not working, so we always linearize
@@ -563,6 +664,7 @@ def offset_path(
                 if newsegment is None or len(newsegment) == 0:
                     continue
                 left_end = idx - 1 + len(newsegment)
+                last_point += len(newsegment) - 1
                 p._segments[idx] = newsegment[0]
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
                     p._segments.insert(idx + 1, newsegment[nidx])
@@ -571,6 +673,7 @@ def offset_path(
                 if newsegment is None or len(newsegment) == 0:
                     continue
                 left_end = idx - 1 + len(newsegment)
+                last_point += len(newsegment) - 1
                 p._segments[idx] = newsegment[0]
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
                     p._segments.insert(idx + 1, newsegment[nidx])
@@ -579,6 +682,7 @@ def offset_path(
                 if newsegment is None or len(newsegment) == 0:
                     continue
                 left_end = idx - 1 + len(newsegment)
+                last_point += len(newsegment) - 1
                 p._segments[idx] = newsegment[0]
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
                     p._segments.insert(idx + 1, newsegment[nidx])
@@ -587,18 +691,22 @@ def offset_path(
                 if newsegment is None or len(newsegment) == 0:
                     continue
                 left_end = idx - 1 + len(newsegment)
+                last_point += len(newsegment) - 1
                 p._segments[idx] = newsegment[0]
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
                     p._segments.insert(idx + 1, newsegment[nidx])
-            stitch_segments_at_index(
+            stitched = stitch_segments_at_index(
                 offset, p, left_end, helper, radial=radial_connector
             )
-        if remember:
-            helper = remember_helper
-            left_end = len(p._segments) - 1
-            stitch_segments_at_index(
-                offset, p, left_end, helper, radial=radial_connector, closed=True
+            if stitched and last_point is not None:
+                last_point += 1
+        if last_point is not None and first_point is not None and is_closed:
+            seglen = p._segments[first_point].start.distance_to(
+                p._segments[last_point].end
             )
+            if seglen > MINIMAL_LEN:
+                close_subpath(p, first_point, last_point)
+
         results.append(p)
 
     if len(results) == 0:
