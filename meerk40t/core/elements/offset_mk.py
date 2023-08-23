@@ -520,7 +520,7 @@ def path_offset(
             pass
         return point_added
 
-    def close_subpath(sub_path, firstidx, lastidx, offset, orgintersect):
+    def close_subpath(radial, sub_path, firstidx, lastidx, offset, orgintersect):
         seg1 = None
         seg2 = None
         very_first = None
@@ -559,16 +559,46 @@ def path_offset(
                     seg2.end = Point(p)
                     # print (f"Close subpath by adjusting inner lines, d={d:.2f} vs. offs={offset:.2f}")
                 elif d >= abs(offset):
-                    p = orgintersect.polar_to(
-                        angle=orgintersect.angle_to(p),
-                        distance=abs(offset),
-                    )
-                    segment = Line(p, seg1.start)
-                    sub_path._segments.insert(lastidx + 1, segment)
-                    segment = Line(seg2.end, p)
-                    sub_path._segments.insert(lastidx + 1, segment)
-                    # sub_path._segments.insert(firstidx, segment)
-                    # print (f"Close subpath with interim pt, d={d:.2f} vs. offs={offset:.2f}")
+                    if radial:
+                        # print ("Inserted an arc")
+                        # Let's check whether the distance of these points is smaller
+                        # than the radius
+
+                        angle = seg1.end.angle_to(seg1.start) - seg1.end.angle_to(seg2.start)
+                        while angle < 0:
+                            angle += tau
+                        while angle > tau:
+                            angle -= tau
+                        # print (f"Angle: {angle:.2f} ({angle / tau * 360.0:.1f})")
+                        startpt = Point(seg2.end)
+                        endpt = Point(seg1.start)
+
+                        if angle >= tau / 2:
+                            ccw = True
+                        else:
+                            ccw = False
+                        # print ("Generate connect-arc")
+                        segment = Arc(
+                            start=startpt, end=endpt, center=Point(orgintersect), ccw=ccw
+                        )
+                        clen = segment.length()
+                        # print (f"Ratio: {clen / abs(tau * offset):.2f}")
+                        if clen > abs(tau * offset / 2):
+                            # That seems strange...
+                            segment = Line(startpt, endpt)
+                        sub_path._segments.insert(lastidx + 1, segment)
+
+                    else:
+                        p = orgintersect.polar_to(
+                            angle=orgintersect.angle_to(p),
+                            distance=abs(offset),
+                        )
+                        segment = Line(p, seg1.start)
+                        sub_path._segments.insert(lastidx + 1, segment)
+                        segment = Line(seg2.end, p)
+                        sub_path._segments.insert(lastidx + 1, segment)
+                        # sub_path._segments.insert(firstidx, segment)
+                        # print (f"Close subpath with interim pt, d={d:.2f} vs. offs={offset:.2f}")
                 else:
                     seg1.start = Point(p)
                     seg2.end = Point(p)
@@ -681,7 +711,7 @@ def path_offset(
                         p._segments[last_point].end
                     )
                     if seglen > MINIMAL_LEN:
-                        close_subpath(p, first_point, last_point, offset, helper2)
+                        close_subpath(radial_connector, p, first_point, last_point, offset, helper2)
                 last_point = None
                 first_point = None
             if segment.start is not None and segment.end is not None:
@@ -766,7 +796,7 @@ def path_offset(
                 p._segments[last_point].end
             )
             if seglen > MINIMAL_LEN:
-                close_subpath(p, first_point, last_point, offset, helper2)
+                close_subpath(radial_connector, p, first_point, last_point, offset, helper2)
 
         results.append(p)
 
@@ -821,7 +851,7 @@ def init_commands(kernel):
         "interpolation", "i", type=int, help=_("interpolation points per segment")
     )
     @self.console_command(
-        "offset2",
+        ("offset2", "offset"),
         help=_("create an offset path for any of the given elements, old algorithm"),
         input_type=(None, "elements"),
         output_type="elements",
