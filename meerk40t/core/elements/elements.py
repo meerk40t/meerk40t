@@ -8,6 +8,7 @@ several smaller functional pieces like Penbox and Wordlists.
 import contextlib
 import os.path
 from time import time
+from . import offset_mk
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.core.node.op_cut import CutOpNode
@@ -27,7 +28,7 @@ from .element_types import *
 
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
-    # The order of offset_old before offset is relevant,
+    # The order of offset_mk before offset is relevant,
     # as offset could and should redefine something later
     if lifecycle == "plugins":
         from . import (
@@ -39,7 +40,6 @@ def plugin(kernel, lifecycle=None):
             grid,
             materials,
             notes,
-            offset_old,
             offset,
             placements,
             render,
@@ -66,7 +66,7 @@ def plugin(kernel, lifecycle=None):
             render.plugin,
             notes.plugin,
             placements.plugin,
-            offset_old.plugin,
+            offset_mk.plugin,
             offset.plugin,
         ]
     elif lifecycle == "preregister":
