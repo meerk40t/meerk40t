@@ -564,7 +564,9 @@ def path_offset(
                         # Let's check whether the distance of these points is smaller
                         # than the radius
 
-                        angle = seg1.end.angle_to(seg1.start) - seg1.end.angle_to(seg2.start)
+                        angle = seg1.end.angle_to(seg1.start) - seg1.end.angle_to(
+                            seg2.start
+                        )
                         while angle < 0:
                             angle += tau
                         while angle > tau:
@@ -579,7 +581,10 @@ def path_offset(
                             ccw = False
                         # print ("Generate connect-arc")
                         segment = Arc(
-                            start=startpt, end=endpt, center=Point(orgintersect), ccw=ccw
+                            start=startpt,
+                            end=endpt,
+                            center=Point(orgintersect),
+                            ccw=ccw,
                         )
                         clen = segment.length()
                         # print (f"Ratio: {clen / abs(tau * offset):.2f}")
@@ -628,7 +633,6 @@ def path_offset(
         #     offset = min(offset, bb[2] - bb[0])
         #     offset = min(offset, bb[3] - bb[1])
         is_closed = False
-        is_closed_by_pts = False
         # Lets check the first and last valid point. If they are identical
         # we consider this to be a closed path even if it has no closed indicator.
         firstp_start = None
@@ -664,6 +668,8 @@ def path_offset(
         last_point = None
         first_point = None
         is_closed = False
+        helper1 = None
+        helper2 = None
         for idx in range(len(p._segments) - 1, -1, -1):
             segment = p._segments[idx]
             # print (f"Deal with seg {idx}: {type(segment).__name__} - {first_point}, {last_point}, {is_closed}")
@@ -711,7 +717,14 @@ def path_offset(
                         p._segments[last_point].end
                     )
                     if seglen > MINIMAL_LEN:
-                        close_subpath(radial_connector, p, first_point, last_point, offset, helper2)
+                        close_subpath(
+                            radial_connector,
+                            p,
+                            first_point,
+                            last_point,
+                            offset,
+                            helper2,
+                        )
                 last_point = None
                 first_point = None
             if segment.start is not None and segment.end is not None:
@@ -743,7 +756,7 @@ def path_offset(
                             offset = -1 * offset_value
                         # print ("Seems to be closed!")
                 # print (f"Regular point: {idx}, {type(segment).__name__}, {first_point}, {last_point}, {is_closed}")
-            helper = Point(p._segments[idx].end)
+            helper1 = Point(p._segments[idx].end)
             helper2 = Point(p._segments[idx].start)
             left_end = idx
             #  print (f"Segment to deal with: {type(segment).__name__}")
@@ -787,7 +800,7 @@ def path_offset(
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
                     p._segments.insert(idx + 1, newsegment[nidx])
             stitched = stitch_segments_at_index(
-                offset, p, left_end, helper, radial=radial_connector
+                offset, p, left_end, helper1, radial=radial_connector
             )
             if last_point is not None:
                 last_point += stitched
@@ -796,7 +809,9 @@ def path_offset(
                 p._segments[last_point].end
             )
             if seglen > MINIMAL_LEN:
-                close_subpath(radial_connector, p, first_point, last_point, offset, helper2)
+                close_subpath(
+                    radial_connector, p, first_point, last_point, offset, helper2
+                )
 
         results.append(p)
 
