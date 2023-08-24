@@ -12,6 +12,12 @@ from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
+realtime_commands = (
+            "!",  # pause
+            "~",  # resume
+            "?",  # status report
+            # "$X",
+        )
 
 class GRBLControllerPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -50,12 +56,6 @@ class GRBLControllerPanel(wx.Panel):
         sizer_1.Add(self.data_exchange, 1, wx.EXPAND, 0)
 
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
-        self.realtime_commands = (
-            "!",  # pause
-            "~",  # resume
-            "?",  # status report
-            # "$X",
-        )
         self.gcode_commands = list()
         if self.service.has_endstops:
             self.gcode_commands.append(
@@ -129,7 +129,7 @@ class GRBLControllerPanel(wx.Panel):
 
     def on_gcode_enter(self, event):  # wxGlade: SerialControllerPanel.<event_handler>
         cmd = self.gcode_text.GetValue()
-        if cmd in self.realtime_commands:
+        if cmd in realtime_commands:
             self.service(f"gcode_realtime {cmd}")
         else:
             self.service(f"gcode {cmd}")
