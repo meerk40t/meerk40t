@@ -250,7 +250,7 @@ class InformationWidget(SimpleInfoWidget):
                 ct += 1
                 if hasattr(e, "as_path"):
                     path = e.as_path()
-                    this_length = path.length()
+                    this_length = path.length(error=1E-2)
                 else:
                     this_length = 0
                 total_length += this_length

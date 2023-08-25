@@ -260,7 +260,7 @@ class PathPropertyPanel(ScrolledPanel):
         total_length = 0
         if hasattr(self.node, "as_path"):
             path = self.node.as_path()
-            total_length = path.length()
+            total_length = path.length(error=1E-2)
         else:
             total_length = 0
         total_area, second_area = self.covered_area([self.node])
