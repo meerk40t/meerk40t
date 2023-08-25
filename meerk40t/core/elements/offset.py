@@ -479,7 +479,7 @@ def offset_path(
                 connect_seg = Arc(
                     start=startpt, end=endpt, center=Point(orgintersect), ccw=ccw
                 )
-                clen = connect_seg.length()
+                clen = connect_seg.length(error = 1E-2)
                 # print (f"Ratio: {clen / abs(tau * offset):.2f}")
                 if clen > abs(tau * offset / 2):
                     # That seems strange...
@@ -497,11 +497,13 @@ def offset_path(
             pass
         return point_added
 
-    def close_subpath(sub_path, firstidx, lastidx, offset, orgintersect):
+    def close_subpath(radial, sub_path, firstidx, lastidx, offset, orgintersect):
+        # from time import perf_counter
         seg1 = None
         seg2 = None
         very_first = None
         very_last = None
+        # t_start = perf_counter()
         idx = firstidx
         while idx < len(sub_path._segments) and very_first is None:
             seg = sub_path._segments[idx]
@@ -520,6 +522,7 @@ def offset_path(
             idx -= 1
         if very_first is None or very_last is None:
             return
+        # print (f"{perf_counter()-t_start:.3f} Found first and last")
         seglen = very_first.distance_to(very_last)
         if seglen > MINIMAL_LEN:
             p, s, t = intersect_line_segments(
@@ -534,18 +537,57 @@ def offset_path(
                 if 0 <= abs(s) <= 1 and 0 <= abs(t) <= 1:
                     seg1.start = Point(p)
                     seg2.end = Point(p)
-                    # print (f"Close subpath by adjusting inner lines, d={d:.2f} vs. offs={offset:.2f}")
+                    # print (f"{perf_counter()-t_start:.3f} Close subpath by adjusting inner lines, d={d:.2f} vs. offs={offset:.2f}")
                 elif d >= abs(offset):
-                    p = orgintersect.polar_to(
-                        angle=orgintersect.angle_to(p),
-                        distance=abs(offset),
-                    )
-                    segment = Line(p, seg1.start)
-                    sub_path._segments.insert(lastidx + 1, segment)
-                    segment = Line(seg2.end, p)
-                    sub_path._segments.insert(lastidx + 1, segment)
-                    # sub_path._segments.insert(firstidx, segment)
-                    # print (f"Close subpath with interim pt, d={d:.2f} vs. offs={offset:.2f}")
+                    if radial:
+                        # print (f"{perf_counter()-t_start:.3f} Insert an arc")
+                        # Let's check whether the distance of these points is smaller
+                        # than the radius
+
+                        angle = seg1.end.angle_to(seg1.start) - seg1.end.angle_to(
+                            seg2.start
+                        )
+                        while angle < 0:
+                            angle += tau
+                        while angle > tau:
+                            angle -= tau
+                        # print (f"{perf_counter()-t_start:.3f} Angle: {angle:.2f} ({angle / tau * 360.0:.1f})")
+                        startpt = Point(seg2.end)
+                        endpt = Point(seg1.start)
+
+                        if angle >= tau / 2:
+                            ccw = True
+                        else:
+                            ccw = False
+                        # print (f"{perf_counter()-t_start:.3f} Generate connect-arc")
+                        # print (f"{perf_counter()-t_start:.3f} s={startpt}, e={endpt}, c={orgintersect}, ccw={ccw}")
+                        segment = Arc(
+                            start=startpt,
+                            end=endpt,
+                            center=Point(orgintersect),
+                            ccw=ccw,
+                        )
+                        # print (f"{perf_counter()-t_start:.3f} Now calculating length")
+                        clen = segment.length(error = 1E-2)
+                        # print (f"{perf_counter()-t_start:.3f} Ratio: {clen / abs(tau * offset):.2f}")
+                        if clen > abs(tau * offset / 2):
+                            # That seems strange...
+                            segment = Line(startpt, endpt)
+                        # print(f"{perf_counter()-t_start:.3f} Inserting segment at {lastidx + 1}...")
+                        sub_path._segments.insert(lastidx + 1, segment)
+                        # print(f"{perf_counter()-t_start:.3f} Done.")
+
+                    else:
+                        p = orgintersect.polar_to(
+                            angle=orgintersect.angle_to(p),
+                            distance=abs(offset),
+                        )
+                        segment = Line(p, seg1.start)
+                        sub_path._segments.insert(lastidx + 1, segment)
+                        segment = Line(seg2.end, p)
+                        sub_path._segments.insert(lastidx + 1, segment)
+                        # sub_path._segments.insert(firstidx, segment)
+                        # print (f"Close subpath with interim pt, d={d:.2f} vs. offs={offset:.2f}")
                 else:
                     seg1.start = Point(p)
                     seg2.end = Point(p)
@@ -553,6 +595,7 @@ def offset_path(
             else:
                 segment = Line(very_last, very_first)
                 sub_path._segments.insert(lastidx + 1, segment)
+                # print ("Fallback case, just create  line")
 
     results = []
     # This needs to be a continuous path
@@ -652,7 +695,7 @@ def offset_path(
                         p._segments[last_point].end
                     )
                     if seglen > MINIMAL_LEN:
-                        close_subpath(p, first_point, last_point, offset, helper2)
+                        close_subpath(radial_connector, p, first_point, last_point, offset, helper2)
                 last_point = None
                 first_point = None
             if segment.start is not None and segment.end is not None:
@@ -737,7 +780,7 @@ def offset_path(
                 p._segments[last_point].end
             )
             if seglen > MINIMAL_LEN:
-                close_subpath(p, first_point, last_point, offset, helper2)
+                close_subpath(radial_connector, p, first_point, last_point, offset, helper2)
 
         results.append(p)
 
