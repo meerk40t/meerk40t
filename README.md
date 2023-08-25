@@ -40,7 +40,7 @@ Meerk40t supports controlling galvo as well as gantry lasers with open source su
 
 ### Moshiboard
 
-The support for old moshiboards makes meerk40t the only known software opensource software that controls moshiboards.
+The support for old moshiboards makes meerk40t the only known opensource software that controls moshiboards.
 
 ### GRBL
 
