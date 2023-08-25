@@ -6,7 +6,7 @@ MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed open-so
 * Provide developers with a highly extensible platform to help further their own ideas, and provide novel work to the laser community at large.
 
 ## Running
-MeerK40t is written in Python and precompiled versions are [available for download](https://github.com/meerk40t/meerk40t/releases) for Windows, Mac OSX, Linux and Raspberry Pi. Due note this sometimes will give false postitives for various viruses (especially since Meerk40t isn't signed).
+MeerK40t is written in Python and precompiled versions are [available for download](https://github.com/meerk40t/meerk40t/releases) for Windows, Mac OSX, Linux and Raspberry Pi (more infos below). Due note this sometimes will give false postitives for various viruses (especially since Meerk40t isn't signed). 
 
 Alternatively you can run MeerK40t directly from Python. `pip install meerk40t[all]` with python installed will usually be sufficient. Then merely run `meerk40t` at the command line.
 
@@ -72,3 +72,14 @@ Open source projects live and die with their support. There are a lots of ways t
 *   Make guides ("How to setup cameras?", etc)
 *   Bounce ideas around
 
+## Download
+You can find and download all current and historical versions in the [Releases](https://github.com/meerk40t/meerk40t/releases) section.
+Currently there are three relevant branches:
+* 0.7 - K40 support only (including ruidacontrol emulator for 3rd party lasersoftware integration) - no longer supported, still good enough for 3rd party integration, latest version [0.7.10](https://github.com/meerk40t/meerk40t/releases/tag/0.7.10000) 
+* 0.8 - Multi laser support - receives critical bugfixes but no more new features, latest version: [0.8.9](https://github.com/meerk40t/meerk40t/releases#latest)
+* 0.9 - Active development (beta) branch with new features and some underlying architectural changes, if you feel brave, try the latest released version: [0.9.7](https://github.com/meerk40t/meerk40t/releases/tag/0.9.0008)
+  
+Just download one of the files for Windows, Mac OSX, Linux and Raspberry Pi.
+
+## Lightburn integration
+Meerk40t allows to act as an intermediator between your K40 laser and software that supports Ruida-controlled laser equipment - [Lightburn](https://lightburnsoftware.com/) is a relevant example of such a software product. You just need to issue the command ``ruidacontrol`` in MeerK40ts console window and you will then be able to add an emulated Ruida Laser inside Lightburn. Laser jobs that are created inside Lightburn and sent to this laser will be picked up by MeerK40t and sent to your K40. See some more detailled instructions in this [video](https://www.youtube.com/watch?v=LUUfLf5Agu0)
