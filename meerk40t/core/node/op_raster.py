@@ -432,20 +432,20 @@ class RasterOpNode(Node, Parameters):
         # Set variables by direction
         direction = self.raster_direction
         horizontal = False
-        start_on_left = False
-        start_on_top = False
+        start_minimum_x = False
+        start_minimum_y = False
         if direction == 0 or direction == 4:
             horizontal = True
-            start_on_top = True
+            start_minimum_y = True
         elif direction == 1:
             horizontal = True
-            start_on_top = False
+            start_minimum_y = False
         elif direction == 2:
             horizontal = False
-            start_on_left = False
+            start_minimum_x = False
         elif direction == 3:
             horizontal = False
-            start_on_left = True
+            start_minimum_x = True
         bidirectional = self.bidirectional
 
         for image_node in self.children:
@@ -499,8 +499,8 @@ class RasterOpNode(Node, Parameters):
                 inverted=False,
                 bidirectional=bidirectional,
                 horizontal=horizontal,
-                start_on_top=start_on_top,
-                start_on_left=start_on_left,
+                start_minimum_y=start_minimum_y,
+                start_minimum_x=start_minimum_x,
                 overscan=overscan,
                 settings=settings,
                 passes=passes,
@@ -529,8 +529,8 @@ class RasterOpNode(Node, Parameters):
                     inverted=False,
                     bidirectional=bidirectional,
                     horizontal=horizontal,
-                    start_on_top=start_on_top,
-                    start_on_left=start_on_left,
+                    start_minimum_y=start_minimum_y,
+                    start_minimum_x=start_minimum_x,
                     overscan=overscan,
                     settings=settings,
                     passes=passes,

@@ -17,8 +17,8 @@ class RasterCut(CutObject):
         inverted=False,
         bidirectional=True,
         horizontal=True,
-        start_on_top=True,
-        start_on_left=True,
+        start_minimum_y=True,
+        start_minimum_x=True,
         overscan=0,
         settings=None,
         passes=1,
@@ -38,8 +38,8 @@ class RasterCut(CutObject):
         # if False -> burn in one direction, if True -> burn back and forth
         self.bidirectional = bidirectional
         self.horizontal = horizontal
-        self.start_on_top = start_on_top
-        self.start_on_left = start_on_left
+        self.start_minimum_y = start_minimum_y
+        self.start_minimum_x = start_minimum_x
         self.width, self.height = image.size
         self.inverted = inverted
         self.scan = overscan
@@ -60,8 +60,8 @@ class RasterCut(CutObject):
             width=self.width,
             height=self.height,
             horizontal=self.horizontal,
-            start_minimum_y=self.start_on_top,
-            start_minimum_x=self.start_on_left,
+            start_minimum_y=self.start_minimum_y,
+            start_minimum_x=self.start_minimum_x,
             bidirectional=self.bidirectional,
             skip_pixel=skip_pixel,
             overscan=self.scan,
