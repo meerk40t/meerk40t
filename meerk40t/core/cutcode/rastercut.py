@@ -60,8 +60,8 @@ class RasterCut(CutObject):
             width=self.width,
             height=self.height,
             horizontal=self.horizontal,
-            start_on_top=self.start_on_top,
-            start_on_left=self.start_on_left,
+            start_minimum_y=self.start_on_top,
+            start_minimum_x=self.start_on_left,
             bidirectional=self.bidirectional,
             skip_pixel=skip_pixel,
             overscan=self.scan,
@@ -137,10 +137,10 @@ class RasterCut(CutObject):
         return 0 if self.plot.horizontal else 1
 
     def x_dir(self):
-        return 1 if self.plot.start_on_left else -1
+        return 1 if self.plot.start_minimum_x else -1
 
     def y_dir(self):
-        return 1 if self.plot.start_on_top else -1
+        return 1 if self.plot.start_minimum_y else -1
 
     def generator(self):
         return self.plot.plot()
