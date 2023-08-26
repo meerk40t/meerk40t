@@ -265,18 +265,18 @@ class GrblController:
             try:
                 from .serial_connection import SerialConnection
 
-                self.connection = SerialConnection(self.service)
+                self.connection = SerialConnection(self.service, self)
             except ImportError:
                 pass
         elif self.service.permit_tcp and self.service.interface == "tcp":
             from meerk40t.grbl.tcp_connection import TCPOutput
 
-            self.connection = TCPOutput(self.service)
+            self.connection = TCPOutput(self.service, self)
         else:
             # Mock
             from .mock_connection import MockConnection
 
-            self.connection = MockConnection(self.service)
+            self.connection = MockConnection(self.service, self)
 
     def add_watcher(self, watcher):
         self._watchers.append(watcher)
@@ -446,11 +446,11 @@ class GrblController:
             self._paused = True
         if "~" in line:
             self._paused = False
+        if line is not None:
+            self._send(line)
         if "\x18" in line:
             with self._forward_lock:
                 self._forward_buffer.clear()
-        if line is not None:
-            self._send(line)
 
     def _sending_single_line(self):
         """

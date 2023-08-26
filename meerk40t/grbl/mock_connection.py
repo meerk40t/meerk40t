@@ -8,9 +8,9 @@ any hardware.
 
 
 class MockConnection:
-    def __init__(self, service):
+    def __init__(self, service, controller):
         self.service = service
-        self.channel = self.service.channel("grbl_state", buffer_size=20)
+        self.controller = controller
         self.laser = None
         self.read_buffer = bytearray()
         self.just_connected = False
@@ -58,18 +58,18 @@ class MockConnection:
 
     def connect(self):
         if self.laser:
-            self.channel("Already connected")
+            self.controller.log("Already connected", type="connection")
             return
         try:
-            self.channel("Attempting to Connect...")
+            self.controller.log("Attempting to Connect...", type="connection")
             self.laser = True
             self.just_connected = True
-            self.channel("Connected")
+            self.controller.log("Connected", type="connection")
             self.service.signal("grbl;status", "connected")
         except ConnectionError:
-            self.channel("Connection Failed.")
+            self.controller.log("Connection Failed.", type="connection")
 
     def disconnect(self):
         self.laser = None
-        self.channel("Disconnected")
+        self.controller.log("Disconnected", type="connection")
         self.service.signal("grbl;status", "disconnected")
