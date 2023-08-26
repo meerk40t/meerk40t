@@ -1716,46 +1716,37 @@ class SimulationWidget(Widget):
                             cut._cache = None
                         cut._cache_id = id(image)
                     # Set draw - constraint
-                    clip_x = 0
-                    clip_y = 0
-                    clip_w = cut._cache_width
-                    clip_h = cut._cache_height
-                    mode = ""
                     if cut.horizontal:
-                        if cut.start_on_top:
-                            mode = "T2B"
+                        if cut.start_minimum_y:
+                            # mode = "T2B"
+                            clip_w = cut._cache_width
+                            clip_h = int(residual * cut._cache_height)
+                            clip_x = 0
+                            clip_y = 0
                         else:
-                            mode = "B2T"
+                            # mode = "B2T"
+                            clip_w = cut._cache_width
+                            clip_h = int(residual * cut._cache_height)
+                            clip_x = 0
+                            clip_y = cut._cache_height - clip_h
                     else:
-                        if cut.start_on_left:
-                            mode = "L2R"
+                        if cut.start_minimum_x:
+                            # mode = "L2R"
+                            clip_w = int(residual * cut._cache_width)
+                            clip_h = cut._cache_height
+                            clip_x = 0
+                            clip_y = 0
                         else:
-                            mode = "R2L"
+                            # mode = "R2L"
+                            clip_w = int(residual * cut._cache_width)
+                            clip_h = cut._cache_height
+                            clip_x = cut._cache_width - clip_w
+                            clip_y = 0
 
                     # msg = f"Mode: {mode}, Horiz: {cut.horizontal}, from left: {cut.start_on_left}, from top: {cut.start_on_top}"
                     # if msg != self.last_msg:
                     #     print (msg)
                     #     self.last_msg = msg
-                    if mode == "T2B":
-                        clip_w = cut._cache_width
-                        clip_h = int(residual * cut._cache_height)
-                        clip_x = 0
-                        clip_y = 0
-                    elif mode == "B2T":
-                        clip_w = cut._cache_width
-                        clip_h = int(residual * cut._cache_height)
-                        clip_x = 0
-                        clip_y = cut._cache_height - clip_h
-                    elif mode == "L2R":
-                        clip_w = int(residual * cut._cache_width)
-                        clip_h = cut._cache_height
-                        clip_x = 0
-                        clip_y = 0
-                    elif mode == "R2L":
-                        clip_w = int(residual * cut._cache_width)
-                        clip_h = cut._cache_height
-                        clip_x = cut._cache_width - clip_w
-                        clip_y = 0
                     gc.Clip(clip_x, clip_y, clip_w, clip_h)
                     if cut._cache is not None:
                         # Cache exists and is valid.

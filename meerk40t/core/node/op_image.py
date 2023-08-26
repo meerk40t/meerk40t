@@ -256,6 +256,18 @@ class ImageOpNode(Node, Parameters):
 
             commands = plan.commands
             commands.append(actual(node))
+        if matrix.value_scale_y() < 0:
+            # Y is negative scale, flip raster_direction if needed
+            if self.raster_direction == 0:
+                self.raster_direction = 1
+            elif self.raster_direction == 1:
+                self.raster_direction = 0
+        if matrix.value_scale_x() < 0:
+            # X is negative scale, flip raster_direction if needed
+            if self.raster_direction == 2:
+                self.raster_direction = 3
+            elif self.raster_direction == 3:
+                self.raster_direction = 2
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """
@@ -339,8 +351,8 @@ class ImageOpNode(Node, Parameters):
                 inverted=False,
                 bidirectional=bidirectional,
                 horizontal=horizontal,
-                start_on_top=start_on_top,
-                start_on_left=start_on_left,
+                start_minimum_y=start_on_top,
+                start_minimum_x=start_on_left,
                 overscan=overscan,
                 settings=settings,
                 passes=passes,
@@ -369,8 +381,8 @@ class ImageOpNode(Node, Parameters):
                     inverted=False,
                     bidirectional=bidirectional,
                     horizontal=horizontal,
-                    start_on_top=start_on_top,
-                    start_on_left=start_on_left,
+                    start_minimum_y=start_on_top,
+                    start_minimum_x=start_on_left,
                     overscan=overscan,
                     settings=settings,
                     passes=passes,
