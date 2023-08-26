@@ -1722,12 +1722,12 @@ class SimulationWidget(Widget):
                     clip_h = cut._cache_height
                     mode = ""
                     if cut.horizontal:
-                        if cut.start_minimum_y:
+                        if cut.start_on_top:
                             mode = "T2B"
                         else:
                             mode = "B2T"
                     else:
-                        if cut.start_minimum_x:
+                        if cut.start_on_left:
                             mode = "L2R"
                         else:
                             mode = "R2L"
