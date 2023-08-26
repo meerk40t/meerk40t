@@ -22,6 +22,7 @@ class TCPOutput:
 
     def connect(self):
         try:
+            self.controller.log("Attempting to Connect...", type="connection")
             self._stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._stream.connect((self.service.address, self.service.port))
             self.service.signal("grbl;status", "connected")
@@ -42,6 +43,7 @@ class TCPOutput:
             self.service.signal("grbl;status", f"Host down {str(e)}")
 
     def disconnect(self):
+        self.controller.log("Disconnected", type="connection")
         self.service.signal("grbl;status", "disconnected")
         self._stream.close()
         self._stream = None
