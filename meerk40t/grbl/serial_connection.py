@@ -9,9 +9,9 @@ from serial import SerialException
 
 
 class SerialConnection:
-    def __init__(self, service):
+    def __init__(self, service, controller):
         self.service = service
-        self.channel = self.service.channel("grbl_state", buffer_size=20)
+        self.controller = controller
         self.laser = None
         self.read_buffer = bytearray()
 

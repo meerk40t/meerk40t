@@ -8,9 +8,9 @@ import socket
 
 
 class TCPOutput:
-    def __init__(self, context, name=None):
-        super().__init__()
-        self.service = context
+    def __init__(self, service, controller, name=None):
+        self.service = service
+        self.controller = controller
         self._stream = None
         self._read_buffer_size = 1024
         self.read_buffer = bytearray()

@@ -265,18 +265,18 @@ class GrblController:
             try:
                 from .serial_connection import SerialConnection
 
-                self.connection = SerialConnection(self.service)
+                self.connection = SerialConnection(self.service, self)
             except ImportError:
                 pass
         elif self.service.permit_tcp and self.service.interface == "tcp":
             from meerk40t.grbl.tcp_connection import TCPOutput
 
-            self.connection = TCPOutput(self.service)
+            self.connection = TCPOutput(self.service, self)
         else:
             # Mock
             from .mock_connection import MockConnection
 
-            self.connection = MockConnection(self.service)
+            self.connection = MockConnection(self.service, self)
 
     def add_watcher(self, watcher):
         self._watchers.append(watcher)
