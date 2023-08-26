@@ -160,6 +160,10 @@ class GRBLControllerPanel(wx.Panel):
             with self._buffer_lock:
                 self._buffer += f"{data}\n"
             self.service.signal("grbl_controller_update", True)
+        elif type == "connection":
+            with self._buffer_lock:
+                self._buffer += f"{data}\n"
+            self.service.signal("grbl_controller_update", True)
 
     @signal_listener("grbl_controller_update")
     def update_text_gui(self, origin, *args):
