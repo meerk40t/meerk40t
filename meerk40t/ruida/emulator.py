@@ -110,19 +110,19 @@ class RuidaEmulator:
         checksum_check = (sent_data[0] & 0xFF) << 8 | sent_data[1] & 0xFF
         checksum_sum = sum(data) & 0xFFFF
         if len(data) == 4:
-            if data == b'\xd9\x84\x08\xfe':
-                self._set_magic(0x83)
             if data == b'\xd4\x89\r\xf7':
                 self._set_magic(0x88)
-            if data == b'i4\xb8N':
+            elif data == b'\xd9\x84\x08\xfe':
+                self._set_magic(0x83)
+            elif data == b'i4\xb8N':
                 self._set_magic(0x33)
-            if data == b'I\x14\x98n':
+            elif data == b'I\x14\x98n':
                 self._set_magic(0x13)
-            if data == b'z#\xa7]':
+            elif data == b'z#\xa7]':
                 self._set_magic(0x22)
-            if data == b"K\x12\x96p":
+            elif data == b"K\x12\x96p":
                 self._set_magic(0x11)
-            if data == b'-x\xf4\n':
+            elif data == b'-x\xf4\n':
                 self._set_magic(0x77)
         if checksum_check == checksum_sum:
             response = b"\xCC"
