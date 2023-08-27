@@ -124,7 +124,6 @@ class RuidaEmulator:
                 self._set_magic(0x11)
             if data == b'-x\xf4\n':
                 self._set_magic(0x77)
-            print(hex(self.magic))
         if checksum_check == checksum_sum:
             response = b"\xCC"
             self.msg_reply(response, desc="Checksum match")
