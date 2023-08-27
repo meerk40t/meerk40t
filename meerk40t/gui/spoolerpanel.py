@@ -646,6 +646,8 @@ class SpoolerPanel(wx.Panel):
 
                     # STEPS
                     try:
+                        if spool_obj.steps_total == 0:
+                            spool_obj.calc_steps()
                         self.list_job_spool.SetItem(
                             list_id,
                             JC_STEPS,
