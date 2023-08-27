@@ -251,7 +251,7 @@ class RDJob:
         @return:
         """
         if magic is None:
-            self.magic = determine_magic_via_histogram(data)
+            magic = determine_magic_via_histogram(data)
         if magic is not None and magic != self.magic:
             self.magic = magic
             self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
