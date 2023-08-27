@@ -509,11 +509,17 @@ class Spooler:
                 while not is_valid:
                     try:
                         program = self._queue[idx]
-                        if program.enabled:
+                        # Not all type of jobs are regular jobs,
+                        # so that needs to be checked...
+                        if hasattr(program, "enabled"):
+                            if program.enabled:
+                                is_valid = True
+                                break
+                            else:
+                                idx += 1
+                        else:
                             is_valid = True
                             break
-                        else:
-                            idx += 1
                     except IndexError:
                         # There is no work to do.
                         self._lock.wait()
