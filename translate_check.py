@@ -16,6 +16,7 @@ specifying the locale as a parameter, e.g.:
 
 import os
 import sys
+
 # def testroutine():
 #     _ = print
 #     msg = _("Test for a '") + "-" + _('another test for "')

@@ -9,9 +9,9 @@ import wx
 
 from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
+    HITCHAIN_DELEGATE,
     HITCHAIN_HIT,
     RESPONSE_CHAIN,
-    HITCHAIN_DELEGATE,
 )
 from meerk40t.gui.scene.widget import Widget
 

@@ -77,9 +77,7 @@ class HatchOpNode(Node, Parameters):
         default_map["penvalue"] = (
             f"(v:{self.penbox_value}) " if self.penbox_value else ""
         )
-        default_map["loop"] = (
-            f"{self.loops}X " if self.loops != 1 else ""
-        )
+        default_map["loop"] = f"{self.loops}X " if self.loops != 1 else ""
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
@@ -304,10 +302,12 @@ class HatchOpNode(Node, Parameters):
                         Geomstr.hatch(
                             outlines,
                             distance=float(Length(self.hatch_distance)),
-                            angle=Angle(self.hatch_angle).radians + loop * Angle(self.hatch_angle_delta).radians,
+                            angle=Angle(self.hatch_angle).radians
+                            + loop * Angle(self.hatch_angle_delta).radians,
                         )
                     )
                 self.add(type="elem path", geometry=path, **chain_settings)
+
         if self.children:
             commands = plan.commands
             commands.append(hatch)

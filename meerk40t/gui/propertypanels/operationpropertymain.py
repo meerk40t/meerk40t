@@ -1,7 +1,7 @@
 import wx
 
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
-from meerk40t.kernel import signal_listener, lookup_listener
+from meerk40t.kernel import lookup_listener, signal_listener
 
 from ...core.units import UNITS_PER_MM, Length
 from ...svgelements import Angle, Color, Matrix
@@ -1556,7 +1556,9 @@ class HatchSettingsPanel(wx.Panel):
         self.slider_angle = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
         sizer_angle.Add(self.slider_angle, 3, wx.EXPAND, 0)
 
-        sizer_angle_delta = StaticBoxSizer(self, wx.ID_ANY, _("Angle Delta"), wx.HORIZONTAL)
+        sizer_angle_delta = StaticBoxSizer(
+            self, wx.ID_ANY, _("Angle Delta"), wx.HORIZONTAL
+        )
         self.text_angle_delta = TextCtrl(
             self,
             wx.ID_ANY,
@@ -1592,7 +1594,9 @@ class HatchSettingsPanel(wx.Panel):
         self.text_loops.SetActionRoutine(self.on_text_loops)
         self.text_angle_delta.SetActionRoutine(self.on_text_angle_delta)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_loops, self.slider_loops)
-        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle_delta, self.slider_angle_delta)
+        self.Bind(
+            wx.EVT_COMMAND_SCROLL, self.on_slider_angle_delta, self.slider_angle_delta
+        )
 
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_fill, self.combo_fill_style)
@@ -1697,7 +1701,9 @@ class HatchSettingsPanel(wx.Panel):
         except ValueError:
             return
         try:
-            h_angle_delta = float(Angle.parse(self.operation.hatch_angle_delta).as_degrees)
+            h_angle_delta = float(
+                Angle.parse(self.operation.hatch_angle_delta).as_degrees
+            )
             while h_angle_delta > self.slider_angle_delta.GetMax():
                 h_angle_delta -= 360
             while h_angle_delta < self.slider_angle_delta.GetMin():

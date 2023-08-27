@@ -237,7 +237,9 @@ def init_commands(kernel):
         help=_("adds hatch-effect to scene"),
         input_type=(None, "elements"),
     )
-    def effect_hatch(command, data=None, angle=None, angle_delta=None, distance=None, **kwargs):
+    def effect_hatch(
+        command, data=None, angle=None, angle_delta=None, distance=None, **kwargs
+    ):
         """
         Add an effect hatch object
         """

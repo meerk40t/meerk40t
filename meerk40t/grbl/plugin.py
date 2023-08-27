@@ -144,9 +144,7 @@ def plugin(kernel, lifecycle=None):
             {
                 "provider": "provider/device/grbl",
                 "friendly_name": _("Ortur Laser Master 2 (GRBL)"),
-                "extended_info": _(
-                    "Ortur-branded self-assembled grbl diode lasers"
-                ),
+                "extended_info": _("Ortur-branded self-assembled grbl diode lasers"),
                 "priority": 21,
                 "family": _("Diode-Laser"),
                 "family_priority": 50,
@@ -163,14 +161,8 @@ def plugin(kernel, lifecycle=None):
                         "attr": "source",
                         "default": "diode",
                     },
-                    {
-                        "attr": "bedheight",
-                        "default": "430mm"
-                    },
-                    {
-                        "attr": "bedwidth",
-                        "default": "400mm"
-                    },
+                    {"attr": "bedheight", "default": "430mm"},
+                    {"attr": "bedwidth", "default": "400mm"},
                     {
                         "attr": "home_bottom",
                         "default": True,

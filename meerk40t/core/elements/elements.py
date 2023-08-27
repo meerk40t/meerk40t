@@ -8,7 +8,6 @@ several smaller functional pieces like Penbox and Wordlists.
 import contextlib
 import os.path
 from time import time
-from . import offset_clpr, offset_mk
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.core.node.op_cut import CutOpNode
@@ -23,6 +22,7 @@ from meerk40t.core.wordlist import Wordlist
 from meerk40t.kernel import ConsoleFunction, Service, Settings
 from meerk40t.svgelements import Color, Path, Point, SVGElement
 
+from . import offset_clpr, offset_mk
 from .element_types import *
 
 
@@ -2945,7 +2945,10 @@ class Elemental(Service):
                             self._filename = pathname
                             self.set_end_time("load", display=True)
                             self.signal("file;loaded")
-                            if elemcount_now != elemcount_then or opcount_then != opcount_now:
+                            if (
+                                elemcount_now != elemcount_then
+                                or opcount_then != opcount_now
+                            ):
                                 return True
                         except FileNotFoundError:
                             return False

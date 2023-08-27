@@ -110,7 +110,9 @@ class SpoolerPanel(wx.Panel):
         self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
 
         self.list_job_spool = wx.ListCtrl(
-            self.win_top, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL
+            self.win_top,
+            wx.ID_ANY,
+            style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
         )
 
         self.info_label = wx.StaticText(

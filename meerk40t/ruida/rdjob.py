@@ -171,6 +171,7 @@ def determine_magic_via_histogram(data):
             magic = i - 1
     return magic
 
+
 def encode_bytes(data, magic=0x88):
     lut_swizzle, lut_unswizzle = swizzles_lut(magic)
     array = list()

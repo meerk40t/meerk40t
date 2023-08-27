@@ -7,13 +7,6 @@ from datetime import datetime
 import wx
 from wx import aui
 
-from .propertypanels.hatchproperty import HatchPropertyPanel
-from .propertypanels.inputproperty import InputPropertyPanel
-from .propertypanels.opbranchproperties import OpBranchPanel
-from .propertypanels.outputproperty import OutputPropertyPanel
-from .propertypanels.waitproperty import WaitPropertyPanel
-from .simpleui import SimpleUI
-
 # try:
 #     # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
 #     # richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
@@ -57,12 +50,16 @@ from .preferences import Preferences
 from .propertypanels.blobproperty import BlobPropertyPanel
 from .propertypanels.consoleproperty import ConsolePropertiesPanel
 from .propertypanels.groupproperties import FilePropertiesPanel, GroupPropertiesPanel
+from .propertypanels.hatchproperty import HatchPropertyPanel
 from .propertypanels.imageproperty import (
     ImageModificationPanel,
     ImagePropertyPanel,
     ImageVectorisationPanel,
 )
+from .propertypanels.inputproperty import InputPropertyPanel
+from .propertypanels.opbranchproperties import OpBranchPanel
 from .propertypanels.operationpropertymain import ParameterPanel
+from .propertypanels.outputproperty import OutputPropertyPanel
 from .propertypanels.pathproperty import PathPropertyPanel
 from .propertypanels.placementproperty import PlacementParameterPanel
 from .propertypanels.pointproperty import PointPropertyPanel
@@ -77,6 +74,8 @@ from .propertypanels.rasterwizardpanels import (
     ToneCurvePanel,
 )
 from .propertypanels.textproperty import TextPropertyPanel
+from .propertypanels.waitproperty import WaitPropertyPanel
+from .simpleui import SimpleUI
 from .simulation import Simulation
 from .toolwidgets.toolnodeedit import NodeEditToolbar
 from .wordlisteditor import WordlistEditor
@@ -96,15 +95,17 @@ The Transformations work in Windows/OSX/Linux for wxPython 4.0+ (and likely befo
 
 _ = wx.GetTranslation
 
-class GoPanel(wx.Panel):
 
+class GoPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PassesPanel.__init__
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.click_time = 0
         self.context = context
-        self.button_go = wx.BitmapButton(self, wx.ID_ANY, icons8_gas_industry_50.GetBitmap())
+        self.button_go = wx.BitmapButton(
+            self, wx.ID_ANY, icons8_gas_industry_50.GetBitmap()
+        )
         self.was_mouse = False
         self.button_go.Bind(wx.EVT_BUTTON, self.on_button_go_click)
         self.button_go.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_down)
@@ -122,6 +123,7 @@ class GoPanel(wx.Panel):
 
     def on_button_go_click(self, event):
         from time import perf_counter
+
         this_time = perf_counter()
         if this_time - self.click_time < 0.5:
             return
@@ -149,6 +151,7 @@ class GoPanel(wx.Panel):
         self.click_time = perf_counter()
         self.was_mouse = False
 
+
 def register_panel_go(window, context):
 
     pane = (
@@ -168,6 +171,7 @@ def register_panel_go(window, context):
 
     window.on_pane_create(pane)
     context.register("pane/go", pane)
+
 
 def register_panel_stop(window, context):
     # Define Stop.

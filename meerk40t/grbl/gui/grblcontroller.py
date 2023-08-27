@@ -13,11 +13,12 @@ from meerk40t.kernel import signal_listener
 _ = wx.GetTranslation
 
 realtime_commands = (
-            "!",  # pause
-            "~",  # resume
-            "?",  # status report
-            # "$X",
-        )
+    "!",  # pause
+    "~",  # resume
+    "?",  # status report
+    # "$X",
+)
+
 
 class GRBLControllerPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):

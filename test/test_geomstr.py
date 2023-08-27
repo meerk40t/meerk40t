@@ -379,7 +379,7 @@ class TestGeomstr(unittest.TestCase):
         self.assertEqual(path.length(0), math.sqrt(2))
         self.assertEqual(path.length(1), math.sqrt(2))
 
-        r = np.array([[0., 0.], [1., 1.], [2., 2.]])
+        r = np.array([[0.0, 0.0], [1.0, 1.0], [2.0, 2.0]])
         path = Geomstr.lines(r)
         self.assertEqual(len(path), 2)
         self.assertEqual(path.length(0), math.sqrt(2))
@@ -1117,9 +1117,9 @@ class TestGeomstr(unittest.TestCase):
         @return:
         """
         gs = Geomstr.circle(500, 0, 0)
-        q = gs.near(complex(0,0), 499)
+        q = gs.near(complex(0, 0), 499)
         self.assertEqual(len(q), 0)
-        q = gs.near(complex(500,0), 50)
+        q = gs.near(complex(500, 0), 50)
         self.assertEqual(len(q), 2)
         gs.append(Geomstr.rect(0, 0, 10, 10))
         gs.end()

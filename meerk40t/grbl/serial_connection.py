@@ -37,7 +37,9 @@ class SerialConnection:
         try:
             self.laser.write(bytes(line, "utf-8"))
         except (SerialException, PermissionError) as e:
-            self.controller.log(f"Error when writing '{line}: {str(e)}'", type="connection")
+            self.controller.log(
+                f"Error when writing '{line}: {str(e)}'", type="connection"
+            )
 
     def connect(self):
         if self.laser:
@@ -69,7 +71,9 @@ class SerialConnection:
         except ConnectionError:
             self.controller.log("Connection Failed.", type="connection")
         except SerialException as e:
-            self.controller.log("Serial connection could not be established.", type="connection")
+            self.controller.log(
+                "Serial connection could not be established.", type="connection"
+            )
             self.controller.log(str(e), type="connection")
 
         self.service.signal("grbl;status", signal_load)

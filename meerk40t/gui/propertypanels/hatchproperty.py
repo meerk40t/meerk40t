@@ -94,7 +94,9 @@ class HatchPropertyPanel(ScrolledPanel):
         sizer_angle.Add(self.slider_angle, 3, wx.EXPAND, 0)
         main_sizer.Add(sizer_angle, 1, wx.EXPAND, 0)
 
-        sizer_angle_delta = StaticBoxSizer(self, wx.ID_ANY, _("Angle Delta"), wx.HORIZONTAL)
+        sizer_angle_delta = StaticBoxSizer(
+            self, wx.ID_ANY, _("Angle Delta"), wx.HORIZONTAL
+        )
         self.text_angle_delta = TextCtrl(
             self,
             wx.ID_ANY,
@@ -123,7 +125,9 @@ class HatchPropertyPanel(ScrolledPanel):
 
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_loops, self.slider_loops)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
-        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle_delta, self.slider_angle_delta)
+        self.Bind(
+            wx.EVT_COMMAND_SCROLL, self.on_slider_angle_delta, self.slider_angle_delta
+        )
         self.Layout()
 
     def pane_hide(self):

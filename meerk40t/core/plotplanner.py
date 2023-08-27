@@ -401,7 +401,7 @@ class PPI(PlotManipulation):
                 # Sequential, random, progressive, static.
                 if self.planner.phase_type == 1:
                     # Random.
-                    self.ppi_total = random.randint(0,1000)
+                    self.ppi_total = random.randint(0, 1000)
                 elif self.planner.phase_type == 2:
                     # progressive
                     self._phase_set += self.planner.phase_value

@@ -1,6 +1,6 @@
 from math import sqrt
 
-from meerk40t.gui.laserrender import DRAW_MODE_REGMARKS, DRAW_MODE_EDIT
+from meerk40t.gui.laserrender import DRAW_MODE_EDIT, DRAW_MODE_REGMARKS
 from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_HIT,
     RESPONSE_CHAIN,

@@ -1,9 +1,9 @@
 import math
 
 from meerk40t.gui.scene.sceneconst import (
-    RESPONSE_DROP,
-    RESPONSE_CONSUME,
     RESPONSE_CHAIN,
+    RESPONSE_CONSUME,
+    RESPONSE_DROP,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 
