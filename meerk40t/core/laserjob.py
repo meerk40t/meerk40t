@@ -32,6 +32,7 @@ class LaserJob:
         self.item_index = 0
 
         self._stopped = True
+        self.enabled = True
 
         self._estimate = 0
 
@@ -43,7 +44,7 @@ class LaserJob:
         self.outline = outline
 
     def __str__(self):
-        return f"{self.__class__.__name__}({self.label}: {self.loops_executed}/{self.loops})"
+        return f"{self.__class__.__name__}({self.label}{'' if self.enabled else '[x]'}: {self.loops_executed}/{self.loops})"
 
     def bounds(self):
         if self.outline is None:
@@ -71,7 +72,10 @@ class LaserJob:
             else:
                 return "Queued"
         else:
-            return "Disabled"
+            if self.enabled:
+                return "Waiting"
+            else:
+                return "Disabled"
 
     def is_running(self):
         return not self._stopped

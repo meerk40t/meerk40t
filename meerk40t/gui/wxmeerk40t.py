@@ -96,16 +96,37 @@ The Transformations work in Windows/OSX/Linux for wxPython 4.0+ (and likely befo
 
 _ = wx.GetTranslation
 
+class GoPanel(wx.Panel):
 
-def register_panel_go(window, context):
-    # Define Go
-    go = wx.BitmapButton(window, wx.ID_ANY, icons8_gas_industry_50.GetBitmap())
-    button_start_was_clicked = False
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: PassesPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.click_time = 0
+        self.context = context
+        self.button_go = wx.BitmapButton(self, wx.ID_ANY, icons8_gas_industry_50.GetBitmap())
+        self.was_mouse = False
+        self.button_go.Bind(wx.EVT_BUTTON, self.on_button_go_click)
+        self.button_go.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_down)
+        self.button_go.SetBackgroundColour(wx.Colour(0, 127, 0))
+        self.button_go.SetToolTip(_("One Touch: Send Job To Laser "))
 
-    def busy_go_plan(event, *args):
-        global button_start_was_clicked
-        if not button_start_was_clicked:
-            channel = context.kernel.channel("console")
+        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        main_sizer.Add(self.button_go, 1, wx.EXPAND, 0)
+        self.SetSizer(main_sizer)
+        main_sizer.Fit(self)
+
+    def on_mouse_down(self, event):
+        self.was_mouse = True
+        event.Skip()
+
+    def on_button_go_click(self, event):
+        from time import perf_counter
+        this_time = perf_counter()
+        if this_time - self.click_time < 0.5:
+            return
+        if not self.was_mouse:
+            channel = self.context.kernel.channel("console")
             channel(
                 _(
                     "We intentionally ignored a request to start a job via the keyboard.\n"
@@ -113,27 +134,23 @@ def register_panel_go(window, context):
                 )
             )
             return
-        context.kernel.busyinfo.start(msg=_("Processing and sending..."))
-        context(
+        if not self.button_go.Enabled:
+            return
+
+        self.button_go.Enable(False)
+        self.context.kernel.busyinfo.start(msg=_("Processing and sending..."))
+        self.context(
             "plan clear copy preprocess validate blob preopt optimize spool\nplan clear\n"
         )
-        context.kernel.busyinfo.end()
-        button_start_was_clicked = False
+        self.context.kernel.busyinfo.end()
+        self.button_go.Enable(True)
+        # Reset...
+        # Deliberately at the end, as clicks queue...
+        self.click_time = perf_counter()
+        self.was_mouse = False
 
-    def mouse_down(event, *args):
-        global button_start_was_clicked
-        button_start_was_clicked = True
-        event.Skip()
+def register_panel_go(window, context):
 
-    window.Bind(
-        wx.EVT_BUTTON,
-        busy_go_plan,
-        go,
-    )
-    go.Bind(wx.EVT_LEFT_DOWN, mouse_down)
-    go.SetBackgroundColour(wx.Colour(0, 127, 0))
-    go.SetToolTip(_("One Touch: Send Job To Laser "))
-    go.SetSize(go.GetBestSize())
     pane = (
         aui.AuiPaneInfo()
         .Bottom()
@@ -146,11 +163,11 @@ def register_panel_go(window, context):
     )
     pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
-    pane.control = go
+    panel = GoPanel(window, wx.ID_ANY, context=context)
+    pane.control = panel
 
     window.on_pane_create(pane)
     context.register("pane/go", pane)
-
 
 def register_panel_stop(window, context):
     # Define Stop.

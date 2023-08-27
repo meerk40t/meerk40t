@@ -110,7 +110,7 @@ class SpoolerPanel(wx.Panel):
         self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
 
         self.list_job_spool = wx.ListCtrl(
-            self.win_top, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
+            self.win_top, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL
         )
 
         self.info_label = wx.StaticText(
@@ -479,12 +479,18 @@ class SpoolerPanel(wx.Panel):
             return
 
         menu = wx.Menu()
+        can_enable = True
         if element.status == "Running":
             action = _("Stop")
             remove_mode = "stop"
+            can_enable = False
         else:
             action = _("Remove")
             remove_mode = "remove"
+            if element.enabled:
+                action2 = _("Disable")
+            else:
+                action2 = _("Enable")
         item = menu.Append(
             wx.ID_ANY,
             f"{action} {str(element)[:30]} [{spooler.context.label}]",
@@ -493,7 +499,15 @@ class SpoolerPanel(wx.Panel):
         )
         info_tuple = [spooler, element, remove_mode]
         self.Bind(wx.EVT_MENU, self.on_menu_popup_delete(info_tuple), item)
-
+        if can_enable:
+            item = menu.Append(
+                wx.ID_ANY,
+                f"{action2} {str(element)[:30]} [{spooler.context.label}]",
+                "",
+                wx.ITEM_NORMAL,
+            )
+            info_tuple = [spooler, element]
+            self.Bind(wx.EVT_MENU, self.on_menu_popup_toggle_enable(info_tuple), item)
         item = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_menu_popup_clear(element), item)
 
@@ -534,6 +548,15 @@ class SpoolerPanel(wx.Panel):
             self.refresh_spooler_list()
 
         return delete
+
+    def on_menu_popup_toggle_enable(self, element):
+        def toggle(event=None):
+            spooler = element[0]
+            job = element[1]
+            job.enabled = not job.enabled
+            self.refresh_spooler_list()
+
+        return toggle
 
     def pane_show(self, *args):
         self.refresh_spooler_list()
@@ -623,6 +646,8 @@ class SpoolerPanel(wx.Panel):
 
                     # STEPS
                     try:
+                        if spool_obj.steps_total == 0:
+                            spool_obj.calc_steps()
                         self.list_job_spool.SetItem(
                             list_id,
                             JC_STEPS,
