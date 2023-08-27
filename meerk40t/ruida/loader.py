@@ -11,9 +11,12 @@ import os
 
 def data_viewer(data, data_type):
     from meerk40t.core.node.blobnode import BlobNode
-    from meerk40t.ruida.rdjob import decode_bytes
+    from meerk40t.ruida.rdjob import decode_bytes, determine_magic_via_histogram
 
-    return BlobNode.hex_view(data=decode_bytes(data), data_type=data_type)
+    return BlobNode.hex_view(
+        data=decode_bytes(data, determine_magic_via_histogram(data)),
+        data_type=data_type,
+    )
 
 
 def command_viewer(data, data_type):
