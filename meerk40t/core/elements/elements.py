@@ -2933,17 +2933,19 @@ class Elemental(Service):
                             # without attachm: 72.1 sec
                             # self.unlisten_tree(self)
                             elemcount_then = self.count_elems()
+                            opcount_then = self.count_op()
                             results = loader.load(
                                 self, self, filename_to_process, **kwargs
                             )
                             elemcount_now = self.count_elems()
+                            opcount_now = self.count_op()
                             self.remove_empty_groups()
                             # self.listen_tree(self)
                             end_time = time()
                             self._filename = pathname
                             self.set_end_time("load", display=True)
                             self.signal("file;loaded")
-                            if elemcount_now != elemcount_then:
+                            if elemcount_now != elemcount_then or opcount_then != opcount_now:
                                 return True
                         except FileNotFoundError:
                             return False
