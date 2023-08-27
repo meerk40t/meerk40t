@@ -481,18 +481,18 @@ class SpoolerPanel(wx.Panel):
             return
 
         menu = wx.Menu()
-        can_enable = True
+        can_enable = False
         if element.status == "Running":
             action = _("Stop")
             remove_mode = "stop"
-            can_enable = False
-        else:
+        elif hasattr(element, "enabled"):
             action = _("Remove")
             remove_mode = "remove"
             if element.enabled:
                 action2 = _("Disable")
             else:
                 action2 = _("Enable")
+            can_enable = True
         item = menu.Append(
             wx.ID_ANY,
             f"{action} {str(element)[:30]} [{spooler.context.label}]",
