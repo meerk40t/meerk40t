@@ -150,6 +150,27 @@ def decode_bytes(data, magic=0x88):
     return bytes(array)
 
 
+def determine_magic_via_histogram(data):
+    """
+    Determines magic number via histogram. The number which occurs most in RDWorks files is overwhelmingly 0. It's
+    about 50% of all data. The swizzle algorithm means that the swizzle for 0 is magic + 1, so we find the most
+    frequent number and subtract one from that and that is *most* likely the magic number.
+
+    @param data:
+    @return:
+    """
+    histogram = [0] * 256
+    for d in data:
+        histogram[d] += 1
+    m = 0
+    magic = None
+    for i in range(len(histogram)):
+        v = histogram[i]
+        if v > m:
+            m = v
+            magic = i - 1
+    return magic
+
 def encode_bytes(data, magic=0x88):
     lut_swizzle, lut_unswizzle = swizzles_lut(magic)
     array = list()
