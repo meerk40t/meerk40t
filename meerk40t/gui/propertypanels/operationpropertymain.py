@@ -377,65 +377,34 @@ class SpeedPpiPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.operation = node
-        speed_min = None
-        speed_max = None
-        power_min = None
-        power_max = None
 
-        op = node.type
-        if op.startswith("op "):  # Should, shouldn't it?
-            op = op[3:]
-        else:
-            op = ""
-        if op != "":
-            label = "dangerlevel_op_" + op
-            warning = [False, 0, False, 0, False, 0, False, 0]
-            if hasattr(self.context.device, label):
-                dummy = getattr(self.context.device, label)
-                if isinstance(dummy, (tuple, list)) and len(dummy) == len(warning):
-                    warning = dummy
-            if warning[0]:
-                power_min = warning[1]
-            if warning[2]:
-                power_max = warning[3]
-            if warning[4]:
-                speed_min = warning[5]
-            if warning[6]:
-                speed_max = warning[7]
-        # print (f"op='{op}', power={power_min}-{power_max}, speed={speed_min}-{speed_max}")
+        self.context.device.setting(bool, "use_percent_for_power_display", False)
+        self.use_percent = self.context.device.use_percent_for_power_display
+        self.context.device.setting(bool, "use_mm_min_for_speed_display", False)
+        self.use_mm_min = self.context.device.use_mm_min_for_speed_display
+
         speed_power_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        if self.use_mm_min:
+            speed_fact = 60
+        else:
+            speed_fact = 1
 
-        speed_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Speed (mm/s)"), wx.HORIZONTAL)
+        speed_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Speed"), wx.HORIZONTAL)
         speed_power_sizer.Add(speed_sizer, 1, wx.EXPAND, 0)
 
         self.text_speed = TextCtrl(
             self,
             wx.ID_ANY,
-            "20.0",
+            f"{20 * speed_fact:.0f}",
             limited=True,
             check="float",
             style=wx.TE_PROCESS_ENTER,
             nonzero=True,
         )
-        self.text_speed.set_error_level(0, None)
-        self.text_speed.set_warn_level(speed_min, speed_max)
-        OPERATION_SPEED_TOOLTIP = (
-            _("Speed at which the head moves in mm/s.")
-            + "\n"
-            + _(
-                "For Cut/Engrave vector operations, this is the speed of the head regardless of direction i.e. the separate x/y speeds vary according to the direction."
-            )
-            + "\n"
-            + _(
-                "For Raster/Image operations, this is the speed of the head as it sweeps backwards and forwards."
-            )
-        )
-
-        self.text_speed.SetToolTip(OPERATION_SPEED_TOOLTIP)
+        self.trailer_speed = wx.StaticText(self, id=wx.ID_ANY)
         speed_sizer.Add(self.text_speed, 1, wx.EXPAND, 0)
+        speed_sizer.Add(self.trailer_speed, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.context.device.setting(bool, "use_percent_for_power_display", False)
-        self.use_percent = self.context.device.use_percent_for_power_display
         self.power_sizer = StaticBoxSizer(
             self, wx.ID_ANY, _("Power (ppi)"), wx.HORIZONTAL
         )
@@ -449,10 +418,11 @@ class SpeedPpiPanel(wx.Panel):
             check="float",
             style=wx.TE_PROCESS_ENTER,
         )
-        self.trailer_text = wx.StaticText(self, id=wx.ID_ANY, label=_("/1000"))
-        self.update_power_properties()
+        self.trailer_power = wx.StaticText(self, id=wx.ID_ANY, label=_("/1000"))
         self.power_sizer.Add(self.text_power, 1, wx.EXPAND, 0)
-        self.power_sizer.Add(self.trailer_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.power_sizer.Add(self.trailer_power, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.update_power_speed_properties()
 
         freq = self.context.device.lookup("frequency")
         if freq:
@@ -496,13 +466,17 @@ class SpeedPpiPanel(wx.Panel):
         pass
 
     def pane_show(self):
-        self.update_power_properties()
+        self.update_power_speed_properties()
 
     def on_device_update(self):
-        self.update_power_properties()
+        try:
+            self.update_power_speed_properties()
+        except RuntimeError:
+            # Pane was already destroyed
+            pass
         self.set_widgets(self.operation)
 
-    def update_power_properties(self):
+    def update_power_speed_properties(self):
         speed_min = None
         speed_max = None
         power_min = None
@@ -528,10 +502,34 @@ class SpeedPpiPanel(wx.Panel):
                 speed_min = warning[5]
             if warning[6]:
                 speed_max = warning[7]
+        self.use_mm_min = self.context.device.use_mm_min_for_speed_display
+        if self.use_mm_min:
+            if speed_min is not None:
+                speed_min *= 60
+            if speed_max is not None:
+                speed_max *= 60
+            speed_unit = "mm/min"
+        else:
+            speed_unit = "mm/s"
+        self.trailer_speed.SetLabel(speed_unit)
+        OPERATION_SPEED_TOOLTIP = (
+            _("Speed at which the head moves in {unit}.").format(unit=speed_unit)
+            + "\n"
+            + _(
+                "For Cut/Engrave vector operations, this is the speed of the head regardless of direction i.e. the separate x/y speeds vary according to the direction."
+            )
+            + "\n"
+            + _(
+                "For Raster/Image operations, this is the speed of the head as it sweeps backwards and forwards."
+            )
+        )
+        self.text_speed.SetToolTip(OPERATION_SPEED_TOOLTIP)
+        self.text_speed.set_error_level(0, None)
         self.text_speed.set_warn_level(speed_min, speed_max)
+
         self.use_percent = self.context.device.use_percent_for_power_display
         if self.use_percent:
-            self.trailer_text.SetLabel("%")
+            self.trailer_power.SetLabel("%")
             self.text_power._check = "percent"
             if power_min is not None:
                 power_min /= 10
@@ -544,7 +542,7 @@ class SpeedPpiPanel(wx.Panel):
             )
             self.power_sizer.SetLabel(_("Power"))
         else:
-            self.trailer_text.SetLabel(_("/1000"))
+            self.trailer_power.SetLabel(_("/1000"))
             self.text_power._check = "float"
             self.text_power.set_range(0, 1000)
             self.text_power.set_warn_level(power_min, power_max)
@@ -576,7 +574,10 @@ class SpeedPpiPanel(wx.Panel):
             self.Hide()
             return
         if self.operation.speed is not None:
-            set_ctrl_value(self.text_speed, str(self.operation.speed))
+            if self.use_mm_min:
+                set_ctrl_value(self.text_speed, str(self.operation.speed * 60))
+            else:
+                set_ctrl_value(self.text_speed, str(self.operation.speed))
         if self.operation.power is not None:
             if self.use_percent:
                 set_ctrl_value(self.text_power, f"{self.operation.power / 10.0:.0f}")
@@ -590,6 +591,8 @@ class SpeedPpiPanel(wx.Panel):
     def on_text_speed(self):  # wxGlade: OperationProperty.<event_handler>
         try:
             value = float(self.text_speed.GetValue())
+            if self.use_mm_min:
+                value /= 60
             if self.operation.speed != value:
                 self.operation.speed = value
                 self.context.elements.signal(
@@ -2012,6 +2015,7 @@ class ParameterPanel(ScrolledPanel):
         # end wxGlade
 
     @signal_listener("power_percent")
+    @signal_listener("speed_min")
     @lookup_listener("service/device/active")
     def on_device_update(self, *args):
         self.speedppi_panel.on_device_update()

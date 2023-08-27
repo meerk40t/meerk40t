@@ -79,13 +79,14 @@ class FormatterPanel(wx.Panel):
                 pass
 
         self.context.setting(bool, "use_percent_for_power_display", False)
+        self.context.setting(bool, "use_mm_min_for_speed_display", False)
         choices = [
             {
                 "attr": "use_percent_for_power_display",
                 "object": self.context,
                 "default": False,
                 "type": bool,
-                "label": _("Display power as a percentage"),
+                "label": _("Show power as %"),
                 "tip": _(
                     "Active: Full power will be shown as 100%"
                     + "\n"
@@ -93,6 +94,20 @@ class FormatterPanel(wx.Panel):
                 ),
                 "subsection": "_10_General",
                 "signals": ("rebuild_tree", "power_percent"),
+            },
+            {
+                "attr": "use_mm_min_for_speed_display",
+                "object": self.context,
+                "default": False,
+                "type": bool,
+                "label": _("Show speed in mm/min"),
+                "tip": _(
+                    "Active: Speed will be shown in mm/min"
+                    + "\n"
+                    + "Inactive: Speed will be shown in mm/s"
+                ),
+                "subsection": "_10_General",
+                "signals": ("rebuild_tree", "speed_min"),
             },
         ]
         for node in self.node_list:

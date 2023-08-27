@@ -588,6 +588,10 @@ class TemplatePanel(wx.Panel):
         self.context.device.setting(bool, "use_percent_for_power_display", False)
         return self.context.device.use_percent_for_power_display
 
+    def use_mm_min(self):
+        self.context.device.setting(bool, "use_mm_min_for_speed_display", False)
+        return self.context.device.use_mm_min_for_speed_display
+
     def set_param_according_to_op(self, event):
         def preset_passes(node=None):
             # Will be called ahead of the modification of the passes variable
@@ -652,35 +656,39 @@ class TemplatePanel(wx.Panel):
         self.check_color_direction_2.Enable(self._freecolor)
 
         # (internal_attribute, secondary_attribute, Label, unit, keep_unit, needs_to_be_positive)
-        self.parameters = [
-            ("speed", None, _("Speed"), "mm/s", False, True),
-            ("power", None, _("Power"), "ppi", False, True),
-            ("passes", preset_passes, _("Passes"), "x", False, True),
-        ]
-
         if self.use_percent():
             ppi = "%"
         else:
             ppi = "ppi"
+        if self.use_mm_min():
+            speed_unit = "mm/min"
+        else:
+            speed_unit = "mm/s"
+        self.parameters = [
+            ("speed", None, _("Speed"), speed_unit, False, True),
+            ("power", None, _("Power"), ppi, False, True),
+            ("passes", preset_passes, _("Passes"), "x", False, True),
+        ]
+
         if opidx == 0:
             # Cut
             # (internal_attribute, secondary_attribute, Label, unit, keep_unit, needs_to_be_positive)
             self.parameters = [
-                ("speed", None, _("Speed"), "mm/s", False, True),
+                ("speed", None, _("Speed"), speed_unit, False, True),
                 ("power", None, _("Power"), ppi, False, True),
                 ("passes", preset_passes, _("Passes"), "x", False, True),
             ]
         elif opidx == 1:
             # Engrave
             self.parameters = [
-                ("speed", None, _("Speed"), "mm/s", False, True),
+                ("speed", None, _("Speed"), speed_unit, False, True),
                 ("power", None, _("Power"), ppi, False, True),
                 ("passes", preset_passes, _("Passes"), "x", False, True),
             ]
         elif opidx == 2:
             # Raster
             self.parameters = [
-                ("speed", None, _("Speed"), "mm/s", False, True),
+                ("speed", None, _("Speed"), speed_unit, False, True),
                 ("power", None, _("Power"), ppi, False, True),
                 ("passes", preset_passes, _("Passes"), "x", False, True),
                 ("dpi", None, _("DPI"), "dpi", False, True),
@@ -689,7 +697,7 @@ class TemplatePanel(wx.Panel):
         elif opidx == 3:
             # Image
             self.parameters = [
-                ("speed", None, _("Speed"), "mm/s", False, True),
+                ("speed", None, _("Speed"), speed_unit, False, True),
                 ("power", None, _("Power"), ppi, False, True),
                 ("passes", preset_passes, _("Passes"), "x", False, True),
                 ("dpi", None, _("DPI"), "dpi", False, True),
@@ -698,7 +706,7 @@ class TemplatePanel(wx.Panel):
         elif opidx == 4:
             # Hatch
             self.parameters = [
-                ("speed", None, _("Speed"), "mm/s", False, True),
+                ("speed", None, _("Speed"), speed_unit, False, True),
                 ("power", None, _("Power"), ppi, False, True),
                 ("passes", preset_passes, _("Passes"), "x", False, True),
                 ("hatch_distance", None, _("Hatch Distance"), "mm", False, True),
@@ -1112,6 +1120,8 @@ class TemplatePanel(wx.Panel):
                         value = p_value_1
                     if param_type_1 == "power" and self.use_percent():
                         value *= 10.0
+                    if param_type_1 == "speed" and self.use_mm_min():
+                        value /= 60.0
                     if hasattr(this_op, param_type_1):
                         # quick and dirty
                         if param_type_1 == "passes":
@@ -1132,6 +1142,8 @@ class TemplatePanel(wx.Panel):
                         value = p_value_2
                     if param_type_2 == "power" and self.use_percent():
                         value *= 10.0
+                    if param_type_2 == "speed" and self.use_mm_min():
+                        value /= 60.0
                     if hasattr(this_op, param_type_2):
                         if param_type_2 == "passes":
                             value = int(value)
@@ -1664,6 +1676,7 @@ class TemplateTool(MWindow):
         self.panel_instances.clear()
 
     @signal_listener("power_percent")
+    @signal_listener("speed_min")
     @lookup_listener("service/device/active")
     def on_device_update(self, *args):
         self.panel_template.on_device_update()
