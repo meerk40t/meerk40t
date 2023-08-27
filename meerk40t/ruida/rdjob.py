@@ -249,18 +249,7 @@ class RDJob:
         @return:
         """
         if magic is None:
-            d12 = 0
-            d89 = 0
-            for d in data:
-                if d == 0x12:
-                    d12 += 1
-                elif d == 0x89:
-                    d89 += 1
-            if d89 + d12 > 10:
-                if d89 > d12:
-                    magic = 0x88
-                else:
-                    magic = 0x11
+            self.magic = determine_magic_via_histogram(data)
         if magic is not None and magic != self.magic:
             self.magic = magic
             self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
