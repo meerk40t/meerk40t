@@ -795,6 +795,9 @@ class wxMeerK40t(wx.App, Module):
 
 
 # end of class MeerK40tGui
+
+MEERK40T_HOST = "meerk40t.com"
+
 def send_file_to_developers(filename):
     """
     Loads a file to send data to the developers.
@@ -822,7 +825,7 @@ def send_data_to_developers(filename, data):
     import socket
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    ipaddr = socket.gethostbyname("api.anonfiles.com")
+    ipaddr = socket.gethostbyname(MEERK40T_HOST)
     s.connect((ipaddr, 80))
     boundary = "----------------meerk40t-boundary"
     file_head = list()
@@ -836,8 +839,8 @@ def send_data_to_developers(filename, data):
     terminal = "--" + boundary + "--"
     payload = "\x0D\x0A".join((part, data, terminal, ""))
     http_req = list()
-    http_req.append("POST /upload?token=630f908431136ef4 HTTP/1.1")
-    http_req.append("Host: api.anonfiles.com")
+    http_req.append("POST /crash HTTP/1.1")
+    http_req.append(f"Host: {MEERK40T_HOST}")
     http_req.append("User-Agent: meerk40t/0.0.1")
     http_req.append("Accept: */*")
     http_req.append(f"Content-Length: {len(payload)}")
