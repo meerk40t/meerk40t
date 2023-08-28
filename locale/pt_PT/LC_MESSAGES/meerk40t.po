@@ -13308,8 +13308,8 @@ msgid "Speed (mm/s)"
 msgstr "Velocidade (mm/s)"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:415
-msgid "Speed at which the head moves in mm/s."
-msgstr "Velocidade em que a cabeça se move em mm/s."
+msgid "Speed at which the head moves in {unit}."
+msgstr "Velocidade em que a cabeça se move em {unit}."
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:417
 msgid ""

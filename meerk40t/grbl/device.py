@@ -203,6 +203,8 @@ class GRBLDevice(Service, ViewPort):
         self.register_choices("rotary", choices)
         # This device prefers to display power level in percent
         self.setting(bool, "use_percent_for_power_display", True)
+        # This device prefers to display speed in mm/min
+        self.setting(bool, "use_mm_min_for_speed_display", False)
 
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
