@@ -198,6 +198,7 @@ class RDJob:
         self.runtime = 0
 
         self._stopped = True
+        self.enabled = True
         self._estimate = 0
 
         self.scale = UNITS_PER_uM
@@ -232,12 +233,16 @@ class RDJob:
 
     @property
     def status(self):
-        if self.is_running and self.time_started is not None:
-            return "Running"
-        elif not self.is_running:
-            return "Disabled"
+        if self.is_running():
+            if self.time_started:
+                return "Running"
+            else:
+                return "Queued"
         else:
-            return "Queued"
+            if self.enabled:
+                return "Waiting"
+            else:
+                return "Disabled"
 
     def write_blob(self, data, magic=None):
         """
