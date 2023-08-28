@@ -118,7 +118,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
         show_labels=None,
         **kwds,
     ):
-        RibbonBarPanel.__init__(self, parent, id, context, **kwds)
+        RibbonBarPanel.__init__(self, parent, id, context, pane, **kwds)
         self.pane = pane
         self.identifier = identifier
         if orientation is not None:
@@ -131,7 +131,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
         if show_labels is not None:
             self.art.show_labels = show_labels
         # Make myself known in context
-        if not hasattr(context, f"_ribbons"):
+        if not hasattr(context, "_ribbons"):
             self.context._ribbons = dict()
         self.context._ribbons[self.identifier] = self
 

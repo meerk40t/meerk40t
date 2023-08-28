@@ -754,10 +754,11 @@ class RibbonPage:
 
 
 class RibbonBarPanel(wx.Control):
-    def __init__(self, parent, id, context=None, **kwds):
+    def __init__(self, parent, id, context=None, pane=None, **kwds):
         super().__init__(parent, id, **kwds)
         self.context = context
         self.pages = []
+        self.pane = pane
         jobname = f"realize_ribbon_bar_{self.GetId()}"
         #  print (f"Requesting job with name: '{jobname}'")
         self._redraw_job = Job(
@@ -913,12 +914,40 @@ class RibbonBarPanel(wx.Control):
         self.Refresh()  # Paint buffer on screen.
 
     def prefer_horizontal(self):
-        width, height = self.ClientSize
-        if width <= 0:
-            width = 1
-        if height <= 0:
-            height = 1
-        return width >= height
+        result = None
+        if self.pane is not None:
+            try:
+                pane = self.pane.manager.GetPane(self.pane.name)
+                if pane.IsDocked():
+                    # if self.pane.name == "tools":
+                    #     print (
+                    #         f"Pane: {pane.name}: {pane.dock_direction}, State: {pane.IsOk()}/{pane.IsDocked()}/{pane.IsFloating()}"
+                    #     )
+                    if pane.dock_direction in (1, 3):
+                        # Horizontal
+                        result = True
+                    elif pane.dock_direction in (2, 4):
+                        # Vertical
+                        result = False
+                # else:
+                #     if self.pane.name == "tools":
+                #         print (
+                #             f"Pane: {pane.name}: {pane.IsFloating()}"
+                #         )
+            except (AttributeError, RuntimeError):
+                # Unknown error occurred
+                pass
+
+        if result is None:
+            # Floating...
+            width, height = self.ClientSize
+            if width <= 0:
+                width = 1
+            if height <= 0:
+                height = 1
+            result = bool(width >= height)
+
+        return result
 
     def _set_buffer(self):
         """
