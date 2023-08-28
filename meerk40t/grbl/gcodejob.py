@@ -133,14 +133,17 @@ class GcodeJob:
         self.runtime = 0
 
         self._stopped = True
+        self.enabled = True
         self._estimate = 0
 
         # Initially assume mm mode. G21 mm DEFAULT
         self.scale = UNITS_PER_MM
+        self.units = "mm"
 
         self.compensation = False
         self.feed_convert = None
         self.feed_invert = None
+        self.feed_desc = None
         self._interpolate = 50
         self.program_mode = False
         self.plotcut = None
@@ -166,12 +169,34 @@ class GcodeJob:
 
     @property
     def status(self):
-        if self.is_running and self.time_started is not None:
-            return "Running"
-        elif not self.is_running:
-            return "Disabled"
+        if self.is_running():
+            if self.time_started:
+                return "Running"
+            else:
+                return "Queued"
         else:
-            return "Queued"
+            if self.enabled:
+                return "Waiting"
+            else:
+                return "Disabled"
+
+    def inform(self, last_command):
+        if not hasattr(self._driver, "signal"):
+            return
+        info = (
+            self.relative,
+            self.program_mode,
+            self.move_mode,
+            self.units,
+            self.x / self.scale,
+            self.y / self.scale,
+            self.z / self.scale,
+            self.power,
+            self.speed,
+            self.feed_desc,
+            last_command,
+        )
+        self._driver.signal("grbl-emulator", info)
 
     def reply_code(self, cmd):
         if cmd == 0:  # Execute GCode.
@@ -281,6 +306,7 @@ class GcodeJob:
                 gc[g].append(c[1])
             else:
                 gc[g].append(None)
+        # self.inform(str(gc))
         if "m" in gc:
             for v in gc["m"]:
                 if v in (0, 1):
@@ -414,9 +440,11 @@ class GcodeJob:
                 elif v in (20, 70):
                     # g20 is inch mode.
                     self.scale = UNITS_PER_INCH
+                    self.units = "in"
                 elif v in (21, 71):
                     # g21 is mm mode. 39.3701 mils in a mm
                     self.scale = UNITS_PER_MM
+                    self.units = "mm"
                 elif v == 28:
                     # Move to Origin (Home)
                     try:
@@ -659,6 +687,8 @@ class GcodeJob:
             self.plotcut = PlotCut(settings={"speed": self.speed, "power": self.power})
             self.plotcut.plot_init(int(round(ox)), int(round(oy)))
         tx, ty = matrix.transform_point([x, y])
+        if self.power is None:
+            self.power = 1000
         self.plotcut.plot_append(
             int(round(tx)), int(round(ty)), power * (self.power / 1000.0)
         )
@@ -706,9 +736,11 @@ class GcodeJob:
         if self.scale == UNITS_PER_INCH:
             self.feed_convert = lambda s: (60.0 * self.scale / UNITS_PER_INCH) / s
             self.feed_invert = lambda s: (60.0 * UNITS_PER_INCH / self.scale) / s
+            self.feed_desc = "min/inch"
         else:
             self.feed_convert = lambda s: (60.0 * self.scale / UNITS_PER_MM) / s
             self.feed_invert = lambda s: (60.0 * UNITS_PER_MM / self.scale) / s
+            self.feed_desc = "min/mm"
 
     def g94_feedrate(self):
         """
@@ -723,6 +755,8 @@ class GcodeJob:
         if self.scale == UNITS_PER_INCH:
             self.feed_convert = lambda s: s / ((self.scale / UNITS_PER_INCH) * 60.0)
             self.feed_invert = lambda s: s * ((self.scale / UNITS_PER_INCH) * 60.0)
+            self.feed_desc = "inch/min"
         else:
             self.feed_convert = lambda s: s / ((self.scale / UNITS_PER_MM) * 60.0)
             self.feed_invert = lambda s: s * ((self.scale / UNITS_PER_MM) * 60.0)
+            self.feed_desc = "mm/min"
