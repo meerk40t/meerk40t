@@ -1146,7 +1146,7 @@ class Art:
         self.tab_height = 20
         self.tab_tab_buffer = 10
         self.tab_initial_buffer = 30
-        self.tab_text_buffer = 5
+        self.tab_text_buffer = 2
         self.edge_page_buffer = 4
         self.rounded_radius = 3
 
