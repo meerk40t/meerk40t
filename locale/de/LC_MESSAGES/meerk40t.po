@@ -10635,8 +10635,8 @@ msgid "Hide all contained elements on scene if not set."
 msgstr "Deaktiviert: Blende alle enthaltenen Element im Arbeitsbereich aus"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:32
-msgid "Speed at which the head moves in mm/s."
-msgstr "Geschwindigkeit des Kopfes in mm/s."
+msgid "Speed at which the head moves in {unit}."
+msgstr "Geschwindigkeit des Kopfes in {unit}."
 
 msgid "For Cut/Engrave vector operations, this is the speed of the head regardless of direction i.e. the separate x/y speeds vary according to the direction."
 msgstr ""
@@ -10822,9 +10822,15 @@ msgstr "Standard"
 msgid "Speed (mm/s)"
 msgstr "Geschwindigkeit (mm/s)"
 
+msgid "Speed ({unit})"
+msgstr "Geschwindigkeit ({unit})"
+
 #: meerk40t/gui/propertypanels/operationpropertymain.py:420
 msgid "Power (ppi)"
 msgstr "Leistung (ppi)"
+
+msgid "Power ({unit})"
+msgstr "Leistung ({unit})"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:440
 msgid "Frequency (kHz)"
@@ -12803,8 +12809,8 @@ msgstr "Punktlänge"
 #~ msgid "Raster operations created automatically by Meerkat "
 #~ msgstr "Raster-Arbeitsgänge, die automatisch von Meerk40t angelegt wurden "
 
-#~ msgid "Speed at which the head moves in mm/s."
-#~ msgstr "Geschwindigkeit, mit der sich der Kopf bewegt, in mm/sec."
+#~ msgid "Speed at which the head moves in {unit}."
+#~ msgstr "Geschwindigkeit, mit der sich der Kopf bewegt, in {unit}."
 
 #~ msgid ""
 #~ "For Cut/Engrave vector operations, this "
@@ -16198,8 +16204,11 @@ msgstr ""
 "Aktiv: Zeige die Texte unter den Icons in der Symbolleiste an\n"
 "Inaktiv: Text werden nicht angezeigt (spart etwas Platz)"
 
-msgid "Display power as a percentage"
+msgid "Show power as %"
 msgstr "Leistung in % anzeigen"
+
+msgid "Show speed in mm/min"
+msgstr "mm/min als Einheit"
 
 msgid ""
 "Active: Full power will be shown as 100%\n"
@@ -16207,6 +16216,13 @@ msgid ""
 msgstr ""
 "Aktiv: Volle Leistung wird als 100% angezeigt\n"
 "Inaktiv: Volle Leistung wird als 1000 ppi angezeigt"
+
+msgid ""
+"Active: Speed will be shown in mm/min\n"
+"Inactive: Speed will be shown in mm/s"
+msgstr ""
+"Aktiv: Geschwindigkeit wird in mm/min angezeigt\n"
+"Inaktiv: Geschwindigkeit wird in mm/s angezeigt"
 
 msgid "% of maximum power - This is a percentage of the maximum power of the laser."
 msgstr "% der maximalen Leistung des Lasers."

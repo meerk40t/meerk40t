@@ -13242,8 +13242,8 @@ msgid "Speed (mm/s)"
 msgstr "スピード(mm/s)"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:415
-msgid "Speed at which the head moves in mm/s."
-msgstr "ヘッドの移動速度（単位：mm/s）。"
+msgid "Speed at which the head moves in {unit}."
+msgstr "ヘッドの移動速度（{unit})"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:417
 msgid ""

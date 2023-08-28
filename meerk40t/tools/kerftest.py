@@ -31,10 +31,12 @@ class KerfPanel(wx.Panel):
 
         self.text_speed = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_speed.set_range(0, 1000)
+        self.label_speed = wx.StaticText(self, wx.ID_ANY, "")
         self.text_power = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_power.set_range(0, 1000)
         self.label_power = wx.StaticText(self, wx.ID_ANY, "")
         self.set_power_info()
+        self.set_speed_info()
 
         self.radio_pattern = wx.RadioBox(
             self,
@@ -69,7 +71,10 @@ class KerfPanel(wx.Panel):
         self.spin_count.SetValue(5)
         self.text_dim.SetValue("20mm")
         self.text_delta.SetValue("5mm")
-        self.text_speed.SetValue("5")
+        sval = 5
+        if self.use_mm_min():
+            sval *= 60
+        self.text_speed.SetValue(str(sval))
         if self.use_percent():
             self.text_power.SetValue("100")
         else:
@@ -100,8 +105,9 @@ class KerfPanel(wx.Panel):
         sizer_speed = StaticBoxSizer(self, wx.ID_ANY, _("Speed"), wx.HORIZONTAL)
         sizer_power = StaticBoxSizer(self, wx.ID_ANY, _("Power"), wx.HORIZONTAL)
         sizer_speed.Add(self.text_speed, 1, wx.EXPAND, 0)
+        sizer_speed.Add(self.label_speed, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_power.Add(self.text_power, 1, wx.EXPAND, 0)
-        sizer_power.Add(self.label_power, 0, wx.EXPAND, 0)
+        sizer_power.Add(self.label_power, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_cutop.Add(sizer_speed, 1, wx.EXPAND, 0)
         sizer_cutop.Add(sizer_power, 1, wx.EXPAND, 0)
 
@@ -169,7 +175,6 @@ class KerfPanel(wx.Panel):
         main_sizer.Add(self.button_create, 0, 0, 0)
         main_sizer.Add(sizer_info, 1, wx.EXPAND, 0)
         main_sizer.Layout()
-        self.text_speed.SetToolTip(_("Speed at which the head moves in mm/s."))
         self.text_min.SetToolTip(_("Minimum value for Kerf"))
         self.text_max.SetToolTip(_("Maximum value for Kerf"))
         self.text_dim.SetToolTip(_("Dimension of the to be created pattern"))
@@ -183,13 +188,17 @@ class KerfPanel(wx.Panel):
         self.context.device.setting(bool, "use_percent_for_power_display", False)
         return self.context.device.use_percent_for_power_display
 
+    def use_mm_min(self):
+        self.context.device.setting(bool, "use_mm_min_for_speed_display", False)
+        return self.context.device.use_mm_min_for_speed_display
+
     def set_power_info(self):
         maxval = 1000
         lbl = ""
-        ttip = _(_("Pulses Per Inch - This is software created laser power control."))
+        ttip = _("Pulses Per Inch - This is software created laser power control.")
 
         if self.use_percent():
-            maxval = 100
+            maxval /= 10
             lbl = "%"
             ttip = _(
                 "% of maximum power - This is a percentage of the maximum power of the laser."
@@ -197,6 +206,18 @@ class KerfPanel(wx.Panel):
         self.text_power.set_range(0, maxval)
         self.label_power.SetLabel(lbl)
         self.text_power.SetToolTip(ttip)
+
+    def set_speed_info(self):
+        maxval = 1000
+        lbl = "mm/s"
+
+        if self.use_mm_min():
+            maxval *= 60
+            lbl = "mm/min"
+        ttip = _("Speed at which the head moves in {unit}.").format(unit=lbl)
+        self.text_speed.set_range(0, maxval)
+        self.label_speed.SetLabel(lbl)
+        self.text_speed.SetToolTip(ttip)
 
     def on_method(self, event):
         slider = bool(self.radio_pattern.GetSelection() == 2)
@@ -250,6 +271,9 @@ class KerfPanel(wx.Panel):
             maxval = 1000
         if not valid_float(self.text_power, 0, maxval):
             is_valid = False
+        maxval = 1000
+        if self.use_mm_min():
+            maxval *= 60
         if not valid_float(self.text_speed, 0, maxval):
             is_valid = False
 
@@ -482,8 +506,20 @@ class KerfPanel(wx.Panel):
                 kerf += delta
                 xx += pattern_size
                 xx += gap_size
+            if self.use_mm_min():
+                speed_fact = 60
+                speed_unit = "mm/min"
+            else:
+                speed_fact = 1
+                speed_unit = "mm/s"
+            info_speed = f"{int(op_speed * speed_fact)}{speed_unit}"
+            if self.use_percent():
+                info_power = f"{op_power/10.0:.0f}%"
+            else:
+                info_power = f"{op_power:.0f}ppi"
+            info = f"Kerf-Test (speed={info_speed}, power={info_power})"
             node = element_branch.add(
-                text=f"Kerf-Test (speed={op_speed}mm/s, power={op_power/10.0:.0f}%)",
+                text=info,
                 matrix=Matrix(
                     f"translate({0 + x_offset}, {2.2 * pattern_size + y_offset})"
                     + f" scale({UNITS_PER_PIXEL})"
@@ -761,6 +797,8 @@ class KerfPanel(wx.Panel):
             minv = float(Length(self.text_min.GetValue()))
             maxv = float(Length(self.text_max.GetValue()))
             op_speed = float(self.text_speed.GetValue())
+            if self.use_mm_min():
+                op_speed /= 60
             op_power = float(self.text_power.GetValue())
             if self.use_percent():
                 op_power *= 10.0
@@ -835,9 +873,11 @@ class KerfTool(MWindow):
         pass
 
     @signal_listener("power_percent")
+    @signal_listener("speed_min")
     @lookup_listener("service/device/active")
     def on_device_update(self, *args):
         self.panel_template.set_power_info()
+        self.panel_template.set_speed_info()
 
     @staticmethod
     def submenu():
