@@ -617,15 +617,18 @@ class GcodeJob:
                 ny = y
             if self.move_mode == 0:
                 self.plot_commit()
-                if self.program_mode:
-                    self.plot_location(nx, ny, 0)
-                else:
-                    try:
-                        self._driver.move_abs(nx, ny)
-                        self.x = nx
-                        self.y = ny
-                    except AttributeError:
-                        pass
+                # According to the grbl documentation G0 will never turn the laser open
+                # just setting the power to 0 is not good enough...
+                # if self.program_mode:
+                #     self.plot_location(nx, ny, 0)
+                #     print ("plot_location 0 with power 0")
+                # else:
+                try:
+                    self._driver.move_abs(nx, ny)
+                    self.x = nx
+                    self.y = ny
+                except AttributeError:
+                    pass
             elif self.move_mode == 1:
                 self.plot_location(nx, ny, self.power)
             elif self.move_mode in (2, 3):
