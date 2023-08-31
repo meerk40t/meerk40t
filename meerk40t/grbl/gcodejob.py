@@ -620,10 +620,9 @@ class GcodeJob:
                         end=(nx, ny),
                         ccw=self.move_mode == 3,
                     )
-                    power = self.power
                     for p in range(self._interpolate + 1):
                         x, y = arc.point(p / self._interpolate)
-                        self.plot_location(x, y, power)
+                        self.plot_location(x, y, self.power)
                 else:
                     arc = Arc(
                         start=(ox, oy),
@@ -631,10 +630,9 @@ class GcodeJob:
                         end=(nx, ny),
                         ccw=self.move_mode == 3,
                     )
-                    power = self.power
                     for p in range(self._interpolate + 1):
                         x, y = arc.point(p / self._interpolate)
-                        self.plot_location(x, y, power)
+                        self.plot_location(x, y, self.power)
         return OKAY
 
     def plot_location(self, x, y, power):
@@ -653,7 +651,7 @@ class GcodeJob:
         matrix = self.units_to_device_matrix
         if self.plotcut is None:
             ox, oy = matrix.transform_point([self.x, self.y])
-            self.plotcut = PlotCut(settings={"speed": self.speed, "power": self.power})
+            self.plotcut = PlotCut(settings={"speed": self.speed})
             self.plotcut.plot_init(int(round(ox)), int(round(oy)))
         tx, ty = matrix.transform_point([x, y])
         self.plotcut.plot_append(int(round(tx)), int(round(ty)), power)
