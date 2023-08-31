@@ -223,3 +223,11 @@ class View:
         step_x = float(oneinch_x / dpi)
         step_y = float(oneinch_y / dpi)
         return step_x, step_y
+
+    @property
+    def unit_width(self):
+        return float(Length(self.width))
+
+    @property
+    def unit_height(self):
+        return float(Length(self.height))
