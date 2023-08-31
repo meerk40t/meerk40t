@@ -120,14 +120,6 @@ class GcodeJob:
     def __init__(
         self, driver=None, units_to_device_matrix=None, priority=0, channel=None
     ):
-        # Circumvent the S0 issue
-        # This will look at all plot_location calls with zero power
-        # and will finish the previous plot and do a driver.move_abs
-        # instead, while this will eventually create the right graphics
-        # mk does an 'empty' ie powerless burn over the complete graphic
-        # before it starts the real deal. So effectively two jobs are created
-
-        self.circumvent_bug = True
 
         self.units_to_device_matrix = units_to_device_matrix
         self._driver = driver
@@ -626,28 +618,15 @@ class GcodeJob:
                 ny = y
             if self.move_mode == 0:
                 self.plot_commit()
-                # According to the grbl documentation G0 will never turn the laser open
-                # just setting the power to 0 is not good enough...
-                # Reverting the change to make the problem clear
-                if self.circumvent_bug:
-                    # START FIX
+                if self.program_mode:
+                    self.plot_location(nx, ny, 0)
+                else:
                     try:
                         self._driver.move_abs(nx, ny)
                         self.x = nx
                         self.y = ny
                     except AttributeError:
                         pass
-                    # END FIX
-                else:
-                    if self.program_mode:
-                        self.plot_location(nx, ny, 0)
-                    else:
-                        try:
-                            self._driver.move_abs(nx, ny)
-                            self.x = nx
-                            self.y = ny
-                        except AttributeError:
-                            pass
             elif self.move_mode == 1:
                 self.plot_location(nx, ny, self.power)
             elif self.move_mode in (2, 3):
@@ -706,24 +685,18 @@ class GcodeJob:
             return
         if self.power is None:
             self.power = 1000
-        if power == 0 and self.circumvent_bug:
-            self.plot_commit()
-            # According to the grbl documentation G0 will never turn the laser open
-            # just setting the power to 0 is not good enough...
-            # START FIX
-            try:
-                self._driver.move_abs(x, y)
-            except AttributeError:
-                pass
-        else:
-            if self.plotcut is None:
-                ox, oy = matrix.transform_point([self.x, self.y])
-                self.plotcut = PlotCut(settings={"speed": self.speed, "power": self.power})
-                self.plotcut.plot_init(int(round(ox)), int(round(oy)))
-            tx, ty = matrix.transform_point([x, y])
-            self.plotcut.plot_append(
-                int(round(tx)), int(round(ty)), (power / 1000.0) * (self.power / 1000.0)
-            )
+        # We need to scale the power between 0 and 1, so the allowed range is between 0 and 1000
+
+        self.power = min(1000, self.power)
+        power = min(1000, power)
+        if self.plotcut is None:
+            ox, oy = matrix.transform_point([self.x, self.y])
+            self.plotcut = PlotCut(settings={"speed": self.speed, "power": self.power})
+            self.plotcut.plot_init(int(round(ox)), int(round(oy)))
+        tx, ty = matrix.transform_point([x, y])
+        self.plotcut.plot_append(
+            int(round(tx)), int(round(ty)), (power / 1000.0) * (self.power / 1000.0)
+        )
         if not self.program_mode:
             self.plot_commit()
         self.x = x
