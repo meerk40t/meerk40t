@@ -29,8 +29,19 @@ class View:
         self._destination = None
         self._matrix = None
 
+    def realize(self):
+        self._matrix = None
+
     def __str__(self):
         return f"View('{self.width}', '{self.height}', @{self.dpi})"
+
+    @property
+    def native_scale_x(self):
+        return UNITS_PER_INCH / self.dpi_x
+
+    @property
+    def native_scale_y(self):
+        return UNITS_PER_INCH / self.dpi_y
 
     @property
     def mm(self):
