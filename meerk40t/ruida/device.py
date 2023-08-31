@@ -4,16 +4,16 @@ Ruida Device
 Ruida device interfacing. We do not send or interpret ruida code, but we can emulate ruidacode into cutcode and read
 ruida files (*.rd) and turn them likewise into cutcode.
 """
-
+from meerk40t.core.view import View
 
 from meerk40t.kernel import Service
 
 from ..core.spoolers import Spooler
-from ..core.units import Length, ViewPort
+from ..core.units import Length, UNITS_PER_NM
 from .driver import RuidaDriver
 
 
-class RuidaDevice(Service, ViewPort):
+class RuidaDevice(Service):
     """
     RuidaDevice is driver for the Ruida Controllers
     """
@@ -190,18 +190,20 @@ class RuidaDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        ViewPort.__init__(
-            self,
+        self.view = View(
             self.bedwidth,
             self.bedheight,
+            dpi=UNITS_PER_NM
+        )
+        self.view.transform(
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,
-            rotary_active=self.rotary_active,
-            rotary_scale_x=self.rotary_scale_x,
-            rotary_scale_y=self.rotary_scale_y,
-            rotary_flip_x=self.rotary_flip_x,
-            rotary_flip_y=self.rotary_flip_y,
         )
+        # rotary_active = self.rotary_active,
+        # rotary_scale_x = self.rotary_scale_x,
+        # rotary_scale_y = self.rotary_scale_y,
+        # rotary_flip_x = self.rotary_flip_x,
+        # rotary_flip_y = self.rotary_flip_y,
         self.state = 0
 
         self.viewbuffer = ""
@@ -212,10 +214,9 @@ class RuidaDevice(Service, ViewPort):
         self.realize()
 
     def realize(self, origin=None):
-        self.width = self.bedwidth
-        self.height = self.bedheight
-        super().realize()
-        self.space.update_bounds(0, 0, self.width, self.height)
+        self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.realize()
+        self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)
 
     @property
     def current(self):

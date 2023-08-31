@@ -74,8 +74,8 @@ class PlacePointNode(Node):
         if outline is None:
             # This job can't be placed.
             return
-        scene_width = context.device.unit_width
-        scene_height = context.device.unit_height
+        scene_width = context.device.view.unit_width
+        scene_height = context.device.view.unit_height
         unit_x = Length(self.x, relative_length=scene_width).units
         unit_y = Length(self.y, relative_length=scene_height).units
         x, y = matrix.point_in_matrix_space((unit_x, unit_y))

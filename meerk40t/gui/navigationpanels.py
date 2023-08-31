@@ -1298,7 +1298,7 @@ class MovePanel(wx.Panel):
         try:
             x = self.text_position_x.GetValue()
             y = self.text_position_y.GetValue()
-            if not self.context.device.contains(x, y):
+            if not self.context.device.view.contains(x, y):
                 dlg = wx.MessageDialog(
                     None,
                     _("Cannot move outside bed dimensions"),
@@ -1308,17 +1308,11 @@ class MovePanel(wx.Panel):
                 dlg.ShowModal()
                 dlg.Destroy()
                 return
-            pos_x = self.context.device.length(
-                self.text_position_x.GetValue(),
-                axis=0,
-                new_units=self.context.units_name,
-                unitless=UNITS_PER_PIXEL,
+            pos_x = Length(
+                self.text_position_x.GetValue(), relative_length=self.context.view.width, unitless=UNITS_PER_PIXEL, preferred_units=self.context.units_name
             )
-            pos_y = self.context.device.length(
-                self.text_position_y.GetValue(),
-                axis=1,
-                new_units=self.context.units_name,
-                unitless=UNITS_PER_PIXEL,
+            pos_y = Length(
+                self.text_position_y.GetValue(), relative_length=self.context.view.height, unitless=UNITS_PER_PIXEL, preferred_units=self.context.units_name
             )
             self.context(f"move {pos_x} {pos_y}\n")
         except ValueError:
@@ -2027,20 +2021,18 @@ class Transform(wx.Panel):
         self.matrix_updated()
 
     def _translate(self, dx, dy, scale):
-        dx = self.context.device.length(
-            dx,
-            0,
-            scale=scale,
-            new_units=self.context.units_name,
-            unitless=UNITS_PER_PIXEL,
+        dx = Length(
+            dx, relative_length=self.context.view.width, unitless=UNITS_PER_PIXEL,
+            preferred_units=self.context.units_name
         )
-        dy = self.context.device.length(
-            dy,
-            1,
-            scale=scale,
-            new_units=self.context.units_name,
-            unitless=UNITS_PER_PIXEL,
+        dx *= scale
+
+        dy = Length(
+            dy, relative_length=self.context.view.height, unitless=UNITS_PER_PIXEL,
+            preferred_units=self.context.units_name
         )
+        dy *= scale
+
         self.context(f"translate {dx} {dy}\n")
         self.context.elements.signal("ext-modified")
         self.matrix_updated()
@@ -2203,11 +2195,9 @@ class JogDistancePanel(wx.Panel):
 
     def on_text_jog_amount(self):  # wxGlade: Navigation.<event_handler>
         try:
-            jog = self.context.device.length(
-                self.text_jog_amount.GetValue(),
-                new_units=self.context.units_name,
-                unitless=UNITS_PER_PIXEL,
-            )
+            jog = Length(
+                self.text_jog_amount.GetValue(), unitless=UNITS_PER_PIXEL, preferred_units=self.context.units_name
+            ).preferred_length
         except ValueError:
             return
         self.context.jog_amount = str(jog)

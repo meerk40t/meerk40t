@@ -1743,8 +1743,8 @@ class MeerK40t(MWindow):
                 m = m.replace("$x", str(x))
                 m = m.replace("$y", str(y))
                 matrix = Matrix(m)
-                unit_width = context.device.unit_width
-                unit_height = context.device.unit_height
+                unit_width = context.device.view.unit_width
+                unit_height = context.device.view.unit_height
                 matrix.render(ppi=UNITS_PER_INCH, width=unit_width, height=unit_height)
                 if matrix.is_identity():
                     dlg.Destroy()
@@ -1776,7 +1776,7 @@ class MeerK40t(MWindow):
             )
             dlg.SetValue("")
             if dlg.ShowModal() == wx.ID_OK:
-                unit_width = context.device.unit_width
+                unit_width = context.device.view.unit_width
                 length = float(Length(dlg.GetValue(), relative_length=unit_width))
                 matrix = Matrix()
                 matrix.post_scale(-1.0, 1, length / 2.0, 0)

@@ -116,7 +116,7 @@ class GuideWidget(Widget):
             tlen = float(Length(f"{self.scene.pane.grid.tick_distance}{p.units_name}"))
             amount = (
                 round(
-                    (p.device.unit_width / tlen) * (p.device.unit_height / tlen) / 1000,
+                    (p.device.view.unit_width / tlen) * (p.device.view.unit_height / tlen) / 1000,
                     0,
                 )
                 * 1000
@@ -136,12 +136,12 @@ class GuideWidget(Widget):
                     return
 
             x = 0
-            while x <= p.device.unit_width:
+            while x <= p.device.view.unit_width:
                 self.scene.pane.toggle_x_magnet(x)
                 x += tlen
 
             y = 0
-            while y <= p.device.unit_height:
+            while y <= p.device.view.unit_height:
                 self.scene.pane.toggle_y_magnet(y)
                 y += tlen
             self.scene.pane.save_magnets()
@@ -521,7 +521,7 @@ class GuideWidget(Widget):
 
     def _set_scaled_conversion(self):
         p = self.scene.context
-        f = p.device.length(f"1{p.units_name}", as_float=True)
+        f = float(Length(f"1{p.units_name}"))
         m = self.scene.widget_root.scene_widget.matrix
         self.scaled_conversion_x = f * m.value_scale_x()
         self.scaled_conversion_y = f * m.value_scale_y()

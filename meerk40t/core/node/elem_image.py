@@ -138,7 +138,7 @@ class ImageNode(Node):
 
         We require a context to calculate the correct step values relative to the device
         """
-        self.step_x, self.step_y = context.device.dpi_to_steps(self.dpi)
+        self.step_x, self.step_y = context.device.view.dpi_to_steps(self.dpi)
         self.matrix *= matrix
         self.set_dirty_bounds()
         self.process_image(self.step_x, self.step_y, not self.prevent_crop)

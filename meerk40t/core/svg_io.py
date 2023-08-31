@@ -83,7 +83,7 @@ from ..svgelements import (
     SVGText,
     Use,
 )
-from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH
+from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, Length
 
 SVG_ATTR_STROKE_JOIN = "stroke-linejoin"
 SVG_ATTR_STROKE_CAP = "stroke-linecap"
@@ -173,8 +173,9 @@ class SVGWriter:
                 "xmlns:" + MEERK40T_XMLS_ID,
                 MEERK40T_NAMESPACE,
             )
-        scene_width = context.device.length_width
-        scene_height = context.device.length_height
+
+        scene_width = Length(amount=context.device.view.width).length_mm
+        scene_height = Length(amount=context.device.view.height).length_mm
         root.set(SVG_ATTR_WIDTH, scene_width.length_mm)
         root.set(SVG_ATTR_HEIGHT, scene_height.length_mm)
         viewbox = f"{0} {0} {int(float(scene_width))} {int(float(scene_height))}"
@@ -1177,8 +1178,8 @@ class SVGLoader:
             source = gzip.open(pathname, "rb")
         try:
             if context.elements.svg_viewport_bed:
-                width = context.device.length_width.length_mm
-                height = context.device.length_height.length_mm
+                width = Length(amount=context.device.view.width).length_mm
+                height = Length(amount=context.device.view.height).length_mm
             else:
                 width = None
                 height = None

@@ -665,24 +665,24 @@ class Elemental(Service):
         return float(Length(v))
 
     def length_x(self, v):
-        return float(Length(v, relative_length=self.device.width))
+        return float(Length(v, relative_length=self.device.view.width))
 
     def length_y(self, v):
-        return float(Length(v, relative_length=self.device.height))
+        return float(Length(v, relative_length=self.device.view.height))
 
     def bounds(self, x0, y0, x1, y1):
         return (
-            float(Length(x0, relative_length=self.device.width)),
-            float(Length(y0, relative_length=self.device.height)),
-            float(Length(x1, relative_length=self.device.width)),
-            float(Length(y1, relative_length=self.device.height)),
+            float(Length(x0, relative_length=self.device.view.width)),
+            float(Length(y0, relative_length=self.device.view.height)),
+            float(Length(x1, relative_length=self.device.view.width)),
+            float(Length(y1, relative_length=self.device.view.height)),
         )
 
     def area(self, v):
-        llx = Length(v, relative_length=self.device.width)
+        llx = Length(v, relative_length=self.device.view.width)
         lx = float(llx)
         if "%" in v:
-            lly = Length(v, relative_length=self.device.height)
+            lly = Length(v, relative_length=self.device.view.height)
         else:
             lly = Length(f"1{llx._preferred_units}")
         ly = float(lly)

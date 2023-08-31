@@ -7,17 +7,19 @@ the given device type.
 
 from hashlib import md5
 
+from meerk40t.core.view import View
+
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
-from ..core.units import UNITS_PER_MIL, Length, ViewPort
+from ..core.units import UNITS_PER_MIL, Length
 from .controller import LihuiyuController
 from .driver import LihuiyuDriver
 from .tcp_connection import TCPOutput
 
 
-class LihuiyuDevice(Service, ViewPort):
+class LihuiyuDevice(Service):
     """
     LihuiyuDevice is driver for the M2 Nano and other classes of Lihuiyu boards.
     """
@@ -448,25 +450,25 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        ViewPort.__init__(
-            self,
+        self.view = View(
             self.bedwidth,
             self.bedheight,
-            user_scale_x=self.user_scale_x,
-            user_scale_y=self.user_scale_y,
-            native_scale_x=UNITS_PER_MIL,
-            native_scale_y=UNITS_PER_MIL,
+            dpi=UNITS_PER_MIL
+        )
+        self.view.transform(
             origin_x=1.0 if self.home_right else 0.0,
             origin_y=1.0 if self.home_bottom else 0.0,
+            user_scale_x=self.user_scale_x,
+            user_scale_y=self.user_scale_y,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
-            swap_xy=self.swap_xy,
-            rotary_active=self.rotary_active,
-            rotary_scale_x=self.rotary_scale_x,
-            rotary_scale_y=self.rotary_scale_y,
-            rotary_flip_x=self.rotary_flip_x,
-            rotary_flip_y=self.rotary_flip_y,
+            swap_xy=self.swap_xy
         )
+        # rotary_active = self.rotary_active,
+        # rotary_scale_x = self.rotary_scale_x,
+        # rotary_scale_y = self.rotary_scale_y,
+        # rotary_flip_x = self.rotary_flip_x,
+        # rotary_flip_y = self.rotary_flip_y,
         self.setting(int, "buffer_max", 900)
         self.setting(bool, "buffer_limit", True)
 
@@ -1013,10 +1015,9 @@ class LihuiyuDevice(Service, ViewPort):
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
     def realize(self, origin=None, *args):
-        self.width = self.bedwidth
-        self.height = self.bedheight
-        super().realize()
-        self.space.update_bounds(0, 0, self.width, self.height)
+        self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.realize()
+        self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)
 
     def outline_move_relative(self, dx, dy):
         x, y = self.native
@@ -1035,9 +1036,12 @@ class LihuiyuDevice(Service, ViewPort):
     @property
     def current(self):
         """
-        @return: the location in scene units for the current known position.
+        @return: the location in units for the current known position.
         """
-        return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
+        return self.view.iposition(
+            self.driver.native_x,
+            self.driver.native_y
+        )
 
     @property
     def speed(self):

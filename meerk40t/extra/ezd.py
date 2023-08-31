@@ -898,8 +898,8 @@ class EZProcessor:
         self.op_branch = elements.op_branch
         self.elem_branch = elements.elem_branch
 
-        self.width = elements.device.unit_width
-        self.height = elements.device.unit_height
+        self.width = elements.device.view.unit_width
+        self.height = elements.device.view.unit_height
         self.cx = self.width / 2.0
         self.cy = self.height / 2.0
         self.matrix = Matrix.scale(UNITS_PER_MM, -UNITS_PER_MM)

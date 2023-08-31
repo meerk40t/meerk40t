@@ -554,10 +554,10 @@ class MeerK40tScenePanel(wx.Panel):
             if height is None:
                 raise CommandSyntaxError("x, y, width, height not specified")
             try:
-                x = self.context.device.length(x, 0, unitless=UNITS_PER_PIXEL)
-                y = self.context.device.length(y, 1, unitless=UNITS_PER_PIXEL)
-                width = self.context.device.length(width, 0, unitless=UNITS_PER_PIXEL)
-                height = self.context.device.length(height, 1, unitless=UNITS_PER_PIXEL)
+                x = Length(x, relative_length=self.context.device.view.width, unitless=UNITS_PER_PIXEL)
+                y = Length(y, relative_length=self.context.device.view.height, unitless=UNITS_PER_PIXEL)
+                width = Length(width, relative_length=self.context.device.view.width, unitless=UNITS_PER_PIXEL)
+                height = Length(height, relative_length=self.context.device.view.height, unitless=UNITS_PER_PIXEL)
             except ValueError:
                 raise CommandSyntaxError("Not a valid length.")
             bbox = (x, y, width, height)

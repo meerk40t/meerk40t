@@ -8,18 +8,20 @@ import re
 import struct
 import time
 
+from meerk40t.core.view import View
+
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.balormk.elementlightjob import ElementLightJob
 from meerk40t.balormk.livelightjob import LiveLightJob
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
-from meerk40t.core.units import Angle, Length, ViewPort
+from meerk40t.core.units import Angle, Length
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.svgelements import Path, Point
 from meerk40t.tools.geomstr import Geomstr
 
 
-class BalorDevice(Service, ViewPort):
+class BalorDevice(Service):
     """
     The BalorDevice is a MeerK40t service for the device type. It should be the main method of interacting with
     the rest of meerk40t. It defines how the scene should look and contains a spooler which meerk40t will give jobs
@@ -742,18 +744,13 @@ class BalorDevice(Service, ViewPort):
         unit_size = float(Length(self.lens_size))
         galvo_range = 0xFFFF
         units_per_galvo = unit_size / galvo_range
-
-        ViewPort.__init__(
-            self,
-            self.lens_size,
-            self.lens_size,
-            native_scale_x=units_per_galvo,
-            native_scale_y=units_per_galvo,
+        self.view = View(self.lens_size, self.lens_size, dpi=units_per_galvo)
+        self.view.transform(
             origin_x=1.0 if self.flip_x else 0.0,
             origin_y=1.0 if self.flip_y else 0.0,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
-            swap_xy=self.swap_xy,
+            swap_xy=self.swap_xy
         )
         self.spooler = Spooler(self)
         self.driver = BalorDriver(self)
@@ -1724,8 +1721,8 @@ class BalorDevice(Service, ViewPort):
             if bounds is None:
                 channel(_("Nothing Selected"))
                 return
-            x0, y0 = self.scene_to_device_position(bounds[0], bounds[1])
-            x1, y1 = self.scene_to_device_position(bounds[2], bounds[3])
+            x0, y0 = self.view.iposition(bounds[0], bounds[1])
+            x1, y1 = self.view.iposition(bounds[2], bounds[3])
             channel(
                 f"Top,Right: ({x0:.02f}, {y0:.02f}). Lower, Left: ({x1:.02f},{y1:.02f})"
             )
@@ -1889,19 +1886,18 @@ class BalorDevice(Service, ViewPort):
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
     def realize(self, origin=None, *args):
-        self.width = self.lens_size
-        self.height = self.lens_size
-        super().realize()
-        self.space.update_bounds(0, 0, self.width, self.height)
+        self.view.set_dims(self.lens_size, self.lens_size)
+        self.view.realize()
+        self.space.update_bounds(0, 0, self.lens_size, self.lens_size)
 
     @property
     def current(self):
         """
-        @return: the location in nm for the current known x value.
+        @return: the location in units for the current known position.
         """
-        return self.device_to_scene_position(
+        return self.view.iposition(
             self.driver.native_x,
-            self.driver.native_y,
+            self.driver.native_y
         )
 
     @property
