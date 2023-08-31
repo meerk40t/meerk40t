@@ -527,8 +527,12 @@ class GuideWidget(Widget):
         self.scaled_conversion_y = f * m.value_scale_y()
 
     def _draw_primary_guides(self, gc):
+
         w, h = gc.Size
         p = self.scene.context
+        mat = self.scene.widget_root.scene_widget.matrix
+        if mat.rotation != 0:
+            return
         sx_primary, sy_primary = self._get_center_primary()
         length = self.line_length
         edge_gap = self.edge_gap
@@ -544,6 +548,7 @@ class GuideWidget(Widget):
         x = offset_x_primary
         last_text_pos = x - 30  # Arbitrary
         while x < w:
+            # print (f"while 1: {x}, {w}")
             if x >= 45:
                 mark_point = (x - sx_primary) / self.scaled_conversion_x
                 if not p.space.right_positive:
@@ -609,6 +614,9 @@ class GuideWidget(Widget):
     def _draw_secondary_guides(self, gc):
         w, h = gc.Size
         p = self.scene.context
+        mat = self.scene.widget_root.scene_widget.matrix
+        if mat.rotation != 0:
+            return
 
         fx = 1.0
         if self.scene.pane.grid.grid_secondary_scale_x is not None:
@@ -635,7 +643,7 @@ class GuideWidget(Widget):
         offset_x = float(sx) % points_x
         x = offset_x
         last_text_pos = x - 30
-        while x < w:
+        while abs(x) < w:
             if x >= 45:
                 mark_point = (x - sx) / (fx * self.scaled_conversion_x)
                 if not p.space.right_positive:
@@ -666,7 +674,7 @@ class GuideWidget(Widget):
         offset_y = float(sy) % points_y
         y = offset_y
         last_text_pos = y - 30
-        while y < h:
+        while abs(y) < h:
             if y >= 20:
                 mark_point = (y - sy) / (fy * self.scaled_conversion_y)
                 if not p.space.bottom_positive:

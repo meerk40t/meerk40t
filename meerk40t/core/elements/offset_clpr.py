@@ -532,10 +532,10 @@ def init_commands(kernel):
                                 break
                             maxd += dx * dx + dy * dy
                         lastpt = pt
-                        if maxd > tolerance:
+                        if maxd > self.tolerance:
                             break
 
-                    if had_error or maxd < tolerance:
+                    if had_error or maxd < self.tolerance:
                         # print (f"Artifact ignored: {maxd:.3f}")
                         continue
 
