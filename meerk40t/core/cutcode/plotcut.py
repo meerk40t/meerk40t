@@ -95,6 +95,14 @@ class PlotCut(CutObject):
             self.plot_append(x, y, laser)
 
     def plot_append(self, x, y, laser):
+        """
+        Append plot values.
+        @param x: x value to append
+        @param y: y value to append
+        @param laser: laser value must be between 0 and 1.
+        @return:
+        """
+        assert 0 <= laser <= 1
         self._length = None
         self._calc_lengths = None
         if self._points:
