@@ -4,7 +4,7 @@ from meerk40t.svgelements import Matrix
 
 class View:
     def __init__(
-        self, width, height, dpi=float(UNITS_PER_INCH), dpi_x=None, dpi_y=None
+        self, width, height, dpi=float(UNITS_PER_INCH), dpi_x=None, dpi_y=None, native_scale_x=None, native_scale_y=None
     ):
         """
         This should init the simple width and height dimensions.
@@ -16,6 +16,10 @@ class View:
         @param height:
         """
 
+        if native_scale_x is not None:
+            dpi_x = UNITS_PER_INCH / native_scale_x
+        if native_scale_y is not None:
+            dpi_y = UNITS_PER_INCH / native_scale_y
         if dpi_x is None:
             dpi_x = dpi
         if dpi_y is None:
@@ -176,13 +180,14 @@ class View:
         swap_xy=False,
     ):
         self.reset()
+        if origin_x != 0 or origin_y != 0:
+            self.origin(origin_x, origin_y)
         self.scale(1.0 / user_scale_x, 1.0 / user_scale_y)
         if flip_x:
             self.flip_x()
         if flip_y:
             self.flip_y()
-        if origin_x != 0 or origin_y != 0:
-            self.origin(origin_x, origin_y)
+        self.scale(1.0 / self.native_scale_x, 1.0 / self.native_scale_y)
         if swap_xy:
             self.swap_xy()
 
