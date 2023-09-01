@@ -572,6 +572,16 @@ class MeerK40tScenePanel(wx.Panel):
             channel(str(matrix))
             return "scene", data
 
+        @context.console_command("feature_request")
+        def send_developer_feature(remainder="", **kwgs):
+            from .wxmeerk40t import send_data_to_developers
+            send_data_to_developers("feature_request.txt", remainder)
+
+        @context.console_command("bug")
+        def send_developer_bug(remainder="", **kwgs):
+            from .wxmeerk40t import send_data_to_developers
+            send_data_to_developers("bug.txt", remainder)
+
         @context.console_command("reference")
         def make_reference(**kwgs):
             # Take first emphasized element
