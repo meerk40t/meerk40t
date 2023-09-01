@@ -314,6 +314,7 @@ class GRBLDriver(Parameters):
                 pass
             elif isinstance(q, PlotCut):
                 self.move_mode = 1
+                self.set("power", 1000)
                 for ox, oy, on, x, y in q.plot:
                     while self.hold_work(0):
                         time.sleep(0.05)
