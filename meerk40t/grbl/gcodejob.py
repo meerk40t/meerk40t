@@ -681,20 +681,13 @@ class GcodeJob:
         if matrix is None:
             # Using job for something other than point plotting
             return
-        if self.power is None:
-            self.power = 1000
-        # We need to scale the power between 0 and 1, so the allowed range is between 0 and 1000
-
-        self.power = min(1000, self.power)
         power = min(1000, power)
         if self.plotcut is None:
             ox, oy = matrix.transform_point([self.x, self.y])
-            self.plotcut = PlotCut(settings={"speed": self.speed, "power": self.power})
+            self.plotcut = PlotCut(settings={"speed": self.speed})
             self.plotcut.plot_init(int(round(ox)), int(round(oy)))
         tx, ty = matrix.transform_point([x, y])
-        self.plotcut.plot_append(
-            int(round(tx)), int(round(ty)), (power / 1000.0) * (self.power / 1000.0)
-        )
+        self.plotcut.plot_append(int(round(tx)), int(round(ty)), (power / 1000.0))
         if not self.program_mode:
             self.plot_commit()
         self.x = x
