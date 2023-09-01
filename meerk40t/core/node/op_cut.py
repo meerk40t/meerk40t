@@ -117,7 +117,9 @@ class CutOpNode(Node, Parameters):
         if self.power is not None:
             default_map["percent"] = f"{self.power / 10.0:.0f}%"
             default_map["ppi"] = f"{self.power:.0f}"
-        default_map["speed_mm_min"] = "" if self.speed is None else f"{self.speed * 60:.0f}"
+        default_map["speed_mm_min"] = (
+            "" if self.speed is None else f"{self.speed * 60:.0f}"
+        )
 
         return default_map
 

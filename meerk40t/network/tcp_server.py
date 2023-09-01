@@ -100,11 +100,16 @@ class TCPServer(Module):
 
         def handle():
             def send(e):
-                if connection is not None:
-                    try:
-                        connection.send(bytes(e, "utf-8"))
-                        self.data_channel(f"<-- {str(e)}")
-                    except (ConnectionAbortedError, ConnectionResetError):
+                if connection is None:
+                    return
+                try:
+                    connection.send(bytes(e, "utf-8"))
+                    self.data_channel(f"<-- {str(e)}")
+                except (ConnectionAbortedError, ConnectionResetError):
+                    connection.close()
+                except OSError:
+                    # Connection is likely already closed.
+                    if connection is not None:
                         connection.close()
 
             recv = self.context.channel(f"{self.name}/recv", pure=True)

@@ -13,6 +13,7 @@ from meerk40t.core.cutcode.homecut import HomeCut
 from meerk40t.core.cutcode.inputcut import InputCut
 from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.cutcode.outputcut import OutputCut
+from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.waitcut import WaitCut
 
@@ -308,8 +309,19 @@ class GRBLDriver(Parameters):
             elif isinstance(q, (InputCut, OutputCut)):
                 # GRBL has no core GPIO functionality
                 pass
+            elif isinstance(q, PlotCut):
+                self.move_mode = 1
+                self.set("power", 1000)
+                for ox, oy, on, x, y in q.plot:
+                    while self.hold_work(0):
+                        time.sleep(0.05)
+                    # q.plot can have different on values, these are parsed
+                    if self.on_value != on:
+                        self.power_dirty = True
+                    self.on_value = on
+                    self._move(x, y)
             else:
-                #  Rastercut, PlotCut
+                #  Rastercut
                 self.plot_planner.push(q)
                 self.move_mode = 1
                 for x, y, on in self.plot_planner.gen():
