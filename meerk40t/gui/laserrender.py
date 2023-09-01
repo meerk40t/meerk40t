@@ -729,12 +729,7 @@ class LaserRender:
             loops = max(1, node.loops)
         if loops > 1:
             symbol = f"{loops}x"
-            matrix = gc.GetTransform().Get()
-            try:
-                font_size = 10.0 / matrix[0]
-            except ZeroDivisionError:
-                font_size = 5000
-            # print (font_size)
+            font_size = 10 * zoomscale
             if font_size < 1.0:
                 font_size = 1.0
             try:
