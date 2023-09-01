@@ -796,7 +796,8 @@ class wxMeerK40t(wx.App, Module):
 
 # end of class MeerK40tGui
 
-MEERK40T_HOST = "meerk40t.com"
+MEERK40T_HOST = "dev.meerk40t.com"
+
 
 def send_file_to_developers(filename):
     """
