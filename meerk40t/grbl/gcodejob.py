@@ -649,10 +649,9 @@ class GcodeJob:
                         end=(nx, ny),
                         ccw=self.move_mode == 3,
                     )
-                    power = self.power
                     for p in range(self._interpolate + 1):
                         x, y = arc.point(p / self._interpolate)
-                        self.plot_location(x, y, power)
+                        self.plot_location(x, y, self.power)
                 else:
                     arc = Arc(
                         start=(ox, oy),
@@ -660,10 +659,9 @@ class GcodeJob:
                         end=(nx, ny),
                         ccw=self.move_mode == 3,
                     )
-                    power = self.power
                     for p in range(self._interpolate + 1):
                         x, y = arc.point(p / self._interpolate)
-                        self.plot_location(x, y, power)
+                        self.plot_location(x, y, self.power)
         return OKAY
 
     def plot_location(self, x, y, power):
