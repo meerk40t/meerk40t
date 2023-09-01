@@ -824,6 +824,7 @@ def send_data_to_developers(filename, data):
     @return:
     """
     import socket
+
     host = MEERK40T_HOST  # Replace with the actual host
     port = 80  # Replace with the actual port
 
@@ -831,7 +832,7 @@ def send_data_to_developers(filename, data):
     boundary = "----------------meerk40t-boundary"
     body = (
         f"--{boundary}\r\n"
-        f"Content-Disposition: form-data; name=\"file\"; filename=\"{filename}\"\r\n"
+        f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'
         f"Content-Type: text/plain\r\n"
         "\r\n"
         f"{data}\r\n"
