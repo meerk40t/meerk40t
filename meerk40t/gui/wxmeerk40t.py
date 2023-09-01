@@ -823,47 +823,54 @@ def send_data_to_developers(filename, data):
     @return:
     """
     import socket
+    host = MEERK40T_HOST  # Replace with the actual host
+    port = 80  # Replace with the actual port
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    ipaddr = socket.gethostbyname(MEERK40T_HOST)
-    s.connect((ipaddr, 80))
+    # Construct the HTTP request
     boundary = "----------------meerk40t-boundary"
-    file_head = list()
-    file_head.append("--" + boundary)
-    file_head.append(
-        f'Content-Disposition: form-data; name="file"; filename="{filename}"'
+    body = (
+        f"--{boundary}\r\n"
+        f"Content-Disposition: form-data; name=\"file\"; filename=\"{filename}\"\r\n"
+        f"Content-Type: text/plain\r\n"
+        "\r\n"
+        f"{data}\r\n"
+        f"--{boundary}--\r\n"
     )
-    file_head.append("Content-Type: text/plain")
-    file_head.append("")
-    part = "\x0D\x0A".join(file_head)
-    terminal = "--" + boundary + "--"
-    payload = "\x0D\x0A".join((part, data, terminal, ""))
-    http_req = list()
-    http_req.append("POST /crash HTTP/1.1")
-    http_req.append(f"Host: {MEERK40T_HOST}")
-    http_req.append("User-Agent: meerk40t/0.0.1")
-    http_req.append("Accept: */*")
-    http_req.append(f"Content-Length: {len(payload)}")
-    http_req.append(f"Content-Type: multipart/form-data; boundary={boundary}")
-    http_req.append("")
-    header = "\x0D\x0A".join(http_req)
-    request = "\x0D\x0A".join((header, payload))
-    s.send(bytes(request, "utf-8"))
-    response = s.recv(4096)
-    response = response.decode("utf-8")
-    s.close()
 
-    if response is None or len(response) == 0:
-        http_code = "No Response."
-    else:
-        http_code = response.split("\n")[0]
+    headers = (
+        f"POST /upload HTTP/1.1\r\n"
+        f"Host: {host}\r\n"
+        "User-Agent: meerk40t/1.0.0\r\n"
+        f"Content-Type: multipart/form-data; boundary={boundary}\r\n"
+        f"Content-Length: {len(body)}\r\n"
+        "\r\n"
+    )
+
+    try:
+        # Create a socket connection
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
+            client_socket.connect((host, port))
+
+            # Send the request
+            request = f"{headers}{body}"
+            client_socket.sendall(request.encode())
+
+            # Receive and print the response
+            response = client_socket.recv(4096)
+            response = response.decode("utf-8")
+    except Exception:
+        response = ""
+
+    response_lines = response.split("\n")
+    http_code = response_lines[0]
+
+    print(response)
 
     if http_code.startswith("HTTP/1.1 200 OK"):
-        print(http_code)
-        http_code = response.split("\n")[0]
+        message = response_lines[-1]
         dlg = wx.MessageDialog(
             None,
-            _("We got your message. Thank you for helping\n\n") + str(http_code),
+            _("We got your message. Thank you for helping\n\n") + message,
             _("Thanks"),
             wx.OK,
         )
