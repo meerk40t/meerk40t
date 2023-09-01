@@ -402,6 +402,7 @@ class ShadowTree:
             "elem line": icons8_line_20,
             "elem polyline": icons8_polyline_50,
             "elem text": icons8_type_50,
+            "blob": icons8_file_20,
         }
         self.image_cache = []
         self.cache_hits = 0
