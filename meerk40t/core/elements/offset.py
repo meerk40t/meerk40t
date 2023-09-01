@@ -479,7 +479,7 @@ def offset_path(
                 connect_seg = Arc(
                     start=startpt, end=endpt, center=Point(orgintersect), ccw=ccw
                 )
-                clen = connect_seg.length(error = 1E-2)
+                clen = connect_seg.length(error=1e-2)
                 # print (f"Ratio: {clen / abs(tau * offset):.2f}")
                 if clen > abs(tau * offset / 2):
                     # That seems strange...
@@ -568,7 +568,7 @@ def offset_path(
                             ccw=ccw,
                         )
                         # print (f"{perf_counter()-t_start:.3f} Now calculating length")
-                        clen = segment.length(error = 1E-2)
+                        clen = segment.length(error=1e-2)
                         # print (f"{perf_counter()-t_start:.3f} Ratio: {clen / abs(tau * offset):.2f}")
                         if clen > abs(tau * offset / 2):
                             # That seems strange...
@@ -695,7 +695,14 @@ def offset_path(
                         p._segments[last_point].end
                     )
                     if seglen > MINIMAL_LEN:
-                        close_subpath(radial_connector, p, first_point, last_point, offset, helper2)
+                        close_subpath(
+                            radial_connector,
+                            p,
+                            first_point,
+                            last_point,
+                            offset,
+                            helper2,
+                        )
                 last_point = None
                 first_point = None
             if segment.start is not None and segment.end is not None:
@@ -780,7 +787,9 @@ def offset_path(
                 p._segments[last_point].end
             )
             if seglen > MINIMAL_LEN:
-                close_subpath(radial_connector, p, first_point, last_point, offset, helper2)
+                close_subpath(
+                    radial_connector, p, first_point, last_point, offset, helper2
+                )
 
         results.append(p)
 
