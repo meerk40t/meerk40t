@@ -1369,9 +1369,7 @@ class ShadowTree:
                 if self.context.device.use_percent_for_power_display:
                     mymap["power"] = mymap["percent"]
             if "speed" in mymap and "speed_mm_min" in mymap:
-                self.context.device.setting(
-                    bool, "use_mm_min_for_speed_display", False
-                )
+                self.context.device.setting(bool, "use_mm_min_for_speed_display", False)
                 if self.context.device.use_mm_min_for_speed_display:
                     text = text.replace("mm/s", "mm/min")
                     mymap["speed"] = mymap["speed_mm_min"]

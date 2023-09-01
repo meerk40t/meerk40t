@@ -68,7 +68,11 @@ class GRBLControl:
             emulator.reply = tcp_send_channel
 
             channel(_("TCP Server for GRBL Emulator on port: {port}").format(port=port))
-            channel(_("Will translate incoming to device: {dev}").format(dev=root.device.name))
+            channel(
+                _("Will translate incoming to device: {dev}").format(
+                    dev=root.device.name
+                )
+            )
         except OSError as e:
             channel(_("Server failed on port: {port}").format(port=port))
             channel(str(e.strerror))
