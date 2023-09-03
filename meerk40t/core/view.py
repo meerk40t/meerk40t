@@ -37,7 +37,7 @@ class View:
         self._matrix = None
 
     def __str__(self):
-        return f"View('{self.width}', '{self.height}', @{self.dpi})"
+        return f"View('{self.width}', '{self.height}', @{self.dpi} {self._destination})"
 
     @property
     def native_scale_x(self):
