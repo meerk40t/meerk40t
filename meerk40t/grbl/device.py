@@ -233,8 +233,6 @@ class GRBLDevice(Service):
             dpi=UNITS_PER_MIL
         )
         self.view.transform(
-            origin_x=1.0 if self.flip_x else 0.0,
-            origin_y=1.0 if self.flip_y else 0.0,
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,
             flip_x=self.flip_x,

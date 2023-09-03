@@ -25,8 +25,6 @@ class TestViewport(unittest.TestCase):
             view.transform(
                 user_scale_x=1.0,
                 user_scale_y=1.0,
-                origin_x=random.random(),
-                origin_y=random.random(),
                 flip_x=bool(random.randint(0, 1)),
                 flip_y=bool(random.randint(0, 1)),
                 swap_xy=bool(random.randint(0, 1)),)
@@ -48,14 +46,12 @@ class TestViewport(unittest.TestCase):
         view = View(
             bed_width,
             bed_height,
-            dpi_x=UNITS_PER_INCH,
-            dpi_y=UNITS_PER_INCH,
+            native_scale_x=UNITS_PER_MIL,
+            native_scale_y=UNITS_PER_MIL,
         )
         view.transform(
             user_scale_x=1.2,
             user_scale_y=1.0,
-            origin_x=0,
-            origin_y=0,
         )
         x, y = view.position(0, 0)
         self.assertAlmostEqual(x, 0, delta=10)
@@ -93,9 +89,6 @@ class TestViewport(unittest.TestCase):
         view.transform(
             user_scale_x=1.2,
             user_scale_y=1.0,
-
-            origin_x=0,
-            origin_y=0,
             swap_xy=True,
         )
         x, y = view.position(0, 0)
@@ -130,11 +123,7 @@ class TestViewport(unittest.TestCase):
             native_scale_x=UNITS_PER_MIL,
             native_scale_y=UNITS_PER_MIL,
         )
-        view.transform(
-            origin_x=0,
-            origin_y=1,
-            flip_y=True,
-        )
+        view.flip_y()
         x, y = view.position(0, 0)
         self.assertAlmostEqual(x, 0, delta=10)
         self.assertAlmostEqual(y, Length(bed_size).mil, delta=10)
@@ -164,8 +153,6 @@ class TestViewport(unittest.TestCase):
         view.transform(
             user_scale_x=1.0 / Length("1mil").mm,
             user_scale_y=1.0 / Length("1mil").mm,
-            origin_x=0,
-            origin_y=1,
             flip_y=True,
         )
         x, y = view.position(0, 0)
@@ -184,9 +171,6 @@ class TestViewport(unittest.TestCase):
         """
         Test Balor-esque viewport.
         Center x, y. normal_x/flip_x, normal_y/flip_y, swap and non-linear
-
-        Device to show position.
-
         :return:
         """
         lens_size_x = "110mm"
@@ -196,7 +180,6 @@ class TestViewport(unittest.TestCase):
         galvo_range = 0xFFFF
         units_per_galvo_x = unit_size_x / galvo_range
         units_per_galvo_y = unit_size_y / galvo_range
-
         for flip_x in (False, True):
             for flip_y in (False, True):
                 for swap_xy in (False, True):
@@ -207,8 +190,6 @@ class TestViewport(unittest.TestCase):
                         native_scale_y=units_per_galvo_y,
                     )
                     view.transform(
-                        origin_x=1.0 if flip_x else 0.0,
-                        origin_y=1.0 if flip_y else 0.0,
                         flip_x=flip_x,
                         flip_y=flip_y,
                         swap_xy=swap_xy,
@@ -320,12 +301,10 @@ class TestViewport(unittest.TestCase):
                     view = View(
                         lens_size_x,
                         lens_size_y,
-                        dpi_x=units_per_galvo_x,
-                        dpi_y=units_per_galvo_y,
+                        native_scale_x=units_per_galvo_x,
+                        native_scale_y=units_per_galvo_y,
                     )
                     view.transform(
-                        origin_x=1.0 if flip_x else 0.0,
-                        origin_y=1.0 if flip_y else 0.0,
                         flip_x=flip_x,
                         flip_y=flip_y,
                         swap_xy=swap_xy,

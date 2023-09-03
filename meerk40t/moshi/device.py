@@ -276,8 +276,6 @@ class MoshiDevice(Service):
             dpi=UNITS_PER_MIL
         )
         self.view.transform(
-            origin_x=1.0 if self.home_right else 0.0,
-            origin_y=1.0 if self.home_bottom else 0.0,
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,
             flip_x=self.flip_x,

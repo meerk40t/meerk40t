@@ -746,8 +746,6 @@ class BalorDevice(Service):
         units_per_galvo = unit_size / galvo_range
         self.view = View(self.lens_size, self.lens_size, dpi=units_per_galvo)
         self.view.transform(
-            origin_x=1.0 if self.flip_x else 0.0,
-            origin_y=1.0 if self.flip_y else 0.0,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy
