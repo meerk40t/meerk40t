@@ -247,8 +247,8 @@ class View:
         @return:
         """
         # We require vectors so any positional offsets are non-contributing.
-        unit_x = self.dpi_x
-        unit_y = self.dpi_y
+        unit_x = UNITS_PER_INCH
+        unit_y = UNITS_PER_INCH
         matrix = self.matrix
         oneinch_x = abs(complex(*matrix.transform_vector([unit_x, 0])))
         oneinch_y = abs(complex(*matrix.transform_vector([0, unit_y])))
