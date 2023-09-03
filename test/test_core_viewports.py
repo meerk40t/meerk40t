@@ -46,8 +46,8 @@ class TestViewport(unittest.TestCase):
         view = View(
             bed_width,
             bed_height,
-            native_scale_x=UNITS_PER_MIL,
-            native_scale_y=UNITS_PER_MIL,
+            dpi_x=1000,
+            dpi_y=1000,
         )
         view.transform(
             user_scale_x=1.2,
@@ -61,14 +61,14 @@ class TestViewport(unittest.TestCase):
         self.assertAlmostEqual(x, 0, delta=10)
         self.assertAlmostEqual(y, 0, delta=10)
 
-        x, y = view.position(0, Length(bed_height).mil)
+        x, y = view.iposition(0, Length(bed_height).mil)
         self.assertAlmostEqual(x, 0, delta=10)
         self.assertAlmostEqual(y, float(Length(bed_height)), delta=10)
 
-        x, y = view.position(
+        x, y = view.iposition(
             Length(bed_width).mil, Length(bed_height).mil
         )
-        self.assertAlmostEqual(x, float(Length(bed_width)) * 1.2, delta=10)
+        self.assertAlmostEqual(x, float(Length(bed_width)) / 1.2, delta=10)
         self.assertAlmostEqual(y, float(Length(bed_height)), delta=10)
 
     def test_viewport_lihuiyu_swap_xy(self):
@@ -83,8 +83,8 @@ class TestViewport(unittest.TestCase):
         view = View(
             bed_width,
             bed_height,
-            dpi_x=UNITS_PER_INCH,
-            dpi_y=UNITS_PER_INCH
+            dpi_x=1000,
+            dpi_y=1000
         )
         view.transform(
             user_scale_x=1.2,
@@ -99,15 +99,13 @@ class TestViewport(unittest.TestCase):
         self.assertAlmostEqual(x, 0, delta=10)
         self.assertAlmostEqual(y, 0, delta=10)
 
-        x, y = view.iposition(0, Length(bed_height).mil)
-        self.assertAlmostEqual(x, float(Length(bed_height)), delta=10)
+        x, y = view.position(0, Length(bed_height))
+        self.assertAlmostEqual(x, float(Length(bed_height).mil), delta=10)
         self.assertAlmostEqual(y, 0, delta=10)
 
-        x, y = view.iposition(
-            Length(bed_width).mil, Length(bed_height).mil
-        )
-        self.assertAlmostEqual(x, float(Length(bed_height)), delta=10)
-        self.assertAlmostEqual(y, float(Length(bed_width)) * 1.2, delta=10)
+        x, y = view.position(Length(bed_width), Length(bed_height))
+        self.assertAlmostEqual(x, float(Length(bed_height).mil), delta=10)
+        self.assertAlmostEqual(y, float(Length(bed_width).mil) * 1.2, delta=10)
 
     def test_viewport_grbl(self):
         """
@@ -147,12 +145,12 @@ class TestViewport(unittest.TestCase):
         view = View(
             bed_size,
             bed_size,
-            dpi_x=UNITS_PER_INCH,
-            dpi_y=UNITS_PER_INCH,
+            dpi_x=1000,
+            dpi_y=1000,
         )
         view.transform(
-            user_scale_x=1.0 / Length("1mil").mm,
-            user_scale_y=1.0 / Length("1mil").mm,
+            user_scale_x=Length("1mil").mm,
+            user_scale_y=Length("1mil").mm,
             flip_y=True,
         )
         x, y = view.position(0, 0)
@@ -309,17 +307,13 @@ class TestViewport(unittest.TestCase):
                         flip_y=flip_y,
                         swap_xy=swap_xy,
                     )
-                    sx, sy = view.iposition("50%", "50%")
+                    sx, sy = view.scene_position("50%", "50%")
 
                     dim0 = view.unit_width / 2
                     dim1 = view.unit_height / 2
-                    if swap_xy:
-                        self.assertAlmostEqual(sx, dim1)
-                        self.assertAlmostEqual(sy, dim0)
-                    else:
-                        self.assertAlmostEqual(sx, dim0)
-                        self.assertAlmostEqual(sy, dim1)
+                    self.assertAlmostEqual(sx, dim0)
+                    self.assertAlmostEqual(sy, dim1)
 
-                    cx, cy = view.position(0x7FFF, 0x7FFF)
+                    cx, cy = view.iposition(0x7FFF, 0x7FFF)
                     self.assertAlmostEqual(sx, cx, delta=10)
                     self.assertAlmostEqual(sy, cy, delta=10)
