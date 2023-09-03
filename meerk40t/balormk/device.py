@@ -724,11 +724,11 @@ class BalorDevice(Service):
         unit_size = float(Length(self.lens_size))
         galvo_range = 0xFFFF
         units_per_galvo = unit_size / galvo_range
-        self.view = View(self.lens_size, self.lens_size, dpi=units_per_galvo)
+        self.view = View(self.lens_size, self.lens_size, native_scale_x=units_per_galvo, native_scale_y=units_per_galvo)
         self.view.transform(
             flip_x=self.flip_x,
             flip_y=self.flip_y,
-            swap_xy=self.swap_xy
+            swap_xy=self.swap_xy,
         )
         self.spooler = Spooler(self)
         self.driver = BalorDriver(self)
@@ -1699,8 +1699,8 @@ class BalorDevice(Service):
             if bounds is None:
                 channel(_("Nothing Selected"))
                 return
-            x0, y0 = self.view.iposition(bounds[0], bounds[1])
-            x1, y1 = self.view.iposition(bounds[2], bounds[3])
+            x0, y0 = self.view.position(bounds[0], bounds[1])
+            x1, y1 = self.view.position(bounds[2], bounds[3])
             channel(
                 f"Top,Right: ({x0:.02f}, {y0:.02f}). Lower, Left: ({x1:.02f},{y1:.02f})"
             )
@@ -1868,7 +1868,7 @@ class BalorDevice(Service):
         self.view.transform(
             flip_x=self.flip_x,
             flip_y=self.flip_y,
-            swap_xy=self.swap_xy
+            swap_xy=self.swap_xy,
         )
         self.space.update_bounds(0, 0, self.lens_size, self.lens_size)
 
