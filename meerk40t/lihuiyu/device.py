@@ -453,9 +453,11 @@ class LihuiyuDevice(Service):
         self.view = View(
             self.bedwidth,
             self.bedheight,
-            dpi=UNITS_PER_MIL
+            dpi=1000.
         )
         self.view.transform(
+            user_scale_x=self.user_scale_x,
+            user_scale_y=self.user_scale_y,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy
@@ -1012,7 +1014,13 @@ class LihuiyuDevice(Service):
     @signal_listener("swap_xy")
     def realize(self, origin=None, *args):
         self.view.set_dims(self.bedwidth, self.bedheight)
-        self.view.realize()
+        self.view.transform(
+            user_scale_x=self.user_scale_x,
+            user_scale_y=self.user_scale_y,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy
+        )
         self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)
 
     def outline_move_relative(self, dx, dy):

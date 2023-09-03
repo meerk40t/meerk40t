@@ -230,7 +230,8 @@ class GRBLDevice(Service):
         self.view = View(
             self.bedwidth,
             self.bedheight,
-            dpi=UNITS_PER_MIL
+            dpi_x=1000.,
+            dpi_y=1000.,
         )
         self.view.transform(
             user_scale_x=self.scale_x,
@@ -763,6 +764,11 @@ class GRBLDevice(Service):
 
     def realize(self, origin=None):
         self.view.set_dims(self.bedwidth, self.bedheight)
-        self.view.origin(1.0 if self.home_right else 0.0, 1.0 if self.home_bottom else 0.0)
-        self.view.realize()
+        self.view.transform(
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy
+        )
         self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)

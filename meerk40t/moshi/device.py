@@ -273,7 +273,7 @@ class MoshiDevice(Service):
         self.view = View(
             self.bedwidth,
             self.bedheight,
-            dpi=UNITS_PER_MIL
+            dpi=1000.0
         )
         self.view.transform(
             user_scale_x=self.scale_x,

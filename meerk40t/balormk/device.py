@@ -158,26 +158,6 @@ class BalorDevice(Service):
                 "subsection": "_25_Offset",
             },
             {
-                "attr": "scale_x",
-                "object": self,
-                "default": "1.0",
-                "type": float,
-                "label": _("X-Axis"),
-                "tip": _("Scale the X axis"),
-                "section": "_10_Parameters",
-                "subsection": "_20_Scale",
-            },
-            {
-                "attr": "scale_y",
-                "object": self,
-                "default": "1.0",
-                "type": float,
-                "label": _("Y-Axis"),
-                "tip": _("Scale the Y axis"),
-                "section": "_10_Parameters",
-                "subsection": "_20_Scale",
-            },
-            {
                 "attr": "flip_x",
                 "object": self,
                 "default": False,
@@ -1885,7 +1865,11 @@ class BalorDevice(Service):
     @signal_listener("swap_xy")
     def realize(self, origin=None, *args):
         self.view.set_dims(self.lens_size, self.lens_size)
-        self.view.realize()
+        self.view.transform(
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy
+        )
         self.space.update_bounds(0, 0, self.lens_size, self.lens_size)
 
     @property
