@@ -708,7 +708,11 @@ class NewlyDevice(Service):
         self.view.set_dims(self.bedwidth, self.bedheight)
         self.view.dpi_x = self.h_dpi
         self.view.dpi_y = self.v_dpi
-        self.view.realize()
+        self.view.transform(
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy
+        )
         self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)
 
     @property
