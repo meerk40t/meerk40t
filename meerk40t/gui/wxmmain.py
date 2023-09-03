@@ -3759,16 +3759,16 @@ class MeerK40t(MWindow):
             x_delta = (bbox[2] - bbox[0]) * zfact
             y_delta = (bbox[3] - bbox[1]) * zfact
             x0 = Length(
-                amount=bbox[0] - x_delta, relative_length=self.context.device.width
+                amount=bbox[0] - x_delta, relative_length=self.context.device.view.width
             ).length_mm
             y0 = Length(
-                amount=bbox[1] - y_delta, relative_length=self.context.device.height
+                amount=bbox[1] - y_delta, relative_length=self.context.device.view.height
             ).length_mm
             x1 = Length(
-                amount=bbox[2] + x_delta, relative_length=self.context.device.width
+                amount=bbox[2] + x_delta, relative_length=self.context.device.view.width
             ).length_mm
             y1 = Length(
-                amount=bbox[3] + y_delta, relative_length=self.context.device.height
+                amount=bbox[3] + y_delta, relative_length=self.context.device.view.height
             ).length_mm
             self.context(f"scene focus -a {x0} {y0} {x1} {y1}\n")
 

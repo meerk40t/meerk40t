@@ -1000,8 +1000,8 @@ class TemplatePanel(wx.Panel):
             expected_width = count_1 * size_x + (count_1 - 1) * gap_x
             expected_height = count_2 * size_y + (count_2 - 1) * gap_y
             # Need to be adjusted to allow for centering
-            start_x = (float(Length(self.context.device.width)) - expected_width) / 2
-            start_y = (float(Length(self.context.device.height)) - expected_height) / 2
+            start_x = (float(Length(self.context.device.view.width)) - expected_width) / 2
+            start_y = (float(Length(self.context.device.view.height)) - expected_height) / 2
             operation_branch = self.context.elements._tree.get(type="branch ops")
             element_branch = self.context.elements._tree.get(type="branch elems")
 

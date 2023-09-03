@@ -521,7 +521,7 @@ def init_tree(kernel):
             # Nothing to do
             return
         data = []
-        max_x = self.device.width
+        max_x = self.device.view.width
         for n in list(self.ops(selected=True)):
             if n.type == "place point":
                 data.append(n)
@@ -586,7 +586,7 @@ def init_tree(kernel):
             # Nothing to do
             return
         data = []
-        max_y = self.device.height
+        max_y = self.device.view.height
         for n in list(self.ops(selected=True)):
             if n.type == "place point":
                 data.append(n)

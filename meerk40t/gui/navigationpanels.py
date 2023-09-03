@@ -215,9 +215,9 @@ def get_movement(device, dx, dy):
     newx = float(Length(dx))
     newy = float(Length(dy))
     min_x = 0
-    max_x = float(Length(device.width))
+    max_x = float(Length(device.view.width))
     min_y = 0
-    max_y = float(Length(device.height))
+    max_y = float(Length(device.view.height))
     # print ("Delta:", newx, newy)
     # print ("Current:", current_x, current_y)
     if newx + current_x > max_x:
@@ -679,9 +679,9 @@ class Drag(wx.Panel):
             return
         if _confined:
             min_x = 0
-            max_x = float(Length(self.context.device.width))
+            max_x = float(Length(self.context.device.view.width))
             min_y = 0
-            max_y = float(Length(self.context.device.height))
+            max_y = float(Length(self.context.device.view.height))
             if x < min_x or x > max_x or y < min_y or y > max_y:
                 dlg = wx.MessageDialog(
                     None,
@@ -1034,9 +1034,9 @@ class Jog(wx.Panel):
             self.confined = False
         if self.confined:
             min_x = 0
-            max_x = float(Length(self.context.device.width))
+            max_x = float(Length(self.context.device.view.width))
             min_y = 0
-            max_y = float(Length(self.context.device.height))
+            max_y = float(Length(self.context.device.view.height))
             # Are we outside? Then lets move back to the edge...
             new_x = min(max_x, max(min_x, current_x))
             new_y = min(max_y, max(min_y, current_y))
