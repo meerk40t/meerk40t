@@ -32,6 +32,7 @@ class View:
         self._source = None
         self._destination = None
         self._matrix = None
+        self.reset()
 
     def realize(self):
         self._matrix = None
@@ -66,6 +67,8 @@ class View:
         bottom_left = 0, height
         self._source = top_left, top_right, bottom_right, bottom_left
         self._destination = top_left, top_right, bottom_right, bottom_left
+        # Pre-scale destination by reverse of native scale.
+        self.scale(1.0 / self.native_scale_x, 1.0 / self.native_scale_y)
 
     def contains(self, x, y):
         """
@@ -171,8 +174,6 @@ class View:
 
     def transform(
         self,
-        origin_x=0.0,
-        origin_y=0.0,
         user_scale_x=1.0,
         user_scale_y=1.0,
         flip_x=False,
@@ -180,18 +181,22 @@ class View:
         swap_xy=False,
     ):
         self.reset()
-        if origin_x != 0 or origin_y != 0:
-            self.origin(origin_x, origin_y)
-        self.scale(1.0 / user_scale_x, 1.0 / user_scale_y)
+        self.scale(user_scale_x, user_scale_y)
         if flip_x:
             self.flip_x()
         if flip_y:
             self.flip_y()
-        self.scale(1.0 / self.native_scale_x, 1.0 / self.native_scale_y)
         if swap_xy:
             self.swap_xy()
 
     def position(self, x, y, vector=False):
+        """
+        Position from the source to the destination position. The result is in destination units.
+        @param x:
+        @param y:
+        @param vector:
+        @return:
+        """
         if not isinstance(x, (int, float)):
             x = Length(x, relative_length=self.width, unitless=1).units
         if not isinstance(y, (int, float)):
@@ -201,11 +206,22 @@ class View:
             return self.matrix.transform_vector([unit_x, unit_y])
         return self.matrix.point_in_matrix_space([unit_x, unit_y])
 
-    def iposition(self, x, y, vector=False):
+    def scene_position(self, x, y):
         if not isinstance(x, (int, float)):
             x = Length(x, relative_length=self.width, unitless=1).units
         if not isinstance(y, (int, float)):
             y = Length(y, relative_length=self.height, unitless=1).units
+        return x, y
+
+    def iposition(self, x, y, vector=False):
+        """
+        Position from the destination to the source position. The result is in source units.
+
+        @param x:
+        @param y:
+        @param vector:
+        @return:
+        """
         unit_x, unit_y = x, y
         matrix = ~self.matrix
         if vector:
