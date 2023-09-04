@@ -40,6 +40,10 @@ def bootstrap():
 
     kernel.add_plugin(ruidadevice.plugin)
 
+    from meerk40t.newly import plugin as newlydevice
+
+    kernel.add_plugin(newlydevice.plugin)
+
     from meerk40t.core import svg_io
 
     kernel.add_plugin(svg_io.plugin)
