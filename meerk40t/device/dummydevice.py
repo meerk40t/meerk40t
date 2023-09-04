@@ -119,8 +119,8 @@ class DummyDevice(Service):
         @return: the location in units for the current known position.
         """
         return self.view.iposition(
-            self.driver.native_x,
-            self.driver.native_y
+            self.native_x,
+            self.native_y
         )
 
     @property
