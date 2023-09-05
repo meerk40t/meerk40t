@@ -88,6 +88,9 @@ def init_commands(kernel):
         try:
             for e in self._clipboard[destination]:
                 copy_node = copy(e)
+                if copy_node is None:
+                    channel(_("Error: clipboard empty node"))
+                    continue
                 # Need to add stroke and fill, as copy will take the
                 # default values for these attributes
                 for optional in ("fill", "stroke"):
