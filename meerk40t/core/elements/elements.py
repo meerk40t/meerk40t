@@ -984,6 +984,8 @@ class Elemental(Service):
 
         for q in data_to_align:
             # print(f"Node to be treated: {q.type}")
+            if q.bounds is None:
+                continue
             if as_group == 0:
                 left_edge = q.bounds[0]
                 top_edge = q.bounds[1]
