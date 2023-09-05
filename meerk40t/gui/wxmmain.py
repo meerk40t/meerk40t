@@ -1957,10 +1957,13 @@ class MeerK40t(MWindow):
         # AUI Manager Update.
         self._mgr.Update()
 
-        self.default_perspective = self._mgr.SavePerspective()
-        self.context.setting(str, "perspective")
-        if self.context.perspective is not None:
-            self._mgr.LoadPerspective(self.context.perspective)
+        self.default_aui = self._mgr.SavePerspective()
+        self.context.setting(str, "aui")
+        self.context.setting(str, "aui_version", self.context.kernel.version)
+        if self.context.aui is not None:
+            # The aui_version will be set on init or reset. This can be used to set resets after specific versions.
+            # if self.context.kernel.version == self.context.aui_version:
+            self._mgr.LoadPerspective(self.context.aui)
 
         self.on_config_panes()
         self.__console_commands()
@@ -1984,12 +1987,12 @@ class MeerK40t(MWindow):
             all_arguments_required=True,
         )
         def load_pane(command, _, channel, configuration=None, **kwargs):
-            perspective = context.setting(str, f"perspective_{configuration}", None)
-            if not perspective:
+            aui = context.setting(str, f"aui_{configuration}", None)
+            if not aui:
                 channel(_("Perspective not found"))
                 return
             self.on_panes_closed()
-            self._mgr.LoadPerspective(perspective, update=True)
+            self._mgr.LoadPerspective(aui, update=True)
             self.on_config_panes()
 
         @context.console_argument("configuration", help=_("configuration to load"))
@@ -2001,7 +2004,7 @@ class MeerK40t(MWindow):
         )
         def save_pane(command, _, channel, configuration=None, **kwargs):
             setattr(
-                context, f"perspective_{configuration}", self._mgr.SavePerspective()
+                context, f"aui_{configuration}", self._mgr.SavePerspective()
             )
 
         @context.console_argument("pane", help=_("pane to be shown"))
@@ -2181,7 +2184,8 @@ class MeerK40t(MWindow):
 
     def on_pane_reset(self, event=None):
         self.on_panes_closed()
-        self._mgr.LoadPerspective(self.default_perspective, update=True)
+        self._mgr.LoadPerspective(self.default_aui, update=True)
+        self.context.aui_version = self.context.kernel.version
         self.on_config_panes()
 
     def on_panes_closed(self):
@@ -3298,7 +3302,7 @@ class MeerK40t(MWindow):
     def window_close(self):
         context = self.context
 
-        context.perspective = self._mgr.SavePerspective()
+        context.aui = self._mgr.SavePerspective()
         self.on_panes_closed()
         self._mgr.UnInit()
 
