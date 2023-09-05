@@ -1,16 +1,15 @@
 """
 This module provides a basic operation panel that allows to access
-fundamental properties of operations. This is uspposed to provide
+fundamental properties of operations. This is supposed to provide
 a simpler interface to operations
 """
 
 import wx
-from wx import aui
 
 from meerk40t.core.elements.element_types import op_nodes
 from meerk40t.gui.laserrender import swizzlecolor
 
-from ..kernel import signal_listener, lookup_listener
+from ..kernel import lookup_listener, signal_listener
 from ..svgelements import Color
 from .icons import (
     icons8_diagonal_20,
@@ -20,7 +19,7 @@ from .icons import (
     icons8_scatter_plot_20,
     icons8_small_beam_20,
 )
-from .wxutils import ScrolledPanel, StaticBoxSizer, create_menu, TextCtrl
+from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, create_menu
 
 _ = wx.GetTranslation
 
@@ -28,6 +27,11 @@ BUTTONSIZE = 20
 
 
 class BasicOpPanel(wx.Panel):
+    """
+    Basic interface to assign elements to operations.
+    Very much like the layer concept in other laser software products
+    """
+
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -57,9 +61,7 @@ class BasicOpPanel(wx.Panel):
             + _("-> Elem - the elements will adopt the color of the assigned operation")
         )
         self.check_all_similar.SetToolTip(
-            _(
-                "Assign as well all other elements with the same stroke-color"
-            )
+            _("Assign as well all other elements with the same stroke-color")
         )
         self.check_exclusive.SetToolTip(
             _(
@@ -380,9 +382,7 @@ class BasicOpPanel(wx.Panel):
                     + "\n"
                     + _("Assign the selected elements to the operation.")
                     + "\n"
-                    + _(
-                        "Right click: Extended options for operation"
-                    )
+                    + _("Right click: Extended options for operation")
                 )
                 btn.SetMinSize(wx.Size(20, -1))
                 btn.SetMaxSize(wx.Size(20, -1))
@@ -396,7 +396,9 @@ class BasicOpPanel(wx.Panel):
                 info = op.type[3:].capitalize()
                 if op.label is not None:
                     info = info[0] + ": " + op.label
-                header = wx.StaticText(self.op_panel, wx.ID_ANY, label=info, style=wx.ST_ELLIPSIZE_END)
+                header = wx.StaticText(
+                    self.op_panel, wx.ID_ANY, label=info, style=wx.ST_ELLIPSIZE_END
+                )
                 header.SetMinSize(wx.Size(30, -1))
                 header.SetMaxSize(wx.Size(70, -1))
                 op_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -420,9 +422,7 @@ class BasicOpPanel(wx.Panel):
                 c_show = wx.CheckBox(self.op_panel, id=wx.ID_ANY)
                 c_show.SetMinSize(wx.Size(30, -1))
                 c_show.SetMaxSize(wx.Size(50, -1))
-                c_show.SetToolTip(
-                    _("Hide all contained elements on scene if not set.")
-                )
+                c_show.SetToolTip(_("Hide all contained elements on scene if not set."))
                 self.op_panel.Bind(wx.EVT_CHECKBOX, on_check_show(op), c_show)
                 if hasattr(op, "is_visible"):
                     flag = bool(op.is_visible)
@@ -456,7 +456,7 @@ class BasicOpPanel(wx.Panel):
                     else:
                         t_power.SetValue(f"{sval:.0f}")
                         unit = "ppi"
-                    t_power.SetToolTip( _("Power ({unit})").format(unit=unit) )
+                    t_power.SetToolTip(_("Power ({unit})").format(unit=unit))
                 else:
                     t_power.Enable(False)
                 t_power.SetActionRoutine(on_power(op, t_power))
@@ -513,7 +513,7 @@ class BasicOpPanel(wx.Panel):
                 if args[0] is self.context.elements.op_branch:
                     myl = list(self.context.elements.ops())
                 else:
-                    myl = [ args[0] ]
+                    myl = [args[0]]
             for n in myl:
                 if n.type.startswith("op "):
                     hadops = True
@@ -532,7 +532,7 @@ class BasicOpPanel(wx.Panel):
                 if args[0] is self.context.elements.op_branch:
                     myl = list(self.context.elements.ops())
                 else:
-                    myl = [ args[0] ]
+                    myl = [args[0]]
             for n in myl:
                 if n.type.startswith("op "):
                     hadops = True
