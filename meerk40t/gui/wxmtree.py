@@ -6,6 +6,7 @@ from meerk40t.core.elements.element_types import op_nodes
 from ..core.units import Length
 from ..kernel import signal_listener
 from ..svgelements import Color
+from .basicops import BasicOpPanel
 from .icons import (
     get_default_scale_factor,
     icon_meerk40t,
@@ -49,6 +50,16 @@ _ = wx.GetTranslation
 
 
 def register_panel_tree(window, context):
+    notetab = wx.aui.AuiNotebook(
+        window,
+        wx.ID_ANY,
+        style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
+        | wx.aui.AUI_NB_SCROLL_BUTTONS
+        | wx.aui.AUI_NB_TAB_SPLIT
+        | wx.aui.AUI_NB_TAB_MOVE,
+    )
+
+    basic = BasicOpPanel(window, wx.ID_ANY, context=context)
     wxtree = TreePanel(window, wx.ID_ANY, context=context)
     pane = (
         aui.AuiPaneInfo()
@@ -64,8 +75,10 @@ def register_panel_tree(window, context):
         .CaptionVisible(not context.pane_lock)
         .TopDockable(False)
     )
+    notetab.AddPage(basic, _("Basic"))
+    notetab.AddPage(wxtree, _("Expert"))
     pane.dock_proportion = 500
-    pane.control = wxtree
+    pane.control = notetab
     window.on_pane_create(pane)
     context.register("pane/tree", pane)
 
