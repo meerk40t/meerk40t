@@ -79,6 +79,10 @@ class BasicOpPanel(wx.Panel):
         self.check_all_similar.Bind(wx.EVT_CHECKBOX, self.on_check_allsimilar)
         self.combo_apply_color.Bind(wx.EVT_COMBOBOX, self.on_combo_color)
 
+        self.btn_config = wx.Button(self, wx.ID_ANY, "...")
+        self.btn_config.SetMinSize(wx.Size(25, -1))
+        self.btn_config.SetMaxSize(wx.Size(25, -1))
+        self.btn_config.Bind(wx.EVT_BUTTON, self.on_config)
         self.main_sizer = wx.BoxSizer(wx.VERTICAL)
         self.op_panel = ScrolledPanel(self, wx.ID_ANY)
         self.op_panel.SetupScrolling()
@@ -88,6 +92,7 @@ class BasicOpPanel(wx.Panel):
         option_sizer.Add(self.combo_apply_color, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         option_sizer.Add(self.check_exclusive, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         option_sizer.Add(self.check_all_similar, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        option_sizer.Add(self.btn_config, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.main_sizer.Add(self.op_panel, 1, wx.EXPAND, 0)
         self.main_sizer.Add(option_sizer, 0, wx.EXPAND, 0)
@@ -137,6 +142,12 @@ class BasicOpPanel(wx.Panel):
             similar=similar,
             exclusive=exclusive,
         )
+
+    def on_config(self, event):
+        mynode = self.context.elements.op_branch
+        mynode.selected = True
+        create_menu(self, mynode, self.context.elements)
+
 
     def fill_operations(self):
         def on_button_left(node):
