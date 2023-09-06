@@ -226,9 +226,6 @@ class NewlyDriver:
         @param y:
         @return:
         """
-        if self.service.swap_xy:
-            x, y = y, x
-
         self.connection.sync()
         try:
             self.connection.set_xy(*self.service.view.position(x, y))

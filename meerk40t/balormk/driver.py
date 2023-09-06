@@ -380,8 +380,6 @@ class BalorDriver:
         @param y:
         @return:
         """
-        if self.service.swap_xy:
-            x, y = y, x
         old_current = self.service.current
         self.native_x, self.native_y = self.service.view.position(x, y)
         if self.native_x > 0xFFFF:
@@ -408,8 +406,6 @@ class BalorDriver:
         @param dy:
         @return:
         """
-        if self.service.swap_xy:
-            dx, dy = dy, dx
         old_current = self.service.current
         unit_dx, unit_dy = self.service.view.position(dx, dy, vector=True)
         self.native_x += unit_dx

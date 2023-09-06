@@ -287,8 +287,6 @@ class MoshiDriver(Parameters):
         @param y:
         @return:
         """
-        if self.service.swap_xy:
-            x, y = y, x
         x, y = self.service.view.position(x, y)
         self.rapid_mode()
         self._move_absolute(int(x), int(y))

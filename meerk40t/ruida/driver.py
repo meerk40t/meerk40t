@@ -280,8 +280,6 @@ class RuidaDriver:
         @param y:
         @return:
         """
-        if self.service.swap_xy:
-            x, y = y, x
         old_current = self.service.current
         self.native_x, self.native_y = self.service.view.position(x, y)
         if self.native_x > 0xFFFF:
