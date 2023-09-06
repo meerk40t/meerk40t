@@ -6,7 +6,7 @@ from meerk40t.core.elements.element_types import op_nodes
 from ..core.units import Length
 from ..kernel import signal_listener
 from ..svgelements import Color
-from .basicops import BasicOpPanel
+from .basicops import BasicOpPanel, BasicElemPanel
 from .icons import (
     get_default_scale_factor,
     icon_meerk40t,
@@ -50,6 +50,18 @@ _ = wx.GetTranslation
 
 
 def register_panel_tree(window, context):
+
+    context.elements.setting(int, "tree_panel_page", 0)
+    lastpage = getattr(context.elements, "tree_panel_page", 0)
+    if lastpage is None or lastpage < 0 or lastpage > 2:
+        lastpage = 0
+
+    def on_panel_change(event):
+        context.elements.setting(int, "tree_panel_page", 0)
+        pagenum = notetab.GetSelection()
+        context.elements.tree_panel_change = pagenum
+        return
+
     notetab = wx.aui.AuiNotebook(
         window,
         wx.ID_ANY,
@@ -59,7 +71,8 @@ def register_panel_tree(window, context):
         | wx.aui.AUI_NB_TAB_MOVE,
     )
 
-    basic = BasicOpPanel(window, wx.ID_ANY, context=context)
+    basic_op = BasicOpPanel(window, wx.ID_ANY, context=context)
+    basic_elem = BasicElemPanel(window, wx.ID_ANY, context=context)
     wxtree = TreePanel(window, wx.ID_ANY, context=context)
     pane = (
         aui.AuiPaneInfo()
@@ -75,8 +88,12 @@ def register_panel_tree(window, context):
         .CaptionVisible(not context.pane_lock)
         .TopDockable(False)
     )
-    notetab.AddPage(basic, _("Basic"))
+
+    notetab.AddPage(basic_op, _("Burn-Operation"))
+    notetab.AddPage(basic_elem, _("Element"))
     notetab.AddPage(wxtree, _("Expert"))
+    notetab.SetSelection(lastpage)
+    notetab.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, on_panel_change)
     pane.dock_proportion = 500
     pane.control = notetab
     window.on_pane_create(pane)
