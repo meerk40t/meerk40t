@@ -147,8 +147,6 @@ class GRBLDriver(Parameters):
         @param y:
         @return:
         """
-        if self.service.swap_xy:
-            x, y = y, x
         self._g90_absolute()
         self._clean()
         old_current = self.service.current
