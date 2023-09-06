@@ -76,8 +76,8 @@ Open source projects live and die with their support. There are a lots of ways t
 You can find and download all current and historical versions in the [Releases](https://github.com/meerk40t/meerk40t/releases) section.
 Currently there are three relevant branches:
 * 0.7 - K40 support only (including ruidacontrol emulator for 3rd party lasersoftware integration) - no longer supported, still good enough for 3rd party integration, latest version [0.7.10](https://github.com/meerk40t/meerk40t/releases/tag/0.7.10000)
-* 0.8 - Multi laser support - receives critical bugfixes but no more new features, latest version: [0.8.9](https://github.com/meerk40t/meerk40t/releases#latest)
-* 0.9 - Active development (beta) branch with new features and some underlying architectural changes, if you feel brave, try the latest released version: [0.9-rc1](https://github.com/meerk40t/meerk40t/releases/tag/0.9.0011)
+* 0.8 - Multi laser support - receives critical bugfixes but no more new features, latest version: [0.8.10](https://github.com/meerk40t/meerk40t/releases#latest)
+* 0.9 - Active development (beta) branch with new features and some underlying architectural changes, if you feel brave, try the latest released version: [0.9-rc2](https://github.com/meerk40t/meerk40t/releases/tag/0.9.0012)
 
 Just download one of the files for Windows, Mac OSX, Linux and Raspberry Pi.
 

@@ -39,7 +39,7 @@ class RuidaControl:
 
         channel = root.channel("console")
         channel(
-            "[red]WARNING: [blue]This is currently being rewritten and is back in beta. Some parts do not work. Use MeerK40t 0.7.x if you want consistency.[normal]",
+            "[red]WARNING: [blue]Non-horizontal rasters may not work well.[normal]",
             ansi=True,
         )
         _ = channel._
