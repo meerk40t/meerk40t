@@ -5,7 +5,7 @@ from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import Angle, Length
 from meerk40t.svgelements import Color, Matrix
-from meerk40t.tools.geomstr import Geomstr, Scanbeam
+from meerk40t.tools.geomstr import Geomstr  # ,  Scanbeam
 
 
 class HatchEffectNode(Node, Stroked):
@@ -30,7 +30,7 @@ class HatchEffectNode(Node, Stroked):
         Node.__init__(
             self, type="effect hatch", id=id, label=label, lock=lock, **kwargs
         )
-        self._formatter = "{effect}{element_type} - {distance} {angle}"
+        self._formatter = "{effect}{element_type} - {distance} {angle} ({children})"
 
         if self.matrix is None:
             self.matrix = Matrix()
@@ -168,6 +168,11 @@ class HatchEffectNode(Node, Stroked):
         )
         default_map["angle"] = str(self.hatch_angle)
         default_map["distance"] = str(self.hatch_distance)
+        print(len(self.children))
+        if len(self.children):
+            default_map["children"] = str(len(self.children))
+        else:
+            default_map["children"] = str(len(self._operands))
         return default_map
 
     @property

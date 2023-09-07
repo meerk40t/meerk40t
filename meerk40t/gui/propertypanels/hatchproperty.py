@@ -60,7 +60,7 @@ class HatchPropertyPanel(ScrolledPanel):
             check="int",
             style=wx.TE_PROCESS_ENTER,
         )
-        sizer_loops.Add(self.text_loops, 1, wx.EXPAND, 0)
+        sizer_loops.Add(self.text_loops, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         self.slider_loops = wx.Slider(self, wx.ID_ANY, 0, 0, 100)
         sizer_loops.Add(self.slider_loops, 3, wx.EXPAND, 0)
         main_sizer.Add(sizer_loops, 1, wx.EXPAND, 0)
@@ -78,7 +78,7 @@ class HatchPropertyPanel(ScrolledPanel):
             check="length",
             style=wx.TE_PROCESS_ENTER,
         )
-        sizer_distance.Add(self.text_distance, 1, wx.EXPAND, 0)
+        sizer_distance.Add(self.text_distance, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_angle = StaticBoxSizer(self, wx.ID_ANY, _("Angle"), wx.HORIZONTAL)
         self.text_angle = TextCtrl(
@@ -89,7 +89,7 @@ class HatchPropertyPanel(ScrolledPanel):
             check="angle",
             style=wx.TE_PROCESS_ENTER,
         )
-        sizer_angle.Add(self.text_angle, 1, wx.EXPAND, 0)
+        sizer_angle.Add(self.text_angle, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         self.slider_angle = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
         sizer_angle.Add(self.slider_angle, 3, wx.EXPAND, 0)
         main_sizer.Add(sizer_angle, 1, wx.EXPAND, 0)
@@ -105,7 +105,7 @@ class HatchPropertyPanel(ScrolledPanel):
             check="angle",
             style=wx.TE_PROCESS_ENTER,
         )
-        sizer_angle_delta.Add(self.text_angle_delta, 1, wx.EXPAND, 0)
+        sizer_angle_delta.Add(self.text_angle_delta, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         self.slider_angle_delta = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
         sizer_angle_delta.Add(self.slider_angle_delta, 3, wx.EXPAND, 0)
         main_sizer.Add(sizer_angle_delta, 1, wx.EXPAND, 0)

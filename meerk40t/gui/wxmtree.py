@@ -344,6 +344,12 @@ class TreePanel(wx.Panel):
         tree = self.shadow_tree.wxtree
         tree.Expand(opitem)
 
+    @signal_listener("updateelem_tree")
+    def on_update_elem_tree(self, origin, *args):
+        elitem = self.context.elements.get(type="branch elems")._item
+        tree = self.shadow_tree.wxtree
+        tree.Expand(elitem)
+
 
 class ElementsTree(MWindow):
     def __init__(self, *args, **kwds):
