@@ -3,7 +3,7 @@ import wx
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 
 from ...core.units import Length
-from ...svgelements import Angle, Color, Matrix
+from ...svgelements import Angle, Matrix
 from ..wxutils import TextCtrl, set_ctrl_value
 from .attributes import ColorPanel, IdPanel
 
@@ -14,7 +14,7 @@ class HatchPropertyPanel(ScrolledPanel):
     def __init__(self, *args, context=None, node=None, **kwds):
         # super().__init__(parent)
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
+        ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
         self.context.setting(
             bool, "_auto_classify", self.context.elements.classify_on_color
