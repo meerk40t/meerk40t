@@ -707,6 +707,8 @@ class Elemental(Service):
         #                 element attrib (ie stroke or fill)
         #               - anything else: leave all colors unchanged
         # attrib:       one of 'stroke', 'fill' to establish the source color
+        #               ('auto' is an option too that will pick the color from the
+        #               operation settings)
         # similar:      will use attrib (see above) to establish similar elements (having (nearly) the same
         #               color) and assign those as well
         # exclusive:    will delete all other assignments of the source elements in other operations if True
@@ -720,18 +722,28 @@ class Elemental(Service):
                     impose = None
             else:
                 impose = None
+                # No need to check, if no one needs it...
+
+        first_color = None
+        target_color = None
+        has_a_color = False
+
+        if impose == "to_elem":
+            target_color = op_assign.color
+            if attrib == "auto":
+                if "stroke" in op_assign.allowed_attributes:
+                    attrib = "stroke"
+                elif "fill" in op_assign.allowed_attributes:
+                    attrib = "fill"
+                else:
+                    attrib = "stroke"
+
         if attrib is None:
             similar = False
         # print ("parameters:")
         # print ("Impose=%s, operation=%s" % (impose, op_assign) )
         # print ("similar=%s, attrib=%s" % (similar, attrib) )
         # print ("exclusive=%s" % exclusive )
-        first_color = None
-        target_color = None
-        has_a_color = False
-        # No need to check, if no one needs it...
-        if impose == "to_elem":
-            target_color = op_assign.color
 
         if impose == "to_op" or similar:
             # Let's establish the color first
@@ -1186,9 +1198,12 @@ class Elemental(Service):
                 power=1000.0,
                 raster_step=3,
             )
-            self.op_branch.add(type="op raster")
-            self.op_branch.add(type="op engrave")
-            self.op_branch.add(type="op cut")
+            node = self.op_branch.add(type="op raster")
+            node.allowed_attributes = ["fill"]
+            node = self.op_branch.add(type="op engrave")
+            node.allowed_attributes = ["stroke"]
+            node = self.op_branch.add(type="op cut")
+            node.allowed_attributes = ["stroke"]
             if performclassify:
                 self.classify(list(self.elems()))
 
@@ -1202,14 +1217,22 @@ class Elemental(Service):
                 power=1000.0,
                 raster_step=3,
             )
-            self.op_branch.add(type="op raster")
-            self.op_branch.add(type="op engrave")
-            self.op_branch.add(type="op engrave", color="blue")
-            self.op_branch.add(type="op engrave", color="green")
-            self.op_branch.add(type="op engrave", color="magenta")
-            self.op_branch.add(type="op engrave", color="cyan")
-            self.op_branch.add(type="op engrave", color="yellow")
-            self.op_branch.add(type="op cut")
+            node = self.op_branch.add(type="op raster")
+            node.allowed_attributes = ["fill"]
+            node = self.op_branch.add(type="op engrave")
+            node.allowed_attributes = ["stroke"]
+            node = self.op_branch.add(type="op engrave", color="blue")
+            node.allowed_attributes = ["stroke"]
+            node = self.op_branch.add(type="op engrave", color="green")
+            node.allowed_attributes = ["stroke"]
+            node = self.op_branch.add(type="op engrave", color="magenta")
+            node.allowed_attributes = ["stroke"]
+            node = self.op_branch.add(type="op engrave", color="cyan")
+            node.allowed_attributes = ["stroke"]
+            node = self.op_branch.add(type="op engrave", color="yellow")
+            node.allowed_attributes = ["stroke"]
+            node = self.op_branch.add(type="op cut")
+            node.allowed_attributes = ["stroke"]
             if performclassify:
                 self.classify(list(self.elems()))
 
