@@ -6,7 +6,7 @@ from meerk40t.core.elements.element_types import op_nodes
 from ..core.units import Length
 from ..kernel import signal_listener
 from ..svgelements import Color
-from .basicops import BasicOpPanel, BasicElemPanel
+from .basicops import BasicOpPanel
 from .icons import (
     get_default_scale_factor,
     icon_meerk40t,
@@ -866,6 +866,7 @@ class ShadowTree:
         # self.last_call = this_call
         op_node = self.elements.get(type="branch ops")
         op_item = op_node._item
+        status = ""
         self.wxtree.Expand(op_item)
         unassigned, unburnt = self.elements.have_unburnable_elements()
         if unassigned or unburnt:
