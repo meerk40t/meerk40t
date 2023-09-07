@@ -4,7 +4,14 @@ from meerk40t.svgelements import Matrix
 
 class View:
     def __init__(
-        self, width, height, dpi=float(UNITS_PER_INCH), dpi_x=None, dpi_y=None, native_scale_x=None, native_scale_y=None
+        self,
+        width,
+        height,
+        dpi=float(UNITS_PER_INCH),
+        dpi_x=None,
+        dpi_y=None,
+        native_scale_x=None,
+        native_scale_y=None,
     ):
         """
         This should init the simple width and height dimensions.
@@ -188,6 +195,16 @@ class View:
             self.flip_y()
         if swap_xy:
             self.swap_xy()
+
+    def rotate_ccw(self):
+        top_left, top_right, bottom_right, bottom_left = self._destination
+        self._destination = (top_right, bottom_right, bottom_left, top_left)
+        self._matrix = None
+
+    def rotate_cw(self):
+        top_left, top_right, bottom_right, bottom_left = self._destination
+        self._destination = (bottom_left, top_left, top_right, bottom_right)
+        self._matrix = None
 
     def position(self, x, y, vector=False):
         """
