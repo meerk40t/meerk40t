@@ -21,96 +21,10 @@ from .icons import (
     icons8_small_beam_20,
 )
 from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, create_menu
-from .propertypanels.attributes import (
-    PositionSizePanel,
-    ColorPanel,
-    PreventChangePanel,
-    StrokeWidthPanel,
-    LinePropPanel,
-)
-from .propertypanels.textproperty import TextPropertyPanel
 
 _ = wx.GetTranslation
 
 BUTTONSIZE = 20
-
-
-class LabelPanel(wx.Panel):
-    def __init__(
-        self, *args, context=None, node=None, showid=True, showlabel=True, **kwds
-    ):
-        # begin wxGlade: LayerSettingPanel.__init__
-        kwds["style"] = kwds.get("style", 0)
-        wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
-        self.node = node
-
-        self.text_label = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
-
-        main_sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer_id_label = wx.BoxSizer(wx.HORIZONTAL)
-        self.sizer_label = StaticBoxSizer(self, wx.ID_ANY, _("Label"), wx.HORIZONTAL)
-        self.sizer_label.Add(self.text_label, 1, wx.EXPAND, 0)
-        self.btn_props = wx.Button(self, wx.ID_ANY, "...")
-        self.btn_props.SetMaxSize(wx.Size(25, -1))
-        self.btn_props.SetMinSize(wx.Size(25, -1))
-        self.sizer_label.Add(self.btn_props, 0, wx.EXPAND, 0)
-        sizer_id_label.Add(self.sizer_label, 1, wx.EXPAND, 0)
-
-        self.btn_props.Bind(wx.EVT_BUTTON, self.on_button)
-        main_sizer.Add(sizer_id_label, 0, wx.EXPAND, 0)
-
-        self.SetSizer(main_sizer)
-        main_sizer.Fit(self)
-        self.Layout()
-        self.text_label.SetActionRoutine(self.on_text_label_change)
-        self.set_widgets(self.node)
-
-    def on_button(self, event):
-        if self.node is not None:
-            self.node.selected = True
-            create_menu(self, self.node, self.context.elements)
-
-    def on_text_label_change(self):
-        try:
-            self.node.label = self.text_label.GetValue()
-            self.context.elements.signal("element_property_reload", self.node)
-        except AttributeError:
-            pass
-
-    def pane_hide(self):
-        pass
-
-    def pane_show(self):
-        pass
-
-    def set_widgets(self, node):
-        def mklabel(value):
-            res = ""
-            if value is not None:
-                res = str(value)
-            return res
-
-        self.node = node
-        # print(f"set_widget for {self.attribute} to {str(node)}")
-        vis = False
-        if node is not None:
-
-            try:
-                if hasattr(self.node, "label"):
-                    vis = True
-                    self.text_label.SetValue(mklabel(node.label))
-                    self.sizer_label.SetLabel(_("Label") + f" ({node.type})")
-                self.text_label.Show(vis)
-                self.sizer_label.Show(vis)
-            except RuntimeWarning:
-                # Could happen if the propertypanel has been destroyed
-                pass
-
-        if vis:
-            self.Show()
-        else:
-            self.Hide()
 
 
 class OperationAssignment(wx.Panel):

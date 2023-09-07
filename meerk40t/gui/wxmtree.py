@@ -72,7 +72,6 @@ def register_panel_tree(window, context):
     )
 
     basic_op = BasicOpPanel(window, wx.ID_ANY, context=context)
-    basic_elem = BasicElemPanel(window, wx.ID_ANY, context=context)
     wxtree = TreePanel(window, wx.ID_ANY, context=context)
     pane = (
         aui.AuiPaneInfo()
@@ -90,8 +89,7 @@ def register_panel_tree(window, context):
     )
 
     notetab.AddPage(basic_op, _("Burn-Operation"))
-    notetab.AddPage(basic_elem, _("Element"))
-    notetab.AddPage(wxtree, _("Expert"))
+    notetab.AddPage(wxtree, _("Details"))
     notetab.SetSelection(lastpage)
     notetab.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, on_panel_change)
     pane.dock_proportion = 500
