@@ -872,7 +872,11 @@ class ShadowTree:
         # self.last_call = this_call
         op_node = self.elements.get(type="branch ops")
         op_item = op_node._item
+
         status = ""
+        if op_item is None:
+            return
+
         self.wxtree.Expand(op_item)
         unassigned, unburnt = self.elements.have_unburnable_elements()
         if unassigned or unburnt:

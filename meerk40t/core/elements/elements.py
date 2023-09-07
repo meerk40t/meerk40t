@@ -999,6 +999,8 @@ class Elemental(Service):
             if q.bounds is None:
                 continue
             if as_group == 0:
+                if q.bounds is None:
+                    continue
                 left_edge = q.bounds[0]
                 top_edge = q.bounds[1]
                 right_edge = q.bounds[2]
