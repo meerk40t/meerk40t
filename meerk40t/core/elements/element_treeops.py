@@ -1737,14 +1737,14 @@ def init_tree(kernel):
         self.signal("refresh_tree")
 
     @tree_submenu(_("Append special effect"))
-    @tree_operation(_("Append Eulerian 1mm"), node_type="branch elems", help="")
+    @tree_operation(_("Append Line-fill 0.1mm"), node_type="branch elems", help="")
     def append_element_effect_eulerian(
         node, node_type="branch elems", pos=None, **kwargs
     ):
         self.elem_branch.add(
             type="effect hatch",
-            hatch_type="eulerian",
-            hatch_distance="1mm",
+            hatch_type="scanline",
+            hatch_distance="0.1mm",
             hatch_angle="0deg",
             pos=pos,
         )
@@ -1752,15 +1752,15 @@ def init_tree(kernel):
 
     @tree_submenu(_("Append special effect"))
     @tree_operation(
-        _("Append diagonal Eulerian 1mm"), node_type="branch elems", help=""
+        _("Append diagonal Line-fill 0.1mm"), node_type="branch elems", help=""
     )
     def append_element_effect_eulerian_45(
         node, node_type="branch elems", pos=None, **kwargs
     ):
         self.elem_branch.add(
             type="effect hatch",
-            hatch_type="eulerian",
-            hatch_distance="1mm",
+            hatch_type="scanline",  # scanline / eulerian
+            hatch_distance="0.1mm",
             hatch_angle="45deg",
             pos=pos,
         )

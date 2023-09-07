@@ -1823,6 +1823,12 @@ class ShadowTree:
                             "This will define an origin from where all the elements in this scene\n"
                             + "will be plotted. You can have multiple such job start points"
                         )
+                    elif node.type == "effect hatch":
+                        ttip = _(
+                            "This is a special node that will consume any other closed path\n"
+                            + "you drag onto it and will fill the shape with a line pattern.\n"
+                            + "To activate / deactivate this effect please use the context menu."
+                        )
         self._last_hover_item = item
         if ttip != self.wxtree.GetToolTipText():
             self.wxtree.SetToolTip(ttip)
