@@ -233,19 +233,7 @@ class GRBLDevice(Service):
             dpi_x=1000.,
             dpi_y=1000.,
         )
-        self.view.transform(
-            user_scale_x=self.scale_x,
-            user_scale_y=self.scale_y,
-            flip_x=self.flip_x,
-            flip_y=self.flip_y,
-            swap_xy=self.swap_xy
-        )
-        # rotary_active=self.rotary_active,
-        # rotary_scale_x=self.rotary_scale_x,
-        # rotary_scale_y=self.rotary_scale_y,
-        # rotary_flip_x=self.rotary_flip_x,
-        # rotary_flip_y=self.rotary_flip_y,
-
+        self.realize()
         self.settings = dict()
         self.state = 0
 
@@ -771,4 +759,9 @@ class GRBLDevice(Service):
             flip_y=self.flip_y,
             swap_xy=self.swap_xy
         )
+        # rotary_active=self.rotary_active,
+        # rotary_scale_x=self.rotary_scale_x,
+        # rotary_scale_y=self.rotary_scale_y,
+        # rotary_flip_x=self.rotary_flip_x,
+        # rotary_flip_y=self.rotary_flip_y,
         self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)
