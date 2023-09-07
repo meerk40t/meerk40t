@@ -168,7 +168,7 @@ class HatchEffectNode(Node, Stroked):
         )
         default_map["angle"] = str(self.hatch_angle)
         default_map["distance"] = str(self.hatch_distance)
-        print(len(self.children))
+
         if len(self.children):
             default_map["children"] = str(len(self.children))
         else:
