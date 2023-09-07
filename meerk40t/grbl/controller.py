@@ -222,6 +222,7 @@ class GrblController:
 
         self._paused = False
         self._watchers = []
+        self.is_shutdown = False
 
     def __repr__(self):
         return f"GRBLController('{self.service.location()}')"
@@ -399,6 +400,10 @@ class GrblController:
                 daemon=True,
             )
 
+    def shutdown(self):
+        self.is_shutdown = True
+        self._forward_buffer.clear()
+
     def _rstop(self, *args):
         self._recving_thread = None
 
@@ -560,6 +565,8 @@ class GrblController:
                     return
                 if not response:
                     time.sleep(0.01)
+                    if self.is_shutdown:
+                        return
             self.service.signal("grbl;response", response)
             self.log(response, type="recv")
             if response == "ok":
