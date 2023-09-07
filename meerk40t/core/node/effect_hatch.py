@@ -85,6 +85,7 @@ class HatchEffectNode(Node, Stroked):
     @angle.setter
     def angle(self, value):
         self.hatch_angle = value
+        self.settings["hatch_angle"] = str(value)
         self.recalculate()
 
     @property
@@ -94,15 +95,17 @@ class HatchEffectNode(Node, Stroked):
     @delta.setter
     def delta(self, value):
         self.hatch_angle_delta = value
+        self.settings["hatch_angle_delta"] = str(value)
         self.recalculate()
 
     @property
     def distance(self):
-        return self.hatch_angle
+        return self.hatch_distance
 
     @distance.setter
-    def distance(self, angle):
-        self.hatch_distance = angle
+    def distance(self, value):
+        self.hatch_distance = value
+        self.settings["hatch_distance"] = str(value)
         self.recalculate()
 
     def recalculate(self):
