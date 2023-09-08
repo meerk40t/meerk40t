@@ -10,6 +10,7 @@ import os.path
 from time import time
 
 from meerk40t.core.exceptions import BadFileError
+from meerk40t.core.node.node import Node
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
@@ -1097,13 +1098,13 @@ class Elemental(Service):
         for e in self.flat():
             e.unregister()
 
-    def save_persistent_operations(self, name):
+    def save_persistent_operations_list(self, name, oplist):
         settings = self.op_data
         subitems = list(settings.derivable(name))
         for section in subitems:
             settings.clear_persistent(section)
         # settings.clear_persistent(name)
-        for i, op in enumerate(self.ops()):
+        for i, op in enumerate(oplist):
             if hasattr(op, "allow_save"):
                 if not op.allow_save():
                     continue
@@ -1113,6 +1114,10 @@ class Elemental(Service):
 
         settings.write_configuration()
 
+    def save_persistent_operations(self, name):
+        opl = [op for op in self.ops()]
+        self.save_persistent_operations_list(name, opl)
+
     def clear_persistent_operations(self, name):
         settings = self.op_data
         subitems = list(settings.derivable(name))
@@ -1120,21 +1125,31 @@ class Elemental(Service):
             settings.clear_persistent(section)
         settings.write_configuration()
 
-    def load_persistent_operations(self, name):
-        self.clear_operations()
+    def load_persistent_op_list(self, name):
+        oplist = []
         settings = self.op_data
-        operation_branch = self._tree.get(type="branch ops")
         for section in list(settings.derivable(name)):
             op_type = settings.read_persistent(str, section, "type")
             # That should not happen, but it happens nonetheless...
             # So recover gracefully
             try:
-                op = operation_branch.add(type=op_type)
-            except (AttributeError, RuntimeError, ValueError):
-                print(f"That should not happen, but ops contained: '{op_type}'")
+                op = Node().create(type=op_type)
+            except (AttributeError, RuntimeError, ValueError) as err:
+                print(f"That should not happen, but ops contained: '{op_type}' [{err}]")
                 continue
 
             op.load(settings, section)
+            oplist.append(op)
+
+        return oplist
+
+    def load_persistent_operations(self, name):
+        self.clear_operations()
+        operation_branch = self._tree.get(type="branch ops")
+        opl = self.load_persistent_op_list(name)
+        for op in opl:
+            operation_branch.add_node(op)
+
         if len(list(self.elems())) > 0:
             self.classify(list(self.elems()))
         self.signal("updateop_tree")
