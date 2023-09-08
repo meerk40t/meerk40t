@@ -130,9 +130,9 @@ class DefaultOperationWidget(StatusBarWidget):
             create_image()
             needs_save = True
         # Ensure we have an id for everything
-        for idx, op in enumerate(oplist):
-            if op.id is None:
-                op.id = f"{idx:02d}"
+        for opidx, opnode in enumerate(oplist):
+            if opnode.id is None:
+                opnode.id = f"{opidx:02d}"
                 needs_save = True
         if needs_save:
             self.context.elements.save_persistent_operations_list("_default", oplist)
@@ -156,6 +156,7 @@ class DefaultOperationWidget(StatusBarWidget):
             ptsize=12,
         ).GetBitmap()
         self.btn_prev.SetBitmap(icon)
+        self.btn_prev.SetToolTip(_("Previous entries"))
         self.Add(self.btn_prev, 0, 0, 0)
         self.btn_prev.Bind(wx.EVT_LEFT_DOWN, self.on_prev)
         self.SetActive(self.btn_prev, False)
@@ -200,6 +201,7 @@ class DefaultOperationWidget(StatusBarWidget):
             ptsize=12,
         ).GetBitmap()
         self.btn_next.SetBitmap(icon)
+        self.btn_next.SetToolTip(_("Next entries"))
         self.Add(self.btn_next, 0, 0, 0)
         self.SetActive(self.btn_next, False)
         self.btn_next.Bind(wx.EVT_LEFT_DOWN, self.on_next)
@@ -230,7 +232,7 @@ class DefaultOperationWidget(StatusBarWidget):
             residual = False
             for idx, btn in enumerate(self.assign_buttons):
                 w = self.buttonsize
-                dbg = f"Check btn {idx} ({self.op_nodes[idx].id}): x={x}, w={w}"
+                # dbg = f"Check btn {idx} ({self.op_nodes[idx].id}): x={x}, w={w}"
                 btnflag = False
                 if not residual:
                     if self.op_nodes[idx] is None:

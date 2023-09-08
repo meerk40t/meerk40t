@@ -160,9 +160,12 @@ class MeerK40t(MWindow):
         self.__set_menubars()
         # Status Bar
         self.startup = True
-        self.main_statusbar = CustomStatusBar(self, 4)
+        # Combine the panels to have more space
+        combine = True
+        pcount = 3 if combine else 4
+        self.main_statusbar = CustomStatusBar(self, pcount)
         self.widgets_created = False
-        self.setup_statusbar_panels()
+        self.setup_statusbar_panels(combine)
         self.SetStatusBar(self.main_statusbar)
         self.main_statusbar.SetStatusStyles(
             [wx.SB_SUNKEN] * self.main_statusbar.GetFieldsCount()
@@ -208,15 +211,20 @@ class MeerK40t(MWindow):
         elif self.context.update_check == 2:
             self.context("check_for_updates --beta --verbosity 2\n")
 
-    def setup_statusbar_panels(self):
-        if not self.context.show_colorbar:
-            return
+    def setup_statusbar_panels(self, combine):
+        # if not self.context.show_colorbar:
+        #     return
         self.widgets_created = True
-        self.idx_selection = self.main_statusbar.panelct - 1
-        self.idx_colors = self.main_statusbar.panelct - 2
-        self.idx_assign = self.main_statusbar.panelct - 3
+        if combine:
+            self.idx_colors = self.main_statusbar.panelct - 2
+            self.idx_assign = self.main_statusbar.panelct - 2
+        else:
+            self.idx_colors = self.main_statusbar.panelct - 2
+            self.idx_assign = self.main_statusbar.panelct - 3
 
         self.status_panel = StatusPanelWidget(self.main_statusbar.panelct)
+        self.idx_selection = self.main_statusbar.panelct - 1
+
         self.main_statusbar.add_panel_widget(self.status_panel, 0, "status", True)
 
         self.select_panel = SelectionWidget()
@@ -519,18 +527,18 @@ class MeerK40t(MWindow):
         self.context.signal("refresh_scene", "Scene")
 
     # --- Listen to external events to update the bar
-    @signal_listener("show_colorbar")
-    def on_colobar_signal(self, origin, *args):
-        if len(args) > 0:
-            showem = args[0]
-        else:
-            showem = True
-        if showem:
-            if not self.widgets_created:
-                self.setup_statusbar_panels()
-        else:
-            if self.widgets_created:
-                self.destroy_statusbar_panels()
+    # @signal_listener("show_colorbar")
+    # def on_colobar_signal(self, origin, *args):
+    #     if len(args) > 0:
+    #         showem = args[0]
+    #     else:
+    #         showem = True
+    #     if showem:
+    #         if not self.widgets_created:
+    #             self.setup_statusbar_panels()
+    #     else:
+    #         if self.widgets_created:
+    #             self.destroy_statusbar_panels()
 
     @signal_listener("element_property_reload")
     @signal_listener("element_property_update")
@@ -558,7 +566,7 @@ class MeerK40t(MWindow):
     def on_update_statusbar(self, origin, *args):
         value = self.context.elements.has_emphasis()
         self._update_status_edit_menu()(None)
-        if not self.context.show_colorbar or not self.widgets_created:
+        if not self.widgets_created:
             return
 
         self.main_statusbar.Signal("emphasized")
@@ -739,21 +747,21 @@ class MeerK40t(MWindow):
         ]
         context.kernel.register_choices("preferences", choices)
 
-        choices = [
-            {
-                "attr": "show_colorbar",
-                "object": self.context.root,
-                "default": True,
-                "type": bool,
-                "label": _("Display colorbar in statusbar"),
-                "tip": _(
-                    "Enable the display of a colorbar at the bottom of the screen."
-                ),
-                "page": "Gui",
-                "section": "General",
-            },
-        ]
-        context.kernel.register_choices("preferences", choices)
+        # choices = [
+        #     {
+        #         "attr": "show_colorbar",
+        #         "object": self.context.root,
+        #         "default": True,
+        #         "type": bool,
+        #         "label": _("Display colorbar in statusbar"),
+        #         "tip": _(
+        #             "Enable the display of a colorbar at the bottom of the screen."
+        #         ),
+        #         "page": "Gui",
+        #         "section": "General",
+        #     },
+        # ]
+        # context.kernel.register_choices("preferences", choices)
 
         choices = [
             {
@@ -3424,7 +3432,7 @@ class MeerK40t(MWindow):
     def on_spooler_queue_signal(self, origin, *args):
         self.main_statusbar.Signal("spooler;queue", args)
 
-        if not self.context.show_colorbar or not self.widgets_created:
+        if not self.widgets_created:
             return
         # Queue Len
         if len(args) > 0:
