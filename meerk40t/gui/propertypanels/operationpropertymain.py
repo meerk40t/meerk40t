@@ -1974,7 +1974,7 @@ class ParameterPanel(ScrolledPanel):
             wx.ID_ANY,
             context=context,
             node=node,
-            showid=False,
+            showid=True,
         )
         param_sizer.Add(self.id_panel, 0, wx.EXPAND, 0)
         self.panels.append(self.id_panel)
