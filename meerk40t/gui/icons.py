@@ -187,10 +187,27 @@ class EmptyIcon:
                 "[black]": wx.BLACK,
             }
             txt_color = wx.BLACK
+            autocolor = True
             for pat in pattern:
                 if msg.startswith(pat):
                     txt_color = pattern[pat]
+                    autocolor = False
                     msg = msg[len(pat) :]
+            if autocolor:
+                c1 = self._color
+                c2 = wx.BLACK
+                red_mean = int((c1.red + c2.red) / 2.0)
+                r = c1.red - c2.red
+                g = c1.green - c2.green
+                b = c1.blue - c2.blue
+                distance = (
+                    (((512 + red_mean) * r * r) >> 8)
+                    + (4 * g * g)
+                    + (((767 - red_mean) * b * b) >> 8)
+                )
+                # print(distance, c1.red, c1.blue, c1.green)
+                if distance < 200 * 200:
+                    txt_color = wx.WHITE
             if ptsize is None:
                 ptsize = 12
             font = wx.Font(
