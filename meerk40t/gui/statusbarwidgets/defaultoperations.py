@@ -22,10 +22,14 @@ class DefaultOperationWidget(StatusBarWidget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.iconsize = 32
-        self.buttonsize = self.iconsize + 4
+        self.font_size = 8
+        self.buttonsize = self.iconsize + 2
 
         self.assign_buttons = []
         self.op_nodes = []
+        self.positions = []
+        self.page_size = 0
+        self.first_to_show = 0
 
     def init_nodes(self):
         def next_color(primary, secondary, tertiary, delta=32):
@@ -136,7 +140,28 @@ class DefaultOperationWidget(StatusBarWidget):
         self.op_nodes = oplist
 
     def GenerateControls(self, parent, panelidx, identifier, context):
+        # print("GenerateControls called")
         super().GenerateControls(parent, panelidx, identifier, context)
+        self.ClearItems()
+        self.btn_prev = wx.StaticBitmap(
+            self.parent,
+            id=wx.ID_ANY,
+            size=(self.buttonsize, self.buttonsize),
+            # style=wx.BORDER_RAISED,
+        )
+        icon = EmptyIcon(
+            size=self.iconsize,
+            color=wx.LIGHT_GREY,
+            msg="<",
+            ptsize=12,
+        ).GetBitmap()
+        self.btn_prev.SetBitmap(icon)
+        self.Add(self.btn_prev, 0, 0, 0)
+        self.btn_prev.Bind(wx.EVT_LEFT_DOWN, self.on_prev)
+        self.SetActive(self.btn_prev, False)
+        self.first_to_show = 0
+        self.page_size = int((self.width - 2 * self.buttonsize) / self.buttonsize)
+
         self.init_nodes()
         self.assign_buttons.clear()
         for idx, op in enumerate(self.op_nodes):
@@ -150,7 +175,7 @@ class DefaultOperationWidget(StatusBarWidget):
                 size=self.iconsize,
                 color=wx.Colour(swizzlecolor(op.color)),
                 msg=op.id,
-                ptsize=9,
+                ptsize=self.font_size,
             ).GetBitmap()
             btn.SetBitmap(icon)
             op_label = op.label
@@ -161,6 +186,23 @@ class DefaultOperationWidget(StatusBarWidget):
             self.assign_buttons.append(btn)
             btn.Bind(wx.EVT_LEFT_DOWN, self.on_button_left)
             self.Add(btn, 0, 0, 0)
+            self.SetActive(btn, False)
+        self.btn_next = wx.StaticBitmap(
+            parent,
+            id=wx.ID_ANY,
+            size=(self.buttonsize, self.buttonsize),
+            # style=wx.BORDER_RAISED,
+        )
+        icon = EmptyIcon(
+            size=self.iconsize,
+            color=wx.LIGHT_GREY,
+            msg=">",
+            ptsize=12,
+        ).GetBitmap()
+        self.btn_next.SetBitmap(icon)
+        self.Add(self.btn_next, 0, 0, 0)
+        self.SetActive(self.btn_next, False)
+        self.btn_next.Bind(wx.EVT_LEFT_DOWN, self.on_next)
 
     def on_button_left(self, event):
         button = event.GetEventObject()
@@ -175,15 +217,68 @@ class DefaultOperationWidget(StatusBarWidget):
     def Show(self, showit=True):
         # Callback function that decides whether to show an element or not
         if showit:
+            self.page_size = int((self.width - 2 * self.buttonsize) / self.buttonsize)
+            # print(f"Page-Size: {self.page_size}, width={self.width}")
+            x = 0
+            gap = 0
+            if self.first_to_show > 0:
+                self.SetActive(self.btn_prev, True)
+                x = self.buttonsize + gap
+            else:
+                self.SetActive(self.btn_prev, False)
+
+            residual = False
             for idx, btn in enumerate(self.assign_buttons):
-                if self.op_nodes[idx] is None:
-                    self.SetActive(btn, False)
-                else:
-                    self.SetActive(btn, True)
+                w = self.buttonsize
+                dbg = f"Check btn {idx} ({self.op_nodes[idx].id}): x={x}, w={w}"
+                btnflag = False
+                if not residual:
+                    if self.op_nodes[idx] is None:
+                        self.SetActive(btn, False)
+                    else:
+                        if idx < self.first_to_show:
+                            btnflag = False
+                        elif idx == len(self.assign_buttons) - 1:
+                            # The last
+                            if x + w > self.width:
+                                residual = True
+                                btnflag = False
+                            else:
+                                btnflag = True
+                                x += gap + w
+                        else:
+                            if x + w + gap + self.buttonsize > self.width:
+                                residual = True
+                                btnflag = False
+                            else:
+                                btnflag = True
+                                x += gap + w
+                self.SetActive(btn, btnflag)
+                # print(f"{dbg} -> {btnflag}")
+            # print(f"Next button: {residual}")
+            self.SetActive(self.btn_next, residual)
+
         else:
+            self.SetActive(self.btn_prev, False)
             for btn in self.assign_buttons:
                 self.SetActive(btn, False)
+            self.SetActive(self.btn_next, False)
+        self.Layout()
         self.RefreshItems(showit)
+
+    def on_prev(self, event):
+        self.first_to_show -= self.page_size
+        if self.first_to_show < 0:
+            self.first_to_show = 0
+        self.Show(True)
+
+    def on_next(self, event):
+        self.first_to_show += self.page_size
+        if self.first_to_show + self.page_size >= len(self.assign_buttons):
+            self.first_to_show = len(self.assign_buttons) - self.page_size
+        if self.first_to_show < 0:
+            self.first_to_show = 0
+        self.Show(True)
 
     def execute_on(self, targetop):
         data = list(self.context.elements.flat(emphasized=True))
@@ -215,12 +310,16 @@ class DefaultOperationWidget(StatusBarWidget):
         for idx in range(len(self.assign_buttons)):
             myflag = flag and self.op_nodes[idx] is not None
             self.assign_buttons[idx].Enable(myflag)
-            self.assign_buttons[idx].Enable(myflag)
 
         self.parent.Reposition(self.panelidx)
 
     def Signal(self, signal, *args):
         if signal in ("rebuild_tree",):
+            # if hasattr(self, "context") and self.context is not None:
+            #     self.GenerateControls(
+            #         self.parent, self.panelidx, self.identifier, self.context
+            #     )
+            #     self.Show(True)
             pass
         elif signal == "emphasized":
             self.Enable(self.context.elements.has_emphasis())
