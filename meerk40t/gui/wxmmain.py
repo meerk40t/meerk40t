@@ -13,10 +13,12 @@ from meerk40t.gui.statusbarwidgets.infowidget import (
     InformationWidget,
     StatusPanelWidget,
 )
-from meerk40t.gui.statusbarwidgets.opassignwidget import (
-    OperationAssignOptionWidget,
-    OperationAssignWidget,
-)
+
+# from meerk40t.gui.statusbarwidgets.opassignwidget import (
+#     OperationAssignOptionWidget,
+#     OperationAssignWidget,
+# )
+from meerk40t.gui.statusbarwidgets.defaultoperations import DefaultOperationWidget
 from meerk40t.gui.statusbarwidgets.selectionwidget import SelectionWidget
 from meerk40t.gui.statusbarwidgets.shapepropwidget import (
     FillruleWidget,
@@ -226,14 +228,14 @@ class MeerK40t(MWindow):
             self.info_panel, self.idx_selection, "infos", False
         )
 
-        self.assign_button_panel = OperationAssignWidget()
-        self.assign_option_panel = OperationAssignOptionWidget()
+        self.assign_button_panel = DefaultOperationWidget()
+        # self.assign_option_panel = OperationAssignOptionWidget()
         self.main_statusbar.add_panel_widget(
             self.assign_button_panel, self.idx_assign, "assign", True
         )
-        self.main_statusbar.add_panel_widget(
-            self.assign_option_panel, self.idx_assign, "assign-options", True
-        )
+        # self.main_statusbar.add_panel_widget(
+        #     self.assign_option_panel, self.idx_assign, "assign-options", True
+        # )
 
         self.color_panel = ColorWidget()
         self.stroke_panel = StrokeWidget()
@@ -2155,7 +2157,7 @@ class MeerK40t(MWindow):
                 width = 646
                 height = 519
             elif pane == "preferences":
-                from .preferences import PreferencesPanel as CreatePanel
+                from .preferences import PreferencesMain as CreatePanel
 
                 caption = _("Preferences")
                 width = 565
