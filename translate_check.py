@@ -230,7 +230,7 @@ def main():
     if len(args) > 0:
         locale = args[0]
     print("Usage: python ./translate_check.py <locale>")
-    print ("<locale> one of de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, zh")
+    print("<locale> one of de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, zh")
     print(f"Checking translation strings for locale {locale}")
     id_strings_source = read_source()
     id_strings = read_po(locale)
