@@ -271,12 +271,11 @@ class BasicOpPanel(wx.Panel):
         def on_label_single(node):
             def handler(event):
                 self.context.elements.set_emphasis(None)
-                mynode.selected = True
-                mynode.emphasized = True
                 for elem in mynode.children:
                     elem.selected = True
                     if elem.node is not None:
                         elem.node.emphasized = True
+                mynode.highlighted = True
                 self.context.elements.signal("refresh_scene", "Scene")
 
             mynode = node
