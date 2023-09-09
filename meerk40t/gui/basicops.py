@@ -6,7 +6,7 @@ a simpler interface to operations
 
 import wx
 
-from meerk40t.core.elements.element_types import op_nodes
+from meerk40t.core.elements.element_types import op_nodes, elem_nodes
 from meerk40t.gui.laserrender import swizzlecolor
 
 from ..kernel import lookup_listener, signal_listener
@@ -101,6 +101,8 @@ class BasicOpPanel(wx.Panel):
         self.use_percent = False
         self.use_mm_min = False
         self.set_display()
+        self.op_ctrl_list = []
+        self.std_color = None
         # self.fill_operations()
 
     def set_display(self):
@@ -333,6 +335,7 @@ class BasicOpPanel(wx.Panel):
         )
         self.op_panel.SetSizer(self.operation_sizer)
         elements = self.context.elements
+        self.op_ctrl_list.clear()
 
         info_sizer = wx.BoxSizer(wx.HORIZONTAL)
         header = wx.StaticText(self.op_panel, wx.ID_ANY, label=_("Operation"))
@@ -361,7 +364,7 @@ class BasicOpPanel(wx.Panel):
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.operation_sizer.Add(info_sizer, 0, wx.EXPAND, 0)
-
+        self.op_ctrl_list.clear()
         for op in elements.flat(types=op_nodes):
             if op is None:
                 continue
@@ -411,6 +414,9 @@ class BasicOpPanel(wx.Panel):
                 header.SetMinSize(wx.Size(30, -1))
                 header.SetMaxSize(wx.Size(70, -1))
                 op_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+                if self.std_color is None:
+                    self.std_color = wx.Colour(header.GetBackgroundColour())
+                self.op_ctrl_list.append((op, header))
 
                 c_out = wx.CheckBox(self.op_panel, id=wx.ID_ANY)
                 c_out.SetMinSize(wx.Size(30, -1))
@@ -501,9 +507,34 @@ class BasicOpPanel(wx.Panel):
         self.op_panel.SetupScrolling()
         self.operation_sizer.Layout()
         self.op_panel.Layout()
+        self.highlight_operations()
         self.op_panel.Thaw()
         self.op_panel.Refresh()
         # print (f"Fill operations called: {len(self.op_panel.GetChildren())}")
+
+    def highlight_operations(self):
+        active_ops = []
+        highlight = wx.Colour(
+            red=0,
+            blue=255,
+            green=0,
+        )
+        highlight.ChangeLightness(32)
+
+        for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
+            for op in self.context.elements.ops():
+                for refnode in op.children:
+                    if refnode.node is elem:
+                        if op not in active_ops:
+                            active_ops.append(op)
+                        break
+        # print(f"Active ops: {len(active_ops)}")
+        for op, ctrl in self.op_ctrl_list:
+            if op in active_ops:
+                ctrl.SetBackgroundColour(highlight)
+            else:
+                ctrl.SetBackgroundColour(self.std_color)
+            ctrl.Refresh()
 
     def pane_show(self, *args):
         # self.fill_operations()
@@ -566,3 +597,7 @@ class BasicOpPanel(wx.Panel):
     def on_device_update(self, *args):
         self.set_display()
         self.fill_operations()
+
+    @signal_listener("emphasized")
+    def signal_handler_emphasized(self, origin, *args, **kwargs):
+        self.highlight_operations()
