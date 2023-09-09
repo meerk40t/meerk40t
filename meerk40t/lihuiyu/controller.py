@@ -160,6 +160,7 @@ class LihuiyuController:
         self._queue_lock = threading.Lock()
         self._preempt_lock = threading.Lock()
         self._main_lock = threading.Lock()
+        self._connect_lock = threading.RLock()
         self._loop_cond = threading.Condition()
 
         self._status = [0] * 6
@@ -215,6 +216,10 @@ class LihuiyuController:
         return len(self._buffer) + len(self._queue) + len(self._preempt)
 
     def open(self):
+        with self._connect_lock:
+            self._process_open()
+
+    def _process_open(self):
         if self.connection is not None and self.connection.is_connected():
             return  # Already connected.
         _ = self.usb_log._
@@ -299,7 +304,9 @@ class LihuiyuController:
 
     def close(self):
         self.pipe_channel("close()")
-        if self.connection is not None:
+        with self._connect_lock:
+            if self.connection is None:
+                return
             self.connection.close()
             self.connection = None
 
