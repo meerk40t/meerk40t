@@ -4,6 +4,7 @@ fundamental properties of operations. This is supposed to provide
 a simpler interface to operations
 """
 
+from time import perf_counter
 import wx
 
 from meerk40t.core.elements.element_types import op_nodes, elem_nodes
@@ -36,7 +37,7 @@ class BasicOpPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-
+        self.last_signal = 0
         choices = [
             _("Leave color"),
             _("Op inherits color"),
@@ -191,7 +192,9 @@ class BasicOpPanel(wx.Panel):
                     if mynode.output is not None:
                         if not mynode.output:
                             newflag = bool(not mynode.is_visible)
+
                     mynode.is_visible = newflag
+                    self.last_signal = perf_counter()
                     mynode.updated()
                     self.context.elements.validate_selected_area()
                     ops = [mynode]
@@ -214,6 +217,7 @@ class BasicOpPanel(wx.Panel):
                         mynode.updated()
                     except AttributeError:
                         pass
+                    self.last_signal = perf_counter()
                     ops = [mynode]
                     self.context.elements.signal("element_property_update", ops)
                     self.context.elements.signal("warn_state_update", "")
@@ -232,6 +236,7 @@ class BasicOpPanel(wx.Panel):
                         value /= 60
                     if mynode.speed != value:
                         mynode.speed = value
+                        self.last_signal = perf_counter()
                         self.context.elements.signal(
                             "element_property_reload", [mynode], "text_speed"
                         )
@@ -251,6 +256,7 @@ class BasicOpPanel(wx.Panel):
                         value *= 10
                     if node.power != value:
                         node.power = value
+                        self.last_signal = perf_counter()
                         self.context.elements.signal(
                             "element_property_reload", [node], "text_power"
                         )
@@ -577,51 +583,67 @@ class BasicOpPanel(wx.Panel):
 
     @signal_listener("element_property_update")
     def signal_handler_update(self, origin, *args, **kwargs):
-        hadops = False
-        if len(args) > 0:
-            if isinstance(args[0], (list, tuple)):
-                myl = args[0]
-            else:
-                if args[0] is self.context.elements.op_branch:
-                    myl = list(self.context.elements.ops())
+        pc = perf_counter()
+        if pc - self.last_signal > 0.5:
+            # print(f"Delta property update: {pc - self.last_signal:.2f}")
+            hadops = False
+            if len(args) > 0:
+                if isinstance(args[0], (list, tuple)):
+                    myl = args[0]
                 else:
-                    myl = [args[0]]
-            for n in myl:
-                if n.type.startswith("op "):
-                    hadops = True
-                    break
-        # print (f"Signal elem update called {args} / {kwargs} / {len(list(self.context.elements.ops()))}")
-        if hadops:
-            self.fill_operations()
+                    if args[0] is self.context.elements.op_branch:
+                        myl = list(self.context.elements.ops())
+                    else:
+                        myl = [args[0]]
+                for n in myl:
+                    if n.type.startswith("op "):
+                        hadops = True
+                        break
+            # print (f"Signal elem update called {args} / {kwargs} / {len(list(self.context.elements.ops()))}")
+            if hadops:
+                self.fill_operations()
+        self.last_signal = pc
 
     @signal_listener("element_property_reload")
     def signal_handler_reload(self, origin, *args, **kwargs):
-        hadops = False
-        if len(args) > 0:
-            if isinstance(args[0], (list, tuple)):
-                myl = args[0]
-            else:
-                if args[0] is self.context.elements.op_branch:
-                    myl = list(self.context.elements.ops())
+        pc = perf_counter()
+        if pc - self.last_signal > 0.5:
+            # print(f"Delta property reload: {pc - self.last_signal:.2f}")
+            hadops = False
+            if len(args) > 0:
+                if isinstance(args[0], (list, tuple)):
+                    myl = args[0]
                 else:
-                    myl = [args[0]]
-            for n in myl:
-                if n.type.startswith("op "):
-                    hadops = True
-                    break
-        # print (f"Signal elem reload called {args} / {kwargs} / {len(list(self.context.elements.ops()))}")
-        if hadops:
-            self.fill_operations()
+                    if args[0] is self.context.elements.op_branch:
+                        myl = list(self.context.elements.ops())
+                    else:
+                        myl = [args[0]]
+                for n in myl:
+                    if n.type.startswith("op "):
+                        hadops = True
+                        break
+            # print (f"Signal elem reload called {args} / {kwargs} / {len(list(self.context.elements.ops()))}")
+            if hadops:
+                self.fill_operations()
+        self.last_signal = pc
 
     @signal_listener("rebuild_tree")
     def signal_handler_rebuild(self, origin, *args, **kwargs):
         # print (f"Signal rebuild called {args} / {kwargs} / {len(list(self.context.elements.ops()))}")
-        self.fill_operations()
+        pc = perf_counter()
+        if pc - self.last_signal > 0.5:
+            # print(f"Delta rebuild: {pc - self.last_signal:.2f}")
+            self.fill_operations()
+        self.last_signal = pc
 
     @signal_listener("tree_changed")
     def signal_handler_tree(self, origin, *args, **kwargs):
         # print (f"Signal tree changed called {args} / {kwargs} / {len(list(self.context.elements.ops()))}")
-        self.fill_operations()
+        pc = perf_counter()
+        if pc - self.last_signal > 0.5:
+            # print(f"Delta tree: {pc - self.last_signal:.2f}")
+            self.fill_operations()
+        self.last_signal = pc
 
     @signal_listener("power_percent")
     @signal_listener("speed_min")
