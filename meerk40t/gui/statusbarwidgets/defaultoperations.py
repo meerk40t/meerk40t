@@ -22,7 +22,6 @@ class DefaultOperationWidget(StatusBarWidget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.iconsize = 32
-        self.font_size = 8
         self.buttonsize = self.iconsize + 2
 
         self.assign_buttons = []
@@ -54,10 +53,10 @@ class DefaultOperationWidget(StatusBarWidget):
                 for power in (1000,):
                     idx += 1
                     op_label = f"Cut ({power/10:.0f}%, {speed}mm/s)"
-                    op_id = f"C{idx:02d}"
+                    op_id = f"C{idx:01d}"
                     op = CutOpNode(label=op_label, id=op_id, speed=speed, power=power)
                     op.color = Color(red=red, blue=blue, green=green)
-                    red, blue, green = next_color(red, blue, green, delta=48)
+                    red, blue, green = next_color(red, blue, green, delta=64)
                     # print(f"Next for cut: {red} {blue} {green}")
                     op.allowed_attributes = ["stroke"]
                     oplist.append(op)
@@ -72,12 +71,12 @@ class DefaultOperationWidget(StatusBarWidget):
                 for power in (1000, 750, 500):
                     idx += 1
                     op_label = f"Engrave ({power/10:.0f}%, {speed}mm/s)"
-                    op_id = f"E{idx:02d}"
+                    op_id = f"E{idx:01d}"
                     op = EngraveOpNode(
                         label=op_label, id=op_id, speed=speed, power=power
                     )
                     op.color = Color(red=red, blue=blue, green=green)
-                    blue, green, red = next_color(blue, green, red)
+                    blue, green, red = next_color(blue, green, red, delta=24)
                     # print(f"Next for engrave: {red} {blue} {green}")
                     op.allowed_attributes = ["stroke"]
                     oplist.append(op)
@@ -92,11 +91,11 @@ class DefaultOperationWidget(StatusBarWidget):
                 for power in (1000,):
                     idx += 1
                     op_label = f"Raster ({power/10:.0f}%, {speed}mm/s)"
-                    op_id = f"R{idx:02d}"
+                    op_id = f"R{idx:01d}"
                     op = RasterOpNode(
                         label=op_label, id=op_id, speed=speed, power=power
                     )
-                    op.color = Color(red=red, blue=blue, green=green, delta=48)
+                    op.color = Color(red=red, blue=blue, green=green, delta=60)
                     green, red, blue = next_color(green, red, blue)
                     # print(f"Next for raster: {red} {blue} {green}")
                     op.allowed_attributes = ["fill"]
@@ -105,17 +104,17 @@ class DefaultOperationWidget(StatusBarWidget):
         def create_image():
             # Image op
             idx = 0
-            blue = 255
-            green = 255
-            red = 255
+            blue = 0
+            green = 0
+            red = 0
             for speed in (250, 200, 150, 100, 75):
                 for power in (1000,):
                     idx += 1
                     op_label = f"Image ({power/10:.0f}%, {speed}mm/s)"
-                    op_id = f"I{idx:02d}"
+                    op_id = f"I{idx:01d}"
                     op = ImageOpNode(label=op_label, id=op_id, speed=speed, power=power)
                     op.color = Color(red=red, blue=blue, green=green, delta=48)
-                    green, red, blue = next_color(green, red, blue)
+                    green, blue, red = next_color(green, red, blue)
                     # print(f"Next for Image: {red} {blue} {green}")
 
                     oplist.append(op)
@@ -132,7 +131,7 @@ class DefaultOperationWidget(StatusBarWidget):
         # Ensure we have an id for everything
         for opidx, opnode in enumerate(oplist):
             if opnode.id is None:
-                opnode.id = f"{opidx:02d}"
+                opnode.id = f"{opidx:01d}"
                 needs_save = True
         if needs_save:
             self.context.elements.save_persistent_operations_list("_default", oplist)
@@ -172,11 +171,22 @@ class DefaultOperationWidget(StatusBarWidget):
                 size=(self.buttonsize, self.buttonsize),
                 # style=wx.BORDER_RAISED,
             )
+            opid = op.id
+            if opid is None:
+                opid = ""
+            fontsize = 12
+            if len(opid) > 2:
+                fontsize = 10
+            elif len(opid) > 3:
+                fontsize = 8
+            elif len(opid) > 4:
+                fontsize = 6
+
             icon = EmptyIcon(
                 size=self.iconsize,
                 color=wx.Colour(swizzlecolor(op.color)),
-                msg=op.id,
-                ptsize=self.font_size,
+                msg=opid,
+                ptsize=fontsize,
             ).GetBitmap()
             btn.SetBitmap(icon)
             op_label = op.label
