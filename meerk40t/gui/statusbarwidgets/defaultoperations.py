@@ -29,6 +29,19 @@ class DefaultOperationWidget(StatusBarWidget):
         self.page_size = 0
         self.first_to_show = 0
 
+    def node_label(self, node):
+        if isinstance(node, CutOpNode):
+            slabel = f"Cut ({node.power/10:.0f}%, {node.speed}mm/s)"
+        elif isinstance(node, EngraveOpNode):
+            slabel = f"Engrave ({node.power/10:.0f}%, {node.speed}mm/s)"
+        elif isinstance(node, RasterOpNode):
+            slabel = f"Raster ({node.power/10:.0f}%, {node.speed}mm/s)"
+        elif isinstance(node, ImageOpNode):
+            slabel = f"Image ({node.power/10:.0f}%, {node.speed}mm/s)"
+        else:
+            slabel = ""
+        return slabel
+
     def init_nodes(self):
         def next_color(primary, secondary, tertiary, delta=32):
             secondary += delta
@@ -51,9 +64,9 @@ class DefaultOperationWidget(StatusBarWidget):
             for speed in (1, 2, 5):
                 for power in (1000,):
                     idx += 1
-                    op_label = f"Cut ({power/10:.0f}%, {speed}mm/s)"
                     op_id = f"C{idx:01d}"
-                    op = CutOpNode(label=op_label, id=op_id, speed=speed, power=power)
+                    op = CutOpNode(id=op_id, speed=speed, power=power)
+                    op.label = self.node_label(op)
                     op.color = Color(red=red, blue=blue, green=green)
                     red, blue, green = next_color(red, blue, green, delta=64)
                     # print(f"Next for cut: {red} {blue} {green}")
@@ -69,11 +82,11 @@ class DefaultOperationWidget(StatusBarWidget):
             for speed in (20, 35, 50):
                 for power in (1000, 750, 500):
                     idx += 1
-                    op_label = f"Engrave ({power/10:.0f}%, {speed}mm/s)"
                     op_id = f"E{idx:01d}"
                     op = EngraveOpNode(
-                        label=op_label, id=op_id, speed=speed, power=power
+                        id=op_id, speed=speed, power=power
                     )
+                    op.label = self.node_label(op)
                     op.color = Color(red=red, blue=blue, green=green)
                     blue, green, red = next_color(blue, green, red, delta=24)
                     # print(f"Next for engrave: {red} {blue} {green}")
@@ -89,11 +102,11 @@ class DefaultOperationWidget(StatusBarWidget):
             for speed in (250, 200, 150, 100, 75):
                 for power in (1000,):
                     idx += 1
-                    op_label = f"Raster ({power/10:.0f}%, {speed}mm/s)"
                     op_id = f"R{idx:01d}"
                     op = RasterOpNode(
-                        label=op_label, id=op_id, speed=speed, power=power
+                        id=op_id, speed=speed, power=power
                     )
+                    op.label = self.node_label(op)
                     op.color = Color(red=red, blue=blue, green=green, delta=60)
                     green, red, blue = next_color(green, red, blue)
                     # print(f"Next for raster: {red} {blue} {green}")
@@ -109,9 +122,9 @@ class DefaultOperationWidget(StatusBarWidget):
             for speed in (250, 200, 150, 100, 75):
                 for power in (1000,):
                     idx += 1
-                    op_label = f"Image ({power/10:.0f}%, {speed}mm/s)"
                     op_id = f"I{idx:01d}"
-                    op = ImageOpNode(label=op_label, id=op_id, speed=speed, power=power)
+                    op = ImageOpNode(id=op_id, speed=speed, power=power)
+                    op.label = self.node_label(op)
                     op.color = Color(red=red, blue=blue, green=green, delta=48)
                     green, blue, red = next_color(green, red, blue)
                     # print(f"Next for Image: {red} {blue} {green}")
@@ -328,21 +341,18 @@ class DefaultOperationWidget(StatusBarWidget):
         # Let's clean non-used operations that come from defaults...
         deleted = 0
         for op in self.context.elements.ops():
+            if op.id is None:
+                continue
             if len(op.children) == 0:
                 # is this one of the default operations?
-                is_default = False
                 for def_op in self.op_nodes:
-                    if def_op.id is not None and def_op.id == op.id:
-                        # Lets check at least power and speed if they are identical
-                        if def_op.speed == op.speed and def_op.power == op.power:
-                            is_default = True
-                            break
-                if is_default:
-                    deleted += 1
-                    op.remove_node()
+                    if def_op.id == op.id:
+                        deleted += 1
+                        op.remove_node()
+                        break
         if deleted:
             self.context.elements.signal("operation_removed")
-
+        self.reset_tooltips()
         for e in emph_data:
             e.emphasized = True
 
@@ -353,13 +363,33 @@ class DefaultOperationWidget(StatusBarWidget):
 
         self.parent.Reposition(self.panelidx)
 
+    def reset_tooltips(self):
+        # First reset all
+        for idx, node in enumerate(self.op_nodes):
+            slabel = self.node_label(node)
+            if slabel:
+                self.assign_buttons[idx].SetToolTip(slabel)
+        oplist = list(self.context.elements.ops())
+        for node in oplist:
+            if node is None:
+                continue
+            if not hasattr(node, "id"):
+                continue
+            opid = node.id
+            if opid:
+                for idx, op in enumerate(self.op_nodes):
+                    if opid == op.id:
+                        slabel = self.node_label(node)
+                        if slabel:
+                            self.assign_buttons[idx].SetToolTip(slabel)
+                        break
+
     def Signal(self, signal, *args):
         if signal in ("rebuild_tree",):
-            # if hasattr(self, "context") and self.context is not None:
-            #     self.GenerateControls(
-            #         self.parent, self.panelidx, self.identifier, self.context
-            #     )
-            #     self.Show(True)
-            pass
+            self.reset_tooltips()
+        elif signal == "element_property_update":
+            if len(args):
+                self.reset_tooltips()
+
         elif signal == "emphasized":
             self.Enable(self.context.elements.has_emphasis())
