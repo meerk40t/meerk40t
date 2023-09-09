@@ -352,8 +352,13 @@ class BasicOpPanel(wx.Panel):
         header.SetMinSize(wx.Size(30, -1))
         header.SetMaxSize(wx.Size(50, -1))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-
-        header = wx.StaticText(self.op_panel, wx.ID_ANY, label=_("Power"))
+        if self.use_percent:
+            unit = " [%]"
+        else:
+            unit = ""
+        header = wx.StaticText(
+            self.op_panel, wx.ID_ANY, label=_("Power {unit}").format(unit=unit)
+        )
         header.SetMaxSize(wx.Size(30, -1))
         header.SetMaxSize(wx.Size(70, -1))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -466,7 +471,7 @@ class BasicOpPanel(wx.Panel):
                     else:
                         sval = 0
                     if self.use_percent:
-                        t_power.SetValue(f"{sval / 10:.0f}%")
+                        t_power.SetValue(f"{sval / 10:.0f}")
                         unit = "%"
                     else:
                         t_power.SetValue(f"{sval:.0f}")
