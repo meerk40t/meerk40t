@@ -552,11 +552,7 @@ class BasicOpPanel(wx.Panel):
 
     def highlight_operations(self):
         active_ops = []
-        highlight = wx.Colour(
-            red=0,
-            blue=255,
-            green=0,
-        )
+        highlight = wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
         highlight.ChangeLightness(32)
 
         for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
