@@ -487,6 +487,10 @@ class Elemental(Service):
         if list(self.ops()):
             # Something was loaded for default ops. Mark that.
             self.undo.mark("op-loaded")  # Mark defaulted
+
+        # This set of default_operations will be filled from the outside...
+        self.default_operations = []
+
         self._default_stroke = None
         self._default_strokewidth = None
         self._default_fill = None
@@ -2040,7 +2044,7 @@ class Elemental(Service):
                         debug(
                             f"For {op.type}: black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}"
                         )
-                    if hasattr(op, "classifys") and whisperer:
+                    if hasattr(op, "classify") and whisperer:
                         classified, should_break, feedback = op.classify(
                             node,
                             fuzzy=fuzzy,

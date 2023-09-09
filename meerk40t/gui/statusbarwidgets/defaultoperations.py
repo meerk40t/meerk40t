@@ -24,7 +24,6 @@ class DefaultOperationWidget(StatusBarWidget):
         self.iconsize = 32
 
         self.assign_buttons = []
-        self.op_nodes = []
         self.positions = []
         self.page_size = 0
         self.first_to_show = 0
@@ -148,7 +147,7 @@ class DefaultOperationWidget(StatusBarWidget):
         if needs_save:
             self.context.elements.save_persistent_operations_list("_default", oplist)
 
-        self.op_nodes = oplist
+        self.context.elements.default_operations = oplist
 
     def GenerateControls(self, parent, panelidx, identifier, context):
 
@@ -183,7 +182,7 @@ class DefaultOperationWidget(StatusBarWidget):
 
         self.init_nodes()
         self.assign_buttons.clear()
-        for idx, op in enumerate(self.op_nodes):
+        for idx, op in enumerate(self.context.elements.default_operations):
             btn = wx.StaticBitmap(
                 self.parent,
                 id=wx.ID_ANY,
@@ -242,7 +241,7 @@ class DefaultOperationWidget(StatusBarWidget):
         idx = 0
         while idx < len(self.assign_buttons):
             if button is self.assign_buttons[idx]:
-                node = self.op_nodes[idx]
+                node = self.context.elements.default_operations[idx]
                 self.execute_on(node)
                 break
             idx += 1
@@ -263,10 +262,10 @@ class DefaultOperationWidget(StatusBarWidget):
             residual = False
             for idx, btn in enumerate(self.assign_buttons):
                 w = self.buttonsize_x
-                # dbg = f"Check btn {idx} ({self.op_nodes[idx].id}): x={x}, w={w}"
+                # dbg = f"Check btn {idx} ({self.context.elements.default_operations[idx].id}): x={x}, w={w}"
                 btnflag = False
                 if not residual:
-                    if self.op_nodes[idx] is None:
+                    if self.context.elements.default_operations[idx] is None:
                         self.SetActive(btn, False)
                     else:
                         if idx < self.first_to_show:
@@ -345,7 +344,7 @@ class DefaultOperationWidget(StatusBarWidget):
                 continue
             if len(op.children) == 0:
                 # is this one of the default operations?
-                for def_op in self.op_nodes:
+                for def_op in self.context.elements.default_operations:
                     if def_op.id == op.id:
                         deleted += 1
                         op.remove_node()
@@ -358,14 +357,14 @@ class DefaultOperationWidget(StatusBarWidget):
 
     def show_stuff(self, flag):
         for idx in range(len(self.assign_buttons)):
-            myflag = flag and self.op_nodes[idx] is not None
+            myflag = flag and self.context.elements.default_operations[idx] is not None
             self.assign_buttons[idx].Enable(myflag)
 
         self.parent.Reposition(self.panelidx)
 
     def reset_tooltips(self):
         # First reset all
-        for idx, node in enumerate(self.op_nodes):
+        for idx, node in enumerate(self.context.elements.default_operations):
             slabel = self.node_label(node)
             if slabel:
                 self.assign_buttons[idx].SetToolTip(slabel)
@@ -377,7 +376,7 @@ class DefaultOperationWidget(StatusBarWidget):
                 continue
             opid = node.id
             if opid:
-                for idx, op in enumerate(self.op_nodes):
+                for idx, op in enumerate(self.context.elements.default_operations):
                     if opid == op.id:
                         slabel = self.node_label(node)
                         if slabel:
