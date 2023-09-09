@@ -51,16 +51,20 @@ _ = wx.GetTranslation
 
 def register_panel_tree(window, context):
 
-    context.elements.setting(int, "tree_panel_page", 0)
-    lastpage = getattr(context.elements, "tree_panel_page", 0)
+    context.root.setting(int, "tree_panel_page", 0)
+    lastpage = getattr(context.root, "tree_panel_page", 0)
     if lastpage is None or lastpage < 0 or lastpage > 2:
         lastpage = 0
 
-    def on_panel_change(event):
-        context.elements.setting(int, "tree_panel_page", 0)
-        pagenum = notetab.GetSelection()
-        context.elements.tree_panel_change = pagenum
-        return
+    def on_panel_change(context):
+        def handler(event):
+            mycontext.root.setting(int, "tree_panel_page", 0)
+            pagenum = notetab.GetSelection()
+            setattr(mycontext.root, "tree_panel_page", pagenum)
+            return
+
+        mycontext = context
+        return handler
 
     notetab = wx.aui.AuiNotebook(
         window,
@@ -91,7 +95,7 @@ def register_panel_tree(window, context):
     notetab.AddPage(basic_op, _("Burn-Operation"))
     notetab.AddPage(wxtree, _("Details"))
     notetab.SetSelection(lastpage)
-    notetab.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, on_panel_change)
+    notetab.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, on_panel_change(context))
     pane.dock_proportion = 500
     pane.control = notetab
     window.on_pane_create(pane)
