@@ -120,7 +120,6 @@ class GcodeJob:
     def __init__(
         self, driver=None, units_to_device_matrix=None, priority=0, channel=None
     ):
-
         self.units_to_device_matrix = units_to_device_matrix
         self._driver = driver
         self.channel = channel

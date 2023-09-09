@@ -153,7 +153,6 @@ class GoPanel(wx.Panel):
 
 
 def register_panel_go(window, context):
-
     pane = (
         aui.AuiPaneInfo()
         .Bottom()

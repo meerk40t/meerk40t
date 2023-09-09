@@ -527,7 +527,6 @@ class GuideWidget(Widget):
         self.scaled_conversion_y = f * m.value_scale_y()
 
     def _draw_primary_guides(self, gc):
-
         w, h = gc.Size
         p = self.scene.context
         mat = self.scene.widget_root.scene_widget.matrix

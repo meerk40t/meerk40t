@@ -50,7 +50,6 @@ _ = wx.GetTranslation
 
 
 def register_panel_tree(window, context):
-
     context.root.setting(int, "tree_panel_page", 0)
     lastpage = getattr(context.root, "tree_panel_page", 0)
     if lastpage is None or lastpage < 0 or lastpage > 2:
