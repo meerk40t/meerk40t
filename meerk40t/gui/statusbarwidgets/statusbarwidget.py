@@ -85,8 +85,8 @@ class BasicHSizer:
             if min_size[1] > 0 and min_size[1] > new_h:
                 new_h = min_size[1]
             self.myh[idx] = new_h
-            self.myy[idx] = self.y + max(0, (self.height - new_h) / 2) + 1
-            # print ("Setting values for %s: h=%.1f, y=%.1f" % (type(wind).__name__, new_h, self.myy[idx]))
+            self.myy[idx] = self.y + max(0, (self.height - new_h) / 2)
+            # print (f"Setting values for {type(wind).__name__}: HH={self.height}, YY={self.y}, h={new_h:.1f}, y={self.myy[idx]:.1f}" )
             total_proportions += self.proportions[idx]
             if self.proportions[idx] <= 0:
                 self.myw[idx] = max(curr_size[0], min_size[0])

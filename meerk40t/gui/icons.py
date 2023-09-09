@@ -158,10 +158,16 @@ class PyEmbeddedImage(py_embedded_image):
 
 class EmptyIcon:
     def __init__(self, size, color, msg=None, ptsize=None, **args):
-        if size <= 0:
-            size = 50
-        size = int(size)
-        self._size = size
+        if isinstance(size, (list, tuple)):
+            self._size_x = int(size[0])
+            self._size_y = int(size[1])
+        else:
+            self._size_x = int(size)
+            self._size_y = int(size)
+        if self._size_x <= 0:
+            self._size_x = 50
+        if self._size_y <= 0:
+            self._size_y = 50
         self._color = color
         bmp = self.populate_image(msg, ptsize)
         self._image = bmp.ConvertToImage()
@@ -171,7 +177,7 @@ class EmptyIcon:
         #         self._image.SetRGB(x, y, color.red, color.green, color.blue)
 
     def populate_image(self, msg=None, ptsize=None):
-        imgBit = wx.Bitmap(self._size, self._size)
+        imgBit = wx.Bitmap(self._size_x, self._size_y)
         dc = wx.MemoryDC(imgBit)
         dc.SelectObject(imgBit)
         brush = wx.Brush(self._color, wx.BRUSHSTYLE_SOLID)
@@ -219,8 +225,8 @@ class EmptyIcon:
             dc.SetTextForeground(txt_color)
             dc.SetFont(font)
             (t_w, t_h) = dc.GetTextExtent(msg)
-            x = (self._size - t_w) / 2
-            y = (self._size - t_h) / 2
+            x = (self._size_x - t_w) / 2
+            y = (self._size_y - t_h) / 2
             pt = wx.Point(int(x), int(y))
             dc.DrawText(msg, pt)
         # Now release dc

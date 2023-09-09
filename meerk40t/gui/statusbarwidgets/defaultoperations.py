@@ -22,7 +22,6 @@ class DefaultOperationWidget(StatusBarWidget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.iconsize = 32
-        self.buttonsize = self.iconsize + 2
 
         self.assign_buttons = []
         self.op_nodes = []
@@ -139,28 +138,35 @@ class DefaultOperationWidget(StatusBarWidget):
         self.op_nodes = oplist
 
     def GenerateControls(self, parent, panelidx, identifier, context):
-        # print("GenerateControls called")
+
+        def size_it(ctrl, dimen_x, dimen_y):
+            ctrl.SetMinSize(wx.Size(dimen_x, dimen_y))
+            ctrl.SetMaxSize(wx.Size(dimen_x, dimen_y))
+
         super().GenerateControls(parent, panelidx, identifier, context)
+        self.buttonsize_x = self.iconsize
+        self.buttonsize_y = min(self.iconsize, self.height)
         self.ClearItems()
         self.btn_prev = wx.StaticBitmap(
             self.parent,
             id=wx.ID_ANY,
-            size=(self.buttonsize, self.buttonsize),
+            size=(self.buttonsize_x, self.buttonsize_y),
             # style=wx.BORDER_RAISED,
         )
         icon = EmptyIcon(
-            size=self.iconsize,
+            size=(self.iconsize, min(self.iconsize, self.height)),
             color=wx.LIGHT_GREY,
             msg="<",
             ptsize=12,
         ).GetBitmap()
         self.btn_prev.SetBitmap(icon)
         self.btn_prev.SetToolTip(_("Previous entries"))
-        self.Add(self.btn_prev, 0, 0, 0)
+        self.Add(self.btn_prev, 0, wx.EXPAND, 0)
         self.btn_prev.Bind(wx.EVT_LEFT_DOWN, self.on_prev)
+        size_it(self.btn_prev, self.buttonsize_x, self.buttonsize_y)
         self.SetActive(self.btn_prev, False)
         self.first_to_show = 0
-        self.page_size = int((self.width - 2 * self.buttonsize) / self.buttonsize)
+        self.page_size = int((self.width - 2 * self.buttonsize_x) / self.buttonsize_x)
 
         self.init_nodes()
         self.assign_buttons.clear()
@@ -168,7 +174,7 @@ class DefaultOperationWidget(StatusBarWidget):
             btn = wx.StaticBitmap(
                 self.parent,
                 id=wx.ID_ANY,
-                size=(self.buttonsize, self.buttonsize),
+                size=(self.buttonsize_x, self.buttonsize_y),
                 # style=wx.BORDER_RAISED,
             )
             opid = op.id
@@ -183,7 +189,7 @@ class DefaultOperationWidget(StatusBarWidget):
                 fontsize = 6
 
             icon = EmptyIcon(
-                size=self.iconsize,
+                size=(self.iconsize, min(self.iconsize, self.height)),
                 color=wx.Colour(swizzlecolor(op.color)),
                 msg=opid,
                 ptsize=fontsize,
@@ -193,26 +199,28 @@ class DefaultOperationWidget(StatusBarWidget):
             if op_label is None:
                 op_label = str(op)
             btn.SetToolTip(op_label)
-
+            size_it(btn, self.buttonsize_x, self.buttonsize_y)
             self.assign_buttons.append(btn)
             btn.Bind(wx.EVT_LEFT_DOWN, self.on_button_left)
-            self.Add(btn, 0, 0, 0)
+            self.Add(btn, 0, wx.EXPAND, 0)
             self.SetActive(btn, False)
         self.btn_next = wx.StaticBitmap(
             parent,
             id=wx.ID_ANY,
-            size=(self.buttonsize, self.buttonsize),
+            size=(self.buttonsize_x, self.buttonsize_y),
             # style=wx.BORDER_RAISED,
         )
         icon = EmptyIcon(
-            size=self.iconsize,
+            size=(self.iconsize, min(self.iconsize, self.height)),
             color=wx.LIGHT_GREY,
             msg=">",
             ptsize=12,
         ).GetBitmap()
         self.btn_next.SetBitmap(icon)
         self.btn_next.SetToolTip(_("Next entries"))
-        self.Add(self.btn_next, 0, 0, 0)
+        size_it(self.btn_next, self.buttonsize_x, self.buttonsize_y)
+
+        self.Add(self.btn_next, 0, wx.EXPAND, 0)
         self.SetActive(self.btn_next, False)
         self.btn_next.Bind(wx.EVT_LEFT_DOWN, self.on_next)
 
@@ -229,19 +237,19 @@ class DefaultOperationWidget(StatusBarWidget):
     def Show(self, showit=True):
         # Callback function that decides whether to show an element or not
         if showit:
-            self.page_size = int((self.width - 2 * self.buttonsize) / self.buttonsize)
+            self.page_size = int((self.width - 2 * self.buttonsize_x) / self.buttonsize_y)
             # print(f"Page-Size: {self.page_size}, width={self.width}")
             x = 0
             gap = 0
             if self.first_to_show > 0:
                 self.SetActive(self.btn_prev, True)
-                x = self.buttonsize + gap
+                x = self.buttonsize_x + gap
             else:
                 self.SetActive(self.btn_prev, False)
 
             residual = False
             for idx, btn in enumerate(self.assign_buttons):
-                w = self.buttonsize
+                w = self.buttonsize_x
                 # dbg = f"Check btn {idx} ({self.op_nodes[idx].id}): x={x}, w={w}"
                 btnflag = False
                 if not residual:
@@ -259,7 +267,7 @@ class DefaultOperationWidget(StatusBarWidget):
                                 btnflag = True
                                 x += gap + w
                         else:
-                            if x + w + gap + self.buttonsize > self.width:
+                            if x + w + gap + self.buttonsize_x > self.width:
                                 residual = True
                                 btnflag = False
                             else:
