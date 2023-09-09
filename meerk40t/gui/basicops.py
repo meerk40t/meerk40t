@@ -283,10 +283,11 @@ class BasicOpPanel(wx.Panel):
 
         def on_label_double(node):
             def handler(event):
-                activate = self.context.elements.lookup(
+                activate = self.context.kernel.lookup(
                     "function/open_property_window_for_node"
                 )
                 if activate is not None:
+                    mynode.selected = True
                     activate(mynode)
 
             mynode = node
