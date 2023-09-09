@@ -296,7 +296,7 @@ class DefaultOperationWidget(StatusBarWidget):
         data = list(self.context.elements.flat(emphasized=True))
         if len(data) == 0:
             return
-
+        emph_data = [e for e in data]
         op_id = targetop.id
         newone = True
         for op in self.context.elements.ops():
@@ -317,6 +317,8 @@ class DefaultOperationWidget(StatusBarWidget):
             similar=similar,
             exclusive=exclusive,
         )
+        for e in emph_data:
+            e.emphasized = True
 
     def show_stuff(self, flag):
         for idx in range(len(self.assign_buttons)):
