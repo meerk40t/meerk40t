@@ -261,6 +261,31 @@ class BasicOpPanel(wx.Panel):
             mytext = tbox
             return handler
 
+        def on_label_single(node):
+            def handler(event):
+                self.context.elements.set_emphasis(None)
+                mynode.selected = True
+                mynode.emphasized = True
+                for elem in mynode.children:
+                    elem.selected = True
+                    if elem.node is not None:
+                        elem.node.emphasized = True
+                self.context.elements.signal("refresh_scene", "Scene")
+
+            mynode = node
+            return handler
+
+        def on_label_double(node):
+            def handler(event):
+                activate = self.context.elements.lookup(
+                    "function/open_property_window_for_node"
+                )
+                if activate is not None:
+                    activate(mynode)
+
+            mynode = node
+            return handler
+
         def get_bitmap(node):
             def get_color():
                 iconcolor = None
@@ -363,7 +388,6 @@ class BasicOpPanel(wx.Panel):
         header.SetMaxSize(wx.Size(30, -1))
         header.SetMaxSize(wx.Size(70, -1))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-
         header = wx.StaticText(self.op_panel, wx.ID_ANY, label=_("Speed"))
         header.SetMaxSize(wx.Size(30, -1))
         header.SetMaxSize(wx.Size(70, -1))
@@ -423,6 +447,8 @@ class BasicOpPanel(wx.Panel):
                 if self.std_color is None:
                     self.std_color = wx.Colour(header.GetBackgroundColour())
                 self.op_ctrl_list.append((op, header))
+                header.Bind(wx.EVT_LEFT_DOWN, on_label_single(op))
+                header.Bind(wx.EVT_LEFT_DCLICK, on_label_double(op))
 
                 c_out = wx.CheckBox(self.op_panel, id=wx.ID_ANY)
                 c_out.SetMinSize(wx.Size(30, -1))
