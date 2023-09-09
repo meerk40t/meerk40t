@@ -103,7 +103,8 @@ class BasicOpPanel(wx.Panel):
         self.use_mm_min = False
         self.set_display()
         self.op_ctrl_list = []
-        self.std_color = None
+        self.std_color_back = None
+        self.std_color_fore = None
         # self.fill_operations()
 
     def set_display(self):
@@ -450,8 +451,9 @@ class BasicOpPanel(wx.Panel):
                 header.SetMinSize(wx.Size(30, -1))
                 header.SetMaxSize(wx.Size(70, -1))
                 op_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-                if self.std_color is None:
-                    self.std_color = wx.Colour(header.GetBackgroundColour())
+                if self.std_color_back is None:
+                    self.std_color_back = wx.Colour(header.GetBackgroundColour())
+                    self.std_color_fore = wx.Colour(header.GetForegroundColour())
                 self.op_ctrl_list.append((op, header))
                 header.Bind(wx.EVT_LEFT_DOWN, on_label_single(op))
                 header.Bind(wx.EVT_LEFT_DCLICK, on_label_double(op))
@@ -552,8 +554,9 @@ class BasicOpPanel(wx.Panel):
 
     def highlight_operations(self):
         active_ops = []
-        highlight = wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
-        highlight.ChangeLightness(32)
+        highlight_back = wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
+        highlight_fore = wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
+        highlight_back.ChangeLightness(32)
 
         for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
             for op in self.context.elements.ops():
@@ -565,9 +568,11 @@ class BasicOpPanel(wx.Panel):
         # print(f"Active ops: {len(active_ops)}")
         for op, ctrl in self.op_ctrl_list:
             if op in active_ops:
-                ctrl.SetBackgroundColour(highlight)
+                ctrl.SetBackgroundColour(highlight_back)
+                ctrl.SetForegroundColour(highlight_fore)
             else:
-                ctrl.SetBackgroundColour(self.std_color)
+                ctrl.SetBackgroundColour(self.std_color_back)
+                ctrl.SetForegroundColour(self.std_color_fore)
             ctrl.Refresh()
 
     def pane_show(self, *args):
