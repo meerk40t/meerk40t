@@ -283,10 +283,11 @@ class BasicOpPanel(wx.Panel):
 
         def on_label_double(node):
             def handler(event):
-                activate = self.context.elements.lookup(
+                activate = self.context.kernel.lookup(
                     "function/open_property_window_for_node"
                 )
                 if activate is not None:
+                    mynode.selected = True
                     activate(mynode)
 
             mynode = node
@@ -631,9 +632,8 @@ class BasicOpPanel(wx.Panel):
     def signal_handler_rebuild(self, origin, *args, **kwargs):
         # print (f"Signal rebuild called {args} / {kwargs} / {len(list(self.context.elements.ops()))}")
         pc = perf_counter()
-        if pc - self.last_signal > 0.5:
-            # print(f"Delta rebuild: {pc - self.last_signal:.2f}")
-            self.fill_operations()
+        # This needs to run every time
+        self.fill_operations()
         self.last_signal = pc
 
     @signal_listener("tree_changed")

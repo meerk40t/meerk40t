@@ -487,6 +487,10 @@ class Elemental(Service):
         if list(self.ops()):
             # Something was loaded for default ops. Mark that.
             self.undo.mark("op-loaded")  # Mark defaulted
+
+        # This set of default_operations will be filled from the outside...
+        self.default_operations = []
+
         self._default_stroke = None
         self._default_strokewidth = None
         self._default_fill = None
@@ -1873,7 +1877,23 @@ class Elemental(Service):
             return
 
         if len(list(self.ops())) == 0 and not self.operation_default_empty:
-            self.load_default(performclassify=False)
+            has_cut = False
+            has_engrave = False
+            has_raster = False
+            has_image = False
+            # Do we need to load a default set or do the default_operations
+            # contain already relevant archetypes?
+            for test in self.default_operations:
+                if isinstance(test, CutOpNode):
+                    has_cut = True
+                elif isinstance(test, EngraveOpNode):
+                    has_engrave = True
+                elif isinstance(test, RasterOpNode):
+                    has_raster = True
+                elif isinstance(test, ImageOpNode):
+                    has_image = True
+            if not (has_cut and has_engrave and has_raster and has_image):
+                self.load_default(performclassify=False)
         reverse = self.classify_reverse
         fuzzy = self.classify_fuzzy
         fuzzydistance = self.classify_fuzzydistance
@@ -2040,7 +2060,7 @@ class Elemental(Service):
                         debug(
                             f"For {op.type}: black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}"
                         )
-                    if hasattr(op, "classifys") and whisperer:
+                    if hasattr(op, "classify") and whisperer:
                         classified, should_break, feedback = op.classify(
                             node,
                             fuzzy=fuzzy,
@@ -2088,13 +2108,27 @@ class Elemental(Service):
                 stdops = []
                 has_raster = False
                 if node.type == "elem image":
-                    stdops.append(ImageOpNode(output=False))
+                    found_default = False
+                    for op_candidate in self.default_operations:
+                        if isinstance(op_candidate, ImageOpNode):
+                            stdops.append(op_candidate)
+                            found_default = True
+                            break
+                    if not found_default:
+                        stdops.append(ImageOpNode(output=False))
                     if debug:
                         debug("add an op image")
                     classif_info[0] = True
                     classif_info[1] = True
                 elif node.type == "elem point":
-                    stdops.append(DotsOpNode(output=False))
+                    found_default = False
+                    for op_candidate in self.default_operations:
+                        if isinstance(op_candidate, DotsOpNode):
+                            stdops.append(op_candidate)
+                            found_default = True
+                            break
+                    if not found_default:
+                        stdops.append(DotsOpNode(output=False))
                     if debug:
                         debug("add an op dots")
                     classif_info[0] = True
@@ -2125,16 +2159,37 @@ class Elemental(Service):
                         is_raster = False
                     # print (f"Need a new op: cut={is_cut},raster={is_raster}, color={node.stroke}")
                     if is_cut:
-                        stdops.append(CutOpNode(color=Color("red"), speed=5.0))
+                        found_default = False
+                        for op_candidate in self.default_operations:
+                            if isinstance(op_candidate, CutOpNode):
+                                stdops.append(op_candidate)
+                                found_default = True
+                                break
+                        if not found_default:
+                            stdops.append(CutOpNode(color=Color("red"), speed=5.0))
                         if debug:
                             debug("add an op cut due to stroke")
                     elif is_raster:
-                        stdops.append(RasterOpNode(color="black", output=True))
+                        found_default = False
+                        for op_candidate in self.default_operations:
+                            if isinstance(op_candidate, RasterOpNode):
+                                stdops.append(op_candidate)
+                                found_default = True
+                                break
+                        if not found_default:
+                            stdops.append(RasterOpNode(color="black", output=True))
                         if debug:
                             debug("add an op raster due to stroke")
                         has_raster = True
                     else:
-                        stdops.append(EngraveOpNode(color=node.stroke, speed=35.0))
+                        found_default = False
+                        for op_candidate in self.default_operations:
+                            if isinstance(op_candidate, EngraveOpNode):
+                                stdops.append(op_candidate)
+                                found_default = True
+                                break
+                        if not found_default:
+                            stdops.append(EngraveOpNode(color=node.stroke, speed=35.0))
                         if debug:
                             debug(
                                 f"add an op engrave with color={node.stroke} due to stroke"
@@ -2147,7 +2202,14 @@ class Elemental(Service):
                     and node.fill.argb is not None
                     and not has_raster
                 ):
-                    stdops.append(RasterOpNode(color="black", output=True))
+                    found_default = False
+                    for op_candidate in self.default_operations:
+                        if isinstance(op_candidate, RasterOpNode):
+                            stdops.append(op_candidate)
+                            found_default = True
+                            break
+                    if not found_default:
+                        stdops.append(RasterOpNode(color="black", output=True))
                     if debug:
                         debug("add an op raster due to fill")
                 for op in stdops:
