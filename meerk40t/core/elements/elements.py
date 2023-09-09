@@ -1877,7 +1877,23 @@ class Elemental(Service):
             return
 
         if len(list(self.ops())) == 0 and not self.operation_default_empty:
-            self.load_default(performclassify=False)
+            has_cut = False
+            has_engrave = False
+            has_raster = False
+            has_image = False
+            # Do we need to load a default set or do the default_operations
+            # contain already relevant archetypes?
+            for test in self.default_operations:
+                if isinstance(test, CutOpNode):
+                    has_cut = True
+                elif isinstance(test, EngraveOpNode):
+                    has_engrave = True
+                elif isinstance(test, RasterOpNode):
+                    has_raster = True
+                elif isinstance(test, ImageOpNode):
+                    has_image = True
+            if not (has_cut and has_engrave and has_raster and has_image):
+                self.load_default(performclassify=False)
         reverse = self.classify_reverse
         fuzzy = self.classify_fuzzy
         fuzzydistance = self.classify_fuzzydistance
