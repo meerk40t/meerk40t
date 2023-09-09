@@ -317,6 +317,24 @@ class DefaultOperationWidget(StatusBarWidget):
             similar=similar,
             exclusive=exclusive,
         )
+        # Let's clean non-used operations that come from defaults...
+        deleted = 0
+        for op in self.context.elements.ops():
+            if len(op.children) == 0:
+                # is this one of the default operations?
+                is_default = False
+                for def_op in self.op_nodes:
+                    if def_op.id is not None and def_op.id == op.id:
+                        # Lets check at least power and speed if they are identical
+                        if def_op.speed == op.speed and def_op.power == op.power:
+                            is_default = True
+                            break
+                if is_default:
+                    deleted += 1
+                    op.remove_node()
+        if deleted:
+            self.context.elements.signal("operation_removed")
+
         for e in emph_data:
             e.emphasized = True
 
