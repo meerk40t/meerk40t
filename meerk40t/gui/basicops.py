@@ -217,6 +217,7 @@ class BasicOpPanel(wx.Panel):
                     ops = [mynode]
                     self.context.elements.signal("element_property_update", ops)
                     self.context.elements.signal("warn_state_update", "")
+                    self.context.elements.signal("refresh_scene", "Scene")
                     cb.SetValue(flag)
 
             mynode = node
