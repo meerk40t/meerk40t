@@ -5,6 +5,7 @@ This is a giant list of console commands that deal with and often implement the 
 import re
 from copy import copy
 
+from meerk40t.core.node.effect_hatch import HatchEffectNode
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
@@ -541,7 +542,10 @@ def init_commands(kernel):
             elif command == "dots":
                 return DotsOpNode()
             elif command == "hatch":
-                return HatchOpNode()
+                parent_op = EngraveOpNode()
+                hatch_effect = HatchEffectNode()
+                parent_op.add_node(hatch_effect)
+                return parent_op
             elif command == "waitop":
                 return WaitOperation()
             elif command == "outputop":
@@ -614,7 +618,11 @@ def init_commands(kernel):
             self.add_op(op)
             if data is not None:
                 for item in data:
-                    op.add_reference(item)
+                    if command == "hatch":
+                        c = op.children[0]
+                        c.add_reference(item)
+                    else:
+                        op.add_reference(item)
             op_list.append(op)
         return "ops", op_list
 
