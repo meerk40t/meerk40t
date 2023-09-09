@@ -48,6 +48,7 @@ BOOL_PARAMETERS = (
     "bidirectional",
     "advanced",
     "stopop",
+    "effect",
 )
 
 STRING_PARAMETERS = (
@@ -433,6 +434,14 @@ class Parameters:
     @hatch_distance.setter
     def hatch_distance(self, value):
         self.settings["hatch_distance"] = value
+
+    @property
+    def effect(self):
+        return self.settings.get("effect", True)
+
+    @effect.setter
+    def effect(self, value):
+        self.settings["effect"] = value
 
     #####################
     # PENBOX PROPERTIES

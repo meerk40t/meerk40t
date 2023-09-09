@@ -6,6 +6,7 @@ from meerk40t.core.elements.element_types import op_nodes
 from ..core.units import Length
 from ..kernel import signal_listener
 from ..svgelements import Color
+from .basicops import BasicOpPanel
 from .icons import (
     get_default_scale_factor,
     icon_meerk40t,
@@ -49,6 +50,32 @@ _ = wx.GetTranslation
 
 
 def register_panel_tree(window, context):
+
+    context.root.setting(int, "tree_panel_page", 0)
+    lastpage = getattr(context.root, "tree_panel_page", 0)
+    if lastpage is None or lastpage < 0 or lastpage > 2:
+        lastpage = 0
+
+    def on_panel_change(context):
+        def handler(event):
+            mycontext.root.setting(int, "tree_panel_page", 0)
+            pagenum = notetab.GetSelection()
+            setattr(mycontext.root, "tree_panel_page", pagenum)
+            return
+
+        mycontext = context
+        return handler
+
+    notetab = wx.aui.AuiNotebook(
+        window,
+        wx.ID_ANY,
+        style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
+        | wx.aui.AUI_NB_SCROLL_BUTTONS
+        | wx.aui.AUI_NB_TAB_SPLIT
+        | wx.aui.AUI_NB_TAB_MOVE,
+    )
+
+    basic_op = BasicOpPanel(window, wx.ID_ANY, context=context)
     wxtree = TreePanel(window, wx.ID_ANY, context=context)
     pane = (
         aui.AuiPaneInfo()
@@ -64,8 +91,13 @@ def register_panel_tree(window, context):
         .CaptionVisible(not context.pane_lock)
         .TopDockable(False)
     )
+
+    notetab.AddPage(basic_op, _("Burn-Operation"))
+    notetab.AddPage(wxtree, _("Details"))
+    notetab.SetSelection(lastpage)
+    notetab.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, on_panel_change(context))
     pane.dock_proportion = 500
-    pane.control = wxtree
+    pane.control = notetab
     window.on_pane_create(pane)
     context.register("pane/tree", pane)
 
@@ -315,6 +347,12 @@ class TreePanel(wx.Panel):
         opitem = self.context.elements.get(type="branch ops")._item
         tree = self.shadow_tree.wxtree
         tree.Expand(opitem)
+
+    @signal_listener("updateelem_tree")
+    def on_update_elem_tree(self, origin, *args):
+        elitem = self.context.elements.get(type="branch elems")._item
+        tree = self.shadow_tree.wxtree
+        tree.Expand(elitem)
 
 
 class ElementsTree(MWindow):
@@ -838,8 +876,11 @@ class ShadowTree:
         # self.last_call = this_call
         op_node = self.elements.get(type="branch ops")
         op_item = op_node._item
+
+        status = ""
         if op_item is None:
             return
+
         self.wxtree.Expand(op_item)
         unassigned, unburnt = self.elements.have_unburnable_elements()
         if unassigned or unburnt:
@@ -1785,6 +1826,12 @@ class ShadowTree:
                         ttip = _(
                             "This will define an origin from where all the elements in this scene\n"
                             + "will be plotted. You can have multiple such job start points"
+                        )
+                    elif node.type == "effect hatch":
+                        ttip = _(
+                            "This is a special node that will consume any other closed path\n"
+                            + "you drag onto it and will fill the shape with a line pattern.\n"
+                            + "To activate / deactivate this effect please use the context menu."
                         )
         self._last_hover_item = item
         if ttip != self.wxtree.GetToolTipText():

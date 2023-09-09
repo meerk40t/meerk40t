@@ -1736,6 +1736,64 @@ def init_tree(kernel):
                     ref.remove_node()
         self.signal("refresh_tree")
 
+    @tree_submenu(_("Append special effect"))
+    @tree_operation(_("Append Line-fill 0.1mm"), node_type="branch elems", help="")
+    def append_element_effect_eulerian(
+        node, node_type="branch elems", pos=None, **kwargs
+    ):
+        self.elem_branch.add(
+            type="effect hatch",
+            hatch_type="scanline",
+            hatch_distance="0.1mm",
+            hatch_angle="0deg",
+            pos=pos,
+        )
+        self.signal("updateelem_tree")
+
+    @tree_submenu(_("Append special effect"))
+    @tree_operation(
+        _("Append diagonal Line-fill 0.1mm"), node_type="branch elems", help=""
+    )
+    def append_element_effect_eulerian_45(
+        node, node_type="branch elems", pos=None, **kwargs
+    ):
+        self.elem_branch.add(
+            type="effect hatch",
+            hatch_type="scanline",  # scanline / eulerian
+            hatch_distance="0.1mm",
+            hatch_angle="45deg",
+            pos=pos,
+        )
+        self.signal("updateelem_tree")
+
+    @tree_submenu(_("Append special effect"))
+    @tree_operation(_("Append Line-Fill 1mm"), node_type="branch elems", help="")
+    def append_element_effect_line(node, node_type="branch elems", pos=None, **kwargs):
+        self.elem_branch.add(
+            type="effect hatch",
+            hatch_type="scanline",
+            hatch_distance="1mm",
+            hatch_angle="0deg",
+            pos=pos,
+        )
+        self.signal("updateelem_tree")
+
+    @tree_submenu(_("Append special effect"))
+    @tree_operation(
+        _("Append diagonal Line-Fill 1mm"), node_type="branch elems", help=""
+    )
+    def append_element_effect_line_45(
+        node, node_type="branch elems", pos=None, **kwargs
+    ):
+        self.elem_branch.add(
+            type="effect hatch",
+            hatch_type="scanline",
+            hatch_distance="1mm",
+            hatch_angle="45deg",
+            pos=pos,
+        )
+        self.signal("updateelem_tree")
+
     @tree_operation(
         _("Duplicate operation(s)"),
         node_type=op_nodes,
