@@ -560,8 +560,10 @@ class BasicOpPanel(wx.Panel):
 
         for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
             for op in self.context.elements.ops():
-                for refnode in op.children:
-                    if refnode.node is elem:
+                for node in op.children:
+                    if node.type == "reference":
+                        node = node.node
+                    if node is elem:
                         if op not in active_ops:
                             active_ops.append(op)
                         break
