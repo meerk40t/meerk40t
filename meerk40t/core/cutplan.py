@@ -305,10 +305,6 @@ class CutPlan:
                 ):
                     yield op
                     continue
-                if op.type == "op hatch":
-                    # hatch passes duplicated sub-objects, while pre-processing
-                    yield from self._blob_convert(op, copies=1, passes=1)
-                    continue
                 passes = op.implicit_passes
                 if context.opt_merge_passes and (
                     context.opt_nearest_neighbor or context.opt_inner_first

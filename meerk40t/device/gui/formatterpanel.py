@@ -191,7 +191,6 @@ class FormatterPanel(wx.Panel):
         from meerk40t.core.node.op_cut import CutOpNode
         from meerk40t.core.node.op_dots import DotsOpNode
         from meerk40t.core.node.op_engrave import EngraveOpNode
-        from meerk40t.core.node.op_hatch import HatchOpNode
         from meerk40t.core.node.op_image import ImageOpNode
         from meerk40t.core.node.op_raster import RasterOpNode
         from meerk40t.core.node.refnode import ReferenceNode
@@ -208,7 +207,6 @@ class FormatterPanel(wx.Panel):
             "op raster": RasterOpNode,
             "op image": ImageOpNode,
             "op dots": DotsOpNode,
-            "op hatch": HatchOpNode,
             "util console": ConsoleOperation,
             "util wait": WaitOperation,
             "util home": HomeOperation,

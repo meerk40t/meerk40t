@@ -397,7 +397,7 @@ def reversed_enumerate(collection: list):
         yield i, collection[i]
 
 
-OP_PRIORITIES = ["op dots", "op image", "op raster", "op engrave", "op cut", "op hatch"]
+OP_PRIORITIES = ["op dots", "op image", "op raster", "op engrave", "op cut"]
 
 
 # def is_dot(element):
