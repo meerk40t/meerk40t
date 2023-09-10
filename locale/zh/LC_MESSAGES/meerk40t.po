@@ -5485,6 +5485,15 @@ msgstr "图标大小："
 msgid "Appearance of all icons in the GUI (requires a restart to take effect)"
 msgstr "GUI 中所有图标的外观（需要重新启动以生效）"
 
+msgid "GUI Appearance"
+msgstr "外观"
+
+msgid "Render-Options"
+msgstr "渲染选项"
+
+msgid "Shape-Attributes"
+msgstr "形状属性"
+
 #: meerk40t/gui/wxmmain.py:377
 msgid "Mini icon in tree"
 msgstr "树中的迷你图标"
@@ -6228,6 +6237,9 @@ msgstr "编辑元素属性"
 msgid "Device-Manager"
 msgstr "设备管理器"
 
+msgid "Device Manager"
+msgstr "设备管理器"
+
 #: meerk40t/gui/wxmmain.py:2602
 msgid "Manage the Laser devices"
 msgstr "管理激光设备"
@@ -6288,6 +6300,7 @@ msgstr "缩放到床\tCtrl-B"
 msgid "GUI-Elements"
 msgstr "界面元素"
 
+msgid ""
 #: meerk40t/gui/wxmmain.py:2745
 msgid "Show/Hide UI-Panels\tCtrl-U"
 msgstr "显示/隐藏界面面板\tCtrl-U"
@@ -14812,3 +14825,24 @@ msgstr "气助功能"
 #: meerk40t/ruida/gui/ruidaoperationproperties.py:26
 msgid "Trigger the per element air assist"
 msgstr "触发每个元素的气助功能"
+
+msgid "Burning"
+msgstr "燃烧"
+
+msgid "TCP Controller"
+msgstr "TCP 控制器"
+
+msgid "Device-Control"
+msgstr "设备控制"
+
+msgid "Device-Settings"
+msgstr "设备设置"
+
+msgid "Laser-Tools"
+msgstr "激光工具"
+
+msgid "Power"
+msgstr "力量"
+
+msgid "Show"
+msgstr "展示"
