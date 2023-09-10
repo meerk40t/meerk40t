@@ -6312,7 +6312,7 @@ msgid "&Paste\tCtrl-V"
 msgstr "&Incolla\tCtrl-V"
 
 #: meerk40t/gui/wxmmain.py:2540
-msgid "&Select All\tCtrl-A"
+msgid "&Select all\tCtrl-A"
 msgstr "&Seleziona tutto\tCtrl-A"
 
 #: meerk40t/gui/wxmmain.py:2541
@@ -16803,11 +16803,11 @@ msgstr "Attiva l'assistenza all'aria per elemento"
 #~ msgid "Shape-Attributes"
 #~ msgstr ""
 
-#~ msgid "GUI Appearance"
-#~ msgstr "Interfaccia grafica"
+msgid "GUI Appearance"
+msgstr "Interfaccia grafica"
 
-#~ msgid "Render-Options"
-#~ msgstr "Opzioni di visualizzazione"
+msgid "Render-Options"
+msgstr "Opzioni di visualizzazione"
 
 #~ msgid "Presets"
 #~ msgstr ""
