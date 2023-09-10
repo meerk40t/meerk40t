@@ -542,10 +542,7 @@ def init_commands(kernel):
             elif command == "dots":
                 return DotsOpNode()
             elif command == "hatch":
-                parent_op = EngraveOpNode()
-                hatch_effect = HatchEffectNode()
-                parent_op.add_node(hatch_effect)
-                return parent_op
+                return EngraveOpNode(modifier=HatchEffectNode())
             elif command == "waitop":
                 return WaitOperation()
             elif command == "outputop":
