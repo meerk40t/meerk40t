@@ -16,7 +16,7 @@ class EngraveOpNode(Node, Parameters):
     This is a Node of type "op engrave".
     """
 
-    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
+    def __init__(self, *args, id=None, label=None, lock=False, modifier=None, **kwargs):
         Node.__init__(self, type="op engrave", id=id, label=label, lock=lock)
         Parameters.__init__(self, None, **kwargs)
         self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
@@ -53,16 +53,16 @@ class EngraveOpNode(Node, Parameters):
         ]  # comma is relevant
         # Is this op out of useful bounds?
         self.dangerous = False
-        if label is None:
-            self.label = "Engrave"
-        else:
-            self.label = label
+        self.label = "Engrave" if label is None else label
+        self.modifier = modifier
+        if modifier is not None:
+            self.label = str(modifier)
 
     def __repr__(self):
         return "EngraveOpNode()"
 
     def __copy__(self):
-        return EngraveOpNode(self)
+        return EngraveOpNode(self, modifier=copy(self.modifier))
 
     # def is_dangerous(self, minpower, maxspeed):
     #     result = False
@@ -74,7 +74,7 @@ class EngraveOpNode(Node, Parameters):
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
-        default_map["element_type"] = "Engrave"
+        default_map["element_type"] = "Engrave" if self.modifier is None else str(self.modifier)
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["danger"] = "❌" if self.dangerous else ""
         default_map["defop"] = "✓" if self.default else ""
