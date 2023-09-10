@@ -113,4 +113,3 @@ class TestDriverNewly(unittest.TestCase):
             data = f.read()
             data = data.decode(encoding="latin-1")
         self.assertEqual(data, hpgl_image)
-

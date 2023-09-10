@@ -544,7 +544,6 @@ class Preferences(MWindow):
         self.panels.append(self.panel_ribbon)
         self.context.setting(bool, "developer_mode", False)
         if self.context.developer_mode:
-
             panel_space = ChoicePropertyPanel(
                 self, wx.ID_ANY, context=self.context, choices="space"
             )

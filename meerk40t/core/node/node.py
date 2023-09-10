@@ -898,6 +898,11 @@ class Node:
         @param pos:
         @return:
         """
+        if node is None:
+            # This should not happen and is a sign that something is amiss, 
+            # so we inform at least abount it
+            print ("Tried to add an invalid node...")
+            return
         if node._parent is not None:
             raise ValueError("Cannot reparent node on add.")
         node._parent = self
@@ -940,7 +945,10 @@ class Node:
         @return:
         """
         node = self.create(type=type, **kwargs)
-        self.add_node(node, pos=pos)
+        if node is not None:
+            self.add_node(node, pos=pos)
+        else:
+            print (f"Did not produce a valid node for type '{type}'")
         return node
 
     def _flatten(self, node):

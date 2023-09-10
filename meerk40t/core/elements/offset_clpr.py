@@ -628,7 +628,6 @@ def init_commands(kernel):
         post=None,
         **kwargs,
     ):
-
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0:
@@ -719,7 +718,6 @@ def init_commands(kernel):
         post=None,
         **kwargs,
     ):
-
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0:

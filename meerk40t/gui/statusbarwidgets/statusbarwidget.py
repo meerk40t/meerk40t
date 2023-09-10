@@ -85,15 +85,18 @@ class BasicHSizer:
             if min_size[1] > 0 and min_size[1] > new_h:
                 new_h = min_size[1]
             self.myh[idx] = new_h
-            self.myy[idx] = self.y + max(0, (self.height - new_h) / 2) + 1
-            # print ("Setting values for %s: h=%.1f, y=%.1f" % (type(wind).__name__, new_h, self.myy[idx]))
+            self.myy[idx] = self.y + max(0, (self.height - new_h) / 2)
+            # print (f"Setting values for {type(wind).__name__}: HH={self.height}, YY={self.y}, h={new_h:.1f}, y={self.myy[idx]:.1f}" )
             total_proportions += self.proportions[idx]
             if self.proportions[idx] <= 0:
                 self.myw[idx] = max(curr_size[0], min_size[0])
                 availw -= self.myw[idx]
             else:
                 self.myw[idx] = -1
-        # print ("Total proportions: %.1f, width=%.1f, remaining=%.1f" % (total_proportions, self.width, availw ))
+        # print(
+        #     "Total proportions: %.1f, width=%.1f, remaining=%.1f"
+        #     % (total_proportions, self.width, availw)
+        # )
         # Now that we have established the minsize lets see what we have left
         # First iteration, check for maxSize
         if total_proportions > 0:
@@ -132,6 +135,7 @@ class BasicHSizer:
         # And now lets move the windows...
         newx = self.start_x + self.x
         for idx, wind in enumerate(self.windows):
+            # print(f"{idx}, vis={self.activectrl[idx]}, x={newx}")
             self.myx[idx] = newx
             if self.visible is None:
                 self.visible = False
@@ -151,7 +155,8 @@ class BasicHSizer:
                 wind.SetRect(rect)
                 # flag = flag and True
             wind.Show(flag)
-            newx += self.myw[idx]
+            if flag and self.activectrl[idx]:
+                newx += self.myw[idx]
 
     def SetDimension(self, newx, newy, newwidth, newheight):
         # print ("Set dimension called")
@@ -165,6 +170,12 @@ class BasicHSizer:
         for wind in self.windows:
             if wind is not None:
                 wind.Reparent(new_parent)
+
+    def ClearItems(self):
+        for wind in self.windows:
+            if wind is not None:
+                wind.Destroy()
+        self.windows = []
 
 
 class StatusBarWidget(BasicHSizer):
@@ -252,3 +263,8 @@ class StatusBarWidget(BasicHSizer):
     def Signal(self, signal, *args):
         # needs to be done in the concrete implementation
         return
+
+    def Clear(self):
+        self.ClearItems()
+        self.activectrl = []
+        self.windows = []

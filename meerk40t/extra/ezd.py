@@ -882,6 +882,12 @@ class EZDLoader:
                 ezfile = EZCFile(file)
         except (IOError, IndexError) as e:
             raise BadFileError(str(e)) from e
+        except struct.error:
+            raise BadFileError(
+                "Unseen sequence, object, or formatting.\n"
+                "File format was only partially unrecognized.\n"
+                "Please raise an github issue and submit this file for review.\n"
+            )
 
         ez_processor = EZProcessor(elements_service)
         ez_processor.process(ezfile, pathname)

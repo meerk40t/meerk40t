@@ -10,6 +10,7 @@ import os.path
 from time import time
 
 from meerk40t.core.exceptions import BadFileError
+from meerk40t.core.node.node import Node
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
@@ -486,6 +487,10 @@ class Elemental(Service):
         if list(self.ops()):
             # Something was loaded for default ops. Mark that.
             self.undo.mark("op-loaded")  # Mark defaulted
+
+        # This set of default_operations will be filled from the outside...
+        self.default_operations = []
+
         self._default_stroke = None
         self._default_strokewidth = None
         self._default_fill = None
@@ -707,6 +712,8 @@ class Elemental(Service):
         #                 element attrib (ie stroke or fill)
         #               - anything else: leave all colors unchanged
         # attrib:       one of 'stroke', 'fill' to establish the source color
+        #               ('auto' is an option too that will pick the color from the
+        #               operation settings)
         # similar:      will use attrib (see above) to establish similar elements (having (nearly) the same
         #               color) and assign those as well
         # exclusive:    will delete all other assignments of the source elements in other operations if True
@@ -720,18 +727,28 @@ class Elemental(Service):
                     impose = None
             else:
                 impose = None
+                # No need to check, if no one needs it...
+
+        first_color = None
+        target_color = None
+        has_a_color = False
+
+        if impose == "to_elem":
+            target_color = op_assign.color
+            if attrib == "auto":
+                if "stroke" in op_assign.allowed_attributes:
+                    attrib = "stroke"
+                elif "fill" in op_assign.allowed_attributes:
+                    attrib = "fill"
+                else:
+                    attrib = "stroke"
+
         if attrib is None:
             similar = False
         # print ("parameters:")
         # print ("Impose=%s, operation=%s" % (impose, op_assign) )
         # print ("similar=%s, attrib=%s" % (similar, attrib) )
         # print ("exclusive=%s" % exclusive )
-        first_color = None
-        target_color = None
-        has_a_color = False
-        # No need to check, if no one needs it...
-        if impose == "to_elem":
-            target_color = op_assign.color
 
         if impose == "to_op" or similar:
             # Let's establish the color first
@@ -984,6 +1001,8 @@ class Elemental(Service):
 
         for q in data_to_align:
             # print(f"Node to be treated: {q.type}")
+            if q.bounds is None:
+                continue
             if as_group == 0:
                 if q.bounds is None:
                     continue
@@ -1083,13 +1102,13 @@ class Elemental(Service):
         for e in self.flat():
             e.unregister()
 
-    def save_persistent_operations(self, name):
+    def save_persistent_operations_list(self, name, oplist):
         settings = self.op_data
         subitems = list(settings.derivable(name))
         for section in subitems:
             settings.clear_persistent(section)
         # settings.clear_persistent(name)
-        for i, op in enumerate(self.ops()):
+        for i, op in enumerate(oplist):
             if hasattr(op, "allow_save"):
                 if not op.allow_save():
                     continue
@@ -1099,6 +1118,10 @@ class Elemental(Service):
 
         settings.write_configuration()
 
+    def save_persistent_operations(self, name):
+        opl = [op for op in self.ops()]
+        self.save_persistent_operations_list(name, opl)
+
     def clear_persistent_operations(self, name):
         settings = self.op_data
         subitems = list(settings.derivable(name))
@@ -1106,21 +1129,31 @@ class Elemental(Service):
             settings.clear_persistent(section)
         settings.write_configuration()
 
-    def load_persistent_operations(self, name):
-        self.clear_operations()
+    def load_persistent_op_list(self, name):
+        oplist = []
         settings = self.op_data
-        operation_branch = self._tree.get(type="branch ops")
         for section in list(settings.derivable(name)):
             op_type = settings.read_persistent(str, section, "type")
             # That should not happen, but it happens nonetheless...
             # So recover gracefully
             try:
-                op = operation_branch.add(type=op_type)
-            except (AttributeError, RuntimeError, ValueError):
-                print(f"That should not happen, but ops contained: '{op_type}'")
+                op = Node().create(type=op_type)
+            except (AttributeError, RuntimeError, ValueError) as err:
+                print(f"That should not happen, but ops contained: '{op_type}' [{err}]")
                 continue
 
             op.load(settings, section)
+            oplist.append(op)
+
+        return oplist
+
+    def load_persistent_operations(self, name):
+        self.clear_operations()
+        operation_branch = self._tree.get(type="branch ops")
+        opl = self.load_persistent_op_list(name)
+        for op in opl:
+            operation_branch.add_node(op)
+
         if len(list(self.elems())) > 0:
             self.classify(list(self.elems()))
         self.signal("updateop_tree")
@@ -1186,9 +1219,12 @@ class Elemental(Service):
                 power=1000.0,
                 raster_step=3,
             )
-            self.op_branch.add(type="op raster")
-            self.op_branch.add(type="op engrave")
-            self.op_branch.add(type="op cut")
+            node = self.op_branch.add(type="op raster")
+            node.allowed_attributes = ["fill"]
+            node = self.op_branch.add(type="op engrave")
+            node.allowed_attributes = ["stroke"]
+            node = self.op_branch.add(type="op cut")
+            node.allowed_attributes = ["stroke"]
             if performclassify:
                 self.classify(list(self.elems()))
 
@@ -1202,14 +1238,22 @@ class Elemental(Service):
                 power=1000.0,
                 raster_step=3,
             )
-            self.op_branch.add(type="op raster")
-            self.op_branch.add(type="op engrave")
-            self.op_branch.add(type="op engrave", color="blue")
-            self.op_branch.add(type="op engrave", color="green")
-            self.op_branch.add(type="op engrave", color="magenta")
-            self.op_branch.add(type="op engrave", color="cyan")
-            self.op_branch.add(type="op engrave", color="yellow")
-            self.op_branch.add(type="op cut")
+            node = self.op_branch.add(type="op raster")
+            node.allowed_attributes = ["fill"]
+            node = self.op_branch.add(type="op engrave")
+            node.allowed_attributes = ["stroke"]
+            node = self.op_branch.add(type="op engrave", color="blue")
+            node.allowed_attributes = ["stroke"]
+            node = self.op_branch.add(type="op engrave", color="green")
+            node.allowed_attributes = ["stroke"]
+            node = self.op_branch.add(type="op engrave", color="magenta")
+            node.allowed_attributes = ["stroke"]
+            node = self.op_branch.add(type="op engrave", color="cyan")
+            node.allowed_attributes = ["stroke"]
+            node = self.op_branch.add(type="op engrave", color="yellow")
+            node.allowed_attributes = ["stroke"]
+            node = self.op_branch.add(type="op cut")
+            node.allowed_attributes = ["stroke"]
             if performclassify:
                 self.classify(list(self.elems()))
 
@@ -1833,7 +1877,23 @@ class Elemental(Service):
             return
 
         if len(list(self.ops())) == 0 and not self.operation_default_empty:
-            self.load_default(performclassify=False)
+            has_cut = False
+            has_engrave = False
+            has_raster = False
+            has_image = False
+            # Do we need to load a default set or do the default_operations
+            # contain already relevant archetypes?
+            for test in self.default_operations:
+                if isinstance(test, CutOpNode):
+                    has_cut = True
+                elif isinstance(test, EngraveOpNode):
+                    has_engrave = True
+                elif isinstance(test, RasterOpNode):
+                    has_raster = True
+                elif isinstance(test, ImageOpNode):
+                    has_image = True
+            if not (has_cut and has_engrave and has_raster and has_image):
+                self.load_default(performclassify=False)
         reverse = self.classify_reverse
         fuzzy = self.classify_fuzzy
         fuzzydistance = self.classify_fuzzydistance
@@ -2000,7 +2060,7 @@ class Elemental(Service):
                         debug(
                             f"For {op.type}: black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}"
                         )
-                    if hasattr(op, "classifys") and whisperer:
+                    if hasattr(op, "classify") and whisperer:
                         classified, should_break, feedback = op.classify(
                             node,
                             fuzzy=fuzzy,
@@ -2048,13 +2108,27 @@ class Elemental(Service):
                 stdops = []
                 has_raster = False
                 if node.type == "elem image":
-                    stdops.append(ImageOpNode(output=False))
+                    found_default = False
+                    for op_candidate in self.default_operations:
+                        if isinstance(op_candidate, ImageOpNode):
+                            stdops.append(op_candidate)
+                            found_default = True
+                            break
+                    if not found_default:
+                        stdops.append(ImageOpNode(output=False))
                     if debug:
                         debug("add an op image")
                     classif_info[0] = True
                     classif_info[1] = True
                 elif node.type == "elem point":
-                    stdops.append(DotsOpNode(output=False))
+                    found_default = False
+                    for op_candidate in self.default_operations:
+                        if isinstance(op_candidate, DotsOpNode):
+                            stdops.append(op_candidate)
+                            found_default = True
+                            break
+                    if not found_default:
+                        stdops.append(DotsOpNode(output=False))
                     if debug:
                         debug("add an op dots")
                     classif_info[0] = True
@@ -2085,16 +2159,37 @@ class Elemental(Service):
                         is_raster = False
                     # print (f"Need a new op: cut={is_cut},raster={is_raster}, color={node.stroke}")
                     if is_cut:
-                        stdops.append(CutOpNode(color=Color("red"), speed=5.0))
+                        found_default = False
+                        for op_candidate in self.default_operations:
+                            if isinstance(op_candidate, CutOpNode):
+                                stdops.append(op_candidate)
+                                found_default = True
+                                break
+                        if not found_default:
+                            stdops.append(CutOpNode(color=Color("red"), speed=5.0))
                         if debug:
                             debug("add an op cut due to stroke")
                     elif is_raster:
-                        stdops.append(RasterOpNode(color="black", output=True))
+                        found_default = False
+                        for op_candidate in self.default_operations:
+                            if isinstance(op_candidate, RasterOpNode):
+                                stdops.append(op_candidate)
+                                found_default = True
+                                break
+                        if not found_default:
+                            stdops.append(RasterOpNode(color="black", output=True))
                         if debug:
                             debug("add an op raster due to stroke")
                         has_raster = True
                     else:
-                        stdops.append(EngraveOpNode(color=node.stroke, speed=35.0))
+                        found_default = False
+                        for op_candidate in self.default_operations:
+                            if isinstance(op_candidate, EngraveOpNode):
+                                stdops.append(op_candidate)
+                                found_default = True
+                                break
+                        if not found_default:
+                            stdops.append(EngraveOpNode(color=node.stroke, speed=35.0))
                         if debug:
                             debug(
                                 f"add an op engrave with color={node.stroke} due to stroke"
@@ -2107,7 +2202,14 @@ class Elemental(Service):
                     and node.fill.argb is not None
                     and not has_raster
                 ):
-                    stdops.append(RasterOpNode(color="black", output=True))
+                    found_default = False
+                    for op_candidate in self.default_operations:
+                        if isinstance(op_candidate, RasterOpNode):
+                            stdops.append(op_candidate)
+                            found_default = True
+                            break
+                    if not found_default:
+                        stdops.append(RasterOpNode(color="black", output=True))
                     if debug:
                         debug("add an op raster due to fill")
                 for op in stdops:
