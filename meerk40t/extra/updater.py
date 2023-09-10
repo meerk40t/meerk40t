@@ -141,8 +141,12 @@ def plugin(kernel, lifecycle):
                 ):
                     sub_ref = reference_version[0:3]
                 # print (sub_cand, sub_ref, bool(sub_cand > sub_ref))
-                if sub_cand > sub_ref:
-                    is_newer = True
+                try:
+                    if sub_cand > sub_ref:
+                        is_newer = True
+                except TypeError:
+                    # Invalid data
+                    is_newer = False
                 # print (f"Comparing {candidate_version} vs {reference_version}: {is_newer}")
                 return is_newer
 
