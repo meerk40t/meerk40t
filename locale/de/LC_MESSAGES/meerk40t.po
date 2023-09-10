@@ -11772,7 +11772,7 @@ msgid "Pause Controller"
 msgstr "Controller anhalten"
 
 msgid "Operation"
-msgstr "Arbeitsgang"
+msgstr "Ablauf"
 
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:499
 msgid "Manual Reset"
@@ -16403,6 +16403,21 @@ msgstr "Import"
 msgid "Import a previously saved setting file"
 msgstr "Importiere die Einstellungen aus einer zuvor gesicherten Version"
 
+msgid "Export completed"
+msgstr "Export abgeschlossen"
+
+msgid "This will import a previously saved configuration file!"
+msgstr "Dies importiert die Einstellungen aus einer zuvor gesicherten Version"
+
+msgid "This may make MeerK40t unworkable if the file does not have the right format!"
+msgstr "Dies kann MeerK40t unbenutzbar machen, falls die Datei ungültige Daten enthält!"
+
+msgid "You do this at you own risk - are you really sure?"
+msgstr "Dies geschieht auf eigenes Risiko - wirklich fortfahren?"
+
+msgid "Choose a previously saved configuration-file"
+msgstr "Wähle eine zuvor exportierte Sicherungsdatei aus"
+
 msgid "Enable all operations"
 msgstr "Alle Operationen aktivieren"
 
@@ -16590,3 +16605,117 @@ msgstr "Wählen Sie eines der vorhandenen Bilder auf der Arbeitsfläche aus,\num
 
 msgid "(Yes=Empty and Create, No=Keep existing)"
 msgstr "(Ja=Leeren und Erstellen, Nein=Bestehende behalten)"
+
+msgid "Decompile cutplan = make operations visible and editable again"
+msgstr "Cutplan zerlegen = mache Operationen wieder sicht- und editierbar"
+
+msgid "Inserts this special operation before the current cutplan entry"
+msgstr "Fügt diese Operation vor dem aktuellen Cutplan-Eintrag ein"
+
+msgid "Appends this special operation at the end of the cutplan"
+msgstr "Fügt diese Operation am Ende des Cutplans an"
+
+msgid "Remove cutcode"
+msgstr "Schritte entfernen"
+
+msgid "Removes the selected cutcode-entries from the active cutplan"
+msgstr "Entferne die selektierten Schritte aus dem aktiven Cutplan"
+
+msgid "Delete all cuts before the first selected"
+msgstr "Entferne alle Schritte vor dem zuerst selektierten"
+
+msgid "Delete all cuts after the last selected"
+msgstr "Entferne alle Schritte nach dem letzten selektierten"
+
+msgid "All incomplete jobs"
+msgstr "Alle unvollständigen Jobs"
+
+msgid "You have elements in disabled operations, that won't be burned"
+msgstr "Elemente sind inaktiven Arbeitsvorgängen zugeordnet, werden also nicht gebrannt"
+
+msgid ""
+"This is a special node that will consume any other closed path\n"
+"you drag onto it and will fill the shape with a line pattern.\n"
+"To activate / deactivate this effect please use the context menu."
+msgstr ""
+"Das ist ein spezielles Effekt-Element, das sich ähnlich einer Gruppe verhält\n"
+"und alle zugeordneten Elemente mit einer Schraffur versieht.\n"
+"Kann in den Eigenschaften aktiviert/deaktiviert werden."
+
+msgid "Segments"
+msgstr "Segmente"
+
+msgid "Loops:"
+msgstr "Durchgänge:"
+
+msgid "Define how often this placement will be used"
+msgstr "Legt fest wie oft dieser Jobstart durchlaufen wird."
+
+msgid "Previous entries"
+msgstr "Vorherige Einträge"
+
+msgid "Next entries"
+msgstr "Folgende Einträge"
+
+msgid "Reset\nstatistics"
+msgstr "Statistik\nlöschen"
+
+msgid "Processing..."
+msgstr "Verarbeiten..."
+
+msgid "Show"
+msgstr "Zeigen"
+
+msgid "Leave color"
+msgstr "Beibehalten"
+
+msgid "Op inherits color"
+msgstr "Farbe -> A.Vorgang"
+
+msgid "Elem inherits color"
+msgstr "Farbe -> Element"
+
+msgid "Assign as well all other elements with the same stroke-color"
+msgstr "Elemente mit gleicher Farbe ebenfalls zuordnen"
+
+msgid "Burn-Operation"
+msgstr "Arbeitsablauf"
+
+msgid "Details"
+msgstr "Details"
+
+msgid "Power {unit}"
+msgstr "Leistung {unit}"
+
+msgid "Speed {unit}"
+msgstr "Geschwindigkeit {unit}"
+
+msgid "Right click: Extended options for operation"
+msgstr "Rechtsclick: Erweiterte Optionen für den Arbeitsablauf"
+
+msgid "Click to select all contained elements on the scene."
+msgstr "Click: Selektiere alle zugeordneten Elemente"
+
+msgid "Double click to open the property dialog for the operation"
+msgstr "Doppelclick: öffne Eigenschafts-Dialog für Arbeitsvorgang"
+
+msgid "Append special effect"
+msgstr "Füge Schraffur-Effekt hinzu"
+
+msgid "Append Line-fill 0.1mm"
+msgstr "Schraffur 0.1mm"
+
+msgid "Append diagonal Line-fill 0.1mm"
+msgstr "Schraffur 0.1mm diagonal"
+
+msgid "Append Line-Fill 1mm"
+msgstr "Schraffur 1mm"
+
+msgid "Append diagonal Line-Fill 1mm"
+msgstr "Schraffur 1mm diagonal"
+
+msgid "Effect: On"
+msgstr "Effekt: An"
+
+msgid "Effect: Off"
+msgstr "Effekt: Aus"

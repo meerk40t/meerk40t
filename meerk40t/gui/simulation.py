@@ -436,7 +436,7 @@ class OperationsPanel(wx.Panel):
                     wx.ID_ANY,
                     _("Insert '{operation}' before").format(operation=entry[0]),
                     _(
-                        "Inserts this special operation before the current cutplan entrys"
+                        "Inserts this special operation before the current cutplan entry"
                     ),
                 ),
             )
@@ -724,7 +724,7 @@ class CutcodePanel(wx.Panel):
                     wx.ID_ANY,
                     _("Insert '{operation}' before").format(operation=entry[0]),
                     _(
-                        "Inserts this special operation before the current cutplan entrys"
+                        "Inserts this special operation before the current cutplan entry"
                     ),
                 ),
             )

@@ -4726,7 +4726,7 @@ msgid "Info"
 msgstr "Informazioni"
 
 #: meerk40t/gui/preferences.py:177
-msgid "This will import a previosuly saved configuration file!"
+msgid "This will import a previously saved configuration file!"
 msgstr "Questo importerà un file di configurazione salvato in precedenza!"
 
 #: meerk40t/gui/preferences.py:179
@@ -4737,7 +4737,7 @@ msgstr ""
 "Questo potrebbe rendere MeerK40t non funzionante se il file non ha il formato corretto!"
 
 #: meerk40t/gui/preferences.py:184
-msgid "You do this at you own risk - are you realy sure?"
+msgid "You do this at you own risk - are you really sure?"
 msgstr "Fai questo a tuo rischio - sei davvero sicuro?"
 
 #: meerk40t/balormk/gui/balorconfig.py:53
@@ -4870,7 +4870,7 @@ msgid "Insert '{operation}' before"
 msgstr "Inserisci '{operation}' prima"
 
 #: meerk40t/gui/simulation.py:502 meerk40t/gui/simulation.py:817
-msgid "Inserts this special operation before the current cutplan entrys"
+msgid "Inserts this special operation before the current cutplan entry"
 msgstr "Inserisce questa operazione speciale prima delle voci del piano di taglio corrente"
 
 #: meerk40t/gui/simulation.py:514 meerk40t/gui/simulation.py:829
@@ -6312,7 +6312,7 @@ msgid "&Paste\tCtrl-V"
 msgstr "&Incolla\tCtrl-V"
 
 #: meerk40t/gui/wxmmain.py:2540
-msgid "&Select All\tCtrl-A"
+msgid "&Select all\tCtrl-A"
 msgstr "&Seleziona tutto\tCtrl-A"
 
 #: meerk40t/gui/wxmmain.py:2541
@@ -16803,11 +16803,11 @@ msgstr "Attiva l'assistenza all'aria per elemento"
 #~ msgid "Shape-Attributes"
 #~ msgstr ""
 
-#~ msgid "GUI Appearance"
-#~ msgstr "Interfaccia grafica"
+msgid "GUI Appearance"
+msgstr "Interfaccia grafica"
 
-#~ msgid "Render-Options"
-#~ msgstr "Opzioni di visualizzazione"
+msgid "Render-Options"
+msgstr "Opzioni di visualizzazione"
 
 #~ msgid "Presets"
 #~ msgstr ""
