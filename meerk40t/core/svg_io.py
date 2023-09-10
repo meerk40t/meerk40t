@@ -1072,6 +1072,7 @@ class SVGProcessor:
                 context_node = self.regmark
                 e_list = self.regmark_list
             else:
+                # Load group with specific group attributes (if needed)
                 e_dict = dict(element.values["attributes"])
                 e_type = e_dict.get("type", "group")
                 stroke = e_dict.get("stroke")
@@ -1082,6 +1083,8 @@ class SVGProcessor:
                     context_node = context_node.add(type=e_type, id=ident, label=_label, **e_dict)
                 else:
                     context_node = context_node.add(type=e_type, id=ident, label=_label, stroke=Color(stroke), **e_dict)
+                if hasattr(context_node, "effect"):
+                    context_node.effect = False
 
             # recurse to children
             if self.reverse:
