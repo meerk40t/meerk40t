@@ -394,7 +394,7 @@ class HatchPropertyPanel(ScrolledPanel):
         matrix = Matrix.scale(0.018)
         hatch = list(
             hatch_algorithm(
-                settings=self.node.settings,
+                settings=self.node.__dict__,
                 outlines=paths,
                 matrix=matrix,
                 limit=1000,
