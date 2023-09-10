@@ -1130,7 +1130,13 @@ class SVGProcessor:
                     self.operations_replaced = True
 
                 try:
-                    op = self.elements.op_branch.create(type=node_type, **attrs)
+                    if node_type == "op hatch":
+                        # Special fallback operation, op hatch is an op engrave with an effect hatch within it.
+                        node_type = "op engrave"
+                        op = self.elements.op_branch.create(type=node_type, **attrs)
+                        op.add(type="effect hatch")
+                    else:
+                        op = self.elements.op_branch.create(type=node_type, **attrs)
                     if op is None or not hasattr(op, "type") or op.type is None:
                         return
                     if hasattr(op, "validate"):
