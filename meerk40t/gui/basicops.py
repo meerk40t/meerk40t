@@ -206,7 +206,7 @@ class BasicOpPanel(wx.Panel):
             mynode = node
             return handler
 
-        def on_check_output(node):
+        def on_check_output(node, showctrl):
             def handler(event):
                 # print(f"Output for {mynode.type}")
                 cb = event.GetEventObject()
@@ -218,6 +218,11 @@ class BasicOpPanel(wx.Panel):
                         mynode.updated()
                     except AttributeError:
                         pass
+                    if flag:
+                        myshow.SetValue(True)
+                        myshow.Enable(False)
+                    else:
+                        myshow.Enable(True)
                     self.last_signal = perf_counter()
                     ops = [mynode]
                     self.context.elements.signal("element_property_update", ops)
@@ -226,6 +231,7 @@ class BasicOpPanel(wx.Panel):
                     cb.SetValue(flag)
 
             mynode = node
+            myshow = showctrl
             return handler
 
         def on_speed(node, tbox):
@@ -255,11 +261,11 @@ class BasicOpPanel(wx.Panel):
                     value = float(mytext.GetValue())
                     if self.use_percent:
                         value *= 10
-                    if node.power != value:
-                        node.power = value
+                    if mynode.power != value:
+                        mynode.power = value
                         self.last_signal = perf_counter()
                         self.context.elements.signal(
-                            "element_property_reload", [node], "text_power"
+                            "element_property_reload", [mynode], "text_power"
                         )
                 except ValueError:
                     pass
@@ -417,7 +423,7 @@ class BasicOpPanel(wx.Panel):
                     btn.SetBitmap(wx.NullBitmap)
                 else:
                     btn.SetBitmap(image)
-                    # self.assign_buttons[myidx].SetBitmapDisabled(icons8_padlock_50.GetBitmap(color=Color("Grey"), resize=(self.iconsize, self.iconsize), noadjustment=True, keepalpha=True))
+
                 btn.SetToolTip(
                     str(op)
                     + "\n"
@@ -440,6 +446,11 @@ class BasicOpPanel(wx.Panel):
                 header = wx.StaticText(
                     self.op_panel, wx.ID_ANY, label=info, style=wx.ST_ELLIPSIZE_END
                 )
+                header.SetToolTip(
+                    _("Click to select all contained elements on the scene.")
+                    + "\n"
+                    + _("Double click to open the property dialog for the operation")
+                )
                 header.SetMinSize(wx.Size(30, -1))
                 header.SetMaxSize(wx.Size(70, -1))
                 op_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -453,7 +464,7 @@ class BasicOpPanel(wx.Panel):
                 c_out = wx.CheckBox(self.op_panel, id=wx.ID_ANY)
                 c_out.SetMinSize(wx.Size(30, -1))
                 c_out.SetMaxSize(wx.Size(50, -1))
-                self.op_panel.Bind(wx.EVT_CHECKBOX, on_check_output(op), c_out)
+
                 if hasattr(op, "output"):
                     flag = bool(op.output)
                     c_out.SetValue(flag)
@@ -470,6 +481,8 @@ class BasicOpPanel(wx.Panel):
                 c_show.SetMinSize(wx.Size(30, -1))
                 c_show.SetMaxSize(wx.Size(50, -1))
                 c_show.SetToolTip(_("Hide all contained elements on scene if not set."))
+
+                self.op_panel.Bind(wx.EVT_CHECKBOX, on_check_output(op, c_show), c_out)
                 self.op_panel.Bind(wx.EVT_CHECKBOX, on_check_show(op), c_show)
                 if hasattr(op, "is_visible"):
                     flag = bool(op.is_visible)
