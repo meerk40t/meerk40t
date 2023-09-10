@@ -344,12 +344,16 @@ class TreePanel(wx.Panel):
     def on_update_op_labels_tree(self, origin, *args):
         self.shadow_tree.update_op_labels()
         opitem = self.context.elements.get(type="branch ops")._item
+        if opitem is None:
+            return
         tree = self.shadow_tree.wxtree
         tree.Expand(opitem)
 
     @signal_listener("updateelem_tree")
     def on_update_elem_tree(self, origin, *args):
         elitem = self.context.elements.get(type="branch elems")._item
+        if elitem is None:
+            return
         tree = self.shadow_tree.wxtree
         tree.Expand(elitem)
 
@@ -718,7 +722,11 @@ class ShadowTree:
         @param node:
         @return:
         """
+        if node is None:
+            return
         item = node._item
+        if item is None:
+            return
         self.check_validity(item)
         # Special treatment for branches, they only collapse fully,
         # if all their childrens were collapsed already
@@ -874,6 +882,8 @@ class ShadowTree:
         # print (f"Update warn was called, time since last: {this_call-self.last_call:.3f}sec")
         # self.last_call = this_call
         op_node = self.elements.get(type="branch ops")
+        if op_node is None:
+            return
         op_item = op_node._item
 
         status = ""
