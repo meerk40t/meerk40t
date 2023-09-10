@@ -272,7 +272,7 @@ class LaserRender:
                 "effect hatch",
             ):
                 node.draw = self.draw_vector
-                node.make_cache = self.cache_geomstr
+                node._make_cache = self.cache_geomstr
             elif node.type == "elem point":
                 node.draw = self.draw_point_node
             elif node.type in place_nodes:
@@ -657,7 +657,7 @@ class LaserRender:
         """
         Draw routine for vector objects.
 
-        Vector objects are expected to have a make_cache routine which attaches a `_cache_matrix` and a `_cache`
+        Vector objects are expected to have a _make_cache routine which attaches a `_cache_matrix` and a `_cache`
         attribute to them which can be drawn as a GraphicsPath.
         """
         if hasattr(node, "mktext"):
@@ -679,7 +679,7 @@ class LaserRender:
         except AttributeError:
             cache = None
         if cache is None:
-            node.make_cache(node, gc)
+            node._make_cache(node, gc)
 
         try:
             cache_matrix = node._cache_matrix
