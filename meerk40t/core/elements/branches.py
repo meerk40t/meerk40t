@@ -617,11 +617,7 @@ def init_commands(kernel):
             self.add_op(op)
             if data is not None:
                 for item in data:
-                    if command == "hatch":
-                        c = op.children[0]
-                        c.add_reference(item)
-                    else:
-                        op.add_reference(item)
+                    op.add_reference(item)
             op_list.append(op)
         return "ops", op_list
 
