@@ -1096,18 +1096,15 @@ class EZProcessor:
                 # (self, ez, element, elem, op)
                 self.parse(ez, child, elem, op)
         elif isinstance(element, EZHatch):
-            elem = elem.add(type="group", label=element.label)
+            p = ez.pens[element.pen]
+            elem = op.add(type="effect hatch", **p.__dict__,  label=element.label)
             for child in element:
                 self.parse(ez, child, elem, op)
-
-            p = ez.pens[element.pen]
-            op_add = op.add(type="op hatch", **p.__dict__)
-            for e in elem.flat():
-                op_add.add_reference(e)
-
             if element.group:
                 for child in element.group:
                     self.parse(ez, child, elem, op)
+            op_add = op.add(type="op engrave", **p.__dict__)
+            op_add.add_reference(elem)
         elif isinstance(element, (EZGroup, EZCombine)):
             elem = elem.add(type="group", label=element.label)
             # recurse to children
