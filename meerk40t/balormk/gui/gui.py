@@ -53,7 +53,6 @@ def plugin(service, lifecycle):
         service.register("property/EngraveOpNode/Balor", BalorOperationPanel)
         service.register("property/ImageOpNode/Balor", BalorOperationPanel)
         service.register("property/DotsOpNode/Balor", BalorOperationPanel)
-        service.register("property/HatchOpNode/Balor", BalorOperationPanel)
         service.register(
             "button/control/Light_On",
             {
