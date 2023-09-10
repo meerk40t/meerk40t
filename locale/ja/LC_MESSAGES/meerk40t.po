@@ -4645,7 +4645,7 @@ msgid "Info"
 msgstr ""
 
 #: meerk40t/gui/preferences.py:177
-msgid "This will import a previosuly saved configuration file!"
+msgid "This will import a previously saved configuration file!"
 msgstr ""
 
 #: meerk40t/gui/preferences.py:179
@@ -4655,7 +4655,7 @@ msgid ""
 msgstr ""
 
 #: meerk40t/gui/preferences.py:184
-msgid "You do this at you own risk - are you realy sure?"
+msgid "You do this at you own risk - are you really sure?"
 msgstr ""
 
 #: meerk40t/balormk/gui/balorconfig.py:53
@@ -4788,7 +4788,7 @@ msgid "Insert '{operation}' before"
 msgstr ""
 
 #: meerk40t/gui/simulation.py:502 meerk40t/gui/simulation.py:817
-msgid "Inserts this special operation before the current cutplan entrys"
+msgid "Inserts this special operation before the current cutplan entry"
 msgstr ""
 
 #: meerk40t/gui/simulation.py:514 meerk40t/gui/simulation.py:829
