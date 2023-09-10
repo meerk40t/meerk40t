@@ -244,6 +244,13 @@ class CutOpNode(Node, Parameters):
         self.updated()
 
     def save(self, settings, section):
+        # Sync certain properties with self.settings
+        for attr in ("label", "lock", "id"):
+            if hasattr(self, attr) and attr in self.settings:
+                self.settings[attr] = getattr(self, attr)
+        if "hex_color" in self.settings:
+            self.settings["hex_color"] = self.color.hexa
+
         settings.write_persistent_attributes(section, self)
         settings.write_persistent(section, "hex_color", self.color.hexa)
         settings.write_persistent_dict(section, self.settings)
