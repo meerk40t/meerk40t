@@ -67,7 +67,6 @@ class OpInfoPanel(ScrolledPanel):
             "op image": ("Image", icons8_image_20, 0),
             "op engrave": ("Engrave", icons8_small_beam_20, 0),
             "op dots": ("Dots", icons8_scatter_plot_20, 0),
-            "op hatch": ("Hatch", icons8_diagonal_20, 0),
         }
         self.state_images = wx.ImageList()
         self.state_images.Create(width=25, height=25)

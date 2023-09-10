@@ -53,7 +53,6 @@ class FormatterPanel(wx.Panel):
             "op cut": icons8_laser_beam_20,
             "op image": icons8_image_20,
             "op raster": icons8_direction_20,
-            "op hatch": icons8_diagonal_20,
             "op dots": icons8_scatter_plot_20,
             "effect hatch": icons8_diagonal_20,
             "file": icons8_file_20,
