@@ -261,11 +261,11 @@ class BasicOpPanel(wx.Panel):
                     value = float(mytext.GetValue())
                     if self.use_percent:
                         value *= 10
-                    if node.power != value:
-                        node.power = value
+                    if mynode.power != value:
+                        mynode.power = value
                         self.last_signal = perf_counter()
                         self.context.elements.signal(
-                            "element_property_reload", [node], "text_power"
+                            "element_property_reload", [mynode], "text_power"
                         )
                 except ValueError:
                     pass
