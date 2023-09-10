@@ -54,15 +54,12 @@ class EngraveOpNode(Node, Parameters):
         # Is this op out of useful bounds?
         self.dangerous = False
         self.label = "Engrave" if label is None else label
-        self.modifier = modifier
-        if modifier is not None:
-            self.label = str(modifier)
 
     def __repr__(self):
         return "EngraveOpNode()"
 
     def __copy__(self):
-        return EngraveOpNode(self, modifier=copy(self.modifier))
+        return EngraveOpNode(self)
 
     # def is_dangerous(self, minpower, maxspeed):
     #     result = False
@@ -74,7 +71,7 @@ class EngraveOpNode(Node, Parameters):
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
-        default_map["element_type"] = "Engrave" if self.modifier is None else str(self.modifier)
+        default_map["element_type"] = "Engrave"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["danger"] = "❌" if self.dangerous else ""
         default_map["defop"] = "✓" if self.default else ""
@@ -240,8 +237,18 @@ class EngraveOpNode(Node, Parameters):
             self.add_reference(element)
 
     def copy_children_as_real(self, copy_node):
+        context = self
         for node in copy_node.children:
-            self.add_node(copy(node.node))
+            if node.type.startswith("effect"):
+                n = copy(node)
+                context.add_node(n)
+                context = n
+        for node in copy_node.children:
+            if node.type == "reference":
+                context.add_node(copy(node.node))
+        for node in self.children:
+            if node.type.startswith("effect"):
+                node.effect = True
 
     def time_estimate(self):
         estimate = 0
