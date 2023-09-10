@@ -1072,7 +1072,17 @@ class SVGProcessor:
                 context_node = self.regmark
                 e_list = self.regmark_list
             else:
-                context_node = context_node.add(type="group", id=ident, label=_label)
+                e_dict = dict(element.values["attributes"])
+                e_type = e_dict.get("type", "group")
+                stroke = e_dict.get("stroke")
+                for attr in ("type", "id", "label", "stroke"):
+                    if attr in e_dict:
+                        del e_dict[attr]
+                if stroke is None:
+                    context_node = context_node.add(type=e_type, id=ident, label=_label, **e_dict)
+                else:
+                    context_node = context_node.add(type=e_type, id=ident, label=_label, stroke=Color(stroke), **e_dict)
+
             # recurse to children
             if self.reverse:
                 for child in reversed(element):
