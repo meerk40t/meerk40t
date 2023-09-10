@@ -82,9 +82,7 @@ class DefaultOperationWidget(StatusBarWidget):
                 for power in (1000, 750, 500):
                     idx += 1
                     op_id = f"E{idx:01d}"
-                    op = EngraveOpNode(
-                        id=op_id, speed=speed, power=power
-                    )
+                    op = EngraveOpNode(id=op_id, speed=speed, power=power)
                     op.label = self.node_label(op)
                     op.color = Color(red=red, blue=blue, green=green)
                     blue, green, red = next_color(blue, green, red, delta=24)
@@ -102,9 +100,7 @@ class DefaultOperationWidget(StatusBarWidget):
                 for power in (1000,):
                     idx += 1
                     op_id = f"R{idx:01d}"
-                    op = RasterOpNode(
-                        id=op_id, speed=speed, power=power
-                    )
+                    op = RasterOpNode(id=op_id, speed=speed, power=power)
                     op.label = self.node_label(op)
                     op.color = Color(red=red, blue=blue, green=green, delta=60)
                     green, red, blue = next_color(green, red, blue)
@@ -150,7 +146,6 @@ class DefaultOperationWidget(StatusBarWidget):
         self.context.elements.default_operations = oplist
 
     def GenerateControls(self, parent, panelidx, identifier, context):
-
         def size_it(ctrl, dimen_x, dimen_y):
             ctrl.SetMinSize(wx.Size(dimen_x, dimen_y))
             ctrl.SetMaxSize(wx.Size(dimen_x, dimen_y))
@@ -249,7 +244,9 @@ class DefaultOperationWidget(StatusBarWidget):
     def Show(self, showit=True):
         # Callback function that decides whether to show an element or not
         if showit:
-            self.page_size = int((self.width - 2 * self.buttonsize_x) / self.buttonsize_y)
+            self.page_size = int(
+                (self.width - 2 * self.buttonsize_x) / self.buttonsize_x
+            )
             # print(f"Page-Size: {self.page_size}, width={self.width}")
             x = 0
             gap = 0
@@ -389,6 +386,10 @@ class DefaultOperationWidget(StatusBarWidget):
         elif signal == "element_property_update":
             if len(args):
                 self.reset_tooltips()
-
+        elif signal == "default_operations":
+            # New default operations!
+            self.GenerateControls(
+                self.parent, self.panelidx, self.identifier, self.context
+            )
         elif signal == "emphasized":
             self.Enable(self.context.elements.has_emphasis())

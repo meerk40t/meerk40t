@@ -1875,6 +1875,7 @@ class Elemental(Service):
 
         if elements is None:
             return
+        new_operations_added = False
 
         if len(list(self.ops())) == 0 and not self.operation_default_empty:
             has_cut = False
@@ -2262,8 +2263,11 @@ class Elemental(Service):
                             op.output = True
                         add_op_function(op)
                         operations.append(op)
+                        new_operations_added = True
                         already_found = True
                     op.add_reference(node)
+        if new_operations_added:
+            self.signal("tree_changed")
 
     def add_classify_op(self, op):
         """
