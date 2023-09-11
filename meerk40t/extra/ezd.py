@@ -920,17 +920,34 @@ class EZProcessor:
         for f in ez.objects:
             self.parse(ez, f, file_node, self.op_branch)
 
-    def parse(self, ez, element, elem, op):
+    def parse(self, ez, element, elem, op, op_add=None, path=None):
+        """
+        Parse ez structure into MK specific tree structure and objects.
+
+        @param ez: EZFile object
+        @param element: ezobject being parsed.
+        @param elem: element context.
+        @param op: operation context
+        @param op_add: Operation we should add to rather than create.
+        @param path: Path we should append to rather than create.
+        @return:
+        """
         if isinstance(element, EZText):
             node = elem.add(type="elem text", text=element.text, transform=self.matrix)
             p = ez.pens[element.pen]
-            op_add = op.add(type="op engrave", **p.__dict__)
+            if op_add is None:
+                op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
         elif isinstance(element, EZCurve):
             points = element.points
             if len(points) == 0:
                 return
-            path = Path(stroke="black", transform=self.matrix)
+            if path is None:
+                append_path = False
+                path = Path(stroke="black", transform=self.matrix)
+            else:
+                append_path = True
+
             last_end = None
             for t, closed, contour in points:
                 cpt = [
@@ -949,13 +966,16 @@ class EZProcessor:
             if points[-1][1]:
                 # Path is closed.
                 path.closed()
+            if append_path:
+                return
             node = elem.add(
                 type="elem path",
                 path=path,
                 stroke_width=self.elements.default_strokewidth,
             )
             p = ez.pens[element.pen]
-            op_add = op.add(type="op engrave", **p.__dict__)
+            if op_add is None:
+                op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
         elif isinstance(element, EZPolygon):
             m = element.matrix
@@ -979,7 +999,8 @@ class EZProcessor:
                 stroke_width=self.elements.default_strokewidth,
             )
             p = ez.pens[element.pen]
-            op_add = op.add(type="op engrave", **p.__dict__)
+            if op_add is None:
+                op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
         elif isinstance(element, EZCircle):
             m = element.matrix
@@ -996,7 +1017,8 @@ class EZProcessor:
                 type="elem ellipse",
             )
             p = ez.pens[element.pen]
-            op_add = op.add(type="op engrave", **p.__dict__)
+            if op_add is None:
+                op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
         elif isinstance(element, EZEllipse):
             m = element.matrix
@@ -1015,7 +1037,8 @@ class EZProcessor:
                 type="elem ellipse",
             )
             p = ez.pens[element.pen]
-            op_add = op.add(type="op engrave", **p.__dict__)
+            if op_add is None:
+                op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
         elif isinstance(element, EZRect):
             m = element.matrix
@@ -1034,7 +1057,8 @@ class EZProcessor:
                 type="elem rect",
             )
             p = ez.pens[element.pen]
-            op_add = op.add(type="op engrave", **p.__dict__)
+            if op_add is None:
+                op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
         elif isinstance(element, EZTimer):
             op.add(type="util wait", wait=element.wait_time / 1000.0)
@@ -1088,13 +1112,14 @@ class EZProcessor:
             matrix.post_translate(left, top)
             node = elem.add(type="elem image", image=image, matrix=matrix, dpi=_dpi)
             p = ez.pens[element.pen]
-            op_add = op.add(type="op image", **p.__dict__)
+            if op_add is None:
+                op_add = op.add(type="op image", **p.__dict__)
             op_add.add_reference(node)
         elif isinstance(element, EZVectorFile):
             elem = elem.add(type="group", label=element.label)
             for child in element:
                 # (self, ez, element, elem, op)
-                self.parse(ez, child, elem, op)
+                self.parse(ez, child, elem, op, op_add=op_add, path=path)
         elif isinstance(element, EZHatch):
             p = ez.pens[element.pen]
             elem = op.add(type="effect hatch", **p.__dict__,  label=element.label)
@@ -1103,13 +1128,14 @@ class EZProcessor:
             if element.group:
                 for child in element.group:
                     self.parse(ez, child, elem, op)
-            op_add = op.add(type="op engrave", **p.__dict__)
+            if op_add is None:
+                op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(elem)
         elif isinstance(element, (EZGroup, EZCombine)):
             elem = elem.add(type="group", label=element.label)
             # recurse to children
             for child in element:
-                self.parse(ez, child, elem, op)
+                self.parse(ez, child, elem, op, op_add=op_add, path=path)
         elif isinstance(element, EZSpiral):
             elem = elem.add(type="group", label=element.label)
             # recurse to children
