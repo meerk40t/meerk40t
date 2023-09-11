@@ -45,15 +45,11 @@ class TestHatch(unittest.TestCase):
         try:
             initial = "M0,0Z"
             path = Path(initial)
-            laserop = HatchOpNode()
+            laserop = HatchEffectNode()
             laserop.add_node(PathNode(path))
-            cutplan = CutPlan("a", kernel.root)
-            matrix = Matrix()
-            laserop.preprocess(kernel.root, matrix, cutplan)
-            cutplan.execute()
-            cutcode = CutCode(laserop.as_cutobjects())
-            self.assertEqual(len(cutcode), 0)
-            path = list(cutcode.as_elements())
-            self.assertEqual(len(path), 0)
+            laserop.effect = False
+            laserop.effect = True
+            g = laserop.as_geometry()
+            self.assertEqual(len(g), 0)
         finally:
             kernel.shutdown()
