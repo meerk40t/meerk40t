@@ -555,6 +555,11 @@ class SVGWriter:
         @param node:
         @return:
         """
+        for c in node.children:
+            if c.type.startswith("effect"):
+                xml_tree = SubElement(xml_tree, SVG_TAG_GROUP)
+                SVGWriter._write_custom(xml_tree, c)
+
         subelement = SubElement(xml_tree, MEERK40T_XMLS_ID + ":operation")
         subelement.set("type", str(node.type))
         if node.label is not None:
