@@ -175,14 +175,14 @@ class PreferencesSavingPanel(wx.Panel):
         dlg.Destroy()
 
     def on_button_import(self, event=None):
-        message = _("This will import a previosuly saved configuration file!") + "\n"
+        message = _("This will import a previously saved configuration file!") + "\n"
         message += (
             _(
                 "This may make MeerK40t unworkable if the file does not have the right format!"
             )
             + "\n"
         )
-        message += _("You do this at you own risk - are you realy sure?")
+        message += _("You do this at you own risk - are you really sure?")
         caption = _("Warning")
         dlg = wx.MessageDialog(
             self,

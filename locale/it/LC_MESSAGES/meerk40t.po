@@ -4726,7 +4726,7 @@ msgid "Info"
 msgstr "Informazioni"
 
 #: meerk40t/gui/preferences.py:177
-msgid "This will import a previosuly saved configuration file!"
+msgid "This will import a previously saved configuration file!"
 msgstr "Questo importerà un file di configurazione salvato in precedenza!"
 
 #: meerk40t/gui/preferences.py:179
@@ -4737,7 +4737,7 @@ msgstr ""
 "Questo potrebbe rendere MeerK40t non funzionante se il file non ha il formato corretto!"
 
 #: meerk40t/gui/preferences.py:184
-msgid "You do this at you own risk - are you realy sure?"
+msgid "You do this at you own risk - are you really sure?"
 msgstr "Fai questo a tuo rischio - sei davvero sicuro?"
 
 #: meerk40t/balormk/gui/balorconfig.py:53
@@ -4870,7 +4870,7 @@ msgid "Insert '{operation}' before"
 msgstr "Inserisci '{operation}' prima"
 
 #: meerk40t/gui/simulation.py:502 meerk40t/gui/simulation.py:817
-msgid "Inserts this special operation before the current cutplan entrys"
+msgid "Inserts this special operation before the current cutplan entry"
 msgstr "Inserisce questa operazione speciale prima delle voci del piano di taglio corrente"
 
 #: meerk40t/gui/simulation.py:514 meerk40t/gui/simulation.py:829
@@ -5802,7 +5802,7 @@ msgid ""
 "Add a polygon element\n"
 "Left click: point/line\n"
 "Double click: complete\n"
-"Right click: end"
+"Right click: cancel"
 msgstr ""
 "Aggiungi un elemento poligono\n"
 "Clic sinistro: punto/linea\n"
@@ -5818,7 +5818,7 @@ msgid ""
 "Add a polyline element\n"
 "Left click: point/line\n"
 "Double click: complete\n"
-"Right click: end"
+"Right click: cancel"
 msgstr ""
 "Aggiungi un elemento polilinea\n"
 "Clic sinistro: punto/linea\n"
@@ -6312,7 +6312,7 @@ msgid "&Paste\tCtrl-V"
 msgstr "&Incolla\tCtrl-V"
 
 #: meerk40t/gui/wxmmain.py:2540
-msgid "&Select All\tCtrl-A"
+msgid "&Select all\tCtrl-A"
 msgstr "&Seleziona tutto\tCtrl-A"
 
 #: meerk40t/gui/wxmmain.py:2541
@@ -6360,7 +6360,7 @@ msgid "Edit the elements properties"
 msgstr "Modifica le proprietà degli elementi"
 
 #: meerk40t/gui/wxmmain.py:2601
-msgid "Device Manager"
+msgid "Device-Manager"
 msgstr "Gestore Dispositivo"
 
 #: meerk40t/gui/wxmmain.py:2602
@@ -6368,7 +6368,7 @@ msgid "Manage the Laser devices"
 msgstr "Gestisci i dispositivi Laser"
 
 #: meerk40t/gui/wxmmain.py:2608
-msgid "Device Configuration"
+msgid "Device-Configuration"
 msgstr "Configurazione Dispositivo"
 
 #: meerk40t/gui/wxmmain.py:2609
@@ -6376,11 +6376,11 @@ msgid "Manage the device settings"
 msgstr "Gestisci le impostazioni del dispositivo"
 
 #: meerk40t/gui/wxmmain.py:2620
-msgid "Wordlist Editor"
+msgid "Wordlist-Editor"
 msgstr "Editor Wordlist"
 
 #: meerk40t/gui/wxmmain.py:2634
-msgid "Key Bindings"
+msgid "Key-Bindings"
 msgstr "Associazioni Tasti"
 
 #: meerk40t/gui/wxmmain.py:2646
@@ -16633,8 +16633,8 @@ msgstr "Attiva l'assistenza all'aria per elemento"
 #~ msgid "Open create split image dialog"
 #~ msgstr ""
 
-#~ msgid "Laser-Tools"
-#~ msgstr ""
+msgid "Laser-Tools"
+msgstr "Strumenti laser"
 
 #~ msgid "{action} {name}"
 #~ msgstr ""
@@ -16800,14 +16800,14 @@ msgstr "Attiva l'assistenza all'aria per elemento"
 #~ msgid "GUI-Appearance"
 #~ msgstr ""
 
-#~ msgid "Shape-Attributes"
-#~ msgstr ""
+msgid "Shape-Attributes"
+msgstr ""
 
-#~ msgid "GUI Appearance"
-#~ msgstr "Interfaccia grafica"
+msgid "GUI Appearance"
+msgstr "Interfaccia grafica"
 
-#~ msgid "Render-Options"
-#~ msgstr "Opzioni di visualizzazione"
+msgid "Render-Options"
+msgstr "Opzioni di visualizzazione"
 
 #~ msgid "Presets"
 #~ msgstr ""
@@ -16935,8 +16935,8 @@ msgstr "Attiva l'assistenza all'aria per elemento"
 #~ msgid "Variables + Wordlists"
 #~ msgstr ""
 
-#~ msgid "Operation/Element Properties"
-#~ msgstr ""
+msgid "Operation/Element Properties"
+msgstr "Proprietà degli operazioni/elementi"
 
 #~ msgid "Sources"
 #~ msgstr ""
@@ -17194,4 +17194,886 @@ msgstr "Attiva l'assistenza all'aria per elemento"
 
 #~ msgid "Replay {index}"
 #~ msgstr "Riproduci {index}"
+
+msgid "What pin is your foot pedal hooked to on the GPIO"
+msgstr ""
+
+msgid "QSwitch Frequency value"
+msgstr ""
+
+msgid "Is the rotary mode active for this device"
+msgstr ""
+
+msgid "Execute regmark live light idle job"
+msgstr ""
+
+msgid "Execute convex hull light idle job"
+msgstr ""
+
+msgid "Send laser rotary command info."
+msgstr ""
+
+msgid "Advance the rotary by the given amount"
+msgstr ""
+
+msgid "Check the rotary position"
+msgstr ""
+
+msgid "The JCZ Controller is a type of Galvo Laser Controller for several different sources compatible with the EZCad2° software."
+msgstr ""
+
+msgid "Live Hull"
+msgstr ""
+
+msgid "Known camera URIs:"
+msgstr ""
+
+msgid "Camera Information:"
+msgstr ""
+
+msgid "MJPEG-SERVER: Listing Servers."
+msgstr ""
+
+msgid "MJPEG-SERVER: End of List"
+msgstr ""
+
+msgid "MJPEG-SERVER: No server found."
+msgstr ""
+
+msgid "MJPEG-SERVER: Instructing Server to Close"
+msgstr ""
+
+msgid "MJPEG-SERVER: New Connection"
+msgstr ""
+
+msgid "MJPEG-SERVER: Connection aborted"
+msgstr ""
+
+msgid "MJPEG-SERVER: Connection closing"
+msgstr ""
+
+msgid "MJPEG-SERVER: Closed"
+msgstr ""
+
+msgid "MJPEG-SERVER: Launching"
+msgstr ""
+
+msgid "No CH341 Devices detected.\n"
+msgstr ""
+
+msgid "Optimize inner travel"
+msgstr ""
+
+msgid "Optimize cuts"
+msgstr ""
+
+msgid "Optimize travel"
+msgstr ""
+
+msgid "Merging cutcode"
+msgstr ""
+
+msgid "Try to complete a set of inner burns and the associated outer cut before moving onto other elements.This option only does something if Burn Inner First is also selected. If your design has multiple separate pieces on it, this should mostly cause each piece to be burned in entirety before moving on to burn another piece. This can reduce the risk of e.g. a shift ruining an entire piece of material by trying to ensure that one piece is finished before starting on another."
+msgstr ""
+
+msgid "Copy data"
+msgstr ""
+
+msgid "Preprocessing"
+msgstr ""
+
+msgid "Validating"
+msgstr ""
+
+msgid "Generating lasercode"
+msgstr ""
+
+msgid "Preparing optimisation"
+msgstr ""
+
+msgid "Optimising"
+msgstr ""
+
+msgid "Clearing data"
+msgstr ""
+
+msgid "Origin X"
+msgstr ""
+
+msgid "Value between 0-1 for the location of the origin x parameter"
+msgstr ""
+
+msgid "Origin Y"
+msgstr ""
+
+msgid "Value between 0-1 for the location of the origin y parameter"
+msgstr ""
+
+msgid "Right Positive"
+msgstr ""
+
+msgid "Are positive values to the right?"
+msgstr ""
+
+msgid "Bottom Positive"
+msgstr ""
+
+msgid "Are positive values towards the bottom?"
+msgstr ""
+
+msgid "XY coordinates are swapped"
+msgstr ""
+
+msgid "Rotation in degrees"
+msgstr ""
+
+msgid "Preferred Units"
+msgstr ""
+
+msgid "Set default units for positions"
+msgstr ""
+
+msgid "tat"
+msgstr ""
+
+msgid "mm"
+msgstr ""
+
+msgid "cm"
+msgstr ""
+
+msgid "inch"
+msgstr ""
+
+msgid "mil"
+msgstr ""
+
+msgid "Deleting°"
+msgstr ""
+
+msgid "element step size"
+msgstr ""
+
+msgid "step <element step-size>"
+msgstr ""
+
+msgid "Image step for %s is currently: %s"
+msgstr ""
+
+msgid "No image element selected."
+msgstr ""
+
+msgid "Error: clipboard empty node"
+msgstr ""
+
+msgid "Legacy Classify"
+msgstr ""
+
+msgid "Autoinherit for empty operation"
+msgstr ""
+
+msgid "Layout"
+msgstr ""
+
+msgid "Distance between placements?"
+msgstr ""
+
+msgid "How many additional placements on the X-Axis?\n(0 = as many as fit on the bed)"
+msgstr ""
+
+msgid "Create placements horizontally"
+msgstr ""
+
+msgid "How many additional placements on the Y-Axis?\n(0 = as many as fit on the bed)"
+msgstr ""
+
+msgid "Create placements vertically"
+msgstr ""
+
+msgid "Delete %s selected items from %s (Ref=%s)"
+msgstr ""
+
+msgid "Effect: On"
+msgstr ""
+
+msgid "Effect: Off"
+msgstr ""
+
+msgid "Append special effect"
+msgstr ""
+
+msgid "Append Line-fill 0.1mm"
+msgstr ""
+
+msgid "Append diagonal Line-fill 0.1mm"
+msgstr ""
+
+msgid "Append Line-Fill 1mm"
+msgstr ""
+
+msgid "Append diagonal Line-Fill 1mm"
+msgstr ""
+
+msgid "The file no longer exists!"
+msgstr ""
+
+msgid "File does not exist."
+msgstr ""
+
+msgid "Rotate {angle}°"
+msgstr ""
+
+msgid "Toggle Magnet-Lines"
+msgstr ""
+
+msgid "Around border"
+msgstr ""
+
+msgid "At center"
+msgstr ""
+
+msgid "Actualize pixels"
+msgstr ""
+
+msgid "Convert any shapes to pathnodes"
+msgstr ""
+
+msgid "adds rectangle to geometry"
+msgstr ""
+
+msgid "uniform scale value"
+msgstr ""
+
+msgid "scale <scale-factor>"
+msgstr ""
+
+msgid "Scale X value"
+msgstr ""
+
+msgid "Scale Y value"
+msgstr ""
+
+msgid "rotation angle"
+msgstr ""
+
+msgid "Add hatch geometry"
+msgstr ""
+
+msgid "offset to line mm (positive values to left/outside, negative values to right/inside)"
+msgstr ""
+
+msgid "join type: round, miter, square"
+msgstr ""
+
+msgid "deal with subpaths separately"
+msgstr ""
+
+msgid "interpolation points per segment"
+msgstr ""
+
+msgid "create an offset path for any of the given elements"
+msgstr ""
+
+msgid "method to use (one of union, difference, intersection, xor)"
+msgstr ""
+
+msgid "filltype to use (one of evenodd, nonzero, negative, positive)"
+msgstr ""
+
+msgid "keep the original elements, will be removed by default"
+msgstr ""
+
+msgid "create a logical combination of the given elements"
+msgstr ""
+
+msgid "radial connector"
+msgstr ""
+
+msgid "native path offset (use at you own risk)"
+msgstr ""
+
+msgid "create an offset path for any of the given elements, old algorithm"
+msgstr ""
+
+msgid "adds hatch-effect to scene"
+msgstr ""
+
+msgid "Toggles effect from being group to an effect."
+msgstr ""
+
+msgid " Area= {area:.3f} {unit}°"
+msgstr ""
+
+msgid "Show current device info."
+msgstr ""
+
+msgid "Show power as %"
+msgstr ""
+
+msgid "Active: Full power will be shown as 100%\nInactive: Full power will be shown as 1000 ppi"
+msgstr ""
+
+msgid "Show speed in mm/min"
+msgstr ""
+
+msgid "Active: Speed will be shown in mm/min\nInactive: Speed will be shown in mm/s"
+msgstr ""
+
+msgid "Unknown fonttype {ext}"
+msgstr ""
+
+msgid "Inkscape executable at \"{path}\" is: {version}"
+msgstr ""
+
+msgid "A new {type} release is available:\nVersion: {name} v{version} ({label})\nUrl: {url}\nInfo: {info}"
+msgstr ""
+
+msgid "You seem to have the latest version.\nLatest version on github: {name} v{version} ({label})\nUrl: {url}\nInfo: {info}"
+msgstr ""
+
+msgid "Will translate incoming to device: {dev}"
+msgstr ""
+
+msgid "TCP Port of the GRBL device"
+msgstr ""
+
+msgid "Serial"
+msgstr ""
+
+msgid "TCP-Network"
+msgstr ""
+
+msgid "mock"
+msgstr ""
+
+msgid "Interface Type"
+msgstr ""
+
+msgid "Select the interface type for the grbl device"
+msgstr ""
+
+msgid "Limit the controller buffer size"
+msgstr ""
+
+msgid "Enables the controller buffer limit."
+msgstr ""
+
+msgid "lines"
+msgstr ""
+
+msgid "Controller Buffer"
+msgstr ""
+
+msgid "This is the limit of the controller buffer size. Prevents full writing to the controller."
+msgstr ""
+
+msgid "Require validation for device"
+msgstr ""
+
+msgid "Ensure device is completely initialized before sending data. This is usually known to be valid at the 'Grbl xx.x' version message."
+msgstr ""
+
+msgid "Welcome Validator"
+msgstr ""
+
+msgid "If for some reason the device needs a different welcome validator than 'Grbl' (default), for example, somewhat custom grbl-like firmware"
+msgstr ""
+
+msgid "Send raw gcode to the device (via realtime channel)"
+msgstr ""
+
+msgid "GRBL-FluidNC (FluidNC-Controller)"
+msgstr ""
+
+msgid "Any of a variety of ESP32 based FluidNC drivers that implement GRBL as a protocol"
+msgstr ""
+
+msgid "Ortur Laser Master 2 (GRBL)"
+msgstr ""
+
+msgid "Ortur-branded self-assembled grbl diode lasers"
+msgstr ""
+
+msgid "starts a grblmock server on port 23 (telnet)"
+msgstr ""
+
+msgid "Select this if you have a GRBL device running through a serial connection."
+msgstr ""
+
+msgid "Select this if the GRBL device is contacted via TCP connection"
+msgstr ""
+
+msgid "Select this only for debugging without a physical laser available."
+msgstr ""
+
+msgid "Advanced"
+msgstr ""
+
+msgid "Reset laser"
+msgstr ""
+
+msgid "Kills alarms and locks"
+msgstr ""
+
+msgid "Gcode"
+msgstr ""
+
+msgid "GRBL"
+msgstr ""
+
+msgid "Set if all columns need to have the same size (ie maximum width over all columns)"
+msgstr ""
+
+msgid "Set if all rows need to have the same size (ie maximum height over all row)"
+msgstr ""
+
+msgid "Leave color"
+msgstr ""
+
+msgid "Op inherits color"
+msgstr ""
+
+msgid "Elem inherits color"
+msgstr ""
+
+msgid "Assign as well all other elements with the same stroke-color"
+msgstr ""
+
+msgid "Operation"
+msgstr ""
+
+msgid "Show"
+msgstr ""
+
+msgid "Power {unit}"
+msgstr ""
+
+msgid "Right click: Extended options for operation"
+msgstr ""
+
+msgid "Click to select all contained elements on the scene."
+msgstr ""
+
+msgid "Double click to open the property dialog for the operation"
+msgstr ""
+
+msgid "Power ({unit})"
+msgstr ""
+
+msgid "Speed ({unit})"
+msgstr ""
+
+msgid "No File"
+msgstr ""
+
+msgid "We intentionally ignored a request to start a job via the keyboard.\nYou need to make your intent clear by a deliberate mouse-click"
+msgstr ""
+
+msgid "Preparing Laserjob..."
+msgstr ""
+
+msgid "The circles center seems to lie outside the bed-dimensions!"
+msgstr ""
+
+msgid "If you continue to move to the center, then the laserhead might"
+msgstr ""
+
+msgid "slam into the walls and get damaged! Do you really want to proeed?"
+msgstr ""
+
+msgid "Template-Name"
+msgstr ""
+
+msgid "Select an entry to reload"
+msgstr ""
+
+msgid "Every {dist}"
+msgstr ""
+
+msgid "Templates"
+msgstr ""
+
+msgid "Automatically open notes if they exist when file is opened."
+msgstr ""
+
+msgid "If checked then the aspect ratio (width / height) will be maintained"
+msgstr ""
+
+msgid "Coordinate Space"
+msgstr ""
+
+msgid "There is more to see - click to display"
+msgstr ""
+
+msgid "Load Project"
+msgstr ""
+
+msgid "The screen distance in pixels inside which snap points will be highlighted"
+msgstr ""
+
+msgid "Snap to Element"
+msgstr ""
+
+msgid "Set the screen distance in pixels inside which the cursor will snap to the nearest element point"
+msgstr ""
+
+msgid "Set the screen distance in pixels inside which the cursor will snap to the nearest grid intersection"
+msgstr ""
+
+msgid "Current Value: {value} pixel"
+msgstr ""
+
+msgid "All incomplete jobs"
+msgstr ""
+
+msgid "Disable"
+msgstr ""
+
+msgid "Crash Detected! Send Log?"
+msgstr ""
+
+msgid "Ribbon-Size:"
+msgstr ""
+
+msgid "Autofocus bed on resize"
+msgstr ""
+
+msgid "If checked, the cursor will snap to the closest element point within the specified threshold"
+msgstr ""
+
+msgid "Element-Point-Snap-Threshold"
+msgstr ""
+
+msgid "If checked, the cursor will snap to the closest grid intersection"
+msgstr ""
+
+msgid "Grid-Point-Snap-Threshold"
+msgstr ""
+
+msgid "Clear magnets on File/New"
+msgstr ""
+
+msgid "File/New can remove all defined magnetlines (active)\nor leave them in place (inactive)"
+msgstr ""
+
+msgid "Button repeat-interval"
+msgstr ""
+
+msgid "If you click and hold the mouse-button on the Jog/Drag-Panels\nthe movement action will be repeated. This value establishes\nthe interval between individual executions.\nA value of 0 will disable this feature."
+msgstr ""
+
+msgid "Accelerate repeats"
+msgstr ""
+
+msgid "If you hold the button for some time, then after some repetitions\nthe action will increase in speed if you activate this option."
+msgstr ""
+
+msgid "No, thank you"
+msgstr ""
+
+msgid "Look for major releases"
+msgstr ""
+
+msgid "Look for major+beta releases"
+msgstr ""
+
+msgid "Check for available updates on startup."
+msgstr ""
+
+msgid "Delete selected items"
+msgstr ""
+
+msgid "Measure distance / perimeter / area\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
+msgstr ""
+
+msgid "control various panes for main window"
+msgstr ""
+
+msgid "pane to be float"
+msgstr ""
+
+msgid "pane to be dock"
+msgstr ""
+
+msgid "Hides/Restores all the visible panes (except scene)"
+msgstr ""
+
+msgid "Don't show the small read circle showing the current laserhead position"
+msgstr ""
+
+msgid "Show a negative image of the scene by inverting colours"
+msgstr ""
+
+msgid "Do Not Refresh"
+msgstr ""
+
+msgid "Don't refresh the scene when requested"
+msgstr ""
+
+msgid "No help text"
+msgstr ""
+
+msgid "Show the Ribbon Labels"
+msgstr ""
+
+msgid "Active: Show the labels for ribbonbar.\nInactive: Hide the ribbon labels."
+msgstr ""
+
+msgid "Ribbons"
+msgstr ""
+
+msgid "Pages"
+msgstr ""
+
+msgid "Panels"
+msgstr ""
+
+msgid "Available Panels"
+msgstr ""
+
+msgid "Add to page"
+msgstr ""
+
+msgid "Apply"
+msgstr ""
+
+msgid "Reset to Default"
+msgstr ""
+
+msgid "Add the selected panel to the selected page"
+msgstr ""
+
+msgid "Apply the configuration"
+msgstr ""
+
+msgid "Reset the ribbon appearance to the default configuration"
+msgstr ""
+
+msgid "Add an additional page to the ribbon"
+msgstr ""
+
+msgid "Remove the selected page from the list"
+msgstr ""
+
+msgid "Decrease the position of the selected page"
+msgstr ""
+
+msgid "Increase the position of the selected page"
+msgstr ""
+
+msgid "Modify the label of the selected page"
+msgstr ""
+
+msgid "Remove the selected panel from the list"
+msgstr ""
+
+msgid "Decrease the position of the selected panel"
+msgstr ""
+
+msgid "Increase the position of the selected panel"
+msgstr ""
+
+msgid "Allow/suppress the display of labels beneath the icons in the ribbon"
+msgstr ""
+
+msgid "Burn-Operation"
+msgstr ""
+
+msgid "Details"
+msgstr ""
+
+msgid "You have elements in disabled operations, that won't be burned"
+msgstr ""
+
+msgid "This is a special node that will consume any other closed path\nyou drag onto it and will fill the shape with a line pattern.\nTo activate / deactivate this effect please use the context menu."
+msgstr ""
+
+msgid "N/A"
+msgstr ""
+
+msgid "Loops"
+msgstr ""
+
+msgid "Angle Delta"
+msgstr ""
+
+msgid "Choose a script to apply"
+msgstr ""
+
+msgid "Select image enhancement script to apply"
+msgstr ""
+
+msgid "Image Properties"
+msgstr ""
+
+msgid "Look at the fill color to restrict classification."
+msgstr ""
+
+msgid "Power (ppi)"
+msgstr ""
+
+msgid "/1000"
+msgstr ""
+
+msgid "Power (ppi):"
+msgstr ""
+
+msgid "Kerf compensation:"
+msgstr ""
+
+msgid "Enter half the width of your laserbeam (kerf)\nif you want to have a shape with an exact size.\nUse the negative value if you are using the cutout\nas a placeholder for another part (eg inlays)."
+msgstr ""
+
+msgid "Inward"
+msgstr ""
+
+msgid "Outward"
+msgstr ""
+
+msgid "User defined value: {value}"
+msgstr ""
+
+msgid "Previous entries"
+msgstr ""
+
+msgid "Next entries"
+msgstr ""
+
+msgid "Set the join of lines to an arc-shape"
+msgstr ""
+
+msgid "Set the join of lines to a miter-clip-shape"
+msgstr ""
+
+msgid "Resample image"
+msgstr ""
+
+msgid "Select the board to use. This has an effects the speedcodes used."
+msgstr ""
+
+msgid "Phase Type"
+msgstr ""
+
+msgid "Sequential"
+msgstr ""
+
+msgid "Random"
+msgstr ""
+
+msgid "Progressive"
+msgstr ""
+
+msgid "Static"
+msgstr ""
+
+msgid "The PPI carry-forward algorithm is ambiguous when it comes to shifting from one location, typically it just maintained the count. However, in some rare cases this may artifact if the PPI is low enough to see individual dots. This feature allows very fine-grained control."
+msgstr ""
+
+msgid "Sequential: maintain phase between cuts"
+msgstr ""
+
+msgid "Random: set the phase to a random value between cuts"
+msgstr ""
+
+msgid "Progressive: linearly progress the phase between cuts"
+msgstr ""
+
+msgid "Static: always set the phase to the exact value between cuts"
+msgstr ""
+
+msgid "Phase Value"
+msgstr ""
+
+msgid "Value for progressive or static phase type"
+msgstr ""
+
+msgid "Reset\nstatistics"
+msgstr ""
+
+msgid "Max Pulse Power"
+msgstr ""
+
+msgid "What max power level should pulses be fired at?"
+msgstr ""
+
+msgid "Maximum Raster Jog"
+msgstr ""
+
+msgid "Maximum distance allowed to be done during a raster step/jog"
+msgstr ""
+
+msgid "At what power level do we raster?"
+msgstr ""
+
+msgid "Send the file but do not start the file"
+msgstr ""
+
+msgid "Advanced Acceleration"
+msgstr ""
+
+msgid "Set acceleration value for this operation"
+msgstr ""
+
+msgid "Field Loop"
+msgstr ""
+
+msgid "Uses Roller"
+msgstr ""
+
+msgid "Steps required for a full rotation"
+msgstr ""
+
+msgid "Circumference of roller"
+msgstr ""
+
+msgid "Circumference of object in rotary"
+msgstr ""
+
+msgid "Object Circumference:"
+msgstr ""
+
+msgid "Roller Circumference:"
+msgstr ""
+
+msgid "Rotation Steps:"
+msgstr ""
+
+msgid "steps"
+msgstr ""
+
+msgid "Pattern"
+msgstr ""
+
+msgid "Rectangular (box joints)"
+msgstr ""
+
+msgid "Circular (inlays)"
+msgstr ""
+
+msgid "Slider"
+msgstr ""
+
+msgid "Cut-Operation"
+msgstr ""
+
+msgid "If you want to produce cut out shapes with *exact* dimensions after the burn, then you need to take half the width of the laserbeam into consideration (aka Kerf compensation).\nThis routine will create a couple of testshapes for you to establish this value.\nAfter you cut these shapes out you need to try to fit the shapes with the same label together. Choose the pair that has a perfect fit and use the label as your kerf-compensation value."
+msgstr ""
+
+msgid "Minimum value for Kerf"
+msgstr ""
+
+msgid "Maximum value for Kerf"
+msgstr ""
+
+msgid "Dimension of the to be created pattern"
+msgstr ""
+
+msgid "Create a test-pattern with your values"
+msgstr ""
+
+msgid "Pulses Per Inch - This is software created laser power control."
+msgstr ""
+
+msgid "Kerf-Test"
+msgstr ""
 
