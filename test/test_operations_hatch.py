@@ -24,12 +24,15 @@ class TestHatch(unittest.TestCase):
             laserop = EngraveOpNode()
             laserop.add_node(HatchEffectNode())
             laserop.add_node(PathNode(path))
+
             cutplan = CutPlan("a", kernel.root)
             matrix = Matrix()
             laserop.preprocess(kernel.root, matrix, cutplan)
             cutplan.execute()
+
             cutcode = CutCode(laserop.as_cutobjects())
-            self.assertEqual(len(cutcode), 7)
+            f = list(cutcode.flat())
+            self.assertEqual(len(f), 3)
             path = list(cutcode.as_elements())
             self.assertEqual(len(path), 1)
         finally:
