@@ -1121,16 +1121,34 @@ class EZProcessor:
                 # (self, ez, element, elem, op)
                 self.parse(ez, child, elem, op, op_add=op_add, path=path)
         elif isinstance(element, EZHatch):
-            p = ez.pens[element.pen]
-            elem = op.add(type="effect hatch", **p.__dict__,  label=element.label)
+            p = dict(ez.pens[element.pen].__dict__)
+
+            op_add = op.add(type="op engrave", **p)
+            if "label" in p:
+                # Both pen and hatch have a label, we shall use the hatch-label for hatch; pen for op.
+                del p["label"]
+            op_add.add(type="effect hatch", **p, label=element.label)
             for child in element:
-                self.parse(ez, child, elem, op)
+                # Operands for the hatch.
+                self.parse(ez, child, elem, op, op_add=op_add)
+
+            op_add = op.add(type="op engrave", **p)
             if element.group:
+                path = Path(stroke="black", transform=self.matrix)
                 for child in element.group:
-                    self.parse(ez, child, elem, op)
-            if op_add is None:
-                op_add = op.add(type="op engrave", **p.__dict__)
-            op_add.add_reference(elem)
+                    # Per-completed hatch elements.
+                    self.parse(ez, child, elem, op, op_add=op_add, path=path)
+
+                # All path elements are added, should add it to the tree.
+                node = elem.add(
+                    type="elem path",
+                    path=path,
+                    stroke_width=self.elements.default_strokewidth,
+                )
+                p = ez.pens[element.pen]
+                if op_add is None:
+                    op_add = op.add(type="op engrave", **p.__dict__)
+                op_add.add_reference(node)
         elif isinstance(element, (EZGroup, EZCombine)):
             elem = elem.add(type="group", label=element.label)
             # recurse to children
