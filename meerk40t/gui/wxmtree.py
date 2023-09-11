@@ -1122,6 +1122,9 @@ class ShadowTree:
         """
         parent = node.parent
         parent_item = parent._item
+        if parent_item is None:
+            # We are appending items in tree before registration.
+            return
         tree = self.wxtree
         if pos is None:
             node._item = tree.AppendItem(parent_item, self.name)
