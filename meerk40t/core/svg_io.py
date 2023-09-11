@@ -1167,6 +1167,8 @@ class SVGProcessor:
                     if hasattr(op, "validate"):
                         op.validate()
                     op.id = node_id
+                    if context_node.type.startswith("effect"):
+                        op.append_child(context_node)
                     self.operation_list.append(op)
                 except AttributeError:
                     # This operation is invalid.
