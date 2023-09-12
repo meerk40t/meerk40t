@@ -1102,31 +1102,64 @@ class Elemental(Service):
         for e in self.flat():
             e.unregister()
 
-    def save_persistent_operations_list(self, name, oplist):
+    def save_persistent_operations_list(self, name, oplist=None):
+        """
+        Saves a given list of operations to the op_data:Settings
+
+        @param name:
+        @param oplist:
+        @return:
+        """
+        if oplist is None:
+            oplist = self.op_branch.children
+        self.clear_persistent_operations(name, flush=False)
+        self._save_persistent_operation_tree(name, oplist)
+
+    # Operations uniform
+    save_persistent_operations = save_persistent_operations_list
+
+    def _save_persistent_operation_tree(self, name, oplist, flush=True):
+        """
+        Recursive save of the tree. Sections append additional values for deeper tree values.
+        References are not saved.
+
+        @param name:
+        @param oplist:
+        @return:
+        """
         settings = self.op_data
-        subitems = list(settings.derivable(name))
-        for section in subitems:
-            settings.clear_persistent(section)
-        # settings.clear_persistent(name)
         for i, op in enumerate(oplist):
             if hasattr(op, "allow_save"):
                 if not op.allow_save():
                     continue
+            if op.type == "reference":
+                # We do not save references.
+                continue
+
             section = f"{name} {i:06d}"
             settings.write_persistent(section, "type", op.type)
             op.save(settings, section)
-
+            try:
+                self._save_persistent_operation_tree(section, op.children)
+            except AttributeError:
+                pass
+        if not flush:
+            return
         settings.write_configuration()
 
-    def save_persistent_operations(self, name):
-        opl = [op for op in self.ops()]
-        self.save_persistent_operations_list(name, opl)
+    def clear_persistent_operations(self, name, flush=True):
+        """
+        Clear operations for the derivables of the given name.
 
-    def clear_persistent_operations(self, name):
+        @param name: name of operation.
+        @param flush: Optionally permit non-flushed to disk.
+        @return:
+        """
         settings = self.op_data
-        subitems = list(settings.derivable(name))
-        for section in subitems:
+        for section in list(settings.derivable(name)):
             settings.clear_persistent(section)
+        if not flush:
+            return
         settings.write_configuration()
 
     def load_persistent_op_list(self, name):
