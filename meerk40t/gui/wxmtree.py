@@ -428,7 +428,6 @@ class ShadowTree:
             "op cut": icons8_laser_beam_20,
             "op image": icons8_image_20,
             "op raster": icons8_direction_20,
-            "op hatch": icons8_diagonal_20,
             "op dots": icons8_scatter_plot_20,
             "effect hatch": icons8_diagonal_20,
             "place current": icons8_home_location_20,
@@ -1123,6 +1122,9 @@ class ShadowTree:
         """
         parent = node.parent
         parent_item = parent._item
+        if parent_item is None:
+            # We are appending items in tree before registration.
+            return
         tree = self.wxtree
         if pos is None:
             node._item = tree.AppendItem(parent_item, self.name)
@@ -1735,11 +1737,6 @@ class ShadowTree:
                         ttip = _(
                             "This will engrave the elements contained,\n"
                             + "following the vector-paths of the data."
-                        )
-                    elif node.type == "op hatch":
-                        ttip = _(
-                            "This is an operation that will engrave a vector shape\n"
-                            + "filled with a set of vector-patterns like lines"
                         )
                     elif node.type == "op image":
                         ttip = _(

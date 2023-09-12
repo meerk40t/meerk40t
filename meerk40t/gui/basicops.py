@@ -347,14 +347,6 @@ class BasicOpPanel(wx.Panel):
                     noadjustment=True,
                     keepalpha=True,
                 )
-            elif node.type == "op hatch":
-                c, d = get_color()
-                result = icons8_diagonal_20.GetBitmap(
-                    color=c,
-                    resize=(iconsize, iconsize),
-                    noadjustment=True,
-                    keepalpha=True,
-                )
             elif node.type == "op dots":
                 c, d = get_color()
                 result = icons8_scatter_plot_20.GetBitmap(

@@ -230,6 +230,8 @@ class HatchEffectNode(Node, Stroked):
 
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
+        if self.parent.type.startswith("op"):
+            return self.parent.drop(drag_node, modify=modify)
         if drag_node.type.startswith("elem"):
             # Dragging element onto operation adds that element to the op.
             if modify:

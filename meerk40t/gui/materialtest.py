@@ -4,9 +4,9 @@ from math import tau
 import wx
 from wx import aui
 
+from meerk40t.core.node.effect_hatch import HatchEffectNode
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
-from meerk40t.core.node.op_hatch import HatchOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
@@ -187,7 +187,9 @@ class TemplatePanel(wx.Panel):
         self.color_scheme_free.append(False)
         self.default_op.append(ImageOpNode())
         self.color_scheme_free.append(True)
-        self.default_op.append(HatchOpNode())
+        op = EngraveOpNode()
+        op.add_node(HatchEffectNode())
+        self.default_op.append(op)
         self.color_scheme_free.append(True)
 
         self.use_image = [False] * len(self.default_op)

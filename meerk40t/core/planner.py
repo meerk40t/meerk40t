@@ -7,7 +7,6 @@ from .cutplan import CutPlan, CutPlanningFailedError
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
 from .node.op_engrave import EngraveOpNode
-from .node.op_hatch import HatchOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
 from .node.util_console import ConsoleOperation
@@ -467,7 +466,6 @@ class Planner(Service):
             #     "op image",
             #     "op engrave",
             #     "op dots",
-            #     "op hatch",
             #     "cutcode",
             #     "util console",
             #     "util wait",
@@ -683,7 +681,6 @@ class Planner(Service):
                         CutOpNode,
                         EngraveOpNode,
                         DotsOpNode,
-                        HatchOpNode,
                     ),
                 ):
                     copy_c = copy(c)

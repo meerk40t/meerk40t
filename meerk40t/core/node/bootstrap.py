@@ -19,7 +19,6 @@ from meerk40t.core.node.layernode import LayerNode
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
-from meerk40t.core.node.op_hatch import HatchOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.node.place_current import PlaceCurrentNode
@@ -40,7 +39,6 @@ defaults = {
     "op raster": {"speed": 150.0, "dpi": 500, "color": "black", "frequency": 30.0},
     "op image": {"speed": 150.0, "color": "transparent", "frequency": 30.0},
     "op dots": {"speed": 150.0, "color": "transparent", "frequency": 30.0},
-    "op hatch": {"speed": 35.0, "color": "lime", "frequency": 30.0},
     "util console": {},
     "util wait": {},
     "util home": {},
@@ -74,7 +72,6 @@ bootstrap = {
     "op raster": RasterOpNode,
     "op image": ImageOpNode,
     "op dots": DotsOpNode,
-    "op hatch": HatchOpNode,
     "effect hatch": HatchEffectNode,
     "util console": ConsoleOperation,
     "util wait": WaitOperation,
