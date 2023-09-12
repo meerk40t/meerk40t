@@ -269,9 +269,7 @@ class SVGWriter:
                 c.image.save(stream, format="PNG", dpi=(c.dpi, c.dpi))
             except OSError:
                 # Edge condition if the original image was CMYK and never touched it can't encode to PNG
-                c.image.convert("RGBA").save(
-                    stream, format="PNG", dpi=(c.dpi, c.dpi)
-                )
+                c.image.convert("RGBA").save(stream, format="PNG", dpi=(c.dpi, c.dpi))
             subelement.set(
                 "xlink:href",
                 f"data:image/png;base64,{b64encode(stream.getvalue()).decode('utf8')}",
@@ -1080,9 +1078,17 @@ class SVGProcessor:
                     if attr in e_dict:
                         del e_dict[attr]
                 if stroke is None:
-                    context_node = context_node.add(type=e_type, id=ident, label=_label, **e_dict)
+                    context_node = context_node.add(
+                        type=e_type, id=ident, label=_label, **e_dict
+                    )
                 else:
-                    context_node = context_node.add(type=e_type, id=ident, label=_label, stroke=Color(stroke), **e_dict)
+                    context_node = context_node.add(
+                        type=e_type,
+                        id=ident,
+                        label=_label,
+                        stroke=Color(stroke),
+                        **e_dict,
+                    )
                 if hasattr(context_node, "effect"):
                     context_node.effect = False
 

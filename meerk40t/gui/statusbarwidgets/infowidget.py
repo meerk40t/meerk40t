@@ -191,7 +191,7 @@ class InformationWidget(SimpleInfoWidget):
             width = bounds[2] - bounds[0]
             height = bounds[3] - bounds[1]
             if isinf(width) or isinf(height):
-                return float('inf'), float('inf')
+                return float("inf"), float("inf")
             new_width = int(width * dots_per_units)
             new_height = int(height * dots_per_units)
             # print(f"Width: {width:.0f} -> {new_width}")
