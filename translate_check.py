@@ -28,8 +28,6 @@ import sys
 
 
 def read_source():
-    msgid_mode = False
-    msgid = ""
 
     id_strings_source = []
     id_usage = []
