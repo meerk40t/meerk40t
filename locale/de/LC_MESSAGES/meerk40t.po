@@ -10251,6 +10251,25 @@ msgstr "GRBL-Konfiguration"
 #: meerk40t/grbl/gui/grblconfiguration.py:47
 msgid "Dimensions"
 msgstr "Abmessungen"
+# ./meerk40t\grbl\gui\grblconfiguration.py:65166
+msgid "Select this if you have a GRBL device running through a serial connection."
+msgstr "Falls der GRBL-Laser direkt an einer seriellen Schnittstelle angeschlossen ist"
+
+# ./meerk40t\grbl\gui\grblconfiguration.py:65173
+msgid "Select this if the GRBL device is contacted via TCP connection"
+msgstr "Falls der GRBL-Laser über eine TCP-Netzwerkverbindung angeschlossen ist"
+
+# ./meerk40t\grbl\gui\grblconfiguration.py:65179
+msgid "Select this only for debugging without a physical laser available."
+msgstr "Nur zu Entwicklungszwecken ohne einen realen Laser verfügbar zu haben"
+
+# ./meerk40t\grbl\gui\grblconfiguration.py:65360
+msgid "Could not query laser-data!"
+msgstr "Laser-Konfiguration liess sich nicht auslesen!"
+
+# ./meerk40t\grbl\gui\grblconfiguration.py:65415
+msgid "Successfully queried laser-data!"
+msgstr "Laser-Konfiguration erfolgreich ausgelesen!"
 
 #: meerk40t/grbl/gui/grblconfiguration.py:48
 msgid "Global Settings"
@@ -10271,6 +10290,10 @@ msgstr "Verbunden"
 #: meerk40t/moshi/gui/moshicontrollergui.py:346
 msgid "Disconnect"
 msgstr "Getrennt"
+
+#: meerk40t\grbl\device.py
+msgid "Serial"
+msgstr "Serielle Schnittstelle"
 
 #: meerk40t/grbl/gui/gui.py:31
 msgid "Serial Controller"
@@ -11722,8 +11745,12 @@ msgid "Byte 5"
 msgstr "Byte 5"
 
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:344
-msgid "Connect Failed"
-msgstr ""
+msgid "Connect failed"
+msgstr "Verbindungsversuch fehlgeschlagen"
+
+#: ./meerk40t\grbl\gui\grblconfiguration.py:292
+msgid "Connect succeeded"
+msgstr "Verbindungsversuch erfolgreich"
 
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:352
 msgid "Retrying..."

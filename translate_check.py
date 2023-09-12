@@ -52,10 +52,12 @@ def read_source():
             # debugit = fname.endswith("translate_check.py")
             with open(fname, mode="r", encoding="utf8", errors="surrogateescape") as f:
                 filecount += 1
+                localline = 0
                 msgid_mode = False
                 msgid = ""
                 while True:
                     linecount += 1
+                    localline += 1
                     line = f.readline()
                     if not line:
                         break
@@ -70,7 +72,7 @@ def read_source():
                                 if msgid:
                                     if msgid not in id_strings_source:
                                         id_strings_source.append(msgid)
-                                        id_usage.append(f"# {fname}:{linecount}")
+                                        id_usage.append(f"#: {fname}:{localline}")
                                     # print (f"'{orgline}' -> '{msgid}'")
                                 msgid_mode = False
                                 msgid = ""

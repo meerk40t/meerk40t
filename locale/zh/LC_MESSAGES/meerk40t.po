@@ -14391,7 +14391,7 @@ msgid "Byte 5"
 msgstr "字节 5"
 
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:345
-msgid "Connect Failed"
+msgid "Connect failed"
 msgstr "连接失败"
 
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:353
