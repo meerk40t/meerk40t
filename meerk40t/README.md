@@ -49,11 +49,11 @@ Image modules are tools dealing with Pillow (Python Image Library).
 Tools are simple stand-alone datastructure/algorithms that perform non-kernel operations
 which may be considerably useful to many modules, or which simply do not require any ecosystem functionality.
 
-## Kernel Server
+## Network
 
 The Server governs interactions within TCP and UDP sockets.
 
-## Main.py
+## Main
 
 The main file deals with the CLI for Meerk40t as well as loading and processing of different plugins, both internal and
 external.

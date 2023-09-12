@@ -1,8 +1,12 @@
 ## Elements
 
-Elements are shape, path, image, and path-text interactions.
+The elements modules governs all the interactions with the various nodes, as well as dealing with tree information.
+This serves effectively as the datastructure that stores all information about any active project. This includes
+several smaller functional pieces like Penbox and Wordlists.
 
 The tree and all data in it are parts of elements.
+
+Most submodules in Elements deal with registering console commands dealing with some particular smaller aspect.
 
 ### Align
 
@@ -39,9 +43,17 @@ Materials database information to load and save different operations.
 Notes are stored information about a project. These are usually viewed on loading of a file and can contain whatever
 relevant data is required.
 
+### Offset
+
+The offset logic deals with the shape offset implementation for how particular elements make an offset path.
+
 ### Penbox
 
 Penboxes are special operations in a list. These are expected to be useful for per-loop command changes.
+
+### Placements
+
+Placements deals with command logic for adding placements to a scene.
 
 ### Render
 
@@ -60,7 +72,7 @@ Operations concerned with running job, and various measurements of the would-be 
 
 There are several very useful operations that can be done with tree manipulation and specific functions called on the
 specific nodes themselves. These console commands gives you access to those functions via the console, so they are
-availible in pure CLI.
+available in pure CLI.
 
 ### Undo/Redo
 

@@ -7,4 +7,4 @@ Ruida command known.
 
 Using `ruidacontrol` for example will make a socket connection to make the localhost appear as a ruida laser cutter. Any
 commands sent to it will be spooled and the resulting laser code will be sent to the locally configured active laser
-device. Likewise `ruidadesign` will transfer the ruida CutCode without executing it.
+device.
