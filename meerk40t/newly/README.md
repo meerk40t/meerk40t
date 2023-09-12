@@ -2,7 +2,6 @@
 
 Newly is a driver for replacing some NewlyDraw driver code.
 
-
 ## Thanks
 
 Thanks to Betaeta for technical specs and data.
