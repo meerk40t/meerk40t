@@ -14521,7 +14521,7 @@ msgid "Byte 5"
 msgstr "Byte 5"
 
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:345
-msgid "Connect Failed"
+msgid "Connect failed"
 msgstr "Csatlakozás sikertelen"
 
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:353

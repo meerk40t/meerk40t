@@ -28,16 +28,23 @@ import sys
 
 
 def read_source():
-    msgid_mode = False
-    msgid = ""
 
     id_strings_source = []
+    id_usage = []
     # sourcedir = "./meerk40t"
     sourcedir = "./"
     linecount = 0
     filecount = 0
     # debugit = False
+    ignoredirs = [".git", ".github", "venv"]
     for root, dirs, files in os.walk(sourcedir):
+        mayignore = False
+        for s in ignoredirs:
+            if root.startswith(s) or root.startswith("./" + s):
+                mayignore = True
+                break
+        if mayignore:
+            continue
         for filename in files:
             fname = os.path.join(root, filename)
             if not fname.endswith(".py"):
@@ -45,10 +52,12 @@ def read_source():
             # debugit = fname.endswith("translate_check.py")
             with open(fname, mode="r", encoding="utf8", errors="surrogateescape") as f:
                 filecount += 1
+                localline = 0
                 msgid_mode = False
                 msgid = ""
                 while True:
                     linecount += 1
+                    localline += 1
                     line = f.readline()
                     if not line:
                         break
@@ -63,6 +72,7 @@ def read_source():
                                 if msgid:
                                     if msgid not in id_strings_source:
                                         id_strings_source.append(msgid)
+                                        id_usage.append(f"#: {fname}:{localline}")
                                     # print (f"'{orgline}' -> '{msgid}'")
                                 msgid_mode = False
                                 msgid = ""
@@ -143,7 +153,7 @@ def read_source():
     print(
         f"Read {filecount} files with {linecount} lines and found {len(id_strings_source)} entries..."
     )
-    return id_strings_source
+    return id_strings_source, id_usage
 
 
 def read_po(locale):
@@ -208,15 +218,16 @@ def read_po(locale):
     return id_strings
 
 
-def compare(locale, id_strings, id_strings_source):
+def compare(locale, id_strings, id_strings_source, id_usage):
     counts = [0, 0, 0]
     with open(f"./delta_{locale}.po", "w") as outp:
-        for key in id_strings_source:
+        for idx, key in enumerate(id_strings_source):
             counts[0] += 1
             if key in id_strings:
                 counts[1] += 1
             else:
                 counts[2] += 1
+                outp.write(f"{id_usage[idx]}\n")
                 outp.write(f'msgid "{key}"\n')
                 outp.write('msgstr ""\n\n')
     print(
@@ -226,15 +237,21 @@ def compare(locale, id_strings, id_strings_source):
 
 def main():
     args = sys.argv[1:]
-    locale = "de"
+    locale = [
+        "de",
+    ]
     if len(args) > 0:
-        locale = args[0]
+        locale = args
+    if locale[0].lower() == "all":
+        locale = ["de", "es", "fr", "hu", "it", "ja", "nl", "pt_BR", "pt_PT", "zh"]
     print("Usage: python ./translate_check.py <locale>")
     print("<locale> one of de, es, fr, hu, it, ja, nl, pt_BR, pt_PT, zh")
-    print(f"Checking translation strings for locale {locale}")
-    id_strings_source = read_source()
-    id_strings = read_po(locale)
-    compare(locale, id_strings, id_strings_source)
+    print("Reading sources...")
+    id_strings_source, id_usage = read_source()
+    for loc in locale:
+        print(f"Checking translation strings for locale {loc}...")
+        id_strings = read_po(loc)
+        compare(loc, id_strings, id_strings_source, id_usage)
 
 
 main()

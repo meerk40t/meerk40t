@@ -12,7 +12,6 @@ from meerk40t.gui.laserrender import swizzlecolor
 from ..kernel import Job, lookup_listener, signal_listener
 from ..svgelements import Color
 from .icons import (
-    icons8_diagonal_20,
     icons8_direction_20,
     icons8_image_20,
     icons8_laser_beam_20,
