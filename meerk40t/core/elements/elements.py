@@ -1163,8 +1163,9 @@ class Elemental(Service):
         settings.write_configuration()
 
     def load_persistent_op_list(self, name):
-        oplist = []
         settings = self.op_data
+
+        op_tree = dict()
         for section in list(settings.derivable(name)):
             op_type = settings.read_persistent(str, section, "type")
             # That should not happen, but it happens nonetheless...
@@ -1174,19 +1175,32 @@ class Elemental(Service):
             except (AttributeError, RuntimeError, ValueError) as err:
                 print(f"That should not happen, but ops contained: '{op_type}' [{err}]")
                 continue
-
             op.load(settings, section)
-            oplist.append(op)
+            op_tree[section] = op
+        op_list = list()
+        for section in op_tree:
+            parent = " ".join(section.split(" ")[:-1])
+            if parent == name:
+                op_list.append(op_tree[section])
+            else:
+                op_tree[parent].add_node(op_tree[section])
+        return op_list
 
-        return oplist
+    def load_persistent_operations(self, name, classify=True):
+        """
+        Load oplist section to replace current op_branch data.
 
-    def load_persistent_operations(self, name):
+        Performs an optional classification.
+
+        @param name:
+        @return:
+        """
         self.clear_operations()
         operation_branch = self._tree.get(type="branch ops")
-        opl = self.load_persistent_op_list(name)
-        for op in opl:
+        for op in self.load_persistent_op_list(name):
             operation_branch.add_node(op)
-
+        if not classify:
+            return
         if len(list(self.elems())) > 0:
             self.classify(list(self.elems()))
         self.signal("updateop_tree")
