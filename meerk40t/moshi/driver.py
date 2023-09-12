@@ -287,9 +287,7 @@ class MoshiDriver(Parameters):
         @param y:
         @return:
         """
-        if self.service.swap_xy:
-            x, y = y, x
-        x, y = self.service.physical_to_device_position(x, y)
+        x, y = self.service.view.position(x, y)
         self.rapid_mode()
         self._move_absolute(int(x), int(y))
 
@@ -301,12 +299,10 @@ class MoshiDriver(Parameters):
         @param dy:
         @return:
         """
-        if self.service.swap_xy:
-            dx, dy = dy, dx
-        dx, dy = self.service.physical_to_device_length(dx, dy)
+        unit_dx, unit_dy = self.service.view.position(dx, dy, vector=True)
         self.rapid_mode()
-        x = self.native_x + dx
-        y = self.native_y + dy
+        x = self.native_x + unit_dx
+        y = self.native_y + unit_dy
         self._move_absolute(int(x), int(y))
         self.rapid_mode()
 

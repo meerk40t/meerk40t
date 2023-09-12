@@ -264,10 +264,10 @@ class Planner(Service):
         return float(Length(v))
 
     def length_x(self, v):
-        return float(Length(v, relative_length=self.device.width))
+        return float(Length(v, relative_length=self.device.view.width))
 
     def length_y(self, v):
-        return float(Length(v, relative_length=self.device.height))
+        return float(Length(v, relative_length=self.device.view.height))
 
     def get_or_make_plan(self, plan_name):
         """

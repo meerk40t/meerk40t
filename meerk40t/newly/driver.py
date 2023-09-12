@@ -226,12 +226,9 @@ class NewlyDriver:
         @param y:
         @return:
         """
-        if self.service.swap_xy:
-            x, y = y, x
-
         self.connection.sync()
         try:
-            self.connection.set_xy(*self.service.physical_to_device_position(x, y))
+            self.connection.set_xy(*self.service.view.position(x, y))
         except ConnectionError:
             # If this triggered the laser movement it might have been force aborted, and crash here in error.
             pass
@@ -245,9 +242,7 @@ class NewlyDriver:
         @param dy:
         @return:
         """
-        if self.service.swap_xy:
-            dx, dy = dy, dx
-        unit_dx, unit_dy = self.service.physical_to_device_length(dx, dy)
+        unit_dx, unit_dy = self.service.view.position(dx, dy, vector=True)
 
         self.connection.sync()
         try:

@@ -152,9 +152,8 @@ class HShape:
 
 class HarmonographWidget(Widget):
     def __init__(self, scene):
-        bed_width, bed_height = scene.context.device.physical_to_scene_position(
-            "100%", "100%"
-        )
+        bed_width = scene.context.space.display.unit_width
+        bed_height = scene.context.space.display.unit_height
         x, y = bed_width / 2, bed_height / 2
         super().__init__(scene, x, y, x, y)
         self.tool_pen = wx.Pen()

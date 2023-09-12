@@ -615,8 +615,8 @@ class LaserToolPanel(wx.Panel):
             if (
                 cx < 0
                 or cy < 0
-                or cx > self.context.device.unit_width
-                or cy > self.context.device.unit_height
+                or cx > self.context.device.view.unit_width
+                or cy > self.context.device.view.unit_height
             ):
                 message = (
                     _("The circles center seems to lie outside the bed-dimensions!")

@@ -123,7 +123,7 @@ class CutPlan:
         """
         device = self.context.device
 
-        scene_to_device_matrix = device.scene_to_device_matrix()
+        scene_to_device_matrix = device.view.matrix
 
         # ==========
         # Determine the jobs bounds.
@@ -141,10 +141,10 @@ class CutPlan:
                 self.outline = None
             else:
                 self.outline = (
-                    device.device_position(min_x, min_y),
-                    device.device_position(max_x, min_y),
-                    device.device_position(max_x, max_y),
-                    device.device_position(min_x, max_y),
+                    device.view.position(min_x, min_y),
+                    device.view.position(max_x, min_y),
+                    device.view.position(max_x, max_y),
+                    device.view.position(min_x, max_y),
                 )
 
         # ==========
@@ -579,8 +579,8 @@ class CutPlan:
                     float(Length(stol))
                     * 2
                     / (
-                        self.context.device.native_scale_x
-                        + self.context.device.native_scale_y
+                        self.context.device.view.native_scale_x
+                        + self.context.device.view.native_scale_y
                     )
                 )
             except ValueError:

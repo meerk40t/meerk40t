@@ -1,14 +1,15 @@
 """
 Newly Device
 """
+from meerk40t.core.view import View
+
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
-from meerk40t.core.units import UNITS_PER_INCH, ViewPort
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.newly.driver import NewlyDriver
 
 
-class NewlyDevice(Service, ViewPort):
+class NewlyDevice(Service):
     """
     Newly Device
     """
@@ -490,18 +491,16 @@ class NewlyDevice(Service, ViewPort):
         self.setting(bool, "use_percent_for_power_display", True)
 
         self.state = 0
-
-        ViewPort.__init__(
-            self,
+        self.view = View(
             self.bedwidth,
             self.bedheight,
-            native_scale_x=UNITS_PER_INCH / self.h_dpi,
-            native_scale_y=UNITS_PER_INCH / self.v_dpi,
-            origin_x=1.0 if self.home_right else 0.0,
-            origin_y=1.0 if self.home_bottom else 0.0,
+            dpi_x=self.h_dpi,
+            dpi_y=self.v_dpi,
+        )
+        self.view.transform(
             flip_x=self.flip_x,
             flip_y=self.flip_y,
-            swap_xy=self.swap_xy,
+            swap_xy=self.swap_xy
         )
         self.spooler = Spooler(self)
         self.driver = NewlyDriver(self)
@@ -706,21 +705,24 @@ class NewlyDevice(Service, ViewPort):
     @signal_listener("v_dpi")
     @signal_listener("h_dpi")
     def realize(self, origin=None, *args):
-        self.width = self.bedwidth
-        self.height = self.bedheight
-        self.native_scale_x = UNITS_PER_INCH / self.h_dpi
-        self.native_scale_y = UNITS_PER_INCH / self.v_dpi
-        super().realize()
-        self.space.update_bounds(0, 0, self.width, self.height)
+        self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.dpi_x = self.h_dpi
+        self.view.dpi_y = self.v_dpi
+        self.view.transform(
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy
+        )
+        self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)
 
     @property
     def current(self):
         """
-        @return: the location in nm for the current known x value.
+        @return: the location in units for the current known position.
         """
-        return self.device_to_scene_position(
+        return self.view.iposition(
             self.driver.native_x,
-            self.driver.native_y,
+            self.driver.native_y
         )
 
     @property

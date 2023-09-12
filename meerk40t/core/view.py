@@ -4,7 +4,14 @@ from meerk40t.svgelements import Matrix
 
 class View:
     def __init__(
-        self, width, height, dpi=float(UNITS_PER_INCH), dpi_x=None, dpi_y=None
+        self,
+        width,
+        height,
+        dpi=float(UNITS_PER_INCH),
+        dpi_x=None,
+        dpi_y=None,
+        native_scale_x=None,
+        native_scale_y=None,
     ):
         """
         This should init the simple width and height dimensions.
@@ -16,6 +23,10 @@ class View:
         @param height:
         """
 
+        if native_scale_x is not None:
+            dpi_x = UNITS_PER_INCH / native_scale_x
+        if native_scale_y is not None:
+            dpi_y = UNITS_PER_INCH / native_scale_y
         if dpi_x is None:
             dpi_x = dpi
         if dpi_y is None:
@@ -28,9 +39,21 @@ class View:
         self._source = None
         self._destination = None
         self._matrix = None
+        self.reset()
+
+    def realize(self):
+        self._matrix = None
 
     def __str__(self):
-        return f"View('{self.width}', '{self.height}', @{self.dpi})"
+        return f"View('{self.width}', '{self.height}', @{self.dpi} {self._destination})"
+
+    @property
+    def native_scale_x(self):
+        return UNITS_PER_INCH / self.dpi_x
+
+    @property
+    def native_scale_y(self):
+        return UNITS_PER_INCH / self.dpi_y
 
     @property
     def mm(self):
@@ -51,6 +74,8 @@ class View:
         bottom_left = 0, height
         self._source = top_left, top_right, bottom_right, bottom_left
         self._destination = top_left, top_right, bottom_right, bottom_left
+        # Pre-scale destination by reverse of native scale.
+        self.scale(1.0 / self.native_scale_x, 1.0 / self.native_scale_y)
 
     def contains(self, x, y):
         """
@@ -156,8 +181,6 @@ class View:
 
     def transform(
         self,
-        origin_x=0.0,
-        origin_y=0.0,
         user_scale_x=1.0,
         user_scale_y=1.0,
         flip_x=False,
@@ -165,17 +188,32 @@ class View:
         swap_xy=False,
     ):
         self.reset()
-        self.scale(1.0 / user_scale_x, 1.0 / user_scale_y)
+        self.scale(user_scale_x, user_scale_y)
         if flip_x:
             self.flip_x()
         if flip_y:
             self.flip_y()
-        if origin_x != 0 or origin_y != 0:
-            self.origin(origin_x, origin_y)
         if swap_xy:
             self.swap_xy()
 
+    def rotate_ccw(self):
+        top_left, top_right, bottom_right, bottom_left = self._destination
+        self._destination = (top_right, bottom_right, bottom_left, top_left)
+        self._matrix = None
+
+    def rotate_cw(self):
+        top_left, top_right, bottom_right, bottom_left = self._destination
+        self._destination = (bottom_left, top_left, top_right, bottom_right)
+        self._matrix = None
+
     def position(self, x, y, vector=False):
+        """
+        Position from the source to the destination position. The result is in destination units.
+        @param x:
+        @param y:
+        @param vector:
+        @return:
+        """
         if not isinstance(x, (int, float)):
             x = Length(x, relative_length=self.width, unitless=1).units
         if not isinstance(y, (int, float)):
@@ -185,11 +223,22 @@ class View:
             return self.matrix.transform_vector([unit_x, unit_y])
         return self.matrix.point_in_matrix_space([unit_x, unit_y])
 
-    def iposition(self, x, y, vector=False):
+    def scene_position(self, x, y):
         if not isinstance(x, (int, float)):
             x = Length(x, relative_length=self.width, unitless=1).units
         if not isinstance(y, (int, float)):
             y = Length(y, relative_length=self.height, unitless=1).units
+        return x, y
+
+    def iposition(self, x, y, vector=False):
+        """
+        Position from the destination to the source position. The result is in source units.
+
+        @param x:
+        @param y:
+        @param vector:
+        @return:
+        """
         unit_x, unit_y = x, y
         matrix = ~self.matrix
         if vector:
@@ -215,11 +264,19 @@ class View:
         @return:
         """
         # We require vectors so any positional offsets are non-contributing.
-        unit_x = self.dpi_x
-        unit_y = self.dpi_y
+        unit_x = UNITS_PER_INCH
+        unit_y = UNITS_PER_INCH
         matrix = self.matrix
         oneinch_x = abs(complex(*matrix.transform_vector([unit_x, 0])))
         oneinch_y = abs(complex(*matrix.transform_vector([0, unit_y])))
         step_x = float(oneinch_x / dpi)
         step_y = float(oneinch_y / dpi)
         return step_x, step_y
+
+    @property
+    def unit_width(self):
+        return float(Length(self.width))
+
+    @property
+    def unit_height(self):
+        return float(Length(self.height))

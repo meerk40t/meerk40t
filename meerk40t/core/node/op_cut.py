@@ -314,7 +314,7 @@ class CutOpNode(Node, Parameters):
         # as kerf is given in scene space but needs to be passed on in device space
         device = context.device
         self._device_factor = 1 / abs(
-            complex(device.native_scale_x, device.native_scale_y)
+            complex(device.view.native_scale_x, device.view.native_scale_y)
         )
 
     def as_cutobjects(self, closed_distance=15, passes=1):
