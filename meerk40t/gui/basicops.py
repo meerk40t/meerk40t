@@ -6,10 +6,10 @@ a simpler interface to operations
 
 import wx
 
-from meerk40t.core.elements.element_types import op_nodes, elem_nodes
+from meerk40t.core.elements.element_types import elem_nodes, op_nodes
 from meerk40t.gui.laserrender import swizzlecolor
 
-from ..kernel import lookup_listener, signal_listener, Job
+from ..kernel import Job, lookup_listener, signal_listener
 from ..svgelements import Color
 from .icons import (
     icons8_diagonal_20,

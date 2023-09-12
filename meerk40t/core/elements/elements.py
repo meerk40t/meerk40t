@@ -488,8 +488,6 @@ class Elemental(Service):
             # Something was loaded for default ops. Mark that.
             self.undo.mark("op-loaded")  # Mark defaulted
 
-        self.default_operations = []
-
         self._default_stroke = None
         self._default_strokewidth = None
         self._default_fill = None
@@ -500,6 +498,9 @@ class Elemental(Service):
         self._align_stack = []
 
         self._timing_stack = {}
+
+        self.default_operations = []
+        self.init_default_operations_nodes()
 
     def set_start_time(self, key):
         if key in self._timing_stack:
@@ -1309,14 +1310,16 @@ class Elemental(Service):
 
         # We first have a try at a device specific default_set
         needs_save = False
+        std_list = "_default"
         needs_signal = len(self.default_operations) != 0
         oplist = []
-        std_list = f"_default_{self.device.label}"
-        # We need to replace all ' ' by an underscore
-        for forbidden in (" ",):
-            std_list = std_list.replace(forbidden, "_")
-        # print(f"Try to load '{std_list}'")
-        oplist = self.load_persistent_op_list(std_list)
+        if hasattr(self, "device"):
+            std_list = f"_default_{self.device.label}"
+            # We need to replace all ' ' by an underscore
+            for forbidden in (" ",):
+                std_list = std_list.replace(forbidden, "_")
+            # print(f"Try to load '{std_list}'")
+            oplist = self.load_persistent_op_list(std_list)
         if len(oplist) == 0:
             std_list = "_default"
             # print(f"Try to load '{std_list}'")
