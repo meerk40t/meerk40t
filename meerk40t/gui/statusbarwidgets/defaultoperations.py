@@ -6,7 +6,6 @@ from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.gui.icons import EmptyIcon
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.svgelements import Color
 
 from .statusbarwidget import StatusBarWidget
 
