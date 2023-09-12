@@ -166,7 +166,6 @@ class LayerSettingPanel(wx.Panel):
             "op raster",
             "op image",
             "op dots",
-            "op hatch",
         )
 
     def set_widgets(self, node):
@@ -174,23 +173,6 @@ class LayerSettingPanel(wx.Panel):
         if self.operation is None or not self.accepts(node):
             self.Hide()
             return
-        op = self.operation.type
-        # if op == "op engrave":
-        #     self.combo_type.SetSelection(0)
-        # elif op == "op cut":
-        #     self.combo_type.SetSelection(1)
-        # elif op == "op raster":
-        #     self.combo_type.SetSelection(2)
-        # elif op == "op image":
-        #     self.combo_type.SetSelection(3)
-        # elif op == "op hatch":
-        #     self.combo_type.SetSelection(4)
-        # elif op == "op dots":
-        #     self.combo_type.SetSelection(5)
-        #     for m in self.GetParent().Children:
-        #         if isinstance(m, wx.Window):
-        #             m.Hide()
-        #     return
         self.button_layer_color.SetBackgroundColour(
             wx.Colour(swizzlecolor(self.operation.color))
         )
@@ -258,7 +240,7 @@ class LayerSettingPanel(wx.Panel):
             except AttributeError:
                 candidate_fill = False
             if (
-                self.operation.type in ("op engrave", "op cut", "op hatch")
+                self.operation.type in ("op engrave", "op cut")
                 and len(self.operation.children) > 0
                 and (candidate_fill or candidate_stroke)
             ):
@@ -294,25 +276,6 @@ class LayerSettingPanel(wx.Panel):
         self.context.elements.signal(
             "element_property_reload", self.operation, "button_layer"
         )
-
-    # def on_combo_operation(
-    #     self, event=None
-    # ):  # wxGlade: OperationProperty.<event_handler>
-    #
-    #     select = self.combo_type.GetSelection()
-    #     if select == 0:
-    #         self.operation.replace_node(self.operation.settings, type="op engrave")
-    #     elif select == 1:
-    #         self.operation.replace_node(self.operation.settings, type="op cut")
-    #     elif select == 2:
-    #         self.operation.replace_node(self.operation.settings, type="op raster")
-    #     elif select == 3:
-    #         self.operation.replace_node(self.operation.settings, type="op image")
-    #     elif select == 4:
-    #         self.operation.replace_node(self.operation.settings, type="op hatch")
-    #     elif select == 5:
-    #         self.operation.replace_node(self.operation.settings, type="op dots")
-    #     self.context.elements.signal("element_property_reload", self.operation)
 
     def on_check_output(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         if self.operation.output != bool(self.checkbox_output.GetValue()):
@@ -565,7 +528,6 @@ class SpeedPpiPanel(wx.Panel):
             "op raster",
             "op image",
             "op dots",
-            "op hatch",
         )
 
     def set_widgets(self, node):
@@ -735,7 +697,6 @@ class PassesPanel(wx.Panel):
             "op raster",
             "op image",
             "op dots",
-            "op hatch",
         )
 
     def set_widgets(self, node):
@@ -911,7 +872,6 @@ class InfoPanel(wx.Panel):
             "op raster",
             "op image",
             "op dots",
-            "op hatch",
         )
 
     def set_widgets(self, node):
@@ -1503,394 +1463,6 @@ class RasterSettingsPanel(wx.Panel):
 # end of class RasterSettingsPanel
 
 
-class HatchSettingsPanel(wx.Panel):
-    def __init__(self, *args, context=None, node=None, **kwds):
-        # begin wxGlade: RasterSettingsPanel.__init__
-        kwds["style"] = kwds.get("style", 0)
-        wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
-        self.operation = node
-        self._Buffer = None
-
-        raster_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Hatch:"), wx.VERTICAL)
-
-        sizer_loops = StaticBoxSizer(self, wx.ID_ANY, _("Loops"), wx.HORIZONTAL)
-        self.text_loops = TextCtrl(
-            self,
-            wx.ID_ANY,
-            str(node.loops),
-            limited=True,
-            check="int",
-            style=wx.TE_PROCESS_ENTER,
-        )
-        sizer_loops.Add(self.text_loops, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.slider_loops = wx.Slider(self, wx.ID_ANY, 0, 0, 100)
-        sizer_loops.Add(self.slider_loops, 3, wx.EXPAND, 0)
-        raster_sizer.Add(sizer_loops, 1, wx.EXPAND, 0)
-
-        sizer_distance = StaticBoxSizer(
-            self, wx.ID_ANY, _("Hatch Distance:"), wx.HORIZONTAL
-        )
-        raster_sizer.Add(sizer_distance, 0, wx.EXPAND, 0)
-
-        self.text_distance = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "1mm",
-            limited=True,
-            check="length",
-            style=wx.TE_PROCESS_ENTER,
-        )
-        sizer_distance.Add(self.text_distance, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-
-        sizer_angle = StaticBoxSizer(self, wx.ID_ANY, _("Angle"), wx.HORIZONTAL)
-        raster_sizer.Add(sizer_angle, 1, wx.EXPAND, 0)
-
-        self.text_angle = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "0deg",
-            limited=True,
-            check="angle",
-            style=wx.TE_PROCESS_ENTER,
-        )
-        sizer_angle.Add(self.text_angle, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-
-        self.slider_angle = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
-        sizer_angle.Add(self.slider_angle, 3, wx.EXPAND, 0)
-
-        sizer_angle_delta = StaticBoxSizer(
-            self, wx.ID_ANY, _("Angle Delta"), wx.HORIZONTAL
-        )
-        self.text_angle_delta = TextCtrl(
-            self,
-            wx.ID_ANY,
-            str(node.hatch_angle_delta),
-            limited=True,
-            check="angle",
-            style=wx.TE_PROCESS_ENTER,
-        )
-        sizer_angle_delta.Add(self.text_angle_delta, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.slider_angle_delta = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
-        sizer_angle_delta.Add(self.slider_angle_delta, 3, wx.EXPAND, 0)
-        raster_sizer.Add(sizer_angle_delta, 1, wx.EXPAND, 0)
-
-        sizer_fill = StaticBoxSizer(self, wx.ID_ANY, _("Fill Style"), wx.VERTICAL)
-        raster_sizer.Add(sizer_fill, 6, wx.EXPAND, 0)
-
-        self.fills = list(self.context.match("hatch", suffix=True))
-        self.combo_fill_style = wx.ComboBox(
-            self, wx.ID_ANY, choices=self.fills, style=wx.CB_DROPDOWN | wx.CB_READONLY
-        )
-        sizer_fill.Add(self.combo_fill_style, 0, wx.EXPAND, 0)
-
-        self.display_panel = wx.Panel(self, wx.ID_ANY)
-        sizer_fill.Add(self.display_panel, 6, wx.EXPAND, 0)
-
-        self.SetSizer(raster_sizer)
-
-        self.Layout()
-
-        self.text_distance.SetActionRoutine(self.on_text_distance)
-        self.text_angle.SetActionRoutine(self.on_text_angle)
-
-        self.text_loops.SetActionRoutine(self.on_text_loops)
-        self.text_angle_delta.SetActionRoutine(self.on_text_angle_delta)
-        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_loops, self.slider_loops)
-        self.Bind(
-            wx.EVT_COMMAND_SCROLL, self.on_slider_angle_delta, self.slider_angle_delta
-        )
-
-        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_fill, self.combo_fill_style)
-        # end wxGlade
-        self.Bind(wx.EVT_SIZE, self.on_size)
-        self.display_panel.Bind(wx.EVT_PAINT, self.on_display_paint)
-        self.display_panel.Bind(wx.EVT_ERASE_BACKGROUND, self.on_display_erase)
-
-        self.raster_pen = wx.Pen()
-        self.raster_pen.SetColour(wx.Colour(0, 0, 0, 180))
-        self.raster_pen.SetWidth(1)
-
-        self.travel_pen = wx.Pen()
-        self.travel_pen.SetColour(wx.Colour(255, 127, 255, 127))
-        self.travel_pen.SetWidth(1)
-
-        self.outline_pen = wx.Pen()
-        self.outline_pen.SetColour(wx.Colour(0, 127, 255, 127))
-        self.outline_pen.SetWidth(1)
-
-        self.hatch_lines = None
-        self.travel_lines = None
-        self.outline_lines = None
-
-    def pane_hide(self):
-        pass
-
-    def pane_show(self):
-        pass
-
-    def accepts(self, node):
-        return node.type in ("op hatch",)
-
-    def set_widgets(self, node):
-        self.operation = node
-        if self.operation is None or not self.accepts(node):
-            self.Hide()
-            return
-        i = 0
-        for ht in self.fills:
-            if ht == self.operation.hatch_type:
-                break
-            i += 1
-        if i == len(self.fills):
-            i = 0
-        self.combo_fill_style.SetSelection(i)
-        set_ctrl_value(self.text_angle, self.operation.hatch_angle)
-        set_ctrl_value(self.text_distance, str(self.operation.hatch_distance))
-        try:
-            h_angle = float(Angle.parse(self.operation.hatch_angle).as_degrees)
-            self.slider_angle.SetValue(int(h_angle))
-        except ValueError:
-            pass
-        self.Show()
-
-    def on_text_distance(self):
-        try:
-            self.operation.hatch_distance = Length(
-                self.text_distance.GetValue()
-            ).length_mm
-            self.hatch_lines = None
-            self.travel_lines = None
-            self.refresh_display()
-        except ValueError:
-            pass
-
-    def on_text_angle(self):
-        try:
-            angle = f"{Angle.parse(self.text_angle.GetValue()).as_degrees}deg"
-            if angle == self.operation.hatch_angle:
-                return
-            self.operation.hatch_angle = angle
-            self.hatch_lines = None
-            self.travel_lines = None
-            self.refresh_display()
-        except ValueError:
-            return
-        try:
-            h_angle = float(Angle.parse(self.operation.hatch_angle).as_degrees)
-            while h_angle > self.slider_angle.GetMax():
-                h_angle -= 360
-            while h_angle < self.slider_angle.GetMin():
-                h_angle += 360
-            self.slider_angle.SetValue(int(h_angle))
-        except ValueError:
-            pass
-
-    def on_slider_angle(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
-        value = self.slider_angle.GetValue()
-        self.text_angle.SetValue(f"{value}deg")
-        self.on_text_angle()
-        self.hatch_lines = None
-        self.travel_lines = None
-        self.refresh_display()
-
-    def on_text_angle_delta(self):
-        try:
-            angle = f"{Angle.parse(self.text_angle_delta.GetValue()).as_degrees}deg"
-            if angle == self.operation.hatch_angle_delta:
-                return
-            self.operation.hatch_angle_delta = angle
-        except ValueError:
-            return
-        try:
-            h_angle_delta = float(
-                Angle.parse(self.operation.hatch_angle_delta).as_degrees
-            )
-            while h_angle_delta > self.slider_angle_delta.GetMax():
-                h_angle_delta -= 360
-            while h_angle_delta < self.slider_angle_delta.GetMin():
-                h_angle_delta += 360
-            self.slider_angle_delta.SetValue(int(h_angle_delta))
-        except ValueError:
-            pass
-        self.hatch_lines = None
-        self.travel_lines = None
-        self.refresh_display()
-
-    def on_slider_angle_delta(self, event):
-        value = self.slider_angle_delta.GetValue()
-        self.text_angle_delta.SetValue(f"{value}deg")
-        self.on_text_angle_delta()
-
-    def on_text_loops(self):
-        try:
-            loops = int(self.text_loops.GetValue())
-            if loops == self.operation.loops:
-                return
-            self.operation.loops = loops
-        except ValueError:
-            return
-        try:
-            h_loops = int(self.operation.loops)
-            self.slider_loops.SetValue(int(h_loops))
-        except ValueError:
-            pass
-        self.hatch_lines = None
-        self.travel_lines = None
-        self.refresh_display()
-
-    def on_slider_loops(self, event):
-        value = self.slider_loops.GetValue()
-        self.text_loops.SetValue(str(value))
-        self.on_text_loops()
-
-    def on_combo_fill(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
-        hatch_type = self.fills[int(self.combo_fill_style.GetSelection())]
-        self.operation.hatch_type = hatch_type
-        self.hatch_lines = None
-        self.travel_lines = None
-        self.refresh_display()
-
-    def on_display_paint(self, event=None):
-        if self._Buffer is None:
-            return
-        try:
-            wx.BufferedPaintDC(self.display_panel, self._Buffer)
-        except RuntimeError:
-            pass
-
-    def on_display_erase(self, event=None):
-        pass
-
-    def set_buffer(self):
-        width, height = self.display_panel.ClientSize
-        if width <= 0:
-            width = 1
-        if height <= 0:
-            height = 1
-        self._Buffer = wx.Bitmap(width, height)
-
-    def on_size(self, event=None):
-        self.Layout()
-        self.set_buffer()
-        self.hatch_lines = None
-        self.travel_lines = None
-        self.refresh_display()
-
-    def refresh_display(self):
-        if not wx.IsMainThread():
-            wx.CallAfter(self.refresh_in_ui)
-        else:
-            self.refresh_in_ui()
-
-    def calculate_hatch_lines(self):
-        w, h = self._Buffer.Size
-        hatch_type = self.operation.hatch_type
-        hatch_algorithm = self.context.lookup(f"hatch/{hatch_type}")
-        if hatch_algorithm is None:
-            return
-        paths = (
-            complex(w * 0.05, h * 0.05),
-            complex(w * 0.95, h * 0.05),
-            complex(w * 0.95, h * 0.95),
-            complex(w * 0.05, h * 0.95),
-            complex(w * 0.05, h * 0.05),
-            None,
-            complex(w * 0.25, h * 0.25),
-            complex(w * 0.75, h * 0.25),
-            complex(w * 0.75, h * 0.75),
-            complex(w * 0.25, h * 0.75),
-            complex(w * 0.25, h * 0.25),
-        )
-        matrix = Matrix.scale(0.018)
-        hatch = list(
-            hatch_algorithm(
-                settings=self.operation.settings,
-                outlines=paths,
-                matrix=matrix,
-                limit=1000,
-            )
-        )
-        o_start = []
-        o_end = []
-        last = None
-        for c in paths:
-            if last is not None and c is not None:
-                o_start.append((c.real, c.imag))
-                o_end.append((last.real, last.imag))
-            last = c
-        self.outline_lines = o_start, o_end
-        h_start = []
-        h_end = []
-        t_start = []
-        t_end = []
-        last_x = None
-        last_y = None
-        travel = True
-        for p in hatch:
-            if p is None:
-                travel = True
-                continue
-            x, y = p
-            if last_x is None:
-                last_x = x
-                last_y = y
-                travel = False
-                continue
-            if travel:
-                t_start.append((last_x, last_y))
-                t_end.append((x, y))
-            else:
-                h_start.append((last_x, last_y))
-                h_end.append((x, y))
-            travel = False
-            last_x = x
-            last_y = y
-        self.hatch_lines = h_start, h_end
-        self.travel_lines = t_start, t_end
-
-    def refresh_in_ui(self):
-        """Performs redrawing of the data in the UI thread."""
-        dc = wx.MemoryDC()
-        dc.SelectObject(self._Buffer)
-        dc.SetBackground(wx.WHITE_BRUSH)
-        dc.Clear()
-        gc = wx.GraphicsContext.Create(dc)
-        if self.Shown:
-            if self.hatch_lines is None:
-                self.calculate_hatch_lines()
-            if self.hatch_lines is not None:
-                starts, ends = self.hatch_lines
-                if len(starts):
-                    gc.SetPen(self.raster_pen)
-                    gc.StrokeLineSegments(starts, ends)
-                else:
-                    font = wx.Font(
-                        14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD
-                    )
-                    gc.SetFont(font, wx.BLACK)
-                    gc.DrawText(_("No hatch preview..."), 0, 0)
-            if self.travel_lines is not None:
-                starts, ends = self.travel_lines
-                if len(starts):
-                    gc.SetPen(self.travel_pen)
-                    gc.StrokeLineSegments(starts, ends)
-            if self.outline_lines is not None:
-                starts, ends = self.outline_lines
-                if len(starts):
-                    gc.SetPen(self.outline_pen)
-                    gc.StrokeLineSegments(starts, ends)
-        gc.Destroy()
-        dc.SelectObject(wx.NullBitmap)
-        del dc
-        self.display_panel.Refresh()
-        self.display_panel.Update()
-
-
-# end of class HatchSettingsPanel
-
-
 class DwellSettingsPanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
         # begin wxGlade: PassesPanel.__init__
@@ -1999,12 +1571,6 @@ class ParameterPanel(ScrolledPanel):
         param_sizer.Add(self.raster_panel, 0, wx.EXPAND, 0)
         self.panels.append(self.raster_panel)
 
-        self.hatch_panel = HatchSettingsPanel(
-            self, wx.ID_ANY, context=context, node=node
-        )
-        param_sizer.Add(self.hatch_panel, 0, wx.EXPAND, 0)
-        self.panels.append(self.hatch_panel)
-
         self.dwell_panel = DwellSettingsPanel(
             self, wx.ID_ANY, context=context, node=node
         )
@@ -2052,24 +1618,6 @@ class ParameterPanel(ScrolledPanel):
             self.raster_panel.panel_start.on_element_property_reload(*args)
         except AttributeError:
             pass
-        # if self.operation.type != "op hatch":
-        #     if self.hatch_panel.Shown:
-        #         self.hatch_panel.Hide()
-        # else:
-        #     if not self.hatch_panel.Shown:
-        #         self.hatch_panel.Show()
-        # if self.operation.type not in ("op raster", "op image"):
-        #     if self.raster_panel.Shown:
-        #         self.raster_panel.Hide()
-        # else:
-        #     if not self.raster_panel.Shown:
-        #         self.raster_panel.Show()
-        # if self.operation.type != "op dots":
-        #     if self.dwell_panel.Shown:
-        #         self.dwell_panel.Hide()
-        # else:
-        #     if not self.dwell_panel.Shown:
-        #         self.dwell_panel.Show()
         self.set_widgets(self.operation)
         self.Layout()
 

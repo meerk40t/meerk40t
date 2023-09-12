@@ -5,10 +5,10 @@ This is a giant list of console commands that deal with and often implement the 
 import re
 from copy import copy
 
+from meerk40t.core.node.effect_hatch import HatchEffectNode
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
-from meerk40t.core.node.op_hatch import HatchOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.node.util_input import InputOperation
@@ -541,7 +541,9 @@ def init_commands(kernel):
             elif command == "dots":
                 return DotsOpNode()
             elif command == "hatch":
-                return HatchOpNode()
+                parent_node = EngraveOpNode()
+                parent_node.add_node(HatchEffectNode())
+                return parent_node
             elif command == "waitop":
                 return WaitOperation()
             elif command == "outputop":

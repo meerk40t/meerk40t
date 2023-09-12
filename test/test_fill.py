@@ -71,56 +71,54 @@ class TestFill(unittest.TestCase):
         # draw(fill, w, h)
 
     def test_fill_hatch(self):
+        """
+        Tests hatch generation by manually executing the regular planning steps.
+        """
         kernel = bootstrap.bootstrap()
         try:
             kernel.console("rect 0 0 1in 1in\n")
             kernel.console("operation* delete\n")
             kernel.console("hatch\n")
             hatch = list(kernel.elements.ops())[0]
+
             rect = list(kernel.elements.elems())[0]
-            # hatch.hatch_type = "eulerian"
-            hatch.add_node(copy(rect))
-            c = CutPlan("q", kernel.planner)
-            # kernel.console("tree list\n")
-            hatch.preprocess(kernel.root, Matrix(), c)
-            c.execute()
-            # kernel.console("tree list\n")
-            path_node = hatch.children[0]
-            shape = path_node.path
+            hatch.add_reference(rect)
+
+            hatch_copy = copy(hatch)
+            hatch_copy.copy_children_as_real(hatch)
+
+            hatch_effect = hatch_copy.children[0]
+            shape = hatch_effect.as_geometry()
             self.assertEqual(len(shape), 50)
             print(shape)
         finally:
             kernel.shutdown()
 
-    def test_fill_hatch2(self):
+    def test_fill_hatch_2rect(self):
+        """
+        Test the hatch with manual steps, counting lines in two rectangles.
+        """
+
         kernel = bootstrap.bootstrap()
         try:
             kernel.console("rect 0 0 1in 1in\n")
             kernel.console("rect 3in 0 1in 1in\n")
             kernel.console("operation* delete\n")
             kernel.console("hatch\n")
+
             ops = list(kernel.elements.ops())
             hatch = ops[0]
-            hatch.hatch_type = "eulerian"
             rect0 = list(kernel.elements.elems())[0]
-            hatch.add_node(copy(rect0))
+            hatch.add_reference(rect0)
             rect1 = list(kernel.elements.elems())[1]
-            hatch.add_node(copy(rect1))
-            commands = list()
-            # kernel.console("tree list\n")
-            c = CutPlan("q", kernel.planner)
-            hatch.preprocess(kernel.root, Matrix(), c)
-            c.execute()
-            # kernel.console("tree list\n")
-            path_node = hatch.children[0]
-            shape0 = path_node.path
-            self.assertEqual(len(shape0), 100)
-            # print(shape0)
+            hatch.add_reference(rect1)
 
-            # path_node1 = hatch.children[0]
-            # shape1 = path_node1.path
-            # self.assertEqual(len(shape1), 50)
-            # print(shape1)
+            hatch_copy = copy(hatch)
+            hatch_copy.copy_children_as_real(hatch)
+
+            hatch_effect = hatch_copy.children[0]
+            shape0 = hatch_effect.as_geometry()
+            self.assertEqual(len(shape0), 100)
         finally:
             kernel.shutdown()
 

@@ -555,6 +555,11 @@ class SVGWriter:
         @param node:
         @return:
         """
+        for c in node.children:
+            if c.type.startswith("effect"):
+                xml_tree = SubElement(xml_tree, SVG_TAG_GROUP)
+                SVGWriter._write_custom(xml_tree, c)
+
         subelement = SubElement(xml_tree, MEERK40T_XMLS_ID + ":operation")
         subelement.set("type", str(node.type))
         if node.label is not None:
@@ -1155,12 +1160,20 @@ class SVGProcessor:
                     self.operations_replaced = True
 
                 try:
-                    op = self.elements.op_branch.create(type=node_type, **attrs)
+                    if node_type == "op hatch":
+                        # Special fallback operation, op hatch is an op engrave with an effect hatch within it.
+                        node_type = "op engrave"
+                        op = self.elements.op_branch.create(type=node_type, **attrs)
+                        op.add(type="effect hatch", **attrs)
+                    else:
+                        op = self.elements.op_branch.create(type=node_type, **attrs)
                     if op is None or not hasattr(op, "type") or op.type is None:
                         return
                     if hasattr(op, "validate"):
                         op.validate()
                     op.id = node_id
+                    if context_node.type.startswith("effect"):
+                        op.append_child(context_node)
                     self.operation_list.append(op)
                 except AttributeError:
                     # This operation is invalid.

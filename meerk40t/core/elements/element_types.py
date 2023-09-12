@@ -12,7 +12,6 @@ non_structural_nodes = (
     "op image",
     "op engrave",
     "op dots",
-    "op hatch",
     "effect hatch",
     "util console",
     "util wait",
@@ -43,7 +42,6 @@ op_parent_nodes = (
     "op image",
     "op engrave",
     "op dots",
-    "op hatch",
 )
 op_nodes = (
     "op cut",
@@ -51,7 +49,6 @@ op_nodes = (
     "op image",
     "op engrave",
     "op dots",
-    "op hatch",
     "util console",
     "util wait",
     "util home",

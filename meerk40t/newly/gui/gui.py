@@ -41,13 +41,6 @@ def plugin(service, lifecycle):
             },
         )
 
-        # service.register("property/RasterOpNode/Newly", NewlyOperationPanel)
-        # service.register("property/CutOpNode/Newly", NewlyOperationPanel)
-        # service.register("property/EngraveOpNode/Newly", NewlyOperationPanel)
-        # service.register("property/ImageOpNode/Newly", NewlyOperationPanel)
-        # service.register("property/DotsOpNode/Newly", NewlyOperationPanel)
-        # service.register("property/HatchOpNode/Newly", NewlyOperationPanel)
-
     if lifecycle == "service_attach":
         from meerk40t.gui.icons import (
             icons8_circled_play_50,

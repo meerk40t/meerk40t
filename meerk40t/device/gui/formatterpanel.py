@@ -53,7 +53,6 @@ class FormatterPanel(wx.Panel):
             "op cut": icons8_laser_beam_20,
             "op image": icons8_image_20,
             "op raster": icons8_direction_20,
-            "op hatch": icons8_diagonal_20,
             "op dots": icons8_scatter_plot_20,
             "effect hatch": icons8_diagonal_20,
             "file": icons8_file_20,
@@ -191,7 +190,6 @@ class FormatterPanel(wx.Panel):
         from meerk40t.core.node.op_cut import CutOpNode
         from meerk40t.core.node.op_dots import DotsOpNode
         from meerk40t.core.node.op_engrave import EngraveOpNode
-        from meerk40t.core.node.op_hatch import HatchOpNode
         from meerk40t.core.node.op_image import ImageOpNode
         from meerk40t.core.node.op_raster import RasterOpNode
         from meerk40t.core.node.refnode import ReferenceNode
@@ -208,7 +206,6 @@ class FormatterPanel(wx.Panel):
             "op raster": RasterOpNode,
             "op image": ImageOpNode,
             "op dots": DotsOpNode,
-            "op hatch": HatchOpNode,
             "util console": ConsoleOperation,
             "util wait": WaitOperation,
             "util home": HomeOperation,

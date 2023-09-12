@@ -397,7 +397,7 @@ def reversed_enumerate(collection: list):
         yield i, collection[i]
 
 
-OP_PRIORITIES = ["op dots", "op image", "op raster", "op engrave", "op cut", "op hatch"]
+OP_PRIORITIES = ["op dots", "op image", "op raster", "op engrave", "op cut"]
 
 
 # def is_dot(element):
@@ -1102,36 +1102,70 @@ class Elemental(Service):
         for e in self.flat():
             e.unregister()
 
-    def save_persistent_operations_list(self, name, oplist):
+    def save_persistent_operations_list(self, name, oplist=None):
+        """
+        Saves a given list of operations to the op_data:Settings
+
+        @param name:
+        @param oplist:
+        @return:
+        """
+        if oplist is None:
+            oplist = self.op_branch.children
+        self.clear_persistent_operations(name, flush=False)
+        self._save_persistent_operation_tree(name, oplist)
+
+    # Operations uniform
+    save_persistent_operations = save_persistent_operations_list
+
+    def _save_persistent_operation_tree(self, name, oplist, flush=True):
+        """
+        Recursive save of the tree. Sections append additional values for deeper tree values.
+        References are not saved.
+
+        @param name:
+        @param oplist:
+        @return:
+        """
         settings = self.op_data
-        subitems = list(settings.derivable(name))
-        for section in subitems:
-            settings.clear_persistent(section)
-        # settings.clear_persistent(name)
         for i, op in enumerate(oplist):
             if hasattr(op, "allow_save"):
                 if not op.allow_save():
                     continue
+            if op.type == "reference":
+                # We do not save references.
+                continue
+
             section = f"{name} {i:06d}"
             settings.write_persistent(section, "type", op.type)
             op.save(settings, section)
-
+            try:
+                self._save_persistent_operation_tree(section, op.children)
+            except AttributeError:
+                pass
+        if not flush:
+            return
         settings.write_configuration()
 
-    def save_persistent_operations(self, name):
-        opl = [op for op in self.ops()]
-        self.save_persistent_operations_list(name, opl)
+    def clear_persistent_operations(self, name, flush=True):
+        """
+        Clear operations for the derivables of the given name.
 
-    def clear_persistent_operations(self, name):
+        @param name: name of operation.
+        @param flush: Optionally permit non-flushed to disk.
+        @return:
+        """
         settings = self.op_data
-        subitems = list(settings.derivable(name))
-        for section in subitems:
+        for section in list(settings.derivable(name)):
             settings.clear_persistent(section)
+        if not flush:
+            return
         settings.write_configuration()
 
     def load_persistent_op_list(self, name):
-        oplist = []
         settings = self.op_data
+
+        op_tree = dict()
         for section in list(settings.derivable(name)):
             op_type = settings.read_persistent(str, section, "type")
             # That should not happen, but it happens nonetheless...
@@ -1141,19 +1175,32 @@ class Elemental(Service):
             except (AttributeError, RuntimeError, ValueError) as err:
                 print(f"That should not happen, but ops contained: '{op_type}' [{err}]")
                 continue
-
             op.load(settings, section)
-            oplist.append(op)
+            op_tree[section] = op
+        op_list = list()
+        for section in op_tree:
+            parent = " ".join(section.split(" ")[:-1])
+            if parent == name:
+                op_list.append(op_tree[section])
+            else:
+                op_tree[parent].add_node(op_tree[section])
+        return op_list
 
-        return oplist
+    def load_persistent_operations(self, name, classify=True):
+        """
+        Load oplist section to replace current op_branch data.
 
-    def load_persistent_operations(self, name):
+        Performs an optional classification.
+
+        @param name:
+        @return:
+        """
         self.clear_operations()
         operation_branch = self._tree.get(type="branch ops")
-        opl = self.load_persistent_op_list(name)
-        for op in opl:
+        for op in self.load_persistent_op_list(name):
             operation_branch.add_node(op)
-
+        if not classify:
+            return
         if len(list(self.elems())) > 0:
             self.classify(list(self.elems()))
         self.signal("updateop_tree")

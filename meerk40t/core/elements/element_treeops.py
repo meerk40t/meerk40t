@@ -315,15 +315,6 @@ def init_tree(kernel):
         self.signal("rebuild_tree")
 
     @tree_submenu(_("Convert operation"))
-    @tree_operation(_("Convert to Hatch"), node_type=op_parent_nodes, help="")
-    def convert_operation_hatch(node, **kwargs):
-        for n in list(self.ops(selected=True)):
-            new_settings = dict(n.settings)
-            new_settings["type"] = "op hatch"
-            n.replace_node(keep_children=True, **new_settings)
-        self.signal("rebuild_tree")
-
-    @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Dots"), node_type=op_parent_nodes, help="")
     def convert_operation_dots(node, **kwargs):
         for n in list(self.ops(selected=True)):
@@ -389,13 +380,13 @@ def init_tree(kernel):
     @tree_values("speed", (2, 3, 4, 5, 6, 7, 10, 15, 20, 25, 30, 35, 40, 50))
     @tree_operation(
         _("{speed}mm/s"),
-        node_type=("op cut", "op engrave", "op hatch"),
+        node_type=("op cut", "op engrave"),
         help="",
     )
     def set_speed_vector_cut(node, speed=20, **kwargs):
         data = list()
         for n in list(self.ops(selected=True)):
-            if n.type not in ("op cut", "op engrave", "op hatch"):
+            if n.type not in ("op cut", "op engrave"):
                 continue
             n.speed = float(speed)
             data.append(n)
@@ -410,7 +401,7 @@ def init_tree(kernel):
     @tree_calc("power_10", lambda i: round(i / 10, 1))
     @tree_operation(
         _("{power}ppi ({power_10}%)"),
-        node_type=("op cut", "op raster", "op image", "op engrave", "op hatch"),
+        node_type=("op cut", "op raster", "op image", "op engrave"),
         help="",
     )
     def set_power(node, power=1000, **kwargs):
@@ -1176,7 +1167,6 @@ def init_tree(kernel):
             "op image",
             "op engrave",
             "op dots",
-            "op hatch",
             "util console",
             "util wait",
             "util home",
@@ -1429,7 +1419,6 @@ def init_tree(kernel):
             "op image",
             "op engrave",
             "op dots",
-            "op hatch",
             "group",
             "branch elems",
             "file",
@@ -1589,7 +1578,8 @@ def init_tree(kernel):
     @tree_submenu(_("Append operation"))
     @tree_operation(_("Append Hatch"), node_type="branch ops", help="")
     def append_operation_hatch(node, pos=None, **kwargs):
-        self.op_branch.add("op hatch", pos=pos)
+        b = self.op_branch.add("op engrave", pos=pos)
+        b.add("effect hatch")
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append operation"))
@@ -1819,7 +1809,7 @@ def init_tree(kernel):
     @tree_submenu(_("Passes"))
     @tree_operation(
         _("Add 1 pass"),
-        node_type=("op image", "op engrave", "op cut", "op hatch"),
+        node_type=("op image", "op engrave", "op cut"),
         help="",
     )
     def add_1_pass(node, **kwargs):
@@ -1830,7 +1820,7 @@ def init_tree(kernel):
     @tree_iterate("copies", 2, 10)
     @tree_operation(
         _("Add {copies} passes"),
-        node_type=("op image", "op engrave", "op cut", "op hatch"),
+        node_type=("op image", "op engrave", "op cut"),
         help="",
     )
     def add_n_passes(node, copies=1, **kwargs):
@@ -2681,7 +2671,6 @@ def init_tree(kernel):
             "op image",
             "op engrave",
             "op dots",
-            "op hatch",
             "branch elems",
             "branch ops",
             "branch reg",
@@ -2703,7 +2692,6 @@ def init_tree(kernel):
             "op image",
             "op engrave",
             "op dots",
-            "op hatch",
             "branch elems",
             "branch ops",
             "branch reg",
