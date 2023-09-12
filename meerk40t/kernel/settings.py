@@ -307,9 +307,9 @@ class Settings:
         @return:
         """
         for section_name in self._config_dict:
-            section_name.split("/")
+            ss = section_name.split(" ")
 
-            if section_name.startswith(section):
+            if ss[0] == section:
                 yield section_name
 
     def section_set(self) -> Generator[str, None, None]:
