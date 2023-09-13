@@ -184,9 +184,11 @@ class Kernel(Settings):
 
         try:
             file_obj = self._open_file_objects.get(filename)
-            if file_obj is None:
-                file_obj = open(filename, *args)
-                self._open_file_objects[filename] = file_obj
+            if file_obj is not None and file_obj.opened:
+                # Give cached file object.
+                return file_obj
+            file_obj = open(filename, *args)
+            self._open_file_objects[filename] = file_obj
             return file_obj
         except PermissionError as e:
             original_dir = os.getcwd()
