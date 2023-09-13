@@ -162,22 +162,46 @@ class Kernel(Settings):
 
         self.current_directory = "."
 
+        # Opened files
+        self._open_file_objects = {}
+
         # Arguments Objects
         self.args = None
 
     def __str__(self):
         return "Kernel()"
 
-    def open_safe(self, *args):
+    def open_safe(self, filename, *args):
+        """
+        Opens the given file with the arguments. If permissions are not granted, the safe path is used.
+
+        If the file already exists the same file object is returned.
+
+        @param filename:
+        @param args:
+        @return:
+        """
+
         try:
-            return open(*args)
-        except PermissionError:
-            original = os.getcwd()
+            file_obj = self._open_file_objects.get(filename)
+            if file_obj is not None and not file_obj.closed:
+                # Give cached file object.
+                return file_obj
+            file_obj = open(filename, *args)
+            self._open_file_objects[filename] = file_obj
+            return file_obj
+        except PermissionError as e:
+            original_dir = os.getcwd()
             os.chdir(get_safe_path(self.name, True))
+            safe_dir = os.getcwd()
+            if original_dir == safe_dir:
+                # Permissions error in safe dir. No solution.
+                raise PermissionError("No permission to write to safe directory.") from e
+
             print(
-                f"Changing working directory from {str(original)} to {str(os.getcwd())}."
+                f"Changing working directory from {str(original_dir)} to {str(safe_dir)}."
             )
-            return open(*args)
+            return self.open_safe(filename, *args)
 
     def _start_debugging(self) -> None:
         """
@@ -1356,6 +1380,13 @@ class Kernel(Settings):
         if thread_count == 0:
             if channel:
                 channel(_("No threads required halting."))
+
+        # Close any safe_files that are still opened.
+        for key, file_obj in self._open_file_objects.items():
+            try:
+                file_obj.close()
+            except:
+                pass
 
         # Process any remove attempts that were occurred too late for standard removal.
         self._process_remove_listeners()
