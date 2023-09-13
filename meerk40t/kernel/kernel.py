@@ -184,7 +184,7 @@ class Kernel(Settings):
 
         try:
             file_obj = self._open_file_objects.get(filename)
-            if file_obj is not None and file_obj.opened:
+            if file_obj is not None and not file_obj.closed:
                 # Give cached file object.
                 return file_obj
             file_obj = open(filename, *args)
@@ -1380,6 +1380,13 @@ class Kernel(Settings):
         if thread_count == 0:
             if channel:
                 channel(_("No threads required halting."))
+
+        # Close any safe_files that are still opened.
+        for key, file_obj in self._open_file_objects.items():
+            try:
+                file_obj.close()
+            except:
+                pass
 
         # Process any remove attempts that were occurred too late for standard removal.
         self._process_remove_listeners()
