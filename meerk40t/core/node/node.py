@@ -430,7 +430,7 @@ class Node:
             node_copy = copy(c)
             for attr in ("id", "label", "color", "lock", "allowed_attributes"):
                 if hasattr(c, attr):
-                    setattr(node_copy, getattr(c, attr))
+                    setattr(node_copy, attr, getattr(c, attr))
             node_copy._root = self._root
             links[id(c)] = (c, node_copy)
         return links
