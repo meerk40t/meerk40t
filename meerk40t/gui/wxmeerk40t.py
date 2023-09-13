@@ -320,6 +320,16 @@ class wxMeerK40t(wx.App, Module):
 
         # App started add the except hook
         sys.excepthook = handleGUIException
+
+        # Monkey patch for pycharm excepthook override issue. https://youtrack.jetbrains.com/issue/PY-39723
+        try:
+            import importlib
+            pydevd = importlib.import_module("_pydevd_bundle.pydevd_breakpoints")
+        except ImportError:
+            pass
+        else:
+            pydevd._fallback_excepthook = sys.excepthook
+
         # Set the delay after which the tooltip disappears or how long a tooltip remains visible.
         self.context.setting(int, "tooltip_autopop", 10000)
         # Set the delay after which the tooltip appears.
