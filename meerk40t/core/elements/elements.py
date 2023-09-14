@@ -1350,10 +1350,7 @@ class Elemental(Service):
             create_image(oplist)
             needs_save = True
         # Ensure we have an id for everything
-        for opnode in oplist:
-            if opnode.id is None:
-                self.set_default_id(opnode)
-                needs_save = True
+        needs_save = self.validate_ids(nodelist=oplist, generic=False)
         if needs_save:
             self.save_persistent_operations_list(std_list, oplist=oplist, inform=False)
 
@@ -1369,23 +1366,6 @@ class Elemental(Service):
             setattr(op_to_use, attr, getattr(sourceop, attr))
         return op_to_use
 
-    def set_default_id(self, targetop):
-        id_candidate = 0
-        pattern = "D"  # Default
-        op_name_parts = targetop.type.split(" ")
-        if len(op_name_parts) > 1:
-            pattern = op_name_parts[1].upper()[0]
-        id_existing = True
-        while id_existing:
-            id_existing = False
-            id_candidate += 1
-            op_id = f"{pattern}{id_candidate}"
-            for op in list(self.ops()):
-                if op_id == op.id:
-                    id_existing = True
-                    break
-        targetop.id = op_id
-
     def assign_default_operation(self, data, targetop):
         emphasize_mode = False
         if data is None:
@@ -1397,7 +1377,8 @@ class Elemental(Service):
         op_id = targetop.id
         if op_id is None:
             # WTF, that should not be the case
-            self.set_default_id(targetop)
+            op_list = [targetop]
+            self.validate_ids(nodelist=op_list, generic=False)
         newone = True
         op_to_use = None
         for op in list(self.ops()):
@@ -1567,11 +1548,14 @@ class Elemental(Service):
     def flat(self, **kwargs):
         yield from self._tree.flat(**kwargs)
 
-    def validate_ids(self):
+    def validate_ids(self, nodelist=None, generic=True):
+        changes = False
         idx = 1
         uid = {}
         missing = list()
-        for node in self.flat():
+        if nodelist is None:
+            nodelist = list(self.flat)
+        for node in nodelist:
             if node.id in uid:
                 # ID already used. Clear.
                 node.id = None
@@ -1582,10 +1566,15 @@ class Elemental(Service):
                 # Set this ID as used.
                 uid[node.id] = node
         for m in missing:
-            while f"meerk40t:{idx}" in uid:
+            changes = True
+            pattern = "meerk40t:"
+            if not generic and m.type.startswith("op "):
+                pattern = m.type[3].upper()
+            while f"{pattern}{idx}" in uid:
                 idx += 1
-            m.id = f"meerk40t:{idx}"
+            m.id = f"{pattern}{idx}"
             uid[m.id] = m
+        return changes
 
     @property
     def reg_branch(self):
