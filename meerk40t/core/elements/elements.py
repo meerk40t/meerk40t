@@ -1554,7 +1554,7 @@ class Elemental(Service):
         uid = {}
         missing = list()
         if nodelist is None:
-            nodelist = list(self.flat)
+            nodelist = list(self.flat())
         for node in nodelist:
             if node.id in uid:
                 # ID already used. Clear.
