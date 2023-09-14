@@ -319,7 +319,7 @@ def plugin(kernel, lifecycle=None):
             {
                 "attr": "remove_non_used_default_ops",
                 "object": elements,
-                "default": True,
+                "default": False,
                 "type": bool,
                 "label": _("Remove unused default operations"),
                 "tip": _(
@@ -327,6 +327,7 @@ def plugin(kernel, lifecycle=None):
                 ),
                 "page": "Classification",
                 "section": "_30_GUI-Behaviour",
+                "hidden": True,
             },
             {
                 "attr": "lock_allows_move",
