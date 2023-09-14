@@ -37,6 +37,7 @@ class BasicOpPanel(wx.Panel):
         self.context = context
         # Refresh logic
         self.ignore_refill = False
+        self.filtered = True
         self._refill_job = Job(
             process=self.fill_operations,
             job_name="basicops_fillop",
@@ -304,6 +305,11 @@ class BasicOpPanel(wx.Panel):
             mynode = node
             return handler
 
+        def on_check_filtered(event):
+            obj = event.GetEventObject()
+            self.filtered = obj.GetValue()
+            self.context.schedule(self._refill_job)
+
         def get_bitmap(node):
             def get_color():
                 iconcolor = None
@@ -374,10 +380,13 @@ class BasicOpPanel(wx.Panel):
         self.op_ctrl_list.clear()
 
         info_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        header = wx.StaticText(self.op_panel, wx.ID_ANY, label=_("Operation"))
-        header.SetMinSize(wx.Size(50, -1))
-        header.SetMaxSize(wx.Size(90, -1))
-        info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        check_filtered = wx.CheckBox(self.op_panel, wx.ID_ANY)
+        check_filtered.SetToolTip(_("Suppress non-used operations"))
+        check_filtered.SetValue(self.filtered)
+        check_filtered.SetMinSize(wx.Size(50, -1))
+        check_filtered.SetMaxSize(wx.Size(90, -1))
+        info_sizer.Add(check_filtered, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        check_filtered.Bind(wx.EVT_CHECKBOX, on_check_filtered)
 
         header = wx.StaticText(self.op_panel, wx.ID_ANY, label=_("Active"))
         header.SetMinSize(wx.Size(30, -1))
@@ -401,12 +410,15 @@ class BasicOpPanel(wx.Panel):
         header = wx.StaticText(self.op_panel, wx.ID_ANY, label=_("Speed"))
         header.SetMaxSize(wx.Size(30, -1))
         header.SetMaxSize(wx.Size(70, -1))
+
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.operation_sizer.Add(info_sizer, 0, wx.EXPAND, 0)
         self.op_ctrl_list.clear()
-        for op in elements.flat(types=op_nodes):
+        for op in list(elements.ops()):
             if op is None:
+                continue
+            if self.filtered and len(op.children) == 0:
                 continue
             if op.type.startswith("op "):
                 op_sizer = wx.BoxSizer(wx.HORIZONTAL)

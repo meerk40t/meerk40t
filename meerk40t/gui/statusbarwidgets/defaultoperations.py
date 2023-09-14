@@ -204,47 +204,10 @@ class DefaultOperationWidget(StatusBarWidget):
         self.Show(True)
 
     def execute_on(self, targetop):
-        data = list(self.context.elements.flat(emphasized=True))
-        if len(data) == 0:
-            return
-        emph_data = [e for e in data]
-        op_id = targetop.id
-        newone = True
-        for op in self.context.elements.ops():
-            if op.id == op_id:
-                newone = False
-                targetop = op
-                break
-        if newone:
-            self.context.elements.op_branch.add_node(targetop)
-        impose = "to_elem"
-        similar = False
-        exclusive = True
-        self.context.elements.assign_operation(
-            op_assign=targetop,
-            data=data,
-            impose=impose,
-            attrib="auto",
-            similar=similar,
-            exclusive=exclusive,
-        )
-        # Let's clean non-used operations that come from defaults...
-        deleted = 0
-        for op in self.context.elements.ops():
-            if op.id is None:
-                continue
-            if len(op.children) == 0:
-                # is this one of the default operations?
-                for def_op in self.context.elements.default_operations:
-                    if def_op.id == op.id:
-                        deleted += 1
-                        op.remove_node()
-                        break
-        if deleted:
-            self.context.elements.signal("operation_removed")
+        data = None  # == selected elements
+        self.context.elements.assign_default_operation(data, targetop)
+
         self.reset_tooltips()
-        for e in emph_data:
-            e.emphasized = True
 
     def show_stuff(self, flag):
         for idx in range(len(self.assign_buttons)):
