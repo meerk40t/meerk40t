@@ -1379,7 +1379,7 @@ class Elemental(Service):
             id_existing = False
             id_candidate += 1
             op_id = f"{pattern}{id_candidate}"
-            for op in self.ops():
+            for op in list(self.ops()):
                 if op_id == op.id:
                     id_existing = True
                     break
@@ -1399,7 +1399,7 @@ class Elemental(Service):
             self.set_default_id(targetop)
         newone = True
         op_to_use = None
-        for op in self.ops():
+        for op in list(self.ops()):
             if op is targetop:
                 # Already existing?
                 newone = False
@@ -1443,12 +1443,12 @@ class Elemental(Service):
             deleted = 0
             to_be_deleted = []
 
-            for op in self.ops():
+            for op in list(self.ops()):
                 # print(f"look at {op.type} - {op.id}: {len(op.children)}")
                 if op.id is None:
                     continue
                 if len(op.children) != 0:
-                    break
+                    continue
                 # is this one of the default operations?
                 for def_op in self.default_operations:
                     if def_op.id == op.id:
@@ -2531,7 +2531,8 @@ class Elemental(Service):
                     if debug:
                         debug(f"Check for existence of {op.type}")
                     already_found = False
-                    for testop in self.ops():
+                    testlist = list(self.ops())
+                    for testop in testlist:
                         if type(op) == type(testop):
                             sameop = True
                         else:
