@@ -35,6 +35,10 @@ class PositionPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.small = small
+
+        self.offset_index = 0  # 0 to 8 tl tc tr cl cc cr bl bc br
+        self.offset_x = 0.0
+        self.offset_y = 0.0
         self.text_x = TextCtrl(
             self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
         )
@@ -61,7 +65,7 @@ class PositionPanel(wx.Panel):
         self.text_y.SetMinSize((70, 23))
         self.text_w.SetMinSize((70, 23))
         self.text_h.SetMinSize((70, 23))
-        self.chk_indivdually = wx.CheckBox(self, wx.ID_ANY, _("Individ."))
+        self.chk_individually = wx.CheckBox(self, wx.ID_ANY, _("Individ."))
         self.chk_lock = wx.CheckBox(self, wx.ID_ANY, _("Keep ratio"))
         if self.small:
             resize_param = 32
@@ -70,6 +74,12 @@ class PositionPanel(wx.Panel):
 
         self.button_execute = wx.BitmapButton(
             self, wx.ID_ANY, icons8_compress_50.GetBitmap(resize=resize_param)
+        )
+        w, h = self.button_execute.GetBitmap().Size
+        icon_size = w
+        self.pos_bitmaps = self.calculate_icons(icon_size)
+        self.button_param = wx.BitmapButton(
+            self, wx.ID_ANY, self.pos_bitmaps[self.offset_index]
         )
         self.choices = ["mm", "cm", "inch", "mil", "%"]
         self.combo_box_units = wx.ComboBox(
@@ -94,6 +104,7 @@ class PositionPanel(wx.Panel):
 
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_box_units, self.combo_box_units)
         self.Bind(wx.EVT_BUTTON, self.on_button_execute, self.button_execute)
+        self.button_param.Bind(wx.EVT_LEFT_DOWN, self.on_button_param)
         self.Bind(wx.EVT_CHECKBOX, self.on_chk_lock, self.chk_lock)
         # end wxGlade
 
@@ -113,6 +124,33 @@ class PositionPanel(wx.Panel):
         if self.position_units in ("in", "inches"):
             self.position_units = "inch"
         self._update_position()
+
+    def calculate_icons(self, bmap_size):
+        result = []
+        for y in range(3):
+            for x in range(3):
+                imgBit = wx.Bitmap(bmap_size, bmap_size)
+                dc = wx.MemoryDC(imgBit)
+                dc.SelectObject(imgBit)
+                dc.SetBackground(wx.WHITE_BRUSH)
+                dc.Clear()
+                dc.SetPen(wx.BLACK_PEN)
+                delta = (bmap_size - 1) / 3
+                for xx in range(4):
+                    dc.DrawLine(int(delta * xx), 0, int(delta * xx), int(bmap_size - 1))
+                    dc.DrawLine(0, int(delta * xx), int(bmap_size - 1), int(delta * xx))
+                # And now fill the area
+                dc.SetBrush(wx.BLACK_BRUSH)
+                dc.DrawRectangle(
+                    int(x * delta),
+                    int(y * delta),
+                    int(delta + 1),
+                    int(delta + 1),
+                )
+                # Now release dc
+                dc.SelectObject(wx.NullBitmap)
+                result.append(imgBit)
+        return result
 
     def pane_show(self, *args):
         self.context.listen("units", self.space_changed)
@@ -177,7 +215,7 @@ class PositionPanel(wx.Panel):
         self.button_execute.SetToolTip(
             _("Apply the changes to all emphasized elements in the scene")
         )
-        self.chk_indivdually.SetToolTip(
+        self.chk_individually.SetToolTip(
             _(
                 "If checked then each element will get the new value of the current field, if unchecked then the new values apply to the selection-dimensions"
             )
@@ -221,13 +259,17 @@ class PositionPanel(wx.Panel):
         sizer_v_xywh.Add(self.sizer_h_xy, 0, wx.EXPAND, 0)
         sizer_v_xywh.Add(self.sizer_h_wh, 0, wx.EXPAND, 0)
 
+        sizer_buttons = wx.BoxSizer(wx.VERTICAL)
+        sizer_buttons.Add(self.button_execute, 0, 0, 0)
+        sizer_buttons.Add(self.button_param, 0, 0, 0)
+
         sizer_h_all = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_h_all.Add(self.button_execute, 0, 0, 0)
+        sizer_h_all.Add(sizer_buttons, 0, 0, 0)
         sizer_h_all.Add(sizer_v_xywh, 1, wx.EXPAND, 0)
         target.Add(sizer_h_all, 0, wx.EXPAND, 0)
 
         sizer_h_options = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_h_options.Add(self.chk_indivdually, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_h_options.Add(self.chk_individually, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_h_options.Add(self.chk_lock, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_h_options.Add(self.combo_box_units, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         target.Add(sizer_h_options, 0, wx.EXPAND, 0)
@@ -241,7 +283,7 @@ class PositionPanel(wx.Panel):
         self.sizer_h_wh.ShowItems(show_wh)
         self.sizer_h_xy.Show(show_xy)
         self.sizer_h_xy.ShowItems(show_xy)
-        self.chk_indivdually.Show(show_indiv)
+        self.chk_individually.Show(show_indiv)
 
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
@@ -268,8 +310,8 @@ class PositionPanel(wx.Panel):
                 self.text_x.Enable(False)
                 self.text_y.Enable(False)
                 self.button_execute.Enable(False)
-                self.chk_indivdually.SetValue(False)
-                self.chk_indivdually.Enable(False)
+                self.chk_individually.SetValue(False)
+                self.chk_individually.Enable(False)
                 self.chk_lock.Enable(False)
                 self.combo_box_units.Enable(False)
             if self.position_units in self.choices:
@@ -284,9 +326,9 @@ class PositionPanel(wx.Panel):
             self.text_y.Enable(True)
             self.combo_box_units.Enable(True)
             self.button_execute.Enable(True)
-            self.chk_indivdually.SetValue(False)
+            self.chk_individually.SetValue(False)
             self.chk_lock.Enable(True)
-        self.chk_indivdually.Enable(more_than_one)
+        self.chk_individually.Enable(more_than_one)
 
         if reset:
             x0, y0, x1, y1 = bounds
@@ -313,8 +355,10 @@ class PositionPanel(wx.Panel):
             self.org_w = self.position_w
             self.org_h = self.position_h
 
-        self.text_x.SetValue(f"{self.position_x:.2f}")
-        self.text_y.SetValue(f"{self.position_y:.2f}")
+        pos_x = self.position_x + self.offset_x * self.position_w
+        pos_y = self.position_y + self.offset_y * self.position_h
+        self.text_x.SetValue(f"{pos_x:.2f}")
+        self.text_y.SetValue(f"{pos_y:.2f}")
         self.text_w.SetValue(f"{self.position_w:.2f}")
         self.text_h.SetValue(f"{self.position_h:.2f}")
         self.combo_box_units.SetSelection(self.choices.index(self.position_units))
@@ -323,11 +367,30 @@ class PositionPanel(wx.Panel):
         self.position_units = self.context.units_name
         self.update_position(True)
 
+    def on_button_param(self, event):
+        pt_mouse = event.GetPosition()
+        ob = event.GetEventObject()
+        rect_ob = ob.GetRect()
+        col = int(3 * pt_mouse[0] / rect_ob[2])
+        row = int(3 * pt_mouse[1] / rect_ob[3])
+        idx = 3 * row + col
+        # print(idx, col, row, pt_mouse, rect_ob)
+        self.offset_index = idx
+        if self.offset_index > 8:
+            self.offset_index = 0
+        x_offsets = (0, 0.5, 1, 0, 0.5, 1, 0, 0.5, 1)
+        y_offsets = (0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1)
+        self.offset_x = x_offsets[self.offset_index]
+        self.offset_y = y_offsets[self.offset_index]
+        self.button_param.SetBitmap(self.pos_bitmaps[self.offset_index])
+        self.button_param.Refresh()
+        self.update_position(True)
+
     def on_button_execute(self, event):  # wxGlade: MyFrame.<event_handler>
         event.Skip()
         do_xy = self.position_x != self.org_x or self.position_y != self.org_y
         do_wh = self.position_w != self.org_w or self.position_h != self.org_h
-        individually = self.chk_indivdually.GetValue()
+        individually = self.chk_individually.GetValue()
         if individually:
             if do_wh:
                 self.execute_wh_changes(False)
@@ -373,7 +436,7 @@ class PositionPanel(wx.Panel):
             and abs(self.position_h - self.org_h) < delta
         ):
             return
-        if self.chk_indivdually.GetValue():
+        if self.chk_individually.GetValue():
             for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 _bb = elem.bounds
                 bb = [_bb[0], _bb[1], _bb[2], _bb[3]]
@@ -437,7 +500,7 @@ class PositionPanel(wx.Panel):
             and abs(self.position_y - self.org_y) < delta
         ):
             return
-        if self.chk_indivdually.GetValue():
+        if self.chk_individually.GetValue():
             for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 _bb = elem.bounds
                 bb = [_bb[0], _bb[1], _bb[2], _bb[3]]
@@ -563,10 +626,10 @@ class PositionPanel(wx.Panel):
 
     def on_text_x_action(self, force):
         try:
-            self.position_x = float(self.text_x.GetValue())
+            pos_x = float(self.text_x.GetValue())
         except ValueError:
             try:
-                self.position_x = self.context.device.length(
+                pos_x = self.context.device.length(
                     self.text_h.GetValue(),
                     1,
                     new_units=self.position_units,
@@ -574,17 +637,17 @@ class PositionPanel(wx.Panel):
                 )
             except ValueError:
                 return
-
+        self.position_x = pos_x - self.offset_x * self.position_w
         if force:
             self.execute_xy_changes()
             self.context.signal("refresh_scene", "Scene")
 
     def on_text_y_action(self, force):
         try:
-            self.position_y = float(self.text_y.GetValue())
+            pos_y = float(self.text_y.GetValue())
         except ValueError:
             try:
-                self.position_y = self.context.device.length(
+                pos_y = self.context.device.length(
                     self.text_h.GetValue(),
                     1,
                     new_units=self.position_units,
@@ -592,6 +655,8 @@ class PositionPanel(wx.Panel):
                 )
             except ValueError:
                 return
+
+        self.position_y = pos_y - self.offset_y * self.position_h
 
         if force:
             self.execute_xy_changes()
