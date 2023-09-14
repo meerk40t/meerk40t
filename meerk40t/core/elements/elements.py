@@ -7,6 +7,7 @@ several smaller functional pieces like Penbox and Wordlists.
 
 import contextlib
 import os.path
+from copy import copy
 from time import time
 
 from meerk40t.core.exceptions import BadFileError
@@ -1359,8 +1360,6 @@ class Elemental(Service):
             self.signal("default_operations")
 
     def create_usable_copy(self, sourceop):
-        from copy import copy
-
         op_to_use = copy(sourceop)
         for attr in ("id", "label", "color", "lock", "allowed_attributes"):
             setattr(op_to_use, attr, getattr(sourceop, attr))
