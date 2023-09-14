@@ -204,82 +204,10 @@ class DefaultOperationWidget(StatusBarWidget):
         self.Show(True)
 
     def execute_on(self, targetop):
-        data = list(self.context.elements.flat(emphasized=True))
-        if len(data) == 0:
-            return
-        emph_data = [e for e in data]
-        op_id = targetop.id
-        if op_id is None:
-            # WTF, that should not be the case
-            id_candidate = 0
-            pattern = "D"  # Default
-            op_name_parts = targetop.type.split(" ")
-            if len(op_name_parts) > 1:
-                pattern = op_name_parts[1].upper()[0]
-            id_existing = True
-            while id_existing:
-                id_existing = False
-                id_candidate += 1
-                op_id = f"{pattern}{id_candidate}"
-                for op in self.context.elements.ops():
-                    if op_id == op.id:
-                        id_existing = True
-                        break
-            targetop.id = op_id
-        newone = True
-        op_to_use = None
-        for op in self.context.elements.ops():
-            if op is targetop:
-                # Already existing?
-                newone = False
-                op_to_use = op
-                break
-            elif op.id == op_id:
-                newone = False
-                op_to_use = op
-                break
-        if newone:
-            from copy import copy
+        data = None  # == selected elements
+        self.context.elements.assign_default_operation(data, targetop)
 
-            op_to_use = copy(targetop)
-            for attr in ("id", "label", "color", "lock", "allowed_attributes"):
-                setattr(op_to_use, attr, getattr(targetop, attr))
-            try:
-                self.context.elements.op_branch.add_node(op_to_use)
-            except ValueError:
-                # This happens when he have somehow lost sync with the node,
-                # and we try to add a node that is already added...
-                # In principle this should be covered by the check
-                # above, but you never know
-                pass
-        impose = "to_elem"
-        similar = False
-        exclusive = True
-        self.context.elements.assign_operation(
-            op_assign=op_to_use,
-            data=data,
-            impose=impose,
-            attrib="auto",
-            similar=similar,
-            exclusive=exclusive,
-        )
-        # Let's clean non-used operations that come from defaults...
-        deleted = 0
-        for op in self.context.elements.ops():
-            if op.id is None:
-                continue
-            if len(op.children) == 0:
-                # is this one of the default operations?
-                for def_op in self.context.elements.default_operations:
-                    if def_op.id == op.id:
-                        deleted += 1
-                        op.remove_node()
-                        break
-        if deleted:
-            self.context.elements.signal("operation_removed")
         self.reset_tooltips()
-        for e in emph_data:
-            e.emphasized = True
 
     def show_stuff(self, flag):
         for idx in range(len(self.assign_buttons)):

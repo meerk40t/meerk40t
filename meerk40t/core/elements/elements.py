@@ -112,6 +112,10 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/elem polyline", "{element_type} {desc} {stroke}")
         kernel.register("format/elem rect", "{element_type} {desc} {stroke}")
         kernel.register("format/elem text", "{element_type} {desc} {text}")
+        kernel.register(
+            "format/effect hatch",
+            "{effect}{element_type} - {distance} {angle} ({children})",
+        )
         kernel.register("format/reference", "*{reference}")
         kernel.register(
             "format/group", "{element_type} {desc} ({children} children, {total} total)"
@@ -309,6 +313,18 @@ def plugin(kernel, lifecycle=None):
                 )
                 + "\n"
                 + _("by disabling this option."),
+                "page": "Classification",
+                "section": "_30_GUI-Behaviour",
+            },
+            {
+                "attr": "remove_non_used_default_ops",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Remove unused default operations"),
+                "tip": _(
+                    "If a default operation is no longer used it will be removed from the list of active operations"
+                ),
                 "page": "Classification",
                 "section": "_30_GUI-Behaviour",
             },
@@ -693,7 +709,7 @@ class Elemental(Service):
         ly = float(lly)
         return lx * ly
 
-    ### Operation tools
+    # ---- Operation tools
 
     def assign_operation(
         self,
@@ -1333,10 +1349,9 @@ class Elemental(Service):
             create_image(oplist)
             needs_save = True
         # Ensure we have an id for everything
-        for opidx, opnode in enumerate(oplist):
+        for opnode in oplist:
             if opnode.id is None:
-                opnode.id = f"{opidx:01d}"
-                # print(f"op id was none for {op.type}")
+                self.set_default_id(opnode)
                 needs_save = True
         if needs_save:
             self.save_persistent_operations_list(std_list, oplist=oplist, inform=False)
@@ -1344,6 +1359,110 @@ class Elemental(Service):
         self.default_operations = oplist
         if needs_signal:
             self.signal("default_operations")
+
+    def create_usable_copy(self, sourceop):
+        from copy import copy
+
+        op_to_use = copy(sourceop)
+        for attr in ("id", "label", "color", "lock", "allowed_attributes"):
+            setattr(op_to_use, attr, getattr(sourceop, attr))
+        return op_to_use
+
+    def set_default_id(self, targetop):
+        id_candidate = 0
+        pattern = "D"  # Default
+        op_name_parts = targetop.type.split(" ")
+        if len(op_name_parts) > 1:
+            pattern = op_name_parts[1].upper()[0]
+        id_existing = True
+        while id_existing:
+            id_existing = False
+            id_candidate += 1
+            op_id = f"{pattern}{id_candidate}"
+            for op in self.ops():
+                if op_id == op.id:
+                    id_existing = True
+                    break
+        targetop.id = op_id
+
+    def assign_default_operation(self, data, targetop):
+        emphasize_mode = False
+        if data is None:
+            emphasize_mode = True
+            data = list(self.flat(emphasized=True))
+        if len(data) == 0:
+            return
+        emph_data = [e for e in data]
+        op_id = targetop.id
+        if op_id is None:
+            # WTF, that should not be the case
+            self.set_default_id(targetop)
+        newone = True
+        op_to_use = None
+        for op in self.ops():
+            if op is targetop:
+                # Already existing?
+                newone = False
+                op_to_use = op
+                break
+            elif op.id == op_id:
+                newone = False
+                op_to_use = op
+                break
+        if newone:
+            op_to_use = self.create_usable_copy(targetop)
+            try:
+                self.op_branch.add_node(op_to_use)
+            except ValueError:
+                # This happens when he have somehow lost sync with the node,
+                # and we try to add a node that is already added...
+                # In principle this should be covered by the check
+                # above, but you never know
+                pass
+        impose = "to_elem"
+        similar = False
+        exclusive = True
+        self.assign_operation(
+            op_assign=op_to_use,
+            data=data,
+            impose=impose,
+            attrib="auto",
+            similar=similar,
+            exclusive=exclusive,
+        )
+        self.remove_unused_default_copies()
+        if emphasize_mode:
+            # Restore emphasized flags
+            for e in emph_data:
+                e.emphasized = True
+
+    def remove_unused_default_copies(self):
+        # Let's clean non-used operations that come from defaults...
+        if self.remove_non_used_default_ops:
+            # print("Remove unused called")
+            deleted = 0
+            to_be_deleted = []
+
+            for op in self.ops():
+                # print(f"look at {op.type} - {op.id}: {len(op.children)}")
+                if op.id is None:
+                    continue
+                if len(op.children) != 0:
+                    break
+                # is this one of the default operations?
+                for def_op in self.default_operations:
+                    if def_op.id == op.id:
+                        to_be_deleted.append(op)
+                        break
+            for op in to_be_deleted:
+                deleted += 1
+                # print(f"will remove {op.type}- {op.id}")
+                op.remove_node()
+
+            if deleted:
+                self.signal("operation_removed")
+
+    # ------------------------------------------------------------------------
 
     def prepare_undo(self):
         if self.do_undo:
@@ -1480,6 +1599,7 @@ class Elemental(Service):
         return self._tree.get(type="branch elems")
 
     def ops(self, **kwargs):
+
         operations = self._tree.get(type="branch ops")
         for item in operations.flat(depth=1, **kwargs):
             if item.type.startswith("branch") or item.type.startswith("ref"):
@@ -2299,7 +2419,8 @@ class Elemental(Service):
                     found_default = False
                     for op_candidate in self.default_operations:
                         if isinstance(op_candidate, ImageOpNode):
-                            stdops.append(op_candidate)
+                            op_to_use = self.create_usable_copy(op_candidate)
+                            stdops.append(op_to_use)
                             found_default = True
                             break
                     if not found_default:
@@ -2312,7 +2433,8 @@ class Elemental(Service):
                     found_default = False
                     for op_candidate in self.default_operations:
                         if isinstance(op_candidate, DotsOpNode):
-                            stdops.append(op_candidate)
+                            op_to_use = self.create_usable_copy(op_candidate)
+                            stdops.append(op_to_use)
                             found_default = True
                             break
                     if not found_default:
@@ -2350,7 +2472,8 @@ class Elemental(Service):
                         found_default = False
                         for op_candidate in self.default_operations:
                             if isinstance(op_candidate, CutOpNode):
-                                stdops.append(op_candidate)
+                                op_to_use = self.create_usable_copy(op_candidate)
+                                stdops.append(op_to_use)
                                 found_default = True
                                 break
                         if not found_default:
@@ -2361,7 +2484,8 @@ class Elemental(Service):
                         found_default = False
                         for op_candidate in self.default_operations:
                             if isinstance(op_candidate, RasterOpNode):
-                                stdops.append(op_candidate)
+                                op_to_use = self.create_usable_copy(op_candidate)
+                                stdops.append(op_to_use)
                                 found_default = True
                                 break
                         if not found_default:
@@ -2373,7 +2497,8 @@ class Elemental(Service):
                         found_default = False
                         for op_candidate in self.default_operations:
                             if isinstance(op_candidate, EngraveOpNode):
-                                stdops.append(op_candidate)
+                                op_to_use = self.create_usable_copy(op_candidate)
+                                stdops.append(op_to_use)
                                 found_default = True
                                 break
                         if not found_default:
@@ -2393,7 +2518,8 @@ class Elemental(Service):
                     found_default = False
                     for op_candidate in self.default_operations:
                         if isinstance(op_candidate, RasterOpNode):
-                            stdops.append(op_candidate)
+                            op_to_use = self.create_usable_copy(op_candidate)
+                            stdops.append(op_to_use)
                             found_default = True
                             break
                     if not found_default:
@@ -2453,6 +2579,8 @@ class Elemental(Service):
                         new_operations_added = True
                         already_found = True
                     op.add_reference(node)
+
+        self.remove_unused_default_copies()
         if new_operations_added:
             self.signal("tree_changed")
 
