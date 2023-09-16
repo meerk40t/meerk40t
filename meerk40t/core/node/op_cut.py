@@ -17,8 +17,8 @@ class CutOpNode(Node, Parameters):
     """
 
     def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
-        Node.__init__(self, type="op cut", id=id, label=label, lock=lock)
-        Parameters.__init__(self, None, **kwargs)
+        # Node.__init__(self, type="op cut", id=id, label=label, lock=lock)
+        Parameters.__init__(self, **kwargs)
         self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
         self.kerf = 0
         self._device_factor = 1.0
@@ -60,9 +60,6 @@ class CutOpNode(Node, Parameters):
 
     def __repr__(self):
         return "CutOpNode()"
-
-    def __copy__(self):
-        return CutOpNode(self)
 
     def offset_routine(self, path, offset_value=0):
         # This is a placeholder that will be overloaded by plugin routines

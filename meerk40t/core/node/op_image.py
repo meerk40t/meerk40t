@@ -18,7 +18,7 @@ class ImageOpNode(Node, Parameters):
 
     def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
         Node.__init__(self, type="op image", id=id, label=label, lock=lock)
-        Parameters.__init__(self, None, **kwargs)
+        Parameters.__init__(self,  **kwargs)
         self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}"
 
         if len(args) == 1:
@@ -43,9 +43,6 @@ class ImageOpNode(Node, Parameters):
 
     def __repr__(self):
         return "ImageOpNode()"
-
-    def __copy__(self):
-        return ImageOpNode(self)
 
     # def is_dangerous(self, minpower, maxspeed):
     #     result = False

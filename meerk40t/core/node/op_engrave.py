@@ -17,8 +17,9 @@ class EngraveOpNode(Node, Parameters):
     """
 
     def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
-        Node.__init__(self, type="op engrave", id=id, label=label, lock=lock)
-        Parameters.__init__(self, None, **kwargs)
+        # Node.__init__(self, type="op engrave", id=id, label=label, lock=lock)
+        super().__init__(type="op engrave", **kwargs)
+        Parameters.__init__(self, **kwargs)
         self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
 
         if len(args) == 1:
@@ -57,9 +58,6 @@ class EngraveOpNode(Node, Parameters):
 
     def __repr__(self):
         return "EngraveOpNode()"
-
-    def __copy__(self):
-        return EngraveOpNode(self)
 
     # def is_dangerous(self, minpower, maxspeed):
     #     result = False

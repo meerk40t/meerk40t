@@ -18,7 +18,7 @@ class DotsOpNode(Node, Parameters):
 
     def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
         Node.__init__(self, type="op dots", id=id, label=label, lock=lock)
-        Parameters.__init__(self, None, **kwargs)
+        Parameters.__init__(self,  **kwargs)
         self._formatter = "{enabled}{pass}{element_type} {dwell_time}ms dwell {color}"
 
         if len(args) == 1:
@@ -40,9 +40,6 @@ class DotsOpNode(Node, Parameters):
 
     def __repr__(self):
         return "DotsOpNode()"
-
-    def __copy__(self):
-        return DotsOpNode(self)
 
     # def is_dangerous(self, minpower, maxspeed):
     #     result = False

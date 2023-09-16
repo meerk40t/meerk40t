@@ -20,17 +20,17 @@ class RasterOpNode(Node, Parameters):
 
     def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
         Node.__init__(self, type="op raster", id=id, label=label, lock=lock)
-        Parameters.__init__(self, None, **kwargs)
+        Parameters.__init__(self, **kwargs)
         self._formatter = (
             "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {color}"
         )
 
-        if len(args) == 1:
-            obj = args[0]
-            if hasattr(obj, "settings"):
-                self.settings = dict(obj.settings)
-            elif isinstance(obj, dict):
-                self.settings.update(obj)
+        # if len(args) == 1:
+        #     obj = args[0]
+        #     if hasattr(obj, "settings"):
+        #         self.settings = dict(obj.settings)
+        #     elif isinstance(obj, dict):
+        #         self.settings.update(obj)
         self._allowed_elements_dnd = (
             "elem ellipse",
             "elem path",
@@ -65,9 +65,6 @@ class RasterOpNode(Node, Parameters):
 
     def __repr__(self):
         return "RasterOp()"
-
-    def __copy__(self):
-        return RasterOpNode(self)
 
     # def is_dangerous(self, minpower, maxspeed):
     #     result = False
