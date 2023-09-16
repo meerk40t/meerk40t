@@ -139,7 +139,8 @@ class MKRibbonBarPanel(RibbonBarPanel):
         self.storage.read_configuration()
 
         # Layout properties.
-        self.toggle_show_labels(context.setting(bool, "ribbon_show_labels", True))
+        if show_labels is None or show_labels:
+            self.toggle_show_labels(context.setting(bool, "ribbon_show_labels", True))
 
         self._pages = []
         self.set_default_pages()
