@@ -437,8 +437,10 @@ class Node:
                 "stroke_width",
                 "stroke_scaled",
             ):
-                if hasattr(c, attr):
-                    setattr(node_copy, attr, getattr(c, attr))
+                if getattr(node_copy, attr, None) != getattr(c, attr, None):
+                    print(f"{node_copy}, {attr}")
+
+                assert getattr(node_copy, attr, None) == getattr(c, attr, None)
             node_copy._root = self._root
             links[id(c)] = (c, node_copy)
         return links
