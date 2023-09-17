@@ -1096,10 +1096,15 @@ class EditTool(ToolWidget):
         """
         modified = False
         if self.node_type == "polyline":
-            if isinstance(self.element.shape, Polygon):
-                newshape = Polyline(self.element.shape)
+            dist = (self.shape.points[0].x - self.shape.points[-1].x) ** 2 + (
+                self.shape.points[0].y - self.shape.points[-1].y
+            ) ** 2
+            if dist < 1:  # Closed
+                newshape = Polyline(self.shape)
+                if len(newshape.points) > 2:
+                    newshape.points.pop(-1)
             else:
-                newshape = Polygon(self.element.shape)
+                newshape = Polygon(self.shape)
             self.shape = newshape
             modified = True
         else:
@@ -1129,6 +1134,7 @@ class EditTool(ToolWidget):
                     # Let's establish the last segment in the path
                     prevseg = None
                     is_closed = False
+                    firstseg = None
                     for sidx in range(segstart, len(self.path), 1):
                         seg = self.path[sidx]
                         if isinstance(seg, Move) and prevseg is None:
@@ -1141,14 +1147,28 @@ class EditTool(ToolWidget):
                             # Ready
                             is_closed = True
                             break
+                        if firstseg is None:
+                            firstseg = seg
                         lastidx = sidx
                         prevseg = seg
+                    if firstseg is not None and not is_closed:
+                        dist = firstseg.start.distance_to(prevseg.end)
+                        if dist < 1:
+                            lastidx -= 1
+                            is_closed = True
+                    else:
+                        dist = 1e6
                     if is_closed:
                         # it's enough just to delete it...
                         del self.path[lastidx + 1]
                         modified = True
                     else:
                         # Need to insert a Close segment
+                        # print(f"Inserting a close, dist={dist:.2f}")
+                        # print(
+                        #     f"First seg, idx={segstart}, type={type(firstseg).__name__}"
+                        # )
+                        # print(f"Last seg, idx={lastidx}, type={type(prevseg).__name__}")
                         newseg = Close(
                             start=Point(prevseg.end.x, prevseg.end.y),
                             end=Point(prevseg.end.x, prevseg.end.y),
