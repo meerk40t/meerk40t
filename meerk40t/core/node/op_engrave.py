@@ -16,18 +16,15 @@ class EngraveOpNode(Node, Parameters):
     This is a Node of type "op engrave".
     """
 
-    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
-        # Node.__init__(self, type="op engrave", id=id, label=label, lock=lock)
-        super().__init__(type="op engrave", **kwargs)
-        Parameters.__init__(self, **kwargs)
-        self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
+    def __init__(self, settings=None, **kwargs):
+        if settings is not None:
+            settings = dict(settings)
+        Parameters.__init__(self, settings, **kwargs)
 
-        if len(args) == 1:
-            obj = args[0]
-            if hasattr(obj, "settings"):
-                self.settings = dict(obj.settings)
-            elif isinstance(obj, dict):
-                self.settings.update(obj)
+        # Is this op out of useful bounds?
+        self.dangerous = False
+
+        self.label = "Engrave"
         # We may want to add more advanced logic at a later time
         # to convert text to paths within dnd...
         self._allowed_elements_dnd = (
@@ -47,14 +44,15 @@ class EngraveOpNode(Node, Parameters):
             "elem line",
             "effect hatch",
         )
+
         # To which attributes does the classification color check respond
         # Can be extended / reduced by add_color_attribute / remove_color_attribute
         self.allowed_attributes = [
             "stroke",
         ]  # comma is relevant
-        # Is this op out of useful bounds?
-        self.dangerous = False
-        self.label = "Engrave" if label is None else label
+
+        super().__init__(type="op engrave", **kwargs)
+        self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
 
     def __repr__(self):
         return "EngraveOpNode()"
@@ -209,9 +207,6 @@ class EngraveOpNode(Node, Parameters):
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
-        update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        self.settings.update(update_dict)
-        self.validate()
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
