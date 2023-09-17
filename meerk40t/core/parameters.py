@@ -1,3 +1,4 @@
+import ast
 from typing import Dict
 
 from meerk40t.svgelements import Color
@@ -98,38 +99,24 @@ class Parameters:
 
     def validate(self):
         settings = self.settings
-        for v in FLOAT_PARAMETERS:
-            if v in settings:
-                settings[v] = float(settings[v])
-        for v in INT_PARAMETERS:
-            if v in settings:
-                settings[v] = int(float(settings[v]))
-        for v in BOOL_PARAMETERS:
-            if v in settings:
-                settings[v] = str(settings[v]).lower() == "true"
-        for v in STRING_PARAMETERS:
-            if v in settings:
-                settings[v] = settings[v]
-        for v in COLOR_PARAMETERS:
-            if v in settings:
+        for v in settings:
+            if v in COLOR_PARAMETERS:
                 settings[v] = Color(settings[v])
-        for v in LIST_PARAMETERS:
-            if v in settings:
-                if isinstance(settings[v], str):
-                    myarr = []
-                    sett = settings[v]
-                    if sett != "":
-                        # First of all is it in the old format where we used eval?
-                        if sett.startswith("["):
-                            sett = sett[1:-1]
-                        if "'," in sett:
-                            slist = sett.split(",")
-                            for n in slist:
-                                n = n.strip().strip("'")
-                                myarr.append(n)
-                        else:
-                            myarr = [sett.strip().strip("'")]
-                    settings[v] = myarr
+                continue
+            elif v in FLOAT_PARAMETERS:
+                settings[v] = float(settings[v])
+            elif v in INT_PARAMETERS:
+                settings[v] = int(float(settings[v]))
+            elif v in BOOL_PARAMETERS:
+                settings[v] = str(settings[v]).lower() == "true"
+            elif v in STRING_PARAMETERS:
+                pass  # Already strings.
+            else:
+                # Includes LIST_PARAMETERS
+                try:
+                    settings[v] = ast.literal_eval(v)
+                except (ValueError, SyntaxError):
+                    pass
 
     @property
     def color(self):
