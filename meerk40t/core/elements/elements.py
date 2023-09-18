@@ -1190,7 +1190,11 @@ class Elemental(Service):
         op_tree = dict()
         for section in list(settings.derivable(name)):
             op_type = settings.read_persistent(str, section, "type")
-            op = Node().create(type=op_type)
+            try:
+                op = Node().create(type=op_type)
+            except ValueError:
+                # Attempted to create a non-boostrapped node type.
+                continue
             op.load(settings, section)
             op_tree[section] = op
         op_list = list()
