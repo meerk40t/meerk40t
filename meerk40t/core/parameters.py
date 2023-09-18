@@ -114,7 +114,7 @@ class Parameters:
             else:
                 # Includes LIST_PARAMETERS
                 try:
-                    settings[v] = ast.literal_eval(v)
+                    settings[v] = ast.literal_eval(settings[v])
                 except (ValueError, SyntaxError):
                     pass
 
