@@ -96,7 +96,7 @@ class Node:
         for k, v in kwargs.items():
             if k.startswith("_"):
                 continue
-            if isinstance(v, str) and k not in ("text", "id"):
+            if isinstance(v, str) and k not in ("text", "id", "label"):
                 try:
                     v = ast.literal_eval(v)
                 except (ValueError, SyntaxError):
