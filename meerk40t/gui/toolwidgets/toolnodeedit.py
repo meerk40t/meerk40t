@@ -31,17 +31,63 @@ from meerk40t.svgelements import (
 _ = wx.GetTranslation
 
 
-class NodeIconPanel(wx.Panel):
+class EditTool(ToolWidget):
     """
-    The Node-Editor toolbar, will interact with the tool class by exchanging signals
+    Edit tool allows you to view and edit the nodes within a
+    selected element in the scene. It can currently handle
+    polylines / polygons and paths.
     """
 
-    def __init__(self, *args, context=None, **kwds):
-        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
+    def __init__(self, scene):
+        ToolWidget.__init__(self, scene)
+        self._listener_active = False
+        self.nodes = None
+        self.shape = None
+        self.path = None
+        self.element = None
+        self.selected_index = None
+        self.anyselected = False
 
-        mainsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.move_type = "node"
+        self.node_type = "path"
+        self.p1 = None
+        self.p2 = None
+        self.pen = wx.Pen()
+        self.pen.SetColour(wx.BLUE)
+        # wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke))
+        self.pen_ctrl = wx.Pen()
+        self.pen_ctrl.SetColour(wx.CYAN)
+        self.pen_ctrl_semi = wx.Pen()
+        self.pen_ctrl_semi.SetColour(wx.GREEN)
+        self.pen_highlight = wx.Pen()
+        self.pen_highlight.SetColour(wx.RED)
+        self.pen_highlight_line = wx.Pen()
+        self.pen_highlight_line.SetColour(wx.Colour(255, 0, 0, 80))
+        self.pen_selection = wx.Pen()
+        self.pen_selection.SetColour(self.scene.colors.color_selection3)
+        self.pen_selection.SetStyle(wx.PENSTYLE_SHORT_DASH)
+        # want to have sharp edges
+        self.pen_selection.SetJoin(wx.JOIN_MITER)
+        # "key": (routine, info, available for poly, available for path)
+        self.commands = {
+            "d": (self.delete_nodes, _("Delete"), True, True),
+            "l": (self.convert_to_line, _("Line"), False, True),
+            "c": (self.convert_to_curve, _("Curve"), False, True),
+            "s": (self.cubic_symmetrical, _("Symmetric"), False, True),
+            "i": (self.insert_midpoint, _("Insert"), True, True),
+            "a": (self.append_line, _("Append"), True, True),
+            "b": (self.break_path, _("Break"), False, True),
+            "j": (self.join_path, _("Join"), False, True),
+            "o": (self.smoothen, _("Smoothen"), False, True),
+            "z": (self.toggle_close, _("Close path"), True, True),
+            "v": (self.smoothen_all, _("Smooth all"), False, True),
+            "w": (self.linear_all, _("Line all"), False, True),
+            "p": (self.convert_to_path, _("To path"), True, False),
+        }
+        self.define_buttons()
+        self.message = ""
+
+    def define_buttons(self):
         node_add = PyEmbeddedImage(
             b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
             b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAJ0lEQVQImWP4//h/AwM24g+DPDKBU93//yCCoR5G2KEQ"
@@ -144,7 +190,49 @@ class NodeIconPanel(wx.Panel):
             b"lZnSzZwkp/jNzHr+k2aayDHzgHPyjlROdDEOh8PhmJz8A+PVbUCLkfVDAAAAAElFTkSuQmCC"
         )
 
-        self.icons = {
+        def becomes_enabled(needs_selection, active_for_path, active_for_poly):
+            def routine(*args):
+                # print(
+                #     f"Was asked to perform with {my_selection}, {my_active_poly}, {my_active_path} while {self.anyselected} + {self.node_type}"
+                # )
+                flag_sel = True
+                flag_poly = False
+                flag_path = False
+                if my_selection and not self.anyselected:
+                    flag_sel = False
+                if my_active_poly and self.node_type == "polyline":
+                    flag_poly = True
+                if my_active_path and self.node_type == "path":
+                    flag_path = True
+                flag = flag_sel and (flag_path or flag_poly)
+                return flag
+
+        def becomes_visible(active_for_path, active_for_poly):
+            def routine(*args):
+                # print(
+                #     f"Was asked to perform with {my_active_poly}, {my_active_path} while {self.anyselected} + {self.node_type}"
+                # )
+                flag_poly = False
+                flag_path = False
+                if my_active_poly and self.node_type == "polyline":
+                    flag_poly = True
+                if my_active_path and self.node_type == "path":
+                    flag_path = True
+                flag = flag_path or flag_poly
+                return flag
+
+            my_active_path = active_for_path
+            my_active_poly = active_for_poly
+            return routine
+
+        def do_action(code):
+            def routine(*args):
+                self.perform_action(mycode)
+
+            mycode = code
+            return routine
+
+        cmd_icons = {
             # "command": [
             #           image, requires_selection,
             #           active_for_path, active_for_poly,
@@ -155,7 +243,6 @@ class NodeIconPanel(wx.Panel):
                 True,
                 True,
                 _("Insert point before"),
-                None,
                 _("Insert"),
             ],
             "a": [
@@ -164,7 +251,6 @@ class NodeIconPanel(wx.Panel):
                 True,
                 True,
                 _("Append point at end"),
-                None,
                 _("Append"),
             ],
             "d": [
@@ -173,7 +259,6 @@ class NodeIconPanel(wx.Panel):
                 True,
                 True,
                 _("Delete point"),
-                None,
                 _("Delete"),
             ],
             "l": [
@@ -182,7 +267,6 @@ class NodeIconPanel(wx.Panel):
                 True,
                 False,
                 _("Make segment a line"),
-                None,
                 _("> Line"),
             ],
             "c": [
@@ -191,7 +275,6 @@ class NodeIconPanel(wx.Panel):
                 True,
                 False,
                 _("Make segment a curve"),
-                None,
                 _("> Curve"),
             ],
             "s": [
@@ -200,7 +283,6 @@ class NodeIconPanel(wx.Panel):
                 True,
                 False,
                 _("Make segment symmetrical"),
-                None,
                 _("Symmetric"),
             ],
             "j": [
@@ -209,7 +291,6 @@ class NodeIconPanel(wx.Panel):
                 True,
                 False,
                 _("Join two segments"),
-                None,
                 _("Join"),
             ],
             "b": [
@@ -218,7 +299,6 @@ class NodeIconPanel(wx.Panel):
                 True,
                 False,
                 _("Break segment apart"),
-                None,
                 _("Break"),
             ],
             "o": [
@@ -227,7 +307,6 @@ class NodeIconPanel(wx.Panel):
                 True,
                 False,
                 _("Smoothen transit to adjacent segments"),
-                None,
                 _("Smooth"),
             ],
             "v": [
@@ -236,7 +315,6 @@ class NodeIconPanel(wx.Panel):
                 True,
                 False,
                 _("Convert all lines into curves and smoothen"),
-                None,
                 _("Very smooth"),
             ],
             "z": [
@@ -245,7 +323,6 @@ class NodeIconPanel(wx.Panel):
                 True,
                 True,
                 _("Toggle closed status"),
-                None,
                 _("Close"),
             ],
             "p": [
@@ -254,173 +331,29 @@ class NodeIconPanel(wx.Panel):
                 False,
                 True,
                 _("Convert polyline to a path element"),
-                None,
                 _("To Path"),
             ],
         }
         icon_size = STD_ICON_SIZE
-        font = wx.Font(
-            7,
-            wx.FONTFAMILY_TELETYPE,
-            wx.FONTSTYLE_NORMAL,
-            wx.FONTWEIGHT_NORMAL,
-        )
-        # label = entry[6]
-        label = ""
-        for command in self.icons:
-            entry = self.icons[command]
-            button = wx.Button(
-                self,
-                wx.ID_ANY,
-                label,
-                size=wx.Size(icon_size + 10, icon_size + 10),
-                style=wx.BU_BOTTOM | wx.BU_LEFT,
+        for command, entry in cmd_icons.items():
+            # print(command, f"button/tool_edit/tool_{command}")
+            self.scene.context.kernel.register(
+                f"button/tool_edit/tool_{command}",
+                {
+                    "label": entry[5],
+                    "icon": entry[0],
+                    "tip": entry[4],
+                    "action": do_action(command),
+                    "size": icon_size,
+                    "rule_enabled": becomes_enabled(entry[1], entry[2], entry[3]),
+                    "rule_visible": becomes_visible(entry[2], entry[3]),
+                },
             )
-            button.SetBitmap(entry[0].GetBitmap(resize=icon_size))
-            button.Bind(wx.EVT_BUTTON, self.button_action(command))
-            button.SetFont(font)
-            # button = wx.StaticBitmap(
-            #     self, wx.ID_ANY, size=wx.Size(icon_size + 10, icon_size + 10)
-            # )
-            # # button.SetBitmap(entry[0].GetBitmap(resize=icon_size))
-            # button.SetBitmap(entry[0].GetBitmap(resize=icon_size))
-            button.SetToolTip(entry[4])
-            button.Enable(False)
-            entry[5] = button
-            button.Bind(wx.EVT_LEFT_DOWN, self.button_action(command))
-            mainsizer.Add(button, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.SetSizer(mainsizer)
-        self.Layout()
 
-    @signal_listener("nodeedit")
-    def realize(self, origin, *args):
-        # print (f"Bar receives: {origin} - {args}")
-        if args:
-            if isinstance(args[0], (list, tuple)):
-                mode = args[0][0]
-                selection = args[0][1]
-            else:
-                mode = args[0]
-                selection = args[1]
-            if mode == "polyline":
-                for command in self.icons:
-                    entry = self.icons[command]
-                    flag_visible = True
-                    flag_enable = True
-                    if entry[1] and not selection:
-                        # Only if something is selected
-                        flag_enable = False
-                    if not entry[3]:
-                        # Not for polyline mode
-                        flag_visible = False
-                    entry[5].Show(flag_visible)
-                    entry[5].Enable(flag_enable)
-            elif mode == "path":
-                for command in self.icons:
-                    entry = self.icons[command]
-                    flag_visible = True
-                    flag_enable = True
-                    if entry[1] and not selection:
-                        # Only if something is selected
-                        flag_enable = False
-                    if not entry[2]:
-                        # Not for path mode
-                        flag_visible = False
-                    entry[5].Show(flag_visible)
-                    entry[5].Enable(flag_enable)
-            self.Layout()
-
-    def button_action(self, command):
-        def action(event):
-            self.context.signal("nodeedit", ("action", command))
-
-        return action
-
-
-class NodeEditToolbar(MWindow):
-    """
-    Wrapper Window to display to Node-Editor toolbar
-    Will hide itself from public view by expressing
-    'return (xxx, xxx, False)' in method 'submenu'
-    """
-
-    def __init__(self, *args, **kwds):
-        iconsize = STD_ICON_SIZE
-        iconsize += 10
-        iconcount = 11
-        super().__init__(
-            iconcount * iconsize - 10, iconsize + 35, submenu="", *args, **kwds
-        )
-        self.panel = NodeIconPanel(self, wx.ID_ANY, context=self.context)
-        self.SetTitle(_("Node-Editor"))
-
-    def window_open(self):
-        pass
-
-    def window_close(self):
-        self.context("tool none\n")
-
-    def delegates(self):
-        yield self.panel
-
-    @staticmethod
-    def submenu():
-        # Suppress = True
-        return "", "Node-Editor", True
-
-
-class EditTool(ToolWidget):
-    """
-    Edit tool allows you to view and edit the nodes within a
-    selected element in the scene. It can currently handle
-    polylines / polygons and paths.
-    """
-
-    def __init__(self, scene):
-        ToolWidget.__init__(self, scene)
-        self._listener_active = False
-        self.nodes = None
-        self.shape = None
-        self.path = None
-        self.element = None
-        self.selected_index = None
-        self.move_type = "node"
-        self.node_type = "path"
-        self.p1 = None
-        self.p2 = None
-        self.pen = wx.Pen()
-        self.pen.SetColour(wx.BLUE)
-        # wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke))
-        self.pen_ctrl = wx.Pen()
-        self.pen_ctrl.SetColour(wx.CYAN)
-        self.pen_ctrl_semi = wx.Pen()
-        self.pen_ctrl_semi.SetColour(wx.GREEN)
-        self.pen_highlight = wx.Pen()
-        self.pen_highlight.SetColour(wx.RED)
-        self.pen_highlight_line = wx.Pen()
-        self.pen_highlight_line.SetColour(wx.Colour(255, 0, 0, 80))
-        self.pen_selection = wx.Pen()
-        self.pen_selection.SetColour(self.scene.colors.color_selection3)
-        self.pen_selection.SetStyle(wx.PENSTYLE_SHORT_DASH)
-        # want to have sharp edges
-        self.pen_selection.SetJoin(wx.JOIN_MITER)
-        # "key": (routine, info, available for poly, available for path)
-        self.commands = {
-            "d": (self.delete_nodes, _("Delete"), True, True),
-            "l": (self.convert_to_line, _("Line"), False, True),
-            "c": (self.convert_to_curve, _("Curve"), False, True),
-            "s": (self.cubic_symmetrical, _("Symmetric"), False, True),
-            "i": (self.insert_midpoint, _("Insert"), True, True),
-            "a": (self.append_line, _("Append"), True, True),
-            "b": (self.break_path, _("Break"), False, True),
-            "j": (self.join_path, _("Join"), False, True),
-            "o": (self.smoothen, _("Smoothen"), False, True),
-            "z": (self.toggle_close, _("Close path"), True, True),
-            "v": (self.smoothen_all, _("Smooth all"), False, True),
-            "w": (self.linear_all, _("Line all"), False, True),
-            "p": (self.convert_to_path, _("To path"), True, False),
-        }
-        self.message = ""
+    def enable_rules(self):
+        toolbar = self.scene.context.lookup("ribbonbar/tools")
+        if toolbar is not None:
+            toolbar.apply_enable_rules()
 
     def final(self, context):
         """
@@ -434,10 +367,6 @@ class EditTool(ToolWidget):
             self.scene.context.unlisten("nodeedit", self.on_signal_nodeedit)
         self._listener_active = False
         self.scene.request_refresh()
-        try:
-            self.scene.context("window close NodeEditToolbar\n")
-        except (AssertionError, RuntimeError, KeyError):
-            pass
 
     def init(self, context):
         """
@@ -447,7 +376,6 @@ class EditTool(ToolWidget):
         self.scene.context.listen("emphasized", self.on_emphasized_changed)
         self.scene.context.listen("nodeedit", self.on_signal_nodeedit)
         self._listener_active = True
-        self.scene.context("window open NodeEditToolbar\n")
 
     def on_emphasized_changed(self, origin, *args):
         """
@@ -457,6 +385,7 @@ class EditTool(ToolWidget):
         if selected_node is not self.element:
             self.calculate_points(selected_node)
             self.scene.request_refresh()
+            self.enable_rules()
 
     def set_pen_widths(self):
         """
@@ -489,63 +418,6 @@ class EditTool(ToolWidget):
                 value = self.element.stroke_width
         value += 4 * linewidth
         set_width_pen(self.pen_highlight_line, value)
-
-    def on_signal_nodeedit(self, origin, *args):
-        """
-        Receiver-Routine for signals sent by the toolbar
-        """
-        if isinstance(args[0], (list, tuple)):
-            mode = args[0][0]
-            keycode = args[0][1]
-        else:
-            mode = args[0]
-            keycode = args[1]
-        if mode == "action":
-            self.perform_action(keycode)
-
-    # def debug_path(self):
-    #     if self.element is None or not hasattr(self.element, "path"):
-    #         return
-    #     path = self.path
-    #     starts = []
-    #     ends = []
-    #     types = []
-    #     for seg in path:
-    #         types.append(type(seg).__name__)
-    #         starts.append(seg.start)
-    #         ends.append(seg.end)
-    #     for idx in range(len(starts)):
-    #         p_idx = idx - 1 if idx > 0 else len(starts) - 1
-    #         n_idx = idx + 1 if idx < len(starts) - 1 else 0
-    #         start_status = ""
-    #         end_status = ""
-    #         if starts[idx] is None:
-    #             if ends[p_idx] is not None:
-    #                 start_status = "Start: None (Prev: not None)"
-    #         else:
-    #             if ends[p_idx] is None:
-    #                 start_status = "Start: Not None (Prev: None)"
-    #             else:
-    #                 if starts[idx].x != ends[p_idx].x or starts[idx].y != ends[p_idx].y:
-    #                     start_status = "Start: != Prev end"
-    #         if ends[idx] is None:
-    #             if starts[n_idx] is not None:
-    #                 end_status = "End: None (Next: not None)"
-    #         else:
-    #             if starts[n_idx] is None:
-    #                 end_status = "End: Not None (Next: None)"
-    #             else:
-    #                 if starts[n_idx].x != ends[idx].x or starts[n_idx].y != ends[idx].y:
-    #                     end_status = "End: != Next start"
-    #         if types[idx] == "Move" and types[p_idx] == "Close":
-    #             if ends[idx].x != ends[p_idx].x or ends[idx].y != ends[p_idx].y:
-    #                 start_status += ", end points !="
-    #             else:
-    #                 start_status += ", end points =="
-
-    #         print(
-    #             f"#{idx} {types[idx]} - {start_status} - {end_status} (Prev: {types[p_idx]}, Next = {types[n_idx]})"
-    #         )
 
     def calculate_points(self, selected_node):
         """
@@ -791,7 +663,8 @@ class EditTool(ToolWidget):
                 if self.message:
                     self.message += ", "
                 self.message += f"{cmd}: {action[1]}"
-        self.scene.context.signal("nodeedit", (self.node_type, False))
+
+        self.enable_rules()
 
     def calc_and_draw(self, gc):
         """
@@ -1006,6 +879,7 @@ class EditTool(ToolWidget):
         if reload:
             self.calculate_points(self.element)
             self.scene.request_refresh()
+            self.enable_rules()
 
     def clear_selection(self):
         """
@@ -1014,6 +888,7 @@ class EditTool(ToolWidget):
         if self.nodes is not None:
             for entry in self.nodes:
                 entry["selected"] = False
+        self.enable_rules()
 
     def first_segment_in_subpath(self, index):
         """
@@ -1965,7 +1840,7 @@ class EditTool(ToolWidget):
 
             xp = space_pos[0]
             yp = space_pos[1]
-            anyselected = False
+            self.anyselected = False
             if self.nodes:
                 w = offset * 4
                 h = offset * 4
@@ -1990,23 +1865,23 @@ class EditTool(ToolWidget):
                             if orgnode is not None:
                                 orgnode["selected"] = True
                             entry["selected"] = True
-                            anyselected = True
+                            self.anyselected = True
                         else:
                             # Shift-Key Pressed?
                             if "shift" not in modifiers:
                                 self.clear_selection()
                                 entry["selected"] = True
-                                anyselected = True
+                                self.anyselected = True
                             else:
                                 entry["selected"] = not entry["selected"]
                                 for chk in self.nodes:
                                     if chk["selected"]:
-                                        anyselected = True
+                                        self.anyselected = True
                                         break
                         break
                 else:  # For-else == icky
                     self.selected_index = None
-            self.scene.context.signal("nodeedit", (self.node_type, anyselected))
+            self.enable_rules()
             if self.selected_index is None:
                 if event_type == "leftclick":
                     # Have we clicked outside the bbox? Then we call it a day...
@@ -2170,7 +2045,7 @@ class EditTool(ToolWidget):
                         # current selection
                         anyselected = True
                 self.scene.request_refresh()
-                self.scene.context.signal("nodeedit", (self.node_type, anyselected))
+                self.enable_rules()
             self.p1 = None
             self.p2 = None
             return RESPONSE_CONSUME
@@ -2180,6 +2055,7 @@ class EditTool(ToolWidget):
         """
         Translates a keycode into a command to execute
         """
+        # print(f"Perform action called with {code}")
         if code in self.commands:
             action = self.commands[code]
             # print(f"Execute {action[1]}")
@@ -2198,6 +2074,7 @@ class EditTool(ToolWidget):
                 if selected_node is not None:
                     self.calculate_points(selected_node)
                     self.scene.request_refresh()
+                    self.enable_rules()
             return
         if self.element is None:
             return
