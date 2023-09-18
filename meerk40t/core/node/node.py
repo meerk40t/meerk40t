@@ -426,19 +426,6 @@ class Node:
         for c in self._children:
             c._build_copy_nodes(links=links)
             node_copy = copy(c)
-            for attr in (
-                "id",
-                "label",
-                "color",
-                "lock",
-                "allowed_attributes",
-                "stroke",
-                "fill",
-                "stroke_width",
-                "stroke_scaled",
-            ):
-                if hasattr(c, attr):
-                    setattr(node_copy, attr, getattr(c, attr))
             node_copy._root = self._root
             links[id(c)] = (c, node_copy)
         return links

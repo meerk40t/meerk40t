@@ -16,19 +16,17 @@ class CutOpNode(Node, Parameters):
     This is a Node of type "op cut".
     """
 
-    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
-        Node.__init__(self, type="op cut", id=id, label=label, lock=lock)
-        Parameters.__init__(self, None, **kwargs)
-        self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
+    def __init__(self, settings=None, **kwargs):
+        if settings is not None:
+            settings = dict(settings)
+        Parameters.__init__(self, settings, **kwargs)
+        # Is this op out of useful bounds?
+        self.dangerous = False
+
+        self.label = "Cut"
         self.kerf = 0
         self._device_factor = 1.0
 
-        if len(args) == 1:
-            obj = args[0]
-            if hasattr(obj, "settings"):
-                self.settings = dict(obj.settings)
-            elif isinstance(obj, dict):
-                self.settings.update(obj)
         # Which elements can be added to an operation (manually via DND)?
         self._allowed_elements_dnd = (
             "elem ellipse",
@@ -51,32 +49,17 @@ class CutOpNode(Node, Parameters):
         self.allowed_attributes = [
             "stroke",
         ]
-        # Is this op out of useful bounds?
-        self.dangerous = False
-        if label is None:
-            self.label = "Cut"
-        else:
-            self.label = label
+        super().__init__(type="op cut", **kwargs)
+        self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
 
     def __repr__(self):
         return "CutOpNode()"
-
-    def __copy__(self):
-        return CutOpNode(self)
 
     def offset_routine(self, path, offset_value=0):
         # This is a placeholder that will be overloaded by plugin routines
         # at runtime. It will return a new path with an offset to a given path
         # As we don't have any logic, we just return the original path
         return path
-
-    # def is_dangerous(self, minpower, maxspeed):
-    #     result = False
-    #     if maxspeed is not None and self.speed > maxspeed:
-    #         result = True
-    #     if minpower is not None and self.power < minpower:
-    #         result = True
-    #     self.dangerous = result
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
@@ -235,9 +218,6 @@ class CutOpNode(Node, Parameters):
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
-        update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        self.settings.update(update_dict)
-        self.validate()
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
@@ -256,8 +236,8 @@ class CutOpNode(Node, Parameters):
         settings.write_persistent_dict(section, self.settings)
 
     def copy_children(self, obj):
-        for node in obj.children:
-            self.add_reference(node)
+        for element in obj.children:
+            self.add_reference(element)
 
     def copy_children_as_real(self, copy_node):
         for node in copy_node.children:
