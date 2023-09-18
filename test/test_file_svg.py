@@ -70,13 +70,19 @@ class TestFileSVG(unittest.TestCase):
         kernel = bootstrap.bootstrap()
         try:
             kernel.console("operation* delete\n")
-            node = EngraveOpNode(id="1", label="1")
+            node = EngraveOpNode(id="1", label="1", speed=39.8)
             kernel.elements.op_branch.add_node(node)
             kernel.console(f"save {file1}\n")
             kernel.console("operation* delete\n")
             kernel.console(f"load {file1}\n")
             node_copy = list(kernel.elements.op_branch.flat(types="op engrave"))[0]
             self.assertEqual(node_copy.id, node.id)
+            self.assertIsInstance(node_copy.id, str)
+
             self.assertEqual(node_copy.label, node.label)
+            self.assertIsInstance(node_copy.label, str)
+
+            self.assertEqual(node_copy.speed, node.speed)
+            self.assertIsInstance(node_copy.speed, float)
         finally:
             kernel.shutdown()
