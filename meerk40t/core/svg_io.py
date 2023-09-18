@@ -173,9 +173,8 @@ class SVGWriter:
                 "xmlns:" + MEERK40T_XMLS_ID,
                 MEERK40T_NAMESPACE,
             )
-
-        scene_width = Length(amount=context.device.view.width).length_mm
-        scene_height = Length(amount=context.device.view.height).length_mm
+        scene_width = Length(context.device.view.width)
+        scene_height = Length(context.device.view.height)
         root.set(SVG_ATTR_WIDTH, scene_width.length_mm)
         root.set(SVG_ATTR_HEIGHT, scene_height.length_mm)
         viewbox = f"{0} {0} {int(float(scene_width))} {int(float(scene_height))}"
