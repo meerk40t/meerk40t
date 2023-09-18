@@ -2022,13 +2022,13 @@ class Transform(wx.Panel):
 
     def _translate(self, dx, dy, scale):
         dx = Length(
-            dx, relative_length=self.context.view.width, unitless=UNITS_PER_PIXEL,
+            dx, relative_length=self.context.space.display.width, unitless=UNITS_PER_PIXEL,
             preferred_units=self.context.units_name
         )
         dx *= scale
 
         dy = Length(
-            dy, relative_length=self.context.view.height, unitless=UNITS_PER_PIXEL,
+            dy, relative_length=self.context.space.display.height, unitless=UNITS_PER_PIXEL,
             preferred_units=self.context.units_name
         )
         dy *= scale
