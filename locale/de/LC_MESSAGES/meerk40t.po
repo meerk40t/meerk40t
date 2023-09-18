@@ -10251,6 +10251,25 @@ msgstr "GRBL-Konfiguration"
 #: meerk40t/grbl/gui/grblconfiguration.py:47
 msgid "Dimensions"
 msgstr "Abmessungen"
+# ./meerk40t\grbl\gui\grblconfiguration.py:65166
+msgid "Select this if you have a GRBL device running through a serial connection."
+msgstr "Falls der GRBL-Laser direkt an einer seriellen Schnittstelle angeschlossen ist"
+
+# ./meerk40t\grbl\gui\grblconfiguration.py:65173
+msgid "Select this if the GRBL device is contacted via TCP connection"
+msgstr "Falls der GRBL-Laser über eine TCP-Netzwerkverbindung angeschlossen ist"
+
+# ./meerk40t\grbl\gui\grblconfiguration.py:65179
+msgid "Select this only for debugging without a physical laser available."
+msgstr "Nur zu Entwicklungszwecken ohne einen realen Laser verfügbar zu haben"
+
+# ./meerk40t\grbl\gui\grblconfiguration.py:65360
+msgid "Could not query laser-data!"
+msgstr "Laser-Konfiguration liess sich nicht auslesen!"
+
+# ./meerk40t\grbl\gui\grblconfiguration.py:65415
+msgid "Successfully queried laser-data!"
+msgstr "Laser-Konfiguration erfolgreich ausgelesen!"
 
 #: meerk40t/grbl/gui/grblconfiguration.py:48
 msgid "Global Settings"
@@ -10271,6 +10290,10 @@ msgstr "Verbunden"
 #: meerk40t/moshi/gui/moshicontrollergui.py:346
 msgid "Disconnect"
 msgstr "Getrennt"
+
+#: meerk40t\grbl\device.py
+msgid "Serial"
+msgstr "Serielle Schnittstelle"
 
 #: meerk40t/grbl/gui/gui.py:31
 msgid "Serial Controller"
@@ -11722,8 +11745,12 @@ msgid "Byte 5"
 msgstr "Byte 5"
 
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:344
-msgid "Connect Failed"
-msgstr ""
+msgid "Connect failed"
+msgstr "Verbindungsversuch fehlgeschlagen"
+
+#: ./meerk40t\grbl\gui\grblconfiguration.py:292
+msgid "Connect succeeded"
+msgstr "Verbindungsversuch erfolgreich"
 
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:352
 msgid "Retrying..."
@@ -16719,3 +16746,65 @@ msgstr "Effekt: An"
 
 msgid "Effect: Off"
 msgstr "Effekt: Aus"
+
+#: ./meerk40t\lihuiyu\device.py:297
+msgid "Minimum travel distance before invoking a rapid jog move."
+msgstr "Mindest-Fahrstrecke bevor beschleunigt wird"
+
+#: ./meerk40t\lihuiyu\device.py:195
+msgid "Sequential"
+msgstr "Sequentiell"
+
+#: ./meerk40t\lihuiyu\device.py:196
+msgid "Random"
+msgstr "Zufällig"
+
+#: ./meerk40t\lihuiyu\device.py:197
+msgid "Progressive"
+msgstr "Progressiv"
+
+msgid "Phase Type"
+msgstr "Phasentyp"
+
+#: ./meerk40t\lihuiyu\device.py:198
+msgid "Static"
+msgstr "Statisch"
+
+#: ./meerk40t\lihuiyu\device.py:205
+msgid ""
+"The PPI carry-forward algorithm is ambiguous when it comes to shifting from one location, "
+"typically it just maintained the count. However, in some rare cases this may artifact "
+"if the PPI is low enough to see individual dots. This feature allows very fine-grained control."
+msgstr ""
+"Der PPI-Übertrags-Algorithmus ist nicht eindeutig, wenn von einer Position zur nächsten bewegt wird. "
+"Üblicherweise wird er Übertrag beibehalten. Das kann in seltenen Fällen, wenn der PPI-Wert "
+"so klein wird, dass man einzelne Punkte sieht, zu Artifakten führen.\n"
+"Diese Einstellung erlaubt eine sehr granulare Kontrolle über dieses Feature."
+
+#: ./meerk40t\lihuiyu\device.py:207
+msgid "Sequential: maintain phase between cuts"
+msgstr "Sequentiell: behält die Phase zwischen Schnitten"
+
+#: ./meerk40t\lihuiyu\device.py:208
+msgid "Random: set the phase to a random value between cuts"
+msgstr "Zufällig: setzt die Phase zwischen Schnitten auf einen Zufallwert"
+
+#: ./meerk40t\lihuiyu\device.py:209
+msgid "Progressive: linearly progress the phase between cuts"
+msgstr "Progressiv: erhöht die Phase zwischen Schnitten gleichmäßig"
+
+#: ./meerk40t\lihuiyu\device.py:212
+msgid "Static: always set the phase to the exact value between cuts"
+msgstr "Statisch: setzt die Phase immer auf den exakt gleichen Wert zwischen Schnitten"
+
+#: ./meerk40t\lihuiyu\device.py:215
+msgid "Plot Planner"
+msgstr "Plot-Planer"
+
+#: ./meerk40t\lihuiyu\device.py:222
+msgid "Phase Value"
+msgstr "Phase"
+
+#: ./meerk40t\lihuiyu\device.py:223
+msgid "Value for progressive or static phase type"
+msgstr "Wert für progressiven oder statischen Phasen-Typ"

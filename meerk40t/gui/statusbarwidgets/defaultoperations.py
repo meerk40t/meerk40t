@@ -2,12 +2,10 @@ import wx
 
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
-from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.node.op_image import ImageOpNode
-
+from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.gui.icons import EmptyIcon
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.svgelements import Color
 
 from .statusbarwidget import StatusBarWidget
 
@@ -41,110 +39,6 @@ class DefaultOperationWidget(StatusBarWidget):
             slabel = ""
         return slabel
 
-    def init_nodes(self):
-        def next_color(primary, secondary, tertiary, delta=32):
-            secondary += delta
-            if secondary > 255:
-                secondary = 0
-                primary -= delta
-            if primary < 0:
-                primary = 255
-                tertiary += delta
-            if tertiary > 255:
-                tertiary = 0
-            return primary, secondary, tertiary
-
-        def create_cut():
-            # Cut op
-            idx = 0
-            blue = 0
-            green = 0
-            red = 255
-            for speed in (1, 2, 5):
-                for power in (1000,):
-                    idx += 1
-                    op_id = f"C{idx:01d}"
-                    op = CutOpNode(id=op_id, speed=speed, power=power)
-                    op.label = self.node_label(op)
-                    op.color = Color(red=red, blue=blue, green=green)
-                    red, blue, green = next_color(red, blue, green, delta=64)
-                    # print(f"Next for cut: {red} {blue} {green}")
-                    op.allowed_attributes = ["stroke"]
-                    oplist.append(op)
-
-        def create_engrave():
-            # Engrave op
-            idx = 0
-            blue = 255
-            green = 0
-            red = 0
-            for speed in (20, 35, 50):
-                for power in (1000, 750, 500):
-                    idx += 1
-                    op_id = f"E{idx:01d}"
-                    op = EngraveOpNode(id=op_id, speed=speed, power=power)
-                    op.label = self.node_label(op)
-                    op.color = Color(red=red, blue=blue, green=green)
-                    blue, green, red = next_color(blue, green, red, delta=24)
-                    # print(f"Next for engrave: {red} {blue} {green}")
-                    op.allowed_attributes = ["stroke"]
-                    oplist.append(op)
-
-        def create_raster():
-            # Raster op
-            idx = 0
-            blue = 0
-            green = 255
-            red = 0
-            for speed in (250, 200, 150, 100, 75):
-                for power in (1000,):
-                    idx += 1
-                    op_id = f"R{idx:01d}"
-                    op = RasterOpNode(id=op_id, speed=speed, power=power)
-                    op.label = self.node_label(op)
-                    op.color = Color(red=red, blue=blue, green=green, delta=60)
-                    green, red, blue = next_color(green, red, blue)
-                    # print(f"Next for raster: {red} {blue} {green}")
-                    op.allowed_attributes = ["fill"]
-                    oplist.append(op)
-
-        def create_image():
-            # Image op
-            idx = 0
-            blue = 0
-            green = 0
-            red = 0
-            for speed in (250, 200, 150, 100, 75):
-                for power in (1000,):
-                    idx += 1
-                    op_id = f"I{idx:01d}"
-                    op = ImageOpNode(id=op_id, speed=speed, power=power)
-                    op.label = self.node_label(op)
-                    op.color = Color(red=red, blue=blue, green=green, delta=48)
-                    green, blue, red = next_color(green, red, blue)
-                    # print(f"Next for Image: {red} {blue} {green}")
-
-                    oplist.append(op)
-
-        oplist = self.context.elements.load_persistent_op_list("_default")
-        needs_save = False
-        if len(oplist) == 0:
-            # Then let's create something useful
-            create_cut()
-            create_engrave()
-            create_raster()
-            create_image()
-            needs_save = True
-        # Ensure we have an id for everything
-        for opidx, opnode in enumerate(oplist):
-            if opnode.id is None:
-                opnode.id = f"{opidx:01d}"
-                needs_save = True
-        if needs_save:
-            self.context.elements.save_persistent_operations_list("_default", oplist)
-
-        self.context.elements.default_operations = oplist
-
     def GenerateControls(self, parent, panelidx, identifier, context):
         def size_it(ctrl, dimen_x, dimen_y):
             ctrl.SetMinSize(wx.Size(dimen_x, dimen_y))
@@ -175,7 +69,7 @@ class DefaultOperationWidget(StatusBarWidget):
         self.first_to_show = 0
         self.page_size = int((self.width - 2 * self.buttonsize_x) / self.buttonsize_x)
 
-        self.init_nodes()
+        self.context.elements.init_default_operations_nodes()
         self.assign_buttons.clear()
         for idx, op in enumerate(self.context.elements.default_operations):
             btn = wx.StaticBitmap(
@@ -310,47 +204,10 @@ class DefaultOperationWidget(StatusBarWidget):
         self.Show(True)
 
     def execute_on(self, targetop):
-        data = list(self.context.elements.flat(emphasized=True))
-        if len(data) == 0:
-            return
-        emph_data = [e for e in data]
-        op_id = targetop.id
-        newone = True
-        for op in self.context.elements.ops():
-            if op.id == op_id:
-                newone = False
-                targetop = op
-                break
-        if newone:
-            self.context.elements.op_branch.add_node(targetop)
-        impose = "to_elem"
-        similar = False
-        exclusive = True
-        self.context.elements.assign_operation(
-            op_assign=targetop,
-            data=data,
-            impose=impose,
-            attrib="auto",
-            similar=similar,
-            exclusive=exclusive,
-        )
-        # Let's clean non-used operations that come from defaults...
-        deleted = 0
-        for op in self.context.elements.ops():
-            if op.id is None:
-                continue
-            if len(op.children) == 0:
-                # is this one of the default operations?
-                for def_op in self.context.elements.default_operations:
-                    if def_op.id == op.id:
-                        deleted += 1
-                        op.remove_node()
-                        break
-        if deleted:
-            self.context.elements.signal("operation_removed")
+        data = None  # == selected elements
+        self.context.elements.assign_default_operation(data, targetop)
+
         self.reset_tooltips()
-        for e in emph_data:
-            e.emphasized = True
 
     def show_stuff(self, flag):
         for idx in range(len(self.assign_buttons)):
@@ -391,5 +248,7 @@ class DefaultOperationWidget(StatusBarWidget):
             self.GenerateControls(
                 self.parent, self.panelidx, self.identifier, self.context
             )
+            # Repaint
+            self.show_stuff(True)
         elif signal == "emphasized":
             self.Enable(self.context.elements.has_emphasis())

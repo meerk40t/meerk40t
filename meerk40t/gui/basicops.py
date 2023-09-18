@@ -4,16 +4,14 @@ fundamental properties of operations. This is supposed to provide
 a simpler interface to operations
 """
 
-from time import perf_counter
 import wx
 
-from meerk40t.core.elements.element_types import op_nodes, elem_nodes
+from meerk40t.core.elements.element_types import elem_nodes, op_nodes
 from meerk40t.gui.laserrender import swizzlecolor
 
-from ..kernel import lookup_listener, signal_listener
+from ..kernel import Job, lookup_listener, signal_listener
 from ..svgelements import Color
 from .icons import (
-    icons8_diagonal_20,
     icons8_direction_20,
     icons8_image_20,
     icons8_laser_beam_20,
@@ -37,7 +35,16 @@ class BasicOpPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.last_signal = 0
+        # Refresh logic
+        self.ignore_refill = False
+        self.filtered = True
+        self._refill_job = Job(
+            process=self.fill_operations,
+            job_name="basicops_fillop",
+            interval=0.5,
+            times=1,
+            run_main=True,
+        )
         choices = [
             _("Leave color"),
             _("Op inherits color"),
@@ -105,7 +112,6 @@ class BasicOpPanel(wx.Panel):
         self.op_ctrl_list = []
         self.std_color_back = None
         self.std_color_fore = None
-        # self.fill_operations()
 
     def set_display(self):
         self.context.device.setting(bool, "use_percent_for_power_display", False)
@@ -195,10 +201,10 @@ class BasicOpPanel(wx.Panel):
                             newflag = bool(not mynode.is_visible)
 
                     mynode.is_visible = newflag
-                    self.last_signal = perf_counter()
                     mynode.updated()
                     self.context.elements.validate_selected_area()
                     ops = [mynode]
+                    self.ignore_refill = True
                     self.context.elements.signal("element_property_update", ops)
                     self.context.elements.signal("refresh_scene", "Scene")
                 cb.SetValue(newflag)
@@ -223,7 +229,7 @@ class BasicOpPanel(wx.Panel):
                         myshow.Enable(False)
                     else:
                         myshow.Enable(True)
-                    self.last_signal = perf_counter()
+                    self.ignore_refill = True
                     ops = [mynode]
                     self.context.elements.signal("element_property_update", ops)
                     self.context.elements.signal("warn_state_update", "")
@@ -243,7 +249,7 @@ class BasicOpPanel(wx.Panel):
                         value /= 60
                     if mynode.speed != value:
                         mynode.speed = value
-                        self.last_signal = perf_counter()
+                        self.ignore_refill = True
                         self.context.elements.signal(
                             "element_property_reload", [mynode], "text_speed"
                         )
@@ -263,7 +269,7 @@ class BasicOpPanel(wx.Panel):
                         value *= 10
                     if mynode.power != value:
                         mynode.power = value
-                        self.last_signal = perf_counter()
+                        self.ignore_refill = True
                         self.context.elements.signal(
                             "element_property_reload", [mynode], "text_power"
                         )
@@ -298,6 +304,11 @@ class BasicOpPanel(wx.Panel):
 
             mynode = node
             return handler
+
+        def on_check_filtered(event):
+            obj = event.GetEventObject()
+            self.filtered = obj.GetValue()
+            self.context.schedule(self._refill_job)
 
         def get_bitmap(node):
             def get_color():
@@ -369,10 +380,13 @@ class BasicOpPanel(wx.Panel):
         self.op_ctrl_list.clear()
 
         info_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        header = wx.StaticText(self.op_panel, wx.ID_ANY, label=_("Operation"))
-        header.SetMinSize(wx.Size(50, -1))
-        header.SetMaxSize(wx.Size(90, -1))
-        info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        check_filtered = wx.CheckBox(self.op_panel, wx.ID_ANY)
+        check_filtered.SetToolTip(_("Suppress non-used operations"))
+        check_filtered.SetValue(self.filtered)
+        check_filtered.SetMinSize(wx.Size(50, -1))
+        check_filtered.SetMaxSize(wx.Size(90, -1))
+        info_sizer.Add(check_filtered, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        check_filtered.Bind(wx.EVT_CHECKBOX, on_check_filtered)
 
         header = wx.StaticText(self.op_panel, wx.ID_ANY, label=_("Active"))
         header.SetMinSize(wx.Size(30, -1))
@@ -396,12 +410,15 @@ class BasicOpPanel(wx.Panel):
         header = wx.StaticText(self.op_panel, wx.ID_ANY, label=_("Speed"))
         header.SetMaxSize(wx.Size(30, -1))
         header.SetMaxSize(wx.Size(70, -1))
+
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.operation_sizer.Add(info_sizer, 0, wx.EXPAND, 0)
         self.op_ctrl_list.clear()
-        for op in elements.flat(types=op_nodes):
+        for op in list(elements.ops()):
             if op is None:
+                continue
+            if self.filtered and len(op.children) == 0:
                 continue
             if op.type.startswith("op "):
                 op_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -583,81 +600,53 @@ class BasicOpPanel(wx.Panel):
             ctrl.Refresh()
 
     def pane_show(self, *args):
-        # self.fill_operations()
         pass
 
     def pane_hide(self, *args):
         pass
 
     @signal_listener("element_property_update")
-    def signal_handler_update(self, origin, *args, **kwargs):
-        pc = perf_counter()
-        if pc - self.last_signal > 0.5:
-            # print(f"Delta property update: {pc - self.last_signal:.2f}")
-            hadops = False
-            if len(args) > 0:
-                if isinstance(args[0], (list, tuple)):
-                    myl = args[0]
-                else:
-                    if args[0] is self.context.elements.op_branch:
-                        myl = list(self.context.elements.ops())
-                    else:
-                        myl = [args[0]]
-                for n in myl:
-                    if n.type.startswith("op "):
-                        hadops = True
-                        break
-            # print (f"Signal elem update called {args} / {kwargs} / {len(list(self.context.elements.ops()))}")
-            if hadops:
-                self.fill_operations()
-        self.last_signal = pc
-
     @signal_listener("element_property_reload")
-    def signal_handler_reload(self, origin, *args, **kwargs):
-        pc = perf_counter()
-        if pc - self.last_signal > 0.5:
-            # print(f"Delta property reload: {pc - self.last_signal:.2f}")
-            hadops = False
-            if len(args) > 0:
-                if isinstance(args[0], (list, tuple)):
-                    myl = args[0]
+    def signal_handler_update(self, origin, *args, **kwargs):
+        hadops = False
+        if len(args) > 0:
+            if isinstance(args[0], (list, tuple)):
+                myl = args[0]
+            else:
+                if args[0] is self.context.elements.op_branch:
+                    myl = list(self.context.elements.ops())
                 else:
-                    if args[0] is self.context.elements.op_branch:
-                        myl = list(self.context.elements.ops())
-                    else:
-                        myl = [args[0]]
-                for n in myl:
-                    if n.type.startswith("op "):
-                        hadops = True
-                        break
-            # print (f"Signal elem reload called {args} / {kwargs} / {len(list(self.context.elements.ops()))}")
-            if hadops:
-                self.fill_operations()
-        self.last_signal = pc
+                    myl = [args[0]]
+            for n in myl:
+                if n.type.startswith("op "):
+                    hadops = True
+                    break
+        # print (f"Signal elem update called {args} / {kwargs} / {len(list(self.context.elements.ops()))}")
+        if hadops:
+            self.ask_for_refill()
 
     @signal_listener("rebuild_tree")
+    @signal_listener("refresh_tree")
+    @signal_listener("tree_changed")
+    @signal_listener("operation_removed")
+    @signal_listener("add_operation")
     def signal_handler_rebuild(self, origin, *args, **kwargs):
         # print (f"Signal rebuild called {args} / {kwargs} / {len(list(self.context.elements.ops()))}")
-        pc = perf_counter()
-        # This needs to run every time
-        self.fill_operations()
-        self.last_signal = pc
+        self.ask_for_refill()
 
-    @signal_listener("tree_changed")
-    def signal_handler_tree(self, origin, *args, **kwargs):
-        # print (f"Signal tree changed called {args} / {kwargs} / {len(list(self.context.elements.ops()))}")
-        pc = perf_counter()
-        if pc - self.last_signal > 0.5:
-            # print(f"Delta tree: {pc - self.last_signal:.2f}")
-            self.fill_operations()
-        self.last_signal = pc
+    def ask_for_refill(self):
+        # Endless cup
+        if self.ignore_refill:
+            self.ignore_refill = False
+            return
+        self.context.schedule(self._refill_job)
 
     @signal_listener("power_percent")
     @signal_listener("speed_min")
     @lookup_listener("service/device/active")
     def on_device_update(self, *args):
         self.set_display()
-        self.fill_operations()
+        self.ask_for_refill()
 
     @signal_listener("emphasized")
     def signal_handler_emphasized(self, origin, *args, **kwargs):

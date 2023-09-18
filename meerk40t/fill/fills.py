@@ -54,6 +54,11 @@ def split(points):
 def eulerian_fill(settings, outlines, matrix, limit=None):
     """
     Applies optimized Eulerian fill
+
+    The Eulerian Fill performs creates a graph made out of edges and a series of horizontal rungs. It then solves for an
+    optimal walk that visits all the horizontal rungs and as many of the edge nodes as needed to perform this walk. This
+    should at most walk the entire edge plus 50% for scaffolding.
+
     @return:
     """
     if matrix is None:

@@ -345,7 +345,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
         if state == "STATE_CONNECTION_FAILED":
             self.button_device_connect.SetBackgroundColour("#dfdf00")
             origin, usb_status = self.context.last_signal("pipe;usb_status")
-            self.button_device_connect.SetLabel(_("Connect Failed"))
+            self.button_device_connect.SetLabel(_("Connect failed"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected_50.GetBitmap(use_theme=False)
             )

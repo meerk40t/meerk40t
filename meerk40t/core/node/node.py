@@ -96,15 +96,13 @@ class Node:
         for k, v in kwargs.items():
             if k.startswith("_"):
                 continue
-            if isinstance(v, str) and k != "text":
+            if isinstance(v, str) and k in ("text", "id"):
                 try:
                     v = ast.literal_eval(v)
                 except (ValueError, SyntaxError):
                     pass
             self.__dict__[k] = v
 
-        if self.id is not None:
-            self.id = str(self.id)
         self._children = list()
         self._root = None
         self._parent = None

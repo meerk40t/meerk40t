@@ -7,6 +7,7 @@ several smaller functional pieces like Penbox and Wordlists.
 
 import contextlib
 import os.path
+from copy import copy
 from time import time
 
 from meerk40t.core.exceptions import BadFileError
@@ -112,6 +113,10 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/elem polyline", "{element_type} {desc} {stroke}")
         kernel.register("format/elem rect", "{element_type} {desc} {stroke}")
         kernel.register("format/elem text", "{element_type} {desc} {text}")
+        kernel.register(
+            "format/effect hatch",
+            "{effect}{element_type} - {distance} {angle} ({children})",
+        )
         kernel.register("format/reference", "*{reference}")
         kernel.register(
             "format/group", "{element_type} {desc} ({children} children, {total} total)"
@@ -313,6 +318,19 @@ def plugin(kernel, lifecycle=None):
                 "section": "_30_GUI-Behaviour",
             },
             {
+                "attr": "remove_non_used_default_ops",
+                "object": elements,
+                "default": False,
+                "type": bool,
+                "label": _("Remove unused default operations"),
+                "tip": _(
+                    "If a default operation is no longer used it will be removed from the list of active operations"
+                ),
+                "page": "Classification",
+                "section": "_30_GUI-Behaviour",
+                "hidden": True,
+            },
+            {
                 "attr": "lock_allows_move",
                 "object": elements,
                 "default": True,
@@ -488,9 +506,6 @@ class Elemental(Service):
             # Something was loaded for default ops. Mark that.
             self.undo.mark("op-loaded")  # Mark defaulted
 
-        # This set of default_operations will be filled from the outside...
-        self.default_operations = []
-
         self._default_stroke = None
         self._default_strokewidth = None
         self._default_fill = None
@@ -501,6 +516,9 @@ class Elemental(Service):
         self._align_stack = []
 
         self._timing_stack = {}
+
+        self.default_operations = []
+        self.init_default_operations_nodes()
 
     def set_start_time(self, key):
         if key in self._timing_stack:
@@ -693,7 +711,7 @@ class Elemental(Service):
         ly = float(lly)
         return lx * ly
 
-    ### Operation tools
+    # ---- Operation tools
 
     def assign_operation(
         self,
@@ -1102,7 +1120,7 @@ class Elemental(Service):
         for e in self.flat():
             e.unregister()
 
-    def save_persistent_operations_list(self, name, oplist=None):
+    def save_persistent_operations_list(self, name, oplist=None, inform=True):
         """
         Saves a given list of operations to the op_data:Settings
 
@@ -1113,18 +1131,20 @@ class Elemental(Service):
         if oplist is None:
             oplist = self.op_branch.children
         self.clear_persistent_operations(name, flush=False)
-        self._save_persistent_operation_tree(name, oplist)
+        self._save_persistent_operation_tree(name, oplist, flush=True, inform=True)
 
     # Operations uniform
     save_persistent_operations = save_persistent_operations_list
 
-    def _save_persistent_operation_tree(self, name, oplist, flush=True):
+    def _save_persistent_operation_tree(self, name, oplist, flush=True, inform=True):
         """
         Recursive save of the tree. Sections append additional values for deeper tree values.
         References are not saved.
 
         @param name:
         @param oplist:
+        @param: inform - if the name is an indicator for a default operation list,
+                then we will let everyone know
         @return:
         """
         settings = self.op_data
@@ -1146,6 +1166,8 @@ class Elemental(Service):
         if not flush:
             return
         settings.write_configuration()
+        if inform and name.startswith("_default"):
+            self.signal("default_operations")
 
     def clear_persistent_operations(self, name, flush=True):
         """
@@ -1168,12 +1190,10 @@ class Elemental(Service):
         op_tree = dict()
         for section in list(settings.derivable(name)):
             op_type = settings.read_persistent(str, section, "type")
-            # That should not happen, but it happens nonetheless...
-            # So recover gracefully
             try:
                 op = Node().create(type=op_type)
-            except (AttributeError, RuntimeError, ValueError) as err:
-                print(f"That should not happen, but ops contained: '{op_type}' [{err}]")
+            except ValueError:
+                # Attempted to create a non-boostrapped node type.
                 continue
             op.load(settings, section)
             op_tree[section] = op
@@ -1204,6 +1224,224 @@ class Elemental(Service):
         if len(list(self.elems())) > 0:
             self.classify(list(self.elems()))
         self.signal("updateop_tree")
+
+    # --------------- Default Operations logic
+    def init_default_operations_nodes(self):
+        def next_color(primary, secondary, tertiary, delta=32):
+            secondary += delta
+            if secondary > 255:
+                secondary = 0
+                primary -= delta
+            if primary < 0:
+                primary = 255
+                tertiary += delta
+            if tertiary > 255:
+                tertiary = 0
+            return primary, secondary, tertiary
+
+        def node_label(node):
+            if isinstance(node, CutOpNode):
+                slabel = f"Cut ({node.power / 10:.0f}%, {node.speed}mm/s)"
+            elif isinstance(node, EngraveOpNode):
+                slabel = f"Engrave ({node.power / 10:.0f}%, {node.speed}mm/s)"
+            elif isinstance(node, RasterOpNode):
+                slabel = f"Raster ({node.power / 10:.0f}%, {node.speed}mm/s)"
+            elif isinstance(node, ImageOpNode):
+                slabel = f"Image ({node.power / 10:.0f}%, {node.speed}mm/s)"
+            else:
+                slabel = ""
+            return slabel
+
+        def create_cut(oplist):
+            # Cut op
+            idx = 0
+            blue = 0
+            green = 0
+            red = 255
+            for speed in (1, 2, 5):
+                for power in (1000,):
+                    idx += 1
+                    op_id = f"C{idx:01d}"
+                    op = CutOpNode(id=op_id, speed=speed, power=power)
+                    op.label = node_label(op)
+                    op.color = Color(red=red, blue=blue, green=green)
+                    red, blue, green = next_color(red, blue, green, delta=64)
+                    # print(f"Next for cut: {red} {blue} {green}")
+                    op.allowed_attributes = ["stroke"]
+                    oplist.append(op)
+
+        def create_engrave(oplist):
+            # Engrave op
+            idx = 0
+            blue = 255
+            green = 0
+            red = 0
+            for speed in (20, 35, 50):
+                for power in (1000, 750, 500):
+                    idx += 1
+                    op_id = f"E{idx:01d}"
+                    op = EngraveOpNode(id=op_id, speed=speed, power=power)
+                    op.label = node_label(op)
+                    op.color = Color(red=red, blue=blue, green=green)
+                    blue, green, red = next_color(blue, green, red, delta=24)
+                    # print(f"Next for engrave: {red} {blue} {green}")
+                    op.allowed_attributes = ["stroke"]
+                    oplist.append(op)
+
+        def create_raster(oplist):
+            # Raster op
+            idx = 0
+            blue = 0
+            green = 255
+            red = 0
+            for speed in (250, 200, 150, 100, 75):
+                for power in (1000,):
+                    idx += 1
+                    op_id = f"R{idx:01d}"
+                    op = RasterOpNode(id=op_id, speed=speed, power=power)
+                    op.label = node_label(op)
+                    op.color = Color(red=red, blue=blue, green=green, delta=60)
+                    green, red, blue = next_color(green, red, blue)
+                    # print(f"Next for raster: {red} {blue} {green}")
+                    op.allowed_attributes = ["fill"]
+                    oplist.append(op)
+
+        def create_image(oplist):
+            # Image op
+            idx = 0
+            blue = 0
+            green = 0
+            red = 0
+            for speed in (250, 200, 150, 100, 75):
+                for power in (1000,):
+                    idx += 1
+                    op_id = f"I{idx:01d}"
+                    op = ImageOpNode(id=op_id, speed=speed, power=power)
+                    op.label = node_label(op)
+                    op.color = Color(red=red, blue=blue, green=green, delta=48)
+                    green, blue, red = next_color(green, red, blue)
+                    # print(f"Next for Image: {red} {blue} {green}")
+
+                    oplist.append(op)
+
+        # We first have a try at a device specific default_set
+        needs_save = False
+        std_list = "_default"
+        needs_signal = len(self.default_operations) != 0
+        oplist = []
+        if hasattr(self, "device"):
+            std_list = f"_default_{self.device.label}"
+            # We need to replace all ' ' by an underscore
+            for forbidden in (" ",):
+                std_list = std_list.replace(forbidden, "_")
+            # print(f"Try to load '{std_list}'")
+            oplist = self.load_persistent_op_list(std_list)
+        if len(oplist) == 0:
+            std_list = "_default"
+            # print(f"Try to load '{std_list}'")
+            oplist = self.load_persistent_op_list(std_list)
+
+        if len(oplist) == 0:
+            # Then let's create something useful
+            create_cut(oplist)
+            create_engrave(oplist)
+            create_raster(oplist)
+            create_image(oplist)
+            needs_save = True
+        # Ensure we have an id for everything
+        needs_save = self.validate_ids(nodelist=oplist, generic=False)
+        if needs_save:
+            self.save_persistent_operations_list(std_list, oplist=oplist, inform=False)
+
+        self.default_operations = oplist
+        if needs_signal:
+            self.signal("default_operations")
+
+    def create_usable_copy(self, sourceop):
+        op_to_use = copy(sourceop)
+        for attr in ("id", "label", "color", "lock", "allowed_attributes"):
+            setattr(op_to_use, attr, getattr(sourceop, attr))
+        return op_to_use
+
+    def assign_default_operation(self, data, targetop):
+        emphasize_mode = False
+        if data is None:
+            emphasize_mode = True
+            data = list(self.flat(emphasized=True))
+        if len(data) == 0:
+            return
+        emph_data = [e for e in data]
+        op_id = targetop.id
+        if op_id is None:
+            # WTF, that should not be the case
+            op_list = [targetop]
+            self.validate_ids(nodelist=op_list, generic=False)
+        newone = True
+        op_to_use = None
+        for op in list(self.ops()):
+            if op is targetop:
+                # Already existing?
+                newone = False
+                op_to_use = op
+                break
+            elif op.id == op_id:
+                newone = False
+                op_to_use = op
+                break
+        if newone:
+            op_to_use = self.create_usable_copy(targetop)
+            try:
+                self.op_branch.add_node(op_to_use)
+            except ValueError:
+                # This happens when he have somehow lost sync with the node,
+                # and we try to add a node that is already added...
+                # In principle this should be covered by the check
+                # above, but you never know
+                pass
+        impose = "to_elem"
+        similar = False
+        exclusive = True
+        self.assign_operation(
+            op_assign=op_to_use,
+            data=data,
+            impose=impose,
+            attrib="auto",
+            similar=similar,
+            exclusive=exclusive,
+        )
+        self.remove_unused_default_copies()
+        if emphasize_mode:
+            # Restore emphasized flags
+            for e in emph_data:
+                e.emphasized = True
+
+    def remove_unused_default_copies(self):
+        # Let's clean non-used operations that come from defaults...
+        if self.remove_non_used_default_ops:
+            # print("Remove unused called")
+            deleted = 0
+            to_be_deleted = []
+
+            for op in list(self.ops()):
+                # print(f"look at {op.type} - {op.id}: {len(op.children)}")
+                if op.id is None:
+                    continue
+                if len(op.children) != 0:
+                    continue
+                # is this one of the default operations?
+                for def_op in self.default_operations:
+                    if def_op.id == op.id:
+                        to_be_deleted.append(op)
+                        break
+            for op in to_be_deleted:
+                deleted += 1
+                # print(f"will remove {op.type}- {op.id}")
+                op.remove_node()
+
+            if deleted:
+                self.signal("operation_removed")
+
+    # ------------------------------------------------------------------------
 
     def prepare_undo(self):
         if self.do_undo:
@@ -1307,11 +1545,14 @@ class Elemental(Service):
     def flat(self, **kwargs):
         yield from self._tree.flat(**kwargs)
 
-    def validate_ids(self):
+    def validate_ids(self, nodelist=None, generic=True):
+        changes = False
         idx = 1
         uid = {}
         missing = list()
-        for node in self.flat():
+        if nodelist is None:
+            nodelist = list(self.flat())
+        for node in nodelist:
             if node.id in uid:
                 # ID already used. Clear.
                 node.id = None
@@ -1322,10 +1563,15 @@ class Elemental(Service):
                 # Set this ID as used.
                 uid[node.id] = node
         for m in missing:
-            while f"meerk40t:{idx}" in uid:
+            changes = True
+            pattern = "meerk40t:"
+            if not generic and m.type.startswith("op "):
+                pattern = m.type[3].upper()
+            while f"{pattern}{idx}" in uid:
                 idx += 1
-            m.id = f"meerk40t:{idx}"
+            m.id = f"{pattern}{idx}"
             uid[m.id] = m
+        return changes
 
     @property
     def reg_branch(self):
@@ -1340,6 +1586,7 @@ class Elemental(Service):
         return self._tree.get(type="branch elems")
 
     def ops(self, **kwargs):
+
         operations = self._tree.get(type="branch ops")
         for item in operations.flat(depth=1, **kwargs):
             if item.type.startswith("branch") or item.type.startswith("ref"):
@@ -2159,7 +2406,8 @@ class Elemental(Service):
                     found_default = False
                     for op_candidate in self.default_operations:
                         if isinstance(op_candidate, ImageOpNode):
-                            stdops.append(op_candidate)
+                            op_to_use = self.create_usable_copy(op_candidate)
+                            stdops.append(op_to_use)
                             found_default = True
                             break
                     if not found_default:
@@ -2172,7 +2420,8 @@ class Elemental(Service):
                     found_default = False
                     for op_candidate in self.default_operations:
                         if isinstance(op_candidate, DotsOpNode):
-                            stdops.append(op_candidate)
+                            op_to_use = self.create_usable_copy(op_candidate)
+                            stdops.append(op_to_use)
                             found_default = True
                             break
                     if not found_default:
@@ -2210,7 +2459,8 @@ class Elemental(Service):
                         found_default = False
                         for op_candidate in self.default_operations:
                             if isinstance(op_candidate, CutOpNode):
-                                stdops.append(op_candidate)
+                                op_to_use = self.create_usable_copy(op_candidate)
+                                stdops.append(op_to_use)
                                 found_default = True
                                 break
                         if not found_default:
@@ -2221,7 +2471,8 @@ class Elemental(Service):
                         found_default = False
                         for op_candidate in self.default_operations:
                             if isinstance(op_candidate, RasterOpNode):
-                                stdops.append(op_candidate)
+                                op_to_use = self.create_usable_copy(op_candidate)
+                                stdops.append(op_to_use)
                                 found_default = True
                                 break
                         if not found_default:
@@ -2233,7 +2484,8 @@ class Elemental(Service):
                         found_default = False
                         for op_candidate in self.default_operations:
                             if isinstance(op_candidate, EngraveOpNode):
-                                stdops.append(op_candidate)
+                                op_to_use = self.create_usable_copy(op_candidate)
+                                stdops.append(op_to_use)
                                 found_default = True
                                 break
                         if not found_default:
@@ -2253,7 +2505,8 @@ class Elemental(Service):
                     found_default = False
                     for op_candidate in self.default_operations:
                         if isinstance(op_candidate, RasterOpNode):
-                            stdops.append(op_candidate)
+                            op_to_use = self.create_usable_copy(op_candidate)
+                            stdops.append(op_to_use)
                             found_default = True
                             break
                     if not found_default:
@@ -2265,7 +2518,8 @@ class Elemental(Service):
                     if debug:
                         debug(f"Check for existence of {op.type}")
                     already_found = False
-                    for testop in self.ops():
+                    testlist = list(self.ops())
+                    for testop in testlist:
                         if type(op) == type(testop):
                             sameop = True
                         else:
@@ -2313,6 +2567,8 @@ class Elemental(Service):
                         new_operations_added = True
                         already_found = True
                     op.add_reference(node)
+
+        self.remove_unused_default_copies()
         if new_operations_added:
             self.signal("tree_changed")
 

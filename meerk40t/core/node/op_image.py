@@ -16,17 +16,11 @@ class ImageOpNode(Node, Parameters):
     This is a Node of type "op image".
     """
 
-    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
-        Node.__init__(self, type="op image", id=id, label=label, lock=lock)
-        Parameters.__init__(self, None, **kwargs)
-        self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}"
+    def __init__(self, settings=None, **kwargs):
+        if settings is not None:
+            settings = dict(settings)
+        Parameters.__init__(self, settings, **kwargs)
 
-        if len(args) == 1:
-            obj = args[0]
-            if hasattr(obj, "settings"):
-                self.settings = dict(obj.settings)
-            elif isinstance(obj, dict):
-                self.settings.update(obj)
         # Which elements can be added to an operation (manually via DND)?
         self._allowed_elements_dnd = ("elem image",)
         # Which elements do we consider for automatic classification?
@@ -35,25 +29,14 @@ class ImageOpNode(Node, Parameters):
         # Is this op out of useful bounds?
         self.dangerous = False
         self.stopop = True
+        self.label = "Image"
+
         self.allowed_attributes = []
-        if label is None:
-            self.label = "Image"
-        else:
-            self.label = label
+        super().__init__(type="op image", **kwargs)
+        self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}"
 
     def __repr__(self):
         return "ImageOpNode()"
-
-    def __copy__(self):
-        return ImageOpNode(self)
-
-    # def is_dangerous(self, minpower, maxspeed):
-    #     result = False
-    #     if maxspeed is not None and self.speed > maxspeed:
-    #         result = True
-    #     if minpower is not None and self.power < minpower:
-    #         result = True
-    #     self.dangerous = result
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
@@ -159,9 +142,6 @@ class ImageOpNode(Node, Parameters):
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
-        update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        self.settings.update(update_dict)
-        self.validate()
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)

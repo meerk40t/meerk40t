@@ -18,19 +18,11 @@ class RasterOpNode(Node, Parameters):
     This is a Node of type "op raster".
     """
 
-    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
-        Node.__init__(self, type="op raster", id=id, label=label, lock=lock)
-        Parameters.__init__(self, None, **kwargs)
-        self._formatter = (
-            "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {color}"
-        )
+    def __init__(self, settings=None, **kwargs):
+        if settings is not None:
+            settings = dict(settings)
+        Parameters.__init__(self, settings, **kwargs)
 
-        if len(args) == 1:
-            obj = args[0]
-            if hasattr(obj, "settings"):
-                self.settings = dict(obj.settings)
-            elif isinstance(obj, dict):
-                self.settings.update(obj)
         self._allowed_elements_dnd = (
             "elem ellipse",
             "elem path",
@@ -50,32 +42,24 @@ class RasterOpNode(Node, Parameters):
             "elem text",
             #            "elem image",
         )
-        # To which attributes do the classification color check respond
-        # Can be extended / reduced by add_color_attribute / remove_color_attribute
-        # An empty set indicates all nodes will be allowed
-        self.allowed_attributes = []
+
         # self.allowed_attributes.append("fill")
         # Is this op out of useful bounds?
         self.dangerous = False
         self.stopop = False
-        if label is None:
-            self.label = "Raster"
-        else:
-            self.label = label
+        self.label = "Raster"
+
+        # To which attributes do the classification color check respond
+        # Can be extended / reduced by add_color_attribute / remove_color_attribute
+        # An empty set indicates all nodes will be allowed
+        self.allowed_attributes = []
+        super().__init__(type="op raster", **kwargs)
+        self._formatter = (
+            "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {color}"
+        )
 
     def __repr__(self):
         return "RasterOp()"
-
-    def __copy__(self):
-        return RasterOpNode(self)
-
-    # def is_dangerous(self, minpower, maxspeed):
-    #     result = False
-    #     if maxspeed is not None and self.speed > maxspeed:
-    #         result = True
-    #     if minpower is not None and self.power < minpower:
-    #         result = True
-    #     self.dangerous = result
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
@@ -275,9 +259,6 @@ class RasterOpNode(Node, Parameters):
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
-        update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        self.settings.update(update_dict)
-        self.validate()
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
@@ -378,7 +359,7 @@ class RasterOpNode(Node, Parameters):
             # Calculate raster steps from DPI device context
             self.set_dirty_bounds()
 
-            step_x, step_y = context.device.view.dpi_to_steps(self.dpi, matrix=matrix)
+            step_x, step_y = context.device.view.dpi_to_steps(self.dpi)
             bounds = self.paint_bounds
             img_mx = Matrix.scale(step_x, step_y)
             data = list(self.flat())

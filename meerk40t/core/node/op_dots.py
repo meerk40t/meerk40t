@@ -16,41 +16,23 @@ class DotsOpNode(Node, Parameters):
     This is a Node of type "op dots".
     """
 
-    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
-        Node.__init__(self, type="op dots", id=id, label=label, lock=lock)
-        Parameters.__init__(self, None, **kwargs)
-        self._formatter = "{enabled}{pass}{element_type} {dwell_time}ms dwell {color}"
-
-        if len(args) == 1:
-            obj = args[0]
-            if hasattr(obj, "settings"):
-                self.settings = dict(obj.settings)
-            elif isinstance(obj, dict):
-                self.settings.update(obj)
+    def __init__(self, settings=None, **kwargs):
+        if settings is not None:
+            settings = dict(settings)
+        Parameters.__init__(self, settings, **kwargs)
         self._allowed_elements_dnd = ("elem point",)
         self._allowed_elements = ("elem point",)
-        self.allowed_attributes = []
         # Is this op out of useful bounds?
         self.dangerous = False
         self.stopop = True
-        if label is None:
-            self.label = "Dots"
-        else:
-            self.label = label
+        self.label = "Dots"
+
+        self.allowed_attributes = []
+        super().__init__(type="op dots", **kwargs)
+        self._formatter = "{enabled}{pass}{element_type} {dwell_time}ms dwell {color}"
 
     def __repr__(self):
         return "DotsOpNode()"
-
-    def __copy__(self):
-        return DotsOpNode(self)
-
-    # def is_dangerous(self, minpower, maxspeed):
-    #     result = False
-    #     if maxspeed is not None and self.speed > maxspeed:
-    #         result = True
-    #     if minpower is not None and self.power < minpower:
-    #         result = True
-    #     self.dangerous = result
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
@@ -199,9 +181,6 @@ class DotsOpNode(Node, Parameters):
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
-        update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        self.settings.update(update_dict)
-        self.validate()
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)

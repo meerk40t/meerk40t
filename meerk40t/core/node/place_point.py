@@ -66,10 +66,6 @@ class PlacePointNode(Node):
             except ValueError:
                 self.loops = 1
 
-    def __copy__(self):
-        nd = self.node_dict
-        return PlacePointNode(**nd)
-
     def placements(self, context, outline, matrix, plan):
         if outline is None:
             # This job can't be placed.
@@ -127,8 +123,4 @@ class PlacePointNode(Node):
         return default_map
 
     def drop(self, drag_node, modify=True):
-        # if drag_node.type.startswith("op"):
-        #     if modify:
-        #         self.insert_sibling(drag_node)
-        #     return True
         return False

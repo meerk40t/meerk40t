@@ -3361,6 +3361,11 @@ class MeerK40t(MWindow):
         dlg.ShowModal()
         dlg.Destroy()
 
+    @signal_listener("activate;device")
+    def on_device_active(self, origin, value):
+        # A new device might have new default oeprations...
+        self.main_statusbar.Signal("default_operations")
+
     @signal_listener("pipe;failing")
     def on_usb_error(self, origin, value):
         if value == 5:
