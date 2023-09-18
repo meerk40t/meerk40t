@@ -95,6 +95,7 @@ class Button:
         self.kind = kind
         self.button_dict = description
         self.enabled = True
+        self.visible = True
         self._aspects = {}
         self.key = "original"
         self.object = None
@@ -126,6 +127,7 @@ class Button:
         self.action = None
         self.action_right = None
         self.rule_enabled = None
+        self.rule_visible = None
         self.min_width = 0
         self.min_height = 0
         self.default_width = 50
@@ -169,6 +171,7 @@ class Button:
         action=None,
         action_right=None,
         rule_enabled=None,
+        rule_visible=None,
         object=None,
         **kwargs,
     ):
@@ -184,6 +187,7 @@ class Button:
         @param action: Action taken when button is pressed.
         @param action_right: Action taken when button is clicked with right mouse button.
         @param rule_enabled: Rule by which the button is enabled or disabled
+        @param rule_visible: Rule by which the button will be hidden or shown
         @param object: object which the toggle_attr is an attr applied to
         @param kwargs:
         @return:
@@ -255,6 +259,7 @@ class Button:
         self.action = action
         self.action_right = action_right
         self.rule_enabled = rule_enabled
+        self.rule_visible = rule_visible
         if object is not None:
             self.object = object
         else:
@@ -318,13 +323,25 @@ class Button:
 
         @return:
         """
-        try:
-            v = self.rule_enabled(0)
-            if v != self.enabled:
-                self.enabled = v
+        if self.rule_enabled is not None:
+            try:
+                v = self.rule_enabled(0)
+                if v != self.enabled:
+                    self.enabled = v
+                    self.modified()
+            except (AttributeError, TypeError):
+                pass
+        if self.rule_visible is not None:
+            v = self.rule_visible(0)
+            if v != self.visible:
+                self.visible = v
+                if not self.visible:
+                    self.position = None
                 self.modified()
-        except (AttributeError, TypeError):
-            pass
+        else:
+            if not self.visible:
+                self.visible = True
+                self.modified()
 
     def contains(self, pos):
         """
@@ -574,6 +591,19 @@ class RibbonPanel:
         self._overflow = list()
         self._overflow_position = None
 
+    def visible_buttons(self):
+        for button in self.buttons:
+            if button.visible:
+                yield button
+
+    @property
+    def visible_button_count(self):
+        pcount = 0
+        for button in self.buttons:
+            if button is not None and button.visible:
+                pcount += 1
+        return pcount
+
     def clear_buttons(self):
         self.buttons.clear()
         self.parent.modified()
@@ -728,7 +758,9 @@ class RibbonPage:
         @return:
         """
         self.panels.append(panel)
-        setattr(self, ref, panel)
+        if ref is not None:
+            # print(f"Setattr in add_panel: {ref} = {panel}")
+            setattr(self, ref, panel)
 
     def contains(self, pos):
         """
@@ -811,7 +843,7 @@ class RibbonBarPanel(wx.Control):
         if modified then we flag the layout and paint as dirty and call for a refresh of the ribbonbar.
         @return:
         """
-        # print (f"Modified called for RibbonBar with {self.visible_pages()} pages")
+        # (f"Modified called for RibbonBar with {self.visible_pages()} pages")
         self._paint_dirty = True
         self._layout_dirty = True
         self.context.schedule(self._redraw_job)
@@ -998,7 +1030,7 @@ class RibbonBarPanel(wx.Control):
             if page is not self.art.current_page or not page.visible:
                 continue
             for panel in page.panels:
-                for button in panel.buttons:
+                for button in panel.visible_buttons():
                     if (
                         button.contains(pos)
                         and (button.enabled or use_all)
@@ -1067,7 +1099,7 @@ class RibbonBarPanel(wx.Control):
 
     def _all_buttons(self):
         """
-        Helper to cycle through all buttons that are currently visible.
+        Helper to cycle through all buttons in the panels that are currently visible.
         @return:
         """
         for page in self.pages:
@@ -1101,12 +1133,36 @@ class RibbonBarPanel(wx.Control):
             label,
             icon,
         )
-        setattr(self, ref, page)
+        if ref is not None:
+            # print(f"Setattr in add_page: {ref} = {page}")
+            setattr(self, ref, page)
         if self.art.current_page is None:
             self.art.current_page = page
         self.pages.append(page)
         self._layout_dirty = True
         return page
+
+    def remove_page(self, id):
+        """
+        Remove a page from the ribbonbar.
+        @param id:
+        @return:
+        """
+        for pidx, page in enumerate(self.pages):
+            if page.id == id:
+                if self.art.current_page is page:
+                    self.art.current_page = None
+                for panel in page.panels:
+                    panel.clear_buttons()
+                    del panel
+                self.pages.pop(pidx)
+                break
+
+        self._layout_dirty = True
+
+    def validate_current_page(self):
+        if self.art.current_page is None or not self.art.current_page.visible:
+            self.art.current_page = self.first_page()
 
     def add_panel(self, ref, parent: RibbonPage, id, label, icon):
         """
@@ -1229,27 +1285,33 @@ class Art:
         @return:
         """
         self._paint_background(dc)
+        self.parent.validate_current_page()
+
         if ribbon.visible_pages() > 1:
             for page in ribbon.pages:
                 if page.visible:
                     self._paint_tab(dc, page)
         else:
             self.current_page = ribbon.first_page()
+        if self.current_page is not None:
+            if self.current_page.position is None:
+                # print("Was dirty...")
+                self.layout(dc, self.parent)
 
         for page in ribbon.pages:
             if page is not self.current_page or not page.visible:
                 continue
+
             dc.SetBrush(wx.Brush(self.button_face))
             x, y, x1, y1 = page.position
             dc.DrawRoundedRectangle(
                 int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius
             )
             for panel in page.panels:
-                # plen = len(panel.buttons)
-                # if plen == 0:
-                #     print (f"Paint for panel '{panel.label}' without buttons")
+                if panel is None:
+                    continue
                 self._paint_panel(dc, panel)
-                for button in panel.buttons:
+                for button in panel.visible_buttons():
                     self._paint_button(dc, button)
 
     def _paint_tab(self, dc: wx.DC, page: RibbonPage):
@@ -1393,7 +1455,7 @@ class Art:
         @param button:
         @return:
         """
-        if button.overflow:
+        if button.overflow or not button.visible or button.position is None:
             return
         bitmap = button.bitmap_large
         bitmap_small = button.bitmap_small
@@ -1671,7 +1733,7 @@ class Art:
         total_button_count = 0
         panel_count = 0
         for panel in page.panels:
-            plen = len(panel.buttons)
+            plen = panel.visible_button_count
             total_button_count += plen
             if plen > 0:
                 panel_count += 1
@@ -1711,7 +1773,7 @@ class Art:
                     button_height_across_panels -= 2 * self.panel_button_buffer
                 else:
                     button_width_across_panels -= 2 * self.panel_button_buffer
-            for b, button in enumerate(panel.buttons):
+            for b, button in enumerate(list(panel.visible_buttons())):
                 if b == 0:
                     # First and last buffers.
                     if is_horizontal:
@@ -1749,7 +1811,7 @@ class Art:
         x += self.page_panel_buffer
         y += self.page_panel_buffer
         for p, panel in enumerate(page.panels):
-            if len(panel.buttons) == 0:
+            if panel.visible_button_count == 0:
                 continue
             if p != 0:
                 # Non-first move between panel gap.
@@ -1759,11 +1821,11 @@ class Art:
                     y += self.between_panel_buffer
 
             if is_horizontal:
-                single_panel_horizontal = max(len(panel.buttons), 1)
+                single_panel_horizontal = max(panel.visible_button_count, 1)
                 single_panel_vertical = 1
             else:
                 single_panel_horizontal = 1
-                single_panel_vertical = max(len(panel.buttons), 1)
+                single_panel_vertical = max(panel.visible_button_count, 1)
 
             panel_width = (
                 single_panel_horizontal * button_width
@@ -1795,7 +1857,7 @@ class Art:
         is_horizontal = (self.orientation == self.RIBBON_ORIENTATION_HORIZONTAL) or (
             horizontal and self.orientation == self.RIBBON_ORIENTATION_AUTO
         )
-        plen = len(panel.buttons)
+        plen = panel.visible_button_count
         # if plen == 0:
         #     print(f"layout for panel '{panel.label}' without buttons!")
 
@@ -1830,7 +1892,7 @@ class Art:
         panel._overflow.clear()
         panel._overflow_position = None
         lastbutton = None
-        for b, button in enumerate(panel.buttons):
+        for b, button in enumerate(list(panel.visible_buttons())):
             button.bitmapsize = "large"
             bitmap_width, bitmap_height = button.bitmap_large.Size
             if bitmap_height > button_height or bitmap_width > button_width:
@@ -1850,7 +1912,7 @@ class Art:
         target_width = button_width
         # if self.parent.visible_pages() == 1:
         #     print(f"Target: {target_width}x{target_height}")
-        for b, button in enumerate(panel.buttons):
+        for b, button in enumerate(list(panel.visible_buttons())):
             button.overflow = False
             this_width = target_width
             this_height = target_height
@@ -1883,7 +1945,7 @@ class Art:
                         is_overflow = False
                         target_height = max_height
                         # Reset height of all previous buttons:
-                        for bb, bbutton in enumerate(panel.buttons):
+                        for bb, bbutton in enumerate(list(panel.visible_buttons())):
                             if bb >= b:
                                 break
                             bbutton.position = (
@@ -1921,7 +1983,7 @@ class Art:
                         is_overflow = False
                         target_width = max_width
                         # Reset width of all previous buttons:
-                        for bb, bbutton in enumerate(panel.buttons):
+                        for bb, bbutton in enumerate(list(panel.visible_buttons())):
                             if bb >= b:
                                 break
                             bbutton.position = (

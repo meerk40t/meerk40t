@@ -61,6 +61,7 @@ def register_panel_ribbon(window, context):
 
     window.on_pane_create(pane_ribbon)
     context.register("pane/ribbon", pane_ribbon)
+    context.register("ribbonbar/primary", ribbon)
 
     minh = int(1.5 * iconsize)
     pane_tool = (
@@ -86,6 +87,7 @@ def register_panel_ribbon(window, context):
 
     window.on_pane_create(pane_tool)
     context.register("pane/tools", pane_tool)
+    context.register("ribbonbar/tools", ribbon)
 
     choices = [
         {
