@@ -60,3 +60,23 @@ class TestFileSVG(unittest.TestCase):
         finally:
             kernel.shutdown()
 
+    def test_load_save_svg_int_id(self):
+        """
+        tests that the validation of id prevents integer value.
+        """
+        file1 = "test.svg"
+        self.addCleanup(os.remove, file1)
+
+        kernel = bootstrap.bootstrap()
+        try:
+            kernel.console("operation* delete\n")
+            node = EngraveOpNode(id="1", label="1")
+            kernel.elements.op_branch.add_node(node)
+            kernel.console(f"save {file1}\n")
+            kernel.console("operation* delete\n")
+            kernel.console(f"load {file1}\n")
+            node_copy = list(kernel.elements.op_branch.flat(types="op engrave"))[0]
+            self.assertEqual(node_copy.id, node.id)
+            self.assertEqual(node_copy.label, node.label)
+        finally:
+            kernel.shutdown()
