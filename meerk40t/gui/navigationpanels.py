@@ -1309,10 +1309,10 @@ class MovePanel(wx.Panel):
                 dlg.Destroy()
                 return
             pos_x = Length(
-                self.text_position_x.GetValue(), relative_length=self.context.view.width, unitless=UNITS_PER_PIXEL, preferred_units=self.context.units_name
+                self.text_position_x.GetValue(), relative_length=self.context.space.display.width, unitless=UNITS_PER_PIXEL, preferred_units=self.context.units_name
             )
             pos_y = Length(
-                self.text_position_y.GetValue(), relative_length=self.context.view.height, unitless=UNITS_PER_PIXEL, preferred_units=self.context.units_name
+                self.text_position_y.GetValue(), relative_length=self.context.space.display.height, unitless=UNITS_PER_PIXEL, preferred_units=self.context.units_name
             )
             self.context(f"move {pos_x} {pos_y}\n")
         except ValueError:
