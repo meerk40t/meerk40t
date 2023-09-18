@@ -60,8 +60,14 @@ class HatchEffectNode(Node, Stroked):
         self._angle_delta = 0
         self._effect = True
         self.recalculate()
-        for c in kwargs.get("operands", []):
-            self._operands.append(copy(c))
+        if "operands" in kwargs:
+            # If operands is a list, we make copies.
+            operands = kwargs.get("operands")
+            if isinstance(operands, list):
+                for c in operands:
+                    self._operands.append(copy(c))
+            # If it was in kwargs, it was added to main.
+            del self.operands
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
