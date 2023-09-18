@@ -1,8 +1,9 @@
-from math import sqrt, tau, sin, tan
+from math import sin, sqrt, tan, tau
 
 import wx
 
 from meerk40t.core.units import Length
+from meerk40t.gui.icons import STD_ICON_SIZE, PyEmbeddedImage, icons8_polygon_50
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_ABORT,
@@ -10,9 +11,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CONSUME,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.svgelements import Point, Polygon, Angle
-from meerk40t.gui.icons import STD_ICON_SIZE, PyEmbeddedImage, icons8_polygon_50
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.svgelements import Point, Polygon
 
 
 class PolygonTool(ToolWidget):
@@ -107,7 +106,7 @@ class PolygonTool(ToolWidget):
         )
 
         self.scene.context.kernel.register(
-            f"button/tool_polygon/tool_freehand",
+            "button/tool_polygon/tool_freehand",
             {
                 "label": "Freehand",
                 "icon": icons8_polygon_50,
@@ -118,7 +117,7 @@ class PolygonTool(ToolWidget):
         )
 
         self.scene.context.kernel.register(
-            f"button/tool_polygon/tool_polygon",
+            "button/tool_polygon/tool_polygon",
             {
                 "label": "Regular",
                 "icon": icon_polygon,
@@ -129,7 +128,7 @@ class PolygonTool(ToolWidget):
         )
 
         self.scene.context.kernel.register(
-            f"button/tool_polygon/tool_star1",
+            "button/tool_polygon/tool_star1",
             {
                 "label": "Star 1",
                 "icon": icon_regular_star,
@@ -140,7 +139,7 @@ class PolygonTool(ToolWidget):
         )
 
         self.scene.context.kernel.register(
-            f"button/tool_polygon/tool_star2",
+            "button/tool_polygon/tool_star2",
             {
                 "label": "Star 2",
                 "icon": icon_crossing_star,
@@ -205,7 +204,6 @@ class PolygonTool(ToolWidget):
         tx = 0
         ty = 0
         tc = 0
-        radius = 0
         for pt in points:
             tc += 1
             tx += pt[0]
@@ -213,7 +211,6 @@ class PolygonTool(ToolWidget):
         if tc > 0:
             cx = tx / tc
             cy = ty / tc
-            radius = sqrt((cx - points[0][0]) ** 2 + (cy - points[0][1]) ** 2)
         if self.design_mode == 0:
             pass
         elif self.design_mode == 1:
@@ -497,10 +494,10 @@ class PolygonTool(ToolWidget):
             elif keycode == "r":
                 # Regular
                 self.set_designmode(1)
-            elif keycode == "1" or keycode == "s":
+            elif keycode in ("1", "s"):
                 # Star 1
                 self.set_designmode(2)
-            elif keycode == "2" or keycode == "p":
+            elif keycode in ("2", "p"):
                 # Star 2 / Pentagram
                 self.set_designmode(3)
 

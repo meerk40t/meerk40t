@@ -3,8 +3,6 @@ from copy import copy
 
 import wx
 
-from meerk40t.tools.geomstr import Geomstr
-
 from meerk40t.gui.icons import STD_ICON_SIZE, PyEmbeddedImage
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.mwindow import MWindow
@@ -27,6 +25,7 @@ from meerk40t.svgelements import (
     Polyline,
     QuadraticBezier,
 )
+from meerk40t.tools.geomstr import Geomstr
 
 _ = wx.GetTranslation
 

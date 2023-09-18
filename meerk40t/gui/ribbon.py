@@ -1142,14 +1142,14 @@ class RibbonBarPanel(wx.Control):
         self._layout_dirty = True
         return page
 
-    def remove_page(self, id):
+    def remove_page(self, pageid):
         """
         Remove a page from the ribbonbar.
         @param id:
         @return:
         """
         for pidx, page in enumerate(self.pages):
-            if page.id == id:
+            if page.id == pageid:
                 if self.art.current_page is page:
                     self.art.current_page = None
                 for panel in page.panels:
