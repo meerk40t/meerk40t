@@ -13,9 +13,10 @@ class TestFileSVG(unittest.TestCase):
         kernel = bootstrap.bootstrap()
         try:
             kernel.console("operation* remove\n")
+            kernel.console("hatch\n")
             kernel.console(f"rect 2cm 2cm 1cm 1cm engrave -s 15\n")
             kernel.console(f"save {file1}\n")
-            kernel.console("element* remove\n")
+            kernel.console("element* delete\n")
             kernel.console("operation* remove\n")
             kernel.console(f"load {file1}\n")
             f = list(kernel.elements.elem_branch.flat(types="elem rect"))[0]
