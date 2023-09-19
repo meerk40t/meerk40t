@@ -1,8 +1,9 @@
-from math import sqrt, tau
+from math import sin, sqrt, tan, tau
 
 import wx
 
 from meerk40t.core.units import Length
+from meerk40t.gui.icons import STD_ICON_SIZE, PyEmbeddedImage, icons8_polygon_50
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_ABORT,
@@ -28,6 +29,125 @@ class PolygonTool(ToolWidget):
         # angle_snap indicates whether a line should be angle snapping
         # False anything goes, True snaps to next 45° angle
         self.angle_snap = False
+        # design_mode
+        # 0 - freehand polygon
+        # 1 - regular polygon
+        # 2 - star polygon
+        # 3 - crossing star polygon
+        self.design_mode = 0
+        self.design_param = 0
+        self.define_buttons()
+
+    def set_designmode(self, mode):
+        if mode < 0 or mode > 3:
+            mode = 0
+        # print(f"Designmode set to {mode}")
+        if mode != self.design_mode:
+            self.design_mode = mode
+            self.design_param = 0
+            self.scene.refresh_scene()
+        else:
+            self.design_param += 1
+
+    def define_buttons(self):
+        icon_size = STD_ICON_SIZE
+        icon_regular_star = PyEmbeddedImage(
+            b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
+            b"AAAD5klEQVR4nO2ZaahNaxjHf8c5uAfXlEPGpMzDByGzW265fCDXUPcDMuSTWfKB4pshlClj"
+            b"XVxdRd2MR9dMXeEDkumQFNec46Acw3G2Hv1Xve32OXvtY6119opfrdq969nP87zvWut9hhd+"
+            b"4IsawFngjH7Hll+BhK6hxJg9zkT+JqY0BkqBMl2lGosds/QkCoGj+j2TGHJFzo8Bxur3NWJG"
+            b"bzn+AqgN1AKeaawXMWKznF7ljK3W2CZiQj7wSk53ccY7aawEqEMMmCSH/0tx77zuTSQGnJOz"
+            b"U1Lcm6p7Fu2zmg5AOfAW+DnF/XrAG03GXrWsZbmc3FaJzHbJLCNLyQMey8m+lcj1k8xToCZZ"
+            b"yCg5eMuH7A3JjiQLOSjn5vmQnS/ZA1RDbCgA2gE9gcHAcGAcMB1YAHwCPkguHQWS/aT/Tpeu"
+            b"4dLdU7YKZNsXE4A/gX3AceACcB24DxQrc034vPZmsDh7M9BbJl/uy7cL8nWffLc58NyHolLl"
+            b"TfeAy4oVhXJmK7AGWAI0z2AiLfSfNdJhugql+7JsvZDtdP7ZHPhNaUNCe/x4oBvQFmgE5FL9"
+            b"5MqXtvJtvBOPSjSHr7QHbjoZ6y9kL/2BJ/L1blI+95X6zs5jH+EMso9p2iTMx3/1lCp8hF50"
+            b"tmtLlgStvBR+2Vha/gDe6U/28TWl+mgMnJAv74HJmSqwvfyBFNzTRxY1HYHb8uFxmtQn7RZ5"
+            b"UYosox1NdIxwdlPbjtt8q0KruXdIYbne1TC7hjnAQuCzbO4JuqKc7UR5C151CZ6fgL+cRVuq"
+            b"iYX6uK3d0zpA3abLayGVyFaoWGVXJIOW5wSF9/oWRVk9rpdRy5WCwl4j07mOCPHSmQEB6hwo"
+            b"nVZ0RUILJ8EMMupbpH4t3a2IsG91KATdh6Pse+2SsTkh6J4r3TuJgIcyFkbK0l26HxEynWXo"
+            b"ic9A1UlnI0d9bqk5Tq1htkJjpoxY9E334S5MKlM/Kr2xI4bK2C35UOuh/TJSWSrdRwc6Xpqx"
+            b"XVe5c9hjMhUxWXJmKxRyneOCVKlJvla8zEn97VTXY5CadwklhFvUC06mlZOm+CqeMsVrdVp9"
+            b"kMwQ4I5TJq+tIKnMVwT3ylVr7wxLIVfko/VaZRZL+QZnrKFW1nttrurYLR09gEtJ/bAmzv2N"
+            b"Gl8Uwjw4LeVecTXOORd8p5XOJNLnqTR4Kx0v1XE0ftfYqaAnUUf1sr3/XYF/nNU8p5K0qlhr"
+            b"9Jij74ieWJlewUDrnmHOynuNsWKdSgVR+ORIV7GTx3nNj1TfUJVZmdSitDyrJcHTzEmBvGtF"
+            b"kAZOSun/OgcJm1GylZDtwBiiXasB0dFANs3298MXw0hXuTS4jKMAAAAASUVORK5CYII="
+        )
+        icon_crossing_star = PyEmbeddedImage(
+            b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAABnRSTlMA/wD/AP83WBt9AAAA"
+            b"CXBIWXMAAA7EAAAOxAGVKw4bAAACbUlEQVRYhd2YO08CQRDHZw/LCw0tHb3PgoJeOv08+gV8"
+            b"ND4a/QAajYaHET8CCT0JoaAlAZUooiWsxSXruXc7O8tsjLkJ1e3M3H/3tzO7h5BSwv+zwFsi"
+            b"kQtEzls2X4n8WqZlKXy+OGZ6tQBgIecLOfeVzYMsDZwXjpmGqPD54siVlYqMzzG7EDVwXjiy"
+            b"ZCGwmBwzCjEVGZ/j8rJywQrTAbHlZVnvj5wLJgtiuVw2DVUqFU5mIf7nrpdSCggEBCcnp5Js"
+            b"UQjfJ25HR8cqBOIp6FkEBLs7u7hPdbvqlDAuANRAvd4gKqNPwClhrVb/eSJ/14vqzkjviXwo"
+            b"zcnqaXqdvt/VMH56FAoFqyYAyOfzyCiyBCllqK6/gcj1ej1t9ObmFgBeXp8pst6nbwDQaj1p"
+            b"z7vdrlrI1LXUIf6SnDYbOkGTP2mfIBlNQEulElETABSLxaRKXBMAgLE8EpVyd3c/HA6dWpEK"
+            b"n0wmV1fXDiWMQEydpX2iPmKpJ89Czi8uL5zUaHZ2fuYwHzqLfr+verFTO41+g8GA/i4qRIjV"
+            b"FHHbxt2c65foF7d4YxuPx0mH0WiEtyW7EVe13W4nwaUCNVEWEHQ6Hc8QTRQ0oNh54sJx+eu2"
+            b"pobaJ2lG2luPjy3++5zCSRDx9Y9G9/f3pJQHB4dWT4o+lizkLEf8SRc1qwf+juQQcmPz2beQ"
+            b"v4qaD03TV3Wj2cBjcbND1FbeqeKSzkSOJIha0jAMiTgWch6GYao+liyVbm11XU30YzalpI7s"
+            b"YzZVvW1zY0tLazILRC2e07qcUlEr8fNrxm+nn18zorPzJwbfuJ8Y1uDlzFuX/3v7BikOKD82"
+            b"lTxEAAAAAElFTkSuQmCC"
+        )
+        icon_polygon = PyEmbeddedImage(
+            b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
+            b"AAACZUlEQVR4nO2aT0sVURjGf7qo0EVIEUUYiYFCFLRIsEViGXTzC1hgfYeSbFVt0o1pu3Kj"
+            b"req61BbZoqCWldEHUFKvtJBKKPpH6Y0DT3AW/rn3zJxzz8j9wV3NnOd5z9yZOe/7noEqVaKh"
+            b"G1gCZoGzKeoaLaNZAHIEwBgVPf8WQ0xkLsBEZn1PYjewbJmleWt1WRdpWV7eGJTRS48ez+Ux"
+            b"4MvgIPAdWAPafZkAJ+XxEzjkw+ChrtQj/PNYXuNpCx8HVoHfQDP+OQz8kueJNIWf6QoNEY67"
+            b"8pxOS7BTgl+APYSjAfgk73NJxWqBGYldJTzX5P1esThzRUIfgJ2EZ4fWKxPDZVeRXcCCRHqo"
+            b"HBcVg8nv6lwEbkjgXdK/NSE1wGvF0u/yoH3W4DNUntOKZQXYW87Aexo4STxMKaaRUgc0aTH6"
+            b"CxwlHlqAP1qUj5QyYEIzv098PFBs+a1ObFPC9g3YT3zsA74qxlObnfhCM75JvNxSjK/WO3hB"
+            b"72lzwkegnnipV4zF9er7Quh6OSGFjeLN8kQW7AM562DWbq3zm9XL5oGKldul9A3s1+8B4n79"
+            b"tm91cl4zNotPbIwqNlPTZzZFaS03RUGJWVGJWiw8UUzDrml8mt1EVzqsNL7svkF/RIXVG8Vy"
+            b"3bXUnZeAKTcrxSVrzXAqdVHBH0vzoTeJkLml3krItGZC05dWO8hu0Dk9aAlosF44iRt0/5mW"
+            b"oGljhmJYnk/TFD2mBTJUE7vJVxMbtfhLTg8SkpfXWJY3etrk8QNo9GUyEHDr7U6ozdC5LG+G"
+            b"bpvt6W31wUBOk/H1CcfiRnV4lSqE5x+0Tyg887i34gAAAABJRU5ErkJggg=="
+        )
+
+        self.scene.context.kernel.register(
+            "button/tool_polygon/tool_freehand",
+            {
+                "label": "Freehand",
+                "icon": icons8_polygon_50,
+                "tip": "Draw a freehand polygon (f)",
+                "action": lambda v: self.set_designmode(0),
+                "size": icon_size,
+            },
+        )
+
+        self.scene.context.kernel.register(
+            "button/tool_polygon/tool_polygon",
+            {
+                "label": "Regular",
+                "icon": icon_polygon,
+                "tip": "Draw a regular polygon (r)",
+                "action": lambda v: self.set_designmode(1),
+                "size": icon_size,
+            },
+        )
+
+        self.scene.context.kernel.register(
+            "button/tool_polygon/tool_star1",
+            {
+                "label": "Star 1",
+                "icon": icon_regular_star,
+                "tip": "Draw a regular star (1)",
+                "action": lambda v: self.set_designmode(2),
+                "size": icon_size,
+            },
+        )
+
+        self.scene.context.kernel.register(
+            "button/tool_polygon/tool_star2",
+            {
+                "label": "Star 2",
+                "icon": icon_crossing_star,
+                "tip": "Draw a crossing star (2)",
+                "action": lambda v: self.set_designmode(3),
+                "size": icon_size,
+            },
+        )
 
     def angled(self, pos):
         points = list(self.point_series)
@@ -59,11 +179,8 @@ class PolygonTool(ToolWidget):
                         wx.BRUSHSTYLE_SOLID,
                     )
                 )
-            points = list(self.point_series)
-            if self.mouse_position is not None:
-                pos = self.angled(self.mouse_position)
-                points.append(pos)
-            points.append(points[0])
+            points = self.calculated_points(True)
+
             gc.StrokeLines(points)
             total_len = 0
             for idx in range(1, len(points)):
@@ -79,6 +196,201 @@ class PolygonTool(ToolWidget):
                 )
             self.scene.context.signal("statusmsg", s)
 
+    def calculated_points(self, closeit):
+        points = list(self.point_series)
+        if self.mouse_position is not None:
+            pos = self.angled(self.mouse_position)
+            points.append(pos)
+        tx = 0
+        ty = 0
+        tc = 0
+        for pt in points:
+            tc += 1
+            tx += pt[0]
+            ty += pt[1]
+        if tc > 0:
+            cx = tx / tc
+            cy = ty / tc
+        if self.design_mode == 0:
+            pass
+        elif self.design_mode == 1:
+            number_points = tc
+            if number_points > 2:
+                point0 = Point(points[0])
+                pcenter = Point(points[-1])
+                radius = pcenter.distance_to(point0)
+                if radius < 5000:
+                    pcenter = Point(cx, cy)
+                    radius = pcenter.distance_to(point0)
+                angle = pcenter.angle_to(point0) + tau / number_points
+                point1 = pcenter.polar(pcenter, angle, radius)
+                points[1] = [point1.x, point1.y]
+                dx = points[1][0] - points[0][0]
+                dy = points[1][1] - points[0][1]
+                baseline = sqrt(dx * dx + dy * dy)
+                apothem = baseline / (2 * tan(tau / (2 * number_points)))
+                circumradius = baseline / (2 * sin(tau / (2 * number_points)))
+                midpoint = Point(points[0][0] + 0.5 * dx, points[0][1] + 0.5 * dy)
+                ax = 0
+                ay = 0
+                for pt in points:
+                    ax += pt[0]
+                    ay += pt[1]
+                ax /= number_points
+                ay /= number_points
+                # The arithmetic center (ax, ay) indicates to which
+                # 'side' of the baseline the polygon needs to be constructed
+                arithmetic_center = Point(ax, ay)
+                # mk_debug_point(ax, ay, "green")
+                angle = point0.angle_to(points[1])
+                midangle = midpoint.angle_to(arithmetic_center)
+                angle += tau / 4
+                first_point = Point.polar(midpoint, angle, apothem)
+                second_point = Point.polar(midpoint, angle + tau / 2, apothem)
+                deltaangle = tau / number_points
+                d1 = arithmetic_center.distance_to(first_point)
+                d2 = arithmetic_center.distance_to(second_point)
+                if d1 < d2:
+                    center_point = Point(first_point)
+                else:
+                    center_point = Point(second_point)
+                # mk_debug_point(center_point.x, center_point.y, "red")
+
+                if center_point.angle_to(point0) > center_point.angle_to(point1):
+                    deltaangle *= -1
+                angle = center_point.angle_to(point0)
+                for idx in range(number_points):
+                    # if idx > 1:
+                    pt = Point.polar(center_point, angle, circumradius)
+                    points[idx] = (pt.x, pt.y)
+                    angle += deltaangle
+        elif self.design_mode == 2:
+            number_points = tc
+            if number_points > 2:
+                point0 = Point(points[0])
+                pcenter = Point(points[-1])
+                pinner = Point(points[-2])
+                radius_inner = pcenter.distance_to(pinner)
+                radius = pcenter.distance_to(point0)
+                if radius < 5000:
+                    pcenter = Point(cx, cy)
+                    radius = pcenter.distance_to(point0)
+                angle = pcenter.angle_to(point0) + tau / number_points
+                point1 = pcenter.polar(pcenter, angle, radius)
+                points[1] = [point1.x, point1.y]
+                dx = points[1][0] - points[0][0]
+                dy = points[1][1] - points[0][1]
+                baseline = sqrt(dx * dx + dy * dy)
+                apothem = baseline / (2 * tan(tau / (2 * number_points)))
+                circumradius = baseline / (2 * sin(tau / (2 * number_points)))
+                midpoint = Point(points[0][0] + 0.5 * dx, points[0][1] + 0.5 * dy)
+                ax = 0
+                ay = 0
+                for pt in points:
+                    ax += pt[0]
+                    ay += pt[1]
+                ax /= number_points
+                ay /= number_points
+                # The arithmetic center (ax, ay) indicates to which
+                # 'side' of the baseline the polygon needs to be constructed
+                arithmetic_center = Point(ax, ay)
+                # mk_debug_point(ax, ay, "green")
+                angle = point0.angle_to(points[1])
+                midangle = midpoint.angle_to(arithmetic_center)
+                angle += tau / 4
+                first_point = Point.polar(midpoint, angle, apothem)
+                second_point = Point.polar(midpoint, angle + tau / 2, apothem)
+                deltaangle = tau / (2 * number_points)
+                d1 = arithmetic_center.distance_to(first_point)
+                d2 = arithmetic_center.distance_to(second_point)
+                if d1 < d2:
+                    center_point = Point(first_point)
+                else:
+                    center_point = Point(second_point)
+                # mk_debug_point(center_point.x, center_point.y, "red")
+
+                if center_point.angle_to(point0) > center_point.angle_to(point1):
+                    deltaangle *= -1
+                angle = center_point.angle_to(point0)
+                points = []
+                for idx in range(2 * number_points):
+                    if idx % 2 == 0:
+                        radius = circumradius
+                    else:
+                        radius = radius_inner
+                    # if idx > 1:
+                    pt = Point.polar(center_point, angle, radius)
+                    points.append((pt.x, pt.y))
+                    angle += deltaangle
+        elif self.design_mode == 3:
+            number_points = tc
+            if number_points > 1:
+                point0 = Point(points[0])
+                pcenter = Point(points[-1])
+                radius = pcenter.distance_to(point0)
+                if radius < 5000:
+                    pcenter = Point(cx, cy)
+                    radius = pcenter.distance_to(point0)
+                angle = pcenter.angle_to(point0) + tau / number_points
+                point1 = pcenter.polar(pcenter, angle, radius)
+                points[1] = [point1.x, point1.y]
+                dx = points[1][0] - points[0][0]
+                dy = points[1][1] - points[0][1]
+                baseline = sqrt(dx * dx + dy * dy)
+                apothem = baseline / (2 * tan(tau / (2 * number_points)))
+                circumradius = baseline / (2 * sin(tau / (2 * number_points)))
+                midpoint = Point(points[0][0] + 0.5 * dx, points[0][1] + 0.5 * dy)
+                ax = 0
+                ay = 0
+                for pt in points:
+                    ax += pt[0]
+                    ay += pt[1]
+                ax /= number_points
+                ay /= number_points
+                # The arithmetic center (ax, ay) indicates to which
+                # 'side' of the baseline the polygon needs to be constructed
+                arithmetic_center = Point(ax, ay)
+                # mk_debug_point(ax, ay, "green")
+                angle = point0.angle_to(points[1])
+                midangle = midpoint.angle_to(arithmetic_center)
+                angle += tau / 4
+                first_point = Point.polar(midpoint, angle, apothem)
+                second_point = Point.polar(midpoint, angle + tau / 2, apothem)
+                targetlen = 2 * number_points + 1
+                deltaangle = tau / targetlen
+                d1 = arithmetic_center.distance_to(first_point)
+                d2 = arithmetic_center.distance_to(second_point)
+                if d1 < d2:
+                    center_point = Point(first_point)
+                else:
+                    center_point = Point(second_point)
+                # mk_debug_point(center_point.x, center_point.y, "red")
+
+                if center_point.angle_to(point0) > center_point.angle_to(point1):
+                    deltaangle *= -1
+                angle = center_point.angle_to(point0)
+                midpoints = []
+                for idx in range(targetlen):
+                    radius = circumradius
+                    pt = Point.polar(center_point, angle, radius)
+                    midpoints.append((pt.x, pt.y))
+                    angle += deltaangle
+                points = []
+                mid_idx = 0
+                delta = int(targetlen / 2 - self.design_param)
+                while delta < 0:
+                    delta += targetlen
+
+                for idx in range(targetlen):
+                    points.append(midpoints[mid_idx])
+                    mid_idx += delta
+                    while mid_idx >= targetlen:
+                        mid_idx -= targetlen
+        # Close the polygon
+        if closeit:
+            points.append(points[0])
+        return points
+
     def event(
         self,
         window_pos=None,
@@ -86,6 +398,7 @@ class PolygonTool(ToolWidget):
         event_type=None,
         nearest_snap=None,
         modifiers=None,
+        keycode=None,
         **kwargs,
     ):
         response = RESPONSE_CHAIN
@@ -125,6 +438,7 @@ class PolygonTool(ToolWidget):
                     complex(*self.point_series[-2]) - complex(*self.point_series[-1])
                 )
                 < 5000
+                and self.design_mode == 0
             ):
                 self.end_tool()
                 response = RESPONSE_ABORT
@@ -165,6 +479,29 @@ class PolygonTool(ToolWidget):
                 response = RESPONSE_CHAIN
             self.point_series = []
             self.mouse_position = None
+        elif event_type == "key_up" and modifiers == "return":
+            self.end_tool()
+            response = RESPONSE_ABORT
+        elif event_type == "key_up":
+            if not self.scene.pane.tool_active:
+                return RESPONSE_CHAIN
+            # print(
+            #     f"key-up: {event_type}, modifiers: '{modifiers}', keycode: '{keycode}'"
+            # )
+            if keycode == "f":
+                # Freehand
+                self.set_designmode(0)
+            elif keycode == "r":
+                # Regular
+                self.set_designmode(1)
+            elif keycode in ("1", "s"):
+                # Star 1
+                self.set_designmode(2)
+            elif keycode in ("2", "p"):
+                # Star 2 / Pentagram
+                self.set_designmode(3)
+
+            return RESPONSE_CONSUME
         elif update_required:
             self.scene.request_refresh()
             response = RESPONSE_CONSUME
@@ -172,7 +509,8 @@ class PolygonTool(ToolWidget):
 
     def end_tool(self):
         if len(self.point_series) > 2:
-            polyline = Polygon(*self.point_series)
+            lines = self.calculated_points(False)
+            polyline = Polygon(*lines)
             elements = self.scene.context.elements
             node = elements.elem_branch.add(
                 shape=polyline,
