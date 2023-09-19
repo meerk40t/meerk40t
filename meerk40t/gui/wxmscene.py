@@ -372,11 +372,66 @@ class MeerK40tScenePanel(wx.Panel):
                     channel(t)
                 channel(_("-------"))
                 return
+            toolbar = context.lookup("ribbonbar/tools")
+
             try:
                 if tool == "none":
                     self.tool_container.set_tool(None)
+                    # Reset the edit toolbar
+                    if toolbar is not None:
+                        toolbar.remove_page("toolcontainer")
+                        for pages in toolbar.pages:
+                            pages.visible = True
+                        toolbar.validate_current_page()
+                        toolbar.apply_enable_rules()
+                        toolbar.modified()
                 else:
                     self.tool_container.set_tool(tool.lower())
+                    # Reset the edit toolbar
+                    if toolbar is not None:
+                        toolbar.remove_page("toolcontainer")
+                        tool_values = list(context.find(f"button/tool_{tool}/.*"))
+                        # print(f"button/tool_{tool}/.*\n{tool_values}")
+                        if tool_values is not None and len(tool_values) > 0:
+                            for pages in toolbar.pages:
+                                pages.visible = False
+                            newpage = toolbar.add_page(
+                                "toolcontainer",
+                                "toolcontainer",
+                                "Select",
+                                None,
+                            )
+
+                            select_panel = toolbar.add_panel(
+                                "toolback",
+                                newpage,
+                                "toolback",
+                                "Select",
+                                None,
+                            )
+                            select_values = (
+                                (
+                                    context.lookup("button/tools/Scene"),
+                                    "button/tools/Scene",
+                                    "Select",
+                                ),
+                            )
+                            select_panel.set_buttons(select_values)
+
+                            tool_panel = toolbar.add_panel(
+                                "toolutil",
+                                newpage,
+                                "toolutil",
+                                "Tools",
+                                None,
+                            )
+                            tool_panel.set_buttons(tool_values)
+                            newpage.visible = True
+                            toolbar.validate_current_page()
+                            toolbar.apply_enable_rules()
+
+                        toolbar.modified()
+
             except (KeyError, AttributeError):
                 raise CommandSyntaxError
 

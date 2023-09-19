@@ -77,7 +77,6 @@ from .propertypanels.textproperty import TextPropertyPanel
 from .propertypanels.waitproperty import WaitPropertyPanel
 from .simpleui import SimpleUI
 from .simulation import Simulation
-from .toolwidgets.toolnodeedit import NodeEditToolbar
 from .wordlisteditor import WordlistEditor
 from .wxmmain import MeerK40t
 
@@ -324,6 +323,7 @@ class wxMeerK40t(wx.App, Module):
         # Monkey patch for pycharm excepthook override issue. https://youtrack.jetbrains.com/issue/PY-39723
         try:
             import importlib
+
             pydevd = importlib.import_module("_pydevd_bundle.pydevd_breakpoints")
         except ImportError:
             pass
@@ -731,13 +731,11 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Alignment", Alignment)
         kernel.register("window/HersheyFontManager", HersheyFontManager)
         kernel.register("window/HersheyFontSelector", HersheyFontSelector)
-        kernel.register("window/NodeEditIcons", NodeEditToolbar)
         kernel.register("window/SplitImage", RenderSplit)
         kernel.register("window/OperationInfo", OperationInformation)
         kernel.register("window/Lasertool", LaserTool)
         kernel.register("window/Templatetool", TemplateTool)
         kernel.register("window/Hingetool", LivingHingeTool)
-        kernel.register("window/NodeEditToolbar", NodeEditToolbar)
         kernel.register("window/Kerftest", KerfTool)
         kernel.register("window/SimpleUI", SimpleUI)
         # Hershey Manager stuff
