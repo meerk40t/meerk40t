@@ -1039,6 +1039,19 @@ class MeerK40t(MWindow):
         #     },
         # )
         kernel.register(
+            "button/tools/Parameter",
+            {
+                "label": _("Parametric Edit"),
+                "icon": icons8_node_edit_50,
+                "tip": _("Parametric edit of a shape"),
+                "action": lambda v: kernel.elements("tool parameter\n"),
+                "group": "tool",
+                "size": bsize_normal,
+                "identifier": "paramedit",
+                "rule_enabled": lambda cond: contains_a_param(),
+            },
+        )
+        kernel.register(
             "button/tools/Nodeeditor",
             {
                 "label": _("Node Edit"),
@@ -1322,6 +1335,14 @@ class MeerK40t(MWindow):
                 "identifier": "measure",
             },
         )
+
+        def contains_a_param():
+            result = False
+            for e in kernel.elements.elems(emphasized=True):
+                if e.functional_parameter is not None:
+                    result = True
+                    break
+            return result
 
         def contains_a_path():
             result = False
