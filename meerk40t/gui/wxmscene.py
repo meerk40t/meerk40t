@@ -37,6 +37,7 @@ from meerk40t.gui.toolwidgets.toollinetext import LineTextTool
 from meerk40t.gui.toolwidgets.toolmeasure import MeasureTool
 from meerk40t.gui.toolwidgets.toolnodeedit import EditTool
 from meerk40t.gui.toolwidgets.toolnodemove import NodeMoveTool
+from meerk40t.gui.toolwidgets.toolparameter import ParameterTool
 from meerk40t.gui.toolwidgets.toolplacement import PlacementTool
 from meerk40t.gui.toolwidgets.toolpoint import PointTool
 from meerk40t.gui.toolwidgets.toolpolygon import PolygonTool
@@ -218,6 +219,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/edit", EditTool)
         context.register("tool/placement", PlacementTool)
         context.register("tool/nodemove", NodeMoveTool)
+        context.register("tool/parameter", ParameterTool)
 
         bsize_normal = STD_ICON_SIZE
 
@@ -376,7 +378,10 @@ class MeerK40tScenePanel(wx.Panel):
 
             try:
                 if tool == "none":
-                    self.tool_container.set_tool(None)
+                    success, response = self.tool_container.set_tool(None)
+                    channel(response)
+                    if not success:
+                        return
                     # Reset the edit toolbar
                     if toolbar is not None:
                         toolbar.remove_page("toolcontainer")
@@ -386,7 +391,10 @@ class MeerK40tScenePanel(wx.Panel):
                         toolbar.apply_enable_rules()
                         toolbar.modified()
                 else:
-                    self.tool_container.set_tool(tool.lower())
+                    success, response = self.tool_container.set_tool(tool.lower())
+                    channel(response)
+                    if not success:
+                        return
                     # Reset the edit toolbar
                     if toolbar is not None:
                         toolbar.remove_page("toolcontainer")
