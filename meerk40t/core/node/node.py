@@ -92,7 +92,7 @@ class Node:
         self._can_update = True
         self._can_remove = True
         self._is_visible = True
-
+        self.fparam = None
         for k, v in kwargs.items():
             if k.startswith("_"):
                 continue
@@ -790,6 +790,8 @@ class Node:
                 self._paint_bounds[3] + dy,
             ]
         self._points_dirty = True
+        self.translate_functional_parameter(dx, dy)
+
         # if self._points_dirty:
         #     self.revalidate_points()
         # else:
@@ -1175,3 +1177,48 @@ class Node:
     @property
     def name(self):
         return self.__str__()
+
+    @property
+    def functional_parameter(self):
+        return self.fparam
+
+    @functional_parameter.setter
+    def functional_parameter(self, value):
+        if isinstance(value, (list, tuple)):
+            self.fparam = value
+
+    def translate_functional_parameter(self, dx, dy):
+        # Functional parameters is a list of values
+        # The very first element defines the function name
+        # followed by a sequence of values:
+        # [0123]: The type of parameter:
+        #   0 : point (two values to follow: x and y)
+        #   1 : int (followed by one value)
+        #   2 : float (followed by one value)
+        #   3 : bool (followed by one value)
+        # So we need to translate the points too
+        oldparam = self.functional_parameter
+        if oldparam is None or len(oldparam) < 3:
+            return
+        newparam = [oldparam[1]]
+        changes = False
+        idx = 1
+        while idx < len(oldparam) - 1:
+            newparam.append(oldparam[idx])
+            if oldparam[idx] == 0:
+                if idx + 2 >= len(oldparam):
+                    # invalid ?
+                    break
+                # point
+                x = oldparam[idx + 1] + dx
+                y = oldparam[idx + 2] + dy
+                newparam.append(x)
+                newparam.append(y)
+                idx += 1
+                changes = True
+            else:
+                # no changes, just copy
+                newparam.append(oldparam[idx + 1])
+            idx += 2
+        if changes:
+            self.functional_parameter = newparam

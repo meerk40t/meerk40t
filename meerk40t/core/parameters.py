@@ -66,7 +66,7 @@ STRING_PARAMETERS = (
 
 COLOR_PARAMETERS = ("color", "line_color")
 
-LIST_PARAMETERS = ("allowed_attributes",)
+LIST_PARAMETERS = ("allowed_attributes", "fparam")
 
 
 class Parameters:
@@ -621,3 +621,11 @@ class Parameters:
     @output_message.setter
     def output_message(self, value):
         self.settings["output_message"] = value
+
+    @property
+    def fparam(self):
+        return self.settings.get("fparam", None)
+
+    @fparam.setter
+    def fparam(self, value):
+        self.settings["fparam"] = value
