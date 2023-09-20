@@ -395,6 +395,17 @@ def plugin(kernel, lifecycle=None):
             },
         ]
         kernel.register_choices("preferences", choices)
+        for fname, func in zip(
+            (
+                "circle",
+                "ellipse",
+            ),
+            (
+                elements.update_node_circle,
+                elements.update_node_ellipse,
+            ),
+        ):
+            kernel.register(f"element_update/{fname}", func)
     elif lifecycle == "prestart":
         if hasattr(kernel.args, "input") and kernel.args.input is not None:
             # Load any input file
@@ -3435,6 +3446,55 @@ class Elemental(Service):
             # Replace node geometry with simplified geometry.
             node.geometry = g
         return changed, before, after
+
+    # --- Routines to update shapes according to saved and updated parameters.
+    def update_node_circle(self, node):
+        my_id = "circle"
+        center = None
+        point_on_circle = None
+        valid = True
+        try:
+            param = node.functional_parameter
+            if param is None or param[0] != my_id:
+                valid = False
+        except (AttributeError, IndexError):
+            valid = False
+        if valid:
+            try:
+                if param[1] == 0:
+                    center = Point(param[2], param[3])
+                if param[4] == 0:
+                    point_on_circle = Point(param[5], param[6])
+            except IndexError:
+                valid = False
+        if center is None or point_on_circle is None:
+            valid = False
+        if valid:
+            radius = center.distance_to(point_on_circle)
+            if radius > 0:
+                node.cx = center.x
+                node.cy = center.y
+                node.rx = radius
+                node.ry = radius
+                node.altered()
+            else:
+                valid = False
+        if not valid:
+            node.functional_parameter = (
+                "circle",
+                0,
+                node.cx,
+                node.cy,
+                0,
+                node.cx,
+                node.cy + node.ry,
+            )
+
+    def update_node_ellipse(self, node):
+        return
+
+
+# --- end of node update routines
 
 
 def linearize_path(path, interp=50, point=False):
