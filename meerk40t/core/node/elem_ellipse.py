@@ -1,5 +1,5 @@
 from copy import copy
-from math import cos, sin
+from math import cos, sin, tau
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Node
@@ -66,6 +66,27 @@ class EllipseNode(Node, Stroked):
             self.ry = 0
         if self.matrix is None:
             self.matrix = Matrix()
+        if self.rx == self.ry:
+            self.functional_parameter = (
+                "circle",
+                0,
+                self.cx,
+                self.cy,
+                0,
+                self.cx + cos(tau * 7 / 8) * self.rx,
+                self.cy + sin(tau * 7 / 8) * self.ry,
+            )
+        else:
+            # store two extreme points
+            self.functional_parameter = (
+                "ellipse",
+                0,
+                self.cx + self.rx,
+                self.cy,
+                0,
+                self.cx,
+                self.cy + self.ry,
+            )
 
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
