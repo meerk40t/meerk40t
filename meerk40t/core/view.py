@@ -77,7 +77,7 @@ class View:
         # Pre-scale destination by reverse of native scale.
         self.scale(1.0 / self.native_scale_x, 1.0 / self.native_scale_y)
 
-    def contains(self, x, y):
+    def destination_contains(self, x, y):
         """
         This solves the AABB of the container, not the strict solution. If a view is rotated by a non-tau/4 multiple
         amount, we could generate false positives.
@@ -86,10 +86,10 @@ class View:
         @return:
         """
         # This solves the AABB of the container, not the strict solution
-        x0, y0, x1, y1 = self.bbox()
+        x0, y0, x1, y1 = self.destination_bbox()
         return x0 < x < x1 and y0 < y < y1
 
-    def bbox(self):
+    def destination_bbox(self):
         return (
             min(
                 self._destination[0][0],
@@ -114,6 +114,46 @@ class View:
                 self._destination[1][1],
                 self._destination[2][1],
                 self._destination[3][1],
+            ),
+        )
+
+    def source_contains(self, x, y):
+        """
+        This solves the AABB of the container, not the strict solution. If a view is rotated by a non-tau/4 multiple
+        amount, we could generate false positives.
+        @param x:
+        @param y:
+        @return:
+        """
+        # This solves the AABB of the container, not the strict solution
+        x0, y0, x1, y1 = self.source_bbox()
+        return x0 < x < x1 and y0 < y < y1
+
+    def source_bbox(self):
+        return (
+            min(
+                self._source[0][0],
+                self._source[1][0],
+                self._source[2][0],
+                self._source[3][0],
+            ),
+            min(
+                self._source[0][1],
+                self._source[1][1],
+                self._source[2][1],
+                self._source[3][1],
+            ),
+            max(
+                self._source[0][0],
+                self._source[1][0],
+                self._source[2][0],
+                self._source[3][0],
+            ),
+            max(
+                self._source[0][1],
+                self._source[1][1],
+                self._source[2][1],
+                self._source[3][1],
             ),
         )
 
