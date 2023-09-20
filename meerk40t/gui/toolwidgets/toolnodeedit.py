@@ -1815,7 +1815,7 @@ class EditTool(ToolWidget):
             event_type (string): [description]. Defaults to None.
             nearest_snap (tuple, optional): If set the coordinates of the nearest snap point in scene coordinates.
             modifiers (string): If available provides a  list of modifier keys that were pressed (shift, alt, ctrl).
-            keycode (string): if available the keyocde that was pressed
+            keycode (string): if available the keycode that was pressed
 
         Returns:
             Indicator how to proceed with this event after its execution (consume, chain etc)
