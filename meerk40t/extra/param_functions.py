@@ -100,7 +100,51 @@ def plugin(kernel, lifecycle):
             valid = True
             try:
                 param = node.functional_parameter
-                print(my_id, param[0])
+                if param is None or param[0] != my_id:
+                    valid = False
+            except (AttributeError, IndexError):
+                valid = False
+            if not valid:
+                # Not for me...
+                return
+            try:
+                if param[1] == 0:
+                    center = Point(param[2], param[3])
+                if param[4] == 0:
+                    point_on_circle = Point(param[5], param[6])
+            except IndexError:
+                valid = False
+            if center is None or point_on_circle is None:
+                valid = False
+            if valid:
+                radius = center.distance_to(point_on_circle)
+                if radius > 0:
+                    node.cx = center.x
+                    node.cy = center.y
+                    node.rx = radius
+                    node.ry = radius
+                    node.altered()
+                else:
+                    valid = False
+            if not valid:
+                # Let's reset it
+                node.functional_parameter = (
+                    "circle",
+                    0,
+                    node.cx,
+                    node.cy,
+                    0,
+                    node.cx + math.cos(math.tau * 7 / 8) * node.rx,
+                    node.cy + math.sin(math.tau * 7 / 8) * node.ry,
+                )
+
+        def update_node_rect(node):
+            my_id = "rect"
+            center = None
+            point_on_circle = None
+            valid = True
+            try:
+                param = node.functional_parameter
                 if param is None or param[0] != my_id:
                     valid = False
             except (AttributeError, IndexError):
@@ -146,7 +190,6 @@ def plugin(kernel, lifecycle):
             valid = True
             try:
                 param = node.functional_parameter
-                print(my_id, param[0])
                 if param is None or param[0] != my_id:
                     valid = False
             except (AttributeError, IndexError):
@@ -197,7 +240,6 @@ def plugin(kernel, lifecycle):
             valid = True
             try:
                 param = node.functional_parameter
-                print(my_id, param[0])
                 if param is None or param[0] != my_id:
                     valid = False
             except (AttributeError, IndexError):
@@ -226,4 +268,5 @@ def plugin(kernel, lifecycle):
         # Let's register them
         kernel.register("element_update/circle", update_node_circle)
         kernel.register("element_update/ellipse", update_node_ellipse)
+        kernel.register("element_update/rect", update_node_rect)
         kernel.register("element_update/fractaltree", update_node_fractaltree)
