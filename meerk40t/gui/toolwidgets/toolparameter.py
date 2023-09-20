@@ -3,7 +3,6 @@ import wx
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
-    RESPONSE_DROP,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 
@@ -91,7 +90,7 @@ class ParameterTool(ToolWidget):
             if ptype == 0:
                 ptx = pdata[0]
                 pty = pdata[1]
-            gc.DrawEllipse(ptx - offset, pty - offset, offset * 2, offset * 2)
+                gc.DrawEllipse(ptx - offset, pty - offset, offset * 2, offset * 2)
         gc.PopState()
 
     def event(
@@ -116,12 +115,8 @@ class ParameterTool(ToolWidget):
             keycode (string): if available the keycode that was pressed
 
         Returns:
-            Indicator how to proceed with this event after its execution (consume, chain etc)
+            Indicator how to proceed with this event after its execution (consume, chain etc.)
         """
-        try:
-            pos = complex(*space_pos[:2])
-        except TypeError:
-            return RESPONSE_CONSUME
         offset = 5
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset /= s
