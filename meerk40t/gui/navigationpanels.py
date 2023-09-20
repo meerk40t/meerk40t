@@ -1298,7 +1298,13 @@ class MovePanel(wx.Panel):
         try:
             x = self.text_position_x.GetValue()
             y = self.text_position_y.GetValue()
-            if not self.context.device.view.contains(x, y):
+            pos_x = Length(
+                x, relative_length=self.context.space.display.width, unitless=UNITS_PER_PIXEL, preferred_units=self.context.units_name
+            )
+            pos_y = Length(
+                y, relative_length=self.context.space.display.height, unitless=UNITS_PER_PIXEL, preferred_units=self.context.units_name
+            )
+            if not self.context.device.view.contains(pos_x, pos_y):
                 dlg = wx.MessageDialog(
                     None,
                     _("Cannot move outside bed dimensions"),
@@ -1308,12 +1314,6 @@ class MovePanel(wx.Panel):
                 dlg.ShowModal()
                 dlg.Destroy()
                 return
-            pos_x = Length(
-                self.text_position_x.GetValue(), relative_length=self.context.space.display.width, unitless=UNITS_PER_PIXEL, preferred_units=self.context.units_name
-            )
-            pos_y = Length(
-                self.text_position_y.GetValue(), relative_length=self.context.space.display.height, unitless=UNITS_PER_PIXEL, preferred_units=self.context.units_name
-            )
             self.context(f"move {pos_x} {pos_y}\n")
         except ValueError:
             return
