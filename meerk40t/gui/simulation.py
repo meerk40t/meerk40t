@@ -1558,7 +1558,7 @@ class SimulationPanel(wx.Panel, Job):
     def pane_show(self):
         self.context.setting(str, "units_name", "mm")
 
-        bbox = self.context.device.view.bbox()
+        bbox = self.context.device.view.source_bbox()
         self.widget_scene.widget_root.focus_viewport_scene(
             bbox, self.view_pane.Size, 0.1
         )
