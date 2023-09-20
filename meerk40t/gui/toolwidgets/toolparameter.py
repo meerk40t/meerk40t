@@ -19,8 +19,16 @@ class ParameterTool(ToolWidget):
         self.element = None
         self.params = []
         self.paramtype = []
+        self._functions = {}
         self.mode = None
         self._index = -1
+        self.read_functions()
+
+    def read_functions(self):
+        self._functions.clear()
+        for func, m, sname in self.scene.context.kernel.find("element_update"):
+            # function, path, shortname
+            self._functions[sname.lower()] = func
 
     def reset(self):
         self.params.clear()
@@ -28,8 +36,6 @@ class ParameterTool(ToolWidget):
         self.element = None
         self.mode = None
         self._index = -1
-        self.scene.pane.tool_active = False
-        self.scene.pane.modif_active = False
 
     def establish_parameters(self, node):
         self.reset()
@@ -39,7 +45,10 @@ class ParameterTool(ToolWidget):
         parameters = self.element.functional_parameter
         if parameters is None or len(parameters) < 3:
             return
-        self.mode = parameters[0]
+        if parameters[0] not in self._functions:
+            print("No function defined...")
+            return
+        self.mode = parameters[0].lower()
         idx = 1
         while idx < len(parameters):
             self.paramtype.append(parameters[idx])
@@ -138,10 +147,13 @@ class ParameterTool(ToolWidget):
             if self._index >= 0:
                 self.params[self._index] = (space_pos[0], space_pos[1])
                 self.update_parameter()
-                if self.mode == "circle":
-                    self.scene.context.elements.update_node_circle(self.element)
-                elif self.mode == "ellipse":
-                    self.scene.context.elements.update_node_ellipse(self.element)
+                if self.mode in self._functions:
+                    print(f"Update for {self.mode}")
+                    func = self._functions[self.mode]
+                    func(self.element)
+                else:
+                    print(f"No Routine for {self.mode}")
+                    pass
                 self.scene.refresh_scene()
             return RESPONSE_CONSUME
         elif event_type == "leftup":
@@ -196,4 +208,6 @@ class ParameterTool(ToolWidget):
         return
 
     def final(self, context):
+        self.scene.pane.tool_active = False
+        self.scene.pane.modif_active = False
         self.scene.pane.suppress_selection = False
