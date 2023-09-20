@@ -826,6 +826,7 @@ class Node:
             self.modified()
             return
         self._bounds = apply_it(self._bounds)
+        self.scale_functional_parameters(sx, sy, ox, oy)
         # This may not really correct, we need the
         # implied stroke_width to add, so the inherited
         # element classes will need to overload it
@@ -1200,7 +1201,7 @@ class Node:
         oldparam = self.functional_parameter
         if oldparam is None or len(oldparam) < 3:
             return
-        newparam = [oldparam[1]]
+        newparam = [oldparam[0]]
         changes = False
         idx = 1
         while idx < len(oldparam) - 1:
@@ -1212,6 +1213,49 @@ class Node:
                 # point
                 x = oldparam[idx + 1] + dx
                 y = oldparam[idx + 2] + dy
+                newparam.append(x)
+                newparam.append(y)
+                idx += 1
+                changes = True
+            else:
+                # no changes, just copy
+                newparam.append(oldparam[idx + 1])
+            idx += 2
+        if changes:
+            self.functional_parameter = newparam
+
+    def scale_functional_parameter(self, sx, sy, ox, oy):
+        # Functional parameters is a list of values
+        # The very first element defines the function name
+        # followed by a sequence of values:
+        # [0123]: The type of parameter:
+        #   0 : point (two values to follow: x and y)
+        #   1 : int (followed by one value)
+        #   2 : float (followed by one value)
+        #   3 : bool (followed by one value)
+        # So we need to translate the points too
+        oldparam = self.functional_parameter
+        if oldparam is None or len(oldparam) < 3:
+            return
+        newparam = [oldparam[0]]
+        changes = False
+        idx = 1
+        while idx < len(oldparam) - 1:
+            newparam.append(oldparam[idx])
+            if oldparam[idx] == 0:
+                if idx + 2 >= len(oldparam):
+                    # invalid ?
+                    break
+                # point
+                x = oldparam[idx + 1]
+                y = oldparam[idx + 2]
+                if sx != 1.0:
+                    x = ox + sx * (x - ox)
+                    changed = True
+                if sy != 1.0:
+                    y = oy + sy * (y - oy)
+                    changed = True
+
                 newparam.append(x)
                 newparam.append(y)
                 idx += 1
