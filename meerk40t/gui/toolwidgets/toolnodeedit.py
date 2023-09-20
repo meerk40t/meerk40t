@@ -2066,7 +2066,7 @@ class EditTool(ToolWidget):
         does not receive global signals
         """
         if signal == "tool_changed":
-            if len(args) > 1 and args[1] == "edit":
+            if len(args) > 0 and len(args[0]) > 1 and args[0][1] == "edit":
                 selected_node = self.scene.context.elements.first_element(
                     emphasized=True
                 )
