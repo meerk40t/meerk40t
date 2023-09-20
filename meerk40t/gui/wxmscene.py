@@ -101,6 +101,7 @@ class MeerK40tScenePanel(wx.Panel):
 
         self.tool_active = False
         self.modif_active = False
+        self.suppress_selection = False
         self._reference = None  # Reference Object
 
         # Stuff for magnet-lines
