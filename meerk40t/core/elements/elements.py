@@ -6,6 +6,7 @@ several smaller functional pieces like Penbox and Wordlists.
 
 
 import contextlib
+import math
 import os.path
 from copy import copy
 from time import time
@@ -3459,14 +3460,16 @@ class Elemental(Service):
                 valid = False
         except (AttributeError, IndexError):
             valid = False
-        if valid:
-            try:
-                if param[1] == 0:
-                    center = Point(param[2], param[3])
-                if param[4] == 0:
-                    point_on_circle = Point(param[5], param[6])
-            except IndexError:
-                valid = False
+        if not valid:
+            # Not for me...
+            return
+        try:
+            if param[1] == 0:
+                center = Point(param[2], param[3])
+            if param[4] == 0:
+                point_on_circle = Point(param[5], param[6])
+        except IndexError:
+            valid = False
         if center is None or point_on_circle is None:
             valid = False
         if valid:
@@ -3480,18 +3483,65 @@ class Elemental(Service):
             else:
                 valid = False
         if not valid:
+            # Let's reset it
             node.functional_parameter = (
                 "circle",
                 0,
                 node.cx,
                 node.cy,
                 0,
-                node.cx,
-                node.cy + node.ry,
+                node.cx + math.cos(math.tau * 7 / 8) * node.rx,
+                node.cy + math.sin(math.tau * 7 / 8) * node.ry,
             )
 
     def update_node_ellipse(self, node):
-        return
+        my_id = "ellipse"
+        point_a = None
+        point_b = None
+        valid = True
+        try:
+            param = node.functional_parameter
+            if param is None or param[0] != my_id:
+                valid = False
+        except (AttributeError, IndexError):
+            valid = False
+        if not valid:
+            # Not for me...
+            return
+        try:
+            if param[1] == 0:
+                point_a = Point(param[2], param[3])
+            if param[4] == 0:
+                point_b = Point(param[5], param[6])
+        except IndexError:
+            valid = False
+        if point_a is None or point_b is None:
+            valid = False
+        if valid:
+            rx = point_a.x - point_b.x
+            ry = point_b.y - point_a.y
+            center = Point(point_a.x - rx, point_b.y - ry)
+            rx = abs(rx)
+            ry = abs(ry)
+            node.cx = center.x
+            node.cy = center.y
+            node.rx = rx
+            node.ry = ry
+            # print(
+            #     f"New: ({node.cx:.0f}, {node.cy:.0f}), rx={node.rx:.0f}, ry={node.ry:.0f}"
+            # )
+            node.altered()
+        if not valid:
+            node.functional_parameter = (
+                my_id,
+                0,
+                node.cx + node.rx,
+                node.cy,
+                0,
+                node.cx,
+                node.cy + node.ry,
+            )
+            # Let's reset it
 
 
 # --- end of node update routines

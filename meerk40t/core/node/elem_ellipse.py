@@ -87,6 +87,9 @@ class EllipseNode(Node, Stroked):
                 self.cx,
                 self.cy + self.ry,
             )
+            # print(
+            #     f"Old: ({self.cx:.0f}, {self.cy:.0f}), rx={self.rx:.0f}, ry={self.ry:.0f}"
+            # )
 
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
