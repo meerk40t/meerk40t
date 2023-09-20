@@ -138,7 +138,10 @@ class ParameterTool(ToolWidget):
             if self._index >= 0:
                 self.params[self._index] = (space_pos[0], space_pos[1])
                 self.update_parameter()
-                self.scene.context.elements.update_node_circle(self.element)
+                if self.mode == "circle":
+                    self.scene.context.elements.update_node_circle(self.element)
+                elif self.mode == "ellipse":
+                    self.scene.context.elements.update_node_ellipse(self.element)
                 self.scene.refresh_scene()
             return RESPONSE_CONSUME
         elif event_type == "leftup":
