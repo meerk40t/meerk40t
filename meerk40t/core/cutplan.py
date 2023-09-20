@@ -236,6 +236,9 @@ class CutPlan:
                 if hasattr(c, "type") and c.type is not None
                 else type(c).__name__
             )
+            if c_type.startswith("effect"):
+                # Effects should not be used here.
+                continue
             if last_type is not None:
                 if c_type.startswith("op") != last_type.startswith("op"):
                     # This cannot merge
