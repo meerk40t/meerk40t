@@ -87,7 +87,7 @@ class View:
         """
         # This solves the AABB of the container, not the strict solution
         x0, y0, x1, y1 = self.destination_bbox()
-        return x0 < x < x1 and y0 < y < y1
+        return x0 <= x <= x1 and y0 <= y <= y1
 
     def destination_bbox(self):
         return (
@@ -127,7 +127,7 @@ class View:
         """
         # This solves the AABB of the container, not the strict solution
         x0, y0, x1, y1 = self.source_bbox()
-        return x0 < x < x1 and y0 < y < y1
+        return x0 <= x <= x1 and y0 <= y <= y1
 
     def source_bbox(self):
         return (
