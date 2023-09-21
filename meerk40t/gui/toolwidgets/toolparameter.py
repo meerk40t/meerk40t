@@ -144,6 +144,7 @@ class ParameterTool(ToolWidget):
         self.slider_index = -1
         self.read_functions()
         self.pt_offset = 5
+        self.is_hovering = False
 
     def read_functions(self):
         self._functions.clear()
@@ -336,11 +337,60 @@ class ParameterTool(ToolWidget):
         Returns:
             Indicator how to proceed with this event after its execution (consume, chain etc.)
         """
+
         offset = 5
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset /= s
+        if event_type == "hover_start":
+            return RESPONSE_CHAIN
+        elif event_type == "hover_end" or event_type == "lost":
+            if self.is_hovering:
+                self.scene.context.signal("statusmsg", "")
+                self.is_hovering = False
+            return RESPONSE_CHAIN
+        elif event_type == "hover":
+            if space_pos is None:
+                return RESPONSE_CHAIN
+            xp = space_pos[0]
+            yp = space_pos[1]
+            w = offset * 4
+            h = offset * 4
 
-        if event_type == "leftdown":
+            message = ""
+            p_idx = -1
+            idx = 0
+            for d_type, d_entry in zip(self.paramtype, self.params):
+                d_entry = self.params[idx]
+                if d_type == 0:
+                    ptx, pty = d_entry
+                    x = ptx - 2 * offset
+                    y = pty - 2 * offset
+                    if x <= xp <= x + w and y <= yp <= y + h:
+                        p_idx = idx
+                        break
+                else:
+                    for slider in self.sliders:
+                        # hh = slider.hit(xp, yp)
+                        # print(f"Check {idx} vs {slider.identifier}: {hh}")
+                        if slider.identifier == idx and slider.hit(xp, yp):
+                            # print(f"Found slider: {slider.identifier}")
+                            p_idx = idx
+                            break
+                    if p_idx >= 0:
+                        break
+
+                idx += 1
+            if p_idx >= 0:
+                if self.mode in self._functions:
+                    info = self._functions[self.mode][1]
+                    if str(p_idx) in info:
+                        gui_info = info[str(p_idx)]
+                        if len(gui_info) > 0:
+                            message = gui_info[0]
+            self.is_hovering = len(message) > 0
+            self.scene.context.signal("statusmsg", message)
+            return RESPONSE_CHAIN
+        elif event_type == "leftdown":
             xp = space_pos[0]
             yp = space_pos[1]
             self.point_index = -1
@@ -428,6 +478,9 @@ class ParameterTool(ToolWidget):
         self.scene.pane.modif_active = False
         self.scene.pane.suppress_selection = False
         self.reset()
+        if self.is_hovering:
+            self.scene.context.signal("statusmsg", "")
+            self.is_hovering = False
         self.scene.context("tool none\n")
 
     def signal(self, signal, *args, **kwargs):
