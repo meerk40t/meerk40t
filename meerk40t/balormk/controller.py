@@ -6,6 +6,7 @@ to the hardware controller.
 """
 
 import struct
+import threading
 import time
 from copy import copy
 
@@ -276,6 +277,7 @@ class GalvoController:
         self._machine_index = 0
 
         self.mode = DRIVER_STATE_RAPID
+        self._list_lock = threading.RLock()
         self._active_list = None
         self._active_index = 0
         self._list_executing = False
@@ -495,7 +497,13 @@ class GalvoController:
     #######################
 
     def _list_end(self):
-        if self._active_list and self._active_index:
+        if not self._active_list or not self._active_index:
+            # Ensure there is a list to end.
+            return
+        with self._list_lock:
+            if not self._active_list or not self._active_index:
+                # Double-gated syntax, make sure there's still that list needing ending.
+                return
             self.wait_ready()
             while self.paused:
                 time.sleep(0.3)
@@ -511,19 +519,21 @@ class GalvoController:
                 self._list_executing = True
 
     def _list_new(self):
-        self._active_list = copy(empty)
-        self._active_index = 0
+        with self._list_lock:
+            self._active_list = copy(empty)
+            self._active_index = 0
 
     def _list_write(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
-        if self._active_index >= 0xC00:
-            self._list_end()
-        if self._active_list is None:
-            self._list_new()
-        index = self._active_index
-        self._active_list[index : index + 12] = struct.pack(
-            "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
-        )
-        self._active_index += 12
+        with self._list_lock:
+            if self._active_index >= 0xC00:
+                self._list_end()
+            if self._active_list is None:
+                self._list_new()
+            index = self._active_index
+            self._active_list[index : index + 12] = struct.pack(
+                "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
+            )
+            self._active_index += 12
 
     def _command(self, command, v1=0, v2=0, v3=0, v4=0, v5=0, read=True):
         cmd = struct.pack(
