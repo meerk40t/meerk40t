@@ -1,5 +1,5 @@
 from copy import copy
-from math import cos, sin, tau
+from math import cos, sin, tau, sqrt
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Node
@@ -258,3 +258,48 @@ class EllipseNode(Node, Stroked):
             SVG_VALUE_NON_SCALING_STROKE if not self.stroke_scale else ""
         )
         return path
+
+    @property
+    def functional_parameter(self):
+        return self.fparam
+
+    @functional_parameter.setter
+    def functional_parameter(self, value):
+        def getit(data, idx, default):
+            if idx < len(data):
+                return data[idx]
+            else:
+                return default
+
+        if isinstance(value, (list, tuple)):
+            self.fparam = value
+            if self.fparam:
+                method = self.fparam[0]
+                if method == "circle":
+                    ncx = getit(self.fparam, 2, self.cx)
+                    ncy = getit(self.fparam, 3, self.cy)
+                    ptx = getit(self.fparam, 5, self.cx + self.rx)
+                    pty = getit(self.fparam, 6, self.cy)
+                    radius = sqrt((ncx - ptx) ** 2 + (ncy - pty) ** 2)
+                    if radius > 0:
+                        self.cx = ncx
+                        self.cy = ncy
+                        self.rx = radius
+                        self.ry = radius
+                        self.altered()
+                elif method == "ellipse":
+                    pt1x = getit(self.fparam, 2, self.cx + self.rx)
+                    pt1y = getit(self.fparam, 3, self.cy)
+                    pt2x = getit(self.fparam, 5, self.cx)
+                    pt2y = getit(self.fparam, 6, self.cy + self.ry)
+                    rx = pt1x - pt2x
+                    ry = pt2y - pt1y
+                    ncx = pt1x - rx
+                    ncy = pt2y - ry
+                    rx = abs(rx)
+                    ry = abs(ry)
+                    self.cx = ncx
+                    self.cy = ncy
+                    self.rx = rx
+                    self.ry = ry
+                    self.altered()
