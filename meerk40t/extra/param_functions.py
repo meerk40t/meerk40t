@@ -11,8 +11,8 @@ def plugin(kernel, lifecycle):
         self = context.elements
         classify_new = self.post_classify
 
-        def create_fractal_tree(first_pt, second_pt, iterations):
-            def tree_fractal(geom, startpt, endpt, depth):
+        def create_fractal_tree(first_pt, second_pt, iterations, ratio):
+            def tree_fractal(geom, startpt, endpt, depth, ratio):
                 #
                 # create a line from startpt to endpt and add it to the geometry
                 if depth < 0:
@@ -25,14 +25,14 @@ def plugin(kernel, lifecycle):
                 # )
                 geom.line(complex(startpt.x, startpt.y), complex(endpt.x, endpt.y))
                 newstart = Point(endpt)
-                newend = Point.polar(endpt, angle - delta, dist * 0.75)
-                tree_fractal(geom, newstart, newend, depth - 1)
-                newend = Point.polar(endpt, angle + delta, dist * 0.75)
-                tree_fractal(geom, newstart, newend, depth - 1)
+                newend = Point.polar(endpt, angle - delta, dist * ratio)
+                tree_fractal(geom, newstart, newend, depth - 1, ratio)
+                newend = Point.polar(endpt, angle + delta, dist * ratio)
+                tree_fractal(geom, newstart, newend, depth - 1, ratio)
 
             geometry = Geomstr()
             # print("create fractal", first_pt, second_pt)
-            tree_fractal(geometry, first_pt, second_pt, iterations)
+            tree_fractal(geometry, first_pt, second_pt, iterations, ratio)
             return geometry
 
         @self.console_argument("sx", type=Length)
@@ -54,6 +54,7 @@ def plugin(kernel, lifecycle):
             post=None,
             **kwargs,
         ):
+            ratio = 0.75
             try:
                 if sx is None:
                     sx = Length("5cm")
@@ -72,7 +73,7 @@ def plugin(kernel, lifecycle):
                 return
             start_pt = Point(ssx, ssy)
             end_pt = Point.polar(start_pt, 0, blen)
-            geom = create_fractal_tree(start_pt, end_pt, iterations)
+            geom = create_fractal_tree(start_pt, end_pt, iterations, ratio)
             node = self.elem_branch.add(type="elem path", geometry=geom)
             node.stroke = self.default_stroke
             node.stroke_width = self.default_strokewidth
@@ -87,6 +88,8 @@ def plugin(kernel, lifecycle):
                 end_pt.y,
                 1,
                 iterations,
+                2,
+                ratio,
             )
             # Newly created! Classification needed?
             post.append(classify_new([node]))
@@ -237,6 +240,7 @@ def plugin(kernel, lifecycle):
             point_a = None
             point_b = None
             iterations = 5
+            ratio = 0.75
             valid = True
             try:
                 param = node.functional_parameter
@@ -254,12 +258,14 @@ def plugin(kernel, lifecycle):
                     point_b = Point(param[5], param[6])
                 if param[7] == 1:
                     iterations = param[8]
+                if param[9] == 2:
+                    ratio = param[10]
             except IndexError:
                 valid = False
             if point_a is None or point_b is None:
                 valid = False
             if valid:
-                geom = create_fractal_tree(point_a, point_b, iterations)
+                geom = create_fractal_tree(point_a, point_b, iterations, ratio)
                 node.geometry = geom
                 node.altered()
 
