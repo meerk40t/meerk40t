@@ -3820,3 +3820,14 @@ icon_kerf_50 = PyEmbeddedImage(
     b"UJgBgqBAIFha2pGz2NGBTKvVZmb+FYKgxMREqVQaEhLMYDAePny4c2exC+fEjo4OLvczAADO"
     b"nImZmpraeUEURf8FcaHqfSGVp/MAAAAASUVORK5CYII="
 )
+
+icons8_pencil_50 = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
+    b"AAABTUlEQVR4nO2ZvUrEQBRGT2GrhaWPIdhrLdqJnT/jvzbb+RzrI2xt4wPYWNgslvsG2lhp"
+    b"oyJklYERhmUSExu/G+6BEEhS3MOXuQlzwXG6sgLcAC/AG3APbGOMXeAT+CocVxhhDhjXSPwc"
+    b"WxhhEXhoELlDmCPgCVhrIfOKKKfANBW5nl2vk3lGXGJQuF+SucaYREkmdrNlDErkMuPUmk1K"
+    b"bACrWWuW4aSDxCA9F7sZ1iWmwDFCHAJVKu6yg8QFQvRC4sAlRPAkrCdxjhAuoUIvkgguIULw"
+    b"JEQInoQIwZMwnsQZQgSXECH0IYl9lxBhL0ui7eZZlX7hZVgA3q1LRDazBRs3mNss7Kbn/o1h"
+    b"NkSpK1JeIjKZmQjNFmtCYinbIS/JmJCI7DSMgavsHD+S0ox+Gc5/pNYsz2Oh+ElqAHHsNY8R"
+    b"bpPMKL1mcc04Dn/jG2ZuF5tGhdokAAAAAElFTkSuQmCC"
+)
