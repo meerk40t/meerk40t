@@ -252,7 +252,7 @@ class ParameterTool(ToolWidget):
 
     def update_parameter(self):
         if self.element is None:
-            return
+            return False
         parameter = [self.mode]
         for d_type, d_data in zip(self.paramtype, self.params):
             parameter.append(d_type)
@@ -264,7 +264,36 @@ class ParameterTool(ToolWidget):
                 parameter.append(newpt[1])
             else:
                 parameter.append(d_data)
-        self.element.functional_parameter = parameter
+        changes = False
+        old_parameter = self.element.functional_parameter
+        if len(parameter) != len(old_parameter):
+            changes = True
+        else:
+            for np, op in zip(parameter, old_parameter):
+                if np != op:
+                    changes = True
+                    break
+        if changes:
+            self.element.functional_parameter = parameter
+        return changes
+
+    def sync_parameter(self):
+        if self.element is None:
+            return
+        param = self.element.functional_parameter
+        idx = 1
+        p_idx = 0
+        while idx < len(param):
+            # self.paramtype[p_idx] = param[idx]
+            if param[idx] == 0:
+                pt = (param[idx + 1], param[idx + 2])
+                new_pt = self.element.matrix.point_in_matrix_space(pt)
+                self.params[p_idx] = new_pt
+                idx += 1
+            else:
+                self.params[p_idx] = param[idx + 1]
+            p_idx += 1
+            idx += 2
 
     def process_draw(self, gc: wx.GraphicsContext):
         """
@@ -354,16 +383,16 @@ class ParameterTool(ToolWidget):
                 # We need to reverse the point in the element matrix
                 pt = (space_pos[0], space_pos[1])
                 self.params[self.point_index] = pt
-                self.update_parameter()
-                if self.mode in self._functions:
-                    # print(f"Update after pt for {self.mode}: {self.params}")
-                    func = self._functions[self.mode][0]
-                    if func is not None:
-                        func(self.element)
-                else:
-                    # print(f"No Routine for {self.mode}")
-                    pass
-                self.scene.refresh_scene()
+                if self.update_parameter():
+                    if self.mode in self._functions:
+                        # print(f"Update after pt for {self.mode}: {self.params}")
+                        func = self._functions[self.mode][0]
+                        if func is not None:
+                            func(self.element)
+                            self.sync_parameter()
+                    else:
+                        self.sync_parameter()
+                    self.scene.refresh_scene()
             elif self.slider_index >= 0:
                 if self.active_slider is not None:
                     self.active_slider.update_according_to_pos(
@@ -374,17 +403,17 @@ class ParameterTool(ToolWidget):
                         # Percentage
                         value /= 100.0
                     self.params[self.slider_index] = value
-                    self.update_parameter()
-                    if self.mode in self._functions:
-                        # print(f"Update after slide for {self.mode}: {self.params}")
-                        func = self._functions[self.mode][0]
-                        if func is not None:
-                            func(self.element)
-                    else:
-                        # print(f"No Routine for {self.mode}")
-                        pass
-                    self.scene.refresh_scene()
-                    # print("Done")
+                    if self.update_parameter():
+                        if self.mode in self._functions:
+                            # print(f"Update after slide for {self.mode}: {self.params}")
+                            func = self._functions[self.mode][0]
+                            if func is not None:
+                                func(self.element)
+                                self.sync_parameter()
+                        else:
+                            # print(f"No Routine for {self.mode}")
+                            self.sync_parameter()
+                        self.scene.refresh_scene()
             return RESPONSE_CONSUME
         elif event_type == "leftup":
             return RESPONSE_CONSUME

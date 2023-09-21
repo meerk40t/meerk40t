@@ -261,7 +261,7 @@ class EllipseNode(Node, Stroked):
 
     @property
     def functional_parameter(self):
-        return self.fparam
+        return self.mkparam
 
     @functional_parameter.setter
     def functional_parameter(self, value):
@@ -272,14 +272,14 @@ class EllipseNode(Node, Stroked):
                 return default
 
         if isinstance(value, (list, tuple)):
-            self.fparam = value
-            if self.fparam:
-                method = self.fparam[0]
+            self.mkparam = value
+            if self.mkparam:
+                method = self.mkparam[0]
                 if method == "circle":
-                    ncx = getit(self.fparam, 2, self.cx)
-                    ncy = getit(self.fparam, 3, self.cy)
-                    ptx = getit(self.fparam, 5, self.cx + self.rx)
-                    pty = getit(self.fparam, 6, self.cy)
+                    ncx = getit(self.mkparam, 2, self.cx)
+                    ncy = getit(self.mkparam, 3, self.cy)
+                    ptx = getit(self.mkparam, 5, self.cx + self.rx)
+                    pty = getit(self.mkparam, 6, self.cy)
                     radius = sqrt((ncx - ptx) ** 2 + (ncy - pty) ** 2)
                     if radius > 0:
                         self.cx = ncx
@@ -288,10 +288,10 @@ class EllipseNode(Node, Stroked):
                         self.ry = radius
                         self.altered()
                 elif method == "ellipse":
-                    pt1x = getit(self.fparam, 2, self.cx + self.rx)
-                    pt1y = getit(self.fparam, 3, self.cy)
-                    pt2x = getit(self.fparam, 5, self.cx)
-                    pt2y = getit(self.fparam, 6, self.cy + self.ry)
+                    pt1x = getit(self.mkparam, 2, self.cx + self.rx)
+                    pt1y = getit(self.mkparam, 3, self.cy)
+                    pt2x = getit(self.mkparam, 5, self.cx)
+                    pt2y = getit(self.mkparam, 6, self.cy + self.ry)
                     rx = pt1x - pt2x
                     ry = pt2y - pt1y
                     ncx = pt1x - rx

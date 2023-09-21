@@ -1,6 +1,6 @@
 import math
 from meerk40t.core.units import Length
-from meerk40t.svgelements import Point, Angle, Matrix, Path, Polyline
+from meerk40t.svgelements import Point
 from meerk40t.tools.geomstr import Geomstr
 
 
@@ -11,6 +11,186 @@ def plugin(kernel, lifecycle):
         self = context.elements
         classify_new = self.post_classify
 
+        def create_copied_grid(start_pt, node, cols, rows, sdx, sdy):
+            # print(
+            #     f"Create a {cols}x{rows} grid, gap={sdx:.0f} x {sdy:.0f} at ({start_pt.x:.0f}, {start_pt.y:.0f})..."
+            # )
+            geom = Geomstr()
+            try:
+                orggeom = node.as_geometry()
+                bb = orggeom.bbox()
+                width = bb[2] - bb[0]
+                height = bb[3] - bb[1]
+            except AttributeError:
+                return geom
+            x = start_pt.x
+            for scol in range(cols):
+                y = start_pt.y
+                for srow in range(rows):
+                    tempgeom = Geomstr(orggeom)
+                    dx = x - bb[0]
+                    dy = y - bb[1]
+                    # print(f"{scol}x{srow}: translate by {dx:.0f}x{dy:.0f}")
+                    tempgeom.translate(dx, dy)
+                    geom.append(tempgeom)
+                    y += sdy + height
+                x += sdx + width
+            return geom
+
+        @self.console_argument("sx", type=Length)
+        @self.console_argument("sy", type=Length)
+        @self.console_argument("cols", type=int)
+        @self.console_argument("rows", type=int)
+        @self.console_argument("id", type=str)
+        @self.console_option("dx", "x", type=Length, help=_("Horizontal delta"))
+        @self.console_option("dy", "y", type=Length, help=_("Vertical delta"))
+        @context.console_command("pgrid", help=_("pgrid sx, sy, cols, rows, id"))
+        def param_grid(
+            command,
+            channel,
+            _,
+            sx=None,
+            sy=None,
+            cols=None,
+            rows=None,
+            id=None,
+            dx=None,
+            dy=None,
+            post=None,
+            **kwargs,
+        ):
+            try:
+                if sx is None:
+                    sx = Length("0cm")
+                ssx = float(sx)
+                if sy is None:
+                    sy = Length("0cm")
+                ssy = float(sy)
+                if cols is None:
+                    cols = 2
+                if rows is None:
+                    rows = 2
+                if dx is None:
+                    dx = Length("0mm")
+                sdx = float(dx)
+                if dy is None:
+                    dy = Length("0mm")
+                sdy = float(dy)
+            except ValueError:
+                channel("Invalid data provided")
+                return
+            self.validate_ids()
+            found_node = None
+            if id is not None:
+                # We look for such a node, both in elements and regmarks.
+                for node in self.elems():
+                    if node.id == id and hasattr(node, "as_geometry"):
+                        found_node = node
+                        break
+                if found_node is None:
+                    for node in self.regmarks():
+                        if node.id == id and hasattr(node, "as_geometry"):
+                            found_node = node
+                            break
+            if found_node is None:
+                # We try the first selected element
+                for node in self.elems(emphasized=True):
+                    if hasattr(node, "as_geometry"):
+                        id = node.id
+                        found_node = node
+                        break
+            if found_node is None:
+                channel("No matching element found.")
+            start_pt = Point(ssx, ssy)
+            geom = create_copied_grid(start_pt, found_node, cols, rows, sdx, sdy)
+            node = self.elem_branch.add(type="elem path", geometry=geom)
+            bb = geom.bbox()
+            width = bb[2] - bb[0]
+            height = bb[3] - bb[1]
+            node.stroke = self.default_stroke
+            node.stroke_width = self.default_strokewidth
+            node.altered()
+            node.functional_parameter = (
+                "grid",
+                3,
+                id,
+                0,
+                start_pt.x + sdx,
+                start_pt.y,
+                0,
+                start_pt.x + width,
+                start_pt.y + sdy,
+                1,
+                cols,
+                1,
+                rows,
+            )
+            # Newly created! Classification needed?
+            data = [node]
+            post.append(classify_new(data))
+            return "elements", data
+
+        def update_node_grid(node):
+            def getit(param, idx, default):
+                if idx >= len(param):
+                    return default
+                return param[idx]
+
+            my_id = "grid"
+            valid = True
+            try:
+                param = node.functional_parameter
+                if param is None or param[0] != my_id:
+                    valid = False
+            except (AttributeError, IndexError):
+                valid = False
+            if not valid:
+                # Not for me...
+                return
+            nodeid = getit(param, 2, None)
+            if nodeid is None:
+                return
+            found_node = None
+            for e in self.elems():
+                if e.id == nodeid and hasattr(e, "as_geometry"):
+                    found_node = e
+                    break
+            if found_node is None:
+                for e in self.regmarks():
+                    if e.id == nodeid and hasattr(e, "as_geometry"):
+                        found_node = e
+                        break
+            if found_node is None:
+                return
+            bb = node.as_geometry().bbox()
+            start_pt = Point(bb[0], bb[1])
+            sdx = getit(param, 4, bb[0])
+            sdx = sdx - bb[0]
+            sdy = getit(param, 8, bb[3])
+            sdy = sdy - bb[1]
+            cols = getit(param, 10, 1)
+            rows = getit(param, 12, 1)
+            geom = create_copied_grid(start_pt, found_node, cols, rows, sdx, sdy)
+            node.geometry = geom
+            bb = node.as_geometry().bbox()
+            node.functional_parameter = (
+                "grid",
+                3,
+                nodeid,
+                0,
+                bb[0] + sdx,
+                bb[1],
+                0,
+                bb[2],
+                bb[1] + sdy,
+                1,
+                cols,
+                1,
+                rows,
+            )
+            node.altered()
+
+        # --- Fractal Tree
         def create_fractal_tree(first_pt, second_pt, iterations, ratio):
             def tree_fractal(geom, startpt, endpt, depth, ratio):
                 #
@@ -92,148 +272,11 @@ def plugin(kernel, lifecycle):
                 ratio,
             )
             # Newly created! Classification needed?
-            post.append(classify_new([node]))
+            data = [node]
+            post.append(classify_new(data))
             return "elements", data
 
         # --- Routines to update shapes according to saved and updated parameters.
-        def update_node_circle(node):
-            my_id = "circle"
-            center = None
-            point_on_circle = None
-            valid = True
-            try:
-                param = node.functional_parameter
-                if param is None or param[0] != my_id:
-                    valid = False
-            except (AttributeError, IndexError):
-                valid = False
-            if not valid:
-                # Not for me...
-                return
-            try:
-                if param[1] == 0:
-                    center = Point(param[2], param[3])
-                if param[4] == 0:
-                    point_on_circle = Point(param[5], param[6])
-            except IndexError:
-                valid = False
-            if center is None or point_on_circle is None:
-                valid = False
-            if valid:
-                radius = center.distance_to(point_on_circle)
-                if radius > 0:
-                    node.cx = center.x
-                    node.cy = center.y
-                    node.rx = radius
-                    node.ry = radius
-                    node.altered()
-                else:
-                    valid = False
-            if not valid:
-                # Let's reset it
-                node.functional_parameter = (
-                    "circle",
-                    0,
-                    node.cx,
-                    node.cy,
-                    0,
-                    node.cx + math.cos(math.tau * 7 / 8) * node.rx,
-                    node.cy + math.sin(math.tau * 7 / 8) * node.ry,
-                )
-
-        def update_node_rect(node):
-            my_id = "rect"
-            center = None
-            point_on_circle = None
-            valid = True
-            try:
-                param = node.functional_parameter
-                if param is None or param[0] != my_id:
-                    valid = False
-            except (AttributeError, IndexError):
-                valid = False
-            if not valid:
-                # Not for me...
-                return
-            try:
-                if param[1] == 0:
-                    center = Point(param[2], param[3])
-                if param[4] == 0:
-                    point_on_circle = Point(param[5], param[6])
-            except IndexError:
-                valid = False
-            if center is None or point_on_circle is None:
-                valid = False
-            if valid:
-                radius = center.distance_to(point_on_circle)
-                if radius > 0:
-                    node.cx = center.x
-                    node.cy = center.y
-                    node.rx = radius
-                    node.ry = radius
-                    node.altered()
-                else:
-                    valid = False
-            if not valid:
-                # Let's reset it
-                node.functional_parameter = (
-                    "circle",
-                    0,
-                    node.cx,
-                    node.cy,
-                    0,
-                    node.cx + math.cos(math.tau * 7 / 8) * node.rx,
-                    node.cy + math.sin(math.tau * 7 / 8) * node.ry,
-                )
-
-        def update_node_ellipse(node):
-            my_id = "ellipse"
-            point_a = None
-            point_b = None
-            valid = True
-            try:
-                param = node.functional_parameter
-                if param is None or param[0] != my_id:
-                    valid = False
-            except (AttributeError, IndexError):
-                valid = False
-            if not valid:
-                # Not for me...
-                return
-            try:
-                if param[1] == 0:
-                    point_a = Point(param[2], param[3])
-                if param[4] == 0:
-                    point_b = Point(param[5], param[6])
-            except IndexError:
-                valid = False
-            if point_a is None or point_b is None:
-                valid = False
-            if valid:
-                rx = point_a.x - point_b.x
-                ry = point_b.y - point_a.y
-                center = Point(point_a.x - rx, point_b.y - ry)
-                rx = abs(rx)
-                ry = abs(ry)
-                node.cx = center.x
-                node.cy = center.y
-                node.rx = rx
-                node.ry = ry
-                # print(
-                #     f"New: ({node.cx:.0f}, {node.cy:.0f}), rx={node.rx:.0f}, ry={node.ry:.0f}"
-                # )
-                node.altered()
-            if not valid:
-                # Let's reset it
-                node.functional_parameter = (
-                    my_id,
-                    0,
-                    node.cx + node.rx,
-                    node.cy,
-                    0,
-                    node.cx,
-                    node.cy + node.ry,
-                )
 
         def update_node_fractaltree(node):
             my_id = "fractaltree"
@@ -272,7 +315,32 @@ def plugin(kernel, lifecycle):
         # --- end of node update routines
 
         # Let's register them
-        kernel.register("element_update/circle", update_node_circle)
-        kernel.register("element_update/ellipse", update_node_ellipse)
-        kernel.register("element_update/rect", update_node_rect)
-        kernel.register("element_update/fractaltree", update_node_fractaltree)
+        info = (
+            update_node_grid,
+            {
+                "0": ("ID",),
+                "1": ("Horizontal gap",),
+                "2": ("Vertical gap",),
+                "3": ("Columns", 1, 25),
+                "4": ("Rows", 1, 25),
+            },
+        )
+        kernel.register("element_update/grid", info)
+
+        info = (
+            update_node_fractaltree,
+            {
+                "0": ("Startpoint",),
+                "1": ("End of base stem",),
+                "2": ("Iterations", 2, 13),
+                "3": ("Branch length",),
+            },
+        )
+        kernel.register("element_update/fractaltree", info)
+        info = (
+            None,  # Let the node deal with it
+            {
+                "0": ("Rounded corner",),
+            },
+        )
+        kernel.register("element_update/rect", info)

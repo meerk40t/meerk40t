@@ -92,7 +92,7 @@ class Node:
         self._can_update = True
         self._can_remove = True
         self._is_visible = True
-        self.fparam = None
+        self.mkparam = None
         for k, v in kwargs.items():
             if k.startswith("_"):
                 continue
@@ -1182,9 +1182,9 @@ class Node:
 
     @property
     def functional_parameter(self):
-        return self.fparam
+        return self.mkparam
 
     @functional_parameter.setter
     def functional_parameter(self, value):
         if isinstance(value, (list, tuple)):
-            self.fparam = value
+            self.mkparam = value
