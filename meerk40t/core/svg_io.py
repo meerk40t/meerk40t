@@ -439,9 +439,10 @@ class SVGWriter:
                     "stroke_width",
                 )
                 and value is not None
-                and isinstance(value, (str, int, float, complex, list, dict))
+                and isinstance(value, (str, int, float, complex, list, tuple, dict))
             ):
                 subelement.set(key, str(value))
+
         ###############
         # SAVE STROKE
         ###############
