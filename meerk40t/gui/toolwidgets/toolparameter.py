@@ -1,10 +1,11 @@
 import math
+
 import wx
-from meerk40t.gui.scene.sceneconst import (
-    RESPONSE_CHAIN,
-    RESPONSE_CONSUME,
-)
+
+from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
+
+_ = wx.GetTranslation
 
 
 class SimpleSlider:
@@ -12,6 +13,9 @@ class SimpleSlider:
         self.identifier = index
         self._minimum = min(minimum, maximum)
         self._maximum = max(minimum, maximum)
+        if self._minimum == self._maximum:
+            # print("min + max were equal")
+            self._maximum += 1
         self._value = self._minimum
         self.scene = scene
         self.x = x
@@ -80,7 +84,11 @@ class SimpleSlider:
         gc.SetBrush(wx.RED_BRUSH)
         gc.SetPen(wx.RED_PEN)
         gc.DrawEllipse(self.ptx - offset, self.pty - offset, offset * 2, offset * 2)
-        symbol = str(self._value) + self.trailer
+        symbol = str(self._value)
+        if self.trailer:
+            if not self.trailer.startswith("%"):
+                symbol += " "
+            symbol += _(self.trailer)
         font_size = 10 / s
         if font_size < 1.0:
             font_size = 1.0
@@ -190,13 +198,44 @@ class ParameterTool(ToolWidget):
             elif parameters[idx] == 1:
                 self.params.append(parameters[idx + 1])
                 # int, we use a simple slider
-                slider = SimpleSlider(p_idx, self.scene, 1, 15, 0, 0, 100, "")
+                minval = 0
+                maxval = 100
+                info = ""
+                if self.mode in self._functions:
+                    info = self._functions[self.mode][1]
+                    if str(p_idx) in info:
+                        gui_info = info[str(p_idx)]
+                        if len(gui_info) > 0:
+                            info = gui_info[0]
+                        if len(gui_info) > 1:
+                            minval = gui_info[1]
+                        if len(gui_info) > 2:
+                            maxval = gui_info[2]
+                slider = SimpleSlider(
+                    p_idx, self.scene, minval, maxval, 0, 0, 100, info
+                )
                 self.sliders.append(slider)
                 slider.value = parameters[idx + 1]
             elif parameters[idx] == 2:
                 self.params.append(parameters[idx + 1])
                 # percentage, we use a simple slider
-                slider = SimpleSlider(p_idx, self.scene, 0, 100, 0, 0, 100, "%")
+                info = ""
+                minval = 0
+                maxval = 100
+                if self.mode in self._functions:
+                    info = self._functions[self.mode][1]
+                    if str(p_idx) in info:
+                        gui_info = info[str(p_idx)]
+                        if len(gui_info) > 0:
+                            info = gui_info[0]
+                        if len(gui_info) > 1:
+                            minval = gui_info[1]
+                        if len(gui_info) > 2:
+                            maxval = gui_info[2]
+                info = "% " + info
+                slider = SimpleSlider(
+                    p_idx, self.scene, minval, maxval, 0, 0, 100, info
+                )
                 self.sliders.append(slider)
                 slider.value = int(100.0 * parameters[idx + 1])
             else:
@@ -318,16 +357,14 @@ class ParameterTool(ToolWidget):
                 self.update_parameter()
                 if self.mode in self._functions:
                     # print(f"Update after pt for {self.mode}: {self.params}")
-                    func = self._functions[self.mode]
-                    func(self.element)
+                    func = self._functions[self.mode][0]
+                    if func is not None:
+                        func(self.element)
                 else:
                     # print(f"No Routine for {self.mode}")
                     pass
                 self.scene.refresh_scene()
             elif self.slider_index >= 0:
-                # print(
-                #     f"idx={self.slider_index}, type={self.paramtype[self.slider_index]}, value={self.params[self.slider_index]}"
-                # )
                 if self.active_slider is not None:
                     self.active_slider.update_according_to_pos(
                         space_pos[0], space_pos[1]
@@ -336,15 +373,13 @@ class ParameterTool(ToolWidget):
                     if self.paramtype[self.slider_index] == 2:
                         # Percentage
                         value /= 100.0
-                    # print(
-                    #     f"New Value for slider {self.slider_index}, type={self.paramtype[self.slider_index]}: {value} (org={self.active_slider.value})"
-                    # )
                     self.params[self.slider_index] = value
                     self.update_parameter()
                     if self.mode in self._functions:
                         # print(f"Update after slide for {self.mode}: {self.params}")
-                        func = self._functions[self.mode]
-                        func(self.element)
+                        func = self._functions[self.mode][0]
+                        if func is not None:
+                            func(self.element)
                     else:
                         # print(f"No Routine for {self.mode}")
                         pass
