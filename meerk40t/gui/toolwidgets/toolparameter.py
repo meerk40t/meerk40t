@@ -7,6 +7,116 @@ from meerk40t.gui.scene.sceneconst import (
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 
 
+class SimpleSlider:
+    def __init__(self, index, scene, minimum, maximum, x, y, width, trailer):
+        self.identifier = index
+        self._minimum = min(minimum, maximum)
+        self._maximum = max(minimum, maximum)
+        self._value = self._minimum
+        self.scene = scene
+        self.x = x
+        self.y = y
+        self.width = width
+        self.ptx = x
+        self.pty = y
+        self.pt_offset = 5
+        if trailer is None:
+            trailer = ""
+        self.trailer = trailer
+
+    @property
+    def value(self):
+        return self._value
+
+    def update_value_pos(self):
+        self.ptx = int(
+            self.x
+            + self.width
+            * (self._value - self._minimum)
+            / (self._maximum - self._minimum)
+        )
+        self.pty = int(self.y)
+
+    @value.setter
+    def value(self, newval):
+        self._value = min(self._maximum, max(self._minimum, newval))
+        self.update_value_pos()
+
+    def set_position(self, x, y, width):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.update_value_pos()
+
+    def update_according_to_pos(self, x, y):
+        if x < self.x:
+            x = self.x
+        if x > self.x + self.width:
+            x = self.x + self.width
+        newvalue = self._minimum + int(
+            (self._maximum - self._minimum) * (x - self.x) / self.width
+        )
+        # print(f"Update from {self._value} to {newvalue}")
+        self.value = newvalue
+
+    def process_draw(self, gc: wx.GraphicsContext):
+        """
+        Widget-Routine to draw the different elements on the provided GraphicContext
+        """
+        gc.PushState()
+        s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
+        offset = self.pt_offset / s
+        gc.SetPen(wx.LIGHT_GREY_PEN)
+        gc.DrawLines([(self.x, self.y), (self.x + self.width, self.y)])
+        gc.DrawLines(
+            [(self.x, int(self.y - offset / 2)), (self.x, int(self.y + offset / 2))]
+        )
+        gc.DrawLines(
+            [
+                (self.x + self.width, int(self.y - offset / 2)),
+                (self.x + self.width, int(self.y + offset / 2)),
+            ]
+        )
+        gc.SetBrush(wx.RED_BRUSH)
+        gc.SetPen(wx.RED_PEN)
+        gc.DrawEllipse(self.ptx - offset, self.pty - offset, offset * 2, offset * 2)
+        symbol = str(self._value) + self.trailer
+        font_size = 10 / s
+        if font_size < 1.0:
+            font_size = 1.0
+        try:
+            font = wx.Font(
+                font_size,
+                wx.FONTFAMILY_SWISS,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+        except TypeError:
+            font = wx.Font(
+                int(font_size),
+                wx.FONTFAMILY_SWISS,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+        gc.SetFont(font, wx.Colour(red=255, green=0, blue=0))
+        (t_width, t_height) = gc.GetTextExtent(symbol)
+        x = self.x + self.width + offset
+        y = self.y - t_height / 2
+        gc.DrawText(symbol, x, y)
+
+        gc.PopState()
+
+    def hit(self, xpos, ypos):
+        s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
+        offset = self.pt_offset / s
+        inside = bool(abs(self.ptx - xpos) <= offset and abs(self.pty - ypos) <= offset)
+        # print(
+        #     f"{self.identifier}: {inside} (offset={offset:.0f}) <- ({xpos:.0f}, {ypos:.0f}) to (({self.ptx:.0f}, {self.pty:.0f}))\n"
+        #     + f"dx={abs(self.ptx - xpos):.0f}, dy={abs(self.pty - ypos):.0f}"
+        # )
+        return inside
+
+
 class ParameterTool(ToolWidget):
     """
     Parameter Tool displays parameter points and values of selected elements
@@ -18,10 +128,14 @@ class ParameterTool(ToolWidget):
         self.element = None
         self.params = []
         self.paramtype = []
+        self.sliders = []
         self._functions = {}
+        self.active_slider = None
         self.mode = None
-        self._index = -1
+        self.point_index = -1
+        self.slider_index = -1
         self.read_functions()
+        self.pt_offset = 5
 
     def read_functions(self):
         self._functions.clear()
@@ -32,9 +146,27 @@ class ParameterTool(ToolWidget):
     def reset(self):
         self.params.clear()
         self.paramtype.clear()
+        self.sliders.clear()
         self.element = None
         self.mode = None
-        self._index = -1
+        self.point_index = -1
+        self.active_slider = None
+
+    def update_and_draw_sliders(self, gc):
+        if self.element is None:
+            return
+        bb = self.element.bounds
+        if bb is None:
+            return
+        s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
+        offset = self.pt_offset / s
+        width = 100 / s
+        x = bb[0]
+        y = bb[1]
+        for slider in self.sliders:
+            y -= 3 * offset
+            slider.set_position(x, y, width)
+            slider.process_draw(gc)
 
     def establish_parameters(self, node):
         self.reset()
@@ -44,22 +176,38 @@ class ParameterTool(ToolWidget):
         parameters = self.element.functional_parameter
         if parameters is None or len(parameters) < 3:
             return
-        if parameters[0] not in self._functions:
-            print("No function defined...")
-            return
         self.mode = parameters[0].lower()
         idx = 1
+        p_idx = 0
         while idx < len(parameters):
             self.paramtype.append(parameters[idx])
             if parameters[idx] == 0:
-                # point
+                # point, needs to be translated into scene coordinates
                 pt = (parameters[idx + 1], parameters[idx + 2])
-                self.params.append(pt)
+                new_pt = self.element.matrix.point_in_matrix_space(pt)
+                self.params.append(new_pt)
                 idx += 1
+            elif parameters[idx] == 1:
+                self.params.append(parameters[idx + 1])
+                # int, we use a simple slider
+                slider = SimpleSlider(p_idx, self.scene, 1, 15, 0, 0, 100, "")
+                self.sliders.append(slider)
+                slider.value = parameters[idx + 1]
+            elif parameters[idx] == 2:
+                self.params.append(parameters[idx + 1])
+                # percentage, we use a simple slider
+                slider = SimpleSlider(p_idx, self.scene, 0, 100, 0, 0, 100, "%")
+                self.sliders.append(slider)
+                slider.value = int(100.0 * parameters[idx + 1])
             else:
                 self.params.append(parameters[idx + 1])
             idx += 2
-
+            p_idx += 1
+        if parameters[0] not in self._functions:
+            # That's not necessarily a bad thing as some node types don't
+            # need a helper function
+            # print("No function defined...")
+            pass
         self.scene.pane.tool_active = True
         self.scene.pane.modif_active = True
 
@@ -70,8 +218,11 @@ class ParameterTool(ToolWidget):
         for d_type, d_data in zip(self.paramtype, self.params):
             parameter.append(d_type)
             if d_type == 0:
-                parameter.append(d_data[0])
-                parameter.append(d_data[1])
+                # The point coordinates need to be brought back
+                # to the original coordinate system
+                newpt = self.element.matrix.point_in_inverse_space(d_data)
+                parameter.append(newpt[0])
+                parameter.append(newpt[1])
             else:
                 parameter.append(d_data)
         self.element.functional_parameter = parameter
@@ -80,10 +231,10 @@ class ParameterTool(ToolWidget):
         """
         Widget-Routine to draw the different elements on the provided GraphicContext
         """
+        self.update_and_draw_sliders(gc)
         gc.PushState()
-        offset = 5
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
-        offset /= s
+        offset = self.pt_offset / s
         gc.SetPen(wx.RED_PEN)
         gc.SetBrush(wx.RED_BRUSH)
         for ptype, pdata in zip(self.paramtype, self.params):
@@ -124,32 +275,81 @@ class ParameterTool(ToolWidget):
         if event_type == "leftdown":
             xp = space_pos[0]
             yp = space_pos[1]
-            self._index = -1
+            self.point_index = -1
+            self.slider_index = -1
+            self.active_slider = None
             w = offset * 4
             h = offset * 4
             idx = 0
             for d_type, d_entry in zip(self.paramtype, self.params):
+                d_entry = self.params[idx]
+                # print(f"Checking {idx}, {d_type}, {d_entry}")
                 if d_type == 0:
-                    ptx, pty = self.element.matrix.point_in_matrix_space(d_entry)
+                    ptx, pty = d_entry
                     x = ptx - 2 * offset
                     y = pty - 2 * offset
                     if x <= xp <= x + w and y <= yp <= y + h:
-                        self._index = idx
+                        # print("Found point")
+                        self.point_index = idx
                         break
+                else:
+                    for slider in self.sliders:
+                        # hh = slider.hit(xp, yp)
+                        # print(f"Check {idx} vs {slider.identifier}: {hh}")
+                        if slider.identifier == idx and slider.hit(xp, yp):
+                            # print(f"Found slider: {slider.identifier}")
+                            self.slider_index = idx
+                            self.active_slider = slider
+                            break
+                    if self.slider_index >= 0:
+                        break
+
                 idx += 1
+            # print(
+            #     f"Established: {self.point_index}, {self.slider_index}, {self.paramtype}"
+            # )
             return RESPONSE_CONSUME
         elif event_type == "move":
-            if self._index >= 0:
-                self.params[self._index] = (space_pos[0], space_pos[1])
+            # print(f"Move: {self.point_index}, {self.slider_index}")
+            if self.point_index >= 0:
+                # We need to reverse the point in the element matrix
+                pt = (space_pos[0], space_pos[1])
+                self.params[self.point_index] = pt
                 self.update_parameter()
                 if self.mode in self._functions:
-                    print(f"Update for {self.mode}")
+                    # print(f"Update after pt for {self.mode}: {self.params}")
                     func = self._functions[self.mode]
                     func(self.element)
                 else:
-                    print(f"No Routine for {self.mode}")
+                    # print(f"No Routine for {self.mode}")
                     pass
                 self.scene.refresh_scene()
+            elif self.slider_index >= 0:
+                # print(
+                #     f"idx={self.slider_index}, type={self.paramtype[self.slider_index]}, value={self.params[self.slider_index]}"
+                # )
+                if self.active_slider is not None:
+                    self.active_slider.update_according_to_pos(
+                        space_pos[0], space_pos[1]
+                    )
+                    value = self.active_slider.value
+                    if self.paramtype[self.slider_index] == 2:
+                        # Percentage
+                        value /= 100.0
+                    # print(
+                    #     f"New Value for slider {self.slider_index}, type={self.paramtype[self.slider_index]}: {value} (org={self.active_slider.value})"
+                    # )
+                    self.params[self.slider_index] = value
+                    self.update_parameter()
+                    if self.mode in self._functions:
+                        # print(f"Update after slide for {self.mode}: {self.params}")
+                        func = self._functions[self.mode]
+                        func(self.element)
+                    else:
+                        # print(f"No Routine for {self.mode}")
+                        pass
+                    self.scene.refresh_scene()
+                    # print("Done")
             return RESPONSE_CONSUME
         elif event_type == "leftup":
             return RESPONSE_CONSUME
