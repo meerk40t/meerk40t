@@ -66,7 +66,7 @@ STRING_PARAMETERS = (
 
 COLOR_PARAMETERS = ("color", "line_color")
 
-LIST_PARAMETERS = ("allowed_attributes", "mkparam")
+LIST_PARAMETERS = ("allowed_attributes", )
 
 
 class Parameters:
@@ -621,11 +621,3 @@ class Parameters:
     @output_message.setter
     def output_message(self, value):
         self.settings["output_message"] = value
-
-    @property
-    def mkparam(self):
-        return self.settings.get("mkparam", None)
-
-    @mkparam.setter
-    def mkparam(self, value):
-        self.settings["mkparam"] = value
