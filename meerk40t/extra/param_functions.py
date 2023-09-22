@@ -332,19 +332,19 @@ def plugin(kernel, lifecycle):
             density,
         ):
             geom = Geomstr()
-            if corners <= 2:
-                # No need to look at side_length parameter as we are considering the radius value as an edge anyway...
-                if startangle is None:
-                    startangle = Angle.parse("0deg")
+            center = Point(cx, cy)
+            if startangle is None:
+                startangle = 0
 
+            if corners <= 2:
                 if corners == 1:
                     geom.point(cx + 1j * cy)
                 if corners == 2:
-                    x = cx + math.cos(startangle.as_radians) * radius
-                    y = cy + math.sin(startangle.as_radians) * radius
+                    x = cx + math.cos(startangle) * radius
+                    y = cy + math.sin(startangle) * radius
                     geom.line(cx + 1j * cy, x + 1j * y)
             else:
-                i_angle = startangle.as_radians
+                i_angle = startangle
                 delta_angle = math.tau / corners
                 ct = 0
                 pts = []
@@ -357,6 +357,9 @@ def plugin(kernel, lifecycle):
                     #    dbg = "inner"
                     thisx = cx + r * math.cos(i_angle)
                     thisy = cy + r * math.sin(i_angle)
+                    # tpoint = center.polar_to(i_angle, r)
+                    # thisx = tpoint.x
+                    # thisy = tpoint.y
                     # print(
                     #    "pt %d, Angle=%.1f: %s radius=%.1f: (%.1f, %.1f)"
                     #    % (j, i_angle / math.pi * 180, dbg, r, thisx, thisy)
@@ -483,13 +486,14 @@ def plugin(kernel, lifecycle):
                 cy = 0
             if radius is None:
                 radius = 0
+            sangle = float(startangle)
             if corners <= 2:
                 # No need to look at side_length parameter as we are considering the radius value as an edge anyway...
                 geom = create_star_shape(
                     cx,
                     cy,
                     corners,
-                    startangle,
+                    sangle,
                     radius,
                     radius_inner,
                     alternate_seq,
@@ -504,6 +508,7 @@ def plugin(kernel, lifecycle):
                 if startangle is None:
                     startangle = Angle.parse("0deg")
 
+                sangle = float(startangle)
                 if alternate_seq is None:
                     if radius_inner is None:
                         alternate_seq = 0
@@ -552,7 +557,7 @@ def plugin(kernel, lifecycle):
                     cx,
                     cy,
                     corners,
-                    startangle,
+                    sangle,
                     radius,
                     radius_inner,
                     alternate_seq,
@@ -594,12 +599,13 @@ def plugin(kernel, lifecycle):
             post.append(classify_new(data))
 
             center = Point(cx, cy)
-            opposing_angle = startangle + math.tau / 2
+            sangle = float(startangle)
+            opposing_angle = sangle + math.tau / 2
             while opposing_angle < 0:
                 opposing_angle += math.tau
             while opposing_angle >= math.tau:
                 opposing_angle -= math.tau
-            first_point = Point.polar(center, startangle, radius)
+            first_point = Point.polar(center, sangle, radius)
             second_point = Point.polar(center, opposing_angle, radius_inner)
             node.functional_parameter = (
                 "star",
@@ -655,6 +661,10 @@ def plugin(kernel, lifecycle):
             startangle = center.angle_to(pt1)
             radius = center.distance_to(pt1)
             radius_inner = center.distance_to(pt2)
+            if alternate_seq < 1:
+                radius_inner = radius
+            if radius_inner == radius:
+                alternate_seq = 0
             if radius == 0:
                 valid = False
             if corners <= 0:
