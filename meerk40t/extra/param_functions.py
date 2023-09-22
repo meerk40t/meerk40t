@@ -1,3 +1,8 @@
+"""
+This module exposes a couple of routines to create shapes,
+that have additional functional parameters set to allow
+parametric editing
+"""
 import math
 from meerk40t.core.units import Length
 from meerk40t.svgelements import Point
