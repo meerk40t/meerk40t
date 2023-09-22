@@ -3649,6 +3649,7 @@ class MeerK40t(MWindow):
         self.context(".laserpath_clear\n")
         self.validate_save()
         kernel.busyinfo.end()
+        self.context("tool none\n")
 
     def clear_and_open(self, pathname):
         self.clear_project()
