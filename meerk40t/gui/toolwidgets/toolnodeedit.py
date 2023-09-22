@@ -77,7 +77,7 @@ class EditTool(ToolWidget):
             "a": (self.append_line, _("Append"), True, True),
             "b": (self.break_path, _("Break"), False, True),
             "j": (self.join_path, _("Join"), False, True),
-            "o": (self.smoothen, _("Smoothen"), False, True),
+            "o": (self.smoothen, _("Smooth"), False, True),
             "z": (self.toggle_close, _("Close path"), True, True),
             "v": (self.smoothen_all, _("Smooth all"), False, True),
             "w": (self.linear_all, _("Line all"), False, True),
@@ -305,7 +305,7 @@ class EditTool(ToolWidget):
                 True,
                 True,
                 False,
-                _("Smoothen transit to adjacent segments"),
+                _("Smooth transit to adjacent segments"),
                 _("Smooth"),
             ],
             "v": [
@@ -313,7 +313,7 @@ class EditTool(ToolWidget):
                 False,
                 True,
                 False,
-                _("Convert all lines into curves and smoothen"),
+                _("Convert all lines into smooth curves"),
                 _("Very smooth"),
             ],
             "z": [
@@ -423,6 +423,7 @@ class EditTool(ToolWidget):
         Parse the element and create a list of dictionaries with relevant information required for display and logic
         """
         self.message = ""
+
         self.element = selected_node
         self.selected_index = None
         self.nodes = []
@@ -467,6 +468,9 @@ class EditTool(ToolWidget):
                 self.path = selected_node.as_path()
             else:
                 return
+            # print(self.path.d(), self.path)
+            self.path.approximate_arcs_with_cubics()
+            # print(self.path.d(), self.path)
             # try:
             # except AttributeError:
             #    return
@@ -476,7 +480,9 @@ class EditTool(ToolWidget):
             # Idx of last point
             l_idx = 0
             for idx, segment in enumerate(self.path):
-                # print (f"{idx}# {type(segment).__name__} - S={segment.start} - E={segment.end}")
+                # print(
+                #     f"{idx}# {type(segment).__name__} - S={segment.start} - E={segment.end}"
+                # )
                 if idx < len(self.path) - 1:
                     next_seg = self.path[idx + 1]
                 else:
@@ -1206,7 +1212,7 @@ class EditTool(ToolWidget):
         """
         Convert all segments of the path that are not cubic Béziers into
         such segments and apply the same smoothen logic as in smoothen(),
-        ie adjust the control points of two neighbouring segemnts
+        ie adjust the control points of two neighbouring segments
         so that the three points
         'prev control2' - 'prev/end=next start' - 'next control1'
         are collinear
@@ -2065,6 +2071,7 @@ class EditTool(ToolWidget):
         Signal routine for stuff that's passed along within a scene,
         does not receive global signals
         """
+        # print(f"Signal: {signal}")
         if signal == "tool_changed":
             if len(args) > 0 and len(args[0]) > 1 and args[0][1] == "edit":
                 selected_node = self.scene.context.elements.first_element(
@@ -2075,5 +2082,13 @@ class EditTool(ToolWidget):
                     self.scene.request_refresh()
                     self.enable_rules()
             return
+        elif signal == "rebuild_tree":
+            selected_node = self.scene.context.elements.first_element(emphasized=True)
+            if selected_node is None:
+                self.done()
+            else:
+                self.calculate_points(selected_node)
+                self.enable_rules()
+            self.scene.request_refresh()
         if self.element is None:
             return

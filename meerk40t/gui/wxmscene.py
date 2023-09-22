@@ -1328,6 +1328,12 @@ class MeerK40tScenePanel(wx.Panel):
         self.context.signal("refresh_tree", nodes)
         self.widget_scene.request_refresh()
 
+    @signal_listener("rebuild_tree")
+    def on_rebuild_tree(self, origin, *args):
+        self.widget_scene._signal_widget(
+            self.widget_scene.widget_root, "rebuild_tree", None
+        )
+
     @signal_listener("theme")
     def on_theme_change(self, origin, theme=None):
         self.scene.signal("theme", theme)
