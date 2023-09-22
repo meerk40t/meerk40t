@@ -289,10 +289,13 @@ class ParameterTool(ToolWidget):
             if param[idx] == 0:
                 pt = (param[idx + 1], param[idx + 2])
                 new_pt = self.element.matrix.point_in_matrix_space(pt)
+                # print(f"sync {p_idx}: {self.params[p_idx]} - {new_pt}")
                 self.params[p_idx] = new_pt
                 idx += 1
             else:
+                # print(f"sync {p_idx}: {self.params[p_idx]} - {param[idx + 1]}")
                 self.params[p_idx] = param[idx + 1]
+
             p_idx += 1
             idx += 2
 

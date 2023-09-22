@@ -13,6 +13,8 @@ from meerk40t.gui.scene.sceneconst import (
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Point, Polygon
 
+_ = wx.GetTranslation
+
 
 class PolygonTool(ToolWidget):
     """
@@ -179,21 +181,25 @@ class PolygonTool(ToolWidget):
                         wx.BRUSHSTYLE_SOLID,
                     )
                 )
+            s = ""
             points = self.calculated_points(True)
-
             gc.StrokeLines(points)
-            total_len = 0
-            for idx in range(1, len(points)):
-                x0 = points[idx][0]
-                y0 = points[idx][1]
-                x1 = points[idx - 1][0]
-                y1 = points[idx - 1][1]
-                total_len += sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0))
-                units = self.scene.context.units_name
-                s = "Pts: {pts}, Len={a}".format(
-                    pts=len(points) - 1,
-                    a=Length(amount=total_len, digits=2, preferred_units=units),
-                )
+            if self.design_mode == 0:
+                total_len = 0
+                for idx in range(1, len(points)):
+                    x0 = points[idx][0]
+                    y0 = points[idx][1]
+                    x1 = points[idx - 1][0]
+                    y1 = points[idx - 1][1]
+                    total_len += sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0))
+                    units = self.scene.context.units_name
+                    s = "Pts: {pts}, Len={a}".format(
+                        pts=len(points) - 1,
+                        a=Length(amount=total_len, digits=2, preferred_units=units),
+                    )
+            else:
+                s = _("Click on the first corner")
+
             self.scene.context.signal("statusmsg", s)
 
     def calculated_points(self, closeit):
@@ -418,4 +424,5 @@ class PolygonTool(ToolWidget):
         self.scene.pane.tool_active = False
         self.point_series = []
         self.mouse_position = None
+
         self.scene.request_refresh()

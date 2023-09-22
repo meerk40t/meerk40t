@@ -376,21 +376,20 @@ class MeerK40tScenePanel(wx.Panel):
                 channel(_("-------"))
                 return
             toolbar = context.lookup("ribbonbar/tools")
-
+            # Reset the edit toolbar
+            if toolbar is not None:
+                toolbar.remove_page("toolcontainer")
+                for pages in toolbar.pages:
+                    pages.visible = True
+                toolbar.validate_current_page()
+                toolbar.apply_enable_rules()
+                toolbar.modified()
             try:
                 if tool == "none":
                     success, response = self.tool_container.set_tool(None)
                     channel(response)
                     if not success:
                         return
-                    # Reset the edit toolbar
-                    if toolbar is not None:
-                        toolbar.remove_page("toolcontainer")
-                        for pages in toolbar.pages:
-                            pages.visible = True
-                        toolbar.validate_current_page()
-                        toolbar.apply_enable_rules()
-                        toolbar.modified()
                 else:
                     success, response = self.tool_container.set_tool(tool.lower())
                     channel(response)
