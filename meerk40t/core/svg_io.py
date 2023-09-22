@@ -439,9 +439,10 @@ class SVGWriter:
                     "stroke_width",
                 )
                 and value is not None
-                and isinstance(value, (str, int, float, complex, list, dict))
+                and isinstance(value, (str, int, float, complex, list, tuple, dict))
             ):
                 subelement.set(key, str(value))
+
         ###############
         # SAVE STROKE
         ###############
@@ -683,10 +684,18 @@ class SVGProcessor:
     def check_for_mk_path_attributes(self, node, element):
         for prop in element.values:
             lc = element.values.get(prop)
-            # print (f"Property: {prop} = {lc}")
             if prop.startswith("mk"):
+                # print (f"Property: {prop} = [{type(lc).__name__}] {lc}")
                 if lc is not None:
                     setattr(node, prop, lc)
+                    # This needs to be done as some node types are not based on Parameters
+                    # and hence would not convert the stringified tuple
+                    if prop == "mkparam" and hasattr(node, "functional_parameter"):
+                        try:
+                            value = ast.literal_eval(lc)
+                            node.functional_parameter = value
+                        except (ValueError, SyntaxError):
+                            pass
 
     def check_for_fill_attributes(self, node, element):
         lc = element.values.get(SVG_ATTR_FILL_RULE)
@@ -880,6 +889,7 @@ class SVGProcessor:
             )
             self.check_for_line_attributes(node, element)
             self.check_for_fill_attributes(node, element)
+            self.check_for_mk_path_attributes(node, element)
             if self.precalc_bbox:
                 # bounds will be done here, paintbounds wont...
                 if element.transform.is_identity():

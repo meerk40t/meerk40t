@@ -60,6 +60,7 @@ from .icons import (  # icons8_replicate_rows_50,
     icons8_oval_50,
     icons8_paste_50,
     icons8_pencil_drawing_50,
+    icons8_finger_50,
     icons8_place_marker_50,
     icons8_point_50,
     icons8_polygon_50,
@@ -1039,6 +1040,19 @@ class MeerK40t(MWindow):
         #     },
         # )
         kernel.register(
+            "button/tools/Parameter",
+            {
+                "label": _("Parametric Edit"),
+                "icon": icons8_finger_50,
+                "tip": _("Parametric edit of a shape"),
+                "action": lambda v: kernel.elements("tool parameter\n"),
+                "group": "tool",
+                "size": bsize_normal,
+                "identifier": "paramedit",
+                "rule_enabled": lambda cond: contains_a_param(),
+            },
+        )
+        kernel.register(
             "button/tools/Nodeeditor",
             {
                 "label": _("Node Edit"),
@@ -1322,6 +1336,14 @@ class MeerK40t(MWindow):
                 "identifier": "measure",
             },
         )
+
+        def contains_a_param():
+            result = False
+            for e in kernel.elements.elems(emphasized=True):
+                if e.functional_parameter is not None:
+                    result = True
+                    break
+            return result
 
         def contains_a_path():
             result = False
@@ -3627,6 +3649,7 @@ class MeerK40t(MWindow):
         self.context(".laserpath_clear\n")
         self.validate_save()
         kernel.busyinfo.end()
+        self.context("tool none\n")
 
     def clear_and_open(self, pathname):
         self.clear_project()

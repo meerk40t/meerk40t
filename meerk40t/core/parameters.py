@@ -66,7 +66,7 @@ STRING_PARAMETERS = (
 
 COLOR_PARAMETERS = ("color", "line_color")
 
-LIST_PARAMETERS = ("allowed_attributes",)
+LIST_PARAMETERS = ("allowed_attributes", )
 
 
 class Parameters:

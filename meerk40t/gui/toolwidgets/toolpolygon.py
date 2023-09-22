@@ -2,7 +2,7 @@ from math import sin, sqrt, tan, tau
 
 import wx
 
-from meerk40t.core.units import Length
+from meerk40t.core.units import Length, Angle
 from meerk40t.gui.icons import STD_ICON_SIZE, PyEmbeddedImage, icons8_polygon_50
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
@@ -12,6 +12,8 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Point, Polygon
+
+_ = wx.GetTranslation
 
 
 class PolygonTool(ToolWidget):
@@ -179,21 +181,25 @@ class PolygonTool(ToolWidget):
                         wx.BRUSHSTYLE_SOLID,
                     )
                 )
+            s = ""
             points = self.calculated_points(True)
-
             gc.StrokeLines(points)
-            total_len = 0
-            for idx in range(1, len(points)):
-                x0 = points[idx][0]
-                y0 = points[idx][1]
-                x1 = points[idx - 1][0]
-                y1 = points[idx - 1][1]
-                total_len += sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0))
-                units = self.scene.context.units_name
-                s = "Pts: {pts}, Len={a}".format(
-                    pts=len(points) - 1,
-                    a=Length(amount=total_len, digits=2, preferred_units=units),
-                )
+            if self.design_mode == 0:
+                total_len = 0
+                for idx in range(1, len(points)):
+                    x0 = points[idx][0]
+                    y0 = points[idx][1]
+                    x1 = points[idx - 1][0]
+                    y1 = points[idx - 1][1]
+                    total_len += sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0))
+                    units = self.scene.context.units_name
+                    s = "Pts: {pts}, Len={a}".format(
+                        pts=len(points) - 1,
+                        a=Length(amount=total_len, digits=2, preferred_units=units),
+                    )
+            else:
+                s = _("Click on the first corner")
+
             self.scene.context.signal("statusmsg", s)
 
     def calculated_points(self, closeit):
@@ -201,191 +207,84 @@ class PolygonTool(ToolWidget):
         if self.mouse_position is not None:
             pos = self.angled(self.mouse_position)
             points.append(pos)
-        tx = 0
-        ty = 0
-        tc = 0
-        for pt in points:
-            tc += 1
-            tx += pt[0]
-            ty += pt[1]
-        if tc > 0:
-            cx = tx / tc
-            cy = ty / tc
+        tc = len(points)
         if self.design_mode == 0:
             pass
         elif self.design_mode == 1:
             number_points = tc
             if number_points > 2:
-                point0 = Point(points[0])
-                pcenter = Point(points[-1])
-                radius = pcenter.distance_to(point0)
-                if radius < 5000:
-                    pcenter = Point(cx, cy)
-                    radius = pcenter.distance_to(point0)
-                angle = pcenter.angle_to(point0) + tau / number_points
-                point1 = pcenter.polar(pcenter, angle, radius)
-                points[1] = [point1.x, point1.y]
-                dx = points[1][0] - points[0][0]
-                dy = points[1][1] - points[0][1]
-                baseline = sqrt(dx * dx + dy * dy)
-                apothem = baseline / (2 * tan(tau / (2 * number_points)))
-                circumradius = baseline / (2 * sin(tau / (2 * number_points)))
-                midpoint = Point(points[0][0] + 0.5 * dx, points[0][1] + 0.5 * dy)
-                ax = 0
-                ay = 0
-                for pt in points:
-                    ax += pt[0]
-                    ay += pt[1]
-                ax /= number_points
-                ay /= number_points
-                # The arithmetic center (ax, ay) indicates to which
-                # 'side' of the baseline the polygon needs to be constructed
-                arithmetic_center = Point(ax, ay)
-                # mk_debug_point(ax, ay, "green")
-                angle = point0.angle_to(points[1])
-                midangle = midpoint.angle_to(arithmetic_center)
-                angle += tau / 4
-                first_point = Point.polar(midpoint, angle, apothem)
-                second_point = Point.polar(midpoint, angle + tau / 2, apothem)
-                deltaangle = tau / number_points
-                d1 = arithmetic_center.distance_to(first_point)
-                d2 = arithmetic_center.distance_to(second_point)
-                if d1 < d2:
-                    center_point = Point(first_point)
-                else:
-                    center_point = Point(second_point)
-                # mk_debug_point(center_point.x, center_point.y, "red")
-
-                if center_point.angle_to(point0) > center_point.angle_to(point1):
-                    deltaangle *= -1
-                angle = center_point.angle_to(point0)
-                for idx in range(number_points):
-                    # if idx > 1:
-                    pt = Point.polar(center_point, angle, circumradius)
-                    points[idx] = (pt.x, pt.y)
-                    angle += deltaangle
+                # We have now enough information to create a regular polygon
+                # The first point is the center, the second point defines
+                # the start point, we just assume it's a regular triangle
+                # and hand over to another tool to let the user refine it
+                pt1 = Point(points[0])
+                pt2 = Point(points[1])
+                # print(
+                #     f"p1=({Length(pt1.x).length_mm}, {Length(pt1.y).length_mm}), p2=({Length(pt2.x).length_mm}, {Length(pt2.y).length_mm})"
+                # )
+                radius = pt1.distance_to(pt2)
+                startangle = pt1.angle_to(pt2)
+                corners = 3
+                command = f"shape {corners} {Length(pt1.x).length_mm} {Length(pt1.y).length_mm}"
+                command += f" {Length(radius).length_mm} -s {Angle(startangle, digits=2).angle_degrees}\n"
+                # print(command)
+                self.scene.context(command)
+                selected_node = self.scene.context.elements.first_element(
+                    emphasized=True
+                )
+                if selected_node is not None:
+                    self.end_tool()
+                    self.scene.context("tool parameter\n")
         elif self.design_mode == 2:
             number_points = tc
             if number_points > 2:
-                point0 = Point(points[0])
-                pcenter = Point(points[-1])
-                pinner = Point(points[-2])
-                radius_inner = pcenter.distance_to(pinner)
-                radius = pcenter.distance_to(point0)
-                if radius < 5000:
-                    pcenter = Point(cx, cy)
-                    radius = pcenter.distance_to(point0)
-                angle = pcenter.angle_to(point0) + tau / number_points
-                point1 = pcenter.polar(pcenter, angle, radius)
-                points[1] = [point1.x, point1.y]
-                dx = points[1][0] - points[0][0]
-                dy = points[1][1] - points[0][1]
-                baseline = sqrt(dx * dx + dy * dy)
-                apothem = baseline / (2 * tan(tau / (2 * number_points)))
-                circumradius = baseline / (2 * sin(tau / (2 * number_points)))
-                midpoint = Point(points[0][0] + 0.5 * dx, points[0][1] + 0.5 * dy)
-                ax = 0
-                ay = 0
-                for pt in points:
-                    ax += pt[0]
-                    ay += pt[1]
-                ax /= number_points
-                ay /= number_points
-                # The arithmetic center (ax, ay) indicates to which
-                # 'side' of the baseline the polygon needs to be constructed
-                arithmetic_center = Point(ax, ay)
-                # mk_debug_point(ax, ay, "green")
-                angle = point0.angle_to(points[1])
-                midangle = midpoint.angle_to(arithmetic_center)
-                angle += tau / 4
-                first_point = Point.polar(midpoint, angle, apothem)
-                second_point = Point.polar(midpoint, angle + tau / 2, apothem)
-                deltaangle = tau / (2 * number_points)
-                d1 = arithmetic_center.distance_to(first_point)
-                d2 = arithmetic_center.distance_to(second_point)
-                if d1 < d2:
-                    center_point = Point(first_point)
-                else:
-                    center_point = Point(second_point)
-                # mk_debug_point(center_point.x, center_point.y, "red")
-
-                if center_point.angle_to(point0) > center_point.angle_to(point1):
-                    deltaangle *= -1
-                angle = center_point.angle_to(point0)
-                points = []
-                for idx in range(2 * number_points):
-                    if idx % 2 == 0:
-                        radius = circumradius
-                    else:
-                        radius = radius_inner
-                    # if idx > 1:
-                    pt = Point.polar(center_point, angle, radius)
-                    points.append((pt.x, pt.y))
-                    angle += deltaangle
+                # We have now enough information to create a star shape
+                # The first point is the center, the second point defines
+                # the start point, we just provide a good looking example
+                # and hand over to another tool
+                pt1 = Point(points[0])
+                pt2 = Point(points[1])
+                radius = pt1.distance_to(pt2)
+                startangle = pt1.angle_to(pt2)
+                corners = 16
+                inner = radius * 0.5
+                command = (
+                    f"shape {corners} {Length(pt1.x).length_mm} {Length(pt1.y).length_mm}"
+                    + f" {Length(radius).length_mm} -s {Angle(startangle, digits=2).angle_degrees}"
+                    + f" -r {Length(inner).length_mm}\n"
+                )
+                self.scene.context(command)
+                selected_node = self.scene.context.elements.first_element(
+                    emphasized=True
+                )
+                if selected_node is not None:
+                    self.end_tool()
+                    self.scene.context("tool parameter\n")
         elif self.design_mode == 3:
             number_points = tc
-            if number_points > 1:
-                point0 = Point(points[0])
-                pcenter = Point(points[-1])
-                radius = pcenter.distance_to(point0)
-                if radius < 5000:
-                    pcenter = Point(cx, cy)
-                    radius = pcenter.distance_to(point0)
-                angle = pcenter.angle_to(point0) + tau / number_points
-                point1 = pcenter.polar(pcenter, angle, radius)
-                points[1] = [point1.x, point1.y]
-                dx = points[1][0] - points[0][0]
-                dy = points[1][1] - points[0][1]
-                baseline = sqrt(dx * dx + dy * dy)
-                apothem = baseline / (2 * tan(tau / (2 * number_points)))
-                circumradius = baseline / (2 * sin(tau / (2 * number_points)))
-                midpoint = Point(points[0][0] + 0.5 * dx, points[0][1] + 0.5 * dy)
-                ax = 0
-                ay = 0
-                for pt in points:
-                    ax += pt[0]
-                    ay += pt[1]
-                ax /= number_points
-                ay /= number_points
-                # The arithmetic center (ax, ay) indicates to which
-                # 'side' of the baseline the polygon needs to be constructed
-                arithmetic_center = Point(ax, ay)
-                # mk_debug_point(ax, ay, "green")
-                angle = point0.angle_to(points[1])
-                midangle = midpoint.angle_to(arithmetic_center)
-                angle += tau / 4
-                first_point = Point.polar(midpoint, angle, apothem)
-                second_point = Point.polar(midpoint, angle + tau / 2, apothem)
-                targetlen = 2 * number_points + 1
-                deltaangle = tau / targetlen
-                d1 = arithmetic_center.distance_to(first_point)
-                d2 = arithmetic_center.distance_to(second_point)
-                if d1 < d2:
-                    center_point = Point(first_point)
-                else:
-                    center_point = Point(second_point)
-                # mk_debug_point(center_point.x, center_point.y, "red")
-
-                if center_point.angle_to(point0) > center_point.angle_to(point1):
-                    deltaangle *= -1
-                angle = center_point.angle_to(point0)
-                midpoints = []
-                for idx in range(targetlen):
-                    radius = circumradius
-                    pt = Point.polar(center_point, angle, radius)
-                    midpoints.append((pt.x, pt.y))
-                    angle += deltaangle
-                points = []
-                mid_idx = 0
-                delta = int(targetlen / 2 - self.design_param)
-                while delta < 0:
-                    delta += targetlen
-
-                for idx in range(targetlen):
-                    points.append(midpoints[mid_idx])
-                    mid_idx += delta
-                    while mid_idx >= targetlen:
-                        mid_idx -= targetlen
+            if number_points > 2:
+                # We have now enough information to create a star shape
+                # The first point is the center, the second point defines
+                # the start point, we just provide a good looking example
+                # and hand over to another tool
+                pt1 = Point(points[0])
+                pt2 = Point(points[1])
+                radius = pt1.distance_to(pt2)
+                startangle = pt1.angle_to(pt2)
+                corners = 8
+                density = 5
+                command = (
+                    f"shape {corners} {Length(pt1.x).length_mm} {Length(pt1.y).length_mm}"
+                    + f" {Length(radius).length_mm} -s {Angle(startangle, digits=2).angle_degrees}"
+                    + f" -d {density}\n"
+                )
+                self.scene.context(command)
+                selected_node = self.scene.context.elements.first_element(
+                    emphasized=True
+                )
+                if selected_node is not None:
+                    self.end_tool()
+                    self.scene.context("tool parameter\n")
         # Close the polygon
         if closeit:
             points.append(points[0])
@@ -525,4 +424,5 @@ class PolygonTool(ToolWidget):
         self.scene.pane.tool_active = False
         self.point_series = []
         self.mouse_position = None
+
         self.scene.request_refresh()
