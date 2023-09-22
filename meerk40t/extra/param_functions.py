@@ -4,8 +4,10 @@ that have additional functional parameters set to allow
 parametric editing
 """
 import math
+
 from meerk40t.core.units import Length
-from meerk40t.svgelements import Point
+from meerk40t.kernel import CommandSyntaxError
+from meerk40t.svgelements import Angle, Point, Polygon
 from meerk40t.tools.geomstr import Geomstr
 
 
@@ -15,6 +17,11 @@ def plugin(kernel, lifecycle):
         context = kernel.root
         self = context.elements
         classify_new = self.post_classify
+
+        def getit(param, idx, default):
+            if idx >= len(param):
+                return default
+            return param[idx]
 
         def create_copied_grid(start_pt, node, cols, rows, sdx, sdy):
             # print(
@@ -136,10 +143,6 @@ def plugin(kernel, lifecycle):
             return "elements", data
 
         def update_node_grid(node):
-            def getit(param, idx, default):
-                if idx >= len(param):
-                    return default
-                return param[idx]
 
             my_id = "grid"
             valid = True
@@ -317,7 +320,386 @@ def plugin(kernel, lifecycle):
                 node.geometry = geom
                 node.altered()
 
+        # --- Start like shapes
+        def create_star_shape(
+            cx,
+            cy,
+            corners,
+            startangle,
+            radius,
+            radius_inner,
+            alternate_seq,
+            density,
+        ):
+            geom = Geomstr()
+            if corners <= 2:
+                # No need to look at side_length parameter as we are considering the radius value as an edge anyway...
+                if startangle is None:
+                    startangle = Angle.parse("0deg")
+
+                if corners == 1:
+                    geom.point(cx + 1j * cy)
+                if corners == 2:
+                    x = cx + math.cos(startangle.as_radians) * radius
+                    y = cy + math.sin(startangle.as_radians) * radius
+                    geom.line(cx + 1j * cy, x + 1j * y)
+            else:
+                i_angle = startangle.as_radians
+                delta_angle = math.tau / corners
+                ct = 0
+                pts = []
+                for j in range(corners):
+                    if ct < alternate_seq:
+                        r = radius
+                    #    dbg = "outer"
+                    else:
+                        r = radius_inner
+                    #    dbg = "inner"
+                    thisx = cx + r * math.cos(i_angle)
+                    thisy = cy + r * math.sin(i_angle)
+                    # print(
+                    #    "pt %d, Angle=%.1f: %s radius=%.1f: (%.1f, %.1f)"
+                    #    % (j, i_angle / math.pi * 180, dbg, r, thisx, thisy)
+                    # )
+                    ct += 1
+                    if ct >= 2 * alternate_seq:
+                        ct = 0
+                    if j == 0:
+                        firstx = thisx
+                        firsty = thisy
+                    i_angle += delta_angle
+                    thispt = thisx + 1j * thisy
+                    pts.append(thispt)
+                # Close the path
+                thispt = firstx + 1j * firsty
+                pts.append(thispt)
+
+                if len(pts) > 0:
+
+                    star_points = [pts[0]]
+                    idx = density
+                    hitted = []
+                    while idx != 0:
+                        if idx in hitted:
+                            break
+                        hitted.append(idx)
+                        star_points.append(pts[idx])
+                        idx += density
+                        if idx >= corners:
+                            idx -= corners
+                    for idx in range(1, len(star_points)):
+                        geom.line(star_points[idx - 1], star_points[idx])
+                    geom.line(star_points[-1], star_points[0])
+            # print(f"Created geometry from {len(pts) / 2} pts: {geom.capacity}")
+            return geom
+
+        # Shape (ie star) routine
+        @self.console_argument(
+            "corners", type=int, help=_("Number of corners/vertices")
+        )
+        @self.console_argument(
+            "cx", type=self.length_x, help=_("X-Value of polygon's center")
+        )
+        @self.console_argument(
+            "cy", type=self.length_y, help=_("Y-Value of polygon's center")
+        )
+        @self.console_argument(
+            "radius",
+            type=self.length_x,
+            help=_("Radius (length of side if --side_length is used)"),
+        )
+        @self.console_option("startangle", "s", type=Angle.parse, help=_("Start-Angle"))
+        @self.console_option(
+            "inscribed",
+            "i",
+            type=bool,
+            action="store_true",
+            help=_("Shall the polygon touch the inscribing circle?"),
+        )
+        @self.console_option(
+            "side_length",
+            "l",
+            type=bool,
+            action="store_true",
+            help=_(
+                "Do you want to treat the length value for radius as the length of one edge instead?"
+            ),
+        )
+        @self.console_option(
+            "radius_inner",
+            "r",
+            type=str,
+            help=_("Alternating radius for every other vertex"),
+        )
+        @self.console_option(
+            "alternate_seq",
+            "a",
+            type=int,
+            help=_(
+                "Length of alternating sequence (1 for starlike figures, >=2 for more gear-like patterns)"
+            ),
+        )
+        @self.console_option(
+            "density", "d", type=int, help=_("Amount of vertices to skip")
+        )
+        @self.console_command(
+            "shape",
+            help=_(
+                "shape <corners> <x> <y> <r> <startangle> <inscribed> or shape <corners> <r>"
+            ),
+            input_type=("elements", None),
+            output_type="elements",
+        )
+        def element_shape(
+            command,
+            channel,
+            _,
+            corners,
+            cx,
+            cy,
+            radius,
+            startangle=None,
+            inscribed=None,
+            side_length=None,
+            radius_inner=None,
+            alternate_seq=None,
+            density=None,
+            data=None,
+            post=None,
+            **kwargs,
+        ):
+            if corners is None:
+                raise CommandSyntaxError
+
+            if cx is None:
+                if corners <= 2:
+                    raise CommandSyntaxError(
+                        _(
+                            "Please provide at least one additional value (which will act as radius then)"
+                        )
+                    )
+                cx = 0
+            if cy is None:
+                cy = 0
+            if radius is None:
+                radius = 0
+            if corners <= 2:
+                # No need to look at side_length parameter as we are considering the radius value as an edge anyway...
+                geom = create_star_shape(
+                    cx,
+                    cy,
+                    corners,
+                    startangle,
+                    radius,
+                    radius_inner,
+                    alternate_seq,
+                    density,
+                )
+            else:
+                # do we have something like 'shape 3 4cm' ? If yes, reassign the parameters
+                if radius is None:
+                    radius = cx
+                    cx = 0
+                    cy = 0
+                if startangle is None:
+                    startangle = Angle.parse("0deg")
+
+                if alternate_seq is None:
+                    if radius_inner is None:
+                        alternate_seq = 0
+                    else:
+                        alternate_seq = 1
+
+                if density is None:
+                    density = 1
+                if density < 1 or density > corners:
+                    density = 1
+
+                # Do we have to consider the radius value as the length of one corner?
+                if side_length is not None:
+                    # Let's recalculate the radius then...
+                    # d_oc = s * csc( math.pi / n)
+                    radius = 0.5 * radius / math.sin(math.pi / corners)
+
+                if radius_inner is None:
+                    radius_inner = radius
+                else:
+                    try:
+                        radius_inner = float(
+                            Length(radius_inner, relative_length=radius)
+                        )
+                    except ValueError:
+                        raise CommandSyntaxError
+
+                if inscribed:
+                    if side_length is None:
+                        radius = radius / math.cos(math.pi / corners)
+                    else:
+                        channel(
+                            _(
+                                "You have as well provided the --side_length parameter, this takes precedence, so --inscribed is ignored"
+                            )
+                        )
+
+                if alternate_seq < 1:
+                    radius_inner = radius
+
+                # print(
+                #   "Your parameters are:\n cx=%.1f, cy=%.1f\n radius=%.1f, inner=%.1f\n corners=%d, density=%d\n seq=%d, angle=%.1f"
+                #   % (cx, cy, radius, radius_inner, corners, density, alternate_seq, startangle)
+                # )
+                geom = create_star_shape(
+                    cx,
+                    cy,
+                    corners,
+                    startangle,
+                    radius,
+                    radius_inner,
+                    alternate_seq,
+                    density,
+                )
+                pts = list(geom.as_points())
+                if len(pts) < corners:
+                    ct = 0
+                    possible_combinations = ""
+                    for i in range(corners - 1):
+                        j = i + 2
+                        if math.gcd(j, corners) == 1:
+                            if ct % 3 == 0:
+                                possible_combinations += (
+                                    f"\n shape {corners} ... -d {j}"
+                                )
+                            else:
+                                possible_combinations += (
+                                    f", shape {corners} ... -d {j} "
+                                )
+                            ct += 1
+                    channel(_("Just for info: we have missed a couple of vertices..."))
+                    channel(
+                        _(
+                            "To hit all, the density parameters should be e.g. {combinations}"
+                        ).format(combinations=possible_combinations)
+                    )
+
+            node = self.elem_branch.add(type="elem path", geometry=geom)
+            node.stroke = self.default_stroke
+            node.stroke_width = self.default_strokewidth
+            node.fill = self.default_fill
+            node.altered()
+            node.emphasized = True
+            node.focus()
+
+            data = [node]
+            # Newly created! Classification needed?
+            post.append(classify_new(data))
+
+            center = Point(cx, cy)
+            opposing_angle = startangle + math.tau / 2
+            while opposing_angle < 0:
+                opposing_angle += math.tau
+            while opposing_angle >= math.tau:
+                opposing_angle -= math.tau
+            first_point = Point.polar(center, startangle, radius)
+            second_point = Point.polar(center, opposing_angle, radius_inner)
+            node.functional_parameter = (
+                "star",
+                0,
+                cx,
+                cy,
+                0,
+                first_point.x,
+                first_point.y,
+                0,
+                second_point.x,
+                second_point.y,
+                1,
+                corners,
+                1,
+                alternate_seq,
+                1,
+                density,
+            )
+
+            return "elements", data
+
         # --- end of node update routines
+        def update_node_star_shape(node):
+            my_id = "star"
+            valid = True
+            try:
+                param = node.functional_parameter
+                if param is None or param[0] != my_id:
+                    valid = False
+            except (AttributeError, IndexError):
+                valid = False
+            if not valid:
+                # Not for me...
+                return
+            param = node.functional_parameter
+            if param is None:
+                return
+            cx = getit(param, 2, 0)
+            cy = getit(param, 3, 0)
+            p1x = getit(param, 5, 0)
+            p1y = getit(param, 6, 0)
+            p2x = getit(param, 8, 0)
+            p2y = getit(param, 9, 0)
+            corners = getit(param, 11, 3)
+            alternate_seq = getit(param, 13, 0)
+            density = getit(param, 15, 1)
+            if density < 1 or density > corners:
+                density = 1
+            center = Point(cx, cy)
+            pt1 = Point(p1x, p1y)
+            pt2 = Point(p2x, p2y)
+            startangle = center.angle_to(pt1)
+            radius = center.distance_to(pt1)
+            radius_inner = center.distance_to(pt2)
+            if radius == 0:
+                valid = False
+            if corners <= 0:
+                valid = False
+            if alternate_seq < 0:
+                valid = False
+            if valid:
+                geom = create_star_shape(
+                    cx,
+                    cy,
+                    corners,
+                    startangle,
+                    radius,
+                    radius_inner,
+                    alternate_seq,
+                    density,
+                )
+                node.geometry = geom
+                node.altered()
+                center = Point(cx, cy)
+                opposing_angle = startangle + math.tau / 2
+                while opposing_angle < 0:
+                    opposing_angle += math.tau
+                while opposing_angle >= math.tau:
+                    opposing_angle -= math.tau
+                first_point = Point.polar(center, startangle, radius)
+                second_point = Point.polar(center, opposing_angle, radius_inner)
+                node.functional_parameter = (
+                    "star",
+                    0,
+                    cx,
+                    cy,
+                    0,
+                    first_point.x,
+                    first_point.y,
+                    0,
+                    second_point.x,
+                    second_point.y,
+                    1,
+                    corners,
+                    1,
+                    alternate_seq,
+                    1,
+                    density,
+                )
 
         # Let's register them
         info = (
@@ -342,6 +724,20 @@ def plugin(kernel, lifecycle):
             },
         )
         kernel.register("element_update/fractaltree", info)
+        max_corner_gui = 50
+        info = (
+            update_node_star_shape,
+            {
+                "0": ("Center",),
+                "1": ("Outer radius",),
+                "2": ("Inner radius",),
+                "3": ("Corners", 3, max_corner_gui),
+                "4": ("Alternation", 0, 10),
+                "5": ("Density", 1, max_corner_gui - 1),
+            },
+        )
+        kernel.register("element_update/star", info)
+
         info = (
             None,  # Let the node deal with it
             {
