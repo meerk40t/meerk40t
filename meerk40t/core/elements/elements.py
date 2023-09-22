@@ -6,7 +6,6 @@ several smaller functional pieces like Penbox and Wordlists.
 
 
 import contextlib
-import math
 import os.path
 from copy import copy
 from time import time
