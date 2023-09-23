@@ -1423,6 +1423,19 @@ class Geomstr:
         for i in range(1, len(points)):
             self.line(points[i - 1], points[i], settings=settings)
 
+    def reverse(self):
+        """
+        Reverses geomstr paths. Flipping each segment and the order of the segments.
+
+        This results in a contiguous path going back to front.
+
+        @return: None
+        """
+        # top to bottom, and right to left flips.
+        self.segments[: self.index + 1] = np.flip(
+            self.segments[: self.index + 1], (0, 1)
+        )
+
     #######################
     # Query Properties
     #######################
