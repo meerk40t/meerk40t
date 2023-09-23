@@ -1436,6 +1436,33 @@ class Geomstr:
             self.segments[: self.index + 1], (0, 1)
         )
 
+    @staticmethod
+    def fit_to_points(replacement, p1, p2, flip_x=False, flip_y=False):
+        r = Geomstr(replacement)
+        if flip_x:
+            r.reverse()
+        if flip_y:
+            r.uscale(-1)
+
+        # Get r points.
+        first_point = r.first_point
+        last_point = r.last_point
+
+        # Map first point to 0.
+        r.translate(first_point.real, first_point.imag)
+
+        # Scale distance first->last to distance of p1,p2
+        scaled = abs(p1 - p2) / abs(first_point  - last_point)
+        r.uscale(scaled)
+
+        # rotate angle first->last to the angle of p1-P2
+        delta_angle =  Geomstr.angle(None,p1,p2) - Geomstr.angle(None,first_point, last_point)
+        r.rotate(delta_angle)
+
+        # Map 0 to position of p1
+        r.translate(p1.real, p1.imag)
+        return r.segments[:r.index]
+
     #######################
     # Query Properties
     #######################
