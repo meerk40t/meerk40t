@@ -989,7 +989,7 @@ class TestGeomstr(unittest.TestCase):
         r = q.points_in_polygon(points)
         t2 = time.time() - t
         for p1, p2 in zip(r, mask):
-            assert (bool(p1), bool(p2))
+            assert bool(p1) == bool(p2)
         try:
             print(
                 f"geomstr points in poly took {t2} seconds. Simple Scanline {t1}. Speed-up {t1 / t2}x"
