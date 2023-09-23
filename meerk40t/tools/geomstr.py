@@ -1463,6 +1463,41 @@ class Geomstr:
         r.translate(p1.real, p1.imag)
         return r.segments[:r.index]
 
+
+    def fractal(self, replacement):
+        """
+        Perform line-segment fractal replacement according to the ventrella system.
+
+        http://www.fractalcurves.com/
+
+        Only line segments will be replaced. The start and end points of the geomstr data will
+        be scaled to the correct size and inserted to replace the current line segments.
+
+        These replacements come in 4 flavors according to the values of extra info values of 'a'. If we perform
+        horizontal swaps the positions of a and b will be swapped as well, so `a` and `b` should probably equal each
+        other. The values are [0-3], straight/flat, straight/flipped, backwards/flat, backwards/flipped.
+
+        The replacement data will be applied to every line segment, other segment types will not be affected. The
+        scale distance and angle will be solely based on the start-and-end points of the replacement non-contiguous
+        parts will also be replaced in situ.
+
+        @param replacement: geomstr replacement data for each line segment.
+        @return:
+        """
+        for i in range(self.index, -1, -1):
+            segment = self.segments[i]
+            start, control, info, control2, end = segment
+            if info.real != TYPE_LINE:
+                continue
+            fit = Geomstr.fit_to_points(
+                replacement,
+                start,
+                end,
+                flip_x=bool(int(np.real(control))&1),
+                flip_y=bool(int(np.real(control))&2)
+            )
+            self.replace(i, i, fit)
+
     #######################
     # Query Properties
     #######################
