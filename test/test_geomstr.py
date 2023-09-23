@@ -1139,7 +1139,6 @@ class TestGeomstr(unittest.TestCase):
         gs.append(Geomstr.ellipse(100, 100, 1000, 1000))
         self.assertAlmostEqual(gs.area(density=1000), tau * 100 * 100, delta=1)
 
-
     def test_geomstr_fractal_koch_snowflake(self):
         seed = Geomstr.svg("M0,0 1,0 2,1 3,0 4,0")
         seed.uscale(500)
@@ -1149,6 +1148,27 @@ class TestGeomstr(unittest.TestCase):
             print(koch)
         bounds = koch.bbox()
         draw(list(koch.as_interpolated_points()), *bounds)
+
+    def test_geomstr_fractal_swaps(self):
+        seed = Geomstr.svg("M0,0 h2 v1 l1,-1 h0.1 v1 v-2 v1")
+        design = Geomstr.svg("M0,0 h1 h1 h1 h1")
+        design.segments[0][1] = 0
+        design.segments[0][3] = 0
+        design.segments[1][1] = 1
+        design.segments[1][3] = 1
+        design.segments[2][1] = 2
+        design.segments[2][3] = 2
+        design.segments[3][1] = 3
+        design.segments[3][3] = 3
+        design.uscale(500)
+        design.fractal(seed)
+
+        a, b, c, d = design.bbox()
+        a -= 50
+        b -= 50
+        c += 50
+        d += 50
+        draw(list(design.as_interpolated_points()), a, b, c, d)
 
     # def test_geomstr_hatch(self):
     #     gs = Geomstr.svg(
