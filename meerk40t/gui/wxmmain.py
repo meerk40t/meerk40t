@@ -1048,7 +1048,7 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements("tool parameter\n"),
                 "group": "tool",
                 "size": bsize_normal,
-                "identifier": "paramedit",
+                "identifier": "parameter",
                 "rule_enabled": lambda cond: contains_a_param(),
             },
         )
@@ -1061,7 +1061,7 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements("tool edit\n"),
                 "group": "tool",
                 "size": bsize_normal,
-                "identifier": "nodeedit",
+                "identifier": "edit",
                 "rule_enabled": lambda cond: contains_a_path(),
             },
         )

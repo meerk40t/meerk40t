@@ -2,6 +2,7 @@ from math import sin, sqrt, tan, tau
 
 import wx
 
+from meerk40t.kernel.kernel import Job
 from meerk40t.core.units import Length, Angle
 from meerk40t.gui.icons import STD_ICON_SIZE, PyEmbeddedImage, icons8_polygon_50
 from meerk40t.gui.laserrender import swizzlecolor
@@ -37,19 +38,29 @@ class PolygonTool(ToolWidget):
         # 2 - star polygon
         # 3 - crossing star polygon
         self.design_mode = 0
-        self.design_param = 0
         self.define_buttons()
+        # We need to wait a bit until all things have
+        # been processed by the ribbonbar
+        self._signal_job = Job(
+            process=self.signal_button_once,
+            job_name="polygon-helper",
+            interval=0.5,
+            times=1,
+            run_main=True,
+        )
+        self.scene.context.schedule(self._signal_job)
+
+    def signal_button_once(self):
+        self.set_designmode(self.design_mode)
 
     def set_designmode(self, mode):
         if mode < 0 or mode > 3:
             mode = 0
-        # print(f"Designmode set to {mode}")
         if mode != self.design_mode:
             self.design_mode = mode
-            self.design_param = 0
             self.scene.refresh_scene()
-        else:
-            self.design_param += 1
+        message = ("polygon", f"polygon{self.design_mode + 1}")
+        self.scene.context.signal("tool_changed", message)
 
     def define_buttons(self):
         icon_size = STD_ICON_SIZE
@@ -115,6 +126,8 @@ class PolygonTool(ToolWidget):
                 "tip": "Draw a freehand polygon (f)",
                 "action": lambda v: self.set_designmode(0),
                 "size": icon_size,
+                "group": "polygon",
+                "identifier": "polygon1",
             },
         )
 
@@ -126,6 +139,8 @@ class PolygonTool(ToolWidget):
                 "tip": "Draw a regular polygon (r)",
                 "action": lambda v: self.set_designmode(1),
                 "size": icon_size,
+                "group": "polygon",
+                "identifier": "polygon2",
             },
         )
 
@@ -137,6 +152,8 @@ class PolygonTool(ToolWidget):
                 "tip": "Draw a regular star (1)",
                 "action": lambda v: self.set_designmode(2),
                 "size": icon_size,
+                "group": "polygon",
+                "identifier": "polygon3",
             },
         )
 
@@ -148,6 +165,8 @@ class PolygonTool(ToolWidget):
                 "tip": "Draw a crossing star (2)",
                 "action": lambda v: self.set_designmode(3),
                 "size": icon_size,
+                "group": "polygon",
+                "identifier": "polygon4",
             },
         )
 

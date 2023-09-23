@@ -3,6 +3,7 @@ This module exposes a couple of routines to create shapes,
 that have additional functional parameters set to allow
 parametric editing
 """
+import copy
 import math
 
 from meerk40t.core.units import Length
@@ -284,8 +285,6 @@ def plugin(kernel, lifecycle):
             post.append(classify_new(data))
             return "elements", data
 
-        # --- Routines to update shapes according to saved and updated parameters.
-
         def update_node_fractaltree(node):
             my_id = "fractaltree"
             point_a = None
@@ -320,7 +319,305 @@ def plugin(kernel, lifecycle):
                 node.geometry = geom
                 node.altered()
 
-        # --- Start like shapes
+        # --- Fractal Dragon
+        def create_fractal_dragon(first_pt, second_pt, iterations):
+
+            # Code based on https://github.com/GuidoDipietro/python_art
+            def rotate(t):
+                t[0], t[1] = -1 * t[1], t[0]
+                return t
+
+            def turtle_lines(coords, x, y):
+                turtle_coords = []
+                for i, point in enumerate(coords):
+                    line_coords = [(x, y), (x + point[0], y + point[1])]
+                    x, y = x + point[0], y + point[1]
+                    turtle_coords.append(line_coords)
+                return turtle_coords
+
+            step = first_pt.distance_to(second_pt)
+            origin_x = first_pt.x
+            origin_y = first_pt.y
+
+            # list of moves in x,y axes. Start with (1,0) (straight line to right)
+            moves = [[step, 0]]
+
+            for i in range(0, iterations):
+                copied = list(map(rotate, copy.deepcopy(moves)[::-1]))
+                moves += copied
+
+            dragon_coords = turtle_lines(moves, origin_x, origin_y)
+
+            geometry = Geomstr()
+            for c in dragon_coords:
+                geometry.line(c[0][0] + 1j * c[0][1], c[1][0] + 1j * c[1][1])
+            return geometry
+
+        @self.console_argument("sx", type=Length)
+        @self.console_argument("sy", type=Length)
+        @self.console_argument("step", type=Length)
+        @self.console_argument("iterations", type=int)
+        @context.console_command(
+            "fractal_dragon", help=_("fractal_dragon sx, sy, step, iterations")
+        )
+        def fractal_dragon(
+            command,
+            channel,
+            _,
+            sx=None,
+            sy=None,
+            step=None,
+            iterations=None,
+            data=None,
+            post=None,
+            **kwargs,
+        ):
+            ratio = 0.75
+            try:
+                if sx is None:
+                    sx = Length("5cm")
+                ssx = float(sx)
+                if sy is None:
+                    sy = Length("5cm")
+                ssy = float(sy)
+                if step is None:
+                    step = Length("0.5cm")
+                blen = float(step)
+                if iterations is None:
+                    iterations = 10
+                iterations = int(iterations)
+            except ValueError:
+                channel("Invalid data provided")
+                return
+            start_pt = Point(ssx, ssy)
+            end_pt = Point.polar(start_pt, 0, blen)
+            geom = create_fractal_dragon(start_pt, end_pt, iterations)
+            node = self.elem_branch.add(type="elem path", geometry=geom)
+            node.stroke = self.default_stroke
+            node.stroke_width = self.default_strokewidth
+            node.altered()
+            node.functional_parameter = (
+                "fractaldragon",
+                0,
+                start_pt.x,
+                start_pt.y,
+                0,
+                end_pt.x,
+                end_pt.y,
+                1,
+                iterations,
+            )
+            # Newly created! Classification needed?
+            data = [node]
+            post.append(classify_new(data))
+            return "elements", data
+
+        def update_node_fractaldragon(node):
+            my_id = "fractaldragon"
+            point_a = None
+            point_b = None
+            iterations = 5
+            valid = True
+            try:
+                param = node.functional_parameter
+                if param is None or param[0] != my_id:
+                    valid = False
+            except (AttributeError, IndexError):
+                valid = False
+            if not valid:
+                # Not for me...
+                return
+            try:
+                if param[1] == 0:
+                    point_a = Point(param[2], param[3])
+                if param[4] == 0:
+                    point_b = Point(param[5], param[6])
+                if param[7] == 1:
+                    iterations = param[8]
+            except IndexError:
+                valid = False
+            if point_a is None or point_b is None:
+                valid = False
+            if valid:
+                geom = create_fractal_dragon(point_a, point_b, iterations)
+                node.geometry = geom
+                node.altered()
+                dist = point_a.distance_to(point_b)
+                # Put second pt at right spot
+                point_b = Point(point_a.x + dist, point_a.y)
+
+                node.functional_parameter = (
+                    "fractaldragon",
+                    0,
+                    point_a.x,
+                    point_a.y,
+                    0,
+                    point_b.x,
+                    point_b.y,
+                    1,
+                    iterations,
+                )
+
+        def create_cycloid_shape(cx, cy, r_major, r_minor, rotations):
+            series = []
+            degree_step = 1
+            if rotations == 0:
+                rotations = 20
+
+            radian_step = math.radians(degree_step)
+            t = 0
+            m = math.tau * rotations
+            if r_minor == 0:
+                r_minor = 1
+            count = 0
+            offset = 0
+            while t < m:
+                px = (r_minor + r_major) * math.cos(t) - (r_minor + offset) * math.cos(
+                    ((r_major + r_minor) / r_minor) * t
+                )
+                py = (r_minor + r_major) * math.sin(t) - (r_minor + offset) * math.sin(
+                    ((r_major + r_minor) / r_minor) * t
+                )
+                series.append((px + cx, py + cy))
+                t += radian_step
+                count += 1
+            # print(
+            #     f"Done: {count} steps, major={r_major:.0f}, minor={r_minor:.0f}, offset={offset:.0f}, rot={rotations}"
+            # )
+            geometry = Geomstr()
+            last = None
+            for m in series:
+                if last is not None:
+                    geometry.line(last[0] + 1j * last[1], m[0] + 1j * m[1])
+                last = m
+            return geometry
+
+        @self.console_argument("sx", type=Length)
+        @self.console_argument("sy", type=Length)
+        @self.console_argument("r_major", type=Length)
+        @self.console_argument("r_minor", type=Length)
+        @self.console_argument("iterations", type=int)
+        @context.console_command(
+            "cycloid", help=_("cycloid sx sy r_major r_minor iterations")
+        )
+        def cycloid(
+            command,
+            channel,
+            _,
+            sx=None,
+            sy=None,
+            r_major=None,
+            r_minor=None,
+            iterations=None,
+            data=None,
+            post=None,
+            **kwargs,
+        ):
+            try:
+                if sx is None:
+                    sx = Length("5cm")
+                ssx = float(sx)
+                if sy is None:
+                    sy = Length("5cm")
+                ssy = float(sy)
+                if r_major is None:
+                    r_major = Length("5cm")
+                radius_major = float(r_major)
+                if r_minor is None:
+                    r_minor = Length("3cm")
+                radius_minor = float(r_minor)
+                if iterations is None:
+                    iterations = 20
+                iterations = int(iterations)
+            except ValueError:
+                channel("Invalid data provided")
+                return
+            start_pt = Point(ssx, ssy)
+            point_major = Point(ssx + radius_major, ssy)
+            point_minor = Point(ssx, ssy - radius_minor)
+            geom = create_cycloid_shape(
+                ssx, ssy, radius_major, radius_minor, iterations
+            )
+            node = self.elem_branch.add(type="elem path", geometry=geom)
+            node.label = f"Cycloid {iterations} iterations"
+            node.stroke = self.default_stroke
+            node.stroke_width = self.default_strokewidth
+            node.altered()
+            node.functional_parameter = (
+                "cycloid",
+                0,
+                start_pt.x,
+                start_pt.y,
+                0,
+                point_major.x,
+                point_major.y,
+                0,
+                point_minor.x,
+                point_minor.y,
+                1,
+                iterations,
+            )
+            # Newly created! Classification needed?
+            data = [node]
+            post.append(classify_new(data))
+            return "elements", data
+
+        def update_node_cycloid(node):
+            my_id = "cycloid"
+            valid = True
+            try:
+                param = node.functional_parameter
+                if param is None or param[0] != my_id:
+                    valid = False
+            except (AttributeError, IndexError):
+                valid = False
+            if not valid:
+                # Not for me...
+                return
+            point_c = None
+            point_major = None
+            point_minor = None
+            try:
+                if param[1] == 0:
+                    point_c = Point(param[2], param[3])
+                if param[4] == 0:
+                    point_major = Point(param[5], param[6])
+                if param[7] == 0:
+                    point_minor = Point(param[8], param[9])
+                if param[10] == 1:
+                    iterations = param[11]
+            except IndexError:
+                valid = False
+            if point_c is None or point_major is None or point_minor is None:
+                valid = False
+            if valid:
+                radius_major = point_c.distance_to(point_major)
+                radius_minor = point_c.distance_to(point_minor)
+                ssx = point_c.x
+                ssy = point_c.y
+                geom = create_cycloid_shape(
+                    ssx, ssy, radius_major, radius_minor, iterations
+                )
+                node.geometry = geom
+                node.altered()
+                point_major = Point(ssx + radius_major, ssy)
+                point_minor = Point(ssx, ssy - radius_minor)
+                node.functional_parameter = (
+                    "cycloid",
+                    0,
+                    point_c.x,
+                    point_c.y,
+                    0,
+                    point_major.x,
+                    point_major.y,
+                    0,
+                    point_minor.x,
+                    point_minor.y,
+                    1,
+                    iterations,
+                )
+
+        # --- Star like shapes
         def create_star_shape(
             cx,
             cy,
@@ -734,6 +1031,28 @@ def plugin(kernel, lifecycle):
             },
         )
         kernel.register("element_update/fractaltree", info)
+
+        info = (
+            update_node_fractaldragon,
+            {
+                "0": ("Startpoint",),
+                "1": ("End of base stem",),
+                "2": ("Iterations", 2, 20),
+            },
+        )
+        kernel.register("element_update/fractaldragon", info)
+
+        info = (
+            update_node_cycloid,
+            {
+                "0": ("Startpoint",),
+                "1": ("Major axis",),
+                "2": ("Minor axis",),
+                "3": ("Iterations", 2, 30),
+            },
+        )
+        kernel.register("element_update/cycloid", info)
+
         max_corner_gui = 50
         info = (
             update_node_star_shape,
