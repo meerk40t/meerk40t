@@ -1454,10 +1454,25 @@ class Geomstr:
         First point within the path if said point exists
         @return:
         """
-        if self.index:
-            return self.segments[0, 0]
-        else:
-            return None
+        for i in range(self.index):
+            segment = self.segments[i]
+            if int(segment[2].real) & 0b1000:
+                return segment[0]
+        return None
+
+    @property
+    def last_point(self):
+        """
+        Last point within the path if said point exists
+
+        @return:
+        """
+        for i in range(self.index-1, -1, -1):
+            segment = self.segments[i]
+            if int(segment[2].real) & 0b0001:
+                return segment[4]
+        return None
+
 
     #######################
     # Universal Functions
