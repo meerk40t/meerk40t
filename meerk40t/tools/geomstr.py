@@ -729,7 +729,7 @@ class Geomstr:
         return self.segments
 
     @classmethod
-    def turtle(cls, turtle, n, d = 1.0):
+    def turtle(cls, turtle, n, d=1.0):
         current_pt = 0j
         direction = 0
         turn = math.tau / n
@@ -1477,8 +1477,8 @@ class Geomstr:
             q = np.where(infos == TYPE_LINE)
             c1 = np.real(geoms[q][:, 1]).astype(int) ^ (flags & 0b11)
             c2 = np.real(geoms[q][:, 3]).astype(int) ^ (flags & 0b11)
-            r.segments[q,1] = c1
-            r.segments[q,3] = c2
+            r.segments[q, 1] = c1
+            r.segments[q, 3] = c2
         # Get r points.
         first_point = r.first_point
         last_point = r.last_point
@@ -1491,13 +1491,14 @@ class Geomstr:
         r.uscale(scaled)
 
         # rotate angle first->last to the angle of p1-P2
-        delta_angle = Geomstr.angle(None,p1,p2) - Geomstr.angle(None,first_point, last_point)
+        delta_angle = Geomstr.angle(None, p1, p2) - Geomstr.angle(
+            None, first_point, last_point
+        )
         r.rotate(delta_angle)
 
         # Map 0 to position of p1
         r.translate(p1.real, p1.imag)
         return r
-
 
     def fractal(self, replacement):
         """
@@ -1519,20 +1520,17 @@ class Geomstr:
         @param replacement: geomstr replacement data for each line segment.
         @return:
         """
-        for i in range(self.index-1, -1, -1):
+        for i in range(self.index - 1, -1, -1):
             segment = self.segments[i]
             start, control, info, control2, end = segment
             if info.real != TYPE_LINE:
                 continue
             fit = Geomstr.fit_to_points(
-                replacement,
-                start,
-                end,
-                flags=int(np.real(control))
+                replacement, start, end, flags=int(np.real(control))
             )
             assert abs(fit.first_point - start) < 1e-5
             assert abs(fit.last_point - end) < 1e-5
-            self.replace(i, i, fit.segments[:fit.index])
+            self.replace(i, i, fit.segments[: fit.index])
 
     #######################
     # Query Properties
@@ -1578,12 +1576,11 @@ class Geomstr:
 
         @return:
         """
-        for i in range(self.index-1, -1, -1):
+        for i in range(self.index - 1, -1, -1):
             segment = self.segments[i]
             if int(segment[2].real) & 0b0001:
                 return segment[4]
         return None
-
 
     #######################
     # Universal Functions
