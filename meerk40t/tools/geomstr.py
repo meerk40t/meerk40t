@@ -1463,7 +1463,7 @@ class Geomstr:
         self.segments[: self.index] = np.flip(self.segments[: self.index], (0, 1))
 
     @staticmethod
-    def fit_to_points(replacement, p1, p2, reverse_path=False, rotate_over_axis=False):
+    def fit_to_points(replacement, p1, p2, flags=0):
         r = Geomstr(replacement)
         if reverse_path:
             r.reverse()
