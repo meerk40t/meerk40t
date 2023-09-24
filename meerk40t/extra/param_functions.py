@@ -224,11 +224,25 @@ def plugin(kernel, lifecycle):
             tree_fractal(geometry, first_pt, second_pt, iterations, ratio)
             return geometry
 
+        @self.console_argument("turtle", type=str)
+        @self.console_argument("n", type=int, default=4)
+        @self.console_argument("iterations", type=int, default=5)
+        @context.console_command(
+            "tfractal", help=_("tfractal iterations"), output_type="geometry", hidden=True,
+        )
+        def fractal(command,channel, turtle, n, iterations, **kwargs):
+            seed = Geomstr.turtle(turtle, n)
+            segments = seed.segments
+            base = Geomstr.svg("M0,0 H65535")
+            for i in range(iterations):
+                base.fractal(seed)
+            return "geometry", base
+
         @self.console_argument("svg_path", type=str)
         @self.console_argument("iterations", type=int)
         @self.console_argument("inversions", nargs="*", type=int)
         @context.console_command(
-            "ffractal", help=_("ffractal iterations"), output_type="geometry"
+            "ffractal", help=_("ffractal iterations"), output_type="geometry", hidden=True,
         )
         def fractal(command,channel, svg_path, iterations, inversions, **kwargs):
             seed = Geomstr.svg(svg_path)
