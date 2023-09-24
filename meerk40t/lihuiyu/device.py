@@ -568,7 +568,7 @@ class LihuiyuDevice(Service, ViewPort):
                     list(move_at_speed()),
                     label=f"move {dx} {dy} at {speed}",
                     helper=True,
-                    outline=self.outline_move_relative(dx.length_mil, dy.length_mil),
+                    outline=self.outline_move_relative(dx.mil, dy.mil),
                 )
             else:
                 channel(_("Busy"))
