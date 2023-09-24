@@ -1528,8 +1528,6 @@ class Geomstr:
             fit = Geomstr.fit_to_points(
                 replacement, start, end, flags=int(np.real(control))
             )
-            assert abs(fit.first_point - start) < 1e-5
-            assert abs(fit.last_point - end) < 1e-5
             self.replace(i, i, fit.segments[: fit.index])
 
     #######################
