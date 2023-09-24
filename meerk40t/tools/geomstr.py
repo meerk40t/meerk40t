@@ -53,6 +53,7 @@ this is effectively a point.
 """
 
 import math
+import re
 from copy import copy
 
 import numpy
@@ -729,32 +730,66 @@ class Geomstr:
         return self.segments
 
     @classmethod
-    def turtle(cls, turtle, n, d=1.0):
+    def turtle(cls, turtle, n=4, d=1.0):
+        PATTERN_COMMAWSP = r"[ ,\t\n\x09\x0A\x0C\x0D]+"
+        PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
+        num_parse = [
+            ("DIST", r"[dD]" + PATTERN_FLOAT),
+            ("N", "n" + PATTERN_FLOAT),
+            ("COMMAND", r"[FfBb]"),
+            ("TURN", r"[\+\-LR]"),
+            ("SKIP", PATTERN_COMMAWSP),
+        ]
+        num_re = re.compile("|".join("(?P<%s>%s)" % pair for pair in num_parse))
         current_pt = 0j
         direction = 0
         turn = math.tau / n
         g = cls()
-        for c in turtle:
-            if c == "F":
-                next_pt = Geomstr.polar(None, current_pt, direction, d)
-                g.line(current_pt, next_pt, 0, a=0, b=0)
-                current_pt = next_pt
-            elif c == "f":
-                next_pt = Geomstr.polar(None, current_pt, direction, d)
-                g.line(current_pt, next_pt, 0, a=2, b=2)
-                current_pt = next_pt
-            elif c == "B":
-                next_pt = Geomstr.polar(None, current_pt, direction, d)
-                g.line(current_pt, next_pt, 0, a=1, b=1)
-                current_pt = next_pt
-            elif c == "b":
-                next_pt = Geomstr.polar(None, current_pt, direction, d)
-                g.line(current_pt, next_pt, 0, a=3, b=3)
-                current_pt = next_pt
-            elif c in ("+", "R"):
-                direction += turn
-            elif c in ("-", "L"):
-                direction -= turn
+        pos = 0
+        limit = len(turtle)
+        while pos < limit:
+            match = num_re.match(turtle, pos)
+            if match is None:
+                break  # No more matches.
+            kind = match.lastgroup
+            start = pos
+            pos = match.end()
+            if kind == "SKIP":
+                continue
+            elif kind == "COMMAND":
+                c = match.group()
+                if c == "F":
+                    next_pt = Geomstr.polar(None, current_pt, direction, d)
+                    g.line(current_pt, next_pt, 0, a=0, b=0)
+                    current_pt = next_pt
+                elif c == "f":
+                    next_pt = Geomstr.polar(None, current_pt, direction, d)
+                    g.line(current_pt, next_pt, 0, a=2, b=2)
+                    current_pt = next_pt
+                elif c == "B":
+                    next_pt = Geomstr.polar(None, current_pt, direction, d)
+                    g.line(current_pt, next_pt, 0, a=1, b=1)
+                    current_pt = next_pt
+                elif c == "b":
+                    next_pt = Geomstr.polar(None, current_pt, direction, d)
+                    g.line(current_pt, next_pt, 0, a=3, b=3)
+                    current_pt = next_pt
+            elif kind == "TURN":
+                c = match.group()
+                if c in ("+", "R"):
+                    direction += turn
+                elif c in ("-", "L"):
+                    direction -= turn
+            elif kind == "DIST":
+                value = match.group()
+                d = float(value[1:])
+                c = value[0]
+                if c == "D":
+                    d = math.sqrt(d)
+            elif kind == "N":
+                value = match.group()
+                n = int(float(value[1:]))
+                turn = math.tau / n
         return g
 
     @classmethod
