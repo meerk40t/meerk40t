@@ -729,6 +729,35 @@ class Geomstr:
         return self.segments
 
     @classmethod
+    def turtle(cls, turtle, n, d = 1.0):
+        current_pt = 0j
+        direction = 0
+        turn = math.tau / n
+        g = cls()
+        for c in turtle:
+            if c == "F":
+                next_pt = Geomstr.polar(None, current_pt, direction, d)
+                g.line(current_pt, next_pt, 0, a=0, b=0)
+                current_pt = next_pt
+            elif c == "f":
+                next_pt = Geomstr.polar(None, current_pt, direction, d)
+                g.line(current_pt, next_pt, 0, a=2, b=2)
+                current_pt = next_pt
+            elif c == "B":
+                next_pt = Geomstr.polar(None, current_pt, direction, d)
+                g.line(current_pt, next_pt, 0, a=1, b=1)
+                current_pt = next_pt
+            elif c == "b":
+                next_pt = Geomstr.polar(None, current_pt, direction, d)
+                g.line(current_pt, next_pt, 0, a=3, b=3)
+                current_pt = next_pt
+            elif c in ("+", "R"):
+                direction += turn
+            elif c in ("-", "L"):
+                direction -= turn
+        return g
+
+    @classmethod
     def svg(cls, path_d):
         obj = cls()
         if isinstance(path_d, str):
