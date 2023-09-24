@@ -257,6 +257,12 @@ def plugin(kernel, lifecycle):
                 base.fractal(seed)
             return "geometry", base
 
+        @self.console_option("amount", "a", type=float, help="corner rounding amount", default=0.2)
+        @self.console_command("round_corners", input_type="geometry", output_type="geometry")
+        def round_corners(command, channel, data, amount=0.2, **kwargs):
+            data.round_corners(amount)
+            return "geometry", data
+
         @self.console_argument("svg_path", type=str)
         @self.console_argument("iterations", type=int)
         @self.console_argument("inversions", nargs="*", type=int)
