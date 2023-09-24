@@ -20,9 +20,12 @@ from meerk40t.tools.geomstr import (
 )
 
 
-def draw(segments, min_x, min_y, max_x, max_y, filename="test.png"):
+def draw(segments, min_x, min_y, max_x, max_y, buffer=0, filename="test.png"):
     from PIL import Image, ImageDraw
-
+    min_x -= buffer
+    min_y -= buffer
+    max_x += buffer
+    max_y += buffer
     im = Image.new("RGBA", (int(max_x - min_x) + 1, int(max_y - min_y) + 1), "white")
 
     draw = ImageDraw.Draw(im)
