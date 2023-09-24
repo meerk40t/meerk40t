@@ -1167,6 +1167,10 @@ class TestGeomstr(unittest.TestCase):
             draw(list(design.as_interpolated_points()), *design.bbox(), buffer=50, filename=f"swaps{i}.png")
 
     def test_geomstr_fractal_polya_sweep(self):
+        """
+        http://www.fractalcurves.com/images/2S_triangle_sweep.jpg
+        @return:
+        """
         seed = Geomstr.turtle("f+B", n=4)
         design = Geomstr.turtle("F", n=4)
         design.uscale(500)
@@ -1175,12 +1179,40 @@ class TestGeomstr(unittest.TestCase):
         draw(list(design.as_interpolated_points()), *design.bbox(), buffer=50, filename="polya.png")
 
     def test_geomstr_fractal_terdragon(self):
+        """
+        http://www.fractalcurves.com/images/3T_ter.jpg
+        @return:
+        """
         seed = Geomstr.turtle("F+F-F", n=3, d=math.sqrt(3))
         design = copy(seed)
         design.uscale(500)
         for _ in range(8):
             design.fractal(seed)
         draw(list(design.as_interpolated_points()), *design.bbox(), buffer=50, filename="terdragon.png")
+
+    def test_geomstr_fractal_iterdragon(self):
+        """
+        http://www.fractalcurves.com/images/3T_butterfly.jpg
+        @return:
+        """
+        seed = Geomstr.turtle("b+b-b", n=3, d=math.sqrt(3))
+        design = copy(seed)
+        design.uscale(500)
+        for _ in range(8):
+            design.fractal(seed)
+        draw(list(design.as_interpolated_points()), *design.bbox(), buffer=50, filename="inverted-terdragon.png")
+
+    def test_geomstr_fractal_box(self):
+        """
+        http://www.fractalcurves.com/images/3T_block.jpg
+        @return:
+        """
+        seed = Geomstr.turtle("b+F-b", n=3, d=math.sqrt(3))
+        design = copy(seed)
+        design.uscale(500)
+        for _ in range(8):
+            design.fractal(seed)
+        draw(list(design.as_interpolated_points()), *design.bbox(), buffer=50, filename="box.png")
 
 
     # def test_geomstr_hatch(self):
