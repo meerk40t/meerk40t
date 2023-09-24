@@ -1554,6 +1554,25 @@ class Geomstr:
             self.segments[i][0] = towards1
             self.insert(i, [[towards0, control0, info0, control20, towards1]])
 
+    def bezier_corners(self, amount=0.2):
+        """
+        Round segment corners.
+
+        @return:
+        """
+        for i in range(self.index - 1, 0, -1):
+            previous = self.segments[i - 1]
+            current = self.segments[i]
+            start0, control0, info0, control20, end0 = previous
+            start1, control1, info1, control21, end1 = current
+            if info0.real != TYPE_LINE or info1.real != TYPE_LINE:
+                continue
+            towards0 = Geomstr.towards(None, start0, end0, 1-amount)
+            towards1 = Geomstr.towards(None, start1, end1, amount)
+            self.segments[i-1][4] = towards0
+            self.segments[i][0] = towards1
+            self.insert(i, [[towards0, end0, TYPE_QUAD, start1, towards1]])
+
     def fractal(self, replacement):
         """
         Perform line-segment fractal replacement according to the ventrella system.
