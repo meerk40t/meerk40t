@@ -224,16 +224,35 @@ def plugin(kernel, lifecycle):
             tree_fractal(geometry, first_pt, second_pt, iterations, ratio)
             return geometry
 
-        @self.console_argument("turtle", type=str)
-        @self.console_argument("n", type=int, default=4)
-        @self.console_argument("iterations", type=int, default=5)
+        @self.console_argument("turtle", type=str, help="turtle-path for the fractal seed")
+        @self.console_argument("n", type=int, default=4, help="Angle divisors")
+        @self.console_argument("iterations", type=int, default=5, help="Number of fractal iterations to add")
+        @self.console_option("base", "b", type=str, help="turtle-path for the fractal base")
         @context.console_command(
             "tfractal", help=_("tfractal iterations"), output_type="geometry", hidden=True,
         )
-        def fractal(command,channel, turtle, n, iterations, **kwargs):
+        def fractal(command,channel, turtle, n, iterations, base=None, **kwargs):
+            """
+            Add a turtle fractal to the scene. All fractals are geometry outputs.
+            F - Forward
+            f - Forward (y-flipped)
+            B - Forward (walking backwards)
+            b - Forward(walking backwards, y-flipped).
+            D - Set new distance (units in sqrt of specified value)
+            d - Set new distance (units given)
+            + - Turn right (also R).
+            - - Turn left (also L).
+
+            For example:
+            tfractal F+++D2Fd1-B 8 7 node
+
+            Would produce the Dragon of Eve fractal (iteration=7)
+            """
             seed = Geomstr.turtle(turtle, n)
-            segments = seed.segments
-            base = Geomstr.svg("M0,0 H65535")
+            if base is None:
+                base = Geomstr.svg("M0,0 H65535")
+            else:
+                base = Geomstr.turtle(base, n, d=65535)
             for i in range(iterations):
                 base.fractal(seed)
             return "geometry", base
