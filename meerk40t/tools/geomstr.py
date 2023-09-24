@@ -1423,6 +1423,80 @@ class Geomstr:
         for i in range(1, len(points)):
             self.line(points[i - 1], points[i], settings=settings)
 
+    def reverse(self):
+        """
+        Reverses geomstr paths. Flipping each segment and the order of the segments.
+
+        This results in a contiguous path going back to front.
+
+        @return: None
+        """
+        self.segments[: self.index] = np.flip(self.segments[: self.index], (0, 1))
+
+    @staticmethod
+    def fit_to_points(replacement, p1, p2, reverse_path=False, rotate_over_axis=False):
+        r = Geomstr(replacement)
+        if reverse_path:
+            r.reverse()
+        if rotate_over_axis:
+            r.transform(Matrix.scale(1,-1))
+
+        # Get r points.
+        first_point = r.first_point
+        last_point = r.last_point
+
+        # Map first point to 0.
+        r.translate(-first_point.real, -first_point.imag)
+
+        # Scale distance first->last to distance of p1,p2
+        scaled = abs(p1 - p2) / abs(first_point - last_point)
+        r.uscale(scaled)
+
+        # rotate angle first->last to the angle of p1-P2
+        delta_angle = Geomstr.angle(None,p1,p2) - Geomstr.angle(None,first_point, last_point)
+        r.rotate(delta_angle)
+
+        # Map 0 to position of p1
+        r.translate(p1.real, p1.imag)
+        return r
+
+
+    def fractal(self, replacement):
+        """
+        Perform line-segment fractal replacement according to the ventrella system.
+
+        http://www.fractalcurves.com/
+
+        Only line segments will be replaced. The start and end points of the geomstr data will
+        be scaled to the correct size and inserted to replace the current line segments.
+
+        These replacements come in 4 flavors according to the values of extra info values of 'a'. If we perform
+        horizontal swaps the positions of a and b will be swapped as well, so `a` and `b` should probably equal each
+        other. The values are [0-3], straight/flat, straight/flipped, backwards/flat, backwards/flipped.
+
+        The replacement data will be applied to every line segment, other segment types will not be affected. The
+        scale distance and angle will be solely based on the start-and-end points of the replacement non-contiguous
+        parts will also be replaced in situ.
+
+        @param replacement: geomstr replacement data for each line segment.
+        @return:
+        """
+        for i in range(self.index, -1, -1):
+            segment = self.segments[i]
+            start, control, info, control2, end = segment
+            if info.real != TYPE_LINE:
+                continue
+            fit = Geomstr.fit_to_points(
+                replacement,
+                start,
+                end,
+                reverse_path=bool(int(np.real(control)) & 2),
+                rotate_over_axis=bool(int(np.real(control)) & 1)
+            )
+            assert abs(fit.first_point - start) < 1e-5
+            assert abs(fit.last_point - end) < 1e-5
+            self.replace(i, i, fit.segments[:fit.index])
+
     #######################
     # Query Properties
     #######################
@@ -1454,10 +1528,25 @@ class Geomstr:
         First point within the path if said point exists
         @return:
         """
-        if self.index:
-            return self.segments[0, 0]
-        else:
-            return None
+        for i in range(self.index):
+            segment = self.segments[i]
+            if int(segment[2].real) & 0b1000:
+                return segment[0]
+        return None
+
+    @property
+    def last_point(self):
+        """
+        Last point within the path if said point exists
+
+        @return:
+        """
+        for i in range(self.index-1, -1, -1):
+            segment = self.segments[i]
+            if int(segment[2].real) & 0b0001:
+                return segment[4]
+        return None
+
 
     #######################
     # Universal Functions
