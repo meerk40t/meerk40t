@@ -1465,11 +1465,20 @@ class Geomstr:
     @staticmethod
     def fit_to_points(replacement, p1, p2, flags=0):
         r = Geomstr(replacement)
-        if reverse_path:
-            r.reverse()
-        if rotate_over_axis:
-            r.transform(Matrix.scale(1,-1))
-
+        if flags:
+            if flags & 0b01:
+                # Flip x (reverse order)
+                r.reverse()
+            if flags & 0b10:
+                # Flip y (top-to-bottom)
+                r.transform(Matrix.scale(1, -1))
+            geoms = r.segments
+            infos = np.real(geoms[:, 2]).astype(int)
+            q = np.where(infos == TYPE_LINE)
+            c1 = np.real(geoms[q][:, 1]).astype(int) ^ (flags & 0b11)
+            c2 = np.real(geoms[q][:, 3]).astype(int) ^ (flags & 0b11)
+            r.segments[q,1] = c1
+            r.segments[q,3] = c2
         # Get r points.
         first_point = r.first_point
         last_point = r.last_point
@@ -1510,7 +1519,7 @@ class Geomstr:
         @param replacement: geomstr replacement data for each line segment.
         @return:
         """
-        for i in range(self.index, -1, -1):
+        for i in range(self.index-1, -1, -1):
             segment = self.segments[i]
             start, control, info, control2, end = segment
             if info.real != TYPE_LINE:
@@ -1519,8 +1528,7 @@ class Geomstr:
                 replacement,
                 start,
                 end,
-                reverse_path=bool(int(np.real(control)) & 2),
-                rotate_over_axis=bool(int(np.real(control)) & 1)
+                flags=int(np.real(control))
             )
             assert abs(fit.first_point - start) < 1e-5
             assert abs(fit.last_point - end) < 1e-5
