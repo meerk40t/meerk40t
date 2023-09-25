@@ -156,6 +156,10 @@ class Length:
             self._amount = scale * amount
             if preferred_units is None:
                 preferred_units = units
+        else:
+            # amount is only ever a number.
+            if not isinstance(amount, (float, int)):
+                raise ValueError("Amount must be an number.")
         if preferred_units is None:
             preferred_units = ""
         if preferred_units == "inch" or preferred_units == "inches":
