@@ -42,6 +42,10 @@ class RuidaControl:
             "[red]WARNING: [blue]Non-horizontal rasters may not work well.[normal]",
             ansi=True,
         )
+        channel(
+            "[red]WARNING: [blue]Cuts are expected below 80mm/s. Rasters above that speed.[normal]",
+            ansi=True,
+        )
         _ = channel._
         try:
             r2m = root.open_as("module/UDPServer", "rd2mk", port=50200)
