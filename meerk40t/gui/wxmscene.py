@@ -1,3 +1,4 @@
+import math
 import platform
 import random
 import time
@@ -1296,6 +1297,7 @@ class MeerK40tScenePanel(wx.Panel):
         self.request_refresh(origin)
 
     def request_refresh(self, *args):
+        Length.units_per_spx = 1 / (96.0 * abs(math.sqrt(self.widget_scene.widget_root.scene_widget.matrix.determinant)))
         self.widget_scene.request_refresh(*args)
 
     @signal_listener("altered")
