@@ -131,7 +131,7 @@ class LaserPanel(wx.Panel):
         self.button_start.SetToolTip(_("Execute the Job"))
         self.button_start.SetBitmap(icons8_gas_industry_50.GetBitmap(resize=25))
         self.button_start.SetBackgroundColour(wx.Colour(0, 127, 0))
-        sizer_control.Add(self.button_start, 1, 0, 0)
+        sizer_control.Add(self.button_start, 1, wx.EXPAND, 0)
 
         self.button_pause = wx.Button(self, wx.ID_ANY, _("Pause"))
         self.button_pause.SetForegroundColour(wx.BLACK)  # Dark Mode correction.
@@ -140,34 +140,34 @@ class LaserPanel(wx.Panel):
             icons8_pause_50.GetBitmap(resize=25, use_theme=False)
         )
         self.button_pause.SetBackgroundColour(wx.Colour(255, 255, 0))
-        sizer_control.Add(self.button_pause, 1, 0, 0)
+        sizer_control.Add(self.button_pause, 1, wx.EXPAND, 0)
 
         self.button_stop = wx.Button(self, wx.ID_ANY, _("Stop"))
         self.button_stop.SetToolTip(_("Stop the laser"))
         self.button_stop.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(resize=25))
         self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
-        sizer_control.Add(self.button_stop, 1, 0, 0)
+        sizer_control.Add(self.button_stop, 1, wx.EXPAND, 0)
 
         sizer_control_misc = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control_misc, 0, wx.EXPAND, 0)
 
         self.arm_toggle = wx.ToggleButton(self, wx.ID_ANY, _("Arm"))
         self.arm_toggle.SetToolTip(_("Arm the job for execution"))
-        sizer_control_misc.Add(self.arm_toggle, 1, wx.ALIGN_CENTER, 0)
+        sizer_control_misc.Add(self.arm_toggle, 1, wx.EXPAND, 0)
 
         self.check_laser_arm()
 
         self.button_outline = wx.Button(self, wx.ID_ANY, _("Outline"))
         self.button_outline.SetToolTip(_("Trace the outline the job"))
         self.button_outline.SetBitmap(icons8_pentagon_50.GetBitmap(resize=25))
-        sizer_control_misc.Add(self.button_outline, 1, 0, 0)
+        sizer_control_misc.Add(self.button_outline, 1, wx.EXPAND, 0)
 
         self.button_simulate = wx.Button(self, wx.ID_ANY, _("Simulate"))
         self.button_simulate.SetToolTip(_("Simulate the Design"))
         self.button_simulate.SetBitmap(
             icons8_laser_beam_hazard2_50.GetBitmap(resize=25)
         )
-        sizer_control_misc.Add(self.button_simulate, 1, 0, 0)
+        sizer_control_misc.Add(self.button_simulate, 1, wx.EXPAND, 0)
 
         sizer_control_update = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control_update, 0, wx.EXPAND, 0)
