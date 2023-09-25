@@ -494,7 +494,10 @@ class LaserPanel(wx.Panel):
 
     def on_combo_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
         index = self.combo_devices.GetSelection()
-        self.selected_device = self.available_devices[index]
+        try:
+            self.selected_device = self.available_devices[index]
+        except IndexError:
+            return
         self.selected_device.kernel.activate_service_path(
             "device", self.selected_device.path
         )
