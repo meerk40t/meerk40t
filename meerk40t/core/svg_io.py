@@ -1231,8 +1231,8 @@ class SVGLoader:
             source = gzip.open(pathname, "rb")
         try:
             if context.elements.svg_viewport_bed:
-                width = Length(amount=context.device.view.width).length_mm
-                height = Length(amount=context.device.view.height).length_mm
+                width = Length(amount=context.device.view.unit_width).length_mm
+                height = Length(amount=context.device.view.unit_height).length_mm
             else:
                 width = None
                 height = None
