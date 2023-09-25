@@ -183,6 +183,7 @@ class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
             kernel.console(
                 f"rect 2cm 2cm 1cm 1cm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
+            device(f"set -p {path} rapid_override False")
         finally:
             kernel.shutdown()
         with open(file1) as f:
