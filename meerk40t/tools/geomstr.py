@@ -53,6 +53,7 @@ this is effectively a point.
 """
 
 import math
+import re
 from copy import copy
 
 import numpy
@@ -727,6 +728,69 @@ class Geomstr:
 
     def __iter__(self):
         return self.segments
+
+    @classmethod
+    def turtle(cls, turtle, n=4, d=1.0):
+        PATTERN_COMMAWSP = r"[ ,\t\n\x09\x0A\x0C\x0D]+"
+        PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
+        num_parse = [
+            ("DIST", r"[dD]" + PATTERN_FLOAT),
+            ("N", "n" + PATTERN_FLOAT),
+            ("COMMAND", r"[FfBb]"),
+            ("TURN", r"[\+\-LR]"),
+            ("SKIP", PATTERN_COMMAWSP),
+        ]
+        num_re = re.compile("|".join("(?P<%s>%s)" % pair for pair in num_parse))
+        current_pt = 0j
+        direction = 0
+        turn = math.tau / n
+        g = cls()
+        pos = 0
+        limit = len(turtle)
+        while pos < limit:
+            match = num_re.match(turtle, pos)
+            if match is None:
+                break  # No more matches.
+            kind = match.lastgroup
+            start = pos
+            pos = match.end()
+            if kind == "SKIP":
+                continue
+            elif kind == "COMMAND":
+                c = match.group()
+                if c == "F":
+                    next_pt = Geomstr.polar(None, current_pt, direction, d)
+                    g.line(current_pt, next_pt, 0, a=0, b=0)
+                    current_pt = next_pt
+                elif c == "f":
+                    next_pt = Geomstr.polar(None, current_pt, direction, d)
+                    g.line(current_pt, next_pt, 0, a=2, b=2)
+                    current_pt = next_pt
+                elif c == "B":
+                    next_pt = Geomstr.polar(None, current_pt, direction, d)
+                    g.line(current_pt, next_pt, 0, a=1, b=1)
+                    current_pt = next_pt
+                elif c == "b":
+                    next_pt = Geomstr.polar(None, current_pt, direction, d)
+                    g.line(current_pt, next_pt, 0, a=3, b=3)
+                    current_pt = next_pt
+            elif kind == "TURN":
+                c = match.group()
+                if c in ("+", "R"):
+                    direction += turn
+                elif c in ("-", "L"):
+                    direction -= turn
+            elif kind == "DIST":
+                value = match.group()
+                d = float(value[1:])
+                c = value[0]
+                if c == "D":
+                    d = math.sqrt(d)
+            elif kind == "N":
+                value = match.group()
+                n = int(float(value[1:]))
+                turn = math.tau / n
+        return g
 
     @classmethod
     def svg(cls, path_d):
@@ -1423,6 +1487,122 @@ class Geomstr:
         for i in range(1, len(points)):
             self.line(points[i - 1], points[i], settings=settings)
 
+    def reverse(self):
+        """
+        Reverses geomstr paths. Flipping each segment and the order of the segments.
+
+        This results in a contiguous path going back to front.
+
+        @return: None
+        """
+        self.segments[: self.index] = np.flip(self.segments[: self.index], (0, 1))
+
+    @staticmethod
+    def fit_to_points(replacement, p1, p2, flags=0):
+        r = Geomstr(replacement)
+        if flags:
+            if flags & 0b01:
+                # Flip x (reverse order)
+                r.reverse()
+            if flags & 0b10:
+                # Flip y (top-to-bottom)
+                r.transform(Matrix.scale(1, -1))
+            geoms = r.segments
+            infos = np.real(geoms[:, 2]).astype(int)
+            q = np.where(infos == TYPE_LINE)
+            c1 = np.real(geoms[q][:, 1]).astype(int) ^ (flags & 0b11)
+            c2 = np.real(geoms[q][:, 3]).astype(int) ^ (flags & 0b11)
+            r.segments[q, 1] = c1
+            r.segments[q, 3] = c2
+        # Get r points.
+        first_point = r.first_point
+        last_point = r.last_point
+
+        # Map first point to 0.
+        r.translate(-first_point.real, -first_point.imag)
+
+        # Scale distance first->last to distance of p1,p2
+        scaled = abs(p1 - p2) / abs(first_point - last_point)
+        r.uscale(scaled)
+
+        # rotate angle first->last to the angle of p1-P2
+        delta_angle = Geomstr.angle(None, p1, p2) - Geomstr.angle(
+            None, first_point, last_point
+        )
+        r.rotate(delta_angle)
+
+        # Map 0 to position of p1
+        r.translate(p1.real, p1.imag)
+        return r
+
+    def round_corners(self, amount=0.2):
+        """
+        Round segment corners.
+
+        @return:
+        """
+        for i in range(self.index - 1, 0, -1):
+            previous = self.segments[i - 1]
+            current = self.segments[i]
+            start0, control0, info0, control20, end0 = previous
+            start1, control1, info1, control21, end1 = current
+            if info0.real != TYPE_LINE or info1.real != TYPE_LINE:
+                continue
+            towards0 = Geomstr.towards(None, start0, end0, 1-amount)
+            towards1 = Geomstr.towards(None, start1, end1, amount)
+            self.segments[i-1][4] = towards0
+            self.segments[i][0] = towards1
+            self.insert(i, [[towards0, control0, info0, control20, towards1]])
+
+    def bezier_corners(self, amount=0.2):
+        """
+        Round segment corners.
+
+        @return:
+        """
+        for i in range(self.index - 1, 0, -1):
+            previous = self.segments[i - 1]
+            current = self.segments[i]
+            start0, control0, info0, control20, end0 = previous
+            start1, control1, info1, control21, end1 = current
+            if info0.real != TYPE_LINE or info1.real != TYPE_LINE:
+                continue
+            towards0 = Geomstr.towards(None, start0, end0, 1-amount)
+            towards1 = Geomstr.towards(None, start1, end1, amount)
+            self.segments[i-1][4] = towards0
+            self.segments[i][0] = towards1
+            self.insert(i, [[towards0, end0, TYPE_QUAD, start1, towards1]])
+
+    def fractal(self, replacement):
+        """
+        Perform line-segment fractal replacement according to the ventrella system.
+
+        http://www.fractalcurves.com/
+
+        Only line segments will be replaced. The start and end points of the geomstr data will
+        be scaled to the correct size and inserted to replace the current line segments.
+
+        These replacements come in 4 flavors according to the values of extra info values of 'a'. If we perform
+        horizontal swaps the positions of a and b will be swapped as well, so `a` and `b` should probably equal each
+        other. The values are [0-3], straight/flat, straight/flipped, backwards/flat, backwards/flipped.
+
+        The replacement data will be applied to every line segment, other segment types will not be affected. The
+        scale distance and angle will be solely based on the start-and-end points of the replacement non-contiguous
+        parts will also be replaced in situ.
+
+        @param replacement: geomstr replacement data for each line segment.
+        @return:
+        """
+        for i in range(self.index - 1, -1, -1):
+            segment = self.segments[i]
+            start, control, info, control2, end = segment
+            if info.real != TYPE_LINE:
+                continue
+            fit = Geomstr.fit_to_points(
+                replacement, start, end, flags=int(np.real(control))
+            )
+            self.replace(i, i, fit.segments[: fit.index])
+
     #######################
     # Query Properties
     #######################
@@ -1454,10 +1634,24 @@ class Geomstr:
         First point within the path if said point exists
         @return:
         """
-        if self.index:
-            return self.segments[0, 0]
-        else:
-            return None
+        for i in range(self.index):
+            segment = self.segments[i]
+            if int(segment[2].real) & 0b1000:
+                return segment[0]
+        return None
+
+    @property
+    def last_point(self):
+        """
+        Last point within the path if said point exists
+
+        @return:
+        """
+        for i in range(self.index - 1, -1, -1):
+            segment = self.segments[i]
+            if int(segment[2].real) & 0b0001:
+                return segment[4]
+        return None
 
     #######################
     # Universal Functions

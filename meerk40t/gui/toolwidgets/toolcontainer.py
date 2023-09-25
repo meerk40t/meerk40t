@@ -36,17 +36,25 @@ class ToolContainer(Widget):
             self.set_tool(tool)
 
     def set_tool(self, tool):
+        response = ""
         if self._active_tool == tool:
-            return
+            return True, f"Tool {tool} was already active"
         self._active_tool = tool
         self.scene.pane.tool_active = False
+        self.scene.pane.suppress_selection = False
         self.remove_all_widgets()
         if tool is not None:
             new_tool = self.scene.context.lookup("tool", tool)
-            self.mode = getattr(new_tool, "select_mode", "selection")
+            if new_tool is None:
+                response = f"Such a tool is not defined: {tool}, leave unchanged"
+                return False, response
+            else:
+                self.mode = getattr(new_tool, "select_mode", "selection")
+                response = f"Tool set to {tool}, selection mode: {self.mode}"
         else:
             new_tool = None
             self.mode = "selection"
+            response = "Tool set to selection mode"
 
         self.add_widget(widget=self.selection_widgets.get(self.mode))
         if new_tool is not None:
@@ -65,3 +73,4 @@ class ToolContainer(Widget):
         self.scene._signal_widget(self.scene.widget_root, "tool_changed", message)
 
         self.scene.request_refresh()
+        return True, response

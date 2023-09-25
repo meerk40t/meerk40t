@@ -92,7 +92,6 @@ class Node:
         self._can_update = True
         self._can_remove = True
         self._is_visible = True
-
         for k, v in kwargs.items():
             if k.startswith("_"):
                 continue
@@ -101,7 +100,11 @@ class Node:
                     v = ast.literal_eval(v)
                 except (ValueError, SyntaxError):
                     pass
-            self.__dict__[k] = v
+            try:
+                setattr(self, k, v)
+            except AttributeError:
+                # If this is already an attribute, just add it to the node dict.
+                self.__dict__[k] = v
 
         self._children = list()
         self._root = None
@@ -790,6 +793,9 @@ class Node:
                 self._paint_bounds[3] + dy,
             ]
         self._points_dirty = True
+        # No need to translate it as we will apply the matrix later
+        # self.translate_functional_parameter(dx, dy)
+
         # if self._points_dirty:
         #     self.revalidate_points()
         # else:
@@ -824,6 +830,7 @@ class Node:
             self.modified()
             return
         self._bounds = apply_it(self._bounds)
+        # self.scale_functional_parameter(sx, sy, ox, oy)
         # This may not really correct, we need the
         # implied stroke_width to add, so the inherited
         # element classes will need to overload it

@@ -395,6 +395,7 @@ def plugin(kernel, lifecycle=None):
             },
         ]
         kernel.register_choices("preferences", choices)
+
     elif lifecycle == "prestart":
         if hasattr(kernel.args, "input") and kernel.args.input is not None:
             # Load any input file

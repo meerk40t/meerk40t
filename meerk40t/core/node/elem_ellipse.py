@@ -1,5 +1,5 @@
 from copy import copy
-from math import cos, sin
+from math import cos, sin, tau, sqrt
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Node
@@ -66,6 +66,30 @@ class EllipseNode(Node, Stroked):
             self.ry = 0
         if self.matrix is None:
             self.matrix = Matrix()
+        if self.rx == self.ry:
+            self.functional_parameter = (
+                "circle",
+                0,
+                self.cx,
+                self.cy,
+                0,
+                self.cx + cos(tau * 7 / 8) * self.rx,
+                self.cy + sin(tau * 7 / 8) * self.ry,
+            )
+        else:
+            # store two extreme points
+            self.functional_parameter = (
+                "ellipse",
+                0,
+                self.cx + self.rx,
+                self.cy,
+                0,
+                self.cx,
+                self.cy + self.ry,
+            )
+            # print(
+            #     f"Old: ({self.cx:.0f}, {self.cy:.0f}), rx={self.rx:.0f}, ry={self.ry:.0f}"
+            # )
 
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
@@ -234,3 +258,48 @@ class EllipseNode(Node, Stroked):
             SVG_VALUE_NON_SCALING_STROKE if not self.stroke_scale else ""
         )
         return path
+
+    @property
+    def functional_parameter(self):
+        return self.mkparam
+
+    @functional_parameter.setter
+    def functional_parameter(self, value):
+        def getit(data, idx, default):
+            if idx < len(data):
+                return data[idx]
+            else:
+                return default
+
+        if isinstance(value, (list, tuple)):
+            self.mkparam = value
+            if self.mkparam:
+                method = self.mkparam[0]
+                if method == "circle":
+                    ncx = getit(self.mkparam, 2, self.cx)
+                    ncy = getit(self.mkparam, 3, self.cy)
+                    ptx = getit(self.mkparam, 5, self.cx + self.rx)
+                    pty = getit(self.mkparam, 6, self.cy)
+                    radius = sqrt((ncx - ptx) ** 2 + (ncy - pty) ** 2)
+                    if radius > 0:
+                        self.cx = ncx
+                        self.cy = ncy
+                        self.rx = radius
+                        self.ry = radius
+                        self.altered()
+                elif method == "ellipse":
+                    pt1x = getit(self.mkparam, 2, self.cx + self.rx)
+                    pt1y = getit(self.mkparam, 3, self.cy)
+                    pt2x = getit(self.mkparam, 5, self.cx)
+                    pt2y = getit(self.mkparam, 6, self.cy + self.ry)
+                    rx = pt1x - pt2x
+                    ry = pt2y - pt1y
+                    ncx = pt1x - rx
+                    ncy = pt2y - ry
+                    rx = abs(rx)
+                    ry = abs(ry)
+                    self.cx = ncx
+                    self.cy = ncy
+                    self.rx = rx
+                    self.ry = ry
+                    self.altered()

@@ -100,6 +100,10 @@ def plugin(kernel, lifecycle):
 
         plugins.append(winsleep.plugin)
 
+        from .extra import param_functions
+
+        plugins.append(param_functions.plugin)
+
         from meerk40t.camera.plugin import plugin as camera_plugin
 
         plugins.append(camera_plugin)

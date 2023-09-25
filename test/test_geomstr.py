@@ -20,9 +20,12 @@ from meerk40t.tools.geomstr import (
 )
 
 
-def draw(segments, min_x, min_y, max_x, max_y, filename="test.png"):
+def draw(segments, min_x, min_y, max_x, max_y, buffer=0, filename="test.png"):
     from PIL import Image, ImageDraw
-
+    min_x -= buffer
+    min_y -= buffer
+    max_x += buffer
+    max_y += buffer
     im = Image.new("RGBA", (int(max_x - min_x) + 1, int(max_y - min_y) + 1), "white")
 
     draw = ImageDraw.Draw(im)
@@ -989,7 +992,7 @@ class TestGeomstr(unittest.TestCase):
         r = q.points_in_polygon(points)
         t2 = time.time() - t
         for p1, p2 in zip(r, mask):
-            assert (bool(p1), bool(p2))
+            assert bool(p1) == bool(p2)
         try:
             print(
                 f"geomstr points in poly took {t2} seconds. Simple Scanline {t1}. Speed-up {t1 / t2}x"
@@ -1139,7 +1142,79 @@ class TestGeomstr(unittest.TestCase):
         gs.append(Geomstr.ellipse(100, 100, 1000, 1000))
         self.assertAlmostEqual(gs.area(density=1000), tau * 100 * 100, delta=1)
 
-    #
+    def test_geomstr_fractal_koch_snowflake(self):
+        # seed = Geomstr.svg("M0,0 1,0 2,1 3,0 4,0")
+        seed = Geomstr.turtle("F-F++F-F", n=6)
+
+        # design = Geomstr.turtle("F+F+F+F", n=4)
+        design = Geomstr.turtle("F+F+F+F", n=6)
+        design.uscale(500)
+        for i in range(5):
+            design.fractal(seed)
+            print(design)
+        bounds = design.bbox()
+        draw(list(design.as_interpolated_points()), *bounds, buffer=50, filename="koch.png")
+
+    def test_geomstr_fractal_swaps(self):
+        for i in range(4):
+            seed = Geomstr.svg("M0,0 h2 v1 l1,-1")
+            design = Geomstr.turtle("FFF", n=4)
+            design.segments[1][1] = i
+            design.segments[1][3] = i
+            design.uscale(500)
+            design.fractal(seed)
+            design.fractal(seed)
+            draw(list(design.as_interpolated_points()), *design.bbox(), buffer=50, filename=f"swaps{i}.png")
+
+    def test_geomstr_fractal_polya_sweep(self):
+        """
+        http://www.fractalcurves.com/images/2S_triangle_sweep.jpg
+        @return:
+        """
+        seed = Geomstr.turtle("f+B", n=4)
+        design = Geomstr.turtle("F", n=4)
+        design.uscale(500)
+        for _ in range(8):
+            design.fractal(seed)
+        draw(list(design.as_interpolated_points()), *design.bbox(), buffer=50, filename="polya.png")
+
+    def test_geomstr_fractal_terdragon(self):
+        """
+        http://www.fractalcurves.com/images/3T_ter.jpg
+        @return:
+        """
+        seed = Geomstr.turtle("F+F-F", n=3, d=math.sqrt(3))
+        design = copy(seed)
+        design.uscale(500)
+        for _ in range(5):
+            design.fractal(seed)
+        draw(list(design.as_interpolated_points()), *design.bbox(), buffer=50, filename="terdragon.png")
+
+    def test_geomstr_fractal_iterdragon(self):
+        """
+        http://www.fractalcurves.com/images/3T_butterfly.jpg
+        @return:
+        """
+        seed = Geomstr.turtle("b+b-b", n=3, d=math.sqrt(3))
+        design = copy(seed)
+        design.uscale(500)
+        for _ in range(8):
+            design.fractal(seed)
+        draw(list(design.as_interpolated_points()), *design.bbox(), buffer=50, filename="inverted-terdragon.png")
+
+    def test_geomstr_fractal_box(self):
+        """
+        http://www.fractalcurves.com/images/3T_block.jpg
+        @return:
+        """
+        seed = Geomstr.turtle("b+F-b", n=3, d=math.sqrt(3))
+        design = copy(seed)
+        design.uscale(500)
+        for _ in range(8):
+            design.fractal(seed)
+        draw(list(design.as_interpolated_points()), *design.bbox(), buffer=50, filename="box.png")
+
+
     # def test_geomstr_hatch(self):
     #     gs = Geomstr.svg(
     #         "M 207770.064517,235321.124952 C 206605.069353,234992.732685 205977.289179,234250.951228 205980.879932,233207.034699 C 205983.217733,232527.380908 206063.501616,232426.095743 206731.813533,232259.66605 L 207288.352862,232121.071081 L 207207.998708,232804.759538 C 207106.904585,233664.912764 207367.871267,234231.469286 207960.295387,234437.989447 C 208960.760372,234786.753419 209959.046638,234459.536445 210380.398871,233644.731075 C 210672.441667,233079.98258 210772.793626,231736.144349 210569.029382,231118.732625 C 210379.268508,230543.75153 209783.667018,230128.095713 209148.499972,230127.379646 C 208627.98084,230126.79283 208274.720902,230294.472682 207747.763851,230792.258962 C 207377.90966,231141.639128 207320.755956,231155.543097 206798.920578,231023.087178 C 206328.09633,230903.579262 206253.35266,230839.656219 206307.510015,230602.818034 C 206382.366365,230275.460062 207158.299204,225839.458855 207158.299204,225738.863735 C 207158.299204,225701.269015 208426.401454,225670.509699 209976.304204,225670.509699 C 211869.528049,225670.509699 212794.309204,225715.990496 212794.309204,225809.099369 C 212794.309204,225885.323687 212726.683921,226357.175687 212644.030798,226857.659369 L 212493.752392,227767.629699 L 210171.516354,227767.629699 L 207849.280317,227767.629699 L 207771.086662,228324.677199 C 207728.080152,228631.053324 207654.900983,229067.454479 207608.466287,229294.457543 L 207524.039566,229707.190387 L 208182.568319,229381.288158 C 209664.399179,228647.938278 211467.922971,228893.537762 212548.92912,229975.888551 C 214130.813964,231559.741067 213569.470754,234195.253882 211455.779825,235108.237047 C 210589.985852,235482.206254 208723.891068,235589.992389 207770.064517,235321.124952 L 207770.064517,235321.124952Z"

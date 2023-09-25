@@ -7,7 +7,7 @@ CornerWidget: Square in corner that typically governs uniform or x/y scaling.
 SideWidget: Square at different sides that typically does x-scaling or y-scaling.
 SkewWidget: Tiny squares along the side that deal with X-skew or y-skew.
 MoveWidget: Center widget that moves the entire selected object.
-MoveRotationOriginWidget: Weird function of rotating based on the reference object or something.
+MoveRotationOriginWidget: Function of rotating around an arbitrary center point.
 ReferenceWidget: Yellow-R widget that that makes this object the reference object.
 LockWidget: Widget to lock and unlock the given object.
 
@@ -2458,6 +2458,8 @@ class SelectionWidget(Widget):
         modifiers=None,
         **kwargs,
     ):
+        if self.scene.pane.suppress_selection:
+            return RESPONSE_CHAIN
         self.modifiers = modifiers
         elements = self.scene.context.elements
         if event_type == "hover_start":
@@ -2497,7 +2499,7 @@ class SelectionWidget(Widget):
                         self.scene.context.signal("statusmsg", "")
 
         elif event_type in ("leftdown", "leftup", "leftclick", "move"):
-            # self.scene.tool_active = False
+            # self.scene.pane.tool_active = False
             pass
         elif event_type == "rightdown":
             self.scene.pane.tool_active = False
@@ -2568,9 +2570,11 @@ class SelectionWidget(Widget):
         Draw routine for drawing the selection box.
         """
         self.gc = gc
+        self.clear()  # Clearing children as we are generating them in a bit...
         if self.scene.context.draw_mode & DRAW_MODE_SELECTION != 0:
             return
-        self.clear()  # Clearing children as we are generating them in a bit...
+        if self.scene.pane.suppress_selection:
+            return
         context = self.scene.context
         try:
             self.use_handle_rotate = context.enable_sel_rotate

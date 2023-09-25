@@ -45,6 +45,48 @@ class TestOperations(unittest.TestCase):
         for item in node.settings:
             self.assertEqual(node.settings[item], node_copy.settings[item])
 
+    def test_operation_copy_engrave_nodedict(self):
+        """
+        Test code to ensure operations copy correctly
+
+        :return:
+        """
+        node = EngraveOpNode(
+            id="fake_id",
+            label="My label",
+            color="green",
+            lock=True,
+            allowed_attributes=["number_of_unicorns"],
+            stroke="green",
+            fill="gray",
+            stroke_width=7,
+            dancing_bear=0.2,
+            speed=30.0
+        )
+        node.speed = 20.0
+        node_copy = copy(node)
+        self.assertEqual(node_copy.speed, 20.0)
+        node_copy.speed = 100.0
+        for attr in (
+            "id",
+            "label",
+            "color",
+            "lock",
+            "allowed_attributes",
+            "stroke",
+            "fill",
+            "stroke_width",
+            "stroke_scaled",
+        ):
+            if hasattr(node, attr):
+                self.assertEqual(getattr(node_copy, attr), getattr(node, attr))
+        for item in node.settings:
+            if item == "speed":
+                continue
+            self.assertEqual(node.settings[item], node_copy.settings[item])
+        self.assertEqual(node_copy.speed, 100.0)
+        self.assertEqual(node.speed, 20.0)
+
     def test_operation_copy_knockon(self):
         """
         Ensure test copy is not reusing the same data.

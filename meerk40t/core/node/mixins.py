@@ -3,6 +3,9 @@ from math import sqrt
 
 
 class Stroked(ABC):
+    def __init__(self, *args, **kwargs):
+        self.mkparam = None
+
     @property
     def stroke_scaled(self):
         return self.stroke_scale
@@ -70,3 +73,12 @@ class Stroked(ABC):
         """
         matrix = self.matrix
         self._stroke_zero = sqrt(abs(matrix.determinant))
+
+    @property
+    def functional_parameter(self):
+        return self.mkparam
+
+    @functional_parameter.setter
+    def functional_parameter(self, value):
+        if isinstance(value, (list, tuple)):
+            self.mkparam = value
