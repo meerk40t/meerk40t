@@ -100,7 +100,11 @@ class Node:
                     v = ast.literal_eval(v)
                 except (ValueError, SyntaxError):
                     pass
-            self.__dict__[k] = v
+            try:
+                setattr(self, k, v)
+            except AttributeError:
+                # If this is already an attribute, just add it to the node dict.
+                self.__dict__[k] = v
 
         self._children = list()
         self._root = None
