@@ -248,26 +248,169 @@ def plugin(kernel, lifecycle):
 
             Would produce the Dragon of Eve fractal (iteration=7)
             """
+            if turtle is None:
+                channel("No turtle definition found")
+                return
             seed = Geomstr.turtle(turtle, n)
+            pattern_base = base
+            pattern_repeat = 1
             if base is None:
                 base = Geomstr.svg("M0,0 H65535")
             else:
                 base = Geomstr.turtle(base, n, d=65535)
+                if pattern_base.startswith("n"):
+                    idx =1
+                    pattern = ""
+                    while pattern_base[idx] in "0123456789":
+                        pattern += pattern_base[idx]
+                        idx += 1
+                    print (f"Repeat indicator: {pattern}")
+                    try:
+                        pattern_repeat = int(pattern)
+                    except ValueError:
+                        pass
+
             for i in range(iterations):
                 base.fractal(seed)
+
+            base.parameter_store = (
+                "tfractal",
+                3,
+                turtle,
+                3,
+                pattern_base,
+                1,
+                n,
+                1,
+                iterations,
+                1,
+                pattern_repeat,
+                1,
+                0, # line connector
+            )
+            print ("Turtle" , base.parameter_store)
             return "geometry", base
 
         @self.console_option("amount", "a", type=float, help="corner rounding amount", default=0.2)
         @self.console_command("round_corners", input_type="geometry", output_type="geometry")
         def round_corners(command, channel, data, amount=0.2, **kwargs):
             data.round_corners(amount)
+            if hasattr(data, "parameter_store"):
+                param = list(data.parameter_store) # make it editable
+                if len(param) > 12:
+                    # Round corners
+                    param[12] = 1
+                data.parameter_store = param
+                print ("Round corner", data.parameter_store)
             return "geometry", data
 
         @self.console_option("amount", "a", type=float, help="corner-bezier amount", default=0.2)
         @self.console_command("quad_corners", input_type="geometry", output_type="geometry")
         def round_corners(command, channel, data, amount=0.2, **kwargs):
             data.bezier_corners(amount)
+            if hasattr(data, "parameter_store"):
+                param = list(data.parameter_store) # make it editable
+                if len(param) > 12:
+                    # Bezier corners
+                    param[12] = 2
+                data.parameter_store = param
+                print ("Quad corner", data.parameter_store)
             return "geometry", data
+
+        def update_node_tfractal(node):
+            my_id = "tfractal"
+            valid = True
+            try:
+                param = node.functional_parameter
+                if param is None or param[0] != my_id:
+                    valid = False
+            except (AttributeError, IndexError):
+                valid = False
+            if not valid:
+                # Not for me...
+                return
+            turtle = getit(param, 2, "")
+            basepattern = getit(param, 4, "")
+            if basepattern == "":
+                basepattern = None
+            n = getit(param, 6, 1)
+            iterations = getit(param, 8, 1)
+            pattern_repeat = getit(param, 10, 1)
+            connector = getit(param, 12, 0)
+            if valid:
+                seed = Geomstr.turtle(turtle, n)
+                # Let's see whether we need to reconstruct the base
+                # Store it
+                targetpattern = basepattern
+                if basepattern is not None:
+                    if basepattern.startswith("n"):
+                        basepattern = basepattern[1:]
+                        previous = ""
+                        while len(basepattern) and basepattern[0] in "0123456789":
+                            previous += basepattern[0]
+                            basepattern = basepattern[1:]
+                        prev_len = 1
+                        if previous:
+                            try:
+                                prev_len = int(previous)
+                            except ValueError:
+                                prev_len = 1
+                            # Need add 1 to the length as the connector symbol
+                            # is not present after the last repetition
+                            if (len(basepattern) + 1) % prev_len == 0:
+                                old = basepattern
+                                basepattern = basepattern[0:int(len(basepattern)/prev_len)]
+                                print (f"Was: '{old}', now: '{basepattern}'")
+                            else:
+                                # that's wrong...
+                                print ("Needed to reset")
+                                pattern_repeat = 1
+
+                    if pattern_repeat > 1:
+                        targetpattern = f"n{pattern_repeat}"
+                        for idx in range(pattern_repeat):
+                            if idx > 0:
+                                targetpattern += "+"
+                            targetpattern += basepattern
+                    else:
+                        targetpattern = basepattern
+
+                if targetpattern == "":
+                    targetpattern = None
+
+
+                if targetpattern is None:
+                    base = Geomstr.svg("M0,0 H65535")
+                else:
+                    base = Geomstr.turtle(targetpattern, n, d=65535)
+
+                for i in range(iterations):
+                    base.fractal(seed)
+                if connector == 2:
+                    amount = 0.2
+                    base.bezier_corners(amount)
+                elif connector == 1:
+                    amount = 0.2
+                    base.round_corners(amount)
+                node.geometry = base
+                node.altered()
+                # Rewrite the functional_parameter
+                node.parameter_store = (
+                    "tfractal",
+                    3,
+                    turtle,
+                    3,
+                    targetpattern,
+                    1,
+                    n,
+                    1,
+                    iterations,
+                    1,
+                    pattern_repeat,
+                    1,
+                    0, # line connector
+                )
+
 
 
         @self.console_argument("svg_path", type=str)
@@ -1130,6 +1273,19 @@ def plugin(kernel, lifecycle):
             },
         )
         kernel.register("element_update/star", info)
+
+        info = (
+            update_node_tfractal,
+            {
+                "0": ("Turtle code",),
+                "1": ("Base code",),
+                "2": ("Segmentation", 1, 20),
+                "3": ("Iterations", 1, 20),
+                "4": ("Shaping", 1, 20),
+                "5": ("Cornertype", 0, 2),
+            },
+        )
+        kernel.register("element_update/tfractal", info)
 
         info = (
             None,  # Let the node deal with it
