@@ -429,6 +429,8 @@ class Length:
     Initial unit is saved as preferred units.
     """
 
+    units_per_spx = 50
+
     def __init__(
         self,
         *args,
@@ -477,6 +479,8 @@ class Length:
                 scale = UNITS_PER_PIXEL
             elif units == "pt":
                 scale = UNITS_PER_POINT
+            elif units == "spx":
+                scale = self.units_per_spx
             elif units == "pc":
                 scale = UNITS_PER_PIXEL * 16.0
             elif units == "%":
@@ -639,6 +643,8 @@ class Length:
             return self.um
         elif self._preferred_units == "pt":
             return self.pt
+        elif self._preferred_units == "spx":
+            return self.spx
         else:
             return self.units
 
@@ -720,6 +726,13 @@ class Length:
         return amount
 
     @property
+    def spx(self):
+        amount = self._amount / self.units_per_spx
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
+
+    @property
     def units(self):
         amount = self._amount
         if self._digits:
@@ -765,6 +778,11 @@ class Length:
     def length_pt(self):
         amount = self.pt
         return f"{round(amount, 8)}pt"
+
+    @property
+    def length_spx(self):
+        amount = self.spx
+        return f"{round(amount, 8)}spx"
 
     @property
     def length_units(self):
