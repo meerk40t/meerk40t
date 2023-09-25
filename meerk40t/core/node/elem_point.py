@@ -17,6 +17,7 @@ class PointNode(Node):
                 kwargs["x"] = point.x
             if "y" not in kwargs:
                 kwargs["y"] = point.y
+            del kwargs["point"]
         self.x = 0
         self.y = 0
         self.matrix = None
