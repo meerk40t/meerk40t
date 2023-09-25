@@ -275,15 +275,10 @@ class RDJob:
             self.time_started = time.time()
         with self.lock:
             array = self.buffer.pop(0)
-        # try:
-        self.process(array)
-        # except RuidaCommandError:
-        #     if self.channel:
-        #         self.channel(f"Process Failure: {str(bytes(array).hex())}")
-        # except Exception as e:
-        #     if self.channel:
-        #         self.channel(f"Crashed processing: {str(bytes(array).hex())}")
-        #         self.channel(str(e))
+        try:
+            self.process(array)
+        except IndexError as e:
+            raise RuidaCommandError(f"Could not process Ruida buffer, {self.buffer[:25]} with magic: {self.magic:02}") from e
         if not self.buffer:
             # Buffer is empty now. Job is complete
             self.runtime += time.time() - self.time_started
