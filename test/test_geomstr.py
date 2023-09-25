@@ -1186,7 +1186,7 @@ class TestGeomstr(unittest.TestCase):
         seed = Geomstr.turtle("F+F-F", n=3, d=math.sqrt(3))
         design = copy(seed)
         design.uscale(500)
-        for _ in range(8):
+        for _ in range(5):
             design.fractal(seed)
         draw(list(design.as_interpolated_points()), *design.bbox(), buffer=50, filename="terdragon.png")
 
