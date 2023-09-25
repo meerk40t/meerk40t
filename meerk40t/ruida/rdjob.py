@@ -278,7 +278,10 @@ class RDJob:
             self.time_started = time.time()
         with self.lock:
             array = self.buffer.pop(0)
-        self.process(array)
+        try:
+            self.process(array)
+        except IndexError as e:
+            raise RuidaCommandError(f"Could not process Ruida buffer, {self.buffer[:25]} with magic: {self.magic:02}") from e
         if not self.buffer:
             # Buffer is empty now. Job is complete
             self.runtime += time.time() - self.time_started
