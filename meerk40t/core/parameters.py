@@ -118,6 +118,37 @@ class Parameters:
                 except (ValueError, SyntaxError):
                     pass
 
+
+    # def __getattr__(self, item):
+    #     """
+    #     Getattr replaces the unfound items.
+    #     @param item:
+    #     @return:
+    #     """
+    #     if item.startswith("_"):
+    #         raise AttributeError
+    #     return self[item]
+    #
+    # def __setattr__(self, key, value):
+    #     """
+    #     Setattr applying to the values.
+    #
+    #     @param key:
+    #     @param value:
+    #     @return:
+    #     """
+    #     super().__setattr__(key, value)
+    #
+    # def __getitem__(self, item):
+    #     """
+    #     Get the value of the item as if this properties is a dict
+    #     @param item:
+    #     @return:
+    #     """
+    #     d = self.__dict__
+    #     return d.get(item, None)
+
+
     @property
     def color(self):
         color = self.settings.get("color")
