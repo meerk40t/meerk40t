@@ -406,13 +406,15 @@ def load_sys(sys_file, channel=None):
         raise ConnectionRefusedError
 
 
-def load_chunks(chunks, channel=None):
+def load_chunks(chunks=None, channel=None):
     """
     Find devices, send chunks to the needed boards.
     @param chunks:
     @param channel:
     @return:
     """
+    if chunks is None:
+        chunks = init
     try:
         devices = list(
             usb.core.find(idVendor=VENDER_ID, idProduct=PRODUCT_ID, find_all=True)
