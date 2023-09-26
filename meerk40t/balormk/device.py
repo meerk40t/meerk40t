@@ -1875,6 +1875,24 @@ class BalorDevice(Service, ViewPort):
             return "geometry", geom
 
         @self.console_command(
+            "clone_init",
+            help=_("Initializes a galvo clone board."),
+        )
+        def codes_update(channel, **kwargs):
+            from clone_loader import load_sys
+            from meerk40t.kernel import get_safe_path
+
+            self.setting(str, "clone_sys", "Lmcv2u.sys")
+            p = self.clone_sys
+            if os.path.exists(p):
+                load_sys(p)
+                return
+            p = get_safe_path(self.clone_sys)
+            if os.path.exists(p):
+                load_sys(p)
+                return
+
+        @self.console_command(
             "viewport_update",
             hidden=True,
             help=_("Update galvo flips for movement"),
