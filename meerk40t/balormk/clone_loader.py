@@ -1,8 +1,7 @@
 """
 This code initializes the FPGA on cloned boards.
 """
-
-
+import hashlib
 import struct
 
 import usb.core
@@ -366,7 +365,23 @@ def _write_chunks(device, chunks):
     _firmware(device, start=False)
 
 
-def _send_device_sys(device, sys_file, offset=0x4440):
+def get_offset_by_hash(hash):
+    if hash == "b86bc139a88592a4d71e64990133e86f":
+        return 0x4440, "LMCV2U2"
+    if  hash == "f775f53d0cf8c9b3e7855837561a4e6c":
+        return 0x11DE0, "LMCUSB2009"
+    if hash == "cd408e29768af505d671fb5c216fcdcc":
+        return 0x9F60, "LMCUSBdSYS"
+    if hash == "2dd5017f569ac9efc292e6c085b08f36":
+        return 0x4440, "LMCdotSYS"
+    if hash == "48bcb097a38fdd84df43f6ee6e7f0195":
+        return 0x5190, "LMCV2U2"
+    if hash == "3a5e33b366f6a7af0f530a5ef68f137b":
+        return 0x1390, "LMCV4"
+    return 0x4440, "Unknown"
+
+
+def _send_device_sys(device, sys_file, channel=None):
     """
     Open the file, write the parsed chunks.
 
@@ -377,6 +392,13 @@ def _send_device_sys(device, sys_file, offset=0x4440):
     """
     if isinstance(sys_file, str):
         with open(sys_file, "rb") as f:
+            contents = f.read()
+            f.seek(0)
+
+            h = hashlib.md5(contents)
+            offset, name = get_offset_by_hash(h.hexdigest())
+            if channel:
+                channel(f"{sys_file} has hash:{h.hexdigest()} is {name} with offset {offset}")
             f.seek(offset)
             _write_chunks(device, _parse(f))
     else:
@@ -400,7 +422,7 @@ def load_sys(sys_file, channel=None):
         for i, device in enumerate(devices):
             if channel:
                 channel(f"Clone board #{i+1} detected. Sending Initialize.")
-            _send_device_sys(device, sys_file)
+            _send_device_sys(device, sys_file, channel=channel)
     except usb.core.USBError as e:
         channel(str(e))
         raise ConnectionRefusedError
@@ -431,5 +453,4 @@ def load_chunks(chunks=None, channel=None):
 
 
 if __name__ == "__main__":
-    load_chunks(channel=print)
-    # load_sys("Lmcv2u.sys", channel=print)
+    load_sys("Lmcv2u.sys", channel=print)

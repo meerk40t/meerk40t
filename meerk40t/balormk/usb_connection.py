@@ -47,10 +47,6 @@ class USBConnection:
             raise ConnectionRefusedError
         if len(devices) == 0:
             self.channel(_("Devices Not Found."))
-
-            from meerk40t.balormk.clone_loader import load_chunks
-            load_chunks(channel=self.channel)
-
             raise ConnectionRefusedError
         for d in devices:
             self.channel(_("Galvo device detected:"))

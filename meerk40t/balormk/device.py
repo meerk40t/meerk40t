@@ -1874,16 +1874,9 @@ class BalorDevice(Service, ViewPort):
                 geom.end()
             return "geometry", geom
 
-        @self.console_command(
-            "clone_init"
-        )
-        def clone_init(channel, **kwargs):
-            from meerk40t.balormk.clone_loader import load_chunks
-            load_chunks(channel=channel)
-
         @self.console_argument("filename", type=str)
         @self.console_command(
-            "clone_finit",
+            "clone_init",
             help=_("Initializes a galvo clone board from specified file."),
         )
         def codes_update(channel, filename, **kwargs):
@@ -1891,9 +1884,13 @@ class BalorDevice(Service, ViewPort):
             from meerk40t.balormk.clone_loader import load_sys
             from meerk40t.kernel import get_safe_path
 
-            self.setting(str, "clone_sys", "Lmcv2u.sys")
+            self.setting(str, "clone_sys", "chunks")
             if filename is not None:
                 self.clone_sys = filename
+            if filename == "chunks":
+                from meerk40t.balormk.clone_loader import load_chunks
+                load_chunks(channel=channel)
+                return
 
             # Check for file in local directory
             p = self.clone_sys
