@@ -28,9 +28,9 @@ class ElementsWidget(Widget):
         context = self.scene.context
         matrix = self.scene.widget_root.scene_widget.matrix
         scale_x = sqrt(abs(matrix.determinant))
-        Length.units_per_spx = 1 / (10 * scale_x)
         try:
             zoom_scale = 1 / scale_x
+            Length.units_per_spx = zoom_scale
         except ZeroDivisionError:
             matrix.reset()
             zoom_scale = 1
