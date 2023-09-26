@@ -119,7 +119,7 @@ class PolygonTool(ToolWidget):
         )
 
         self.scene.context.kernel.register(
-            "button/tool_polygon/tool_freehand",
+            "button/secondarytool_polygon/tool_freehand",
             {
                 "label": "Freehand",
                 "icon": icons8_polygon_50,
@@ -132,7 +132,7 @@ class PolygonTool(ToolWidget):
         )
 
         self.scene.context.kernel.register(
-            "button/tool_polygon/tool_polygon",
+            "button/secondarytool_polygon/tool_polygon",
             {
                 "label": "Regular",
                 "icon": icon_polygon,
@@ -145,7 +145,7 @@ class PolygonTool(ToolWidget):
         )
 
         self.scene.context.kernel.register(
-            "button/tool_polygon/tool_star1",
+            "button/secondarytool_polygon/tool_star1",
             {
                 "label": "Star 1",
                 "icon": icon_regular_star,
@@ -158,7 +158,7 @@ class PolygonTool(ToolWidget):
         )
 
         self.scene.context.kernel.register(
-            "button/tool_polygon/tool_star2",
+            "button/secondarytool_polygon/tool_star2",
             {
                 "label": "Star 2",
                 "icon": icon_crossing_star,
