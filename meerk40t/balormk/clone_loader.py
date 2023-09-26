@@ -30,14 +30,7 @@ def _firmware(device, start):
     )
 
 
-def _write(device, wValue, data):
-    device.ctrl_transfer(
-        request, bRequest=0xA0, wValue=wValue, wIndex=0x0, data_or_wLength=data
-    )
-
-
-def _send_device_stream(device, f):
-    _firmware(device, start=True)
+def _parse(f):
     while True:
         data = f.read(22)
         if data is None or len(data) != 22:
@@ -45,21 +38,29 @@ def _send_device_stream(device, f):
         length, _, value, end, payload, _ = struct.unpack("BBHB16sB", data)
         if end != 0:
             break
-        _write(device, wValue=value, data=payload[:length])
+        yield value, payload[:length]
+
+
+def _write_chunks(device, chunks):
+    _firmware(device, start=True)
+    for value, payload in chunks:
+        device.ctrl_transfer(
+            request, bRequest=0xA0, wValue=value, wIndex=0x0, data_or_wLength=payload
+        )
+        print(value, payload)
     _firmware(device, start=False)
 
 
 def _send_device_sys(device, sys_file, offset=0x4440):
     if isinstance(sys_file, str):
         with open(sys_file, "rb") as f:
-            if offset:
-                f.seek(offset, 0)
-            _send_device_stream(device, f)
+            f.seek(offset)
+            _write_chunks(device, _parse(f))
     else:
-        _send_device_stream(device, sys_file)
+        _write_chunks(device, _parse(sys_file))
 
 
-def load_sys(sys_file=None, channel=None):
+def load_sys(sys_file, channel=None):
     try:
         devices = list(usb.core.find(idVendor=USB_LOCK_VENDOR, idProduct=USB_LOCK_PRODUCT, find_all=True))
         if channel:
@@ -68,6 +69,21 @@ def load_sys(sys_file=None, channel=None):
             if channel:
                 channel(f"Clone board #{i+1} detected. Sending Initialize.")
             _send_device_sys(device, sys_file)
+    except usb.core.USBError as e:
+        channel(str(e))
+        raise ConnectionRefusedError
+
+def load_chunks(chunks, channel=None):
+    try:
+        devices = list(
+            usb.core.find(idVendor=USB_LOCK_VENDOR, idProduct=USB_LOCK_PRODUCT, find_all=True)
+        )
+        if channel:
+            channel(f"{len(devices)} devices need initializing.")
+        for i, device in enumerate(devices):
+            if channel:
+                channel(f"Clone board #{i+1} detected. Sending Initialize.")
+            _write_chunks(device, chunks)
     except usb.core.USBError as e:
         channel(str(e))
         raise ConnectionRefusedError

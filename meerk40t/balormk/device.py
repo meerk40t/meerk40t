@@ -1875,22 +1875,54 @@ class BalorDevice(Service, ViewPort):
             return "geometry", geom
 
         @self.console_command(
-            "clone_init",
-            help=_("Initializes a galvo clone board."),
+            "clone_init"
         )
-        def codes_update(channel, **kwargs):
-            from clone_loader import load_sys
+        def clone_init(channel, **kwargs):
+            from meerk40t.balormk import init
+            from meerk40t.balormk.clone_loader import load_chunks
+            load_chunks(init, channel=channel)
+
+        @self.console_argument("filename", type=str)
+        @self.console_command(
+            "clone_finit",
+            help=_("Initializes a galvo clone board from specified file."),
+        )
+        def codes_update(channel, filename, **kwargs):
+            import platform
+            from meerk40t.balormk.clone_loader import load_sys
             from meerk40t.kernel import get_safe_path
 
             self.setting(str, "clone_sys", "Lmcv2u.sys")
+            if filename is not None:
+                self.clone_sys = filename
+
+            # Check for file in local directory
             p = self.clone_sys
             if os.path.exists(p):
-                load_sys(p)
+                load_sys(p, channel=channel)
                 return
-            p = get_safe_path(self.clone_sys)
+
+            # Check for file in the meerk40t directory (safe_path)
+            directory = get_safe_path(kernel.name, create=True)
+            p = os.path.join(directory, self.clone_sys)
             if os.path.exists(p):
-                load_sys(p)
+                load_sys(p, channel=channel)
                 return
+
+            if platform.system() != "Windows":
+                return
+
+            # In windows, check the system32/drivers directory.
+            system32 = os.path.join(
+                os.environ["SystemRoot"],
+                "SysNative" if platform.architecture()[0] == "32bit" else "System32",
+            )
+            p = os.path.join(system32, "drivers", self.clone_sys)
+            if os.path.exists(p):
+                load_sys(p, channel=channel)
+                return
+
+            channel(f"{self.clone_sys} file was not found.")
 
         @self.console_command(
             "viewport_update",
