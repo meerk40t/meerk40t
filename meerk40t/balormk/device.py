@@ -1878,9 +1878,8 @@ class BalorDevice(Service, ViewPort):
             "clone_init"
         )
         def clone_init(channel, **kwargs):
-            from meerk40t.balormk import init
             from meerk40t.balormk.clone_loader import load_chunks
-            load_chunks(init, channel=channel)
+            load_chunks(channel=channel)
 
         @self.console_argument("filename", type=str)
         @self.console_command(
