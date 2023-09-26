@@ -47,7 +47,6 @@ def _write_chunks(device, chunks):
         device.ctrl_transfer(
             request, bRequest=0xA0, wValue=value, wIndex=0x0, data_or_wLength=payload
         )
-        print(value, payload)
     _firmware(device, start=False)
 
 
