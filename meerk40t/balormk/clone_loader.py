@@ -52,18 +52,18 @@ def _send_device_sys(device, sys_file, offset=0x4440):
 
 def load_sys(sys_file=None, channel=None):
     try:
-        for device in list(
-            usb.core.find(
-                idVendor=USB_LOCK_VENDOR, idProduct=USB_LOCK_PRODUCT, find_all=True
-            )
-        ):
+        devices = list(usb.core.find(idVendor=USB_LOCK_VENDOR, idProduct=USB_LOCK_PRODUCT, find_all=True))
+        if channel:
+            channel(f"{len(devices)} devices need initializing.")
+        for i, device in enumerate(devices):
             if channel:
-                channel("Clone board detected sending sys file.")
-                _send_device_sys(device, sys_file)
+                channel(f"Clone board #{i+1} detected sending sys file.")
+            _send_device_sys(device, sys_file)
+
     except usb.core.USBError as e:
         channel(str(e))
         raise ConnectionRefusedError
 
 
 if __name__ == "__main__":
-    load_sys("Lmcv2u.sys")
+    load_sys("Lmcv2u.sys", channel=print)
