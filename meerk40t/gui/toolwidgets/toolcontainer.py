@@ -41,6 +41,7 @@ class ToolContainer(Widget):
             return True, f"Tool {tool} was already active"
         self._active_tool = tool
         self.scene.pane.tool_active = False
+        self.scene.pane.modif_active = False
         self.scene.pane.suppress_selection = False
         self.remove_all_widgets()
         if tool is not None:
