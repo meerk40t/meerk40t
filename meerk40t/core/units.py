@@ -67,346 +67,6 @@ UNITS_INCH = 4
 UNITS_PERCENT = 100
 
 
-class ViewPort:
-    """
-    The width and height are of the viewport are stored in MK native units (1/65535) in.
-    Origin_x and origin_y are the location of the machine home position in factors of 1.
-    This is to say 1,1 is the bottom left, and 0.5 0.5 is the middle of the bed.
-    * user_scale is a scale factor for applied by the user rather than the driver.
-    * native_scale is the scale factor of the driver units to MK native units
-    * flip_x, flip_y, and swap_xy are used to apply whatever flips and swaps are needed.
-    """
-
-    def __init__(
-        self,
-        width,
-        height,
-        origin_x=0.0,
-        origin_y=0.0,
-        user_scale_x=1.0,
-        user_scale_y=1.0,
-        native_scale_x=1.0,
-        native_scale_y=1.0,
-        flip_x=False,
-        flip_y=False,
-        swap_xy=False,
-        rotary_active=False,
-        rotary_scale_x=1.0,
-        rotary_scale_y=1.0,
-        rotary_flip_x=False,
-        rotary_flip_y=False,
-    ):
-        self._device_to_scene_matrix = None
-        self._scene_to_device_matrix = None
-
-        self.width = width
-        self.height = height
-        self.origin_x = origin_x
-        self.origin_y = origin_y
-        self.user_scale_x = user_scale_x
-        self.user_scale_y = user_scale_y
-        self.native_scale_x = native_scale_x
-        self.native_scale_y = native_scale_y
-        self.flip_x = flip_x
-        self.flip_y = flip_y
-        self.rotary_active = rotary_active
-        self.rotary_flip_x = rotary_flip_x
-        self.rotary_flip_y = rotary_flip_y
-        self.rotary_scale_x = rotary_scale_x
-        self.rotary_scale_y = rotary_scale_y
-        self.swap_xy = swap_xy
-
-        self._width = None
-        self._height = None
-        self.realize()
-
-    def realize(self):
-        self._device_to_scene_matrix = None
-        self._scene_to_device_matrix = None
-        self._width = self.unit_width
-        self._height = self.unit_height
-
-    def physical_to_device_position(self, x, y, unitless=1):
-        """
-        Converts a physical X,Y position into device units.
-
-        @param x:
-        @param y:
-        @param unitless:
-        @return:
-        """
-        x, y = self.physical_to_scene_position(x, y, unitless)
-        return self.scene_to_device_position(x, y)
-
-    def physical_to_scene_position(self, x, y, unitless=1):
-        """
-        Converts a physical X,Y position into viewport units.
-
-        This does not depend on the device except for the width/height for converting percent values.
-
-        @param x:
-        @param y:
-        @param unitless:
-        @return:
-        """
-        unit_x = Length(x, relative_length=self._width, unitless=unitless).units
-        unit_y = Length(y, relative_length=self._height, unitless=unitless).units
-        if self.swap_xy:
-            return unit_y, unit_x
-        return unit_x, unit_y
-
-    def physical_to_device_length(self, x, y, unitless=1):
-        """
-        Converts a physical X,Y vector into device vector (dx, dy).
-
-        This natively assumes device coordinate systems are affine. If we convert (0, 1in) as a vector into
-        machine units we are converting the length of 1in into the equal length in machine units. Positionally this
-        could be flipped or moved anywhere in the machine. But, the distance should be the same. However, in some cases
-        due to belt stretching etc. we can have scaled x vs y coord systems so (1in, 0) could be a different length
-        than (0, 1in).
-
-        @param x:
-        @param y:
-        @param unitless:
-        @return:
-        """
-        x, y = self.physical_to_scene_position(x, y, unitless)
-        return self.scene_to_device_position(x, y, vector=True)
-
-    def device_to_scene_position(self, x, y, vector=False):
-        """
-        Converts a device position x, y into a scene position of native units (1/65535) inches.
-        @param x:
-        @param y:
-        @param vector:
-        @return:
-        """
-        if vector:
-            point = self.device_to_scene_matrix().transform_vector((x, y))
-            return point.x, point.y
-        else:
-            point = self.device_to_scene_matrix().point_in_matrix_space((x, y))
-            return point.x, point.y
-
-    def scene_to_device_position(self, x, y, vector=False):
-        """
-        Converts scene to a device position (or vector). Converts x, y from scene units (1/65535) inches into
-        device specific units. Optionally allows the calculation of a vector distance.
-
-        @param x:
-        @param y:
-        @param vector:
-        @return:
-        """
-        if vector:
-            point = self.scene_to_device_matrix().transform_vector([x, y])
-            return point[0], point[1]
-        else:
-            point = self.scene_to_device_matrix().point_in_matrix_space((x, y))
-            return point.x, point.y
-
-    def device_position(self, x, y):
-        m = self.scene_to_device_matrix()
-        return m.point_in_matrix_space((x, y))
-
-    def _calculate_matrices(self):
-        """
-        Calculate the matrices between the scene and device units.
-        """
-        self._scene_to_device_matrix = Matrix(self._scene_to_device_transform())
-        self._device_to_scene_matrix = Matrix(self._scene_to_device_matrix)
-        self._device_to_scene_matrix.inverse()
-
-    def device_to_scene_matrix(self):
-        """
-        Returns the device-to-scene matrix.
-        """
-        if self._device_to_scene_matrix is None:
-            self._calculate_matrices()
-        return self._device_to_scene_matrix
-
-    def scene_to_device_matrix(self):
-        """
-        Returns the scene-to-device matrix.
-        """
-        if self._scene_to_device_matrix is None:
-            self._calculate_matrices()
-        return self._scene_to_device_matrix
-
-    def _scene_to_device_transform(self):
-        """
-        Transform for moving from scene units to device units. This takes into account the user and native scaling, the
-        shift in origin point, flips to the y-axis, flips to the x-axis, and axis_swapping.
-
-        @return:
-        """
-        sx = self.user_scale_x * self.native_scale_x
-        sy = self.user_scale_y * self.native_scale_y
-        if self.rotary_active:
-            sx *= self.rotary_scale_x
-            sy *= self.rotary_scale_y
-        dx = self.unit_width * self.origin_x
-        dy = self.unit_height * self.origin_y
-        ops = []
-        if sx != 1.0 or sy != 1.0:
-            try:
-                ops.append(f"scale({1.0 / sx:.13f}, {1.0 / sy:.13f})")
-            except ZeroDivisionError:
-                pass
-        if self.flip_y:
-            ops.append("scale(1.0, -1.0)")
-        if self.rotary_active and self.rotary_flip_y:
-            ops.append("scale(1.0, -1.0)")
-
-        if self.flip_x:
-            ops.append("scale(-1.0, 1.0)")
-        if self.rotary_active and self.rotary_flip_x:
-            ops.append("scale(-1.0, 1.0)")
-        if dx != 0 or dy != 0:
-            ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
-        if self.swap_xy:
-            ops.append("scale(-1.0, 1.0) rotate(90deg)")
-        return " ".join(ops)
-
-    def native_mm(self):
-        matrix = self.scene_to_device_matrix()
-        return abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
-
-    def length(
-        self,
-        value,
-        axis=None,
-        new_units=None,
-        relative_length=None,
-        as_float=False,
-        unitless=1,
-        digits=None,
-        scale=None,
-    ):
-        """
-        Axis 0 is X
-        Axis 1 is Y
-
-        Axis -1 is 1D in x, y space. e.g. a line width.
-
-        Convert a length of distance {value} to new native values.
-
-        @param value:
-        @param axis:
-        @param new_units:
-        @param relative_length:
-        @param as_float:
-        @param unitless: factor for units with no units sets.
-        @param digits: number of digits
-        @param scale: scale length by given factor.
-        @return:
-        """
-        if axis == 0:
-            if relative_length is None:
-                relative_length = self.width
-        else:
-            if relative_length is None:
-                relative_length = self.height
-        length = Length(
-            value, relative_length=relative_length, unitless=unitless, digits=digits
-        )
-        if scale is not None:
-            length *= scale
-
-        if new_units == "mm":
-            if as_float:
-                return length.mm
-            else:
-                return length.length_mm
-        elif new_units == "inch":
-            if as_float:
-                return length.inches
-            else:
-                return length.length_inches
-        elif new_units == "cm":
-            if as_float:
-                return length.cm
-            else:
-                return length.length_cm
-        elif new_units == "px":
-            if as_float:
-                return length.pixels
-            else:
-                return length.length_pixels
-        elif new_units == "mil":
-            if as_float:
-                return length.mil
-            else:
-                return length.length_mil
-        else:
-            return length.units
-
-    def contains(self, x, y):
-        x = self.length(x, 0)
-        y = self.length(y, 1)
-        if x > self._width:
-            return False
-        if y > self._height:
-            return False
-        if x < 0:
-            return False
-        if y < 0:
-            return False
-        return True
-
-    def bbox(self):
-        return (
-            0,
-            0,
-            self.unit_width,
-            self.unit_height,
-        )
-
-    def dpi_to_steps(self, dpi, matrix=None):
-        """
-        Converts a DPI to a given step amount within the device length values. So M2 Nano will have 1 step per mil,
-        the DPI of 500 therefore is step_x 2, step_y 2. A Galvo laser with a 200mm lens will have steps equal to
-        200mm/65536 ~= 0.12 mils. So a DPI of 500 needs a step size of ~16.65 for x and y. Since 500 DPI is one dot
-        per 2 mils.
-
-        Note, steps size can be negative if our driver is x or y flipped.
-
-        @param dpi:
-        @param matrix: matrix to use rather than the scene to device matrix if supplied.
-        @return:
-        """
-        # We require vectors so any positional offsets are non-contributing.
-        unit_x = UNITS_PER_INCH
-        unit_y = UNITS_PER_INCH
-        if matrix is None:
-            matrix = self.scene_to_device_matrix()
-        oneinch_x = abs(complex(*matrix.transform_vector([unit_x, 0])))
-        oneinch_y = abs(complex(*matrix.transform_vector([0, unit_y])))
-        step_x = float(oneinch_x / dpi)
-        step_y = float(oneinch_y / dpi)
-        return step_x, step_y
-
-    @property
-    def length_width(self):
-        return Length(self.width)
-
-    @property
-    def length_height(self):
-        return Length(self.height)
-
-    @property
-    def unit_width(self):
-        return float(Length(self.width))
-
-    @property
-    def unit_height(self):
-        return float(Length(self.height))
-
-    @staticmethod
-    def conversion(units, amount=1):
-        return Length(f"{amount}{units}").preferred
-
-
 ACCEPTED_UNITS = (
     "",
     "cm",
@@ -428,6 +88,8 @@ class Length:
     Amounts are converted to UNITS.
     Initial unit is saved as preferred units.
     """
+
+    units_per_spx = 50
 
     def __init__(
         self,
@@ -477,6 +139,8 @@ class Length:
                 scale = UNITS_PER_PIXEL
             elif units == "pt":
                 scale = UNITS_PER_POINT
+            elif units == "spx":
+                scale = self.units_per_spx
             elif units == "pc":
                 scale = UNITS_PER_PIXEL * 16.0
             elif units == "%":
@@ -496,6 +160,10 @@ class Length:
             self._amount = scale * amount
             if preferred_units is None:
                 preferred_units = units
+        else:
+            # amount is only ever a number.
+            if not isinstance(amount, (float, int)):
+                raise ValueError("Amount must be an number.")
         if preferred_units is None:
             preferred_units = ""
         if preferred_units == "inch" or preferred_units == "inches":
@@ -639,6 +307,8 @@ class Length:
             return self.um
         elif self._preferred_units == "pt":
             return self.pt
+        elif self._preferred_units == "spx":
+            return self.spx
         else:
             return self.units
 
@@ -720,6 +390,13 @@ class Length:
         return amount
 
     @property
+    def spx(self):
+        amount = self._amount / self.units_per_spx
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
+
+    @property
     def units(self):
         amount = self._amount
         if self._digits:
@@ -765,6 +442,11 @@ class Length:
     def length_pt(self):
         amount = self.pt
         return f"{round(amount, 8)}pt"
+
+    @property
+    def length_spx(self):
+        amount = self.spx
+        return f"{round(amount, 8)}spx"
 
     @property
     def length_units(self):

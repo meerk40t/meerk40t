@@ -359,6 +359,8 @@ class GalvoController:
                     raise ConnectionError
                 self.init_laser()
             except (ConnectionError, ConnectionRefusedError):
+                if count == 0:
+                    self.service("clone_init\n")
                 time.sleep(0.3)
                 count += 1
                 # self.usb_log(f"Error-Routine pass #{count}")
@@ -623,11 +625,11 @@ class GalvoController:
             self._wobble = None
             return
         wobble_radius = settings.get("wobble_radius", "1.5mm")
-        wobble_r = self.service.physical_to_device_length(wobble_radius, 0)[0]
+        wobble_r, _ = self.service.view.position(wobble_radius, 0, vector=True)
         wobble_interval = settings.get("wobble_interval", "0.3mm")
         wobble_speed = settings.get("wobble_speed", 50.0)
         wobble_type = settings.get("wobble_type", "circle")
-        wobble_interval = self.service.physical_to_device_length(wobble_interval, 0)[0]
+        wobble_interval, _ = self.service.view.position(wobble_interval, 0, vector=True)
         algorithm = self.service.lookup(f"wobble/{wobble_type}")
         if self._wobble is None:
             self._wobble = Wobble(
@@ -908,8 +910,8 @@ class GalvoController:
         @return:
         """
         # return int(speed / 2)
-        galvos_per_mm = abs(self.service.physical_to_device_length("1mm", "1mm")[0])
-        return int(speed * galvos_per_mm / 1000.0)
+        galvos_per_mm, _ = self.service.view.position("1mm", "1mm", vector=True)
+        return abs(int(speed * galvos_per_mm / 1000.0))
 
     def _convert_frequency(self, frequency_khz):
         """

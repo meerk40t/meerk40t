@@ -1197,7 +1197,7 @@ class SimulationPanel(wx.Panel, Job):
         self.widget_scene.request_refresh()
 
     def fit_scene_to_panel(self):
-        bbox = self.context.device.bbox()
+        bbox = self.context.device.view.source_bbox()
         self.widget_scene.widget_root.focus_viewport_scene(
             bbox, self.view_pane.Size, 0.1
         )
@@ -1558,7 +1558,7 @@ class SimulationPanel(wx.Panel, Job):
     def pane_show(self):
         self.context.setting(str, "units_name", "mm")
 
-        bbox = self.context.device.bbox()
+        bbox = self.context.device.view.source_bbox()
         self.widget_scene.widget_root.focus_viewport_scene(
             bbox, self.view_pane.Size, 0.1
         )
@@ -1662,7 +1662,7 @@ class SimulationWidget(Widget):
         Widget.__init__(self, scene, all=False)
         self.renderer = LaserRender(self.scene.context)
         self.sim = sim
-        self.matrix.post_cat(scene.context.device.device_to_scene_matrix())
+        self.matrix.post_cat(~scene.context.device.view.matrix)
         self.last_msg = None
 
     def process_draw(self, gc: wx.GraphicsContext):
@@ -1828,9 +1828,9 @@ class SimulationTravelWidget(Widget):
 
     def __init__(self, scene, sim):
         Widget.__init__(self, scene, all=False)
-        self.sim_matrix = scene.context.device.device_to_scene_matrix()
+        self.sim_matrix = ~scene.context.device.view.matrix
         self.sim = sim
-        self.matrix.post_cat(scene.context.device.device_to_scene_matrix())
+        self.matrix.post_cat(~scene.context.device.view.matrix)
         self.initvars()
 
     def initvars(self):
@@ -1943,7 +1943,7 @@ class SimReticleWidget(Widget):
 
     def __init__(self, scene, sim):
         Widget.__init__(self, scene, all=False)
-        self.sim_matrix = scene.context.device.device_to_scene_matrix()
+        self.sim_matrix = ~scene.context.device.view.matrix
         self.sim = sim
 
     def process_draw(self, gc):

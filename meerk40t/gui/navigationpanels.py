@@ -215,9 +215,9 @@ def get_movement(device, dx, dy):
     newx = float(Length(dx))
     newy = float(Length(dy))
     min_x = 0
-    max_x = float(Length(device.width))
+    max_x = float(Length(device.view.width))
     min_y = 0
-    max_y = float(Length(device.height))
+    max_y = float(Length(device.view.height))
     # print ("Delta:", newx, newy)
     # print ("Current:", current_x, current_y)
     if newx + current_x > max_x:
@@ -679,9 +679,9 @@ class Drag(wx.Panel):
             return
         if _confined:
             min_x = 0
-            max_x = float(Length(self.context.device.width))
+            max_x = float(Length(self.context.device.view.width))
             min_y = 0
-            max_y = float(Length(self.context.device.height))
+            max_y = float(Length(self.context.device.view.height))
             if x < min_x or x > max_x or y < min_y or y > max_y:
                 dlg = wx.MessageDialog(
                     None,
@@ -1034,9 +1034,9 @@ class Jog(wx.Panel):
             self.confined = False
         if self.confined:
             min_x = 0
-            max_x = float(Length(self.context.device.width))
+            max_x = float(Length(self.context.device.view.width))
             min_y = 0
-            max_y = float(Length(self.context.device.height))
+            max_y = float(Length(self.context.device.view.height))
             # Are we outside? Then lets move back to the edge...
             new_x = min(max_x, max(min_x, current_x))
             new_y = min(max_y, max(min_y, current_y))
@@ -1298,7 +1298,13 @@ class MovePanel(wx.Panel):
         try:
             x = self.text_position_x.GetValue()
             y = self.text_position_y.GetValue()
-            if not self.context.device.contains(x, y):
+            pos_x = Length(
+                x, relative_length=self.context.space.display.width, unitless=UNITS_PER_PIXEL, preferred_units=self.context.units_name
+            )
+            pos_y = Length(
+                y, relative_length=self.context.space.display.height, unitless=UNITS_PER_PIXEL, preferred_units=self.context.units_name
+            )
+            if not self.context.device.view.source_contains(float(pos_x), float(pos_y)):
                 dlg = wx.MessageDialog(
                     None,
                     _("Cannot move outside bed dimensions"),
@@ -1308,18 +1314,6 @@ class MovePanel(wx.Panel):
                 dlg.ShowModal()
                 dlg.Destroy()
                 return
-            pos_x = self.context.device.length(
-                self.text_position_x.GetValue(),
-                axis=0,
-                new_units=self.context.units_name,
-                unitless=UNITS_PER_PIXEL,
-            )
-            pos_y = self.context.device.length(
-                self.text_position_y.GetValue(),
-                axis=1,
-                new_units=self.context.units_name,
-                unitless=UNITS_PER_PIXEL,
-            )
             self.context(f"move {pos_x} {pos_y}\n")
         except ValueError:
             return
@@ -2027,20 +2021,18 @@ class Transform(wx.Panel):
         self.matrix_updated()
 
     def _translate(self, dx, dy, scale):
-        dx = self.context.device.length(
-            dx,
-            0,
-            scale=scale,
-            new_units=self.context.units_name,
-            unitless=UNITS_PER_PIXEL,
+        dx = Length(
+            dx, relative_length=self.context.space.display.width, unitless=UNITS_PER_PIXEL,
+            preferred_units=self.context.units_name
         )
-        dy = self.context.device.length(
-            dy,
-            1,
-            scale=scale,
-            new_units=self.context.units_name,
-            unitless=UNITS_PER_PIXEL,
+        dx *= scale
+
+        dy = Length(
+            dy, relative_length=self.context.space.display.height, unitless=UNITS_PER_PIXEL,
+            preferred_units=self.context.units_name
         )
+        dy *= scale
+
         self.context(f"translate {dx} {dy}\n")
         self.context.elements.signal("ext-modified")
         self.matrix_updated()
@@ -2203,11 +2195,9 @@ class JogDistancePanel(wx.Panel):
 
     def on_text_jog_amount(self):  # wxGlade: Navigation.<event_handler>
         try:
-            jog = self.context.device.length(
-                self.text_jog_amount.GetValue(),
-                new_units=self.context.units_name,
-                unitless=UNITS_PER_PIXEL,
-            )
+            jog = Length(
+                self.text_jog_amount.GetValue(), unitless=UNITS_PER_PIXEL, preferred_units=self.context.units_name
+            ).preferred_length
         except ValueError:
             return
         self.context.jog_amount = str(jog)

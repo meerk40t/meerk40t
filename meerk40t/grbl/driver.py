@@ -147,12 +147,10 @@ class GRBLDriver(Parameters):
         @param y:
         @return:
         """
-        if self.service.swap_xy:
-            x, y = y, x
         self._g90_absolute()
         self._clean()
         old_current = self.service.current
-        x, y = self.service.physical_to_device_position(x, y)
+        x, y = self.service.view.position(x, y)
         self._move(x, y)
         new_current = self.service.current
         self.service.signal(
@@ -168,14 +166,12 @@ class GRBLDriver(Parameters):
         @param dy:
         @return:
         """
-        if self.service.swap_xy:
-            dx, dy = dy, dx
         self._g91_relative()
         self._clean()
         old_current = self.service.current
 
-        dx, dy = self.service.physical_to_device_length(dx, dy)
-        self._move(dx, dy)
+        unit_dx, unit_dy = self.service.view.position(dx, dy, vector=True)
+        self._move(unit_dx, unit_dy)
 
         new_current = self.service.current
         self.service.signal(

@@ -208,13 +208,7 @@ class GridWidget(Widget):
 
     @property
     def scaled_conversion(self):
-        return (
-            self.scene.context.device.length(
-                f"1{self.scene.context.units_name}",
-                as_float=True,
-            )
-            * self.scene_scale
-        )
+        return float(Length(f"1{self.scene.context.units_name}")) * self.scene_scale
 
     def calculate_tickdistance(self, w, h):
         # Establish the delta for about 15 ticks
@@ -296,8 +290,8 @@ class GridWidget(Widget):
 
         self.min_x = max(0, self.min_x)
         self.min_y = max(0, self.min_y)
-        self.max_x = min(float(self.scene.context.device.unit_width), self.max_x)
-        self.max_y = min(float(self.scene.context.device.unit_height), self.max_y)
+        self.max_x = min(float(self.scene.context.device.view.unit_width), self.max_x)
+        self.max_y = min(float(self.scene.context.device.view.unit_height), self.max_y)
 
     def calculate_tick_length(self):
         tick_length = float(
@@ -496,7 +490,7 @@ class GridWidget(Widget):
         y = start_y
         # mx, my = self.scene.convert_scene_to_window([x, y])
         self.grid_points.append([x, y])
-        max_r = abs(complex(p.device.unit_width, p.device.unit_height))  # hypot
+        max_r = abs(complex(p.device.view.unit_width, p.device.view.unit_height))  # hypot
         tick_length = (self.primary_tick_length_x + self.primary_tick_length_y) / 2
         r_fourth = max_r // (4 * tick_length) * tick_length
         segments = 48
@@ -627,8 +621,8 @@ class GridWidget(Widget):
 
     def _draw_grid_circular(self, gc):
         gc.SetPen(self.circular_grid_line_pen)
-        u_width = float(self.scene.context.device.unit_width)
-        u_height = float(self.scene.context.device.unit_height)
+        u_width = float(self.scene.context.device.view.unit_width)
+        u_height = float(self.scene.context.device.view.unit_height)
         gc.Clip(0, 0, u_width, u_height)
         siz = sqrt(u_width * u_width + u_height * u_height)
         sox = self.circular_grid_center_x / u_width

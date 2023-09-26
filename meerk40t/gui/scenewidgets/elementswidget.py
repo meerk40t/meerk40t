@@ -1,5 +1,6 @@
 from math import sqrt
 
+from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import DRAW_MODE_EDIT, DRAW_MODE_REGMARKS
 from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_HIT,
@@ -29,6 +30,7 @@ class ElementsWidget(Widget):
         scale_x = sqrt(abs(matrix.determinant))
         try:
             zoom_scale = 1 / scale_x
+            Length.units_per_spx = zoom_scale
         except ZeroDivisionError:
             matrix.reset()
             zoom_scale = 1

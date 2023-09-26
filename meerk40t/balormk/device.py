@@ -8,18 +8,20 @@ import re
 import struct
 import time
 
+from meerk40t.core.view import View
+
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.balormk.elementlightjob import ElementLightJob
 from meerk40t.balormk.livelightjob import LiveLightJob
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
-from meerk40t.core.units import Angle, Length, ViewPort
+from meerk40t.core.units import Angle, Length
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.svgelements import Path, Point
 from meerk40t.tools.geomstr import Geomstr
 
 
-class BalorDevice(Service, ViewPort):
+class BalorDevice(Service):
     """
     The BalorDevice is a MeerK40t service for the device type. It should be the main method of interacting with
     the rest of meerk40t. It defines how the scene should look and contains a spooler which meerk40t will give jobs
@@ -154,26 +156,6 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("Offset in the Y axis"),
                 "section": "_10_Parameters",
                 "subsection": "_25_Offset",
-            },
-            {
-                "attr": "scale_x",
-                "object": self,
-                "default": "1.0",
-                "type": float,
-                "label": _("X-Axis"),
-                "tip": _("Scale the X axis"),
-                "section": "_10_Parameters",
-                "subsection": "_20_Scale",
-            },
-            {
-                "attr": "scale_y",
-                "object": self,
-                "default": "1.0",
-                "type": float,
-                "label": _("Y-Axis"),
-                "tip": _("Scale the Y axis"),
-                "section": "_10_Parameters",
-                "subsection": "_20_Scale",
             },
             {
                 "attr": "flip_x",
@@ -742,15 +724,8 @@ class BalorDevice(Service, ViewPort):
         unit_size = float(Length(self.lens_size))
         galvo_range = 0xFFFF
         units_per_galvo = unit_size / galvo_range
-
-        ViewPort.__init__(
-            self,
-            self.lens_size,
-            self.lens_size,
-            native_scale_x=units_per_galvo,
-            native_scale_y=units_per_galvo,
-            origin_x=1.0 if self.flip_x else 0.0,
-            origin_y=1.0 if self.flip_y else 0.0,
+        self.view = View(self.lens_size, self.lens_size, native_scale_x=units_per_galvo, native_scale_y=units_per_galvo)
+        self.view.transform(
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
@@ -1724,8 +1699,8 @@ class BalorDevice(Service, ViewPort):
             if bounds is None:
                 channel(_("Nothing Selected"))
                 return
-            x0, y0 = self.scene_to_device_position(bounds[0], bounds[1])
-            x1, y1 = self.scene_to_device_position(bounds[2], bounds[3])
+            x0, y0 = self.view.position(bounds[0], bounds[1])
+            x1, y1 = self.view.position(bounds[2], bounds[3])
             channel(
                 f"Top,Right: ({x0:.02f}, {y0:.02f}). Lower, Left: ({x1:.02f},{y1:.02f})"
             )
@@ -1874,6 +1849,52 @@ class BalorDevice(Service, ViewPort):
                 geom.end()
             return "geometry", geom
 
+        @self.console_argument("filename", type=str)
+        @self.console_command(
+            "clone_init",
+            help=_("Initializes a galvo clone board from specified file."),
+        )
+        def codes_update(channel, filename, **kwargs):
+            import platform
+            from meerk40t.balormk.clone_loader import load_sys
+            from meerk40t.kernel import get_safe_path
+
+            self.setting(str, "clone_sys", "chunks")
+            if filename is not None:
+                self.clone_sys = filename
+            if self.clone_sys == "chunks":
+                from meerk40t.balormk.clone_loader import load_chunks
+                load_chunks(channel=channel)
+                return
+
+            # Check for file in local directory
+            p = self.clone_sys
+            if os.path.exists(p):
+                load_sys(p, channel=channel)
+                return
+
+            # Check for file in the meerk40t directory (safe_path)
+            directory = get_safe_path(kernel.name, create=True)
+            p = os.path.join(directory, self.clone_sys)
+            if os.path.exists(p):
+                load_sys(p, channel=channel)
+                return
+
+            if platform.system() != "Windows":
+                return
+
+            # In windows, check the system32/drivers directory.
+            system32 = os.path.join(
+                os.environ["SystemRoot"],
+                "SysNative" if platform.architecture()[0] == "32bit" else "System32",
+            )
+            p = os.path.join(system32, "drivers", self.clone_sys)
+            if os.path.exists(p):
+                load_sys(p, channel=channel)
+                return
+
+            channel(f"{self.clone_sys} file was not found.")
+
         @self.console_command(
             "viewport_update",
             hidden=True,
@@ -1889,19 +1910,22 @@ class BalorDevice(Service, ViewPort):
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
     def realize(self, origin=None, *args):
-        self.width = self.lens_size
-        self.height = self.lens_size
-        super().realize()
-        self.space.update_bounds(0, 0, self.width, self.height)
+        self.view.set_dims(self.lens_size, self.lens_size)
+        self.view.transform(
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
+        )
+        self.space.update_bounds(0, 0, self.lens_size, self.lens_size)
 
     @property
     def current(self):
         """
-        @return: the location in nm for the current known x value.
+        @return: the location in units for the current known position.
         """
-        return self.device_to_scene_position(
+        return self.view.iposition(
             self.driver.native_x,
-            self.driver.native_y,
+            self.driver.native_y
         )
 
     @property

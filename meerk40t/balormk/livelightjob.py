@@ -11,7 +11,7 @@ import time
 
 import numpy as np
 
-from meerk40t.core.units import UNITS_PER_PIXEL
+from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.svgelements import Matrix
 from meerk40t.tools.geomstr import Geomstr
 
@@ -239,7 +239,7 @@ class LiveLightJob:
             (xmin, ymin),
         )
         rotate = self._redlight_adjust_matrix()
-        geometry.transform(self.service.scene_to_device_matrix())
+        geometry.transform(self.service.view.matrix)
         geometry.transform(rotate)
         return self._light_geometry(con, geometry, bounded=True)
 
@@ -250,18 +250,13 @@ class LiveLightJob:
 
         @return:
         """
-        x_offset = self.service.length(
-            self.service.redlight_offset_x,
-            axis=0,
-            as_float=True,
-            unitless=UNITS_PER_PIXEL,
-        )
-        y_offset = self.service.length(
-            self.service.redlight_offset_y,
-            axis=1,
-            as_float=True,
-            unitless=UNITS_PER_PIXEL,
-        )
+
+        x_offset = float(Length(
+            self.service.redlight_offset_x, relative_length=self.service.view.width, unitless=UNITS_PER_PIXEL
+        ))
+        y_offset = float(Length(
+            self.service.redlight_offset_y, relative_length=self.service.view.height, unitless=UNITS_PER_PIXEL
+        ))
         redlight_adjust_matrix = Matrix()
         redlight_adjust_matrix.post_rotate(
             self.service.redlight_angle.radians, 0x8000, 0x8000
@@ -338,7 +333,7 @@ class LiveLightJob:
             geometry = Geomstr(node.as_geometry())
 
             # Move to device space.
-            geometry.transform(self.service.scene_to_device_matrix())
+            geometry.transform(self.service.view.matrix)
 
             # Add redlight adjustments within device space.
             geometry.transform(rotate)
@@ -371,7 +366,7 @@ class LiveLightJob:
 
             # Convert to hull.
             hull = Geomstr.hull(geometry)
-            hull.transform(self.service.scene_to_device_matrix())
+            hull.transform(self.service.view.matrix)
             hull.transform(self._redlight_adjust_matrix())
             self.points = hull
 

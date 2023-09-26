@@ -5,17 +5,18 @@ Moshiboard Device
 Defines the interactions between the device service and the meerk40t's viewport.
 Registers relevant commands and options.
 """
+from meerk40t.core.view import View
 
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
-from ..core.units import UNITS_PER_MIL, Length, ViewPort
+from ..core.units import UNITS_PER_MIL, Length
 from .controller import MoshiController
 from .driver import MoshiDriver
 
 
-class MoshiDevice(Service, ViewPort):
+class MoshiDevice(Service):
     """
     MoshiDevice is driver for the Moshiboard boards.
     """
@@ -269,26 +270,23 @@ class MoshiDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        ViewPort.__init__(
-            self,
+        self.view = View(
             self.bedwidth,
             self.bedheight,
+            dpi=1000.0
+        )
+        self.view.transform(
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,
-            native_scale_x=UNITS_PER_MIL,
-            native_scale_y=UNITS_PER_MIL,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
-            swap_xy=self.swap_xy,
-            origin_x=1.0 if self.home_right else 0.0,
-            origin_y=1.0 if self.home_bottom else 0.0,
-            rotary_active=self.rotary_active,
-            rotary_scale_x=self.rotary_scale_x,
-            rotary_scale_y=self.rotary_scale_y,
-            rotary_flip_x=self.rotary_flip_x,
-            rotary_flip_y=self.rotary_flip_y,
+            swap_xy=self.swap_xy
         )
-
+        # rotary_active = self.rotary_active,
+        # rotary_scale_x = self.rotary_scale_x,
+        # rotary_scale_y = self.rotary_scale_y,
+        # rotary_flip_x = self.rotary_flip_x,
+        # rotary_flip_y = self.rotary_flip_y,
         self.state = 0
 
         self.driver = MoshiDriver(self)
@@ -428,7 +426,10 @@ class MoshiDevice(Service, ViewPort):
         """
         @return: the location in units for the current known position.
         """
-        return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
+        return self.view.iposition(
+            self.driver.native_x,
+            self.driver.native_y
+        )
 
     @property
     def native(self):
@@ -439,9 +440,6 @@ class MoshiDevice(Service, ViewPort):
 
     @signal_listener("bedsize")
     def realize(self, origin=None):
-        self.width = self.bedwidth
-        self.height = self.bedheight
-        self.origin_x = 1.0 if self.home_right else 0.0
-        self.origin_y = 1.0 if self.home_bottom else 0.0
-        super().realize()
+        self.view.origin(1.0 if self.home_right else 0.0, 1.0 if self.home_bottom else 0.0)
+        self.view.realize()
         self.space.update_bounds(0, 0, self.width, self.height)

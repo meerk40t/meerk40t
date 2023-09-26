@@ -90,9 +90,9 @@ class DXFProcessor:
         if dxf_center:
             bbox = file_node.bounds
             if bbox is not None:
-                viewport = self.elements.device
-                bw = viewport.unit_width
-                bh = viewport.unit_height
+                view = self.elements.device.view
+                bw = view.unit_width
+                bh = view.unit_height
                 bx = 0
                 by = 0
                 x = bbox[0]
@@ -103,7 +103,7 @@ class DXFProcessor:
                     w = 1
                 if h == 0:
                     h = 1
-                if w > viewport.unit_width or h > viewport.unit_height:
+                if w > view.unit_width or h > view.unit_height:
                     # Cannot fit to bed. Scale.
                     bb = Viewbox(f"{x} {y} {w} {h}", preserve_aspect_ratio="xMidyMid")
                     matrix = bb.transform(Viewbox(bx, by, bw, bh))
@@ -157,7 +157,7 @@ class DXFProcessor:
         if entity.dxftype() == "CIRCLE":
             m = Matrix()
             m.post_scale(self.scale, -self.scale)
-            m.post_translate_y(self.elements.device.unit_height)
+            m.post_translate_y(self.elements.device.view.unit_height)
             try:
                 cx, cy = entity.dxf.center
             except ValueError:
@@ -185,7 +185,7 @@ class DXFProcessor:
             element = Path(circ.arc_angle(start_angle, end_angle))
             element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
             element.transform.post_scale(self.scale, -self.scale)
-            element.transform.post_translate_y(self.elements.device.unit_height)
+            element.transform.post_translate_y(self.elements.device.view.unit_height)
             path = abs(Path(element))
             if len(path) != 0:
                 if not isinstance(path[0], Move):
@@ -208,7 +208,7 @@ class DXFProcessor:
             )
             element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
             element.transform.post_scale(self.scale, -self.scale)
-            element.transform.post_translate_y(self.elements.device.unit_height)
+            element.transform.post_translate_y(self.elements.device.view.unit_height)
             node = context_node.add(shape=element, type="elem ellipse")
             self.check_for_attributes(node, entity)
             e_list.append(node)
@@ -217,7 +217,7 @@ class DXFProcessor:
             #  https://ezdxf.readthedocs.io/en/stable/dxfentities/line.html
             m = Matrix()
             m.post_scale(self.scale, -self.scale)
-            m.post_translate_y(self.elements.device.unit_height)
+            m.post_translate_y(self.elements.device.view.unit_height)
             node = context_node.add(
                 x1=entity.dxf.start[0],
                 y1=entity.dxf.start[1],
@@ -248,7 +248,7 @@ class DXFProcessor:
                         SVG_ATTR_VECTOR_EFFECT
                     ] = SVG_VALUE_NON_SCALING_STROKE
                     element.transform.post_scale(self.scale, -self.scale)
-                    element.transform.post_translate_y(self.elements.device.unit_height)
+                    element.transform.post_translate_y(self.elements.device.view.unit_height)
                     node = context_node.add(shape=element, type="elem polyline")
                     self.check_for_attributes(node, entity)
                     e_list.append(node)
@@ -281,7 +281,7 @@ class DXFProcessor:
                         SVG_ATTR_VECTOR_EFFECT
                     ] = SVG_VALUE_NON_SCALING_STROKE
                     element.transform.post_scale(self.scale, -self.scale)
-                    element.transform.post_translate_y(self.elements.device.unit_height)
+                    element.transform.post_translate_y(self.elements.device.view.unit_height)
                     path = abs(Path(element))
                     if len(path) != 0:
                         if not isinstance(path[0], Move):
@@ -299,7 +299,7 @@ class DXFProcessor:
                     element = Polyline(*[(p[0], p[1]) for p in entity])
                 element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
                 element.transform.post_scale(self.scale, -self.scale)
-                element.transform.post_translate_y(self.elements.device.unit_height)
+                element.transform.post_translate_y(self.elements.device.view.unit_height)
                 node = context_node.add(shape=element, type="elem polyline")
                 self.check_for_attributes(node, entity)
                 e_list.append(node)
@@ -327,7 +327,7 @@ class DXFProcessor:
                         element.closed()
                 element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
                 element.transform.post_scale(self.scale, -self.scale)
-                element.transform.post_translate_y(self.elements.device.unit_height)
+                element.transform.post_translate_y(self.elements.device.view.unit_height)
                 path = abs(Path(element))
                 if len(path) != 0:
                     if not isinstance(path[0], Move):
@@ -388,7 +388,7 @@ class DXFProcessor:
                                     element.line(knot)
             element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
             element.transform.post_scale(self.scale, -self.scale)
-            element.transform.post_translate_y(self.elements.device.unit_height)
+            element.transform.post_translate_y(self.elements.device.view.unit_height)
             path = abs(Path(element))
             if len(path) != 0:
                 if not isinstance(path[0], Move):
@@ -416,7 +416,7 @@ class DXFProcessor:
                 return
             # Node.matrix is primary transformation.
             node.matrix.post_scale(self.scale, -self.scale)
-            node.matrix.post_translate_y(self.elements.device.unit_height)
+            node.matrix.post_translate_y(self.elements.device.view.unit_height)
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
@@ -430,7 +430,7 @@ class DXFProcessor:
                 type="elem text",
             )
             node.matrix.post_scale(self.scale, -self.scale)
-            node.matrix.post_translate_y(self.elements.device.unit_height)
+            node.matrix.post_translate_y(self.elements.device.view.unit_height)
 
             self.check_for_attributes(node, entity)
             e_list.append(node)
@@ -445,7 +445,7 @@ class DXFProcessor:
                 type="elem text",
             )
             node.matrix.post_scale(self.scale, -self.scale)
-            node.matrix.post_translate_y(self.elements.device.unit_height)
+            node.matrix.post_translate_y(self.elements.device.view.unit_height)
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
@@ -460,7 +460,7 @@ class DXFProcessor:
             element.fill = Color("black")
             element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
             element.transform.post_scale(self.scale, -self.scale)
-            element.transform.post_translate_y(self.elements.device.unit_height)
+            element.transform.post_translate_y(self.elements.device.view.unit_height)
 
             path = abs(Path(element))
             node = context_node.add(path=path, type="elem path")
@@ -509,7 +509,7 @@ class DXFProcessor:
                 element.closed()
             element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
             element.transform.post_scale(self.scale, -self.scale)
-            element.transform.post_translate_y(self.elements.device.unit_height)
+            element.transform.post_translate_y(self.elements.device.view.unit_height)
             path = abs(element)
             if len(path) != 0:
                 if not isinstance(path[0], Move):

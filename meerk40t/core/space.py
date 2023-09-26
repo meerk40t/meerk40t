@@ -106,8 +106,6 @@ class CoordinateSystem(Service):
             self.width, self.height, dpi_x=UNITS_PER_INCH, dpi_y=UNITS_PER_INCH
         )
         self.display.transform(
-            origin_x=self.origin_x,
-            origin_y=self.origin_y,
             flip_x=not self.right_positive,
             flip_y=not self.bottom_positive,
             swap_xy=self.swap_xy,

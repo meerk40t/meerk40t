@@ -512,7 +512,7 @@ def init_tree(kernel):
             # Nothing to do
             return
         data = []
-        max_x = self.device.width
+        max_x = self.device.view.width
         for n in list(self.ops(selected=True)):
             if n.type == "place point":
                 data.append(n)
@@ -577,7 +577,7 @@ def init_tree(kernel):
             # Nothing to do
             return
         data = []
-        max_y = self.device.height
+        max_y = self.device.view.height
         for n in list(self.ops(selected=True)):
             if n.type == "place point":
                 data.append(n)
@@ -1362,7 +1362,7 @@ def init_tree(kernel):
     )
     def blob_execute(node, **kwargs):
         spooler_job = self.lookup(f"spoolerjob/{node.data_type}")
-        matrix = self.device.scene_to_device_matrix()
+        matrix = self.device.view.matrix
         job_object = spooler_job(self.device.driver, matrix)
         job_object.write_blob(node.data)
         self.device.spooler.send(job_object)

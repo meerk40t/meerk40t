@@ -54,7 +54,7 @@ class MachineOriginWidget(Widget):
         y_dx, y_dy = space.display.iposition(0, 50000)
         ya1_dx, ya1_dy = space.display.iposition(5000, 45000)
         ya2_dx, ya2_dy = space.display.iposition(-5000, 45000)
-        dev0x, dev0y = self.scene.context.device.device_to_scene_position(0, 0)
+        dev0x, dev0y = space.device.view.iposition(0, 0)
         gc.SetBrush(self.brush)
         gc.DrawRectangle(dev0x - margin, dev0y - margin, margin * 2, margin * 2)
 
