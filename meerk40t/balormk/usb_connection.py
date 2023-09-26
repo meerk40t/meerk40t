@@ -22,6 +22,7 @@ READ_ENDPOINT = 0x88
 # WRITE_ENDPOINT = 0x02  # usb.util.ENDPOINT_OUT|usb.util.ENDPOINT_TYPE_BULK
 # READ_ENDPOINT = 0x82
 
+chunks_loaded = False
 
 class USBConnection:
     def __init__(self, channel):
@@ -48,6 +49,11 @@ class USBConnection:
             raise ConnectionRefusedError
         if len(devices) == 0:
             self.channel(_("Devices Not Found."))
+            global chunks_loaded
+            if not chunks_loaded:
+                from meerk40t.balormk.clone_loader import load_chunks
+            
+                load_chunks(self.channel)
             raise ConnectionRefusedError
         for d in devices:
             self.channel(_("Galvo device detected:"))
