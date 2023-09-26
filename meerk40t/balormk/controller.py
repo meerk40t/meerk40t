@@ -359,6 +359,8 @@ class GalvoController:
                     raise ConnectionError
                 self.init_laser()
             except (ConnectionError, ConnectionRefusedError):
+                if count == 0:
+                    self.service("clone_init\n")
                 time.sleep(0.3)
                 count += 1
                 # self.usb_log(f"Error-Routine pass #{count}")
