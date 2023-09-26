@@ -873,8 +873,8 @@ class DistributionPanel(wx.Panel):
         elif treatment == "bed":
             left_edge = 0
             top_edge = 0
-            right_edge = float(Length(self.context.device.width))
-            bottom_edge = float(Length(self.context.device.height))
+            right_edge = float(Length(self.context.device.view.width))
+            bottom_edge = float(Length(self.context.device.view.height))
             calc_basic()
         elif treatment == "ref":
             left_edge = self.scene.pane.reference_object.bounds[0]
@@ -1370,8 +1370,8 @@ class ArrangementPanel(wx.Panel):
             # Now that we have established the global boundaries,
             # we are going to center it on the scene...
             # By definition the origin was set to 0 0
-            dx = float(Length(self.context.device.width)) / 2 - (0 + max_xx) / 2
-            dy = float(Length(self.context.device.height)) / 2 - (0 + max_yy) / 2
+            dx = float(Length(self.context.device.view.width)) / 2 - (0 + max_xx) / 2
+            dy = float(Length(self.context.device.view.height)) / 2 - (0 + max_yy) / 2
             for idx, bb in enumerate(target):
                 newbb = (bb[0] + dx, bb[1] + dy, bb[2] + dx, bb[3] + dy)
                 target[idx] = newbb

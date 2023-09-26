@@ -1788,8 +1788,8 @@ class MeerK40t(MWindow):
                 m = m.replace("$x", str(x))
                 m = m.replace("$y", str(y))
                 matrix = Matrix(m)
-                unit_width = context.device.unit_width
-                unit_height = context.device.unit_height
+                unit_width = context.device.view.unit_width
+                unit_height = context.device.view.unit_height
                 matrix.render(ppi=UNITS_PER_INCH, width=unit_width, height=unit_height)
                 if matrix.is_identity():
                     dlg.Destroy()
@@ -1821,7 +1821,7 @@ class MeerK40t(MWindow):
             )
             dlg.SetValue("")
             if dlg.ShowModal() == wx.ID_OK:
-                unit_width = context.device.unit_width
+                unit_width = context.device.view.unit_width
                 length = float(Length(dlg.GetValue(), relative_length=unit_width))
                 matrix = Matrix()
                 matrix.post_scale(-1.0, 1, length / 2.0, 0)
@@ -3812,16 +3812,16 @@ class MeerK40t(MWindow):
             x_delta = (bbox[2] - bbox[0]) * zfact
             y_delta = (bbox[3] - bbox[1]) * zfact
             x0 = Length(
-                amount=bbox[0] - x_delta, relative_length=self.context.device.width
+                amount=bbox[0] - x_delta, relative_length=self.context.device.view.width
             ).length_mm
             y0 = Length(
-                amount=bbox[1] - y_delta, relative_length=self.context.device.height
+                amount=bbox[1] - y_delta, relative_length=self.context.device.view.height
             ).length_mm
             x1 = Length(
-                amount=bbox[2] + x_delta, relative_length=self.context.device.width
+                amount=bbox[2] + x_delta, relative_length=self.context.device.view.width
             ).length_mm
             y1 = Length(
-                amount=bbox[3] + y_delta, relative_length=self.context.device.height
+                amount=bbox[3] + y_delta, relative_length=self.context.device.view.height
             ).length_mm
             self.context(f"scene focus -a {x0} {y0} {x1} {y1}\n")
 

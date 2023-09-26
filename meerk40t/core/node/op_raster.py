@@ -359,7 +359,7 @@ class RasterOpNode(Node, Parameters):
             # Calculate raster steps from DPI device context
             self.set_dirty_bounds()
 
-            step_x, step_y = context.device.dpi_to_steps(self.dpi, matrix=matrix)
+            step_x, step_y = context.device.view.dpi_to_steps(self.dpi)
             bounds = self.paint_bounds
             img_mx = Matrix.scale(step_x, step_y)
             data = list(self.flat())

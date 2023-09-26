@@ -336,13 +336,13 @@ class PositionPanel(wx.Panel):
             conversion_x = float(
                 Length(
                     f"1{self.position_units}",
-                    relative_length=self.context.device.unit_width,
+                    relative_length=self.context.device.view.unit_width,
                 )
             )
             conversion_y = float(
                 Length(
                     f"1{self.position_units}",
-                    relative_length=self.context.device.unit_height,
+                    relative_length=self.context.device.view.unit_height,
                 )
             )
             # print ("Size: x0 = %.2f, conversion=%.5f, new=%.2f (units %s)" % (x0, conversion, x0/conversion, self.position_units))
@@ -566,11 +566,11 @@ class PositionPanel(wx.Panel):
             w = float(self.text_w.GetValue())
         except ValueError:
             try:
-                w = self.context.device.length(
+                w = Length(
                     self.text_w.GetValue(),
-                    0,
-                    new_units=self.position_units,
+                    relative_length=self.context.view.width,
                     unitless=UNITS_PER_PIXEL,
+                    preferred_units=self.context.units_name,
                 )
             except ValueError:
                 return
@@ -598,11 +598,11 @@ class PositionPanel(wx.Panel):
             h = float(self.text_h.GetValue())
         except ValueError:
             try:
-                h = self.context.device.length(
+                h = Length(
                     self.text_h.GetValue(),
-                    1,
-                    new_units=self.position_units,
+                    relative_length=self.context.view.height,
                     unitless=UNITS_PER_PIXEL,
+                    preferred_units=self.context.units_name,
                 )
             except ValueError:
                 return
@@ -629,11 +629,11 @@ class PositionPanel(wx.Panel):
             pos_x = float(self.text_x.GetValue())
         except ValueError:
             try:
-                pos_x = self.context.device.length(
+                pos_x = Length(
                     self.text_h.GetValue(),
-                    1,
-                    new_units=self.position_units,
+                    relative_length=self.context.view.height,
                     unitless=UNITS_PER_PIXEL,
+                    preferred_units=self.context.units_name,
                 )
             except ValueError:
                 return
@@ -647,11 +647,11 @@ class PositionPanel(wx.Panel):
             pos_y = float(self.text_y.GetValue())
         except ValueError:
             try:
-                pos_y = self.context.device.length(
+                pos_y = Length(
                     self.text_h.GetValue(),
-                    1,
-                    new_units=self.position_units,
+                    relative_length=self.context.view.width,
                     unitless=UNITS_PER_PIXEL,
+                    preferred_units=self.context.units_name,
                 )
             except ValueError:
                 return
