@@ -66,7 +66,7 @@ def load_sys(sys_file=None, channel=None):
             channel(f"{len(devices)} devices need initializing.")
         for i, device in enumerate(devices):
             if channel:
-                channel(f"Clone board #{i+1} detected sending sys file.")
+                channel(f"Clone board #{i+1} detected. Sending Initialize.")
             _send_device_sys(device, sys_file)
     except usb.core.USBError as e:
         channel(str(e))
