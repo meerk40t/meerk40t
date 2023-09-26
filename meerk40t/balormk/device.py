@@ -1887,7 +1887,7 @@ class BalorDevice(Service, ViewPort):
             self.setting(str, "clone_sys", "chunks")
             if filename is not None:
                 self.clone_sys = filename
-            if filename == "chunks":
+            if self.clone_sys == "chunks":
                 from meerk40t.balormk.clone_loader import load_chunks
                 load_chunks(channel=channel)
                 return
