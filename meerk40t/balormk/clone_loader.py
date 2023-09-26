@@ -36,19 +36,27 @@ def _write(device, wValue, data):
     )
 
 
-def _send_device_sys(device, sys_file, offset=0x4440):
+def _send_device_stream(device, f):
     _firmware(device, start=True)
-    with open(sys_file, "rb") as f:
-        f.seek(offset)
-        while True:
-            data = f.read(22)
-            if data is None or len(data) != 22:
-                break
-            length, _, value, end, payload, _ = struct.unpack("BBHB16sB", data)
-            if end != 0:
-                break
-            _write(device, wValue=value, data=payload[:length])
+    while True:
+        data = f.read(22)
+        if data is None or len(data) != 22:
+            break
+        length, _, value, end, payload, _ = struct.unpack("BBHB16sB", data)
+        if end != 0:
+            break
+        _write(device, wValue=value, data=payload[:length])
     _firmware(device, start=False)
+
+
+def _send_device_sys(device, sys_file, offset=0x4440):
+    if isinstance(sys_file, str):
+        with open(sys_file, "rb") as f:
+            if offset:
+                f.seek(offset, 0)
+            _send_device_stream(device, f)
+    else:
+        _send_device_stream(device, sys_file)
 
 
 def load_sys(sys_file=None, channel=None):
@@ -60,7 +68,6 @@ def load_sys(sys_file=None, channel=None):
             if channel:
                 channel(f"Clone board #{i+1} detected sending sys file.")
             _send_device_sys(device, sys_file)
-
     except usb.core.USBError as e:
         channel(str(e))
         raise ConnectionRefusedError
