@@ -7,6 +7,80 @@ from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 
 _ = wx.GetTranslation
 
+class SimpleCheckbox:
+    def __init__(self, index, scene, x, y, trailer):
+        self.identifier = index
+        self._value = False
+        self.scene = scene
+        self.x = x
+        self.y = y
+        self.pt_offset = 5
+        if trailer is None:
+            trailer = ""
+        self.trailer = trailer
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, newval):
+        self._value = bool(newval)
+
+    def set_position(self, x, y):
+        self.x = x
+        self.y = y
+
+    def process_draw(self, gc: wx.GraphicsContext):
+        """
+        Widget-Routine to draw the different elements on the provided GraphicContext
+        """
+        gc.PushState()
+        s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
+        offset = self.pt_offset / s
+        gc.SetBrush(wx.TRANSPARENT_BRUSH)
+        gc.SetPen(wx.LIGHT_GREY_PEN)
+        gc.DrawRectangle(int(self.x - offset), int(self.y - offset), int(2 * offset), int(2 * offset))
+        if self._value:
+            gc.SetBrush(wx.RED_BRUSH)
+            gc.SetPen(wx.RED_PEN)
+            gc.DrawRectangle(int(self.x - 0.75 * offset), int(self.y - 0.75 * offset), int(1.5 * offset), int(1.5 * offset))
+        if self.trailer:
+            font_size = 8 / s
+            if font_size < 1.0:
+                font_size = 1.0
+            try:
+                font = wx.Font(
+                    font_size,
+                    wx.FONTFAMILY_SWISS,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+            except TypeError:
+                font = wx.Font(
+                    int(font_size),
+                    wx.FONTFAMILY_SWISS,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+            gc.SetFont(font, wx.Colour(red=255, green=0, blue=0))
+            (t_width, t_height) = gc.GetTextExtent(self.trailer)
+            x = self.x + 2 * offset
+            y = self.y - t_height / 2
+            gc.DrawText(self.trailer, int(x), int(y))
+
+        gc.PopState()
+
+    def hit(self, xpos, ypos):
+        s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
+        offset = self.pt_offset / s
+        inside = bool(abs(self.x - xpos) <= offset and abs(self.y - ypos) <= offset)
+        # print(
+        #     f"{self.identifier}: {inside} (offset={offset:.0f}) <- ({xpos:.0f}, {ypos:.0f}) to ({self.x:.0f}, {self.y:.0f})\n"
+        #     + f"dx={abs(self.x - xpos):.0f}, dy={abs(self.y - ypos):.0f}"
+        # )
+        return inside
+
 
 class SimpleSlider:
     def __init__(self, index, scene, minimum, maximum, x, y, width, trailer):
@@ -71,19 +145,19 @@ class SimpleSlider:
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset = self.pt_offset / s
         gc.SetPen(wx.LIGHT_GREY_PEN)
-        gc.DrawLines([(self.x, self.y), (self.x + self.width, self.y)])
+        gc.DrawLines([(int(self.x), int(self.y)), (int(self.x + self.width), int(self.y))])
         gc.DrawLines(
-            [(self.x, int(self.y - offset / 2)), (self.x, int(self.y + offset / 2))]
+            [(int(self.x), int(self.y - offset / 2)), (int(self.x), int(self.y + offset / 2))]
         )
         gc.DrawLines(
             [
-                (self.x + self.width, int(self.y - offset / 2)),
-                (self.x + self.width, int(self.y + offset / 2)),
+                (int(self.x + self.width), int(self.y - offset / 2)),
+                (int(self.x + self.width), int(self.y + offset / 2)),
             ]
         )
         gc.SetBrush(wx.RED_BRUSH)
         gc.SetPen(wx.RED_PEN)
-        gc.DrawEllipse(self.ptx - offset, self.pty - offset, offset * 2, offset * 2)
+        gc.DrawEllipse(int(self.ptx - offset), int(self.pty - offset), int(offset * 2), int(offset * 2))
         symbol = str(self._value)
         if self.trailer:
             if not self.trailer.startswith("%"):
@@ -110,7 +184,7 @@ class SimpleSlider:
         (t_width, t_height) = gc.GetTextExtent(symbol)
         x = self.x + self.width + offset
         y = self.y - t_height / 2
-        gc.DrawText(symbol, x, y)
+        gc.DrawText(symbol, int(x), int(y))
 
         gc.PopState()
 
@@ -145,6 +219,9 @@ class ParameterTool(ToolWidget):
         self.read_functions()
         self.pt_offset = 5
         self.is_hovering = False
+        self.pin_box = None
+        self.pin_box = SimpleCheckbox(-1, self.scene, 0, 0, _("Pin"))
+        self.pinned = False
 
     def read_functions(self):
         self._functions.clear()
@@ -161,21 +238,32 @@ class ParameterTool(ToolWidget):
         self.point_index = -1
         self.active_slider = None
 
+
     def update_and_draw_sliders(self, gc):
         if self.element is None:
             return
         bb = self.element.bounds
         if bb is None:
             return
+        if len(self.sliders) == 0:
+            return
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset = self.pt_offset / s
         width = 100 / s
-        x = bb[0]
-        y = bb[1]
+        if self.pinned:
+            x = offset
+            y = offset + 3 * offset * (len(self.sliders) + 1)
+        else:
+            x = bb[0]
+            y = bb[1]
         for slider in self.sliders:
             y -= 3 * offset
             slider.set_position(x, y, width)
             slider.process_draw(gc)
+        y -= 3 * offset
+        self.pin_box.value = self.pinned
+        self.pin_box.set_position(x, y)
+        self.pin_box.process_draw(gc)
 
     def establish_parameters(self, node):
         self.reset()
@@ -390,6 +478,9 @@ class ParameterTool(ToolWidget):
                         gui_info = info[str(p_idx)]
                         if len(gui_info) > 0:
                             message = gui_info[0]
+            else:
+                if self.pin_box.hit(xp, yp):
+                    message = _("Pin the parameter section to the top of the screen")
             self.is_hovering = len(message) > 0
             self.scene.context.signal("statusmsg", message)
             return RESPONSE_CHAIN
@@ -426,9 +517,11 @@ class ParameterTool(ToolWidget):
                         break
 
                 idx += 1
-            # print(
-            #     f"Established: {self.point_index}, {self.slider_index}, {self.paramtype}"
-            # )
+            if self.point_index < 0 and self.slider_index < 0 and self.pin_box.hit(xp, yp):
+                self.pinned = not self.pinned
+                self.pin_box.value = self.pinned
+
+                self.scene.refresh_scene()
             return RESPONSE_CONSUME
         elif event_type == "move":
             # print(f"Move: {self.point_index}, {self.slider_index}")
