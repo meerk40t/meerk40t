@@ -15,7 +15,8 @@ from usb.util import (
 )
 
 USB_LOCK_VENDOR = 0x9588
-USB_LOCK_PRODUCT = 0x9880
+USB_LOCK_PRODUCT = 0x9980
+
 request = build_request_type(CTRL_OUT, CTRL_TYPE_VENDOR, CTRL_RECIPIENT_DEVICE)
 
 
