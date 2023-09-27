@@ -467,7 +467,7 @@ class GalvoController:
             self._delay_poly = None
             self._delay_end = None
             self.list_ready()
-            if self.service.delay_openmo != 0:
+            if self.service.delay_openmo != 0 and self.source == "fiber":
                 self.list_delay_time(int(self.service.delay_openmo * 100))
             self.list_write_port()
             self.list_jump_speed(self.service.default_rapid_speed)
