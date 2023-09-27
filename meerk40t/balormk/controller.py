@@ -599,7 +599,7 @@ class GalvoController:
 
         power = float(settings.get("power", self.service.default_power)) / 10.0   # Convert power, out of 1000
         frequency = float(settings.get("frequency", self.service.default_frequency))
-        fpk = float(settings.get("fpk", self.service.fpk))
+        fpk = float(settings.get("fpk", self.service.default_fpk))
         if self.source == "fiber":
             self.power(power)
             self.frequency(frequency)
