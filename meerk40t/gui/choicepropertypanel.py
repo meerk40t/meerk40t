@@ -1207,21 +1207,23 @@ class ChoicePropertyPanel(ScrolledPanel):
                     if len(conditional) == 2:
                         c_obj, c_attr = conditional
                         enabled = bool(getattr(c_obj, c_attr))
+                        c_equals = True
                         control.Enable(enabled)
                     elif len(conditional) == 3:
                         c_obj, c_attr, c_equals = conditional
                         enabled = bool(getattr(c_obj, c_attr) == c_equals)
                         control.Enable(enabled)
-                    def on_enable_listener(param, ctrl, obj):
+
+                    def on_enable_listener(param, ctrl, obj, eqs):
                         def listen(origin, value, target=None):
                             try:
-                                ctrl.Enable(bool(getattr(obj, param)))
+                                ctrl.Enable(bool(getattr(obj, param)) == eqs)
                             except RuntimeError:
                                 pass
 
                         return listen
 
-                    listener = on_enable_listener(c_attr, control, c_obj)
+                    listener = on_enable_listener(c_attr, control, c_obj, c_equals)
                     self.listeners.append((c_attr, listener))
                     context.listen(c_attr, listener)
                 except KeyError:
