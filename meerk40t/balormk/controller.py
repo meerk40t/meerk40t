@@ -872,7 +872,11 @@ class GalvoController:
         if self._power == power:
             return
         self._power = power
-        self.list_mark_current(self._convert_power(power))
+        if self.source == "co2":
+            power_ratio = int(round(200 * power / self._frequency))
+            self.list_mark_power_ratio(power_ratio)
+        if self.source == "fiber":
+            self.list_mark_current(self._convert_power(power))
 
     def frequency(self, frequency):
         if self._frequency == frequency:
