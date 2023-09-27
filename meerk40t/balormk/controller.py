@@ -285,6 +285,10 @@ class GalvoController:
         self.paused = False
 
     @property
+    def source(self):
+        return self.service.source
+
+    @property
     def state(self):
         if self.mode == DRIVER_STATE_RAPID:
             return "idle", "idle"

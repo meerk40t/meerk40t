@@ -101,6 +101,16 @@ class BalorDevice(Service):
                 "signals": "device;renamed",
             },
             {
+                "attr": "source",
+                "object": self,
+                "default": "fiber",
+                "type": str,
+                "style": "combo",
+                "choices": ["fiber", "co2", "uv"],
+                "label": _("Laser Source"),
+                "tip": _("What type of laser is this?"),
+            },
+            {
                 "attr": "corfile_enabled",
                 "object": self,
                 "default": False,
