@@ -265,6 +265,7 @@ class GalvoController:
         self._frequency = None
         self._power = None
         self._pulse_width = None
+        self._fpk = None
 
         self._delay_jump = None
         self._delay_on = None
@@ -576,7 +577,7 @@ class GalvoController:
         @param settings: The current settings dictionary
         @return:
         """
-        if self.service.pulse_width_enabled:
+        if self.service.pulse_width_enabled and self.source == "fiber":
             # Global Pulse Width is enabled.
             if str(settings.get("pulse_width_enabled", False)).lower() == "true":
                 # Local Pulse Width value is enabled.
