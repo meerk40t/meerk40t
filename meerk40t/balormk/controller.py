@@ -425,7 +425,8 @@ class GalvoController:
         self._list_executing = False
         self._number_of_list_packets = 0
         self.wait_idle()
-        self.set_fiber_mo(0)
+        if self.source == "fiber":
+            self.set_fiber_mo(0)
         self.port_off(bit=0)
         self.write_port()
         marktime = self.get_mark_time()
@@ -444,13 +445,15 @@ class GalvoController:
             self.light_off()
             self.port_on(bit=0)
             self.write_port()
-            self.set_fiber_mo(1)
+            if self.source == "fiber":
+                self.set_fiber_mo(1)
         else:
             self.mode = DRIVER_STATE_PROGRAM
             self.reset_list()
             self.port_on(bit=0)
             self.write_port()
-            self.set_fiber_mo(1)
+            if self.source == "fiber":
+                self.set_fiber_mo(1)
             self._ready = None
             self._speed = None
             self._travel_speed = None
@@ -473,7 +476,8 @@ class GalvoController:
         if self.mode == DRIVER_STATE_LIGHT:
             return
         if self.mode == DRIVER_STATE_PROGRAM:
-            self.set_fiber_mo(0)
+            if self.source == "fiber":
+                self.set_fiber_mo(0)
             self.port_off(bit=0)
             self.port_on(self._light_bit)
             self.write_port()
