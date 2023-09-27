@@ -889,7 +889,10 @@ class GalvoController:
         if self._frequency == frequency:
             return
         self._frequency = frequency
-        self.list_qswitch_period(self._convert_frequency(frequency))
+        if self.source == "fiber":
+            self.list_qswitch_period(self._convert_frequency(frequency, base=20000.0))
+        elif self.source == "co2":
+            self.list_mark_frequency(self._convert_frequency(frequency, base=10000.0))
 
     def set_fpk(self, fpk):
         """
@@ -947,7 +950,7 @@ class GalvoController:
         galvos_per_mm, _ = self.service.view.position("1mm", "1mm", vector=True)
         return abs(int(speed * galvos_per_mm / 1000.0))
 
-    def _convert_frequency(self, frequency_khz):
+    def _convert_frequency(self, frequency_khz, base=20000.0):
         """
         Converts frequency to period.
 
@@ -956,7 +959,7 @@ class GalvoController:
         @param frequency_khz: Frequency to convert
         @return:
         """
-        return int(round(20000.0 / frequency_khz)) & 0xFFFF
+        return int(round(base / frequency_khz)) & 0xFFFF
 
     def _convert_power(self, power):
         """
@@ -1133,8 +1136,7 @@ class GalvoController:
         @param frequency:
         @return:
         """
-        # listMarkFreq
-        raise NotImplementedError
+        self._list_write(listMarkFreq, frequency)
 
     def list_mark_power_ratio(self, power_ratio):
         """
