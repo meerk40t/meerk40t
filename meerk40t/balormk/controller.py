@@ -597,10 +597,16 @@ class GalvoController:
         else:
             self.list_jump_speed(self.service.default_rapid_speed)
 
-        self.power(
-            float(settings.get("power", self.service.default_power)) / 10.0
-        )  # Convert power, out of 1000
-        self.frequency(float(settings.get("frequency", self.service.default_frequency)))
+        power = float(settings.get("power", self.service.default_power)) / 10.0   # Convert power, out of 1000
+        frequency = float(settings.get("frequency", self.service.default_frequency))
+        fpk = float(settings.get("fpk", self.service.fpk))
+        if self.source == "fiber":
+            self.power(power)
+            self.frequency(frequency)
+        elif self.source == "co2":
+            self.frequency(frequency)
+            self.fpk(fpk)
+            self.power(power)
         self.list_mark_speed(float(settings.get("speed", self.service.default_speed)))
 
         if str(settings.get("timing_enabled", False)).lower() == "true":
