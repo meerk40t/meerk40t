@@ -101,6 +101,16 @@ class BalorDevice(Service):
                 "signals": "device;renamed",
             },
             {
+                "attr": "source",
+                "object": self,
+                "default": "fiber",
+                "type": str,
+                "style": "combo",
+                "choices": ["fiber", "co2", "uv"],
+                "label": _("Laser Source"),
+                "tip": _("What type of laser is this?"),
+            },
+            {
                 "attr": "corfile_enabled",
                 "object": self,
                 "default": False,
@@ -325,6 +335,16 @@ class BalorDevice(Service):
                 "tip": _("QSwitch Frequency value"),
             },
             {
+                "attr": "default_fpk",
+                "object": self,
+                "default": 10.0,
+                "type": float,
+                "trailer": "%",
+                "label": _("First Pulse Killer"),
+                "conditional": (self, "source", "co2"),
+                "tip": _("Percent of First Pulse Killer for co2 source"),
+            },
+            {
                 "attr": "default_rapid_speed",
                 "object": self,
                 "default": 2000.0,
@@ -340,6 +360,7 @@ class BalorDevice(Service):
                 "type": bool,
                 "label": _("Enable"),
                 "tip": _("Enable using Pulse Width (MOPA)"),
+                # "conditional": (self, "source", "fiber"),
                 "subsection": "Pulse Width",
             },
             {
