@@ -894,7 +894,7 @@ class GalvoController:
         elif self.source == "co2":
             self.list_mark_frequency(self._convert_frequency(frequency, base=10000.0))
 
-    def set_fpk(self, fpk):
+    def fpk(self, fpk):
         """
         Set First Pulse Killer
         @param fpk: first_pulse_killer value in percent.

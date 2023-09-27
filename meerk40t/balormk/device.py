@@ -360,6 +360,7 @@ class BalorDevice(Service):
                 "type": bool,
                 "label": _("Enable"),
                 "tip": _("Enable using Pulse Width (MOPA)"),
+                # "conditional": (self, "source", "fiber"),
                 "subsection": "Pulse Width",
             },
             {
