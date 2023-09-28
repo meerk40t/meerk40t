@@ -76,6 +76,27 @@ class PyEmbeddedImage(py_embedded_image):
         @return:
         """
 
+        def color_distance(color1, color2:str):
+            from math import sqrt
+            if hasattr(color1, "distance_to"):
+                return color1.distance_to(color2)
+            # That's wx stuff
+            c1 = color1
+            coldb = wx.ColourDatabase()
+            c2 = coldb.Find(color2.upper())
+            if not c2.IsOk():
+                return 0
+            red_mean = int((c1.red + c2.red) / 2.0)
+            r = c1.red - c2.red
+            g = c1.green - c2.green
+            b = c1.blue - c2.blue
+            distance_sq = (
+                (((512 + red_mean) * r * r) >> 8)
+                + (4 * g * g)
+                + (((767 - red_mean) * b * b) >> 8)
+            )
+            return sqrt(distance_sq)
+
         image = py_embedded_image.GetImage(self)
         if not noadjustment and _GLOBAL_FACTOR != 1.0:
             oldresize = resize
@@ -123,10 +144,12 @@ class PyEmbeddedImage(py_embedded_image):
         ):
             image.Replace(0, 0, 0, color.red, color.green, color.blue)
             if force_darkmode or (DARKMODE and use_theme):
-                reverse = color.distance_to("black") <= 200
+                dist = color_distance(color, "black")
+                reverse = dist <= 200
                 black_bg = False
             else:
-                reverse = color.distance_to("white") <= 200
+                dist = color_distance(color, "white")
+                reverse = dist <= 200
                 black_bg = True
             if reverse and not keepalpha:
                 self.RemoveAlpha(image, black_bg=black_bg)
