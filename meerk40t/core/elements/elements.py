@@ -395,6 +395,29 @@ def plugin(kernel, lifecycle=None):
             },
         ]
         kernel.register_choices("preferences", choices)
+        choices = [
+            {
+                "attr": "default_ops_display_mode",
+                "object": elements,
+                "default": 0,
+                "type": int,
+                "label": _("Statusbar display"),
+                "style": "option",
+                "display": (
+                    _("As in operations tree"),
+                    _("Group types together (CC EE RR II)"),
+                    _("Matching (CERI CERI)"),
+                ),
+                "choices": (0, 1, 2),
+                "tip": _(
+                    "Choose if and how you want to group together / display the default operations at the botteom of the screen"
+                ),
+                "page": "Classification",
+                "section": "_95_Default Operations",
+                "signals": "default_operations",
+            },
+        ]
+        kernel.register_choices("preferences", choices)
 
     elif lifecycle == "prestart":
         if hasattr(kernel.args, "input") and kernel.args.input is not None:
