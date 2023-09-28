@@ -789,6 +789,62 @@ class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
         listmix.TextEditMixin.__init__(self)
 
 
+class HoverButton(wx.Button):
+    def __init__(self, parent, ID, label):
+        super().__init__(parent, ID, label)
+        self._focus_color = None
+        self._disable_color = None
+        self._foreground_color = self.GetForegroundColour()
+        self._background_color = self.GetBackgroundColour()
+        self.Bind(wx.EVT_ENTER_WINDOW, self.on_enter)
+        self.Bind(wx.EVT_LEAVE_WINDOW, self.on_leave)
+
+    def SetFocusColour(self, color):
+        self._focus_color = color
+
+    def SetDisabledBackgroundColour(self, color):
+        self._disable_color = color
+
+    def SetForegroundColor(self, color):
+        self._foreground_color = color
+        super().SetForegroundColour(color)
+
+    def SetBackgroundColour(self, color):
+        self._background_color = color
+        super().SetBackgroundColour(color)
+
+    def GetFocusColour(self, color):
+        return self._focus_color
+
+    def Enable(self, value):
+        if value:
+            super().SetBackgroundColour(self._background_color)
+        else:
+            if self._disable_color is None:
+                r, g, b, a = self._background_color.Get()
+                color = wx.Colour(
+                    min(255, int(1.5 * r)),
+                    min(255, int(1.5 * g)),
+                    min(255, int(1.5 * b))
+                )
+            else:
+                color = self._disable_color
+            super().SetBackgroundColour(color)
+        super().Enable(value)
+        self.Refresh()
+
+    def on_enter(self, event):
+        if self._focus_color is not None:
+            super().SetForegroundColour(self._focus_color)
+            self.Refresh()
+        event.Skip()
+
+    def on_leave(self, event):
+        super().SetForegroundColour(self._foreground_color)
+        self.Refresh()
+        event.Skip()
+
+
 WX_METAKEYS = [
     wx.WXK_START,
     wx.WXK_WINDOWS_LEFT,
