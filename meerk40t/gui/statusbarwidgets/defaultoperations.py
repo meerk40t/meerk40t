@@ -63,7 +63,7 @@ class DefaultOperationWidget(StatusBarWidget):
             color=wx.LIGHT_GREY,
             msg="<",
             ptsize=12,
-        ).GetBitmap()
+        ).GetBitmap(noadjustment=True)
         self.btn_prev.SetBitmap(icon)
         self.btn_prev.SetToolTip(_("Previous entries"))
         self.Add(self.btn_prev, 0, wx.EXPAND, 0)
@@ -139,7 +139,7 @@ class DefaultOperationWidget(StatusBarWidget):
                 color=wx.Colour(swizzlecolor(op.color)),
                 msg=opid,
                 ptsize=fontsize,
-            ).GetBitmap()
+            ).GetBitmap(noadjustment=True)
             btn.SetBitmap(icon)
             op_label = op.label
             if op_label is None:
@@ -149,6 +149,7 @@ class DefaultOperationWidget(StatusBarWidget):
             self.assign_buttons.append(btn)
             self.assign_operations.append(op)
             btn.Bind(wx.EVT_LEFT_DOWN, self.on_button_left)
+            btn.Bind(wx.EVT_RIGHT_DOWN, self.on_button_right)
             self.Add(btn, 0, wx.EXPAND, 0)
             self.SetActive(btn, False)
 
@@ -163,7 +164,7 @@ class DefaultOperationWidget(StatusBarWidget):
             color=wx.LIGHT_GREY,
             msg=">",
             ptsize=12,
-        ).GetBitmap()
+        ).GetBitmap(noadjustment=True)
         self.btn_next.SetBitmap(icon)
         self.btn_next.SetToolTip(_("Next entries"))
         size_it(self.btn_next, self.buttonsize_x, self.buttonsize_y)
@@ -181,6 +182,47 @@ class DefaultOperationWidget(StatusBarWidget):
                 self.execute_on(node)
                 break
             idx += 1
+
+    def on_button_right(self, event):
+        # Allow loading of a different set of operations...
+        # Sae function for all buttons...
+        # button = event.GetEventObject()
+        menu = wx.Menu()
+        item = menu.Append(wx.ID_ANY, _("Load"), "")
+        item.Enable(False)
+        matcount = 0
+
+        def on_menu_material(matname):
+            def handler(*args):
+                oplist = self.context.elements.load_persistent_op_list(stored_mat)
+                if oplist is not None and len(oplist) > 0:
+                    self.context.elements.default_operations = oplist
+                    self.Signal("default_operations")
+
+            stored_mat = matname
+            return handler
+
+        for material in self.context.elements.op_data.section_set():
+            if material == "previous":
+                continue
+            if material == "_default":
+                name = "Generic Defaults"
+            elif material.startswith("_default_"):
+                name = f"Default for {material[9:]}"
+            else:
+                name = material
+            matcount += 1
+
+            self.parent.Bind(
+                wx.EVT_MENU,
+                on_menu_material(material),
+                menu.Append(wx.ID_ANY, name, ""),
+            )
+
+        if matcount > 0:
+            self.parent.PopupMenu(menu)
+
+        menu.Destroy()
 
     def Show(self, showit=True):
         # Callback function that decides whether to show an element or not
@@ -223,8 +265,6 @@ class DefaultOperationWidget(StatusBarWidget):
                                 btnflag = True
                                 x += gap + w
                 self.SetActive(btn, btnflag)
-                # print(f"{dbg} -> {btnflag}")
-            # print(f"Next button: {residual}")
             self.SetActive(self.btn_next, residual)
 
         else:
