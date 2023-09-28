@@ -102,9 +102,9 @@ class GoPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.click_time = 0
         self.context = context
-        self.button_go = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_gas_industry_50.GetBitmap()
-        )
+        self.button_go = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_go.SetBitmap(icons8_gas_industry_50.GetBitmap(color=wx.WHITE, keepalpha=True))
+        self.button_go.SetBitmapFocus(icons8_gas_industry_50.GetBitmap())
         self.was_mouse = False
         self.button_go.Bind(wx.EVT_BUTTON, self.on_button_go_click)
         self.button_go.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_down)
@@ -173,15 +173,15 @@ def register_panel_go(window, context):
 
 def register_panel_stop(window, context):
     # Define Stop.
-    stop = wx.BitmapButton(
-        window, wx.ID_ANY, icons8_emergency_stop_button_50.GetBitmap()
-    )
+    stop = wx.BitmapButton(window, wx.ID_ANY)
     window.Bind(
         wx.EVT_BUTTON,
         ConsoleFunction(context, "estop\n"),
         stop,
     )
     stop.SetBackgroundColour(wx.Colour(127, 0, 0))
+    stop.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(color=wx.WHITE, keepalpha=True))
+    stop.SetBitmapFocus(icons8_emergency_stop_button_50.GetBitmap())
     stop.SetToolTip(_("Emergency stop/reset the controller."))
     stop.SetSize(stop.GetBestSize())
     pane = (
