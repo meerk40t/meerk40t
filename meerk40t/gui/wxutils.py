@@ -798,19 +798,20 @@ class HoverButton(wx.Button):
         self._background_color = self.GetBackgroundColour()
         self.Bind(wx.EVT_ENTER_WINDOW, self.on_enter)
         self.Bind(wx.EVT_LEAVE_WINDOW, self.on_leave)
+        # self.Bind(wx.EVT_MOUSE_EVENTS, self.on_mouse)
 
     def SetFocusColour(self, color):
-        self._focus_color = color
+        self._focus_color = wx.Colour(color)
 
     def SetDisabledBackgroundColour(self, color):
-        self._disable_color = color
+        self._disable_color = wx.Colour(color)
 
-    def SetForegroundColor(self, color):
-        self._foreground_color = color
+    def SetForegroundColour(self, color):
+        self._foreground_color = wx.Colour(color)
         super().SetForegroundColour(color)
 
     def SetBackgroundColour(self, color):
-        self._background_color = color
+        self._background_color = wx.Colour(color)
         super().SetBackgroundColour(color)
 
     def GetFocusColour(self, color):
@@ -844,6 +845,10 @@ class HoverButton(wx.Button):
         self.Refresh()
         event.Skip()
 
+    # def on_mouse(self, event):
+    #     if event.Leaving():
+    #         self.on_leave(event)
+    #     event.Skip()
 
 WX_METAKEYS = [
     wx.WXK_START,
