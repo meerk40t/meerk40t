@@ -253,6 +253,10 @@ class HatchEffectNode(Node, Stroked):
             if modify:
                 self.append_child(drag_node.node)
             return True
+        elif drag_node.type.startswith("op"):
+            # If we drag an operation to this node,
+            # then we will reverse the game
+            return drag_node.drop(self, modify=modify)
         return False
 
     def copy_children(self, obj):
