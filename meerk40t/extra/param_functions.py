@@ -224,14 +224,26 @@ def plugin(kernel, lifecycle):
             tree_fractal(geometry, first_pt, second_pt, iterations, ratio)
             return geometry
 
-        @self.console_argument("turtle", type=str, help="turtle-path for the fractal seed")
-        @self.console_argument("n", type=int, default=4, help="Angle divisors")
-        @self.console_argument("iterations", type=int, default=5, help="Number of fractal iterations to add")
-        @self.console_option("base", "b", type=str, help="turtle-path for the fractal base")
-        @context.console_command(
-            "tfractal", help=_("tfractal iterations"), output_type="geometry", hidden=True,
+        @self.console_argument(
+            "turtle", type=str, help="turtle-path for the fractal seed"
         )
-        def fractal(command,channel, turtle, n, iterations, base=None, **kwargs):
+        @self.console_argument("n", type=int, default=4, help="Angle divisors")
+        @self.console_argument(
+            "iterations",
+            type=int,
+            default=5,
+            help="Number of fractal iterations to add",
+        )
+        @self.console_option(
+            "base", "b", type=str, help="turtle-path for the fractal base"
+        )
+        @context.console_command(
+            "tfractal",
+            help=_("tfractal iterations"),
+            output_type="geometry",
+            hidden=True,
+        )
+        def fractal(command, channel, turtle, n, iterations, base=None, **kwargs):
             """
             Add a turtle fractal to the scene. All fractals are geometry outputs.
             F - Forward
@@ -259,12 +271,12 @@ def plugin(kernel, lifecycle):
             else:
                 base = Geomstr.turtle(base, n, d=65535)
                 if pattern_base.startswith("n"):
-                    idx =1
+                    idx = 1
                     pattern = ""
                     while pattern_base[idx] in "0123456789":
                         pattern += pattern_base[idx]
                         idx += 1
-                    print (f"Repeat indicator: {pattern}")
+                    print(f"Repeat indicator: {pattern}")
                     try:
                         pattern_repeat = int(pattern)
                     except ValueError:
@@ -286,35 +298,43 @@ def plugin(kernel, lifecycle):
                 1,
                 pattern_repeat,
                 1,
-                0, # line connector
+                0,  # line connector
             )
-            print ("Turtle" , base.parameter_store)
+            print("Turtle", base.parameter_store)
             return "geometry", base
 
-        @self.console_option("amount", "a", type=float, help="corner rounding amount", default=0.2)
-        @self.console_command("round_corners", input_type="geometry", output_type="geometry")
+        @self.console_option(
+            "amount", "a", type=float, help="corner rounding amount", default=0.2
+        )
+        @self.console_command(
+            "round_corners", input_type="geometry", output_type="geometry"
+        )
         def round_corners(command, channel, data, amount=0.2, **kwargs):
             data.round_corners(amount)
             if hasattr(data, "parameter_store"):
-                param = list(data.parameter_store) # make it editable
+                param = list(data.parameter_store)  # make it editable
                 if len(param) > 12:
                     # Round corners
                     param[12] = 1
                 data.parameter_store = param
-                print ("Round corner", data.parameter_store)
+                print("Round corner", data.parameter_store)
             return "geometry", data
 
-        @self.console_option("amount", "a", type=float, help="corner-bezier amount", default=0.2)
-        @self.console_command("quad_corners", input_type="geometry", output_type="geometry")
+        @self.console_option(
+            "amount", "a", type=float, help="corner-bezier amount", default=0.2
+        )
+        @self.console_command(
+            "quad_corners", input_type="geometry", output_type="geometry"
+        )
         def round_corners(command, channel, data, amount=0.2, **kwargs):
             data.bezier_corners(amount)
             if hasattr(data, "parameter_store"):
-                param = list(data.parameter_store) # make it editable
+                param = list(data.parameter_store)  # make it editable
                 if len(param) > 12:
                     # Bezier corners
                     param[12] = 2
                 data.parameter_store = param
-                print ("Quad corner", data.parameter_store)
+                print("Quad corner", data.parameter_store)
             return "geometry", data
 
         def update_node_tfractal(node):
@@ -359,11 +379,13 @@ def plugin(kernel, lifecycle):
                             # is not present after the last repetition
                             if (len(basepattern) + 1) % prev_len == 0:
                                 old = basepattern
-                                basepattern = basepattern[0:int(len(basepattern)/prev_len)]
-                                print (f"Was: '{old}', now: '{basepattern}'")
+                                basepattern = basepattern[
+                                    0 : int(len(basepattern) / prev_len)
+                                ]
+                                print(f"Was: '{old}', now: '{basepattern}'")
                             else:
                                 # that's wrong...
-                                print ("Needed to reset")
+                                print("Needed to reset")
                                 pattern_repeat = 1
 
                     if pattern_repeat > 1:
@@ -377,7 +399,6 @@ def plugin(kernel, lifecycle):
 
                 if targetpattern == "":
                     targetpattern = None
-
 
                 if targetpattern is None:
                     base = Geomstr.svg("M0,0 H65535")
@@ -408,18 +429,19 @@ def plugin(kernel, lifecycle):
                     1,
                     pattern_repeat,
                     1,
-                    0, # line connector
+                    0,  # line connector
                 )
-
-
 
         @self.console_argument("svg_path", type=str)
         @self.console_argument("iterations", type=int)
         @self.console_argument("inversions", nargs="*", type=int)
         @context.console_command(
-            "ffractal", help=_("ffractal iterations"), output_type="geometry", hidden=True,
+            "ffractal",
+            help=_("ffractal iterations"),
+            output_type="geometry",
+            hidden=True,
         )
-        def fractal(command,channel, svg_path, iterations, inversions, **kwargs):
+        def fractal(command, channel, svg_path, iterations, inversions, **kwargs):
             seed = Geomstr.svg(svg_path)
             segments = seed.segments
             for i, q in enumerate(inversions):
@@ -527,144 +549,145 @@ def plugin(kernel, lifecycle):
                 node.altered()
 
         # --- Fractal Dragon
-        def create_fractal_dragon(first_pt, second_pt, iterations):
+        # def create_fractal_dragon(first_pt, second_pt, iterations):
+        #
+        #     # Code based on https://github.com/GuidoDipietro/python_art
+        #     def rotate(t):
+        #         t[0], t[1] = -1 * t[1], t[0]
+        #         return t
+        #
+        #     def turtle_lines(coords, x, y):
+        #         turtle_coords = []
+        #         for i, point in enumerate(coords):
+        #             line_coords = [(x, y), (x + point[0], y + point[1])]
+        #             x, y = x + point[0], y + point[1]
+        #             turtle_coords.append(line_coords)
+        #         return turtle_coords
+        #
+        #     step = first_pt.distance_to(second_pt)
+        #     origin_x = first_pt.x
+        #     origin_y = first_pt.y
+        #
+        #     # list of moves in x,y axes. Start with (1,0) (straight line to right)
+        #     moves = [[step, 0]]
+        #
+        #     for i in range(0, iterations):
+        #         copied = list(map(rotate, copy.deepcopy(moves)[::-1]))
+        #         moves += copied
+        #
+        #     dragon_coords = turtle_lines(moves, origin_x, origin_y)
+        #
+        #     geometry = Geomstr()
+        #     for c in dragon_coords:
+        #         geometry.line(c[0][0] + 1j * c[0][1], c[1][0] + 1j * c[1][1])
+        #     return geometry
+        #
+        # @self.console_argument("sx", type=Length)
+        # @self.console_argument("sy", type=Length)
+        # @self.console_argument("step", type=Length)
+        # @self.console_argument("iterations", type=int)
+        # @context.console_command(
+        #     "fractal_dragon", help=_("fractal_dragon sx, sy, step, iterations")
+        # )
+        # def fractal_dragon(
+        #     command,
+        #     channel,
+        #     _,
+        #     sx=None,
+        #     sy=None,
+        #     step=None,
+        #     iterations=None,
+        #     data=None,
+        #     post=None,
+        #     **kwargs,
+        # ):
+        #     ratio = 0.75
+        #     try:
+        #         if sx is None:
+        #             sx = Length("5cm")
+        #         ssx = float(sx)
+        #         if sy is None:
+        #             sy = Length("5cm")
+        #         ssy = float(sy)
+        #         if step is None:
+        #             step = Length("0.5cm")
+        #         blen = float(step)
+        #         if iterations is None:
+        #             iterations = 10
+        #         iterations = int(iterations)
+        #     except ValueError:
+        #         channel("Invalid data provided")
+        #         return
+        #     start_pt = Point(ssx, ssy)
+        #     end_pt = Point.polar(start_pt, 0, blen)
+        #     geom = create_fractal_dragon(start_pt, end_pt, iterations)
+        #     node = self.elem_branch.add(type="elem path", geometry=geom)
+        #     node.stroke = self.default_stroke
+        #     node.stroke_width = self.default_strokewidth
+        #     node.altered()
+        #     node.functional_parameter = (
+        #         "fractaldragon",
+        #         0,
+        #         start_pt.x,
+        #         start_pt.y,
+        #         0,
+        #         end_pt.x,
+        #         end_pt.y,
+        #         1,
+        #         iterations,
+        #     )
+        #     # Newly created! Classification needed?
+        #     data = [node]
+        #     post.append(classify_new(data))
+        #     return "elements", data
+        #
+        # def update_node_fractaldragon(node):
+        #     my_id = "fractaldragon"
+        #     point_a = None
+        #     point_b = None
+        #     iterations = 5
+        #     valid = True
+        #     try:
+        #         param = node.functional_parameter
+        #         if param is None or param[0] != my_id:
+        #             valid = False
+        #     except (AttributeError, IndexError):
+        #         valid = False
+        #     if not valid:
+        #         # Not for me...
+        #         return
+        #     try:
+        #         if param[1] == 0:
+        #             point_a = Point(param[2], param[3])
+        #         if param[4] == 0:
+        #             point_b = Point(param[5], param[6])
+        #         if param[7] == 1:
+        #             iterations = param[8]
+        #     except IndexError:
+        #         valid = False
+        #     if point_a is None or point_b is None:
+        #         valid = False
+        #     if valid:
+        #         geom = create_fractal_dragon(point_a, point_b, iterations)
+        #         node.geometry = geom
+        #         node.altered()
+        #         dist = point_a.distance_to(point_b)
+        #         # Put second pt at right spot
+        #         point_b = Point(point_a.x + dist, point_a.y)
+        #
+        #         node.functional_parameter = (
+        #             "fractaldragon",
+        #             0,
+        #             point_a.x,
+        #             point_a.y,
+        #             0,
+        #             point_b.x,
+        #             point_b.y,
+        #             1,
+        #             iterations,
+        #         )
 
-            # Code based on https://github.com/GuidoDipietro/python_art
-            def rotate(t):
-                t[0], t[1] = -1 * t[1], t[0]
-                return t
-
-            def turtle_lines(coords, x, y):
-                turtle_coords = []
-                for i, point in enumerate(coords):
-                    line_coords = [(x, y), (x + point[0], y + point[1])]
-                    x, y = x + point[0], y + point[1]
-                    turtle_coords.append(line_coords)
-                return turtle_coords
-
-            step = first_pt.distance_to(second_pt)
-            origin_x = first_pt.x
-            origin_y = first_pt.y
-
-            # list of moves in x,y axes. Start with (1,0) (straight line to right)
-            moves = [[step, 0]]
-
-            for i in range(0, iterations):
-                copied = list(map(rotate, copy.deepcopy(moves)[::-1]))
-                moves += copied
-
-            dragon_coords = turtle_lines(moves, origin_x, origin_y)
-
-            geometry = Geomstr()
-            for c in dragon_coords:
-                geometry.line(c[0][0] + 1j * c[0][1], c[1][0] + 1j * c[1][1])
-            return geometry
-
-        @self.console_argument("sx", type=Length)
-        @self.console_argument("sy", type=Length)
-        @self.console_argument("step", type=Length)
-        @self.console_argument("iterations", type=int)
-        @context.console_command(
-            "fractal_dragon", help=_("fractal_dragon sx, sy, step, iterations")
-        )
-        def fractal_dragon(
-            command,
-            channel,
-            _,
-            sx=None,
-            sy=None,
-            step=None,
-            iterations=None,
-            data=None,
-            post=None,
-            **kwargs,
-        ):
-            ratio = 0.75
-            try:
-                if sx is None:
-                    sx = Length("5cm")
-                ssx = float(sx)
-                if sy is None:
-                    sy = Length("5cm")
-                ssy = float(sy)
-                if step is None:
-                    step = Length("0.5cm")
-                blen = float(step)
-                if iterations is None:
-                    iterations = 10
-                iterations = int(iterations)
-            except ValueError:
-                channel("Invalid data provided")
-                return
-            start_pt = Point(ssx, ssy)
-            end_pt = Point.polar(start_pt, 0, blen)
-            geom = create_fractal_dragon(start_pt, end_pt, iterations)
-            node = self.elem_branch.add(type="elem path", geometry=geom)
-            node.stroke = self.default_stroke
-            node.stroke_width = self.default_strokewidth
-            node.altered()
-            node.functional_parameter = (
-                "fractaldragon",
-                0,
-                start_pt.x,
-                start_pt.y,
-                0,
-                end_pt.x,
-                end_pt.y,
-                1,
-                iterations,
-            )
-            # Newly created! Classification needed?
-            data = [node]
-            post.append(classify_new(data))
-            return "elements", data
-
-        def update_node_fractaldragon(node):
-            my_id = "fractaldragon"
-            point_a = None
-            point_b = None
-            iterations = 5
-            valid = True
-            try:
-                param = node.functional_parameter
-                if param is None or param[0] != my_id:
-                    valid = False
-            except (AttributeError, IndexError):
-                valid = False
-            if not valid:
-                # Not for me...
-                return
-            try:
-                if param[1] == 0:
-                    point_a = Point(param[2], param[3])
-                if param[4] == 0:
-                    point_b = Point(param[5], param[6])
-                if param[7] == 1:
-                    iterations = param[8]
-            except IndexError:
-                valid = False
-            if point_a is None or point_b is None:
-                valid = False
-            if valid:
-                geom = create_fractal_dragon(point_a, point_b, iterations)
-                node.geometry = geom
-                node.altered()
-                dist = point_a.distance_to(point_b)
-                # Put second pt at right spot
-                point_b = Point(point_a.x + dist, point_a.y)
-
-                node.functional_parameter = (
-                    "fractaldragon",
-                    0,
-                    point_a.x,
-                    point_a.y,
-                    0,
-                    point_b.x,
-                    point_b.y,
-                    1,
-                    iterations,
-                )
-
+        # Cycloid Shape
         def create_cycloid_shape(cx, cy, r_major, r_minor, rotations):
             series = []
             degree_step = 1
@@ -1215,6 +1238,208 @@ def plugin(kernel, lifecycle):
                     density,
                 )
 
+        def create_growing_shape(
+            cx, cy, sides, iterations, ratio_in_percent, sidelen, startangle, gap
+        ):
+            geom = Geomstr()
+            if sides < 3:
+                sides = 3
+            shape_angle = math.tau / sides
+            myangle = startangle
+            sidelength = sidelen
+            sidedelta = sidelength * ratio_in_percent / 100.0
+            pt1 = cx + 1j * cy
+            for idx in range(iterations):
+                for side in range(sides):
+                    while myangle < 0:
+                        myangle += math.tau
+                    while myangle > math.tau:
+                        myangle -= math.tau
+
+                    pt2 = geom.polar(pt1, myangle, sidelength)
+                    geom.line(pt1, pt2)
+                    pt1 = pt2
+                    sidelength += sidedelta
+                    # sidedelta = sidelength * ratio_in_percent
+                    myangle += shape_angle
+                    myangle += gap
+            return geom
+
+        def update_node_growing_shape(node):
+            my_id = "growingshape"
+            valid = True
+            try:
+                param = node.functional_parameter
+                if param is None or param[0] != my_id:
+                    valid = False
+            except (AttributeError, IndexError):
+                valid = False
+            if not valid:
+                # Not for me...
+                return
+            param = node.functional_parameter
+            if param is None:
+                return
+            pt0x = getit(param, 2, 0)
+            pt0y = getit(param, 3, 0)
+            pt1x = getit(param, 5, 0)
+            pt1y = getit(param, 6, 0)
+            ratio_in_percent = getit(param, 8, 0)
+            sides = getit(param, 10, 0)
+            iterations = getit(param, 12, 0)
+            igap = getit(param, 14, 0)
+            pt0 = Point(pt0x, pt0y)
+            pt1 = Point(pt1x, pt1y)
+            sidelen = pt0.distance_to(pt1)
+            startangle = pt0.angle_to(pt1)
+            gap = igap / 360 * math.tau
+            geom = create_growing_shape(
+                pt0x,
+                pt0y,
+                sides,
+                iterations,
+                ratio_in_percent,
+                sidelen,
+                startangle,
+                gap,
+            )
+            node.geometry = geom
+            node.altered()
+            pt0 = None
+            pt1 = None
+            for pt in geom.as_points():
+                if pt0 is None:
+                    pt0 = Point(pt.real, pt.imag)
+                elif pt1 is None:
+                    pt1 = Point(pt.real, pt.imag)
+                else:
+                    break
+            opposite_angle = math.tau / 2 + gap
+            while opposite_angle > math.tau:
+                opposite_angle -= math.tau
+            while opposite_angle < 0:
+                opposite_angle += math.tau
+            pt2 = Point.polar(pt0, opposite_angle, sidelen * ratio_in_percent)
+            node.functional_parameter = (
+                "growingshape",
+                0,
+                pt0.x,
+                pt0.y,
+                0,
+                pt1.x,
+                pt1.y,
+                1,
+                ratio_in_percent,
+                1,
+                sides,
+                1,
+                iterations,
+                1,
+                igap,
+            )
+
+        @self.console_argument("sx", type=Length)
+        @self.console_argument("sy", type=Length)
+        @self.console_argument("sides", type=int)
+        @self.console_argument("iterations", type=int)
+        @self.console_argument("firstlength", type=Length)
+        @self.console_option("ratio", "r", type=int, help=_("Growth in %"))
+        @self.console_option("angle", "a", type=Angle, help=_("Start angle"))
+        @self.console_option(
+            "gap", "g", type=int, help=_("Delta angle between moves in degrees")
+        )
+        @context.console_command(
+            "growingshape", help=_("growingshape sx sy sides iterations")
+        )
+        def growing_shape(
+            command,
+            channel,
+            _,
+            sx=None,
+            sy=None,
+            sides=None,
+            iterations=None,
+            firstlength=None,
+            ratio=None,
+            angle=None,
+            gap=None,
+            data=None,
+            post=None,
+            **kwargs,
+        ):
+            try:
+                if sx is None:
+                    sx = Length("0cm")
+                ssx = float(sx)
+                if sy is None:
+                    sy = Length("0cm")
+                ssy = float(sy)
+                if sides is None or sides < 3:
+                    sides = 3
+                if iterations is None:
+                    iterations = 5
+                if iterations < 1:
+                    iterations = 1
+                if angle is None:
+                    angle = Angle.parse("0deg")
+                startangle = float(angle)
+                if firstlength is None:
+                    firstlength = Length("0.5cm")
+                sidelen = float(firstlength)
+                if ratio is None:
+                    ratio = 2  #  2% growth
+                if gap is None:
+                    gap = 0
+            except ValueError:
+                channel("Invalid data provided")
+                return
+            gap_angle = gap / 360 * math.tau
+            geom = create_growing_shape(
+                ssx,
+                ssy,
+                sides,
+                iterations,
+                ratio,
+                sidelen,
+                startangle,
+                gap_angle,
+            )
+            node = self.elem_branch.add(type="elem path", geometry=geom)
+            node.label = f"Growing Polygon w. {sides} sides"
+            node.stroke = self.default_stroke
+            node.stroke_width = 1000  # self.default_strokewidth
+            node.altered()
+            pt0 = None
+            pt1 = None
+            for pt in geom.as_points():
+                if pt0 is None:
+                    pt0 = Point(pt.real, pt.imag)
+                elif pt1 is None:
+                    pt1 = Point(pt.real, pt.imag)
+                else:
+                    break
+            node.functional_parameter = (
+                "growingshape",
+                0,
+                pt0.x,
+                pt0.y,
+                0,
+                pt1.x,
+                pt1.y,
+                1,
+                ratio,
+                1,
+                sides,
+                1,
+                iterations,
+                1,
+                gap,
+            )
+            # Newly created! Classification needed?
+            data = [node]
+            post.append(classify_new(data))
+            return "elements", data
+
         # Let's register them
         info = (
             update_node_grid,
@@ -1239,15 +1464,15 @@ def plugin(kernel, lifecycle):
         )
         kernel.register("element_update/fractaltree", info)
 
-        info = (
-            update_node_fractaldragon,
-            {
-                "0": ("Startpoint",),
-                "1": ("End of base stem",),
-                "2": ("Iterations", 2, 20),
-            },
-        )
-        kernel.register("element_update/fractaldragon", info)
+        # info = (
+        #     update_node_fractaldragon,
+        #     {
+        #         "0": ("Startpoint",),
+        #         "1": ("End of base stem",),
+        #         "2": ("Iterations", 2, 20),
+        #     },
+        # )
+        # kernel.register("element_update/fractaldragon", info)
 
         info = (
             update_node_cycloid,
@@ -1294,3 +1519,16 @@ def plugin(kernel, lifecycle):
             },
         )
         kernel.register("element_update/rect", info)
+
+        info = (
+            update_node_growing_shape,
+            {
+                "0": ("First point",),
+                "1": ("First edge",),
+                "2": ("Growth Ratio", 0, 100),
+                "3": ("Sides", 3, 12),
+                "4": ("Iterations", 1, 45),
+                "5": ("Gap", 0, 15),
+            },
+        )
+        kernel.register("element_update/growingshape", info)
