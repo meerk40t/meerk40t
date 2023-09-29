@@ -7,7 +7,7 @@ import copy
 import math
 
 from meerk40t.core.units import Length
-from meerk40t.kernel import CommandSyntaxError
+from meerk40t.kernel import CommandSyntaxError, signal_listener
 from meerk40t.svgelements import Angle, Point, Polygon
 from meerk40t.tools.geomstr import Geomstr
 
@@ -69,6 +69,7 @@ def plugin(kernel, lifecycle):
             id=None,
             dx=None,
             dy=None,
+            clone=None,
             post=None,
             **kwargs,
         ):
@@ -119,7 +120,7 @@ def plugin(kernel, lifecycle):
             node = self.elem_branch.add(type="elem path", geometry=geom)
             bb = geom.bbox()
             width = bb[2] - bb[0]
-            height = bb[3] - bb[1]
+            # height = bb[3] - bb[1]
             node.stroke = self.default_stroke
             node.stroke_width = self.default_strokewidth
             node.altered()

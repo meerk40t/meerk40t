@@ -3402,6 +3402,49 @@ class MeerK40t(MWindow):
             status = False
         self.set_needs_save_status(status)
 
+    @signal_listener("altered")
+    @signal_listener("modified")
+    @signal_listener("scaled")
+    def check_parametric_updates(self, origin, *args):
+        def getit(param, idx, default):
+            if idx >= len(param):
+                return default
+            return param[idx]
+
+        # Let's check for the need of parametric updates...
+        if len(args) == 0:
+            return
+        data = args[0]
+        if not isinstance(data, (list, tuple)):
+            data = [args[0]]
+        for n in data:
+            if n is None:
+                continue
+            if not hasattr(n, "id"):
+                continue
+            if n.id is None:
+                continue
+            nid = n.id
+            for e in self.context.elements.elems():
+                if not hasattr(e, "functional_parameter"):
+                    continue
+                param = e.functional_parameter
+                if param is None:
+                    continue
+                ptype = getit(param, 0, None)
+                if ptype is None:
+                    continue
+                pid = getit(param, 2, None)
+                if ptype in ("grid",) and pid == nid:
+                    func_tuple = self.context.kernel.lookup(f"element_update/{ptype}")
+                    if func_tuple is None:
+                        continue
+                    try:
+                        func = func_tuple[0]
+                        func(e)
+                    except IndexError:
+                        pass
+
     def validate_save(self):
         self.set_needs_save_status(False)
 
