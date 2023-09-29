@@ -646,6 +646,21 @@ class MeerK40t(MWindow):
                 ),
                 "page": "Gui",
                 "section": "Appearance",
+                "signals": "rebuild_tree",
+            },
+            {
+                "attr": "tree_colored",
+                "object": self.context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Color entries in tree"),
+                "tip": _(
+                    "Active: The tree entry will be displayed in the objects color\n"
+                    + "Inactive: Standard Colors are used"
+                ),
+                "page": "Gui",
+                "section": "Appearance",
+                "signals": "rebuild_tree",
             },
         ]
         context.kernel.register_choices("preferences", choices)
@@ -1908,8 +1923,17 @@ class MeerK40t(MWindow):
             ) as fileDialog:
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
                     return  # the user changed their mind
+                idx = fileDialog.GetFilterIndex()
+                preferred_loader = None
+                if idx > 0:
+                    lidx = 0
+                    for loader, loader_name, sname in context.kernel.find("load"):
+                        lidx += 1
+                        if lidx == idx:
+                            preferred_loader = loader_name
+                            break
                 pathname = fileDialog.GetPath()
-                gui.clear_and_open(pathname)
+                gui.clear_and_open(pathname, preferred_loader=preferred_loader)
 
         @context.console_command("dialog_import", hidden=True)
         def import_dialog(**kwargs):
@@ -1922,8 +1946,17 @@ class MeerK40t(MWindow):
             ) as fileDialog:
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
                     return  # the user changed their mind
+                idx = fileDialog.GetFilterIndex()
+                preferred_loader = None
+                if idx > 0:
+                    lidx = 0
+                    for loader, loader_name, sname in context.kernel.find("load"):
+                        lidx += 1
+                        if lidx == idx:
+                            preferred_loader = loader_name
+                            break
                 pathname = fileDialog.GetPath()
-                gui.load(pathname)
+                gui.load(pathname, preferred_loader)
 
         @context.console_option("quit", "q", action="store_true", type=bool)
         @context.console_command("dialog_save_as", hidden=True)
@@ -3561,8 +3594,17 @@ class MeerK40t(MWindow):
             fileDialog.SetFilename(default_file)
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return  # the user changed their mind
+            idx = fileDialog.GetFilterIndex()
+            preferred_loader = None
+            if idx > 0:
+                lidx = 0
+                for loader, loader_name, sname in context.kernel.find("load"):
+                    lidx += 1
+                    if lidx == idx:
+                        preferred_loader = loader_name
+                        break
             pathname = fileDialog.GetPath()
-            self.load(pathname)
+            self.load(pathname, preferred_loader)
 
     def populate_recent_menu(self):
         if not hasattr(self, "recent_file_menu"):
@@ -3640,20 +3682,20 @@ class MeerK40t(MWindow):
                 break
         self.populate_recent_menu()
 
-    def clear_project(self):
+    def clear_project(self, ops_too=True):
         context = self.context
         kernel = context.kernel
         kernel.busyinfo.start(msg=_("Cleaning up..."))
         self.working_file = None
-        context.elements.clear_all()
+        context.elements.clear_all(ops_too=ops_too)
         self.context(".laserpath_clear\n")
         self.validate_save()
         kernel.busyinfo.end()
         self.context("tool none\n")
 
-    def clear_and_open(self, pathname):
-        self.clear_project()
-        if self.load(pathname):
+    def clear_and_open(self, pathname, preferred_loader=None):
+        self.clear_project(ops_too=False)
+        if self.load(pathname, preferred_loader):
             try:
                 if self.context.uniform_svg and pathname.lower().endswith("svg"):
                     # or (len(elements) > 0 and "meerK40t" in elements[0].values):
@@ -3663,7 +3705,7 @@ class MeerK40t(MWindow):
             except AttributeError:
                 pass
 
-    def load(self, pathname):
+    def load(self, pathname, preferred_loader=None):
         def unescaped(filename):
             OS_NAME = platform.system()
             if OS_NAME == "Windows":
@@ -3683,6 +3725,7 @@ class MeerK40t(MWindow):
                 pathname,
                 channel=self.context.channel("load"),
                 svg_ppi=self.context.elements.svg_ppi,
+                preferred_loader=preferred_loader,
             )
             kernel.busyinfo.end()
         except BadFileError as e:
@@ -3815,13 +3858,15 @@ class MeerK40t(MWindow):
                 amount=bbox[0] - x_delta, relative_length=self.context.device.view.width
             ).length_mm
             y0 = Length(
-                amount=bbox[1] - y_delta, relative_length=self.context.device.view.height
+                amount=bbox[1] - y_delta,
+                relative_length=self.context.device.view.height,
             ).length_mm
             x1 = Length(
                 amount=bbox[2] + x_delta, relative_length=self.context.device.view.width
             ).length_mm
             y1 = Length(
-                amount=bbox[3] + y_delta, relative_length=self.context.device.view.height
+                amount=bbox[3] + y_delta,
+                relative_length=self.context.device.view.height,
             ).length_mm
             self.context(f"scene focus -a {x0} {y0} {x1} {y1}\n")
 
