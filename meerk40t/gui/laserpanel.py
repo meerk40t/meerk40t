@@ -13,7 +13,7 @@ from meerk40t.gui.icons import (
     icons8_save_50,
 )
 from meerk40t.gui.navigationpanels import Drag, Jog, MovePanel
-from meerk40t.gui.wxutils import StaticBoxSizer, disable_window
+from meerk40t.gui.wxutils import StaticBoxSizer, disable_window, HoverButton
 from meerk40t.kernel import lookup_listener, signal_listener
 
 _ = wx.GetTranslation
@@ -127,10 +127,17 @@ class LaserPanel(wx.Panel):
         sizer_control = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control, 0, wx.EXPAND, 0)
 
-        self.button_start = wx.Button(self, wx.ID_ANY, _("Start"))
+        self.button_start = HoverButton(self, wx.ID_ANY, _("Start"))
         self.button_start.SetToolTip(_("Execute the Job"))
-        self.button_start.SetBitmap(icons8_gas_industry_50.GetBitmap(resize=25))
+        self.button_start.SetBitmap(
+            icons8_gas_industry_50.GetBitmap(resize=25, color=wx.WHITE, keepalpha=True)
+        )
+        self.button_start.SetBitmapFocus(icons8_gas_industry_50.GetBitmap(resize=25))
         self.button_start.SetBackgroundColour(wx.Colour(0, 127, 0))
+        self.button_start.SetForegroundColour(wx.WHITE)
+        self.button_start.SetFocusColour(wx.BLACK)
+        self.button_start.SetDisabledBackgroundColour(wx.Colour(172, 192, 172))
+
         sizer_control.Add(self.button_start, 1, wx.EXPAND, 0)
 
         self.button_pause = wx.Button(self, wx.ID_ANY, _("Pause"))
@@ -142,10 +149,19 @@ class LaserPanel(wx.Panel):
         self.button_pause.SetBackgroundColour(wx.Colour(255, 255, 0))
         sizer_control.Add(self.button_pause, 1, wx.EXPAND, 0)
 
-        self.button_stop = wx.Button(self, wx.ID_ANY, _("Stop"))
+        self.button_stop = HoverButton(self, wx.ID_ANY, _("Stop"))
         self.button_stop.SetToolTip(_("Stop the laser"))
-        self.button_stop.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(resize=25))
+        self.button_stop.SetBitmap(
+            icons8_emergency_stop_button_50.GetBitmap(
+                resize=25, color=wx.WHITE, keepalpha=True
+            )
+        )
+        self.button_stop.SetBitmapFocus(
+            icons8_emergency_stop_button_50.GetBitmap(resize=25)
+        )
         self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
+        self.button_stop.SetForegroundColour(wx.WHITE)
+        self.button_stop.SetFocusColour(wx.BLACK)
         sizer_control.Add(self.button_stop, 1, wx.EXPAND, 0)
 
         sizer_control_misc = wx.BoxSizer(wx.HORIZONTAL)

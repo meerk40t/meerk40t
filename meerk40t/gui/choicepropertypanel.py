@@ -84,7 +84,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             provided)
         "conditional": if given as tuple (cond_obj, cond_prop) then the (boolean)
             value of the property cond_obj.cond_prop will decide if the element
-            will be enabled or not
+            will be enabled or not. (If a third value then the value must equal that value).
         "signals": This for advanced treatment, normally any change to a property
             will be announced to the wider mk-universe by sending a signal with the
             attributes name as signal-indicator (this is used to inform other UI-
@@ -1204,20 +1204,26 @@ class ChoicePropertyPanel(ScrolledPanel):
                 # Listen to establish whether this control should be enabled based on another control's value.
                 try:
                     conditional = c["conditional"]
-                    c_obj, c_attr = conditional
-                    enabled = bool(getattr(c_obj, c_attr))
-                    control.Enable(enabled)
+                    if len(conditional) == 2:
+                        c_obj, c_attr = conditional
+                        enabled = bool(getattr(c_obj, c_attr))
+                        c_equals = True
+                        control.Enable(enabled)
+                    elif len(conditional) == 3:
+                        c_obj, c_attr, c_equals = conditional
+                        enabled = bool(getattr(c_obj, c_attr) == c_equals)
+                        control.Enable(enabled)
 
-                    def on_enable_listener(param, ctrl, obj):
+                    def on_enable_listener(param, ctrl, obj, eqs):
                         def listen(origin, value, target=None):
                             try:
-                                ctrl.Enable(bool(getattr(obj, param)))
+                                ctrl.Enable(bool(getattr(obj, param)) == eqs)
                             except RuntimeError:
                                 pass
 
                         return listen
 
-                    listener = on_enable_listener(c_attr, control, c_obj)
+                    listener = on_enable_listener(c_attr, control, c_obj, c_equals)
                     self.listeners.append((c_attr, listener))
                     context.listen(c_attr, listener)
                 except KeyError:

@@ -335,9 +335,9 @@ class EditTool(ToolWidget):
         }
         icon_size = STD_ICON_SIZE
         for command, entry in cmd_icons.items():
-            # print(command, f"button/tool_edit/tool_{command}")
+            # print(command, f"button/secondarytool_edit/tool_{command}")
             self.scene.context.kernel.register(
-                f"button/tool_edit/tool_{command}",
+                f"button/secondarytool_edit/tool_{command}",
                 {
                     "label": entry[5],
                     "icon": entry[0],

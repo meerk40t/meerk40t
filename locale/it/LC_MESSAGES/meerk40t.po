@@ -849,7 +849,7 @@ msgstr "Utilizzo di LibUSB per la connessione."
 #: meerk40t/device/ch341/ch341libusbdriver.py:67
 #: meerk40t/newly/usb_connection.py:34
 msgid "Finding devices."
-msgstr "Trovare dispositivi."
+msgstr "Trova dispositivi."
 
 #: meerk40t/balormk/usb_connection.py:50 meerk40t/ch341/libusb.py:89
 #: meerk40t/device/ch341/ch341libusbdriver.py:80
@@ -2878,7 +2878,7 @@ msgstr "Cancella lo schermo della console"
 
 #: meerk40t/gui/consolepanel.py:517
 msgid "Open Console Window"
-msgstr "Apri Finestra Console"
+msgstr "Console comandi"
 
 #: meerk40t/gui/devicepanel.py:20 meerk40t/gui/devicepanel.py:103
 #: meerk40t/gui/devicepanel.py:516 meerk40t/gui/devicepanel.py:524
@@ -2960,7 +2960,7 @@ msgstr "Errore"
 
 #: meerk40t/gui/devicepanel.py:526
 msgid "Opens Devices Window"
-msgstr "Apre Finestra Dispositivi"
+msgstr "Gestione dispositivi"
 
 #: meerk40t/gui/dialogoptions.py:40
 msgid "Input required"
@@ -3242,7 +3242,7 @@ msgstr "Gestore dei Caratteri"
 
 #: meerk40t/gui/hersheymanager.py:843 meerk40t/gui/wxmmain.py:2628
 msgid "Open the vector-font management window."
-msgstr "Apri la finestra di gestione dei caratteri vettoriali."
+msgstr "Gestione dei caratteri"
 
 #: meerk40t/gui/imagesplitter.py:164 meerk40t/gui/imagesplitter.py:458
 msgid "Create split images"
@@ -3345,7 +3345,7 @@ msgstr "Keymap"
 
 #: meerk40t/gui/keymap.py:330 meerk40t/gui/wxmmain.py:2635
 msgid "Opens Keymap Window"
-msgstr "Apre la finestra keymap"
+msgstr "Keymap"
 
 #: meerk40t/gui/laserpanel.py:62
 msgid "Laser-Control"
@@ -3383,7 +3383,7 @@ msgstr "Seleziona il dispositivo dall'elenco dei dispositivi configurati"
 
 #: meerk40t/gui/laserpanel.py:133
 msgid "Execute the Job"
-msgstr "Esegui il lavoro"
+msgstr "Avvio"
 
 #: meerk40t/grbl/gui/gui.py:52 meerk40t/gui/laserpanel.py:138
 #: meerk40t/gui/laserpanel.py:348 meerk40t/gui/spoolerpanel.py:104
@@ -3431,7 +3431,7 @@ msgstr "Simula"
 
 #: meerk40t/gui/laserpanel.py:168
 msgid "Simulate the Design"
-msgstr "Simula il design"
+msgstr "Simula il lavoro"
 
 #: meerk40t/gui/laserpanel.py:180 meerk40t/gui/simulation.py:924
 msgid "Enable/Disable Optimize"
@@ -4389,7 +4389,7 @@ msgstr "Distanza di Jog:"
 
 #: meerk40t/gui/navigationpanels.py:2105
 msgid "Opens Navigation Window"
-msgstr "Apre la finestra di navigazione"
+msgstr "Navigazione"
 
 #: meerk40t/gui/notes.py:18 meerk40t/gui/notes.py:120 meerk40t/gui/notes.py:129
 msgid "Notes"
@@ -4412,7 +4412,7 @@ msgstr "Apri automaticamente le note se esistono quando il file viene aperto."
 
 #: meerk40t/gui/notes.py:131
 msgid "Open Notes Window"
-msgstr "Apri la finestra delle note"
+msgstr "Note"
 
 #: meerk40t/core/node/rootnode.py:17 meerk40t/gui/opassignment.py:27
 #: meerk40t/gui/simulation.py:921
@@ -4839,7 +4839,7 @@ msgstr "Preferenze"
 
 #: meerk40t/gui/preferences.py:593
 msgid "Opens Preferences Window"
-msgstr "Apre la finestra delle preferenze"
+msgstr "Preferenze"
 
 #: meerk40t/gui/preferences.py:606
 msgid "Pr&eferences...\tCtrl-,"
@@ -5082,7 +5082,7 @@ msgstr "Simulazione"
 
 #: meerk40t/gui/simulation.py:2152
 msgid "Simulate the current laser job"
-msgstr "Simula il lavoro attuale del laser"
+msgstr "Simula il lavoro"
 
 #: meerk40t/gui/snapoptions.py:17
 msgid "Snap-Options"
@@ -5218,7 +5218,7 @@ msgstr "Spooler dei Lavori"
 
 #: meerk40t/gui/spoolerpanel.py:993
 msgid "Opens Spooler Window"
-msgstr "Apre la Finestra dello Spooler"
+msgstr "Spooler"
 
 #: meerk40t/gui/usbconnect.py:81
 msgid "UsbConnect"
@@ -5739,11 +5739,11 @@ msgstr "Apri"
 
 #: meerk40t/gui/wxmmain.py:663
 msgid "Opens new project"
-msgstr "Apre un nuovo progetto"
+msgstr "Nuovo progetto"
 
 #: meerk40t/gui/wxmmain.py:674
 msgid "Saves a project to disk"
-msgstr "Salva un progetto su disco"
+msgstr "Salva su disco"
 
 #: meerk40t/gui/wxmmain.py:687
 msgid "Select"
@@ -5751,7 +5751,7 @@ msgstr "Seleziona"
 
 #: meerk40t/gui/wxmmain.py:689
 msgid "Regular selection tool"
-msgstr "Strumento di selezione normale"
+msgstr "Strumento di selezione"
 
 #: meerk40t/gui/wxmmain.py:700
 msgid "Set Position"
@@ -5864,11 +5864,11 @@ msgstr "Aggiungi un elemento di testo"
 
 #: meerk40t/gui/wxmmain.py:851 meerk40t/gui/wxmmain.py:2509
 msgid "Cut selected elements"
-msgstr "Taglia gli elementi selezionati"
+msgstr "Taglia"
 
 #: meerk40t/gui/wxmmain.py:866 meerk40t/gui/wxmmain.py:2518
 msgid "Copy selected elements to clipboard"
-msgstr "Copia gli elementi selezionati negli appunti"
+msgstr "Copia"
 
 #: meerk40t/gui/wxmmain.py:890
 msgid "Paste"
@@ -5876,7 +5876,7 @@ msgstr "Incolla"
 
 #: meerk40t/gui/wxmmain.py:892 meerk40t/gui/wxmmain.py:2527
 msgid "Paste elements from clipboard"
-msgstr "Incolla gli elementi dagli appunti"
+msgstr "Incolla"
 
 #: meerk40t/gui/wxmmain.py:921
 msgid "Undo"
@@ -5916,7 +5916,7 @@ msgstr "Modifica nodo"
 
 #: meerk40t/gui/wxmmain.py:971
 msgid "Edit nodes of a polyline/path-object"
-msgstr "Modifica i nodi di un oggetto polilinea/percorso"
+msgstr "Strumento di modellazione"
 
 #: meerk40t/gui/wxmmain.py:984
 msgid "Flip Vertical"
@@ -6128,7 +6128,7 @@ msgstr "Salvataggio Fallito"
 
 #: meerk40t/gui/wxmmain.py:1633
 msgid "control various panes for the main window"
-msgstr "controlla le diverse riquadri della finestra principale"
+msgstr "controlla i diversi pannelli della finestra principale"
 
 #: meerk40t/gui/wxmmain.py:1639 meerk40t/gui/wxmmain.py:1655
 msgid "configuration to load"
@@ -6178,26 +6178,26 @@ msgstr "Ancora il riquadro"
 
 #: meerk40t/gui/wxmmain.py:1754
 msgid "Hides/Restores all the visible panes (except the scene)"
-msgstr "Nasconde/Ripristina tutti i riquadri visibili (eccetto la scena)"
+msgstr "Nasconde/Ripristina tutti i pannelli visibili (eccetto la scena)"
 
 #: meerk40t/gui/wxmmain.py:1765
 msgid "Panes restored."
-msgstr "Riquadri ripristinati."
+msgstr "Pannelli ripristinati."
 
 #: meerk40t/gui/wxmmain.py:1777
 msgid "Panes hidden."
-msgstr "Riquadri nascosti."
+msgstr "Pannelli nascosti."
 #: meerk40t/gui/wxmmain.py:1782
 msgid "reset all panes restoring the default perspective"
-msgstr "reimposta tutti i riquadri ripristinando la prospettiva predefinita"
+msgstr "reimposta tutti i pannelli ripristinando la prospettiva predefinita"
 
 #: meerk40t/gui/wxmmain.py:1790
-msgid "lock the panes"
-msgstr "blocca i riquadri"
+msgid "Lock the panes"
+msgstr "Blocca i pannelli"
 
 #: meerk40t/gui/wxmmain.py:1798
 msgid "unlock the panes"
-msgstr "sblocca i riquadri"
+msgstr "sblocca i pannelli"
 
 #: meerk40t/gui/wxmmain.py:1803
 msgid "pane to create"
@@ -6213,15 +6213,15 @@ msgstr "Informazioni e assegnazioni di temi"
 
 #: meerk40t/gui/wxmmain.py:2007
 msgid "Panes"
-msgstr "Riquadri"
+msgstr "Pannelli"
 
 #: meerk40t/gui/wxmmain.py:2072
 msgid "Lock Panes"
-msgstr "Blocca Riquadri"
+msgstr "Blocca Pannelli"
 
 #: meerk40t/gui/wxmmain.py:2083
 msgid "Reset Panes"
-msgstr "Ripristina Riquadri"
+msgstr "Ripristina Pannelli"
 
 #: meerk40t/gui/wxmmain.py:2200
 msgid "Reset Windows"
@@ -6417,7 +6417,7 @@ msgstr "Riempi l'area della scena con gli elementi selezionati"
 
 #: meerk40t/gui/wxmmain.py:2727
 msgid "Zoom to &Bed\tCtrl-B"
-msgstr "Zoom al &Letto\tCtrl-B"
+msgstr "Zoom &Area di lavoro\tCtrl-B"
 
 #: meerk40t/gui/wxmmain.py:2740
 msgid "GUI-Elements"
@@ -6805,7 +6805,7 @@ msgstr "Errore riscontrato"
 
 #: meerk40t/gui/wxmribbon.py:305
 msgid "Ribbon"
-msgstr "Nastro"
+msgstr "Barra"
 
 #: meerk40t/gui/wxmribbon.py:1012 meerk40t/gui/wxmribbon.py:1050
 msgid "Project"
@@ -9422,7 +9422,7 @@ msgstr "Elaborazione..."
 
 #: meerk40t/tools/livinghinges.py:611 meerk40t/tools/livinghinges.py:1000
 msgid "Living-Hinges"
-msgstr "Cerniere viventi"
+msgstr "Pattern di piegatura"
 
 #: meerk40t/tools/livinghinges.py:1026
 msgid "Hinge"
@@ -9550,13 +9550,13 @@ msgstr "Tipo di modello per l'oscillazione specificata."
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:179 meerk40t/moshi/gui/gui.py:30
 #: meerk40t/newly/gui/gui.py:28 meerk40t/ruida/gui/gui.py:39
 msgid "Controller"
-msgstr "Controllore"
+msgstr "Controller"
 
 #: meerk40t/balormk/gui/gui.py:37 meerk40t/lihuiyu/gui/gui.py:55
 #: meerk40t/moshi/gui/gui.py:32 meerk40t/newly/gui/gui.py:30
 #: meerk40t/ruida/gui/gui.py:41
 msgid "Opens Controller Window"
-msgstr "Apre la finestra del controllore"
+msgstr "Controller"
 
 #: meerk40t/balormk/gui/gui.py:44 meerk40t/grbl/gui/gui.py:43
 #: meerk40t/lihuiyu/gui/gui.py:72 meerk40t/moshi/gui/gui.py:39
@@ -9567,7 +9567,7 @@ msgstr "Configurazione"
 #: meerk40t/balormk/gui/gui.py:46 meerk40t/lihuiyu/gui/gui.py:74
 #: meerk40t/newly/gui/gui.py:39 meerk40t/ruida/gui/gui.py:50
 msgid "Opens device-specific configuration window"
-msgstr "Apre la finestra di configurazione specifica del dispositivo"
+msgstr "Configurazione del dispositivo in uso"
 
 #: meerk40t/balormk/gui/gui.py:60
 msgid "Galvo Light"
@@ -9774,11 +9774,11 @@ msgstr "Identifica telecamere"
 
 #: meerk40t/camera/gui/camerapanel.py:802
 msgid "Opens Camera Window"
-msgstr "Apre la finestra della telecamera"
+msgstr "Telecamera"
 
 #: meerk40t/camera/gui/camerapanel.py:849
 msgid "camwin <index>: Open camera window at index"
-msgstr "camwin <indice>: Apre la finestra della telecamera all'indice specificato"
+msgstr "camwin <indice>: Telecamera specificata"
 
 #: meerk40t/camera/gui/camerapanel.py:855
 msgid "camdetect: Tries to detect cameras on the system"
@@ -12815,11 +12815,11 @@ msgstr "Controller Seriale"
 
 #: meerk40t/grbl/gui/gui.py:36
 msgid "Opens GRBL Serial Sender"
-msgstr "Apre il trasmettitore seriale GRBL"
+msgstr "Trasmettitore seriale GRBL"
 
 #: meerk40t/grbl/gui/gui.py:45 meerk40t/moshi/gui/gui.py:41
 msgid "Opens device-specfic configuration window"
-msgstr "Apre la finestra di configurazione specifica del dispositivo"
+msgstr "Configurazione dispositivo in uso"
 
 #: meerk40t/grbl/gui/gui.py:54 meerk40t/lihuiyu/gui/gui.py:83
 #: meerk40t/moshi/gui/gui.py:50
@@ -13789,7 +13789,7 @@ msgstr "Finestra delle Proprietà"
 #: meerk40t/gui/propertypanels/propertywindow.py:140
 #: meerk40t/gui/propertypanels/propertywindow.py:150
 msgid "Opens Properties Window"
-msgstr "Apre la Finestra delle Proprietà"
+msgstr "Proprietà"
 
 #: meerk40t/gui/propertypanels/rasterwizardpanels.py:12
 #: meerk40t/gui/propertypanels/rasterwizardpanels.py:97
@@ -14220,7 +14220,7 @@ msgstr "Diventa oggetto di riferimento"
 
 #: meerk40t/gui/scenewidgets/selectionwidget.py:2432
 msgid "Clear reference object"
-msgstr "Cancella oggetto di riferimento"
+msgstr "Cancella oggetto"
 
 #: meerk40t/gui/scenewidgets/selectionwidget.py:2436
 msgid "Reference Object"
@@ -14478,11 +14478,11 @@ msgstr "Nascondi automaticamente"
 
 #: meerk40t/lihuiyu/gui/gui.py:59
 msgid "Opens USB-Controller"
-msgstr "Apre il Controller USB"
+msgstr "Controller USB"
 
 #: meerk40t/lihuiyu/gui/gui.py:63
 msgid "Opens Network-Controller"
-msgstr "Apre il Controller di Rete"
+msgstr "Controller di Rete"
 
 #: meerk40t/lihuiyu/gui/lhyaccelgui.py:19
 #: meerk40t/lihuiyu/gui/lhyaccelgui.py:24
@@ -15049,7 +15049,7 @@ msgstr "Grafico raster"
 
 #: meerk40t/newly/gui/newlycontroller.py:163
 msgid "Newly-Controller"
-msgstr "Controllore di Newly"
+msgstr "Controller di Newly"
 
 #: meerk40t/rotary/gui/gui.py:25
 msgid "Opens Rotary Window"
@@ -15777,7 +15777,7 @@ msgstr "Attiva l'assistenza all'aria per elemento"
 #~ msgstr ""
 
 #~ msgid "Opens Device Manager"
-#~ msgstr ""
+#~ msgstr "Gestione dispositivi"
 
 #~ msgid "Opens Configuration Window"
 #~ msgstr ""
@@ -17035,7 +17035,7 @@ msgstr "Proprietà degli operazioni/elementi"
 #~ msgstr ""
 
 #~ msgid "Device Manager"
-#~ msgstr ""
+#~ msgstr "Gestione dispositivi"
 
 #~ msgid "Output"
 #~ msgstr ""
@@ -17781,7 +17781,7 @@ msgid "Check for available updates on startup."
 msgstr ""
 
 msgid "Delete selected items"
-msgstr ""
+msgstr "Cancella oggetto selezionato"
 
 msgid "Measure distance / perimeter / area\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
 msgstr ""
@@ -18057,7 +18057,7 @@ msgid "Cut-Operation"
 msgstr ""
 
 msgid "If you want to produce cut out shapes with *exact* dimensions after the burn, then you need to take half the width of the laserbeam into consideration (aka Kerf compensation).\nThis routine will create a couple of testshapes for you to establish this value.\nAfter you cut these shapes out you need to try to fit the shapes with the same label together. Choose the pair that has a perfect fit and use the label as your kerf-compensation value."
-msgstr ""
+msgstr "Se si desidera ottenere forme ritagliate con dimensioni *esatte* (ad esempio forme che vanno incastrate tra loro) è necessario considerare il materiale asportato dal laser per effetto della bruciatura: la metà di questa misura rappresenta il valore di compensazione KERF.\nLa routine creerà delle forme di prova per stabilire questo valore. \nDopo aver eseguito il taglio, provare a far combaciare le forme con la stessa etichetta. Scegliere la coppia che si adatta perfettamente e utilizzare l'etichetta come valore di compensazione."
 
 msgid "Minimum value for Kerf"
 msgstr ""
@@ -18075,5 +18075,5 @@ msgid "Pulses Per Inch - This is software created laser power control."
 msgstr ""
 
 msgid "Kerf-Test"
-msgstr ""
+msgstr "Test compensazione taglio -Kerf-"
 

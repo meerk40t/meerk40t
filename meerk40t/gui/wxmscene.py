@@ -399,8 +399,8 @@ class MeerK40tScenePanel(wx.Panel):
                     # Reset the edit toolbar
                     if toolbar is not None:
                         toolbar.remove_page("toolcontainer")
-                        tool_values = list(context.find(f"button/tool_{tool}/.*"))
-                        # print(f"button/tool_{tool}/.*\n{tool_values}")
+                        tool_values = list(context.find(f"button/secondarytool_{tool}/.*"))
+                        # print(f"button/secondarytool_{tool}/.*\n{tool_values}")
                         if tool_values is not None and len(tool_values) > 0:
                             for pages in toolbar.pages:
                                 pages.visible = False
