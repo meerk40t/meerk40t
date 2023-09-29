@@ -129,9 +129,12 @@ class LaserPanel(wx.Panel):
 
         self.button_start = HoverButton(self, wx.ID_ANY, _("Start"))
         self.button_start.SetToolTip(_("Execute the Job"))
-        self.button_start.SetBitmap(icons8_gas_industry_50.GetBitmap(resize=25, color=wx.WHITE, keepalpha=True))
+        self.button_start.SetBitmap(
+            icons8_gas_industry_50.GetBitmap(resize=25, color=wx.WHITE, keepalpha=True)
+        )
         self.button_start.SetBitmapFocus(icons8_gas_industry_50.GetBitmap(resize=25))
         self.button_start.SetBackgroundColour(wx.Colour(0, 127, 0))
+        self.button_start.SetForegroundColour(wx.WHITE)
         self.button_start.SetFocusColour(wx.BLACK)
         self.button_start.SetDisabledBackgroundColour(wx.Colour(172, 192, 172))
 
@@ -148,8 +151,14 @@ class LaserPanel(wx.Panel):
 
         self.button_stop = HoverButton(self, wx.ID_ANY, _("Stop"))
         self.button_stop.SetToolTip(_("Stop the laser"))
-        self.button_stop.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(resize=25, color=wx.WHITE, keepalpha=True))
-        self.button_stop.SetBitmapFocus(icons8_emergency_stop_button_50.GetBitmap(resize=25))
+        self.button_stop.SetBitmap(
+            icons8_emergency_stop_button_50.GetBitmap(
+                resize=25, color=wx.WHITE, keepalpha=True
+            )
+        )
+        self.button_stop.SetBitmapFocus(
+            icons8_emergency_stop_button_50.GetBitmap(resize=25)
+        )
         self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
         self.button_stop.SetForegroundColour(wx.WHITE)
         self.button_stop.SetFocusColour(wx.BLACK)
