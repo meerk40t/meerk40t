@@ -110,6 +110,7 @@ def plugin(kernel, lifecycle=None):
         ]
         kernel.register_choices("preferences", choices)
         kernel.register("load/SVGLoader", SVGLoader)
+        kernel.register("load/SVGPlainLoader", SVGLoaderPlain)
         kernel.register("save/SVGWriter", SVGWriter)
 
 
@@ -629,7 +630,7 @@ class SVGWriter:
 
 
 class SVGProcessor:
-    def __init__(self, elements):
+    def __init__(self, elements, load_operations):
         self.elements = elements
         self.element_list = list()
         self.regmark_list = list()
@@ -638,12 +639,13 @@ class SVGProcessor:
         self.operations_replaced = False
         self.pathname = None
         self.regmark = None
+        self.load_operations = load_operations
         self.operation_list = list()
 
         # Setting this is bringing as much benefit as anticipated
         # Both the time to load the file (unexpectedly) and the time
         # for the first emphasis when all the nonpopulated bounding
-        # boxes will be calculated are benefitting from this precalculation:
+        # boxes will be calculated are benefiting from this precalculation:
         # (All values as average over three consecutive loads)
         #                    |           Load             |       First Select
         # File               |   Old  | Precalc | Speedup |  Old   | Precalc | Speedup
@@ -660,7 +662,7 @@ class SVGProcessor:
         file_node.focus()
 
         self.parse(svg, file_node, self.element_list)
-        if self.operations_replaced:
+        if self.load_operations and self.operations_replaced:
             self.elements.undo.mark("op-replaced")
             self.elements.clear_operations()
             for node in self.operation_list:
@@ -1170,7 +1172,7 @@ class SVGProcessor:
             if "stroke" in attrs:
                 attrs["stroke"] = Color(attrs["stroke"])
 
-            if tag == "operation":
+            if self.load_operations and tag == "operation":
                 # Check if SVGElement: operation
                 if not self.operations_replaced:
                     self.operations_replaced = True
@@ -1250,6 +1252,49 @@ class SVGLoader:
             )
         except ParseError as e:
             raise BadFileError(str(e)) from e
-        svg_processor = SVGProcessor(elements_service)
+        svg_processor = SVGProcessor(elements_service, True)
+        svg_processor.process(svg, pathname)
+        return True
+
+
+class SVGLoaderPlain:
+    @staticmethod
+    def load_types():
+        yield "SVG (elements only)", ("svg", "svgz"), "image/svg+xml"
+
+    @staticmethod
+    def load(context, elements_service, pathname, **kwargs):
+        if "svg_ppi" in kwargs:
+            ppi = float(kwargs["svg_ppi"])
+        else:
+            ppi = DEFAULT_PPI
+        if ppi == 0:
+            ppi = DEFAULT_PPI
+        scale_factor = NATIVE_UNIT_PER_INCH / ppi
+        source = pathname
+        if pathname.lower().endswith("svgz"):
+            source = gzip.open(pathname, "rb")
+        try:
+            if context.elements.svg_viewport_bed:
+                width = Length(amount=context.device.view.unit_width).length_mm
+                height = Length(amount=context.device.view.unit_height).length_mm
+            else:
+                width = None
+                height = None
+            # The color attribute of SVG.parse decides which default color
+            # a stroke / fill will get if the attribute "currentColor" is
+            # set - we opt for "black"
+            svg = SVG.parse(
+                source=source,
+                reify=False,
+                width=width,
+                height=height,
+                ppi=ppi,
+                color="black",
+                transform=f"scale({scale_factor})",
+            )
+        except ParseError as e:
+            raise BadFileError(str(e)) from e
+        svg_processor = SVGProcessor(elements_service, False)
         svg_processor.process(svg, pathname)
         return True
