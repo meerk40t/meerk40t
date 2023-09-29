@@ -1153,10 +1153,11 @@ class ShadowTree:
                 else:
                     textcolor = c2
                 wxcolor = wx.Colour(swizzlecolor(textcolor))
-        try:
-            tree.SetItemTextColour(node._item, wxcolor)
-        except (AttributeError, KeyError, TypeError):
-            pass
+        if self.context.root.tree_colored:
+            try:
+                tree.SetItemTextColour(node._item, wxcolor)
+            except (AttributeError, KeyError, TypeError):
+                pass
         # We might need to update the decorations for all parent objects
         e = node.parent
         while e is not None:
@@ -1197,6 +1198,8 @@ class ShadowTree:
         @param color: Color to be set.
         @return:
         """
+        if not self.context.root.tree_colored:
+            return
         item = node._item
         if item is None:
             return
@@ -1584,10 +1587,11 @@ class ShadowTree:
                 else:
                     textcolor = c2
                 wxcolor = wx.Colour(swizzlecolor(textcolor))
-        try:
-            self.wxtree.SetItemTextColour(node._item, wxcolor)
-        except (AttributeError, KeyError, TypeError):
-            pass
+        if self.context.root.tree_colored:
+            try:
+                self.wxtree.SetItemTextColour(node._item, wxcolor)
+            except (AttributeError, KeyError, TypeError):
+                pass
 
         state_num = -1
         if node is self.elements.get(type="branch ops"):

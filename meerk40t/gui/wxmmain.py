@@ -646,6 +646,21 @@ class MeerK40t(MWindow):
                 ),
                 "page": "Gui",
                 "section": "Appearance",
+                "signals": "rebuild_tree",
+            },
+            {
+                "attr": "tree_colored",
+                "object": self.context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Color entries in tree"),
+                "tip": _(
+                    "Active: The tree entry will be displayed in the objects color\n"
+                    + "Inactive: Standard Colors are used"
+                ),
+                "page": "Gui",
+                "section": "Appearance",
+                "signals": "rebuild_tree",
             },
         ]
         context.kernel.register_choices("preferences", choices)
