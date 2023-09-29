@@ -12,6 +12,8 @@ from meerk40t.gui.icons import (
     icons8_route_50,
 )
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import HoverButton
+
 from meerk40t.kernel import get_safe_path, signal_listener
 
 _ = wx.GetTranslation
@@ -104,10 +106,13 @@ class SpoolerPanel(wx.Panel):
         self.button_pause = wx.Button(self.win_top, wx.ID_ANY, _("Pause"))
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
         self.button_pause.SetBitmap(icons8_pause_50.GetBitmap(resize=25))
-        self.button_stop = wx.Button(self.win_top, wx.ID_ANY, _("Abort"))
+        self.button_stop = HoverButton(self.win_top, wx.ID_ANY, _("Abort"))
         self.button_stop.SetToolTip(_("Stop the laser"))
-        self.button_stop.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(resize=25))
+        self.button_stop.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(resize=25, color=wx.WHITE, keepalpha=True))
+        self.button_stop.SetBitmapFocus(icons8_emergency_stop_button_50.GetBitmap(resize=25))
         self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
+        self.button_stop.SetForegroundColour(wx.WHITE)
+        self.button_stop.SetFocusColour(wx.BLACK)
 
         self.list_job_spool = wx.ListCtrl(
             self.win_top,
