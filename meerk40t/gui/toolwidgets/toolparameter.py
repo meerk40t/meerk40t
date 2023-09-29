@@ -7,6 +7,7 @@ from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 
 _ = wx.GetTranslation
 
+
 class SimpleCheckbox:
     def __init__(self, index, scene, x, y, trailer):
         self.identifier = index
@@ -40,11 +41,18 @@ class SimpleCheckbox:
         offset = self.pt_offset / s
         gc.SetBrush(wx.TRANSPARENT_BRUSH)
         gc.SetPen(wx.LIGHT_GREY_PEN)
-        gc.DrawRectangle(int(self.x - offset), int(self.y - offset), int(2 * offset), int(2 * offset))
+        gc.DrawRectangle(
+            int(self.x - offset), int(self.y - offset), int(2 * offset), int(2 * offset)
+        )
         if self._value:
             gc.SetBrush(wx.RED_BRUSH)
             gc.SetPen(wx.RED_PEN)
-            gc.DrawRectangle(int(self.x - 0.75 * offset), int(self.y - 0.75 * offset), int(1.5 * offset), int(1.5 * offset))
+            gc.DrawRectangle(
+                int(self.x - 0.75 * offset),
+                int(self.y - 0.75 * offset),
+                int(1.5 * offset),
+                int(1.5 * offset),
+            )
         if self.trailer:
             font_size = 8 / s
             if font_size < 1.0:
@@ -145,9 +153,14 @@ class SimpleSlider:
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset = self.pt_offset / s
         gc.SetPen(wx.LIGHT_GREY_PEN)
-        gc.DrawLines([(int(self.x), int(self.y)), (int(self.x + self.width), int(self.y))])
         gc.DrawLines(
-            [(int(self.x), int(self.y - offset / 2)), (int(self.x), int(self.y + offset / 2))]
+            [(int(self.x), int(self.y)), (int(self.x + self.width), int(self.y))]
+        )
+        gc.DrawLines(
+            [
+                (int(self.x), int(self.y - offset / 2)),
+                (int(self.x), int(self.y + offset / 2)),
+            ]
         )
         gc.DrawLines(
             [
@@ -157,7 +170,12 @@ class SimpleSlider:
         )
         gc.SetBrush(wx.RED_BRUSH)
         gc.SetPen(wx.RED_PEN)
-        gc.DrawEllipse(int(self.ptx - offset), int(self.pty - offset), int(offset * 2), int(offset * 2))
+        gc.DrawEllipse(
+            int(self.ptx - offset),
+            int(self.pty - offset),
+            int(offset * 2),
+            int(offset * 2),
+        )
         symbol = str(self._value)
         if self.trailer:
             if not self.trailer.startswith("%"):
@@ -237,7 +255,6 @@ class ParameterTool(ToolWidget):
         self.mode = None
         self.point_index = -1
         self.active_slider = None
-
 
     def update_and_draw_sliders(self, gc):
         if self.element is None:
@@ -517,13 +534,19 @@ class ParameterTool(ToolWidget):
                         break
 
                 idx += 1
-            if self.point_index < 0 and self.slider_index < 0 and self.pin_box.hit(xp, yp):
+            if (
+                self.point_index < 0
+                and self.slider_index < 0
+                and self.pin_box.hit(xp, yp)
+            ):
                 self.pinned = not self.pinned
                 self.pin_box.value = self.pinned
 
                 self.scene.refresh_scene()
             return RESPONSE_CONSUME
         elif event_type == "move":
+            if "m_middle" in modifiers:
+                return RESPONSE_CHAIN
             # print(f"Move: {self.point_index}, {self.slider_index}")
             if self.point_index >= 0:
                 # We need to reverse the point in the element matrix
