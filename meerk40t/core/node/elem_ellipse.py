@@ -208,6 +208,10 @@ class EllipseNode(Node, Stroked):
             if modify:
                 self.insert_sibling(drag_node)
             return True
+        elif drag_node.type.startswith("op"):
+            # If we drag an operation to this node,
+            # then we will reverse the game
+            return drag_node.drop(self, modify=modify)
         return False
 
     def revalidate_points(self):
