@@ -188,7 +188,7 @@ class DefaultOperationWidget(StatusBarWidget):
         # Sae function for all buttons...
         # button = event.GetEventObject()
         menu = wx.Menu()
-        item = menu.Append(wx.ID_ANY, _("Load"), "")
+        item = menu.Append(wx.ID_ANY, _("Load materials/operations"), "")
         item.Enable(False)
         matcount = 0
 
@@ -210,7 +210,7 @@ class DefaultOperationWidget(StatusBarWidget):
             elif material.startswith("_default_"):
                 name = f"Default for {material[9:]}"
             else:
-                name = material
+                name = material.replace("_", " ")
             matcount += 1
 
             self.parent.Bind(
@@ -296,9 +296,9 @@ class DefaultOperationWidget(StatusBarWidget):
         self.reset_tooltips()
 
     def show_stuff(self, flag):
-        for idx in range(len(self.assign_buttons)):
-            myflag = flag and self.assign_operations[idx] is not None
-            self.assign_buttons[idx].Enable(myflag)
+        # for idx in range(len(self.assign_buttons)):
+        #     myflag = flag and self.assign_operations[idx] is not None
+        #     self.assign_buttons[idx].Enable(myflag)
 
         self.parent.Reposition(self.panelidx)
 
@@ -337,4 +337,5 @@ class DefaultOperationWidget(StatusBarWidget):
             # Repaint
             self.show_stuff(True)
         elif signal == "emphasized":
-            self.Enable(self.context.elements.has_emphasis())
+            pass
+            # self.Enable(self.context.elements.has_emphasis())
