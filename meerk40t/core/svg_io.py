@@ -109,6 +109,9 @@ def plugin(kernel, lifecycle=None):
             },
         ]
         kernel.register_choices("preferences", choices)
+        # The order is relevant as both loaders support SVG
+        # By definition the very first matching loader is used as a default
+        # so that needs to be the full loader
         kernel.register("load/SVGLoader", SVGLoader)
         kernel.register("load/SVGPlainLoader", SVGLoaderPlain)
         kernel.register("save/SVGWriter", SVGWriter)
@@ -1215,6 +1218,10 @@ class SVGProcessor:
 
 
 class SVGLoader:
+    """
+    SVG loader - loading elements, regmarks and operations
+    """
+
     @staticmethod
     def load_types():
         yield "Scalable Vector Graphics", ("svg", "svgz"), "image/svg+xml"
@@ -1258,6 +1265,10 @@ class SVGLoader:
 
 
 class SVGLoaderPlain:
+    """
+    SVG loader but without loading the operations branch
+    """
+
     @staticmethod
     def load_types():
         yield "SVG (elements only)", ("svg", "svgz"), "image/svg+xml"
