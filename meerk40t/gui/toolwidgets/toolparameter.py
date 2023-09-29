@@ -47,11 +47,23 @@ class SimpleCheckbox:
         if self._value:
             gc.SetBrush(wx.RED_BRUSH)
             gc.SetPen(wx.RED_PEN)
-            gc.DrawRectangle(
-                int(self.x - 0.75 * offset),
-                int(self.y - 0.75 * offset),
-                int(1.5 * offset),
-                int(1.5 * offset),
+            # gc.DrawRectangle(
+            #     int(self.x - 0.75 * offset),
+            #     int(self.y - 0.75 * offset),
+            #     int(1.5 * offset),
+            #     int(1.5 * offset),
+            # )
+            gc.DrawLines(
+                [
+                    (int(self.x - offset), int(self.y - offset)),
+                    (int(self.x + offset), int(self.y + offset)),
+                ]
+            )
+            gc.DrawLines(
+                [
+                    (int(self.x - offset), int(self.y + offset)),
+                    (int(self.x + offset), int(self.y - offset)),
+                ]
             )
         if self.trailer:
             font_size = 8 / s
@@ -200,7 +212,7 @@ class SimpleSlider:
             )
         gc.SetFont(font, wx.Colour(red=255, green=0, blue=0))
         (t_width, t_height) = gc.GetTextExtent(symbol)
-        x = self.x + self.width + offset
+        x = self.x + self.width + 1.5 * offset
         y = self.y - t_height / 2
         gc.DrawText(symbol, int(x), int(y))
 
@@ -276,10 +288,12 @@ class ParameterTool(ToolWidget):
         for slider in self.sliders:
             y -= 3 * offset
             slider.set_position(x, y, width)
-            slider.process_draw(gc)
         y -= 3 * offset
         self.pin_box.value = self.pinned
         self.pin_box.set_position(x, y)
+        # Now draw everything
+        for slider in self.sliders:
+            slider.process_draw(gc)
         self.pin_box.process_draw(gc)
 
     def establish_parameters(self, node):
