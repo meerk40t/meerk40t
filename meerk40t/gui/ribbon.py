@@ -42,6 +42,7 @@ The action is a function which is run when the button is pressed.
 
 import copy
 import math
+import platform
 import threading
 
 import wx
@@ -1268,6 +1269,9 @@ class Art:
             self.text_color_disabled = wx.Colour("Light Grey")
             self.black_color = wx.WHITE
             self.inactive_background = wx.BLACK
+            OS_NAME = platform.system()
+            if OS_NAME == "Windows":
+                self.button_face_hover = wx.BLUE
 
         self.default_font = wx.Font(
             10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
