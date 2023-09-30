@@ -252,6 +252,7 @@ class ParameterTool(ToolWidget):
         self.pin_box = None
         self.pin_box = SimpleCheckbox(-1, self.scene, 0, 0, _("Pin"))
         self.pinned = False
+        self.is_moving = False
 
     def read_functions(self):
         self._functions.clear()
@@ -287,10 +288,13 @@ class ParameterTool(ToolWidget):
             y = bb[1]
         for slider in self.sliders:
             y -= 3 * offset
-            slider.set_position(x, y, width)
+            if not self.is_moving:
+                slider.set_position(x, y, width)
         y -= 3 * offset
         self.pin_box.value = self.pinned
-        self.pin_box.set_position(x, y)
+        if not self.is_moving:
+            self.pin_box.set_position(x, y)
+
         # Now draw everything
         for slider in self.sliders:
             slider.process_draw(gc)
@@ -463,6 +467,7 @@ class ParameterTool(ToolWidget):
         offset = 5
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset /= s
+        self.is_moving = False
         if event_type == "hover_start":
             return RESPONSE_CHAIN
         elif event_type == "hover_end" or event_type == "lost":
@@ -516,6 +521,7 @@ class ParameterTool(ToolWidget):
             self.scene.context.signal("statusmsg", message)
             return RESPONSE_CHAIN
         elif event_type == "leftdown":
+            self.is_moving = True
             xp = space_pos[0]
             yp = space_pos[1]
             self.point_index = -1
@@ -556,12 +562,14 @@ class ParameterTool(ToolWidget):
                 self.pinned = not self.pinned
                 self.pin_box.value = self.pinned
 
+                self.is_moving = False
                 self.scene.refresh_scene()
             return RESPONSE_CONSUME
         elif event_type == "move":
             if "m_middle" in modifiers:
                 return RESPONSE_CHAIN
             # print(f"Move: {self.point_index}, {self.slider_index}")
+            self.is_moving = True
             if self.point_index >= 0:
                 # We need to reverse the point in the element matrix
                 pt = (space_pos[0], space_pos[1])
@@ -599,6 +607,7 @@ class ParameterTool(ToolWidget):
                         self.scene.refresh_scene()
             return RESPONSE_CONSUME
         elif event_type == "leftup":
+            self.is_moving = False
             return RESPONSE_CONSUME
         elif event_type == "rightdown":
             # We stop
@@ -614,6 +623,7 @@ class ParameterTool(ToolWidget):
         if self.is_hovering:
             self.scene.context.signal("statusmsg", "")
             self.is_hovering = False
+        self.is_moving = False
         self.scene.context("tool none\n")
 
     def signal(self, signal, *args, **kwargs):
