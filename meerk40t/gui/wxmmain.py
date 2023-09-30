@@ -3429,9 +3429,14 @@ class MeerK40t(MWindow):
         dlg.ShowModal()
         dlg.Destroy()
 
+    @signal_listener("default_operations")
+    def on_def_ops(self, origin, *args):
+        self.main_statusbar.Signal("default_operations")
+
     @signal_listener("activate;device")
-    def on_device_active(self, origin, value):
-        # A new device might have new default oeprations...
+    def on_device_active(self, origin, *args):
+        # A new device might have new default operations...
+        self.context.elements.init_default_operations_nodes()
         self.main_statusbar.Signal("default_operations")
 
     @signal_listener("pipe;failing")

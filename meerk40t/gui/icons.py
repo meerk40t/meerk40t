@@ -234,8 +234,8 @@ class EmptyIcon:
                     + (4 * g * g)
                     + (((767 - red_mean) * b * b) >> 8)
                 )
-                # print(distance, c1.red, c1.blue, c1.green)
-                if distance < 200 * 200:
+                # print(c1.red, c1.blue, c1.green, c1.blue + c1.red)
+                if distance < 200 * 200 or c1.blue == 255 or c1.red == 255:
                     txt_color = wx.WHITE
             if ptsize is None:
                 ptsize = 12
