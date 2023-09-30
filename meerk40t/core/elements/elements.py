@@ -125,7 +125,6 @@ def plugin(kernel, lifecycle=None):
         )
         kernel.register("format/blob", "{element_type} {data_type}:{label} @{length}")
         kernel.register("format/file", "{element_type} {filename}")
-        kernel.register("format/lasercode", "{element_type} {command_count}")
         kernel.register("format/cutcode", "{element_type}")
         kernel.register("format/branch ops", "{element_type} {loops}")
         kernel.register("format/branch elems", "{element_type}")
