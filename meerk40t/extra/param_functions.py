@@ -7,8 +7,8 @@ import copy
 import math
 
 from meerk40t.core.units import Length
-from meerk40t.kernel import CommandSyntaxError, signal_listener
-from meerk40t.svgelements import Angle, Point, Matrix
+from meerk40t.kernel import CommandSyntaxError
+from meerk40t.svgelements import Angle, Point
 from meerk40t.tools.geomstr import Geomstr
 
 
@@ -425,7 +425,7 @@ def plugin(kernel, lifecycle):
                 node.geometry = base
                 node.altered()
                 # Rewrite the functional_parameter
-                node.parameter_store = (
+                node.functional_parameter = (
                     "tfractal",
                     3,
                     turtle,
@@ -438,7 +438,7 @@ def plugin(kernel, lifecycle):
                     1,
                     pattern_repeat,
                     1,
-                    0,  # line connector
+                    connector,  # line connector
                 )
 
         @self.console_argument("svg_path", type=str)
