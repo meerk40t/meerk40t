@@ -8,7 +8,7 @@ import math
 
 from meerk40t.core.units import Length
 from meerk40t.kernel import CommandSyntaxError, signal_listener
-from meerk40t.svgelements import Angle, Point, Polygon
+from meerk40t.svgelements import Angle, Point, Matrix
 from meerk40t.tools.geomstr import Geomstr
 
 
@@ -30,7 +30,12 @@ def plugin(kernel, lifecycle):
             # )
             geom = Geomstr()
             try:
-                orggeom = node.as_geometry()
+                if isinstance(node, Geomstr):
+                    # That may be the case if we have lost the connection to the original node.
+                    # In that case we are getting passed the first geometry subpath to reuse
+                    orggeom = node
+                else:
+                    orggeom = node.as_geometry()
                 bb = orggeom.bbox()
                 width = bb[2] - bb[0]
                 height = bb[3] - bb[1]
@@ -121,7 +126,10 @@ def plugin(kernel, lifecycle):
             bb = geom.bbox()
             width = bb[2] - bb[0]
             # height = bb[3] - bb[1]
-            node.stroke = self.default_stroke
+            if hasattr(found_node, "stroke"):
+                node.stroke = found_node.stroke
+            else:
+                node.stroke = self.default_stroke
             node.stroke_width = self.default_strokewidth
             node.altered()
             node.functional_parameter = (
@@ -157,36 +165,53 @@ def plugin(kernel, lifecycle):
             if not valid:
                 # Not for me...
                 return
-            nodeid = getit(param, 2, None)
-            if nodeid is None:
+            node_id = getit(param, 2, None)
+            if node_id is None:
                 return
             found_node = None
             for e in self.elems():
-                if e.id == nodeid and hasattr(e, "as_geometry"):
+                if e.id == node_id and hasattr(e, "as_geometry"):
                     found_node = e
                     break
             if found_node is None:
                 for e in self.regmarks():
-                    if e.id == nodeid and hasattr(e, "as_geometry"):
+                    if e.id == node_id and hasattr(e, "as_geometry"):
                         found_node = e
                         break
             if found_node is None:
                 return
-            bb = node.as_geometry().bbox()
+            geom = node.as_geometry()
+            # That has already the matrix applied, so we need to reverse that
+            bb = geom.bbox()
+            # print(
+            #     f"Before: x={bb[0]:.0f}, y={bb[1]:.0f}, w={bb[2] - bb[0]:.0f}, h={bb[3] - bb[1]:.0f}"
+            # )
+            inverse = Matrix(node.matrix)
+            inverse.inverse()
+            geom.transform(inverse)
+            bb = geom.bbox()
+            # print(
+            #     f"After: x={bb[0]:.0f}, y={bb[1]:.0f}, w={bb[2] - bb[0]:.0f}, h={bb[3] - bb[1]:.0f}"
+            # )
             start_pt = Point(bb[0], bb[1])
+
             sdx = getit(param, 4, bb[0])
+            sdy = getit(param, 8, bb[1])
+            # print(
+            #     f"I got sdx={sdx:.0f}, sdy={sdy:.0f} -> {sdx - bb[0]:.0f}, sdy={sdy-bb[1]:.0f}"
+            # )
             sdx = sdx - bb[0]
-            sdy = getit(param, 8, bb[3])
             sdy = sdy - bb[1]
             cols = getit(param, 10, 1)
             rows = getit(param, 12, 1)
+
             geom = create_copied_grid(start_pt, found_node, cols, rows, sdx, sdy)
             node.geometry = geom
-            bb = node.as_geometry().bbox()
+            bb = geom.bbox()
             node.functional_parameter = (
                 "grid",
                 3,
-                nodeid,
+                node_id,
                 0,
                 bb[0] + sdx,
                 bb[1],
@@ -277,7 +302,6 @@ def plugin(kernel, lifecycle):
                     while pattern_base[idx] in "0123456789":
                         pattern += pattern_base[idx]
                         idx += 1
-                    print(f"Repeat indicator: {pattern}")
                     try:
                         pattern_repeat = int(pattern)
                     except ValueError:
@@ -301,7 +325,6 @@ def plugin(kernel, lifecycle):
                 1,
                 0,  # line connector
             )
-            print("Turtle", base.parameter_store)
             return "geometry", base
 
         @self.console_option(
@@ -318,7 +341,6 @@ def plugin(kernel, lifecycle):
                     # Round corners
                     param[12] = 1
                 data.parameter_store = param
-                print("Round corner", data.parameter_store)
             return "geometry", data
 
         @self.console_option(
@@ -335,7 +357,6 @@ def plugin(kernel, lifecycle):
                     # Bezier corners
                     param[12] = 2
                 data.parameter_store = param
-                print("Quad corner", data.parameter_store)
             return "geometry", data
 
         def update_node_tfractal(node):
@@ -383,10 +404,8 @@ def plugin(kernel, lifecycle):
                                 basepattern = basepattern[
                                     0 : int(len(basepattern) / prev_len)
                                 ]
-                                print(f"Was: '{old}', now: '{basepattern}'")
                             else:
                                 # that's wrong...
-                                print("Needed to reset")
                                 pattern_repeat = 1
 
                     if pattern_repeat > 1:
@@ -549,7 +568,7 @@ def plugin(kernel, lifecycle):
                 node.geometry = geom
                 node.altered()
 
-        # --- Fractal Dragon
+        # --- Fractal Dragon - now superceded by generic tfractal routine
         # def create_fractal_dragon(first_pt, second_pt, iterations):
         #
         #     # Code based on https://github.com/GuidoDipietro/python_art
