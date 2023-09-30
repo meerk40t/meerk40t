@@ -16481,7 +16481,7 @@ msgstr "Vorverarbeitung"
 msgid "Validating"
 msgstr "Validierung"
 
-msgid "Generating lasercode"
+msgid "Convert data"
 msgstr "Lasercode generieren"
 
 msgid "Preparing optimisation"

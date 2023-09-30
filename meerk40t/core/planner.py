@@ -474,7 +474,6 @@ class Planner(Service):
             #     "util input",
             #     "util output",
             #     "place point"
-            #     "lasercode",
             #     "blob",
             # )
             for c in operations:
@@ -602,7 +601,7 @@ class Planner(Service):
             # Update Info-panel if displayed
             busy = self.kernel.busyinfo
             if busy.shown:
-                busy.change(msg=_("Generating lasercode"), keep=1)
+                busy.change(msg=_("Converting data"), keep=1)
                 busy.show()
 
             data.blob()

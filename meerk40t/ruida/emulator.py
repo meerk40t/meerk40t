@@ -50,7 +50,6 @@ class RuidaEmulator:
         self.realtime = None
 
         self.process_commands = True
-        self.parse_lasercode = True
         self.swizzle_mode = True
 
         self.scale = UNITS_PER_uM

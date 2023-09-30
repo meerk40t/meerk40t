@@ -386,7 +386,7 @@ class RDJob:
         """
         Parses an individual unswizzled ruida command, updating the emulator state.
 
-        These commands can change the position, settings, speed, color, power, create elements, creates lasercode.
+        These commands can change the position, settings, speed, color, power, create elements.
         @param array:
         @return:
         """

@@ -22,7 +22,6 @@ non_structural_nodes = (
     "place point",
     "place current",
     "reference",
-    "lasercode",
     "cutcode",
     "blob",
     "elem ellipse",

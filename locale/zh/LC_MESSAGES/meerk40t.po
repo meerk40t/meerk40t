@@ -2936,7 +2936,7 @@ msgid "Run the commands to make these operations valid."
 msgstr "运行命令以使这些操作有效。"
 
 #: meerk40t/gui/executejob.py:232
-msgid "Create Lasercode"
+msgid "Convert data"
 msgstr "创建激光代码"
 
 #: meerk40t/gui/executejob.py:234

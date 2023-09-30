@@ -10,8 +10,7 @@ from .quadcut import QuadCut
 Cutcode is a list of cut objects. These are line, quad, cubic, arc, and raster. And anything else that should be
 considered a laser primitive. These are disjointed objects. If the distance between one and the next exist the laser
 should be toggled and move by anything executing these in the planning process. Various other laser-file types should
-be converted into cut code. This should be the parsed form of file-blobs. Cutcode can convert easily to both SVG and
-to LaserCode.
+be converted into cut code. This should be the parsed form of file-blobs. Cutcode can convert easily to SVG.
 
 All CutObjects have a .start .end and .generator() functions. They also have a settings object that contains all
 properties for that cuts may need or use. Or which may be used by the CutPlanner, PlotPlanner, or local objects. These
@@ -287,42 +286,6 @@ class CutCode(CutGroup):
         if rapid_speed is None:
             return 0
         return travel / rapid_speed
-
-    @classmethod
-    def from_lasercode(cls, lasercode):
-        cutcode = cls()
-        x = 0
-        y = 0
-        for code in lasercode:
-            if isinstance(code, int):
-                cmd = code
-            elif isinstance(code, (tuple, list)):
-                cmd = code[0]
-            else:
-                continue
-            if cmd == "plot":
-                cutcode.extend(code[1])
-            elif cmd == "move_rel":
-                nx = code[1]
-                ny = code[2]
-                nx = x + nx
-                ny = y + ny
-                x = nx
-                y = ny
-            elif cmd == "move_abs":
-                nx = code[1]
-                ny = code[2]
-                x = nx
-                y = ny
-            elif cmd == "home":
-                x = 0
-                y = 0
-            elif cmd == "dwell":
-                time = code[1]
-                cut = DwellCut((x, y), time)
-                cutcode.append(cut)
-
-        return cutcode
 
     def reordered(self, order):
         """
