@@ -238,7 +238,7 @@ class PlannerPanel(wx.Panel):
                 _("Run the commands to make these operations valid.")
             )
         elif self.stage == 3:
-            self.button_start.SetLabelText(_("Create Lasercode"))
+            self.button_start.SetLabelText(_("Convert data"))
             self.button_start.SetBackgroundColour(wx.Colour(102, 102, 255))
             self.button_start.SetToolTip(_("Turn this set of operations into Cutcode"))
         elif self.stage == 4:

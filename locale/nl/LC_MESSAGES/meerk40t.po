@@ -3003,7 +3003,7 @@ msgid "Run the commands to make these operations valid."
 msgstr "Voer de opdrachten uit om deze bewerkingen geldig te maken."
 
 #: meerk40t/gui/executejob.py:232
-msgid "Create Lasercode"
+msgid "Convert data"
 msgstr ""
 
 #: meerk40t/gui/executejob.py:234
