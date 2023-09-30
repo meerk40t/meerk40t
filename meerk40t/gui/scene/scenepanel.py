@@ -96,6 +96,15 @@ class ScenePanel(wx.Panel):
             modifiers.append("shift")
         if event.MetaDown():
             modifiers.append("meta")
+        try:
+            if event.LeftIsDown():
+                modifiers.append("m_left")
+            if event.RightIsDown():
+                modifiers.append("m_right")
+            if event.MiddleIsDown():
+                modifiers.append("m_middle")
+        except AttributeError:
+            pass
         return modifiers
 
     def on_key(self, evt):

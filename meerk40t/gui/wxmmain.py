@@ -205,6 +205,7 @@ class MeerK40t(MWindow):
 
         self.CenterOnScreen()
         self.update_check()
+        self.parametric_info = None
 
     def update_check(self, silent=True):
         if self.context.update_check == 1:
@@ -3401,6 +3402,62 @@ class MeerK40t(MWindow):
         if len(self.context.elements.elem_branch.children) == 0:
             status = False
         self.set_needs_save_status(status)
+
+    @signal_listener("altered")
+    @signal_listener("modified")
+    @signal_listener("scaled")
+    def check_parametric_updates(self, origin, *args):
+        def getit(param, idx, default):
+            if idx >= len(param):
+                return default
+            return param[idx]
+
+        def read_information():
+            if self.parametric_info is None:
+                self.parametric_info = {}
+                for info, m, sname in self.context.kernel.find("element_update"):
+                    # function, path, shortname
+                    self.parametric_info[sname.lower()] = info
+
+        # Let's check for the need of parametric updates...
+        if len(args) == 0:
+            return
+        read_information()
+        data = args[0]
+        if not isinstance(data, (list, tuple)):
+            data = [args[0]]
+        for n in data:
+            if n is None:
+                continue
+            if not hasattr(n, "id"):
+                continue
+            if n.id is None:
+                continue
+            nid = n.id
+            for e in self.context.elements.elems():
+                if not hasattr(e, "functional_parameter"):
+                    continue
+                param = e.functional_parameter
+                if param is None:
+                    continue
+                ptype = getit(param, 0, None)
+                if ptype is None:
+                    continue
+                pid = getit(param, 2, None)
+                if pid != nid:
+                    continue
+                try:
+                    func_tuple = self.parametric_info[ptype.lower()]
+                    if not func_tuple[2]:  # No Autoupdate
+                        func_tuple = None
+                except IndexError:
+                    func_tuple = None
+                if func_tuple is not None:
+                    try:
+                        func = func_tuple[0]
+                        func(e)
+                    except IndexError:
+                        pass
 
     def validate_save(self):
         self.set_needs_save_status(False)

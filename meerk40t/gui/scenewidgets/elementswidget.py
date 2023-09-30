@@ -87,6 +87,8 @@ class ElementsWidget(Widget):
                 return RESPONSE_CONSUME
             return RESPONSE_CHAIN
         elif event_type == "leftclick":
+            if self.scene.pane.modif_active:
+                return RESPONSE_CHAIN
             keep_old = "shift" in modifiers
             smallest = bool(self.scene.context.select_smallest) != bool(
                 "ctrl" in modifiers

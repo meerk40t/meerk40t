@@ -37,6 +37,11 @@ def init_commands(kernel):
             stroke_width=self.default_strokewidth,
             type="elem path",
         )
+        if hasattr(data, "parameter_store"):
+            param = getattr(data, "parameter_store", None)
+            if param is not None:
+                node.functional_parameter = param
+
         return "elements", [node]
 
     @self.console_argument("copies", type=int)
