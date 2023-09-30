@@ -10,8 +10,7 @@ from .quadcut import QuadCut
 Cutcode is a list of cut objects. These are line, quad, cubic, arc, and raster. And anything else that should be
 considered a laser primitive. These are disjointed objects. If the distance between one and the next exist the laser
 should be toggled and move by anything executing these in the planning process. Various other laser-file types should
-be converted into cut code. This should be the parsed form of file-blobs. Cutcode can convert easily to both SVG and
-to LaserCode.
+be converted into cut code. This should be the parsed form of file-blobs. Cutcode can convert easily to SVG.
 
 All CutObjects have a .start .end and .generator() functions. They also have a settings object that contains all
 properties for that cuts may need or use. Or which may be used by the CutPlanner, PlotPlanner, or local objects. These
