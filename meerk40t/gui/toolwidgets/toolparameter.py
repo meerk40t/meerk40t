@@ -152,7 +152,7 @@ class SimpleSlider:
         if x > self.x + self.width:
             x = self.x + self.width
         newvalue = self._minimum + int(
-            (self._maximum - self._minimum) * (x - self.x) / self.width
+            round((self._maximum - self._minimum) * (x - self.x) / self.width, 0)
         )
         # print(f"Update from {self._value} to {newvalue}")
         self.value = newvalue
