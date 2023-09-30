@@ -288,42 +288,6 @@ class CutCode(CutGroup):
             return 0
         return travel / rapid_speed
 
-    @classmethod
-    def from_lasercode(cls, lasercode):
-        cutcode = cls()
-        x = 0
-        y = 0
-        for code in lasercode:
-            if isinstance(code, int):
-                cmd = code
-            elif isinstance(code, (tuple, list)):
-                cmd = code[0]
-            else:
-                continue
-            if cmd == "plot":
-                cutcode.extend(code[1])
-            elif cmd == "move_rel":
-                nx = code[1]
-                ny = code[2]
-                nx = x + nx
-                ny = y + ny
-                x = nx
-                y = ny
-            elif cmd == "move_abs":
-                nx = code[1]
-                ny = code[2]
-                x = nx
-                y = ny
-            elif cmd == "home":
-                x = 0
-                y = 0
-            elif cmd == "dwell":
-                time = code[1]
-                cut = DwellCut((x, y), time)
-                cutcode.append(cut)
-
-        return cutcode
-
     def reordered(self, order):
         """
         Reorder the cutcode based on the given order.
