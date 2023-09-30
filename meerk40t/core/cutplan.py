@@ -448,10 +448,10 @@ class CutPlan:
             return
         context = self.context
         grouped_plan = list(self._to_grouped_plan(self.plan))
-        if context.opt_merge_ops and not context.opt_merge_passes:
-            blob_plan = list(self._to_blob_plan_passes_first(grouped_plan))
-        else:
-            blob_plan = list(self._to_blob_plan(grouped_plan))
+        # if context.opt_merge_ops and not context.opt_merge_passes:
+        #     blob_plan = list(self._to_blob_plan_passes_first(grouped_plan))
+        # else:
+        blob_plan = list(self._to_blob_plan(grouped_plan))
         self.plan.clear()
         self.plan.extend(self._to_merged_plan(blob_plan))
 
@@ -462,175 +462,176 @@ class CutPlan:
 
         @return:
         """
-        context = self.context
-        has_cutcode = False
-        for op in self.plan:
-            try:
-                if isinstance(op, CutCode):
-                    has_cutcode = True
-                    break
-            except AttributeError:
-                pass
-        if not has_cutcode:
-            return
+        pass
+        # context = self.context
+        # has_cutcode = False
+        # for op in self.plan:
+        #     try:
+        #         if isinstance(op, CutCode):
+        #             has_cutcode = True
+        #             break
+        #     except AttributeError:
+        #         pass
+        # if not has_cutcode:
+        #     return
 
-        if context.opt_reduce_travel and (
-            context.opt_nearest_neighbor or context.opt_2opt
-        ):
-            if context.opt_nearest_neighbor:
-                self.commands.append(self.optimize_travel)
-            if context.opt_2opt and not context.opt_inner_first:
-                try:
-                    # Check for numpy before adding additional 2opt
-                    # pylint: disable=unused-import
-                    import numpy as np
+        # if context.opt_reduce_travel and (
+        #     context.opt_nearest_neighbor or context.opt_2opt
+        # ):
+        #     if context.opt_nearest_neighbor:
+        #         self.commands.append(self.optimize_travel)
+            # if context.opt_2opt and not context.opt_inner_first:
+            #     try:
+            #         # Check for numpy before adding additional 2opt
+            #         # pylint: disable=unused-import
+            #         import numpy as np
+            #
+            #         self.commands.append(self.optimize_travel_2opt)
+            #     except ImportError:
+            #         pass
 
-                    self.commands.append(self.optimize_travel_2opt)
-                except ImportError:
-                    pass
+        # elif context.opt_inner_first:
+        #     self.commands.append(self.optimize_cuts)
+        # self.commands.append(self.merge_cutcode)
+        # if context.opt_reduce_directions:
+        #     pass
+        # if context.opt_remove_overlap:
+        #     pass
 
-        elif context.opt_inner_first:
-            self.commands.append(self.optimize_cuts)
-        self.commands.append(self.merge_cutcode)
-        if context.opt_reduce_directions:
-            pass
-        if context.opt_remove_overlap:
-            pass
+    # def optimize_travel_2opt(self):
+    #     """
+    #     Optimize travel 2opt at optimize stage on cutcode
+    #     @return:
+    #     """
+    #     busy = self.context.kernel.busyinfo
+    #     _ = self.context.kernel.translation
+    #     if busy.shown:
+    #         busy.change(msg=_("Optimize inner travel"), keep=1)
+    #         busy.show()
+    #     channel = self.context.channel("optimize", timestamp=True)
+    #     for i, c in enumerate(self.plan):
+    #         if isinstance(c, CutCode):
+    #             self.plan[i] = short_travel_cutcode_2opt(self.plan[i], channel=channel)
 
-    def optimize_travel_2opt(self):
-        """
-        Optimize travel 2opt at optimize stage on cutcode
-        @return:
-        """
-        busy = self.context.kernel.busyinfo
-        _ = self.context.kernel.translation
-        if busy.shown:
-            busy.change(msg=_("Optimize inner travel"), keep=1)
-            busy.show()
-        channel = self.context.channel("optimize", timestamp=True)
-        for i, c in enumerate(self.plan):
-            if isinstance(c, CutCode):
-                self.plan[i] = short_travel_cutcode_2opt(self.plan[i], channel=channel)
+    # def optimize_cuts(self):
+    #     """
+    #     Optimize cuts at optimize stage on cutcode
+    #     @return:
+    #     """
+    #     # Update Info-panel if displayed
+    #     busy = self.context.kernel.busyinfo
+    #     _ = self.context.kernel.translation
+    #     if busy.shown:
+    #         busy.change(msg=_("Optimize cuts"), keep=1)
+    #         busy.show()
+    #     tolerance = 0
+    #     if self.context.opt_inner_first:
+    #         stol = self.context.opt_inner_tolerance
+    #         try:
+    #             tolerance = (
+    #                 float(Length(stol))
+    #                 * 2
+    #                 / (
+    #                     self.context.device.native_scale_x
+    #                     + self.context.device.native_scale_y
+    #                 )
+    #             )
+    #         except ValueError:
+    #             pass
+    #     # print(f"Tolerance: {tolerance}")
+    #
+    #     channel = self.context.channel("optimize", timestamp=True)
+    #     grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
+    #     for i, c in enumerate(self.plan):
+    #         if busy.shown:
+    #             busy.change(
+    #                 msg=_("Optimize cuts") + f" {i + 1}/{len(self.plan)}", keep=1
+    #             )
+    #             busy.show()
+    #         if isinstance(c, CutCode):
+    #             if c.constrained:
+    #                 self.plan[i] = inner_first_ident(
+    #                     c, channel=channel, tolerance=tolerance
+    #                 )
+    #                 c = self.plan[i]
+    #             self.plan[i] = inner_selection_cutcode(
+    #                 c,
+    #                 channel=channel,
+    #                 grouped_inner=grouped_inner,
+    #             )
 
-    def optimize_cuts(self):
-        """
-        Optimize cuts at optimize stage on cutcode
-        @return:
-        """
-        # Update Info-panel if displayed
-        busy = self.context.kernel.busyinfo
-        _ = self.context.kernel.translation
-        if busy.shown:
-            busy.change(msg=_("Optimize cuts"), keep=1)
-            busy.show()
-        tolerance = 0
-        if self.context.opt_inner_first:
-            stol = self.context.opt_inner_tolerance
-            try:
-                tolerance = (
-                    float(Length(stol))
-                    * 2
-                    / (
-                        self.context.device.native_scale_x
-                        + self.context.device.native_scale_y
-                    )
-                )
-            except ValueError:
-                pass
-        # print(f"Tolerance: {tolerance}")
+    # def optimize_travel(self):
+    #     """
+    #     Optimize travel at optimize stage on cutcode.
+    #     @return:
+    #     """
+    #     # Update Info-panel if displayed
+    #     busy = self.context.kernel.busyinfo
+    #     _ = self.context.kernel.translation
+    #     if busy.shown:
+    #         busy.change(msg=_("Optimize travel"), keep=1)
+    #         busy.show()
+    #     try:
+    #         last = self.context.device.native
+    #     except AttributeError:
+    #         last = None
+    #     tolerance = 0
+    #     if self.context.opt_inner_first:
+    #         stol = self.context.opt_inner_tolerance
+    #         try:
+    #             tolerance = (
+    #                 float(Length(stol))
+    #                 * 2
+    #                 / (
+    #                     self.context.device.view.native_scale_x
+    #                     + self.context.device.view.native_scale_y
+    #                 )
+    #             )
+    #         except ValueError:
+    #             pass
+    #     # print(f"Tolerance: {tolerance}")
+    #
+    #     channel = self.context.channel("optimize", timestamp=True)
+    #     grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
+    #     for i, c in enumerate(self.plan):
+    #         if busy.shown:
+    #             busy.change(
+    #                 msg=_("Optimize travel") + f" {i + 1}/{len(self.plan)}", keep=1
+    #             )
+    #             busy.show()
+    #
+    #         if isinstance(c, CutCode):
+    #             if c.constrained:
+    #                 self.plan[i] = inner_first_ident(
+    #                     c, channel=channel, tolerance=tolerance
+    #                 )
+    #                 c = self.plan[i]
+    #             if last is not None:
+    #                 c._start_x, c._start_y = last
+    #             # self.plan[i] = short_travel_cutcode(
+    #             #     c,
+    #             #     channel=channel,
+    #             #     complete_path=self.context.opt_complete_subpaths,
+    #             #     grouped_inner=grouped_inner,
+    #             # )
+    #             last = self.plan[i].end
 
-        channel = self.context.channel("optimize", timestamp=True)
-        grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
-        for i, c in enumerate(self.plan):
-            if busy.shown:
-                busy.change(
-                    msg=_("Optimize cuts") + f" {i + 1}/{len(self.plan)}", keep=1
-                )
-                busy.show()
-            if isinstance(c, CutCode):
-                if c.constrained:
-                    self.plan[i] = inner_first_ident(
-                        c, channel=channel, tolerance=tolerance
-                    )
-                    c = self.plan[i]
-                self.plan[i] = inner_selection_cutcode(
-                    c,
-                    channel=channel,
-                    grouped_inner=grouped_inner,
-                )
-
-    def optimize_travel(self):
-        """
-        Optimize travel at optimize stage on cutcode.
-        @return:
-        """
-        # Update Info-panel if displayed
-        busy = self.context.kernel.busyinfo
-        _ = self.context.kernel.translation
-        if busy.shown:
-            busy.change(msg=_("Optimize travel"), keep=1)
-            busy.show()
-        try:
-            last = self.context.device.native
-        except AttributeError:
-            last = None
-        tolerance = 0
-        if self.context.opt_inner_first:
-            stol = self.context.opt_inner_tolerance
-            try:
-                tolerance = (
-                    float(Length(stol))
-                    * 2
-                    / (
-                        self.context.device.view.native_scale_x
-                        + self.context.device.view.native_scale_y
-                    )
-                )
-            except ValueError:
-                pass
-        # print(f"Tolerance: {tolerance}")
-
-        channel = self.context.channel("optimize", timestamp=True)
-        grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
-        for i, c in enumerate(self.plan):
-            if busy.shown:
-                busy.change(
-                    msg=_("Optimize travel") + f" {i + 1}/{len(self.plan)}", keep=1
-                )
-                busy.show()
-
-            if isinstance(c, CutCode):
-                if c.constrained:
-                    self.plan[i] = inner_first_ident(
-                        c, channel=channel, tolerance=tolerance
-                    )
-                    c = self.plan[i]
-                if last is not None:
-                    c._start_x, c._start_y = last
-                self.plan[i] = short_travel_cutcode(
-                    c,
-                    channel=channel,
-                    complete_path=self.context.opt_complete_subpaths,
-                    grouped_inner=grouped_inner,
-                )
-                last = self.plan[i].end
-
-    def merge_cutcode(self):
-        """
-        Merge all adjacent optimized cutcode into single cutcode objects.
-        @return:
-        """
-        busy = self.context.kernel.busyinfo
-        _ = self.context.kernel.translation
-        if busy.shown:
-            busy.change(msg=_("Merging cutcode"), keep=1)
-            busy.show()
-        for i in range(len(self.plan) - 1, 0, -1):
-            cur = self.plan[i]
-            prev = self.plan[i - 1]
-            if isinstance(cur, CutCode) and isinstance(prev, CutCode):
-                prev.extend(cur)
-                del self.plan[i]
+    # def merge_cutcode(self):
+    #     """
+    #     Merge all adjacent optimized cutcode into single cutcode objects.
+    #     @return:
+    #     """
+    #     busy = self.context.kernel.busyinfo
+    #     _ = self.context.kernel.translation
+    #     if busy.shown:
+    #         busy.change(msg=_("Merging cutcode"), keep=1)
+    #         busy.show()
+    #     for i in range(len(self.plan) - 1, 0, -1):
+    #         cur = self.plan[i]
+    #         prev = self.plan[i - 1]
+    #         if isinstance(cur, CutCode) and isinstance(prev, CutCode):
+    #             prev.extend(cur)
+    #             del self.plan[i]
 
     def clear(self):
         self._previous_bounds = None
@@ -737,10 +738,10 @@ def is_inside(inner, outer, tolerance=0):
     # return vm_code(outer, outer_path, inner, inner_path)
 
 
-def reify_matrix(self):
-    """Apply the matrix to the path and reset matrix."""
-    self.element = abs(self.element)
-    self.scene_bounds = None
+# def reify_matrix(self):
+#     """Apply the matrix to the path and reset matrix."""
+#     self.element = abs(self.element)
+#     self.scene_bounds = None
 
 
 # def bounding_box(elements):
@@ -773,373 +774,373 @@ def reify_matrix(self):
 #     return xmin, ymin, xmax, ymax
 
 
-def correct_empty(context: CutGroup):
-    """
-    Iterates through backwards deleting any entries that are empty.
-    """
-    for index in range(len(context) - 1, -1, -1):
-        c = context[index]
-        if not isinstance(c, CutGroup):
-            continue
-        correct_empty(c)
-        if len(c) == 0:
-            del context[index]
+# def correct_empty(context: CutGroup):
+#     """
+#     Iterates through backwards deleting any entries that are empty.
+#     """
+#     for index in range(len(context) - 1, -1, -1):
+#         c = context[index]
+#         if not isinstance(c, CutGroup):
+#             continue
+#         correct_empty(c)
+#         if len(c) == 0:
+#             del context[index]
 
 
-def inner_first_ident(context: CutGroup, channel=None, tolerance=0):
-    """
-    Identifies closed CutGroups and then identifies any other CutGroups which
-    are entirely inside.
-
-    The CutGroup candidate generator uses this information to not offer the outer CutGroup
-    as a candidate for a burn unless all contained CutGroups are cut.
-
-    The Cutcode is resequenced in either short_travel_cutcode or inner_selection_cutcode
-    based on this information, as used in the
-    """
-    if channel:
-        start_time = time()
-        start_times = times()
-        channel("Executing Inner-First Identification")
-
-    groups = [cut for cut in context if isinstance(cut, (CutGroup, RasterCut))]
-    closed_groups = [g for g in groups if isinstance(g, CutGroup) and g.closed]
-    context.contains = closed_groups
-
-    constrained = False
-    for outer in closed_groups:
-        for inner in groups:
-            if outer is inner:
-                continue
-            # if outer is inside inner, then inner cannot be inside outer
-            if inner.contains and outer in inner.contains:
-                continue
-
-            if is_inside(inner, outer, tolerance):
-                constrained = True
-                if outer.contains is None:
-                    outer.contains = list()
-                outer.contains.append(inner)
-
-                if inner.inside is None:
-                    inner.inside = list()
-                inner.inside.append(outer)
-
-    context.constrained = constrained
-
-    # for g in groups:
-    # if g.contains is not None:
-    # for inner in g.contains:
-    # assert inner in groups
-    # assert inner is not g
-    # assert g in inner.inside
-    # if g.inside is not None:
-    # for outer in g.inside:
-    # assert outer in groups
-    # assert outer is not g
-    # assert g in outer.contains
-
-    if channel:
-        end_times = times()
-        channel(
-            f"Inner paths identified in {time() - start_time:.3f} elapsed seconds "
-            f"using {end_times[0] - start_times[0]:.3f} seconds CPU"
-        )
-    return context
-
-
-def short_travel_cutcode(
-    context: CutCode,
-    channel=None,
-    complete_path: Optional[bool] = False,
-    grouped_inner: Optional[bool] = False,
-):
-    """
-    Selects cutcode from candidate cutcode (burns_done < passes in this CutCode),
-    optimizing with greedy/brute for shortest distances optimizations.
-
-    For paths starting at exactly the same point forward paths are preferred over reverse paths
-
-    We start at either 0,0 or the value given in `context.start`
-
-    This is time-intense hyper-optimized code, so it contains several seemingly redundant
-    checks.
-    """
-    if channel:
-        start_length = context.length_travel(True)
-        start_time = time()
-        start_times = times()
-        channel("Executing Greedy Short-Travel optimization")
-        channel(f"Length at start: {start_length:.0f} steps")
-
-    curr = context.start
-    if curr is None:
-        curr = 0
-    else:
-        curr = complex(curr[0], curr[1])
-
-    for c in context.flat():
-        c.burns_done = 0
-
-    ordered = CutCode()
-    while True:
-        closest = None
-        backwards = False
-        distance = float("inf")
-
-        try:
-            last_segment = ordered[-1]
-        except IndexError:
-            pass
-        else:
-            if last_segment.normal:
-                # Attempt to initialize value to next segment in subpath
-                cut = last_segment.next
-                if cut and cut.burns_done < cut.passes:
-                    closest = cut
-                    backwards = False
-                    start = closest.start
-                    distance = abs(complex(start[0], start[1]) - curr)
-            else:
-                # Attempt to initialize value to previous segment in subpath
-                cut = last_segment.previous
-                if cut and cut.burns_done < cut.passes:
-                    closest = cut
-                    backwards = True
-                    end = closest.end
-                    distance = abs(complex(end[0], end[1]) - curr)
-            # Gap or continuing on path not permitted, try reversing
-            if (
-                distance > 50
-                and last_segment.burns_done < last_segment.passes
-                and last_segment.reversible()
-                and last_segment.next is not None
-            ):
-                # last_segment is a copy, so we need to get original
-                closest = last_segment.next.previous
-                backwards = last_segment.normal
-                distance = 0  # By definition since we are reversing and reburning
-
-        # Stay on path in same direction if gap <= 1/20" i.e. path not quite closed
-        # Travel only if path is completely burned or gap > 1/20"
-        if distance > 50:
-            for cut in context.candidate(
-                complete_path=complete_path, grouped_inner=grouped_inner
-            ):
-                s = cut.start
-                if (
-                    abs(s[0] - curr.real) <= distance
-                    and abs(s[1] - curr.imag) <= distance
-                    and (not complete_path or cut.closed or cut.first)
-                ):
-                    d = abs(complex(s[0], s[1]) - curr)
-                    if d < distance:
-                        closest = cut
-                        backwards = False
-                        if d <= 0.1:  # Distance in px is zero, we cannot improve.
-                            break
-                        distance = d
-
-                if not cut.reversible():
-                    continue
-                e = cut.end
-                if (
-                    abs(e[0] - curr.real) <= distance
-                    and abs(e[1] - curr.imag) <= distance
-                    and (not complete_path or cut.closed or cut.last)
-                ):
-                    d = abs(complex(e[0], e[1]) - curr)
-                    if d < distance:
-                        closest = cut
-                        backwards = True
-                        if d <= 0.1:  # Distance in px is zero, we cannot improve.
-                            break
-                        distance = d
-
-        if closest is None:
-            break
-
-        # Change direction if other direction is coincident and has more burns remaining
-        if backwards:
-            if (
-                closest.next
-                and closest.next.burns_done <= closest.burns_done
-                and closest.next.start == closest.end
-            ):
-                closest = closest.next
-                backwards = False
-        elif closest.reversible():
-            if (
-                closest.previous
-                and closest.previous is not closest
-                and closest.previous.burns_done < closest.burns_done
-                and closest.previous.end == closest.start
-            ):
-                closest = closest.previous
-                backwards = True
-
-        closest.burns_done += 1
-        c = copy(closest)
-        if backwards:
-            c.reverse()
-        end = c.end
-        curr = complex(end[0], end[1])
-        ordered.append(c)
-    if context.start is not None:
-        ordered._start_x, ordered._start_y = context.start
-    else:
-        ordered._start_x = 0
-        ordered._start_y = 0
-    if channel:
-        end_times = times()
-        end_length = ordered.length_travel(True)
-        try:
-            delta = (end_length - start_length) / start_length
-        except ZeroDivisionError:
-            delta = 0
-        channel(
-            f"Length at end: {end_length:.0f} steps "
-            f"({delta:+.0%}), "
-            f"optimized in {time() - start_time:.3f} "
-            f"elapsed seconds using {end_times[0] - start_times[0]:.3f} seconds CPU"
-        )
-    return ordered
+# def inner_first_ident(context: CutGroup, channel=None, tolerance=0):
+#     """
+#     Identifies closed CutGroups and then identifies any other CutGroups which
+#     are entirely inside.
+#
+#     The CutGroup candidate generator uses this information to not offer the outer CutGroup
+#     as a candidate for a burn unless all contained CutGroups are cut.
+#
+#     The Cutcode is resequenced in either short_travel_cutcode or inner_selection_cutcode
+#     based on this information, as used in the
+#     """
+#     if channel:
+#         start_time = time()
+#         start_times = times()
+#         channel("Executing Inner-First Identification")
+#
+#     groups = [cut for cut in context if isinstance(cut, (CutGroup, RasterCut))]
+#     closed_groups = [g for g in groups if isinstance(g, CutGroup) and g.closed]
+#     context.contains = closed_groups
+#
+#     constrained = False
+#     for outer in closed_groups:
+#         for inner in groups:
+#             if outer is inner:
+#                 continue
+#             # if outer is inside inner, then inner cannot be inside outer
+#             if inner.contains and outer in inner.contains:
+#                 continue
+#
+#             if is_inside(inner, outer, tolerance):
+#                 constrained = True
+#                 if outer.contains is None:
+#                     outer.contains = list()
+#                 outer.contains.append(inner)
+#
+#                 if inner.inside is None:
+#                     inner.inside = list()
+#                 inner.inside.append(outer)
+#
+#     context.constrained = constrained
+#
+#     # for g in groups:
+#     # if g.contains is not None:
+#     # for inner in g.contains:
+#     # assert inner in groups
+#     # assert inner is not g
+#     # assert g in inner.inside
+#     # if g.inside is not None:
+#     # for outer in g.inside:
+#     # assert outer in groups
+#     # assert outer is not g
+#     # assert g in outer.contains
+#
+#     if channel:
+#         end_times = times()
+#         channel(
+#             f"Inner paths identified in {time() - start_time:.3f} elapsed seconds "
+#             f"using {end_times[0] - start_times[0]:.3f} seconds CPU"
+#         )
+#     return context
 
 
-def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
-    """
-    This implements 2-opt algorithm using numpy.
+# def short_travel_cutcode(
+#     context: CutCode,
+#     channel=None,
+#     complete_path: Optional[bool] = False,
+#     grouped_inner: Optional[bool] = False,
+# ):
+#     """
+#     Selects cutcode from candidate cutcode (burns_done < passes in this CutCode),
+#     optimizing with greedy/brute for shortest distances optimizations.
+#
+#     For paths starting at exactly the same point forward paths are preferred over reverse paths
+#
+#     We start at either 0,0 or the value given in `context.start`
+#
+#     This is time-intense hyper-optimized code, so it contains several seemingly redundant
+#     checks.
+#     """
+#     if channel:
+#         start_length = context.length_travel(True)
+#         start_time = time()
+#         start_times = times()
+#         channel("Executing Greedy Short-Travel optimization")
+#         channel(f"Length at start: {start_length:.0f} steps")
+#
+#     curr = context.start
+#     if curr is None:
+#         curr = 0
+#     else:
+#         curr = complex(curr[0], curr[1])
+#
+#     for c in context.flat():
+#         c.burns_done = 0
+#
+#     ordered = CutCode()
+#     while True:
+#         closest = None
+#         backwards = False
+#         distance = float("inf")
+#
+#         try:
+#             last_segment = ordered[-1]
+#         except IndexError:
+#             pass
+#         else:
+#             if last_segment.normal:
+#                 # Attempt to initialize value to next segment in subpath
+#                 cut = last_segment.next
+#                 if cut and cut.burns_done < cut.passes:
+#                     closest = cut
+#                     backwards = False
+#                     start = closest.start
+#                     distance = abs(complex(start[0], start[1]) - curr)
+#             else:
+#                 # Attempt to initialize value to previous segment in subpath
+#                 cut = last_segment.previous
+#                 if cut and cut.burns_done < cut.passes:
+#                     closest = cut
+#                     backwards = True
+#                     end = closest.end
+#                     distance = abs(complex(end[0], end[1]) - curr)
+#             # Gap or continuing on path not permitted, try reversing
+#             if (
+#                 distance > 50
+#                 and last_segment.burns_done < last_segment.passes
+#                 and last_segment.reversible()
+#                 and last_segment.next is not None
+#             ):
+#                 # last_segment is a copy, so we need to get original
+#                 closest = last_segment.next.previous
+#                 backwards = last_segment.normal
+#                 distance = 0  # By definition since we are reversing and reburning
+#
+#         # Stay on path in same direction if gap <= 1/20" i.e. path not quite closed
+#         # Travel only if path is completely burned or gap > 1/20"
+#         if distance > 50:
+#             for cut in context.candidate(
+#                 complete_path=complete_path, grouped_inner=grouped_inner
+#             ):
+#                 s = cut.start
+#                 if (
+#                     abs(s[0] - curr.real) <= distance
+#                     and abs(s[1] - curr.imag) <= distance
+#                     and (not complete_path or cut.closed or cut.first)
+#                 ):
+#                     d = abs(complex(s[0], s[1]) - curr)
+#                     if d < distance:
+#                         closest = cut
+#                         backwards = False
+#                         if d <= 0.1:  # Distance in px is zero, we cannot improve.
+#                             break
+#                         distance = d
+#
+#                 if not cut.reversible():
+#                     continue
+#                 e = cut.end
+#                 if (
+#                     abs(e[0] - curr.real) <= distance
+#                     and abs(e[1] - curr.imag) <= distance
+#                     and (not complete_path or cut.closed or cut.last)
+#                 ):
+#                     d = abs(complex(e[0], e[1]) - curr)
+#                     if d < distance:
+#                         closest = cut
+#                         backwards = True
+#                         if d <= 0.1:  # Distance in px is zero, we cannot improve.
+#                             break
+#                         distance = d
+#
+#         if closest is None:
+#             break
+#
+#         # Change direction if other direction is coincident and has more burns remaining
+#         if backwards:
+#             if (
+#                 closest.next
+#                 and closest.next.burns_done <= closest.burns_done
+#                 and closest.next.start == closest.end
+#             ):
+#                 closest = closest.next
+#                 backwards = False
+#         elif closest.reversible():
+#             if (
+#                 closest.previous
+#                 and closest.previous is not closest
+#                 and closest.previous.burns_done < closest.burns_done
+#                 and closest.previous.end == closest.start
+#             ):
+#                 closest = closest.previous
+#                 backwards = True
+#
+#         closest.burns_done += 1
+#         c = copy(closest)
+#         if backwards:
+#             c.reverse()
+#         end = c.end
+#         curr = complex(end[0], end[1])
+#         ordered.append(c)
+#     if context.start is not None:
+#         ordered._start_x, ordered._start_y = context.start
+#     else:
+#         ordered._start_x = 0
+#         ordered._start_y = 0
+#     if channel:
+#         end_times = times()
+#         end_length = ordered.length_travel(True)
+#         try:
+#             delta = (end_length - start_length) / start_length
+#         except ZeroDivisionError:
+#             delta = 0
+#         channel(
+#             f"Length at end: {end_length:.0f} steps "
+#             f"({delta:+.0%}), "
+#             f"optimized in {time() - start_time:.3f} "
+#             f"elapsed seconds using {end_times[0] - start_times[0]:.3f} seconds CPU"
+#         )
+#     return ordered
 
-    Skipping of the candidate code it does not perform inner first optimizations.
-    Due to the numpy requirement, doesn't work without numpy.
-    --
-    Uses code I wrote for vpype:
-    https://github.com/abey79/vpype/commit/7b1fad6bd0fcfc267473fdb8ba2166821c80d9cd
 
-    @param context:cutcode: cutcode to be optimized
-    @param passes: max passes to perform 2-opt
-    @param channel: Channel to send data about the optimization process.
-    @return:
-    """
-    try:
-        import numpy as np
-    except ImportError:
-        return context
-
-    if channel:
-        start_length = context.length_travel(True)
-        start_time = time()
-        start_times = times()
-        channel("Executing 2-Opt Short-Travel optimization")
-        channel(f"Length at start: {start_length:.0f} steps")
-
-    ordered = CutCode(context.flat())
-    length = len(ordered)
-    if length <= 1:
-        if channel:
-            channel("2-Opt: Not enough elements to optimize.")
-        return ordered
-
-    curr = context.start
-    if curr is None:
-        curr = 0
-    else:
-        curr = complex(curr)
-
-    current_pass = 1
-    min_value = -1e-10  # Do not swap on rounding error.
-
-    endpoints = np.zeros((length, 4), dtype="complex")
-    # start, index, reverse-index, end
-    for i in range(length):
-        endpoints[i] = complex(ordered[i].start), i, ~i, complex(ordered[i].end)
-    indexes0 = np.arange(0, length - 1)
-    indexes1 = indexes0 + 1
-
-    def log_progress(pos):
-        starts = endpoints[indexes0, -1]
-        ends = endpoints[indexes1, 0]
-        dists = np.abs(starts - ends)
-        dist_sum = dists.sum() + abs(curr - endpoints[0][0])
-        channel(
-            f"optimize: laser-off distance is {dist_sum}. {100 * pos / length:.02f}% done with pass {current_pass}/{passes}"
-        )
-
-    improved = True
-    while improved:
-        improved = False
-
-        first = endpoints[0][0]
-        cut_ends = endpoints[indexes0, -1]
-        cut_starts = endpoints[indexes1, 0]
-
-        # delta = np.abs(curr - first) + np.abs(first - cut_starts) - np.abs(cut_ends - cut_starts)
-        delta = (
-            np.abs(curr - cut_ends)
-            + np.abs(first - cut_starts)
-            - np.abs(cut_ends - cut_starts)
-            - np.abs(curr - first)
-        )
-        index = int(np.argmin(delta))
-        if delta[index] < min_value:
-            endpoints[: index + 1] = np.flip(
-                endpoints[: index + 1], (0, 1)
-            )  # top to bottom, and right to left flips.
-            improved = True
-            if channel:
-                log_progress(1)
-        for mid in range(1, length - 1):
-            idxs = np.arange(mid, length - 1)
-
-            mid_source = endpoints[mid - 1, -1]
-            mid_dest = endpoints[mid, 0]
-            cut_ends = endpoints[idxs, -1]
-            cut_starts = endpoints[idxs + 1, 0]
-            delta = (
-                np.abs(mid_source - cut_ends)
-                + np.abs(mid_dest - cut_starts)
-                - np.abs(cut_ends - cut_starts)
-                - np.abs(mid_source - mid_dest)
-            )
-            index = int(np.argmin(delta))
-            if delta[index] < min_value:
-                endpoints[mid : mid + index + 1] = np.flip(
-                    endpoints[mid : mid + index + 1], (0, 1)
-                )
-                improved = True
-                if channel:
-                    log_progress(mid)
-
-        last = endpoints[-1, -1]
-        cut_ends = endpoints[indexes0, -1]
-        cut_starts = endpoints[indexes1, 0]
-
-        delta = np.abs(cut_ends - last) - np.abs(cut_ends - cut_starts)
-        index = int(np.argmin(delta))
-        if delta[index] < min_value:
-            endpoints[index + 1 :] = np.flip(
-                endpoints[index + 1 :], (0, 1)
-            )  # top to bottom, and right to left flips.
-            improved = True
-            if channel:
-                log_progress(length)
-        if current_pass >= passes:
-            break
-        current_pass += 1
-
-    # Two-opt complete.
-    order = endpoints[:, 1].real.astype(int)
-    ordered.reordered(order)
-    if channel:
-        end_times = times()
-        end_length = ordered.length_travel(True)
-        channel(
-            f"Length at end: {end_length:.0f} steps "
-            f"({(end_length - start_length) / start_length:+.0%}), "
-            f"optimized in {time() - start_time:.3f} "
-            f"elapsed seconds using {end_times[0] - start_times[0]:.3f} seconds CPU"
-        )
-    return ordered
+# def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
+#     """
+#     This implements 2-opt algorithm using numpy.
+#
+#     Skipping of the candidate code it does not perform inner first optimizations.
+#     Due to the numpy requirement, doesn't work without numpy.
+#     --
+#     Uses code I wrote for vpype:
+#     https://github.com/abey79/vpype/commit/7b1fad6bd0fcfc267473fdb8ba2166821c80d9cd
+#
+#     @param context:cutcode: cutcode to be optimized
+#     @param passes: max passes to perform 2-opt
+#     @param channel: Channel to send data about the optimization process.
+#     @return:
+#     """
+#     try:
+#         import numpy as np
+#     except ImportError:
+#         return context
+#
+#     if channel:
+#         start_length = context.length_travel(True)
+#         start_time = time()
+#         start_times = times()
+#         channel("Executing 2-Opt Short-Travel optimization")
+#         channel(f"Length at start: {start_length:.0f} steps")
+#
+#     ordered = CutCode(context.flat())
+#     length = len(ordered)
+#     if length <= 1:
+#         if channel:
+#             channel("2-Opt: Not enough elements to optimize.")
+#         return ordered
+#
+#     curr = context.start
+#     if curr is None:
+#         curr = 0
+#     else:
+#         curr = complex(curr)
+#
+#     current_pass = 1
+#     min_value = -1e-10  # Do not swap on rounding error.
+#
+#     endpoints = np.zeros((length, 4), dtype="complex")
+#     # start, index, reverse-index, end
+#     for i in range(length):
+#         endpoints[i] = complex(ordered[i].start), i, ~i, complex(ordered[i].end)
+#     indexes0 = np.arange(0, length - 1)
+#     indexes1 = indexes0 + 1
+#
+#     def log_progress(pos):
+#         starts = endpoints[indexes0, -1]
+#         ends = endpoints[indexes1, 0]
+#         dists = np.abs(starts - ends)
+#         dist_sum = dists.sum() + abs(curr - endpoints[0][0])
+#         channel(
+#             f"optimize: laser-off distance is {dist_sum}. {100 * pos / length:.02f}% done with pass {current_pass}/{passes}"
+#         )
+#
+#     improved = True
+#     while improved:
+#         improved = False
+#
+#         first = endpoints[0][0]
+#         cut_ends = endpoints[indexes0, -1]
+#         cut_starts = endpoints[indexes1, 0]
+#
+#         # delta = np.abs(curr - first) + np.abs(first - cut_starts) - np.abs(cut_ends - cut_starts)
+#         delta = (
+#             np.abs(curr - cut_ends)
+#             + np.abs(first - cut_starts)
+#             - np.abs(cut_ends - cut_starts)
+#             - np.abs(curr - first)
+#         )
+#         index = int(np.argmin(delta))
+#         if delta[index] < min_value:
+#             endpoints[: index + 1] = np.flip(
+#                 endpoints[: index + 1], (0, 1)
+#             )  # top to bottom, and right to left flips.
+#             improved = True
+#             if channel:
+#                 log_progress(1)
+#         for mid in range(1, length - 1):
+#             idxs = np.arange(mid, length - 1)
+#
+#             mid_source = endpoints[mid - 1, -1]
+#             mid_dest = endpoints[mid, 0]
+#             cut_ends = endpoints[idxs, -1]
+#             cut_starts = endpoints[idxs + 1, 0]
+#             delta = (
+#                 np.abs(mid_source - cut_ends)
+#                 + np.abs(mid_dest - cut_starts)
+#                 - np.abs(cut_ends - cut_starts)
+#                 - np.abs(mid_source - mid_dest)
+#             )
+#             index = int(np.argmin(delta))
+#             if delta[index] < min_value:
+#                 endpoints[mid : mid + index + 1] = np.flip(
+#                     endpoints[mid : mid + index + 1], (0, 1)
+#                 )
+#                 improved = True
+#                 if channel:
+#                     log_progress(mid)
+#
+#         last = endpoints[-1, -1]
+#         cut_ends = endpoints[indexes0, -1]
+#         cut_starts = endpoints[indexes1, 0]
+#
+#         delta = np.abs(cut_ends - last) - np.abs(cut_ends - cut_starts)
+#         index = int(np.argmin(delta))
+#         if delta[index] < min_value:
+#             endpoints[index + 1 :] = np.flip(
+#                 endpoints[index + 1 :], (0, 1)
+#             )  # top to bottom, and right to left flips.
+#             improved = True
+#             if channel:
+#                 log_progress(length)
+#         if current_pass >= passes:
+#             break
+#         current_pass += 1
+#
+#     # Two-opt complete.
+#     order = endpoints[:, 1].real.astype(int)
+#     ordered.reordered(order)
+#     if channel:
+#         end_times = times()
+#         end_length = ordered.length_travel(True)
+#         channel(
+#             f"Length at end: {end_length:.0f} steps "
+#             f"({(end_length - start_length) / start_length:+.0%}), "
+#             f"optimized in {time() - start_time:.3f} "
+#             f"elapsed seconds using {end_times[0] - start_times[0]:.3f} seconds CPU"
+#         )
+#     return ordered
 
 
 def inner_selection_cutcode(
