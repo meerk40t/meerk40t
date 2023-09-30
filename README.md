@@ -8,7 +8,11 @@ MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed open-so
 ## Running
 MeerK40t is written in Python and precompiled versions are [available for download](https://github.com/meerk40t/meerk40t/releases) for Windows, Mac OSX, Linux and Raspberry Pi (more infos below). Due note this sometimes will give false postitives for various viruses (especially since Meerk40t isn't signed).
 
+### Source
+
 Alternatively you can run MeerK40t directly from Python. `pip install meerk40t[all]` with python installed will usually be sufficient. Then merely run `meerk40t` at the command line.
+
+See [Install: Source wiki page](https://github.com/meerk40t/meerk40t/wiki/Install:-Source)
 
 ### GUI
 ![meerk40t8](https://user-images.githubusercontent.com/3302478/196283699-745d0616-5e74-49b3-ba95-f4902061584b.png)
