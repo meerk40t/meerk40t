@@ -182,17 +182,10 @@ def plugin(kernel, lifecycle):
                 return
             geom = node.as_geometry()
             # That has already the matrix applied, so we need to reverse that
-            bb = geom.bbox()
-            # print(
-            #     f"Before: x={bb[0]:.0f}, y={bb[1]:.0f}, w={bb[2] - bb[0]:.0f}, h={bb[3] - bb[1]:.0f}"
-            # )
             inverse = Matrix(node.matrix)
             inverse.inverse()
             geom.transform(inverse)
             bb = geom.bbox()
-            # print(
-            #     f"After: x={bb[0]:.0f}, y={bb[1]:.0f}, w={bb[2] - bb[0]:.0f}, h={bb[3] - bb[1]:.0f}"
-            # )
             start_pt = Point(bb[0], bb[1])
 
             sdx = getit(param, 4, bb[0])
