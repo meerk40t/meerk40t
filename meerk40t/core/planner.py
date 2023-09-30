@@ -474,7 +474,6 @@ class Planner(Service):
             #     "util input",
             #     "util output",
             #     "place point"
-            #     "lasercode",
             #     "blob",
             # )
             for c in operations:

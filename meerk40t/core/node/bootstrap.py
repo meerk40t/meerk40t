@@ -14,7 +14,6 @@ from meerk40t.core.node.elem_rect import RectNode
 from meerk40t.core.node.elem_text import TextNode
 from meerk40t.core.node.filenode import FileNode
 from meerk40t.core.node.groupnode import GroupNode
-from meerk40t.core.node.lasercodenode import LaserCodeNode
 from meerk40t.core.node.layernode import LayerNode
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
@@ -45,7 +44,6 @@ defaults = {
     "util goto": {},
     "util input": {},
     "util output": {},
-    "lasercode": {},
     "blob": {},
     "group": {},
     "layer": {},
@@ -81,7 +79,6 @@ bootstrap = {
     "util output": OutputOperation,
     "place point": PlacePointNode,
     "place current": PlaceCurrentNode,
-    "lasercode": LaserCodeNode,
     "blob": BlobNode,
     "group": GroupNode,
     "layer": LayerNode,

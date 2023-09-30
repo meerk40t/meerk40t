@@ -1173,7 +1173,6 @@ def init_tree(kernel):
             "util goto",
             "util output",
             "util input",
-            "lasercode",
             "cutcode",
             "blob",
         ),
@@ -1304,13 +1303,6 @@ def init_tree(kernel):
     # ==========
     # CONVERT TREE OPERATIONS
     # ==========
-    @tree_operation(
-        _("Convert to Cutcode"),
-        node_type="lasercode",
-        help="",
-    )
-    def lasercode2cut(node, **kwargs):
-        node.replace_node(CutCode.from_lasercode(node.commands), type="cutcode")
 
     @tree_conditional_try(
         lambda node: kernel.lookup(f"spoolerjob/{node.data_type}") is not None
