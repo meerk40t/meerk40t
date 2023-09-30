@@ -182,17 +182,13 @@ def plugin(kernel, lifecycle):
                 return
             geom = node.as_geometry()
             # That has already the matrix applied, so we need to reverse that
-            inverse = Matrix(node.matrix)
-            inverse.inverse()
-            geom.transform(inverse)
+            # Use ~ inversion operator to create an inversed copy
+            geom.transform(~node.matrix)
             bb = geom.bbox()
             start_pt = Point(bb[0], bb[1])
 
             sdx = getit(param, 4, bb[0])
             sdy = getit(param, 8, bb[1])
-            # print(
-            #     f"I got sdx={sdx:.0f}, sdy={sdy:.0f} -> {sdx - bb[0]:.0f}, sdy={sdy-bb[1]:.0f}"
-            # )
             sdx = sdx - bb[0]
             sdy = sdy - bb[1]
             cols = getit(param, 10, 1)
@@ -1454,6 +1450,14 @@ def plugin(kernel, lifecycle):
             return "elements", data
 
         # Let's register them
+        # The info tuple contains three entries
+        # 1) The function to be called to update the node after a parameter change
+        # 2) A dict with information how to read/display the different parameter entries
+        # 3) A boolean parameter that indicates whether this is a routine that needs
+        #    to be automatically called after a change of a related source node
+        #    This needs the id of the related node to be in the very 'first' parameter
+        #    of the functional_parameter structure, so something like
+        #       node.functional_parameter = ("grid", 3, source_node.id, ....)
         info = (
             update_node_grid,
             {
@@ -1463,6 +1467,7 @@ def plugin(kernel, lifecycle):
                 "3": ("Columns", 1, 25),
                 "4": ("Rows", 1, 25),
             },
+            True,  # Yes this something that needs to be updated on source changes
         )
         kernel.register("element_update/grid", info)
 
@@ -1474,6 +1479,7 @@ def plugin(kernel, lifecycle):
                 "2": ("Iterations", 2, 13),
                 "3": ("Branch length",),
             },
+            False,
         )
         kernel.register("element_update/fractaltree", info)
 
@@ -1495,6 +1501,7 @@ def plugin(kernel, lifecycle):
                 "2": ("Minor axis",),
                 "3": ("Iterations", 2, 30),
             },
+            False,
         )
         kernel.register("element_update/cycloid", info)
 
@@ -1509,6 +1516,7 @@ def plugin(kernel, lifecycle):
                 "4": ("Alternation", 0, 10),
                 "5": ("Density", 1, max_corner_gui - 1),
             },
+            False,
         )
         kernel.register("element_update/star", info)
 
@@ -1522,6 +1530,7 @@ def plugin(kernel, lifecycle):
                 "4": ("Shaping", 1, 20),
                 "5": ("Cornertype", 0, 2),
             },
+            False,
         )
         kernel.register("element_update/tfractal", info)
 
@@ -1530,6 +1539,7 @@ def plugin(kernel, lifecycle):
             {
                 "0": ("Rounded corner",),
             },
+            False,
         )
         kernel.register("element_update/rect", info)
 
@@ -1543,5 +1553,6 @@ def plugin(kernel, lifecycle):
                 "4": ("Iterations", 1, 45),
                 "5": ("Gap", 0, 15),
             },
+            False,
         )
         kernel.register("element_update/growingshape", info)

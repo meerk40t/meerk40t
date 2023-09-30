@@ -205,6 +205,7 @@ class MeerK40t(MWindow):
 
         self.CenterOnScreen()
         self.update_check()
+        self.parametric_info = None
 
     def update_check(self, silent=True):
         if self.context.update_check == 1:
@@ -3411,9 +3412,17 @@ class MeerK40t(MWindow):
                 return default
             return param[idx]
 
+        def read_information():
+            if self.parametric_info is None:
+                self.parametric_info = {}
+                for info, m, sname in self.context.kernel.find("element_update"):
+                    # function, path, shortname
+                    self.parametric_info[sname.lower()] = info
+
         # Let's check for the need of parametric updates...
         if len(args) == 0:
             return
+        read_information()
         data = args[0]
         if not isinstance(data, (list, tuple)):
             data = [args[0]]
@@ -3435,10 +3444,15 @@ class MeerK40t(MWindow):
                 if ptype is None:
                     continue
                 pid = getit(param, 2, None)
-                if ptype in ("grid",) and pid == nid:
-                    func_tuple = self.context.kernel.lookup(f"element_update/{ptype}")
-                    if func_tuple is None:
-                        continue
+                if pid != nid:
+                    continue
+                try:
+                    func_tuple = self.parametric_info[ptype.lower()]
+                    if not func_tuple[2]:  # No Autoupdate
+                        func_tuple = None
+                except IndexError:
+                    func_tuple = None
+                if func_tuple is not None:
                     try:
                         func = func_tuple[0]
                         func(e)
