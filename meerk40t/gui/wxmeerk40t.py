@@ -949,7 +949,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     def _variable_summary(vars, indent: int = 0):
         info = ""
         for (name, value) in vars.items():
-            label = f'{" " * indent}{name} => '
+            label = f'{" " * indent}{name} : '
             total_indent = len(label)
             formatted = str(value)
             formatted = formatted.replace("\n", "\n" + " " * total_indent)
