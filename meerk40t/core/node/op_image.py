@@ -22,7 +22,7 @@ class ImageOpNode(Node, Parameters):
         Parameters.__init__(self, settings, **kwargs)
 
         # Which elements do we consider for automatic classification?
-        self._allowed_elements = ("elem image",)
+        self._allowed_elements = ("elem image", "image raster")
 
         # Is this op out of useful bounds?
         self.dangerous = False
