@@ -16,6 +16,8 @@ class ImageRasterNode(Node):
         self.__formatter = "{element_type} {id} {width}x{height}"
         if self.matrix is None:
             self.matrix = Matrix()
+        self._can_rotate = False
+        self._can_skew = False
 
     def __copy__(self):
         nd = self.node_dict
