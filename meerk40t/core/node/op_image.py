@@ -21,8 +21,6 @@ class ImageOpNode(Node, Parameters):
             settings = dict(settings)
         Parameters.__init__(self, settings, **kwargs)
 
-        # Which elements can be added to an operation (manually via DND)?
-        self._allowed_elements_dnd = ("elem image",)
         # Which elements do we consider for automatic classification?
         self._allowed_elements = ("elem image",)
 
@@ -90,34 +88,32 @@ class ImageOpNode(Node, Parameters):
 
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
-        if drag_node.type.startswith("elem"):
-            if (
-                drag_node.type not in self._allowed_elements_dnd
-                or drag_node._parent.type == "branch reg"
-            ):
+        if hasattr(drag_node, "as_image"):
+            if drag_node._parent.type == "branch reg":
+                # We do not accept reg nodes.
                 return False
             # Dragging element onto operation adds that element to the op.
             if modify:
                 self.add_reference(drag_node, pos=0)
             return True
-        elif drag_node.type == "reference":
+        if drag_node.type == "reference":
             # Disallow drop of image refelems onto a Dot op.
-            if not drag_node.node.type in self._allowed_elements_dnd:
+            if not hasattr(drag_node.node, "as_image"):
                 return False
             # Move a refelem to end of op.
             if modify:
                 self.append_child(drag_node)
             return True
-        elif drag_node.type in op_nodes:
+        if drag_node.type in op_nodes:
             # Move operation to a different position.
             if modify:
                 self.insert_sibling(drag_node)
             return True
-        elif drag_node.type in ("file", "group"):
+        if drag_node.type in ("file", "group"):
             some_nodes = False
             for e in drag_node.flat(elem_nodes):
                 # Add element to operation
-                if e.type in self._allowed_elements_dnd:
+                if hasattr(e, "as_image"):
                     if modify:
                         self.add_reference(e)
                     some_nodes = True
@@ -125,7 +121,7 @@ class ImageOpNode(Node, Parameters):
         return False
 
     def valid_node_for_reference(self, node):
-        if node.type in self._allowed_elements_dnd:
+        if hasattr(node, "as_image"):
             return True
         else:
             return False
@@ -298,9 +294,17 @@ class ImageOpNode(Node, Parameters):
                 start_on_left = True
             bidirectional = self.bidirectional
 
+            # Set variables
+            pil_image, bounds = image_node.as_image()
+            offset_x = bounds[0]
+            offset_y = bounds[1]
+
             # Get steps from individual images
-            step_x = image_node.step_x
-            step_y = image_node.step_y
+            image_width, image_height = pil_image.size
+            expected_width = bounds[2] - bounds[0]
+            expected_height = bounds[3] - bounds[1]
+            step_x = expected_width / image_width
+            step_y = expected_height / image_height
 
             if horizontal:
                 # Raster step is only along y for horizontal raster
@@ -310,12 +314,6 @@ class ImageOpNode(Node, Parameters):
                 # Raster step is only along x for vertical raster
                 settings["raster_step_x"] = step_x
                 settings["raster_step_y"] = 0
-
-            # Set variables
-            matrix = image_node.active_matrix
-            pil_image = image_node.active_image
-            offset_x = matrix.value_trans_x()
-            offset_y = matrix.value_trans_y()
 
             # Establish path
             min_x = offset_x
