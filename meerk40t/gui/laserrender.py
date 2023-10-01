@@ -914,7 +914,8 @@ class LaserRender:
             cache = self.make_thumbnail(
                 image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
             )
-            gc.DrawBitmap(cache, *bounds)
+            min_x, min_y, max_x, max_y = bounds
+            gc.DrawBitmap(cache, min_x, min_y, max_x - min_x, max_y - min_y)
         except MemoryError:
             pass
         gc.PopState()
