@@ -32,6 +32,7 @@ non_structural_nodes = (
     "elem rect",
     "elem line",
     "elem text",
+    "image raster",
     "file",
     "group",
 )
@@ -71,6 +72,7 @@ elem_nodes = (
     "elem rect",
     "elem line",
     "elem text",
+"image raster",
     "effect hatch",
 )
 elem_group_nodes = (
