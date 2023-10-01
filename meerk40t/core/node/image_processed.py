@@ -448,10 +448,10 @@ class ImageProcessedNode(Node):
                             image = image.convert("P")
                             tone_values = op["values"]
                             if op["type"] == "spline":
-                                spline = ImageNode.spline(tone_values)
+                                spline = ImageProcessedNode.spline(tone_values)
                             else:
                                 tone_values = [q for q in tone_values if q is not None]
-                                spline = ImageNode.line(tone_values)
+                                spline = ImageProcessedNode.line(tone_values)
                             if len(spline) < 256:
                                 spline.extend([255] * (256 - len(spline)))
                             if len(spline) > 256:
