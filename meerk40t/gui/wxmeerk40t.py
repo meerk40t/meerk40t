@@ -103,7 +103,9 @@ class GoPanel(wx.Panel):
         self.click_time = 0
         self.context = context
         self.button_go = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_go.SetBitmap(icons8_gas_industry_50.GetBitmap(color=wx.WHITE, keepalpha=True))
+        self.button_go.SetBitmap(
+            icons8_gas_industry_50.GetBitmap(color=wx.WHITE, keepalpha=True)
+        )
         self.button_go.SetBitmapFocus(icons8_gas_industry_50.GetBitmap())
         self.was_mouse = False
         self.button_go.Bind(wx.EVT_BUTTON, self.on_button_go_click)
@@ -180,7 +182,9 @@ def register_panel_stop(window, context):
         stop,
     )
     stop.SetBackgroundColour(wx.Colour(127, 0, 0))
-    stop.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(color=wx.WHITE, keepalpha=True))
+    stop.SetBitmap(
+        icons8_emergency_stop_button_50.GetBitmap(color=wx.WHITE, keepalpha=True)
+    )
     stop.SetBitmapFocus(icons8_emergency_stop_button_50.GetBitmap())
     stop.SetToolTip(_("Emergency stop/reset the controller."))
     stop.SetSize(stop.GetBestSize())
@@ -941,6 +945,17 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     @param exc_traceback:
     @return:
     """
+
+    def _variable_summary(vars, indent: int = 0):
+        info = ""
+        for (name, value) in vars.items():
+            label = f'{" " * indent}{name} => '
+            total_indent = len(label)
+            formatted = str(value)
+            formatted = formatted.replace("\n", "\n" + " " * total_indent)
+            info += f"{label}{formatted}\n"
+        return info
+
     wxversion = "wx"
     try:
         wxversion = wx.version()
@@ -952,8 +967,13 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         f"Python {platform.python_version()}: {platform.machine()} - wxPython: {wxversion}\n"
     )
     error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
-    print("\n")
-    print(error_log)
+    variable_info = ""
+    try:
+        frame = exc_traceback.tb_frame
+        variable_info = "\nLocal variables:\n"
+        variable_info += _variable_summary(frame.f_locals)
+    except Exception:
+        pass
     try:
         filename = f"MeerK40t-{datetime.now():%Y-%m-%d_%H_%M_%S}.txt"
     except Exception:  # I already crashed once, if there's another here just ignore it.
@@ -963,11 +983,15 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         try:
             with open(filename, "w", encoding="utf8") as file:
                 file.write(error_log)
+                if variable_info:
+                    file.write(variable_info)
                 print(file)
         except PermissionError:
             filename = get_safe_path(APPLICATION_NAME).joinpath(filename)
             with open(filename, "w", encoding="utf8") as file:
                 file.write(error_log)
+                if variable_info:
+                    file.write(variable_info)
                 print(file)
     except Exception:
         # I already crashed once, if there's another here just ignore it.
@@ -1047,6 +1071,7 @@ Send the following data to the MeerK40t team?
             error_log_short += error_log_list[idx]
 
     ext_msg += error_log_short
+
     dlg = wx.MessageDialog(
         None,
         message,
@@ -1056,4 +1081,7 @@ Send the following data to the MeerK40t team?
     dlg.SetExtendedMessage(ext_msg)
     answer = dlg.ShowModal()
     if answer in (wx.YES, wx.ID_YES):
-        send_data_to_developers(filename, error_log)
+        data = error_log
+        if variable_info:
+            data += "\n" + variable_info
+        send_data_to_developers(filename, data)
