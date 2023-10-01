@@ -51,17 +51,17 @@ jobs:
       env:
         PYTHONHASHSEED: 12506
       run: |
-        git clone --depth=1 --branch=v4.9 https://github.com/pyinstaller/pyinstaller
+        git clone --depth=1 https://github.com/pyinstaller/pyinstaller
         cd pyinstaller/bootloader
         python3 ./waf distclean all --target-arch=32bit
         cd ..
-        python3 setup.py install
+        pip3 install .
         cd ..
 
     - name: Build MeerK40t
       run: |
         move meerk40t.py mk40t.py
-        pyinstaller --windowed --onefile --name meerk40t .github/workflows/win/meerk40t.spec
+        pyinstaller .github/workflows/win/meerk40t.spec
         move mk40t.py meerk40t.py
 
 # Switched to using softprops/action-gh-release@v1
