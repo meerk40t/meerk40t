@@ -263,7 +263,7 @@ class ImageOpNode(Node, Parameters):
         for image_node in self.children:
             # Process each child. All settings are different for each child.
 
-            if image_node.type != "elem image":
+            if not hasattr(image_node, "as_image"):
                 continue
             settings = self.derive()
 
@@ -273,7 +273,7 @@ class ImageOpNode(Node, Parameters):
                 overscan = float(Length(overscan))
 
             # Set variables by direction
-            if image_node.direction is not None:
+            if hasattr(image_node, "direction") and image_node.direction is not None:
                 direction = image_node.direction
             else:
                 direction = self.raster_direction
