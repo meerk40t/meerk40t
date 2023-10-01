@@ -218,7 +218,7 @@ class LaserRender:
                 )
                 nodes = [e for e in nodes if e.type not in path_elements]
             if draw_mode & DRAW_MODE_IMAGE:  # Do not draw images.
-                nodes = [e for e in nodes if e.type != "elem image"]
+                nodes = [e for e in nodes if hasattr(e, "as_image")]
             if draw_mode & DRAW_MODE_TEXT:  # Do not draw text.
                 nodes = [e for e in nodes if e.type != "elem text"]
             if draw_mode & DRAW_MODE_REGMARKS:  # Do not draw regmarked items.
@@ -277,7 +277,7 @@ class LaserRender:
                 node.draw = self.draw_point_node
             elif node.type in place_nodes:
                 node.draw = self.draw_placement_node
-            elif node.type == "elem image":
+            elif hasattr(node, "as_image"):
                 node.draw = self.draw_image_node
             elif node.type == "elem text":
                 node.draw = self.draw_text_node
@@ -891,55 +891,43 @@ class LaserRender:
         gc.PopState()
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
-        image = node.active_image
-        matrix = node.active_matrix
+        image, bounds = node.as_image()
         gc.PushState()
-        if matrix is not None and not matrix.is_identity():
-            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if node._process_image_failed:
-            image_width, image_height = image.size
-            gc.SetBrush(wx.RED_BRUSH)
-            gc.SetPen(wx.RED_PEN)
-            gc.DrawRectangle(0, 0, image_width, image_height)
-            gc.DrawBitmap(icons8_image_50.GetBitmap(), 0, 0, image_width, image_height)
-        else:
-            if draw_mode & DRAW_MODE_CACHE == 0:
-                cache = None
-                try:
-                    cache = node._cache
-                except AttributeError:
-                    pass
-                if cache is None:
-                    try:
-                        max_allowed = node.max_allowed
-                    except AttributeError:
-                        max_allowed = 2048
-                    node._cache_width, node._cache_height = image.size
-                    node._cache = self.make_thumbnail(
-                        image,
-                        maximum=max_allowed,
-                        alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
-                    )
-                gc.DrawBitmap(node._cache, 0, 0, node._cache_width, node._cache_height)
-            else:
-                node._cache_width, node._cache_height = image.size
-                try:
-                    cache = self.make_thumbnail(
-                        image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
-                    )
-                    gc.DrawBitmap(cache, 0, 0, node._cache_width, node._cache_height)
-                except MemoryError:
-                    pass
+        cache = None
+        try:
+            cache = node._cache
+        except AttributeError:
+            pass
+        if cache is None:
+            try:
+                max_allowed = node.max_allowed
+            except AttributeError:
+                max_allowed = 2048
+            node._cache_width, node._cache_height = image.size
+            node._cache = self.make_thumbnail(
+                image,
+                maximum=max_allowed,
+                alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
+            )
+        node._cache_width, node._cache_height = image.size
+        try:
+            cache = self.make_thumbnail(
+                image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
+            )
+            gc.DrawBitmap(cache, *bounds)
+        except MemoryError:
+            pass
         gc.PopState()
-        txt = node._processing_message
-        if txt is not None:
-            gc.PushState()
-            gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(None)))
-            font = wx.Font()
-            font.SetPointSize(20)
-            gc.SetFont(font, wx.BLACK)
-            gc.DrawText(txt, 30, 30)
-            gc.PopState()
+        if hasattr(node, "message"):
+            txt = node.message
+            if txt is not None:
+                gc.PushState()
+                gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(None)))
+                font = wx.Font()
+                font.SetPointSize(20)
+                gc.SetFont(font, wx.BLACK)
+                gc.DrawText(txt, 30, 30)
+                gc.PopState()
 
     def measure_text(self, node):
         """

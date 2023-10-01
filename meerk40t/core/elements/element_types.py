@@ -82,6 +82,7 @@ elem_group_nodes = (
     "elem rect",
     "elem line",
     "elem text",
+    "image raster",
     "effect hatch",
     "group",
     "file",
