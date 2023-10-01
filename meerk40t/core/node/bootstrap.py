@@ -14,6 +14,7 @@ from meerk40t.core.node.elem_rect import RectNode
 from meerk40t.core.node.elem_text import TextNode
 from meerk40t.core.node.filenode import FileNode
 from meerk40t.core.node.groupnode import GroupNode
+from meerk40t.core.node.image_raster import ImageRasterNode
 from meerk40t.core.node.layernode import LayerNode
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
@@ -90,6 +91,7 @@ bootstrap = {
     "elem polyline": PolylineNode,
     "elem image": ImageNode,
     "elem text": TextNode,
+    "image raster": ImageRasterNode,
     "reference": ReferenceNode,
     "cutcode": CutNode,
     "branch ops": BranchOperationsNode,

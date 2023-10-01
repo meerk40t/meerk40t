@@ -1830,8 +1830,7 @@ class ImageLoader:
         n = file_node.add(
             image=image,
             matrix=matrix,
-            type="elem image",
-            dpi=_dpi,
+            type="image raster",
         )
         if context.create_image_group:
             file_node.focus()
