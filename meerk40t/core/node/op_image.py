@@ -21,9 +21,6 @@ class ImageOpNode(Node, Parameters):
             settings = dict(settings)
         Parameters.__init__(self, settings, **kwargs)
 
-        # Which elements do we consider for automatic classification?
-        self._allowed_elements = ("elem image", "image raster")
-
         # Is this op out of useful bounds?
         self.dangerous = False
         self.stopop = True
@@ -128,7 +125,7 @@ class ImageOpNode(Node, Parameters):
 
     def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         feedback = []
-        if node.type in self._allowed_elements:
+        if hasattr(node, "as_image"):
             self.add_reference(node)
             # Have classified and no more classification are needed
             feedback.append("stroke")
