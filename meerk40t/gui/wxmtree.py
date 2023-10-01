@@ -835,6 +835,8 @@ class ShadowTree:
         # self.last_call = this_call
         op_node = self.elements.get(type="branch ops")
         op_item = op_node._item
+        if op_item is None:
+            return
         self.wxtree.Expand(op_item)
         if self.elements.have_unassigned_elements():
             self.wxtree.SetItemState(op_item, self.iconstates["warning"])
