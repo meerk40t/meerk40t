@@ -1109,8 +1109,6 @@ class SVGProcessor:
                         stroke=Color(stroke),
                         **e_dict,
                     )
-                if hasattr(context_node, "effect"):
-                    context_node.effect = False
 
             # recurse to children
             if self.reverse:

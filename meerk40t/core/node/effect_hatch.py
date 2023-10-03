@@ -30,7 +30,7 @@ class HatchEffectNode(Node, Stroked):
         Node.__init__(
             self, type="effect hatch", id=id, label=label, lock=lock, **kwargs
         )
-        self._formatter = "{effect}{element_type} - {distance} {angle} ({children})"
+        self._formatter = "{element_type} - {distance} {angle} ({children})"
 
         if self.matrix is None:
             self.matrix = Matrix()
@@ -135,8 +135,6 @@ class HatchEffectNode(Node, Stroked):
         self.set_dirty_bounds()
 
     def bbox(self, transformed=True, with_stroke=False):
-        if not self.effect:
-            return None
         geometry = self.as_geometry()
         if transformed:
             bounds = geometry.bbox(mx=self.matrix)
@@ -157,7 +155,6 @@ class HatchEffectNode(Node, Stroked):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Hatch"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
-        default_map["effect"] = "+" if self.effect else "-"
         default_map["loop"] = (
             f"{self.loops}X " if self.loops and self.loops != 1 else ""
         )
@@ -166,30 +163,6 @@ class HatchEffectNode(Node, Stroked):
 
         default_map["children"] = str(len(self.children))
         return default_map
-
-    @property
-    def effect(self):
-        return self._effect
-
-    @effect.setter
-    def effect(self, value):
-        self._effect = value
-        # if self._effect:
-        #     self._operands.extend(self._children)
-        #     for c in self._children:
-        #         c.set_dirty_bounds()
-        #         c.matrix *= ~self.matrix
-        #     self.remove_all_children(destroy=False)
-        #     self.set_dirty_bounds()
-        #     self.altered()
-        # else:
-        #     for c in self._operands:
-        #         c.matrix *= self.matrix
-        #         self.set_dirty_bounds()
-        #         self.add_node(c)
-        #     self._operands.clear()
-        #     self.set_dirty_bounds()
-        #     self.altered()
 
     def as_geometry(self, **kws):
         """
@@ -200,8 +173,6 @@ class HatchEffectNode(Node, Stroked):
         @return:
         """
         outlines = Geomstr()
-        if not self.effect:
-            return outlines
         for node in self._children:
             outlines.append(node.as_geometry(**kws))
         outlines.transform(self.matrix)

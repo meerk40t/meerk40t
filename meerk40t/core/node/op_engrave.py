@@ -238,9 +238,6 @@ class EngraveOpNode(Node, Parameters):
         for node in copy_node.children:
             if node.type == "reference":
                 context.add_node(copy(node.node))
-        for node in self.children:
-            if node.type.startswith("effect"):
-                node.effect = True
 
     def time_estimate(self):
         estimate = 0
