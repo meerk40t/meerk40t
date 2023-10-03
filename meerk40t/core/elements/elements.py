@@ -117,7 +117,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/elem text", "{element_type} {desc} {text}")
         kernel.register(
             "format/effect hatch",
-            "{effect}{element_type} - {distance} {angle} ({children})",
+            "{element_type} - {distance} {angle} ({children})",
         )
         kernel.register("format/reference", "*{reference}")
         kernel.register(
