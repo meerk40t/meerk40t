@@ -54,20 +54,11 @@ class HatchEffectNode(Node, Stroked):
             self.hatch_angle = "0deg"
         if self.hatch_angle_delta is None:
             self.hatch_angle_delta = "0deg"
-        self._operands = list()
         self._distance = None
         self._angle = None
         self._angle_delta = 0
         self._effect = True
         self.recalculate()
-        if "operands" in kwargs:
-            # If operands is a list, we make copies.
-            operands = kwargs.get("operands")
-            if isinstance(operands, list):
-                for c in operands:
-                    self._operands.append(copy(c))
-            # If it was in kwargs, it was added to main.
-            del self.operands
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
@@ -77,7 +68,6 @@ class HatchEffectNode(Node, Stroked):
         nd["matrix"] = copy(self.matrix)
         nd["stroke"] = copy(self.stroke)
         nd["fill"] = copy(self.fill)
-        nd["operands"] = copy(self._operands)
         return HatchEffectNode(**nd)
 
     def scaled(self, sx, sy, ox, oy):
@@ -138,7 +128,7 @@ class HatchEffectNode(Node, Stroked):
         self.stroke_scaled = True
         factor = sqrt(abs(matrix.determinant))
         self._distance *= factor
-        for c in self._operands:
+        for c in self._children:
             c.matrix *= matrix
 
         self.stroke_scaled = False
@@ -174,10 +164,7 @@ class HatchEffectNode(Node, Stroked):
         default_map["angle"] = str(self.hatch_angle)
         default_map["distance"] = str(self.hatch_distance)
 
-        if len(self.children):
-            default_map["children"] = str(len(self.children))
-        else:
-            default_map["children"] = str(len(self._operands))
+        default_map["children"] = str(len(self.children))
         return default_map
 
     @property
@@ -187,22 +174,22 @@ class HatchEffectNode(Node, Stroked):
     @effect.setter
     def effect(self, value):
         self._effect = value
-        if self._effect:
-            self._operands.extend(self._children)
-            for c in self._children:
-                c.set_dirty_bounds()
-                c.matrix *= ~self.matrix
-            self.remove_all_children(destroy=False)
-            self.set_dirty_bounds()
-            self.altered()
-        else:
-            for c in self._operands:
-                c.matrix *= self.matrix
-                self.set_dirty_bounds()
-                self.add_node(c)
-            self._operands.clear()
-            self.set_dirty_bounds()
-            self.altered()
+        # if self._effect:
+        #     self._operands.extend(self._children)
+        #     for c in self._children:
+        #         c.set_dirty_bounds()
+        #         c.matrix *= ~self.matrix
+        #     self.remove_all_children(destroy=False)
+        #     self.set_dirty_bounds()
+        #     self.altered()
+        # else:
+        #     for c in self._operands:
+        #         c.matrix *= self.matrix
+        #         self.set_dirty_bounds()
+        #         self.add_node(c)
+        #     self._operands.clear()
+        #     self.set_dirty_bounds()
+        #     self.altered()
 
     def as_geometry(self, **kws):
         """
@@ -215,7 +202,7 @@ class HatchEffectNode(Node, Stroked):
         outlines = Geomstr()
         if not self.effect:
             return outlines
-        for node in self._operands:
+        for node in self._children:
             outlines.append(node.as_geometry(**kws))
         outlines.transform(self.matrix)
         path = Geomstr()
@@ -241,12 +228,7 @@ class HatchEffectNode(Node, Stroked):
         if drag_node.type.startswith("elem"):
             # Dragging element onto operation adds that element to the op.
             if modify:
-                if self._effect:
-                    drag_node.matrix *= ~self.matrix
-                    self._operands.append(drag_node)
-                    drag_node.remove_node()
-                else:
-                    self.append_child(drag_node)
+                self.append_child(drag_node)
                 self.altered()
             return True
         elif drag_node.type == "reference":
