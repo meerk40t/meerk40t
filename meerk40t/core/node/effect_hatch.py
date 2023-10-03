@@ -73,6 +73,30 @@ class HatchEffectNode(Node, Stroked):
     def scaled(self, sx, sy, ox, oy):
         self.altered()
 
+    def notify_modified(self, node=None, **kwargs):
+        Node.notify_modified(self, node=node, **kwargs)
+        if node is self:
+            return
+        self.altered()
+
+    def notify_altered(self, node=None, **kwargs):
+        Node.notify_altered(self, node=node, **kwargs)
+        if node is self:
+            return
+        self.altered()
+
+    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, **kwargs):
+        Node.notify_scaled(self, node, sx, sy, ox, oy, **kwargs)
+        if node is self:
+            return
+        self.altered()
+
+    def notify_translated(self, node=None, dx=0, dy=0, **kwargs):
+        Node.notify_translated(self, node, dx, dy, **kwargs)
+        if node is self:
+            return
+        self.altered()
+
     @property
     def angle(self):
         return self.hatch_angle
