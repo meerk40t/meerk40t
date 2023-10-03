@@ -1,21 +1,19 @@
 from copy import copy
 from math import sqrt
 
-from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import Angle, Length
 from meerk40t.svgelements import Color, Matrix
 from meerk40t.tools.geomstr import Geomstr  # ,  Scanbeam
 
 
-class HatchEffectNode(Node, Stroked):
+class HatchEffectNode(Node):
     """
     Effect node performing a hatch. Effects are themselves a sort of geometry node that contains other geometry and
     the required data to produce additional geometry.
     """
 
     def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
-        self.matrix = None
         self.fill = None
         self.stroke = Color("Blue")
         self.stroke_width = 1000.0
@@ -31,13 +29,6 @@ class HatchEffectNode(Node, Stroked):
             self, type="effect hatch", id=id, label=label, lock=lock, **kwargs
         )
         self._formatter = "{element_type} - {distance} {angle} ({children})"
-
-        if self.matrix is None:
-            self.matrix = Matrix()
-
-        if self._stroke_zero is None:
-            # This defines the stroke-width zero point scale
-            self.stroke_width_zero()
 
         if label is None:
             self.label = "Hatch"
@@ -60,12 +51,15 @@ class HatchEffectNode(Node, Stroked):
         self._effect = True
         self.recalculate()
 
+    @property
+    def implied_stroke_width(self):
+        return self.stroke_width
+
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
     def __copy__(self):
         nd = self.node_dict
-        nd["matrix"] = copy(self.matrix)
         nd["stroke"] = copy(self.stroke)
         nd["fill"] = copy(self.fill)
         return HatchEffectNode(**nd)
@@ -144,36 +138,34 @@ class HatchEffectNode(Node, Stroked):
         else:
             self._angle_delta = Angle(h_angle_delta).radians
 
-        transformed_vector = self.matrix.transform_vector([0, distance_y])
+        # transformed_vector = self.matrix.transform_vector([0, distance_y])
+        transformed_vector = [0, distance_y]
         self._distance = abs(complex(transformed_vector[0], transformed_vector[1]))
 
     def preprocess(self, context, matrix, plan):
-        self.stroke_scaled = False
-        self.stroke_scaled = True
         factor = sqrt(abs(matrix.determinant))
         self._distance *= factor
-        for c in self._children:
-            c.matrix *= matrix
+        # for c in self._children:
+        #     c.matrix *= matrix
 
-        self.stroke_scaled = False
         self.set_dirty_bounds()
 
-    def bbox(self, transformed=True, with_stroke=False):
-        geometry = self.as_geometry()
-        if transformed:
-            bounds = geometry.bbox(mx=self.matrix)
-        else:
-            bounds = geometry.bbox()
-        xmin, ymin, xmax, ymax = bounds
-        if with_stroke:
-            delta = float(self.implied_stroke_width) / 2.0
-            return (
-                xmin - delta,
-                ymin - delta,
-                xmax + delta,
-                ymax + delta,
-            )
-        return xmin, ymin, xmax, ymax
+    # def bbox(self, transformed=True, with_stroke=False):
+    #     geometry = self.as_geometry()
+    #     if transformed:
+    #         bounds = geometry.bbox(mx=self.matrix)
+    #     else:
+    #         bounds = geometry.bbox()
+    #     xmin, ymin, xmax, ymax = bounds
+    #     if with_stroke:
+    #         delta = float(self.implied_stroke_width) / 2.0
+    #         return (
+    #             xmin - delta,
+    #             ymin - delta,
+    #             xmax + delta,
+    #             ymax + delta,
+    #         )
+    #     return xmin, ymin, xmax, ymax
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
@@ -199,7 +191,7 @@ class HatchEffectNode(Node, Stroked):
         outlines = Geomstr()
         for node in self._children:
             outlines.append(node.as_geometry(**kws))
-        outlines.transform(self.matrix)
+        # outlines.transform(self.matrix)
         path = Geomstr()
         if self._distance is None:
             self.recalculate()
