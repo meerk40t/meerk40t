@@ -1,7 +1,7 @@
 import math
 from copy import copy
 
-from meerk40t.core.node.mixins import Stroked
+from meerk40t.core.node.mixins import Stroked, FunctionalParameter
 from meerk40t.core.node.node import Fillrule, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -13,7 +13,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class RectNode(Node, Stroked):
+class RectNode(Node, Stroked, FunctionalParameter):
     """
     RectNode is the bootstrapped node type for the 'elem rect' type.
     """

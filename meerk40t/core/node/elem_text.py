@@ -2,7 +2,7 @@ import re
 from copy import copy
 from math import tau
 
-from meerk40t.core.node.mixins import Stroked
+from meerk40t.core.node.mixins import Stroked, FunctionalParameter
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_POINT, Length
 from meerk40t.svgelements import (
@@ -40,7 +40,7 @@ REGEX_CSS_FONT_FAMILY = re.compile(
 )
 
 
-class TextNode(Node, Stroked):
+class TextNode(Node, Stroked, FunctionalParameter):
     """
     TextNode is the bootstrapped node type for the 'elem text' type.
     """

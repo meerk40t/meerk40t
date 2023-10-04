@@ -1,11 +1,12 @@
 from copy import copy
 
+from meerk40t.core.node.mixins import FunctionalParameter
 from meerk40t.core.node.node import Node
 from meerk40t.svgelements import Matrix, Point
 from meerk40t.tools.geomstr import Geomstr
 
 
-class PointNode(Node):
+class PointNode(Node, FunctionalParameter):
     """
     PointNode is the bootstrapped node type for the 'elem point' type.
     """
