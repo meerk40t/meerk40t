@@ -409,7 +409,7 @@ def plugin(kernel, lifecycle=None):
                 ),
                 "choices": (0, 1, 2),
                 "tip": _(
-                    "Choose if and how you want to group together / display the default operations at the botteom of the screen"
+                    "Choose if and how you want to group together / display the default operations at the bottom of the screen"
                 ),
                 "page": "Classification",
                 "section": "_95_Default Operations",

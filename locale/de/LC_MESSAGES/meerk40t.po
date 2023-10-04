@@ -16310,9 +16310,6 @@ msgstr "Obere Begrenzung des Kerf-Test Intervall"
 msgid "Dimension of the to be created pattern"
 msgstr "Größe der zu erzeugenden Testformen"
 
-msgid "Horizontal gap between patterns"
-msgstr "Horizontaler Abstand zwischen den Testformen"
-
 msgid "Every {dist}"
 msgstr "Alle {dist}"
 
@@ -16808,3 +16805,232 @@ msgstr "Phase"
 #: ./meerk40t\lihuiyu\device.py:223
 msgid "Value for progressive or static phase type"
 msgstr "Wert für progressiven oder statischen Phasen-Typ"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:106
+msgid "Orientation:"
+msgstr "Orientierung:"
+
+#: ./meerk40t\gui\propertypanels\pointproperty.py:127
+msgid "Point Properties"
+msgstr "Punkt-Eigenschaften"
+
+#: ./meerk40t\gui\statusbarwidgets\defaultoperations.py:191
+msgid "Load materials/operations"
+msgstr "Lade Material-Bibliothek"
+
+#: ./meerk40t\gui\statusbarwidgets\shapepropwidget.py:127
+msgid "Set the join of lines to an arc-shape"
+msgstr "Verbindung zwischen Linien als Kurve"
+
+#: ./meerk40t\gui\statusbarwidgets\shapepropwidget.py:132
+msgid "Set the join of lines to a miter-clip-shape"
+msgstr "Verbindung zwischen Linien als Miter"
+
+#: ./meerk40t\gui\toolwidgets\toolnodeedit.py:75
+msgid "Symmetric"
+msgstr "Symmetrisch"
+
+#: ./meerk40t\gui\toolwidgets\toolnodeedit.py:308
+msgid "Smooth transit to adjacent segments"
+msgstr "Übergang zwischen benachbarten Segmenten glätten"
+
+#: ./meerk40t\gui\toolwidgets\toolnodeedit.py:316
+msgid "Convert all lines into smooth curves"
+msgstr "Alle Linien in geglättete Kurven umwandeln"
+
+#: ./meerk40t\gui\toolwidgets\toolnodeedit.py:333
+msgid "To Path"
+msgstr "In Pfad wandeln"
+
+#: ./meerk40t\gui\toolwidgets\toolnodeedit.py:1941
+msgid "Drag to change the curve shape (ctrl to affect the other side)"
+msgstr "Klicken & Ziehen um Form zu ändern (Mit Ctrl andere Seite)"
+
+#: ./meerk40t\gui\toolwidgets\toolparameter.py:253
+msgid "Pin"
+msgstr "Fixieren"
+
+#: ./meerk40t\gui\toolwidgets\toolparameter.py:519
+msgid "Pin the parameter section to the top of the screen"
+msgstr "Fixiere den Parameter-Bereich am oberen Bereich des Bildschirms"
+
+#: ./meerk40t\gui\toolwidgets\toolplacement.py:98
+msgid "Click to set the TL-corner of the job (Ctrl for BR, Shift for Center)"
+msgstr "Klicken, um ober linke Ecke des Jobs festzulegen (Ctrl: Unten Rechts, Shift: Zentrum)"
+
+#: ./meerk40t\gui\toolwidgets\toolpolygon.py:220
+msgid "Click on the first corner"
+msgstr "Klicken, um ersten Eckpunkt festzulegen"
+
+#: ./meerk40t\gui\propertypanels\operationpropertymain.py:716
+msgid "Inward"
+msgstr "Nach innen"
+
+#: ./meerk40t\gui\propertypanels\operationpropertymain.py:718
+msgid "Outward"
+msgstr "Nach außen"
+
+#: ./meerk40t\gui\propertypanels\operationpropertymain.py:579
+msgid "Power (ppi):"
+msgstr "Leistung (ppi):"
+
+#: ./meerk40t\gui\propertypanels\hatchproperty.py:56
+msgid "Loops"
+msgstr "Wiederholungen"
+
+#: ./meerk40t\gui\propertypanels\hatchproperty.py:100
+msgid "Angle Delta"
+msgstr "Winkel"
+
+#: ./meerk40t\gui\propertypanels\imageproperty.py:25
+msgid "Crop"
+msgstr "Zuschneiden"
+
+#: ./meerk40t\gui\propertypanels\imageproperty.py:395
+msgid "Apply {entry}"
+msgstr "{entry} anwenden"
+
+#: ./meerk40t\gui\propertypanels\imageproperty.py:571
+msgid "Delete item"
+msgstr "Eintrag löschen"
+
+#: ./meerk40t\gui\propertypanels\imageproperty.py:571
+msgid "Will delete the current entry"
+msgstr "Löschte den aktuellen Eintrag"
+
+#: ./meerk40t\gui\propertypanels\imageproperty.py:578
+msgid "Toggles enable-status of operation"
+msgstr "Schaltet den 'Aktiv'-Status um"
+
+#: ./meerk40t\gui\propertypanels\imageproperty.py:588
+msgid "Insert {op}"
+msgstr "{op} einfügen"
+
+#: ./meerk40t\gui\propertypanels\imageproperty.py:589
+msgid "Will insert this operation before the current entry"
+msgstr "Fügt diese Operation vor dem aktuellen Eintrag ein"
+
+#: ./meerk40t\gui\propertypanels\imageproperty.py:597
+msgid "Append {op}"
+msgstr "{op} anhängen"
+
+#: ./meerk40t\gui\propertypanels\imageproperty.py:598
+msgid "Will append this operation to the end of the list"
+msgstr "Hängt diese Operation ans Ende der Liste an"
+
+#: ./meerk40t\core\elements\elements.py:326
+msgid "Remove unused default operations"
+msgstr "Ungenutzte Abläufe entfernen"
+
+#: ./meerk40t\core\elements\elements.py:329
+msgid "If a default operation is no longer used it will be removed from the list of active operations"
+msgstr "Falls ein Arbeitsablauf nicht mehr verwendet wird, wird er aus der Liste des aktiven Abläufe entfernt"
+
+#: ./meerk40t\core\elements\elements.py:403
+msgid "Statusbar display"
+msgstr "Statusbar-Anzeige"
+
+#: ./meerk40t\core\elements\elements.py:406
+msgid "As in operations tree"
+msgstr "Wie im Arbeitsablauf-Baum"
+
+#: ./meerk40t\core\elements\elements.py:407
+msgid "Group types together (CC EE RR II)"
+msgstr "Nach gleichen Arten (CC EE RR II)"
+
+#: ./meerk40t\core\elements\elements.py:408
+msgid "Matching (CERI CERI)"
+msgstr "Zusammenfügen (CC EE RR II)"
+
+#: ./meerk40t\core\elements\elements.py:413
+msgid "Choose if and how you want to group together / display the default operations at the bottom of the screen"
+msgstr "Festlegung, ob und wie die Bibliotheks-Arbeitsabläufe am untern Rand des Bildschirms zusammengefasst werden sollen"
+
+#: ./meerk40t\core\elements\element_treeops.py:1535
+msgid "New"
+msgstr "Neu"
+
+#: ./meerk40t\core\elements\element_treeops.py:2232
+msgid "Increase Wordlist-Reference"
+msgstr "Wortlisten-Verweis weiterschalten"
+
+#: ./meerk40t\core\elements\element_treeops.py:2237
+msgid "Adjusts the reference value for a wordlist, ie {name} to {name#+1}"
+msgstr "Passt den Verweis-Wert in der Wortliste an, d.h. {name} to {name#+1}"
+
+#: ./meerk40t\core\elements\element_treeops.py:2258
+msgid "Decrease Wordlist-Reference"
+msgstr "Wortlisten-Verweis zurückschalten"
+
+#: ./meerk40t\core\elements\element_treeops.py:2263
+msgid "Adjusts the reference value for a wordlist, ie {name#+3} to {name#+2}"
+msgstr "Passt den Verweis-Wert in der Wortliste an, d.h. {name#+3} to {name#+2}"
+
+#: ./meerk40t\core\elements\element_treeops.py:2528
+msgid "Create placement"
+msgstr "Jobstart festlegen"
+
+#: ./meerk40t\core\elements\element_treeops.py:2556
+msgid "Toggle Magnet-Lines"
+msgstr "Magnet-Linien umschalten"
+
+#: ./meerk40t\core\elements\element_treeops.py:2557
+msgid "Around border"
+msgstr "Um Rahmen"
+
+#: ./meerk40t\core\elements\element_treeops.py:2567
+msgid "At center"
+msgstr "Im Zentrum"
+
+#: ./meerk40t\extra\param_functions.py:1355
+msgid "Growth in %"
+msgstr "Wachstum in %"
+
+#: ./meerk40t\extra\param_functions.py:1356
+msgid "Start angle"
+msgstr "Start-Winkel"
+
+msgid "Horizontal gap"
+msgstr "Abstand horiz."
+
+msgid "Vertical gap"
+msgstr "Abstand vert."
+
+msgid "Columns"
+msgstr "Spalten"
+
+msgid "Rows"
+msgstr "Zeilen"
+
+msgid "Startpoint"
+msgstr "Startpunkt"
+
+msgid "End of base stem"
+msgstr "Ende des Stammzweigs"
+
+msgid "Iterations"
+msgstr "Iterationen"
+
+msgid "Branch length"
+msgstr "Zweiglänge"
+
+msgid "Major axis"
+msgstr "Hauptachse"
+
+msgid "Minor axis"
+msgstr "Nebenachse"
+
+msgid "Outer radius"
+msgstr "Äußerer Radius"
+
+msgid "Inner radius"
+msgstr "Innerer Radius"
+
+msgid "Corners"
+msgstr "Ecken"
+
+msgid "Alternation"
+msgstr "Alternierend"
+
+msgid "Density"
+msgstr "Dichte"
