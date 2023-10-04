@@ -4,7 +4,6 @@ from math import sqrt
 
 class Stroked(ABC):
     def __init__(self, *args, **kwargs):
-        print("Stroked called.")
         super().__init__()
 
     @property
@@ -78,7 +77,6 @@ class Stroked(ABC):
 
 class FunctionalParameter(ABC):
     def __init__(self, *args, **kwargs):
-        print("FunctionalParameter called.")
         self.mkparam = None
         super().__init__()
 
