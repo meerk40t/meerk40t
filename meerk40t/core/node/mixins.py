@@ -1,10 +1,23 @@
+"""
+Mixins for nodes are aspects of code which can and should be used between multiple different nodes which convey some
+basic functionality.
+
+The use of ABC allows @abstractmethod decorators which require any subclass to implement the required method.
+"""
+
 from abc import ABC
 from math import sqrt
 
 
 class Stroked(ABC):
+    """
+    Stroked nodes provide a stroke_scaled matrix controlled stroke mixin. Such that the stroke scaling can be enabled
+    and disabled, and it will increase or decrease the implied_stroke_width. If stroke scaling is disabled then the
+    stroke_width is independent to the scaling of the node (dictated by the .matrix attribute).
+    """
+
     def __init__(self, *args, **kwargs):
-        self.mkparam = None
+        super().__init__()
 
     @property
     def stroke_scaled(self):
@@ -73,6 +86,15 @@ class Stroked(ABC):
         """
         matrix = self.matrix
         self._stroke_zero = sqrt(abs(matrix.determinant))
+
+
+class FunctionalParameter(ABC):
+    """
+    Functional Parameters mixin allows the use and utility of functional parameters for this node type.
+    """
+    def __init__(self, *args, **kwargs):
+        self.mkparam = None
+        super().__init__()
 
     @property
     def functional_parameter(self):
