@@ -4,7 +4,8 @@ from math import sqrt
 
 class Stroked(ABC):
     def __init__(self, *args, **kwargs):
-        self.mkparam = None
+        print("Stroked called.")
+        super().__init__()
 
     @property
     def stroke_scaled(self):
@@ -73,6 +74,13 @@ class Stroked(ABC):
         """
         matrix = self.matrix
         self._stroke_zero = sqrt(abs(matrix.determinant))
+
+
+class FunctionalParameter(ABC):
+    def __init__(self, *args, **kwargs):
+        print("FunctionalParameter called.")
+        self.mkparam = None
+        super().__init__()
 
     @property
     def functional_parameter(self):

@@ -1,6 +1,6 @@
 from copy import copy
 
-from meerk40t.core.node.mixins import Stroked
+from meerk40t.core.node.mixins import Stroked, FunctionalParameter
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -10,7 +10,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class PathNode(Node, Stroked):
+class PathNode(Node, Stroked, FunctionalParameter):
     """
     PathNode is the bootstrapped node type for the 'elem path' type.
     """
