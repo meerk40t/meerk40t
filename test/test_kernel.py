@@ -81,6 +81,7 @@ class TestKernel(unittest.TestCase):
                     print(f"Executing: {func.name}")
                     func(n, **func_dict)
         finally:
+            kernel.console("elements\n")
             kernel.shutdown()
 
 
