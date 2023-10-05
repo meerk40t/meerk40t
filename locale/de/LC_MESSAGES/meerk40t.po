@@ -7018,9 +7018,8 @@ msgstr ""
 
 #: meerk40t/gui/wxmeerk40t.py:790
 msgid ""
-"We got your message. Thank you for helping\n"
-"\n"
-msgstr "Wir haben die Nachricht erhalten. Vielen Dank für die Unterstützung"
+"We got your message. Thank you for helping\n\n"
+msgstr "Wir haben die Nachricht erhalten. Vielen Dank für die Unterstützung.\n\n"
 
 #: meerk40t/gui/wxmeerk40t.py:791 meerk40t/gui/wxmeerk40t.py:808
 msgid "Thanks"
@@ -7072,16 +7071,20 @@ msgid ""
 "The good news is that you can help us fix this bug by anonymously sending"
 " us the crash details."
 msgstr ""
+"Die schlechte Nachricht ist, dass MeerK40t auf einen Fehler gelaufen ist, "
+"und die Entwickler bitten dafür um Entschuldigung!\n"
+"\n"
+"Die gute Nachricht ist, dass Sie uns dabei helfen können, diesen Bug zu beseitigen, "
+"indem Sie zustimmen, anonym Details zu diesem Fehler zu übermitteln."
 
 #: meerk40t/gui/wxmeerk40t.py:902
 msgid ""
 "Only the crash details below are sent. No data from your MeerK40t project"
-" is sent. No\n"
-"personal information is sent either.\n"
-"\n"
-"Send the following data to the MeerK40t team?\n"
-"------\n"
+" is sent. No personal information is sent either.\n"
+"Send the following data to the MeerK40t team?"
 msgstr ""
+"Es werden lediglich die unten angezeigten Info gesendet.\n"
+"Dürfen die folgenden Daten an das MeerK40t-Team übermittelt werden?"
 
 #: meerk40t/gui/wxmeerk40t.py:910
 msgid "Crash Detected! Send Log?"

@@ -17,6 +17,20 @@ if not getattr(sys, "frozen", False):
     # Otherwise we are running from source
     if os.path.isdir(sys.path[0] + "/.git"):
         APPLICATION_VERSION += " git"
+        try:
+            head_file = os.path.join(sys.path[0], ".git", "HEAD")
+            if os.path.isfile(head_file):
+                ref_prefix = "ref: refs/heads/"
+                ref = ""
+                with open(head_file) as f:
+                    ref = f.readline()
+                if ref.startswith(ref_prefix):
+                    branch = ref[len(ref_prefix) :].strip("\n")
+                    APPLICATION_VERSION += " " + branch
+        except Exception:
+            # Entirely optional, also this code segment may run in python2
+            pass
+
     elif os.path.isdir(sys.path[0] + "/.github"):
         APPLICATION_VERSION += " src"
     else:
