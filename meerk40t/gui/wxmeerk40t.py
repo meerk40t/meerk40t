@@ -918,7 +918,7 @@ def send_data_to_developers(filename, data):
         dlg.ShowModal()
         dlg.Destroy()
     else:
-        print(response)
+        # print(response)
         MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
         dlg = wx.MessageDialog(
             None,
@@ -945,6 +945,30 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     @param exc_traceback:
     @return:
     """
+    def _extended_dialog(caption, header, body):
+        dlg = wx.Dialog(
+            None, wx.ID_ANY, title=caption, size=wx.DefaultSize, pos=wx.DefaultPosition,
+            style=wx.DEFAULT_DIALOG_STYLE
+        )
+        # contents
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        label = wx.StaticText(dlg, wx.ID_ANY, header)
+        sizer.Add(label, 1, wx.EXPAND, 0)
+        info = wx.TextCtrl(dlg, wx.ID_ANY, style=wx.TE_MULTILINE)
+        info.SetValue(body)
+        sizer.Add(info, 5, wx.EXPAND, 0)
+        btnsizer = wx.StdDialogButtonSizer()
+        btn = wx.Button(dlg, wx.ID_OK)
+        btn.SetDefault()
+        btnsizer.AddButton(btn)
+        btn = wx.Button(dlg, wx.ID_CANCEL)
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        sizer.Add(btnsizer, 0, wx.EXPAND, 0)
+        dlg.SetSizer(sizer)
+        sizer.Fit(dlg)
+        return dlg
 
     def _variable_summary(vars, indent: int = 0):
         info = ""
@@ -1003,45 +1027,20 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
 
 The good news is that you can help us fix this bug by anonymously sending us the crash details."""
     )
-    ext_msg = _(
-        """Only the crash details below are sent. No data from your MeerK40t project is sent. No
-personal information is sent either.
-
-Send the following data to the MeerK40t team?
-------
-"""
+    message += "\n" + _(
+        "Only the crash details below are sent. No data from your MeerK40t project is sent. No " +
+        "personal information is sent either.\n" +
+        "Send the following data to the MeerK40t team?"
     )
     caption = _("Crash Detected! Send Log?")
-    style = wx.YES_NO | wx.CANCEL | wx.ICON_WARNING
-    error_log_short = error_log
-    # Usually that gets quite messy with a lot of information
-    # So we try to split this:
-    error_log_list = error_log.split("\n")
-    max_error_lines = 15
-    header_lines = 4
-    if len(error_log_list) > max_error_lines:
-        error_log_short = ""
-        for idx in range(header_lines):
-            error_log_short += error_log_list[idx]
-            if idx > 0:
-                error_log_short += "\n"
-        error_log_short += "[...]"
-        for idx in range(header_lines - max_error_lines, 0):
-            error_log_short += "\n"
-            error_log_short += error_log_list[idx]
-
-    ext_msg += error_log_short
-
-    dlg = wx.MessageDialog(
-        None,
-        message,
-        caption=caption,
-        style=style,
-    )
-    dlg.SetExtendedMessage(ext_msg)
-    answer = dlg.ShowModal()
-    if answer in (wx.YES, wx.ID_YES):
-        data = error_log
-        if variable_info:
-            data += "\n" + variable_info
+    data = error_log
+    if variable_info:
+        data += "\n" + variable_info
+    try:
+        dlg = _extended_dialog(caption, message, data)
+        answer = dlg.ShowModal()
+        dlg.Destroy()
+    except Exception:
+        answer = wx.ID_NO
+    if answer in (wx.YES, wx.ID_YES, wx.ID_OK):
         send_data_to_developers(filename, data)
