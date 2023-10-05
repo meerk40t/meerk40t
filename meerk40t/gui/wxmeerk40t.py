@@ -955,7 +955,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
 
         label = wx.StaticText(dlg, wx.ID_ANY, header)
         sizer.Add(label, 1, wx.EXPAND, 0)
-        info = wx.TextCtrl(dlg, wx.ID_ANY, style=wx.TE_MULTILINE)
+        info = wx.TextCtrl(dlg, wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_READONLY)
         info.SetValue(body)
         sizer.Add(info, 5, wx.EXPAND, 0)
         btnsizer = wx.StdDialogButtonSizer()
