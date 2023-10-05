@@ -998,61 +998,21 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         pass
 
     # Ask to send file.
-    git = branch = False
-    if " " in APPLICATION_VERSION:
-        ver, exec_type = APPLICATION_VERSION.rsplit(" ", 1)
-        git = exec_type == "git"
-
-    if git:
-        head_file = os.path.join(sys.path[0], ".git", "HEAD")
-        if os.path.isfile(head_file):
-            ref_prefix = "ref: refs/heads/"
-            ref = ""
-            try:
-                with open(head_file) as f:
-                    ref = f.readline()
-            except Exception:
-                pass
-            if ref.startswith(ref_prefix):
-                branch = ref[len(ref_prefix) :].strip("\n")
-
-    if git and branch and branch not in ("main", "legacy6", "legacy7"):
-        message = _("Meerk40t has encountered a crash.")
-        ext_msg = _(
-            """It appears that you are running Meerk40t from source managed by Git,
-from a branch '{branch}' which is not 'main',
-and that you are therefore running a development version of Meerk40t.
-
-To avoid reporting crashes during development, automated submission of this crash has
-been disabled. If this is a crash which is unrelated to any development work that you are
-undertaking, please recreate this crash under main or if you are certain that this is not
-caused by any code changes you have made, then you can manually create a new Github
-issue indicating the branch you are runing from and using the traceback below which can
-be found in "{filename}".
-
-"""
-        ).format(
-            filename=filename,
-            branch=branch,
-        )
-        caption = _("Crash Detected!")
-        style = wx.OK | wx.ICON_WARNING
-    else:
-        message = _(
-            """The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!
+    message = _(
+        """The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!
 
 The good news is that you can help us fix this bug by anonymously sending us the crash details."""
-        )
-        ext_msg = _(
-            """Only the crash details below are sent. No data from your MeerK40t project is sent. No
+    )
+    ext_msg = _(
+        """Only the crash details below are sent. No data from your MeerK40t project is sent. No
 personal information is sent either.
 
 Send the following data to the MeerK40t team?
 ------
 """
-        )
-        caption = _("Crash Detected! Send Log?")
-        style = wx.YES_NO | wx.CANCEL | wx.ICON_WARNING
+    )
+    caption = _("Crash Detected! Send Log?")
+    style = wx.YES_NO | wx.CANCEL | wx.ICON_WARNING
     error_log_short = error_log
     # Usually that gets quite messy with a lot of information
     # So we try to split this:
