@@ -1213,12 +1213,21 @@ class ChoicePropertyPanel(ScrolledPanel):
                         c_obj, c_attr, c_equals = conditional
                         enabled = bool(getattr(c_obj, c_attr) == c_equals)
                         control.Enable(enabled)
+                    elif len(conditional) == 4:
+                        c_obj, c_attr, c_from, c_to = conditional
+                        enabled = bool( c_from <= getattr(c_obj, c_attr) <= c_to)
+                        c_equals = (c_from, c_to)
+                        control.Enable(enabled)
 
                     def on_enable_listener(param, ctrl, obj, eqs):
                         def listen(origin, value, target=None):
                             try:
-                                ctrl.Enable(bool(getattr(obj, param)) == eqs)
-                            except RuntimeError:
+                                if isinstance(eqs, (list, tuple)):
+                                    enable = bool(eqs[0] <= getattr(obj, param) <= eqs[1])
+                                else:
+                                    enable = bool(getattr(obj, param) == eqs )
+                                ctrl.Enable(enable)
+                            except (IndexError, RuntimeError):
                                 pass
 
                         return listen
