@@ -45,6 +45,45 @@ class TestKernel(unittest.TestCase):
         finally:
             kernel.shutdown()
 
+    def test_tree_menu(self):
+        """
+        Tests all commands with no arguments to test for crashes...
+        """
+        from meerk40t.core.treeop import tree_operations_for_node
+        from PIL import Image
+        image = Image.new("RGBA", (256, 256))
+        from PIL import ImageDraw
+        draw = ImageDraw.Draw(image)
+        draw.ellipse((0, 0, 255, 255), "black")
+        image = image.convert("L")
+
+        kwargs_nodes = (
+
+            {"type": "elem ellipse", "center": 0j, "r": 10000},
+            {"type": "elem image", "image": image, "dpi": 500},
+            {"type": "elem path", "d": "M0,0L10000,10000"},
+            {"type": "elem point", "x": 0, "y": 0},
+            {"type": "elem polyline", "points": (0j, 10000j, )},
+            {"type": "elem rect", "x": 0, "y": 0, "width": 10000, "height": 20000},
+            {"type": "elem line","x1": 0, "y1": 0, "x2": 20000, "y2": 20000},
+            {"type": "elem text", "text": "Hello World."},
+        )
+        kernel = bootstrap.bootstrap()
+        try:
+            for kws in kwargs_nodes:
+                print(f"Creating: {kws.get('type')}")
+                n = kernel.elements.elem_branch.add(**kws)
+                print(n)
+
+                nodes = tree_operations_for_node(kernel.elements, n)
+                for func in nodes:
+                    func_dict = dict(func.func_dict)
+                    print(f"Executing: {func.name}")
+                    func(n, **func_dict)
+        finally:
+            kernel.console("elements\n")
+            kernel.shutdown()
+
 
 class TestGetSafePath(unittest.TestCase):
     def test_get_safe_path(self):

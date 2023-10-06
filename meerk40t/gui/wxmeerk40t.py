@@ -103,7 +103,9 @@ class GoPanel(wx.Panel):
         self.click_time = 0
         self.context = context
         self.button_go = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_go.SetBitmap(icons8_gas_industry_50.GetBitmap(color=wx.WHITE, keepalpha=True))
+        self.button_go.SetBitmap(
+            icons8_gas_industry_50.GetBitmap(color=wx.WHITE, keepalpha=True)
+        )
         self.button_go.SetBitmapFocus(icons8_gas_industry_50.GetBitmap())
         self.was_mouse = False
         self.button_go.Bind(wx.EVT_BUTTON, self.on_button_go_click)
@@ -180,7 +182,9 @@ def register_panel_stop(window, context):
         stop,
     )
     stop.SetBackgroundColour(wx.Colour(127, 0, 0))
-    stop.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(color=wx.WHITE, keepalpha=True))
+    stop.SetBitmap(
+        icons8_emergency_stop_button_50.GetBitmap(color=wx.WHITE, keepalpha=True)
+    )
     stop.SetBitmapFocus(icons8_emergency_stop_button_50.GetBitmap())
     stop.SetToolTip(_("Emergency stop/reset the controller."))
     stop.SetSize(stop.GetBestSize())
@@ -914,7 +918,7 @@ def send_data_to_developers(filename, data):
         dlg.ShowModal()
         dlg.Destroy()
     else:
-        print(response)
+        # print(response)
         MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
         dlg = wx.MessageDialog(
             None,
@@ -941,6 +945,41 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     @param exc_traceback:
     @return:
     """
+    def _extended_dialog(caption, header, body):
+        dlg = wx.Dialog(
+            None, wx.ID_ANY, title=caption, size=wx.DefaultSize, pos=wx.DefaultPosition,
+            style=wx.DEFAULT_DIALOG_STYLE
+        )
+        # contents
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        label = wx.StaticText(dlg, wx.ID_ANY, header)
+        sizer.Add(label, 1, wx.EXPAND, 0)
+        info = wx.TextCtrl(dlg, wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        info.SetValue(body)
+        sizer.Add(info, 5, wx.EXPAND, 0)
+        btnsizer = wx.StdDialogButtonSizer()
+        btn = wx.Button(dlg, wx.ID_OK)
+        btn.SetDefault()
+        btnsizer.AddButton(btn)
+        btn = wx.Button(dlg, wx.ID_CANCEL)
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        sizer.Add(btnsizer, 0, wx.EXPAND, 0)
+        dlg.SetSizer(sizer)
+        sizer.Fit(dlg)
+        return dlg
+
+    def _variable_summary(vars, indent: int = 0):
+        info = ""
+        for (name, value) in vars.items():
+            label = f'{" " * indent}{name} : '
+            total_indent = len(label)
+            formatted = str(value)
+            formatted = formatted.replace("\n", "\n" + " " * total_indent)
+            info += f"{label}{formatted}\n"
+        return info
+
     wxversion = "wx"
     try:
         wxversion = wx.version()
@@ -952,8 +991,13 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         f"Python {platform.python_version()}: {platform.machine()} - wxPython: {wxversion}\n"
     )
     error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
-    print("\n")
-    print(error_log)
+    variable_info = ""
+    try:
+        frame = exc_traceback.tb_frame
+        variable_info = "\nLocal variables:\n"
+        variable_info += _variable_summary(frame.f_locals)
+    except Exception:
+        pass
     try:
         filename = f"MeerK40t-{datetime.now():%Y-%m-%d_%H_%M_%S}.txt"
     except Exception:  # I already crashed once, if there's another here just ignore it.
@@ -963,97 +1007,40 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         try:
             with open(filename, "w", encoding="utf8") as file:
                 file.write(error_log)
+                if variable_info:
+                    file.write(variable_info)
                 print(file)
         except PermissionError:
             filename = get_safe_path(APPLICATION_NAME).joinpath(filename)
             with open(filename, "w", encoding="utf8") as file:
                 file.write(error_log)
+                if variable_info:
+                    file.write(variable_info)
                 print(file)
     except Exception:
         # I already crashed once, if there's another here just ignore it.
         pass
 
     # Ask to send file.
-    git = branch = False
-    if " " in APPLICATION_VERSION:
-        ver, exec_type = APPLICATION_VERSION.rsplit(" ", 1)
-        git = exec_type == "git"
-
-    if git:
-        head_file = os.path.join(sys.path[0], ".git", "HEAD")
-        if os.path.isfile(head_file):
-            ref_prefix = "ref: refs/heads/"
-            ref = ""
-            try:
-                with open(head_file) as f:
-                    ref = f.readline()
-            except Exception:
-                pass
-            if ref.startswith(ref_prefix):
-                branch = ref[len(ref_prefix) :].strip("\n")
-
-    if git and branch and branch not in ("main", "legacy6", "legacy7"):
-        message = _("Meerk40t has encountered a crash.")
-        ext_msg = _(
-            """It appears that you are running Meerk40t from source managed by Git,
-from a branch '{branch}' which is not 'main',
-and that you are therefore running a development version of Meerk40t.
-
-To avoid reporting crashes during development, automated submission of this crash has
-been disabled. If this is a crash which is unrelated to any development work that you are
-undertaking, please recreate this crash under main or if you are certain that this is not
-caused by any code changes you have made, then you can manually create a new Github
-issue indicating the branch you are runing from and using the traceback below which can
-be found in "{filename}".
-
-"""
-        ).format(
-            filename=filename,
-            branch=branch,
-        )
-        caption = _("Crash Detected!")
-        style = wx.OK | wx.ICON_WARNING
-    else:
-        message = _(
-            """The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!
+    message = _(
+        """The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!
 
 The good news is that you can help us fix this bug by anonymously sending us the crash details."""
-        )
-        ext_msg = _(
-            """Only the crash details below are sent. No data from your MeerK40t project is sent. No
-personal information is sent either.
-
-Send the following data to the MeerK40t team?
-------
-"""
-        )
-        caption = _("Crash Detected! Send Log?")
-        style = wx.YES_NO | wx.CANCEL | wx.ICON_WARNING
-    error_log_short = error_log
-    # Usually that gets quite messy with a lot of information
-    # So we try to split this:
-    error_log_list = error_log.split("\n")
-    max_error_lines = 15
-    header_lines = 4
-    if len(error_log_list) > max_error_lines:
-        error_log_short = ""
-        for idx in range(header_lines):
-            error_log_short += error_log_list[idx]
-            if idx > 0:
-                error_log_short += "\n"
-        error_log_short += "[...]"
-        for idx in range(header_lines - max_error_lines, 0):
-            error_log_short += "\n"
-            error_log_short += error_log_list[idx]
-
-    ext_msg += error_log_short
-    dlg = wx.MessageDialog(
-        None,
-        message,
-        caption=caption,
-        style=style,
     )
-    dlg.SetExtendedMessage(ext_msg)
-    answer = dlg.ShowModal()
-    if answer in (wx.YES, wx.ID_YES):
-        send_data_to_developers(filename, error_log)
+    message += "\n" + _(
+        "Only the crash details below are sent. No data from your MeerK40t project is sent. No " +
+        "personal information is sent either.\n" +
+        "Send the following data to the MeerK40t team?"
+    )
+    caption = _("Crash Detected! Send Log?")
+    data = error_log
+    if variable_info:
+        data += "\n" + variable_info
+    try:
+        dlg = _extended_dialog(caption, message, data)
+        answer = dlg.ShowModal()
+        dlg.Destroy()
+    except Exception:
+        answer = wx.ID_NO
+    if answer in (wx.YES, wx.ID_YES, wx.ID_OK):
+        send_data_to_developers(filename, data)
