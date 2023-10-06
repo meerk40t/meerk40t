@@ -67,6 +67,19 @@ class HatchEffectNode(Node):
     def scaled(self, sx, sy, ox, oy):
         self.altered()
 
+    def notify_attached(self, node=None, **kwargs):
+        Node.notify_attached(self, node=node, **kwargs)
+        if node is self:
+            return
+        self.altered()
+
+    def notify_detached(self, node=None, **kwargs):
+        Node.notify_detached(self, node=node, **kwargs)
+        if node is self:
+            return
+        self.altered()
+
+
     def notify_modified(self, node=None, **kwargs):
         Node.notify_modified(self, node=node, **kwargs)
         if node is self:
