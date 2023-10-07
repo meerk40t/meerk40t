@@ -512,6 +512,11 @@ class Node:
     def valid_node_for_reference(self, node):
         return True
 
+    def copy_children_as_references(self, obj):
+        for element in obj.children:
+            self.add_reference(element)
+
+
     def is_draggable(self):
         return True
 
