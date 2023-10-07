@@ -1009,14 +1009,14 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
                 file.write(error_log)
                 if variable_info:
                     file.write(variable_info)
-                print(file)
+                print(error_log)
         except PermissionError:
             filename = get_safe_path(APPLICATION_NAME).joinpath(filename)
             with open(filename, "w", encoding="utf8") as file:
                 file.write(error_log)
                 if variable_info:
                     file.write(variable_info)
-                print(file)
+                print(error_log)
     except Exception:
         # I already crashed once, if there's another here just ignore it.
         pass
