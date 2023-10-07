@@ -185,13 +185,7 @@ class WobbleEffectNode(Node):
         if self._radius is None or self._interval is None:
             self.recalculate()
         if self.wobble_type == "circle":
-            path.append(
-                self.wobble(
-                    outlines,
-                    distance=self._distance,
-                    angle=self._angle + p * self._angle_delta,
-                )
-            )
+            path.append(Geomstr.wobble_circle(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
         return path
 
     def modified(self):
