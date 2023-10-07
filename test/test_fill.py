@@ -79,13 +79,13 @@ class TestFill(unittest.TestCase):
             kernel.console("rect 0 0 1in 1in\n")
             kernel.console("operation* delete\n")
             kernel.console("hatch\n")
-            hatch = list(kernel.elements.ops())[0]
-
+            hatch_op = list(kernel.elements.ops())[0]
             rect = list(kernel.elements.elems())[0]
-            hatch.add_reference(rect)
 
-            hatch_copy = copy(hatch)
-            hatch_copy.copy_children_as_real(hatch)
+            # Add rect refences into hatch.
+            hatch_op.children[0].add_reference(rect)
+
+            hatch_copy = hatch_op.copy_with_reified_tree()
 
             hatch_effect = hatch_copy.children[0]
             shape = hatch_effect.as_geometry()
@@ -113,8 +113,7 @@ class TestFill(unittest.TestCase):
             rect1 = list(kernel.elements.elems())[1]
             hatch.add_reference(rect1)
 
-            hatch_copy = copy(hatch)
-            hatch_copy.copy_children_as_real(hatch)
+            hatch_copy = hatch.copy_with_reified_tree()
 
             hatch_effect = hatch_copy.children[0]
             shape0 = hatch_effect.as_geometry()
