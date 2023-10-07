@@ -108,10 +108,11 @@ class TestFill(unittest.TestCase):
 
             ops = list(kernel.elements.ops())
             hatch = ops[0]
+            hatch_effect = hatch.children[0]
             rect0 = list(kernel.elements.elems())[0]
-            hatch.add_reference(rect0)
+            hatch_effect.add_reference(rect0)
             rect1 = list(kernel.elements.elems())[1]
-            hatch.add_reference(rect1)
+            hatch_effect.add_reference(rect1)
 
             hatch_copy = hatch.copy_with_reified_tree()
 
