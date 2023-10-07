@@ -1036,17 +1036,73 @@ class Geomstr:
         return geometry
 
     @classmethod
-    def wobble_circle(cls, outer, radius, interval, speed):
-        last = None
-        from meerk40t.fill.fills import Wobble, circle
+    def wobble(cls, algorithm, outer, radius, interval, speed):
+        from meerk40t.fill.fills import Wobble
 
-        w = Wobble(circle, radius=radius, speed=speed, interval=interval)
+        last = None
+        w = Wobble(algorithm, radius=radius, speed=speed, interval=interval)
         points = []
         for pt in outer.as_interpolated_points(interpolate=50):
             if last is not None:
                 points.extend([complex(wx, wy) for wx, wy in w(last.real, last.imag, pt.real, pt.imag)])
             last = pt
         return cls.lines(*points)
+
+
+    @classmethod
+    def wobble_slowtooth(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import slowtooth as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+
+    @classmethod
+    def wobble_gear(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import gear as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+
+    @classmethod
+    def wobble_jigsaw(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import jigsaw as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+
+    @classmethod
+    def wobble_sawtooth(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import sawtooth as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+
+    @classmethod
+    def wobble_sinewave(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import sinewave as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+
+    @classmethod
+    def wobble_circle_left(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import circle_right as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+
+    @classmethod
+    def wobble_circle_right(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import circle_right as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+
+    @classmethod
+    def wobble_circle(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import circle as algorithm
+        
+        return cls.wobble(algorithm, outer, radius, interval, speed)
 
 
     def copies(self, n):

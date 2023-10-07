@@ -193,8 +193,23 @@ class WobbleEffectNode(Node):
         path = Geomstr()
         if self._radius is None or self._interval is None:
             self.recalculate()
+
         if self.wobble_type == "circle":
             path.append(Geomstr.wobble_circle(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+        elif self.wobble_type == "circle_right":
+            path.append(Geomstr.wobble_circle_right(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+        elif self.wobble_type == "circle_left":
+            path.append(Geomstr.wobble_circle_left(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+        elif self.wobble_type == "sinewave":
+            path.append(Geomstr.wobble_sinewave(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+        elif self.wobble_type == "sawtooth":
+            path.append(Geomstr.wobble_sawtooth(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+        elif self.wobble_type == "jigsaw":
+            path.append(Geomstr.wobble_jigsaw(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+        elif self.wobble_type == "gear":
+            path.append(Geomstr.wobble_gear(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+        elif self.wobble_type == "slowtooth":
+            path.append(Geomstr.wobble_slowtooth(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
         return path
 
     def modified(self):
@@ -202,6 +217,10 @@ class WobbleEffectNode(Node):
 
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
+        if drag_node.type.startswith("effect"):
+            self.append_child(drag_node)
+            self.altered()
+            return True
         if drag_node.type.startswith("elem"):
             # Dragging element onto operation adds that element to the op.
             if not modify:
