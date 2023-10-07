@@ -1039,14 +1039,18 @@ class Geomstr:
     def wobble(cls, algorithm, outer, radius, interval, speed):
         from meerk40t.fill.fills import Wobble
 
-        last = None
         w = Wobble(algorithm, radius=radius, speed=speed, interval=interval)
-        points = []
-        for pt in outer.as_interpolated_points(interpolate=50):
-            if last is not None:
-                points.extend([complex(wx, wy) for wx, wy in w(last.real, last.imag, pt.real, pt.imag)])
-            last = pt
-        return cls.lines(*points)
+
+        geometry = cls()
+        for segments in outer.as_interpolated_segments(interpolate=50):
+            points = []
+            last = None
+            for pt in segments:
+                if last is not None:
+                    points.extend([complex(wx, wy) for wx, wy in w(last.real, last.imag, pt.real, pt.imag)])
+                last = pt
+            geometry.append(Geomstr.lines(*points))
+        return geometry
 
 
     @classmethod
