@@ -106,6 +106,15 @@ class WobbleEffectNode(Node):
         self.wobble_radius = value
         self.recalculate()
 
+    @property
+    def interval(self):
+        return self.wobble_interval
+
+    @interval.setter
+    def interval(self, value):
+        self.wobble_interval = value
+        self.recalculate()
+
     def recalculate(self):
         """
         Ensure that the properties for distance, angle and angle_delta are in usable units.
