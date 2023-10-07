@@ -516,6 +516,13 @@ class Node:
         for element in obj.children:
             self.add_reference(element)
 
+    def copy_children_as_real(self, copy_node):
+        if copy_node.type == "reference":
+            copy_node = copy_node.node
+        for child in copy_node.children:
+            copy_child = copy(child)
+            self.add_node(copy_child)
+            copy_child.copy_children_as_real(child)
 
     def is_draggable(self):
         return True

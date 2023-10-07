@@ -224,17 +224,6 @@ class EngraveOpNode(Node, Parameters):
         settings.write_persistent(section, "hex_color", self.color.hexa)
         settings.write_persistent_dict(section, self.settings)
 
-    def copy_children_as_real(self, copy_node):
-        context = self
-        for node in copy_node.children:
-            if node.type.startswith("effect"):
-                n = copy(node)
-                context.add_node(n)
-                context = n
-        for node in copy_node.children:
-            if node.type == "reference":
-                context.add_node(copy(node.node))
-
     def time_estimate(self):
         estimate = 0
         for node in self.children:

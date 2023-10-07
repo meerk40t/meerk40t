@@ -198,10 +198,6 @@ class DotsOpNode(Node, Parameters):
         settings.write_persistent(section, "hex_color", self.color.hexa)
         settings.write_persistent_dict(section, self.settings)
 
-    def copy_children_as_real(self, copy_node):
-        for node in copy_node.children:
-            self.add_node(copy(node.node))
-
     def time_estimate(self):
         estimate = 0
         for e in self.children:

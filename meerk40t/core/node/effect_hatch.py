@@ -240,7 +240,3 @@ class HatchEffectNode(Node):
             # then we will reverse the game
             return drag_node.drop(self, modify=modify)
         return False
-
-    def copy_children_as_real(self, copy_node):
-        for node in copy_node.children:
-            self.add_node(copy(node.node))
