@@ -27,6 +27,9 @@ if not getattr(sys, "frozen", False):
                 if ref.startswith(ref_prefix):
                     branch = ref[len(ref_prefix) :].strip("\n")
                     APPLICATION_VERSION += " " + branch
+                else:
+                    branch = ref.strip("\n")
+                    APPLICATION_VERSION += " " + branch
         except Exception:
             # Entirely optional, also this code segment may run in python2
             pass
