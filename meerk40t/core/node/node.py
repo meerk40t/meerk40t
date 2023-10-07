@@ -513,13 +513,33 @@ class Node:
         return True
 
     def copy_children_as_references(self, obj):
+        """
+        Copy the children of the given object as direct references to those children.
+        @param obj:
+        @return:
+        """
         for element in obj.children:
             self.add_reference(element)
 
+    def copy_with_reified_tree(self):
+        """
+        Make a copy of the current node, and a copy of the sub-nodes dereferencing any reference nodes
+        @return:
+        """
+        copy_c = copy(self)
+        copy_c.copy_children_as_real(self)
+        return copy_c
+
     def copy_children_as_real(self, copy_node):
-        if copy_node.type == "reference":
-            copy_node = copy_node.node
+        """
+        Copy the children of copy_node to the current node, dereferencing any reference nodes.
+        @param copy_node:
+        @return:
+        """
         for child in copy_node.children:
+            child = child
+            if child.type == "reference":
+                child = child.node
             copy_child = copy(child)
             self.add_node(copy_child)
             copy_child.copy_children_as_real(child)
