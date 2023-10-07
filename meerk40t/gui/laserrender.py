@@ -215,6 +215,7 @@ class LaserRender:
                     "elem rect",
                     "elem line",
                     "effect hatch",
+                    "effect wobble",
                 )
                 nodes = [e for e in nodes if e.type not in path_elements]
             if draw_mode & DRAW_MODE_IMAGE:  # Do not draw images.
@@ -270,6 +271,7 @@ class LaserRender:
                 "elem line",
                 "elem polyline",
                 "effect hatch",
+                "effect wobble",
             ):
                 node.draw = self.draw_vector
                 node._make_cache = self.cache_geomstr

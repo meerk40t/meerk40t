@@ -35,6 +35,7 @@ class CutOpNode(Node, Parameters):
             "elem rect",
             "elem line",
             "effect hatch",
+            "effect wobble",
         )
         # Which elements do we consider for automatic classification?
         self._allowed_elements = (
@@ -44,6 +45,7 @@ class CutOpNode(Node, Parameters):
             "elem rect",
             "elem line",
             "effect hatch",
+            "effect wobble",
         )
         # To which attributes responds the classification color check
         self.allowed_attributes = [
