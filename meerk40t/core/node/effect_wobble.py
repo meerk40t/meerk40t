@@ -22,7 +22,7 @@ class WobbleEffectNode(Node):
         self._stroke_zero = None
         self.output = True
         self.wobble_radius = "1.5mm"
-        self.wobble_interval = "0.3mm"
+        self.wobble_interval = "0.1mm"
         self.wobble_speed = 50
         self.wobble_type = "circle"
 
