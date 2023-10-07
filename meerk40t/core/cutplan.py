@@ -176,6 +176,7 @@ class CutPlan:
 
         original_ops = copy(self.plan)
         self.plan.clear()
+
         idx = 0
         self.context.elements.mywordlist.push()
 
@@ -185,7 +186,10 @@ class CutPlan:
                 self.context.elements.mywordlist.move_all_indices(1)
 
             for original_op in original_ops:
-                op = copy(original_op)
+                try:
+                    op = original_op.copy_with_reified_tree()
+                except AttributeError:
+                    op = original_op
                 if not hasattr(op, "type") or op.type is None:
                     self.plan.append(op)
                     continue
@@ -193,8 +197,6 @@ class CutPlan:
                     continue
                 self.plan.append(op)
                 if op.type.startswith("op"):
-                    for child in original_op.children:
-                        op.add_node(copy(child))
                     if hasattr(op, "preprocess"):
                         op.preprocess(self.context, placement, self)
                     for node in op.flat():
