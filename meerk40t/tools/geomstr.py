@@ -1090,7 +1090,7 @@ class Geomstr:
 
     @classmethod
     def wobble_circle_left(cls, outer, radius, interval, speed):
-        from meerk40t.fill.fills import circle_right as algorithm
+        from meerk40t.fill.fills import circle_left as algorithm
 
         return cls.wobble(algorithm, outer, radius, interval, speed)
 
