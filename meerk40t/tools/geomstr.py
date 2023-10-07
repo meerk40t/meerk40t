@@ -1035,6 +1035,20 @@ class Geomstr:
         geometry.rotate(-angle)
         return geometry
 
+    @classmethod
+    def wobble_circle(cls, outer, radius, interval, speed):
+        last = None
+        from meerk40t.fill.fills import Wobble, circle
+
+        w = Wobble(circle, radius=radius, speed=speed, interval=interval)
+        points = []
+        for pt in outer.as_interpolated_points(interpolate=50):
+            if last is not None:
+                points.extend([complex(wx, wy) for wx, wy in w(last.real, last.imag, pt.real, pt.imag)])
+            last = pt
+        return cls.lines(*points)
+
+
     def copies(self, n):
         segs = self.segments[: self.index]
         self.segments = np.vstack([segs] * n)
