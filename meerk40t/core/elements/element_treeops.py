@@ -1760,6 +1760,23 @@ def init_tree(kernel):
         self.signal("updateelem_tree")
 
 
+
+    @tree_submenu(_("Append special effect"))
+    @tree_operation(
+        _("Append wobble {type} {radius} @{interval}").format(type="Circle", radius="0.5mm", interval="0.05mm"), node_type="branch elems", help=""
+    )
+    def append_element_effect_wobble_c1(
+        node, node_type="branch elems", pos=None, **kwargs
+    ):
+        self.elem_branch.add(
+            type="effect wobble",
+            wobble_type="circle",
+            wobble_radius="0.5mm",
+            wobble_interval="0.05mm",
+            pos=pos,
+        )
+        self.signal("updateelem_tree")
+
     @tree_submenu(_("Append special effect"))
     @tree_operation(
         _("Append wobble {type} {radius} @{interval}").format(type="Circle", radius="1mm", interval="0.1mm"), node_type="branch elems", help=""
