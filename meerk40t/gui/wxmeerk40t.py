@@ -968,6 +968,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         sizer.Add(btnsizer, 0, wx.EXPAND, 0)
         dlg.SetSizer(sizer)
         sizer.Fit(dlg)
+        dlg.CenterOnScreen()
         return dlg
 
     def _variable_summary(vars, indent: int = 0):

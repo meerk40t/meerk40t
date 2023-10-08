@@ -978,44 +978,6 @@ class MeerK40t(MWindow):
             },
         ]
         context.kernel.register_choices("preferences", choices)
-        choices = [
-            {
-                "attr": "update_check",
-                "object": context.root,
-                "default": 1,
-                "type": int,
-                "label": _("Action"),
-                "style": "option",
-                "display": (
-                    _("No, thank you"),
-                    _("Look for major releases"),
-                    _("Look for major+beta releases"),
-                ),
-                "choices": (0, 1, 2),
-                "tip": _("Check for available updates on startup."),
-                "page": "Options",
-                "section": "Check for updates on startup",
-            },
-            {
-                "attr": "update_frequency",
-                "object": context.root,
-                "default": 1,
-                "type": int,
-                "label": _("Frequency"),
-                "style": "option",
-                "display": (
-                    _("At every startup"),
-                    _("Once per day"),
-                    _("Once per week"),
-                ),
-                "choices": (0, 1, 2),
-                "tip": _("How often should MeerK40t look for new versions"),
-                "page": "Options",
-                "section": "Check for updates on startup",
-                "conditional": (context.root, "update_check", 1, 2),
-            },
-        ]
-        context.kernel.register_choices("preferences", choices)
 
         context.register(
             "function/open_property_window_for_node", self.open_property_window_for_node
