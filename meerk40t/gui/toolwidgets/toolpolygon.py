@@ -121,9 +121,9 @@ class PolygonTool(ToolWidget):
         self.scene.context.kernel.register(
             "button/secondarytool_polygon/tool_freehand",
             {
-                "label": "Freehand",
+                "label": _("Freehand"),
                 "icon": icons8_polygon_50,
-                "tip": "Draw a freehand polygon (f)",
+                "tip": _("Draw a freehand polygon (f)"),
                 "action": lambda v: self.set_designmode(0),
                 "size": icon_size,
                 "group": "polygon",
@@ -134,9 +134,9 @@ class PolygonTool(ToolWidget):
         self.scene.context.kernel.register(
             "button/secondarytool_polygon/tool_polygon",
             {
-                "label": "Regular",
+                "label": _("Regular"),
                 "icon": icon_polygon,
-                "tip": "Draw a regular polygon (r)",
+                "tip": _("Draw a regular polygon (r)"),
                 "action": lambda v: self.set_designmode(1),
                 "size": icon_size,
                 "group": "polygon",
@@ -147,9 +147,9 @@ class PolygonTool(ToolWidget):
         self.scene.context.kernel.register(
             "button/secondarytool_polygon/tool_star1",
             {
-                "label": "Star 1",
+                "label": _("Star 1"),
                 "icon": icon_regular_star,
-                "tip": "Draw a regular star (1)",
+                "tip": _("Draw a regular star (1)"),
                 "action": lambda v: self.set_designmode(2),
                 "size": icon_size,
                 "group": "polygon",
@@ -160,9 +160,9 @@ class PolygonTool(ToolWidget):
         self.scene.context.kernel.register(
             "button/secondarytool_polygon/tool_star2",
             {
-                "label": "Star 2",
+                "label": _("Star 2"),
                 "icon": icon_crossing_star,
-                "tip": "Draw a crossing star (2)",
+                "tip": _("Draw a crossing star (2)"),
                 "action": lambda v: self.set_designmode(3),
                 "size": icon_size,
                 "group": "polygon",

@@ -4199,12 +4199,6 @@ msgstr ""
 msgid "Optimization not found."
 msgstr "Keine Optimierungen gefunden."
 
-#: meerk40t/extra/updater.py:20
-msgid ""
-"A new {type} release of {name} v{version} is available from\n"
-"{url}"
-msgstr ""
-
 #: meerk40t/extra/updater.py:28
 msgid "Check whether a newer version is available"
 msgstr ""
@@ -6283,7 +6277,7 @@ msgid "Disable ToolTips"
 msgstr "Deaktiviere Tooltips"
 
 msgid "Disable tooltips over tree"
-msgstr "Keine Tooltips über Arbeitsbereich"
+msgstr "Keine Tooltips über Baumdiagramm"
 
 msgid "You can suppress the tooltips over operations and elements in the tree"
 msgstr ""
@@ -12393,7 +12387,7 @@ msgid "Hide Selection"
 msgstr "Auswahl verbergen"
 
 msgid "Hide Tree"
-msgstr "Baum ausblenden"
+msgstr "Baumdiagramm ausblenden"
 
 msgid "Do Not Refresh"
 msgstr "Nicht aktualisieren"
@@ -14542,20 +14536,20 @@ msgstr "Gerät"
 #~ "Prüft neben Standard-Versionen auch das"
 #~ " Vorhandensein von Vorabversionen (beta)"
 
-#~ msgid "Select all elements the selection rectangle touches."
-#~ msgstr "Wähle die Elemente aus, die die Auswahl berührt."
+msgid "Select all elements the selection rectangle touches."
+msgstr "Wähle die Elemente aus, die die Auswahl berührt."
 
-#~ msgid "Select all elements the selection rectangle crosses."
-#~ msgstr "Wähle die Elemente aus, die die Auswahl kreuzt."
+msgid "Select all elements the selection rectangle crosses."
+msgstr "Wähle die Elemente aus, die die Auswahl kreuzt."
 
-#~ msgid "Select all elements the selection rectangle encloses."
-#~ msgstr "Wähle die Elemente aus, die die Auswahl umschließt."
+msgid "Select all elements the selection rectangle encloses."
+msgstr "Wähle die Elemente aus, die die Auswahl umschließt."
 
-#~ msgid " Previously selected remain selected!"
-#~ msgstr " Die jetzige Auswahl bleibt erhalten!"
+msgid " Previously selected remain selected!"
+msgstr " Die jetzige Auswahl bleibt erhalten!"
 
-#~ msgid " Invert selection state of elements!"
-#~ msgstr " Der Status wird dabei umgekehrt!"
+msgid " Invert selection state of elements!"
+msgstr " Der Status wird dabei umgekehrt!"
 
 #~ msgid "This is not a valid length"
 #~ msgstr "Das ist keine gültige Längenangabe"
@@ -15283,6 +15277,12 @@ msgstr "Oberer/Unterer Einzug"
 msgid "Save the job"
 msgstr "Speichere den Laserjob"
 
+msgid "Undo"
+msgstr "Rückgängig"
+
+msgid "Redo"
+msgstr "Erneut"
+
 msgid "Undo last operation"
 msgstr "Mach letzte Operation rückgängig"
 
@@ -15320,7 +15320,7 @@ msgid ""
 "Active: Display a miniature representation of the element in the tree\n"
 "Inactive: Use a standard icon for the element type instead"
 msgstr ""
-"Aktiv: Zeigt im Arbeitsvorgangsbereich ein Miniatur-Bild des Elements an\n"
+"Aktiv: Zeigt im Baumdiagramm ein Miniatur-Bild des Elements an\n"
 "Inaktiv: Nutze ein Standard-Smybol für alle Elemente des selben Typs\n"
 "(weniger detailliert aber dafür deutlich weniger Ressourcen-fressend)"
 
@@ -15551,7 +15551,7 @@ msgid ""
 "that will be sent directly to the laser.\n"
 "Double-click to view."
 msgstr ""
-"Dies sind importierte oder generierte Binär-Daten,\"
+"Dies sind importierte oder generierte Binär-Daten,\n"
 "die unverändert zum Laser gesendet werden.\n"
 "Doppel-Klick um diese anzuzeigen."
 
@@ -15898,7 +15898,7 @@ msgid "Undo last action"
 msgstr "Letzte Aktion rückgängig machen"
 
 msgid "&Redo\tCtrl-Shift-Z"
-msgstr "Wiederherstellen\tCtrl-Shift-Z"
+msgstr "Erneut\tCtrl-Shift-Z"
 
 msgid "Revert last undo"
 msgstr "Letzte rückgängig gemachte Aktion erneut durchführen"
@@ -15996,21 +15996,23 @@ msgstr "Dektiviere alle Arbeitsabläufe des gleichen Typs"
 msgid "Check for Updates"
 msgstr "Prüfe auf Updates"
 
+msgid  "A new {type} release is available:"
+msgstr "Es ist eine neue {type}-Version verfügbar:"
+
 msgid ""
-"A new {type} release is available:\n"
 "Version: {name} v{version} ({label})\n"
 "Url: {url}"
 msgstr ""
-"Es ist eine {type} Version verfügbar:\n"
 "Version: {name} v{version} ({label})\n"
 "Url: {url}"
 
+msgid "You seem to have the latest version."
+msgstr "Dies scheint die aktuelle Version von MeerK40t zu sein."
+
 msgid ""
-"You seem to have the latest version.\n"
 "Latest version on github: {name} v{version} ({label})\n"
 "Url: {url}"
 msgstr ""
-"Dies scheint die aktuelle Version von {name} zu sein.\n"
 "Neueste Version auf github: {name} v{version} ({label})\n"
 "Url: {url}"
 
@@ -16122,6 +16124,18 @@ msgstr "Suche nach neuen Versionen"
 
 msgid "Look for major+beta releases"
 msgstr "Suche nach Versionen (inkl. Betas)"
+
+msgid "At every startup"
+msgstr "Bei jedem Programmstart"
+
+msgid "Once per day"
+msgstr "Einmal pro Tag"
+
+msgid "Once per week"
+msgstr "Einmal pro Woche"
+
+msgid "How often should MeerK40t look for new versions"
+msgstr "Wie oft soll MeerK40t nach neuen Versionen suchen"
 
 msgid "Button repeat-interval"
 msgstr "Intervall"
@@ -16312,9 +16326,6 @@ msgstr "Obere Begrenzung des Kerf-Test Intervall"
 
 msgid "Dimension of the to be created pattern"
 msgstr "Größe der zu erzeugenden Testformen"
-
-msgid "Horizontal gap between patterns"
-msgstr "Horizontaler Abstand zwischen den Testformen"
 
 msgid "Every {dist}"
 msgstr "Alle {dist}"
@@ -16811,3 +16822,352 @@ msgstr "Phase"
 #: ./meerk40t\lihuiyu\device.py:223
 msgid "Value for progressive or static phase type"
 msgstr "Wert für progressiven oder statischen Phasen-Typ"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:106
+msgid "Orientation:"
+msgstr "Orientierung:"
+
+#: ./meerk40t\gui\propertypanels\pointproperty.py:127
+msgid "Point Properties"
+msgstr "Punkt-Eigenschaften"
+
+#: ./meerk40t\gui\statusbarwidgets\defaultoperations.py:191
+msgid "Load materials/operations"
+msgstr "Lade Material-Bibliothek"
+
+#: ./meerk40t\gui\statusbarwidgets\shapepropwidget.py:127
+msgid "Set the join of lines to an arc-shape"
+msgstr "Verbindung zwischen Linien als Kurve"
+
+#: ./meerk40t\gui\statusbarwidgets\shapepropwidget.py:132
+msgid "Set the join of lines to a miter-clip-shape"
+msgstr "Verbindung zwischen Linien als Miter"
+
+#: ./meerk40t\gui\toolwidgets\toolnodeedit.py:75
+msgid "Symmetric"
+msgstr "Symmetrisch"
+
+#: ./meerk40t\gui\toolwidgets\toolnodeedit.py:308
+msgid "Smooth transit to adjacent segments"
+msgstr "Übergang zwischen benachbarten Segmenten glätten"
+
+#: ./meerk40t\gui\toolwidgets\toolnodeedit.py:316
+msgid "Convert all lines into smooth curves"
+msgstr "Alle Linien in geglättete Kurven umwandeln"
+
+#: ./meerk40t\gui\toolwidgets\toolnodeedit.py:333
+msgid "To Path"
+msgstr "In Pfad wandeln"
+
+#: ./meerk40t\gui\toolwidgets\toolnodeedit.py:1941
+msgid "Drag to change the curve shape (ctrl to affect the other side)"
+msgstr "Klicken & Ziehen um Form zu ändern (Mit Ctrl andere Seite)"
+
+#: ./meerk40t\gui\toolwidgets\toolparameter.py:253
+msgid "Pin"
+msgstr "Fixieren"
+
+#: ./meerk40t\gui\toolwidgets\toolparameter.py:519
+msgid "Pin the parameter section to the top of the screen"
+msgstr "Fixiere den Parameter-Bereich am oberen Bereich des Bildschirms"
+
+#: ./meerk40t\gui\toolwidgets\toolplacement.py:98
+msgid "Click to set the TL-corner of the job (Ctrl for BR, Shift for Center)"
+msgstr "Klicken, um ober linke Ecke des Jobs festzulegen (Ctrl: Unten Rechts, Shift: Zentrum)"
+
+#: ./meerk40t\gui\toolwidgets\toolpolygon.py:220
+msgid "Click on the first corner"
+msgstr "Klicken, um ersten Eckpunkt festzulegen"
+
+#: ./meerk40t\gui\propertypanels\operationpropertymain.py:716
+msgid "Inward"
+msgstr "Nach innen"
+
+#: ./meerk40t\gui\propertypanels\operationpropertymain.py:718
+msgid "Outward"
+msgstr "Nach außen"
+
+#: ./meerk40t\gui\propertypanels\operationpropertymain.py:579
+msgid "Power (ppi):"
+msgstr "Leistung (ppi):"
+
+#: ./meerk40t\gui\propertypanels\hatchproperty.py:56
+msgid "Loops"
+msgstr "Wiederholungen"
+
+#: ./meerk40t\gui\propertypanels\hatchproperty.py:100
+msgid "Angle Delta"
+msgstr "Winkel"
+
+#: ./meerk40t\gui\propertypanels\imageproperty.py:25
+msgid "Crop"
+msgstr "Zuschneiden"
+
+#: ./meerk40t\gui\propertypanels\imageproperty.py:395
+msgid "Apply {entry}"
+msgstr "{entry} anwenden"
+
+#: ./meerk40t\gui\propertypanels\imageproperty.py:571
+msgid "Delete item"
+msgstr "Eintrag löschen"
+
+#: ./meerk40t\gui\propertypanels\imageproperty.py:571
+msgid "Will delete the current entry"
+msgstr "Löschte den aktuellen Eintrag"
+
+#: ./meerk40t\gui\propertypanels\imageproperty.py:578
+msgid "Toggles enable-status of operation"
+msgstr "Schaltet den 'Aktiv'-Status um"
+
+#: ./meerk40t\gui\propertypanels\imageproperty.py:588
+msgid "Insert {op}"
+msgstr "{op} einfügen"
+
+#: ./meerk40t\gui\propertypanels\imageproperty.py:589
+msgid "Will insert this operation before the current entry"
+msgstr "Fügt diese Operation vor dem aktuellen Eintrag ein"
+
+#: ./meerk40t\gui\propertypanels\imageproperty.py:597
+msgid "Append {op}"
+msgstr "{op} anhängen"
+
+#: ./meerk40t\gui\propertypanels\imageproperty.py:598
+msgid "Will append this operation to the end of the list"
+msgstr "Hängt diese Operation ans Ende der Liste an"
+
+#: ./meerk40t\core\elements\elements.py:326
+msgid "Remove unused default operations"
+msgstr "Ungenutzte Abläufe entfernen"
+
+#: ./meerk40t\core\elements\elements.py:329
+msgid "If a default operation is no longer used it will be removed from the list of active operations"
+msgstr "Falls ein Arbeitsablauf nicht mehr verwendet wird, wird er aus der Liste des aktiven Abläufe entfernt"
+
+#: ./meerk40t\core\elements\elements.py:403
+msgid "Statusbar display"
+msgstr "Statusbar-Anzeige"
+
+#: ./meerk40t\core\elements\elements.py:406
+msgid "As in operations tree"
+msgstr "Wie im Baumdiagramm"
+
+#: ./meerk40t\core\elements\elements.py:407
+msgid "Group types together (CC EE RR II)"
+msgstr "Nach gleichen Arten (CC EE RR II)"
+
+#: ./meerk40t\core\elements\elements.py:408
+msgid "Matching (CERI CERI)"
+msgstr "Zusammenfügen (CC EE RR II)"
+
+#: ./meerk40t\core\elements\elements.py:413
+msgid "Choose if and how you want to group together / display the default operations at the bottom of the screen"
+msgstr "Festlegung, ob und wie die Bibliotheks-Arbeitsabläufe am untern Rand des Bildschirms zusammengefasst werden sollen"
+
+#: ./meerk40t\core\elements\element_treeops.py:1535
+msgid "New"
+msgstr "Neu"
+
+#: ./meerk40t\core\elements\element_treeops.py:2232
+msgid "Increase Wordlist-Reference"
+msgstr "Wortlisten-Verweis weiterschalten"
+
+#: ./meerk40t\core\elements\element_treeops.py:2237
+msgid "Adjusts the reference value for a wordlist, ie {name} to {name#+1}"
+msgstr "Passt den Verweis-Wert in der Wortliste an, d.h. {name} to {name#+1}"
+
+#: ./meerk40t\core\elements\element_treeops.py:2258
+msgid "Decrease Wordlist-Reference"
+msgstr "Wortlisten-Verweis zurückschalten"
+
+#: ./meerk40t\core\elements\element_treeops.py:2263
+msgid "Adjusts the reference value for a wordlist, ie {name#+3} to {name#+2}"
+msgstr "Passt den Verweis-Wert in der Wortliste an, d.h. {name#+3} to {name#+2}"
+
+#: ./meerk40t\core\elements\element_treeops.py:2528
+msgid "Create placement"
+msgstr "Jobstart festlegen"
+
+#: ./meerk40t\core\elements\element_treeops.py:2556
+msgid "Toggle Magnet-Lines"
+msgstr "Magnet-Linien umschalten"
+
+#: ./meerk40t\core\elements\element_treeops.py:2557
+msgid "Around border"
+msgstr "Um Rahmen"
+
+#: ./meerk40t\core\elements\element_treeops.py:2567
+msgid "At center"
+msgstr "Im Zentrum"
+
+#: ./meerk40t\extra\param_functions.py:1355
+msgid "Growth in %"
+msgstr "Wachstum in %"
+
+#: ./meerk40t\extra\param_functions.py:1356
+msgid "Start angle"
+msgstr "Start-Winkel"
+
+msgid "Horizontal gap"
+msgstr "Abstand horiz."
+
+msgid "Vertical gap"
+msgstr "Abstand vert."
+
+msgid "Columns"
+msgstr "Spalten"
+
+msgid "Rows"
+msgstr "Zeilen"
+
+msgid "Startpoint"
+msgstr "Startpunkt"
+
+msgid "End of base stem"
+msgstr "Ende des Stammzweigs"
+
+msgid "Iterations"
+msgstr "Iterationen"
+
+msgid "Branch length"
+msgstr "Zweiglänge"
+
+msgid "Major axis"
+msgstr "Hauptachse"
+
+msgid "Minor axis"
+msgstr "Nebenachse"
+
+msgid "Outer radius"
+msgstr "Äußerer Radius"
+
+msgid "Inner radius"
+msgstr "Innerer Radius"
+
+msgid "Corners"
+msgstr "Ecken"
+
+msgid "Alternation"
+msgstr "Alternierend"
+
+msgid "Density"
+msgstr "Dichte"
+
+#: ./meerk40t\gui\wxmmain.py:657
+msgid "Color entries in tree"
+msgstr "Farbige Textdarstellung im Baumdiagramm"
+
+#: ./meerk40t\gui\wxmmain.py:661
+msgid ""
+"Active: The tree entry will be displayed in the objects color\n"
+"Inactive: Standard Colors are used"
+msgstr ""
+"Aktiv: Einträge im Baumdiagramm werden in der Farbe des Objekts angezeigt.\n"
+"Inaktiv: Standard-Farben werden verwendet."
+
+#: ./meerk40t\gui\wxmmain.py:1061
+msgid "Parametric Edit"
+msgstr "Parameter-Bearbeitung"
+
+#: ./meerk40t\gui\wxmmain.py:1063
+msgid "Parametric edit of a shape"
+msgstr "Ändern von Parametern des Objektes"
+
+#: ./meerk40t\gui\propertypanels\attributes.py:945
+msgid "Ratio of X-Radius compared to width (in %)"
+msgstr "Verhältnis des X-Radius zur Breite (in %)"
+
+#: ./meerk40t\gui\propertypanels\attributes.py:955
+msgid "Ratio of Y-Radius compared to height (in %)"
+msgstr "Verhältnis des Y-Radius zur Höhe (in %)"
+
+#: ./meerk40t\gui\propertypanels\attributes.py:959
+msgid "Lock the radii of X- and Y-axis"
+msgstr "Radienverhältnis für X und Y sperren"
+
+#: ./meerk40t\gui\propertypanels\blobproperty.py:25
+msgid "Hexadecimal View"
+msgstr "Hexadezimal"
+
+#: ./meerk40t\gui\propertypanels\blobproperty.py:26
+msgid "Plain-Text"
+msgstr "Reiner Text"
+
+#: ./meerk40t\gui\propertypanels\blobproperty.py:64
+msgid "N/A"
+msgstr "n.v."
+
+#: ./meerk40t\gui\propertypanels\blobproperty.py:105
+msgid "Blob Properties"
+msgstr "Blob Eigenschaften"
+
+#: ./meerk40t\gui\propertypanels\groupproperties.py:30
+msgid "Elements:"
+msgstr "Elemente:"
+
+#: ./meerk40t\gui\propertypanels\groupproperties.py:55
+msgid "{count} elements"
+msgstr "{count} Elemente"
+
+#: ./meerk40t\gui\propertypanels\groupproperties.py:142
+msgid "Filename:"
+msgstr "Dateiname:"
+
+#: ./meerk40t\gui\propertypanels\groupproperties.py:144
+msgid "Path:"
+msgstr "Pfad:"
+
+#: ./meerk40t\gui\propertypanels\groupproperties.py:146
+msgid "Size:"
+msgstr "Größe:"
+
+#: ./meerk40t\gui\propertypanels\groupproperties.py:148
+msgid "Date:"
+msgstr "Datum:"
+
+#: ./meerk40t\gui\propertypanels\groupproperties.py:176
+msgid "File not found"
+msgstr "Datei nicht verfügbar"
+
+#: ./meerk40t\gui\propertypanels\groupproperties.py:186
+msgid "Created:"
+msgstr "Erzeugt:"
+
+#: ./meerk40t\gui\propertypanels\groupproperties.py:187
+msgid "Modified:"
+msgstr "Verändert:"
+
+#: ./meerk40t\gui\propertypanels\groupproperties.py:208
+msgid "File Properties"
+msgstr "Datei-Eigenschaften"
+
+msgid "Freehand"
+msgstr "Beliebig"
+
+msgid "Draw a freehand polygon (f)"
+msgstr "Zeichne ein beliebiges Vieleck (f)"
+
+msgid "Regular"
+msgstr "Gleichseitig"
+
+msgid "Draw a regular polygon (r)"
+msgstr "Zeichne ein gleichseitiges Vieleck (r)"
+
+msgid "Star 1"
+msgstr "Stern 1"
+
+msgid "Draw a regular star (1)"
+msgstr "Zeichne einen regulären Stern (1)"
+
+msgid "Star 2"
+msgstr "Stern 2"
+
+msgid "Draw a crossing star (2)"
+msgstr "Zeichne einen sich kreuzenden Stern (2)
+
+#: meerk40t/gui/wxmmain.py:1347 meerk40t/gui/wxmmain.py:1366
+msgid "Left click: Equal distances"
+msgstr "Links: Verteile Abstände"
+
+#: meerk40t/gui/wxmmain.py:1349 meerk40t/gui/wxmmain.py:1368
+msgid "Right click: Equal centers"
+msgstr "Rechts: Verteile Mittelpunkte"

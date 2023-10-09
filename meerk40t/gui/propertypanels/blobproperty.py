@@ -27,7 +27,7 @@ class BlobPropertyPanel(ScrolledPanel):
         self.option_view = wx.RadioBox(
             self,
             wx.ID_ANY,
-            label="View",
+            label=_("View"),
             choices=list(self.views),
             style=wx.RA_SPECIFY_COLS,
         )
