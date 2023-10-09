@@ -14992,7 +14992,8 @@ msgstr "Configurazione Moshiboard"
 #: meerk40t/newly/gui/gui.py:103 meerk40t/newly/gui/gui.py:108
 #: meerk40t/newly/gui/gui.py:113 meerk40t/newly/gui/gui.py:118
 msgid "File {index}"
-msgstr "File {indice}"
+msgstr "File {index}"
+
 #: meerk40t/newly/gui/gui.py:71
 msgid "Select active file to use for machine."
 msgstr "Seleziona il file attivo da utilizzare per la macchina."
@@ -17521,12 +17522,6 @@ msgid "Unknown fonttype {ext}"
 msgstr ""
 
 msgid "Inkscape executable at \"{path}\" is: {version}"
-msgstr ""
-
-msgid "A new {type} release is available:\nVersion: {name} v{version} ({label})\nUrl: {url}\nInfo: {info}"
-msgstr ""
-
-msgid "You seem to have the latest version.\nLatest version on github: {name} v{version} ({label})\nUrl: {url}\nInfo: {info}"
 msgstr ""
 
 msgid "Will translate incoming to device: {dev}"
