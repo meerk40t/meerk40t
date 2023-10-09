@@ -59,8 +59,7 @@ def plugin(kernel, lifecycle):
 
         UPDATE_MESSAGE_HEADER = _("A new {type} release is available:")
         UPDATE_MESSAGE_BODY = _(
-            "A new {type} release is available:\n"
-            + "Version: {name} v{version} ({label})\n"
+            "Version: {name} v{version} ({label})\n"
             + "Url: {url}\n"
             + "Info: {info}"
         )
