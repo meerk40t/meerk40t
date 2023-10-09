@@ -2070,22 +2070,24 @@ msgid "return paths around image"
 msgstr "返回围绕图像的路径"
 
 #: meerk40t/extra/updater.py:21
+msgid  "A new {type} release is available:"
+msgstr "有一个新的 {type} 发布可用:"
+
 msgid ""
-"A new {type} release is available:\n"
 "Version: {name} v{version} ({label})\n"
 "Url: {url}"
 msgstr ""
-"有一个新的 {type} 发布可用：\n"
 "版本：{name} v{version}（{label}）\n"
 "网址：{url}"
 
 #: meerk40t/extra/updater.py:26
+msgid "You seem to have the latest version."
+msgstr "您似乎已经有了最新版本。"
+
 msgid ""
-"You seem to have the latest version.\n"
 "Latest version on github: {name} v{version} ({label})\n"
 "Url: {url}"
 msgstr ""
-"您似乎已经有了最新版本。\n"
 "github 上的最新版本：{name} v{version}（{label}）\n"
 "网址：{url}"
 

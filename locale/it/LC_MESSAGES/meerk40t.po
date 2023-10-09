@@ -10,7 +10,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 23-04-21 06:37UTC\n"
 "PO-Revision-Date: 23-04-21 06:37UTC\n"
-"Last-Translator: tatarize\n"
+"Last-Translator: betaeta\n"
 "Language: it\n"
 "Language-Team: Italian\n"
 "Plural-Forms: nplurals=2; plural=n != 1\n"
@@ -2152,22 +2152,24 @@ msgid "return paths around image"
 msgstr "restituisci percorsi attorno all'immagine"
 
 #: meerk40t/extra/updater.py:21
+msgid "A new {type} release is available:"
+msgstr "È disponibile una nuova versione di {type}:"
+
 msgid ""
-"A new {type} release is available:\n"
 "Version: {name} v{version} ({label})\n"
 "Url: {url}"
 msgstr ""
-"È disponibile una nuova versione di {type}:\n"
 "Versione: {name} v{version} ({label})\n"
 "URL: {url}"
 
 #: meerk40t/extra/updater.py:26
+msgid "You seem to have the latest version."
+msgstr "Sembra che tu abbia l'ultima versione."
+
 msgid ""
-"You seem to have the latest version.\n"
 "Latest version on github: {name} v{version} ({label})\n"
 "Url: {url}"
 msgstr ""
-"Sembra che tu abbia l'ultima versione.\n"
 "Ultima versione su GitHub: {name} v{version} ({label})\n"
 "URL: {url}"
 
@@ -2844,7 +2846,7 @@ msgstr "Modalità Esperto"
 
 #: meerk40t/gui/alignment.py:1614
 msgid "Open alignment dialog with advanced options"
-msgstr "Apri la finestra di allineamento con opzioni avanzate"
+msgstr "Pannello opzioni avanzate di allineamento"
 
 #: meerk40t/gui/bufferview.py:25
 msgid "Could not find buffer.\n"
@@ -3102,11 +3104,11 @@ msgstr "Diminuisci la dimensione del carattere"
 
 #: meerk40t/gui/hersheymanager.py:139 meerk40t/gui/hersheymanager.py:291
 msgid "Fonts (double-click to use)"
-msgstr "Caratteri (doppio clic per utilizzare)"
+msgstr "Caratteri (doppio click per utilizzare)"
 
 #: meerk40t/gui/hersheymanager.py:145 meerk40t/gui/hersheymanager.py:297
 msgid "Select to preview the font, double-click to apply it"
-msgstr "Seleziona per visualizzare anteprima del carattere, doppio clic per applicarlo"
+msgstr "Seleziona per visualizzare anteprima del carattere, doppio click per applicarlo"
 
 #: meerk40t/gui/hersheymanager.py:285
 msgid "Show/Hide all fonts of type {info[0]}"
@@ -3383,7 +3385,7 @@ msgstr "Seleziona il dispositivo dall'elenco dei dispositivi configurati"
 
 #: meerk40t/gui/laserpanel.py:133
 msgid "Execute the Job"
-msgstr "Avvio"
+msgstr "Avvia lavorazione"
 
 #: meerk40t/grbl/gui/gui.py:52 meerk40t/gui/laserpanel.py:138
 #: meerk40t/gui/laserpanel.py:348 meerk40t/gui/spoolerpanel.py:104
@@ -3395,7 +3397,7 @@ msgstr "Pausa"
 
 #: meerk40t/gui/laserpanel.py:140 meerk40t/gui/spoolerpanel.py:105
 msgid "Pause/Resume the laser"
-msgstr "Metti in pausa/Riprendi il laser"
+msgstr "Metti in pausa/Riprendi il lavorazione"
 
 #: meerk40t/grbl/gui/gui.py:62 meerk40t/gui/laserpanel.py:147
 #: meerk40t/gui/propertypanels/operationpropertymain.py:83
@@ -3407,7 +3409,7 @@ msgstr "Arresto"
 
 #: meerk40t/gui/laserpanel.py:148 meerk40t/gui/spoolerpanel.py:108
 msgid "Stop the laser"
-msgstr "Arresta il laser"
+msgstr "Arresta lavorazione"
 
 #: meerk40t/gui/laserpanel.py:156
 msgid "Arm"
@@ -3415,7 +3417,7 @@ msgstr "Armamento"
 
 #: meerk40t/gui/laserpanel.py:157
 msgid "Arm the job for execution"
-msgstr "Arma il lavoro per l'esecuzione"
+msgstr "Arma il laser per l'esecuzione"
 
 #: meerk40t/gui/laserpanel.py:162
 msgid "Outline"
@@ -3563,7 +3565,7 @@ msgstr "Usa la posizione"
 #: meerk40t/gui/lasertoolpanel.py:161 meerk40t/gui/lasertoolpanel.py:214
 #: meerk40t/gui/lasertoolpanel.py:230 meerk40t/gui/lasertoolpanel.py:246
 msgid "Place the laser over the desired point and click..."
-msgstr "Posiziona il laser sul punto desiderato e fai clic..."
+msgstr "Posiziona il laser sul punto desiderato e fai click..."
 
 #: meerk40t/gui/lasertoolpanel.py:61 meerk40t/gui/lasertoolpanel.py:76
 #: meerk40t/gui/lasertoolpanel.py:91 meerk40t/gui/lasertoolpanel.py:150
@@ -3591,7 +3593,7 @@ msgid ""
 "recreate the circle for further processing."
 msgstr ""
 "Istruzione: posiziona il laser su tre punti sulla circonferenza del cerchio "
-"nel letto e conferma la posizione facendo clic sui pulsanti sottostanti.\n"
+"nel letto e conferma la posizione facendo click sui pulsanti sottostanti.\n"
 "MK troverà il centro per te e posizionerà il laser sopra di esso o "
 "ricostruirà il cerchio per ulteriori elaborazioni."
 
@@ -3631,7 +3633,7 @@ msgid ""
 "MK will create a rectangle for you for further processing."
 msgstr ""
 "Istruzione: posiziona il laser su un angolo del rettangolo circostante e "
-"conferma la posizione facendo clic sui pulsanti sottostanti. Quindi scegli "
+"conferma la posizione facendo click sui pulsanti sottostanti. Quindi scegli "
 "l'angolo opposto.\n"
 "MK creerà un rettangolo per te per ulteriori elaborazioni."
 
@@ -3671,7 +3673,7 @@ msgid ""
 "MK will create a square for you for further processing."
 msgstr ""
 "Istruzione: posiziona il laser su due punti di un lato di un quadrato sul "
-"letto e conferma la posizione facendo clic sui pulsanti sottostanti. "
+"letto e conferma la posizione facendo click sui pulsanti sottostanti. "
 "Quindi scegli un punto sull'altro lato dell'angolo.\n"
 "MK creerà un quadrato per te per ulteriori elaborazioni."
 
@@ -4101,7 +4103,7 @@ msgstr "Distanze"
 
 #: meerk40t/gui/navigationpanels.py:362
 msgid "(Right Mouseclick to lock/unlock the selection to the laserhead)"
-msgstr "(Clic destro del mouse per bloccare/sbloccare la selezione con la testa del laser)"
+msgstr "(Click destro del mouse per bloccare/sbloccare la selezione con la testa del laser)"
 
 #: meerk40t/gui/navigationpanels.py:366
 msgid "Align laser with the upper left corner of the selection"
@@ -4173,7 +4175,7 @@ msgstr "Sposta il laser nella direzione sinistra"
 
 #: meerk40t/gui/navigationpanels.py:767 meerk40t/gui/navigationpanels.py:927
 msgid "Send laser to home position (right click: to physical home)"
-msgstr "Manda il laser alla posizione di home (clic destro: per il home fisico)"
+msgstr "Manda il laser alla posizione di home (click destro: per il home fisico)"
 
 #: meerk40t/gui/navigationpanels.py:769
 msgid "Move laser in the right direction"
@@ -4215,8 +4217,8 @@ msgid ""
 "Left click to go to saved position\n"
 "Right click to save coordinates"
 msgstr ""
-"Clic sinistro per andare alla posizione salvata\n"
-"Clic destro per salvare le coordinate"
+"Click sinistro per andare alla posizione salvata\n"
+"Click destro per salvare le coordinate"
 
 #: meerk40t/gui/navigationpanels.py:996 meerk40t/gui/navigationpanels.py:1114
 msgid "Current: "
@@ -4228,7 +4230,7 @@ msgstr "Spostarsi nella posizione impostata"
 
 #: meerk40t/gui/navigationpanels.py:1021
 msgid "Right click to activate mouse-click mode to set position"
-msgstr "Clic destro per attivare la modalità di clic del mouse per impostare la posizione"
+msgstr "Click destro per attivare la modalità di click del mouse per impostare la posizione"
 
 #: meerk40t/gui/navigationpanels.py:1024
 msgid "Set X value for the Move To"
@@ -4240,7 +4242,7 @@ msgstr "Imposta il valore Y per lo Sposta in"
 
 #: meerk40t/gui/navigationpanels.py:1026
 msgid "Current laserhead position. Double-click to use."
-msgstr "Posizione attuale della testa laser. Doppio clic per utilizzare."
+msgstr "Posizione attuale della testa laser. Doppio click per utilizzare."
 
 #: meerk40t/gui/navigationpanels.py:1031
 msgid "Move Laser to:"
@@ -4286,39 +4288,39 @@ msgstr "Blocca il rapporto larghezza / altezza ai valori originali"
 #: meerk40t/gui/navigationpanels.py:1619
 #, python-format
 msgid "Scale Down by 5% / 50% on left / right click"
-msgstr "Riduci scala del 5% / 50% con clic sinistro / destro"
+msgstr "Riduci scala del 5% / 50% con click sinistro / destro"
 
 #: meerk40t/gui/navigationpanels.py:1622
 msgid "Translate Up by 1x / 10x Jog-Distance on left / right click"
-msgstr "Sposta verso l'alto di 1x / 10x Jog-Distance con clic sinistro / destro"
+msgstr "Sposta verso l'alto di 1x / 10x Jog-Distance con click sinistro / destro"
 
 #: meerk40t/gui/navigationpanels.py:1624
 #, python-format
 msgid "Scale Up by 5% / 50% on left / right click"
-msgstr "Ingrandisci scala del 5% / 50% con clic sinistro / destro"
+msgstr "Ingrandisci scala del 5% / 50% con click sinistro / destro"
 
 #: meerk40t/gui/navigationpanels.py:1626
 msgid "Translate Left by 1x / 10x Jog-Distance on left / right click"
-msgstr "Sposta a sinistra di 1x / 10x Jog-Distance con clic sinistro / destro"
+msgstr "Sposta a sinistra di 1x / 10x Jog-Distance con click sinistro / destro"
 
 #: meerk40t/gui/navigationpanels.py:1628
 msgid "Reset Matrix"
 msgstr "Reimposta matrice"
 #: meerk40t/gui/navigationpanels.py:1630
 msgid "Translate Right by 1x / 10x Jog-Distance on left / right click"
-msgstr "Sposta a destra di 1x / 10x Jog-Distance con clic sinistro / destro"
+msgstr "Sposta a destra di 1x / 10x Jog-Distance con click sinistro / destro"
 
 #: meerk40t/gui/navigationpanels.py:1633
 msgid "Rotate Counterclockwise by 5° / by 90° on left / right click"
-msgstr "Ruota in senso antiorario di 5° / di 90° con clic sinistro / destro"
+msgstr "Ruota in senso antiorario di 5° / di 90° con click sinistro / destro"
 
 #: meerk40t/gui/navigationpanels.py:1636
 msgid "Translate Down by 1x / 10x Jog-Distance on left / right click"
-msgstr "Sposta verso il basso di 1x / 10x Jog-Distance con clic sinistro / destro"
+msgstr "Sposta verso il basso di 1x / 10x Jog-Distance con click sinistro / destro"
 
 #: meerk40t/gui/navigationpanels.py:1639
 msgid "Rotate Clockwise by 5° / by 90° on left / right click"
-msgstr "Ruota in senso orario di 5° / di 90° con clic sinistro / destro"
+msgstr "Ruota in senso orario di 5° / di 90° con click sinistro / destro"
 
 #: meerk40t/gui/navigationpanels.py:1643
 #, python-format
@@ -4389,7 +4391,7 @@ msgstr "Distanza di Jog:"
 
 #: meerk40t/gui/navigationpanels.py:2105
 msgid "Opens Navigation Window"
-msgstr "Navigazione"
+msgstr "Pannello di navigazione"
 
 #: meerk40t/gui/notes.py:18 meerk40t/gui/notes.py:120 meerk40t/gui/notes.py:129
 msgid "Notes"
@@ -4461,7 +4463,7 @@ msgstr "Assegna anche tutti gli altri elementi dello stesso colore del tratto,"
 
 #: meerk40t/gui/opassignment.py:82
 msgid "respectively with the same fill-color if you right-click the button"
-msgstr "rispettivamente con lo stesso colore di riempimento se si fa clic destro sul pulsante"
+msgstr "rispettivamente con lo stesso colore di riempimento se si fa click destro sul pulsante"
 
 #: meerk40t/gui/opassignment.py:85
 #: meerk40t/gui/statusbarwidgets/opassignwidget.py:59
@@ -4479,7 +4481,7 @@ msgstr "Assegna gli elementi selezionati all'operazione."
 #: meerk40t/gui/opassignment.py:229
 #: meerk40t/gui/statusbarwidgets/opassignwidget.py:301
 msgid "Left click: consider stroke as main color, right click: use fill"
-msgstr "Clic sinistro: considera il tratto come colore principale, clic destro: usa il riempimento"
+msgstr "Click sinistro: considera il tratto come colore principale, click destro: usa il riempimento"
 
 #: meerk40t/gui/operation_info.py:30
 #: meerk40t/gui/propertypanels/imageproperty.py:411
@@ -4503,7 +4505,7 @@ msgstr "Tempo di esecuzione"
 
 #: meerk40t/gui/operation_info.py:51
 msgid "Right-Click for more options for ops and unassigned elements"
-msgstr "Clic destro per ulteriori opzioni per le operazioni e gli elementi non assegnati"
+msgstr "Click destro per ulteriori opzioni per le operazioni e gli elementi non assegnati"
 
 #: meerk40t/gui/operation_info.py:53
 msgid "Get Time Estimates"
@@ -5082,7 +5084,7 @@ msgstr "Simulazione"
 
 #: meerk40t/gui/simulation.py:2152
 msgid "Simulate the current laser job"
-msgstr "Simula il lavoro"
+msgstr "Simula lavoro"
 
 #: meerk40t/gui/snapoptions.py:17
 msgid "Snap-Options"
@@ -5248,7 +5250,7 @@ msgstr "Successivo"
 
 #: meerk40t/gui/wordlisteditor.py:54
 msgid "Wordlist: go to next page (right-click to next entry)"
-msgstr "Elenco delle parole: vai alla pagina successiva (clic destro per la voce successiva)"
+msgstr "Elenco delle parole: vai alla pagina successiva (click destro per la voce successiva)"
 
 #: meerk40t/gui/wordlisteditor.py:57 meerk40t/gui/wxmmain.py:1242
 msgid "Prev"
@@ -5256,7 +5258,7 @@ msgstr "Precedente"
 
 #: meerk40t/gui/wordlisteditor.py:60
 msgid "Wordlist: go to previous page (right-click to previous entry)"
-msgstr "Elenco delle parole: vai alla pagina precedente (clic destro per la voce precedente)"
+msgstr "Elenco delle parole: vai alla pagina precedente (click destro per la voce precedente)"
 
 #: meerk40t/gui/wordlisteditor.py:156
 msgid "Start Index for CSV-based data:"
@@ -5669,8 +5671,8 @@ msgid ""
 "(ctrl+click selects the largest) / Inactive: Single click selects the "
 "largest element  (ctrl+click the smallest)."
 msgstr ""
-"Attivo: Un singolo clic seleziona l'elemento più piccolo sotto il cursore "
-"(Ctrl+clic seleziona il più grande) / Inattivo: Un singolo clic seleziona l'elemento più grande (Ctrl+clic il più piccolo)."
+"Attivo: Un singolo click seleziona l'elemento più piccolo sotto il cursore "
+"(Ctrl+click seleziona il più grande) / Inattivo: Un singolo click seleziona l'elemento più grande (Ctrl+click il più piccolo)."
 
 #: meerk40t/gui/wxmmain.py:476
 msgid "Auto-select element after creation"
@@ -5714,7 +5716,7 @@ msgstr "Usa il menu degli strumenti nella scena"
 
 #: meerk40t/gui/wxmmain.py:599
 msgid "The scene-menu will appear if you right-click on the scene-background"
-msgstr "Il menu della scena apparirà se fai clic destro sullo sfondo della scena"
+msgstr "Il menu della scena apparirà se fai click destro sullo sfondo della scena"
 
 #: meerk40t/gui/wxmmain.py:611
 msgid "Process input while typing"
@@ -5775,7 +5777,7 @@ msgstr "Disegna"
 
 #: meerk40t/gui/wxmmain.py:728
 msgid "Add a free-drawing element"
-msgstr "Aggiungi un elemento di disegno libero"
+msgstr "Strumento matita"
 
 #: meerk40t/gui/wxmmain.py:739
 msgid "Ellipse"
@@ -5783,7 +5785,7 @@ msgstr "Ellisse"
 
 #: meerk40t/gui/wxmmain.py:741
 msgid "Add an ellipse element"
-msgstr "Aggiungi un elemento ellisse"
+msgstr "Strumento ellisse"
 
 #: meerk40t/gui/wxmmain.py:752
 msgid "Circle"
@@ -5791,7 +5793,7 @@ msgstr "Cerchio"
 
 #: meerk40t/gui/wxmmain.py:754
 msgid "Add a circle element"
-msgstr "Aggiungi un elemento cerchio"
+msgstr "Strumento cerchio"
 
 #: meerk40t/gui/wxmmain.py:765
 msgid "Polygon"
@@ -5804,10 +5806,10 @@ msgid ""
 "Double click: complete\n"
 "Right click: cancel"
 msgstr ""
-"Aggiungi un elemento poligono\n"
-"Clic sinistro: punto/linea\n"
-"Doppio clic: completa\n"
-"Clic destro: fine"
+"Strumento poligono\n"
+"Click sinistro: punto/linea\n"
+"Doppio click: completa\n"
+"Click destro: fine"
 
 #: meerk40t/gui/wxmmain.py:780
 msgid "Polyline"
@@ -5820,17 +5822,17 @@ msgid ""
 "Double click: complete\n"
 "Right click: cancel"
 msgstr ""
-"Aggiungi un elemento polilinea\n"
-"Clic sinistro: punto/linea\n"
-"Doppio clic: completa\n"
-"Clic destro: fine"
+"Strumento polilinea\n"
+"Click sinistro: punto/linea\n"
+"Doppio click: completa\n"
+"Click destro: fine"
 #: meerk40t/gui/wxmmain.py:795
 msgid "Rectangle"
 msgstr "Rettangolo"
 
 #: meerk40t/gui/wxmmain.py:797
 msgid "Add a rectangular element"
-msgstr "Aggiungi un elemento rettangolare"
+msgstr "Strumento rettangolo"
 
 #: meerk40t/gui/wxmmain.py:808
 msgid "Point"
@@ -5838,7 +5840,7 @@ msgstr "Punto"
 
 #: meerk40t/gui/wxmmain.py:810
 msgid "Add point to the scene"
-msgstr "Aggiungi un punto alla scena"
+msgstr "Strumento punto"
 
 #: meerk40t/gui/wxmmain.py:821 meerk40t/lihuiyu/gui/lhyaccelgui.py:190
 msgid "Vector"
@@ -5852,15 +5854,15 @@ msgid ""
 "Double click: complete\n"
 "Right click: end"
 msgstr ""
-"Aggiungi una forma\n"
-"Clic sinistro: punto/linea\n"
-"Clic e tieni premuto: curva\n"
+"Strumento forma\n"
+"Click sinistro: punto/linea\n"
+"Click e tieni premuto: curva\n"
 "Doppio clic: completa\n"
-"Clic destro: fine"
+"Click destro: fine"
 
 #: meerk40t/gui/wxmmain.py:838
 msgid "Add a text element"
-msgstr "Aggiungi un elemento di testo"
+msgstr "Strumento testo"
 
 #: meerk40t/gui/wxmmain.py:851 meerk40t/gui/wxmmain.py:2509
 msgid "Cut selected elements"
@@ -5884,7 +5886,7 @@ msgstr "Annulla"
 
 #: meerk40t/gui/wxmmain.py:923
 msgid "Undo last operation"
-msgstr "Annulla l'ultima operazione"
+msgstr "Annullare l'ultima operazione"
 
 #: meerk40t/gui/wxmmain.py:933
 msgid "Redo"
@@ -5892,7 +5894,7 @@ msgstr "Ripeti"
 
 #: meerk40t/gui/wxmmain.py:935
 msgid "Redo last operation"
-msgstr "Ripeti l'ultima operazione"
+msgstr "Riapplica l'ultima operazione annullata"
 
 #: meerk40t/gui/wxmmain.py:946
 msgid "Measure"
@@ -5906,9 +5908,9 @@ msgid ""
 "Right click: end"
 msgstr ""
 "Misura distanza / perimetro / area\n"
-"Clic sinistro: punto/linea\n"
-"Doppio clic: completa\n"
-"Clic destro: fine"
+"Click sinistro: punto/linea\n"
+"Doppio click: completa\n"
+"Click destro: fine"
 
 #: meerk40t/gui/wxmmain.py:969
 msgid "Node Edit"
@@ -5920,19 +5922,19 @@ msgstr "Strumento di modellazione"
 
 #: meerk40t/gui/wxmmain.py:984
 msgid "Flip Vertical"
-msgstr "Capovolgi verticalmente"
+msgstr "Rigletti verticalmente"
 
 #: meerk40t/gui/wxmmain.py:986
 msgid "Flip the selected element vertically"
-msgstr "Capovolgi l'elemento selezionato verticalmente"
+msgstr " Rifletti verticalmente"
 
 #: meerk40t/gui/wxmmain.py:998
 msgid "Mirror Horizontal"
-msgstr "Specchia orizzontalmente"
+msgstr "Rifletti orizzontalmente"
 
 #: meerk40t/gui/wxmmain.py:1000
 msgid "Mirror the selected element horizontally"
-msgstr "Specchia l'elemento selezionato orizzontalmente"
+msgstr "Rifletti orizzontalmente"
 
 #: meerk40t/gui/wxmmain.py:1012
 msgid "Rotate CW"
@@ -5940,7 +5942,7 @@ msgstr "Ruota in senso orario"
 
 #: meerk40t/gui/wxmmain.py:1014
 msgid "Rotate the selected element clockwise by 90 deg"
-msgstr "Ruota l'elemento selezionato di 90 gradi in senso orario"
+msgstr "Ruota di 90 gradi in senso orario"
 
 #: meerk40t/gui/wxmmain.py:1026
 msgid "Rotate CCW"
@@ -5948,14 +5950,14 @@ msgstr "Ruota in senso antiorario"
 
 #: meerk40t/gui/wxmmain.py:1028
 msgid "Rotate the selected element counterclockwise by 90 deg"
-msgstr "Ruota l'elemento selezionato di 90 gradi in senso antiorario"
+msgstr "Ruota di 90 gradi in senso antiorario"
 #: meerk40t/gui/wxmmain.py:1040
 msgid "Union"
 msgstr "Unione"
 
 #: meerk40t/gui/wxmmain.py:1042
 msgid "Create a union of the selected elements"
-msgstr "Crea un'unione degli elementi selezionati"
+msgstr "Salda in un unico elemento"
 
 #: meerk40t/gui/wxmmain.py:1054
 msgid "Difference"
@@ -5963,7 +5965,7 @@ msgstr "Differenza"
 
 #: meerk40t/gui/wxmmain.py:1056
 msgid "Create a difference of the selected elements"
-msgstr "Crea una differenza degli elementi selezionati"
+msgstr "Taglia la differenza"
 
 #: meerk40t/gui/wxmmain.py:1068
 msgid "Xor"
@@ -5971,7 +5973,7 @@ msgstr "Xor"
 
 #: meerk40t/gui/wxmmain.py:1070
 msgid "Create a xor of the selected elements"
-msgstr "Crea un xor degli elementi selezionati"
+msgstr "Unisci elementi in un singolo oggetto"
 
 #: meerk40t/gui/wxmmain.py:1082
 msgid "Intersection"
@@ -5979,7 +5981,7 @@ msgstr "Intersezione"
 
 #: meerk40t/gui/wxmmain.py:1084
 msgid "Create a intersection of the selected elements"
-msgstr "Crea un'intersezione degli elementi selezionati"
+msgstr "Interseca"
 
 #: meerk40t/gui/wxmmain.py:1139 meerk40t/gui/wxmribbon.py:1157
 msgid "Group"
@@ -5987,7 +5989,7 @@ msgstr "Raggruppa"
 
 #: meerk40t/gui/wxmmain.py:1141
 msgid "Group elements together"
-msgstr "Raggruppa insieme gli elementi"
+msgstr "Raggruppa elementi"
 
 #: meerk40t/gui/wxmmain.py:1184
 msgid "Ungroup"
@@ -5995,15 +5997,15 @@ msgstr "Separa"
 
 #: meerk40t/core/elements/element_treeops.py:125 meerk40t/gui/wxmmain.py:1186
 msgid "Ungroup elements"
-msgstr "Separa gli elementi"
+msgstr "Dividi elementi"
 
 #: meerk40t/gui/wxmmain.py:1198
 msgid "Align selected elements at the leftmost position (right click: of the bed)"
-msgstr "Allinea gli elementi selezionati alla posizione più a sinistra (clic destro: del piano)"
+msgstr "Allinea a Sn gli elementi fra loro o al bordo del piano (click destro)"
 
 #: meerk40t/gui/wxmmain.py:1227 meerk40t/gui/wxmmain.py:1244
 msgid " (right go to next entry)"
-msgstr " (clic destro vai all'entrata successiva)"
+msgstr " (click destro vai all'entrata successiva)"
 
 #: meerk40t/gui/wxmmain.py:1235
 msgid "Wordlist: go to next entry"
@@ -6011,7 +6013,7 @@ msgstr "Elenco delle parole: vai all'entrata successiva"
 
 #: meerk40t/gui/wxmmain.py:1235
 msgid " (right go to prev entry)"
-msgstr " (clic destro vai all'entrata precedente)"
+msgstr " (click destro vai all'entrata precedente)"
 
 #: meerk40t/gui/wxmmain.py:1244
 msgid "Wordlist: go to prev entry"
@@ -6021,15 +6023,15 @@ msgstr "Elenco delle parole: vai all'entrata precedente"
 msgid ""
 "Align selected elements at the rightmost position (right click: of the "
 "bed)"
-msgstr "Allinea gli elementi selezionati alla posizione più a destra (clic destro: del piano)"
+msgstr "Allinea a Dx gli elementi fra loro o al bordo del piano (click destro)"
 
 #: meerk40t/gui/wxmmain.py:1277
 msgid "Align selected elements at the topmost position (right click: of the bed)"
-msgstr "Allinea gli elementi selezionati alla posizione più in alto (clic destro: del piano)"
+msgstr "Allinea gli elementi alla posizione più in alto o al bordo del piano (click destro)"
 
 #: meerk40t/gui/wxmmain.py:1294
 msgid "Align selected elements at the lowest position (right click: of the bed)"
-msgstr "Allinea gli elementi selezionati alla posizione più in basso (clic destro: del piano)"
+msgstr "Allinea gli elementi alla posizione più in basso o al bordo del piano (click destro)"
 
 #: meerk40t/gui/wxmmain.py:1309
 msgid "Center X"
@@ -6039,7 +6041,7 @@ msgstr "Centra X"
 msgid ""
 "Align selected elements at their center horizontally (right click: of the"
 " bed)"
-msgstr "Allinea gli elementi selezionati al loro centro orizzontalmente (clic destro: del piano)"
+msgstr "Allinea al centro orizzontalmente o al centro del piano (click destro)"
 
 #: meerk40t/gui/wxmmain.py:1326
 msgid "Center Y"
@@ -6049,7 +6051,7 @@ msgstr "Centra Y"
 msgid ""
 "Align selected elements at their center vertically (right click: of the "
 "bed)"
-msgstr "Allinea gli elementi selezionati al loro centro verticalmente (clic destro: del piano)"
+msgstr "Allinea al centro verticalmente o al centro del piano (click destro)"
 
 #: meerk40t/gui/wxmmain.py:1343
 msgid "Distr. Hor."
@@ -6061,11 +6063,11 @@ msgstr "Distribuisci spazio orizzontalmente"
 
 #: meerk40t/gui/wxmmain.py:1347 meerk40t/gui/wxmmain.py:1366
 msgid "Left click: Equal distances"
-msgstr "Clic sinistro: distanze uguali"
+msgstr "Click sinistro: Stessa distanza"
 
 #: meerk40t/gui/wxmmain.py:1349 meerk40t/gui/wxmmain.py:1368
 msgid "Right click: Equal centers"
-msgstr "Clic destro: centri uguali"
+msgstr "Click destro: Stesso interasse"
 #: meerk40t/gui/wxmmain.py:1362
 msgid "Distr. Vert."
 msgstr "Distr. Vert."
@@ -6353,7 +6355,7 @@ msgstr "Elimina gli elementi selezionati"
 #: meerk40t/gui/propertypanels/propertywindow.py:19
 #: meerk40t/gui/wxmmain.py:2588 meerk40t/gui/wxmribbon.py:1181
 msgid "Properties"
-msgstr "Proprietà"
+msgstr "Proprietà elemento"
 
 #: meerk40t/gui/wxmmain.py:2589
 msgid "Edit the elements properties"
@@ -6862,7 +6864,7 @@ msgstr "Testo Vettoriale"
 
 #: meerk40t/gui/wxmscene.py:199
 msgid "Add a vector text element"
-msgstr "Aggiungi un elemento di testo vettoriale"
+msgstr "Strumento testo vettoriale"
 
 #: meerk40t/gui/wxmscene.py:210
 msgid "Ref. Obj."
@@ -7046,7 +7048,7 @@ msgid ""
 msgstr ""
 "Questi sono dati binari importati o generati\n"
 "che verranno inviati direttamente al laser.\n"
-"Fai doppio clic per visualizzarli."
+"Fai doppio click per visualizzarli."
 
 #: meerk40t/gui/wxmtree.py:1629
 msgid ""
@@ -9430,7 +9432,7 @@ msgstr "Cerniera"
 
 #: meerk40t/tools/livinghinges.py:1028
 msgid "Fill area with a living hinge pattern"
-msgstr "Riempi l'area con un modello di cerniera vivente"
+msgstr "Strumento pattern di piegatura"
 
 #: meerk40t/balormk/gui/balorconfig.py:21
 msgid "Balor-Configuration"
@@ -10932,7 +10934,7 @@ msgid "Run the given blob on the current device"
 msgstr "Esegui il blob dato sul dispositivo corrente"
 #: meerk40t/core/elements/element_treeops.py:1208
 msgid "Convert to Path"
-msgstr "Converti in Percorso"
+msgstr "Converti in curve"
 
 #: meerk40t/core/elements/element_treeops.py:1224
 #: meerk40t/core/elements/element_treeops.py:1229
@@ -13989,11 +13991,11 @@ msgstr "Voci del Font Utilizzato in Precedenza"
 
 #: meerk40t/gui/propertypanels/textproperty.py:151
 msgid "Double click a variable to add it to the text"
-msgstr "Fai doppio clic su una variabile per aggiungerla al testo"
+msgstr "Fai doppio click su una variabile per aggiungerla al testo"
 
 #: meerk40t/gui/propertypanels/textproperty.py:155
 msgid "Available Variables (double click to use)"
-msgstr "Variabili Disponibili (doppio clic per usare)"
+msgstr "Variabili Disponibili (doppio click per usare)"
 
 #: meerk40t/gui/propertypanels/textproperty.py:269
 msgid " Translate Variables"
@@ -14244,7 +14246,7 @@ msgid ""
 "if right-click"
 msgstr ""
 "Assegna anche tutti gli altri elementi con lo stesso colore di contorno "
-"(colore di riempimento se si fa clic destro"
+"(colore di riempimento se si fa click destro"
 
 #: meerk40t/gui/statusbarwidgets/selectionwidget.py:24
 msgid "Resize"
@@ -14309,11 +14311,11 @@ msgid "Set the fillstyle to even-odd (alternating areas)"
 msgstr "Imposta lo stile di riempimento a even-odd (aree alternate)"
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:45
 msgid "Clear stroke-color (right click clear fill color)"
-msgstr "Cancella il colore del contorno (clic destro per cancellare il colore di riempimento)"
+msgstr "Cancella il colore del contorno (click destro per cancellare il colore di riempimento)"
 
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:48
 msgid "Set stroke-color (right click set fill color)"
-msgstr "Imposta il colore del contorno (clic destro per impostare il colore di riempimento)"
+msgstr "Imposta il colore del contorno (click destro per impostare il colore di riempimento)"
 
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:118
 msgid "Stroke:"
@@ -14339,7 +14341,7 @@ msgstr "Perimetro"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:154
 msgid "Insert point before"
-msgstr "Inserisci un punto prima"
+msgstr "Aggiungi un nodo prima"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:156
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:408
@@ -14348,7 +14350,7 @@ msgstr "Inserisci"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:163
 msgid "Append point at end"
-msgstr "Aggiungi un punto alla fine"
+msgstr "Aggiungi un nodo alla fine"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:165
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:409
@@ -14357,11 +14359,11 @@ msgstr "Aggiungi"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:172
 msgid "Delete point"
-msgstr "Elimina il punto"
+msgstr "Elimina nodo"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:181
 msgid "Make segment a line"
-msgstr "Rendi il segmento una linea"
+msgstr "Converti in linea"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:183
 msgid "> Line"
@@ -14369,7 +14371,7 @@ msgstr "> Linea"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:190
 msgid "Make segment a curve"
-msgstr "Rendi il segmento una curva"
+msgstr "Converti in curva"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:192
 msgid "> Curve"
@@ -14377,7 +14379,7 @@ msgstr "> Curva"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:199
 msgid "Make segment symmetrical"
-msgstr "Rendi il segmento simmetrico"
+msgstr "Nodo simmetrico"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:201
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:407
@@ -14386,7 +14388,7 @@ msgstr "Simmetrico"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:208
 msgid "Join two segments"
-msgstr "Unisci due segmenti"
+msgstr "Unisci nodi"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:217
 msgid "Break segment apart"
@@ -14415,7 +14417,7 @@ msgstr "Molto liscio"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:244
 msgid "Toggle closed status"
-msgstr "Cambia lo stato chiuso"
+msgstr "Chiudi curva"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:253
 msgid "Convert polyline to a path element"
@@ -17112,10 +17114,6 @@ msgstr "Proprietà degli operazioni/elementi"
 #~ msgid "Searching: {path} -- Result: Fail"
 #~ msgstr ""
 
-#~ msgid ""
-#~ "A new {type} release of {name} v{version} is available from\n"
-#~ "{url}"
-#~ msgstr ""
 
 #~ msgid "Check whether a newer version is available"
 #~ msgstr ""
@@ -17785,6 +17783,10 @@ msgstr "Cancella oggetto selezionato"
 
 msgid "Measure distance / perimeter / area\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
 msgstr ""
+"Strumento di misura distanza/perimetro/area\n"
+"Click sinistro: punto/linea\n"
+"Doppio click: completa\n"
+"Click destro: fine"
 
 msgid "control various panes for main window"
 msgstr ""

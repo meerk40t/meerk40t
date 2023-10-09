@@ -2091,15 +2091,19 @@ msgid "return paths around image"
 msgstr ""
 
 #: meerk40t/extra/updater.py:21
+msgid  "A new {type} release is available:"
+msgstr ""
+
 msgid ""
-"A new {type} release is available:\n"
 "Version: {name} v{version} ({label})\n"
 "Url: {url}"
 msgstr ""
 
 #: meerk40t/extra/updater.py:26
+msgid "You seem to have the latest version."
+msgstr ""
+
 msgid ""
-"You seem to have the latest version.\n"
 "Latest version on github: {name} v{version} ({label})\n"
 "Url: {url}"
 msgstr ""

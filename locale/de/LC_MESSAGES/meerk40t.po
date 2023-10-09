@@ -4199,12 +4199,6 @@ msgstr ""
 msgid "Optimization not found."
 msgstr "Keine Optimierungen gefunden."
 
-#: meerk40t/extra/updater.py:20
-msgid ""
-"A new {type} release of {name} v{version} is available from\n"
-"{url}"
-msgstr ""
-
 #: meerk40t/extra/updater.py:28
 msgid "Check whether a newer version is available"
 msgstr ""
@@ -6283,7 +6277,7 @@ msgid "Disable ToolTips"
 msgstr "Deaktiviere Tooltips"
 
 msgid "Disable tooltips over tree"
-msgstr "Keine Tooltips über Arbeitsbereich"
+msgstr "Keine Tooltips über Baumdiagramm"
 
 msgid "You can suppress the tooltips over operations and elements in the tree"
 msgstr ""
@@ -12390,7 +12384,7 @@ msgid "Hide Selection"
 msgstr "Auswahl verbergen"
 
 msgid "Hide Tree"
-msgstr "Baum ausblenden"
+msgstr "Baumdiagramm ausblenden"
 
 msgid "Do Not Refresh"
 msgstr "Nicht aktualisieren"
@@ -14539,20 +14533,20 @@ msgstr "Gerät"
 #~ "Prüft neben Standard-Versionen auch das"
 #~ " Vorhandensein von Vorabversionen (beta)"
 
-#~ msgid "Select all elements the selection rectangle touches."
-#~ msgstr "Wähle die Elemente aus, die die Auswahl berührt."
+msgid "Select all elements the selection rectangle touches."
+msgstr "Wähle die Elemente aus, die die Auswahl berührt."
 
-#~ msgid "Select all elements the selection rectangle crosses."
-#~ msgstr "Wähle die Elemente aus, die die Auswahl kreuzt."
+msgid "Select all elements the selection rectangle crosses."
+msgstr "Wähle die Elemente aus, die die Auswahl kreuzt."
 
-#~ msgid "Select all elements the selection rectangle encloses."
-#~ msgstr "Wähle die Elemente aus, die die Auswahl umschließt."
+msgid "Select all elements the selection rectangle encloses."
+msgstr "Wähle die Elemente aus, die die Auswahl umschließt."
 
-#~ msgid " Previously selected remain selected!"
-#~ msgstr " Die jetzige Auswahl bleibt erhalten!"
+msgid " Previously selected remain selected!"
+msgstr " Die jetzige Auswahl bleibt erhalten!"
 
-#~ msgid " Invert selection state of elements!"
-#~ msgstr " Der Status wird dabei umgekehrt!"
+msgid " Invert selection state of elements!"
+msgstr " Der Status wird dabei umgekehrt!"
 
 #~ msgid "This is not a valid length"
 #~ msgstr "Das ist keine gültige Längenangabe"
@@ -15280,6 +15274,12 @@ msgstr "Oberer/Unterer Einzug"
 msgid "Save the job"
 msgstr "Speichere den Laserjob"
 
+msgid "Undo"
+msgstr "Rückgängig"
+
+msgid "Redo"
+msgstr "Erneut"
+
 msgid "Undo last operation"
 msgstr "Mach letzte Operation rückgängig"
 
@@ -15317,7 +15317,7 @@ msgid ""
 "Active: Display a miniature representation of the element in the tree\n"
 "Inactive: Use a standard icon for the element type instead"
 msgstr ""
-"Aktiv: Zeigt im Arbeitsvorgangsbereich ein Miniatur-Bild des Elements an\n"
+"Aktiv: Zeigt im Baumdiagramm ein Miniatur-Bild des Elements an\n"
 "Inaktiv: Nutze ein Standard-Smybol für alle Elemente des selben Typs\n"
 "(weniger detailliert aber dafür deutlich weniger Ressourcen-fressend)"
 
@@ -15548,7 +15548,7 @@ msgid ""
 "that will be sent directly to the laser.\n"
 "Double-click to view."
 msgstr ""
-"Dies sind importierte oder generierte Binär-Daten,\"
+"Dies sind importierte oder generierte Binär-Daten,\n"
 "die unverändert zum Laser gesendet werden.\n"
 "Doppel-Klick um diese anzuzeigen."
 
@@ -15895,7 +15895,7 @@ msgid "Undo last action"
 msgstr "Letzte Aktion rückgängig machen"
 
 msgid "&Redo\tCtrl-Shift-Z"
-msgstr "Wiederherstellen\tCtrl-Shift-Z"
+msgstr "Erneut\tCtrl-Shift-Z"
 
 msgid "Revert last undo"
 msgstr "Letzte rückgängig gemachte Aktion erneut durchführen"
@@ -15993,21 +15993,23 @@ msgstr "Dektiviere alle Arbeitsabläufe des gleichen Typs"
 msgid "Check for Updates"
 msgstr "Prüfe auf Updates"
 
+msgid  "A new {type} release is available:"
+msgstr "Es ist eine neue {type}-Version verfügbar:"
+
 msgid ""
-"A new {type} release is available:\n"
 "Version: {name} v{version} ({label})\n"
 "Url: {url}"
 msgstr ""
-"Es ist eine {type} Version verfügbar:\n"
 "Version: {name} v{version} ({label})\n"
 "Url: {url}"
 
+msgid "You seem to have the latest version."
+msgstr "Dies scheint die aktuelle Version von MeerK40t zu sein."
+
 msgid ""
-"You seem to have the latest version.\n"
 "Latest version on github: {name} v{version} ({label})\n"
 "Url: {url}"
 msgstr ""
-"Dies scheint die aktuelle Version von {name} zu sein.\n"
 "Neueste Version auf github: {name} v{version} ({label})\n"
 "Url: {url}"
 
@@ -16119,6 +16121,18 @@ msgstr "Suche nach neuen Versionen"
 
 msgid "Look for major+beta releases"
 msgstr "Suche nach Versionen (inkl. Betas)"
+
+msgid "At every startup"
+msgstr "Bei jedem Programmstart"
+
+msgid "Once per day"
+msgstr "Einmal pro Tag"
+
+msgid "Once per week"
+msgstr "Einmal pro Woche"
+
+msgid "How often should MeerK40t look for new versions"
+msgstr "Wie oft soll MeerK40t nach neuen Versionen suchen"
 
 msgid "Button repeat-interval"
 msgstr "Intervall"
@@ -16932,7 +16946,7 @@ msgstr "Statusbar-Anzeige"
 
 #: ./meerk40t\core\elements\elements.py:406
 msgid "As in operations tree"
-msgstr "Wie im Arbeitsablauf-Baum"
+msgstr "Wie im Baumdiagramm"
 
 #: ./meerk40t\core\elements\elements.py:407
 msgid "Group types together (CC EE RR II)"
@@ -17034,3 +17048,115 @@ msgstr "Alternierend"
 
 msgid "Density"
 msgstr "Dichte"
+
+#: ./meerk40t\gui\wxmmain.py:657
+msgid "Color entries in tree"
+msgstr "Farbige Textdarstellung im Baumdiagramm"
+
+#: ./meerk40t\gui\wxmmain.py:661
+msgid ""
+"Active: The tree entry will be displayed in the objects color\n"
+"Inactive: Standard Colors are used"
+msgstr ""
+"Aktiv: Einträge im Baumdiagramm werden in der Farbe des Objekts angezeigt.\n"
+"Inaktiv: Standard-Farben werden verwendet."
+
+#: ./meerk40t\gui\wxmmain.py:1061
+msgid "Parametric Edit"
+msgstr "Parameter-Bearbeitung"
+
+#: ./meerk40t\gui\wxmmain.py:1063
+msgid "Parametric edit of a shape"
+msgstr "Ändern von Parametern des Objektes"
+
+#: ./meerk40t\gui\propertypanels\attributes.py:945
+msgid "Ratio of X-Radius compared to width (in %)"
+msgstr "Verhältnis des X-Radius zur Breite (in %)"
+
+#: ./meerk40t\gui\propertypanels\attributes.py:955
+msgid "Ratio of Y-Radius compared to height (in %)"
+msgstr "Verhältnis des Y-Radius zur Höhe (in %)"
+
+#: ./meerk40t\gui\propertypanels\attributes.py:959
+msgid "Lock the radii of X- and Y-axis"
+msgstr "Radienverhältnis für X und Y sperren"
+
+#: ./meerk40t\gui\propertypanels\blobproperty.py:25
+msgid "Hexadecimal View"
+msgstr "Hexadezimal"
+
+#: ./meerk40t\gui\propertypanels\blobproperty.py:26
+msgid "Plain-Text"
+msgstr "Reiner Text"
+
+#: ./meerk40t\gui\propertypanels\blobproperty.py:64
+msgid "N/A"
+msgstr "n.v."
+
+#: ./meerk40t\gui\propertypanels\blobproperty.py:105
+msgid "Blob Properties"
+msgstr "Blob Eigenschaften"
+
+#: ./meerk40t\gui\propertypanels\groupproperties.py:30
+msgid "Elements:"
+msgstr "Elemente:"
+
+#: ./meerk40t\gui\propertypanels\groupproperties.py:55
+msgid "{count} elements"
+msgstr "{count} Elemente"
+
+#: ./meerk40t\gui\propertypanels\groupproperties.py:142
+msgid "Filename:"
+msgstr "Dateiname:"
+
+#: ./meerk40t\gui\propertypanels\groupproperties.py:144
+msgid "Path:"
+msgstr "Pfad:"
+
+#: ./meerk40t\gui\propertypanels\groupproperties.py:146
+msgid "Size:"
+msgstr "Größe:"
+
+#: ./meerk40t\gui\propertypanels\groupproperties.py:148
+msgid "Date:"
+msgstr "Datum:"
+
+#: ./meerk40t\gui\propertypanels\groupproperties.py:176
+msgid "File not found"
+msgstr "Datei nicht verfügbar"
+
+#: ./meerk40t\gui\propertypanels\groupproperties.py:186
+msgid "Created:"
+msgstr "Erzeugt:"
+
+#: ./meerk40t\gui\propertypanels\groupproperties.py:187
+msgid "Modified:"
+msgstr "Verändert:"
+
+#: ./meerk40t\gui\propertypanels\groupproperties.py:208
+msgid "File Properties"
+msgstr "Datei-Eigenschaften"
+
+msgid "Freehand"
+msgstr "Beliebig"
+
+msgid "Draw a freehand polygon (f)"
+msgstr "Zeichne ein beliebiges Vieleck (f)"
+
+msgid "Regular"
+msgstr "Gleichseitig"
+
+msgid "Draw a regular polygon (r)"
+msgstr "Zeichne ein gleichseitiges Vieleck (r)"
+
+msgid "Star 1"
+msgstr "Stern 1"
+
+msgid "Draw a regular star (1)"
+msgstr "Zeichne einen regulären Stern (1)"
+
+msgid "Star 2"
+msgstr "Stern 2"
+
+msgid "Draw a crossing star (2)"
+msgstr "Zeichne einen sich kreuzenden Stern (2)
