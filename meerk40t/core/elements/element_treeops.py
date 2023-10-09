@@ -1765,7 +1765,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Append wobble {type} {radius} @{interval}").format(type="Circle", radius="0.5mm", interval="0.05mm"), node_type="branch elems", help=""
     )
-    def append_element_effect_wobble_c1(
+    def append_element_effect_wobble_c05(
         node, node_type="branch elems", pos=None, **kwargs
     ):
         self.elem_branch.add(
