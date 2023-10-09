@@ -17160,3 +17160,11 @@ msgstr "Stern 2"
 
 msgid "Draw a crossing star (2)"
 msgstr "Zeichne einen sich kreuzenden Stern (2)
+
+#: meerk40t/gui/wxmmain.py:1347 meerk40t/gui/wxmmain.py:1366
+msgid "Left click: Equal distances"
+msgstr "Links: Verteile Abstände"
+
+#: meerk40t/gui/wxmmain.py:1349 meerk40t/gui/wxmmain.py:1368
+msgid "Right click: Equal centers"
+msgstr "Rechts: Verteile Mittelpunkte"
