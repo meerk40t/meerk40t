@@ -10,6 +10,44 @@ from urllib.request import Request, urlopen
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
         _ = kernel.translation
+        choices = [
+            {
+                "attr": "update_check",
+                "object": kernel.root,
+                "default": 1,
+                "type": int,
+                "label": _("Action"),
+                "style": "option",
+                "display": (
+                    _("No, thank you"),
+                    _("Look for major releases"),
+                    _("Look for major+beta releases"),
+                ),
+                "choices": (0, 1, 2),
+                "tip": _("Check for available updates on startup."),
+                "page": "Options",
+                "section": "Check for updates on startup",
+            },
+            {
+                "attr": "update_frequency",
+                "object": kernel.root,
+                "default": 1,
+                "type": int,
+                "label": _("Frequency"),
+                "style": "option",
+                "display": (
+                    _("At every startup"),
+                    _("Once per day"),
+                    _("Once per week"),
+                ),
+                "choices": (0, 1, 2),
+                "tip": _("How often should MeerK40t look for new versions"),
+                "page": "Options",
+                "section": "Check for updates on startup",
+                "conditional": (kernel.root, "update_check", 1, 2),
+            },
+        ]
+        kernel.register_choices("preferences", choices)
 
         # https://docs.github.com/en/rest/reference/repos#get-the-latest-release
         GITHUB_LATEST = "https://api.github.com/repos/meerk40t/meerk40t/releases/latest"
@@ -19,14 +57,15 @@ def plugin(kernel, lifecycle):
         )
         GITHUB_HEADER = ("Accept", "application/vnd.github.v3+json")
 
-        UPDATE_MESSAGE = _(
+        UPDATE_MESSAGE_HEADER = _("A new {type} release is available:")
+        UPDATE_MESSAGE_BODY = _(
             "A new {type} release is available:\n"
             + "Version: {name} v{version} ({label})\n"
             + "Url: {url}\n"
             + "Info: {info}"
         )
-        NO_UPDATE_MESSAGE = _(
-            "You seem to have the latest version.\n"
+        NO_UPDATE_MESSAGE_HEADER = _("You seem to have the latest version.")
+        NO_UPDATE_MESSAGE_BODY = _(
             "Latest version on github: {name} v{version} ({label})\n"
             + "Url: {url}\n"
             + "Info: {info}"
@@ -269,11 +308,14 @@ def plugin(kernel, lifecycle):
                         type_newest = " (beta)"
                         info_newest = info_beta
                         # print ("Beta is newer than full")
-                    newest_message = ""
+                    newest_message_header = ""
+                    newest_message_body = ""
                     if newer_version(version_full, version_current):
                         something = True
-                        message = UPDATE_MESSAGE.format(
+                        message_header = UPDATE_MESSAGE_HEADER.format(
                             type="full",
+                        )
+                        message_body = UPDATE_MESSAGE_BODY.format(
                             name=kernel.name,
                             version=tag_full,
                             label=label_full,
@@ -281,13 +323,16 @@ def plugin(kernel, lifecycle):
                             info=info_full,
                         )
                         if verbosity > 0:
-                            channel(message)
-                        newest_message = message
+                            channel(message_header + "\n" + message_body)
+                        newest_message_header = message_header
+                        newest_message_body = message_body
 
                     if newer_version(version_beta, version_current):
                         something = True
-                        message = UPDATE_MESSAGE.format(
-                            type="beta",
+                        message_header = UPDATE_MESSAGE_HEADER.format(
+                            type="beta"
+                        )
+                        message_body = UPDATE_MESSAGE_BODY.format(
                             name=kernel.name,
                             version=tag_beta,
                             label=label_beta,
@@ -295,22 +340,77 @@ def plugin(kernel, lifecycle):
                             info=info_beta,
                         )
                         if verbosity > 0:
-                            channel(message)
-                        newest_message = message
+                            channel(message_header + "\n" + message_body)
+                        newest_message_header = message_header
+                        newest_message_body = message_body
+                    has_wx = False
+                    try:
+                        import wx
+                        from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
+                        has_wx = True
+                    except ImportError:
+                        pass
+                    action = False
+
+                    def get_response(header, content, footer):
+                        if has_wx:
+                            # Very simple panel
+                            dlg = wx.Dialog(
+                                None, wx.ID_ANY,
+                                title=_("Update-Info"),
+                                size=wx.DefaultSize,
+                                pos=wx.DefaultPosition,
+                                style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
+                            )
+                            # contents
+                            sizer = wx.BoxSizer(wx.VERTICAL)
+
+                            label = wx.StaticText(dlg, wx.ID_ANY, header)
+                            sizer.Add(label, 0, wx.EXPAND, 0)
+                            info = wx.TextCtrl(dlg, wx.ID_ANY, style = wx.TE_READONLY|wx.TE_MULTILINE)
+                            info.SetValue(content)
+                            sizer.Add(info, 1, wx.EXPAND, 0)
+                            label = wx.StaticText(dlg, wx.ID_ANY, footer)
+                            sizer.Add(label, 0, wx.EXPAND, 0)
+                            btnsizer = wx.StdDialogButtonSizer()
+                            btn = wx.Button(dlg, wx.ID_OK)
+                            btn.SetDefault()
+                            btnsizer.AddButton(btn)
+                            btn = wx.Button(dlg, wx.ID_CANCEL)
+                            btnsizer.AddButton(btn)
+                            btnsizer.Realize()
+                            sizer.Add(btnsizer, 0, wx.EXPAND, 0)
+                            panel = ChoicePropertyPanel(
+                                dlg, wx.ID_ANY, context=context, choices=choices
+                            )
+                            sizer.Add(panel, 1, wx.EXPAND, 0)
+                            dlg.SetSizer(sizer)
+                            sizer.Fit(dlg)
+                            dlg.SetSize(wx.Size(620, 400))
+                            dlg.CenterOnScreen()
+                            answer = dlg.ShowModal()
+                            dlg.Destroy()
+                            response = bool(
+                                answer in (wx.YES, wx.ID_YES, wx.ID_OK)
+                            )
+                        else:
+                            question = header + "\n" + content + "\n" + footer
+                            response = kernel.yesno(question)
+                        return response
+
                     if something:
                         # if we have a hit then we brag about it
+                        #
                         if verbosity > 1:
-                            if kernel.yesno(
-                                newest_message
-                                + "\n"
-                                + _("Do you want to go the download page?")
-                            ):
-                                import webbrowser
-
-                                webbrowser.open(url_newest, new=0, autoraise=True)
+                            action = get_response(
+                                newest_message_header,
+                                newest_message_body,
+                                _("Do you want to go the download page?")
+                            )
                     else:
                         if version_newest is not None:
-                            message = NO_UPDATE_MESSAGE.format(
+                            message_header = NO_UPDATE_MESSAGE_HEADER
+                            message_body = NO_UPDATE_MESSAGE_BODY.format(
                                 name=kernel.name,
                                 version=tag_newest,
                                 type=type_newest,
@@ -319,20 +419,22 @@ def plugin(kernel, lifecycle):
                                 info=info_newest,
                             )
                             if verbosity > 2:
-                                channel(message)
-                                if kernel.yesno(
-                                    message
-                                    + "\n"
-                                    + _("Do you want to look for yourself?")
-                                ):
-                                    import webbrowser
-
-                                    webbrowser.open(url_newest, new=0, autoraise=True)
+                                channel(message_header + "\n" + message_body)
+                                action = get_response(
+                                    message_header,
+                                    message_body,
+                                    _("Do you want to look for yourself?")
+                                )
                             elif verbosity > 0:
-                                channel(message)
+                                channel(message_header + "\n" + message_body)
                         else:
                             if verbosity > 0:
                                 channel(ERROR_MESSAGE)
+                    # Yes, please open a webpage
+                    if action:
+                        import webbrowser
+
+                        webbrowser.open(url_newest, new=0, autoraise=True)
 
                 if beta is None:
                     beta = False
@@ -340,4 +442,12 @@ def plugin(kernel, lifecycle):
                     verbosity = 1
                 return update_test
 
-            kernel.threaded(update_check(verbosity, beta), "update_check")
+            from meerk40t.kernel.kernel import Job
+            _job = Job(
+                process=update_check(verbosity, beta),
+                job_name="update_check_job",
+                interval=0.01,
+                times=1,
+                run_main=True,
+            )
+            context.schedule(_job)
