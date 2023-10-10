@@ -870,10 +870,22 @@ class HingePanel(wx.Panel):
 
         entry = self.context.lookup(f"pattern/{pattern}")
         flag, info1, info2 = self.hinge_generator.set_predefined_pattern(entry)
-        x = float(Length(self.hinge_origin_x))
-        y = float(Length(self.hinge_origin_y))
-        wd = float(Length(self.hinge_width))
-        ht = float(Length(self.hinge_height))
+        try:
+            x = float(Length(self.hinge_origin_x))
+        except ValueError:
+            x = 0
+        try:
+            y = float(Length(self.hinge_origin_y))
+        except ValueError:
+            y = 0
+        try:
+            wd = float(Length(self.hinge_width))
+        except ValueError:
+            wd = float(Length("5cm"))
+        try:
+            ht = float(Length(self.hinge_height))
+        except ValueError:
+            ht = float(Length("5cm"))
         self.hinge_generator.set_hinge_area(x, y, wd, ht)
         self.hinge_generator.set_cell_values(self.hinge_cells_x, self.hinge_cells_y)
         self.hinge_generator.set_padding_values(
