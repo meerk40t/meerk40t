@@ -169,6 +169,8 @@ class LhyAdvancedPanel(wx.Panel):
         pass
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.operation = node
         if self.operation.dratio is not None:
             self.text_dratio.SetValue(str(self.operation.dratio))

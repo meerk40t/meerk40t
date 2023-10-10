@@ -151,6 +151,8 @@ class ColorPanel(wx.Panel):
         return hasattr(node, self.attribute)
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.node = node
         # print(f"set_widget for {self.attribute} to {str(node)}")
         if self.node is None or not self.accepts(node):
@@ -286,6 +288,8 @@ class IdPanel(wx.Panel):
             return res
 
         self.node = node
+        if self.context.kernel.is_shutdown():
+            return
         # print(f"set_widget for {self.attribute} to {str(node)}")
         vis1 = False
         vis2 = False
@@ -295,7 +299,7 @@ class IdPanel(wx.Panel):
                 self.text_id.SetValue(mklabel(node.id))
             self.text_id.Show(vis1)
             self.sizer_id.Show(vis1)
-        except RuntimeWarning:
+        except RuntimeError:
             # Could happen if the propertypanel has been destroyed
             pass
         try:
@@ -304,7 +308,7 @@ class IdPanel(wx.Panel):
                 self.text_label.SetValue(mklabel(node.label))
             self.text_label.Show(vis2)
             self.sizer_label.Show(vis2)
-        except RuntimeWarning:
+        except RuntimeError:
             # Could happen if the propertypanel has been destroyed
             pass
 
@@ -403,6 +407,8 @@ class LinePropPanel(wx.Panel):
         pass
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.node = node
         # print(f"set_widget for {self.attribute} to {str(node)}")
         vis1 = False
@@ -515,6 +521,8 @@ class StrokeWidthPanel(wx.Panel):
             pass
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.node = node
         enable = False
         if self.node is None:
@@ -729,6 +737,8 @@ class PositionSizePanel(wx.Panel):
         self.Layout()
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.node = node
         try:
             bb = node.bounds
@@ -895,6 +905,8 @@ class PreventChangePanel(wx.Panel):
         self.Hide()
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.node = node
         if hasattr(self.node, "lock"):
             self.check_lock.Enable(True)
@@ -988,6 +1000,8 @@ class RoundedRectPanel(wx.Panel):
             return False
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.node = node
         # print(f"set_widget for {self.attribute} to {str(node)}")
         if self.node is None or not self.accepts(node):

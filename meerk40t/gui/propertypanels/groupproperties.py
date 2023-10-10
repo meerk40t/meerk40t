@@ -50,6 +50,8 @@ class ElemcountPanel(wx.Panel):
                     res += elem_count(e)
             return res
 
+        if self.context.kernel.is_shutdown():
+            return
         self.node = node
         count = elem_count(self.node)
         self.text_elements.SetValue(_("{count} elements").format(count=count))
@@ -86,6 +88,8 @@ class GroupPropertiesPanel(ScrolledPanel):
         # end wxGlade
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.panel_id.set_widgets(node)
         self.panel_ct.set_widgets(node)
         self.node = node
@@ -158,6 +162,8 @@ class FilePropertiesPanel(ScrolledPanel):
         # end wxGlade
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.node = node
         self.panel_ct.set_widgets(node)
         if self.node is None:

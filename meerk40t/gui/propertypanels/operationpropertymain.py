@@ -169,6 +169,8 @@ class LayerSettingPanel(wx.Panel):
         )
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.operation = node
         if self.operation is None or not self.accepts(node):
             self.Hide()
@@ -531,6 +533,8 @@ class SpeedPpiPanel(wx.Panel):
         )
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.operation = node
         if self.operation is None or not self.accepts(node):
             self.Hide()
@@ -700,6 +704,8 @@ class PassesPanel(wx.Panel):
         )
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.operation = node
         if self.operation is None or not self.accepts(node):
             self.Hide()
@@ -875,6 +881,8 @@ class InfoPanel(wx.Panel):
         )
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.operation = node
         if self.operation is None or not self.accepts(node):
             self.Hide()
@@ -977,6 +985,8 @@ class PanelStartPreference(wx.Panel):
         )
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.operation = node
         if self.operation is None or not self.accepts(node):
             self.Hide()
@@ -1394,6 +1404,8 @@ class RasterSettingsPanel(wx.Panel):
         )
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.operation = node
         if self.operation is None or not self.accepts(node):
             self.Hide()
@@ -1505,6 +1517,8 @@ class DwellSettingsPanel(wx.Panel):
         return node.type in ("op dots",)
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.operation = node
         if self.operation is None or not self.accepts(node):
             self.Hide()
@@ -1622,6 +1636,8 @@ class ParameterPanel(ScrolledPanel):
         self.Layout()
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.operation = node
         for panel in self.panels:
             panel.set_widgets(node)

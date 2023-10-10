@@ -177,6 +177,8 @@ class HatchPropertyPanel(ScrolledPanel):
         return node.type in ("effect hatch",)
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.node = node
         if self.node is None or not self.accepts(node):
             self.Hide()

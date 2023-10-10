@@ -47,6 +47,8 @@ class BlobPropertyPanel(ScrolledPanel):
             return False
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.panel_id.set_widgets(node)
 
         if node is not None:

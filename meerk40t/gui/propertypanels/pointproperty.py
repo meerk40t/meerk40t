@@ -63,6 +63,8 @@ class PointPropertyPanel(ScrolledPanel):
             return False
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.panel_id.set_widgets(node)
         self.panel_stroke.set_widgets(node)
         self.panel_fill.set_widgets(node)

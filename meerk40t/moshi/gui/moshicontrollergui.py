@@ -272,6 +272,8 @@ class MoshiControllerPanel(wx.Panel):
         self.text_usb_log.AppendText(buffer)
 
     def set_widgets(self):
+        if self.context.kernel.is_shutdown():
+            return
         self.context.setting(bool, "show_usb_log", False)
         self.context.setting(int, "usb_index", -1)
         self.context.setting(int, "usb_bus", -1)

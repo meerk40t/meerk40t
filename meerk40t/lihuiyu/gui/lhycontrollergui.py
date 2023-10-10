@@ -285,6 +285,8 @@ class LihuiyuControllerPanel(ScrolledPanel):
             pass
 
     def set_widgets(self):
+        if self.context.kernel.is_shutdown():
+            return
         try:
             show_log = self.context.show_usb_log
         except AttributeError:

@@ -180,6 +180,8 @@ class LineTextPropertyPanel(wx.Panel):
             return False
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.node = node
         # print(f"set_widget for {self.attribute} to {str(node)}")
         if self.node is None or not self.accepts(node):

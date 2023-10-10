@@ -44,4 +44,6 @@ class RuidaOperationPanel(ScrolledPanel):
         self.panel.pane_show()
 
     def set_widgets(self, node):
+        if self.context.kernel.is_shutdown():
+            return
         self.operation = node

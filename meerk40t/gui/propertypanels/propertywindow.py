@@ -61,6 +61,8 @@ class PropertyWindow(MWindow):
 
     @signal_listener("selected")
     def on_selected(self, origin, *args):
+        if self.context.kernel.is_shutdown():
+            return
         self.Freeze()
         for p in self.panel_instances:
             try:
