@@ -246,6 +246,9 @@ def generate_hull_shape_quick(data):
 
 def generate_hull_shape_hull(data):
     pts = []
+    if data is None or len(data) == 0:
+        # return empty list
+        return pts
     for node in data:
         try:
             path = node.as_path()
@@ -265,9 +268,13 @@ def generate_hull_shape_hull(data):
                         (bounds[2], bounds[3]),
                     ]
                 )
-    hull = list(Point.convex_hull(pts))
-    if len(hull) != 0:
-        hull.append(hull[0])  # loop
+    try:
+        hull = list(Point.convex_hull(pts))
+        if len(hull) != 0:
+            hull.append(hull[0])  # loop
+    except TypeError:
+        # if empty convex_hull returns None
+        hull = []
     return hull
 
 
@@ -277,6 +284,8 @@ def generate_hull_shape_complex(data, resolution=None):
     else:
         resolution = int(resolution)
     pts = []
+    if data is None or len(data) == 0:
+        return pts
     for node in data:
         try:
             path = node.as_path()
@@ -302,14 +311,21 @@ def generate_hull_shape_complex(data, resolution=None):
                         (bounds[2], bounds[3]),
                     ]
                 )
-    hull = list(Point.convex_hull(pts))
-    if len(hull) != 0:
-        hull.append(hull[0])  # loop
+    try:
+        hull = list(Point.convex_hull(pts))
+        if len(hull) != 0:
+            hull.append(hull[0])  # loop
+    except TypeError:
+        # if empty convex_hull returns None
+        hull = []
     return hull
 
 
 def generate_hull_shape_circle_data(data):
     pts = []
+    if data is None or len(data) == 0:
+        # return empty list
+        return pts
     for node in data:
         try:
             path = node.as_path()
@@ -334,7 +350,12 @@ def generate_hull_shape_circle_data(data):
     # amount of point this will cause a huge amount
     # of recursive calls (which will fail)
     # -> so we apply it to the hull points
-    hull = list(Point.convex_hull(pts))
+    try:
+        hull = list(Point.convex_hull(pts))
+    except TypeError:
+        # if empty convex_hull returns None
+        hull = []
+
     mec_center, mec_radius = welzl(hull)
 
     # So now we have a circle with (mec[0], mec[1]), and mec_radius

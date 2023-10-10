@@ -1807,7 +1807,11 @@ class BalorDevice(Service):
                         except AttributeError:
                             continue
                     pts += [q for q in path.as_points()]
-            hull = [p for p in Point.convex_hull(pts)]
+            try:
+                hull = [p for p in Point.convex_hull(pts)]
+            except TypeError:
+                # if empty convex_hull returns None
+                hull = []
             if len(hull) == 0:
                 channel(_("No elements bounds to trace."))
                 return
