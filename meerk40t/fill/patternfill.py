@@ -1,3 +1,6 @@
+"""
+    Obsolete! No longer needed, just there for reference
+"""
 from copy import copy
 
 from meerk40t.svgelements import (
