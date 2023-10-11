@@ -110,7 +110,7 @@ class TestOperations(unittest.TestCase):
         node_copy.dancing_bear = 0.5
         self.assertNotEqual(node_copy.dancing_bear, node.dancing_bear)
         node_copy_copy = copy(node_copy)
-        self.assertEquals(node_copy_copy.dancing_bear, node_copy.dancing_bear)
+        self.assertEqual(node_copy_copy.dancing_bear, node_copy.dancing_bear)
         node.allowed_attributes.append("Fancy pants")
         self.assertNotEqual(node_copy_copy.allowed_attributes, node.allowed_attributes)
 
