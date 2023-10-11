@@ -15701,7 +15701,7 @@ msgstr "Glätte Übergänge zu angrenzenden Segmenten"
 msgid "Smooth"
 msgstr "Glätten"
 
-msgid "Convert all lines into curves and smoothen"
+msgid "Convert all lines into smooth curves"
 msgstr "Wandle alle Geraden in Kurven um und glätte diese"
 
 msgid "Very smooth"

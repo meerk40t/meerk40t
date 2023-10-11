@@ -1450,17 +1450,21 @@ msgid ""
 " ruining an entire piece of material by trying to ensure that one piece "
 "is finished before starting on another."
 msgstr ""
-"Cerca di completare un insieme di masterizzazioni interne e il taglio esterno associato prima "
-"di passare ad altri elementi. Questa opzione fa qualcosa solo se è selezionato anche Masterizza Interno Per Primo. "
-"Se il tuo progetto ha pezzi multipli separati, questo dovrebbe far sì che ciascun pezzo venga masterizzato interamente "
-"prima di passare a masterizzare un altro pezzo. Questo può ridurre il rischio, ad esempio, di un cambiamento che rovina "
-"un intero pezzo di materiale cercando di garantire che un pezzo sia completato prima di iniziare un altro."
+"Cerca di completare un set di campiture interne unitamente al relativo "
+"contorno esterno prima di passare ad altri elementi. Questa opzione "
+"produce risultati solo se è selezionato anche (Burn Inner First). "
+"Se il progetto contiene più elementi separati, questo dovrebbe far "
+"sì che ciascuno di essi venga completato prima di passare a tagliare "
+"un altro elemento. In caso di interruzioni o errori ciò permette di "
+"non sprecare l’intero supporto, salvando gli elementi già completati."
+
 #: meerk40t/core/planner.py:204
 msgid ""
 "This optimization works best with Merge Operations also checked though "
 "this is not a requirement. "
 msgstr ""
-"Questa ottimizzazione funziona al meglio anche se Unisci Operazioni è selezionato, anche se non è un requisito."
+"Questa ottimizzazione funziona al meglio insieme a Unisci Operazioni, "
+"anche se ciò non è obbligatorio."
 
 #: meerk40t/core/planner.py:208
 msgid ""
@@ -1468,8 +1472,10 @@ msgid ""
 "images, inner elements may span multiple design pieces, in which case "
 "they may be optimised together."
 msgstr ""
-"Poiché questa ottimizzazione viene eseguita una volta che i raster sono stati trasformati in immagini, "
-"gli elementi interni possono coprire più pezzi di progetto, in tal caso potrebbero essere ottimizzati insieme."
+"Poiché questa ottimizzazione viene eseguita una volta che i raster "
+"sono stati trasformati in immagini, gli elementi interni potrebbero "
+"risultare composti da più componenti: "
+"in tal caso potrebbero essere ottimizzati insieme.."
 
 #: meerk40t/core/planner.py:222
 msgid "Closed Distance"
@@ -3125,8 +3131,7 @@ msgid ""
 "very versatile.\n"
 "See more: https://en.wikipedia.org/wiki/Hershey_fonts "
 msgstr ""
-"MeerK40t può utilizzare True-Type-Fonts, Hershey-Fonts o font Autocad-86 "
-"progettati per essere resi esclusivamente con vettori.\n"
+"MeerK40t può utilizzare True-Type-Fonts, Hershey-Fonts o font Autocad-86.\n"
 "Possono essere scalati, incisi come qualsiasi altra forma vettoriale e sono "
 "quindi molto versatili.\n"
 "Vedi di più: https://en.wikipedia.org/wiki/Hershey_fonts"
@@ -5957,7 +5962,7 @@ msgstr "Unione"
 
 #: meerk40t/gui/wxmmain.py:1042
 msgid "Create a union of the selected elements"
-msgstr "Salda in un unico elemento"
+msgstr "Aggiungi: combina gli oggetti in una singola forma"
 
 #: meerk40t/gui/wxmmain.py:1054
 msgid "Difference"
@@ -5965,7 +5970,7 @@ msgstr "Differenza"
 
 #: meerk40t/gui/wxmmain.py:1056
 msgid "Create a difference of the selected elements"
-msgstr "Taglia la differenza"
+msgstr "Sottrai: sottrae l’oggetto superiore dagli oggetti sottostanti"
 
 #: meerk40t/gui/wxmmain.py:1068
 msgid "Xor"
@@ -5973,7 +5978,7 @@ msgstr "Xor"
 
 #: meerk40t/gui/wxmmain.py:1070
 msgid "Create a xor of the selected elements"
-msgstr "Unisci elementi in un singolo oggetto"
+msgstr "Escludi: esclude le aree delle forme che si sovrappongono"
 
 #: meerk40t/gui/wxmmain.py:1082
 msgid "Intersection"
@@ -5981,7 +5986,7 @@ msgstr "Intersezione"
 
 #: meerk40t/gui/wxmmain.py:1084
 msgid "Create a intersection of the selected elements"
-msgstr "Interseca"
+msgstr "Interseca: interseca le aree delle forme"
 
 #: meerk40t/gui/wxmmain.py:1139 meerk40t/gui/wxmribbon.py:1157
 msgid "Group"
@@ -6001,7 +6006,7 @@ msgstr "Dividi elementi"
 
 #: meerk40t/gui/wxmmain.py:1198
 msgid "Align selected elements at the leftmost position (right click: of the bed)"
-msgstr "Allinea a Sn gli elementi fra loro o al bordo del piano (click destro)"
+msgstr "Allinea bordi di sinistra (click destro: allinea al bordo del piano)"
 
 #: meerk40t/gui/wxmmain.py:1227 meerk40t/gui/wxmmain.py:1244
 msgid " (right go to next entry)"
@@ -6023,15 +6028,15 @@ msgstr "Elenco delle parole: vai all'entrata precedente"
 msgid ""
 "Align selected elements at the rightmost position (right click: of the "
 "bed)"
-msgstr "Allinea a Dx gli elementi fra loro o al bordo del piano (click destro)"
+msgstr "Allinea bordi di destra (click destro: allinea al bordo del piano)"
 
 #: meerk40t/gui/wxmmain.py:1277
 msgid "Align selected elements at the topmost position (right click: of the bed)"
-msgstr "Allinea gli elementi alla posizione più in alto o al bordo del piano (click destro)"
+msgstr "Allinea bordi superiori (click destro: allinea al bordo del piano)"
 
 #: meerk40t/gui/wxmmain.py:1294
 msgid "Align selected elements at the lowest position (right click: of the bed)"
-msgstr "Allinea gli elementi alla posizione più in basso o al bordo del piano (click destro)"
+msgstr "Allinea bordi inferiori (click destro: allinea al bordo del piano)"
 
 #: meerk40t/gui/wxmmain.py:1309
 msgid "Center X"
@@ -6041,7 +6046,7 @@ msgstr "Centra X"
 msgid ""
 "Align selected elements at their center horizontally (right click: of the"
 " bed)"
-msgstr "Allinea al centro orizzontalmente o al centro del piano (click destro)"
+msgstr "Allinea centri orizzontali (click destro: allinea al bordo del piano)"
 
 #: meerk40t/gui/wxmmain.py:1326
 msgid "Center Y"
@@ -6051,7 +6056,7 @@ msgstr "Centra Y"
 msgid ""
 "Align selected elements at their center vertically (right click: of the "
 "bed)"
-msgstr "Allinea al centro verticalmente o al centro del piano (click destro)"
+msgstr "Allinea centri verticali (click destro: allinea al bordo del piano)"
 
 #: meerk40t/gui/wxmmain.py:1343
 msgid "Distr. Hor."
@@ -14401,15 +14406,15 @@ msgstr "Spezza"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:226
 msgid "Smoothen transit to adjacent segments"
-msgstr "Amplifica la transizione verso segmenti adiacenti"
+msgstr "Ammorbidisci la transizione ai segmenti adiacenti"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:228
 msgid "Smooth"
 msgstr "Liscio"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:235
-msgid "Convert all lines into curves and smoothen"
-msgstr "Converti tutte le linee in curve e appiattisci"
+msgid "Convert all lines into smooth curves"
+msgstr "Converti tutte le linee in curve e ammorbidisci tracciato"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:237
 msgid "Very smooth"
@@ -17270,9 +17275,6 @@ msgid "Optimize travel"
 msgstr ""
 
 msgid "Merging cutcode"
-msgstr ""
-
-msgid "Try to complete a set of inner burns and the associated outer cut before moving onto other elements.This option only does something if Burn Inner First is also selected. If your design has multiple separate pieces on it, this should mostly cause each piece to be burned in entirety before moving on to burn another piece. This can reduce the risk of e.g. a shift ruining an entire piece of material by trying to ensure that one piece is finished before starting on another."
 msgstr ""
 
 msgid "Copy data"
