@@ -89,7 +89,7 @@ class CropPanel(wx.Panel):
         self.slider_bottom.Enable(flag)
 
     def set_widgets(self, node):
-        if self.context.kernel.is_shutdown():
+        if self.context.kernel.is_shutdown:
             return
         if self.node is None:
             self.label_info.SetLabel("")
@@ -446,7 +446,7 @@ class ImageModificationPanel(ScrolledPanel):
         return False
 
     def set_widgets(self, node=None):
-        if self.context.kernel.is_shutdown():
+        if self.context.kernel.is_shutdown:
             return
         self.node = node
         if node is None:
@@ -1006,7 +1006,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         return wx.Bitmap.FromBuffer(width, height, newimage.tobytes())
 
     def set_widgets(self, node=None):
-        if self.context.kernel.is_shutdown():
+        if self.context.kernel.is_shutdown:
             return
         self.node = node
         if node is not None:
@@ -1161,7 +1161,7 @@ class ImagePropertyPanel(ScrolledPanel):
         return False
 
     def set_widgets(self, node=None):
-        if self.context.kernel.is_shutdown():
+        if self.context.kernel.is_shutdown:
             return
         if node is None:
             node = self.node

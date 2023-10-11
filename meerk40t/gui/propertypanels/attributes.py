@@ -151,7 +151,7 @@ class ColorPanel(wx.Panel):
         return hasattr(node, self.attribute)
 
     def set_widgets(self, node):
-        if self.context.kernel.is_shutdown():
+        if self.context.kernel.is_shutdown:
             return
         self.node = node
         # print(f"set_widget for {self.attribute} to {str(node)}")
@@ -288,7 +288,7 @@ class IdPanel(wx.Panel):
             return res
 
         self.node = node
-        if self.context.kernel.is_shutdown():
+        if self.context.kernel.is_shutdown:
             return
         # print(f"set_widget for {self.attribute} to {str(node)}")
         vis1 = False
@@ -407,7 +407,7 @@ class LinePropPanel(wx.Panel):
         pass
 
     def set_widgets(self, node):
-        if self.context.kernel.is_shutdown():
+        if self.context.kernel.is_shutdown:
             return
         self.node = node
         # print(f"set_widget for {self.attribute} to {str(node)}")
@@ -521,7 +521,7 @@ class StrokeWidthPanel(wx.Panel):
             pass
 
     def set_widgets(self, node):
-        if self.context.kernel.is_shutdown():
+        if self.context.kernel.is_shutdown:
             return
         self.node = node
         enable = False
@@ -737,7 +737,7 @@ class PositionSizePanel(wx.Panel):
         self.Layout()
 
     def set_widgets(self, node):
-        if self.context.kernel.is_shutdown():
+        if self.context.kernel.is_shutdown:
             return
         self.node = node
         try:
@@ -905,7 +905,7 @@ class PreventChangePanel(wx.Panel):
         self.Hide()
 
     def set_widgets(self, node):
-        if self.context.kernel.is_shutdown():
+        if self.context.kernel.is_shutdown:
             return
         self.node = node
         if hasattr(self.node, "lock"):
@@ -1000,7 +1000,7 @@ class RoundedRectPanel(wx.Panel):
             return False
 
     def set_widgets(self, node):
-        if self.context.kernel.is_shutdown():
+        if self.context.kernel.is_shutdown:
             return
         self.node = node
         # print(f"set_widget for {self.attribute} to {str(node)}")

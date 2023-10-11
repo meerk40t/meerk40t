@@ -274,7 +274,7 @@ class PathPropertyPanel(ScrolledPanel):
         self.lbl_info_points.SetValue(f"{points:d}")
 
     def set_widgets(self, node):
-        if self.context.kernel.is_shutdown():
+        if self.context.kernel.is_shutdown:
             return
         for panel in self.panels:
             if panel is not None:

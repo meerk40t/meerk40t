@@ -44,7 +44,7 @@ class WaitPropertyPanel(wx.Panel):
         self.panel.pane_show()
 
     def set_widgets(self, node):
-        if self.context.kernel.is_shutdown():
+        if self.context.kernel.is_shutdown:
             return
         self.operation = node
         for item in self.choices:

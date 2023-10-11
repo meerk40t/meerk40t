@@ -297,7 +297,7 @@ class LihuiyuAccelerationChartPanel(ScrolledPanel):
         # end wxGlade
 
     def set_widgets(self):
-        if self.context.kernel.is_shutdown():
+        if self.context.kernel.is_shutdown:
             return
         context = self.context
         context.setting(bool, "raster_accel_table", False)

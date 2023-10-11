@@ -370,7 +370,7 @@ class PlacementParameterPanel(ScrolledPanel):
         self.Layout()
 
     def set_widgets(self, node):
-        if self.context.kernel.is_shutdown():
+        if self.context.kernel.is_shutdown:
             return
         self.operation = node
         for panel in self.panels:
