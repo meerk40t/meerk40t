@@ -14268,7 +14268,7 @@ msgid "Smooth"
 msgstr ""
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:235
-msgid "Convert all lines into curves and smoothen"
+msgid "Convert all lines into smooth curves"
 msgstr ""
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:237
