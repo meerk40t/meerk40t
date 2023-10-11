@@ -1343,7 +1343,7 @@ class Kernel(Settings):
                     )
                 )
             try:
-                if thread is threading.currentThread():
+                if thread is threading.current_thread():
                     if channel:
                         channel(
                             _("{name} is the current shutdown thread").format(
@@ -1566,7 +1566,7 @@ class Kernel(Settings):
         @return:
         """
         self.channel("lookup")(
-            f"Changed all: {str(paths)} ({str(threading.currentThread().getName())})"
+            f"Changed all: {str(paths)} ({str(threading.current_thread().name)})"
         )
         with self._lookup_lock:
             if not self._dirty_paths:
@@ -1581,7 +1581,7 @@ class Kernel(Settings):
         @return:
         """
         self.channel("lookup")(
-            f"Changed {str(path)} ({str(threading.currentThread().getName())})"
+            f"Changed {str(path)} ({str(threading.current_thread().name)})"
         )
         with self._lookup_lock:
             if not self._dirty_paths:
@@ -1603,7 +1603,7 @@ class Kernel(Settings):
         channel = self.channel("lookup")
         if channel:
             channel(
-                f"Lookup Change Processing ({str(threading.currentThread().getName())})"
+                f"Lookup Change Processing ({str(threading.current_thread().name)})"
             )
         with self._lookup_lock:
             for matchtext in self.lookups:
