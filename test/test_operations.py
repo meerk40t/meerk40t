@@ -108,11 +108,11 @@ class TestOperations(unittest.TestCase):
         for item in node.settings:
             self.assertEqual(node.settings[item], node_copy.settings[item])
         node_copy.dancing_bear = 0.5
-        self.assertNotEquals(node_copy.dancing_bear, node.dancing_bear)
+        self.assertNotEqual(node_copy.dancing_bear, node.dancing_bear)
         node_copy_copy = copy(node_copy)
         self.assertEquals(node_copy_copy.dancing_bear, node_copy.dancing_bear)
         node.allowed_attributes.append("Fancy pants")
-        self.assertNotEquals(node_copy_copy.allowed_attributes, node.allowed_attributes)
+        self.assertNotEqual(node_copy_copy.allowed_attributes, node.allowed_attributes)
 
     def test_operation_copy_root(self):
         """
