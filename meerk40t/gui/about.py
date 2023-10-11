@@ -246,7 +246,7 @@ class InformationPanel(wx.Panel):
         self.SetSizer(sizer_main)
 
     def check_for_updates(self, event):
-        self.context("check_for_updates -popup\n")
+        self.context("check_for_updates --popup\n")
 
     def copy_debug_info(self, event):
         if wx.TheClipboard.Open():

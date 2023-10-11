@@ -572,6 +572,18 @@ class MeerK40tScenePanel(wx.Panel):
             channel(str(matrix))
             return "scene", data
 
+        @context.console_command("feature_request")
+        def send_developer_feature(remainder="", **kwgs):
+            from .wxmeerk40t import send_data_to_developers
+
+            send_data_to_developers("feature_request.txt", remainder)
+
+        @context.console_command("bug")
+        def send_developer_bug(remainder="", **kwgs):
+            from .wxmeerk40t import send_data_to_developers
+
+            send_data_to_developers("bug.txt", remainder)
+
         @context.console_command("reference")
         def make_reference(**kwgs):
             # Take first emphasized element
@@ -1191,12 +1203,12 @@ class MeerK40tScenePanel(wx.Panel):
     def on_close(self, event):
         self.save_magnets()
 
-    @signal_listener("driver;mode")
+    @signal_listener("pipe;running")
     def on_driver_mode(self, origin, state):
-        if state == 0:
-            self.widget_scene.overrule_background = None
-        else:
+        if state:
             self.widget_scene.overrule_background = wx.RED
+        else:
+            self.widget_scene.overrule_background = None
         self.widget_scene.request_refresh_for_animation()
 
     @signal_listener("background")

@@ -322,7 +322,6 @@ class LihuiyuDriver(Parameters):
         self(b"~I*\n~")
         self._reset_modes()
         self.state = DRIVER_STATE_RAPID
-        self.service.signal("driver;mode", self.state)
         self.paused = False
 
     def abort(self):
@@ -450,7 +449,6 @@ class LihuiyuDriver(Parameters):
             self(b"FNSE-\n")
             self.laser = False
         self.state = DRIVER_STATE_RAPID
-        self.service.signal("driver;mode", self.state)
 
     def finished_mode(self, *values):
         """
@@ -472,7 +470,6 @@ class LihuiyuDriver(Parameters):
         elif self.state == DRIVER_STATE_RAPID:
             self(b"I")
         self.state = DRIVER_STATE_FINISH
-        self.service.signal("driver;mode", self.state)
 
     def raster_mode(self, *values, dx=0, dy=0):
         """
@@ -541,7 +538,6 @@ class LihuiyuDriver(Parameters):
         self(self._code_declare_directions())
         self(b"S1E")
         self.state = DRIVER_STATE_RASTER
-        self.service.signal("driver;mode", self.state)
 
     def program_mode(self, *values, dx=0, dy=0):
         """
@@ -602,7 +598,6 @@ class LihuiyuDriver(Parameters):
             self.state = DRIVER_STATE_RASTER
         else:
             self.state = DRIVER_STATE_PROGRAM
-        self.service.signal("driver;mode", self.state)
 
     def home(self, *values):
         """
@@ -620,7 +615,6 @@ class LihuiyuDriver(Parameters):
         self.native_y = 0
         self._reset_modes()
         self.state = DRIVER_STATE_RAPID
-        self.service.signal("driver;mode", self.state)
 
         new_current = self.service.current
         self.service.signal(

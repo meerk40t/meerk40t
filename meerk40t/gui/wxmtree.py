@@ -399,6 +399,7 @@ class ShadowTree:
             "elem line": icons8_line_20,
             "elem polyline": icons8_polyline_50,
             "elem text": icons8_type_50,
+            "blob": icons8_file_20,
         }
         self.image_cache = []
         self.cache_hits = 0
@@ -834,6 +835,8 @@ class ShadowTree:
         # self.last_call = this_call
         op_node = self.elements.get(type="branch ops")
         op_item = op_node._item
+        if op_item is None:
+            return
         self.wxtree.Expand(op_item)
         if self.elements.have_unassigned_elements():
             self.wxtree.SetItemState(op_item, self.iconstates["warning"])

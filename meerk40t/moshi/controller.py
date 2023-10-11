@@ -75,6 +75,7 @@ class MoshiController:
             bytearray()
         )  # Threadsafe buffered commands to be sent to controller.
 
+        self._program_lock = threading.Lock()
         self._programs = []  # Programs to execute.
 
         self.context._buffer_size = 0
@@ -108,8 +109,9 @@ class MoshiController:
         device.
         """
         buffer = f"Current Working Buffer: {str(self._buffer)}\n"
-        for p in self._programs:
-            buffer += f"{str(p.data)}\n"
+        with self._program_lock:
+            for p in self._programs:
+                buffer += f"{str(p.data)}\n"
         return buffer
 
     def added(self, *args, **kwargs):
@@ -219,7 +221,8 @@ class MoshiController:
 
     def push_program(self, program):
         self.pipe_channel(f"Pushed: {str(program.data)}")
-        self._programs.append(program)
+        with self._program_lock:
+            self._programs.append(program)
         self.start()
 
     def unlock_rail(self):
@@ -267,7 +270,8 @@ class MoshiController:
         Abort the current buffer and data queue.
         """
         self._buffer = bytearray()
-        self._programs.clear()
+        with self._program_lock:
+            self._programs.clear()
         self.context.signal("pipe;buffer", 0)
         self.realtime_stop()
         self.update_state("terminate")
@@ -372,7 +376,12 @@ class MoshiController:
                     self.pipe_channel("New Program")
                     self.wait_until_accepting_packets()
                     self.realtime_prologue()
-                    self._buffer = self._programs.pop(0).data
+                    with self._program_lock:
+                        # May have been cleared
+                        if len(self._programs) == 0:
+                            # There was something, now it's gone.
+                            break
+                        self._buffer = self._programs.pop(0).data
                     assert len(self._buffer) != 0
 
                 # Stage 1: Send Program.
