@@ -15,9 +15,11 @@ def plugin(kernel, lifecycle):
             return
 
         plugins = list()
-        import pkg_resources
+        import importlib.metadata as pkg_resources
 
-        for entry_point in pkg_resources.iter_entry_points("meerk40t.extension"):
+        entry_points = pkg_resources.entry_points().get("meerk40t.extension", [])
+
+        for entry_point in entry_points:
             try:
                 plugin = entry_point.load()
             except pkg_resources.DistributionNotFound:
