@@ -406,7 +406,7 @@ class TextCtrl(wx.TextCtrl):
         self._last_valid_value = None
         self._event_generated = None
         self._action_routine = None
-        # You can set this to False, i you don't want logic to interfere with text input
+        # You can set this to False, if you don't want logic to interfere with text input
         self.execute_action_on_change = True
 
         if self._check is not None and self._check != "":
@@ -633,14 +633,19 @@ class TextCtrl(wx.TextCtrl):
 
     def on_char(self, event):
         proceed = True
-        if self.charpattern != "":
+        # The French awerty keyboard generates numbers by pressing Shift + some key
+        # Under Linux this is not properly translated by GetUnicodeKey and
+        # is hence leading to a 'wrong' character being recognised (the original key).
+        # So we can't rely on a proper representation if the Shift-Key
+        # is held down, sigh.
+        if self.charpattern != "" and not event.ShiftDown():
             keyc = event.GetUnicodeKey()
             special = False
             if event.RawControlDown() or event.ControlDown() or event.AltDown():
+                # GetUnicodeKey ignores all special keys, so we need to acknowledge that
                 special = True
             if keyc == 127:  # delete
                 special = True
-            # GetUnicodeKey ignores all special keys in the first
             if keyc != wx.WXK_NONE and not special:
                 # a 'real' character?
                 if keyc >= ord(" "):
