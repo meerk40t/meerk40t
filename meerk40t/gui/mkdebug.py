@@ -132,8 +132,6 @@ class DebugColorPanel(wx.Panel):
         self.context = context
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_line = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_main.Add(sizer_line, 0, wx.EXPAND, 0)
         count = 1000
         font = wx.Font(6, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         pattern = "SYS_COLOUR_"
