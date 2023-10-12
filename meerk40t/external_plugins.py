@@ -5,9 +5,9 @@ builds. See the external_plugin_build.py file for regular built plugins.
 """
 
 
-
 def plugin(kernel, lifecycle):
     import sys
+
     if lifecycle == "plugins":
         if getattr(sys, "frozen", False):
             return
@@ -22,9 +22,8 @@ def plugin(kernel, lifecycle):
         else:
             from importlib.metadata import entry_points
 
-        entry_points = entry_points().get("meerk40t.extension", [])
-
-        for entry_point in entry_points:
+        entry_points = entry_points()
+        for entry_point in entry_points.select(group="meerk40t.extension"):
             try:
                 plugin = entry_point.load()
                 plugins.append(plugin)
