@@ -25,6 +25,23 @@ def register_panel_debugger(window, context):
     window.on_pane_create(pane)
     context.register("pane/debug_tree", pane)
 
+def register_panel_color(window, context):
+    pane = (
+        aui.AuiPaneInfo()
+        .Left()
+        .MinSize(225, 110)
+        .FloatingSize(225, 110)
+        .Caption(_("System-Colors"))
+        .CaptionVisible(not context.pane_lock)
+        .Name("debug_color")
+        .Hide()
+    )
+    pane.dock_proportion = 225
+    pane.control = DebugColorPanel(window, wx.ID_ANY, context=context)
+    pane.submenu = "_ZZ_" + _("Debug")
+    window.on_pane_create(pane)
+    context.register("pane/debug_color", pane)
+
 
 class DebugTreePanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -104,3 +121,53 @@ class DebugTreePanel(wx.Panel):
         self.lb_emphasized.SetValue(txt2)
 
         self.txt_first.SetValue(txt3)
+
+class DebugColorPanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: PositionPanel.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        from copy import copy
+
+        self.context = context
+
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        sizer_line = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_main.Add(sizer_line, 0, wx.EXPAND, 0)
+        count = 0
+        font = wx.Font(6, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        pattern = "SYS_COLOUR_"
+        for prop in dir(wx):
+            if prop.startswith(pattern):
+                # print (prop)
+                count += 1
+                if count >= 5:
+                    sizer_line = wx.BoxSizer(wx.HORIZONTAL)
+                    sizer_main.Add(sizer_line, 0, wx.EXPAND, 0)
+                    count = 0
+
+                col = wx.SystemSettings().GetColour(getattr(wx, prop))
+                infosizer = wx.BoxSizer(wx.VERTICAL)
+                box = wx.StaticBitmap(
+                    self, wx.ID_ANY,
+                    size = wx.Size(32, 32),
+                    style=wx.SB_RAISED
+                )
+                box.SetBackgroundColour(col)
+                lbl = wx.StaticText(self, wx.ID_ANY, prop[len(pattern):])
+                lbl.SetFont(font)
+                lbl.SetMinSize(wx.Size(75, -1))
+                infosizer.Add(box, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+                infosizer.Add(lbl, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+
+                sizer_line.Add(infosizer, 1, wx.EXPAND, 0)
+        self.SetSizer(sizer_main)
+        sizer_main.Fit(self)
+        self.Layout()
+
+
+    def pane_show(self, *args):
+        return
+
+    def pane_hide(self, *args):
+        return
