@@ -4,10 +4,10 @@ builds, since compiled versions do not have access to entry points. External plu
 builds. See the external_plugin_build.py file for regular built plugins.
 """
 
-import sys
 
 
 def plugin(kernel, lifecycle):
+    import sys
     if lifecycle == "plugins":
         if getattr(sys, "frozen", False):
             return
@@ -15,24 +15,26 @@ def plugin(kernel, lifecycle):
             return
 
         plugins = list()
-        import importlib.metadata as pkg_resources
 
-        entry_points = pkg_resources.entry_points().get("meerk40t.extension", [])
+        import sys
+        if sys.version_info < (3, 8):
+            from importlib_metadata import entry_points
+        else:
+            from importlib.metadata import entry_points
+
+        entry_points = entry_points().get("meerk40t.extension", [])
 
         for entry_point in entry_points:
             try:
                 plugin = entry_point.load()
-            except pkg_resources.DistributionNotFound:
-                pass
-            except pkg_resources.VersionConflict as e:
+                plugins.append(plugin)
+            except ImportError as e:
                 print(
-                    "Cannot install plugin - '{entrypoint}' due to version conflict.".format(
-                        entrypoint=str(entry_point)
+                    "Cannot install plugin - '{entrypoint}'.".format(
+                        entrypoint=str(entry_point.value)
                     )
                 )
                 print(e)
-            else:
-                plugins.append(plugin)
         return plugins
     if lifecycle == "invalidate":
         return True
