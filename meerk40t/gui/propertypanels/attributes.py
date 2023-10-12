@@ -446,8 +446,8 @@ class StrokeWidthPanel(wx.Panel):
         main_sizer.Add(s_sizer, 1, wx.EXPAND, 0)
         # Plus one combobox + value field for stroke width
         strokewidth_label = wx.StaticText(self, wx.ID_ANY, label=_("Width:"))
-        self.text_width = wx.TextCtrl(
-            self, wx.ID_ANY, value="0.10", style=wx.TE_PROCESS_ENTER
+        self.text_width = TextCtrl(
+            self, wx.ID_ANY, value="0.10", style=wx.TE_PROCESS_ENTER, check="float", limited=True
         )
         self.text_width.SetMaxSize(wx.Size(100, -1))
 
@@ -474,7 +474,7 @@ class StrokeWidthPanel(wx.Panel):
         s_sizer.Add(self.combo_units, 1, wx.EXPAND, 0)
         s_sizer.Add(self.chk_scale, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.text_width)
+        self.text_width.SetActionRoutine(self.on_stroke_width)
         self.Bind(wx.EVT_CHECKBOX, self.on_chk_scale, self.chk_scale)
         self.SetSizer(main_sizer)
         main_sizer.Fit(self)
@@ -493,7 +493,7 @@ class StrokeWidthPanel(wx.Panel):
         except (ValueError, AttributeError):
             pass
 
-    def on_stroke_width(self, event):
+    def on_stroke_width(self):
         if self.node is None or self.node.lock:
             return
         try:
