@@ -16,14 +16,18 @@ def plugin(kernel, lifecycle):
 
         plugins = list()
 
-        import sys
-        if sys.version_info < (3, 8):
-            from importlib_metadata import entry_points
-        else:
+        try:
             from importlib.metadata import entry_points
+        except ImportError:
+            from importlib_metadata import entry_points
 
         entry_points = entry_points()
-        for entry_point in entry_points.select(group="meerk40t.extension"):
+        try:
+            ep = entry_points.select(group="meerk40t.extension")
+        except AttributeError:
+            ep = entry_points.get("meerk40t.extension")
+
+        for entry_point in ep:
             try:
                 plugin = entry_point.load()
                 plugins.append(plugin)
