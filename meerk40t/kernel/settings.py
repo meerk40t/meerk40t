@@ -88,17 +88,22 @@ class Settings:
 
     def literal_dict(self):
         literal_dict = dict()
-        for section in self._config_dict:
-            section_dict = self._config_dict[section]
-            literal_section_dict = dict()
-            literal_dict[section] = literal_section_dict
-            for key in section_dict:
-                value = section_dict[key]
-                try:
-                    value = ast.literal_eval(value)
-                except (ValueError, SyntaxError):
-                    pass
-                literal_section_dict[key] = value
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            for section in self._config_dict:
+                section_dict = self._config_dict[section]
+                literal_section_dict = dict()
+                literal_dict[section] = literal_section_dict
+                for key in section_dict:
+                    value = section_dict[key]
+                    try:
+                        value = ast.literal_eval(value)
+                    except (ValueError, SyntaxError):
+                        pass
+                    literal_section_dict[key] = value
+
         return literal_dict
 
     def set_dict(self, literal_dict):
