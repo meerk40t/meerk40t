@@ -15,6 +15,8 @@ from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.svgelements import Matrix
 from meerk40t.tools.geomstr import Geomstr
 
+MAX_FULL_LENGTH = 2000000
+
 
 class LiveLightJob:
     def __init__(
@@ -325,12 +327,23 @@ class LiveLightJob:
             return self._crosshairs(con)
 
         rotate = self._redlight_adjust_matrix()
+        path_length = 0.0
         for node in elems:
             if self.stopped:
                 return False
             if self.changed:
                 return True
             geometry = Geomstr(node.as_geometry())
+
+            if self.mode == "full":
+                # Is path length too large for full?
+                for segment in range(0, len(geometry)):
+                    segment_length = geometry.length(segment)
+                    if segment_length:
+                        path_length += segment_length
+                        if path_length > MAX_FULL_LENGTH:
+                            # Too large, switching to bounds
+                            return self._bounds(con)
 
             # Move to device space.
             geometry.transform(self.service.view.matrix)
