@@ -44,6 +44,9 @@ def plugins_importlib():
     except AttributeError:
         ep = entry_points.get(MEERK40T_ENTRYPOINT)
 
+    if ep is None:
+        return []
+
     for entry_point in ep:
         try:
             yield entry_point.load()
