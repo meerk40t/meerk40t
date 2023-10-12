@@ -1230,12 +1230,12 @@ class Art:
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
         )
 
-        # self.button_face_hover = copy.copy(
-        #     wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
-        # ).ChangeLightness(50)
         self.button_face_hover = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNHILIGHT)
-        )  # .ChangeLightness(25)
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
+        ).ChangeLightness(150)
+        # self.button_face_hover = copy.copy(
+        #     wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRADIENTACTIVECAPTION)
+        # )
         self.inactive_background = copy.copy(
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION)
         )
@@ -1249,7 +1249,7 @@ class Art:
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOBK)
         )
         self.button_face = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNFACE)
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNHILIGHT)
         )
         self.highlight = copy.copy(
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_HOTLIGHT)
