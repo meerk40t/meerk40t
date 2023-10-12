@@ -724,7 +724,7 @@ class ShxFont:
         Octants are numbered ccw starting from 0° at the 3 o'clock position.
 
         3 2 1
-         \ /
+         ⍀ /
         4-O-0
          / \
         5 6 7
