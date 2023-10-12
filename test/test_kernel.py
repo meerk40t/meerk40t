@@ -96,10 +96,12 @@ class TestKernel(unittest.TestCase):
 
         kernel = bootstrap.bootstrap()
         kernel.args = Args()
-
-        from meerk40t.external_plugins import plugin
-        q = plugin(kernel=kernel, lifecycle="plugins")
-        print(q)
+        try:
+            from meerk40t.external_plugins import plugin
+            q = plugin(kernel=kernel, lifecycle="plugins")
+            print(q)
+        finally:
+            kernel.shutdown()
 
 
 class TestGetSafePath(unittest.TestCase):
