@@ -400,9 +400,15 @@ class VectorIcon:
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
         if color is None:
-            dc.SetBackground(wx.WHITE_BRUSH)
+            if force_darkmode:
+                dc.SetBackground(wx.BLACK_BRUSH)
+            else:
+                dc.SetBackground(wx.WHITE_BRUSH)
         else:
-            wxcolor = wx.Colour(color)
+            if hasattr(color, "red"):
+                wxcolor = wx.Colour(color.red, color.green, color.blue)
+            else:
+                wxcolor = wx.Colour(color)
             brush = wx.Brush(wxcolor)
             dc.SetBackground(brush)
         dc.Clear()
@@ -448,10 +454,42 @@ class VectorIcon:
         if not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
 
-        gc.SetBrush(wx.BLACK_BRUSH)
+        if force_darkmode:
+            gc.SetBrush(wx.WHITE_BRUSH)
+        else:
+            gc.SetBrush(wx.BLACK_BRUSH)
         # gc.SetPen(wx.BLACK_PEN)
         gc.FillPath(gp)
         gc.StrokePath(gp)
+        dc.SelectObject(wx.NullBitmap)
+        gc.Destroy()
+        del gc.dc
+        del dc
+        # That has no effect...
+        # if force_darkmode:
+        #     mask = wx.Mask(bmp, wx.BLACK)
+        #     bmp.SetMask(mask)
+        #     bmp.SetMaskColour("black")
+        # else:
+        #     mask = wx.Mask(bmp, wx.WHITE)
+        #     effort = bmp.SetMask(mask)
+        #     bmp.SetMaskColour("white")
+        image = bmp.ConvertToImage()
+        if image.HasAlpha():
+            image.ClearAlpha()
+        image.InitAlpha()
+        if force_darkmode:
+            bgcol = 0
+        else:
+            bgcol = 255
+        for x in range(image.GetWidth()):
+            for y in range(image.GetHeight()):
+                r = image.GetRed(x, y)
+                g = image.GetGreen(x, y)
+                b = image.GetBlue(x, y)
+                if r == g == b == bgcol:
+                    image.SetAlpha(x, y, wx.IMAGE_ALPHA_TRANSPARENT)
+        bmp = wx.Bitmap(image)
         return bmp
 
     def make_geomstr(self, gc, path):
