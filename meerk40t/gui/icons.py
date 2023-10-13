@@ -372,8 +372,9 @@ class EmptyIcon:
 
 
 class VectorIcon:
-    def __init__(self, data):
-        self.data = data
+    def __init__(self, fill, stroke=None):
+        self.data = fill
+        self.data2 = stroke
 
     def GetBitmap(self,
         use_theme=True,
@@ -416,9 +417,21 @@ class VectorIcon:
         gc.dc = dc
 
         geom = Geomstr.svg(self.data)
+        if self.data2 is not None:
+            geom_stroke = Geomstr.svg(self.data2)
+            gp_stroke = self.make_geomstr(gc, geom_stroke)
+        else:
+            geom_stroke = None
+            gp_stroke = None
         gp = self.make_geomstr(gc, geom)
 
         min_x, min_y, path_width, path_height = gp.Box
+        if gp_stroke is not None:
+            min_x2, min_y2, path_width2, path_height2 = gp_stroke.Box
+            min_x = min(min_x, min_x2)
+            min_y = min(min_y, min_y2)
+            path_width = max(path_width, path_width2)
+            path_height = max(path_height, path_height2)
         min_x -= buffer
         min_y -= buffer
         path_width += buffer * 2
@@ -435,6 +448,7 @@ class VectorIcon:
         if keep_ratio:
             scale_x = min(scale_x, scale_y)
             scale_y = scale_x
+
         from meerk40t.svgelements import Matrix
         from meerk40t.gui.zmatrix import ZMatrix
 
@@ -458,9 +472,14 @@ class VectorIcon:
             gc.SetBrush(wx.WHITE_BRUSH)
         else:
             gc.SetBrush(wx.BLACK_BRUSH)
-        # gc.SetPen(wx.BLACK_PEN)
+
         gc.FillPath(gp)
-        gc.StrokePath(gp)
+        if gp_stroke is not None:
+            if force_darkmode:
+                gc.SetPen(wx.WHITE_PEN)
+            else:
+                gc.SetPen(wx.BLACK_PEN)
+            gc.StrokePath(gp_stroke)
         dc.SelectObject(wx.NullBitmap)
         gc.Destroy()
         del gc.dc
