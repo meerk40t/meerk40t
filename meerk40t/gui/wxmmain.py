@@ -121,7 +121,7 @@ class MeerK40t(MWindow):
         except AttributeError:
             # Not WX 4.1
             pass
-
+        # print(self.GetDPIScaleFactor())
         self.context.gui = self
         self._usb_running = dict()
         context = self.context
