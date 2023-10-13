@@ -375,8 +375,24 @@ class VectorIcon:
     def __init__(self, fill, stroke=None):
         self.data = fill
         self.data2 = stroke
+        self._pen = wx.Pen()
+        self._brush = wx.Brush()
+        self._background = wx.Brush()
 
-    def GetBitmap(self,
+    def light_mode(self):
+        self._pen.SetColour(wx.BLACK)
+        self._brush.SetColour(wx.BLACK)
+        self._background.SetColour(wx.WHITE)
+        self._pen.SetWidth(3)
+
+    def dark_mode(self):
+        self._pen.SetColour(wx.WHITE)
+        self._brush.SetColour(wx.WHITE)
+        self._background.SetColour(wx.BLACK)
+        self._pen.SetWidth(3)
+
+    def GetBitmap(
+        self,
         use_theme=True,
         resize=None,
         color=None,
@@ -384,13 +400,18 @@ class VectorIcon:
         noadjustment=False,
         keepalpha=False,
         force_darkmode=False,
-        buffer = 5,
-        **kwargs):
+        buffer=5,
+        **kwargs,
+    ):
+        if force_darkmode:
+            self.dark_mode()
+        else:
+            self.light_mode()
 
         from meerk40t.tools.geomstr import Geomstr
 
         if resize is None:
-            resize = 50
+            resize = get_default_icon_size()
 
         if isinstance(resize, tuple):
             final_icon_width, final_icon_height = resize
@@ -401,10 +422,7 @@ class VectorIcon:
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
         if color is None:
-            if force_darkmode:
-                dc.SetBackground(wx.BLACK_BRUSH)
-            else:
-                dc.SetBackground(wx.WHITE_BRUSH)
+            dc.SetBackground(self._background)
         else:
             if hasattr(color, "red"):
                 wxcolor = wx.Colour(color.red, color.green, color.blue)
@@ -468,22 +486,17 @@ class VectorIcon:
         if not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
 
-        if force_darkmode:
-            gc.SetBrush(wx.WHITE_BRUSH)
-        else:
-            gc.SetBrush(wx.BLACK_BRUSH)
-
+        gc.SetBrush(self._brush)
         gc.FillPath(gp)
+
         if gp_stroke is not None:
-            if force_darkmode:
-                gc.SetPen(wx.WHITE_PEN)
-            else:
-                gc.SetPen(wx.BLACK_PEN)
+            gc.SetPen(self._pen)
             gc.StrokePath(gp_stroke)
         dc.SelectObject(wx.NullBitmap)
         gc.Destroy()
         del gc.dc
         del dc
+
         # That has no effect...
         # if force_darkmode:
         #     mask = wx.Mask(bmp, wx.BLACK)
