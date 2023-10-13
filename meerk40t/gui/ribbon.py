@@ -225,8 +225,10 @@ class Button:
         # TypeError: GetBitmap() got an unexpected keyword argument 'force_darkmode'
         # Well...
         from meerk40t.gui.icons import PyEmbeddedImage
+        from meerk40t.gui.icons import VectorIcon
 
-        icon = PyEmbeddedImage(icon.data)
+        if not isinstance(icon, VectorIcon):
+            icon = PyEmbeddedImage(icon.data)
         self.bitmap_large = icon.GetBitmap(
             resize=resize_param,
             noadjustment=True,

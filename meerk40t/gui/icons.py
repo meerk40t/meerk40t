@@ -1,6 +1,8 @@
 import wx
 from wx.lib.embeddedimage import PyEmbeddedImage as py_embedded_image
 
+from meerk40t.tools.geomstr import TYPE_LINE, TYPE_QUAD, TYPE_ARC, Geomstr, TYPE_CUBIC
+
 """
 icons serves as a central repository for icons and other assets. These are all processed as PyEmbeddedImages which is
 extended from the wx.lib utility of the same name. We allow several additional modifications to these assets. For
@@ -367,6 +369,92 @@ class EmptyIcon:
                 image.SetRGB(x, y, r, g, b)
                 image.SetAlpha(x, y, wx.IMAGE_ALPHA_OPAQUE)
         image.ClearAlpha()
+
+
+class VectorIcon:
+    def __init__(self, data):
+        self.data = data
+
+    def GetBitmap(self, resize=50, **kwargs):
+        from meerk40t.tools.geomstr import Geomstr
+
+        bmp = wx.Bitmap(resize, resize, 32)
+        dc = wx.MemoryDC()
+        dc.SelectObject(bmp)
+        dc.SetBackground(wx.WHITE_BRUSH)
+        dc.Clear()
+        gc = wx.GraphicsContext.Create(dc)
+        gc.dc = dc
+
+        geom = Geomstr.svg(self.data)
+        gp = self.make_geomstr(gc, geom)
+        gc.SetBrush(wx.BLACK_BRUSH)
+        # gc.SetPen(wx.BLACK_PEN)
+        gc.FillPath(gp)
+        gc.StrokePath(gp)
+        return bmp
+
+    def make_geomstr(self, gc, path):
+        """
+        Takes a Geomstr path and converts it to a GraphicsContext.Graphics path
+
+        This also creates a point list of the relevant nodes and creates a ._cache_edit value to be used by node
+        editing view.
+        """
+        p = gc.CreatePath()
+        pts = list()
+        for subpath in path.as_subpaths():
+            if len(subpath) == 0:
+                continue
+            end = None
+            for e in subpath.segments:
+                seg_type = int(e[2].real)
+                start = e[0]
+                if end != start:
+                    # Start point does not equal previous end point.
+                    p.MoveToPoint(start.real, start.imag)
+                c0 = e[1]
+                c1 = e[3]
+                end = e[4]
+
+                if seg_type == TYPE_LINE:
+                    p.AddLineToPoint(end.real, end.imag)
+                    pts.append(start)
+                    pts.append(end)
+                elif seg_type == TYPE_QUAD:
+                    p.AddQuadCurveToPoint(c0.real, c0.imag, end.real, end.imag)
+                    pts.append(c0)
+                    pts.append(start)
+                    pts.append(end)
+                elif seg_type == TYPE_ARC:
+                    radius = Geomstr.arc_radius(None, line=e)
+                    center = Geomstr.arc_center(None, line=e)
+                    start_t = Geomstr.angle(None, center, start)
+                    end_t = Geomstr.angle(None, center, end)
+                    p.AddArc(
+                        center.real,
+                        center.imag,
+                        radius,
+                        start_t,
+                        end_t,
+                        clockwise="ccw" != Geomstr.orientation(None, start, c0, end),
+                    )
+                    pts.append(c0)
+                    pts.append(start)
+                    pts.append(end)
+                elif seg_type == TYPE_CUBIC:
+                    p.AddCurveToPoint(
+                        c0.real, c0.imag, c1.real, c1.imag, end.real, end.imag
+                    )
+                    pts.append(c0)
+                    pts.append(c1)
+                    pts.append(start)
+                    pts.append(end)
+                else:
+                    print(f"Unknown seg_type: {seg_type}")
+            if subpath.first_point == end:
+                p.CloseSubpath()
+        return p
 
 
 icons8_add_file_50 = PyEmbeddedImage(
@@ -1375,6 +1463,8 @@ icons8_camera_50 = PyEmbeddedImage(
     b"Esxod4Fcz8/oh47C2ZQzriE2TwM7zcd2/InZh1xF5mPOxEUSCSczEiv4udga2pCbbduJWegy"
     b"nc4JgyrkZnsE/9T3L5VZ4D0yJ9bCqYgiiihi6+EvESa3u9XaFVMAAAAASUVORK5CYII="
 )
+
+icons8_camera_50 = VectorIcon("M 19.09375 5 C 18.011719 5 17.105469 5.625 16.5625 6.4375 C 16.5625 6.449219 16.5625 6.457031 16.5625 6.46875 L 14.96875 9 L 6 9 C 3.253906 9 1 11.253906 1 14 L 1 38 C 1 40.746094 3.253906 43 6 43 L 44 43 C 46.746094 43 49 40.746094 49 38 L 49 14 C 49 11.253906 46.746094 9 44 9 L 34.9375 9 L 33.34375 6.46875 C 33.34375 6.457031 33.34375 6.449219 33.34375 6.4375 C 32.800781 5.625 31.894531 5 30.8125 5 Z M 19.09375 7 L 30.8125 7 C 31.132813 7 31.398438 7.175781 31.65625 7.5625 L 33.5625 10.53125 C 33.746094 10.820313 34.0625 11 34.40625 11 L 44 11 C 45.65625 11 47 12.34375 47 14 L 47 38 C 47 39.65625 45.65625 41 44 41 L 6 41 C 4.34375 41 3 39.65625 3 38 L 3 14 C 3 12.34375 4.34375 11 6 11 L 15.5 11 C 15.84375 11 16.160156 10.820313 16.34375 10.53125 L 18.21875 7.5625 L 18.25 7.53125 C 18.5 7.179688 18.789063 7 19.09375 7 Z M 10 13 C 8.355469 13 7 14.355469 7 16 C 7 17.644531 8.355469 19 10 19 C 11.644531 19 13 17.644531 13 16 C 13 14.355469 11.644531 13 10 13 Z M 10 15 C 10.554688 15 11 15.445313 11 16 C 11 16.554688 10.554688 17 10 17 C 9.445313 17 9 16.554688 9 16 C 9 15.445313 9.445313 15 10 15 Z M 25 15 C 18.9375 15 14 19.9375 14 26 C 14 32.0625 18.9375 37 25 37 C 31.0625 37 36 32.0625 36 26 C 36 19.9375 31.0625 15 25 15 Z M 25 17 C 29.980469 17 34 21.019531 34 26 C 34 30.980469 29.980469 35 25 35 C 20.019531 35 16 30.980469 16 26 C 16 21.019531 20.019531 17 25 17 Z")
 
 icons8_detective_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAE"
@@ -3857,4 +3947,9 @@ icons8_finger_50 = PyEmbeddedImage(
     b"C+9RBlcqxU318Q2PsMV/9+xKj/IP4Bld6mjFw03hZd1CGm1U8e3KwQI5dMx2PuuhbVJ57bkn"
     b"F9wC9tTpS6DmFJw4ELEBXCdHPHDE/NKFWgdwKeX7JbXvcYbTRoZt0KnPMF+def8kYYdTrk4k"
     b"Ycf2fWBUE8BuysLtBdySfi+c+MPeB/5NUJYk4pDZAAAAAElFTkSuQmCC"
+)
+
+
+icons8_centerh_50 = VectorIcon(
+    "M 23.4815320307,48.8124690662 C 23.1957961233,48.0678532274 23.0830594543,36.8929321171 23.2310060995,23.9793110433 C 23.4611043587,3.89503184947 23.716895111,0.5 25,0.5 C 26.2923777019,0.5 26.5,3.87962962963 26.5,24.9166666667 C 26.5,43.5556297706 26.204337579,49.4318874737 25.2505259312,49.7498246896 C 24.5633151933,49.9788949356 23.7672679381,49.557084905 23.4815320307,48.8124690662 Z M 5.2,31.8 C 3.49433315332,30.0943331533 3.64738544542,19.537533519 5.3988551522,18.083942768 C 6.77561936461,16.9413299568 10.1467515776,18.574363024 16.5,23.4615237926 L 18.5,25 L 16.5,26.5384762074 C 14.2357722318,28.2802064821 7.04496406527,33 6.65559094272,33 C 6.51501592422,33 5.86,32.46 5.2,31.8 Z M 37,29.6214380251 C 33.975,27.8650464301 31.5,25.7884692723 31.5,25.0068221188 C 31.5,24.2251749654 34.1464588219,22.0977065982 37.3810196041,20.2791146362 C 44.7105737226,16.1581631062 46,16.8528197296 46,24.9224447154 C 46,29.8955171137 44.7797216097,33.19853933 43.05,32.9074386443 C 42.7475,32.8565298987 40.025,31.37782962 37,29.6214380251 Z M 11.4529469789,26.8394849797 C 12.8538261405,26.2012017185 14,25.3734334777 14,25 C 14,24.3913047117 9.57843532493,22 8.45294697887,22 C 8.20382614049,22 8,23.35 8,25 C 8,28.4092552194 8.00353888442,28.4111404857 11.4529469789,26.8394849797 Z M 42,25 C 42,21.5907447806 41.9964611156,21.5888595143 38.5470530211,23.1605150203 C 35.4123272686,24.5887916561 35.3474130241,25.3796404509 38.25,26.779505359 C 41.6491195451,28.4188388948 42,28.2523339214 42,25 Z"
 )
