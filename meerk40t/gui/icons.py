@@ -375,9 +375,18 @@ class VectorIcon:
     def __init__(self, data):
         self.data = data
 
-    def GetBitmap(self, resize=50, **kwargs):
+    def GetBitmap(self,
+        use_theme=True,
+        resize=None,
+        color=None,
+        rotate=None,
+        noadjustment=False,
+        keepalpha=False, **kwargs):
+
         from meerk40t.tools.geomstr import Geomstr
 
+        if resize is None:
+            resize = 50
 
         if isinstance(resize, tuple):
             w, h = resize
@@ -387,7 +396,12 @@ class VectorIcon:
         bmp = wx.Bitmap(w, h, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
-        dc.SetBackground(wx.WHITE_BRUSH)
+        if color is None:
+            dc.SetBackground(wx.WHITE_BRUSH)
+        else:
+            wxcolor = wx.Colour(color)
+            brush = wx.Brush(wxcolor)
+            dc.SetBackground(brush)
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
         gc.dc = dc
