@@ -381,7 +381,10 @@ class VectorIcon:
         color=None,
         rotate=None,
         noadjustment=False,
-        keepalpha=False, **kwargs):
+        keepalpha=False,
+        force_darkmode=False,
+        buffer = 5,
+        **kwargs):
 
         from meerk40t.tools.geomstr import Geomstr
 
@@ -389,11 +392,11 @@ class VectorIcon:
             resize = 50
 
         if isinstance(resize, tuple):
-            w, h = resize
+            final_icon_width, final_icon_height = resize
         else:
-            w = resize
-            h = resize
-        bmp = wx.Bitmap(w, h, 32)
+            final_icon_width = resize
+            final_icon_height = resize
+        bmp = wx.Bitmap(final_icon_width, final_icon_height, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
         if color is None:
@@ -408,6 +411,43 @@ class VectorIcon:
 
         geom = Geomstr.svg(self.data)
         gp = self.make_geomstr(gc, geom)
+
+        min_x, min_y, path_width, path_height = gp.Box
+        min_x -= buffer
+        min_y -= buffer
+        path_width += buffer * 2
+        path_height += buffer * 2
+
+        scale_x = final_icon_width / path_width
+        scale_y = final_icon_height / path_height
+
+        scale = min(scale_x, scale_y)
+        width_scaled = int(round(path_width * scale))
+        height_scaled = int(round(path_height * scale))
+        keep_ratio = True
+
+        if keep_ratio:
+            scale_x = min(scale_x, scale_y)
+            scale_y = scale_x
+        from meerk40t.svgelements import Matrix
+        from meerk40t.gui.zmatrix import ZMatrix
+
+        matrix = Matrix()
+
+        matrix.post_translate(-min_x, -min_y)
+        matrix.post_scale(scale_x, scale_y)
+        if scale_y < 0:
+            matrix.pre_translate(0, -height_scaled)
+        if scale_x < 0:
+            matrix.pre_translate(-width_scaled, 0)
+
+        gc = wx.GraphicsContext.Create(dc)
+        gc.dc = dc
+        gc.SetInterpolationQuality(wx.INTERPOLATION_BEST)
+        gc.PushState()
+        if not matrix.is_identity():
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+
         gc.SetBrush(wx.BLACK_BRUSH)
         # gc.SetPen(wx.BLACK_PEN)
         gc.FillPath(gp)
