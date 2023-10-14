@@ -231,7 +231,11 @@ class DXFProcessor:
             e_list.append(node)
             return
         elif entity.dxftype() == "POINT":
-            x, y = entity.dxf.location
+            pos = entity.dxf.location
+            if len(pos) == 2:
+                x, y = pos
+            else:
+                x, y, z = pos
             node = context_node.add(x=x, y=y, matrix=Matrix(), type="elem point")
             self.check_for_attributes(node, entity)
             e_list.append(node)
