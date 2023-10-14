@@ -300,20 +300,22 @@ class wxMeerK40t(wx.App, Module):
 
     def __init__(self, context, path):
         wx.App.__init__(self, 0)
-        # try:
-        #     # https://discuss.wxpython.org/t/support-for-high-dpi-on-windows-10/32925
-        #     from ctypes import OleDLL
-        #
-        #     # Turn on high-DPI awareness to make sure rendering is sharp on big
-        #
-        #     # monitors with font scaling enabled.
-        #
-        #     OleDLL("shcore").SetProcessDpiAwareness(1)
-        #
-        # except AttributeError:
-        #     # We're on a non-Windows box.
-        #
-        #     pass
+        try:
+            # https://discuss.wxpython.org/t/support-for-high-dpi-on-windows-10/32925
+            from ctypes import OleDLL
+
+            # Turn on high-DPI awareness to make sure rendering is sharp on big
+
+            # monitors with font scaling enabled.
+
+            OleDLL("shcore").SetProcessDpiAwareness(1)
+
+        except AttributeError:
+            # We're on a non-Windows box.
+            pass
+        except OSError:
+            # Potential access denied.
+            pass
         self.supported_languages = supported_languages
         import meerk40t.gui.icons as icons
 
