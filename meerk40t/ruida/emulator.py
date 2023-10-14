@@ -21,6 +21,7 @@ from .rdjob import (
     parse_filenumber,
     parse_mem,
     swizzles_lut,
+    magic_keys,
 )
 
 
@@ -59,6 +60,7 @@ class RuidaEmulator:
             channel=self.channel,
             units_to_device_matrix=units_to_device_matrix,
         )
+        self._magic_keys = magic_keys()
 
     def __repr__(self):
         return f"RuidaEmulator(@{hex(id(self))})"
@@ -93,20 +95,9 @@ class RuidaEmulator:
         checksum_check = (sent_data[0] & 0xFF) << 8 | sent_data[1] & 0xFF
         checksum_sum = sum(data) & 0xFFFF
         if len(data) == 4:
-            if data == b"\xd4\x89\r\xf7":
-                self._set_magic(0x88)
-            elif data == b"\xd9\x84\x08\xfe":
-                self._set_magic(0x83)
-            elif data == b"i4\xb8N":
-                self._set_magic(0x33)
-            elif data == b"I\x14\x98n":
-                self._set_magic(0x13)
-            elif data == b"z#\xa7]":
-                self._set_magic(0x22)
-            elif data == b"K\x12\x96p":
-                self._set_magic(0x11)
-            elif data == b"-x\xf4\n":
-                self._set_magic(0x77)
+            magic = self._magic_keys.get(data)
+            if magic is not None:
+                self._set_magic(magic)
         if checksum_check == checksum_sum:
             response = b"\xCC"
             self.msg_reply(response, desc="Checksum match")
