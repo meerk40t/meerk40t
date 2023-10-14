@@ -9,6 +9,7 @@ from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color, Matrix, Path
+from meerk40t.fill.patterns import LivingHinges
 
 _ = wx.GetTranslation
 
@@ -31,15 +32,9 @@ class HingePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self._use_geomstr = self.context.setting(bool, "geomstr_hinge", False)
-        if self._use_geomstr:
-            from meerk40t.fill.patterns import LivingHinges
-        else:
-            from meerk40t.fill.patternfill import LivingHinges
         self.hinge_generator = LivingHinges(
             0, 0, float(Length("5cm")), float(Length("5cm"))
         )
-
         self.hinge_origin_x = "0cm"
         self.hinge_origin_y = "0cm"
         self.hinge_width = "5cm"
@@ -392,7 +387,6 @@ class HingePanel(wx.Panel):
         self.check_preview_show_shape.SetMinSize(wx.Size(-1, 23))
         hsizer_preview.Add(self.check_preview_show_pattern, 1, wx.EXPAND, 0)
         hsizer_preview.Add(self.check_preview_show_shape, 1, wx.EXPAND, 0)
-
         self.panel_preview = wx.Panel(self, wx.ID_ANY)
         main_right.Add(self.panel_preview, 1, wx.EXPAND, 0)
         main_left.Layout()
@@ -458,31 +452,21 @@ class HingePanel(wx.Panel):
             except ZeroDivisionError:
                 return
             ratio *= 0.9
-            if self._use_geomstr:
-                matrix = gc.CreateMatrix(
-                    a=ratio,
-                    b=0,
-                    c=0,
-                    d=ratio,
-                    tx=ratio
-                    * (
-                        0.05 * self.hinge_generator.width - self.hinge_generator.start_x
-                    ),
-                    ty=ratio
-                    * (
-                        0.05 * self.hinge_generator.height
-                        - self.hinge_generator.start_y
-                    ),
-                )
-            else:
-                matrix = gc.CreateMatrix(
-                    a=ratio,
-                    b=0,
-                    c=0,
-                    d=ratio,
-                    tx=0.05 * ratio * self.hinge_generator.width,
-                    ty=0.05 * ratio * self.hinge_generator.height,
-                )
+            matrix = gc.CreateMatrix(
+                a=ratio,
+                b=0,
+                c=0,
+                d=ratio,
+                tx=ratio
+                * (
+                    0.05 * self.hinge_generator.width - self.hinge_generator.start_x
+                ),
+                ty=ratio
+                * (
+                    0.05 * self.hinge_generator.height
+                    - self.hinge_generator.start_y
+                ),
+            )
             gc.SetTransform(matrix)
             if ratio == 0:
                 ratio = 1
@@ -496,16 +480,8 @@ class HingePanel(wx.Panel):
                         0, 0, self.hinge_generator.width, self.hinge_generator.height
                     )
                 else:
-                    if self._use_geomstr:
-                        path = self.hinge_generator.outershape.as_path()
-                        if path:
-                            gcpath = self.renderer.make_path(gc, path)
-                            gc.StrokePath(gcpath)
-                    else:
-                        node = copy(self.hinge_generator.outershape)
-                        bb = node.bbox()
-                        node.matrix *= Matrix.translate(-bb[0], -bb[1])
-                        path = node.as_path()
+                    path = self.hinge_generator.outershape.as_path()
+                    if path:
                         gcpath = self.renderer.make_path(gc, path)
                         gc.StrokePath(gcpath)
             if self.check_preview_show_pattern.GetValue():
@@ -520,6 +496,8 @@ class HingePanel(wx.Panel):
                 gspath = self.hinge_generator.preview_path
                 if gspath is not None:
                     if isinstance(gspath, Path):
+                        bb = self.hinge_generator.outershape.bbox()
+                        gspath.transform *= Matrix.translate(-bb[0], -bb[1])
                         gcpath = self.renderer.make_path(gc, gspath)
                     else:
                         gcpath = self.renderer.make_geomstr(gc, gspath)
@@ -589,7 +567,12 @@ class HingePanel(wx.Panel):
 
         # Polycut algorithm does not work for me (yet), final=False still
         self.hinge_generator.generate(show_outline=False, force=True, final=True)
-        path = self.hinge_generator.path
+        path = copy(self.hinge_generator.path)
+        if path is None:
+            # print ("Invalid path")
+            self.button_generate.Enable(True)
+            self.button_generate.SetLabel(oldlabel)
+            return
         if hasattr(path, "as_path"):
             path = path.as_path()
         node = self.context.elements.elem_branch.add(
@@ -870,10 +853,22 @@ class HingePanel(wx.Panel):
 
         entry = self.context.lookup(f"pattern/{pattern}")
         flag, info1, info2 = self.hinge_generator.set_predefined_pattern(entry)
-        x = float(Length(self.hinge_origin_x))
-        y = float(Length(self.hinge_origin_y))
-        wd = float(Length(self.hinge_width))
-        ht = float(Length(self.hinge_height))
+        try:
+            x = float(Length(self.hinge_origin_x))
+        except ValueError:
+            x = 0
+        try:
+            y = float(Length(self.hinge_origin_y))
+        except ValueError:
+            y = 0
+        try:
+            wd = float(Length(self.hinge_width))
+        except ValueError:
+            wd = float(Length("5cm"))
+        try:
+            ht = float(Length(self.hinge_height))
+        except ValueError:
+            ht = float(Length("5cm"))
         self.hinge_generator.set_hinge_area(x, y, wd, ht)
         self.hinge_generator.set_cell_values(self.hinge_cells_x, self.hinge_cells_y)
         self.hinge_generator.set_padding_values(

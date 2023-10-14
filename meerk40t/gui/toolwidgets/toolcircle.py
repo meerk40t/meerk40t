@@ -28,7 +28,8 @@ class CircleTool(ToolWidget):
         self.p1 = None
         self.p2 = None
         # 0 -> from corner, 1 from center
-        self.creation_mode = 0
+        self.old_mode = self.scene.context.setting(bool, "circle_from_corner", False)
+        self.creation_mode = 0 if self.old_mode else 1
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.p1 is not None and self.p2 is not None:
@@ -98,7 +99,10 @@ class CircleTool(ToolWidget):
                     ),
                     radius=Length(amount=radius, digits=2, preferred_units=units),
                 )
-                s += _(" (Press Alt-Key to draw from center)")
+                if self.old_mode:
+                    s += _(" (Press Alt-Key to draw from center)")
+                else:
+                    s += _(" (Press Alt-Key to draw from corner)")
                 self.scene.context.signal("statusmsg", s)
 
     def event(
@@ -118,17 +122,25 @@ class CircleTool(ToolWidget):
             or (event_type == "key_up" and "alt" in modifiers)
             or ("alt" not in modifiers)
         ):
-            if self.creation_mode != 0:
-                self.creation_mode = 0
-                update_required = True
+            # No longer alternative mode
+            if self.old_mode:
+                newmode = 0
+            else:
+                newmode = 1
         else:
-            if self.creation_mode != 1:
-                self.creation_mode = 1
-                update_required = True
+            # Alternative mode
+            if self.old_mode:
+                newmode = 1
+            else:
+                newmode = 0
+        if self.creation_mode != newmode:
+            self.creation_mode = newmode
+            update_required = True
         if event_type == "leftdown":
             self.scene.pane.tool_active = True
             if nearest_snap is None:
-                self.p1 = complex(space_pos[0], space_pos[1])
+                sx, sy = self.scene.get_snap_point(space_pos[0], space_pos[1], modifiers)
+                self.p1 = complex(sx, sy)
             else:
                 self.p1 = complex(nearest_snap[0], nearest_snap[1])
             response = RESPONSE_CONSUME
