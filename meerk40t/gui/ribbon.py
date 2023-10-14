@@ -49,6 +49,7 @@ import wx
 
 from meerk40t.kernel import Job
 from meerk40t.svgelements import Color
+from meerk40t.gui.icons import PyEmbeddedImage, STD_ICON_SIZE
 
 _ = wx.GetTranslation
 
@@ -224,7 +225,7 @@ class Button:
         # as otherwise a strange type error is thrown:
         # TypeError: GetBitmap() got an unexpected keyword argument 'force_darkmode'
         # Well...
-        from meerk40t.gui.icons import PyEmbeddedImage
+
 
         icon = PyEmbeddedImage(icon.data)
         self.bitmap_large = icon.GetBitmap(
@@ -432,7 +433,7 @@ class Button:
             if icon:
                 # There seems to be a bug to display icons in a submenu consistently
                 # print (f"Had a bitmap for {v.get('label')}")
-                item.SetBitmap(icon.GetBitmap(resize=25))
+                item.SetBitmap(icon.GetBitmap(resize=STD_ICON_SIZE/2))
             top.Bind(wx.EVT_MENU, self.drop_menu_click(v), id=item.GetId())
         top.PopupMenu(menu)
 
@@ -730,7 +731,7 @@ class RibbonPanel:
             item.Enable(v.enabled)
             item.SetHelp(v.tip)
             if v.icon:
-                item.SetBitmap(v.icon.GetBitmap(resize=25))
+                item.SetBitmap(v.icon.GetBitmap(resize=STD_ICON_SIZE/2))
             top.Bind(wx.EVT_MENU, v.click, id=item.Id)
         top.PopupMenu(menu)
 

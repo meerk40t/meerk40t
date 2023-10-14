@@ -7,7 +7,7 @@ from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
 
 from ...svgelements import Color
-from ..icons import icons8_choose_font_50, icons8_text_50
+from ..icons import icons8_choose_font_50, icons8_text_50, STD_ICON_SIZE
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
 from .attributes import ColorPanel, IdPanel, PositionSizePanel, PreventChangePanel
@@ -85,7 +85,7 @@ class FontHistory(wx.Panel):
                     | wx.ST_NO_AUTORESIZE,
                 )
             )
-            self.last_font[i].SetMinSize((120, 90))
+            self.last_font[i].SetMinSize(dip_size(self, 120, 90))
             self.last_font[i].SetFont(self.default_font)
             self.last_font[i].SetToolTip(_("Choose last used font-settings"))
             self.textbox.Bind(wx.EVT_TEXT, self.on_text_change)
@@ -179,7 +179,7 @@ class TextPropertyPanel(ScrolledPanel):
         self.label_fonttest = wx.StaticText(
             self, wx.ID_ANY, "", style=wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE
         )
-        self.label_fonttest.SetMinSize((-1, 90))
+        self.label_fonttest.SetMinSize(dip_size(self, -1, 90))
         self.label_fonttest.SetFont(
             wx.Font(
                 16,
@@ -191,7 +191,7 @@ class TextPropertyPanel(ScrolledPanel):
             )
         )
         self.button_choose_font = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_choose_font_50.GetBitmap(resize=25)
+            self, wx.ID_ANY, icons8_choose_font_50.GetBitmap(resize=STD_ICON_SIZE/2)
         )
         self.panel_id = IdPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node

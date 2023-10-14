@@ -711,7 +711,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     # Try to center it vertically to the controls extent
                     wd, ht = control.GetSize()
                     label_text = wx.StaticText(self, id=wx.ID_ANY, label=label + " ")
-                    # label_text.SetMinSize((-1, ht))
+                    # label_text.SetMinSize(dip_size(self, -1, ht))
                     control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
                 control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
                 control.Bind(
@@ -768,7 +768,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     # Try to center it vertically to the controls extent
                     wd, ht = control.GetSize()
                     label_text = wx.StaticText(self, id=wx.ID_ANY, label=label + " ")
-                    # label_text.SetMinSize((-1, ht))
+                    # label_text.SetMinSize(dip_size(self, -1, ht))
                     control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
                 if ctrl_width > 0:
                     control.SetMaxSize(dip_size(self, ctrl_width, -1))

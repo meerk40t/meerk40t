@@ -13,6 +13,7 @@ from meerk40t.gui.icons import (
     icons8_system_task_20,
     icons8_timer_20,
     icons8_up_50,
+    STD_ICON_SIZE,
 )
 from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 
@@ -81,16 +82,16 @@ class DefaultActionPanel(wx.Panel):
         self.button_down_prepend = wx.StaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 30, 20)
         )
-        self.button_del_prepend.SetBitmap(icons8_remove_25.GetBitmap(resize=25))
-        self.button_up_prepend.SetBitmap(icons8_up_50.GetBitmap(resize=25))
-        self.button_down_prepend.SetBitmap(icons8_down_50.GetBitmap(resize=25))
+        self.button_del_prepend.SetBitmap(icons8_remove_25.GetBitmap(resize=STD_ICON_SIZE/2))
+        self.button_up_prepend.SetBitmap(icons8_up_50.GetBitmap(resize=STD_ICON_SIZE/2))
+        self.button_down_prepend.SetBitmap(icons8_down_50.GetBitmap(resize=STD_ICON_SIZE/2))
 
         self.button_del_append = wx.StaticBitmap(self, wx.ID_ANY, size=dip_size(self, 30, 30))
         self.button_up_append = wx.StaticBitmap(self, wx.ID_ANY, size=dip_size(self, 30, 30))
         self.button_down_append = wx.StaticBitmap(self, wx.ID_ANY, size=dip_size(self, 30, 30))
-        self.button_del_append.SetBitmap(icons8_remove_25.GetBitmap(resize=25))
-        self.button_up_append.SetBitmap(icons8_up_50.GetBitmap(resize=25))
-        self.button_down_append.SetBitmap(icons8_down_50.GetBitmap(resize=25))
+        self.button_del_append.SetBitmap(icons8_remove_25.GetBitmap(resize=STD_ICON_SIZE/2))
+        self.button_up_append.SetBitmap(icons8_up_50.GetBitmap(resize=STD_ICON_SIZE/2))
+        self.button_down_append.SetBitmap(icons8_down_50.GetBitmap(resize=STD_ICON_SIZE/2))
 
         sizer_param = StaticBoxSizer(
             self, wx.ID_ANY, _("Operation parameter:"), wx.HORIZONTAL

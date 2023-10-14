@@ -280,21 +280,21 @@ class HingePanel(wx.Panel):
         vsizer_options.Add(hsizer_pattern, 0, wx.EXPAND, 0)
 
         label_pattern = wx.StaticText(self, wx.ID_ANY, _("Pattern:"))
-        label_pattern.SetMinSize((90, -1))
+        label_pattern.SetMinSize(dip_size(self, 90, -1))
         hsizer_pattern.Add(label_pattern, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.combo_style.SetToolTip(_("Choose the hinge pattern"))
         hsizer_pattern.Add(self.combo_style, 1, wx.EXPAND, 0)
 
         self.button_default.SetToolTip(_("Default Values"))
-        self.button_default.SetMinSize((30, -1))
+        self.button_default.SetMinSize(dip_size(self, 30, -1))
         hsizer_pattern.Add(self.button_default, 0, wx.EXPAND, 0)
 
         hsizer_cellwidth = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_options.Add(hsizer_cellwidth, 1, wx.EXPAND, 0)
 
         label_cell_width = wx.StaticText(self, wx.ID_ANY, _("Cell-Width:"))
-        label_cell_width.SetMinSize((90, -1))
+        label_cell_width.SetMinSize(dip_size(self, 90, -1))
         hsizer_cellwidth.Add(label_cell_width, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.slider_width.SetToolTip(
@@ -313,7 +313,7 @@ class HingePanel(wx.Panel):
         vsizer_options.Add(hsizer_cellheight, 1, wx.EXPAND, 0)
 
         label_cell_height = wx.StaticText(self, wx.ID_ANY, _("Cell-Height:"))
-        label_cell_height.SetMinSize((90, -1))
+        label_cell_height.SetMinSize(dip_size(self, 90, -1))
         hsizer_cellheight.Add(label_cell_height, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.slider_height.SetToolTip(
@@ -332,7 +332,7 @@ class HingePanel(wx.Panel):
         vsizer_options.Add(hsizer_offsetx, 1, wx.EXPAND, 0)
 
         label_offset_x = wx.StaticText(self, wx.ID_ANY, _("Offset X:"))
-        label_offset_x.SetMinSize((90, -1))
+        label_offset_x.SetMinSize(dip_size(self, 90, -1))
         hsizer_offsetx.Add(label_offset_x, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.slider_offset_x.SetToolTip(_("Select the pattern-offset in X-direction"))
@@ -349,7 +349,7 @@ class HingePanel(wx.Panel):
         vsizer_options.Add(hsizer_offsety, 0, wx.EXPAND, 0)
 
         label_offset_y = wx.StaticText(self, wx.ID_ANY, _("Offset Y:"))
-        label_offset_y.SetMinSize((90, -1))
+        label_offset_y.SetMinSize(dip_size(self, 90, -1))
         hsizer_offsety.Add(label_offset_y, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.slider_offset_y.SetToolTip(_("Select the pattern-offset in Y-direction"))

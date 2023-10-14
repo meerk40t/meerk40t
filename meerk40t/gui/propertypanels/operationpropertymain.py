@@ -1,6 +1,6 @@
 import wx
 
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
 from meerk40t.kernel import lookup_listener, signal_listener
 
 from ...core.units import UNITS_PER_MM, Length
@@ -785,11 +785,11 @@ class InfoPanel(wx.Panel):
         )
 
         self.text_children = wx.TextCtrl(self, wx.ID_ANY, "0", style=wx.TE_READONLY)
-        self.text_children.SetMinSize((25, -1))
-        self.text_children.SetMaxSize((55, -1))
+        self.text_children.SetMinSize(dip_size(self, 25, -1))
+        self.text_children.SetMaxSize(dip_size(self, 55, -1))
         self.text_time = wx.TextCtrl(self, wx.ID_ANY, "---", style=wx.TE_READONLY)
-        self.text_time.SetMinSize((55, -1))
-        self.text_time.SetMaxSize((100, -1))
+        self.text_time.SetMinSize(dip_size(self, 55, -1))
+        self.text_time.SetMaxSize(dip_size(self, 100, -1))
         self.text_children.SetToolTip(
             _("How many elements does this operation contain")
         )
