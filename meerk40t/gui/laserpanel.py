@@ -13,7 +13,7 @@ from meerk40t.gui.icons import (
     icons8_save_50,
 )
 from meerk40t.gui.navigationpanels import Drag, Jog, MovePanel
-from meerk40t.gui.wxutils import StaticBoxSizer, disable_window, HoverButton
+from meerk40t.gui.wxutils import StaticBoxSizer, disable_window, HoverButton, dip_size
 from meerk40t.kernel import lookup_listener, signal_listener
 
 _ = wx.GetTranslation
@@ -121,7 +121,7 @@ class LaserPanel(wx.Panel):
         )
 
         sizer_devices.Add(self.combo_devices, 1, wx.EXPAND, 0)
-        self.btn_config_laser.SetMinSize(wx.Size(20, -1))
+        self.btn_config_laser.SetMinSize(dip_size(self, 20, -1))
         sizer_devices.Add(self.btn_config_laser, 0, wx.EXPAND, 0)
 
         sizer_control = wx.BoxSizer(wx.HORIZONTAL)

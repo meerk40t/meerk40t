@@ -46,7 +46,7 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.position import PositionPanel
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Angle
 
@@ -1140,7 +1140,7 @@ class MovePanel(wx.Panel):
         )
         self.small_buttons = []
         for idx in range(9):
-            btn = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(25, 25))
+            btn = wx.StaticBitmap(self, wx.ID_ANY, size=dip_size(self, 25, 25))
             icon = EmptyIcon(size=20, msg=str(idx + 1), ptsize=12, color=wx.LIGHT_GREY)
             btn.SetBitmap(icon.GetBitmap(resize=20))
             self.small_buttons.append(btn)
@@ -1489,8 +1489,8 @@ class PulsePanel(wx.Panel):
 #         sizer_label = wx.BoxSizer(wx.VERTICAL)
 #         fieldsizer1 = wx.BoxSizer(wx.HORIZONTAL)
 #         fieldsizer2 = wx.BoxSizer(wx.HORIZONTAL)
-#         self.label_9.SetMinSize(wx.Size(45, -1))
-#         self.label_10.SetMinSize(wx.Size(45, -1))
+#         self.label_9.SetMinSize(dip_size(self, 45, -1))
+#         self.label_10.SetMinSize(dip_size(self, 45, -1))
 #         fieldsizer1.Add(self.label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 #         fieldsizer1.Add(self.text_width, 1, wx.EXPAND, 0)
 

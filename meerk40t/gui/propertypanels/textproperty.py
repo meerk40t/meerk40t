@@ -4,7 +4,7 @@ import wx
 
 from meerk40t.gui.fonts import wxfont_to_svg
 from meerk40t.gui.laserrender import LaserRender
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
 
 from ...svgelements import Color
 from ..icons import icons8_choose_font_50, icons8_text_50
@@ -248,22 +248,22 @@ class TextPropertyPanel(ScrolledPanel):
         else:
             mysize = 23
         self.button_attrib_larger = wx.Button(
-            self, id=wx.ID_ANY, label="A", size=wx.Size(mysize, mysize)
+            self, id=wx.ID_ANY, label="A", size=dip_size(self, mysize, mysize)
         )
         self.button_attrib_smaller = wx.Button(
-            self, id=wx.ID_ANY, label="a", size=wx.Size(mysize, mysize)
+            self, id=wx.ID_ANY, label="a", size=dip_size(self, mysize, mysize)
         )
         self.button_attrib_bold = wx.ToggleButton(
-            self, id=wx.ID_ANY, label="b", size=wx.Size(mysize, mysize)
+            self, id=wx.ID_ANY, label="b", size=dip_size(self, mysize, mysize)
         )
         self.button_attrib_italic = wx.ToggleButton(
-            self, id=wx.ID_ANY, label="i", size=wx.Size(mysize, mysize)
+            self, id=wx.ID_ANY, label="i", size=dip_size(self, mysize, mysize)
         )
         self.button_attrib_underline = wx.ToggleButton(
-            self, id=wx.ID_ANY, label="u", size=wx.Size(mysize, mysize)
+            self, id=wx.ID_ANY, label="u", size=dip_size(self, mysize, mysize)
         )
         self.button_attrib_strikethrough = wx.ToggleButton(
-            self, id=wx.ID_ANY, label="s", size=wx.Size(mysize, mysize)
+            self, id=wx.ID_ANY, label="s", size=dip_size(self, mysize, mysize)
         )
 
         self.check_variable = wx.CheckBox(self, wx.ID_ANY, _(" Translate Variables"))

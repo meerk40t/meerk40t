@@ -12,7 +12,7 @@ from meerk40t.gui.propertypanels.attributes import (
     PositionSizePanel,
     PreventChangePanel,
 )
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.svgelements import Matrix
 
 _ = wx.GetTranslation
@@ -1244,10 +1244,10 @@ class ImagePropertyPanel(ScrolledPanel):
         sizer_grayscale.Add(sizer_rg, 5, wx.EXPAND, 0)
         sizer_grayscale.Add(sizer_bl, 5, wx.EXPAND, 0)
 
-        self.text_grayscale_red.SetMaxSize(wx.Size(70, -1))
-        self.text_grayscale_green.SetMaxSize(wx.Size(70, -1))
-        self.text_grayscale_blue.SetMaxSize(wx.Size(70, -1))
-        self.text_grayscale_lightness.SetMaxSize(wx.Size(70, -1))
+        self.text_grayscale_red.SetMaxSize(dip_size(self, 70, -1))
+        self.text_grayscale_green.SetMaxSize(dip_size(self, 70, -1))
+        self.text_grayscale_blue.SetMaxSize(dip_size(self, 70, -1))
+        self.text_grayscale_lightness.SetMaxSize(dip_size(self, 70, -1))
 
         sizer_main.Add(sizer_grayscale, 0, wx.EXPAND, 0)
 

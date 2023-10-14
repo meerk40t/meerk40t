@@ -6,7 +6,7 @@ from meerk40t.core.units import ACCEPTED_UNITS, Length
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_hinges_50
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color, Matrix, Path
 
@@ -218,9 +218,9 @@ class HingePanel(wx.Panel):
 
     def _set_layout(self):
         def size_it(ctrl, value):
-            ctrl.SetMaxSize(wx.Size(int(value), -1))
-            ctrl.SetMinSize(wx.Size(int(value * 0.75), -1))
-            ctrl.SetSize(wx.Size(value, -1))
+            ctrl.SetMaxSize(dip_size(self, int(value), -1))
+            ctrl.SetMinSize(dip_size(self, int(value * 0.75), -1))
+            ctrl.SetSize(dip_size(self, value, -1))
 
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         size_it(self.slider_height, 120)
@@ -388,8 +388,8 @@ class HingePanel(wx.Panel):
 
         hsizer_preview = wx.BoxSizer(wx.HORIZONTAL)
         main_right.Add(hsizer_preview, 0, wx.EXPAND, 0)
-        self.check_preview_show_pattern.SetMinSize(wx.Size(-1, 23))
-        self.check_preview_show_shape.SetMinSize(wx.Size(-1, 23))
+        self.check_preview_show_pattern.SetMinSize(dip_size(self, -1, 23))
+        self.check_preview_show_shape.SetMinSize(dip_size(self, -1, 23))
         hsizer_preview.Add(self.check_preview_show_pattern, 1, wx.EXPAND, 0)
         hsizer_preview.Add(self.check_preview_show_shape, 1, wx.EXPAND, 0)
 

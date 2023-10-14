@@ -47,7 +47,7 @@ from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.bedwidget import BedWidget
 from .scenewidgets.gridwidget import GridWidget
-from .wxutils import StaticBoxSizer
+from .wxutils import StaticBoxSizer, dip_size
 from .zmatrix import ZMatrix
 
 _ = wx.GetTranslation
@@ -1054,7 +1054,7 @@ class SimulationPanel(wx.Panel, Job):
         self.checkbox_optimize.Reparent(self.subpanel_optimize)
         self.btn_redo_it.Reparent(self.subpanel_optimize)
 
-        self.checkbox_optimize.SetMinSize(wx.Size(-1, 23))
+        self.checkbox_optimize.SetMinSize(dip_size(self, -1, 23))
         opt_sizer.Add(self.options_optimize, 1, wx.EXPAND, 0)
         opt_sizer.Add(self.checkbox_optimize, 0, wx.EXPAND, 0)
         opt_sizer.Add(self.btn_redo_it, 0, wx.EXPAND, 0)
@@ -1071,7 +1071,7 @@ class SimulationPanel(wx.Panel, Job):
             mysize = 40
         else:
             mysize = 20
-        self.btn_slide_options.SetMinSize(wx.Size(mysize, -1))
+        self.btn_slide_options.SetMinSize(dip_size(self, mysize, -1))
         self.voption_sizer = wx.BoxSizer(wx.VERTICAL)
         self.voption_sizer.Add(self.panel_optimize, 1, wx.EXPAND, 0)
 
@@ -1121,7 +1121,7 @@ class SimulationPanel(wx.Panel, Job):
         label_playback_mode = wx.StaticText(self, wx.ID_ANY, _("Mode") + " ")
         sizer_display.Add(label_playback_mode, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         # Make sure it has about textbox size, otherwise too narrow
-        self.radio_cut.SetMinSize(wx.Size(-1, 23))
+        self.radio_cut.SetMinSize(dip_size(self, -1, 23))
         sizer_display.Add(self.radio_cut, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_display.Add(self.radio_time_seconds, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_display.Add(self.radio_time_minutes, 1, wx.ALIGN_CENTER_VERTICAL, 0)

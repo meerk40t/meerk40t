@@ -2,7 +2,7 @@ import wx
 
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_keyhole_50, icons8_split_table_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color
 
@@ -20,13 +20,13 @@ class InfoPanel(wx.Panel):
         self.lbl_info_last = wx.StaticText(self, wx.ID_ANY, "")
         self.preview_size = 25
         self.image_default = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(self.preview_size, self.preview_size)
+            self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
         self.image_first = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(self.preview_size, self.preview_size)
+            self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
         self.image_last = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(self.preview_size, self.preview_size)
+            self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
         sizer_main = wx.BoxSizer(wx.VERTICAL)
 

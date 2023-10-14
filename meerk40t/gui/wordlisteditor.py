@@ -15,7 +15,7 @@ from .icons import (
     icons8_remove_25,
 )
 from .mwindow import MWindow
-from .wxutils import StaticBoxSizer
+from .wxutils import StaticBoxSizer, dip_size
 
 _ = wx.GetTranslation
 
@@ -191,22 +191,22 @@ class WordlistPanel(wx.Panel):
         )
 
         self.btn_edit_wordlist_del = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(25, 25)
+            self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
         self.btn_edit_wordlist_edit = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(25, 25)
+            self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
         self.btn_edit_content_add = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(25, 25)
+            self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
         self.btn_edit_content_del = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(25, 25)
+            self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
         self.btn_edit_content_edit = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(25, 25)
+            self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
         self.btn_edit_content_paste = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(25, 25)
+            self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
         self.btn_edit_wordlist_del.SetBitmap(icons8_remove_25.GetBitmap())
         self.btn_edit_wordlist_edit.SetBitmap(icons8_edit_25.GetBitmap())
@@ -234,12 +234,12 @@ class WordlistPanel(wx.Panel):
             )
         )
         minsize = 23
-        self.btn_edit_wordlist_del.SetMinSize(wx.Size(minsize, minsize))
-        self.btn_edit_wordlist_edit.SetMinSize(wx.Size(minsize, minsize))
-        self.btn_edit_content_add.SetMinSize(wx.Size(minsize, minsize))
-        self.btn_edit_content_del.SetMinSize(wx.Size(minsize, minsize))
-        self.btn_edit_content_edit.SetMinSize(wx.Size(minsize, minsize))
-        self.btn_edit_content_paste.SetMinSize(wx.Size(minsize, minsize))
+        self.btn_edit_wordlist_del.SetMinSize(dip_size(self, minsize, minsize))
+        self.btn_edit_wordlist_edit.SetMinSize(dip_size(self, minsize, minsize))
+        self.btn_edit_content_add.SetMinSize(dip_size(self, minsize, minsize))
+        self.btn_edit_content_del.SetMinSize(dip_size(self, minsize, minsize))
+        self.btn_edit_content_edit.SetMinSize(dip_size(self, minsize, minsize))
+        self.btn_edit_content_paste.SetMinSize(dip_size(self, minsize, minsize))
 
         sizer_edit_wordlist_buttons.Add(self.btn_edit_wordlist_del, 0, wx.EXPAND, 0)
         sizer_edit_wordlist_buttons.Add(self.btn_edit_wordlist_edit, 0, wx.EXPAND, 0)

@@ -5,7 +5,7 @@ import wx
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import icons8_lock_50, icons8_padlock_50
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import CheckBox, StaticBoxSizer, TextCtrl
+from meerk40t.gui.wxutils import CheckBox, StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -54,7 +54,7 @@ class ColorPanel(wx.Panel):
         for i in range(len(self.bgcolors)):
             self.underliner.append(wx.StaticBitmap(self, wx.ID_ANY))
             self.underliner[i].SetBackgroundColour(wx.BLUE)
-            self.underliner[i].SetMaxSize(wx.Size(-1, 3))
+            self.underliner[i].SetMaxSize(dip_size(self, -1, 3))
             # self.lbl_color[i].SetMinSize((-1, 20))
             self.btn_color.append(wx.Button(self, wx.ID_ANY, ""))
             if i == 0:
@@ -333,9 +333,9 @@ class LinePropPanel(wx.Panel):
         self.combo_fill = wx.ComboBox(
             self, wx.ID_ANY, choices=fillchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
-        self.combo_cap.SetMaxSize(wx.Size(100, -1))
-        self.combo_join.SetMaxSize(wx.Size(100, -1))
-        self.combo_fill.SetMaxSize(wx.Size(100, -1))
+        self.combo_cap.SetMaxSize(dip_size(self, 100, -1))
+        self.combo_join.SetMaxSize(dip_size(self, 100, -1))
+        self.combo_fill.SetMaxSize(dip_size(self, 100, -1))
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_attributes = wx.BoxSizer(wx.HORIZONTAL)
@@ -447,7 +447,7 @@ class StrokeWidthPanel(wx.Panel):
         self.text_width = TextCtrl(
             self, wx.ID_ANY, value="0.10", style=wx.TE_PROCESS_ENTER, check="float", limited=True
         )
-        self.text_width.SetMaxSize(wx.Size(100, -1))
+        self.text_width.SetMaxSize(dip_size(self, 100, -1))
 
         self.unit_choices = ["px", "pt", "mm", "cm", "inch", "mil"]
         self.combo_units = wx.ComboBox(
@@ -457,7 +457,7 @@ class StrokeWidthPanel(wx.Panel):
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
         self.combo_units.SetSelection(0)
-        self.combo_units.SetMaxSize(wx.Size(100, -1))
+        self.combo_units.SetMaxSize(dip_size(self, 100, -1))
 
         self.chk_scale = wx.CheckBox(self, wx.ID_ANY, _("Scale"))
         self.chk_scale.SetToolTip(

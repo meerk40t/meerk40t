@@ -346,6 +346,7 @@ def plugin(kernel, lifecycle):
                     try:
                         import wx
                         from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
+                        from meerk40t.gui.wxutils import dip_size
                         has_wx = True
                     except ImportError:
                         pass
@@ -385,7 +386,7 @@ def plugin(kernel, lifecycle):
                             sizer.Add(panel, 1, wx.EXPAND, 0)
                             dlg.SetSizer(sizer)
                             sizer.Fit(dlg)
-                            dlg.SetSize(wx.Size(620, 400))
+                            dlg.SetSize(dip_size(self, 620, 400))
                             dlg.CenterOnScreen()
                             answer = dlg.ShowModal()
                             dlg.Destroy()

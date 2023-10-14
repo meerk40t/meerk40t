@@ -12,7 +12,7 @@ from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
 from meerk40t.gui.icons import icons8_detective_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.kernel import Settings, lookup_listener, signal_listener
 from meerk40t.svgelements import Color, Matrix
 
@@ -163,9 +163,9 @@ class TemplatePanel(wx.Panel):
 
     def __init__(self, *args, context=None, storage=None, **kwds):
         def size_it(ctrl, value):
-            ctrl.SetMaxSize(wx.Size(int(value), -1))
-            ctrl.SetMinSize(wx.Size(int(value * 0.75), -1))
-            ctrl.SetSize(wx.Size(value, -1))
+            ctrl.SetMaxSize(dip_size(self, int(value), -1))
+            ctrl.SetMinSize(dip_size(self, int(value * 0.75), -1))
+            ctrl.SetSize(dip_size(self, value, -1))
 
         # begin wxGlade: clsLasertools.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

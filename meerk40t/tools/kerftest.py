@@ -11,7 +11,7 @@ from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import icon_kerf_50, icons8_detective_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.kernel import lookup_listener, signal_listener
 from meerk40t.svgelements import Color, Matrix, Polyline
 
@@ -96,9 +96,9 @@ class KerfPanel(wx.Panel):
 
     def _set_layout(self):
         def size_it(ctrl, value):
-            ctrl.SetMaxSize(wx.Size(int(value), -1))
-            ctrl.SetMinSize(wx.Size(int(value * 0.75), -1))
-            ctrl.SetSize(wx.Size(value, -1))
+            ctrl.SetMaxSize(dip_size(self, int(value), -1))
+            ctrl.SetMinSize(dip_size(self, int(value * 0.75), -1))
+            ctrl.SetSize(dip_size(self, value, -1))
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_cutop = StaticBoxSizer(self, wx.ID_ANY, _("Cut-Operation"), wx.HORIZONTAL)
