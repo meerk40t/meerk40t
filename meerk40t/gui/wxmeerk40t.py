@@ -312,7 +312,9 @@ class wxMeerK40t(wx.App, Module):
 
         except AttributeError:
             # We're on a non-Windows box.
-
+            pass
+        except OSError:
+            # Potential access denied.
             pass
         self.supported_languages = supported_languages
         import meerk40t.gui.icons as icons
