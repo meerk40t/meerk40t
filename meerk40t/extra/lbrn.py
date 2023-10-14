@@ -23,6 +23,10 @@ def plugin(kernel, lifecycle):
         kernel.register("load/LbrnLoader", LbrnLoader)
 
 
+DEFAULT_SPEED = 30
+DEFAULT_POWER = 30
+
+
 _prim_parse = [
     ("CONNECT", r"([0-9]+ [0-9]+)"),
     ("TYPE", r"(B|L)"),
@@ -229,8 +233,8 @@ class LbrnLoader:
                         values["op"] = values["op"] = op_branch.add(
                             type="op image",
                             label=values.get("name"),
-                            speed=float(values.get("speed")),
-                            power=float(values.get("maxPower")) * 10.0,
+                            speed=float(values.get("speed", DEFAULT_SPEED)),
+                            power=float(values.get("maxPower", DEFAULT_POWER)) * 10.0,
                         )
                 elif elem.tag == "CutSetting":
                     values = {"tag": elem.tag}
@@ -244,22 +248,22 @@ class LbrnLoader:
                         values["op"] = op_branch.add(
                             type="op cut",
                             label=values.get("name"),
-                            speed=float(values.get("speed")),
-                            power=float(values.get("maxPower")) * 10.0,
+                            speed=float(values.get("speed", DEFAULT_SPEED)),
+                            power=float(values.get("maxPower", DEFAULT_POWER)) * 10.0,
                         )
                     elif op_type == "Scan":
                         values["op"] = op_branch.add(
                             type="op raster",
                             label=values.get("name"),
-                            speed=float(values.get("speed")),
-                            power=float(values.get("maxPower")) * 10.0,
+                            speed=float(values.get("speed", DEFAULT_SPEED)),
+                            power=float(values.get("maxPower", DEFAULT_POWER)) * 10.0,
                         )
                     else:
                         values["op"] = op_branch.add(
                             type="op engrave",
                             label=values.get("name"),
-                            speed=float(values.get("speed")),
-                            power=float(values.get("maxPower")) * 10.0,
+                            speed=float(values.get("speed", DEFAULT_SPEED)),
+                            power=float(values.get("maxPower", DEFAULT_POWER)) * 10.0,
                         )
                 elif elem.tag == "XForm":
                     matrix = Matrix(*map(float, elem.text.split(" "))) * matrix
