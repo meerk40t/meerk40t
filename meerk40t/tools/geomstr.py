@@ -818,18 +818,22 @@ class Geomstr:
         return g
 
     @classmethod
-    def svg(cls, path_d, break_subpaths=False):
+    def svg(cls, path_d):
         obj = cls()
         if isinstance(path_d, str):
             path = Path(path_d)
         else:
             path = path_d
-        first_move = True
+        last_point = None
         for seg in path:
             if isinstance(seg, Move):
-                if first_move and break_subpaths:
-                    first_move = False
-                else:
+                # If the move destination is identical to destination of the
+                # last point then we need to introduce a subpath break
+                if (
+                    last_point is not None
+                    and last_point.x == seg.end.x
+                    and last_point.y == seg.end.y
+                ):
                     # This is a deliberate subpath break
                     obj.new_subpath()
             elif isinstance(seg, (Line, Close)):
@@ -852,6 +856,7 @@ class Geomstr:
                     quads = seg.as_quad_curves(4)
                     for q in quads:
                         obj.quad(complex(q.start), complex(q.control), complex(q.end))
+            last_point = seg.end
         return obj
 
     @classmethod
