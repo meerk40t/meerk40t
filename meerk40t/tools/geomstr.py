@@ -3474,7 +3474,6 @@ class Geomstr:
                     isinstance(seg, Line)
                     and seg.start.x == seg.end.x
                     and seg.start.y == seg.end.y
-                    and seg.start.y == seg.end.y
                 ):
                     obj._segments.pop(idx)
                     removed += 1
