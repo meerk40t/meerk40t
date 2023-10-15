@@ -386,7 +386,7 @@ def plugin(kernel, lifecycle):
                             sizer.Add(panel, 1, wx.EXPAND, 0)
                             dlg.SetSizer(sizer)
                             sizer.Fit(dlg)
-                            dlg.SetSize(dip_size(self, 620, 400))
+                            dlg.SetSize(dip_size(dlg, 620, 400))
                             dlg.CenterOnScreen()
                             answer = dlg.ShowModal()
                             dlg.Destroy()
