@@ -835,7 +835,7 @@ class Geomstr:
                     and last_point.y == seg.end.y
                 ):
                     # This is a deliberate subpath break
-                    obj.new_subpath()
+                    obj.end()
             elif isinstance(seg, (Line, Close)):
                 obj.line(complex(seg.start), complex(seg.end))
             elif isinstance(seg, QuadraticBezier):
@@ -1210,17 +1210,6 @@ class Geomstr:
     #######################
     # Geometric Primitives
     #######################
-    def new_subpath(self, settings=-1):
-        # Will add an end primitive = break subpath
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
-            np.nan,
-            np.nan,
-            complex(TYPE_END, settings),
-            np.nan,
-            np.nan,
-        )
-        self.index += 1
 
     def line(self, start, end, settings=0, a=None, b=None):
         """
