@@ -729,6 +729,31 @@ class Geomstr:
     def __iter__(self):
         return self.segments
 
+    def debug_me(self):
+        # Provides information about the Geometry.
+        def cplx_info(num):
+            return f"({num.real:.0f}, {num.imag:.0f})"
+
+        print(f"Segments: {self.index}")
+        for idx, seg in enumerate(self.segments[: self.index]):
+            start = seg[0]
+            c1 = seg[1]
+            seg_type = int(seg[2].real)
+            c2 = seg[3]
+            end = seg[4]
+            seg_info = self.segment_type(idx)
+            if seg_type != TYPE_END:
+                seg_info += f", Start: {cplx_info(start)}, End: {cplx_info(end)}"
+            if seg_type == TYPE_QUAD:
+                seg_info += f", C: {cplx_info(c1)}"
+            elif seg_type == TYPE_CUBIC:
+                seg_info += f", C1: {cplx_info(c1)}, C2: {cplx_info(c2)}"
+            elif seg_type == TYPE_ARC:
+                seg_info += f", C1: {cplx_info(c1)}, C2: {cplx_info(c2)}"
+            print(seg_info)
+        svg = self.as_path()
+        print(f"Path-equivalent: {svg.d()}")
+
     @classmethod
     def turtle(cls, turtle, n=4, d=1.0):
         PATTERN_COMMAWSP = r"[ ,\t\n\x09\x0A\x0C\x0D]+"
@@ -793,15 +818,20 @@ class Geomstr:
         return g
 
     @classmethod
-    def svg(cls, path_d):
+    def svg(cls, path_d, break_subpaths=False):
         obj = cls()
         if isinstance(path_d, str):
             path = Path(path_d)
         else:
             path = path_d
+        first_move = True
         for seg in path:
             if isinstance(seg, Move):
-                pass
+                if first_move and break_subpaths:
+                    first_move = False
+                else:
+                    # This is a deliberate subpath break
+                    obj.new_subpath()
             elif isinstance(seg, (Line, Close)):
                 obj.line(complex(seg.start), complex(seg.end))
             elif isinstance(seg, QuadraticBezier):
@@ -1173,8 +1203,19 @@ class Geomstr:
         self.index += other.index
 
     #######################
-    # Geometric Primatives
+    # Geometric Primitives
     #######################
+    def new_subpath(self, settings=0):
+        # Will add an end primitive = break subpath
+        self._ensure_capacity(self.index + 1)
+        self.segments[self.index] = (
+            0,
+            0,
+            complex(TYPE_END, settings),
+            0,
+            0,
+        )
+        self.index += 1
 
     def line(self, start, end, settings=0, a=None, b=None):
         """
@@ -1548,9 +1589,9 @@ class Geomstr:
             start1, control1, info1, control21, end1 = current
             if info0.real != TYPE_LINE or info1.real != TYPE_LINE:
                 continue
-            towards0 = Geomstr.towards(None, start0, end0, 1-amount)
+            towards0 = Geomstr.towards(None, start0, end0, 1 - amount)
             towards1 = Geomstr.towards(None, start1, end1, amount)
-            self.segments[i-1][4] = towards0
+            self.segments[i - 1][4] = towards0
             self.segments[i][0] = towards1
             self.insert(i, [[towards0, control0, info0, control20, towards1]])
 
@@ -1567,9 +1608,9 @@ class Geomstr:
             start1, control1, info1, control21, end1 = current
             if info0.real != TYPE_LINE or info1.real != TYPE_LINE:
                 continue
-            towards0 = Geomstr.towards(None, start0, end0, 1-amount)
+            towards0 = Geomstr.towards(None, start0, end0, 1 - amount)
             towards1 = Geomstr.towards(None, start1, end1, amount)
-            self.segments[i-1][4] = towards0
+            self.segments[i - 1][4] = towards0
             self.segments[i][0] = towards1
             self.insert(i, [[towards0, end0, TYPE_QUAD, start1, towards1]])
 
@@ -3427,6 +3468,7 @@ class Geomstr:
                 if (
                     isinstance(seg, Line)
                     and seg.start.x == seg.end.x
+                    and seg.start.y == seg.end.y
                     and seg.start.y == seg.end.y
                 ):
                     obj._segments.pop(idx)
