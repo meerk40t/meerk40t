@@ -134,14 +134,14 @@ class Button:
         self.default_width = 50
         self.set_aspect(**description)
         self.apply_enable_rules()
-        # self.sizes = {
-        #     "large_label": (0, 0),
-        #     "small_label": (0, 0),
-        #     "tiny_label": (0, 0),
-        #     "large": (0, 0),
-        #     "small": (0, 0),
-        #     "tiny": (0, 0),
-        # }
+        self.sizes = {
+            "large_label": (0, 0),
+            "small_label": (0, 0),
+            "tiny_label": (0, 0),
+            "large": (0, 0),
+            "small": (0, 0),
+            "tiny": (0, 0),
+        }
 
     # def calc_sizes(self, dc):
     #     def calc(bmap, uselabel):
@@ -1232,12 +1232,12 @@ class Art:
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
         )
 
-        # self.button_face_hover = copy.copy(
-        #     wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
-        # ).ChangeLightness(50)
         self.button_face_hover = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNHILIGHT)
-        )  # .ChangeLightness(25)
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
+        ).ChangeLightness(150)
+        # self.button_face_hover = copy.copy(
+        #     wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRADIENTACTIVECAPTION)
+        # )
         self.inactive_background = copy.copy(
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION)
         )
@@ -1251,7 +1251,7 @@ class Art:
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOBK)
         )
         self.button_face = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNFACE)
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNHILIGHT)
         )
         self.highlight = copy.copy(
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_HOTLIGHT)
@@ -1826,9 +1826,36 @@ class Art:
         button_width, button_height = self.preferred_button_size_for_page(dc, page)
         x += self.page_panel_buffer
         y += self.page_panel_buffer
+        """
+        We discuss now the horizontal case, the same
+        logic would apply for the vertical case.
+        We iterate through the sizes and establish the space
+        needed for every panel:
+        1) We calculate the required button dimensions for all
+        combinations of tiny/small/regular icons plus with/without labels
+        2) We get the minimum amount of columns required to display
+        the buttons (taking the vertical extent ie the amount
+        of available rows into account).
+        This will provide us with a solution that would need
+        the least horizontal space.
+        3) That may lead to a situation where you would still
+        have horizontal space available for the panels.
+        Hence we do a second pass where we assign additional space
+        to all panels that need more than one row of icons.
+        As we will do this for all possible size combinations,
+        we will chose eventually that solution that has the
+        fewest amount of buttons in overflow.
+        """
+        # 1 Calculate button sizes - this is not required
+        # here, already done during button creation
+
+        #2 Loop over all sizes
+
+
+
+        # Now that we have gathered all information we can assign
+        # the space...
         for p, panel in enumerate(page.panels):
-            if panel.visible_button_count == 0:
-                continue
             if p != 0:
                 # Non-first move between panel gap.
                 if is_horizontal:
@@ -1857,6 +1884,7 @@ class Art:
             panel.position = x, y, x + panel_width, y + panel_height
             # if self.parent.visible_pages() == 1:
             #     print(f"panel: {panel.position}")
+
             self.panel_layout(dc, panel)
 
             if is_horizontal:
