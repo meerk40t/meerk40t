@@ -1030,6 +1030,7 @@ def set_ctrl_value(ctrl, value):
         ctrl.SetValue(value)
         ctrl.SetInsertionPoint(min(len(value), cursor))
 
+
 def dip_size(frame, x, y):
     # wx.Window.FromDIP was introduced with wxPython 4.1, so not all distros may have this
     wxsize = wx.Size(x, y)
