@@ -25,6 +25,7 @@ def register_panel_debugger(window, context):
     window.on_pane_create(pane)
     context.register("pane/debug_tree", pane)
 
+
 def register_panel_color(window, context):
     pane = (
         aui.AuiPaneInfo()
@@ -122,6 +123,7 @@ class DebugTreePanel(wx.Panel):
 
         self.txt_first.SetValue(txt3)
 
+
 class DebugColorPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__
@@ -133,7 +135,9 @@ class DebugColorPanel(wx.Panel):
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         count = 1000
-        font = wx.Font(6, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        font = wx.Font(
+            6, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
         pattern = "SYS_COLOUR_"
         for prop in dir(wx):
             if prop.startswith(pattern):
@@ -147,12 +151,11 @@ class DebugColorPanel(wx.Panel):
                 col = wx.SystemSettings().GetColour(getattr(wx, prop))
                 infosizer = wx.BoxSizer(wx.VERTICAL)
                 box = wx.StaticBitmap(
-                    self, wx.ID_ANY,
-                    size = wx.Size(32, 32),
-                    style=wx.SB_RAISED
+                    self, wx.ID_ANY, size=wx.Size(32, 32), style=wx.SB_RAISED
                 )
                 box.SetBackgroundColour(col)
-                lbl = wx.StaticText(self, wx.ID_ANY, prop[len(pattern):])
+                box.SetToolTip(prop)
+                lbl = wx.StaticText(self, wx.ID_ANY, prop[len(pattern) :])
                 lbl.SetFont(font)
                 lbl.SetMinSize(wx.Size(75, -1))
                 infosizer.Add(box, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
@@ -162,7 +165,6 @@ class DebugColorPanel(wx.Panel):
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
         self.Layout()
-
 
     def pane_show(self, *args):
         return

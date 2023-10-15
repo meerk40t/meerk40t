@@ -1332,9 +1332,14 @@ class Art:
             if OS_NAME == "Windows":
                 self.button_face_hover = wx.BLUE
         if self.color_mode == COLOR_MODE_COLOR:
-            tmp = self.ribbon_background
-            self.ribbon_background = self.button_face_hover
-            self.button_face_hover = tmp
+            self.ribbon_background = copy.copy(
+                wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRADIENTINACTIVECAPTION)
+            )
+            self.button_face = copy.copy(
+                wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRADIENTACTIVECAPTION)
+            )
+            self.button_face_hover = wx.Colour("gold").ChangeLightness(150)
+            self.highlight = wx.Colour("gold")
 
         self.default_font = wx.Font(
             10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
