@@ -1409,13 +1409,18 @@ class Art:
         cx = (x + x1) / 2
         cy = -r / 2 + (y + y1) / 2
         # print (f"area: {x},{y}-{x1},{y1} - center={cx},{cy} r={r}")
-        points = [
-            (
-                int(cx + r * math.cos(math.radians(angle))),
-                int(cy + r * math.sin(math.radians(angle))),
-            )
-            for angle in (0, 90, 180)
-        ]
+        # points = [
+        #     (
+        #         int(cx + r * math.cos(math.radians(angle))),
+        #         int(cy + r * math.sin(math.radians(angle))),
+        #     )
+        #     for angle in (0, 90, 180)
+        # ]
+        lp_x = int(cx - r)
+        lp_y = int(cy)
+        dp_x = int(cx)
+        dp_y = int(cy + r)
+        points = [ (lp_x, lp_y), (dp_x, dp_y), (2 * dp_x - lp_x, lp_y) ]
         dc.SetPen(wx.Pen(self.black_color))
         dc.SetBrush(wx.Brush(self.inactive_background))
         dc.DrawPolygon(points)
@@ -1438,17 +1443,22 @@ class Art:
         dc.DrawRoundedRectangle(
             int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius
         )
-        r = min((x1 - x) / 2, (y1 - y) / 2)
+        r = min((y1 - y) / 2, (x1 - x) / 2) - 2
         cx = (x + x1) / 2
         cy = -r / 2 + (y + y1) / 2
-
-        points = [
-            (
-                int(cx + r * math.cos(math.radians(x))),
-                int(cy + r * math.sin(math.radians(x))),
-            )
-            for x in (0, 90, 180)
-        ]
+        # print (f"area: {x},{y}-{x1},{y1} - center={cx},{cy} r={r}")
+        # points = [
+        #     (
+        #         int(cx + r * math.cos(math.radians(angle))),
+        #         int(cy + r * math.sin(math.radians(angle))),
+        #     )
+        #     for angle in (0, 90, 180)
+        # ]
+        lp_x = int(cx - r)
+        lp_y = int(cy)
+        dp_x = int(cx)
+        dp_y = int(cy + r)
+        points = [ (lp_x, lp_y), (dp_x, dp_y), (2 * dp_x - lp_x, lp_y) ]
         dc.SetPen(wx.Pen(self.black_color))
         dc.SetBrush(wx.Brush(self.inactive_background))
         dc.DrawPolygon(points)
