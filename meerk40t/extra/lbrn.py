@@ -341,7 +341,10 @@ class LbrnLoader:
                         # Needs image specific settings.
                         _cut_settings = cut_settings_img.get(_cut_index, None)
 
-                        thumb_source_data = base64.b64decode(elem.attrib.get("Data"))
+                        data = elem.attrib.get("Data")
+                        if data is None:
+                            continue
+                        thumb_source_data = base64.b64decode(data)
                         stream = BytesIO(thumb_source_data)
                         image = PIL.Image.open(stream)
                         width = float(values.get("W"))
