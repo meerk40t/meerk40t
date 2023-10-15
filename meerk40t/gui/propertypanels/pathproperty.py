@@ -146,8 +146,13 @@ class PathPropertyPanel(ScrolledPanel):
                 bounds = Node.union_bounds(data)
             width = bounds[2] - bounds[0]
             height = bounds[3] - bounds[1]
-            new_width = int(width * dots_per_units)
-            new_height = int(height * dots_per_units)
+
+            try:
+                new_width = int(width * dots_per_units)
+                new_height = int(height * dots_per_units)
+            except OverflowError:
+                new_width = 0
+                new_height = 0
             # print(f"Width: {width:.0f} -> {new_width}")
             # print(f"Height: {height:.0f} -> {new_height}")
             keep_ratio = True
