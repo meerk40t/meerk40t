@@ -1210,15 +1210,15 @@ class Geomstr:
     #######################
     # Geometric Primitives
     #######################
-    def new_subpath(self, settings=0):
+    def new_subpath(self, settings=-1):
         # Will add an end primitive = break subpath
         self._ensure_capacity(self.index + 1)
         self.segments[self.index] = (
-            0,
-            0,
+            np.nan,
+            np.nan,
             complex(TYPE_END, settings),
-            0,
-            0,
+            np.nan,
+            np.nan,
         )
         self.index += 1
 
