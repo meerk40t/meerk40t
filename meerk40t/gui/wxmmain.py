@@ -64,7 +64,7 @@ from .icons import (  # icons8_replicate_rows_50,
     icons8_finger_50,
     icons8_place_marker_50,
     icon_mk_point,
-    icons8_polygon_50,
+    icon_mk_polygon,
     icon_mk_polyline,
     icon_mk_rectangular,
     icons8_redo_50,
@@ -1155,7 +1155,7 @@ class MeerK40t(MWindow):
             "button/tools/Polygon",
             {
                 "label": _("Polygon"),
-                "icon": icons8_polygon_50,
+                "icon": icon_mk_polygon,
                 "tip": _(
                     "Add a polygon element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
                 ),

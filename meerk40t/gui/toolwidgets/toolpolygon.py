@@ -8,7 +8,7 @@ from meerk40t.gui.icons import (
     icon_crossing_star,
     icon_polygon,
     icon_regular_star,
-    icons8_polygon_50,
+    icon_mk_polygon,
 )
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
@@ -75,7 +75,7 @@ class PolygonTool(ToolWidget):
             "button/secondarytool_polygon/tool_freehand",
             {
                 "label": _("Freehand"),
-                "icon": icons8_polygon_50,
+                "icon": icon_mk_polygon,
                 "tip": _("Draw a freehand polygon (f)"),
                 "action": lambda v: self.set_designmode(0),
                 "size": icon_size,
