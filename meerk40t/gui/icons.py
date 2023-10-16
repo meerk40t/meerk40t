@@ -394,15 +394,27 @@ class VectorIcon:
         self._brush = wx.Brush()
         self._background = wx.Brush()
 
-    def light_mode(self):
-        self._pen.SetColour(wx.BLACK)
-        self._brush.SetColour(wx.BLACK)
+    def light_mode(self, color):
+        if color is None:
+            target = wx.BLACK
+        elif hasattr(color, "red"):
+            target = wx.Colour(color.red, color.green, color.blue)
+        else:
+            target = color
+        self._pen.SetColour(target)
+        self._brush.SetColour(target)
         self._background.SetColour(wx.WHITE)
         self._pen.SetWidth(2)
 
-    def dark_mode(self):
-        self._pen.SetColour(wx.WHITE)
-        self._brush.SetColour(wx.WHITE)
+    def dark_mode(self, color):
+        if color is None:
+            target = wx.WHITE
+        elif hasattr(color, "red"):
+            target = wx.Colour(color.red, color.green, color.blue)
+        else:
+            target = color
+        self._pen.SetColour(target)
+        self._brush.SetColour(target)
         self._background.SetColour(wx.BLACK)
         self._pen.SetWidth(2)
 
@@ -421,9 +433,9 @@ class VectorIcon:
         # if debug:
         #     print (f"Color: {color}, dark={force_darkmode}")
         if force_darkmode:
-            self.dark_mode()
+            self.dark_mode(color)
         else:
-            self.light_mode()
+            self.light_mode(color)
 
         from meerk40t.tools.geomstr import Geomstr
 
@@ -2297,25 +2309,6 @@ icons8_place_marker_50 = PyEmbeddedImage(
     b"zPAkRq8AjF6hYVXur8hjVngPsqKZ8D/iZ4huqztQ5AAAAABJRU5ErkJggg=="
 )
 
-icons8_polygon_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAC"
-    b"/0lEQVRogdXZT6gVZRjH8c+9edHECrWgugspCyJqJUirFv4Bb2FK0qJNLhRcikXoJhBdtYhA"
-    b"JajlRTcuNHPhIoJAF+FKCgnh3sXtamVGKvgv/02L5xxmzumce+f80XnnBwOHeZ/3eX/fmTnv"
-    b"zPu8DEfv4iIu4b0h5axEs8gax19Yj7FKHfWop3BIDlE8/sEk3sfiqgyW0TuYEabvNn7P4ADO"
-    b"a4W6hW+xFcurMNtJS/G13OQ5rOoQ9xJ24gweFOLvN87txiuPwW9HfYDL8qu8G0+U6PccPsJJ"
-    b"/Kv1bp3HXp0vxtA1ju8Kg/+AlX3mWiagjuOmVqhfcVA8orOYGMh1QSPYgWuNga5iW+P8MLRY"
-    b"TAaTYnJonzB+G8Ygr+LHQtJjeGEYibtoTEzbVwpjXhwk4QJ8Kv4DGf7AlsE89qRNjTGb/5++"
-    b"7v6bOCu/IkdVM10uwu8ND5vKdmp+XsyI90GGaax9BAZ70Z6Gl5/Kdih+XmT4Qhpv4qfF5JIp"
-    b"eVGn5RBTj85XX9ovfH1fJnitHKTqx6ldz+KG8La6TIcmSIr6Ung7XiY4ZZBx3MFDvDFfcMog"
-    b"8I3wNzlfYOogL+Oe+HKe84s5dRA4Ijx+NVdQHUBeF+uaO3ixW1AdQIhVZobPuwXUBWS18HlD"
-    b"l2/AuoAQb/kMn3VqrBPIGuH1byxpb6wTCFG8yLCrvaFuIBvlK8iFxYa6gYzgF+H5klhToX4g"
-    b"BEDT9+xoxWYGUbG2nBV/1OmOfKi1ZLSh2VAnkJW4Lvxub2+sC8iYKEY0Kzz/U11AmqvFaTzT"
-    b"KaAOIBNilXgXb3ULSh1kXF5K/WSuwJRBRkX1P8Mp85RQUwbZK7z9iefnC04V5G2xTn+AdWU6"
-    b"pAiyTL5Hua9sp9RARnBCeDottjpKKTWQj+Vb3Ct66ZgSyCr5hunmXjunArIEF4SXA/0kSAXk"
-    b"sPDxM57sJ0EKINvlpZ7X+klQ3B9ZMzxfPY0/VfCwtd9ExSRVH1f6hRjVVoWoWLcH6TwhNkSn"
-    b"VLP11ny0Wpasveo/T0QoE45QIQcAAAAASUVORK5CYII="
-)
-
 
 icons8_type_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
@@ -3060,8 +3053,6 @@ icons8_input_20 = PyEmbeddedImage(
     b"Rf4IXzjbQCQgdD/qAAAAAElFTkSuQmCC"
 )
 
-
-
 icons8_flash_off_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAC"
     b"L0lEQVRoge3aP2sUQRiA8V/UIoVgEBVbEQRBESWFpWjQTxCwvQ/gV9DD2kYsFHvzCSyM9oKJ"
@@ -3281,7 +3272,6 @@ fill_nonzero = PyEmbeddedImage(
     b"vxN8hrWnMN+XhkhvYQ8PIXOQIjzHFZYimRouQzZKFcfSeqsSstX85A/ci1xqR7HjbwAAAABJ"
     b"RU5ErkJggg=="
 )
-
 
 fill_evenodd = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABQAAAATCAYAAACQjC21AAAACXBIWXMAAAMpAAADKQG9Lnl1"
@@ -4180,6 +4170,7 @@ icons8_separate_for_every_new_imported_file = VectorIcon(
     "M 16 4 L 16 8 L 10 8 L 10 12 L 4 12 L 4 28 L 7 28 L 12 28 L 12 26 L 7 26 L 6 26 L 6 14 L 14 14 L 14 19 L 16 19 L 16 12 L 12 12 L 12 10 L 20 10 L 20 24 L 22 24 L 22 20 L 24 20 L 24 18 L 22 18 L 22 8 L 18 8 L 18 6 L 26 6 L 26 11 L 28 11 L 28 4 L 16 4 z M 27 13 L 24 16 L 26 16 L 26 20 L 28 20 L 28 16 L 30 16 L 27 13 z M 15 21 L 12 24 L 14 24 L 14 28 L 16 28 L 16 24 L 18 24 L 15 21 z"
 )
 
+# The following icons were designed by the mk-Team themselves...
 icon_fractal = VectorIcon(fill="", stroke="M 0,0 L 4095,0 L 6143,-3547 L 4095,-7094 L 6143,-10641 L 10239,-10641 L 12287,-7094 M 12287,-7094 L 10239,-3547 L 12287,0 L 16383,0 M 16383,0 L 18431,-3547 L 22527,-3547 L 24575,0 L 28671,0 L 30719,-3547 L 28671,-7094 L 24575,-7094 L 22527,-10641 L 24575,-14188 M 24575,-14188 L 22527,-17735 L 18431,-17735 L 16383,-14188 M 16383,-14188 L 12287,-14188 L 10239,-17735 L 12287,-21283 L 16383,-21283 L 18431,-24830 L 16383,-28377 M 16383,-28377 L 18431,-31924 L 22527,-31924 L 24575,-28377 L 28671,-28377 L 30719,-31924 L 28671,-35471 L 24575,-35471 L 22527,-39019 L 24575,-42566 L 28671,-42566 L 30719,-46113 L 28671,-49660 L 30719,-53207 L 34815,-53207 L 36863,-49660 L 34815,-46113 L 36863,-42566 L 40959,-42566 L 43007,-39019 L 40959,-35471 L 36863,-35471 L 34815,-31924 L 36863,-28377 L 40959,-28377 L 43007,-31924 L 47103,-31924 L 49151,-28377 L 47103,-24830 L 49151,-21283 L 53247,-21283 L 55295,-17735 L 53247,-14188 L 49151,-14188 L 47103,-17735 L 43007,-17735 L 40959,-14188 L 43007,-10641 L 40959,-7094 L 36863,-7094 L 34815,-3547 L 36863,0 L 40959,0 M 40959,0 L 43007,-3547 L 47103,-3547 L 49151,0 M 49151,0 L 53247,0 L 55295,-3547 L 53247,-7094 L 55295,-10641 L 59391,-10641 L 61439,-7094 L 59391,-3547 L 61439,0 L 65535,0")
 
 icon_mk_circle = VectorIcon(fill="", stroke="M 15, 15 a 15,15 0 1,0 1,0 z")
@@ -4254,4 +4245,16 @@ icon_mk_align_bottom = VectorIcon(
         "M 20,15 v20 h10 v-20 z",
         "M 0,40 h35",
     )
+)
+
+icon_mk_polygon = VectorIcon(
+    fill = (
+        "M 20,50 a 5,5, 0 1,0 1,0",
+        "M 40,50 a 5,5, 0 1,0 1,0",
+        "M 20,0 a 5,5, 0 1,0 1,0",
+        "M 40,0 a 5,5, 0 1,0 1,0",
+        "M 55,25 a 5,5, 0 1,0 1,0",
+        "M 5,25 a 5,5, 0 1,0 1,0",
+    ),
+    stroke = "M 20,55 L 40,55 L 55,30 L 40,5 L 20,5 L 5,30 z",
 )
