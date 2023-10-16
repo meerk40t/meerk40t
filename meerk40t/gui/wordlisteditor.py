@@ -13,9 +13,10 @@ from .icons import (
     icons8_edit_25,
     icons8_paste_25,
     icons8_remove_25,
+    STD_ICON_SIZE,
 )
 from .mwindow import MWindow
-from .wxutils import StaticBoxSizer
+from .wxutils import StaticBoxSizer, dip_size
 
 _ = wx.GetTranslation
 
@@ -45,17 +46,17 @@ class WordlistMiniPanel(wx.Panel):
         self.context = context
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.button_edit = wx.Button(self, wx.ID_ANY, _("Edit"))
-        self.button_edit.SetBitmap(icons8_curly_brackets_50.GetBitmap(resize=25))
+        self.button_edit.SetBitmap(icons8_curly_brackets_50.GetBitmap(resize=STD_ICON_SIZE/2))
         self.button_edit.SetToolTip(_("Manages Wordlist-Entries"))
 
         self.button_next = wx.Button(self, wx.ID_ANY, _("Next"))
-        self.button_next.SetBitmap(icons8_circled_right_50.GetBitmap(resize=25))
+        self.button_next.SetBitmap(icons8_circled_right_50.GetBitmap(resize=STD_ICON_SIZE/2))
         self.button_next.SetToolTip(
             _("Wordlist: go to next page (right-click to next entry)")
         )
 
         self.button_prev = wx.Button(self, wx.ID_ANY, _("Prev"))
-        self.button_prev.SetBitmap(icons8_circled_left_50.GetBitmap(resize=25))
+        self.button_prev.SetBitmap(icons8_circled_left_50.GetBitmap(resize=STD_ICON_SIZE/2))
         self.button_prev.SetToolTip(
             _("Wordlist: go to previous page (right-click to previous entry)")
         )
@@ -191,22 +192,22 @@ class WordlistPanel(wx.Panel):
         )
 
         self.btn_edit_wordlist_del = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(25, 25)
+            self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
         self.btn_edit_wordlist_edit = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(25, 25)
+            self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
         self.btn_edit_content_add = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(25, 25)
+            self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
         self.btn_edit_content_del = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(25, 25)
+            self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
         self.btn_edit_content_edit = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(25, 25)
+            self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
         self.btn_edit_content_paste = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(25, 25)
+            self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
         self.btn_edit_wordlist_del.SetBitmap(icons8_remove_25.GetBitmap())
         self.btn_edit_wordlist_edit.SetBitmap(icons8_edit_25.GetBitmap())
@@ -234,12 +235,12 @@ class WordlistPanel(wx.Panel):
             )
         )
         minsize = 23
-        self.btn_edit_wordlist_del.SetMinSize(wx.Size(minsize, minsize))
-        self.btn_edit_wordlist_edit.SetMinSize(wx.Size(minsize, minsize))
-        self.btn_edit_content_add.SetMinSize(wx.Size(minsize, minsize))
-        self.btn_edit_content_del.SetMinSize(wx.Size(minsize, minsize))
-        self.btn_edit_content_edit.SetMinSize(wx.Size(minsize, minsize))
-        self.btn_edit_content_paste.SetMinSize(wx.Size(minsize, minsize))
+        self.btn_edit_wordlist_del.SetMinSize(dip_size(self, minsize, minsize))
+        self.btn_edit_wordlist_edit.SetMinSize(dip_size(self, minsize, minsize))
+        self.btn_edit_content_add.SetMinSize(dip_size(self, minsize, minsize))
+        self.btn_edit_content_del.SetMinSize(dip_size(self, minsize, minsize))
+        self.btn_edit_content_edit.SetMinSize(dip_size(self, minsize, minsize))
+        self.btn_edit_content_paste.SetMinSize(dip_size(self, minsize, minsize))
 
         sizer_edit_wordlist_buttons.Add(self.btn_edit_wordlist_del, 0, wx.EXPAND, 0)
         sizer_edit_wordlist_buttons.Add(self.btn_edit_wordlist_edit, 0, wx.EXPAND, 0)
@@ -692,7 +693,7 @@ class ImportPanel(wx.Panel):
         sizer_csv.Add(self.txt_filename, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_fileDialog = wx.Button(self, wx.ID_ANY, "...")
-        self.btn_fileDialog.SetMinSize((23, 23))
+        self.btn_fileDialog.SetMinSize(dip_size(self, 23, 23))
         sizer_csv.Add(self.btn_fileDialog, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_import = wx.Button(self, wx.ID_ANY, _("Import CSV"))

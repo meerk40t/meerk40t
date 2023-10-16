@@ -2,7 +2,7 @@ import wx
 
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_keyhole_50, icons8_split_table_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color
 
@@ -20,13 +20,13 @@ class InfoPanel(wx.Panel):
         self.lbl_info_last = wx.StaticText(self, wx.ID_ANY, "")
         self.preview_size = 25
         self.image_default = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(self.preview_size, self.preview_size)
+            self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
         self.image_first = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(self.preview_size, self.preview_size)
+            self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
         self.image_last = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(self.preview_size, self.preview_size)
+            self, wx.ID_ANY, size=dip_size(self, self.preview_size, self.preview_size)
         )
         sizer_main = wx.BoxSizer(wx.VERTICAL)
 
@@ -162,7 +162,7 @@ class SplitterPanel(wx.Panel):
         self.text_dpi.SetValue("500")
         self.lbl_info = wx.StaticText(self, wx.ID_ANY, "")
         self.btn_align = wx.Button(self, wx.ID_ANY, _("Create split images"))
-        self.btn_align.SetBitmap(icons8_split_table_50.GetBitmap(resize=25))
+        self.btn_align.SetBitmap(icons8_split_table_50.GetBitmap(resize=STD_ICON_SIZE/2))
 
         lbl_dpi = wx.StaticText(self, wx.ID_ANY, "DPI:")
         sizer_dpi = StaticBoxSizer(
@@ -301,7 +301,7 @@ class KeyholePanel(wx.Panel):
         self.info_panel = InfoPanel(self, wx.ID_ANY, context=self.context)
 
         self.btn_align = wx.Button(self, wx.ID_ANY, _("Create keyhole image"))
-        self.btn_align.SetBitmap(icons8_keyhole_50.GetBitmap(resize=25))
+        self.btn_align.SetBitmap(icons8_keyhole_50.GetBitmap(resize=STD_ICON_SIZE/2))
 
         lbl_dpi = wx.StaticText(self, wx.ID_ANY, "DPI:")
         sizer_dpi = StaticBoxSizer(
@@ -453,7 +453,7 @@ class RenderSplit(MWindow):
         self.Layout()
 
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_split_table_50.GetBitmap(resize=25))
+        _icon.CopyFromBitmap(icons8_split_table_50.GetBitmap(resize=STD_ICON_SIZE/2))
         self.SetIcon(_icon)
         self.SetTitle(_("Create split images"))
 

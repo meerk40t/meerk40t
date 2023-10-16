@@ -33,9 +33,10 @@ from meerk40t.gui.icons import (
     icons8_opened_folder_50,
     icons8_remove_25,
     icons8_up_50,
+    STD_ICON_SIZE,
 )
 from meerk40t.gui.ribbon import RibbonBarPanel
-from meerk40t.gui.wxutils import StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 from meerk40t.kernel import Settings, lookup_listener, signal_listener
 
 _ = wx.GetTranslation
@@ -588,21 +589,21 @@ class RibbonEditor(wx.Panel):
         self.text_param_page = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER)
 
         self.list_panels = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
-        self.button_add_page = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
-        self.button_del_page = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
-        self.button_up_page = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
-        self.button_down_page = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 20))
-        self.button_add_page.SetBitmap(icons8_add_new_25.GetBitmap(resize=25))
-        self.button_del_page.SetBitmap(icons8_remove_25.GetBitmap(resize=25))
-        self.button_up_page.SetBitmap(icons8_up_50.GetBitmap(resize=25))
-        self.button_down_page.SetBitmap(icons8_down_50.GetBitmap(resize=25))
+        self.button_add_page = wx.StaticBitmap(self, wx.ID_ANY, size=dip_size(self, 30, 30))
+        self.button_del_page = wx.StaticBitmap(self, wx.ID_ANY, size=dip_size(self, 30, 30))
+        self.button_up_page = wx.StaticBitmap(self, wx.ID_ANY, size=dip_size(self, 30, 30))
+        self.button_down_page = wx.StaticBitmap(self, wx.ID_ANY, size=dip_size(self, 30, 20))
+        self.button_add_page.SetBitmap(icons8_add_new_25.GetBitmap(resize=STD_ICON_SIZE/2))
+        self.button_del_page.SetBitmap(icons8_remove_25.GetBitmap(resize=STD_ICON_SIZE/2))
+        self.button_up_page.SetBitmap(icons8_up_50.GetBitmap(resize=STD_ICON_SIZE/2))
+        self.button_down_page.SetBitmap(icons8_down_50.GetBitmap(resize=STD_ICON_SIZE/2))
 
-        self.button_del_panel = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
-        self.button_up_panel = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
-        self.button_down_panel = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
-        self.button_del_panel.SetBitmap(icons8_remove_25.GetBitmap(resize=25))
-        self.button_up_panel.SetBitmap(icons8_up_50.GetBitmap(resize=25))
-        self.button_down_panel.SetBitmap(icons8_down_50.GetBitmap(resize=25))
+        self.button_del_panel = wx.StaticBitmap(self, wx.ID_ANY, size=dip_size(self, 30, 30))
+        self.button_up_panel = wx.StaticBitmap(self, wx.ID_ANY, size=dip_size(self, 30, 30))
+        self.button_down_panel = wx.StaticBitmap(self, wx.ID_ANY, size=dip_size(self, 30, 30))
+        self.button_del_panel.SetBitmap(icons8_remove_25.GetBitmap(resize=STD_ICON_SIZE/2))
+        self.button_up_panel.SetBitmap(icons8_up_50.GetBitmap(resize=STD_ICON_SIZE/2))
+        self.button_down_panel.SetBitmap(icons8_down_50.GetBitmap(resize=STD_ICON_SIZE/2))
 
         self.list_options = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
         self.button_add_panel = wx.Button(self, wx.ID_ANY, _("Add to page"))

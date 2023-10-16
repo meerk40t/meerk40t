@@ -3597,7 +3597,7 @@ msgid "If you continue to move to the center, then the laserhead might"
 msgstr ""
 
 #: meerk40t/gui/lasertoolpanel.py:629
-msgid "slam into the walls and get damaged! Do you really want to proeed?"
+msgid "slam into the walls and get damaged! Do you really want to proceed?"
 msgstr ""
 
 #: meerk40t/gui/lasertoolpanel.py:632
