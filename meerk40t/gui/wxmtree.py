@@ -115,7 +115,11 @@ class TreePanel(wx.Panel):
             | wx.TR_HIDE_ROOT
             | wx.TR_LINES_AT_ROOT,
         )
-        if wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127:
+        try:
+            res = wx.SystemSettings().GetAppearance().IsDark()
+        except AttributeError:
+            res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        if res:
             self.wxtree.SetBackgroundColour(wx.Colour(50, 50, 50))
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)

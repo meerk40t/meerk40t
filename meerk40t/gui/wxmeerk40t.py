@@ -307,8 +307,11 @@ class wxMeerK40t(wx.App, Module):
         self.Bind(wx.EVT_TIMER, context._kernel.scheduler_main, self.timer)
         context._kernel.scheduler_handles_main_thread_jobs = False
         self.timer.Start(50)
-
-        icons.DARKMODE = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        try:
+            res = wx.SystemSettings().GetAppearance().IsDark()
+        except AttributeError:
+            res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        icons.DARKMODE = res
         icons.icon_r = 230
         icons.icon_g = 230
         icons.icon_b = 230
