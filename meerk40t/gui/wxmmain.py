@@ -39,13 +39,13 @@ from .icons import (  # icons8_replicate_rows_50,
     icon_cag_union_50,
     icon_cag_xor_50,
     icon_meerk40t,
-    icons8_align_bottom_50,
-    icons8_align_left_50,
-    icons8_align_right_50,
-    icons8_align_top_50,
+    icon_mk_align_bottom,
+    icon_mk_align_left,
+    icon_mk_align_right,
+    icon_mk_align_top,
     icons8_centerh_50,
     icons8_centerv_50,
-    icons8_circle_50,
+    icon_mk_circle,
     icons8_circled_left_50,
     icons8_circled_right_50,
     icons8_copy_50,
@@ -58,15 +58,15 @@ from .icons import (  # icons8_replicate_rows_50,
     icons8_mirror_horizontal,
     icons8_node_edit_50,
     icons8_opened_folder_50,
-    icons8_oval_50,
+    icon_mk_ellipse,
     icons8_paste_50,
     icons8_pencil_drawing_50,
     icons8_finger_50,
     icons8_place_marker_50,
-    icons8_point_50,
+    icon_mk_point,
     icons8_polygon_50,
-    icons8_polyline_50,
-    icons8_rectangular_50,
+    icon_mk_polyline,
+    icon_mk_rectangular,
     icons8_redo_50,
     icons8_rotate_left_50,
     icons8_rotate_right_50,
@@ -1129,7 +1129,7 @@ class MeerK40t(MWindow):
             "button/tools/ellipse",
             {
                 "label": _("Ellipse"),
-                "icon": icons8_oval_50,
+                "icon": icon_mk_ellipse,
                 "tip": _("Add an ellipse element"),
                 "action": lambda v: kernel.elements("tool ellipse\n"),
                 "group": "tool",
@@ -1142,7 +1142,7 @@ class MeerK40t(MWindow):
             "button/tools/circle",
             {
                 "label": _("Circle"),
-                "icon": icons8_circle_50,
+                "icon": icon_mk_circle,
                 "tip": _("Add a circle element"),
                 "action": lambda v: kernel.elements("tool circle\n"),
                 "group": "tool",
@@ -1170,7 +1170,7 @@ class MeerK40t(MWindow):
             "button/tools/Polyline",
             {
                 "label": _("Polyline"),
-                "icon": icons8_polyline_50,
+                "icon": icon_mk_polyline,
                 "tip": _(
                     "Add a polyline element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
                 ),
@@ -1185,7 +1185,7 @@ class MeerK40t(MWindow):
             "button/tools/Rectangle",
             {
                 "label": _("Rectangle"),
-                "icon": icons8_rectangular_50,
+                "icon": icon_mk_rectangular,
                 "tip": _("Add a rectangular element"),
                 "action": lambda v: kernel.elements("tool rect\n"),
                 "group": "tool",
@@ -1198,7 +1198,7 @@ class MeerK40t(MWindow):
             "button/tools/Point",
             {
                 "label": _("Point"),
-                "icon": icons8_point_50,
+                "icon": icon_mk_point,
                 "tip": _("Add point to the scene"),
                 "action": lambda v: kernel.elements("tool point\n"),
                 "group": "tool",
@@ -1592,7 +1592,7 @@ class MeerK40t(MWindow):
             "button/align/AlignLeft",
             {
                 "label": _("Left"),
-                "icon": icons8_align_left_50,
+                "icon": icon_mk_align_left,
                 "tip": _(
                     "Align selected elements at the leftmost position (right click: of the bed)"
                 ),
@@ -1661,7 +1661,7 @@ class MeerK40t(MWindow):
             "button/align/AlignRight",
             {
                 "label": _("Right"),
-                "icon": icons8_align_right_50,
+                "icon": icon_mk_align_right,
                 "tip": _(
                     "Align selected elements at the rightmost position (right click: of the bed)"
                 ),
@@ -1678,7 +1678,7 @@ class MeerK40t(MWindow):
             "button/align/AlignTop",
             {
                 "label": _("Top"),
-                "icon": icons8_align_top_50,
+                "icon": icon_mk_align_top,
                 "tip": _(
                     "Align selected elements at the topmost position (right click: of the bed)"
                 ),
@@ -1695,7 +1695,7 @@ class MeerK40t(MWindow):
             "button/align/AlignBottom",
             {
                 "label": _("Bottom"),
-                "icon": icons8_align_bottom_50,
+                "icon": icon_mk_align_bottom,
                 "tip": _(
                     "Align selected elements at the lowest position (right click: of the bed)"
                 ),

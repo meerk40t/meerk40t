@@ -50,7 +50,7 @@ def plugin(service, lifecycle):
             icons8_file_50,
             icons8_move_50,
             icons8_play_50,
-            icons8_rectangular_50,
+            icon_mk_rectangular,
         )
 
         _ = service.kernel.translation
@@ -144,7 +144,7 @@ def plugin(service, lifecycle):
             "button/control/DrawFrame",
             {
                 "label": _("Draw Frame"),
-                "icon": icons8_rectangular_50,
+                "icon": icon_mk_rectangular,
                 "tip": _(
                     "Draw a bounding rectangle of the object saved in the machine"
                 ),

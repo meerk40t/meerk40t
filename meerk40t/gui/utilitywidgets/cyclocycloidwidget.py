@@ -208,7 +208,7 @@ class MajorHandleWidget(Widget):
         self.pen.SetColour(wx.BLUE)
         self.pen.SetWidth(1000)
         self.widget = cyclowidget
-        self.bitmap = icons.icons8_point_50.GetBitmap(use_theme=False)
+        self.bitmap = icons.icon_mk_point.GetBitmap(use_theme=False)
         self._start_x = None
         self._start_y = None
         self._current_x = None
@@ -283,7 +283,7 @@ class MinorHandleWidget(Widget):
         self.pen.SetColour(wx.BLUE)
         self.pen.SetWidth(1000)
         self.widget = cyclowidget
-        self.bitmap = icons.icons8_point_50.GetBitmap(use_theme=False)
+        self.bitmap = icons.icon_mk_point.GetBitmap(use_theme=False)
         self._start_x = None
         self._start_y = None
         self._current_x = None

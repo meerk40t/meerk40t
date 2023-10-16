@@ -376,14 +376,14 @@ class VectorIcon:
     def __init__(self, fill, stroke=None):
         self.list_fill = []
         self.list_stroke = []
-        if fill is None:
+        if not fill:
             pass
         elif isinstance(fill, str):
             self.list_fill.append(fill)
         elif isinstance(fill, (list, tuple)):
             for e in fill:
                 self.list_fill.append(e)
-        if stroke is None:
+        if not stroke:
             pass
         elif isinstance(stroke, str):
             self.list_stroke.append(stroke)
@@ -398,13 +398,13 @@ class VectorIcon:
         self._pen.SetColour(wx.BLACK)
         self._brush.SetColour(wx.BLACK)
         self._background.SetColour(wx.WHITE)
-        self._pen.SetWidth(3)
+        self._pen.SetWidth(2)
 
     def dark_mode(self):
         self._pen.SetColour(wx.WHITE)
         self._brush.SetColour(wx.WHITE)
         self._background.SetColour(wx.BLACK)
-        self._pen.SetWidth(3)
+        self._pen.SetWidth(2)
 
     def GetBitmap(
         self,
@@ -438,67 +438,57 @@ class VectorIcon:
         bmp = wx.Bitmap(final_icon_width, final_icon_height, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
-        if color is None:
-            dc.SetBackground(self._background)
-        else:
-            if hasattr(color, "red"):
-                wxcolor = wx.Colour(color.red, color.green, color.blue)
-            else:
-                wxcolor = wx.Colour(color)
-            # if debug:
-            #     print(f"BG-Color chosen: r={wxcolor.Red()}, g={wxcolor.Green()}, b={wxcolor.Blue()}")
-            #     col = self._pen.GetColour()
-            #     print(f"Pen: r={col.Red()}, g={col.Green()}, b={col.Blue()}")
-            #     col = self._brush.GetColour()
-            #     print(f"Brush: r={col.Red()}, g={col.Green()}, b={col.Blue()}")
-            brush = wx.Brush(wxcolor)
-            dc.SetBackground(brush)
+        dc.SetBackground(self._background)
+        # dc.SetBackground(wx.RED_BRUSH)
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
         gc.dc = dc
-
+        stroke_paths = []
+        fill_paths = []
         # Establish the box...
-        min_x = min_y = path_width = path_height = None
+        min_x = min_y = max_x = max_y = None
         for e in self.list_fill:
             geom = Geomstr.svg(e)
             gp = self.make_geomstr(gc, geom)
+            fill_paths.append(gp)
             m_x, m_y, p_w, p_h = gp.Box
             if min_x is None:
                 min_x = m_x
                 min_y = m_y
-                path_width = p_w
-                path_height = p_h
+                max_x = m_x + p_w
+                max_y = m_y + p_h
             else:
                 min_x = min(min_x, m_x)
                 min_y = min(min_y, m_y)
-                path_width = max(path_width, p_w)
-                path_height = max(path_height, p_h)
+                max_x = max(max_x, m_x + p_w)
+                max_y = max(max_y, m_y + p_h)
         for e in self.list_stroke:
             geom = Geomstr.svg(e)
             gp = self.make_geomstr(gc, geom)
+            stroke_paths.append(gp)
             m_x, m_y, p_w, p_h = gp.Box
             if min_x is None:
                 min_x = m_x
                 min_y = m_y
-                path_width = p_w
-                path_height = p_h
+                max_x = m_x + p_w
+                max_y = m_y + p_h
             else:
                 min_x = min(min_x, m_x)
                 min_y = min(min_y, m_y)
-                path_width = max(path_width, p_w)
-                path_height = max(path_height, p_h)
+                max_x = max(max_x, m_x + p_w)
+                max_y = max(max_y, m_y + p_h)
 
-        min_x -= buffer
-        min_y -= buffer
-        path_width += buffer * 2
-        path_height += buffer * 2
+        path_width = max_x - min_x
+        path_height = max_y - min_y
 
-        scale_x = final_icon_width / path_width
-        scale_y = final_icon_height / path_height
+        scale_x = (final_icon_width - 2 * buffer) / path_width
+        scale_y = (final_icon_height - 2 * buffer) / path_height
 
         scale = min(scale_x, scale_y)
         width_scaled = int(round(path_width * scale))
         height_scaled = int(round(path_height * scale))
+
+        # print (f"W: {final_icon_width} vs {width_scaled}, {final_icon_height} vs {height_scaled}")
         keep_ratio = True
 
         if keep_ratio:
@@ -509,8 +499,10 @@ class VectorIcon:
         from meerk40t.gui.zmatrix import ZMatrix
 
         matrix = Matrix()
-
-        matrix.post_translate(-min_x, -min_y)
+        matrix.post_translate(
+            -min_x + (final_icon_width - width_scaled) / 2 / scale_x,
+            -min_y + (final_icon_height - height_scaled) / 2 / scale_x,
+        )
         matrix.post_scale(scale_x, scale_y)
         if scale_y < 0:
             matrix.pre_translate(0, -height_scaled)
@@ -525,14 +517,10 @@ class VectorIcon:
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
 
         gc.SetBrush(self._brush)
-        for e in self.list_fill:
-            geom = Geomstr.svg(e)
-            gp = self.make_geomstr(gc, geom)
+        for gp in fill_paths:
             gc.FillPath(gp)
         gc.SetPen(self._pen)
-        for e in self.list_stroke:
-            geom = Geomstr.svg(e)
-            gp = self.make_geomstr(gc, geom)
+        for gp in stroke_paths:
             gc.StrokePath(gp)
         dc.SelectObject(wx.NullBitmap)
         gc.Destroy()
@@ -2246,62 +2234,6 @@ icons8_about_50 = PyEmbeddedImage(
     b"qsR/ME41xQZApAYAAAAASUVORK5CYII="
 )
 
-icons8_align_bottom_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"oUlEQVRoge3ZTQ6CMBQA4afx/ldygZ4Ldi4MSX9oH5NmvoSVUjtAgNgI6RbviNg7ty1zoo/C"
-    b"5/vk8Yd5VX6vdUJXD0CzZ/YPzmIIjSE0htBkh3xj0ptC7ZO994H4v9+0NwUvLRpDaAyhMYTG"
-    b"EBpDaAyhMYTGEBpDaAyhMYTGEJplQmoXQ9MXN1uVzsjnwthn/56PHk9Yo9cvsv3mv8xdSzQH"
-    b"L7opUXxgNIwAAAAASUVORK5CYII="
-)
-
-
-icons8_align_top_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"qElEQVRoge3aTQqDMBQA4Vi8/5HcWM+lC7GL4B95Eqc6H3TRheENbVLQpiSWJns/3jJFud/8"
-    b"nzun0Jt1ad43Ja9+Zb0hsN53b9B8s+eim//qw2Rz3ja6wIbqp99jTi1DaAyhMYTGEBpDaAyh"
-    b"MYTGEBpDaAyhMYTGEBpDaGqHDIFrd+/GH1lu6de6rphfLRpDaAyheUzI2Yeh+L92HH0ikV/T"
-    b"tefs0r+ZAAn6K06SZpqKAAAAAElFTkSuQmCC"
-)
-
-icons8_align_right_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
-    b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAGYktHRAD/AP8A/6C9p5MAAACgSURB"
-    b"VGhD7dfLCoAgEIVh6/0fKip6rS4ys0hcWAs92f/BMAgRHkxoAoDUbhWN1j+PIGreBlnO8m+0"
-    b"Zs1nZQ3Wn7pe2orv2fcQ19wRNQRRQxA1BFFDEDUEUfP7IJv12lbrXfEZJeKOqOk2SKtZvLSK"
-    b"Z/brYXXZmT3lyRWle7utuexqCKKGIGoIooYgaroJ0s1PY3oik3VVzOyfQRDgF0I4AEuCXBYR"
-    b"wmDyAAAAAElFTkSuQmCC"
-)
-
-icons8_align_left_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
-    b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAGYktHRAD/AP8A/6C9p5MAAACvSURB"
-    b"VGhD7dnRCoMwDIXhbu//TsKcvpZrIBnDiuhAPa3/ByHUC+lBAi0m4HiTV5We3qtHEDVrQd65"
-    b"Ym7OrD7Xbg/vxl5i4lmsr/C7r02YETUEUUMQNQRRQxA1BFFziyCj97MN3v8W94EqMSNqbhHE"
-    b"7s4xN4r1yvWlemffavFuH0nDfK2k2BvDroYgagiihiBqCKKmmSDNHBrXvkjnXZX9GlxUnChr"
-    b"wrCraSYIcIiUPoSrXBiRr7O2AAAAAElFTkSuQmCC"
-)
-
-icons8_circle_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAD"
-    b"l0lEQVRoge2az0tVQRTHP6l5BU18Wgq1SOiXukjdFVhtQhGKWliE7toX4n/hDypJWmZ/gRkk"
-    b"/SCCqEVIKBjlr2ihtagMNAnqKb0Wc6/de+687o9352nhFwbu9Z5z5nucMzNnzhvYxtbCjgRt"
-    b"pYCTQAvQABwAqoFS+/t34BPwHngLvACeAcsJcogNC+gCHgLrQCZiWwceAJ22rbyjBOgBPoYg"
-    b"G7Z9ALpt23lBO/AuQQdkmwfaTDpQAtwKIDEBDAAdwFHUvNlpt5T9tw5bZjLA1hAGwq0GeJWl"
-    b"wxWgFzgSw24d0Gfb0NkeRy0YiaAWNdyykzTQD1Qk0EcKNUppTT9zNoecUIPeiTeoMEkajail"
-    b"WedM7JEpQR9OI/zZG0ygFLir6XecmHNGN7FvA4UJkA1CITCs6f9mVEPtGiMj5McJB4XAqIZH"
-    b"a1gDFjArlGeBXUkzDYFS/HNmnpCbZo9QTGNmYodFE7AmOF0NUrLwpx195jiGxjW8nBYJmPhd"
-    b"QmGFZPaJXFEJfMPL7dLfFB4J4V7DBKNgAC+3sWyCKfypeJy0wxQa8HJbA8p1gueF4ESeCEbB"
-    b"FF6OZ50PBS6hFqH01DyvyHgi3k84D25H6oTQS2N04kNyqnce3I4cFkKzxujEh+R0SCe0hDf+"
-    b"Kg2TioPdeDl+0Qn9FELF+WIXARZejj+cDwXZNP41uB1ZFd82I0kMguS0wdntyFchtNcYnfjY"
-    b"J96XnAe3I/NCaCvt6g4kpw3ObkemhdAxY3Ti47h4l5wBOId3RZg0TCoOXuPleEYnVIE/aZS7"
-    b"/WZCJo1pXEmjO7SW8ecyl02ziwDJ5THqjKJFJ/6DVcoYtfCoQi21oQ9WFqoq7lYYMMsxFG7g"
-    b"5bRAiMyjG38sNprjGIhm/MWHK2EULWBGKG6lctAcESqObUI5gypj5rNAVwTcExx+AaejGhrC"
-    b"78ww+XGmCLij6X8wjjELVTiWxkaBsty5ZkUZ/pHIoE6HsY8W1aiYlEanURXApNGMf346c3RP"
-    b"rsZr0TuzhqoAJnGSrEItsXJ1cpzYn0AfgBoZXZhlULtrPyqFiIoG1D4lNzt3OOU8EhIW6vcJ"
-    b"XYdOm0KN0gXU3lOJiuti1H+9CbgIXMefAMrVaRDDx+1W9KGWVJshxhIbFxaqtL+YoAMLqB17"
-    b"U25AFKOStzH0EzWorQH3bRs5hVGSl2rKgVOoMmY9cBA1UZ3UZhX4jLo1MQ08R12qkUWPbfwX"
-    b"+A3NNtEphGbglwAAAABJRU5ErkJggg=="
-)
 
 icons8_flip_vertical = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAB"
@@ -2334,26 +2266,6 @@ icons8_mirror_horizontal = PyEmbeddedImage(
     b"q6ampqYN/Ab7PEdZ7CnXLgAAAABJRU5ErkJggg=="
 )
 
-icons8_oval_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAD"
-    b"TElEQVRoge3ZzW8VVRzG8Q+3yltLWxcI9YWYGDHGEIFYMNGFVTdojBr1L3ADSohB3BsCuFJ3"
-    b"KqjhD0DRDejK+FaQutFECyTiQqoLSbA0JpbwUhdnGm/PzNw7vS9zr/F+k7OYM79zfs+9M+dl"
-    b"nkOPHj16/JdY0qJ+bsdWbMI9uC2pW4bhJGYas5hKyiS+x7fJdcfYirdwGnNNltN4E1vKEt+P"
-    b"l3C2BeLzyhm8iJXt+AFL8TIutPEHxOUCdiW561JkjDyED7C+RswV4V3/Tnjvf8Gv+EsYG4Sx"
-    b"MoB1uBMbMYoHcEONvs/iBYwX0JpJHw7gmux/bBYf4VmsajRJ0vY5HMXlnFzXEi19i+18CJ/l"
-    b"dHoJ+7C2CfF5jGB/kiMr93EMFu1sGKcyOrmOt7G6hcLzWI13kpyxjpPCH12TZfgmo/F5jLVF"
-    b"cm0eTnLHer5WZxI4nNFoHGvap7Uua3EiQ9d7eQ2eyQj+XFg7Os0AvpDW91Qc2I/fo6AfLWJg"
-    b"lcCQsK2p1vibaOF8NQr4W9gzdRv3CtN+tdZX5m/2ST+N10qXWJy90hNRBR6LbvypwPTWQYal"
-    b"15lHKtgWBR5JAruVaXwY1W2rCPudao6Xo6cpjkXXo4SRX/2Y1pUsqhHusFDzFGGGqq5c3iFx"
-    b"i2G5aJatdFZPw8S6r1dwMars5HakKLHGixWciyo3lySmGWKN5yqYiCofL0lMMzwRXU/AoxYO"
-    b"nGndvSDeJL0gjhG2KPEUvLczGguxT84WBfZEN2eFDVq3sUH6u353dUC/9FOZ1F2v2LDgecUL"
-    b"Ycr/ejoKmhM+ZgZKElqLVfhKWt+TeQ3ezwg+qT2OSVFGBM8s1vVurUZLhQ/7uNGUzpgPY7LN"
-    b"hy8VcCCHhKeQZQcdxM1tkbyQNTgk2w4at4ixO4hPMzqZw4zg+o20UPg8t+D1JEdW7mMacDXr"
-    b"WaaX8bFgdzZjUgzieXwi3zK9qo5lWsTEflAwse+uEXNV2CZM4Af8LLzbM0mZFzwoHADdhfuE"
-    b"85BRtU3sM4KJfaKA1rrcKFj8ZR4r/IGdSe6WsxI7tOaUKq9MYrs2HfRkMYo3pE2zRspPSV/3"
-    b"NyqmVYeht8o+DF3h34lgRvisPm/hYegpYXvUo0ePHv8j/gFzYrbzMmFdVAAAAABJRU5ErkJg"
-    b"gg=="
-)
 
 icons8_place_marker_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAF"
@@ -2404,35 +2316,6 @@ icons8_polygon_50 = PyEmbeddedImage(
     b"VLP11ny0Wpasveo/T0QoE45QIQcAAAAASUVORK5CYII="
 )
 
-icons8_polyline_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAD"
-    b"E0lEQVRogd2azW+MQRzHP1tV4qA9IF4S4Wma6EGCiwtOxEtLpE2chCxWRYtGw9FFwhEXf4Aj"
-    b"J3rYNOEiIqFJaR3EQV1FSF+U7tq+OMzT9Jl55tl9dsx0uj7J5Nlndp/f7/vdZ+b37EwLtUc7"
-    b"8BaYCo9tfuWY0Q7Ma9pJn6JMGERv5I1PUSb8Qm9kss6nKgNGE/o/ZSwmCYCDQD0wAHy2GBtg"
-    b"K/ABWKv0zwPHbSXJAtMs3uo/QM5WcCCD+HKiw6kEvAKO2EoSIJuIJgos5chp4tv8ogDo0iRZ"
-    b"aL+BfuAM0GgYfwswpsR9jrhLVukh2Ui0zSCGwjVgc8rYGSCvxJlAzBfrBIg5kcbMQpsFXgLX"
-    b"ge1lYi/JkIqSBQqapGnbEHAL2BnGC4BuxLcf/dwADoaUSiswpyQ+AdxGlM20pkaBoqbf2ZDS"
-    b"MaQkPx95rwW4CbxGDK1q79rVJXEQckdJ/iThc+sQlayf9EOyy6Vwlf3Eh8PKCtesQTyZHxGf"
-    b"E9F2wY1kPfXEa/6BKq4PEA9S1cQ05aubEx4rIu5WeX0OuZxPA2dtCkxLFtnIO4MYzcBlhKlt"
-    b"1pRVyUbkMjxH+ie5MS7WI1+B4ch5BjjsII+Eq4VVXjk/6iiPc9QyPE7lMrwsWQH8QDazz2VC"
-    b"V0NrFnih9DkdXi43H/6bebKJeBlu9SUmAC4iVnUtBtePIM+TInDOmroI5RYpWeAhsDo8LwE3"
-    b"EMvVJsS2TKPm2BQeG4E9xKtVCdhB8h6VVZJ2Rmy1btuCkyb7IRbvhAuKtgMmGXH58CoQL83/"
-    b"TH1Cfx6xfaO+P4NYf0+EbbzM6zFgL3APaAivLwCXgC/WHFRgPfEtngJw2iBWM3AFTz/Je5FN"
-    b"fETs+NUc75GN9PmVY8ZuZBMlxGKp5niAbOSpXzlmNADfkI10eFVkSAeyie/AKq+KDHmGbOS+"
-    b"XzlmbCD+7NjlVZEhfcgmRvzKMaMTsY0TNdLrVZEBncT/rjEPnPIpyoRh9GuGQZ+iTJhCb2TS"
-    b"p6hqqUP8INSR1L9saUN/R475FGVKG+JfhX6Gx5oz8RfUZnMRWR+s4AAAAABJRU5ErkJggg=="
-)
-
-icons8_rectangular_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAB"
-    b"U0lEQVRoge2ZPU7DQBBGHwi3lAS65ATIiQInyQEQKOIGiANAzoAiwVkQFEAD3CBUEVSEFiQo"
-    b"lmI8sdeEyPaA5klb7NojvW/9U8yC4ziO4/yelZy1BNgHdoBn4AyY1OiURwcYAi3gFjgH3mMF"
-    b"CXANfIoxA9JKNeP0vh2k0xXBtZBDVWB5DKX4qgrSL9seQ+zKiQ7yUqPIskzlRH/sbeARWFfr"
-    b"I+C+OqcoKXCs1mbANvAUK+ySfRdPq7BbkBFZpx//fGTRoBK1xRiQdZpDfyN/Fg9iDQ9iDQ9i"
-    b"DQ9iDQ9iDQ9iDQ9iDQ9iDQ9ijbwg3ZJ5E5Q66XZQB3jAVjuoBxyptTdCO2hSVKTbLpbHiRTX"
-    b"r9ZG4b7YY1NOdJC7GkWW5SZ2MSG07OUjfKXZY4WU+WOFS2BN3lR00LNH6HZPgTElPdYaaAMH"
-    b"wBbhSVwAH00KOY7jOP+LL8rEkimh6HlnAAAAAElFTkSuQmCC"
-)
 
 icons8_type_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
@@ -2482,31 +2365,6 @@ icons8_end_50 = PyEmbeddedImage(
     b"Nx+iaAdF06CLpmUaRRM7itcK0bzoSSQSiUSiyAcoKiORfFCb+AAAAABJRU5ErkJggg=="
 )
 
-icons8_emergency_stop_button_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"CXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5QICAg0Rhg4xqwAABFlJREFUaN7tmW2IVFUY"
-    b"x38zrumOua6lI5ooGvjCJCnmh/yU+MX6UuELkUNpKpZQCiGUb2Ul9smXD4WEHyKQzbREJSTI"
-    b"ME2NXlhnYWFWymXXZdSo1hTUXXdn+/JceHg4d+bOvXd0hfnDZc7c85znnOec5+08F2qooYYa"
-    b"HiQkYuaXBGYB84EZwHhgtPR1AwWgDTgHtAADg21DZgF7gWuyuCDPVWCPjL3vyADHgGIFAtin"
-    b"CBwFZt4P1aoDtgMbgaGmrw/4BcgBl4Ab8r4BmArMBuYJD427wMfAB8Kj6hgHnHXsbDOwQhZc"
-    b"DqOAlcAFB58zQLraQkwGLpqJLwHLxdDDOIcs0G54XpS5qoKxQN5MeBBIxcB7OPCF4f2HnH6s"
-    b"GGrUqQhsitl9J4DNxnGcdthSJOwwu7WpBO1DwAvAPuA88Kc8PwOfAs+UUcMtZq7tcbrYXsX4"
-    b"QImTSAKtAVxuO/BSiZM5qGh7gOlxCHLMGHZ9GfotFcSQI+LBPHgLTgEdiu6bOCK21tnlAcY8"
-    b"DHTJIl8HngOeBdbKu14jzE8y5kUZ5+EVY5OZKILsNXEi6aMKzzvsxA8TgW+NMHmgX/IxraY5"
-    b"RbM7SgKoc6eVDpp5YtADwNwK+e9yqFq3oVml+gphveSTikmvidhpYL/sokfzSYX8xwP/lBGk"
-    b"UVIXrz9UgvmGYnBO5VjrZUK7m/8GcAQeZhtj9hMEcdte/9pS6uOHGardrBLCs8DnwH+GfrQY"
-    b"bBBMBZqA4+IJiyVom33WFBiH1U687eg/r/r75Pf7kPaYEhtb6ujbqOY5FOZERqr2DUf/BNVe"
-    b"BLwM3BavVCluAb/7LFSffEOpe0VYDDN3iSZ5qnkdHwhzIjfN/cHiL9WeEmGhCyRGrBEnYNHg"
-    b"s6bAgnQZ47TIqfbCCIJkgQ3AZ8Bbjv7HVftyGEHyxl1anFDtJcCYEEKkgWXq/3cOmjk+awoV"
-    b"EO861Csl6uXRHA6Qg1kcUOOvGbvzXLoOiE+ENbKrislrDpoNjrtDwieKnzDv3jdj1znGrY4j"
-    b"RbFJ4wWHKg6RYoFe0LuGpl6qKj3iJR8DvjJjfhBeVu1bFM2uONP4rE9VxbvL3zQeLGEWfVxi"
-    b"jRaiVeoBFq8qmv6oaTxSPNM3u3ofYX4E3jTvPyxzsToJPOrgNwLoVHRfxxGQZopaeEybfHS1"
-    b"zqhetkQFsiA24Xe/0ad4B5gWV3S1O7s5wJingd8c9arFUv7xwzYz5r0404Q6Y9RFuZuX8yJJ"
-    b"Sb3/lnG/lvGSW80pnnI4gchIO6qMXwYs0D0ipaDrPsKPcHiyfMggG7hk2mYm7JBCQZCS6Rwj"
-    b"eFK8U6dDiEnVrv+OlQqgNeCc3LEbA/BolGDX4uBzKsxJRPmssBV4x1Ex6RMjz4m77lbpxhTJ"
-    b"255y6H4PsBP4SOLGPcV0KZ5F+dDTL3FiGoMAGblTXKlAgIKkHZk4FhD3x9CEZKjz5bQmKpu5"
-    b"LnecNilgtDIIP4bWUEMNNdwb/A9jBMuJwvmIngAAAABJRU5ErkJggg=="
-)
 
 # ----------------------------------------------------------------------
 icons8_group_objects_20 = PyEmbeddedImage(
@@ -3203,34 +3061,6 @@ icons8_input_20 = PyEmbeddedImage(
 )
 
 
-icons8_point_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAF"
-    b"JElEQVRoge2Za2xURRTHf31ZoQWqjTTUaiyCT9D6flRRxESlKmpiMEJQolTjK2qi0QTxERJN"
-    b"6jMhRoNIlPDBRJMqIRgTQyTxATY+0BBF66O0lvqoYCmN2O364ezKmbMzu3vvLvrB/Sc3mb1n"
-    b"zn/OuTNz5pxZKKGEEv4XKCsyVwswGzgDOAZoBManZMNAP7Ad+BjYCHwKJItoQ0E4DFgGfIsY"
-    b"FeXpBh4BJv/rVitMADqQLx3VAfvsBZ4CJsY1Ju7SuhR4CTjcIxsBPgS2At8hjgLUAM3AScA5"
-    b"yJKz+AloB9bHtCtvlAHLgTHcLzoGrAOuAqrz4KkGrgQ6gYSH63GgvMi2/4NK4BUyl8U7wIwC"
-    b"eE8ENnh41wJVBfB6UQasNgPtARYH+pcDJwOXAzcDS1LtFqAioLMIGDJjrKG4kZVlZoD+lKEW"
-    b"ZwMrgQHCG/tnYBXQ6tGfCfSa/o8Wy4nZwKgi3glMN32mAW+QuXdyPZ3AsYZrKtCn+iSAiwt1"
-    b"Yhzu+TACnGb6tAG7sxi7G9iVRT4EXG04W5CQnO7zPf4olzeWmkFvN/JbcGcrCfwOPA3MMoOP"
-    b"A84HngR+MzoJ4C7D3W76PBzXiVoz4Ae4IfESjxMrgPo8uA8BnsVdigkkIKRRBmzC/UCT4jhy"
-    b"mzHyPCVrShGnZX8CC2OMMR9ZrnoZHqXkZxkb7o4xBptxZ0NjlRkgFIbzwQLDtcbINyrZJ1HJ"
-    b"pxjyJUp2PO6SejkquQcv4i4xHdpvMLYcGYX4eqU4BjQo2XIlG8afb0VFA+5h2KFk9bhpzI1R"
-    b"iDuU4jYj+5LwMrCoAS5MPTU5+url+o2RfaZkz+XgcfCWUnxdva/HneZrs3C04p7SO5CsN4R5"
-    b"hrtRydaq92/7lEMZpi50flRtu4y2BvRrgNdM/6bUu9DB9rn53RSwoQEPQo7UqvaQak8x/foD"
-    b"+mfi3ztHIGWwD/3IF/eN9YdqT/AphxwZC/TZZ/rFSbOTgfdVuJmuHqtStRM+5ZAjehbqVNvO"
-    b"QCN+bEGqPYteoCugY2dQj6VP9CE8CDnSq9pHq3Yf7hcJbd5h5NTWzvSl3u0N6GiuJNATsGFH"
-    b"QN+Lx9gfJXqNTOc/G3Lw1AIXIaVArvD7puLdbGTdSvZEDh4HbbihUNcM96r3CeDUKMQBzMTN"
-    b"Fh5UsmZji035s2IistnSykuVbDISRdKy93A3Y1RUAO8qvmHcvXe/ko0imXMkrFME3bi19kO4"
-    b"XynSaWugs4gkkgKlUQ58pWTewzAXrjEDLFCyGiR10fLniRaOK5GaRHNsx72km2/k18Xwgwrg"
-    b"a0XSg3tQTiez0tuCVIG5cC5yiad1dyGZdRrjkRJXr4rYS9jWCi8YeSvwq+mTBD4CHgDmACek"
-    b"DJyDrPf3Pf0HkcimscL0WRTXCZCTVhc2vjR6KvCFx7h8n21k3sosNH02UYT7rWbcsnYfkqlq"
-    b"VAP34J+d0DMI3AccbLjmIqWzXnLTCnUijXm4cf4v3KoxjUlI2duJ3ERa4/cgJcJNuKlPGotx"
-    b"w34CCTpFxa0ew14le1w/FLnbnUH225U6pGS2/HcWbHUA7WReAQ0Ad5C5RPJBNXJbs9Nwjqbe"
-    b"H1BcBvxC5tcbQM6FWcBBWfSrkBD9DJkOJJF91hbVqLiRoAk5AK8IyEeQE/kH9l+X1iF3VscR"
-    b"rhLXIzPRE5AfMMxFDsG4oTf9dOHeMv5nuADZrINEC7+ryTwIY6Gof6IgSd4pwOlI6t+EpDVl"
-    b"SGXXh6Q9Xchf096ytYQSSighiL8BHpA7bZy+dDAAAAAASUVORK5CYII="
-)
 
 icons8_flash_off_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAC"
@@ -4123,6 +3953,163 @@ icons8_finger_50 = PyEmbeddedImage(
     b"Ycf2fWBUE8BuysLtBdySfi+c+MPeB/5NUJYk4pDZAAAAAElFTkSuQmCC"
 )
 
+icon_regular_star = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
+    b"AAAD5klEQVR4nO2ZaahNaxjHf8c5uAfXlEPGpMzDByGzW265fCDXUPcDMuSTWfKB4pshlClj"
+    b"XVxdRd2MR9dMXeEDkumQFNec46Acw3G2Hv1Xve32OXvtY6119opfrdq969nP87zvWut9hhd+"
+    b"4IsawFngjH7Hll+BhK6hxJg9zkT+JqY0BkqBMl2lGosds/QkCoGj+j2TGHJFzo8Bxur3NWJG"
+    b"bzn+AqgN1AKeaawXMWKznF7ljK3W2CZiQj7wSk53ccY7aawEqEMMmCSH/0tx77zuTSQGnJOz"
+    b"U1Lcm6p7Fu2zmg5AOfAW+DnF/XrAG03GXrWsZbmc3FaJzHbJLCNLyQMey8m+lcj1k8xToCZZ"
+    b"yCg5eMuH7A3JjiQLOSjn5vmQnS/ZA1RDbCgA2gE9gcHAcGAcMB1YAHwCPkguHQWS/aT/Tpeu"
+    b"4dLdU7YKZNsXE4A/gX3AceACcB24DxQrc034vPZmsDh7M9BbJl/uy7cL8nWffLc58NyHolLl"
+    b"TfeAy4oVhXJmK7AGWAI0z2AiLfSfNdJhugql+7JsvZDtdP7ZHPhNaUNCe/x4oBvQFmgE5FL9"
+    b"5MqXtvJtvBOPSjSHr7QHbjoZ6y9kL/2BJ/L1blI+95X6zs5jH+EMso9p2iTMx3/1lCp8hF50"
+    b"tmtLlgStvBR+2Vha/gDe6U/28TWl+mgMnJAv74HJmSqwvfyBFNzTRxY1HYHb8uFxmtQn7RZ5"
+    b"UYosox1NdIxwdlPbjtt8q0KruXdIYbne1TC7hjnAQuCzbO4JuqKc7UR5C151CZ6fgL+cRVuq"
+    b"iYX6uK3d0zpA3abLayGVyFaoWGVXJIOW5wSF9/oWRVk9rpdRy5WCwl4j07mOCPHSmQEB6hwo"
+    b"nVZ0RUILJ8EMMupbpH4t3a2IsG91KATdh6Pse+2SsTkh6J4r3TuJgIcyFkbK0l26HxEynWXo"
+    b"ic9A1UlnI0d9bqk5Tq1htkJjpoxY9E334S5MKlM/Kr2xI4bK2C35UOuh/TJSWSrdRwc6Xpqx"
+    b"XVe5c9hjMhUxWXJmKxRyneOCVKlJvla8zEn97VTXY5CadwklhFvUC06mlZOm+CqeMsVrdVp9"
+    b"kMwQ4I5TJq+tIKnMVwT3ylVr7wxLIVfko/VaZRZL+QZnrKFW1nttrurYLR09gEtJ/bAmzv2N"
+    b"Gl8Uwjw4LeVecTXOORd8p5XOJNLnqTR4Kx0v1XE0ftfYqaAnUUf1sr3/XYF/nNU8p5K0qlhr"
+    b"9Jij74ieWJlewUDrnmHOynuNsWKdSgVR+ORIV7GTx3nNj1TfUJVZmdSitDyrJcHTzEmBvGtF"
+    b"kAZOSun/OgcJm1GylZDtwBiiXasB0dFANs3298MXw0hXuTS4jKMAAAAASUVORK5CYII="
+)
+
+icon_crossing_star = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAABnRSTlMA/wD/AP83WBt9AAAA"
+    b"CXBIWXMAAA7EAAAOxAGVKw4bAAACbUlEQVRYhd2YO08CQRDHZw/LCw0tHb3PgoJeOv08+gV8"
+    b"ND4a/QAajYaHET8CCT0JoaAlAZUooiWsxSXruXc7O8tsjLkJ1e3M3H/3tzO7h5BSwv+zwFsi"
+    b"kQtEzls2X4n8WqZlKXy+OGZ6tQBgIecLOfeVzYMsDZwXjpmGqPD54siVlYqMzzG7EDVwXjiy"
+    b"ZCGwmBwzCjEVGZ/j8rJywQrTAbHlZVnvj5wLJgtiuVw2DVUqFU5mIf7nrpdSCggEBCcnp5Js"
+    b"UQjfJ25HR8cqBOIp6FkEBLs7u7hPdbvqlDAuANRAvd4gKqNPwClhrVb/eSJ/14vqzkjviXwo"
+    b"zcnqaXqdvt/VMH56FAoFqyYAyOfzyCiyBCllqK6/gcj1ej1t9ObmFgBeXp8pst6nbwDQaj1p"
+    b"z7vdrlrI1LXUIf6SnDYbOkGTP2mfIBlNQEulElETABSLxaRKXBMAgLE8EpVyd3c/HA6dWpEK"
+    b"n0wmV1fXDiWMQEydpX2iPmKpJ89Czi8uL5zUaHZ2fuYwHzqLfr+verFTO41+g8GA/i4qRIjV"
+    b"FHHbxt2c65foF7d4YxuPx0mH0WiEtyW7EVe13W4nwaUCNVEWEHQ6Hc8QTRQ0oNh54sJx+eu2"
+    b"pobaJ2lG2luPjy3++5zCSRDx9Y9G9/f3pJQHB4dWT4o+lizkLEf8SRc1qwf+juQQcmPz2beQ"
+    b"v4qaD03TV3Wj2cBjcbND1FbeqeKSzkSOJIha0jAMiTgWch6GYao+liyVbm11XU30YzalpI7s"
+    b"YzZVvW1zY0tLazILRC2e07qcUlEr8fNrxm+nn18zorPzJwbfuJ8Y1uDlzFuX/3v7BikOKD82"
+    b"lTxEAAAAAElFTkSuQmCC"
+)
+
+icon_polygon = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
+    b"AAACZUlEQVR4nO2aT0sVURjGf7qo0EVIEUUYiYFCFLRIsEViGXTzC1hgfYeSbFVt0o1pu3Kj"
+    b"req61BbZoqCWldEHUFKvtJBKKPpH6Y0DT3AW/rn3zJxzz8j9wV3NnOd5z9yZOe/7noEqVaKh"
+    b"G1gCZoGzKeoaLaNZAHIEwBgVPf8WQ0xkLsBEZn1PYjewbJmleWt1WRdpWV7eGJTRS48ez+Ux"
+    b"4MvgIPAdWAPafZkAJ+XxEzjkw+ChrtQj/PNYXuNpCx8HVoHfQDP+OQz8kueJNIWf6QoNEY67"
+    b"8pxOS7BTgl+APYSjAfgk73NJxWqBGYldJTzX5P1esThzRUIfgJ2EZ4fWKxPDZVeRXcCCRHqo"
+    b"HBcVg8nv6lwEbkjgXdK/NSE1wGvF0u/yoH3W4DNUntOKZQXYW87Aexo4STxMKaaRUgc0aTH6"
+    b"CxwlHlqAP1qUj5QyYEIzv098PFBs+a1ObFPC9g3YT3zsA74qxlObnfhCM75JvNxSjK/WO3hB"
+    b"72lzwkegnnipV4zF9er7Quh6OSGFjeLN8kQW7AM562DWbq3zm9XL5oGKldul9A3s1+8B4n79"
+    b"tm91cl4zNotPbIwqNlPTZzZFaS03RUGJWVGJWiw8UUzDrml8mt1EVzqsNL7svkF/RIXVG8Vy"
+    b"3bXUnZeAKTcrxSVrzXAqdVHBH0vzoTeJkLml3krItGZC05dWO8hu0Dk9aAlosF44iRt0/5mW"
+    b"oGljhmJYnk/TFD2mBTJUE7vJVxMbtfhLTg8SkpfXWJY3etrk8QNo9GUyEHDr7U6ozdC5LG+G"
+    b"bpvt6W31wUBOk/H1CcfiRnV4lSqE5x+0Tyg887i34gAAAABJRU5ErkJggg=="
+)
+node_add = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
+    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAJ0lEQVQImWP4//h/AwM24g+DPDKBU93//yCCoR5G2KEQ"
+    b"YIAmBlcMABg0P3m4MIsZAAAAAElFTkSuQmCC"
+)
+
+node_append = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
+    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAALklEQVQImWP4//h/AwM24g+DPDKBU93//zCC/wd7A8P7"
+    b"39+RiRfM3zHEwOpAOgBQXErXEDO0NAAAAABJRU5ErkJggg=="
+)
+
+node_break = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAABcAAAAZAQMAAADg7ieTAAAABlBMVEUAAAD///+l2Z/dAAAA"
+    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAOElEQVQImWP4//8fw39GIK6FYIYaBjgbLA6Sf4+EGaG4"
+    b"GYiPQ8Qa/jEx7Pv3C4zt/v2As0HiQP0AnIQ8UXzwP+sAAAAASUVORK5CYII="
+)
+
+node_curve = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
+    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAARklEQVQImWP4//9/AwOUOAgi7gKJP7JA4iGIdR4kJg+U"
+    b"/VcPIkDq/oCInyDiN4j4DCK+w4nnIOI9iGgGEbtRiWYk2/43AADobVHMAT+avQAAAABJRU5E"
+    b"rkJggg=="
+)
+
+node_delete = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
+    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAKUlEQVQImWP4//9/AwM24g+DPDKBUx0SMakeSOyvh3FB"
+    b"LDBAE4OoA3IBbltJOc3s08cAAAAASUVORK5CYII="
+)
+
+node_join = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
+    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAPklEQVQImWP4//9/A8OD/80NDO/+74YSff93IHPBsv+/"
+    b"/0chGkDEQRDxGC72H04wgIg6GNFQx4DMhcgC1QEARo5M+gzPuwgAAAAASUVORK5CYII="
+)
+
+node_line = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
+    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAARElEQVQImWP4//9/A8P//wdAxD0sRAOIsAcS/+qBxB+Q"
+    b"4p8g4jOIeA4izoOI+SDCHkj8qwcSf0CGNoKIvViIRoiV/xsA49JQrrbQItQAAAAASUVORK5C"
+    b"YII="
+)
+
+node_symmetric = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
+    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAV0lEQVQImV3NqxGAMBRE0R2qQoXS2ApICVDJowRKQEYi"
+    b"YsIAWX6DIObIeyGJeGgllDTKwKjMl147MesgJq3Eoo0IjES0QCTzROdqYnAV4S1dZbvz/B5/"
+    b"TrOwSVb5BTbFAAAAAElFTkSuQmCC"
+)
+
+node_smooth = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAAAXNSR0IArs4c6QAAAARnQU1B"
+    b"AACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAIgSURBVEhLY/wPBAw0BkxQmqZg+FhC"
+    b"VJx8+fyZ4fKVK1AeBEhKSDAoKCpCefgBUZZcvHCBITo6CsqDgJjYWIaKikooDz8gKrjevX8P"
+    b"ZSHAh3fvGX7//g3l4Qc4ffLz50+G9evWMSxftpTh7r17UFFUwM3NzeDm6saQlJLMoKioBBXF"
+    b"BFgtOX/+HENNdRXDw4ePwHwZGVmGJ08eg9kwICQkxPDj+3eGb0DMxMTEkJySwpCdncPAwsIC"
+    b"VYEAGJZs3bqFoaaqiuH3nz8Mjg6ODHkFBWADFy1cCFUBAdo6Ogx2dnYMq1etYpg6dQrDly9f"
+    b"GKysbRgmTpzIwMnJCVUFBSBLYODgwYP/dXV1/usB8do1a6CihMGLF8//h4YE/9fW0vyfmZn5"
+    b"/++fP1AZCIBb8ubNm/8W5mb/dbS1/m/ftg0qSjz4/Pnz/4AAf7BF8+bOhYpCANyS2tpqsIKO"
+    b"jnaoCOng/v37/40MDf4bGxmCHQ0DYEtAAoYG+mCfAMMWLEEu6O7qAjt22rSpUJH//8H55MD+"
+    b"/Qy/fv1i8A8IACdLSkBkZCSY3rVzJ5gGAWZ+Pr6G7du3MgB9wyAsJMzwB5iq1DU0oNKkg/Xr"
+    b"1zFcOHeO4dWrVwzfvn4DZofzDIwgr0HlwcDZ2Ylh4qQpUB7pwNfHh+H+fUTmBYXMaH1CEmA8"
+    b"duwYSpyAihB1dXUoj3QAqhZA5RkMMDMzEVefUApGI54EwMAAANLW9DiEznjCAAAAAElFTkSu"
+    b"QmCC"
+)
+
+node_smooth_all = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
+    b"AAACs0lEQVR4nO2YO2hUQRSGj4r4loh2Rldws3P+/+zdK2xhSB+idop2FqJgFUEt1FJERBtt"
+    b"VKy0UvCBz0IR0UKsTBoRBEVREcEHiEh8JBrlZu+uIbmYx97sA+eDKbaY/86/c86cMyPi8Xg8"
+    b"Ho/nP6RYLM404PDIETjnpJlob22dY8TvkQPAOmkmzCxMMkJq9yaRGdLIFAqFeaa606DPkkwM"
+    b"Gx8NOBoE2VZpNACsJfR1ZbHQH0b8SjDxrbI70D5Sd4vIdGkESN1rxGApdPAmCp8gCBYRuEui"
+    b"Z/gw0w1mroPE5coc4FImk5ldVxMG7Bm2C6edcwvGPddcF6HvYjM36pY7Zq6rEj7Agclp2Mpy"
+    b"SJJ6UGpNsVicS+JFbOJMNVr5fK5A4iuh/aqal1pCanc5J7LZ7MIU9PbF4XkxnRWOEwJPSka4"
+    b"Q1LaYSM+EDoQtrUtlVpAMhsfn/1hGLakp4sTkW4e2CpTjVEvEHgQn1Sfo9+q2l6tLum2EHhY"
+    b"0tWnQ9+h7qpWN3DORVojhyS3HdxYvREcS2hnzlera+Y6ktbsjYyF35HJh9boxEkr2UsHifbF"
+    b"CX81tWSH3owNDEZ1aijZpxoC14eOYNXOtDTzwOa4eD+SWkHq9rjtOZeaJnAv1jyUlubYHyXn"
+    b"E/opqvCBc0G1ennVzrh4DwDISJ2uBr3R3X+yOrlcbolRX8Y16aTU5QWG6C0nfTabnTVRjTAM"
+    b"WyodCPRVmq3UhDCzZUa8jRdy3zm3YrxzA+cCoz6O534huUrqCYA2As//LkiPRIai4jnqCg3s"
+    b"V9WcAcfj94LolHoPYLU0Aqq62ICzw4pZdM///q9HDStdnW+RXC6NRqlC65Xyv53cvOKnUe+Q"
+    b"XCMi06SRiR43DHotwURPtHvSTBj0VIKR29Js5FXXJzyQb6v3ujwej8fj8Uid+AMS4JbuhXD/"
+    b"gAAAAABJRU5ErkJggg=="
+)
+
+node_close = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
+    b"AAACpklEQVR4nO2YSWsVQRRGjwlOcWM0YCDguFHzUKMrccClszEgiCKSgBiCYOJGI7qX4MYg"
+    b"auLsD3DnhD5F/AGaxAHEZKFunDfqwiQ+KbgNl6K7051+TbpNHajV++7te19VV9dX4HA4HA7H"
+    b"xDAFOA5cAGrJMTuBkoy3QB05Za1qJPfNHMtzM3OBrUCLvCOvIjSzAOgQfdhoAbbIM1KhEjgI"
+    b"PAFGrML9xh0r/k2EGD2GgcfAAaCiXE1sAgZiFvLUyvExZnxJjT5gY9Imjsi/Yyd/DzwEbslS"
+    b"0r99ApZbeVYD3UBPyDC5TM4PATPUNt4mTvkkuww0KM1ea6mZJgokpwG44rOMO+MmagL+qgTv"
+    b"gBWWZpU1W6aJesrLSmBQPWMUaIwaPAf4oYL7A3aRfSk34VFjvaPfgGoicFYFfQUWBuhmAL3A"
+    b"bWAp6bIY+K7q6horYBbwWwUcJTt0qLp+AVVh4t1K/BmYRnaYLivEq29XmLhXCa+RPW6o+i6F"
+    b"CR8o4SGyx2FV3/0w4Usl3Eb22GHtpoH0K+F2su2B+ibF0upRwutkj5uqvotRt98vsuXlcvut"
+    b"ko+NJ24nm270JzBzrIAu61yzKOUClwH3gPPA1ADNEuuIciZK4moraEAObmlQLwdO71l7fDQ1"
+    b"1mfBLK/ZUR/QKEdmL3hQju1pNmEsQcHHlwxZx3izBcei0zI1xuRcFbeXlILVxIiYNO/ib40c"
+    b"kWxjZS4oxkVbgNU1drQo9jTMvnZbjtJvJkpil02uYoC//wO0kpANwIsElwemMM2zmPHPgXWU"
+    b"iQq5mikGzFDYeG3luhshZhh4BOwv53WQnxXeDDQDp2UrDBongPlWfJ3PzcuQ5GqW3JGsbBao"
+    b"lZnSzZwkp/jNzHr+k2aayDHzgHPyjlROdDEOh8PhmJz8A+PVbUCLkfVDAAAAAElFTkSuQmCC"
+)
+
 
 icons8_centerh_50 = VectorIcon(
     "M 23.4815320307,48.8124690662 C 23.1957961233,48.0678532274 23.0830594543,36.8929321171 23.2310060995,23.9793110433 C 23.4611043587,3.89503184947 23.716895111,0.5 25,0.5 C 26.2923777019,0.5 26.5,3.87962962963 26.5,24.9166666667 C 26.5,43.5556297706 26.204337579,49.4318874737 25.2505259312,49.7498246896 C 24.5633151933,49.9788949356 23.7672679381,49.557084905 23.4815320307,48.8124690662 Z M 5.2,31.8 C 3.49433315332,30.0943331533 3.64738544542,19.537533519 5.3988551522,18.083942768 C 6.77561936461,16.9413299568 10.1467515776,18.574363024 16.5,23.4615237926 L 18.5,25 L 16.5,26.5384762074 C 14.2357722318,28.2802064821 7.04496406527,33 6.65559094272,33 C 6.51501592422,33 5.86,32.46 5.2,31.8 Z M 37,29.6214380251 C 33.975,27.8650464301 31.5,25.7884692723 31.5,25.0068221188 C 31.5,24.2251749654 34.1464588219,22.0977065982 37.3810196041,20.2791146362 C 44.7105737226,16.1581631062 46,16.8528197296 46,24.9224447154 C 46,29.8955171137 44.7797216097,33.19853933 43.05,32.9074386443 C 42.7475,32.8565298987 40.025,31.37782962 37,29.6214380251 Z M 11.4529469789,26.8394849797 C 12.8538261405,26.2012017185 14,25.3734334777 14,25 C 14,24.3913047117 9.57843532493,22 8.45294697887,22 C 8.20382614049,22 8,23.35 8,25 C 8,28.4092552194 8.00353888442,28.4111404857 11.4529469789,26.8394849797 Z M 42,25 C 42,21.5907447806 41.9964611156,21.5888595143 38.5470530211,23.1605150203 C 35.4123272686,24.5887916561 35.3474130241,25.3796404509 38.25,26.779505359 C 41.6491195451,28.4188388948 42,28.2523339214 42,25 Z"
@@ -4194,3 +4181,77 @@ icons8_separate_for_every_new_imported_file = VectorIcon(
 )
 
 icon_fractal = VectorIcon(fill="", stroke="M 0,0 L 4095,0 L 6143,-3547 L 4095,-7094 L 6143,-10641 L 10239,-10641 L 12287,-7094 M 12287,-7094 L 10239,-3547 L 12287,0 L 16383,0 M 16383,0 L 18431,-3547 L 22527,-3547 L 24575,0 L 28671,0 L 30719,-3547 L 28671,-7094 L 24575,-7094 L 22527,-10641 L 24575,-14188 M 24575,-14188 L 22527,-17735 L 18431,-17735 L 16383,-14188 M 16383,-14188 L 12287,-14188 L 10239,-17735 L 12287,-21283 L 16383,-21283 L 18431,-24830 L 16383,-28377 M 16383,-28377 L 18431,-31924 L 22527,-31924 L 24575,-28377 L 28671,-28377 L 30719,-31924 L 28671,-35471 L 24575,-35471 L 22527,-39019 L 24575,-42566 L 28671,-42566 L 30719,-46113 L 28671,-49660 L 30719,-53207 L 34815,-53207 L 36863,-49660 L 34815,-46113 L 36863,-42566 L 40959,-42566 L 43007,-39019 L 40959,-35471 L 36863,-35471 L 34815,-31924 L 36863,-28377 L 40959,-28377 L 43007,-31924 L 47103,-31924 L 49151,-28377 L 47103,-24830 L 49151,-21283 L 53247,-21283 L 55295,-17735 L 53247,-14188 L 49151,-14188 L 47103,-17735 L 43007,-17735 L 40959,-14188 L 43007,-10641 L 40959,-7094 L 36863,-7094 L 34815,-3547 L 36863,0 L 40959,0 M 40959,0 L 43007,-3547 L 47103,-3547 L 49151,0 M 49151,0 L 53247,0 L 55295,-3547 L 53247,-7094 L 55295,-10641 L 59391,-10641 L 61439,-7094 L 59391,-3547 L 61439,0 L 65535,0")
+
+icon_mk_circle = VectorIcon(fill="", stroke="M 15, 15 a 15,15 0 1,0 1,0 z")
+
+icon_mk_ellipse = VectorIcon(fill="", stroke="M 15, 7.5 a 15,7.5 0 1,0 1,0 z")
+
+icon_mk_rectangular = VectorIcon(
+    fill=(
+        "M 5 0 a 5 5, 0 1,0 1,0",
+        "M 50 0 a 5 5, 0 1,0 1,0",
+        "M 50 30 a 5 5, 0 1,0 1,0",
+        "M 5 30 a 5 5, 0 1,0 1,0",
+    )
+    ,
+    stroke=(
+        "M 5 5 h45 v30 h-45 v-30",
+    ),
+)
+
+icon_mk_polyline = VectorIcon(
+    fill=(
+        "M 5,45 a 5,5, 0 1,0 1,0",
+        "M 20,15 a 5,5, 0 1,0 1,0",
+        "M 40,35 a 5,5, 0 1,0 1,0",
+        "M 60,5 a 5,5, 0 1,0 1,0",
+    )
+    ,
+    stroke=(
+        "M 5,50 L 20 20 L 40 40 L 60 10",
+    ),
+)
+
+icon_mk_point = VectorIcon(
+    fill="M 15, 12 a 3,3 0 1,0 1,0 z",
+    stroke=(
+        "M 15, 0 a 15,15 0 1,0 1,0 z",
+        "M 15, 5 a 10,10 0 1,0 1,0 z",
+    )
+)
+
+icon_mk_align_right = VectorIcon(
+    fill="M 20,5 h20 v10 h-20 z",
+    stroke=(
+        "M 10,20 h30 v10 h-30 z",
+        "M 20,5 h20 v10 h-20 z",
+        "M 45,0 v35",
+    )
+)
+
+icon_mk_align_left = VectorIcon(
+    fill="M 5,5 h20 v10 h-20 z",
+    stroke=(
+        "M 5,20 h30 v10 h-30 z",
+        "M 5,5 h20 v10 h-20 z",
+        "M 0,0 v35",
+    )
+)
+
+icon_mk_align_top = VectorIcon(
+    fill="M 20,5 v20 h10 v-20 z",
+    stroke=(
+        "M 5,5 v30 h10 v-30 z",
+        "M 20,5 v20 h10 v-20 z",
+        "M 0,0 h35",
+    )
+)
+
+icon_mk_align_bottom = VectorIcon(
+    fill="M 20,15 v20 h10 v-20 z",
+    stroke=(
+        "M 5,5 v30 h10 v-30 z",
+        "M 20,15 v20 h10 v-20 z",
+        "M 0,40 h35",
+    )
+)
