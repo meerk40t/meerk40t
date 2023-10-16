@@ -6,7 +6,7 @@ from meerk40t.core.units import ACCEPTED_UNITS, Length
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_hinges_50
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color, Matrix, Path
 from meerk40t.fill.patterns import LivingHinges
@@ -213,9 +213,9 @@ class HingePanel(wx.Panel):
 
     def _set_layout(self):
         def size_it(ctrl, value):
-            ctrl.SetMaxSize(wx.Size(int(value), -1))
-            ctrl.SetMinSize(wx.Size(int(value * 0.75), -1))
-            ctrl.SetSize(wx.Size(value, -1))
+            ctrl.SetMaxSize(dip_size(self, int(value), -1))
+            ctrl.SetMinSize(dip_size(self, int(value * 0.75), -1))
+            ctrl.SetSize(dip_size(self, value, -1))
 
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         size_it(self.slider_height, 120)
@@ -280,21 +280,21 @@ class HingePanel(wx.Panel):
         vsizer_options.Add(hsizer_pattern, 0, wx.EXPAND, 0)
 
         label_pattern = wx.StaticText(self, wx.ID_ANY, _("Pattern:"))
-        label_pattern.SetMinSize((90, -1))
+        label_pattern.SetMinSize(dip_size(self, 90, -1))
         hsizer_pattern.Add(label_pattern, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.combo_style.SetToolTip(_("Choose the hinge pattern"))
         hsizer_pattern.Add(self.combo_style, 1, wx.EXPAND, 0)
 
         self.button_default.SetToolTip(_("Default Values"))
-        self.button_default.SetMinSize((30, -1))
+        self.button_default.SetMinSize(dip_size(self, 30, -1))
         hsizer_pattern.Add(self.button_default, 0, wx.EXPAND, 0)
 
         hsizer_cellwidth = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_options.Add(hsizer_cellwidth, 1, wx.EXPAND, 0)
 
         label_cell_width = wx.StaticText(self, wx.ID_ANY, _("Cell-Width:"))
-        label_cell_width.SetMinSize((90, -1))
+        label_cell_width.SetMinSize(dip_size(self, 90, -1))
         hsizer_cellwidth.Add(label_cell_width, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.slider_width.SetToolTip(
@@ -313,7 +313,7 @@ class HingePanel(wx.Panel):
         vsizer_options.Add(hsizer_cellheight, 1, wx.EXPAND, 0)
 
         label_cell_height = wx.StaticText(self, wx.ID_ANY, _("Cell-Height:"))
-        label_cell_height.SetMinSize((90, -1))
+        label_cell_height.SetMinSize(dip_size(self, 90, -1))
         hsizer_cellheight.Add(label_cell_height, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.slider_height.SetToolTip(
@@ -332,7 +332,7 @@ class HingePanel(wx.Panel):
         vsizer_options.Add(hsizer_offsetx, 1, wx.EXPAND, 0)
 
         label_offset_x = wx.StaticText(self, wx.ID_ANY, _("Offset X:"))
-        label_offset_x.SetMinSize((90, -1))
+        label_offset_x.SetMinSize(dip_size(self, 90, -1))
         hsizer_offsetx.Add(label_offset_x, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.slider_offset_x.SetToolTip(_("Select the pattern-offset in X-direction"))
@@ -349,7 +349,7 @@ class HingePanel(wx.Panel):
         vsizer_options.Add(hsizer_offsety, 0, wx.EXPAND, 0)
 
         label_offset_y = wx.StaticText(self, wx.ID_ANY, _("Offset Y:"))
-        label_offset_y.SetMinSize((90, -1))
+        label_offset_y.SetMinSize(dip_size(self, 90, -1))
         hsizer_offsety.Add(label_offset_y, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.slider_offset_y.SetToolTip(_("Select the pattern-offset in Y-direction"))
@@ -383,8 +383,8 @@ class HingePanel(wx.Panel):
 
         hsizer_preview = wx.BoxSizer(wx.HORIZONTAL)
         main_right.Add(hsizer_preview, 0, wx.EXPAND, 0)
-        self.check_preview_show_pattern.SetMinSize(wx.Size(-1, 23))
-        self.check_preview_show_shape.SetMinSize(wx.Size(-1, 23))
+        self.check_preview_show_pattern.SetMinSize(dip_size(self, -1, 23))
+        self.check_preview_show_shape.SetMinSize(dip_size(self, -1, 23))
         hsizer_preview.Add(self.check_preview_show_pattern, 1, wx.EXPAND, 0)
         hsizer_preview.Add(self.check_preview_show_shape, 1, wx.EXPAND, 0)
         self.panel_preview = wx.Panel(self, wx.ID_ANY)

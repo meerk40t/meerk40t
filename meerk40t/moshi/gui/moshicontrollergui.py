@@ -4,7 +4,7 @@ import wx
 
 from meerk40t.gui.icons import icons8_connected_50, icons8_disconnected_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -115,46 +115,46 @@ class MoshiControllerPanel(wx.Panel):
                 "DEBUG. Without a K40 connected continue to process things as if there was one."
             )
         )
-        self.text_device_index.SetMinSize((55, 23))
-        self.spin_device_index.SetMinSize((40, 23))
+        self.text_device_index.SetMinSize(dip_size(self, 55, -1))
+        self.spin_device_index.SetMinSize(dip_size(self, 40, -1))
         self.spin_device_index.SetToolTip(
             _(
                 "Optional: Distinguish between different lasers using the match criteria below.\n"
                 "-1 match anything. 0+ match exactly that value."
             )
         )
-        self.text_device_address.SetMinSize((55, 23))
-        self.spin_device_address.SetMinSize((40, 23))
+        self.text_device_address.SetMinSize(dip_size(self, 55, -1))
+        self.spin_device_address.SetMinSize(dip_size(self, 40, -1))
         self.spin_device_address.SetToolTip(
             _(
                 "Optional: Distinguish between different lasers using the match criteria below.\n"
                 "-1 match anything. 0+ match exactly that value."
             )
         )
-        self.text_device_bus.SetMinSize((55, 23))
-        self.spin_device_bus.SetMinSize((40, 23))
+        self.text_device_bus.SetMinSize(dip_size(self, 55, -1))
+        self.spin_device_bus.SetMinSize(dip_size(self, 40, -1))
         self.spin_device_bus.SetToolTip(
             _(
                 "Optional: Distinguish between different lasers using the match criteria below.\n"
                 "-1 match anything. 0+ match exactly that value."
             )
         )
-        self.text_device_version.SetMinSize((55, 23))
-        self.spin_device_version.SetMinSize((40, 23))
+        self.text_device_version.SetMinSize(dip_size(self, 55, -1))
+        self.spin_device_version.SetMinSize(dip_size(self, 40, -1))
         self.spin_device_version.SetToolTip(
             _(
                 "Optional: Distinguish between different lasers using the match criteria below.\n"
                 "-1 match anything. 0+ match exactly that value."
             )
         )
-        self.text_byte_0.SetMinSize((77, 23))
-        self.text_byte_1.SetMinSize((77, 23))
-        self.text_desc.SetMinSize((75, 23))
+        self.text_byte_0.SetMinSize(dip_size(self, 77, -1))
+        self.text_byte_1.SetMinSize(dip_size(self, 77, -1))
+        self.text_desc.SetMinSize(dip_size(self, 75, 23))
         self.text_desc.SetToolTip(_("The meaning of Byte 1"))
-        self.text_byte_2.SetMinSize((77, 23))
-        self.text_byte_3.SetMinSize((77, 23))
-        self.text_byte_4.SetMinSize((77, 23))
-        self.text_byte_5.SetMinSize((77, 23))
+        self.text_byte_2.SetMinSize(dip_size(self, 77, -1))
+        self.text_byte_3.SetMinSize(dip_size(self, 77, -1))
+        self.text_byte_4.SetMinSize(dip_size(self, 77, -1))
+        self.text_byte_5.SetMinSize(dip_size(self, 77, -1))
         self.checkbox_show_usb_log.SetValue(1)
         # end wxGlade
 

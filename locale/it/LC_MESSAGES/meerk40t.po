@@ -17673,7 +17673,7 @@ msgstr ""
 msgid "If you continue to move to the center, then the laserhead might"
 msgstr ""
 
-msgid "slam into the walls and get damaged! Do you really want to proeed?"
+msgid "slam into the walls and get damaged! Do you really want to proceed?"
 msgstr ""
 
 msgid "Template-Name"

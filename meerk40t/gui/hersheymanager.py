@@ -14,7 +14,7 @@ from meerk40t.extra.hershey import (
 )
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_choose_font_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 from meerk40t.kernel import get_safe_path
 
 _ = wx.GetTranslation
@@ -140,14 +140,14 @@ class LineTextPropertyPanel(wx.Panel):
         )
 
         self.list_fonts = wx.ListBox(self, wx.ID_ANY)
-        self.list_fonts.SetMinSize((-1, 140))
+        self.list_fonts.SetMinSize(dip_size(self, -1, 140))
         self.list_fonts.SetToolTip(
             _("Select to preview the font, double-click to apply it")
         )
         sizer_fonts.Add(self.list_fonts, 0, wx.EXPAND, 0)
 
         self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
-        self.bmp_preview.SetMinSize((-1, 70))
+        self.bmp_preview.SetMinSize(dip_size(self, -1, 70))
         sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
 
         main_sizer.Add(sizer_text, 0, wx.EXPAND, 0)
@@ -299,7 +299,7 @@ class PanelFontSelect(wx.Panel):
         sizer_fonts.Add(sizer_checker, 0, wx.EXPAND, 0)
 
         self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
-        self.bmp_preview.SetMinSize((-1, 70))
+        self.bmp_preview.SetMinSize(dip_size(self, -1, 70))
         sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
 
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
@@ -406,7 +406,7 @@ class HersheyFontSelector(MWindow):
         super().__init__(450, 550, submenu="", *args, **kwds)
         self.panel = PanelFontSelect(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_choose_font_50.GetBitmap(resize=25))
+        _icon.CopyFromBitmap(icons8_choose_font_50.GetBitmap(resize=STD_ICON_SIZE/2))
         # _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Font-Selection"))
@@ -452,7 +452,7 @@ class PanelFontManager(wx.Panel):
             style=wx.BORDER_NONE | wx.TE_MULTILINE | wx.TE_READONLY,
         )
 
-        self.text_info.SetMinSize((-1, 90))
+        self.text_info.SetMinSize(dip_size(self, -1, 90))
         self.text_info.SetBackgroundColour(self.GetBackgroundColour())
         sizer_info = StaticBoxSizer(self, wx.ID_ANY, _("Information"), wx.HORIZONTAL)
         mainsizer.Add(sizer_info, 0, wx.EXPAND, 0)
@@ -476,7 +476,7 @@ class PanelFontManager(wx.Panel):
         sizer_fonts.Add(self.list_fonts, 1, wx.EXPAND, 0)
 
         self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
-        self.bmp_preview.SetMinSize((-1, 70))
+        self.bmp_preview.SetMinSize(dip_size(self, -1, 70))
         sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
 
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
@@ -809,7 +809,7 @@ class HersheyFontManager(MWindow):
         super().__init__(551, 234, submenu="", *args, **kwds)
         self.panel = PanelFontManager(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_choose_font_50.GetBitmap(resize=25))
+        _icon.CopyFromBitmap(icons8_choose_font_50.GetBitmap(resize=STD_ICON_SIZE/2))
         # _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Font-Manager"))

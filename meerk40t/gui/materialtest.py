@@ -10,9 +10,9 @@ from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
-from meerk40t.gui.icons import icons8_detective_50
+from meerk40t.gui.icons import icons8_detective_50, STD_ICON_SIZE
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.kernel import Settings, lookup_listener, signal_listener
 from meerk40t.svgelements import Color, Matrix
 
@@ -163,9 +163,9 @@ class TemplatePanel(wx.Panel):
 
     def __init__(self, *args, context=None, storage=None, **kwds):
         def size_it(ctrl, value):
-            ctrl.SetMaxSize(wx.Size(int(value), -1))
-            ctrl.SetMinSize(wx.Size(int(value * 0.75), -1))
-            ctrl.SetSize(wx.Size(value, -1))
+            ctrl.SetMaxSize(dip_size(self, int(value), -1))
+            ctrl.SetMinSize(dip_size(self, int(value * 0.75), -1))
+            ctrl.SetSize(dip_size(self, value, -1))
 
         # begin wxGlade: clsLasertools.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -283,7 +283,7 @@ class TemplatePanel(wx.Panel):
         self.check_color_direction_2 = wx.CheckBox(self, wx.ID_ANY, _("Growing"))
 
         self.button_create = wx.Button(self, wx.ID_ANY, _("Create Pattern"))
-        self.button_create.SetBitmap(icons8_detective_50.GetBitmap(resize=25))
+        self.button_create.SetBitmap(icons8_detective_50.GetBitmap(resize=STD_ICON_SIZE/2))
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_param_optype = wx.BoxSizer(wx.HORIZONTAL)

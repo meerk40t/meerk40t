@@ -9,6 +9,7 @@ from meerk40t.gui.icons import (
     instruction_rectangle,
 )
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import dip_size
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -58,6 +59,9 @@ class LaserToolPanel(wx.Panel):
         )
         sizer_1.Add(self.btn_set_circle_1, 0, wx.EXPAND, 0)
 
+        # How big should graphics become?
+        desired_height = 6 * self.btn_set_circle_1.Size[1]
+
         self.lbl_pos_1 = wx.StaticText(self.nb_circle, wx.ID_ANY, _("<empty>"))
         sizer_1.Add(self.lbl_pos_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -92,7 +96,9 @@ class LaserToolPanel(wx.Panel):
         sizer_3.Add(self.lbl_pos_3, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         img_instruction_1 = wx.StaticBitmap(
-            self.nb_circle, wx.ID_ANY, instruction_circle.GetBitmap()
+            self.nb_circle,
+            wx.ID_ANY,
+            self.fitted_bitmap(instruction_circle, desired_height),
         )
         instructions = _(
             "Instruction: place the laser on three points on the circumference of the circle on the bed and confirm the position by clicking on the buttons below.\nMK will find the center for you and place the laser above it or will recreate the circle for further processing."
@@ -166,7 +172,9 @@ class LaserToolPanel(wx.Panel):
         sizer_6a.Add(self.lbl_pos_8, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.img_instruction_2 = wx.StaticBitmap(
-            self.nb_rectangle, wx.ID_ANY, instruction_frame.GetBitmap()
+            self.nb_rectangle,
+            wx.ID_ANY,
+            self.fitted_bitmap(instruction_frame, desired_height),
         )
         instructions = _(
             "Instruction: place the laser on one corner of the encompassing rectangle and confirm the position by clicking on the buttons below. Then choose the opposing corner.\nMK will create a rectangle for you for further processing."
@@ -206,7 +214,7 @@ class LaserToolPanel(wx.Panel):
         sizer_sqare_vert.Add(sizer_5, 1, wx.EXPAND, 0)
 
         label_4 = wx.StaticText(self.nb_square, wx.ID_ANY, _("Side A 1"))
-        label_4.SetMinSize((45, -1))
+        label_4.SetMinSize(dip_size(self.nb_square, 45, -1))
         sizer_5.Add(label_4, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_set_square_1 = wx.Button(self.nb_square, wx.ID_ANY, _("Use position"))
@@ -222,7 +230,7 @@ class LaserToolPanel(wx.Panel):
         sizer_sqare_vert.Add(sizer_6, 1, wx.EXPAND, 0)
 
         label_5 = wx.StaticText(self.nb_square, wx.ID_ANY, _("Side A 2"))
-        label_5.SetMinSize((45, -1))
+        label_5.SetMinSize(dip_size(self.nb_square, 45, -1))
         sizer_6.Add(label_5, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_set_square_2 = wx.Button(self.nb_square, wx.ID_ANY, _("Use position"))
@@ -238,7 +246,7 @@ class LaserToolPanel(wx.Panel):
         sizer_sqare_vert.Add(sizer_7, 1, wx.EXPAND, 0)
 
         label_6 = wx.StaticText(self.nb_square, wx.ID_ANY, _("Side B"))
-        label_6.SetMinSize((45, -1))
+        label_6.SetMinSize(dip_size(self.nb_square, 45, -1))
         sizer_7.Add(label_6, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_set_square_3 = wx.Button(self.nb_square, wx.ID_ANY, _("Use position"))
@@ -258,11 +266,13 @@ class LaserToolPanel(wx.Panel):
 
         self.txt_width = wx.TextCtrl(self.nb_square, wx.ID_ANY, DEFAULT_LEN)
         self.txt_width.SetToolTip(_("Extension of the square to create"))
-        self.txt_width.SetMinSize((60, -1))
+        self.txt_width.SetMinSize(dip_size(self.nb_square, 60, -1))
         size_width.Add(self.txt_width, 0, wx.EXPAND, 0)
 
         self.img_instruction_3 = wx.StaticBitmap(
-            self.nb_square, wx.ID_ANY, instruction_rectangle.GetBitmap()
+            self.nb_square,
+            wx.ID_ANY,
+            self.fitted_bitmap(instruction_rectangle, desired_height),
         )
         instructions = _(
             "Instruction: place the laser on two points of one side of a square on the bed and confirm the position by clicking on the buttons below. Then choose one point on the other side of the corner.\nMK will create a square for you for further processing."
@@ -314,6 +324,16 @@ class LaserToolPanel(wx.Panel):
         self.btn_create_square.Bind(wx.EVT_BUTTON, self.on_btn_create_square)
         # self.img_instruction_3.Bind(wx.EVT_LEFT_DCLICK, self.create_scenario)
         # end wxGlade
+
+    def fitted_bitmap(self, picture, available_height):
+        bmp = picture.GetBitmap()
+        bmp_width, bmp_height = bmp.Size
+        factor = int(4 * available_height / bmp_height) / 4
+        # print(f"Img: {factor}, Available:{available_height} vs ht={bmp_height}")
+        if factor > 1:
+            bmp_width *= factor
+            bmp_height *= factor
+        return picture.GetBitmap(resize=(bmp_width, bmp_height))
 
     # scenario = 8
     #
@@ -627,7 +647,7 @@ class LaserToolPanel(wx.Panel):
                     + "\n"
                 )
                 message += _(
-                    "slam into the walls and get damaged! Do you really want to proeed?"
+                    "slam into the walls and get damaged! Do you really want to proceed?"
                 )
                 caption = _("Dangerous coordinates")
                 dlg = wx.MessageDialog(

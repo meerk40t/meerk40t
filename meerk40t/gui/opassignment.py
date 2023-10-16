@@ -11,6 +11,7 @@ from meerk40t.gui.icons import (
     icons8_small_beam_20,
 )
 from meerk40t.gui.laserrender import swizzlecolor
+from meerk40t.gui.wxutils import dip_size
 from meerk40t.svgelements import Color
 
 from ..kernel import signal_listener
@@ -49,7 +50,7 @@ class OperationAssignPanel(wx.Panel):
         self.buttons = []
         self.op_nodes = []
         for idx in range(self.MAXBUTTONS):
-            btn = wx.Button(self, id=wx.ID_ANY, size=(self.buttonsize, self.buttonsize))
+            btn = wx.Button(self, id=wx.ID_ANY, size=dip_size(self, self.buttonsize, self.buttonsize))
             self.buttons.append(btn)
             self.op_nodes.append(None)
 
