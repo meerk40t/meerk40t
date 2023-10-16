@@ -374,8 +374,22 @@ class EmptyIcon:
 
 class VectorIcon:
     def __init__(self, fill, stroke=None):
-        self.data = fill
-        self.data2 = stroke
+        self.list_fill = []
+        self.list_stroke = []
+        if fill is None:
+            pass
+        elif isinstance(fill, str):
+            self.list_fill.append(fill)
+        elif isinstance(fill, (list, tuple)):
+            for e in fill:
+                self.list_fill.append(e)
+        if stroke is None:
+            pass
+        elif isinstance(stroke, str):
+            self.list_stroke.append(stroke)
+        elif isinstance(stroke, (list, tuple)):
+            for e in stroke:
+                self.list_stroke.append(e)
         self._pen = wx.Pen()
         self._brush = wx.Brush()
         self._background = wx.Brush()
@@ -404,6 +418,8 @@ class VectorIcon:
         buffer=5,
         **kwargs,
     ):
+        # if debug:
+        #     print (f"Color: {color}, dark={force_darkmode}")
         if force_darkmode:
             self.dark_mode()
         else:
@@ -429,28 +445,49 @@ class VectorIcon:
                 wxcolor = wx.Colour(color.red, color.green, color.blue)
             else:
                 wxcolor = wx.Colour(color)
+            # if debug:
+            #     print(f"BG-Color chosen: r={wxcolor.Red()}, g={wxcolor.Green()}, b={wxcolor.Blue()}")
+            #     col = self._pen.GetColour()
+            #     print(f"Pen: r={col.Red()}, g={col.Green()}, b={col.Blue()}")
+            #     col = self._brush.GetColour()
+            #     print(f"Brush: r={col.Red()}, g={col.Green()}, b={col.Blue()}")
             brush = wx.Brush(wxcolor)
             dc.SetBackground(brush)
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
         gc.dc = dc
 
-        geom = Geomstr.svg(self.data)
-        if self.data2 is not None:
-            geom_stroke = Geomstr.svg(self.data2)
-            gp_stroke = self.make_geomstr(gc, geom_stroke)
-        else:
-            geom_stroke = None
-            gp_stroke = None
-        gp = self.make_geomstr(gc, geom)
+        # Establish the box...
+        min_x = min_y = path_width = path_height = None
+        for e in self.list_fill:
+            geom = Geomstr.svg(e)
+            gp = self.make_geomstr(gc, geom)
+            m_x, m_y, p_w, p_h = gp.Box
+            if min_x is None:
+                min_x = m_x
+                min_y = m_y
+                path_width = p_w
+                path_height = p_h
+            else:
+                min_x = min(min_x, m_x)
+                min_y = min(min_y, m_y)
+                path_width = max(path_width, p_w)
+                path_height = max(path_height, p_h)
+        for e in self.list_stroke:
+            geom = Geomstr.svg(e)
+            gp = self.make_geomstr(gc, geom)
+            m_x, m_y, p_w, p_h = gp.Box
+            if min_x is None:
+                min_x = m_x
+                min_y = m_y
+                path_width = p_w
+                path_height = p_h
+            else:
+                min_x = min(min_x, m_x)
+                min_y = min(min_y, m_y)
+                path_width = max(path_width, p_w)
+                path_height = max(path_height, p_h)
 
-        min_x, min_y, path_width, path_height = gp.Box
-        if gp_stroke is not None:
-            min_x2, min_y2, path_width2, path_height2 = gp_stroke.Box
-            min_x = min(min_x, min_x2)
-            min_y = min(min_y, min_y2)
-            path_width = max(path_width, path_width2)
-            path_height = max(path_height, path_height2)
         min_x -= buffer
         min_y -= buffer
         path_width += buffer * 2
@@ -488,11 +525,15 @@ class VectorIcon:
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
 
         gc.SetBrush(self._brush)
-        gc.FillPath(gp)
-
-        if gp_stroke is not None:
-            gc.SetPen(self._pen)
-            gc.StrokePath(gp_stroke)
+        for e in self.list_fill:
+            geom = Geomstr.svg(e)
+            gp = self.make_geomstr(gc, geom)
+            gc.FillPath(gp)
+        gc.SetPen(self._pen)
+        for e in self.list_stroke:
+            geom = Geomstr.svg(e)
+            gp = self.make_geomstr(gc, geom)
+            gc.StrokePath(gp)
         dc.SelectObject(wx.NullBitmap)
         gc.Destroy()
         del gc.dc
