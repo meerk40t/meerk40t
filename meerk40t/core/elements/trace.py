@@ -250,6 +250,8 @@ def generate_hull_shape_hull(data):
         try:
             path = node.as_path()
             p = path.first_point
+            if p is None:
+                continue
             pts.append(p)
             for segment in path:
                 pts.append(segment.end)
