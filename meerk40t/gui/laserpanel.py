@@ -130,7 +130,7 @@ class LaserPanel(wx.Panel):
         self.button_start = HoverButton(self, wx.ID_ANY, _("Start"))
         self.button_start.SetToolTip(_("Execute the Job"))
         self.button_start.SetBitmap(
-            icons8_gas_industry_50.GetBitmap(resize=25, color=wx.WHITE, keepalpha=True)
+            icons8_gas_industry_50.GetBitmap(resize=25, force_darkmode=True)
         )
         self.button_start.SetBitmapFocus(icons8_gas_industry_50.GetBitmap(resize=25))
         self.button_start.SetBackgroundColour(wx.Colour(0, 127, 0))
@@ -153,7 +153,7 @@ class LaserPanel(wx.Panel):
         self.button_stop.SetToolTip(_("Stop the laser"))
         self.button_stop.SetBitmap(
             icons8_emergency_stop_button_50.GetBitmap(
-                resize=25, color=wx.WHITE, keepalpha=True
+                resize=25, force_darkmode=True, debug=True,
             )
         )
         self.button_stop.SetBitmapFocus(
