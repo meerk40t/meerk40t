@@ -3651,7 +3651,7 @@ icons8_replicate_rows_50 = PyEmbeddedImage(
 )
 
 
-icons8_undo_50 = PyEmbeddedImage(
+icon_mk_undo = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
     b"AAABpElEQVR4nO3YTYhNYRjA8d8YDY2buSQ1NYtJFpItG6UsbCkfNZrdpIidsrSQrG1tLGRp"
     b"oyzZjMiMwUYToZnFLGSDBfkIo6NHnc2s3Pe6z+n86+xu9+nX073nPYe2toFsDHdwQ3LEPFax"
@@ -3664,7 +3664,7 @@ icons8_undo_50 = PyEmbeddedImage(
     b"AAAAAElFTkSuQmCC"
 )
 
-icons8_redo_50 = PyEmbeddedImage(
+icon_mk_redo = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
     b"AAABqUlEQVR4nO3Yu2sVURCA8Z8PxCdqTCMsgnYKVhaCWFhZpVBQCKmEpBFbESsFC0tbS9FK"
     b"xMbGRoRYJCHRq02SwgckVYqApgm+iSyMcP+APUvmZj847cz5OLN75gwdHQPLU7zEQcnpYQOz"
@@ -3998,17 +3998,6 @@ icon_polygon = PyEmbeddedImage(
     b"oGljhmJYnk/TFD2mBTJUE7vJVxMbtfhLTg8SkpfXWJY3etrk8QNo9GUyEHDr7U6ozdC5LG+G"
     b"bpvt6W31wUBOk/H1CcfiRnV4lSqE5x+0Tyg887i34gAAAABJRU5ErkJggg=="
 )
-node_add = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
-    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAJ0lEQVQImWP4//h/AwM24g+DPDKBU93//yCCoR5G2KEQ"
-    b"YIAmBlcMABg0P3m4MIsZAAAAAElFTkSuQmCC"
-)
-
-node_append = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
-    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAALklEQVQImWP4//h/AwM24g+DPDKBU93//zCC/wd7A8P7"
-    b"39+RiRfM3zHEwOpAOgBQXErXEDO0NAAAAABJRU5ErkJggg=="
-)
 
 node_break = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABcAAAAZAQMAAADg7ieTAAAABlBMVEUAAAD///+l2Z/dAAAA"
@@ -4257,4 +4246,39 @@ icon_mk_polygon = VectorIcon(
         "M 5,25 a 5,5, 0 1,0 1,0",
     ),
     stroke = "M 20,55 L 40,55 L 55,30 L 40,5 L 20,5 L 5,30 z",
+)
+
+icon_mk_undo = VectorIcon(
+    fill=(
+        "m 290,1112.362 v 2 h 5.5 c 0.8403,0 1.5,0.66 1.5,1.5 v 0.5 0.5 c 0,0.841 -0.6597,1.5 -1.5,1.5 H 295 v 2 h 0.5 c 1.9212,0 3.5,-1.579 3.5,-3.5 v -0.5 -0.5 c 0,-1.921 -1.5788,-3.5 -3.5,-3.5 z",
+        "m 286,1113.362 4,4 v -8 z"
+    ),
+)
+
+icon_mk_redo = VectorIcon(
+    fill=(
+        "m 328,1112 v 2 h -5.5 c -0.8403,0 -1.5,0.66 -1.5,1.5 v 0.5 0.5 c 0,0.841 0.6597,1.5 1.5,1.5 h 0.5 v 2 h -0.5 c -1.9212,0 -3.5,-1.579 -3.5,-3.5 v -0.5 -0.5 c 0,-1.921 1.5788,-3.5 3.5,-3.5 z",
+        "m 332,1113.362 -4,4 v -8 z",
+    ),
+)
+
+node_add = VectorIcon(
+    fill="",
+    stroke=(
+        "M 35, 15 h 30",
+        "M 50, 0 v 30",
+        "M 35,70 h 30 v 30 h -30 z",
+        "M 0,85 h 100",
+    ),
+)
+
+node_append = VectorIcon(
+    fill="",
+    stroke=(
+        "M 35, 15 h 30",
+        "M 50, 0 v 30",
+        "M 0,70 h 15 v 30 h -15",
+        "M 70,70 h 30 v 30 h -30 z",
+        "M 0,85 h 85",
+    ),
 )
