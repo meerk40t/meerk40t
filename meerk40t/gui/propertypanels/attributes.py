@@ -295,7 +295,7 @@ class IdPanel(wx.Panel):
                 self.text_id.SetValue(mklabel(node.id))
             self.text_id.Show(vis1)
             self.sizer_id.Show(vis1)
-        except RuntimeWarning:
+        except RuntimeError:
             # Could happen if the propertypanel has been destroyed
             pass
         try:
@@ -304,7 +304,7 @@ class IdPanel(wx.Panel):
                 self.text_label.SetValue(mklabel(node.label))
             self.text_label.Show(vis2)
             self.sizer_label.Show(vis2)
-        except RuntimeWarning:
+        except RuntimeError:
             # Could happen if the propertypanel has been destroyed
             pass
 
