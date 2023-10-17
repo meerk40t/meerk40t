@@ -639,6 +639,7 @@ class Spooler:
     def clear_queue(self):
         with self._lock:
             for element in self._queue:
+                element.stop()
                 loop = getattr(element, "loops_executed", 0)
                 total = getattr(element, "loops", 0)
                 if isinf(total):
@@ -666,7 +667,6 @@ class Spooler:
                     }
                 )
                 self.context.signal("spooler;completed")
-                element.stop()
             self._queue.clear()
             self._lock.notify()
         self.context.signal("spooler;queue", len(self._queue))
