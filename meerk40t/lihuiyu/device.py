@@ -583,12 +583,13 @@ class LihuiyuDevice(Service):
         )
         @self.console_argument("speed", type=str, help=_("Set the driver speed."))
         @self.console_command(
-            "speed", input_type="lihuiyu", help=_("Set current speed of driver.")
+            "device_speed", help=_("Set current speed of driver.")
         )
         def speed(
             command, channel, _, data=None, speed=None, difference=False, **kwargs
         ):
-            spooler, driver, output = data
+            driver = self.device.driver
+
             if speed is None:
                 current_speed = driver.speed
                 if current_speed is None:
@@ -596,7 +597,7 @@ class LihuiyuDevice(Service):
                 else:
                     channel(
                         _("Speed set at: {speed} mm/s").format(
-                            speed=driver.settings.speed
+                            speed=driver.speed
                         )
                     )
                 return
@@ -605,18 +606,20 @@ class LihuiyuDevice(Service):
                 percent = True
             else:
                 percent = False
+
             try:
                 s = float(speed)
             except ValueError:
                 channel(_("Not a valid speed or percent."))
                 return
+
             if percent and difference:
                 s = driver.speed + driver.speed * (s / 100.0)
             elif difference:
                 s += driver.speed
             elif percent:
                 s = driver.speed * (s / 100.0)
-            driver.set("speed", s)
+            driver._set_speed(s)
             channel(_("Speed set at: {speed} mm/s").format(speed=driver.speed))
 
         @self.console_argument("ppi", type=int, help=_("pulses per inch [0-1000]"))

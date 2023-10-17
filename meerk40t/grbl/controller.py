@@ -642,15 +642,27 @@ class GrblController:
         data = list(message.split("|"))
         self.service.signal("grbl:state", data[0])
         for datum in data[1:]:
-            name, info = datum.split(":")
+            # While valid some grbl replies might violate the parsing convention.
+            try:
+                name, info = datum.split(":")
+            except ValueError:
+                continue
             if name == "F":
                 self.service.signal("grbl:speed", float(info))
-            if name == "S":
+            elif name == "S":
                 self.service.signal("grbl:power", float(info))
             elif name == "FS":
                 f, s = info.split(",")
                 self.service.signal("grbl:speed", float(f))
                 self.service.signal("grbl:power", float(s))
+            # See: https://github.com/grbl/grbl/blob/master/grbl/report.c#L421
+            # MPos: Coord values. Machine Position.
+            # WPos: MPos but with applied work coordinates. Work Position.
+            # RX: serial rx buffer count.
+            # Buf: plan block buffer count.
+            # Ln: line number.
+            # Lim: limits states
+            # Ctl: control pins and mask (binary).
             self.service.signal(f"grbl:status:{name}", info)
 
     def _process_feedback_message(self, response):

@@ -14,7 +14,7 @@ from meerk40t.gui.icons import (
     icons8_play_50,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -126,21 +126,21 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.text_controller_status.SetToolTip(
             _("Displays the controller's current process.")
         )
-        self.packet_count_text.SetMinSize((77, 23))
+        self.packet_count_text.SetMinSize(dip_size(self, 77, 23))
         self.packet_count_text.SetToolTip(_("Total number of packets sent"))
-        self.rejected_packet_count_text.SetMinSize((77, 23))
+        self.rejected_packet_count_text.SetMinSize(dip_size(self, 77, 23))
         self.rejected_packet_count_text.SetToolTip(
             _("Total number of packets rejected")
         )
         self.packet_text_text.SetToolTip(_("Last packet information sent"))
-        self.text_byte_0.SetMinSize((77, 23))
-        self.text_byte_1.SetMinSize((77, 23))
-        self.text_desc.SetMinSize((75, 23))
+        self.text_byte_0.SetMinSize(dip_size(self, 77, 23))
+        self.text_byte_1.SetMinSize(dip_size(self, 77, 23))
+        self.text_desc.SetMinSize(dip_size(self, 75, 23))
         self.text_desc.SetToolTip(_("The meaning of Byte 1"))
-        self.text_byte_2.SetMinSize((77, 23))
-        self.text_byte_3.SetMinSize((77, 23))
-        self.text_byte_4.SetMinSize((77, 23))
-        self.text_byte_5.SetMinSize((77, 23))
+        self.text_byte_2.SetMinSize(dip_size(self, 77, 23))
+        self.text_byte_3.SetMinSize(dip_size(self, 77, 23))
+        self.text_byte_4.SetMinSize(dip_size(self, 77, 23))
+        self.text_byte_5.SetMinSize(dip_size(self, 77, 23))
         self.checkbox_show_usb_log.SetValue(1)
         self.button_device_connect.SetBitmap(
             icons8_disconnected_50.GetBitmap(use_theme=False)

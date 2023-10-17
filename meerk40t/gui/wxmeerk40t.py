@@ -300,6 +300,23 @@ class wxMeerK40t(wx.App, Module):
 
     def __init__(self, context, path):
         wx.App.__init__(self, 0)
+        # Is this a Windows machine? If yes:
+        # Turn on high-DPI awareness to make sure rendering is sharp on big
+        # monitors with font scaling enabled.
+        from platform import system
+
+        if system() == "Windows":
+            try:
+                # https://discuss.wxpython.org/t/support-for-high-dpi-on-windows-10/32925
+                from ctypes import OleDLL
+
+                OleDLL("shcore").SetProcessDpiAwareness(1)
+            except (AttributeError, ImportError):
+                # We're on a non-Windows box.
+                pass
+            except OSError:
+                # Potential access denied.
+                pass
         self.supported_languages = supported_languages
         import meerk40t.gui.icons as icons
 
@@ -949,10 +966,15 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     @param exc_traceback:
     @return:
     """
+
     def _extended_dialog(caption, header, body):
         dlg = wx.Dialog(
-            None, wx.ID_ANY, title=caption, size=wx.DefaultSize, pos=wx.DefaultPosition,
-            style=wx.DEFAULT_DIALOG_STYLE
+            None,
+            wx.ID_ANY,
+            title=caption,
+            size=wx.DefaultSize,
+            pos=wx.DefaultPosition,
+            style=wx.DEFAULT_DIALOG_STYLE,
         )
         # contents
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -977,7 +999,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
 
     def _variable_summary(vars, indent: int = 0):
         info = ""
-        for (name, value) in vars.items():
+        for name, value in vars.items():
             label = f'{" " * indent}{name} : '
             total_indent = len(label)
             formatted = str(value)
@@ -1033,9 +1055,9 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
 The good news is that you can help us fix this bug by anonymously sending us the crash details."""
     )
     message += "\n" + _(
-        "Only the crash details below are sent. No data from your MeerK40t project is sent. No " +
-        "personal information is sent either.\n" +
-        "Send the following data to the MeerK40t team?"
+        "Only the crash details below are sent. No data from your MeerK40t project is sent. No "
+        + "personal information is sent either.\n"
+        + "Send the following data to the MeerK40t team?"
     )
     caption = _("Crash Detected! Send Log?")
     data = error_log

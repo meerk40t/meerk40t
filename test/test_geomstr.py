@@ -466,6 +466,14 @@ class TestGeomstr(unittest.TestCase):
             self.assertEqual(c.point(t), path.position(0, t))
 
     def test_geomstr_cubic_length(self):
+        """
+        This test is too time-consuming without scipy installed
+        @return:
+        """
+        try:
+            import scipy
+        except ImportError:
+            return
         difference = 0
         t0 = 0
         t1 = 0

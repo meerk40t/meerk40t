@@ -5380,7 +5380,7 @@ msgid "If you continue to move to the center, then the laserhead might"
 msgstr "Beim Bewegen dorthin wird der Laserkopf an die Maschinen-"
 
 #: meerk40t/gui/lasertoolpanel.py:619
-msgid "slam into the walls and get damaged! Do you really want to proeed?"
+msgid "slam into the walls and get damaged! Do you really want to proceed?"
 msgstr ""
 "Begrenzungen fahren und könnte dabei beschädigt werden\n"
 "Wirklich fortfahren?"

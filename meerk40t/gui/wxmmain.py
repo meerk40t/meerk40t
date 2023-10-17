@@ -20,7 +20,7 @@ from meerk40t.gui.statusbarwidgets.infowidget import (
 #     OperationAssignWidget,
 # )
 from meerk40t.gui.statusbarwidgets.defaultoperations import DefaultOperationWidget
-from meerk40t.gui.statusbarwidgets.selectionwidget import SelectionWidget
+from meerk40t.gui.statusbarwidgets.selectionwidget import SelectionOptionWidget, SnapOptionsWidget
 from meerk40t.gui.statusbarwidgets.shapepropwidget import (
     FillruleWidget,
     LinecapWidget,
@@ -121,7 +121,7 @@ class MeerK40t(MWindow):
         except AttributeError:
             # Not WX 4.1
             pass
-
+        # print(self.GetDPIScaleFactor())
         self.context.gui = self
         self._usb_running = dict()
         context = self.context
@@ -253,10 +253,14 @@ class MeerK40t(MWindow):
 
         self.main_statusbar.add_panel_widget(self.status_panel, 0, "status", True)
 
-        self.select_panel = SelectionWidget()
+        self.select_panel = SelectionOptionWidget()
+        self.snap_panel = SnapOptionsWidget()
         self.info_panel = InformationWidget()
         self.main_statusbar.add_panel_widget(
             self.select_panel, self.idx_selection, "selection", False
+        )
+        self.main_statusbar.add_panel_widget(
+            self.snap_panel, self.idx_selection, "snap", False
         )
         self.main_statusbar.add_panel_widget(
             self.info_panel, self.idx_selection, "infos", False
@@ -295,7 +299,7 @@ class MeerK40t(MWindow):
         self.main_statusbar.add_panel_widget(
             self.burn_panel, self.idx_selection, "burninfo", False
         )
-
+        self.main_statusbar.activate_panel("snap", True)
         self.assign_button_panel.show_stuff(False)
 
     def _setup_edit_menu_choice(self):
@@ -599,7 +603,7 @@ class MeerK40t(MWindow):
         # First enable/disable the controls in the statusbar
 
         self.assign_button_panel.show_stuff(value)
-        self.main_statusbar.activate_panel("selection", value)
+        self.main_statusbar.activate_panel("selection", value, force=True)
         self.main_statusbar.activate_panel("infos", value)
         self.main_statusbar.activate_panel("color", value)
         self.main_statusbar.activate_panel("stroke", value)
@@ -3509,6 +3513,12 @@ class MeerK40t(MWindow):
     @signal_listener("default_operations")
     def on_def_ops(self, origin, *args):
         self.main_statusbar.Signal("default_operations")
+
+    @signal_listener("snap_grid")
+    @signal_listener("snap_points")
+    def on_sig_snap(self, origin, *args):
+        # will be used for both
+        self.main_statusbar.Signal("snap_grid")
 
     @signal_listener("activate;device")
     def on_device_active(self, origin, *args):

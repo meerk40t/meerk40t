@@ -1,3 +1,5 @@
+import os.path
+
 import ezdxf
 from ezdxf import units
 
@@ -231,7 +233,11 @@ class DXFProcessor:
             e_list.append(node)
             return
         elif entity.dxftype() == "POINT":
-            x, y = entity.dxf.location
+            pos = entity.dxf.location
+            if len(pos) == 2:
+                x, y = pos
+            else:
+                x, y, z = pos
             node = context_node.add(x=x, y=y, matrix=Matrix(), type="elem point")
             self.check_for_attributes(node, entity)
             e_list.append(node)
@@ -400,12 +406,17 @@ class DXFProcessor:
         elif entity.dxftype() == "IMAGE":
             bottom_left_position = entity.dxf.insert
             size = entity.dxf.image_size
-            imagedef = entity.dxf.image_def_handle
-            if not isinstance(imagedef, str):
-                imagedef = imagedef.filename
+            imagedef = entity.image_def
+            filename = imagedef.dxf.filename
+            if not os.path.exists(filename) or os.path.isdir(filename):
+                filename = os.path.join(os.path.dirname(self.pathname), filename)
+            if not os.path.exists(filename) or os.path.isdir(filename):
+                # Image def refers to a path that does not exist.
+                return
+
             try:
                 node = context_node.add(
-                    href=imagedef,
+                    href=filename,
                     x=bottom_left_position[0],
                     y=bottom_left_position[1] - size[1],
                     width=size[0],

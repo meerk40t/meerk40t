@@ -141,7 +141,10 @@ class WinCH341Driver:
         if self.bulk:
             write_buffer = bytes([mCH341_PARA_CMD_STS])
             self.driver.CH341WriteData(write_buffer)
-            return self.driver.CH341ReadData(8)
+            data = self.driver.CH341ReadData(8)
+            if len(data) != 0:
+                return data
+            return [0] * 6
         return self.driver.CH341GetStatus()
 
     def get_chip_version(self):
