@@ -115,6 +115,18 @@ msgstr "Name des Geräts"
 msgid "Enable"
 msgstr "Aktivieren"
 
+#: ./meerk40t\balormk\device.py:110
+msgid "Laser Source"
+msgstr "Laser-Quelle"
+
+#: ./meerk40t\balormk\device.py:111
+msgid "What type of laser is this?"
+msgstr "Was für eine Art von Laser ist das?"
+
+#: ./meerk40t\balormk\device.py:345
+msgid "Percent of First Pulse Killer for co2 source"
+msgstr "Anteil des 'First Pulse Killer' für CO2 Laser"
+
 #: meerk40t/balormk/device.py:627
 msgid "Use correction file?"
 msgstr "Nutze KorrekturDatei (.cor)"
@@ -4199,6 +4211,10 @@ msgstr ""
 msgid "Optimization not found."
 msgstr "Keine Optimierungen gefunden."
 
+#: ./meerk40t\extra\updater.py:360
+msgid "Update-Info"
+msgstr "Update-Information"
+
 #: meerk40t/extra/updater.py:28
 msgid "Check whether a newer version is available"
 msgstr ""
@@ -6897,6 +6913,30 @@ msgstr "Wortliste"
 #: meerk40t/gui/wordlisteditor.py:623
 msgid "Manages Wordlist-Entries"
 msgstr "Wortlisten-Einträge ändern/erstellen"
+#: ./meerk40t\gui\wordlisteditor.py:55
+
+msgid "Wordlist: go to next page (right-click to next entry)"
+msgstr "Wortliste: springe zum letzten Eintrag (Rechts-Click: zum nächsten Eintrag)"
+
+#: ./meerk40t\gui\wordlisteditor.py:61
+msgid "Wordlist: go to previous page (right-click to previous entry)"
+msgstr "Wortliste: springe zum ersten Eintrag (Rechts-Click: zum vorherigen Eintrag)"
+
+#: ./meerk40t\gui\wordlisteditor.py:296
+msgid "Autosave"
+msgstr "Autosave"
+
+#: ./meerk40t\gui\wordlisteditor.py:298
+msgid "All changes to the wordlist will be saved immediately"
+msgstr "Änderungen an der Wortliste werden sofort gespeichert"
+
+#: ./meerk40t\gui\wxmmain.py:1624
+msgid " (right go to next entry)"
+msgstr " (Rechts-Click: zum nächsten Eintrag)"
+
+#: ./meerk40t\gui\wxmmain.py:1643
+msgid " (right go to prev entry)"
+msgstr " (Rechts-Click: zum vorherigen Eintrag)"
 
 #: meerk40t/gui/wxmeerk40t.py:89
 msgid "Processing and sending..."
@@ -14528,14 +14568,6 @@ msgstr "Gerät"
 #~ "anstatt mit der normalen Brenn-"
 #~ "Geschwindigkeit weiterzufahren."
 
-#~ msgid "Check for beta version updates"
-#~ msgstr "Prüfe auf Vorabversionen"
-
-#~ msgid "Check for beta releases in addition to full releases."
-#~ msgstr ""
-#~ "Prüft neben Standard-Versionen auch das"
-#~ " Vorhandensein von Vorabversionen (beta)"
-
 msgid "Select all elements the selection rectangle touches."
 msgstr "Wähle die Elemente aus, die die Auswahl berührt."
 
@@ -16011,10 +16043,12 @@ msgstr "Dies scheint die aktuelle Version von MeerK40t zu sein."
 
 msgid ""
 "Latest version on github: {name} v{version} ({label})\n"
-"Url: {url}"
+"Url: {url}\n"
+"Info: {info}"
 msgstr ""
 "Neueste Version auf github: {name} v{version} ({label})\n"
-"Url: {url}"
+"Url: {url}\n"
+"Info: {info}"
 
 msgid "Could not find any release information on github"
 msgstr "Konnte keine Versionsinformationen von Github abrufen"
@@ -16171,6 +16205,9 @@ msgstr ""
 #: meerk40t/gui/toolwidgets/toolrect.py:88
 msgid " (Press Alt-Key to draw from center)"
 msgstr " (Mit Alt-Taste von Mitte zeichnen)"
+
+msgid " (Press Alt-Key to draw from corner)"
+msgstr " (Mit Alt-Taste von Ecke zeichnen)"
 
 msgid "Rounded Corners"
 msgstr "Abgerundete Ecken"
@@ -17171,3 +17208,218 @@ msgstr "Links: Verteile Abstände"
 #: meerk40t/gui/wxmmain.py:1349 meerk40t/gui/wxmmain.py:1368
 msgid "Right click: Equal centers"
 msgstr "Rechts: Verteile Mittelpunkte"
+
+#: ./meerk40t\newly\device.py:71
+msgid "Speed <="
+msgstr "Geschwindigkeit <="
+
+#: ./meerk40t\newly\device.py:78
+msgid "Acceleration Length"
+msgstr "Beschleunigungs-Strecke"
+
+#: ./meerk40t\newly\device.py:85
+msgid "Backlash"
+msgstr "Spiel"
+
+#: ./meerk40t\newly\device.py:92
+msgid "Corner Speed"
+msgstr "Ecken-Geschwindigkeit"
+
+#: ./meerk40t\newly\device.py:99
+msgid "Speed Chart"
+msgstr "Geschwindigkeit-Chart"
+
+#: ./meerk40t\newly\device.py:100
+msgid "Raster speed to chart."
+msgstr ""
+
+#: ./meerk40t\newly\device.py:164
+msgid "Flip the X axis for the device"
+msgstr "X-Achse für Laser umkehren"
+
+#: ./meerk40t\newly\device.py:175
+msgid "Flip the Y axis for the device"
+msgstr "Y-Achse für Laser umkehren"
+
+#: ./meerk40t\newly\device.py:229
+msgid "Output File"
+msgstr "Ausgabe-Datei"
+
+#: ./meerk40t\newly\device.py:232
+msgid "File0 is default and instantly executes. The remaining files need to be sent and told to start"
+msgstr "File0 ist der Standard und wird sofort ausgeführt. Die anderen Dateien müssen nach Übertragung manuell gestartet werden."
+
+#: ./meerk40t\newly\device.py:240
+msgid "Automatically Start"
+msgstr "Automatischer Start"
+
+#: ./meerk40t\newly\device.py:243
+msgid "Automatically start the job when the output file is sent. You can send without execution if this is unchecked."
+msgstr ""
+"Job unmittelbar starten, wenn die Ausgabe-Datei gesendet wird.\n"
+"Ist die Option inaktiv, so kann die Datei gesendet werden,\n"
+"ohne dass sie sofort gestartet wird."
+
+#: ./meerk40t\newly\device.py:255
+msgid "Horizontal DPI"
+msgstr "DPI Horizontal"
+
+#: ./meerk40t\newly\device.py:256
+msgid "The Dots-Per-Inch across the X-axis"
+msgstr "Auflösung (dots per inch) entlang der X-Achse"
+
+#: ./meerk40t\newly\device.py:265
+msgid "Vertical DPI"
+msgstr "DPI Vertikal"
+
+#: ./meerk40t\newly\device.py:266
+msgid "The Dots-Per-Inch across the Y-axis"
+msgstr "Auflösung (dots per inch) entlang der Y-Achse"
+
+#: ./meerk40t\newly\device.py:275
+msgid "Horizontal Backlash"
+msgstr "Horizontal"
+
+#: ./meerk40t\newly\device.py:276
+msgid "Backlash amount for the laser."
+msgstr ""
+
+#: ./meerk40t\newly\device.py:286
+msgid "Vertical Backlash"
+msgstr "Vertikal"
+
+#: ./meerk40t\newly\device.py:297
+msgid "Max Power"
+msgstr "Max Leistung"
+
+#: ./meerk40t\newly\device.py:301
+msgid "Maximum laser power, all other power will be a scale of this amount"
+msgstr "Maximale Laser-Leistung, alle anderen Angaben werden hierauf skaliert"
+
+#: ./meerk40t\newly\device.py:310
+msgid "Max Pulse Power"
+msgstr "Max Puls Leistung"
+
+#: ./meerk40t\newly\device.py:312
+msgid "What max power level should pulses be fired at?"
+msgstr "Mit welcher max. Leistung werden Pulse gefeuert?"
+
+#: ./meerk40t\newly\device.py:321
+msgid "PWM Power"
+msgstr "PWM Leistung"
+
+#: ./meerk40t\newly\device.py:322
+msgid "Power Width Modulation enabled for device."
+msgstr "Variable Leistung (PWN) aktiv für den Laser"
+
+#: ./meerk40t\newly\device.py:334
+msgid "PWM Frequency"
+msgstr "PWM Frequenz"
+
+#: ./meerk40t\newly\device.py:338
+msgid "Set the frequency of the PWM, how often the pulse width cycles"
+msgstr "Setzt die PWN-Frequenz"
+
+#: ./meerk40t\newly\device.py:347
+msgid "Cut DC"
+msgstr "Schneid Spannung"
+
+#: ./meerk40t\newly\device.py:348
+msgid "Set the current for the cut movements."
+msgstr "Setzt die Spannung, bei der Schneid-Bewegungen ausgeführt werden"
+
+#: ./meerk40t\newly\device.py:357
+msgid "Move DC"
+msgstr "Bewegung Spannung"
+
+#: ./meerk40t\newly\device.py:358
+msgid "Set the current for the regular movements."
+msgstr "Setzt die Spannung, bei der normale Bewegungen ausgeführt werden"
+
+#: ./meerk40t\newly\device.py:367
+msgid "Maximum Raster Jog"
+msgstr "Max. Raster-Sprung"
+
+#: ./meerk40t\newly\device.py:370
+msgid "Maximum distance allowed to be done during a raster step/jog"
+msgstr "Maximal erlaubte Sprungdistanz während Rastern"
+
+#: ./meerk40t\newly\device.py:393
+msgid "Cut Power"
+msgstr "Schneid Leistung"
+
+#: ./meerk40t\newly\device.py:404
+msgid "On Delay"
+msgstr "Einschalt-Verzögerung"
+
+#: ./meerk40t\newly\device.py:405
+msgid "Delay for laser on?"
+msgstr "Wie lange soll gewartet werden, bevor der Laser eingeschaltet wird?"
+
+#: ./meerk40t\newly\device.py:414
+msgid "Off Delay"
+msgstr "Ausschalt-Verzögerung"
+
+#: ./meerk40t\newly\device.py:415
+msgid "Delay for laser off?"
+msgstr "Wie lange soll gewartet werden, bevor der Laser ausgeschaltet wird?"
+
+#: ./meerk40t\newly\device.py:424
+msgid "Raster Speed"
+msgstr "Raster Geschwindigkeit"
+
+#: ./meerk40t\newly\device.py:425
+msgid "How fast do we raster?"
+msgstr "Wie schnell soll gerastert werden?"
+
+#: ./meerk40t\newly\device.py:433
+msgid "Raster Power"
+msgstr "Raster Leistung"
+
+#: ./meerk40t\newly\device.py:435
+msgid "At what power level do we raster?"
+msgstr "Wie hoch soll die Leistung beim Rastern sein?"
+
+#: ./meerk40t\newly\device.py:444
+msgid "Moving Speed"
+msgstr "Bewegungsgeschw."
+
+#: ./meerk40t\newly\device.py:445
+msgid "Moving speed while not cutting?"
+msgstr "Wie schnell soll der Laser fahren, wenn nicht geschnitten wird?"
+
+#: ./meerk40t\newly\device.py:455
+msgid "Speed to move from acceleration corner to corner?"
+msgstr "Wie schnell soll bei der Beschleunigung von Ecke zu Ecke gefahren werden?"
+
+#: ./meerk40t\newly\device.py:464
+msgid "Acceleration Distance"
+msgstr "Beschleunigungsstrecke"
+
+#: ./meerk40t\newly\device.py:465
+msgid "Distance to use to ramp up to speed for movement?"
+msgstr "Benötigte Strecke für Beschleunigung"
+
+msgid "Moving"
+msgstr "Bewegung"
+
+#: ./meerk40t\newly\device.py:474
+msgid "Framing"
+msgstr "Umriss"
+
+#: ./meerk40t\newly\device.py:474
+msgid "Rect Speed"
+msgstr "Geschwindigkeit"
+
+#: ./meerk40t\newly\device.py:475
+msgid "Speed to perform frame trace?"
+msgstr "Wie schnell sollen Umrisse abgefahren werden?"
+
+#: ./meerk40t\newly\device.py:484
+msgid "Rect Power"
+msgstr "Leistung"
+
+#: ./meerk40t\newly\device.py:485
+msgid "Power usage for draw frame operation?"
+msgstr "Welche Leistung sollen bei Abfahren von Umrissen genutzt werden?"
+
