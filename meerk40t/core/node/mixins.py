@@ -70,7 +70,7 @@ class Stroked(ABC):
         stroke_one = sqrt(abs(matrix.determinant))
         try:
             return stroke_one / self._stroke_zero
-        except (AttributeError, ZeroDivisionError):
+        except (AttributeError, ZeroDivisionError, TypeError):
             return 1.0
 
     def stroke_reify(self):

@@ -3384,7 +3384,6 @@ class Elemental(Service):
                             opcount_now = self.count_op()
                             self.remove_empty_groups()
                             # self.listen_tree(self)
-                            end_time = time()
                             self._filename = pathname
                             self.set_end_time("load", display=True)
                             self.signal("file;loaded")
@@ -3393,6 +3392,10 @@ class Elemental(Service):
                                 or opcount_then != opcount_now
                             ):
                                 return True
+                            elif results:
+                                self.signal("warning", _("File is Empty"), _("File is Malformed"))
+                                return True
+
                         except FileNotFoundError:
                             return False
                         except BadFileError as e:
