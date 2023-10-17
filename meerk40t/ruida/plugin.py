@@ -82,6 +82,6 @@ def plugin(kernel, lifecycle=None):
                 root.device.unregister("ruidacontrol")
 
     if lifecycle == "preboot":
-        suffix = "ruida"
-        for d in kernel.derivable(suffix):
-            kernel.root(f"service device start -p {d} {suffix}\n")
+        prefix = "ruida"
+        for d in kernel.section_startswith(prefix):
+            kernel.root(f"service device start -p {d} {prefix}\n")
