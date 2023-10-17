@@ -317,6 +317,16 @@ class Settings:
             if ss[0] == section:
                 yield section_name
 
+    def section_startswith(self, prefix: str) -> Generator[str, None, None]:
+        """
+        Finds all paths within the config that starts with the given prefix.
+        @param prefix:
+        @return:
+        """
+        for section_name in self._config_dict:
+            if section_name.startswith(prefix):
+                yield section_name
+
     def section_set(self) -> Generator[str, None, None]:
         """
         Finds all derivable paths within the config from the set path location.
