@@ -263,6 +263,6 @@ def plugin(kernel, lifecycle=None):
             return
 
     elif lifecycle == "preboot":
-        suffix = "grbl"
-        for d in kernel.derivable(suffix):
-            kernel.root(f"service device start -p {d} {suffix}\n")
+        prefix = "grbl"
+        for d in kernel.section_startswith(prefix):
+            kernel.root(f"service device start -p {d} {prefix}\n")
