@@ -305,12 +305,14 @@ class wxMeerK40t(wx.App, Module):
         # monitors with font scaling enabled.
         from platform import system
 
-        if system() == "Windows":
+        no_dpi = context.setting(bool, "no_high_dpi", False)
+        if system() == "Windows" and not no_dpi:
             try:
                 # https://discuss.wxpython.org/t/support-for-high-dpi-on-windows-10/32925
                 from ctypes import OleDLL
 
                 OleDLL("shcore").SetProcessDpiAwareness(1)
+                print("High DPI set")
             except (AttributeError, ImportError):
                 # We're on a non-Windows box.
                 pass
