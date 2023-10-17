@@ -7769,7 +7769,7 @@ msgstr "Zoome in den Arbeitsbereich hinein"
 
 #: meerk40t/gui/wxmmain.py:2069
 msgid "Zoom to &Selected\tCtrl-Shift-B"
-msgstr "Zoomen auf Abmessungen der Element-Au&swahl"
+msgstr "Zoomen auf Abmessungen der Element-Au&swahl\tCtrl-Shift-B"
 
 #: meerk40t/gui/wxmmain.py:2070 meerk40t/gui/wxmscene.py:785
 msgid "Fill the scene area with the selected elements"
@@ -7777,7 +7777,7 @@ msgstr "Zoomen auf Auswahlgröße"
 
 #: meerk40t/gui/wxmmain.py:2077
 msgid "Zoom to &Bed\tCtrl-B"
-msgstr "Zoomen auf &Bettgröße"
+msgstr "Zoomen auf &Bettgröße\tCtrl-B"
 
 #: meerk40t/gui/wxmmain.py:2090
 msgid "GUI-Elements"
