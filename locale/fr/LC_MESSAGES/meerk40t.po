@@ -2103,7 +2103,8 @@ msgstr ""
 
 msgid ""
 "Latest version on github: {name} v{version} ({label})\n"
-"Url: {url}"
+"Url: {url}\n"
+"Info: {info}"
 msgstr ""
 
 #: meerk40t/extra/updater.py:30

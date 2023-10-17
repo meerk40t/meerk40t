@@ -2174,10 +2174,12 @@ msgstr "Sembra che tu abbia l'ultima versione."
 
 msgid ""
 "Latest version on github: {name} v{version} ({label})\n"
-"Url: {url}"
+"Url: {url}\n"
+"Info: {info}"
 msgstr ""
 "Ultima versione su GitHub: {name} v{version} ({label})\n"
-"URL: {url}"
+"URL: {url}\n"
+"{info}"
 
 #: meerk40t/extra/updater.py:30
 msgid "Could not find any release information on github"
@@ -14331,6 +14333,9 @@ msgstr "Contorno:"
 #: meerk40t/gui/toolwidgets/toolrect.py:88
 msgid " (Press Alt-Key to draw from center)"
 msgstr " (Premi il tasto Alt per disegnare dal centro)"
+
+msgid " (Press Alt-Key to draw from corner)"
+msgstr " (Premi il tasto Alt per disegnare dal angolo)"
 
 #: meerk40t/gui/toolwidgets/toollinetext.py:133
 msgid "Complete text-entry by pressing either Enter or Escape"
