@@ -2356,14 +2356,15 @@ class Elemental(Service):
                     ):
                         if fuzzy:
                             is_black = (
-                                Color.distance("black", node.stroke) <= fuzzydistance
-                                or Color.distance("white", node.stroke) <= fuzzydistance
+                                Color.distance("black", abs(node.stroke))
+                                <= fuzzydistance
+                                or Color.distance("white", abs(node.stroke))
+                                <= fuzzydistance
                             )
                         else:
-                            is_black = (
-                                Color("black") == node.stroke
-                                or Color("white") == node.stroke
-                            )
+                            is_black = Color("black") == abs(node.stroke) or Color(
+                                "white"
+                            ) == abs(node.stroke)
                     if (
                         not self.classify_black_as_raster
                         and is_black
@@ -2477,14 +2478,15 @@ class Elemental(Service):
                     if self.classify_black_as_raster:
                         if fuzzy:
                             is_raster = (
-                                Color.distance("black", node.stroke) <= fuzzydistance
-                                or Color.distance("white", node.stroke) <= fuzzydistance
+                                Color.distance("black", abs(node.stroke))
+                                <= fuzzydistance
+                                or Color.distance("white", abs(node.stroke))
+                                <= fuzzydistance
                             )
                         else:
-                            is_raster = (
-                                Color("black") == node.stroke
-                                or Color("white") == node.stroke
-                            )
+                            is_raster = Color("black") == abs(node.stroke) or Color(
+                                "white"
+                            ) == abs(node.stroke)
                     else:
                         is_raster = False
                     if is_raster:
@@ -2515,11 +2517,15 @@ class Elemental(Service):
                             if isinstance(op_candidate, (CutOpNode, EngraveOpNode)):
                                 if tempfuzzy:
                                     classified = (
-                                        Color.distance(node.stroke, op_candidate.color)
+                                        Color.distance(
+                                            abs(node.stroke), abs(op_candidate.color)
+                                        )
                                         <= fuzzydistance
                                     )
                                 else:
-                                    classified = node.stroke == op_candidate.color
+                                    classified = abs(node.stroke) == abs(
+                                        op_candidate.color
+                                    )
 
                                 if classified:
                                     classif_info[0] = True
@@ -2542,9 +2548,11 @@ class Elemental(Service):
                 ):
                     is_cut = False
                     if fuzzy:
-                        is_cut = Color.distance(node.stroke, "red") <= fuzzydistance
+                        is_cut = (
+                            Color.distance(abs(node.stroke), "red") <= fuzzydistance
+                        )
                     else:
-                        is_cut = node.stroke == Color("red")
+                        is_cut = abs(node.stroke) == Color("red")
                     if is_cut:
                         op = CutOpNode(color=Color("red"), speed=5.0)
                         op.add_color_attribute("stroke")
@@ -2562,12 +2570,25 @@ class Elemental(Service):
 
                 # -------------------------------------
                 # Do we need to add a fill operation?
+
                 if (
                     not classif_info[1]
                     and hasattr(node, "fill")
                     and node.fill is not None
                     and node.fill.argb is not None
                 ):
+                    if node.fill.red == node.fill.green == node.fill.blue:
+                        is_black = True
+                    elif fuzzy:
+                        is_black = (
+                            Color.distance("black", abs(node.fill)) <= fuzzydistance
+                            or Color.distance("white", abs(node.fill)) <= fuzzydistance
+                        )
+                    else:
+                        is_black = Color("black") == abs(node.fill) or Color(
+                            "white"
+                        ) == abs(node.fill)
+                    node_fill = Color("black") if is_black else abs(node.fill)
                     if fuzzy:
                         fuzzy_param = (False, True)
                     else:
@@ -2581,11 +2602,13 @@ class Elemental(Service):
                             if isinstance(op_candidate, RasterOpNode):
                                 if tempfuzzy:
                                     classified = (
-                                        Color.distance(node.fill, op_candidate.color)
+                                        Color.distance(
+                                            node_fill, abs(op_candidate.color)
+                                        )
                                         <= fuzzydistance
                                     )
                                 else:
-                                    classified = node.fill == op_candidate.color
+                                    classified = node_fill == abs(op_candidate.color)
                             if classified:
                                 classif_info[1] = True
                                 was_classified = True
@@ -2605,7 +2628,12 @@ class Elemental(Service):
                     and node.fill is not None
                     and node.fill.argb is not None
                 ):
-                    op = RasterOpNode(color=node.fill, speed=150.0)
+                    node_fill = abs(node.fill)
+                    if node_fill == Color("white"):
+                        node_fill = Color("black")
+                    elif node_fill.red == node_fill.green == node_fill.blue:
+                        node_fill = Color("black")
+                    op = RasterOpNode(color=node_fill, speed=150.0)
                     op.add_color_attribute("fill")
                     stdops.append(op)
                     if debug:
