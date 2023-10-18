@@ -95,15 +95,22 @@ class BasicOpPanel(wx.Panel):
         self.op_panel = ScrolledPanel(self, wx.ID_ANY)
         self.op_panel.SetupScrolling()
         self.operation_sizer = None
+        classif_sizer = StaticBoxSizer(
+            self, wx.ID_ANY, _("Classification"), wx.VERTICAL
+        )
+        upper_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        upper_sizer.Add(self.combo_apply_color, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        upper_sizer.Add(self.btn_config, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        option_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Options"), wx.HORIZONTAL)
-        option_sizer.Add(self.combo_apply_color, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        option_sizer.Add(self.check_exclusive, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        option_sizer.Add(self.check_all_similar, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        option_sizer.Add(self.btn_config, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        classif_sizer.Add(upper_sizer, 0, wx.EXPAND, 0)
+
+        lower_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        lower_sizer.Add(self.check_exclusive, 1, wx.EXPAND, 0)
+        lower_sizer.Add(self.check_all_similar, 1, wx.EXPAND, 0)
+        classif_sizer.Add(lower_sizer, 0, wx.EXPAND, 0)
 
         self.main_sizer.Add(self.op_panel, 1, wx.EXPAND, 0)
-        self.main_sizer.Add(option_sizer, 0, wx.EXPAND, 0)
+        self.main_sizer.Add(classif_sizer, 0, wx.EXPAND, 0)
         self.SetSizer(self.main_sizer)
         self.Layout()
         self.use_percent = False
