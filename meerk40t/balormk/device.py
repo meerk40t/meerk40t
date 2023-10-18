@@ -878,6 +878,7 @@ class BalorDevice(Service):
             try:
                 channel("Resetting controller.")
                 self.driver.reset()
+                self.signal("pause")
             except ConnectionRefusedError:
                 pass
 
