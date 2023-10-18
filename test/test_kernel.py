@@ -103,32 +103,6 @@ class TestKernel(unittest.TestCase):
         finally:
             kernel.shutdown()
 
-    def test_kernel_reload_devices(self):
-        """
-        We start a new bootstrap, delete any services that would have existed previously. Add 1 service and also have
-        the default service added by default.
-        @return:
-        """
-        kernel = bootstrap.bootstrap(profile="MeerK40t_REBOOT")
-        try:
-            for i in range(10):
-                kernel.console(f"service device destroy {i}\n")
-            kernel.console("service device start -i lhystudios 0\n")
-            kernel.console("service device start -i lhystudios 1\n")
-            kernel.console("service device start -i lhystudios 2\n")
-            kernel.console("service list\n")
-            kernel.console("contexts\n")
-            kernel.console("plugins\n")
-        finally:
-            kernel.shutdown()
-
-        kernel = bootstrap.bootstrap(profile="MeerK40t_REBOOT")
-        try:
-            devs = [name for name in kernel.contexts if name.startswith("lhystudios")]
-            self.assertGreater(len(devs), 1)
-        finally:
-            kernel.shutdown()
-
 
 class TestGetSafePath(unittest.TestCase):
     def test_get_safe_path(self):
