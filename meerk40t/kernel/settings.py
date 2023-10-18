@@ -308,6 +308,13 @@ class Settings:
     def derivable(self, section: str) -> Generator[str, None, None]:
         """
         Finds all derivable paths within the config from the set path location.
+
+        This would find:
+         `camera/1 000001`
+         `camera/1 000002`
+
+         It `derivable(camera)` would only find paths of the form `camera *`
+
         @param section:
         @return:
         """
@@ -320,6 +327,7 @@ class Settings:
     def section_startswith(self, prefix: str) -> Generator[str, None, None]:
         """
         Finds all paths within the config that starts with the given prefix.
+
         @param prefix:
         @return:
         """
