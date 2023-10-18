@@ -6,7 +6,7 @@ import re
 from math import isinf
 from typing import Callable, Generator, List, Optional, Tuple, Union
 
-from meerk40t.kernel import CommandSyntaxError, MalformedCommandRegistration
+from .exceptions import CommandSyntaxError, MalformedCommandRegistration
 
 _cmd_parse = [
     ("OPT", r"-([a-zA-Z]+)"),

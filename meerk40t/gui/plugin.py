@@ -308,7 +308,7 @@ and a wxpython version <= 4.1.1."""
                 return
 
             kernel.console("window open MeerK40t\n")
-            for window in kernel.derivable("window"):
+            for window in kernel.section_startswith("window/"):
                 wsplit = window.split(":")
                 window_name = wsplit[0]
                 window_index = wsplit[-1] if len(wsplit) > 1 else None

@@ -19,6 +19,33 @@ gcode_blank = ""
 
 
 class TestDriverGRBL(unittest.TestCase):
+
+    def test_reload_devices_grbl(self):
+        """
+        We start a new bootstrap, delete any services that would have existed previously. Add several grbl services.
+        Shutdown the bootstrap. Reload. Test if those other services also booted back up.
+        @return:
+        """
+        kernel = bootstrap.bootstrap(profile="MeerK40t_GRBL")
+        try:
+            for i in range(10):
+                kernel.console(f"service device destroy {i}\n")
+            kernel.console("service device start -i grbl 0\n")
+            kernel.console("service device start -i grbl 1\n")
+            kernel.console("service device start -i grbl 2\n")
+            kernel.console("service list\n")
+            kernel.console("contexts\n")
+            kernel.console("plugins\n")
+        finally:
+            kernel.shutdown()
+
+        kernel = bootstrap.bootstrap(profile="MeerK40t_GRBL")
+        try:
+            devs = [name for name in kernel.contexts if name.startswith("grbl")]
+            self.assertGreater(len(devs), 1)
+        finally:
+            kernel.shutdown()
+
     def test_driver_basic_rect_engrave(self):
         """
         @return:

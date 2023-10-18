@@ -60,6 +60,33 @@ ICV2490731016000027CNLBS1EDz139Rz139Tz139Lz139FNSE-
 
 
 class TestDriverLihuiyu(unittest.TestCase):
+
+    def test_reload_devices_lihuiyu(self):
+        """
+        We start a new bootstrap, delete any services that would have existed previously. Add 1 service and also have
+        the default service added by default.
+        @return:
+        """
+        kernel = bootstrap.bootstrap(profile="MeerK40t_LHY")
+        try:
+            for i in range(10):
+                kernel.console(f"service device destroy {i}\n")
+            kernel.console("service device start -i lhystudios 0\n")
+            kernel.console("service device start -i lhystudios 1\n")
+            kernel.console("service device start -i lhystudios 2\n")
+            kernel.console("service list\n")
+            kernel.console("contexts\n")
+            kernel.console("plugins\n")
+        finally:
+            kernel.shutdown()
+
+        kernel = bootstrap.bootstrap(profile="MeerK40t_LHY")
+        try:
+            devs = [name for name in kernel.contexts if name.startswith("lhystudios")]
+            self.assertGreater(len(devs), 1)
+        finally:
+            kernel.shutdown()
+
     def test_driver_basic_rect_engrave(self):
         """
         @return:
@@ -79,6 +106,7 @@ class TestDriverLihuiyu(unittest.TestCase):
         with open(file1) as f:
             data = f.read()
         self.assertEqual(data, egv_rect)
+
 
     def test_driver_basic_rect_cut(self):
         """
