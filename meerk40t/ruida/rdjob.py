@@ -180,6 +180,13 @@ def encode_bytes(data, magic=0x88):
     return bytes(array)
 
 
+def magic_keys():
+    mk = dict()
+    for g in range(256):
+        mk[encode_bytes(b'\xda\x00\x05\x7E', magic=g)] = g
+    return mk
+
+
 class RDJob:
     def __init__(
         self, driver=None, units_to_device_matrix=None, priority=0, channel=None
