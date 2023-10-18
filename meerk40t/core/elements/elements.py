@@ -2628,13 +2628,7 @@ class Elemental(Service):
                     and node.fill is not None
                     and node.fill.argb is not None
                 ):
-                    node_fill = abs(node.fill)
-                    if node_fill == Color("white"):
-                        node_fill = Color("black")
-                    elif node_fill.red == node_fill.green == node_fill.blue:
-                        node_fill = Color("black")
-                    op = RasterOpNode(color=node_fill, speed=150.0)
-                    op.add_color_attribute("fill")
+                    op = RasterOpNode(color="black")
                     stdops.append(op)
                     if debug:
                         debug("add an op raster due to fill")
