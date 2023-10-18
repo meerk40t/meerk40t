@@ -12,7 +12,7 @@ class Settings:
     dictionary of dictionaries. The first dictionary key are called sections, and the sub-
     section are attributes. To save a list of related settings we add a space within the
     section name. E.g. `operation 0001` or `operation 0002` etc. The first element can be
-    divided up with various layers of `/` to make derivable subdirectories of settings.
+    divided up with various layers of `/` to make path-like subdirectories of settings.
 
     Reading/writing and deleting are performed on the config_dict which stores a set of values
     these are loaded during the `read_configuration` step and are committed to disk when
