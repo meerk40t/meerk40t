@@ -1203,7 +1203,7 @@ def init_tree(kernel):
         self.signal("make_reference", node)
 
     @tree_conditional(
-        lambda node: isinstance(node.shape, Polygon) and len(node.shape.points) >= 3
+        lambda node: node.closed and len(list(node.geometry.as_points())) >= 3
     )
     @tree_operation(
         _("Make Polygon regular"),
@@ -1211,31 +1211,12 @@ def init_tree(kernel):
         help="",
     )
     def make_polygon_regular(node, **kwargs):
-        # from .units import Length
-        # from ..svgelements import Color
-
-        # def mk_debug_point(x, y, col):
-        #     circ = Ellipse(cx=x, cy=y, r=float(Length("1mm")))
-        #     circ.transform = copy(node.shape.transform)
-        #     self.elem_branch.add(
-        #         shape=circ,
-        #         type="elem ellipse",
-        #         stroke=Color(col),
-        #         fill=Color(col),
-        #         matrix=copy(node.matrix),
-        #     )
-
         if node is None or node.type != "elem polyline":
             return
-        number_points = len(node.shape.points)
-        # print (f"Number of points: {number_points}")
-        # for prop in dir(node):
-        #     print (f"{prop} - {getattr(node, 'prop', '')}")
-        # for idx, pt in enumerate(node.shape.points):
-        #     print (f"{idx}: {pt.x:.1f}, {pt.y:.1f}")
-        if number_points < 3 or not isinstance(node.shape, Polygon):
-            return
-        pts = node.shape.points
+        number_points = len(list(node.geometry.as_points()))
+
+        shape = node.shape
+        pts = shape.points
         dx = pts[1].x - pts[0].x
         dy = pts[1].y - pts[0].y
         baseline = math.sqrt(dx * dx + dy * dy)
@@ -1279,6 +1260,7 @@ def init_tree(kernel):
             pts[idx].x = pt.x
             pts[idx].y = pt.y
             angle += deltaangle
+        node.shape = shape
         node.altered()
         self.signal("refresh_scene", "Scene")
 
