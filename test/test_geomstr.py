@@ -22,6 +22,7 @@ from meerk40t.tools.geomstr import (
 
 def draw(segments, min_x, min_y, max_x, max_y, buffer=0, filename="test.png"):
     from PIL import Image, ImageDraw
+
     min_x -= buffer
     min_y -= buffer
     max_x += buffer
@@ -1161,7 +1162,12 @@ class TestGeomstr(unittest.TestCase):
             design.fractal(seed)
             print(design)
         bounds = design.bbox()
-        draw(list(design.as_interpolated_points()), *bounds, buffer=50, filename="koch.png")
+        draw(
+            list(design.as_interpolated_points()),
+            *bounds,
+            buffer=50,
+            filename="koch.png",
+        )
 
     def test_geomstr_fractal_swaps(self):
         for i in range(4):
@@ -1172,7 +1178,12 @@ class TestGeomstr(unittest.TestCase):
             design.uscale(500)
             design.fractal(seed)
             design.fractal(seed)
-            draw(list(design.as_interpolated_points()), *design.bbox(), buffer=50, filename=f"swaps{i}.png")
+            draw(
+                list(design.as_interpolated_points()),
+                *design.bbox(),
+                buffer=50,
+                filename=f"swaps{i}.png",
+            )
 
     def test_geomstr_fractal_polya_sweep(self):
         """
@@ -1184,7 +1195,12 @@ class TestGeomstr(unittest.TestCase):
         design.uscale(500)
         for _ in range(8):
             design.fractal(seed)
-        draw(list(design.as_interpolated_points()), *design.bbox(), buffer=50, filename="polya.png")
+        draw(
+            list(design.as_interpolated_points()),
+            *design.bbox(),
+            buffer=50,
+            filename="polya.png",
+        )
 
     def test_geomstr_fractal_terdragon(self):
         """
@@ -1196,7 +1212,12 @@ class TestGeomstr(unittest.TestCase):
         design.uscale(500)
         for _ in range(5):
             design.fractal(seed)
-        draw(list(design.as_interpolated_points()), *design.bbox(), buffer=50, filename="terdragon.png")
+        draw(
+            list(design.as_interpolated_points()),
+            *design.bbox(),
+            buffer=50,
+            filename="terdragon.png",
+        )
 
     def test_geomstr_fractal_iterdragon(self):
         """
@@ -1208,7 +1229,12 @@ class TestGeomstr(unittest.TestCase):
         design.uscale(500)
         for _ in range(8):
             design.fractal(seed)
-        draw(list(design.as_interpolated_points()), *design.bbox(), buffer=50, filename="inverted-terdragon.png")
+        draw(
+            list(design.as_interpolated_points()),
+            *design.bbox(),
+            buffer=50,
+            filename="inverted-terdragon.png",
+        )
 
     def test_geomstr_fractal_box(self):
         """
@@ -1220,8 +1246,12 @@ class TestGeomstr(unittest.TestCase):
         design.uscale(500)
         for _ in range(8):
             design.fractal(seed)
-        draw(list(design.as_interpolated_points()), *design.bbox(), buffer=50, filename="box.png")
-
+        draw(
+            list(design.as_interpolated_points()),
+            *design.bbox(),
+            buffer=50,
+            filename="box.png",
+        )
 
     # def test_geomstr_hatch(self):
     #     gs = Geomstr.svg(

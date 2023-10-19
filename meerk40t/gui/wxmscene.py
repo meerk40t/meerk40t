@@ -399,7 +399,9 @@ class MeerK40tScenePanel(wx.Panel):
                     # Reset the edit toolbar
                     if toolbar is not None:
                         toolbar.remove_page("toolcontainer")
-                        tool_values = list(context.find(f"button/secondarytool_{tool}/.*"))
+                        tool_values = list(
+                            context.find(f"button/secondarytool_{tool}/.*")
+                        )
                         # print(f"button/secondarytool_{tool}/.*\n{tool_values}")
                         if tool_values is not None and len(tool_values) > 0:
                             for pages in toolbar.pages:
@@ -618,10 +620,26 @@ class MeerK40tScenePanel(wx.Panel):
             if height is None:
                 raise CommandSyntaxError("x, y, width, height not specified")
             try:
-                x = Length(x, relative_length=self.context.device.view.width, unitless=UNITS_PER_PIXEL)
-                y = Length(y, relative_length=self.context.device.view.height, unitless=UNITS_PER_PIXEL)
-                width = Length(width, relative_length=self.context.device.view.width, unitless=UNITS_PER_PIXEL)
-                height = Length(height, relative_length=self.context.device.view.height, unitless=UNITS_PER_PIXEL)
+                x = Length(
+                    x,
+                    relative_length=self.context.device.view.width,
+                    unitless=UNITS_PER_PIXEL,
+                )
+                y = Length(
+                    y,
+                    relative_length=self.context.device.view.height,
+                    unitless=UNITS_PER_PIXEL,
+                )
+                width = Length(
+                    width,
+                    relative_length=self.context.device.view.width,
+                    unitless=UNITS_PER_PIXEL,
+                )
+                height = Length(
+                    height,
+                    relative_length=self.context.device.view.height,
+                    unitless=UNITS_PER_PIXEL,
+                )
             except ValueError:
                 raise CommandSyntaxError("Not a valid length.")
             bbox = (x, y, width, height)
@@ -736,10 +754,14 @@ class MeerK40tScenePanel(wx.Panel):
                             if oy is None:
                                 oy = ox
                             self.grid.grid_secondary_cx = float(
-                                Length(ox, relative_length=self.context.device.view.width)
+                                Length(
+                                    ox, relative_length=self.context.device.view.width
+                                )
                             )
                             self.grid.grid_secondary_cy = float(
-                                Length(oy, relative_length=self.context.device.view.height)
+                                Length(
+                                    oy, relative_length=self.context.device.view.height
+                                )
                             )
                         if scalex is None:
                             rot = self.scene.context.rotary
@@ -777,10 +799,14 @@ class MeerK40tScenePanel(wx.Panel):
                             if oy is None:
                                 oy = ox
                             self.grid.grid_circular_cx = float(
-                                Length(ox, relative_length=self.context.device.view.width)
+                                Length(
+                                    ox, relative_length=self.context.device.view.width
+                                )
                             )
                             self.grid.grid_circular_cy = float(
-                                Length(oy, relative_length=self.context.device.view.height)
+                                Length(
+                                    oy, relative_length=self.context.device.view.height
+                                )
                             )
                     channel(
                         _(
@@ -1052,16 +1078,20 @@ class MeerK40tScenePanel(wx.Panel):
                 x_delta = (bbox[2] - bbox[0]) * zfact
                 y_delta = (bbox[3] - bbox[1]) * zfact
                 x0 = Length(
-                    amount=bbox[0] - x_delta, relative_length=self.context.device.view.width
+                    amount=bbox[0] - x_delta,
+                    relative_length=self.context.device.view.width,
                 ).length_mm
                 y0 = Length(
-                    amount=bbox[1] - y_delta, relative_length=self.context.device.view.height
+                    amount=bbox[1] - y_delta,
+                    relative_length=self.context.device.view.height,
                 ).length_mm
                 x1 = Length(
-                    amount=bbox[2] + x_delta, relative_length=self.context.device.view.width
+                    amount=bbox[2] + x_delta,
+                    relative_length=self.context.device.view.width,
                 ).length_mm
                 y1 = Length(
-                    amount=bbox[3] + y_delta, relative_length=self.context.device.view.height
+                    amount=bbox[3] + y_delta,
+                    relative_length=self.context.device.view.height,
                 ).length_mm
                 self.context(f"scene focus -a {x0} {y0} {x1} {y1}\n")
 

@@ -1701,6 +1701,7 @@ class EditTool(ToolWidget):
                     if entry["segment"] is None:
                         continue
                     segment = entry["segment"]
+
                     def pt_info(pt):
                         return f"({pt.x:.0f}, {pt.y:.0f})"
 

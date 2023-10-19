@@ -1,8 +1,8 @@
 import wx
 
 from .icons import icons8_comments_50
-from .wxutils import dip_size
 from .mwindow import MWindow
+from .wxutils import dip_size
 
 _ = wx.GetTranslation
 

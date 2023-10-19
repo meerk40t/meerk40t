@@ -1,7 +1,7 @@
 import math
 from copy import copy
 
-from meerk40t.core.node.mixins import Stroked, FunctionalParameter
+from meerk40t.core.node.mixins import FunctionalParameter, Stroked
 from meerk40t.core.node.node import Fillrule, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,

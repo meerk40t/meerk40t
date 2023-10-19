@@ -8,7 +8,7 @@ from meerk40t.gui.wxutils import (
     ScrolledPanel,
     StaticBoxSizer,
     TextCtrl,
-    dip_size
+    dip_size,
 )
 from meerk40t.kernel import Context
 from meerk40t.svgelements import Color
@@ -1216,7 +1216,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         control.Enable(enabled)
                     elif len(conditional) == 4:
                         c_obj, c_attr, c_from, c_to = conditional
-                        enabled = bool( c_from <= getattr(c_obj, c_attr) <= c_to)
+                        enabled = bool(c_from <= getattr(c_obj, c_attr) <= c_to)
                         c_equals = (c_from, c_to)
                         control.Enable(enabled)
 
@@ -1224,9 +1224,11 @@ class ChoicePropertyPanel(ScrolledPanel):
                         def listen(origin, value, target=None):
                             try:
                                 if isinstance(eqs, (list, tuple)):
-                                    enable = bool(eqs[0] <= getattr(obj, param) <= eqs[1])
+                                    enable = bool(
+                                        eqs[0] <= getattr(obj, param) <= eqs[1]
+                                    )
                                 else:
-                                    enable = bool(getattr(obj, param) == eqs )
+                                    enable = bool(getattr(obj, param) == eqs)
                                 ctrl.Enable(enable)
                             except (IndexError, RuntimeError):
                                 pass

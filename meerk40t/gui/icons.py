@@ -76,8 +76,9 @@ class PyEmbeddedImage(py_embedded_image):
         @return:
         """
 
-        def color_distance(color1, color2:str):
+        def color_distance(color1, color2: str):
             from math import sqrt
+
             if hasattr(color1, "distance_to"):
                 return color1.distance_to(color2)
             # That's wx stuff

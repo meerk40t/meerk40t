@@ -92,6 +92,7 @@ class FunctionalParameter(ABC):
     """
     Functional Parameters mixin allows the use and utility of functional parameters for this node type.
     """
+
     def __init__(self, *args, **kwargs):
         self.mkparam = None
         super().__init__()

@@ -1,4 +1,5 @@
 import datetime
+
 import wx
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
@@ -234,7 +235,6 @@ class InformationPanel(wx.Panel):
             command = "check_for_updates --beta --verbosity 3\n"
         self.context(command)
         self.context.last_update_check = now.toordinal()
-
 
     def copy_debug_info(self, event):
         if wx.TheClipboard.Open():

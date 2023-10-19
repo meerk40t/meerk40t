@@ -7,14 +7,13 @@ import wx.lib.mixins.listctrl as listmix
 from wx import aui
 
 from meerk40t.gui.icons import (
+    STD_ICON_SIZE,
     icons8_emergency_stop_button_50,
     icons8_pause_50,
     icons8_route_50,
-    STD_ICON_SIZE,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import HoverButton
-
 from meerk40t.kernel import get_safe_path, signal_listener
 
 _ = wx.GetTranslation
@@ -106,11 +105,17 @@ class SpoolerPanel(wx.Panel):
         self.combo_device.SetSelection(0)  # All by default...
         self.button_pause = wx.Button(self.win_top, wx.ID_ANY, _("Pause"))
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
-        self.button_pause.SetBitmap(icons8_pause_50.GetBitmap(resize=STD_ICON_SIZE/2))
+        self.button_pause.SetBitmap(icons8_pause_50.GetBitmap(resize=STD_ICON_SIZE / 2))
         self.button_stop = HoverButton(self.win_top, wx.ID_ANY, _("Abort"))
         self.button_stop.SetToolTip(_("Stop the laser"))
-        self.button_stop.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(resize=STD_ICON_SIZE/2, color=wx.WHITE, keepalpha=True))
-        self.button_stop.SetBitmapFocus(icons8_emergency_stop_button_50.GetBitmap(resize=STD_ICON_SIZE/2))
+        self.button_stop.SetBitmap(
+            icons8_emergency_stop_button_50.GetBitmap(
+                resize=STD_ICON_SIZE / 2, color=wx.WHITE, keepalpha=True
+            )
+        )
+        self.button_stop.SetBitmapFocus(
+            icons8_emergency_stop_button_50.GetBitmap(resize=STD_ICON_SIZE / 2)
+        )
         self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
         self.button_stop.SetForegroundColour(wx.WHITE)
         self.button_stop.SetFocusColour(wx.BLACK)

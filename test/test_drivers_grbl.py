@@ -19,7 +19,6 @@ gcode_blank = ""
 
 
 class TestDriverGRBL(unittest.TestCase):
-
     def test_reload_devices_grbl(self):
         """
         We start a new bootstrap, delete any services that would have existed previously. Add several grbl services.

@@ -9,7 +9,7 @@ from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
-from meerk40t.gui.icons import icon_kerf_50, icons8_detective_50, STD_ICON_SIZE
+from meerk40t.gui.icons import STD_ICON_SIZE, icon_kerf_50, icons8_detective_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.kernel import lookup_listener, signal_listener
@@ -57,7 +57,9 @@ class KerfPanel(wx.Panel):
         # self.text_delta.set_range(0, 50)
 
         self.button_create = wx.Button(self, wx.ID_ANY, _("Create Pattern"))
-        self.button_create.SetBitmap(icons8_detective_50.GetBitmap(resize=STD_ICON_SIZE/2))
+        self.button_create.SetBitmap(
+            icons8_detective_50.GetBitmap(resize=STD_ICON_SIZE / 2)
+        )
 
         self._set_layout()
         self._set_logic()

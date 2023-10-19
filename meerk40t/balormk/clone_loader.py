@@ -5,12 +5,11 @@ import hashlib
 import struct
 
 import usb.core
-
 from usb.util import (
-    build_request_type,
     CTRL_OUT,
-    CTRL_TYPE_VENDOR,
     CTRL_RECIPIENT_DEVICE,
+    CTRL_TYPE_VENDOR,
+    build_request_type,
 )
 
 VENDER_ID = 0x9588
@@ -368,7 +367,7 @@ def _write_chunks(device, chunks):
 def get_offset_by_hash(hash):
     if hash == "b86bc139a88592a4d71e64990133e86f":
         return 0x4440, "LMCV2U2"
-    if  hash == "f775f53d0cf8c9b3e7855837561a4e6c":
+    if hash == "f775f53d0cf8c9b3e7855837561a4e6c":
         return 0x11DE0, "LMCUSB2009"
     if hash == "cd408e29768af505d671fb5c216fcdcc":
         return 0x9F60, "LMCUSBdSYS"
@@ -398,7 +397,9 @@ def _send_device_sys(device, sys_file, channel=None):
             h = hashlib.md5(contents)
             offset, name = get_offset_by_hash(h.hexdigest())
             if channel:
-                channel(f"{sys_file} has hash:{h.hexdigest()} is {name} with offset {offset}")
+                channel(
+                    f"{sys_file} has hash:{h.hexdigest()} is {name} with offset {offset}"
+                )
             f.seek(offset)
             _write_chunks(device, _parse(f))
     else:

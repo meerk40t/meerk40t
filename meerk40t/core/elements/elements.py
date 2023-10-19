@@ -1611,7 +1611,6 @@ class Elemental(Service):
         return self._tree.get(type="branch elems")
 
     def ops(self, **kwargs):
-
         operations = self._tree.get(type="branch ops")
         for item in operations.flat(depth=1, **kwargs):
             if item.type.startswith("branch") or item.type.startswith("ref"):

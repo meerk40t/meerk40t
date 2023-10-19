@@ -254,7 +254,9 @@ class DXFProcessor:
                         SVG_ATTR_VECTOR_EFFECT
                     ] = SVG_VALUE_NON_SCALING_STROKE
                     element.transform.post_scale(self.scale, -self.scale)
-                    element.transform.post_translate_y(self.elements.device.view.unit_height)
+                    element.transform.post_translate_y(
+                        self.elements.device.view.unit_height
+                    )
                     node = context_node.add(shape=element, type="elem polyline")
                     self.check_for_attributes(node, entity)
                     e_list.append(node)
@@ -287,7 +289,9 @@ class DXFProcessor:
                         SVG_ATTR_VECTOR_EFFECT
                     ] = SVG_VALUE_NON_SCALING_STROKE
                     element.transform.post_scale(self.scale, -self.scale)
-                    element.transform.post_translate_y(self.elements.device.view.unit_height)
+                    element.transform.post_translate_y(
+                        self.elements.device.view.unit_height
+                    )
                     path = abs(Path(element))
                     if len(path) != 0:
                         if not isinstance(path[0], Move):
@@ -305,7 +309,9 @@ class DXFProcessor:
                     element = Polyline(*[(p[0], p[1]) for p in entity])
                 element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
                 element.transform.post_scale(self.scale, -self.scale)
-                element.transform.post_translate_y(self.elements.device.view.unit_height)
+                element.transform.post_translate_y(
+                    self.elements.device.view.unit_height
+                )
                 node = context_node.add(shape=element, type="elem polyline")
                 self.check_for_attributes(node, entity)
                 e_list.append(node)
@@ -333,7 +339,9 @@ class DXFProcessor:
                         element.closed()
                 element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
                 element.transform.post_scale(self.scale, -self.scale)
-                element.transform.post_translate_y(self.elements.device.view.unit_height)
+                element.transform.post_translate_y(
+                    self.elements.device.view.unit_height
+                )
                 path = abs(Path(element))
                 if len(path) != 0:
                     if not isinstance(path[0], Move):

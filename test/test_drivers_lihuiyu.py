@@ -60,7 +60,6 @@ ICV2490731016000027CNLBS1EDz139Rz139Tz139Lz139FNSE-
 
 
 class TestDriverLihuiyu(unittest.TestCase):
-
     def test_reload_devices_lihuiyu(self):
         """
         We start a new bootstrap, delete any services that would have existed previously. Add 1 service and also have
@@ -106,7 +105,6 @@ class TestDriverLihuiyu(unittest.TestCase):
         with open(file1) as f:
             data = f.read()
         self.assertEqual(data, egv_rect)
-
 
     def test_driver_basic_rect_cut(self):
         """

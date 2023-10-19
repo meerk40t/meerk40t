@@ -3,6 +3,7 @@ from wx import aui
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
+    STD_ICON_SIZE,
     icons8_delete_50,
     icons8_emergency_stop_button_50,
     icons8_gas_industry_50,
@@ -11,15 +12,14 @@ from meerk40t.gui.icons import (
     icons8_pause_50,
     icons8_pentagon_50,
     icons8_save_50,
-    STD_ICON_SIZE,
 )
 from meerk40t.gui.navigationpanels import Drag, Jog, MovePanel
 from meerk40t.gui.wxutils import (
-    StaticBoxSizer,
-    disable_window,
     HoverButton,
-    dip_size,
     ScrolledPanel,
+    StaticBoxSizer,
+    dip_size,
+    disable_window,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
 

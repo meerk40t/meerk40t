@@ -1,14 +1,12 @@
 import os
 import unittest
+from test import bootstrap
 
-from PIL import Image
-from PIL import ImageDraw
+from PIL import Image, ImageDraw
 
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.units import UNITS_PER_MM
-
 from meerk40t.svgelements import Matrix
-from test import bootstrap
 
 hpgl_rect = "ZZZFile0;VP100;VK100;SP2;VQ20;VJ10;VS10;PR;PU787,787;ZED;ZZZFile0;DW;VP100;VK100;SP0;DA0;VQ20;VJ10;VS10;PR;PD0,394;PD394,0;PD0,-394;PD-394,0;ZED;GZ;VP100;VK100;SP1;DA51;VS177;PR;PD0,394;PD394,0;PD0,-394;PD-394,0;ZED;ZZZFile0;ZG0;ZED;"
 

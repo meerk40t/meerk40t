@@ -157,6 +157,7 @@ I segnaposto per "data" e "ora" possono anche contenere istruzioni di formattazi
 Per un insieme completo delle istruzioni di formattazione, vedere: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
 """
 
+
 def asset(context, asset):
     language = context.language
     lang = "english"

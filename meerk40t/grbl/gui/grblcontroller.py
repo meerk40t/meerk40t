@@ -7,8 +7,8 @@ import threading
 import wx
 
 from meerk40t.gui.icons import icons8_connected_50, icons8_disconnected_50
-from meerk40t.gui.wxutils import dip_size
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import dip_size
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation

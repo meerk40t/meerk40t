@@ -7,7 +7,7 @@ from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
 
 from ...svgelements import Color
-from ..icons import icons8_choose_font_50, icons8_text_50, STD_ICON_SIZE
+from ..icons import STD_ICON_SIZE, icons8_choose_font_50, icons8_text_50
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
 from .attributes import ColorPanel, IdPanel, PositionSizePanel, PreventChangePanel
@@ -191,7 +191,7 @@ class TextPropertyPanel(ScrolledPanel):
             )
         )
         self.button_choose_font = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_choose_font_50.GetBitmap(resize=STD_ICON_SIZE/2)
+            self, wx.ID_ANY, icons8_choose_font_50.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
         self.panel_id = IdPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node

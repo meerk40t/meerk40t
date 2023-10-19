@@ -1,6 +1,5 @@
-from meerk40t.core.view import View
-
 from meerk40t.core.spoolers import Spooler
+from meerk40t.core.view import View
 from meerk40t.kernel import Service
 
 from ..core.units import UNITS_PER_MIL
@@ -118,10 +117,7 @@ class DummyDevice(Service):
         """
         @return: the location in units for the current known position.
         """
-        return self.view.iposition(
-            self.native_x,
-            self.native_y
-        )
+        return self.view.iposition(self.native_x, self.native_y)
 
     @property
     def native(self):

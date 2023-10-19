@@ -4,6 +4,7 @@ import time
 
 import wx
 
+from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.gui.laserrender import (
     DRAW_MODE_ANIMATE,
     DRAW_MODE_FLIPXY,
@@ -22,7 +23,6 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CONSUME,
     RESPONSE_DROP,
 )
-from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point
@@ -40,6 +40,7 @@ TYPE_MIDDLE = 2
 TYPE_CENTER = 3
 TYPE_GRID = 4
 TYPE_MIDDLE_SMALL = 5
+
 
 class SceneToast:
     """
@@ -944,7 +945,8 @@ class Scene(Module, Job):
                     self.snap_attraction_points.append([pt[0], pt[1], pt_type, emph])
 
         self.context.elements.set_end_time(
-            "attr_calc_points", message=f"points added={len(self.snap_attraction_points)}"
+            "attr_calc_points",
+            message=f"points added={len(self.snap_attraction_points)}",
         )
 
     def calculate_display_points(self, my_x, my_y, snap_points, snap_grid):
@@ -967,7 +969,6 @@ class Scene(Module, Job):
 
         if snap_grid and self.pane.grid.grid_points:
             self._calculate_grid_points(my_x, my_y, length)
-
 
     def calculate_snap(self, my_x, my_y):
         """

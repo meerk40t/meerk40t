@@ -1,12 +1,11 @@
 import unittest
-
-from meerk40t.core.node.effect_hatch import HatchEffectNode
-from meerk40t.core.node.op_engrave import EngraveOpNode
 from test import bootstrap
 
 from meerk40t.core.cutcode.cutcode import CutCode
 from meerk40t.core.cutplan import CutPlan
+from meerk40t.core.node.effect_hatch import HatchEffectNode
 from meerk40t.core.node.elem_path import PathNode
+from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.svgelements import Matrix, Path
 
 

@@ -71,7 +71,9 @@ class PlacementTool(ToolWidget):
             #     f"Ctrl={self.has_ctrl}, alt={self.has_alt}, shift={self.has_shift}, point={space_pos}, snap={nearest_snap}"
             # )
             if nearest_snap is None:
-                sx, sy = self.scene.get_snap_point(space_pos[0], space_pos[1], modifiers)
+                sx, sy = self.scene.get_snap_point(
+                    space_pos[0], space_pos[1], modifiers
+                )
                 point = Point(sx, sy)
             else:
                 point = Point(nearest_snap[0], nearest_snap[1])

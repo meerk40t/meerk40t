@@ -114,7 +114,9 @@ class RectTool(ToolWidget):
         if event_type == "leftdown":
             self.scene.pane.tool_active = True
             if nearest_snap is None:
-                sx, sy = self.scene.get_snap_point(space_pos[0], space_pos[1], modifiers)
+                sx, sy = self.scene.get_snap_point(
+                    space_pos[0], space_pos[1], modifiers
+                )
                 self.p1 = complex(sx, sy)
             else:
                 self.p1 = complex(nearest_snap[0], nearest_snap[1])

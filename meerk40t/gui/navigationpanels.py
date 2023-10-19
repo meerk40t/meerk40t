@@ -8,6 +8,7 @@ from wx import aui
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import (
+    STD_ICON_SIZE,
     EmptyIcon,
     get_default_icon_size,
     icon_corner1,
@@ -43,7 +44,6 @@ from meerk40t.gui.icons import (
     icons8_up_left_50,
     icons8_up_right_50,
     icons8up,
-    STD_ICON_SIZE,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.position import PositionPanel
@@ -1144,7 +1144,9 @@ class MovePanel(wx.Panel):
         def_size = wx.Size(def_dim + 5, def_dim + 5)
         for idx in range(9):
             btn = wx.StaticBitmap(self, wx.ID_ANY, size=def_size)
-            icon = EmptyIcon(size=def_dim, msg=str(idx + 1), ptsize=12, color=wx.LIGHT_GREY)
+            icon = EmptyIcon(
+                size=def_dim, msg=str(idx + 1), ptsize=12, color=wx.LIGHT_GREY
+            )
             btn.SetBitmap(icon.GetBitmap(resize=def_dim))
             self.small_buttons.append(btn)
             btn.Bind(wx.EVT_RIGHT_DOWN, self.on_right(idx))
@@ -1302,10 +1304,16 @@ class MovePanel(wx.Panel):
             x = self.text_position_x.GetValue()
             y = self.text_position_y.GetValue()
             pos_x = Length(
-                x, relative_length=self.context.space.display.width, unitless=UNITS_PER_PIXEL, preferred_units=self.context.units_name
+                x,
+                relative_length=self.context.space.display.width,
+                unitless=UNITS_PER_PIXEL,
+                preferred_units=self.context.units_name,
             )
             pos_y = Length(
-                y, relative_length=self.context.space.display.height, unitless=UNITS_PER_PIXEL, preferred_units=self.context.units_name
+                y,
+                relative_length=self.context.space.display.height,
+                unitless=UNITS_PER_PIXEL,
+                preferred_units=self.context.units_name,
             )
             if not self.context.device.view.source_contains(float(pos_x), float(pos_y)):
                 dlg = wx.MessageDialog(
@@ -2025,14 +2033,18 @@ class Transform(wx.Panel):
 
     def _translate(self, dx, dy, scale):
         dx = Length(
-            dx, relative_length=self.context.space.display.width, unitless=UNITS_PER_PIXEL,
-            preferred_units=self.context.units_name
+            dx,
+            relative_length=self.context.space.display.width,
+            unitless=UNITS_PER_PIXEL,
+            preferred_units=self.context.units_name,
         )
         dx *= scale
 
         dy = Length(
-            dy, relative_length=self.context.space.display.height, unitless=UNITS_PER_PIXEL,
-            preferred_units=self.context.units_name
+            dy,
+            relative_length=self.context.space.display.height,
+            unitless=UNITS_PER_PIXEL,
+            preferred_units=self.context.units_name,
         )
         dy *= scale
 
@@ -2199,7 +2211,9 @@ class JogDistancePanel(wx.Panel):
     def on_text_jog_amount(self):  # wxGlade: Navigation.<event_handler>
         try:
             jog = Length(
-                self.text_jog_amount.GetValue(), unitless=UNITS_PER_PIXEL, preferred_units=self.context.units_name
+                self.text_jog_amount.GetValue(),
+                unitless=UNITS_PER_PIXEL,
+                preferred_units=self.context.units_name,
             ).preferred_length
         except ValueError:
             return
