@@ -40,7 +40,6 @@ class RasterOpNode(Node, Parameters):
             "elem rect",
             "elem line",
             "elem text",
-            #            "elem image",
         )
 
         # self.allowed_attributes.append("fill")
