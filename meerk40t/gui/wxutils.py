@@ -418,9 +418,9 @@ class TextCtrl(wx.TextCtrl):
         if self._style & wx.TE_PROCESS_ENTER != 0:
             self.Bind(wx.EVT_TEXT_ENTER, self.on_enter)
         _MIN_WIDTH, _MAX_WIDTH = self.validate_widths()
-        self.SetMinSize(wx.Size(_MIN_WIDTH, -1))
+        self.SetMinSize(dip_size(self, _MIN_WIDTH, -1))
         if limited:
-            self.SetMaxSize(wx.Size(_MAX_WIDTH, -1))
+            self.SetMaxSize(dip_size(self, _MAX_WIDTH, -1))
 
     def validate_widths(self):
         minw = 35
@@ -756,7 +756,7 @@ class StaticBoxSizer(wx.StaticBoxSizer):
         **kwargs,
     ):
         self.sbox = wx.StaticBox(parent, id, label=label)
-        self.sbox.SetMinSize(wx.Size(50, 50))
+        self.sbox.SetMinSize(dip_size(self, 50, 50))
         super().__init__(self.sbox, orientation)
 
     def Show(self, show=True):
@@ -1029,3 +1029,13 @@ def set_ctrl_value(ctrl, value):
     if ctrl.GetValue() != value:
         ctrl.SetValue(value)
         ctrl.SetInsertionPoint(min(len(value), cursor))
+
+
+def dip_size(frame, x, y):
+    # wx.Window.FromDIP was introduced with wxPython 4.1, so not all distros may have this
+    wxsize = wx.Size(x, y)
+    try:
+        dipsize = frame.FromDIP(wxsize)
+        return dipsize
+    except AttributeError:
+        return wxsize

@@ -2089,17 +2089,22 @@ msgid "return paths around image"
 msgstr ""
 
 #: meerk40t/extra/updater.py:21
+msgid  "A new {type} release is available:"
+msgstr ""
+
 msgid ""
-"A new {type} release is available:\n"
 "Version: {name} v{version} ({label})\n"
 "Url: {url}"
 msgstr ""
 
 #: meerk40t/extra/updater.py:26
+msgid "You seem to have the latest version."
+msgstr ""
+
 msgid ""
-"You seem to have the latest version.\n"
 "Latest version on github: {name} v{version} ({label})\n"
-"Url: {url}"
+"Url: {url}\n"
+"Info: {info}"
 msgstr ""
 
 #: meerk40t/extra/updater.py:30
@@ -3593,7 +3598,7 @@ msgid "If you continue to move to the center, then the laserhead might"
 msgstr ""
 
 #: meerk40t/gui/lasertoolpanel.py:629
-msgid "slam into the walls and get damaged! Do you really want to proeed?"
+msgid "slam into the walls and get damaged! Do you really want to proceed?"
 msgstr ""
 
 #: meerk40t/gui/lasertoolpanel.py:632
@@ -14188,7 +14193,7 @@ msgid "Smooth"
 msgstr ""
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:235
-msgid "Convert all lines into curves and smoothen"
+msgid "Convert all lines into smooth curves"
 msgstr ""
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:237

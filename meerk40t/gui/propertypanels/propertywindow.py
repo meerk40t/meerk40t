@@ -47,7 +47,7 @@ class PropertyWindow(MWindow):
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, *args):
         myargs = [i for i in args]
-        if args[0] == "Scene":
+        if len(args) > 0 and args[0] == "Scene":
             for p in self.panel_instances:
                 if hasattr(p, "signal"):
                     p.signal("refresh_scene", myargs)

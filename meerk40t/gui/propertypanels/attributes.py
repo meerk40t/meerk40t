@@ -3,9 +3,9 @@ from math import sqrt
 import wx
 
 from meerk40t.core.units import Length
-from meerk40t.gui.icons import icons8_lock_50, icons8_padlock_50
+from meerk40t.gui.icons import STD_ICON_SIZE, icons8_lock_50, icons8_padlock_50
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import CheckBox, StaticBoxSizer, TextCtrl
+from meerk40t.gui.wxutils import CheckBox, StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -54,8 +54,8 @@ class ColorPanel(wx.Panel):
         for i in range(len(self.bgcolors)):
             self.underliner.append(wx.StaticBitmap(self, wx.ID_ANY))
             self.underliner[i].SetBackgroundColour(wx.BLUE)
-            self.underliner[i].SetMaxSize(wx.Size(-1, 3))
-            # self.lbl_color[i].SetMinSize((-1, 20))
+            self.underliner[i].SetMaxSize(dip_size(self, -1, 3))
+            # self.lbl_color[i].SetMinSize(dip_size(self, -1, 20))
             self.btn_color.append(wx.Button(self, wx.ID_ANY, ""))
             if i == 0:
                 self.btn_color[i].SetForegroundColour(wx.RED)
@@ -66,7 +66,7 @@ class ColorPanel(wx.Panel):
                 self.btn_color[i].SetForegroundColour(wx.Colour(self.bgcolors[i]))
                 colinfo = wx.Colour(self.bgcolors[i]).GetAsString(wx.C2S_NAME)
                 self.btn_color[i].SetLabel(_(colinfo))
-            self.btn_color[i].SetMinSize((10, 23))
+            self.btn_color[i].SetMinSize(dip_size(self, 10, 23))
             self.btn_color[i].SetBackgroundColour(wx.Colour(self.bgcolors[i]))
             sizer = wx.BoxSizer(wx.VERTICAL)
             sizer.Add(self.btn_color[i], 0, wx.EXPAND, 0)
@@ -295,7 +295,7 @@ class IdPanel(wx.Panel):
                 self.text_id.SetValue(mklabel(node.id))
             self.text_id.Show(vis1)
             self.sizer_id.Show(vis1)
-        except RuntimeWarning:
+        except RuntimeError:
             # Could happen if the propertypanel has been destroyed
             pass
         try:
@@ -304,7 +304,7 @@ class IdPanel(wx.Panel):
                 self.text_label.SetValue(mklabel(node.label))
             self.text_label.Show(vis2)
             self.sizer_label.Show(vis2)
-        except RuntimeWarning:
+        except RuntimeError:
             # Could happen if the propertypanel has been destroyed
             pass
 
@@ -333,9 +333,9 @@ class LinePropPanel(wx.Panel):
         self.combo_fill = wx.ComboBox(
             self, wx.ID_ANY, choices=fillchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
-        self.combo_cap.SetMaxSize(wx.Size(100, -1))
-        self.combo_join.SetMaxSize(wx.Size(100, -1))
-        self.combo_fill.SetMaxSize(wx.Size(100, -1))
+        self.combo_cap.SetMaxSize(dip_size(self, 100, -1))
+        self.combo_join.SetMaxSize(dip_size(self, 100, -1))
+        self.combo_fill.SetMaxSize(dip_size(self, 100, -1))
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_attributes = wx.BoxSizer(wx.HORIZONTAL)
@@ -444,10 +444,15 @@ class StrokeWidthPanel(wx.Panel):
         main_sizer.Add(s_sizer, 1, wx.EXPAND, 0)
         # Plus one combobox + value field for stroke width
         strokewidth_label = wx.StaticText(self, wx.ID_ANY, label=_("Width:"))
-        self.text_width = wx.TextCtrl(
-            self, wx.ID_ANY, value="0.10", style=wx.TE_PROCESS_ENTER
+        self.text_width = TextCtrl(
+            self,
+            wx.ID_ANY,
+            value="0.10",
+            style=wx.TE_PROCESS_ENTER,
+            check="float",
+            limited=True,
         )
-        self.text_width.SetMaxSize(wx.Size(100, -1))
+        self.text_width.SetMaxSize(dip_size(self, 100, -1))
 
         self.unit_choices = ["px", "pt", "mm", "cm", "inch", "mil"]
         self.combo_units = wx.ComboBox(
@@ -457,7 +462,7 @@ class StrokeWidthPanel(wx.Panel):
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
         self.combo_units.SetSelection(0)
-        self.combo_units.SetMaxSize(wx.Size(100, -1))
+        self.combo_units.SetMaxSize(dip_size(self, 100, -1))
 
         self.chk_scale = wx.CheckBox(self, wx.ID_ANY, _("Scale"))
         self.chk_scale.SetToolTip(
@@ -472,8 +477,8 @@ class StrokeWidthPanel(wx.Panel):
         s_sizer.Add(self.combo_units, 1, wx.EXPAND, 0)
         s_sizer.Add(self.chk_scale, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.text_width)
         self.Bind(wx.EVT_CHECKBOX, self.on_chk_scale, self.chk_scale)
+        self.text_width.SetActionRoutine(self.on_stroke_width)
         self.SetSizer(main_sizer)
         main_sizer.Fit(self)
         self.Layout()
@@ -491,7 +496,7 @@ class StrokeWidthPanel(wx.Panel):
         except (ValueError, AttributeError):
             pass
 
-    def on_stroke_width(self, event):
+    def on_stroke_width(self):
         if self.node is None or self.node.lock:
             return
         try:
@@ -631,8 +636,12 @@ class PositionSizePanel(wx.Panel):
         )
         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
         self.btn_lock_ratio.SetValue(True)
-        self.bitmap_locked = icons8_lock_50.GetBitmap(resize=25, use_theme=False)
-        self.bitmap_unlocked = icons8_padlock_50.GetBitmap(resize=25, use_theme=False)
+        self.bitmap_locked = icons8_lock_50.GetBitmap(
+            resize=STD_ICON_SIZE / 2, use_theme=False
+        )
+        self.bitmap_unlocked = icons8_padlock_50.GetBitmap(
+            resize=STD_ICON_SIZE / 2, use_theme=False
+        )
         self.__set_properties()
         self.__do_layout()
 
@@ -658,7 +667,7 @@ class PositionSizePanel(wx.Panel):
         sizer_w.Add(self.text_w, 1, wx.EXPAND, 0)
         sizer_h.Add(self.text_h, 1, wx.EXPAND, 0)
 
-        self.btn_lock_ratio.SetMinSize((32, 32))
+        self.btn_lock_ratio.SetMinSize(dip_size(self, 32, 32))
         self.btn_lock_ratio.SetToolTip(
             _("Lock the ratio of width / height to the original values")
         )
@@ -955,11 +964,15 @@ class RoundedRectPanel(wx.Panel):
         self.slider_y.SetToolTip(_("Ratio of Y-Radius compared to height (in %)"))
         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
         self.btn_lock_ratio.SetValue(True)
-        self.btn_lock_ratio.SetMinSize((32, 32))
+        self.btn_lock_ratio.SetMinSize(dip_size(self, 32, 32))
         self.btn_lock_ratio.SetToolTip(_("Lock the radii of X- and Y-axis"))
         # Set Bitmap
-        self.bitmap_locked = icons8_lock_50.GetBitmap(resize=25, use_theme=False)
-        self.bitmap_unlocked = icons8_padlock_50.GetBitmap(resize=25, use_theme=False)
+        self.bitmap_locked = icons8_lock_50.GetBitmap(
+            resize=STD_ICON_SIZE / 2, use_theme=False
+        )
+        self.bitmap_unlocked = icons8_padlock_50.GetBitmap(
+            resize=STD_ICON_SIZE / 2, use_theme=False
+        )
 
         sizer_x.Add(self.slider_x, 1, wx.EXPAND, 0)
         sizer_y.Add(self.slider_y, 1, wx.EXPAND, 0)

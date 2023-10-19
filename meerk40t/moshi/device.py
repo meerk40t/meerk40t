@@ -6,7 +6,6 @@ Defines the interactions between the device service and the meerk40t's viewport.
 Registers relevant commands and options.
 """
 from meerk40t.core.view import View
-
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
@@ -270,17 +269,13 @@ class MoshiDevice(Service):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        self.view = View(
-            self.bedwidth,
-            self.bedheight,
-            dpi=1000.0
-        )
+        self.view = View(self.bedwidth, self.bedheight, dpi=1000.0)
         self.view.transform(
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
-            swap_xy=self.swap_xy
+            swap_xy=self.swap_xy,
         )
         # rotary_active = self.rotary_active,
         # rotary_scale_x = self.rotary_scale_x,
@@ -426,10 +421,7 @@ class MoshiDevice(Service):
         """
         @return: the location in units for the current known position.
         """
-        return self.view.iposition(
-            self.driver.native_x,
-            self.driver.native_y
-        )
+        return self.view.iposition(self.driver.native_x, self.driver.native_y)
 
     @property
     def native(self):
@@ -440,6 +432,8 @@ class MoshiDevice(Service):
 
     @signal_listener("bedsize")
     def realize(self, origin=None):
-        self.view.origin(1.0 if self.home_right else 0.0, 1.0 if self.home_bottom else 0.0)
+        self.view.origin(
+            1.0 if self.home_right else 0.0, 1.0 if self.home_bottom else 0.0
+        )
         self.view.realize()
         self.space.update_bounds(0, 0, self.width, self.height)

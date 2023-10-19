@@ -2,8 +2,7 @@ from math import sin, sqrt, tan, tau
 
 import wx
 
-from meerk40t.kernel.kernel import Job
-from meerk40t.core.units import Length, Angle
+from meerk40t.core.units import Angle, Length
 from meerk40t.gui.icons import STD_ICON_SIZE, PyEmbeddedImage, icons8_polygon_50
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
@@ -12,6 +11,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CONSUME,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
+from meerk40t.kernel.kernel import Job
 from meerk40t.svgelements import Point, Polygon
 
 _ = wx.GetTranslation
@@ -121,9 +121,9 @@ class PolygonTool(ToolWidget):
         self.scene.context.kernel.register(
             "button/secondarytool_polygon/tool_freehand",
             {
-                "label": "Freehand",
+                "label": _("Freehand"),
                 "icon": icons8_polygon_50,
-                "tip": "Draw a freehand polygon (f)",
+                "tip": _("Draw a freehand polygon (f)"),
                 "action": lambda v: self.set_designmode(0),
                 "size": icon_size,
                 "group": "polygon",
@@ -134,9 +134,9 @@ class PolygonTool(ToolWidget):
         self.scene.context.kernel.register(
             "button/secondarytool_polygon/tool_polygon",
             {
-                "label": "Regular",
+                "label": _("Regular"),
                 "icon": icon_polygon,
-                "tip": "Draw a regular polygon (r)",
+                "tip": _("Draw a regular polygon (r)"),
                 "action": lambda v: self.set_designmode(1),
                 "size": icon_size,
                 "group": "polygon",
@@ -147,9 +147,9 @@ class PolygonTool(ToolWidget):
         self.scene.context.kernel.register(
             "button/secondarytool_polygon/tool_star1",
             {
-                "label": "Star 1",
+                "label": _("Star 1"),
                 "icon": icon_regular_star,
-                "tip": "Draw a regular star (1)",
+                "tip": _("Draw a regular star (1)"),
                 "action": lambda v: self.set_designmode(2),
                 "size": icon_size,
                 "group": "polygon",
@@ -160,9 +160,9 @@ class PolygonTool(ToolWidget):
         self.scene.context.kernel.register(
             "button/secondarytool_polygon/tool_star2",
             {
-                "label": "Star 2",
+                "label": _("Star 2"),
                 "icon": icon_crossing_star,
-                "tip": "Draw a crossing star (2)",
+                "tip": _("Draw a crossing star (2)"),
                 "action": lambda v: self.set_designmode(3),
                 "size": icon_size,
                 "group": "polygon",
@@ -335,7 +335,10 @@ class PolygonTool(ToolWidget):
                 update_required = True
         if event_type == "leftclick":
             if nearest_snap is None:
-                pos = [space_pos[0], space_pos[1]]
+                sx, sy = self.scene.get_snap_point(
+                    space_pos[0], space_pos[1], modifiers
+                )
+                pos = [sx, sy]
             else:
                 pos = [nearest_snap[0], nearest_snap[1]]
             pos = self.angled(pos)

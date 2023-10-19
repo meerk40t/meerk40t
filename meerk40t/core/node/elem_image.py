@@ -114,9 +114,7 @@ class ImageNode(Node):
 
     @property
     def active_image(self):
-        if self._processed_image is None and (
-            (self.operations is not None and len(self.operations) > 0) or self.dither
-        ):
+        if self._processed_image is None:
             step = UNITS_PER_INCH / self.dpi
             step_x = step
             step_y = step

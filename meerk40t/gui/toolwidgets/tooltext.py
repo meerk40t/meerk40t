@@ -45,8 +45,7 @@ class TextTool(ToolWidget):
         self.scene.cursor("text")
         if event_type == "leftdown":
             if nearest_snap is None:
-                x = space_pos[0]
-                y = space_pos[1]
+                x, y = self.scene.get_snap_point(space_pos[0], space_pos[1], modifiers)
             else:
                 x = nearest_snap[0]
                 y = nearest_snap[1]

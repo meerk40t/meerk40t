@@ -2,6 +2,7 @@ import wx
 
 from .icons import icons8_comments_50
 from .mwindow import MWindow
+from .wxutils import dip_size
 
 _ = wx.GetTranslation
 
@@ -28,7 +29,7 @@ class BufferViewPanel(wx.Panel):
         self.text_buffer_info = self.text_buffer_info.SetValue(buffer)
 
     def __set_properties(self):
-        self.text_buffer_length.SetMinSize((165, 23))
+        self.text_buffer_length.SetMinSize(dip_size(self, 165, 23))
         # end wxGlade
 
     def __do_layout(self):

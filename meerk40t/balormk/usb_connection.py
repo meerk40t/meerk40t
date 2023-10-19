@@ -22,6 +22,7 @@ READ_ENDPOINT = 0x88
 # WRITE_ENDPOINT = 0x02  # usb.util.ENDPOINT_OUT|usb.util.ENDPOINT_TYPE_BULK
 # READ_ENDPOINT = 0x82
 
+
 class USBConnection:
     def __init__(self, channel):
         self.channel = channel

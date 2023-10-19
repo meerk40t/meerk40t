@@ -301,6 +301,24 @@ class wxMeerK40t(wx.App, Module):
 
     def __init__(self, context, path):
         wx.App.__init__(self, 0)
+        # Is this a Windows machine? If yes:
+        # Turn on high-DPI awareness to make sure rendering is sharp on big
+        # monitors with font scaling enabled.
+        from platform import system
+
+        high_dpi = context.setting(bool, "high_dpi", True)
+        if system() == "Windows" and high_dpi:
+            try:
+                # https://discuss.wxpython.org/t/support-for-high-dpi-on-windows-10/32925
+                from ctypes import OleDLL
+
+                OleDLL("shcore").SetProcessDpiAwareness(1)
+            except (AttributeError, ImportError):
+                # We're on a non-Windows box.
+                pass
+            except OSError:
+                # Potential access denied.
+                pass
         self.supported_languages = supported_languages
         import meerk40t.gui.icons as icons
 
@@ -610,13 +628,12 @@ class wxMeerK40t(wx.App, Module):
             help=_("reset the supplied window, or '*' for all windows"),
         )
         def window_reset(channel, _, data, window=None, **kwargs):
-            for section in list(kernel.derivable("")):
-                if section.startswith("window"):
-                    kernel.clear_persistent(section)
-                    try:
-                        del kernel.contexts[section]
-                    except KeyError:
-                        pass  # No open context for that window, nothing will save out.
+            for section in list(kernel.section_startswith("window/")):
+                kernel.clear_persistent(section)
+                try:
+                    del kernel.contexts[section]
+                except KeyError:
+                    pass  # No open context for that window, nothing will save out.
 
         @kernel.console_command("refresh", help=_("Refresh the main wxMeerK40 window"))
         def scene_refresh(command, channel, _, **kwargs):
@@ -947,10 +964,15 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     @param exc_traceback:
     @return:
     """
+
     def _extended_dialog(caption, header, body):
         dlg = wx.Dialog(
-            None, wx.ID_ANY, title=caption, size=wx.DefaultSize, pos=wx.DefaultPosition,
-            style=wx.DEFAULT_DIALOG_STYLE
+            None,
+            wx.ID_ANY,
+            title=caption,
+            size=wx.DefaultSize,
+            pos=wx.DefaultPosition,
+            style=wx.DEFAULT_DIALOG_STYLE,
         )
         # contents
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -970,11 +992,12 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         sizer.Add(btnsizer, 0, wx.EXPAND, 0)
         dlg.SetSizer(sizer)
         sizer.Fit(dlg)
+        dlg.CenterOnScreen()
         return dlg
 
     def _variable_summary(vars, indent: int = 0):
         info = ""
-        for (name, value) in vars.items():
+        for name, value in vars.items():
             label = f'{" " * indent}{name} : '
             total_indent = len(label)
             formatted = str(value)
@@ -1030,9 +1053,9 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
 The good news is that you can help us fix this bug by anonymously sending us the crash details."""
     )
     message += "\n" + _(
-        "Only the crash details below are sent. No data from your MeerK40t project is sent. No " +
-        "personal information is sent either.\n" +
-        "Send the following data to the MeerK40t team?"
+        "Only the crash details below are sent. No data from your MeerK40t project is sent. No "
+        + "personal information is sent either.\n"
+        + "Send the following data to the MeerK40t team?"
     )
     caption = _("Crash Detected! Send Log?")
     data = error_log

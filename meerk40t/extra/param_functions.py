@@ -153,7 +153,6 @@ def plugin(kernel, lifecycle):
             return "elements", data
 
         def update_node_grid(node):
-
             my_id = "grid"
             valid = True
             try:
@@ -914,7 +913,6 @@ def plugin(kernel, lifecycle):
                 pts.append(thispt)
 
                 if len(pts) > 0:
-
                     star_points = [pts[0]]
                     idx = density
                     hitted = []

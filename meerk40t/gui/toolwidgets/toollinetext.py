@@ -116,7 +116,10 @@ class LineTextTool(ToolWidget):
                 else:
                     self.color = elements.default_stroke
                 if nearest_snap is None:
-                    self.p1 = complex(space_pos[0], space_pos[1])
+                    sx, sy = self.scene.get_snap_point(
+                        space_pos[0], space_pos[1], modifiers
+                    )
+                    self.p1 = complex(sx, sy)
                 else:
                     self.p1 = complex(nearest_snap[0], nearest_snap[1])
                 x = self.p1.real
