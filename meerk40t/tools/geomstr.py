@@ -729,6 +729,31 @@ class Geomstr:
     def __iter__(self):
         return self.segments
 
+    def debug_me(self):
+        # Provides information about the Geometry.
+        def cplx_info(num):
+            return f"({num.real:.0f}, {num.imag:.0f})"
+
+        print(f"Segments: {self.index}")
+        for idx, seg in enumerate(self.segments[: self.index]):
+            start = seg[0]
+            c1 = seg[1]
+            seg_type = int(seg[2].real)
+            c2 = seg[3]
+            end = seg[4]
+            seg_info = self.segment_type(idx)
+            if seg_type != TYPE_END:
+                seg_info += f", Start: {cplx_info(start)}, End: {cplx_info(end)}"
+            if seg_type == TYPE_QUAD:
+                seg_info += f", C: {cplx_info(c1)}"
+            elif seg_type == TYPE_CUBIC:
+                seg_info += f", C1: {cplx_info(c1)}, C2: {cplx_info(c2)}"
+            elif seg_type == TYPE_ARC:
+                seg_info += f", C1: {cplx_info(c1)}, C2: {cplx_info(c2)}"
+            print(seg_info)
+        svg = self.as_path()
+        print(f"Path-equivalent: {svg.d()}")
+
     @classmethod
     def turtle(cls, turtle, n=4, d=1.0):
         PATTERN_COMMAWSP = r"[ ,\t\n\x09\x0A\x0C\x0D]+"
@@ -799,9 +824,18 @@ class Geomstr:
             path = Path(path_d)
         else:
             path = path_d
+        last_point = None
         for seg in path:
             if isinstance(seg, Move):
-                pass
+                # If the move destination is identical to destination of the
+                # last point then we need to introduce a subpath break
+                if (
+                    last_point is not None
+                    and last_point.x == seg.end.x
+                    and last_point.y == seg.end.y
+                ):
+                    # This is a deliberate subpath break
+                    obj.end()
             elif isinstance(seg, (Line, Close)):
                 obj.line(complex(seg.start), complex(seg.end))
             elif isinstance(seg, QuadraticBezier):
@@ -822,6 +856,7 @@ class Geomstr:
                     quads = seg.as_quad_curves(4)
                     for q in quads:
                         obj.quad(complex(q.start), complex(q.control), complex(q.end))
+            last_point = seg.end
         return obj
 
     @classmethod
@@ -1035,6 +1070,80 @@ class Geomstr:
         geometry.rotate(-angle)
         return geometry
 
+    @classmethod
+    def wobble(cls, algorithm, outer, radius, interval, speed):
+        from meerk40t.fill.fills import Wobble
+
+        w = Wobble(algorithm, radius=radius, speed=speed, interval=interval)
+
+        geometry = cls()
+        for segments in outer.as_interpolated_segments(interpolate=50):
+            points = []
+            last = None
+            for pt in segments:
+                if last is not None:
+                    points.extend([complex(wx, wy) for wx, wy in w(last.real, last.imag, pt.real, pt.imag)])
+                last = pt
+            geometry.append(Geomstr.lines(*points))
+        return geometry
+
+
+    @classmethod
+    def wobble_slowtooth(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import slowtooth as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+
+    @classmethod
+    def wobble_gear(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import gear as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+
+    @classmethod
+    def wobble_jigsaw(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import jigsaw as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+
+    @classmethod
+    def wobble_sawtooth(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import sawtooth as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+
+    @classmethod
+    def wobble_sinewave(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import sinewave as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+
+    @classmethod
+    def wobble_circle_left(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import circle_left as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+
+    @classmethod
+    def wobble_circle_right(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import circle_right as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+
+    @classmethod
+    def wobble_circle(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import circle as algorithm
+        
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+
     def copies(self, n):
         segs = self.segments[: self.index]
         self.segments = np.vstack([segs] * n)
@@ -1173,7 +1282,7 @@ class Geomstr:
         self.index += other.index
 
     #######################
-    # Geometric Primatives
+    # Geometric Primitives
     #######################
 
     def line(self, start, end, settings=0, a=None, b=None):
@@ -1548,9 +1657,9 @@ class Geomstr:
             start1, control1, info1, control21, end1 = current
             if info0.real != TYPE_LINE or info1.real != TYPE_LINE:
                 continue
-            towards0 = Geomstr.towards(None, start0, end0, 1-amount)
+            towards0 = Geomstr.towards(None, start0, end0, 1 - amount)
             towards1 = Geomstr.towards(None, start1, end1, amount)
-            self.segments[i-1][4] = towards0
+            self.segments[i - 1][4] = towards0
             self.segments[i][0] = towards1
             self.insert(i, [[towards0, control0, info0, control20, towards1]])
 
@@ -1567,9 +1676,9 @@ class Geomstr:
             start1, control1, info1, control21, end1 = current
             if info0.real != TYPE_LINE or info1.real != TYPE_LINE:
                 continue
-            towards0 = Geomstr.towards(None, start0, end0, 1-amount)
+            towards0 = Geomstr.towards(None, start0, end0, 1 - amount)
             towards1 = Geomstr.towards(None, start1, end1, amount)
-            self.segments[i-1][4] = towards0
+            self.segments[i - 1][4] = towards0
             self.segments[i][0] = towards1
             self.insert(i, [[towards0, end0, TYPE_QUAD, start1, towards1]])
 

@@ -1,3 +1,5 @@
+import datetime
+
 import wx
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
@@ -186,27 +188,6 @@ class InformationPanel(wx.Panel):
         self.os_version.SetValue(info)
 
         info = f"{APPLICATION_NAME} v{APPLICATION_VERSION}"
-        # Development-Version ?
-        git = branch = False
-        if " " in APPLICATION_VERSION:
-            ver, exec_type = APPLICATION_VERSION.rsplit(" ", 1)
-            git = exec_type == "git"
-
-        if git:
-            head_file = os.path.join(sys.path[0], ".git", "HEAD")
-            if os.path.isfile(head_file):
-                ref_prefix = "ref: refs/heads/"
-                ref = ""
-                try:
-                    with open(head_file) as f:
-                        ref = f.readline()
-                except Exception:
-                    pass
-                if ref.startswith(ref_prefix):
-                    branch = ref[len(ref_prefix) :].strip("\n")
-
-        if git and branch and branch not in ("main", "legacy6", "legacy7"):
-            info = info + " - " + branch
         self.mk_version.SetValue(info)
         info = os.path.dirname(self.context.elements.op_data._config_file)
         # info = self.context.kernel.current_directory
@@ -246,7 +227,14 @@ class InformationPanel(wx.Panel):
         self.SetSizer(sizer_main)
 
     def check_for_updates(self, event):
-        self.context("check_for_updates --popup\n")
+        self.context.setting(str, "last_update_check", None)
+        now = datetime.date.today()
+        if self.context.update_check == 1:
+            command = "check_for_updates --verbosity 3\n"
+        elif self.context.update_check == 2:
+            command = "check_for_updates --beta --verbosity 3\n"
+        self.context(command)
+        self.context.last_update_check = now.toordinal()
 
     def copy_debug_info(self, event):
         if wx.TheClipboard.Open():

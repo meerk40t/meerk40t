@@ -47,7 +47,7 @@ from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.bedwidget import BedWidget
 from .scenewidgets.gridwidget import GridWidget
-from .wxutils import StaticBoxSizer
+from .wxutils import StaticBoxSizer, dip_size
 from .zmatrix import ZMatrix
 
 _ = wx.GetTranslation
@@ -978,7 +978,7 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.text_time_total.SetToolTip(_("Time Estimate: Total Time"))
         self.button_play.SetBitmap(icons8_play_50.GetBitmap())
-        self.text_playback_speed.SetMinSize((55, 23))
+        self.text_playback_speed.SetMinSize(dip_size(self, 55, 23))
         # self.combo_device.SetToolTip(_("Select the device"))
         self.button_spool.SetFont(
             wx.Font(
@@ -995,20 +995,20 @@ class SimulationPanel(wx.Panel, Job):
 
     def __do_layout(self):
         # begin wxGlade: Simulation.__do_layout
-        self.text_distance_laser.SetMinSize((35, -1))
-        self.text_distance_laser_step.SetMinSize((35, -1))
-        self.text_distance_total.SetMinSize((35, -1))
-        self.text_distance_total_step.SetMinSize((35, -1))
-        self.text_distance_travel.SetMinSize((35, -1))
-        self.text_distance_travel_step.SetMinSize((35, -1))
-        self.text_time_laser.SetMinSize((35, -1))
-        self.text_time_laser_step.SetMinSize((35, -1))
-        self.text_time_total.SetMinSize((35, -1))
-        self.text_time_total_step.SetMinSize((35, -1))
-        self.text_time_travel.SetMinSize((35, -1))
-        self.text_time_travel_step.SetMinSize((35, -1))
-        self.text_time_extra.SetMinSize((35, -1))
-        self.text_time_extra_step.SetMinSize((35, -1))
+        self.text_distance_laser.SetMinSize(dip_size(self, 35, -1))
+        self.text_distance_laser_step.SetMinSize(dip_size(self, 35, -1))
+        self.text_distance_total.SetMinSize(dip_size(self, 35, -1))
+        self.text_distance_total_step.SetMinSize(dip_size(self, 35, -1))
+        self.text_distance_travel.SetMinSize(dip_size(self, 35, -1))
+        self.text_distance_travel_step.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_laser.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_laser_step.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_total.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_total_step.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_travel.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_travel_step.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_extra.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_extra_step.SetMinSize(dip_size(self, 35, -1))
         v_sizer_main = wx.BoxSizer(wx.VERTICAL)
         h_sizer_scroll = wx.BoxSizer(wx.HORIZONTAL)
         h_sizer_text_1 = wx.BoxSizer(wx.HORIZONTAL)
@@ -1054,7 +1054,7 @@ class SimulationPanel(wx.Panel, Job):
         self.checkbox_optimize.Reparent(self.subpanel_optimize)
         self.btn_redo_it.Reparent(self.subpanel_optimize)
 
-        self.checkbox_optimize.SetMinSize(wx.Size(-1, 23))
+        self.checkbox_optimize.SetMinSize(dip_size(self, -1, 23))
         opt_sizer.Add(self.options_optimize, 1, wx.EXPAND, 0)
         opt_sizer.Add(self.checkbox_optimize, 0, wx.EXPAND, 0)
         opt_sizer.Add(self.btn_redo_it, 0, wx.EXPAND, 0)
@@ -1071,7 +1071,7 @@ class SimulationPanel(wx.Panel, Job):
             mysize = 40
         else:
             mysize = 20
-        self.btn_slide_options.SetMinSize(wx.Size(mysize, -1))
+        self.btn_slide_options.SetMinSize(dip_size(self, mysize, -1))
         self.voption_sizer = wx.BoxSizer(wx.VERTICAL)
         self.voption_sizer.Add(self.panel_optimize, 1, wx.EXPAND, 0)
 
@@ -1121,7 +1121,7 @@ class SimulationPanel(wx.Panel, Job):
         label_playback_mode = wx.StaticText(self, wx.ID_ANY, _("Mode") + " ")
         sizer_display.Add(label_playback_mode, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         # Make sure it has about textbox size, otherwise too narrow
-        self.radio_cut.SetMinSize(wx.Size(-1, 23))
+        self.radio_cut.SetMinSize(dip_size(self, -1, 23))
         sizer_display.Add(self.radio_cut, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_display.Add(self.radio_time_seconds, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_display.Add(self.radio_time_minutes, 1, wx.ALIGN_CENTER_VERTICAL, 0)

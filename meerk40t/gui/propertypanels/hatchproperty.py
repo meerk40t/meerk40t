@@ -28,8 +28,6 @@ class HatchPropertyPanel(ScrolledPanel):
         # `Id` at top in all cases...
         panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
         main_sizer.Add(panel_id, 1, wx.EXPAND, 0)
-        self.check_active = wx.CheckBox(self, wx.ID_ANY, _("Active"))
-        main_sizer.Add(self.check_active, 0, wx.EXPAND, 0)
 
         panel_stroke = ColorPanel(
             self,
@@ -135,7 +133,6 @@ class HatchPropertyPanel(ScrolledPanel):
         self.text_distance.SetActionRoutine(self.on_text_distance)
         self.text_angle.SetActionRoutine(self.on_text_angle)
         self.text_angle_delta.SetActionRoutine(self.on_text_angle_delta)
-        self.check_active.Bind(wx.EVT_CHECKBOX, self.on_check_active)
         self.check_classify.Bind(wx.EVT_CHECKBOX, self.on_check_classify)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_loops, self.slider_loops)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
@@ -202,13 +199,7 @@ class HatchPropertyPanel(ScrolledPanel):
             self.slider_angle_delta.SetValue(int(h_angle))
         except ValueError:
             pass
-        self.check_active.SetValue(self.node.effect)
         self.Show()
-
-    def on_check_active(self, event):
-        value = self.check_active.GetValue()
-        self.node.effect = value
-        self.context.signal("refresh_scene", "Scene")
 
     def on_check_classify(self, event):
         self.context._auto_classify = self.check_classify.GetValue()

@@ -215,6 +215,7 @@ class LaserRender:
                     "elem rect",
                     "elem line",
                     "effect hatch",
+                    "effect wobble",
                 )
                 nodes = [e for e in nodes if e.type not in path_elements]
             if draw_mode & DRAW_MODE_IMAGE:  # Do not draw images.
@@ -270,6 +271,7 @@ class LaserRender:
                 "elem line",
                 "elem polyline",
                 "effect hatch",
+                "effect wobble",
             ):
                 node.draw = self.draw_vector
                 node._make_cache = self.cache_geomstr
@@ -639,16 +641,22 @@ class LaserRender:
         node._cache = cache
 
     def cache_path(self, node, gc):
-        matrix = node.matrix
-        node._cache_matrix = copy(matrix)
-        # Ensure Sync.
-        node.path.transform = matrix
+        try:
+            matrix = node.matrix
+            node._cache_matrix = copy(matrix)
+            # Ensure Sync.
+            node.path.transform = matrix
+        except AttributeError:
+            node._cache_matrix = Matrix()
         cache = self.make_path(gc, node.path)
         node._cache = cache
 
     def cache_geomstr(self, node, gc):
-        matrix = node.matrix
-        node._cache_matrix = copy(matrix)
+        try:
+            matrix = node.matrix
+            node._cache_matrix = copy(matrix)
+        except AttributeError:
+            node._cache_matrix = Matrix()
         geom = node.as_geometry()
         cache = self.make_geomstr(gc, geom, node=node)
         node._cache = cache
@@ -672,7 +680,10 @@ class LaserRender:
                     property_op(kernel.root, node)
                 if hasattr(node, "_cache"):
                     node._cache = None
-        matrix = node.matrix
+        try:
+            matrix = node.matrix
+        except AttributeError:
+            matrix = Matrix()
         gc.PushState()
         try:
             cache = node._cache

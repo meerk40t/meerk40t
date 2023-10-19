@@ -1,5 +1,6 @@
 import unittest
 from copy import copy
+from test import bootstrap
 
 from meerk40t.core.node.branch_ops import BranchOperationsNode
 from meerk40t.core.node.op_cut import CutOpNode
@@ -7,7 +8,6 @@ from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.node.rootnode import RootNode
-from test import bootstrap
 
 
 class TestOperations(unittest.TestCase):
@@ -61,7 +61,7 @@ class TestOperations(unittest.TestCase):
             fill="gray",
             stroke_width=7,
             dancing_bear=0.2,
-            speed=30.0
+            speed=30.0,
         )
         node.speed = 20.0
         node_copy = copy(node)
@@ -108,11 +108,11 @@ class TestOperations(unittest.TestCase):
         for item in node.settings:
             self.assertEqual(node.settings[item], node_copy.settings[item])
         node_copy.dancing_bear = 0.5
-        self.assertNotEquals(node_copy.dancing_bear, node.dancing_bear)
+        self.assertNotEqual(node_copy.dancing_bear, node.dancing_bear)
         node_copy_copy = copy(node_copy)
-        self.assertEquals(node_copy_copy.dancing_bear, node_copy.dancing_bear)
+        self.assertEqual(node_copy_copy.dancing_bear, node_copy.dancing_bear)
         node.allowed_attributes.append("Fancy pants")
-        self.assertNotEquals(node_copy_copy.allowed_attributes, node.allowed_attributes)
+        self.assertNotEqual(node_copy_copy.allowed_attributes, node.allowed_attributes)
 
     def test_operation_copy_root(self):
         """
@@ -138,7 +138,7 @@ class TestOperations(unittest.TestCase):
             )
             root.add_node(node)
             self.assertIs(root, node._root)
-            
+
             node_copy = copy(node)
             self.assertIsNot(node_copy._root, root)
 

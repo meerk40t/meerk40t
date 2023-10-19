@@ -5,11 +5,10 @@ Ruida device interfacing. We do not send or interpret ruida code, but we can emu
 ruida files (*.rd) and turn them likewise into cutcode.
 """
 from meerk40t.core.view import View
-
 from meerk40t.kernel import Service
 
 from ..core.spoolers import Spooler
-from ..core.units import Length, UNITS_PER_NM
+from ..core.units import UNITS_PER_NM, Length
 from .driver import RuidaDriver
 
 
@@ -190,11 +189,7 @@ class RuidaDevice(Service):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        self.view = View(
-            self.bedwidth,
-            self.bedheight,
-            dpi=UNITS_PER_NM
-        )
+        self.view = View(self.bedwidth, self.bedheight, dpi=UNITS_PER_NM)
         self.view.transform(
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,

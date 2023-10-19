@@ -108,7 +108,10 @@ class PolylineTool(ToolWidget):
         if event_type == "leftclick":
             self.scene.pane.tool_active = True
             if nearest_snap is None:
-                pos = [space_pos[0], space_pos[1]]
+                sx, sy = self.scene.get_snap_point(
+                    space_pos[0], space_pos[1], modifiers
+                )
+                pos = [sx, sy]
             else:
                 pos = [nearest_snap[0], nearest_snap[1]]
             pos = self.angled(pos)

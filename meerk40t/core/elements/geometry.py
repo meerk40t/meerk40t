@@ -31,16 +31,18 @@ def init_commands(kernel):
         output_type="elements",
     )
     def element_shape_convert(data, **kwargs):
+        param = None
+        if hasattr(data, "parameter_store"):
+            param = getattr(data, "parameter_store", None)
+            del data.parameter_store
         node = self.elem_branch.add(
             geometry=data,
             stroke=self.default_stroke,
             stroke_width=self.default_strokewidth,
             type="elem path",
         )
-        if hasattr(data, "parameter_store"):
-            param = getattr(data, "parameter_store", None)
-            if param is not None:
-                node.functional_parameter = param
+        if param is not None:
+            node.functional_parameter = param
 
         return "elements", [node]
 

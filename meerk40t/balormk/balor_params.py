@@ -30,6 +30,9 @@ STRING_PARAMETERS = ("wobble_type", "wobble_radius", "wobble_interval")
 
 class Parameters:
     def __init__(self, settings: Dict = None, **kwargs):
+        if hasattr(self, "settings"):
+            # already initialized.
+            return
         self.settings = settings
         if self.settings is None:
             self.settings = dict()

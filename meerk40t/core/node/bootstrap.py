@@ -4,6 +4,7 @@ from meerk40t.core.node.branch_ops import BranchOperationsNode
 from meerk40t.core.node.branch_regmark import BranchRegmarkNode
 from meerk40t.core.node.cutnode import CutNode
 from meerk40t.core.node.effect_hatch import HatchEffectNode
+from meerk40t.core.node.effect_wobble import WobbleEffectNode
 from meerk40t.core.node.elem_ellipse import EllipseNode
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.elem_line import LineNode
@@ -72,6 +73,7 @@ bootstrap = {
     "op image": ImageOpNode,
     "op dots": DotsOpNode,
     "effect hatch": HatchEffectNode,
+    "effect wobble": WobbleEffectNode,
     "util console": ConsoleOperation,
     "util wait": WaitOperation,
     "util home": HomeOperation,

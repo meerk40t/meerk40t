@@ -490,7 +490,9 @@ class GridWidget(Widget):
         y = start_y
         # mx, my = self.scene.convert_scene_to_window([x, y])
         self.grid_points.append([x, y])
-        max_r = abs(complex(p.device.view.unit_width, p.device.view.unit_height))  # hypot
+        max_r = abs(
+            complex(p.device.view.unit_width, p.device.view.unit_height)
+        )  # hypot
         tick_length = (self.primary_tick_length_x + self.primary_tick_length_y) / 2
         r_fourth = max_r // (4 * tick_length) * tick_length
         segments = 48

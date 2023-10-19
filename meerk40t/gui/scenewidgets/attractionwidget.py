@@ -7,7 +7,6 @@ from math import sqrt
 
 import wx
 
-from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.gui.scene.sceneconst import HITCHAIN_PRIORITY_HIT, RESPONSE_CHAIN
 from meerk40t.gui.scene.widget import Widget
 
@@ -30,7 +29,7 @@ class AttractionWidget(Widget):
         # We want to be unrecognized
         self.transparent = True
         self.context = self.scene.context
-        self.attraction_points = None  # Clear all
+        self.snap_attraction_points = None  # Clear all
         self.my_x = None
         self.my_y = None
         self.visible_pen = wx.Pen()
@@ -39,7 +38,6 @@ class AttractionWidget(Widget):
         self.closeup_pen.SetWidth(1)
         self.load_colors()
         self.symbol_size = 1  # Will be replaced anyway
-        self.display_points = []
 
         # Should already be covered in wxmain choice panel, but are used here and thus set here.
         self.context.setting(int, "show_attract_len", 45)
@@ -48,8 +46,6 @@ class AttractionWidget(Widget):
         self.context.setting(bool, "snap_grid", True)
         self.context.setting(bool, "snap_points", False)
         self._show_snap_points = False
-        self._snap_grid = False
-        self._snap_points = False
 
     def load_colors(self):
         self.visible_pen.SetColour(self.scene.colors.color_snap_visible)
@@ -87,15 +83,18 @@ class AttractionWidget(Widget):
         self.my_y = space_pos[1]
         ctx = self.context
 
-        self._snap_grid = ctx.snap_grid
-        self._snap_points = ctx.snap_points
+        snap_grid = ctx.snap_grid
+        snap_points = ctx.snap_points
         self._show_snap_points = False
         if "shift" in modifiers:
-            # Shift inverts the on/off of snaps.
-            self._snap_grid = not self._snap_grid
-            self._snap_points = not self._snap_points
+            # Shift inverts the on/off of snaps,
+            snap_grid = not snap_grid
+            snap_points = not snap_points
+            # but we just do that for the grid
+            if snap_points:
+                snap_points = False
 
-        if not self._snap_points and not self._snap_grid:
+        if not snap_points and not snap_grid:
             # We are not going to snap.
             return RESPONSE_CHAIN
 
@@ -107,9 +106,12 @@ class AttractionWidget(Widget):
 
         # Inform profiler
         ctx.elements.set_start_time("attr_calc_disp")
-        self._calculate_display_points()
+        self.scene.calculate_display_points(
+            self.my_x, self.my_y, snap_points, snap_grid
+        )
         ctx.elements.set_end_time(
-            "attr_calc_disp", message=f"points added={len(self.display_points)}"
+            "attr_calc_disp",
+            message=f"points added={len(self.scene.snap_display_points)}",
         )
 
         if event_type in (
@@ -126,28 +128,11 @@ class AttractionWidget(Widget):
             # (but we needed the calculation)
             self._show_snap_points = False
 
-        # Loop through display points, find closest.
-        if self.display_points and self.my_x is not None:
-            # Has to be lower than the action threshold
-            min_delta = float("inf")
-            new_x = None
-            new_y = None
-            for pt in self.display_points:
-                dx = pt[0] - self.my_x
-                dy = pt[1] - self.my_y
-                delta = dx * dx + dy * dy
-                if delta < min_delta:
-                    new_x = pt[0]
-                    new_y = pt[1]
-                    min_delta = delta
-            if new_x is None:
-                return RESPONSE_CHAIN
-            matrix = self.parent.matrix
-            pixel = self.context.action_attract_len / matrix.value_scale_x()
-            if abs(new_x - self.my_x) <= pixel and abs(new_y - self.my_y) <= pixel:
-                # If the distance small enough, snap.
-                return RESPONSE_CHAIN, new_x, new_y
-        return RESPONSE_CHAIN
+        res_x, res_y = self.scene.calculate_snap(self.my_x, self.my_y)
+        if res_x is None:
+            return RESPONSE_CHAIN
+        else:
+            return RESPONSE_CHAIN, res_x, res_y
 
     def _draw_caret(self, gc, x, y, closeup):
         if closeup == 2:  # closest
@@ -265,7 +250,7 @@ class AttractionWidget(Widget):
         min_x = None
         min_y = None
         min_type = None
-        for pts in self.display_points:
+        for pts in self.scene.snap_display_points:
             if (
                 abs(pts[0] - self.my_x) <= local_attract_len
                 and abs(pts[1] - self.my_y) <= local_attract_len
@@ -314,95 +299,11 @@ class AttractionWidget(Widget):
             elif min_type == TYPE_GRID:
                 self._draw_gridpoint(gc, min_x, min_y, closeup)
 
-    def _calculate_attraction_points(self):
-        """
-        Looks at all elements (all_points=True) or at non-selected elements (all_points=False) and identifies all
-        attraction points (center, corners, sides)
-        """
-        self.context.elements.set_start_time("attr_calc_points")
-        self.attraction_points = []  # Clear all
-        translation_table = {
-            "bounds top_left": TYPE_BOUND,
-            "bounds top_right": TYPE_BOUND,
-            "bounds bottom_left": TYPE_BOUND,
-            "bounds bottom_right": TYPE_BOUND,
-            "bounds center_center": TYPE_CENTER,
-            "bounds top_center": TYPE_MIDDLE,
-            "bounds bottom_center": TYPE_MIDDLE,
-            "bounds center_left": TYPE_MIDDLE,
-            "bounds center_right": TYPE_MIDDLE,
-            "endpoint": TYPE_POINT,
-            "point": TYPE_POINT,
-            "midpoint": TYPE_MIDDLE_SMALL,
-        }
-
-        for e in self.scene.context.elements.flat(types=elem_nodes):
-            emph = e.emphasized
-            if hasattr(e, "points"):
-                for pt in e.points:
-                    try:
-                        pt_type = translation_table[pt[2]]
-                    except:
-                        print(f"Unknown type: {pt[2]}")
-                        pt_type = TYPE_POINT
-                    self.attraction_points.append([pt[0], pt[1], pt_type, emph])
-
-        self.context.elements.set_end_time(
-            "attr_calc_points", message=f"points added={len(self.attraction_points)}"
-        )
-
-    def _calculate_snap_points(self, length):
-        """
-        Recalculate the snap element attraction points
-
-        @param length:
-        @return:
-        """
-        for pts in self.attraction_points:
-            if self.scene.pane.modif_active:
-                if pts[3]:
-                    # No snap points for emphasized objects.
-                    continue
-            if abs(pts[0] - self.my_x) <= length and abs(pts[1] - self.my_y) <= length:
-                self.display_points.append([pts[0], pts[1], pts[2]])
-
-    def _calculate_grid_points(self, length):
-        """
-        Recalculate the local grid points
-
-        @param length:
-        @return:
-        """
-        for pts in self.scene.pane.grid.grid_points:
-            if abs(pts[0] - self.my_x) <= length and abs(pts[1] - self.my_y) <= length:
-                self.display_points.append([pts[0], pts[1], TYPE_GRID])
-
-    def _calculate_display_points(self):
-        """
-        Recalcuate the points that need to be displayed for the user.
-
-        @return:
-        """
-        self.display_points = []
-        if self.my_x is None:
-            return
-        if self.attraction_points is None and self._snap_points:
-            self._calculate_attraction_points()
-
-        matrix = self.parent.matrix
-        length = self.context.show_attract_len / matrix.value_scale_x()
-
-        if self._snap_points and self.attraction_points:
-            self._calculate_snap_points(length)
-
-        if self._snap_grid and self.scene.pane.grid.grid_points:
-            self._calculate_grid_points(length)
-
     def signal(self, signal, *args, **kwargs):
         """
         Signal commands which indicate that we need to refresh / discard some data
         """
         if signal in ("modified", "emphasized", "element_added", "tool_modified"):
-            self.attraction_points = None
+            self.scene.reset_snap_attraction()
         elif signal == "theme":
             self.load_colors()

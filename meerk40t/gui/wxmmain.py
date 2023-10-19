@@ -1,3 +1,4 @@
+import datetime
 import os
 import platform
 import sys
@@ -8,18 +9,16 @@ from PIL import Image
 from wx import aui
 
 from meerk40t.core.exceptions import BadFileError
+from meerk40t.gui.statusbarwidgets.defaultoperations import DefaultOperationWidget
 from meerk40t.gui.statusbarwidgets.infowidget import (
     BurnProgressPanel,
     InformationWidget,
     StatusPanelWidget,
 )
-
-# from meerk40t.gui.statusbarwidgets.opassignwidget import (
-#     OperationAssignOptionWidget,
-#     OperationAssignWidget,
-# )
-from meerk40t.gui.statusbarwidgets.defaultoperations import DefaultOperationWidget
-from meerk40t.gui.statusbarwidgets.selectionwidget import SelectionWidget
+from meerk40t.gui.statusbarwidgets.selectionwidget import (
+    SelectionOptionWidget,
+    SnapOptionsWidget,
+)
 from meerk40t.gui.statusbarwidgets.shapepropwidget import (
     FillruleWidget,
     LinecapWidget,
@@ -51,6 +50,7 @@ from .icons import (  # icons8_replicate_rows_50,
     icons8_curly_brackets_50,
     icons8_cursor_50,
     icons8_delete_50,
+    icons8_finger_50,
     icons8_flip_vertical,
     icons8_group_objects_50,
     icons8_measure_50,
@@ -60,7 +60,6 @@ from .icons import (  # icons8_replicate_rows_50,
     icons8_oval_50,
     icons8_paste_50,
     icons8_pencil_drawing_50,
-    icons8_finger_50,
     icons8_place_marker_50,
     icons8_point_50,
     icons8_polygon_50,
@@ -120,7 +119,7 @@ class MeerK40t(MWindow):
         except AttributeError:
             # Not WX 4.1
             pass
-
+        # print(self.GetDPIScaleFactor())
         self.context.gui = self
         self._usb_running = dict()
         context = self.context
@@ -204,14 +203,37 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_SIZE, self.on_size)
 
         self.CenterOnScreen()
-        self.update_check()
+        self.update_check_at_startup()
         self.parametric_info = None
 
-    def update_check(self, silent=True):
+    def update_check_at_startup(self):
+        if self.context.update_check == 0:
+            return
         if self.context.update_check == 1:
-            self.context("check_for_updates --verbosity 2\n")
+            command = "check_for_updates --verbosity 2\n"
         elif self.context.update_check == 2:
-            self.context("check_for_updates --beta --verbosity 2\n")
+            command = "check_for_updates --beta --verbosity 2\n"
+        doit = True
+        lastdate = None
+        lastcall = self.context.setting(int, "last_update_check", None)
+        if lastcall is not None:
+            try:
+                lastdate = datetime.date.fromordinal(lastcall)
+            except ValueError:
+                pass
+        now = datetime.date.today()
+        if lastdate is not None:
+            delta = now - lastdate
+            # print (f"Delta: {delta.days}, lastdate={lastdate}, interval={self.context.update_frequency}")
+            if self.context.update_frequency == 2 and delta.days <= 6:
+                # Weekly
+                doit = False
+            elif self.context.update_frequency == 1 and delta.days <= 0:
+                # Daily
+                doit = False
+        if doit:
+            self.context.last_update_check = now.toordinal()
+            self.context(command)
 
     def setup_statusbar_panels(self, combine):
         # if not self.context.show_colorbar:
@@ -229,10 +251,14 @@ class MeerK40t(MWindow):
 
         self.main_statusbar.add_panel_widget(self.status_panel, 0, "status", True)
 
-        self.select_panel = SelectionWidget()
+        self.select_panel = SelectionOptionWidget()
+        self.snap_panel = SnapOptionsWidget()
         self.info_panel = InformationWidget()
         self.main_statusbar.add_panel_widget(
             self.select_panel, self.idx_selection, "selection", False
+        )
+        self.main_statusbar.add_panel_widget(
+            self.snap_panel, self.idx_selection, "snap", False
         )
         self.main_statusbar.add_panel_widget(
             self.info_panel, self.idx_selection, "infos", False
@@ -271,7 +297,7 @@ class MeerK40t(MWindow):
         self.main_statusbar.add_panel_widget(
             self.burn_panel, self.idx_selection, "burninfo", False
         )
-
+        self.main_statusbar.activate_panel("snap", True)
         self.assign_button_panel.show_stuff(False)
 
     def _setup_edit_menu_choice(self):
@@ -575,7 +601,7 @@ class MeerK40t(MWindow):
         # First enable/disable the controls in the statusbar
 
         self.assign_button_panel.show_stuff(value)
-        self.main_statusbar.activate_panel("selection", value)
+        self.main_statusbar.activate_panel("selection", value, force=True)
         self.main_statusbar.activate_panel("infos", value)
         self.main_statusbar.activate_panel("color", value)
         self.main_statusbar.activate_panel("stroke", value)
@@ -951,26 +977,6 @@ class MeerK40t(MWindow):
                 "page": "Gui",
                 # "hidden": True,
                 "section": "Misc.",
-            },
-        ]
-        context.kernel.register_choices("preferences", choices)
-        choices = [
-            {
-                "attr": "update_check",
-                "object": context.root,
-                "default": 1,
-                "type": int,
-                "label": _("Action"),
-                "style": "option",
-                "display": (
-                    _("No, thank you"),
-                    _("Look for major releases"),
-                    _("Look for major+beta releases"),
-                ),
-                "choices": (0, 1, 2),
-                "tip": _("Check for available updates on startup."),
-                "page": "Options",
-                "section": "Check for updates on startup",
             },
         ]
         context.kernel.register_choices("preferences", choices)
@@ -3291,9 +3297,21 @@ class MeerK40t(MWindow):
             _("Check for Updates"),
             _("Check whether a newer version of Meerk40t is available"),
         )
+
+        def update_check_from_menu():
+            if self.context.update_check == 1:
+                command = "check_for_updates --verbosity 3\n"
+            elif self.context.update_check == 2:
+                command = "check_for_updates --beta --verbosity 3\n"
+
+            self.context(command)
+            self.context.setting(int, "last_update_check", None)
+            now = datetime.date.today()
+            self.context.last_update_check = now.toordinal()
+
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("check_for_updates -beta --verbosity 3\n"),
+            lambda v: update_check_from_menu(),
             id=menuitem.GetId(),
         )
         menuitem = self.help_menu.Append(
@@ -3489,6 +3507,12 @@ class MeerK40t(MWindow):
     @signal_listener("default_operations")
     def on_def_ops(self, origin, *args):
         self.main_statusbar.Signal("default_operations")
+
+    @signal_listener("snap_grid")
+    @signal_listener("snap_points")
+    def on_sig_snap(self, origin, *args):
+        # will be used for both
+        self.main_statusbar.Signal("snap_grid")
 
     @signal_listener("activate;device")
     def on_device_active(self, origin, *args):

@@ -10,13 +10,30 @@ import os.path
 import sys
 
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.9.1001"
+APPLICATION_VERSION = "0.9.2000"
 
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
     # Otherwise we are running from source
     if os.path.isdir(sys.path[0] + "/.git"):
         APPLICATION_VERSION += " git"
+        try:
+            head_file = os.path.join(sys.path[0], ".git", "HEAD")
+            if os.path.isfile(head_file):
+                ref_prefix = "ref: refs/heads/"
+                ref = ""
+                with open(head_file) as f:
+                    ref = f.readline()
+                if ref.startswith(ref_prefix):
+                    branch = ref[len(ref_prefix) :].strip("\n")
+                    APPLICATION_VERSION += " " + branch
+                else:
+                    branch = ref.strip("\n")
+                    APPLICATION_VERSION += " " + branch
+        except Exception:
+            # Entirely optional, also this code segment may run in python2
+            pass
+
     elif os.path.isdir(sys.path[0] + "/.github"):
         APPLICATION_VERSION += " src"
     else:

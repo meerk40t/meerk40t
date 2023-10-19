@@ -81,7 +81,7 @@ class CustomStatusBar(wx.StatusBar):
         widget.active = visible
         self.widgets[identifier] = widget
 
-    def activate_panel(self, identifier, newflag):
+    def activate_panel(self, identifier, newflag, force=False):
         # Activate Panel will make the indicated panel become choosable
         # print ("Activate Panel: %s -> %s" % (identifier, newflag))
         try:
@@ -93,7 +93,7 @@ class CustomStatusBar(wx.StatusBar):
 
             # Choosable
             self.widgets[identifier].active = newflag
-            if newflag and self.activesizer[panelidx] is None:
+            if newflag and (self.activesizer[panelidx] is None or force):
                 self.activesizer[panelidx] = identifier
             elif not newflag and self.activesizer[panelidx] == identifier:
                 # Was the active one, so look for an alternative

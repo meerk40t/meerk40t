@@ -1109,8 +1109,6 @@ class SVGProcessor:
                         stroke=Color(stroke),
                         **e_dict,
                     )
-                if hasattr(context_node, "effect"):
-                    context_node.effect = False
 
             # recurse to children
             if self.reverse:
@@ -1185,13 +1183,15 @@ class SVGProcessor:
                         # Special fallback operation, op hatch is an op engrave with an effect hatch within it.
                         node_type = "op engrave"
                         op = self.elements.op_branch.create(type=node_type, **attrs)
-                        op.add(type="effect hatch", **attrs)
+                        op = op.add(type="effect hatch", **attrs)
                     else:
                         op = self.elements.op_branch.create(type=node_type, **attrs)
+
                     if op is None or not hasattr(op, "type") or op.type is None:
                         return
                     if hasattr(op, "validate"):
                         op.validate()
+
                     op.id = node_id
                     if context_node.type.startswith("effect"):
                         op.append_child(context_node)

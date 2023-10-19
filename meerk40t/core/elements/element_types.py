@@ -13,6 +13,7 @@ non_structural_nodes = (
     "op engrave",
     "op dots",
     "effect hatch",
+    "effect wobble",
     "util console",
     "util wait",
     "util home",
@@ -62,7 +63,7 @@ place_nodes = (
     "place point",
     "place current",
 )
-effect_nodes = ("effect hatch",)
+effect_nodes = ("effect hatch", "effect wobble")
 elem_nodes = (
     "elem ellipse",
     "elem image",
@@ -72,7 +73,7 @@ elem_nodes = (
     "elem rect",
     "elem line",
     "elem text",
-"image raster",
+    "image raster",
     "effect hatch",
 )
 elem_group_nodes = (
@@ -86,6 +87,7 @@ elem_group_nodes = (
     "elem text",
     "image raster",
     "effect hatch",
+    "effect wobble",
     "group",
     "file",
 )
@@ -99,5 +101,6 @@ elem_ref_nodes = (
     "elem line",
     "elem text",
     "effect hatch",
+    "effect wobble",
     "reference",
 )

@@ -552,6 +552,7 @@ class BalorDriver:
 
         @return:
         """
+        self.paused = False
         self.connection.abort()
 
     def dwell(self, time_in_ms):

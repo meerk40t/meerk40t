@@ -131,6 +131,7 @@ class Node:
 
         self._item = None
         self._cache = None
+        super().__init__()
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
@@ -511,6 +512,38 @@ class Node:
     def valid_node_for_reference(self, node):
         return True
 
+    def copy_children_as_references(self, obj):
+        """
+        Copy the children of the given object as direct references to those children.
+        @param obj:
+        @return:
+        """
+        for element in obj.children:
+            self.add_reference(element)
+
+    def copy_with_reified_tree(self):
+        """
+        Make a copy of the current node, and a copy of the sub-nodes dereferencing any reference nodes
+        @return:
+        """
+        copy_c = copy(self)
+        copy_c.copy_children_as_real(self)
+        return copy_c
+
+    def copy_children_as_real(self, copy_node):
+        """
+        Copy the children of copy_node to the current node, dereferencing any reference nodes.
+        @param copy_node:
+        @return:
+        """
+        for child in copy_node.children:
+            child = child
+            if child.type == "reference":
+                child = child.node
+            copy_child = copy(child)
+            self.add_node(copy_child)
+            copy_child.copy_children_as_real(child)
+
     def is_draggable(self):
         return True
 
@@ -626,52 +659,52 @@ class Node:
         return True
 
     def notify_created(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_created(node=node, **kwargs)
+            self._parent.notify_created(node=node, **kwargs)
 
     def notify_destroyed(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_destroyed(node=node, **kwargs)
+            self._parent.notify_destroyed(node=node, **kwargs)
 
     def notify_attached(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_attached(node=node, **kwargs)
+            self._parent.notify_attached(node=node, **kwargs)
 
     def notify_detached(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_detached(node=node, **kwargs)
+            self._parent.notify_detached(node=node, **kwargs)
 
     def notify_changed(self, node, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_changed(node=node, **kwargs)
+            self._parent.notify_changed(node=node, **kwargs)
 
     def notify_selected(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_selected(node=node, **kwargs)
+            self._parent.notify_selected(node=node, **kwargs)
 
     def notify_emphasized(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_emphasized(node=node, **kwargs)
+            self._parent.notify_emphasized(node=node, **kwargs)
 
     def notify_targeted(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_targeted(node=node, **kwargs)
+            self._parent.notify_targeted(node=node, **kwargs)
 
     def notify_highlighted(self, node=None, **kwargs):
         if self._root is not None:
@@ -680,58 +713,58 @@ class Node:
             self._root.notify_highlighted(node=node, **kwargs)
 
     def notify_modified(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_modified(node=node, **kwargs)
+            self._parent.notify_modified(node=node, **kwargs)
 
     def notify_translated(self, node=None, dx=0, dy=0, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_translated(node=node, dx=dx, dy=dy, **kwargs)
+            self._parent.notify_translated(node=node, dx=dx, dy=dy, **kwargs)
 
     def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_scaled(node=node, sx=sx, sy=sy, ox=ox, oy=oy, **kwargs)
+            self._parent.notify_scaled(node=node, sx=sx, sy=sy, ox=ox, oy=oy, **kwargs)
 
     def notify_altered(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_altered(node=node, **kwargs)
+            self._parent.notify_altered(node=node, **kwargs)
 
     def notify_expand(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_expand(node=node, **kwargs)
+            self._parent.notify_expand(node=node, **kwargs)
 
     def notify_collapse(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_collapse(node=node, **kwargs)
+            self._parent.notify_collapse(node=node, **kwargs)
 
     def notify_reorder(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_reorder(node=node, **kwargs)
+            self._parent.notify_reorder(node=node, **kwargs)
 
     def notify_update(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_update(node=node, **kwargs)
+            self._parent.notify_update(node=node, **kwargs)
 
     def notify_focus(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_focus(node=node, **kwargs)
+            self._parent.notify_focus(node=node, **kwargs)
 
     def focus(self):
         self.notify_focus(self)

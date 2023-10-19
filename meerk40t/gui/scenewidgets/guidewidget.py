@@ -116,7 +116,9 @@ class GuideWidget(Widget):
             tlen = float(Length(f"{self.scene.pane.grid.tick_distance}{p.units_name}"))
             amount = (
                 round(
-                    (p.device.view.unit_width / tlen) * (p.device.view.unit_height / tlen) / 1000,
+                    (p.device.view.unit_width / tlen)
+                    * (p.device.view.unit_height / tlen)
+                    / 1000,
                     0,
                 )
                 * 1000

@@ -1,3 +1,4 @@
+import math
 from copy import copy
 from math import sqrt
 
@@ -7,9 +8,9 @@ from meerk40t.svgelements import Color, Matrix
 from meerk40t.tools.geomstr import Geomstr  # ,  Scanbeam
 
 
-class HatchEffectNode(Node):
+class WobbleEffectNode(Node):
     """
-    Effect node performing a hatch. Effects are themselves a sort of geometry node that contains other geometry and
+    Effect node performing a wobble. Effects are themselves a sort of geometry node that contains other geometry and
     the required data to produce additional geometry.
     """
 
@@ -20,36 +21,29 @@ class HatchEffectNode(Node):
         self.stroke_scale = False
         self._stroke_zero = None
         self.output = True
-        self.hatch_distance = None
-        self.hatch_angle = None
-        self.hatch_angle_delta = None
-        self.hatch_type = None
-        self.loops = None
+        self.wobble_radius = "1.5mm"
+        self.wobble_interval = "0.1mm"
+        self.wobble_speed = 50
+        self.wobble_type = "circle"
+
         Node.__init__(
-            self, type="effect hatch", id=id, label=label, lock=lock, **kwargs
+            self, type="effect wobble", id=id, label=label, lock=lock, **kwargs
         )
-        self._formatter = "{element_type} - {distance} {angle} ({children})"
+        self._formatter = "{element_type} - {type} {radius} ({children})"
 
         if label is None:
-            self.label = "Hatch"
+            self.label = "Wobble"
         else:
             self.label = label
 
-        if self.hatch_type is None:
-            self.hatch_type = "scanline"
-        if self.loops is None:
-            self.loops = 1
-        if self.hatch_distance is None:
-            self.hatch_distance = "1mm"
-        if self.hatch_angle is None:
-            self.hatch_angle = "0deg"
-        if self.hatch_angle_delta is None:
-            self.hatch_angle_delta = "0deg"
-        self._distance = None
-        self._angle = None
-        self._angle_delta = 0
-        self._effect = True
         self.recalculate()
+
+        self._total_count = 0
+        self._total_distance = 0
+        self._remainder = 0
+        self.previous_angle = None
+        self._last_x = None
+        self._last_y = None
 
     @property
     def implied_stroke_width(self):
@@ -62,7 +56,7 @@ class HatchEffectNode(Node):
         nd = self.node_dict
         nd["stroke"] = copy(self.stroke)
         nd["fill"] = copy(self.fill)
-        return HatchEffectNode(**nd)
+        return WobbleEffectNode(**nd)
 
     def scaled(self, sx, sy, ox, oy):
         self.altered()
@@ -104,30 +98,21 @@ class HatchEffectNode(Node):
         self.altered()
 
     @property
-    def angle(self):
-        return self.hatch_angle
+    def radius(self):
+        return self.wobble_radius
 
-    @angle.setter
-    def angle(self, value):
-        self.hatch_angle = value
+    @radius.setter
+    def radius(self, value):
+        self.wobble_radius = value
         self.recalculate()
 
     @property
-    def delta(self):
-        return self.hatch_angle_delta
+    def interval(self):
+        return self.wobble_interval
 
-    @delta.setter
-    def delta(self, value):
-        self.hatch_angle_delta = value
-        self.recalculate()
-
-    @property
-    def distance(self):
-        return self.hatch_distance
-
-    @distance.setter
-    def distance(self, value):
-        self.hatch_distance = value
+    @interval.setter
+    def interval(self, value):
+        self.wobble_interval = value
         self.recalculate()
 
     def recalculate(self):
@@ -135,62 +120,64 @@ class HatchEffectNode(Node):
         Ensure that the properties for distance, angle and angle_delta are in usable units.
         @return:
         """
-        h_dist = self.hatch_distance
-        h_angle = self.hatch_angle
-        h_angle_delta = self.hatch_angle_delta
-        distance_y = float(Length(h_dist))
+        w_radius = self.wobble_radius
+        w_interval = self.wobble_interval
 
-        if isinstance(h_angle, float):
-            self._angle = h_angle
+        if isinstance(w_radius, float):
+            self._radius = w_radius
         else:
-            self._angle = Angle(h_angle).radians
+            self._radius = float(Length(w_radius))
 
-        if isinstance(h_angle_delta, float):
-            self._angle_delta = h_angle_delta
+        if isinstance(w_interval, float):
+            self._interval = w_interval
         else:
-            self._angle_delta = Angle(h_angle_delta).radians
-
-        # transformed_vector = self.matrix.transform_vector([0, distance_y])
-        transformed_vector = [0, distance_y]
-        self._distance = abs(complex(transformed_vector[0], transformed_vector[1]))
+            self._interval = float(Length(w_interval))
 
     def preprocess(self, context, matrix, plan):
         factor = sqrt(abs(matrix.determinant))
-        self._distance *= factor
-        # for c in self._children:
-        #     c.matrix *= matrix
-
+        self._radius *= factor
+        self._interval *= factor
         self.set_dirty_bounds()
-
-    # def bbox(self, transformed=True, with_stroke=False):
-    #     geometry = self.as_geometry()
-    #     if transformed:
-    #         bounds = geometry.bbox(mx=self.matrix)
-    #     else:
-    #         bounds = geometry.bbox()
-    #     xmin, ymin, xmax, ymax = bounds
-    #     if with_stroke:
-    #         delta = float(self.implied_stroke_width) / 2.0
-    #         return (
-    #             xmin - delta,
-    #             ymin - delta,
-    #             xmax + delta,
-    #             ymax + delta,
-    #         )
-    #     return xmin, ymin, xmax, ymax
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
-        default_map["element_type"] = "Hatch"
+        default_map["element_type"] = "Wobble"
+        default_map["type"] = str(self.wobble_type)
         default_map["enabled"] = "(Disabled) " if not self.output else ""
-        default_map["loop"] = (
-            f"{self.loops}X " if self.loops and self.loops != 1 else ""
-        )
-        default_map["angle"] = str(self.hatch_angle)
-        default_map["distance"] = str(self.hatch_distance)
+        default_map["radius"] = str(self.wobble_radius)
+        default_map["interval"] = str(self.wobble_interval)
 
         default_map["children"] = str(len(self.children))
         return default_map
+
+    def circle(self, x0, y0, x1, y1):
+        if x1 is None or y1 is None:
+            yield x0, y0
+            return
+        for tx, ty in self.wobble(x0, y0, x1, y1):
+            t = self._total_distance / (math.tau * self._radius)
+            dx = self._radius * math.cos(t * self.speed)
+            dy = self._radius * math.sin(t * self.speed)
+            yield tx + dx, ty + dy
+
+    def wobble(self,  x0, y0, x1, y1):
+        distance_change = abs(complex(x0, y0) - complex(x1, y1))
+        positions = 1 - self._remainder
+        # Circumvent a div by zero error
+        try:
+            intervals = distance_change / self._interval
+        except ZeroDivisionError:
+            intervals = 1
+        while positions <= intervals:
+            amount = positions / intervals
+            tx = amount * (x1 - x0) + x0
+            ty = amount * (y1 - y0) + y0
+            self._total_distance += self._interval
+            self._total_count += 1
+            yield tx, ty
+            positions += 1
+        self._remainder += intervals
+        self._remainder %= 1
 
     def as_geometry(self, **kws):
         """
@@ -203,18 +190,26 @@ class HatchEffectNode(Node):
         outlines = Geomstr()
         for node in self._children:
             outlines.append(node.as_geometry(**kws))
-        # outlines.transform(self.matrix)
         path = Geomstr()
-        if self._distance is None:
+        if self._radius is None or self._interval is None:
             self.recalculate()
-        for p in range(self.loops):
-            path.append(
-                Geomstr.hatch(
-                    outlines,
-                    distance=self._distance,
-                    angle=self._angle + p * self._angle_delta,
-                )
-            )
+
+        if self.wobble_type == "circle":
+            path.append(Geomstr.wobble_circle(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+        elif self.wobble_type == "circle_right":
+            path.append(Geomstr.wobble_circle_right(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+        elif self.wobble_type == "circle_left":
+            path.append(Geomstr.wobble_circle_left(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+        elif self.wobble_type == "sinewave":
+            path.append(Geomstr.wobble_sinewave(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+        elif self.wobble_type == "sawtooth":
+            path.append(Geomstr.wobble_sawtooth(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+        elif self.wobble_type == "jigsaw":
+            path.append(Geomstr.wobble_jigsaw(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+        elif self.wobble_type == "gear":
+            path.append(Geomstr.wobble_gear(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+        elif self.wobble_type == "slowtooth":
+            path.append(Geomstr.wobble_slowtooth(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
         return path
 
     def modified(self):
@@ -222,6 +217,10 @@ class HatchEffectNode(Node):
 
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
+        if drag_node.type.startswith("effect"):
+            self.append_child(drag_node)
+            self.altered()
+            return True
         if drag_node.type.startswith("elem"):
             # Dragging element onto operation adds that element to the op.
             if not modify:
