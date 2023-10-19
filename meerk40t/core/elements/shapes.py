@@ -256,19 +256,6 @@ def init_commands(kernel):
                 node.append_child(n)
         node.focus()
 
-    @self.console_command(
-        "toggle",
-        help=_("Toggles effect from being group to an effect."),
-        input_type="elements",
-    )
-    def effect_toggle(command, data=None, **kwargs):
-        """
-        Toggles effect hatch object
-        """
-        for n in data:
-            if n.type.startswith("effect "):
-                n.effect = not n.effect
-
     @self.console_option(
         "size", "s", type=float, default=16, help=_("font size to for object")
     )

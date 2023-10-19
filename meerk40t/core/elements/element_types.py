@@ -71,7 +71,6 @@ elem_nodes = (
     "elem rect",
     "elem line",
     "elem text",
-    "effect hatch",
 )
 elem_group_nodes = (
     "elem ellipse",

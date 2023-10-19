@@ -639,16 +639,22 @@ class LaserRender:
         node._cache = cache
 
     def cache_path(self, node, gc):
-        matrix = node.matrix
-        node._cache_matrix = copy(matrix)
-        # Ensure Sync.
-        node.path.transform = matrix
+        try:
+            matrix = node.matrix
+            node._cache_matrix = copy(matrix)
+            # Ensure Sync.
+            node.path.transform = matrix
+        except AttributeError:
+            node._cache_matrix = Matrix()
         cache = self.make_path(gc, node.path)
         node._cache = cache
 
     def cache_geomstr(self, node, gc):
-        matrix = node.matrix
-        node._cache_matrix = copy(matrix)
+        try:
+            matrix = node.matrix
+            node._cache_matrix = copy(matrix)
+        except AttributeError:
+            node._cache_matrix = Matrix()
         geom = node.as_geometry()
         cache = self.make_geomstr(gc, geom, node=node)
         node._cache = cache
@@ -672,7 +678,10 @@ class LaserRender:
                     property_op(kernel.root, node)
                 if hasattr(node, "_cache"):
                     node._cache = None
-        matrix = node.matrix
+        try:
+            matrix = node.matrix
+        except AttributeError:
+            matrix = Matrix()
         gc.PushState()
         try:
             cache = node._cache

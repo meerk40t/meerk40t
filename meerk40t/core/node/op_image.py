@@ -159,14 +159,6 @@ class ImageOpNode(Node, Parameters):
         settings.write_persistent(section, "hex_color", self.color.hexa)
         settings.write_persistent_dict(section, self.settings)
 
-    def copy_children(self, obj):
-        for element in obj.children:
-            self.add_reference(element)
-
-    def copy_children_as_real(self, copy_node):
-        for node in copy_node.children:
-            self.add_node(copy(node.node))
-
     def time_estimate(self):
         """
         The scanlines would equal "(e.height * 1000) / dpi" but our images are pre-actualized.
