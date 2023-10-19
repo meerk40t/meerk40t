@@ -39,7 +39,7 @@ class LayerSettingPanel(wx.Panel):
         self.button_layer_color.SetToolTip(COLOR_TOOLTIP)
         layer_sizer.Add(self.button_layer_color, 0, wx.EXPAND, 0)
         h_classify_sizer = StaticBoxSizer(
-            self, wx.ID_ANY, _("Classification"), wx.HORIZONTAL
+            self, wx.ID_ANY, _("Restrict classification"), wx.HORIZONTAL
         )
         h_property_sizer = StaticBoxSizer(
             self, wx.ID_ANY, _("Properties"), wx.HORIZONTAL

@@ -4828,6 +4828,9 @@ msgstr "Generale"
 msgid "Classification"
 msgstr "Classificazione"
 
+msgid "Restrict classification"
+msgstr "Limitare classificazione"
+
 #: meerk40t/gui/preferences.py:528
 msgid "GUI"
 msgstr "Interfaccia Grafica"
