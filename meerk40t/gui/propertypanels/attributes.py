@@ -476,7 +476,7 @@ class StrokeWidthPanel(wx.Panel):
         s_sizer.Add(self.text_width, 1, wx.EXPAND, 0)
         s_sizer.Add(self.combo_units, 1, wx.EXPAND, 0)
         s_sizer.Add(self.chk_scale, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)
+        self.Bind(wx.EVT_COMBOBOX, self.on_stroke_width_combo, self.combo_units)
         self.Bind(wx.EVT_CHECKBOX, self.on_chk_scale, self.chk_scale)
         self.text_width.SetActionRoutine(self.on_stroke_width)
         self.SetSizer(main_sizer)
@@ -495,6 +495,9 @@ class StrokeWidthPanel(wx.Panel):
                 self.context.signal("element_property_update", self.node)
         except (ValueError, AttributeError):
             pass
+
+    def on_stroke_width_combo(self, event):
+        self.on_stroke_width()
 
     def on_stroke_width(self):
         if self.node is None or self.node.lock:
