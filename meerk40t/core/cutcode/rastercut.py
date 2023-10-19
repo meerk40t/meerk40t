@@ -28,7 +28,9 @@ class RasterCut(CutObject):
         CutObject.__init__(
             self, settings=settings, passes=passes, parent=parent, color=color
         )
-        assert image.mode in ("L", "1")
+        if image.mode not in ("L", "1"):
+            image = image.convert("L")
+        # assert image.mode in ("L", "1")
         self.first = True  # Raster cuts are always first within themselves.
         self.image = image
         self.offset_x = offset_x
