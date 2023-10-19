@@ -75,9 +75,21 @@ class SceneToast:
         """
         self.countdown -= 1
         if self.countdown <= 20:
-            self.scene.invalidate(self.left - 10, self.top - 10, self.right + 10, self.bottom + 10, animate=True)
+            self.scene.invalidate(
+                self.left - 10,
+                self.top - 10,
+                self.right + 10,
+                self.bottom + 10,
+                animate=True,
+            )
         if self.countdown <= 0:
-            self.scene.invalidate(self.left - 10, self.top - 10, self.right + 10, self.bottom + 10, animate=False)
+            self.scene.invalidate(
+                self.left - 10,
+                self.top - 10,
+                self.right + 10,
+                self.bottom + 10,
+                animate=False,
+            )
             # self.scene.request_refresh()
             self.message = None
             self.token = None
@@ -210,7 +222,7 @@ class Scene(Module, Job):
         self.colors = self.context.colors
 
         self.screen_refresh_is_requested = True
-        self.clip = wx.Rect(0,0,0,0)
+        self.clip = wx.Rect(0, 0, 0, 0)
 
         self.background_brush = wx.Brush(self.colors.color_background)
         self.has_background = False
@@ -300,7 +312,7 @@ class Scene(Module, Job):
             pass
 
     def invalidate(self, min_x, min_y, max_x, max_y, animate=False):
-        self.clip.Union((min_x, min_y, max_x-min_x, max_y-min_y))
+        self.clip.Union((min_x, min_y, max_x - min_x, max_y - min_y))
         if animate:
             self.request_refresh_for_animation()
         else:

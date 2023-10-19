@@ -225,7 +225,9 @@ class HatchEffectNode(Node):
         if drag_node.type.startswith("elem"):
             # Dragging element onto operation adds that element to the op.
             if not modify:
-                if self.parent.type.startswith("op") or self.parent.type.startswith("effect"):
+                if self.parent.type.startswith("op") or self.parent.type.startswith(
+                    "effect"
+                ):
                     self.add_reference(drag_node)
                 else:
                     self.append_child(drag_node)
@@ -233,7 +235,9 @@ class HatchEffectNode(Node):
             return True
         elif drag_node.type == "reference":
             if modify:
-                if self.parent.type.startswith("op") or self.parent.type.startswith("effect"):
+                if self.parent.type.startswith("op") or self.parent.type.startswith(
+                    "effect"
+                ):
                     self.append_child(drag_node)
                 else:
                     self.append_child(drag_node.node)

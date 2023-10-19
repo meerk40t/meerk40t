@@ -50,10 +50,9 @@ class WobblePropertyPanel(ScrolledPanel):
                 "tip": _("How many times should the operation job loop"),
             },
         ]
-        #self.panel = ChoicePropertyPanel(
+        # self.panel = ChoicePropertyPanel(
         #    self, wx.ID_ANY, context=context, choices=self.choices
-        #)
-
+        # )
 
         main_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Wobble:"), wx.VERTICAL)
 

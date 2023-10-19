@@ -1742,7 +1742,6 @@ def init_tree(kernel):
         )
         self.signal("updateelem_tree")
 
-
     @tree_submenu(_("Append special effect"))
     @tree_operation(
         _("Append diagonal Line-Fill 1mm"), node_type="branch elems", help=""
@@ -1759,11 +1758,13 @@ def init_tree(kernel):
         )
         self.signal("updateelem_tree")
 
-
-
     @tree_submenu(_("Append special effect"))
     @tree_operation(
-        _("Append wobble {type} {radius} @{interval}").format(type="Circle", radius="0.5mm", interval="0.05mm"), node_type="branch elems", help=""
+        _("Append wobble {type} {radius} @{interval}").format(
+            type="Circle", radius="0.5mm", interval="0.05mm"
+        ),
+        node_type="branch elems",
+        help="",
     )
     def append_element_effect_wobble_c05(
         node, node_type="branch elems", pos=None, **kwargs
@@ -1779,7 +1780,11 @@ def init_tree(kernel):
 
     @tree_submenu(_("Append special effect"))
     @tree_operation(
-        _("Append wobble {type} {radius} @{interval}").format(type="Circle", radius="1mm", interval="0.1mm"), node_type="branch elems", help=""
+        _("Append wobble {type} {radius} @{interval}").format(
+            type="Circle", radius="1mm", interval="0.1mm"
+        ),
+        node_type="branch elems",
+        help="",
     )
     def append_element_effect_wobble_c1(
         node, node_type="branch elems", pos=None, **kwargs
@@ -1794,8 +1799,16 @@ def init_tree(kernel):
         self.signal("updateelem_tree")
 
     @tree_submenu(_("Append special effect"))
-    @tree_operation(_("Append wobble {type} {radius} @{interval}").format(type="Circle", radius="3mm", interval="0.1mm"), node_type="branch elems", help="")
-    def append_element_effect_wobble_c3(node, node_type="branch elems", pos=None, **kwargs):
+    @tree_operation(
+        _("Append wobble {type} {radius} @{interval}").format(
+            type="Circle", radius="3mm", interval="0.1mm"
+        ),
+        node_type="branch elems",
+        help="",
+    )
+    def append_element_effect_wobble_c3(
+        node, node_type="branch elems", pos=None, **kwargs
+    ):
         self.elem_branch.add(
             type="effect wobble",
             wobble_type="circle_right",

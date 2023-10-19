@@ -160,7 +160,7 @@ class WobbleEffectNode(Node):
             dy = self._radius * math.sin(t * self.speed)
             yield tx + dx, ty + dy
 
-    def wobble(self,  x0, y0, x1, y1):
+    def wobble(self, x0, y0, x1, y1):
         distance_change = abs(complex(x0, y0) - complex(x1, y1))
         positions = 1 - self._remainder
         # Circumvent a div by zero error
@@ -195,21 +195,77 @@ class WobbleEffectNode(Node):
             self.recalculate()
 
         if self.wobble_type == "circle":
-            path.append(Geomstr.wobble_circle(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+            path.append(
+                Geomstr.wobble_circle(
+                    outlines,
+                    radius=self._radius,
+                    interval=self._interval,
+                    speed=self.wobble_speed,
+                )
+            )
         elif self.wobble_type == "circle_right":
-            path.append(Geomstr.wobble_circle_right(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+            path.append(
+                Geomstr.wobble_circle_right(
+                    outlines,
+                    radius=self._radius,
+                    interval=self._interval,
+                    speed=self.wobble_speed,
+                )
+            )
         elif self.wobble_type == "circle_left":
-            path.append(Geomstr.wobble_circle_left(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+            path.append(
+                Geomstr.wobble_circle_left(
+                    outlines,
+                    radius=self._radius,
+                    interval=self._interval,
+                    speed=self.wobble_speed,
+                )
+            )
         elif self.wobble_type == "sinewave":
-            path.append(Geomstr.wobble_sinewave(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+            path.append(
+                Geomstr.wobble_sinewave(
+                    outlines,
+                    radius=self._radius,
+                    interval=self._interval,
+                    speed=self.wobble_speed,
+                )
+            )
         elif self.wobble_type == "sawtooth":
-            path.append(Geomstr.wobble_sawtooth(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+            path.append(
+                Geomstr.wobble_sawtooth(
+                    outlines,
+                    radius=self._radius,
+                    interval=self._interval,
+                    speed=self.wobble_speed,
+                )
+            )
         elif self.wobble_type == "jigsaw":
-            path.append(Geomstr.wobble_jigsaw(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+            path.append(
+                Geomstr.wobble_jigsaw(
+                    outlines,
+                    radius=self._radius,
+                    interval=self._interval,
+                    speed=self.wobble_speed,
+                )
+            )
         elif self.wobble_type == "gear":
-            path.append(Geomstr.wobble_gear(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+            path.append(
+                Geomstr.wobble_gear(
+                    outlines,
+                    radius=self._radius,
+                    interval=self._interval,
+                    speed=self.wobble_speed,
+                )
+            )
         elif self.wobble_type == "slowtooth":
-            path.append(Geomstr.wobble_slowtooth(outlines, radius=self._radius, interval=self._interval, speed=self.wobble_speed))
+            path.append(
+                Geomstr.wobble_slowtooth(
+                    outlines,
+                    radius=self._radius,
+                    interval=self._interval,
+                    speed=self.wobble_speed,
+                )
+            )
         return path
 
     def modified(self):
@@ -224,7 +280,9 @@ class WobbleEffectNode(Node):
         if drag_node.type.startswith("elem"):
             # Dragging element onto operation adds that element to the op.
             if not modify:
-                if self.parent.type.startswith("op") or self.parent.type.startswith("effect"):
+                if self.parent.type.startswith("op") or self.parent.type.startswith(
+                    "effect"
+                ):
                     self.add_reference(drag_node)
                 else:
                     self.append_child(drag_node)
@@ -232,7 +290,9 @@ class WobbleEffectNode(Node):
             return True
         elif drag_node.type == "reference":
             if modify:
-                if self.parent.type.startswith("op") or self.parent.type.startswith("effect"):
+                if self.parent.type.startswith("op") or self.parent.type.startswith(
+                    "effect"
+                ):
                     self.append_child(drag_node)
                 else:
                     self.append_child(drag_node.node)

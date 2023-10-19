@@ -122,7 +122,6 @@ def plugin(kernel, lifecycle=None):
         kernel.register(
             "format/effect wobble",
             "{element_type} - {type} {radius} ({children})",
-
         )
         kernel.register("format/reference", "*{reference}")
         kernel.register(
