@@ -102,7 +102,7 @@ class BalorDriver:
         """
         Required.
 
-        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
+        Sets a laser parameter this could be speed, power, number_of_unicorns, or any unknown parameters for
         yet to be written drivers.
 
         @param key:
@@ -186,7 +186,6 @@ class BalorDriver:
         con.program_mode()
         self._list_bits = con._port_bits
         last_on = None
-        con.set_wobble(None)
         queue = self.queue
         self.queue = list()
         for q in queue:
@@ -198,7 +197,6 @@ class BalorDriver:
                 except KeyError:
                     self.value_penbox = None
             con.set_settings(settings)
-            con.set_wobble(settings)
             # LOOP CHECKS
             if self._aborting:
                 con.abort()
@@ -323,7 +321,6 @@ class BalorDriver:
                                 except KeyError:
                                     self.value_penbox = None
                             con.set_settings(settings)
-                            con.set_wobble(settings)
                         elif on & (
                             PLOT_RAPID | PLOT_JOG
                         ):  # Plot planner requests position change.
