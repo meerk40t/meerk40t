@@ -64,6 +64,7 @@ place_nodes = (
     "place current",
 )
 effect_nodes = ("effect hatch", "effect wobble")
+image_nodes = ("image raster", "image processed", "elem image")
 elem_nodes = (
     "elem ellipse",
     "elem image",
@@ -73,8 +74,6 @@ elem_nodes = (
     "elem rect",
     "elem line",
     "elem text",
-    "image raster",
-    "effect hatch",
 )
 elem_group_nodes = (
     "elem ellipse",
