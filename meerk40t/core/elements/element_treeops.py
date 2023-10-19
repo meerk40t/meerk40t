@@ -1226,7 +1226,13 @@ def init_tree(kernel):
 
         start_angle = Geomstr.angle(None, arithmetic_center, pts[0])
 
-        node.geometry = Geomstr.regular_polygon(vertex_count, arithmetic_center, radius=circumradius, radius_inner=circumradius, start_angle=start_angle)
+        node.geometry = Geomstr.regular_polygon(
+            vertex_count,
+            arithmetic_center,
+            radius=circumradius,
+            radius_inner=circumradius,
+            start_angle=start_angle,
+        )
         node.altered()
         self.signal("refresh_scene", "Scene")
 
