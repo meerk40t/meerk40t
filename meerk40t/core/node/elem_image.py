@@ -141,6 +141,9 @@ class ImageNode(Node):
         self.set_dirty_bounds()
         self.process_image(self.step_x, self.step_y, not self.prevent_crop)
 
+    def as_image(self):
+        return self.active_image, self.bbox()
+
     def bbox(self, transformed=True, with_stroke=False):
         image_width, image_height = self.active_image.size
         matrix = self.active_matrix

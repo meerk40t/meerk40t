@@ -2614,12 +2614,6 @@ def init_tree(kernel):
             return
         self.signal("magnet_gen", ("center", node))
 
-    # @tree_conditional(lambda node: not node.lock)
-    # @tree_conditional_try(lambda node: not node.lock)
-    # @tree_operation(_("Actualize pixels"), node_type="elem image", help="")
-    # def image_actualize_pixels(node, **kwargs):
-    #     self("image resample\n")
-
     @tree_conditional(lambda node: not node.lock)
     @tree_submenu(_("Z-depth divide"))
     @tree_iterate("divide", 2, 10)
@@ -2694,6 +2688,16 @@ def init_tree(kernel):
     )
     def image_save_processed(node, **kwargs):
         self("image save output.png --processed\n")
+
+    @tree_conditional(lambda node: not node.lock)
+    @tree_submenu(_("Convert"))
+    @tree_operation(_("Raw Image"), node_type="elem image", help="")
+    def image_convert_raw(node, **kwargs):
+        node.replace_node(
+            image=node.image,
+            matrix=node.matrix,
+            type="image raster",
+        )
 
     @tree_conditional(lambda node: len(node.children) > 0)
     @tree_separator_before()
