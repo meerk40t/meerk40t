@@ -96,7 +96,7 @@ class ImageNode(Node):
         self._processed_image = None
         self._processed_matrix = None
         self._process_image_failed = False
-        self._processing_message = None
+        self.message = None
         if self.operations or self.dither or self.prevent_crop:
             step = UNITS_PER_INCH / self.dpi
             step_x = step
@@ -215,7 +215,7 @@ class ImageNode(Node):
         """
         self._needs_update = True
         if context is not None:
-            self._processing_message = "Processing..."
+            self.message = "Processing..."
             context.signal("refresh_scene", "Scene")
         if self._update_thread is None:
 
@@ -224,11 +224,11 @@ class ImageNode(Node):
                 self._update_thread = None
                 if context is not None:
                     if self._process_image_failed:
-                        self._processing_message = (
+                        self.message = (
                             "Process image could not exist in memory."
                         )
                     else:
-                        self._processing_message = None
+                        self.message = None
                     context.signal("refresh_scene", "Scene")
                     context.signal("image_updated", self)
 

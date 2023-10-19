@@ -904,6 +904,16 @@ class LaserRender:
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         image, bounds = node.as_image()
         gc.PushState()
+
+        try:
+            image = node.active_image
+            matrix = node.active_matrix
+            bounds = 0, 0, image.width, image.height
+            if matrix is not None and not matrix.is_identity():
+                gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        except AttributeError:
+            pass
+
         cache = None
         try:
             cache = node._cache
