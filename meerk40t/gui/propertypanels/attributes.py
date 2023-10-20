@@ -1008,16 +1008,16 @@ class RoundedRectPanel(wx.Panel):
             return
         # Set values for rx and ry
         bb = self.node.bbox()
-        width = self.node.shape.width
-        height = self.node.shape.height
-        if self.node.shape.rx is None:
+        width = self.node.width
+        height = self.node.height
+        if self.node.rx is None:
             rx = 0
         else:
-            rx = self.node.shape.rx
-        if self.node.shape.ry is None:
+            rx = self.node.rx
+        if self.node.ry is None:
             ry = 0
         else:
-            ry = self.node.shape.ry
+            ry = self.node.ry
         flag = bool(rx == ry)
         self.btn_lock_ratio.SetValue(flag)
         self.on_toggle_ratio(None)
