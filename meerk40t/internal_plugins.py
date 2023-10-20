@@ -76,10 +76,6 @@ def plugin(kernel, lifecycle):
 
         plugins.append(hershey.plugin)
 
-        from .extra import embroider
-
-        plugins.append(embroider.plugin)
-
         from .extra import ezd
 
         plugins.append(ezd.plugin)
