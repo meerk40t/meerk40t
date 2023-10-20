@@ -632,25 +632,6 @@ class LaserRender:
             gc.StrokePath(p)
             del p
 
-    def cache_shape(self, node, gc):
-        matrix = node.matrix
-        node._cache_matrix = copy(matrix)
-        # Ensure Sync.
-        node.shape.transform = matrix
-        cache = self.make_path(gc, node.shape)
-        node._cache = cache
-
-    def cache_path(self, node, gc):
-        try:
-            matrix = node.matrix
-            node._cache_matrix = copy(matrix)
-            # Ensure Sync.
-            node.path.transform = matrix
-        except AttributeError:
-            node._cache_matrix = Matrix()
-        cache = self.make_path(gc, node.path)
-        node._cache = cache
-
     def cache_geomstr(self, node, gc):
         try:
             matrix = node.matrix
