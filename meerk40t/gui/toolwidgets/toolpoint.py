@@ -33,7 +33,7 @@ class PointTool(ToolWidget):
                 sx, sy = self.scene.get_snap_point(
                     space_pos[0], space_pos[1], modifiers
                 )
-                point = Point(sx, sx)
+                point = Point(sx, sy)
             else:
                 point = Point(nearest_snap[0], nearest_snap[1])
             elements = self.scene.context.elements
