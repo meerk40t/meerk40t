@@ -323,12 +323,11 @@ class SVGWriter:
                 )
             SVGWriter._write_custom(subelement, c)
         elif c.type == "elem polyline":
-            element = c.shape
-            copy_attributes(c, element)
             subelement = SubElement(xml_tree, SVG_TAG_POLYLINE)
+            points = list(c.geometry.as_points())
             subelement.set(
                 SVG_ATTR_POINTS,
-                " ".join([f"{e[0]} {e[1]}" for e in element.points]),
+                " ".join([f"{e.real} {e.imag}" for e in points]),
             )
             t = c.matrix
             if not t.is_identity():
