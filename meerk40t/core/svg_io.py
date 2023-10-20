@@ -298,7 +298,6 @@ class SVGWriter:
                     "transform",
                     f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
                 )
-
         elif c.type == "elem path":
             element = c.path
             copy_attributes(c, element)
@@ -311,9 +310,6 @@ class SVGWriter:
                     f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
                 )
         elif c.type == "elem point":
-            element = Point(c.point)
-            c.x = element.x
-            c.y = element.y
             subelement = SubElement(xml_tree, "element")
             t = c.matrix
             if not t.is_identity():
@@ -321,7 +317,8 @@ class SVGWriter:
                     "transform",
                     f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
                 )
-            SVGWriter._write_custom(subelement, c)
+            subelement.set("x", str(c.x))
+            subelement.set("y", str(c.y))
         elif c.type == "elem polyline":
             subelement = SubElement(xml_tree, SVG_TAG_POLYLINE)
             points = list(c.geometry.as_points())
