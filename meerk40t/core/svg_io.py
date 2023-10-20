@@ -252,13 +252,11 @@ class SVGWriter:
             return flag
 
         if c.type == "elem ellipse":
-            element = c.shape
-            copy_attributes(c, element)
             subelement = SubElement(xml_tree, SVG_TAG_ELLIPSE)
-            subelement.set(SVG_ATTR_CENTER_X, str(element.cx))
-            subelement.set(SVG_ATTR_CENTER_Y, str(element.cy))
-            subelement.set(SVG_ATTR_RADIUS_X, str(element.rx))
-            subelement.set(SVG_ATTR_RADIUS_Y, str(element.ry))
+            subelement.set(SVG_ATTR_CENTER_X, str(c.cx))
+            subelement.set(SVG_ATTR_CENTER_Y, str(c.cy))
+            subelement.set(SVG_ATTR_RADIUS_X, str(c.rx))
+            subelement.set(SVG_ATTR_RADIUS_Y, str(c.ry))
             t = Matrix(c.matrix)
             if not t.is_identity():
                 subelement.set(
