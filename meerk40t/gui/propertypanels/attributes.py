@@ -1039,21 +1039,21 @@ class RoundedRectPanel(wx.Panel):
 
     def set_values(self, axis, value):
         sync = self.btn_lock_ratio.GetValue()
-        width = self.node.shape.width
-        height = self.node.shape.height
+        width = self.node.width
+        height = self.node.height
         if axis == 0:  # x
             rx = value / 100 * width
-            self.node.shape.rx = rx
+            self.node.rx = rx
             if sync:
-                self.node.shape.ry = rx
+                self.node.ry = rx
                 max_val_y = self.slider_x.GetMax()
                 int_ry = int(100.0 * rx / height)
                 self.slider_y.SetValue(min(max_val_y, int_ry))
         else:
             ry = value / 100 * height
-            self.node.shape.ry = ry
+            self.node.ry = ry
             if sync:
-                self.node.shape.rx = ry
+                self.node.rx = ry
                 max_val_x = self.slider_x.GetMax()
                 int_rx = int(100.0 * ry / width)
                 self.slider_x.SetValue(min(max_val_x, int_rx))
