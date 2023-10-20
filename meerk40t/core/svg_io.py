@@ -337,15 +337,13 @@ class SVGWriter:
                     f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
                 )
         elif c.type == "elem rect":
-            element = c.shape
-            copy_attributes(c, element)
             subelement = SubElement(xml_tree, SVG_TAG_RECT)
-            subelement.set(SVG_ATTR_X, str(element.x))
-            subelement.set(SVG_ATTR_Y, str(element.y))
-            subelement.set(SVG_ATTR_RADIUS_X, str(element.rx))
-            subelement.set(SVG_ATTR_RADIUS_Y, str(element.ry))
-            subelement.set(SVG_ATTR_WIDTH, str(element.width))
-            subelement.set(SVG_ATTR_HEIGHT, str(element.height))
+            subelement.set(SVG_ATTR_X, str(c.x))
+            subelement.set(SVG_ATTR_Y, str(c.y))
+            subelement.set(SVG_ATTR_RADIUS_X, str(c.rx))
+            subelement.set(SVG_ATTR_RADIUS_Y, str(c.ry))
+            subelement.set(SVG_ATTR_WIDTH, str(c.width))
+            subelement.set(SVG_ATTR_HEIGHT, str(c.height))
             t = c.matrix
             if not t.is_identity():
                 subelement.set(
