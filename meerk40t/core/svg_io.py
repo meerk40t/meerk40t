@@ -287,13 +287,11 @@ class SVGWriter:
                     f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
                 )
         elif c.type == "elem line":
-            element = c.shape
-            copy_attributes(c, element)
             subelement = SubElement(xml_tree, SVG_TAG_LINE)
-            subelement.set(SVG_ATTR_X1, str(element.x1))
-            subelement.set(SVG_ATTR_Y1, str(element.y1))
-            subelement.set(SVG_ATTR_X2, str(element.x2))
-            subelement.set(SVG_ATTR_Y2, str(element.y2))
+            subelement.set(SVG_ATTR_X1, str(c.x1))
+            subelement.set(SVG_ATTR_Y1, str(c.y1))
+            subelement.set(SVG_ATTR_X2, str(c.x2))
+            subelement.set(SVG_ATTR_Y2, str(c.y2))
             t = c.matrix
             if not t.is_identity():
                 subelement.set(
