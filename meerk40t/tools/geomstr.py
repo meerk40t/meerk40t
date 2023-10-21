@@ -317,7 +317,6 @@ class PolyBool:
     def add_segments(self, g):
         self.inputs.append(g)
 
-
     def union(self):
         pass
 
@@ -1476,7 +1475,7 @@ class Geomstr:
         self.segments[self.index : self.index + other.index] = other.segments[
             : other.index
         ]
-        self.index += other.index
+        self.index = new_capacity
 
     #######################
     # Geometric Primitives
