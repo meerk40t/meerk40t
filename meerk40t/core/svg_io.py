@@ -264,7 +264,6 @@ class SVGWriter:
                     f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
                 )
         elif c.type == "elem image":
-            element = c.image
             subelement = SubElement(xml_tree, SVG_TAG_IMAGE)
             stream = BytesIO()
             try:
@@ -299,8 +298,7 @@ class SVGWriter:
                     f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
                 )
         elif c.type == "elem path":
-            element = c.path
-            copy_attributes(c, element)
+            element = c.geometry.as_path()
             subelement = SubElement(xml_tree, SVG_TAG_PATH)
             subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             t = c.matrix
