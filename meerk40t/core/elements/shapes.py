@@ -719,12 +719,12 @@ def init_commands(kernel):
     def element_pathd_info(command, channel, _, data, real=True, **kwargs):
         for node in data:
             try:
-                if node.path.transform.is_identity():
-                    channel(
-                        f"{str(node)} (Identity): {node.path.d(transformed=not real)}"
-                    )
-                else:
-                    channel(f"{str(node)}: {node.path.d(transformed=not real)}")
+                g = node.as_geometry()
+                path = g.as_path()
+                ident = " (Identity)" if node.matrix.is_identity() else ""
+                channel(
+                    f"{str(node)}{ident}: {path.d(transformed=not real)}"
+                )
             except AttributeError:
                 channel(f"{str(node)}: Invalid")
 
@@ -2008,7 +2008,7 @@ def init_commands(kernel):
             except AttributeError:
                 pass
             if e.type == "elem path":
-                e.path.approximate_bezier_with_circular_arcs()
+                e.path = e.path.approximate_bezier_with_circular_arcs()
                 e.altered()
 
         return "elements", data
