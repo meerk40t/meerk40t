@@ -84,10 +84,6 @@ def plugin(kernel, lifecycle):
 
         plugins.append(lbrn.plugin)
 
-        from .extra import pathoptimize
-
-        plugins.append(pathoptimize.plugin)
-
         from .extra import updater
 
         plugins.append(updater.plugin)
