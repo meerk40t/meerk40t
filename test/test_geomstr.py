@@ -41,12 +41,9 @@ def draw(segments, min_x, min_y, max_x, max_y, buffer=0, filename="test.png"):
             ((f.real - min_x, f.imag - min_y), (t.real - min_x, t.imag - min_y)),
             fill="#000000",
         )
-    # for segment in segments:
-    #     # Draw end points.
-    #     f = segment[0]
-    #     t = segment[-1]
-    #     draw.ellipse((f.real - 3, f.imag - 3, f.real + 3, f.imag + 3), fill="#FF0000")
-    #     draw.ellipse((t.real - 2, t.imag - 2, t.real + 2, t.imag + 2), fill="#0000FF")
+        # Draw end points.
+        draw.ellipse((f.real - 3 -min_x, f.imag - 3 - min_y, f.real + 3 -min_x, f.imag + 3 - min_y), fill="#FF0000")
+        draw.ellipse((t.real - 2 -min_x, t.imag - 2 - min_y, t.real + 2 -min_x, t.imag + 2 - min_y), fill="#0000FF")
     im.save(filename)
 
 
