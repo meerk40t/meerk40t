@@ -2008,7 +2008,10 @@ def init_commands(kernel):
             except AttributeError:
                 pass
             if e.type == "elem path":
-                e.path = e.path.approximate_bezier_with_circular_arcs()
+                g = e.geometry
+                path = g.as_path()
+                path.approximate_bezier_with_circular_arcs()
+                e.geometry = Geomstr.svg(path)
                 e.altered()
 
         return "elements", data
