@@ -1320,6 +1320,6 @@ class TestGeomstr(unittest.TestCase):
             print(f"Time: {time.time() - t}")
             print(len(pb.path))
             try:
-                draw(pb.path.segments, 1000, 1000, "test.png")
+                draw(list(pb.path.as_interpolated_points()), *pb.path.bbox(), filename="test.png")
             except PermissionError:
                 pass
