@@ -39,7 +39,9 @@ def create_mo_files():
             else:
                 counts[1] += 1
         data_files.append((d, mo_files))
-    print (f"Total: {counts[0] + counts[1]}, Translated: {counts[0]}, Ignored: {counts[1]}, Errors: {counts[2]}")
+    print(
+        f"Total: {counts[0] + counts[1]}, Translated: {counts[0]}, Ignored: {counts[1]}, Errors: {counts[2]}"
+    )
     return data_files
 
 

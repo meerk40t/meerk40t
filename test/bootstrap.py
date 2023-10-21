@@ -1,8 +1,8 @@
 from meerk40t.kernel import Kernel
 
 
-def bootstrap():
-    kernel = Kernel("MeerK40t", "0.0.0-testing", "MeerK40t_TEST", ansi=False)
+def bootstrap(profile="MeerK40t_TEST"):
+    kernel = Kernel("MeerK40t", "0.0.0-testing", profile, ansi=False)
 
     from meerk40t.network import kernelserver
 
@@ -24,10 +24,6 @@ def bootstrap():
 
     kernel.add_plugin(fills.plugin)
 
-    from meerk40t.device.ch341 import ch341
-
-    kernel.add_plugin(ch341.plugin)
-
     from meerk40t.lihuiyu import plugin as lhystudiosdevice
 
     kernel.add_plugin(lhystudiosdevice.plugin)
@@ -43,6 +39,10 @@ def bootstrap():
     from meerk40t.ruida import plugin as ruidadevice
 
     kernel.add_plugin(ruidadevice.plugin)
+
+    from meerk40t.newly import plugin as newlydevice
+
+    kernel.add_plugin(newlydevice.plugin)
 
     from meerk40t.core import svg_io
 

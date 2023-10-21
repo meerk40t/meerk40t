@@ -13,6 +13,7 @@ class CutObject:
     ):
         if settings is None:
             settings = dict()
+        self.lock = False
         self.settings = settings
         self.parent = parent
         self.passes = passes

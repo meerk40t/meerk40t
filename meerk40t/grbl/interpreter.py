@@ -12,7 +12,7 @@ from meerk40t.kernel import Module
 class GRBLInterpreter(Module):
     def __init__(self, service, path):
         Module.__init__(self, service, path)
-        self.emulator = GRBLEmulator(self, service.device.scene_to_show_matrix())
+        self.emulator = GRBLEmulator(self, service.space.display.matrix())
         self._attached_device = None
 
     def __repr__(self):
@@ -22,9 +22,6 @@ class GRBLInterpreter(Module):
         self.context.signal("emulator;position", (x, y, x, y))
 
     def move_rel(self, x, y):
-        self.context.signal("emulator;position", (x, y, x, y))
-
-    def move_ori(self, x, y):
         self.context.signal("emulator;position", (x, y, x, y))
 
     def plot(self, cutobject):

@@ -1,6 +1,7 @@
 import wx
 
 from meerk40t.gui.icons import (
+    STD_ICON_SIZE,
     icons8_bell_20,
     icons8_close_window_20,
     icons8_down_50,
@@ -13,9 +14,8 @@ from meerk40t.gui.icons import (
     icons8_system_task_20,
     icons8_timer_20,
     icons8_up_50,
-    icons8_visit_20,
 )
-from meerk40t.gui.wxutils import StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 
 _ = wx.GetTranslation
 
@@ -39,7 +39,6 @@ class DefaultActionPanel(wx.Panel):
             ("Beep", "util console", "beep"),
             ("Interrupt", "util console", 'interrupt "Spooling was interrupted"'),
             ("Console", "util console", ""),
-            ("Set Origin", "util origin", ""),
         )
         self.default_images = [
             ["console home -f", icons8_home_20],
@@ -49,8 +48,7 @@ class DefaultActionPanel(wx.Panel):
             ["console quit", icons8_close_window_20],
             ["util wait", icons8_timer_20],
             ["util home", icons8_home_20],
-            ["util goto", icons8_return_20],
-            ["util origin", icons8_visit_20],
+            ["util goto", icons8_return_20],  # icons8_visit_20
             ["util output", icons8_output_20],
             ["util input", icons8_input_20],
             ["util console", icons8_system_task_20],
@@ -79,21 +77,43 @@ class DefaultActionPanel(wx.Panel):
 
         self.append_list = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_LIST)
         self.text_param_append = wx.TextCtrl(self, wx.ID_ANY)
-        self.button_del_prepend = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
-        self.button_up_prepend = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
-        self.button_down_prepend = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(30, 20)
+        self.button_del_prepend = wx.StaticBitmap(
+            self, wx.ID_ANY, size=dip_size(self, 30, 30)
         )
-        self.button_del_prepend.SetBitmap(icons8_remove_25.GetBitmap(resize=25))
-        self.button_up_prepend.SetBitmap(icons8_up_50.GetBitmap(resize=25))
-        self.button_down_prepend.SetBitmap(icons8_down_50.GetBitmap(resize=25))
+        self.button_up_prepend = wx.StaticBitmap(
+            self, wx.ID_ANY, size=dip_size(self, 30, 30)
+        )
+        self.button_down_prepend = wx.StaticBitmap(
+            self, wx.ID_ANY, size=dip_size(self, 30, 20)
+        )
+        self.button_del_prepend.SetBitmap(
+            icons8_remove_25.GetBitmap(resize=STD_ICON_SIZE / 2)
+        )
+        self.button_up_prepend.SetBitmap(
+            icons8_up_50.GetBitmap(resize=STD_ICON_SIZE / 2)
+        )
+        self.button_down_prepend.SetBitmap(
+            icons8_down_50.GetBitmap(resize=STD_ICON_SIZE / 2)
+        )
 
-        self.button_del_append = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
-        self.button_up_append = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
-        self.button_down_append = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
-        self.button_del_append.SetBitmap(icons8_remove_25.GetBitmap(resize=25))
-        self.button_up_append.SetBitmap(icons8_up_50.GetBitmap(resize=25))
-        self.button_down_append.SetBitmap(icons8_down_50.GetBitmap(resize=25))
+        self.button_del_append = wx.StaticBitmap(
+            self, wx.ID_ANY, size=dip_size(self, 30, 30)
+        )
+        self.button_up_append = wx.StaticBitmap(
+            self, wx.ID_ANY, size=dip_size(self, 30, 30)
+        )
+        self.button_down_append = wx.StaticBitmap(
+            self, wx.ID_ANY, size=dip_size(self, 30, 30)
+        )
+        self.button_del_append.SetBitmap(
+            icons8_remove_25.GetBitmap(resize=STD_ICON_SIZE / 2)
+        )
+        self.button_up_append.SetBitmap(
+            icons8_up_50.GetBitmap(resize=STD_ICON_SIZE / 2)
+        )
+        self.button_down_append.SetBitmap(
+            icons8_down_50.GetBitmap(resize=STD_ICON_SIZE / 2)
+        )
 
         sizer_param = StaticBoxSizer(
             self, wx.ID_ANY, _("Operation parameter:"), wx.HORIZONTAL
@@ -521,8 +541,6 @@ class DefaultActionPanel(wx.Panel):
                 entry[1] = ""
             display_name = entry[0]
             for def_entry in self.standards:
-                if def_entry[2] is None:
-                    def_entry[2] = ""
                 if def_entry[1] == entry[0] and def_entry[2] == entry[1]:
                     display_name = def_entry[0]
                     break

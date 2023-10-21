@@ -1,5 +1,5 @@
 from meerk40t.core.cutcode.gotocut import GotoCut
-from meerk40t.core.element_types import *
+from meerk40t.core.elements.element_types import *
 from meerk40t.core.node.node import Node
 
 
@@ -62,4 +62,4 @@ class GotoOperation(Node):
         yield cut
 
     def generate(self):
-        yield "move_ori", self.x, self.y
+        yield "move_abs", self.x, self.y

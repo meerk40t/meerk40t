@@ -3,7 +3,7 @@ from math import isnan
 
 from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.core.cutplan import CutPlanningFailedError
-from meerk40t.core.element_types import *
+from meerk40t.core.elements.element_types import *
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
@@ -18,19 +18,11 @@ class RasterOpNode(Node, Parameters):
     This is a Node of type "op raster".
     """
 
-    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
-        Node.__init__(self, type="op raster", id=id, label=label, lock=lock)
-        Parameters.__init__(self, None, **kwargs)
-        self._formatter = (
-            "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {color}"
-        )
+    def __init__(self, settings=None, **kwargs):
+        if settings is not None:
+            settings = dict(settings)
+        Parameters.__init__(self, settings, **kwargs)
 
-        if len(args) == 1:
-            obj = args[0]
-            if hasattr(obj, "settings"):
-                self.settings = dict(obj.settings)
-            elif isinstance(obj, dict):
-                self.settings.update(obj)
         self._allowed_elements_dnd = (
             "elem ellipse",
             "elem path",
@@ -48,39 +40,30 @@ class RasterOpNode(Node, Parameters):
             "elem rect",
             "elem line",
             "elem text",
-            #            "elem image",
         )
-        # To which attributes do the classification color check respond
-        # Can be extended / reduced by add_color_attribute / remove_color_attribute
-        # An empty set indicates all nodes will be allowed
-        self.allowed_attributes = []
+
         # self.allowed_attributes.append("fill")
         # Is this op out of useful bounds?
         self.dangerous = False
         self.stopop = False
-        if label is None:
-            self.label = "Raster"
-        else:
-            self.label = label
+        self.label = "Raster"
+
+        # To which attributes do the classification color check respond
+        # Can be extended / reduced by add_color_attribute / remove_color_attribute
+        # An empty set indicates all nodes will be allowed
+        self.allowed_attributes = []
+        super().__init__(type="op raster", **kwargs)
+        self._formatter = (
+            "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {color}"
+        )
 
     def __repr__(self):
         return "RasterOp()"
 
-    def __copy__(self):
-        return RasterOpNode(self)
-
-    # def is_dangerous(self, minpower, maxspeed):
-    #     result = False
-    #     if maxspeed is not None and self.speed > maxspeed:
-    #         result = True
-    #     if minpower is not None and self.power < minpower:
-    #         result = True
-    #     self.dangerous = result
-
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Raster"
-        default_map["dpi"] = str(self.dpi)
+        default_map["dpi"] = str(int(self.dpi))
         default_map["danger"] = "❌" if self.dangerous else ""
         default_map["defop"] = "✓" if self.default else ""
         default_map["enabled"] = "(Disabled) " if not self.output else ""
@@ -125,6 +108,14 @@ class RasterOpNode(Node, Parameters):
         default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
         default_map["overscan"] = f"±{self.overscan}"
+        default_map["percent"] = "100%"
+        default_map["ppi"] = "default"
+        if self.power is not None:
+            default_map["percent"] = f"{self.power / 10.0:.0f}%"
+            default_map["ppi"] = f"{self.power:.0f}"
+        default_map["speed_mm_min"] = (
+            "" if self.speed is None else f"{self.speed * 60:.0f}"
+        )
         return default_map
 
     def drop(self, drag_node, modify=True):
@@ -267,26 +258,22 @@ class RasterOpNode(Node, Parameters):
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
-        update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        self.settings.update(update_dict)
-        self.validate()
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
         self.updated()
 
     def save(self, settings, section):
+        # Sync certain properties with self.settings
+        for attr in ("label", "lock", "id"):
+            if hasattr(self, attr) and attr in self.settings:
+                self.settings[attr] = getattr(self, attr)
+        if "hex_color" in self.settings:
+            self.settings["hex_color"] = self.color.hexa
+
         settings.write_persistent_attributes(section, self)
         settings.write_persistent(section, "hex_color", self.color.hexa)
         settings.write_persistent_dict(section, self.settings)
-
-    def copy_children(self, obj):
-        for element in obj.children:
-            self.add_reference(element)
-
-    def copy_children_as_real(self, copy_node):
-        for node in copy_node.children:
-            self.add_node(copy(node.node))
 
     def time_estimate(self):
         estimate = 0
@@ -329,6 +316,11 @@ class RasterOpNode(Node, Parameters):
         @param plan:
         @return:
         """
+        if isinstance(self.speed, str):
+            try:
+                self.speed = float(self.speed)
+            except ValueError:
+                pass
         commands = plan.commands
         native_mm = abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
         self.settings["native_mm"] = native_mm
@@ -358,7 +350,7 @@ class RasterOpNode(Node, Parameters):
             # Calculate raster steps from DPI device context
             self.set_dirty_bounds()
 
-            step_x, step_y = context.device.dpi_to_steps(self.dpi, matrix=matrix)
+            step_x, step_y = context.device.view.dpi_to_steps(self.dpi)
             bounds = self.paint_bounds
             img_mx = Matrix.scale(step_x, step_y)
             data = list(self.flat())
@@ -386,6 +378,19 @@ class RasterOpNode(Node, Parameters):
             image_node.step_y = step_y
             image_node.process_image()
 
+        if matrix.value_scale_y() < 0:
+            # Y is negative scale, flip raster_direction if needed
+            if self.raster_direction == 0:
+                self.raster_direction = 1
+            elif self.raster_direction == 1:
+                self.raster_direction = 0
+        if matrix.value_scale_x() < 0:
+            # X is negative scale, flip raster_direction if needed
+            if self.raster_direction == 2:
+                self.raster_direction = 3
+            elif self.raster_direction == 3:
+                self.raster_direction = 2
+
         commands.append(make_image)
 
     def as_cutobjects(self, closed_distance=15, passes=1):
@@ -409,20 +414,20 @@ class RasterOpNode(Node, Parameters):
         # Set variables by direction
         direction = self.raster_direction
         horizontal = False
-        start_on_left = False
-        start_on_top = False
+        start_minimum_x = False
+        start_minimum_y = False
         if direction == 0 or direction == 4:
             horizontal = True
-            start_on_top = True
+            start_minimum_y = True
         elif direction == 1:
             horizontal = True
-            start_on_top = False
+            start_minimum_y = False
         elif direction == 2:
             horizontal = False
-            start_on_left = False
+            start_minimum_x = False
         elif direction == 3:
             horizontal = False
-            start_on_left = True
+            start_minimum_x = True
         bidirectional = self.bidirectional
 
         for image_node in self.children:
@@ -476,8 +481,8 @@ class RasterOpNode(Node, Parameters):
                 inverted=False,
                 bidirectional=bidirectional,
                 horizontal=horizontal,
-                start_on_top=start_on_top,
-                start_on_left=start_on_left,
+                start_minimum_y=start_minimum_y,
+                start_minimum_x=start_minimum_x,
                 overscan=overscan,
                 settings=settings,
                 passes=passes,
@@ -506,8 +511,8 @@ class RasterOpNode(Node, Parameters):
                     inverted=False,
                     bidirectional=bidirectional,
                     horizontal=horizontal,
-                    start_on_top=start_on_top,
-                    start_on_left=start_on_left,
+                    start_minimum_y=start_minimum_y,
+                    start_minimum_x=start_minimum_x,
                     overscan=overscan,
                     settings=settings,
                     passes=passes,

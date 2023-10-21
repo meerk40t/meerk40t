@@ -41,6 +41,24 @@ class TestElements(unittest.TestCase):
         finally:
             kernel.shutdown()
 
+    def test_elements_frame(self):
+        """
+        Test frame command creates a rectangle of a rectangle
+        """
+        kernel = bootstrap.bootstrap()
+        try:
+            kernel.console("rect 2cm 2cm 1cm 1cm\n")
+            kernel.console("frame\n")
+            f = list(kernel.elements.elem_branch.flat(types="elem rect"))
+            self.assertAlmostEqual(f[0].x, f[1].x)
+            self.assertAlmostEqual(f[0].y, f[1].y)
+            self.assertAlmostEqual(f[0].width, f[1].width)
+            self.assertAlmostEqual(f[0].height, f[1].height)
+            self.assertAlmostEqual(f[0].rx, f[1].rx)
+            self.assertAlmostEqual(f[0].ry, f[1].ry)
+        finally:
+            kernel.shutdown()
+
     def test_elements_circle(self):
         """
         Intro test for elements
@@ -52,12 +70,15 @@ class TestElements(unittest.TestCase):
             kernel_root = kernel.get_context("/")
             kernel_root("circle 1in 1in 1in\n")
             for node in kernel_root.elements.elems():
-                # print(element)
+                shape = node.shape
                 self.assertEqual(
-                    node.shape,
+                    shape,
                     Circle(
                         center=(1000 * UNITS_PER_MIL, 1000 * UNITS_PER_MIL),
                         r=1000 * UNITS_PER_MIL,
+                        stroke_width=shape.stroke_width,
+                        fill=shape.fill,
+                        stroke=shape.stroke,
                     ),
                 )
                 self.assertEqual(node.stroke, "blue")
@@ -75,13 +96,17 @@ class TestElements(unittest.TestCase):
             kernel_root = kernel.get_context("/")
             kernel_root("rect 1in 1in 1in 1in stroke red fill blue\n")
             for node in kernel_root.elements.elems():
+                shape = node.shape
                 self.assertEqual(
-                    node.shape,
+                    shape,
                     Rect(
                         1000 * UNITS_PER_MIL,
                         1000 * UNITS_PER_MIL,
                         1000 * UNITS_PER_MIL,
                         1000 * UNITS_PER_MIL,
+                        stroke_width=shape.stroke_width,
+                        fill=shape.fill,
+                        stroke=shape.stroke,
                     ),
                 )
                 self.assertEqual(node.stroke, "red")

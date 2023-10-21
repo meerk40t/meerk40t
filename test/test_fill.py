@@ -28,20 +28,17 @@ class TestFill(unittest.TestCase):
         w = 10000
         h = 10000
         paths = (
-            (
-                (w * 0.05, h * 0.05),
-                (w * 0.95, h * 0.05),
-                (w * 0.95, h * 0.95),
-                (w * 0.05, h * 0.95),
-                (w * 0.05, h * 0.05),
-            ),
-            (
-                (w * 0.25, h * 0.25),
-                (w * 0.75, h * 0.25),
-                (w * 0.75, h * 0.75),
-                (w * 0.25, h * 0.75),
-                (w * 0.25, h * 0.25),
-            ),
+            complex(w * 0.05, h * 0.05),
+            complex(w * 0.95, h * 0.05),
+            complex(w * 0.95, h * 0.95),
+            complex(w * 0.05, h * 0.95),
+            complex(w * 0.05, h * 0.05),
+            None,
+            complex(w * 0.25, h * 0.25),
+            complex(w * 0.75, h * 0.25),
+            complex(w * 0.75, h * 0.75),
+            complex(w * 0.25, h * 0.75),
+            complex(w * 0.25, h * 0.25),
         )
 
         fill = list(eulerian_fill(settings={}, outlines=paths, matrix=None))
@@ -53,20 +50,17 @@ class TestFill(unittest.TestCase):
         w = 1000
         h = 1000
         paths = (
-            (
-                (w * 0.05, h * 0.05),
-                (w * 0.95, h * 0.05),
-                (w * 0.95, h * 0.95),
-                (w * 0.05, h * 0.95),
-                (w * 0.05, h * 0.05),
-            ),
-            (
-                (w * 0.25, h * 0.25),
-                (w * 0.75, h * 0.25),
-                (w * 0.75, h * 0.75),
-                (w * 0.25, h * 0.75),
-                (w * 0.25, h * 0.25),
-            ),
+            complex(w * 0.05, h * 0.05),
+            complex(w * 0.95, h * 0.05),
+            complex(w * 0.95, h * 0.95),
+            complex(w * 0.05, h * 0.95),
+            complex(w * 0.05, h * 0.05),
+            None,
+            complex(w * 0.25, h * 0.25),
+            complex(w * 0.75, h * 0.25),
+            complex(w * 0.75, h * 0.75),
+            complex(w * 0.25, h * 0.75),
+            complex(w * 0.25, h * 0.25),
         )
         matrix = Matrix.scale(0.005)
         fill = list(eulerian_fill(settings={}, outlines=paths, matrix=matrix))
@@ -77,58 +71,54 @@ class TestFill(unittest.TestCase):
         # draw(fill, w, h)
 
     def test_fill_hatch(self):
+        """
+        Tests hatch generation by manually executing the regular planning steps.
+        """
         kernel = bootstrap.bootstrap()
         try:
-
             kernel.console("rect 0 0 1in 1in\n")
             kernel.console("operation* delete\n")
             kernel.console("hatch\n")
-            hatch = list(kernel.elements.ops())[0]
+            hatch_op = list(kernel.elements.ops())[0]
             rect = list(kernel.elements.elems())[0]
-            hatch.hatch_type = "eulerian"
-            hatch.add_node(copy(rect))
-            c = CutPlan("q", kernel.planner)
-            # kernel.console("tree list\n")
-            hatch.preprocess(kernel.root, Matrix(), c)
-            c.execute()
-            # kernel.console("tree list\n")
-            polyline_node = hatch.children[0]
-            shape = polyline_node.shape
-            self.assertEqual(len(shape), 77)
+
+            # Add rect refences into hatch.
+            hatch_op.children[0].add_reference(rect)
+
+            hatch_copy = hatch_op.copy_with_reified_tree()
+
+            hatch_effect = hatch_copy.children[0]
+            shape = hatch_effect.as_geometry()
+            self.assertEqual(len(shape), 50)
             print(shape)
         finally:
             kernel.shutdown()
 
-    def test_fill_hatch2(self):
+    def test_fill_hatch_2rect(self):
+        """
+        Test the hatch with manual steps, counting lines in two rectangles.
+        """
+
         kernel = bootstrap.bootstrap()
         try:
-
             kernel.console("rect 0 0 1in 1in\n")
             kernel.console("rect 3in 0 1in 1in\n")
             kernel.console("operation* delete\n")
             kernel.console("hatch\n")
+
             ops = list(kernel.elements.ops())
             hatch = ops[0]
-            hatch.hatch_type = "eulerian"
+            hatch_effect = hatch.children[0]
             rect0 = list(kernel.elements.elems())[0]
-            hatch.add_node(copy(rect0))
+            hatch_effect.add_reference(rect0)
             rect1 = list(kernel.elements.elems())[1]
-            hatch.add_node(copy(rect1))
-            commands = list()
-            # kernel.console("tree list\n")
-            c = CutPlan("q", kernel.planner)
-            hatch.preprocess(kernel.root, Matrix(), c)
-            c.execute()
-            # kernel.console("tree list\n")
-            polyline_node0 = hatch.children[0]
-            shape0 = polyline_node0.shape
-            self.assertEqual(len(shape0), 77)
-            # print(shape0)
+            hatch_effect.add_reference(rect1)
 
-            polyline_node1 = hatch.children[1]
-            shape1 = polyline_node1.shape
-            self.assertEqual(len(shape1), 50)
-            # print(shape1)
+            hatch_copy = hatch.copy_with_reified_tree()
+
+            hatch_effect = hatch_copy.children[0]
+            shape0 = hatch_effect.as_geometry()
+            self.assertEqual(len(shape0), 100)
         finally:
             kernel.shutdown()
 
@@ -136,20 +126,17 @@ class TestFill(unittest.TestCase):
         w = 10000
         h = 10000
         paths = (
-            (
-                (w * 0.05, h * 0.05),
-                (w * 0.95, h * 0.05),
-                (w * 0.95, h * 0.95),
-                (w * 0.05, h * 0.95),
-                (w * 0.05, h * 0.05),
-            ),
-            (
-                (w * 0.25, h * 0.25),
-                (w * 0.75, h * 0.25),
-                (w * 0.75, h * 0.75),
-                (w * 0.25, h * 0.75),
-                (w * 0.25, h * 0.25),
-            ),
+            complex(w * 0.05, h * 0.05),
+            complex(w * 0.95, h * 0.05),
+            complex(w * 0.95, h * 0.95),
+            complex(w * 0.05, h * 0.95),
+            complex(w * 0.05, h * 0.05),
+            None,
+            complex(w * 0.25, h * 0.25),
+            complex(w * 0.75, h * 0.25),
+            complex(w * 0.75, h * 0.75),
+            complex(w * 0.25, h * 0.75),
+            complex(w * 0.25, h * 0.25),
         )
 
         fill = list(scanline_fill(settings={}, outlines=paths, matrix=None))

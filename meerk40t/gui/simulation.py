@@ -16,12 +16,10 @@ from ..core.cutcode.outputcut import OutputCut
 from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.rastercut import RasterCut
-from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
 from ..core.node.util_console import ConsoleOperation
 from ..core.node.util_goto import GotoOperation
 from ..core.node.util_home import HomeOperation
-from ..core.node.util_origin import SetOriginOperation
 from ..core.node.util_wait import WaitOperation
 from ..core.units import Length
 from ..svgelements import Matrix
@@ -42,7 +40,6 @@ from .icons import (
     icons8_stop_gesture_20,
     icons8_system_task_20,
     icons8_timer_20,
-    icons8_visit_20,
 )
 from .laserrender import DRAW_MODE_BACKGROUND, LaserRender
 from .mwindow import MWindow
@@ -50,7 +47,7 @@ from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.bedwidget import BedWidget
 from .scenewidgets.gridwidget import GridWidget
-from .wxutils import StaticBoxSizer
+from .wxutils import StaticBoxSizer, dip_size
 from .zmatrix import ZMatrix
 
 _ = wx.GetTranslation
@@ -117,7 +114,6 @@ class OperationsPanel(wx.Panel):
             ["home", icons8_home_20],
             ["goto", icons8_return_20],
             ["origin", icons8_return_20],
-            ["setorigin", icons8_visit_20],
             ["output", icons8_output_20],
             ["input", icons8_input_20],
             ["cutcode", icons8_laser_beam_hazard2_50],
@@ -199,15 +195,6 @@ class OperationsPanel(wx.Panel):
                                 self.cutplan.plan.insert(myidx, newop)
                                 myidx += 1
                                 cut.pop(0)
-                            elif isinstance(entry, SetOriginCut):
-                                # reverse engineer
-                                changes = True
-                                x = entry._start_x
-                                y = entry._start_y
-                                newop = SetOriginOperation(x=x, y=y)
-                                self.cutplan.plan.insert(myidx, newop)
-                                myidx += 1
-                                cut.pop(0)
                             else:
                                 # 'Real ' stuff starts that's enough...
                                 break
@@ -235,14 +222,6 @@ class OperationsPanel(wx.Panel):
                                 changes = True
                                 wt = entry.dwell_time
                                 newop = WaitOperation(wait=wt)
-                                self.cutplan.plan.insert(myidx + 1, newop)
-                                cut.pop(last)
-                            elif isinstance(entry, SetOriginCut):
-                                # reverse engineer
-                                changes = True
-                                x = entry._start_x
-                                y = entry._start_y
-                                newop = SetOriginOperation(x=x, y=y)
                                 self.cutplan.plan.insert(myidx + 1, newop)
                                 cut.pop(last)
                             else:
@@ -315,24 +294,6 @@ class OperationsPanel(wx.Panel):
                     flag = True
                 except ValueError:
                     return
-            elif isinstance(op, SetOriginOperation):
-                if content != "":
-                    params = content.split(",")
-                    x = 0
-                    y = 0
-                    if len(params) > 0:
-                        try:
-                            x = float(Length(params[0]))
-                        except ValueError:
-                            return
-                    if len(params) > 1:
-                        try:
-                            y = float(Length(params[1]))
-                        except ValueError:
-                            return
-                    op.x = x
-                    op.y = y
-                    flag = True
                 else:
                     op.x = None
                     op.y = None
@@ -355,12 +316,6 @@ class OperationsPanel(wx.Panel):
                 flag = True
             elif isinstance(op, WaitOperation):
                 content = str(op.wait)
-                flag = True
-            elif isinstance(op, SetOriginOperation):
-                if op.x is None or op.y is None:
-                    content = ""
-                else:
-                    content = str(op.x) + "," + str(op.y)
                 flag = True
             elif isinstance(op, CutCode):
                 cutcode = op
@@ -410,7 +365,6 @@ class OperationsPanel(wx.Panel):
         )
         standards = (
             ("Home", "util home", ""),
-            ("Set Origin", "util origin", ""),
             ("Goto Origin", "util goto", "0,0"),
             ("Beep", "util console", "beep"),
             ("Interrupt", "util console", 'interrupt "Spooling was interrupted"'),
@@ -462,24 +416,6 @@ class OperationsPanel(wx.Panel):
                             except ValueError:
                                 y = 0
                         addop = GotoOperation(x=x, y=y)
-                elif optype == "util origin":
-                    if opparam is not None and opparam != "":
-                        params = opparam.split(",")
-                        x = 0
-                        y = 0
-                        if len(params) > 0:
-                            try:
-                                x = float(Length(params[0]))
-                            except ValueError:
-                                x = 0
-                        if len(params) > 1:
-                            try:
-                                y = float(Length(params[1]))
-                            except ValueError:
-                                y = 0
-                        addop = SetOriginOperation(x=x, y=y)
-                    else:
-                        addop = SetOriginOperation(x=None, y=None)
                 elif optype == "util wait":
                     if opparam is not None:
                         try:
@@ -500,7 +436,7 @@ class OperationsPanel(wx.Panel):
                     wx.ID_ANY,
                     _("Insert '{operation}' before").format(operation=entry[0]),
                     _(
-                        "Inserts this special operation before the current cutplan entrys"
+                        "Inserts this special operation before the current cutplan entry"
                     ),
                 ),
             )
@@ -585,14 +521,6 @@ class CutcodePanel(wx.Panel):
             elif isinstance(e, QuadCut):
                 res = f"Quad: {e.start[0]:.0f}, {e.start[1]:.0f} - {e.end[0]:.0f}, {e.end[1]:.0f}"
                 res += f" (c={e.c()[0]:.0f}, {e.c()[1]:.0f})"
-            # elif isinstance(e, InfoCut):
-            #     res = f"Info: {e.message}"
-            elif isinstance(e, SetOriginCut):
-                if e.set_current:
-                    coord = "<current>"
-                else:
-                    coord = f"({e._start_x:.0f}, {e._start_y:.0f})"
-                res = f"Set Origin: {coord}"
             else:
                 try:
                     res = e.__name__
@@ -724,7 +652,6 @@ class CutcodePanel(wx.Panel):
             )
         standards = (
             ("Home", "home", ""),
-            ("Set Origin", "origin", ""),
             ("Goto Origin", "goto", "0,0"),
             # ("Info", "info", "Still burning"),
             ("Wait", "wait", "5"),
@@ -777,24 +704,6 @@ class CutcodePanel(wx.Panel):
                             except ValueError:
                                 y = 0
                         addop = GotoCut((x, y))
-                elif optype == "origin":
-                    if opparam is not None and opparam != "":
-                        params = opparam.split(",")
-                        x = 0
-                        y = 0
-                        if len(params) > 0:
-                            try:
-                                x = float(Length(params[0]))
-                            except ValueError:
-                                x = 0
-                        if len(params) > 1:
-                            try:
-                                y = float(Length(params[1]))
-                            except ValueError:
-                                y = 0
-                        addop = SetOriginCut((x, y))
-                    else:
-                        addop = SetOriginCut()
                 elif optype == "wait":
                     if opparam is not None:
                         try:
@@ -815,7 +724,7 @@ class CutcodePanel(wx.Panel):
                     wx.ID_ANY,
                     _("Insert '{operation}' before").format(operation=entry[0]),
                     _(
-                        "Inserts this special operation before the current cutplan entrys"
+                        "Inserts this special operation before the current cutplan entry"
                     ),
                 ),
             )
@@ -885,6 +794,7 @@ class SimulationPanel(wx.Panel, Job):
             scene_name="SimScene",
             style=wx.EXPAND,
         )
+        self.view_pane.start_scene()
         self.view_pane.SetCanFocus(False)
         self.widget_scene = self.view_pane.scene
 
@@ -1068,7 +978,7 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.text_time_total.SetToolTip(_("Time Estimate: Total Time"))
         self.button_play.SetBitmap(icons8_play_50.GetBitmap())
-        self.text_playback_speed.SetMinSize((55, 23))
+        self.text_playback_speed.SetMinSize(dip_size(self, 55, 23))
         # self.combo_device.SetToolTip(_("Select the device"))
         self.button_spool.SetFont(
             wx.Font(
@@ -1085,20 +995,20 @@ class SimulationPanel(wx.Panel, Job):
 
     def __do_layout(self):
         # begin wxGlade: Simulation.__do_layout
-        self.text_distance_laser.SetMinSize((35, -1))
-        self.text_distance_laser_step.SetMinSize((35, -1))
-        self.text_distance_total.SetMinSize((35, -1))
-        self.text_distance_total_step.SetMinSize((35, -1))
-        self.text_distance_travel.SetMinSize((35, -1))
-        self.text_distance_travel_step.SetMinSize((35, -1))
-        self.text_time_laser.SetMinSize((35, -1))
-        self.text_time_laser_step.SetMinSize((35, -1))
-        self.text_time_total.SetMinSize((35, -1))
-        self.text_time_total_step.SetMinSize((35, -1))
-        self.text_time_travel.SetMinSize((35, -1))
-        self.text_time_travel_step.SetMinSize((35, -1))
-        self.text_time_extra.SetMinSize((35, -1))
-        self.text_time_extra_step.SetMinSize((35, -1))
+        self.text_distance_laser.SetMinSize(dip_size(self, 35, -1))
+        self.text_distance_laser_step.SetMinSize(dip_size(self, 35, -1))
+        self.text_distance_total.SetMinSize(dip_size(self, 35, -1))
+        self.text_distance_total_step.SetMinSize(dip_size(self, 35, -1))
+        self.text_distance_travel.SetMinSize(dip_size(self, 35, -1))
+        self.text_distance_travel_step.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_laser.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_laser_step.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_total.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_total_step.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_travel.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_travel_step.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_extra.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_extra_step.SetMinSize(dip_size(self, 35, -1))
         v_sizer_main = wx.BoxSizer(wx.VERTICAL)
         h_sizer_scroll = wx.BoxSizer(wx.HORIZONTAL)
         h_sizer_text_1 = wx.BoxSizer(wx.HORIZONTAL)
@@ -1144,7 +1054,7 @@ class SimulationPanel(wx.Panel, Job):
         self.checkbox_optimize.Reparent(self.subpanel_optimize)
         self.btn_redo_it.Reparent(self.subpanel_optimize)
 
-        self.checkbox_optimize.SetMinSize(wx.Size(-1, 23))
+        self.checkbox_optimize.SetMinSize(dip_size(self, -1, 23))
         opt_sizer.Add(self.options_optimize, 1, wx.EXPAND, 0)
         opt_sizer.Add(self.checkbox_optimize, 0, wx.EXPAND, 0)
         opt_sizer.Add(self.btn_redo_it, 0, wx.EXPAND, 0)
@@ -1161,7 +1071,7 @@ class SimulationPanel(wx.Panel, Job):
             mysize = 40
         else:
             mysize = 20
-        self.btn_slide_options.SetMinSize(wx.Size(mysize, -1))
+        self.btn_slide_options.SetMinSize(dip_size(self, mysize, -1))
         self.voption_sizer = wx.BoxSizer(wx.VERTICAL)
         self.voption_sizer.Add(self.panel_optimize, 1, wx.EXPAND, 0)
 
@@ -1211,7 +1121,7 @@ class SimulationPanel(wx.Panel, Job):
         label_playback_mode = wx.StaticText(self, wx.ID_ANY, _("Mode") + " ")
         sizer_display.Add(label_playback_mode, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         # Make sure it has about textbox size, otherwise too narrow
-        self.radio_cut.SetMinSize(wx.Size(-1, 23))
+        self.radio_cut.SetMinSize(dip_size(self, -1, 23))
         sizer_display.Add(self.radio_cut, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_display.Add(self.radio_time_seconds, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_display.Add(self.radio_time_minutes, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -1287,7 +1197,7 @@ class SimulationPanel(wx.Panel, Job):
         self.widget_scene.request_refresh()
 
     def fit_scene_to_panel(self):
-        bbox = self.context.device.bbox()
+        bbox = self.context.device.view.source_bbox()
         self.widget_scene.widget_root.focus_viewport_scene(
             bbox, self.view_pane.Size, 0.1
         )
@@ -1441,7 +1351,6 @@ class SimulationPanel(wx.Panel, Job):
         self.interval = factor * 100.0 / float(value)
 
     def _refresh_simulated_plan(self):
-
         # Stop animation
         if self.running:
             self._stop()
@@ -1632,21 +1541,24 @@ class SimulationPanel(wx.Panel, Job):
         event.Skip()
 
     def on_redo_it(self, event):
-        with wx.BusyInfo(_("Preparing simulation...")):
-            plan = self.plan_name
-            if self.checkbox_optimize.GetValue():
-                opt = " optimize"
-            else:
-                opt = ""
-            self.context(
-                f"plan{plan} clear\nplan{plan} copy preprocess validate blob preopt{opt}\n"
-            )
+        busy = self.context.kernel.busyinfo
+        busy.start(msg=_("Preparing simulation..."))
+
+        plan = self.plan_name
+        if self.checkbox_optimize.GetValue():
+            opt = " optimize"
+        else:
+            opt = ""
+        self.context(
+            f"plan{plan} clear\nplan{plan} copy preprocess validate blob preopt{opt}\n"
+        )
+        busy.end()
         self._refresh_simulated_plan()
 
     def pane_show(self):
         self.context.setting(str, "units_name", "mm")
 
-        bbox = self.context.device.bbox()
+        bbox = self.context.device.view.source_bbox()
         self.widget_scene.widget_root.focus_viewport_scene(
             bbox, self.view_pane.Size, 0.1
         )
@@ -1750,7 +1662,7 @@ class SimulationWidget(Widget):
         Widget.__init__(self, scene, all=False)
         self.renderer = LaserRender(self.scene.context)
         self.sim = sim
-        self.matrix.post_cat(scene.context.device.device_to_scene_matrix())
+        self.matrix.post_cat(~scene.context.device.view.matrix)
         self.last_msg = None
 
     def process_draw(self, gc: wx.GraphicsContext):
@@ -1768,8 +1680,8 @@ class SimulationWidget(Widget):
                 # We draw interpolated lines to acknowledge we are in the middle of a cut operation
                 starts = []
                 ends = []
-                cutstart = wx.Point2D(self.sim.cutcode[idx].start)
-                cutend = wx.Point2D(self.sim.cutcode[idx].end)
+                cutstart = wx.Point2D(*self.sim.cutcode[idx].start)
+                cutend = wx.Point2D(*self.sim.cutcode[idx].end)
                 if self.sim.statistics[idx]["type"] == "RasterCut":
                     # Rastercut object.
                     x = 0
@@ -1804,46 +1716,37 @@ class SimulationWidget(Widget):
                             cut._cache = None
                         cut._cache_id = id(image)
                     # Set draw - constraint
-                    clip_x = 0
-                    clip_y = 0
-                    clip_w = cut._cache_width
-                    clip_h = cut._cache_height
-                    mode = ""
                     if cut.horizontal:
-                        if cut.start_on_top:
-                            mode = "T2B"
+                        if cut.start_minimum_y:
+                            # mode = "T2B"
+                            clip_w = cut._cache_width
+                            clip_h = int(residual * cut._cache_height)
+                            clip_x = 0
+                            clip_y = 0
                         else:
-                            mode = "B2T"
+                            # mode = "B2T"
+                            clip_w = cut._cache_width
+                            clip_h = int(residual * cut._cache_height)
+                            clip_x = 0
+                            clip_y = cut._cache_height - clip_h
                     else:
-                        if cut.start_on_left:
-                            mode = "L2R"
+                        if cut.start_minimum_x:
+                            # mode = "L2R"
+                            clip_w = int(residual * cut._cache_width)
+                            clip_h = cut._cache_height
+                            clip_x = 0
+                            clip_y = 0
                         else:
-                            mode = "R2L"
+                            # mode = "R2L"
+                            clip_w = int(residual * cut._cache_width)
+                            clip_h = cut._cache_height
+                            clip_x = cut._cache_width - clip_w
+                            clip_y = 0
 
                     # msg = f"Mode: {mode}, Horiz: {cut.horizontal}, from left: {cut.start_on_left}, from top: {cut.start_on_top}"
                     # if msg != self.last_msg:
                     #     print (msg)
                     #     self.last_msg = msg
-                    if mode == "T2B":
-                        clip_w = cut._cache_width
-                        clip_h = int(residual * cut._cache_height)
-                        clip_x = 0
-                        clip_y = 0
-                    elif mode == "B2T":
-                        clip_w = cut._cache_width
-                        clip_h = int(residual * cut._cache_height)
-                        clip_x = 0
-                        clip_y = cut._cache_height - clip_h
-                    elif mode == "L2R":
-                        clip_w = int(residual * cut._cache_width)
-                        clip_h = cut._cache_height
-                        clip_x = 0
-                        clip_y = 0
-                    elif mode == "R2L":
-                        clip_w = int(residual * cut._cache_width)
-                        clip_h = cut._cache_height
-                        clip_x = cut._cache_width - clip_w
-                        clip_y = 0
                     gc.Clip(clip_x, clip_y, clip_w, clip_h)
                     if cut._cache is not None:
                         # Cache exists and is valid.
@@ -1925,9 +1828,9 @@ class SimulationTravelWidget(Widget):
 
     def __init__(self, scene, sim):
         Widget.__init__(self, scene, all=False)
-        self.sim_matrix = scene.context.device.device_to_scene_matrix()
+        self.sim_matrix = ~scene.context.device.view.matrix
         self.sim = sim
-        self.matrix.post_cat(scene.context.device.device_to_scene_matrix())
+        self.matrix.post_cat(~scene.context.device.view.matrix)
         self.initvars()
 
     def initvars(self):
@@ -2040,7 +1943,7 @@ class SimReticleWidget(Widget):
 
     def __init__(self, scene, sim):
         Widget.__init__(self, scene, all=False)
-        self.sim_matrix = scene.context.device.device_to_scene_matrix()
+        self.sim_matrix = ~scene.context.device.view.matrix
         self.sim = sim
 
     def process_draw(self, gc):
@@ -2139,10 +2042,14 @@ class Simulation(MWindow):
     @staticmethod
     def sub_register(kernel):
         def open_simulator(v=None):
-            with wx.BusyInfo(_("Preparing simulation...")):
-                kernel.console(
-                    "planz copy preprocess validate blob preopt optimize\nwindow toggle Simulation z\n"
-                ),
+            busy = kernel.busyinfo
+            busy.change(msg=_("Preparing simulation..."))
+            busy.start()
+
+            kernel.console(
+                "planz copy preprocess validate blob preopt optimize\nwindow toggle Simulation z\n"
+            )
+            busy.end()
 
         kernel.register(
             "button/jobstart/Simulation",
@@ -2176,4 +2083,4 @@ class Simulation(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Burning", "Simulation")
+        return "Burning", "Simulation"

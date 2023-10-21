@@ -1,8 +1,8 @@
 import re
 from copy import copy
-from math import sqrt, tau
+from math import tau
 
-from meerk40t.core.node.mixins import Stroked
+from meerk40t.core.node.mixins import FunctionalParameter, Stroked
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_POINT, Length
 from meerk40t.svgelements import (
@@ -40,7 +40,7 @@ REGEX_CSS_FONT_FAMILY = re.compile(
 )
 
 
-class TextNode(Node, Stroked):
+class TextNode(Node, Stroked, FunctionalParameter):
     """
     TextNode is the bootstrapped node type for the 'elem text' type.
     """
@@ -73,7 +73,7 @@ class TextNode(Node, Stroked):
         self.font_size = 16.0  # 16px font 'normal' 12pt font
         self.line_height = 16.0
         self.font_family = "sans-serif"
-        # Offset values to allow to fix the drawing of slanted fonts outside of the GetTextExtentBoundaries
+        # Offset values to allow fixing the drawing of slanted fonts. Without GetTextExtentBoundaries
         self.offset_x = 0
         self.offset_y = 0
         if "font" in kwargs:
@@ -143,8 +143,9 @@ class TextNode(Node, Stroked):
     def __copy__(self):
         nd = self.node_dict
         nd["matrix"] = copy(self.matrix)
-        nd["fill"] = copy(self.fill)
+        nd["stroke"] = copy(self.stroke)
         nd["stroke_width"] = copy(self.stroke_width)
+        nd["fill"] = copy(self.fill)
         return TextNode(**nd)
 
     @property
@@ -188,6 +189,10 @@ class TextNode(Node, Stroked):
             if modify:
                 self.insert_sibling(drag_node)
             return True
+        elif drag_node.type.startswith("op"):
+            # If we drag an operation to this node,
+            # then we will reverse the game
+            return drag_node.drop(self, modify=modify)
         return False
 
     def revalidate_points(self):

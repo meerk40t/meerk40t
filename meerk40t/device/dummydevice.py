@@ -1,7 +1,8 @@
 from meerk40t.core.spoolers import Spooler
+from meerk40t.core.view import View
 from meerk40t.kernel import Service
 
-from ..core.units import UNITS_PER_MIL, ViewPort
+from ..core.units import UNITS_PER_MIL
 
 
 def plugin(kernel, lifecycle=None):
@@ -26,7 +27,7 @@ def plugin(kernel, lifecycle=None):
         )
 
 
-class DummyDevice(Service, ViewPort):
+class DummyDevice(Service):
     """
     DummyDevice is a mock device service. It provides no actual device.
 
@@ -109,51 +110,14 @@ class DummyDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        ViewPort.__init__(
-            self,
-            width=self.bedwidth,
-            height=self.bedheight,
-            native_scale_x=UNITS_PER_MIL,
-            native_scale_y=UNITS_PER_MIL,
-            origin_x=0.0,
-            origin_y=0.0,
-        )
-
-        @self.console_command(
-            "spool",
-            help=_("spool <command>"),
-            regex=True,
-            input_type=(None, "plan", "device"),
-            output_type="spooler",
-        )
-        def spool(command, channel, _, data=None, remainder=None, **kwgs):
-            spooler = self.spooler
-            if data is not None:
-                label = None
-                # If plan data is in data, then we copy that and move on to next step.
-                spooler.laserjob(data.plan, label=label)
-                channel(_("Spooled Plan."))
-                self.signal("plan", data.name, 6)
-
-            if remainder is None:
-                channel(_("----------"))
-                channel(_("Spoolers:"))
-                for d, d_name in enumerate(self.match("device", suffix=True)):
-                    channel(f"{d}: {d_name}")
-                channel(_("----------"))
-                channel(_("Spooler on device {name}:").format(name=str(self.label)))
-                for s, op_name in enumerate(spooler.queue):
-                    channel(f"{s}: {op_name}")
-                channel(_("----------"))
-
-            return "spooler", spooler
+        self.view = View(self.bedwidth, self.bedheight)
 
     @property
     def current(self):
         """
-        @return: the location in nm for the current known x value.
+        @return: the location in units for the current known position.
         """
-        return self.device_to_scene_position(self.native_x, self.native_y)
+        return self.view.iposition(self.native_x, self.native_y)
 
     @property
     def native(self):

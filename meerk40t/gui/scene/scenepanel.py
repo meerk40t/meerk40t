@@ -17,7 +17,8 @@ class ScenePanel(wx.Panel):
         self.context = context
         self.scene_panel.SetDoubleBuffered(True)
 
-        self._Buffer = None
+        # The scene buffer is the updated image that is drawn to screen.
+        self.scene_buffer = None
 
         self.__set_properties()
         self.__do_layout()
@@ -70,6 +71,12 @@ class ScenePanel(wx.Panel):
         main_sizer.Fit(self)
         self.Layout()
 
+    def start_scene(self):
+        self.context.schedule(self.scene)
+
+    def stop_scene(self):
+        self.context.unschedule(self.scene)
+
     def signal(self, *args, **kwargs):
         """
         Scene signal calls the signal command on the root which is used to pass message and data to deeper objects
@@ -89,6 +96,15 @@ class ScenePanel(wx.Panel):
             modifiers.append("shift")
         if event.MetaDown():
             modifiers.append("meta")
+        try:
+            if event.LeftIsDown():
+                modifiers.append("m_left")
+            if event.RightIsDown():
+                modifiers.append("m_right")
+            if event.MiddleIsDown():
+                modifiers.append("m_middle")
+        except AttributeError:
+            pass
         return modifiers
 
     def on_key(self, evt):
@@ -308,9 +324,10 @@ class ScenePanel(wx.Panel):
         it is created in the self.scene.update_buffer_ui_thread() call.
         """
         try:
-            if self._Buffer is None:
-                self.scene.update_buffer_ui_thread()
-            wx.BufferedPaintDC(self.scene_panel, self._Buffer)
+            if self.scene_buffer is None:
+                self.scene.request_refresh()
+                return
+            wx.BufferedPaintDC(self.scene_panel, self.scene_buffer)
         except (RuntimeError, AssertionError, TypeError):
             pass
 
@@ -329,4 +346,4 @@ class ScenePanel(wx.Panel):
             width = 1
         if height <= 0:
             height = 1
-        self._Buffer = wx.Bitmap(width, height)
+        self.scene_buffer = wx.Bitmap(width, height)

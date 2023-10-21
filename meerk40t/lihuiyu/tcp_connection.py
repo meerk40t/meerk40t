@@ -38,10 +38,14 @@ class TCPOutput:
         except socket.herror as e:
             self.disconnect()
             self.service.signal("tcp;status", f"herror: {str(e)}")
+        except OSError as e:
+            self.disconnect()
+            self.service.signal("tcp;status", f"Host down {str(e)}")
 
     def disconnect(self):
         self.service.signal("tcp;status", "disconnected")
-        self._stream.close()
+        if self._stream is not None:
+            self._stream.close()
         self._stream = None
 
     def write(self, data):

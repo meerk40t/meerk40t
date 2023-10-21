@@ -4,10 +4,10 @@ import wx
 
 from meerk40t.gui.fonts import wxfont_to_svg
 from meerk40t.gui.laserrender import LaserRender
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
 
 from ...svgelements import Color
-from ..icons import icons8_choose_font_50, icons8_text_50
+from ..icons import STD_ICON_SIZE, icons8_choose_font_50, icons8_text_50
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
 from .attributes import ColorPanel, IdPanel, PositionSizePanel, PreventChangePanel
@@ -85,7 +85,7 @@ class FontHistory(wx.Panel):
                     | wx.ST_NO_AUTORESIZE,
                 )
             )
-            self.last_font[i].SetMinSize((120, 90))
+            self.last_font[i].SetMinSize(dip_size(self, 120, 90))
             self.last_font[i].SetFont(self.default_font)
             self.last_font[i].SetToolTip(_("Choose last used font-settings"))
             self.textbox.Bind(wx.EVT_TEXT, self.on_text_change)
@@ -179,7 +179,7 @@ class TextPropertyPanel(ScrolledPanel):
         self.label_fonttest = wx.StaticText(
             self, wx.ID_ANY, "", style=wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE
         )
-        self.label_fonttest.SetMinSize((-1, 90))
+        self.label_fonttest.SetMinSize(dip_size(self, -1, 90))
         self.label_fonttest.SetFont(
             wx.Font(
                 16,
@@ -191,7 +191,7 @@ class TextPropertyPanel(ScrolledPanel):
             )
         )
         self.button_choose_font = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_choose_font_50.GetBitmap(resize=25)
+            self, wx.ID_ANY, icons8_choose_font_50.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
         self.panel_id = IdPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
@@ -248,22 +248,22 @@ class TextPropertyPanel(ScrolledPanel):
         else:
             mysize = 23
         self.button_attrib_larger = wx.Button(
-            self, id=wx.ID_ANY, label="A", size=wx.Size(mysize, mysize)
+            self, id=wx.ID_ANY, label="A", size=dip_size(self, mysize, mysize)
         )
         self.button_attrib_smaller = wx.Button(
-            self, id=wx.ID_ANY, label="a", size=wx.Size(mysize, mysize)
+            self, id=wx.ID_ANY, label="a", size=dip_size(self, mysize, mysize)
         )
         self.button_attrib_bold = wx.ToggleButton(
-            self, id=wx.ID_ANY, label="b", size=wx.Size(mysize, mysize)
+            self, id=wx.ID_ANY, label="b", size=dip_size(self, mysize, mysize)
         )
         self.button_attrib_italic = wx.ToggleButton(
-            self, id=wx.ID_ANY, label="i", size=wx.Size(mysize, mysize)
+            self, id=wx.ID_ANY, label="i", size=dip_size(self, mysize, mysize)
         )
         self.button_attrib_underline = wx.ToggleButton(
-            self, id=wx.ID_ANY, label="u", size=wx.Size(mysize, mysize)
+            self, id=wx.ID_ANY, label="u", size=dip_size(self, mysize, mysize)
         )
         self.button_attrib_strikethrough = wx.ToggleButton(
-            self, id=wx.ID_ANY, label="s", size=wx.Size(mysize, mysize)
+            self, id=wx.ID_ANY, label="s", size=dip_size(self, mysize, mysize)
         )
 
         self.check_variable = wx.CheckBox(self, wx.ID_ANY, _(" Translate Variables"))
@@ -336,7 +336,6 @@ class TextPropertyPanel(ScrolledPanel):
         self.text_text.SelectAll()
 
     def __set_properties(self):
-
         self.button_choose_font.SetSize(self.button_choose_font.GetBestSize())
 
         self.button_attrib_bold.SetFont(
@@ -546,7 +545,10 @@ class TextPropertyPanel(ScrolledPanel):
         self.button_attrib_italic.SetValue(self.node.font_style != "normal")
         self.button_attrib_underline.SetValue(self.node.underline)
         self.button_attrib_strikethrough.SetValue(self.node.strikethrough)
-        self.combo_font.SetValue(self.node.wxfont.GetFaceName())
+        try:
+            self.combo_font.SetValue(self.node.wxfont.GetFaceName())
+        except AttributeError:
+            pass
 
     def font_callback(self, forecolor, newfont):
         self.node.wxfont = newfont
@@ -692,7 +694,10 @@ class TextPropertyPanel(ScrolledPanel):
             font = data.GetChosenFont()
             try:
                 color = data.GetColour()
-                rgb = color.GetRGB()
+                if color and color.IsOk():
+                    rgb = color.GetRGB()
+                else:
+                    rgb = 0
                 color = swizzlecolor(rgb)
                 color = Color(color, 1.0)
                 self.node.fill = color

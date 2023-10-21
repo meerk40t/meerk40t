@@ -162,6 +162,8 @@ def get_tree_operation(registration):
 
 
 def tree_operations_for_node(registration, node):
+    if node.type is None:
+        return
     for func, m, sname in registration.find("tree", node.type, ".*"):
         reject = False
         for cond in func.conditionals:
@@ -179,13 +181,30 @@ def tree_operations_for_node(registration, node):
                 continue
         if reject:
             continue
+        node_name = (
+            str(node.name)
+            if (hasattr(node, "name") and node.name is not None)
+            else str(node.label)
+        )
+        node_label = (
+            str(node.name)
+            if (hasattr(node, "name") and node.name is not None)
+            else str(node.label)
+        )
+
+        def unescaped(filename):
+            from platform import system
+
+            OS_NAME = system()
+            if OS_NAME == "Windows":
+                newstring = filename.replace("&", "&&")
+            else:
+                newstring = filename.replace("&", "&&")
+            return newstring
+
         func_dict = {
-            "name": str(node.name)
-            if (hasattr(node, "name") and node.name is not None)
-            else str(node.label),
-            "label": str(node.name)
-            if (hasattr(node, "name") and node.name is not None)
-            else str(node.label),
+            "name": unescaped(node_name),
+            "label": unescaped(node_label),
         }
 
         iterator = func.values

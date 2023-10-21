@@ -16,11 +16,6 @@ PLOT_RIGHT_LOWER = 1024
 
 
 def plugin(kernel, lifecycle=None):
-    if lifecycle == "plugins":
-        from .ch341 import ch341
-
-        return [ch341.plugin]
-
     if lifecycle == "boot":
         last_device = kernel.read_persistent(str, "/", "activated_device", None)
         if last_device:
@@ -37,6 +32,20 @@ def plugin(kernel, lifecycle=None):
             kernel.root(f"service device start {preferred_device}\n")
 
         _ = kernel.translation
+
+        @kernel.console_command(
+            "devinfo",
+            help=_("Show current device info."),
+            input_type=None,
+            output_type=None,
+        )
+        def devinfo(channel, _, remainder=None, **kwargs):
+            """
+            Display device status info.
+            """
+            x, y = kernel.device.current
+            nx, ny = kernel.device.native
+            channel(_(f"{x},{y};{nx},{ny};"))
 
         @kernel.console_command(
             "device",

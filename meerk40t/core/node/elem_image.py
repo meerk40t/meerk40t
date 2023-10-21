@@ -57,6 +57,10 @@ class ImageNode(Node):
             try:
                 from PIL import Image as PILImage
 
+                if not isinstance(self.href, str):
+                    # Error caused by href being int value
+                    raise ImportError
+
                 self.image = PILImage.open(self.href)
                 if hasattr(self, "x"):
                     self.matrix.post_translate_x(self.x)
@@ -92,7 +96,7 @@ class ImageNode(Node):
         self._processed_image = None
         self._processed_matrix = None
         self._process_image_failed = False
-        self._processing_message = None
+        self.message = None
         if self.operations or self.dither or self.prevent_crop:
             step = UNITS_PER_INCH / self.dpi
             step_x = step
@@ -110,9 +114,7 @@ class ImageNode(Node):
 
     @property
     def active_image(self):
-        if self._processed_image is None and (
-            (self.operations is not None and len(self.operations) > 0) or self.dither
-        ):
+        if self._processed_image is None:
             step = UNITS_PER_INCH / self.dpi
             step_x = step
             step_y = step
@@ -134,10 +136,13 @@ class ImageNode(Node):
 
         We require a context to calculate the correct step values relative to the device
         """
-        self.step_x, self.step_y = context.device.dpi_to_steps(self.dpi)
+        self.step_x, self.step_y = context.device.view.dpi_to_steps(self.dpi)
         self.matrix *= matrix
         self.set_dirty_bounds()
         self.process_image(self.step_x, self.step_y, not self.prevent_crop)
+
+    def as_image(self):
+        return self.active_image, self.bbox()
 
     def bbox(self, transformed=True, with_stroke=False):
         image_width, image_height = self.active_image.size
@@ -168,6 +173,10 @@ class ImageNode(Node):
             if modify:
                 self.insert_sibling(drag_node)
             return True
+        elif drag_node.type.startswith("op"):
+            # If we drag an operation to this node,
+            # then we will reverse the game
+            return drag_node.drop(self, modify=modify)
         return False
 
     def revalidate_points(self):
@@ -206,7 +215,7 @@ class ImageNode(Node):
         """
         self._needs_update = True
         if context is not None:
-            self._processing_message = "Processing..."
+            self.message = "Processing..."
             context.signal("refresh_scene", "Scene")
         if self._update_thread is None:
 
@@ -215,11 +224,11 @@ class ImageNode(Node):
                 self._update_thread = None
                 if context is not None:
                     if self._process_image_failed:
-                        self._processing_message = (
+                        self.message = (
                             "Process image could not exist in memory."
                         )
                     else:
-                        self._processing_message = None
+                        self.message = None
                     context.signal("refresh_scene", "Scene")
                     context.signal("image_updated", self)
 
@@ -287,7 +296,10 @@ class ImageNode(Node):
             bb = self.bbox()
             self._bounds = bb
             self._paint_bounds = bb
-        except (MemoryError, Image.DecompressionBombError):
+        except (MemoryError, Image.DecompressionBombError, ValueError):
+            # Memory error if creating requires too much memory.
+            # DecompressionBomb if over 272 megapixels.
+            # ValueError if bounds are NaN.
             self._process_image_failed = True
         self.updated()
 
@@ -337,6 +349,8 @@ class ImageNode(Node):
         @param image:
         @return:
         """
+        if image is None:
+            return None
         if "transparency" in image.info:
             image = image.convert("RGBA")
         try:

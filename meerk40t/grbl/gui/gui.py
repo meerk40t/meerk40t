@@ -7,9 +7,13 @@ def plugin(service, lifecycle):
         return not service.has_feature("wx")
     if lifecycle == "service":
         return "provider/device/grbl"
+
+    if lifecycle == "assigned":
+        service("window toggle Configuration\n")
+
     if lifecycle == "added":
         from meerk40t.grbl.gui.grblconfiguration import GRBLConfiguration
-        from meerk40t.grbl.gui.grblserialcontroller import SerialController
+        from meerk40t.grbl.gui.grblcontroller import GRBLController
         from meerk40t.gui.icons import (
             icons8_computer_support_50,
             icons8_connected_50,
@@ -20,10 +24,10 @@ def plugin(service, lifecycle):
             icons8_quick_mode_on_50,
         )
 
-        service.register("window/Serial-Controller", SerialController)
-        service.register("window/Configuration", GRBLConfiguration)
+        service.register("window/GRBLController", GRBLController)
+        service.register("winpath/GRBLController", service)
 
-        service.register("winpath/Serial-Controller", service)
+        service.register("window/Configuration", GRBLConfiguration)
         service.register("winpath/Configuration", service)
 
         _ = service._
@@ -31,10 +35,10 @@ def plugin(service, lifecycle):
         service.register(
             "button/control/Controller",
             {
-                "label": _("Serial Controller"),
+                "label": _("Controller"),
                 "icon": icons8_connected_50,
-                "tip": _("Opens GRBL Serial Sender"),
-                "action": lambda e: service("window toggle Serial-Controller\n"),
+                "tip": _("Opens Controller Window"),
+                "action": lambda v: service("window toggle GRBLController\n"),
             },
         )
         service.register(
@@ -42,7 +46,7 @@ def plugin(service, lifecycle):
             {
                 "label": _("Config"),
                 "icon": icons8_computer_support_50,
-                "tip": _("Opens device-specfic configuration window"),
+                "tip": _("Opens device-specific configuration window"),
                 "action": lambda v: service("window toggle Configuration\n"),
             },
         )

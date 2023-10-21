@@ -8,6 +8,7 @@ import wx
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import icons8_administrative_tools_50
 from .mwindow import MWindow
+from .wxmribbon import RibbonEditor
 from .wxutils import StaticBoxSizer, TextCtrl
 
 _ = wx.GetTranslation
@@ -141,7 +142,7 @@ class PreferencesSavingPanel(wx.Panel):
         self.button_save.SetToolTip(_("Immediately save the settings to disk"))
         self.button_export = wx.Button(self, wx.ID_ANY, _("Export"))
         self.button_export.SetToolTip(
-            _("Export the the current settings to a different location")
+            _("Export the current settings to a different location")
         )
         self.button_import = wx.Button(self, wx.ID_ANY, _("Import"))
         self.button_import.SetToolTip(_("Import a previously saved setting file"))
@@ -174,14 +175,14 @@ class PreferencesSavingPanel(wx.Panel):
         dlg.Destroy()
 
     def on_button_import(self, event=None):
-        message = _("This will import a previosuly saved configuration file!") + "\n"
+        message = _("This will import a previously saved configuration file!") + "\n"
         message += (
             _(
                 "This may make MeerK40t unworkable if the file does not have the right format!"
             )
             + "\n"
         )
-        message += _("You do this at you own risk - are you realy sure?")
+        message += _("You do this at you own risk - are you really sure?")
         caption = _("Warning")
         dlg = wx.MessageDialog(
             self,
@@ -243,7 +244,6 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
         self.text_svg_ppi = TextCtrl(
             self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER, limited=True
         )
-        # self.text_svg_ppi.SetMinSize((60, 23))
         self.text_svg_ppi.SetToolTip(
             _("Custom Pixels Per Inch to use when loading an SVG file")
         )
@@ -448,7 +448,7 @@ class Preferences(MWindow):
             id=wx.ID_ANY,
             context=self.context,
             choices="preferences",
-            constraint=("Classification"),
+            constraint="Classification",
             injector=inject_choices,
         )
         self.panel_classification.SetupScrolling()
@@ -458,7 +458,7 @@ class Preferences(MWindow):
             id=wx.ID_ANY,
             context=self.context,
             choices="preferences",
-            constraint=("Gui"),
+            constraint="Gui",
         )
         self.panel_gui.SetupScrolling()
 
@@ -467,20 +467,19 @@ class Preferences(MWindow):
             id=wx.ID_ANY,
             context=self.context,
             choices="preferences",
-            constraint=("Scene"),
+            constraint="Scene",
         )
         self.panel_scene.SetupScrolling()
 
         main_scene = getattr(self.context.root, "mainscene", None)
-        colorchoices = []
+        color_choices = []
         local_default_color = []
-        for key in main_scene.colors.default_color:
-            local_default_color.append(key)
+        for key, value in main_scene.colors.__dict__.items():
+            if not key.startswith("_") and isinstance(value, str):
+                local_default_color.append(key)
         local_default_color.sort()
         section = ""
         for key in local_default_color:
-            colorkey = f"color_{key}"
-            defaultcolor = main_scene.colors.default_color[key]
             # Try to make a sensible name out of it
             keyname = key.replace("_", " ")
             idx = 1  # Intentionally
@@ -493,32 +492,35 @@ class Preferences(MWindow):
             possible_section = words[0]
             if possible_section[0:2] != section[0:2]:
                 section = possible_section
-            singlechoice = {
-                "attr": colorkey,
-                "object": self.context,
-                "default": defaultcolor,
-                "type": str,
-                "style": "color",  # hexa representation
-                "label": keyname,
-                "section": section,
-                "signals": ("refresh_scene", "theme"),
+            color_choices.append(
+                {
+                    "attr": f"color_{key}",
+                    "object": main_scene.colors,
+                    "default": main_scene.colors[key],
+                    "type": str,
+                    "style": "color",  # hexa representation
+                    "label": keyname,
+                    "section": section,
+                    "signals": ("refresh_scene", "theme"),
+                }
+            )
+
+        color_choices.append(
+            {
+                "attr": "color_reset",
+                "object": self,
+                "type": bool,
+                "style": "button",
+                "label": _("Reset Colors to Default"),
+                "section": "_ZZ_",
             }
-            colorchoices.append(singlechoice)
-        singlechoice = {
-            "attr": "color_reset",
-            "object": self,
-            "type": bool,
-            "style": "button",
-            "label": _("Reset Colors to Default"),
-            "section": "_ZZ_",
-        }
-        colorchoices.append(singlechoice)
+        )
 
         self.panel_color = ChoicePropertyPanel(
             self,
             id=wx.ID_ANY,
             context=self.context,
-            choices=colorchoices,
+            choices=color_choices,
             entries_per_column=12,
         )
         self.panel_color.SetupScrolling()
@@ -528,6 +530,24 @@ class Preferences(MWindow):
         self.notebook_main.AddPage(self.panel_gui, _("GUI"))
         self.notebook_main.AddPage(self.panel_scene, _("Scene"))
         self.notebook_main.AddPage(self.panel_color, _("Colors"))
+
+        self.panels = [
+            self.panel_main,
+            self.panel_classification,
+            self.panel_gui,
+            self.panel_scene,
+            self.panel_color,
+        ]
+        self.panel_ribbon = RibbonEditor(self, wx.ID_ANY, context=self.context)
+        self.notebook_main.AddPage(self.panel_ribbon, _("Ribbon"))
+        self.panels.append(self.panel_ribbon)
+        self.context.setting(bool, "developer_mode", False)
+        if self.context.developer_mode:
+            panel_space = ChoicePropertyPanel(
+                self, wx.ID_ANY, context=self.context, choices="space"
+            )
+            self.notebook_main.AddPage(panel_space, _("Coordinate Space"))
+            self.panels.append(panel_space)
         self.Layout()
 
         _icon = wx.NullIcon
@@ -574,11 +594,7 @@ class Preferences(MWindow):
                 self.context.signal(preset[1], preset[2], preset[0])
 
     def delegates(self):
-        yield self.panel_main
-        yield self.panel_classification
-        yield self.panel_gui
-        yield self.panel_scene
-        yield self.panel_color
+        yield from self.panels
 
     @staticmethod
     def sub_register(kernel):
@@ -616,4 +632,4 @@ class Preferences(MWindow):
     @staticmethod
     def submenu():
         # suppress in tool-menu
-        return ("", "Preferences", True)
+        return "", "Preferences", True

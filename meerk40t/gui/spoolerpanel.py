@@ -7,11 +7,13 @@ import wx.lib.mixins.listctrl as listmix
 from wx import aui
 
 from meerk40t.gui.icons import (
+    STD_ICON_SIZE,
     icons8_emergency_stop_button_50,
     icons8_pause_50,
     icons8_route_50,
 )
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import HoverButton
 from meerk40t.kernel import get_safe_path, signal_listener
 
 _ = wx.GetTranslation
@@ -103,14 +105,25 @@ class SpoolerPanel(wx.Panel):
         self.combo_device.SetSelection(0)  # All by default...
         self.button_pause = wx.Button(self.win_top, wx.ID_ANY, _("Pause"))
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
-        self.button_pause.SetBitmap(icons8_pause_50.GetBitmap(resize=25))
-        self.button_stop = wx.Button(self.win_top, wx.ID_ANY, _("Abort"))
+        self.button_pause.SetBitmap(icons8_pause_50.GetBitmap(resize=STD_ICON_SIZE / 2))
+        self.button_stop = HoverButton(self.win_top, wx.ID_ANY, _("Abort"))
         self.button_stop.SetToolTip(_("Stop the laser"))
-        self.button_stop.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(resize=25))
+        self.button_stop.SetBitmap(
+            icons8_emergency_stop_button_50.GetBitmap(
+                resize=STD_ICON_SIZE / 2, color=wx.WHITE, keepalpha=True
+            )
+        )
+        self.button_stop.SetBitmapFocus(
+            icons8_emergency_stop_button_50.GetBitmap(resize=STD_ICON_SIZE / 2)
+        )
         self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
+        self.button_stop.SetForegroundColour(wx.WHITE)
+        self.button_stop.SetFocusColour(wx.BLACK)
 
         self.list_job_spool = wx.ListCtrl(
-            self.win_top, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
+            self.win_top,
+            wx.ID_ANY,
+            style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
         )
 
         self.info_label = wx.StaticText(
@@ -299,8 +312,8 @@ class SpoolerPanel(wx.Panel):
                     line_items = []
                     if info["start_time"] is None:
                         continue
-                    line_items.append(info.get("device", "''"))
-                    line_items.append(info.get("label", "''"))
+                    line_items.append(str(info.get("device", "''")))
+                    line_items.append(str(info.get("label", "''")))
                     line_items.append(
                         f"{self.datestr(info.get('start_time',0))} {self.timestr(info.get('start_time',0), True)}"
                     )
@@ -324,7 +337,7 @@ class SpoolerPanel(wx.Panel):
         except (PermissionError, OSError, FileNotFoundError):
             pass
 
-    def clear_history(self, older_than=None):
+    def clear_history(self, older_than=None, job_type=None):
         if self.filter_device:
             to_remove = list(
                 self.context.logging.matching_events("job", device=self.filter_device)
@@ -332,11 +345,24 @@ class SpoolerPanel(wx.Panel):
         else:
             to_remove = list(self.context.logging.matching_events("job"))
         for key, event in to_remove:
+            if event is not None and older_than is not None:
+                if not "start_time" in event:
+                    continue
+                if (
+                    event["start_time"] is not None
+                    and event["start_time"] >= older_than
+                ):
+                    continue
+            if event is not None and job_type is not None:
+                if not "status" in event:
+                    continue
+                if event["status"] is not None and event["status"] != job_type:
+                    continue
             del self.context.logging.logs[key]
         self.refresh_history()
 
     def on_button_clear_history(self, event):
-        self.clear_history(None)
+        self.clear_history(older_than=None, job_type=None)
 
     def on_right_mouse_history(self, event):
         listid = self.list_job_history.GetFirstSelected()
@@ -355,10 +381,13 @@ class SpoolerPanel(wx.Panel):
 
             return check
 
-        def on_menu_time(cutoff):
+        def on_menu_time(cutoff, jobtype):
             def check(event):
-                self.clear_history(cutoff)
+                self.clear_history(older_than=dcutoff, job_type=djobtype)
 
+            # Store value locally
+            dcutoff = cutoff
+            djobtype = jobtype
             return check
 
         def toggle_1(event):
@@ -374,10 +403,13 @@ class SpoolerPanel(wx.Panel):
 
         now = time.time()
         week_seconds = 60 * 60 * 24 * 7
-        options = [(_("All entries"), None)]
+        options = [(_("All entries"), None, None)]
         for week in range(1, 5):
             cutoff_time = now - week * week_seconds
-            options.append((_("Older than {week} week").format(week=week), cutoff_time))
+            options.append(
+                (_("Older than {week} week").format(week=week), cutoff_time, None)
+            )
+        options.append((_("All incomplete jobs"), None, "stopped"))
         menu = wx.Menu()
         if idx >= 0:
             menuitem = menu.Append(wx.ID_ANY, _("Delete this entry"), "")
@@ -395,7 +427,7 @@ class SpoolerPanel(wx.Panel):
             menuitem = menu.Append(wx.ID_ANY, item[0], "")
             self.Bind(
                 wx.EVT_MENU,
-                on_menu_time(item[1]),
+                on_menu_time(item[1], item[2]),
                 id=menuitem.GetId(),
             )
 
@@ -447,7 +479,11 @@ class SpoolerPanel(wx.Panel):
 
     def on_item_rightclick(self, event):  # wxGlade: JobSpooler.<event_handler>
         listindex = event.Index
-        index = self.list_job_spool.GetItemData(listindex)
+        try:
+            index = self.list_job_spool.GetItemData(listindex)
+        except AssertionError:
+            # Size of list_job_spool changed or is updating.
+            return
         try:
             spooler = self.queue_entries[index][0]
             qindex = self.queue_entries[index][1]
@@ -456,12 +492,19 @@ class SpoolerPanel(wx.Panel):
             return
 
         menu = wx.Menu()
-        if element.status.lower() == "running":
+        can_enable = False
+        action = _("Remove")
+        if element.status == "Running":
             action = _("Stop")
             remove_mode = "stop"
-        else:
-            action = _("Remove")
+        elif hasattr(element, "enabled"):
             remove_mode = "remove"
+            if element.enabled:
+                action2 = _("Disable")
+            else:
+                action2 = _("Enable")
+            can_enable = True
+
         item = menu.Append(
             wx.ID_ANY,
             f"{action} {str(element)[:30]} [{spooler.context.label}]",
@@ -470,7 +513,15 @@ class SpoolerPanel(wx.Panel):
         )
         info_tuple = [spooler, element, remove_mode]
         self.Bind(wx.EVT_MENU, self.on_menu_popup_delete(info_tuple), item)
-
+        if can_enable:
+            item = menu.Append(
+                wx.ID_ANY,
+                f"{action2} {str(element)[:30]} [{spooler.context.label}]",
+                "",
+                wx.ITEM_NORMAL,
+            )
+            info_tuple = [spooler, element]
+            self.Bind(wx.EVT_MENU, self.on_menu_popup_toggle_enable(info_tuple), item)
         item = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_menu_popup_clear(element), item)
 
@@ -503,11 +554,23 @@ class SpoolerPanel(wx.Panel):
             spooler.remove(job)
             # That will remove the job but create a log entry if needed.
             if mode == "stop":
-                # Force stop of laser.
-                self.context("estop\n")
+                if hasattr(job, "stop"):
+                    job.stop()
+                else:
+                    # Force stop of laser.
+                    self.context("estop\n")
             self.refresh_spooler_list()
 
         return delete
+
+    def on_menu_popup_toggle_enable(self, element):
+        def toggle(event=None):
+            spooler = element[0]
+            job = element[1]
+            job.enabled = not job.enabled
+            self.refresh_spooler_list()
+
+        return toggle
 
     def pane_show(self, *args):
         self.refresh_spooler_list()
@@ -581,11 +644,9 @@ class SpoolerPanel(wx.Panel):
                         joblen = 1
                     self.list_job_spool.SetItem(list_id, JC_ENTRIES, str(joblen))
                     # STATUS
-                    # try:
-                    status = spool_obj.status
-                    # except AttributeError:
-                    # status = _("Queued")
-                    self.list_job_spool.SetItem(list_id, JC_STATUS, str(status))
+                    self.list_job_spool.SetItem(
+                        list_id, JC_STATUS, str(spool_obj.status)
+                    )
 
                     # TYPE
                     try:
@@ -599,6 +660,8 @@ class SpoolerPanel(wx.Panel):
 
                     # STEPS
                     try:
+                        if spool_obj.steps_total == 0:
+                            spool_obj.calc_steps()
                         self.list_job_spool.SetItem(
                             list_id,
                             JC_STEPS,
@@ -610,6 +673,11 @@ class SpoolerPanel(wx.Panel):
                     try:
                         loop = spool_obj.loops_executed
                         total = spool_obj.loops
+                        # No invalid values please
+                        if loop is None:
+                            loop = 0
+                        if total is None:
+                            total = 1
 
                         if isinf(total):
                             total = "∞"
@@ -670,6 +738,7 @@ class SpoolerPanel(wx.Panel):
         else:
             hours, remainder = divmod(t, 3600)
             minutes, seconds = divmod(remainder, 60)
+        # Military time display
         result = (
             f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
         )
@@ -683,6 +752,7 @@ class SpoolerPanel(wx.Panel):
             return t
         localt = time.localtime(t)
         lyear = localt[0]
+        syear = lyear % 100
         lmonth = int(localt[1])
         lday = localt[2]
         lhour = localt[3]
@@ -693,19 +763,36 @@ class SpoolerPanel(wx.Panel):
         # wx.DateTime(31,01,1999)
         # Arbitrary but with different figures
         # Alas this is the only simple method to get locale relevant dateformat...
-        wxdt = wx.DateTime(31, 7, 2022)
-        pattern = wxdt.FormatDate()
-        pattern = pattern.replace("2022", "{yy}")
-        pattern = pattern.replace("22", "{yy}")
-        pattern = pattern.replace("31", "{dd}")
-        # That would be the right thing, so if the bug is ever fixed, that will work
-        pattern = pattern.replace("07", "{mm}")
-        pattern = pattern.replace("7", "{mm}")
-        # And this is needed to deal with the bug...
-        pattern = pattern.replace("08", "{mm}")
-        pattern = pattern.replace("8", "{mm}")
+        pattern = None
+        try:
+            loc = wx.Locale()
+            pattern = loc.GetOSInfo(wx.LOCALE_SHORT_DATE_FMT, wx.LOCALE_CAT_DEFAULT)
+        except AttributeError:
+            # That's not available, so we use the other algorithm instead...
+            pass
+        if pattern is not None:
+            pattern = pattern.replace("%d", "{dd}")
+            pattern = pattern.replace("%m", "{mm}")
+            pattern = pattern.replace("%y", "{y}")
+            pattern = pattern.replace("%Y", "{yy}")
+        if pattern is None:
+            wxdt = wx.DateTime(31, 7, 2022)
+            pattern = wxdt.FormatDate()
+            pattern = pattern.replace("2022", "{yy}")
+            pattern = pattern.replace("22", "{y}")
+            pattern = pattern.replace("31", "{dd}")
+            # That would be the right thing, so if the bug is ever fixed, that will work
+            pattern = pattern.replace("07", "{mm}")
+            pattern = pattern.replace("7", "{mm}")
+            # And this is needed to deal with the bug...
+            pattern = pattern.replace("08", "{mm}")
+            pattern = pattern.replace("8", "{mm}")
+        # Deal with years seperately
+        pattern = pattern.replace("{y}", str(syear).zfill(2))
+        pattern = pattern.replace("{yy}", str(lyear).zfill(2))
         result = pattern.format(
-            dd=str(lday).zfill(2), mm=str(lmonth).zfill(2), yy=str(lyear).zfill(2)
+            dd=str(lday).zfill(2),
+            mm=str(lmonth).zfill(2),
         )
         # Just to show the bug...
         # result1 = f"{int(lday)}.{str(int(lmonth)).zfill(2)}.{str(int(lyear)).zfill(2)}"
@@ -732,7 +819,9 @@ class SpoolerPanel(wx.Panel):
                 events = self.context.logging.matching_events("job", important=True)
             else:
                 events = self.context.logging.matching_events("job")
+        has_data = False
         for idx, event_and_key in enumerate(reversed(list(events))):
+            has_data = True
             key, info = event_and_key
             list_id = self.list_job_history.InsertItem(
                 self.list_job_history.GetItemCount(), f"#{idx}"
@@ -761,10 +850,21 @@ class SpoolerPanel(wx.Panel):
                 HC_RUNTIME,
                 self.timestr(duration, False),
             )
+            nr_loop = info.get("loop")
+            nr_total = info.get("total")
+            if nr_total is None:
+                if nr_loop is None:
+                    passes_str = "n/a"
+                else:
+                    passes_str = f"{nr_loop}"
+            elif isinf(float(nr_total)):
+                passes_str = f"{nr_loop}/∞"
+            else:
+                passes_str = f"{nr_loop}/{nr_total}"
             self.list_job_history.SetItem(
                 list_id,
                 HC_PASSES,
-                str(info.get("loops_total")),
+                passes_str,
             )
             self.list_job_history.SetItem(list_id, HC_DEVICE, str(info.get("device")))
             self.list_job_history.SetItem(
@@ -784,6 +884,8 @@ class SpoolerPanel(wx.Panel):
                 f"{info.get('steps_done',0)}/{info.get('steps_total',0)}",
             )
             self.list_job_history.SetItemData(list_id, idx)
+        if has_data:
+            self.list_job_history.Select(0)
 
     def before_history_update(self, event):
         list_id = event.GetIndex()  # Get the current row
@@ -977,4 +1079,4 @@ class JobSpooler(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Burning", "Spooler")
+        return "Burning", "Spooler"

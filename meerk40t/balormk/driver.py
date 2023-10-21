@@ -16,7 +16,6 @@ from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.cutcode.outputcut import OutputCut
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
-from meerk40t.core.cutcode.setorigincut import SetOriginCut
 from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
@@ -75,6 +74,8 @@ class BalorDriver:
     #############
     # DRIVER COMMANDS
     #############
+    def job_start(self, job):
+        self._aborting = False
 
     def hold_work(self, priority):
         """
@@ -101,7 +102,7 @@ class BalorDriver:
         """
         Required.
 
-        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
+        Sets a laser parameter this could be speed, power, number_of_unicorns, or any unknown parameters for
         yet to be written drivers.
 
         @param key:
@@ -185,7 +186,6 @@ class BalorDriver:
         con.program_mode()
         self._list_bits = con._port_bits
         last_on = None
-        con.set_wobble(None)
         queue = self.queue
         self.queue = list()
         for q in queue:
@@ -193,11 +193,10 @@ class BalorDriver:
             penbox = settings.get("penbox_value")
             if penbox is not None:
                 try:
-                    self.value_penbox = self.service.elements.penbox[penbox]
+                    self.value_penbox = self.service.penbox.pens[penbox]
                 except KeyError:
                     self.value_penbox = None
             con.set_settings(settings)
-            con.set_wobble(settings)
             # LOOP CHECKS
             if self._aborting:
                 con.abort()
@@ -287,9 +286,6 @@ class BalorDriver:
                 con.goto(0x8000, 0x8000)
             elif isinstance(q, GotoCut):
                 con.goto(0x8000, 0x8000)
-            elif isinstance(q, SetOriginCut):
-                # Currently not supporting set origin cut.
-                pass
             elif isinstance(q, OutputCut):
                 con.port_set(q.output_mask, q.output_value)
                 con.list_write_port()
@@ -321,13 +317,10 @@ class BalorDriver:
                             penbox = settings.get("penbox_value")
                             if penbox is not None:
                                 try:
-                                    self.value_penbox = self.service.elements.penbox[
-                                        penbox
-                                    ]
+                                    self.value_penbox = self.service.penbox.pens[penbox]
                                 except KeyError:
                                     self.value_penbox = None
                             con.set_settings(settings)
-                            con.set_wobble(settings)
                         elif on & (
                             PLOT_RAPID | PLOT_JOG
                         ):  # Plot planner requests position change.
@@ -384,10 +377,8 @@ class BalorDriver:
         @param y:
         @return:
         """
-        if self.service.swap_xy:
-            x, y = y, x
         old_current = self.service.current
-        self.native_x, self.native_y = self.service.physical_to_device_position(x, y)
+        self.native_x, self.native_y = self.service.view.position(x, y)
         if self.native_x > 0xFFFF:
             self.native_x = 0xFFFF
         if self.native_x < 0:
@@ -412,10 +403,8 @@ class BalorDriver:
         @param dy:
         @return:
         """
-        if self.service.swap_xy:
-            dx, dy = dy, dx
         old_current = self.service.current
-        unit_dx, unit_dy = self.service.physical_to_device_length(dx, dy)
+        unit_dx, unit_dy = self.service.view.position(dx, dy, vector=True)
         self.native_x += unit_dx
         self.native_y += unit_dy
 
@@ -560,6 +549,7 @@ class BalorDriver:
 
         @return:
         """
+        self.paused = False
         self.connection.abort()
 
     def dwell(self, time_in_ms):

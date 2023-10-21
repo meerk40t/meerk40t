@@ -13,7 +13,7 @@ jobs:
     runs-on: macos-11
     steps:
     - name: Checkout meerk40t
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 ##    - name: Set up Python 3.9
 ##      uses: actions/setup-python@v2
 ##      with:
@@ -55,20 +55,16 @@ jobs:
     - name: Ensure latest pip and meerk40t-camera
       run: |
         python3.8 -m pip install --upgrade pip
-        ## python3.8 -m pip install --upgrade pip
+        python3.8 -m pip install wheel setuptools
         python3.8 -m pip install meerk40t-camera opencv-python-headless==3.4.13.47
-        ## python3.8 -m pip install meerk40t-camera opencv-python
-        ##python3.8 -m pip install --upgrade pyinstaller==4.3
         python3.8 -m pip install --no-use-pep517 pyinstaller==4.3
         
         ## numpy toggle based on 32 bit fix
-        python3.8 -m pip install wheel six numpy ezdxf
+        python3.8 -m pip install six numpy ezdxf
         ## python3.8 -m pip install wheel six ezdxf
         
         python3.8 -m pip install potracer
         
-        ## python3.8 -m pip install wheel six numpy
-        ## python3.8 -m pip install pyinstaller py2app wheel six numpy
         python3.8 -m pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04 wxPython==4.1.1
         if [ -f requirements-nogui.txt ]; then python3.8 -m pip install -r requirements-nogui.txt; fi
         python3.8 -m pip uninstall -y meerk40t[gui]
@@ -99,11 +95,11 @@ jobs:
         sed -i "" "s|0.0.0|$MKVERSION|g" setup_mac.py
 
         ## Export env variable to github actions scope to use in tag_name of upload release
-        echo "::set-output name=mkversion::$(echo $MKVERSION)"
-
+        ## echo "::set-output name=mkversion::$(echo $MKVERSION)"
+        echo "mkversion=$(echo $MKVERSION)" >> $GITHUB_OUTPUT
         ## python3.8 setup_mac.py py2app --dylib-excludes /usr/local/lib/libssl.1.1.dylib,/usr/local/lib/libcrypto.1.1.dylib,/Users/runner/hostedtoolcache/Python/3.9.7/x64/lib/python3.9/site-packages/PIL/.dylibs/libfreetype.6.dylib,/Users/runner/hostedtoolcache/Python/3.9.7/x64/lib/python3.9/site-packages/PIL/.dylibs/liblzma.5.dylib --frameworks libusb-1.0.dylib
         mv meerk40t.py mk40t.py
-        python3.8 -m PyInstaller --hidden-import meerk40t --windowed --noconfirm -i meerk40t.icns --add-data 'locale/:locale/' --name MeerK40t mk40t.py
+        python3.8 -m PyInstaller --hidden-import wx._adv --hidden-import wx._xml --hidden-import meerk40t --windowed --noconfirm -i meerk40t.icns --add-data 'locale/:locale/' --name MeerK40t mk40t.py
         mv mk40t.py meerk40t.py
         rm -rf dist/MeerK40t
         sed -i "" "s|$MKVERSION|0.0.0|g" setup_mac.py
@@ -131,9 +127,9 @@ jobs:
         plutil -replace CFBundleSupportedPlatforms -xml "<array><string>MacOSX</string></array>" dist/MeerK40t.app/Contents/Info.plist
         
         ## Fix the numpy 32 bit issue inside the app bundle - or install numpy from source.
-        lipo dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib -remove i386 -output dist/MeerK40t.app/Contents/MacOS/libgcc_s_new.1.dylib
-        rm dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib
-        mv dist/MeerK40t.app/Contents/MacOS/libgcc_s_new.1.dylib dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib
+        ## lipo dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib -remove i386 -output dist/MeerK40t.app/Contents/MacOS/libgcc_s_new.1.dylib
+        ## rm dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib
+        ## mv dist/MeerK40t.app/Contents/MacOS/libgcc_s_new.1.dylib dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib
         
         echo "Codesign for GITHUB"
         codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/*.zip
@@ -177,6 +173,5 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        tag_name: ${{ steps.build.outputs.mkversion }}
         files: |
           MeerK40t_unsigned.dmg

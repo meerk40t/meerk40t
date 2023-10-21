@@ -134,45 +134,54 @@ class PlannerPanel(wx.Panel):
         self.busy = True
         self.button_start.Enable(False)
         if self.stage == 0:
-            with wx.BusyInfo(_("Preprocessing...")):
-                self.context(f"plan{self.plan_name} copy preprocess\n")
-                cutplan = self.context.planner.default_plan
-                if len(cutplan.commands) == 0:
-                    self.context(f"plan{self.plan_name} validate\n")
-        elif self.stage == 1:
-            with wx.BusyInfo(_("Determining validity of operations...")):
-                self.context(f"plan{self.plan_name} preprocess\n")
-                cutplan = self.context.planner.default_plan
-                if len(cutplan.commands) == 0:
-                    self.context(f"plan{self.plan_name} validate\n")
-        elif self.stage == 2:
-            with wx.BusyInfo(_("Validating operation data...")):
+            self.context.kernel.busyinfo.start(msg=_("Preprocessing..."))
+            self.context(f"plan{self.plan_name} copy preprocess\n")
+            cutplan = self.context.planner.default_plan
+            if len(cutplan.commands) == 0:
                 self.context(f"plan{self.plan_name} validate\n")
+            self.context.kernel.busyinfo.end()
+        elif self.stage == 1:
+            self.context.kernel.busyinfo.start(
+                msg=_("Determining validity of operations...")
+            )
+            self.context(f"plan{self.plan_name} preprocess\n")
+            cutplan = self.context.planner.default_plan
+            if len(cutplan.commands) == 0:
+                self.context(f"plan{self.plan_name} validate\n")
+            self.context.kernel.busyinfo.end()
+        elif self.stage == 2:
+            self.context.kernel.busyinfo.start(msg=_("Validating operation data..."))
+            self.context(f"plan{self.plan_name} validate\n")
+            self.context.kernel.busyinfo.end()
         elif self.stage == 3:
-            with wx.BusyInfo(_("Compiling cuts...")):
-                self.context(f"plan{self.plan_name} blob preopt\n")
+            self.context.kernel.busyinfo.start(msg=_("Compiling cuts..."))
+            self.context(f"plan{self.plan_name} blob preopt\n")
+            self.context.kernel.busyinfo.end()
         elif self.stage == 4:
-            with wx.BusyInfo(_("Determining optimizations to perform...")):
-                self.context(f"plan{self.plan_name} preopt\n")
+            self.context.kernel.busyinfo.start(
+                msg=_("Determining optimizations to perform...")
+            )
+            self.context(f"plan{self.plan_name} preopt\n")
+            self.context.kernel.busyinfo.end()
         elif self.stage == 5:
-            with wx.BusyInfo(_("Performing Optimizations...")):
-                self.context(f"plan{self.plan_name} optimize\n")
+            self.context.kernel.busyinfo.start(msg=_("Performing Optimizations..."))
+            self.context(f"plan{self.plan_name} optimize\n")
+            self.context.kernel.busyinfo.end()
         elif self.stage == 6:
-            with wx.BusyInfo(_("Sending data to laser...")):
-                self.context(f"plan{self.plan_name} spool\n")
-                if self.context.auto_spooler:
-                    self.context("window open JobSpooler\n")
-                try:
-                    self.GetParent().Close()
-                except (TypeError, AttributeError):
-                    pass
+            self.context.kernel.busyinfo.start(msg=_("Sending data to laser..."))
+            self.context(f"plan{self.plan_name} spool\n")
+            if self.context.auto_spooler:
+                self.context("window open JobSpooler\n")
+            try:
+                self.GetParent().Close()
+            except (TypeError, AttributeError):
+                pass
+            self.context.kernel.busyinfo.end()
         self.busy = False
         self.button_start.Enable(True)
         self.update_gui()
 
     def pane_show(self):
-        # self.context.setting(bool, "opt_rasters_split", True)
-        # TODO: OPT_RASTER_SPLIT
         cutplan = self.context.planner.default_plan
         self.Children[0].SetFocus()
         if len(cutplan.plan) == 0 and len(cutplan.commands) == 0:
@@ -229,7 +238,7 @@ class PlannerPanel(wx.Panel):
                 _("Run the commands to make these operations valid.")
             )
         elif self.stage == 3:
-            self.button_start.SetLabelText(_("Create Lasercode"))
+            self.button_start.SetLabelText(_("Convert data"))
             self.button_start.SetBackgroundColour(wx.Colour(102, 102, 255))
             self.button_start.SetToolTip(_("Turn this set of operations into Cutcode"))
         elif self.stage == 4:
@@ -268,17 +277,18 @@ class ExecuteJob(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-        kernel.register(
-            "button/jobstart/ExecuteJob",
-            {
-                "label": _("Execute Job"),
-                "icon": icons8_laser_beam_52,
-                "tip": _("Execute the current laser project"),
-                "action": lambda v: kernel.console("window toggle ExecuteJob 0\n"),
-                "size": STD_ICON_SIZE,
-                "priority": 2,
-            },
-        )
+        pass
+        # kernel.register(
+        #     "button/jobstart/ExecuteJob",
+        #     {
+        #         "label": _("Execute Job"),
+        #         "icon": icons8_laser_beam_52,
+        #         "tip": _("Execute the current laser project"),
+        #         "action": lambda v: kernel.console("window toggle ExecuteJob 0\n"),
+        #         "size": STD_ICON_SIZE,
+        #         "priority": 2,
+        #     },
+        # )
 
     def delegates(self):
         yield self.panel
@@ -291,4 +301,4 @@ class ExecuteJob(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Burning", "Execute Job")
+        return "Burning", "Execute Job"

@@ -406,7 +406,8 @@ class TextCtrl(wx.TextCtrl):
         self._last_valid_value = None
         self._event_generated = None
         self._action_routine = None
-        # You can set this to False, i you don't want logic to interfere with text input
+
+        # You can set this to False, if you don't want logic to interfere with text input
         self.execute_action_on_change = True
 
         if self._check is not None and self._check != "":
@@ -417,16 +418,16 @@ class TextCtrl(wx.TextCtrl):
         if self._style & wx.TE_PROCESS_ENTER != 0:
             self.Bind(wx.EVT_TEXT_ENTER, self.on_enter)
         _MIN_WIDTH, _MAX_WIDTH = self.validate_widths()
-        self.SetMinSize(wx.Size(_MIN_WIDTH, -1))
+        self.SetMinSize(dip_size(self, _MIN_WIDTH, -1))
         if limited:
-            self.SetMaxSize(wx.Size(_MAX_WIDTH, -1))
+            self.SetMaxSize(dip_size(self, _MAX_WIDTH, -1))
 
     def validate_widths(self):
         minw = 35
         maxw = 100
         minpattern = "0000"
         maxpattern = "999999999.99mm"
-        # Lets be a bit more specific: what is the minimum size of the textcontrol fonts
+        # Let's be a bit more specific: what is the minimum size of the textcontrol fonts
         # to hold these patterns
         tfont = self.GetFont()
         xsize = 15
@@ -633,21 +634,26 @@ class TextCtrl(wx.TextCtrl):
 
     def on_char(self, event):
         proceed = True
-        if self.charpattern != "":
+        # The French awerty keyboard generates numbers by pressing Shift + some key
+        # Under Linux this is not properly translated by GetUnicodeKey and
+        # is hence leading to a 'wrong' character being recognised (the original key).
+        # So we can't rely on a proper representation if the Shift-Key
+        # is held down, sigh.
+        if self.charpattern != "" and not event.ShiftDown():
             keyc = event.GetUnicodeKey()
             special = False
             if event.RawControlDown() or event.ControlDown() or event.AltDown():
+                # GetUnicodeKey ignores all special keys, so we need to acknowledge that
                 special = True
             if keyc == 127:  # delete
                 special = True
-            # GetUnicodeKey ignores all special keys in the first
             if keyc != wx.WXK_NONE and not special:
                 # a 'real' character?
                 if keyc >= ord(" "):
                     char = chr(keyc).lower()
                     if char not in self.charpattern:
                         proceed = False
-                        # print (f"Ignored: {keyc} - {char}")
+                        # print(f"Ignored: {keyc} - {char}")
         if proceed:
             event.DoAllowNextEvent()
             event.Skip()
@@ -750,7 +756,7 @@ class StaticBoxSizer(wx.StaticBoxSizer):
         **kwargs,
     ):
         self.sbox = wx.StaticBox(parent, id, label=label)
-        self.sbox.SetMinSize(wx.Size(50, 50))
+        self.sbox.SetMinSize(dip_size(self, 50, 50))
         super().__init__(self.sbox, orientation)
 
     def Show(self, show=True):
@@ -787,6 +793,68 @@ class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
         """Constructor"""
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         listmix.TextEditMixin.__init__(self)
+
+
+class HoverButton(wx.Button):
+    def __init__(self, parent, ID, label):
+        super().__init__(parent, ID, label)
+        self._focus_color = None
+        self._disable_color = None
+        self._foreground_color = self.GetForegroundColour()
+        self._background_color = self.GetBackgroundColour()
+        self.Bind(wx.EVT_ENTER_WINDOW, self.on_enter)
+        self.Bind(wx.EVT_LEAVE_WINDOW, self.on_leave)
+        # self.Bind(wx.EVT_MOUSE_EVENTS, self.on_mouse)
+
+    def SetFocusColour(self, color):
+        self._focus_color = wx.Colour(color)
+
+    def SetDisabledBackgroundColour(self, color):
+        self._disable_color = wx.Colour(color)
+
+    def SetForegroundColour(self, color):
+        self._foreground_color = wx.Colour(color)
+        super().SetForegroundColour(color)
+
+    def SetBackgroundColour(self, color):
+        self._background_color = wx.Colour(color)
+        super().SetBackgroundColour(color)
+
+    def GetFocusColour(self, color):
+        return self._focus_color
+
+    def Enable(self, value):
+        if value:
+            super().SetBackgroundColour(self._background_color)
+        else:
+            if self._disable_color is None:
+                r, g, b, a = self._background_color.Get()
+                color = wx.Colour(
+                    min(255, int(1.5 * r)),
+                    min(255, int(1.5 * g)),
+                    min(255, int(1.5 * b)),
+                )
+            else:
+                color = self._disable_color
+            super().SetBackgroundColour(color)
+        super().Enable(value)
+        self.Refresh()
+
+    def on_enter(self, event):
+        if self._focus_color is not None:
+            super().SetForegroundColour(self._focus_color)
+            self.Refresh()
+        event.Skip()
+
+    def on_leave(self, event):
+        super().SetForegroundColour(self._foreground_color)
+        self.Refresh()
+        event.Skip()
+
+    # def on_mouse(self, event):
+    #     if event.Leaving():
+    #         self.on_leave(event)
+    #     event.Skip()
 
 
 WX_METAKEYS = [
@@ -961,3 +1029,13 @@ def set_ctrl_value(ctrl, value):
     if ctrl.GetValue() != value:
         ctrl.SetValue(value)
         ctrl.SetInsertionPoint(min(len(value), cursor))
+
+
+def dip_size(frame, x, y):
+    # wx.Window.FromDIP was introduced with wxPython 4.1, so not all distros may have this
+    wxsize = wx.Size(x, y)
+    try:
+        dipsize = frame.FromDIP(wxsize)
+        return dipsize
+    except AttributeError:
+        return wxsize

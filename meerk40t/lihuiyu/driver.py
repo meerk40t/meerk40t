@@ -3,8 +3,8 @@ Lihuiyu Driver
 
 Governs the generic commands issued by laserjob and spooler and converts that into regular LHYMicro-GL output.
 
-This built data is then sent to the controller, which could be network, or usb, or mock depending on the selected
-output.
+This generated data is then sent to the controller, which could be a network connection, usb, or mock depending on the
+selected output.
 """
 
 import math
@@ -18,7 +18,6 @@ from ..core.cutcode.homecut import HomeCut
 from ..core.cutcode.inputcut import InputCut
 from ..core.cutcode.outputcut import OutputCut
 from ..core.cutcode.plotcut import PlotCut
-from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
@@ -135,11 +134,10 @@ class LihuiyuDriver(Parameters):
 
         self.native_x = 0
         self.native_y = 0
-        self.origin_x = 0
-        self.origin_y = 0
 
         self.plot_planner = PlotPlanner(self.settings)
-        self.plot_planner.force_shift = service.plot_shift
+        self.plot_attribute_update()
+
         self.plot_data = None
 
         self.state = DRIVER_STATE_RAPID
@@ -159,7 +157,6 @@ class LihuiyuDriver(Parameters):
         self.CODE_LASER_OFF = b"U"
 
         self.paused = False
-        self.service._buffer_size = 0
 
         def primary_hold():
             if self.out_pipe is None:
@@ -191,6 +188,11 @@ class LihuiyuDriver(Parameters):
 
     def __call__(self, e):
         self.out_pipe.write(e)
+
+    def plot_attribute_update(self):
+        self.plot_planner.force_shift = self.service.plot_shift
+        self.plot_planner.phase_type = self.service.plot_phase_type
+        self.plot_planner.phase_value = self.service.plot_phase_value
 
     def hold_work(self, priority):
         """
@@ -301,7 +303,7 @@ class LihuiyuDriver(Parameters):
         To work this command should usually be put into the realtime work queue for the laser, without that it will
         be paused and unable to process the resume.
 
-        @param args:
+        @param values:
         @return:
         """
         self(b"~PN&\n~")
@@ -325,7 +327,6 @@ class LihuiyuDriver(Parameters):
         self(b"~I*\n~")
         self._reset_modes()
         self.state = DRIVER_STATE_RAPID
-        self.service.signal("driver;mode", self.state)
         self.paused = False
 
     def abort(self):
@@ -344,20 +345,6 @@ class LihuiyuDriver(Parameters):
         if blob_type == "egv":
             self(data)
 
-    def move_ori(self, x, y):
-        """
-        Requests laser move to origin offset position x,y in physical units
-
-        @param x:
-        @param y:
-        @return:
-        """
-        if self.service.swap_xy:
-            x, y = y, x
-        x, y = self.service.physical_to_device_position(x, y)
-        self.rapid_mode()
-        self._move_absolute(self.origin_x + int(x), self.origin_y + int(y))
-
     def move_abs(self, x, y):
         """
         Requests laser move to absolute position x, y in physical units
@@ -366,9 +353,7 @@ class LihuiyuDriver(Parameters):
         @param y:
         @return:
         """
-        if self.service.swap_xy:
-            x, y = y, x
-        x, y = self.service.physical_to_device_position(x, y)
+        x, y = self.service.view.position(x, y)
         self.rapid_mode()
         self._move_absolute(int(round(x)), int(round(y)))
 
@@ -380,11 +365,9 @@ class LihuiyuDriver(Parameters):
         @param dy:
         @return:
         """
-        if self.service.swap_xy:
-            dx, dy = dy, dx
-        dx, dy = self.service.physical_to_device_length(dx, dy)
+        unit_dx, unit_dy = self.service.view.position(dx, dy, vector=True)
         self.rapid_mode()
-        self._move_relative(dx, dy)
+        self._move_relative(unit_dx, unit_dy)
 
     def dwell(self, time_in_ms):
         """
@@ -467,7 +450,6 @@ class LihuiyuDriver(Parameters):
             self(b"FNSE-\n")
             self.laser = False
         self.state = DRIVER_STATE_RAPID
-        self.service.signal("driver;mode", self.state)
 
     def finished_mode(self, *values):
         """
@@ -489,7 +471,6 @@ class LihuiyuDriver(Parameters):
         elif self.state == DRIVER_STATE_RAPID:
             self(b"I")
         self.state = DRIVER_STATE_FINISH
-        self.service.signal("driver;mode", self.state)
 
     def raster_mode(self, *values, dx=0, dy=0):
         """
@@ -497,6 +478,8 @@ class LihuiyuDriver(Parameters):
         vertical rastering, usually at a high speed. Accel twitches are required for this mode.
 
         @param values:
+        @param dx: movement during raster mode switch
+        @param dy: movement during raster mode switch
         @return:
         """
         if self.raster_step_y == 0 and self.raster_step_x == 0:
@@ -514,6 +497,8 @@ class LihuiyuDriver(Parameters):
         self._raster_step_float = (
             self.raster_step_y if horizontal else self.raster_step_x
         )
+        if self._raster_step_float is None:
+            self._raster_step_float = 1
         self._raster_step_g_value = int(math.floor(self._raster_step_float))
 
         if self._request_leftward is not None:
@@ -556,7 +541,6 @@ class LihuiyuDriver(Parameters):
         self(self._code_declare_directions())
         self(b"S1E")
         self.state = DRIVER_STATE_RASTER
-        self.service.signal("driver;mode", self.state)
 
     def program_mode(self, *values, dx=0, dy=0):
         """
@@ -617,7 +601,6 @@ class LihuiyuDriver(Parameters):
             self.state = DRIVER_STATE_RASTER
         else:
             self.state = DRIVER_STATE_PROGRAM
-        self.service.signal("driver;mode", self.state)
 
     def home(self, *values):
         """
@@ -635,7 +618,6 @@ class LihuiyuDriver(Parameters):
         self.native_y = 0
         self._reset_modes()
         self.state = DRIVER_STATE_RAPID
-        self.service.signal("driver;mode", self.state)
 
         new_current = self.service.current
         self.service.signal(
@@ -707,15 +689,7 @@ class LihuiyuDriver(Parameters):
             self.plot_start()
             start = plot.start
             self.wait_finish()
-            self._move_absolute(self.origin_x + start[0], self.origin_y + start[1])
-        elif isinstance(plot, SetOriginCut):
-            self.plot_start()
-            if plot.set_current:
-                x = self.native_x
-                y = self.native_y
-            else:
-                x, y = plot.start
-            self.set_origin(x, y)
+            self._move_absolute(start[0], start[1])
         else:
             # LineCut, QuadCut, CubicCut, PlotCut, RasterCut
             if isinstance(plot, PlotCut):
@@ -732,17 +706,6 @@ class LihuiyuDriver(Parameters):
         if self.plot_data is None:
             self.plot_data = self.plot_planner.gen()
         self._plotplanner_process()
-
-    def set_origin(self, x, y):
-        """
-        This should set the origin position.
-
-        @param x:
-        @param y:
-        @return:
-        """
-        self.origin_x = x
-        self.origin_y = y
 
     def wait(self, time_in_ms):
         """

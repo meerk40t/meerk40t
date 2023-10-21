@@ -9,9 +9,9 @@ from serial import SerialException
 
 
 class SerialConnection:
-    def __init__(self, service):
+    def __init__(self, service, controller):
         self.service = service
-        self.channel = self.service.channel("grbl_state", buffer_size=20)
+        self.controller = controller
         self.laser = None
         self.read_buffer = bytearray()
 
@@ -37,19 +37,21 @@ class SerialConnection:
         try:
             self.laser.write(bytes(line, "utf-8"))
         except (SerialException, PermissionError) as e:
-            self.channel(f"Error when writing '{line}: {str(e)}'")
+            self.controller.log(
+                f"Error when writing '{line}: {str(e)}'", type="connection"
+            )
 
     def connect(self):
         if self.laser:
-            self.channel("Already connected")
+            self.controller.log("Already connected", type="connection")
             return
 
         signal_load = "uninitialized"
         try:
-            self.channel("Attempting to Connect...")
+            self.controller.log("Attempting to Connect...", type="connection")
             serial_port = self.service.serial_port
             if serial_port == "UNCONFIGURED":
-                self.channel("Laser port is not set.")
+                self.controller.log("Laser port is not set.", type="connection")
                 signal_load = "error"
                 self.service.signal(
                     "warning",
@@ -64,19 +66,22 @@ class SerialConnection:
                 baud_rate,
                 timeout=0,
             )
-            self.channel("Connected")
+            self.controller.log("Connected", type="connection")
             signal_load = "connected"
         except ConnectionError:
-            self.channel("Connection Failed.")
-        except SerialException:
-            self.channel("Serial connection could not be established.")
+            self.controller.log("Connection Failed.", type="connection")
+        except SerialException as e:
+            self.controller.log(
+                "Serial connection could not be established.", type="connection"
+            )
+            self.controller.log(str(e), type="connection")
 
-        self.service.signal("serial;status", signal_load)
+        self.service.signal("grbl;status", signal_load)
 
     def disconnect(self):
-        self.channel("Disconnected")
+        self.controller.log("Disconnected", type="connection")
         if self.laser:
             self.laser.close()
             del self.laser
             self.laser = None
-        self.service.signal("serial;status", "disconnected")
+        self.service.signal("grbl;status", "disconnected")

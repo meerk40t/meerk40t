@@ -7,7 +7,6 @@ a = Analysis(['../../../mk40t.py'],
              pathex=['../../../build/meerk40t-import'],
              binaries = [
                 ('./libusb0.dll', '.'),
-                ('./CH341DLL.DLL', '.'),
              ],
              datas=[],
              hiddenimports=['usb', 'wx._adv', 'wx._xml'],

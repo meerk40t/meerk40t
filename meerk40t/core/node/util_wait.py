@@ -1,5 +1,5 @@
 from meerk40t.core.cutcode.waitcut import WaitCut
-from meerk40t.core.element_types import *
+from meerk40t.core.elements.element_types import *
 from meerk40t.core.node.node import Node
 
 
@@ -7,7 +7,7 @@ class WaitOperation(Node):
     """
     WaitOperation tells the controller to wait for a specified period of time.
 
-    The units for the wait property is seconds. The waitcut uses milliseconds, as does spooled "wait" lasercode.
+    The units for the wait property is seconds. The waitcut uses milliseconds.
 
     Node type "util wait"
     """

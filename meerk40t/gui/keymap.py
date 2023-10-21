@@ -341,4 +341,4 @@ class Keymap(MWindow):
     @staticmethod
     def submenu():
         # suppress in tool-menu
-        return ("", "Keymap", True)
+        return "", "Keymap", True

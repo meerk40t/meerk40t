@@ -1,3 +1,4 @@
+import ast
 from typing import Dict
 
 from meerk40t.svgelements import Color
@@ -8,6 +9,7 @@ INT_PARAMETERS = (
     "acceleration",
     "dot_length",
     "passes",
+    "loops",
     "jog_distance",
     "raster_direction",
     "raster_preference_top",
@@ -29,6 +31,7 @@ FLOAT_PARAMETERS = (
     "dratio",
     "dwell_time",
     "frequency",
+    "kerf",
 )
 
 BOOL_PARAMETERS = (
@@ -46,12 +49,14 @@ BOOL_PARAMETERS = (
     "bidirectional",
     "advanced",
     "stopop",
+    "effect",
 )
 
 STRING_PARAMETERS = (
     "overscan",
     "hatch_distance",
     "hatch_angle",
+    "hatch_angle_delta",
     "hatch_type",
     "penbox_value",
     "penbox_pass",
@@ -76,6 +81,9 @@ class Parameters:
     """
 
     def __init__(self, settings: Dict = None, **kwargs):
+        if hasattr(self, "settings"):
+            # already initialized.
+            return
         self.settings = settings
         if self.settings is None:
             self.settings = dict()
@@ -94,38 +102,53 @@ class Parameters:
 
     def validate(self):
         settings = self.settings
-        for v in FLOAT_PARAMETERS:
-            if v in settings:
-                settings[v] = float(settings[v])
-        for v in INT_PARAMETERS:
-            if v in settings:
-                settings[v] = int(float(settings[v]))
-        for v in BOOL_PARAMETERS:
-            if v in settings:
-                settings[v] = str(settings[v]).lower() == "true"
-        for v in STRING_PARAMETERS:
-            if v in settings:
-                settings[v] = settings[v]
-        for v in COLOR_PARAMETERS:
-            if v in settings:
+        for v in settings:
+            if v in COLOR_PARAMETERS:
                 settings[v] = Color(settings[v])
-        for v in LIST_PARAMETERS:
-            if v in settings:
-                if isinstance(settings[v], str):
-                    myarr = []
-                    sett = settings[v]
-                    if sett != "":
-                        # First of all is it in the old format where we used eval?
-                        if sett.startswith("["):
-                            sett = sett[1:-1]
-                        if "'," in sett:
-                            slist = sett.split(",")
-                            for n in slist:
-                                n = n.strip().strip("'")
-                                myarr.append(n)
-                        else:
-                            myarr = [sett.strip().strip("'")]
-                    settings[v] = myarr
+                continue
+            elif v in FLOAT_PARAMETERS:
+                settings[v] = float(settings[v])
+            elif v in INT_PARAMETERS:
+                settings[v] = int(float(settings[v]))
+            elif v in BOOL_PARAMETERS:
+                settings[v] = str(settings[v]).lower() == "true"
+            elif v in STRING_PARAMETERS:
+                pass  # Already strings.
+            else:
+                # Includes LIST_PARAMETERS
+                try:
+                    settings[v] = ast.literal_eval(settings[v])
+                except (ValueError, SyntaxError):
+                    pass
+
+    # def __getattr__(self, item):
+    #     """
+    #     Getattr replaces the unfound items.
+    #     @param item:
+    #     @return:
+    #     """
+    #     if item.startswith("_"):
+    #         raise AttributeError
+    #     return self[item]
+    #
+    # def __setattr__(self, key, value):
+    #     """
+    #     Setattr applying to the values.
+    #
+    #     @param key:
+    #     @param value:
+    #     @return:
+    #     """
+    #     super().__setattr__(key, value)
+    #
+    # def __getitem__(self, item):
+    #     """
+    #     Get the value of the item as if this properties is a dict
+    #     @param item:
+    #     @return:
+    #     """
+    #     d = self.__dict__
+    #     return d.get(item, None)
 
     @property
     def color(self):
@@ -139,8 +162,6 @@ class Parameters:
                 return Color("red")
             elif type == "op engrave":
                 return Color("blue")
-            elif type == "op hatch":
-                return Color("lime")
             elif type == "op raster":
                 return Color("black")
             elif type == "op image":
@@ -158,6 +179,7 @@ class Parameters:
         if isinstance(value, Color):
             value = value.hexa
         self.settings["color"] = value
+        self.__dict__["color"] = value
 
     @property
     def default(self):
@@ -166,6 +188,7 @@ class Parameters:
     @default.setter
     def default(self, value):
         self.settings["default"] = value
+        self.__dict__["default"] = value
 
     @property
     def allowed_attributes(self):
@@ -173,7 +196,10 @@ class Parameters:
 
     @allowed_attributes.setter
     def allowed_attributes(self, value):
+        # Any set operation must clone list
+        value = list(value)
         self.settings["allowed_attributes"] = value
+        self.__dict__["allowed_attributes"] = value
 
     @property
     def output(self):
@@ -182,6 +208,7 @@ class Parameters:
     @output.setter
     def output(self, value):
         self.settings["output"] = value
+        self.__dict__["output"] = value
 
     @property
     def stopop(self):
@@ -190,6 +217,7 @@ class Parameters:
     @stopop.setter
     def stopop(self, value):
         self.settings["stopop"] = value
+        self.__dict__["stopop"] = value
 
     @property
     def raster_step_x(self):
@@ -198,6 +226,7 @@ class Parameters:
     @raster_step_x.setter
     def raster_step_x(self, value):
         self.settings["raster_step_x"] = value
+        self.__dict__["raster_step_x"] = value
 
     @property
     def raster_step_y(self):
@@ -206,6 +235,7 @@ class Parameters:
     @raster_step_y.setter
     def raster_step_y(self, value):
         self.settings["raster_step_y"] = value
+        self.__dict__["raster_step_y"] = value
 
     @property
     def desc(self):
@@ -214,6 +244,7 @@ class Parameters:
     @desc.setter
     def desc(self, value):
         self.settings["desc"] = value
+        self.__dict__["desc"] = value
 
     @property
     def dpi(self):
@@ -222,6 +253,7 @@ class Parameters:
     @dpi.setter
     def dpi(self, value):
         self.settings["dpi"] = value
+        self.__dict__["dpi"] = value
 
     @property
     def overscan(self):
@@ -230,6 +262,7 @@ class Parameters:
     @overscan.setter
     def overscan(self, value):
         self.settings["overscan"] = value
+        self.__dict__["overscan"] = value
 
     @property
     def speed(self):
@@ -242,8 +275,6 @@ class Parameters:
             if type == "op cut":
                 return 10.0
             elif type == "op engrave":
-                return 35.0
-            elif type == "op hatch":
                 return 35.0
             elif type == "op raster":
                 return 150.0
@@ -258,6 +289,7 @@ class Parameters:
     @speed.setter
     def speed(self, value):
         self.settings["speed"] = value
+        self.__dict__["speed"] = value
 
     @property
     def power(self):
@@ -266,6 +298,7 @@ class Parameters:
     @power.setter
     def power(self, value):
         self.settings["power"] = value
+        self.__dict__["power"] = value
 
     @property
     def frequency(self):
@@ -274,6 +307,7 @@ class Parameters:
     @frequency.setter
     def frequency(self, value):
         self.settings["frequency"] = value
+        self.__dict__["frequency"] = value
 
     @property
     def rapid_speed(self):
@@ -282,6 +316,7 @@ class Parameters:
     @rapid_speed.setter
     def rapid_speed(self, value):
         self.settings["rapid_speed"] = value
+        self.__dict__["rapid_speed"] = value
 
     @property
     def line_color(self):
@@ -290,6 +325,7 @@ class Parameters:
     @line_color.setter
     def line_color(self, value):
         self.settings["line_color"] = value
+        self.__dict__["line_color"] = value
 
     @property
     def laser_enabled(self):
@@ -298,6 +334,7 @@ class Parameters:
     @laser_enabled.setter
     def laser_enabled(self, value):
         self.settings["laser_enabled"] = value
+        self.__dict__["laser_enabled"] = value
 
     @property
     def ppi_enabled(self):
@@ -306,6 +343,7 @@ class Parameters:
     @ppi_enabled.setter
     def ppi_enabled(self, value):
         self.settings["ppi_enabled"] = value
+        self.__dict__["ppi_enabled"] = value
 
     @property
     def dot_length(self):
@@ -314,6 +352,7 @@ class Parameters:
     @dot_length.setter
     def dot_length(self, value):
         self.settings["dot_length"] = value
+        self.__dict__["dot_length"] = value
 
     @property
     def dot_length_custom(self):
@@ -322,6 +361,7 @@ class Parameters:
     @dot_length_custom.setter
     def dot_length_custom(self, value):
         self.settings["dot_length_custom"] = value
+        self.__dict__["dot_length_custom"] = value
 
     @property
     def implicit_dotlength(self):
@@ -336,6 +376,7 @@ class Parameters:
     @shift_enabled.setter
     def shift_enabled(self, value):
         self.settings["shift_enabled"] = value
+        self.__dict__["shift_enabled"] = value
 
     @property
     def passes(self):
@@ -344,6 +385,7 @@ class Parameters:
     @passes.setter
     def passes(self, value):
         self.settings["passes"] = value
+        self.__dict__["passes"] = value
 
     @property
     def passes_custom(self):
@@ -352,6 +394,7 @@ class Parameters:
     @passes_custom.setter
     def passes_custom(self, value):
         self.settings["passes_custom"] = value
+        self.__dict__["passes_custom"] = value
 
     @property
     def implicit_passes(self):
@@ -360,12 +403,22 @@ class Parameters:
         return self.passes
 
     @property
+    def loops(self):
+        return self.settings.get("loops", 1)
+
+    @loops.setter
+    def loops(self, value):
+        self.settings["loops"] = value
+        self.__dict__["loops"] = value
+
+    @property
     def raster_direction(self):
         return self.settings.get("raster_direction", 1)
 
     @raster_direction.setter
     def raster_direction(self, value):
         self.settings["raster_direction"] = value
+        self.__dict__["raster_direction"] = value
 
     @property
     def bidirectional(self):
@@ -374,6 +427,20 @@ class Parameters:
     @bidirectional.setter
     def bidirectional(self, value):
         self.settings["bidirectional"] = value
+        self.__dict__["bidirectional"] = value
+
+    #####################
+    # KERF PROPERTIES
+    #####################
+
+    @property
+    def kerf(self):
+        return self.settings.get("kerf", 0)
+
+    @kerf.setter
+    def kerf(self, value):
+        self.settings["kerf"] = value
+        self.__dict__["kerf"] = value
 
     #####################
     # HATCH PROPERTIES
@@ -386,6 +453,7 @@ class Parameters:
     @hatch_type.setter
     def hatch_type(self, value):
         self.settings["hatch_type"] = value
+        self.__dict__["hatch_type"] = value
 
     @property
     def hatch_angle(self):
@@ -394,6 +462,16 @@ class Parameters:
     @hatch_angle.setter
     def hatch_angle(self, value):
         self.settings["hatch_angle"] = value
+        self.__dict__["hatch_angle"] = value
+
+    @property
+    def hatch_angle_delta(self):
+        return self.settings.get("hatch_angle_delta", "0deg")
+
+    @hatch_angle_delta.setter
+    def hatch_angle_delta(self, value):
+        self.settings["hatch_angle_delta"] = value
+        self.__dict__["hatch_angle_delta"] = value
 
     @property
     def hatch_distance(self):
@@ -402,6 +480,16 @@ class Parameters:
     @hatch_distance.setter
     def hatch_distance(self, value):
         self.settings["hatch_distance"] = value
+        self.__dict__["hatch_distance"] = value
+
+    @property
+    def effect(self):
+        return self.settings.get("effect", True)
+
+    @effect.setter
+    def effect(self, value):
+        self.settings["effect"] = value
+        self.__dict__["effect"] = value
 
     #####################
     # PENBOX PROPERTIES
@@ -414,6 +502,7 @@ class Parameters:
     @penbox_pass.setter
     def penbox_pass(self, value):
         self.settings["penbox_pass"] = value
+        self.__dict__["penbox_pass"] = value
 
     @property
     def penbox_value(self):
@@ -422,6 +511,7 @@ class Parameters:
     @penbox_value.setter
     def penbox_value(self, value):
         self.settings["penbox_value"] = value
+        self.__dict__["penbox_value"] = value
 
     #####################
     # ACCEL PROPERTIES
@@ -434,6 +524,7 @@ class Parameters:
     @acceleration.setter
     def acceleration(self, value):
         self.settings["acceleration"] = value
+        self.__dict__["acceleration"] = value
 
     @property
     def acceleration_custom(self):
@@ -442,6 +533,7 @@ class Parameters:
     @acceleration_custom.setter
     def acceleration_custom(self, value):
         self.settings["acceleration_custom"] = value
+        self.__dict__["acceleration_custom"] = value
 
     @property
     def implicit_accel(self):
@@ -460,6 +552,7 @@ class Parameters:
     @dratio.setter
     def dratio(self, value):
         self.settings["dratio"] = value
+        self.__dict__["dratio"] = value
 
     @property
     def dratio_custom(self):
@@ -468,6 +561,7 @@ class Parameters:
     @dratio_custom.setter
     def dratio_custom(self, value):
         self.settings["dratio_custom"] = value
+        self.__dict__["dratio_custom"] = value
 
     @property
     def implicit_d_ratio(self):
@@ -486,6 +580,7 @@ class Parameters:
     @raster_preference_top.setter
     def raster_preference_top(self, value):
         self.settings["raster_preference_top"] = value
+        self.__dict__["raster_preference_top"] = value
 
     @property
     def raster_preference_right(self):
@@ -494,6 +589,7 @@ class Parameters:
     @raster_preference_right.setter
     def raster_preference_right(self, value):
         self.settings["raster_preference_right"] = value
+        self.__dict__["raster_preference_right"] = value
 
     @property
     def raster_preference_left(self):
@@ -502,6 +598,7 @@ class Parameters:
     @raster_preference_left.setter
     def raster_preference_left(self, value):
         self.settings["raster_preference_left"] = value
+        self.__dict__["raster_preference_left"] = value
 
     @property
     def raster_preference_bottom(self):
@@ -510,6 +607,7 @@ class Parameters:
     @raster_preference_bottom.setter
     def raster_preference_bottom(self, value):
         self.settings["raster_preference_bottom"] = value
+        self.__dict__["raster_preference_bottom"] = value
 
     #####################
     # JOG PROPERTIES
@@ -522,6 +620,7 @@ class Parameters:
     @jog_distance.setter
     def jog_distance(self, value):
         self.settings["jog_distance"] = value
+        self.__dict__["jog_distance"] = value
 
     @property
     def jog_enable(self):
@@ -530,6 +629,7 @@ class Parameters:
     @jog_enable.setter
     def jog_enable(self, value):
         self.settings["jog_enable"] = value
+        self.__dict__["jog_enable"] = value
 
     #####################
     # DWELL PROPERTIES
@@ -542,6 +642,7 @@ class Parameters:
     @dwell_time.setter
     def dwell_time(self, value):
         self.settings["dwell_time"] = value
+        self.__dict__["dwell_time"] = value
 
     #####################
     # INPUT PROPERTIES
@@ -554,6 +655,7 @@ class Parameters:
     @input_mask.setter
     def input_mask(self, value):
         self.settings["input_mask"] = value
+        self.__dict__["input_mask"] = value
 
     @property
     def input_value(self):
@@ -562,6 +664,7 @@ class Parameters:
     @input_value.setter
     def input_value(self, value):
         self.settings["input_value"] = value
+        self.__dict__["input_value"] = value
 
     @property
     def input_message(self):
@@ -570,6 +673,7 @@ class Parameters:
     @input_message.setter
     def input_message(self, value):
         self.settings["input_message"] = value
+        self.__dict__["input_message"] = value
 
     #####################
     # OUTPUT PROPERTIES
@@ -582,6 +686,7 @@ class Parameters:
     @output_mask.setter
     def output_mask(self, value):
         self.settings["output_mask"] = value
+        self.__dict__["output_mask"] = value
 
     @property
     def output_value(self):
@@ -590,6 +695,7 @@ class Parameters:
     @output_value.setter
     def output_value(self, value):
         self.settings["output_value"] = value
+        self.__dict__["output_value"] = value
 
     @property
     def output_message(self):
@@ -598,3 +704,4 @@ class Parameters:
     @output_message.setter
     def output_message(self, value):
         self.settings["output_message"] = value
+        self.__dict__["output_message"] = value

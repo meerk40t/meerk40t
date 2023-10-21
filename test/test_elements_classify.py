@@ -2,7 +2,7 @@ import unittest
 from random import Random
 from test import bootstrap
 
-from meerk40t.core.element_types import elem_nodes, op_nodes
+from meerk40t.core.elements.element_types import elem_nodes, op_nodes
 
 
 class TestElementClassification(unittest.TestCase):

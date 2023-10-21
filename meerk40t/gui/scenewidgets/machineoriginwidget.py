@@ -1,3 +1,10 @@
+"""
+This widget draws the machine origin as well as the X and Y directions for the coordinate system being used.
+
+The machine origin is actually the position of the 0,0 location for the device being used, whereas the coordinate
+system is the user display space.
+"""
+
 import wx
 
 from meerk40t.gui.laserrender import DRAW_MODE_ORIGIN
@@ -25,7 +32,6 @@ class MachineOriginWidget(Widget):
         return HITCHAIN_HIT
 
     def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
-        """ """
         return RESPONSE_CHAIN
 
     def process_draw(self, gc):
@@ -40,22 +46,37 @@ class MachineOriginWidget(Widget):
             # We were called without a matrix applied, that's plain wrong
             return
         margin = 5000
-        context = self.scene.context
-        x, y = context.device.show_to_scene_position(0, 0)
-        x_dx, x_dy = context.device.show_to_scene_position(50000, 0)
-        xa1_dx, xa1_dy = context.device.show_to_scene_position(45000, 5000)
-        xa2_dx, xa2_dy = context.device.show_to_scene_position(45000, -5000)
-        y_dx, y_dy = context.device.show_to_scene_position(0, 50000)
-        ya1_dx, ya1_dy = context.device.show_to_scene_position(5000, 45000)
-        ya2_dx, ya2_dy = context.device.show_to_scene_position(-5000, 45000)
+        space = self.scene.context.space
+        x, y = space.display.iposition(0, 0)
+        x_dx, x_dy = space.display.iposition(50000, 0)
+        xa1_dx, xa1_dy = space.display.iposition(45000, 5000)
+        xa2_dx, xa2_dy = space.display.iposition(45000, -5000)
+        y_dx, y_dy = space.display.iposition(0, 50000)
+        ya1_dx, ya1_dy = space.display.iposition(5000, 45000)
+        ya2_dx, ya2_dy = space.display.iposition(-5000, 45000)
+        dev0x, dev0y = space.device.view.iposition(0, 0)
         gc.SetBrush(self.brush)
-        gc.DrawRectangle(x - margin, y - margin, margin * 2, margin * 2)
+        gc.DrawRectangle(dev0x - margin, dev0y - margin, margin * 2, margin * 2)
+
         gc.SetBrush(wx.NullBrush)
         gc.SetPen(self.x_axis_pen)
-        gc.DrawLines(
-            [(x, y), (x_dx, x_dy), (xa1_dx, xa1_dy), (x_dx, x_dy), (xa2_dx, xa2_dy)]
-        )
+        # gc.DrawLines will draw a polygon according to the documentation!
+        # While the windows implementation of wxPython does not care
+        # and draws a polyline, the Linux implementation does and closes the
+        # polygon!
+        arrow1 = gc.CreatePath()
+        arrow1.MoveToPoint((x, y))
+        arrow1.AddLineToPoint((x_dx, x_dy))
+        arrow1.AddLineToPoint((xa1_dx, xa1_dy))
+        arrow1.MoveToPoint((x_dx, x_dy))
+        arrow1.AddLineToPoint((xa2_dx, xa2_dy))
+        gc.DrawPath(arrow1)
+
         gc.SetPen(self.y_axis_pen)
-        gc.DrawLines(
-            [(x, y), (y_dx, y_dy), (ya1_dx, ya1_dy), (y_dx, y_dy), (ya2_dx, ya2_dy)]
-        )
+        arrow2 = gc.CreatePath()
+        arrow2.MoveToPoint((x, y))
+        arrow2.AddLineToPoint((y_dx, y_dy))
+        arrow2.AddLineToPoint((ya1_dx, ya1_dy))
+        arrow2.MoveToPoint((y_dx, y_dy))
+        arrow2.AddLineToPoint((ya2_dx, ya2_dy))
+        gc.DrawPath(arrow2)

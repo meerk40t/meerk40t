@@ -55,7 +55,6 @@ class LihuiyuParser:
         self.number_consumer = {}
 
     def parse(self, data, elements):
-
         from meerk40t.tools.geomstr import Geomstr
 
         self.path = Geomstr()
@@ -73,9 +72,9 @@ class LihuiyuParser:
         self.write(data)
         self.path.uscale(UNITS_PER_MIL)
         elements.elem_branch.add(
-            type="elem geomstr",
-            path=self.path,
+            geometry=self.path,
             stroke=Color("black"),
+            type="elem path",
             **self.settings.settings,
         )
         elements.signal("refresh_scene", 0)
@@ -263,7 +262,7 @@ class LihuiyuParser:
         elif c == "B":  # Move to Right.
             if self.left and self.horizontal_major:
                 # Was T switched to B with horizontal rastering.
-                if self.raster_step:
+                if self.raster_step and self.compact_state:
                     self.distance_y += self.raster_step
             self.left = False
             self.x_on = True
@@ -273,7 +272,7 @@ class LihuiyuParser:
         elif c == "T":  # Move to Left
             if not self.left and self.horizontal_major:
                 # Was T switched to B with horizontal rastering.
-                if self.raster_step:
+                if self.raster_step and self.compact_state:
                     self.distance_y += self.raster_step
             self.left = True
             self.x_on = True
@@ -283,7 +282,7 @@ class LihuiyuParser:
         elif c == "R":  # Move to Bottom
             if self.top and not self.horizontal_major:
                 # Was L switched to R with vertical rastering.
-                if self.raster_step:
+                if self.raster_step and self.compact_state:
                     self.distance_x += self.raster_step
             self.top = False
             self.x_on = False
@@ -293,7 +292,7 @@ class LihuiyuParser:
         elif c == "L":  # Move to Top
             if not self.top and not self.horizontal_major:
                 # Was R switched to L with vertical rastering.
-                if self.raster_step:
+                if self.raster_step and self.compact_state:
                     self.distance_x += self.raster_step
             self.top = True
             self.x_on = False
@@ -351,15 +350,11 @@ class LihuiyuParser:
                     self.left = not self.left
                     self.x_on = True
                     self.y_on = False
-                    if self.raster_step:
-                        self.distance_y += self.raster_step
                 else:
                     # vertical major
                     self.top = not self.top
                     self.x_on = False
                     self.y_on = True
-                    if self.raster_step:
-                        self.distance_x += self.raster_step
             elif self.mode == 0:
                 # Homes then moves position.
                 pass

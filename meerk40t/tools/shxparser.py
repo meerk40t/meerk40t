@@ -580,7 +580,7 @@ class ShxFont:
     def _pop_stack(self):
         """
         Stack is considered four units deep. You may not pop more locations than have
-        been pushed onto the stack. Attempts to do so will respond with a error message.
+        been pushed onto the stack. Attempts to do so will respond with an error message.
         :return:
         """
         if self._debug:
@@ -724,7 +724,7 @@ class ShxFont:
         Octants are numbered ccw starting from 0° at the 3 o'clock position.
 
         3 2 1
-         \ /
+         ⍀ /
         4-O-0
          / \
         5 6 7

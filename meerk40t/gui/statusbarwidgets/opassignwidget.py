@@ -1,6 +1,6 @@
 import wx
 
-from meerk40t.core.element_types import op_nodes
+from meerk40t.core.elements.element_types import op_nodes
 from meerk40t.gui.icons import (
     icons8_diagonal_20,
     icons8_direction_20,
@@ -255,14 +255,6 @@ class OperationAssignWidget(StatusBarWidget):
             elif node.type == "op cut":
                 c, d = get_color()
                 result = icons8_laser_beam_20.GetBitmap(
-                    color=c,
-                    resize=(iconsize, iconsize),
-                    noadjustment=True,
-                    keepalpha=True,
-                )
-            elif node.type == "op hatch":
-                c, d = get_color()
-                result = icons8_diagonal_20.GetBitmap(
                     color=c,
                     resize=(iconsize, iconsize),
                     noadjustment=True,

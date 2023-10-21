@@ -2,7 +2,7 @@ import wx
 
 from meerk40t.gui.icons import icons8_connected_50, icons8_disconnected_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import TextCtrl
+from meerk40t.gui.wxutils import TextCtrl, dip_size
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -72,11 +72,11 @@ class TCPController(MWindow):
         self.text_status.SetToolTip(_("Connection status"))
         self.text_ip_host.SetToolTip(_("IP/Host if the server computer"))
         self.text_port.SetToolTip(_("Port for tcp connection on the server computer"))
-        self.text_buffer_length.SetMinSize((165, 23))
+        self.text_buffer_length.SetMinSize(dip_size(self, 165, -1))
         self.text_buffer_length.SetToolTip(
             _("Current number of bytes in the write buffer.")
         )
-        self.text_buffer_max.SetMinSize((165, 23))
+        self.text_buffer_max.SetMinSize(dip_size(self, 165, -1))
         self.text_buffer_max.SetToolTip(
             _("Current number of bytes in the write buffer.")
         )
@@ -105,7 +105,7 @@ class TCPController(MWindow):
 
         sizer_1.Add(connection_controller, 0, wx.EXPAND, 0)
         static_line_2 = wx.StaticLine(self, wx.ID_ANY)
-        static_line_2.SetMinSize((483, 5))
+        static_line_2.SetMinSize(dip_size(self, 483, 5))
         sizer_1.Add(static_line_2, 0, wx.EXPAND, 0)
         sizer_1.Add(self.gauge_buffer, 0, wx.EXPAND, 0)
         label_12 = wx.StaticText(self, wx.ID_ANY, _("Buffer Size: "))
@@ -174,4 +174,4 @@ class TCPController(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Device-Control", "TCP Controller")
+        return "Device-Control", "TCP Controller"

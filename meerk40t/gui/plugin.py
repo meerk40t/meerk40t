@@ -38,7 +38,7 @@ def plugin(kernel, lifecycle):
         except ImportError:
             print("wxMeerK40t plugin could not load because wxPython is not installed.")
             return True
-        # Lets check whether we have an incompatible version of wxpython and python
+        # Let's check whether we have an incompatible version of wxpython and python.
         # Python 3.10 onwards no longer supports automatic casts of decimals to ints:
         # Builtin and extension functions that take integer arguments no longer accept
         # Decimals, Fractions and other objects that can be converted to integers only
@@ -70,6 +70,9 @@ and a wxpython version <= 4.1.1."""
         kernel_root.register("render-op/make_raster", renderer.make_raster)
         kernel_root.register("font/wx_to_svg", wxfont_to_svg)
     if lifecycle == "register":
+        from meerk40t.gui.guicolors import GuiColors
+
+        kernel.add_service("colors", GuiColors(kernel))
 
         from meerk40t.gui.scene.scene import Scene
 
@@ -174,7 +177,7 @@ and a wxpython version <= 4.1.1."""
                 "object": kernel.root,
                 "default": False,
                 "type": bool,
-                "label": _("Disable Element-ToolTips"),
+                "label": _("Disable tooltips over tree"),
                 "tip": _(
                     "You can suppress the tooltips over operations and elements in the tree"
                 ),
@@ -208,13 +211,14 @@ and a wxpython version <= 4.1.1."""
             @param prompt: question asked of the user.
             @param option_yes: input to be interpreted as yes (first letter is okay too).
             @param option_no: input to be interpreted as no (first letter is okay too).
+            @param caption: caption for popup
             """
             import wx
 
             if option_yes is None:
-                option_yes = "Yes"
+                option_yes = _("Yes")
             if option_no is None:
-                option_yes = "No"
+                option_no = _("No")
             if caption is None:
                 caption = _("Question")
             dlg = wx.MessageDialog(
@@ -298,8 +302,13 @@ and a wxpython version <= 4.1.1."""
 
         if kernel._gui:
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
+            if kernel.args.simpleui:
+                kernel.console("window open SimpleUI\n")
+                meerk40tgui.MainLoop()
+                return
+
             kernel.console("window open MeerK40t\n")
-            for window in kernel.derivable("window"):
+            for window in kernel.section_startswith("window/"):
                 wsplit = window.split(":")
                 window_name = wsplit[0]
                 window_index = wsplit[-1] if len(wsplit) > 1 else None

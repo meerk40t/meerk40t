@@ -31,7 +31,7 @@ class PathPropertyPanel(ScrolledPanel):
         )
         self.node = node
         self.panels = []
-        # Id at top in all cases...
+        # `Id` at top in all cases...
         panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
         self.panels.append(panel_id)
 
@@ -109,6 +109,8 @@ class PathPropertyPanel(ScrolledPanel):
             return False
         elif node.type.startswith("elem"):
             return True
+        elif node.type.startswith("effect"):
+            return True
         return False
 
     def covered_area(self, nodes):
@@ -144,8 +146,13 @@ class PathPropertyPanel(ScrolledPanel):
                 bounds = Node.union_bounds(data)
             width = bounds[2] - bounds[0]
             height = bounds[3] - bounds[1]
-            new_width = int(width * dots_per_units)
-            new_height = int(height * dots_per_units)
+
+            try:
+                new_width = int(width * dots_per_units)
+                new_height = int(height * dots_per_units)
+            except OverflowError:
+                new_width = 0
+                new_height = 0
             # print(f"Width: {width:.0f} -> {new_width}")
             # print(f"Height: {height:.0f} -> {new_height}")
             keep_ratio = True
@@ -258,7 +265,7 @@ class PathPropertyPanel(ScrolledPanel):
         total_length = 0
         if hasattr(self.node, "as_path"):
             path = self.node.as_path()
-            total_length = path.length()
+            total_length = path.length(error=1e-2)
         else:
             total_length = 0
         total_area, second_area = self.covered_area([self.node])
@@ -283,6 +290,11 @@ class PathPropertyPanel(ScrolledPanel):
         self.lbl_info_segments.SetValue("")
 
         self.Refresh()
+
+    def signal(self, signalstr, myargs):
+        for panel in self.panels:
+            if hasattr(panel, "signal"):
+                panel.signal(signalstr, myargs)
 
     def __set_properties(self):
         return

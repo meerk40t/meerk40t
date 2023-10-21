@@ -4,7 +4,7 @@ from math import isinf
 
 import wx
 
-from meerk40t.core.element_types import elem_nodes
+from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH, Length
@@ -190,6 +190,8 @@ class InformationWidget(SimpleInfoWidget):
                 bounds = Node.union_bounds(data)
             width = bounds[2] - bounds[0]
             height = bounds[3] - bounds[1]
+            if isinf(width) or isinf(height):
+                return float("inf"), float("inf")
             new_width = int(width * dots_per_units)
             new_height = int(height * dots_per_units)
             # print(f"Width: {width:.0f} -> {new_width}")
@@ -250,7 +252,7 @@ class InformationWidget(SimpleInfoWidget):
                 ct += 1
                 if hasattr(e, "as_path"):
                     path = e.as_path()
-                    this_length = path.length()
+                    this_length = path.length(error=1e-2)
                 else:
                     this_length = 0
                 total_length += this_length
@@ -325,7 +327,7 @@ class BurnProgressPanel(SimpleInfoWidget):
         self._job_estimate = 0
         self._job_elapsed = 0
         self._job_remaining = 0
-        # How often do i want to have an update?
+        # How often do I want to have an update?
         self._last_invokation = 0
         self._invokation_delta = 2  # Every 2 seconds max
         self._driver = None

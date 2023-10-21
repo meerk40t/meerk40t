@@ -805,6 +805,8 @@ class VectorMontonizer:
 
         @return:
         """
+        if len(self._events) == 0:
+            return None, None
         self._sort_events()
         y_min = self._events[0][0]
         y_max = self._events[-1][0]
@@ -827,7 +829,7 @@ class VectorMontonizer:
             y = self.scanline
         m = e[6]
         b = e[7]
-        if m == float("nan") or m == float("inf"):
+        if isnan(m) or isinf(m):
             low = e[5]
             return low.x
         return (y - b) / m

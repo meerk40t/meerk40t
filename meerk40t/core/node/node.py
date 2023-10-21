@@ -64,7 +64,7 @@ class Node:
 
     Type is a string value of the given node type and is used to delineate nodes.
     Label is a string value that will often describe the node.
-    Id is a string value, during saving, we make sure this is a unique id.
+    `Id` is a string value, during saving, we make sure this is a unique id.
 
 
     Node bounds exist, but not all nodes are have geometric bounds.
@@ -80,17 +80,31 @@ class Node:
         self.id = None
         self.label = None
         self.lock = False
+        self._can_emphasize = True
+        self._can_highlight = True
+        self._can_target = True
+        self._can_move = True
+        self._can_scale = True
+        self._can_rotate = True
+        self._can_skew = True
+        self._can_modify = True
+        self._can_alter = True
+        self._can_update = True
+        self._can_remove = True
         self._is_visible = True
-
         for k, v in kwargs.items():
             if k.startswith("_"):
                 continue
-            if isinstance(v, str):
+            if isinstance(v, str) and k not in ("text", "id", "label"):
                 try:
                     v = ast.literal_eval(v)
                 except (ValueError, SyntaxError):
                     pass
-            self.__dict__[k] = v
+            try:
+                setattr(self, k, v)
+            except AttributeError:
+                # If this is already an attribute, just add it to the node dict.
+                self.__dict__[k] = v
 
         self._children = list()
         self._root = None
@@ -117,6 +131,7 @@ class Node:
 
         self._item = None
         self._cache = None
+        super().__init__()
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
@@ -188,22 +203,21 @@ class Node:
                 return True
             else:
                 return self._is_visible
-        else:
-            if hasattr(self, "references"):
-                valid = False
-                flag = False
-                for n in self.references:
-                    if hasattr(n.parent, "output"):
-                        valid = True
-                        if n.parent.output is None or n.parent.output:
-                            flag = True
-                            break
-                        if n.parent.is_visible:
-                            flag = True
-                            break
-                # If there aren't any references then it is visible by default
-                if valid:
-                    result = flag
+        if hasattr(self, "references"):
+            valid = False
+            flag = False
+            for n in self.references:
+                if hasattr(n.parent, "output"):
+                    valid = True
+                    if n.parent.output is None or n.parent.output:
+                        flag = True
+                        break
+                    if n.parent.is_visible:
+                        flag = True
+                        break
+            # If there aren't any references then it is visible by default
+            if valid:
+                result = flag
         return result
 
     @is_visible.setter
@@ -279,47 +293,50 @@ class Node:
 
     @property
     def can_emphasize(self):
-        return not self.lock
+        return self._can_emphasize
 
     @property
     def can_highlight(self):
-        return not self.lock
+        return self._can_highlight
 
     @property
     def can_target(self):
-        return not self.lock
+        return self._can_target
 
-    @property
-    def can_move(self):
+    def can_move(self, optional_permission=False):
+        if not self._can_move:
+            return False
+        if optional_permission:
+            return True
         return not self.lock
 
     @property
     def can_scale(self):
-        return not self.lock
+        return self._can_scale and not self.lock
 
     @property
     def can_rotate(self):
-        return not self.lock
+        return self._can_rotate and not self.lock
 
     @property
     def can_skew(self):
-        return not self.lock
+        return self._can_skew and not self.lock
 
     @property
     def can_modify(self):
-        return not self.lock
+        return self._can_modify and not self.lock
 
     @property
     def can_alter(self):
-        return not self.lock
+        return self._can_alter and not self.lock
 
     @property
     def can_update(self):
-        return not self.lock
+        return self._can_update and not self.lock
 
     @property
     def can_remove(self):
-        return not self.lock
+        return self._can_remove and not self.lock
 
     @property
     def bounds(self):
@@ -495,6 +512,38 @@ class Node:
     def valid_node_for_reference(self, node):
         return True
 
+    def copy_children_as_references(self, obj):
+        """
+        Copy the children of the given object as direct references to those children.
+        @param obj:
+        @return:
+        """
+        for element in obj.children:
+            self.add_reference(element)
+
+    def copy_with_reified_tree(self):
+        """
+        Make a copy of the current node, and a copy of the sub-nodes dereferencing any reference nodes
+        @return:
+        """
+        copy_c = copy(self)
+        copy_c.copy_children_as_real(self)
+        return copy_c
+
+    def copy_children_as_real(self, copy_node):
+        """
+        Copy the children of copy_node to the current node, dereferencing any reference nodes.
+        @param copy_node:
+        @return:
+        """
+        for child in copy_node.children:
+            child = child
+            if child.type == "reference":
+                child = child.node
+            copy_child = copy(child)
+            self.add_node(copy_child)
+            copy_child.copy_children_as_real(child)
+
     def is_draggable(self):
         return True
 
@@ -564,7 +613,7 @@ class Node:
 
         Should be overloaded by subclasses.
 
-        @param index: index of the updating point
+        @param index: updating point index
         @param point: Point to be updated
         @return: Whether update was successful
         """
@@ -577,6 +626,7 @@ class Node:
         Should be overloaded by subclasses.
 
         @param point: point to be added
+        @param index: index for point insertion
         @return: Whether append was successful
         """
         # return self._insert_point(point, index)
@@ -609,52 +659,52 @@ class Node:
         return True
 
     def notify_created(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_created(node=node, **kwargs)
+            self._parent.notify_created(node=node, **kwargs)
 
     def notify_destroyed(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_destroyed(node=node, **kwargs)
+            self._parent.notify_destroyed(node=node, **kwargs)
 
     def notify_attached(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_attached(node=node, **kwargs)
+            self._parent.notify_attached(node=node, **kwargs)
 
     def notify_detached(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_detached(node=node, **kwargs)
+            self._parent.notify_detached(node=node, **kwargs)
 
     def notify_changed(self, node, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_changed(node=node, **kwargs)
+            self._parent.notify_changed(node=node, **kwargs)
 
     def notify_selected(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_selected(node=node, **kwargs)
+            self._parent.notify_selected(node=node, **kwargs)
 
     def notify_emphasized(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_emphasized(node=node, **kwargs)
+            self._parent.notify_emphasized(node=node, **kwargs)
 
     def notify_targeted(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_targeted(node=node, **kwargs)
+            self._parent.notify_targeted(node=node, **kwargs)
 
     def notify_highlighted(self, node=None, **kwargs):
         if self._root is not None:
@@ -663,58 +713,58 @@ class Node:
             self._root.notify_highlighted(node=node, **kwargs)
 
     def notify_modified(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_modified(node=node, **kwargs)
+            self._parent.notify_modified(node=node, **kwargs)
 
     def notify_translated(self, node=None, dx=0, dy=0, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_translated(node=node, dx=dx, dy=dy, **kwargs)
+            self._parent.notify_translated(node=node, dx=dx, dy=dy, **kwargs)
 
     def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_scaled(node=node, sx=sx, sy=sy, ox=ox, oy=oy, **kwargs)
+            self._parent.notify_scaled(node=node, sx=sx, sy=sy, ox=ox, oy=oy, **kwargs)
 
     def notify_altered(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_altered(node=node, **kwargs)
+            self._parent.notify_altered(node=node, **kwargs)
 
     def notify_expand(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_expand(node=node, **kwargs)
+            self._parent.notify_expand(node=node, **kwargs)
 
     def notify_collapse(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_collapse(node=node, **kwargs)
+            self._parent.notify_collapse(node=node, **kwargs)
 
     def notify_reorder(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_reorder(node=node, **kwargs)
+            self._parent.notify_reorder(node=node, **kwargs)
 
     def notify_update(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_update(node=node, **kwargs)
+            self._parent.notify_update(node=node, **kwargs)
 
     def notify_focus(self, node=None, **kwargs):
-        if self._root is not None:
+        if self._parent is not None:
             if node is None:
                 node = self
-            self._root.notify_focus(node=node, **kwargs)
+            self._parent.notify_focus(node=node, **kwargs)
 
     def focus(self):
         self.notify_focus(self)
@@ -753,7 +803,7 @@ class Node:
     def translated(self, dx, dy):
         """
         This is a special case of the modified call, we are translating
-        the node without fundamentally altering it's properties
+        the node without fundamentally altering its properties
         """
         if self._bounds_dirty or self._bounds is None:
             # A pity but we need proper data
@@ -776,6 +826,9 @@ class Node:
                 self._paint_bounds[3] + dy,
             ]
         self._points_dirty = True
+        # No need to translate it as we will apply the matrix later
+        # self.translate_functional_parameter(dx, dy)
+
         # if self._points_dirty:
         #     self.revalidate_points()
         # else:
@@ -788,7 +841,7 @@ class Node:
     def scaled(self, sx, sy, ox, oy):
         """
         This is a special case of the modified call, we are scaling
-        the node without fundamentally altering it's properties
+        the node without fundamentally altering its properties
         """
 
         def apply_it(box):
@@ -803,13 +856,14 @@ class Node:
                 d2 = y1 - oy
                 y0 = oy + sy * d1
                 y1 = oy + sy * d2
-            return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
+            return min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)
 
         if self._bounds_dirty or self._bounds is None:
             # A pity but we need proper data
             self.modified()
             return
         self._bounds = apply_it(self._bounds)
+        # self.scale_functional_parameter(sx, sy, ox, oy)
         # This may not really correct, we need the
         # implied stroke_width to add, so the inherited
         # element classes will need to overload it
@@ -882,9 +936,21 @@ class Node:
         @param pos:
         @return:
         """
+        if node is None:
+            # This should not happen and is a sign that something is amiss,
+            # so we inform at least abount it
+            print("Tried to add an invalid node...")
+            return
         if node._parent is not None:
             raise ValueError("Cannot reparent node on add.")
-        self._attach_node(node, pos=pos)
+        node._parent = self
+        node._root = self._root
+        if pos is None:
+            self._children.append(node)
+        else:
+            self._children.insert(pos, node)
+        node.notify_attached(node, parent=self, pos=pos)
+        return node
 
     def create(self, type, **kwargs):
         """
@@ -896,29 +962,15 @@ class Node:
         """
         from .bootstrap import bootstrap, defaults
 
-        node_class = bootstrap.get(type, Node)
+        node_class = bootstrap.get(type, None)
+        if node_class is None:
+            raise ValueError("Attempted to create unbootstrapped node")
         node_defaults = defaults.get(type, {})
         nd = dict(node_defaults)
         nd.update(kwargs)
         node = node_class(**nd)
         if self._root is not None:
             self._root.notify_created(node)
-        return node
-
-    def _attach_node(self, node, pos=None):
-        """
-        Attach a valid and created node to tree.
-        @param node:
-        @param pos:
-        @return:
-        """
-        node._parent = self
-        node._root = self._root
-        if pos is None:
-            self._children.append(node)
-        else:
-            self._children.insert(pos, node)
-        node.notify_attached(node, parent=self, pos=pos)
         return node
 
     def add(self, type=None, pos=None, **kwargs):
@@ -931,7 +983,10 @@ class Node:
         @return:
         """
         node = self.create(type=type, **kwargs)
-        self._attach_node(node, pos=pos)
+        if node is not None:
+            self.add_node(node, pos=pos)
+        else:
+            print(f"Did not produce a valid node for type '{type}'")
         return node
 
     def _flatten(self, node):
@@ -964,6 +1019,7 @@ class Node:
         emphasized=None,
         targeted=None,
         highlighted=None,
+        lock=None,
     ):
         """
         Returned flat list of matching nodes. If cascade is set then any matching group will give all the descendants
@@ -984,7 +1040,8 @@ class Node:
             (targeted is None or targeted == node.targeted)
             and (emphasized is None or emphasized == node.emphasized)
             and (selected is None or selected == node.selected)
-            and (highlighted is None or highlighted != node.highlighted)
+            and (highlighted is None or highlighted == node.highlighted)
+            and (lock is None or lock == node.lock)
         ):
             # Matches the emphases.
             if cascade:
@@ -1005,7 +1062,7 @@ class Node:
         # Check all children.
         for c in node.children:
             yield from c.flat(
-                types, cascade, depth, selected, emphasized, targeted, highlighted
+                types, cascade, depth, selected, emphasized, targeted, highlighted, lock
             )
 
     def count_children(self):
@@ -1013,7 +1070,9 @@ class Node:
 
     def append_child(self, new_child):
         """
-        Add the new_child node as the last child of the current node.
+        Moves the new_child node as the last child of the current node.
+        If the node exists elsewhere in the tree it will be removed from that location.
+
         """
         new_parent = self
         source_siblings = new_child.parent.children
@@ -1029,6 +1088,7 @@ class Node:
     def insert_sibling(self, new_sibling):
         """
         Add the new_sibling node next to the current node.
+        If the node exists elsewhere in the tree it will be removed from that location.
         """
         reference_sibling = self
         source_siblings = new_sibling.parent.children
@@ -1066,14 +1126,18 @@ class Node:
         self._item = None
         self._parent = None
         self._root = None
-        self.type = None
         self.unregister()
         return node
 
-    def remove_node(self, children=True, references=True, fast=False):
+    def remove_node(self, children=True, references=True, fast=False, destroy=True):
         """
         Remove the current node from the tree.
-        This function must iterate down and first remove all children from the bottom.
+
+        @param children: removes all the children of this node.
+        @param references: remove the references to this node.
+        @param fast: Do not send notifications of the detatches and destroys
+        @param destroy: Do not destroy the node.
+        @return:
         """
         if children:
             self.remove_all_children(fast=fast)
@@ -1082,23 +1146,23 @@ class Node:
             self._parent.set_dirty_bounds()
         if not fast:
             self.notify_detached(self)
-            self.notify_destroyed(self)
+            if destroy:
+                self.notify_destroyed(self)
         if references:
             for ref in list(self._references):
                 ref.remove_node(fast=fast)
         self._item = None
         self._parent = None
         self._root = None
-        self.type = None
         self.unregister()
 
-    def remove_all_children(self, fast=False):
+    def remove_all_children(self, fast=False, destroy=True):
         """
-        Removes all children of the current node.
+        Recursively removes all children of the current node.
         """
         for child in list(self.children):
-            child.remove_all_children(fast=fast)
-            child.remove_node(fast=fast)
+            child.remove_all_children(fast=fast, destroy=destroy)
+            child.remove_node(fast=fast, destroy=destroy)
 
     def get(self, type=None):
         """
@@ -1133,7 +1197,9 @@ class Node:
         else:
             xmin, ymin, xmax, ymax = bounds
         for e in nodes:
-            box = getattr(e, attr)
+            if e.lock:
+                continue
+            box = getattr(e, attr, None)
             if box is None:
                 continue
             if box[0] < xmin:

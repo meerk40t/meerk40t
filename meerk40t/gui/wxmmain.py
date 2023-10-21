@@ -1,3 +1,4 @@
+import datetime
 import os
 import platform
 import sys
@@ -8,16 +9,16 @@ from PIL import Image
 from wx import aui
 
 from meerk40t.core.exceptions import BadFileError
+from meerk40t.gui.statusbarwidgets.defaultoperations import DefaultOperationWidget
 from meerk40t.gui.statusbarwidgets.infowidget import (
     BurnProgressPanel,
     InformationWidget,
     StatusPanelWidget,
 )
-from meerk40t.gui.statusbarwidgets.opassignwidget import (
-    OperationAssignOptionWidget,
-    OperationAssignWidget,
+from meerk40t.gui.statusbarwidgets.selectionwidget import (
+    SelectionOptionWidget,
+    SnapOptionsWidget,
 )
-from meerk40t.gui.statusbarwidgets.selectionwidget import SelectionWidget
 from meerk40t.gui.statusbarwidgets.shapepropwidget import (
     FillruleWidget,
     LinecapWidget,
@@ -48,6 +49,8 @@ from .icons import (  # icons8_replicate_rows_50,
     icons8_copy_50,
     icons8_curly_brackets_50,
     icons8_cursor_50,
+    icons8_delete_50,
+    icons8_finger_50,
     icons8_flip_vertical,
     icons8_group_objects_50,
     icons8_measure_50,
@@ -70,6 +73,7 @@ from .icons import (  # icons8_replicate_rows_50,
     icons8_type_50,
     icons8_undo_50,
     icons8_ungroup_objects_50,
+    icons8_user_location_50,
     icons8_vector_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
@@ -115,7 +119,7 @@ class MeerK40t(MWindow):
         except AttributeError:
             # Not WX 4.1
             pass
-
+        # print(self.GetDPIScaleFactor())
         self.context.gui = self
         self._usb_running = dict()
         context = self.context
@@ -148,14 +152,20 @@ class MeerK40t(MWindow):
         self.__set_panes()
         self.__set_commands()
 
+        self.edit_menu_choice = None
+        self._setup_edit_menu_choice()
+
         # Menu Bar
         self.main_menubar = wx.MenuBar()
         self.__set_menubars()
         # Status Bar
         self.startup = True
-        self.main_statusbar = CustomStatusBar(self, 4)
+        # Combine the panels to have more space
+        combine = True
+        pcount = 3 if combine else 4
+        self.main_statusbar = CustomStatusBar(self, pcount)
         self.widgets_created = False
-        self.setup_statusbar_panels()
+        self.setup_statusbar_panels(combine)
         self.SetStatusBar(self.main_statusbar)
         self.main_statusbar.SetStatusStyles(
             [wx.SB_SUNKEN] * self.main_statusbar.GetFieldsCount()
@@ -193,35 +203,75 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_SIZE, self.on_size)
 
         self.CenterOnScreen()
+        self.update_check_at_startup()
+        self.parametric_info = None
 
-    def setup_statusbar_panels(self):
-        if not self.context.show_colorbar:
+    def update_check_at_startup(self):
+        if self.context.update_check == 0:
             return
+        if self.context.update_check == 1:
+            command = "check_for_updates --verbosity 2\n"
+        elif self.context.update_check == 2:
+            command = "check_for_updates --beta --verbosity 2\n"
+        doit = True
+        lastdate = None
+        lastcall = self.context.setting(int, "last_update_check", None)
+        if lastcall is not None:
+            try:
+                lastdate = datetime.date.fromordinal(lastcall)
+            except ValueError:
+                pass
+        now = datetime.date.today()
+        if lastdate is not None:
+            delta = now - lastdate
+            # print (f"Delta: {delta.days}, lastdate={lastdate}, interval={self.context.update_frequency}")
+            if self.context.update_frequency == 2 and delta.days <= 6:
+                # Weekly
+                doit = False
+            elif self.context.update_frequency == 1 and delta.days <= 0:
+                # Daily
+                doit = False
+        if doit:
+            self.context.last_update_check = now.toordinal()
+            self.context(command)
+
+    def setup_statusbar_panels(self, combine):
+        # if not self.context.show_colorbar:
+        #     return
         self.widgets_created = True
-        self.idx_selection = self.main_statusbar.panelct - 1
-        self.idx_colors = self.main_statusbar.panelct - 2
-        self.idx_assign = self.main_statusbar.panelct - 3
+        if combine:
+            self.idx_colors = self.main_statusbar.panelct - 2
+            self.idx_assign = self.main_statusbar.panelct - 2
+        else:
+            self.idx_colors = self.main_statusbar.panelct - 2
+            self.idx_assign = self.main_statusbar.panelct - 3
 
         self.status_panel = StatusPanelWidget(self.main_statusbar.panelct)
+        self.idx_selection = self.main_statusbar.panelct - 1
+
         self.main_statusbar.add_panel_widget(self.status_panel, 0, "status", True)
 
-        self.select_panel = SelectionWidget()
+        self.select_panel = SelectionOptionWidget()
+        self.snap_panel = SnapOptionsWidget()
         self.info_panel = InformationWidget()
         self.main_statusbar.add_panel_widget(
             self.select_panel, self.idx_selection, "selection", False
         )
         self.main_statusbar.add_panel_widget(
+            self.snap_panel, self.idx_selection, "snap", False
+        )
+        self.main_statusbar.add_panel_widget(
             self.info_panel, self.idx_selection, "infos", False
         )
 
-        self.assign_button_panel = OperationAssignWidget()
-        self.assign_option_panel = OperationAssignOptionWidget()
+        self.assign_button_panel = DefaultOperationWidget()
+        # self.assign_option_panel = OperationAssignOptionWidget()
         self.main_statusbar.add_panel_widget(
             self.assign_button_panel, self.idx_assign, "assign", True
         )
-        self.main_statusbar.add_panel_widget(
-            self.assign_option_panel, self.idx_assign, "assign-options", True
-        )
+        # self.main_statusbar.add_panel_widget(
+        #     self.assign_option_panel, self.idx_assign, "assign-options", True
+        # )
 
         self.color_panel = ColorWidget()
         self.stroke_panel = StrokeWidget()
@@ -247,8 +297,250 @@ class MeerK40t(MWindow):
         self.main_statusbar.add_panel_widget(
             self.burn_panel, self.idx_selection, "burninfo", False
         )
-
+        self.main_statusbar.activate_panel("snap", True)
         self.assign_button_panel.show_stuff(False)
+
+    def _setup_edit_menu_choice(self):
+        def on_click_undo():
+            self.context("undo\n")
+
+        def on_click_redo():
+            self.context("redo\n")
+
+        def on_click_cut():
+            self.context("clipboard cut\n")
+
+        def on_click_copy():
+            self.context("clipboard copy\n")
+
+        def on_click_paste():
+            self.context("clipboard paste\n")
+
+        def on_click_sel_all():
+            self.context("element* select\n")
+
+        def on_click_sel_none():
+            self.context("element* select-\n")
+
+        def on_click_sel_invert():
+            self.context("element* select^\n")
+
+        def on_click_sel_unassigned():
+            elements = self.context.elements
+            for node in elements.elems():
+                flag = False
+                if hasattr(node, "references"):
+                    flag = True
+                    if len(node.references) > 0:
+                        flag = False
+                if node.can_emphasize:
+                    node.emphasized = flag
+            elements.validate_selected_area()
+            self.context.signal("refresh_scene", "Scene")
+
+        def on_click_properties():
+            self.context("window open Properties\n")
+
+        def on_click_device_manager():
+            self.context("window open DeviceManager\n")
+
+        def on_click_device_settings():
+            self.context("window open Configuration\n")
+
+        def on_click_pref_wordlist():
+            self.context("window open Wordlist\n")
+
+        def on_click_pref_fonts():
+            self.context("window open HersheyFontManager\n")
+
+        def on_click_pref_keys():
+            self.context("window open Keymap\n")
+
+        def on_click_preferences():
+            self.context("window open Preferences\n")
+
+        def on_click_delete():
+            self.context("tree selected delete\n")
+
+        def clipboard_filled():
+            res = False
+            try:
+                destination = self.context.elements._clipboard_default
+                if len(self.context.elements._clipboard[destination]) > 0:
+                    res = True
+            except (TypeError, KeyError):
+                pass
+            return res
+
+        self.edit_menu_choice = [
+            {
+                "label": _("&Undo\tCtrl-Z"),
+                "help": _("Undo last action"),
+                "action": on_click_undo,
+                "id": wx.ID_UNDO,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("&Redo\tCtrl-Shift-Z"),
+                "help": _("Revert last undo"),
+                "action": on_click_redo,
+                "id": wx.ID_REDO,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": "",
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("C&ut\tCtrl-X"),
+                "help": _("Cut selected elements"),
+                "action": on_click_cut,
+                "enabled": self.context.elements.has_emphasis,
+                "id": wx.ID_CUT,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("&Copy\tCtrl-C"),
+                "help": _("Copy selected elements to clipboard"),
+                "action": on_click_copy,
+                "enabled": self.context.elements.has_emphasis,
+                "id": wx.ID_COPY,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("&Paste\tCtrl-V"),
+                "help": _("Paste elements from clipboard"),
+                "action": on_click_paste,
+                "enabled": clipboard_filled,
+                "id": wx.ID_PASTE,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": "",
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("&Select all\tCtrl-A"),
+                "help": _("Select all elements on scene"),
+                "action": on_click_sel_all,
+                "id": wx.ID_SELECTALL,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("&Select None"),
+                "help": _("Deselect all elements on scene"),
+                "action": on_click_sel_none,
+                "enabled": self.context.elements.has_emphasis,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("&Invert selection\tCtrl-I"),
+                "help": _("Invert the selection status of all elements"),
+                "action": on_click_sel_invert,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Select all non-assigned"),
+                "help": _("Select all elements that are not assigned to an operation"),
+                "action": on_click_sel_unassigned,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": "",
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Delete"),
+                "help": _("Delete the selected elements"),
+                "action": on_click_delete,
+                "enabled": self.context.elements.has_emphasis,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": "",
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Properties"),
+                "help": _("Edit the elements properties"),
+                "action": on_click_properties,
+                "enabled": self.context.elements.has_emphasis,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": "",
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Device-Manager"),
+                "help": _("Manage the Laser devices"),
+                "action": on_click_device_manager,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Device-Configuration"),
+                "help": _("Manage the device settings"),
+                "action": on_click_device_settings,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": "",
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Wordlist-Editor"),
+                "help": _("Manages Wordlist-Entries"),
+                "action": on_click_pref_wordlist,
+                "level": 2,
+                "segment": "Settings",
+            },
+            {
+                "label": _("Font-Manager"),
+                "help": _("Open the vector-font management window."),
+                "action": on_click_pref_fonts,
+                "level": 2,
+                "segment": "Settings",
+            },
+            {
+                "label": _("Key-Bindings"),
+                "help": _("Opens Keymap Window"),
+                "action": on_click_pref_keys,
+                "level": 2,
+                "segment": "Settings",
+            },
+            {
+                "label": "",
+                "level": 2,
+                "segment": "Settings",
+            },
+            {
+                "label": _("Preferences\tCtrl-,"),
+                "help": _("Edit the general preferences"),
+                "action": on_click_preferences,
+                "level": 2,
+                "id": wx.ID_PREFERENCES,
+                "segment": "Settings",
+            },
+        ]
 
     def destroy_statusbar_panels(self):
         self.main_statusbar.Clear()
@@ -263,18 +555,18 @@ class MeerK40t(MWindow):
         self.context.signal("refresh_scene", "Scene")
 
     # --- Listen to external events to update the bar
-    @signal_listener("show_colorbar")
-    def on_colobar_signal(self, origin, *args):
-        if len(args) > 0:
-            showem = args[0]
-        else:
-            showem = True
-        if showem:
-            if not self.widgets_created:
-                self.setup_statusbar_panels()
-        else:
-            if self.widgets_created:
-                self.destroy_statusbar_panels()
+    # @signal_listener("show_colorbar")
+    # def on_colobar_signal(self, origin, *args):
+    #     if len(args) > 0:
+    #         showem = args[0]
+    #     else:
+    #         showem = True
+    #     if showem:
+    #         if not self.widgets_created:
+    #             self.setup_statusbar_panels()
+    #     else:
+    #         if self.widgets_created:
+    #             self.destroy_statusbar_panels()
 
     @signal_listener("element_property_reload")
     @signal_listener("element_property_update")
@@ -300,14 +592,16 @@ class MeerK40t(MWindow):
 
     @signal_listener("emphasized")
     def on_update_statusbar(self, origin, *args):
-        if not self.context.show_colorbar or not self.widgets_created:
-            return
         value = self.context.elements.has_emphasis()
+        self._update_status_edit_menu()(None)
+        if not self.widgets_created:
+            return
+
         self.main_statusbar.Signal("emphasized")
         # First enable/disable the controls in the statusbar
 
         self.assign_button_panel.show_stuff(value)
-        self.main_statusbar.activate_panel("selection", value)
+        self.main_statusbar.activate_panel("selection", value, force=True)
         self.main_statusbar.activate_panel("infos", value)
         self.main_statusbar.activate_panel("color", value)
         self.main_statusbar.activate_panel("stroke", value)
@@ -320,7 +614,6 @@ class MeerK40t(MWindow):
     def register_options_and_choices(self, context):
         _ = context._
         context.setting(bool, "disable_tool_tips", False)
-        context.setting(bool, "maintain_zoom_resize", True)
         context.setting(bool, "enable_sel_move", True)
         context.setting(bool, "enable_sel_size", True)
         context.setting(bool, "enable_sel_rotate", True)
@@ -330,7 +623,7 @@ class MeerK40t(MWindow):
         # default, factor 1 - leave as is
         # small = factor 2/3, min_size = 32
         # tiny  = factor 1/2, min_size = 25
-        context.setting(str, "icon_size", "default")
+        # context.setting(str, "icon_size", "default")
         # Ribbon-Size (NOT YET ACTIVE)
         # default - std icon size + panel-labels,
         # small - std icon size / no labels
@@ -355,6 +648,20 @@ class MeerK40t(MWindow):
         # context.kernel.register_choices("preferences", choices)
         choices = [
             {
+                "attr": "icon_size",
+                "object": self.context.root,
+                "default": "small",
+                "type": str,
+                "style": "combosmall",
+                "choices": ["large", "big", "default", "small", "tiny"],
+                "label": _("Icon size:"),
+                "tip": _(
+                    "Appearance of all icons in the GUI (requires a restart to take effect)"
+                ),
+                "page": "Gui",
+                "section": "Appearance",
+            },
+            {
                 "attr": "mini_icon",
                 "object": self.context.root,
                 "default": False,
@@ -366,20 +673,21 @@ class MeerK40t(MWindow):
                 ),
                 "page": "Gui",
                 "section": "Appearance",
+                "signals": "rebuild_tree",
             },
             {
-                "attr": "icon_size",
+                "attr": "tree_colored",
                 "object": self.context.root,
-                "default": "default",
-                "type": str,
-                "style": "combosmall",
-                "choices": ["large", "big", "default", "small", "tiny"],
-                "label": _("Icon size:"),
+                "default": True,
+                "type": bool,
+                "label": _("Color entries in tree"),
                 "tip": _(
-                    "Appearance of all icons in the GUI (requires a restart to take effect))"
+                    "Active: The tree entry will be displayed in the objects color\n"
+                    + "Inactive: Standard Colors are used"
                 ),
                 "page": "Gui",
                 "section": "Appearance",
+                "signals": "rebuild_tree",
             },
         ]
         context.kernel.register_choices("preferences", choices)
@@ -442,11 +750,11 @@ class MeerK40t(MWindow):
         context.kernel.register_choices("preferences", choices)
         choices = [
             {
-                "attr": "maintain_zoom_resize",
+                "attr": "autofocus_resize",
                 "object": self.context.root,
-                "default": True,
+                "default": False,
                 "type": bool,
-                "label": _("Maintain zoom on resize"),
+                "label": _("Autofocus bed on resize"),
                 "tip": _("Autofocus bed when resizing the main window"),
                 "page": "Gui",
                 "section": "Zoom",
@@ -482,21 +790,21 @@ class MeerK40t(MWindow):
         ]
         context.kernel.register_choices("preferences", choices)
 
-        choices = [
-            {
-                "attr": "show_colorbar",
-                "object": self.context.root,
-                "default": True,
-                "type": bool,
-                "label": _("Display colorbar in statusbar"),
-                "tip": _(
-                    "Enable the display of a colorbar at the bottom of the screen."
-                ),
-                "page": "Gui",
-                "section": "General",
-            },
-        ]
-        context.kernel.register_choices("preferences", choices)
+        # choices = [
+        #     {
+        #         "attr": "show_colorbar",
+        #         "object": self.context.root,
+        #         "default": True,
+        #         "type": bool,
+        #         "label": _("Display colorbar in statusbar"),
+        #         "tip": _(
+        #             "Enable the display of a colorbar at the bottom of the screen."
+        #         ),
+        #         "page": "Gui",
+        #         "section": "General",
+        #     },
+        # ]
+        # context.kernel.register_choices("preferences", choices)
 
         choices = [
             {
@@ -525,7 +833,7 @@ class MeerK40t(MWindow):
                 "max": 75,
                 "label": _("Display-Distance"),
                 "tip": _(
-                    "Defines until which distance snap points will be highlighted"
+                    "The screen distance in pixels inside which snap points will be highlighted"
                 ),
                 "page": "Scene",
                 "section": "Snap-Options",
@@ -535,8 +843,10 @@ class MeerK40t(MWindow):
                 "object": context.root,
                 "default": False,
                 "type": bool,
-                "label": _("Snap to element"),
-                "tip": _("Shall the cursor snap to the next element point?"),
+                "label": _("Snap to Element"),
+                "tip": _(
+                    "If checked, the cursor will snap to the closest element point within the specified threshold"
+                ),
                 "page": "Scene",
                 "section": "Snap-Options",
                 "subsection": "Element-Points",
@@ -550,9 +860,9 @@ class MeerK40t(MWindow):
                 "style": "slider",
                 "min": 1,
                 "max": 75,
-                "label": _("Point-Snap-Threshold"),
+                "label": _("Element-Point-Snap-Threshold"),
                 "tip": _(
-                    "Set the distance inside which the cursor will snap to the next element point"
+                    "Set the screen distance in pixels inside which the cursor will snap to the nearest element point"
                 ),
                 "page": "Scene",
                 "section": "Snap-Options",
@@ -564,7 +874,9 @@ class MeerK40t(MWindow):
                 "default": True,
                 "type": bool,
                 "label": _("Snap to Grid"),
-                "tip": _("Shall the cursor snap to the next grid intersection?"),
+                "tip": _(
+                    "If checked, the cursor will snap to the closest grid intersection"
+                ),
                 "page": "Scene",
                 "section": "Snap-Options",
                 "subsection": "Grid",
@@ -578,13 +890,26 @@ class MeerK40t(MWindow):
                 "style": "slider",
                 "min": 1,
                 "max": 75,
-                "label": _("Point-Snap-Threshold"),
+                "label": _("Grid-Point-Snap-Threshold"),
                 "tip": _(
-                    "Set the distance inside which the cursor will snap to the next grid intersection"
+                    "Set the screen distance in pixels inside which the cursor will snap to the nearest grid intersection"
                 ),
                 "page": "Scene",
                 "section": "Snap-Options",
                 "subsection": "Grid",
+            },
+            {
+                "attr": "clear_magnets",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Clear magnets on File/New"),
+                "tip": _(
+                    "File/New can remove all defined magnetlines (active)\nor leave them in place (inactive)"
+                ),
+                "page": "Scene",
+                "section": "Snap-Options",
+                "subsection": "Magnetlines",
             },
         ]
         context.kernel.register_choices("preferences", choices)
@@ -601,6 +926,38 @@ class MeerK40t(MWindow):
                 "page": "Gui",
                 "hidden": True,
                 "section": "Scene",
+            },
+            {
+                "attr": "button_repeat",
+                "object": self.context.root,
+                "default": 0.5,
+                "type": float,
+                "label": _("Button repeat-interval"),
+                "tip": _(
+                    "If you click and hold the mouse-button on the Jog/Drag-Panels\n"
+                    + "the movement action will be repeated. This value establishes\n"
+                    + "the interval between individual executions.\n"
+                    + "A value of 0 will disable this feature."
+                ),
+                "page": "Gui",
+                "section": "Misc.",
+                "subsection": "Button-Behaviour",
+                "signals": "button-repeat",
+            },
+            {
+                "attr": "button_accelerate",
+                "object": self.context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Accelerate repeats"),
+                "tip": _(
+                    "If you hold the button for some time, then after some repetitions\n"
+                    + "the action will increase in speed if you activate this option."
+                ),
+                "page": "Gui",
+                "section": "Misc.",
+                "subsection": "Button-Behaviour",
+                "signals": "button-repeat",
             },
             {
                 "attr": "process_while_typing",
@@ -692,6 +1049,44 @@ class MeerK40t(MWindow):
                 "identifier": "none",
             },
         )
+        # kernel.register(
+        #     "button/tools/Nodeeditor",
+        #     {
+        #         "label": _("Node Edit"),
+        #         "icon": icons8_node_edit_50,
+        #         "tip": _("Edit nodes of a polyline/path-object"),
+        #         "action": lambda v: kernel.elements("tool nodemove\n"),
+        #         "group": "tool",
+        #         "size": bsize_normal,
+        #         "identifier": "nodemove",
+        #     },
+        # )
+        kernel.register(
+            "button/tools/Parameter",
+            {
+                "label": _("Parametric Edit"),
+                "icon": icons8_finger_50,
+                "tip": _("Parametric edit of a shape"),
+                "action": lambda v: kernel.elements("tool parameter\n"),
+                "group": "tool",
+                "size": bsize_normal,
+                "identifier": "parameter",
+                "rule_enabled": lambda cond: contains_a_param(),
+            },
+        )
+        kernel.register(
+            "button/tools/Nodeeditor",
+            {
+                "label": _("Node Edit"),
+                "icon": icons8_node_edit_50,
+                "tip": _("Edit nodes of a polyline/path-object"),
+                "action": lambda v: kernel.elements("tool edit\n"),
+                "group": "tool",
+                "size": bsize_normal,
+                "identifier": "edit",
+                "rule_enabled": lambda cond: contains_a_path(),
+            },
+        )
 
         kernel.register(
             "button/tools/Relocate",
@@ -703,6 +1098,19 @@ class MeerK40t(MWindow):
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "relocate",
+            },
+        )
+
+        kernel.register(
+            "button/tools/Placement",
+            {
+                "label": _("Job Start"),
+                "icon": icons8_user_location_50,
+                "tip": _("Add a job starting point to the scene"),
+                "action": lambda v: kernel.elements("tool placement\n"),
+                "group": "tool",
+                "size": bsize_normal,
+                "identifier": "placement",
             },
         )
 
@@ -807,7 +1215,7 @@ class MeerK40t(MWindow):
                 "label": _("Vector"),
                 "icon": icons8_vector_50,
                 "tip": _(
-                    "Add a shape\nLeft click: point/line\nClick and hold: curve\nDouble click: complete\nRight click: cancel"
+                    "Add a shape\nLeft click: point/line\nClick and hold: curve\nDouble click: complete\nRight click: end"
                 ),
                 "action": lambda v: kernel.elements("tool vector\n"),
                 "group": "tool",
@@ -815,7 +1223,6 @@ class MeerK40t(MWindow):
                 "identifier": "vector",
             },
         )
-
         kernel.register(
             "button/tools/Text",
             {
@@ -829,6 +1236,17 @@ class MeerK40t(MWindow):
             },
         )
 
+        kernel.register(
+            "button/basicediting/Delete",
+            {
+                "label": _("Delete"),
+                "icon": icons8_delete_50,
+                "tip": _("Delete selected items"),
+                "action": lambda v: kernel.elements("tree selected delete\n"),
+                "size": bsize_normal,
+                "rule_enabled": lambda cond: bool(kernel.elements.has_emphasis()),
+            },
+        )
         kernel.register(
             "button/basicediting/Cut",
             {
@@ -902,7 +1320,7 @@ class MeerK40t(MWindow):
         #     },
         # )
         kernel.register(
-            "button/basicediting/Undo",
+            "button/undo/Undo",
             {
                 "label": _("Undo"),
                 "icon": icons8_undo_50,
@@ -914,7 +1332,7 @@ class MeerK40t(MWindow):
             },
         )
         kernel.register(
-            "button/basicediting/Redo",
+            "button/undo/Redo",
             {
                 "label": _("Redo"),
                 "icon": icons8_redo_50,
@@ -941,6 +1359,14 @@ class MeerK40t(MWindow):
             },
         )
 
+        def contains_a_param():
+            result = False
+            for e in kernel.elements.elems(emphasized=True):
+                if e.functional_parameter is not None:
+                    result = True
+                    break
+            return result
+
         def contains_a_path():
             result = False
             for e in kernel.elements.elems(emphasized=True):
@@ -949,18 +1375,6 @@ class MeerK40t(MWindow):
                     break
             return result
 
-        kernel.register(
-            "button/modify/Nodeeditor",
-            {
-                "label": _("Node Edit"),
-                "icon": icons8_node_edit_50,
-                "tip": _("Edit nodes of a polyline/path-object"),
-                "action": lambda v: kernel.elements("tool edit\n"),
-                "size": bsize_normal,
-                "identifier": "nodeedit",
-                "rule_enabled": lambda cond: contains_a_path(),
-            },
-        )
         # Default Size for smaller buttons
         buttonsize = STD_ICON_SIZE / 2
 
@@ -1113,8 +1527,9 @@ class MeerK40t(MWindow):
                         group_node = node.parent.add(type="group", label="Group")
                     group_node.append_child(node)
                     node.emphasized = True
-                group_node.emphasized = True
-                kernel.signal("element_property_reload", "Scene", group_node)
+                if group_node is not None:
+                    group_node.emphasized = True
+                    kernel.signal("element_property_reload", "Scene", group_node)
 
         # Default Size for normal buttons
         buttonsize = STD_ICON_SIZE
@@ -1186,7 +1601,9 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements(
                     "align push first individual left pop\n"
                 ),
-                "right": lambda v: kernel.elements("align push bed group left pop\n"),
+                "action_right": lambda v: kernel.elements(
+                    "align push bed group left pop\n"
+                ),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1200,7 +1617,9 @@ class MeerK40t(MWindow):
             {
                 "label": _("Wordlist"),
                 "icon": icons8_curly_brackets_50,
-                "tip": _("Manages Wordlist-Entries"),
+                "tip": _("Manages Wordlist-Entries")
+                + "\n"
+                + _(" (right go to next entry)"),
                 "action": lambda v: kernel.console("window toggle Wordlist\n"),
                 "identifier": "prep_wordlist",
                 "priority": 99,
@@ -1209,23 +1628,29 @@ class MeerK40t(MWindow):
                     {
                         "identifier": "prep_wordlist_edit",
                         "icon": icons8_curly_brackets_50,
-                        "tip": _("Manages Wordlist-Entries"),
-                        "label": _("Wordlist"),
+                        "tip": _("Manages Wordlist-Entries")
+                        + _(" (right go to next entry)"),
+                        "label": _("Wordlist Editor"),
                         "action": lambda v: kernel.console("window toggle Wordlist\n"),
+                        "action_right": lambda v: kernel.elements.wordlist_advance(1),
                     },
                     {
                         "identifier": "prep_wordlist_plus_1",
                         "icon": icons8_circled_right_50,
-                        "tip": _("Wordlist: go to next entry"),
+                        "tip": _("Wordlist: go to next entry")
+                        + _(" (right go to prev entry)"),
                         "label": _("Next"),
                         "action": lambda v: kernel.elements.wordlist_advance(1),
+                        "action_right": lambda v: kernel.elements.wordlist_advance(-1),
                     },
                     {
                         "identifier": "prep_wordlist_minus_1",
                         "label": _("Prev"),
                         "icon": icons8_circled_left_50,
-                        "tip": _("Wordlist: go to prev entry"),
+                        "tip": _("Wordlist: go to prev entry")
+                        + _(" (right go to next entry)"),
                         "action": lambda v: kernel.elements.wordlist_advance(-1),
+                        "action_right": lambda v: kernel.elements.wordlist_advance(1),
                     },
                 ],
             },
@@ -1243,7 +1668,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at the rightmost position (right click: of the bed)"
                 ),
                 "action": lambda v: kernel.elements("align first right\n"),
-                "right": lambda v: kernel.elements("align bed group right\n"),
+                "action_right": lambda v: kernel.elements("align bed group right\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1260,7 +1685,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at the topmost position (right click: of the bed)"
                 ),
                 "action": lambda v: kernel.elements("align first top\n"),
-                "right": lambda v: kernel.elements("align bed group top\n"),
+                "action_right": lambda v: kernel.elements("align bed group top\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1277,7 +1702,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at the lowest position (right click: of the bed)"
                 ),
                 "action": lambda v: kernel.elements("align first bottom\n"),
-                "right": lambda v: kernel.elements("align bed group bottom\n"),
+                "action_right": lambda v: kernel.elements("align bed group bottom\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1294,7 +1719,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at their center horizontally (right click: of the bed)"
                 ),
                 "action": lambda v: kernel.elements("align first centerh\n"),
-                "right": lambda v: kernel.elements("align bed group centerh\n"),
+                "action_right": lambda v: kernel.elements("align bed group centerh\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1311,7 +1736,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at their center vertically (right click: of the bed)"
                 ),
                 "action": lambda v: kernel.elements("align first centerv\n"),
-                "right": lambda v: kernel.elements("align bed group centerv\n"),
+                "action_right": lambda v: kernel.elements("align bed group centerv\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1330,7 +1755,7 @@ class MeerK40t(MWindow):
                 + "\n"
                 + _("Right click: Equal centers"),
                 "action": lambda v: kernel.elements("align spaceh\n"),
-                "right": lambda v: kernel.elements("align spaceh2\n"),
+                "action_right": lambda v: kernel.elements("align spaceh2\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1349,7 +1774,7 @@ class MeerK40t(MWindow):
                 + "\n"
                 + _("Right click: Equal centers"),
                 "action": lambda v: kernel.elements("align spacev\n"),
-                "right": lambda v: kernel.elements("align spacev2\n"),
+                "action_right": lambda v: kernel.elements("align spacev2\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1385,8 +1810,8 @@ class MeerK40t(MWindow):
                 m = m.replace("$x", str(x))
                 m = m.replace("$y", str(y))
                 matrix = Matrix(m)
-                unit_width = context.device.unit_width
-                unit_height = context.device.unit_height
+                unit_width = context.device.view.unit_width
+                unit_height = context.device.view.unit_height
                 matrix.render(ppi=UNITS_PER_INCH, width=unit_width, height=unit_height)
                 if matrix.is_identity():
                     dlg.Destroy()
@@ -1418,7 +1843,7 @@ class MeerK40t(MWindow):
             )
             dlg.SetValue("")
             if dlg.ShowModal() == wx.ID_OK:
-                unit_width = context.device.unit_width
+                unit_width = context.device.view.unit_width
                 length = float(Length(dlg.GetValue(), relative_length=unit_width))
                 matrix = Matrix()
                 matrix.post_scale(-1.0, 1, length / 2.0, 0)
@@ -1505,8 +1930,17 @@ class MeerK40t(MWindow):
             ) as fileDialog:
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
                     return  # the user changed their mind
+                idx = fileDialog.GetFilterIndex()
+                preferred_loader = None
+                if idx > 0:
+                    lidx = 0
+                    for loader, loader_name, sname in context.kernel.find("load"):
+                        lidx += 1
+                        if lidx == idx:
+                            preferred_loader = loader_name
+                            break
                 pathname = fileDialog.GetPath()
-                gui.clear_and_open(pathname)
+                gui.clear_and_open(pathname, preferred_loader=preferred_loader)
 
         @context.console_command("dialog_import", hidden=True)
         def import_dialog(**kwargs):
@@ -1519,8 +1953,17 @@ class MeerK40t(MWindow):
             ) as fileDialog:
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
                     return  # the user changed their mind
+                idx = fileDialog.GetFilterIndex()
+                preferred_loader = None
+                if idx > 0:
+                    lidx = 0
+                    for loader, loader_name, sname in context.kernel.find("load"):
+                        lidx += 1
+                        if lidx == idx:
+                            preferred_loader = loader_name
+                            break
                 pathname = fileDialog.GetPath()
-                gui.load(pathname)
+                gui.load(pathname, preferred_loader)
 
         @context.console_option("quit", "q", action="store_true", type=bool)
         @context.console_command("dialog_save_as", hidden=True)
@@ -1599,10 +2042,13 @@ class MeerK40t(MWindow):
         # AUI Manager Update.
         self._mgr.Update()
 
-        self.default_perspective = self._mgr.SavePerspective()
-        self.context.setting(str, "perspective")
-        if self.context.perspective is not None:
-            self._mgr.LoadPerspective(self.context.perspective)
+        self.default_aui = self._mgr.SavePerspective()
+        self.context.setting(str, "aui")
+        self.context.setting(str, "aui_version", self.context.kernel.version)
+        if self.context.aui is not None:
+            # The aui_version will be set on init or reset. This can be used to set resets after specific versions.
+            # if self.context.kernel.version == self.context.aui_version:
+            self._mgr.LoadPerspective(self.context.aui)
 
         self.on_config_panes()
         self.__console_commands()
@@ -1626,12 +2072,12 @@ class MeerK40t(MWindow):
             all_arguments_required=True,
         )
         def load_pane(command, _, channel, configuration=None, **kwargs):
-            perspective = context.setting(str, f"perspective_{configuration}", None)
-            if not perspective:
+            aui = context.setting(str, f"aui_{configuration}", None)
+            if not aui:
                 channel(_("Perspective not found"))
                 return
             self.on_panes_closed()
-            self._mgr.LoadPerspective(perspective, update=True)
+            self._mgr.LoadPerspective(aui, update=True)
             self.on_config_panes()
 
         @context.console_argument("configuration", help=_("configuration to load"))
@@ -1642,9 +2088,7 @@ class MeerK40t(MWindow):
             all_arguments_required=True,
         )
         def save_pane(command, _, channel, configuration=None, **kwargs):
-            setattr(
-                context, f"perspective_{configuration}", self._mgr.SavePerspective()
-            )
+            setattr(context, f"aui_{configuration}", self._mgr.SavePerspective())
 
         @context.console_argument("pane", help=_("pane to be shown"))
         @context.console_command(
@@ -1796,7 +2240,7 @@ class MeerK40t(MWindow):
                 width = 646
                 height = 519
             elif pane == "preferences":
-                from .preferences import PreferencesPanel as CreatePanel
+                from .preferences import PreferencesMain as CreatePanel
 
                 caption = _("Preferences")
                 width = 565
@@ -1823,7 +2267,8 @@ class MeerK40t(MWindow):
 
     def on_pane_reset(self, event=None):
         self.on_panes_closed()
-        self._mgr.LoadPerspective(self.default_perspective, update=True)
+        self._mgr.LoadPerspective(self.default_aui, update=True)
+        self.context.aui_version = self.context.kernel.version
         self.on_config_panes()
 
     def on_panes_closed(self):
@@ -1883,6 +2328,7 @@ class MeerK40t(MWindow):
                 self.add_module_delegate(page)
         else:
             self.add_module_delegate(control)
+        paneinfo.manager = self._mgr
         self.on_pane_show(paneinfo)
 
     def on_pane_show(self, paneinfo: aui.AuiPaneInfo):
@@ -1959,6 +2405,8 @@ class MeerK40t(MWindow):
         context.setting(str, "file18", None)
         context.setting(str, "file19", None)
         self.populate_recent_menu()
+        if hasattr(context.kernel.busyinfo, "reparent"):
+            context.kernel.busyinfo.reparent(self)
 
     @lookup_listener("pane")
     def dynamic_fill_pane_menu(self, new=None, old=None):
@@ -2211,56 +2659,17 @@ class MeerK40t(MWindow):
             except KeyError:
                 c_level = 1
 
-            try:
-                c_segment = choice["segment"]
-            except KeyError:
-                c_segment = ""
-
-            try:
-                c_subsegment = choice["subsegment"]
-            except KeyError:
-                c_subsegment = ""
-
-            try:
-                c_label = choice["label"]
-            except KeyError:
-                c_label = ""
-
-            try:
-                c_help = choice["help"]
-            except KeyError:
-                c_help = ""
-
-            try:
-                c_action = choice["action"]
-            except KeyError:
-                c_action = None
-
-            try:
-                c_criteria = choice["criteria"]
-            except KeyError:
-                c_criteria = None
-
-            try:
-                c_enabled = choice["enabled"]
-            except KeyError:
-                c_enabled = None
-
-            try:
-                c_segment = choice["segment"]
-            except KeyError:
-                c_segment = ""
-
-            try:
-                c_param = choice["parameter"]
-            except KeyError:
-                c_param = None
-
-            try:
-                c_id = choice["id"]
-            except KeyError:
-                c_id = wx.ID_ANY
-            # print(f"{c_segment}{c_subsegment},{c_level}: {c_label}")
+            c_segment = choice.get("segment", "")
+            c_subsegment = choice.get("subsegment", "")
+            c_label = choice.get("label", "")
+            c_help = choice.get("help", "")
+            c_action = choice.get("action")
+            c_criteria = choice.get("criteria")
+            c_enabled = choice.get("enabled")
+            c_segment = choice.get("segment", "")
+            c_param = choice.get("parameter")
+            c_text_color = choice.get("text_color")
+            c_id = choice.get("id", wx.ID_ANY)
             if c_segment != current_segment:
                 current_segment = c_segment
                 current_subsegment = ""
@@ -2311,13 +2720,17 @@ class MeerK40t(MWindow):
                         wx.ITEM_CHECK,
                     )
                     menu_item.Check(c_criteria)
-                flag = True
-                if c_enabled is not None:
-                    try:
-                        flag = bool(c_enabled())
-                    except (AttributeError, TypeError):
-                        pass
-                menu_item.Enable(flag)
+                choice["menu_item"] = menu_item
+                if c_text_color:
+                    menu_item.SetTextColour(c_text_color)
+                # flag = True
+                # if c_enabled is not None:
+                #     try:
+                #         flag = bool(c_enabled())
+                #     except (AttributeError, TypeError):
+                #         pass
+                # if not flag:
+                #     menu_item.Enable(flag)
 
                 def deal_with(routine, parameter=None):
                     def done(event):
@@ -2337,7 +2750,6 @@ class MeerK40t(MWindow):
                     )
 
     def __set_file_menu(self):
-
         self.file_menu = wx.Menu()
         # ==========
         # FILE MENU
@@ -2388,252 +2800,32 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_MENU, self.on_click_exit, id=menu_item.GetId())
         self.main_menubar.Append(self.file_menu, _("File"))
 
+    def _update_status_edit_menu(self, *args):
+        def handler(event):
+            for entry in self.edit_menu_choice:
+                if "label" in entry and "enabled" in entry:
+                    flag = True
+                    label = entry["label"]
+                    try:
+                        flag = bool(entry["enabled"]())
+                    except AttributeError:
+                        flag = True
+                    if label:
+                        menu_id = self.edit_menu.FindItem(label)
+                        if menu_id != wx.NOT_FOUND:
+                            menu_item = self.edit_menu.FindItemById(menu_id)
+                            menu_item.Enable(flag)
+            if event:
+                event.Skip()
+
+        return handler
+
     def __set_edit_menu(self):
         """
         Edit MENU
         """
-
-        def on_click_undo():
-            self.context("undo\n")
-
-        def on_click_redo():
-            self.context("redo\n")
-
-        def on_click_cut():
-            self.context("clipboard cut\n")
-
-        def on_click_copy():
-            self.context("clipboard copy\n")
-
-        def on_click_paste():
-            self.context("clipboard paste\n")
-
-        def on_click_sel_all():
-            self.context("element* select\n")
-
-        def on_click_sel_none():
-            self.context("element* select-\n")
-
-        def on_click_sel_invert():
-            self.context("element* select^\n")
-
-        def on_click_sel_unassigned():
-            elements = self.context.elements
-            for node in elements.elems():
-                flag = False
-                if hasattr(node, "references"):
-                    flag = True
-                    if len(node.references) > 0:
-                        flag = False
-                node.emphasized = flag
-            elements.validate_selected_area()
-            self.context.signal("refresh_scene", "Scene")
-
-        def on_click_properties():
-            self.context("window open Properties\n")
-
-        def on_click_device_manager():
-            self.context("window open DeviceManager\n")
-
-        def on_click_device_settings():
-            self.context("window open Configuration\n")
-
-        def on_click_pref_wordlist():
-            self.context("window open Wordlist\n")
-
-        def on_click_pref_fonts():
-            self.context("window open HersheyFontManager\n")
-
-        def on_click_pref_keys():
-            self.context("window open Keymap\n")
-
-        def on_click_preferences():
-            self.context("window open Preferences\n")
-
-        def on_click_delete():
-            self.context("element delete\n")
-
-        def clipboard_filled():
-            res = False
-            try:
-                destination = self.context.elements._clipboard_default
-                if len(self.context.elements._clipboard[destination]) > 0:
-                    res = True
-            except (TypeError, KeyError):
-                pass
-            return res
-
-        choices = [
-            {
-                "label": _("&Undo\tCtrl-Z"),
-                "help": _("Undo last action"),
-                "action": on_click_undo,
-                "id": wx.ID_UNDO,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("&Redo\tCtrl-Shift-Z"),
-                "help": _("Revert last undo"),
-                "action": on_click_redo,
-                "id": wx.ID_REDO,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": "",
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("C&ut\tCtrl-X"),
-                "help": _("Cut selected elements"),
-                "action": on_click_cut,
-                "enabled": self.context.elements.has_emphasis,
-                "id": wx.ID_CUT,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("&Copy\tCtrl-C"),
-                "help": _("Copy selected elements to clipboard"),
-                "action": on_click_copy,
-                "enabled": self.context.elements.has_emphasis,
-                "id": wx.ID_COPY,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("&Paste\tCtrl-V"),
-                "help": _("Paste elements from clipboard"),
-                "action": on_click_paste,
-                "enabled": clipboard_filled,
-                "id": wx.ID_PASTE,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": "",
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("&Select all\tCtrl-A"),
-                "help": _("Select all elements on scene"),
-                "action": on_click_sel_all,
-                "id": wx.ID_SELECTALL,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("&Select None"),
-                "help": _("Deselect all elements on scene"),
-                "action": on_click_sel_none,
-                "enabled": self.context.elements.has_emphasis,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("&Invert selection\tCtrl-I"),
-                "help": _("Invert the selection status of all elements"),
-                "action": on_click_sel_invert,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("Select all non-assigned"),
-                "help": _("Select all elements that are not assigned to an operation"),
-                "action": on_click_sel_unassigned,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": "",
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("Delete\tDel"),
-                "help": _("Delete the selected elements"),
-                "action": on_click_delete,
-                "enabled": self.context.elements.has_emphasis,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": "",
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("Properties"),
-                "help": _("Edit the elements properties"),
-                "action": on_click_properties,
-                "enabled": self.context.elements.has_emphasis,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": "",
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("Device-Manager"),
-                "help": _("Manage the Laser devices"),
-                "action": on_click_device_manager,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("Device-Configuration"),
-                "help": _("Manage the device settings"),
-                "action": on_click_device_settings,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": "",
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("Wordlist-Editor"),
-                "help": _("Manages Wordlist-Entries"),
-                "action": on_click_pref_wordlist,
-                "level": 2,
-                "segment": "Settings",
-            },
-            {
-                "label": _("Font-Manager"),
-                "help": _("Open the vector-font management window."),
-                "action": on_click_pref_fonts,
-                "level": 2,
-                "segment": "Settings",
-            },
-            {
-                "label": _("Key-Bindings"),
-                "help": _("Opens Keymap Window"),
-                "action": on_click_pref_keys,
-                "level": 2,
-                "segment": "Settings",
-            },
-            {
-                "label": "",
-                "level": 2,
-                "segment": "Settings",
-            },
-            {
-                "label": _("Preferences\tCtrl-,"),
-                "help": _("Edit the general preferences"),
-                "action": on_click_preferences,
-                "level": 2,
-                "id": wx.ID_PREFERENCES,
-                "segment": "Settings",
-            },
-        ]
         self.edit_menu = wx.Menu()
-        self._create_menu_from_choices(self.edit_menu, choices)
+        self._create_menu_from_choices(self.edit_menu, self.edit_menu_choice)
         label = _("Edit")
         index = self.main_menubar.FindMenu(label)
         if index != -1:
@@ -2641,27 +2833,7 @@ class MeerK40t(MWindow):
         else:
             self.main_menubar.Append(self.edit_menu, label)
 
-        def update_status(choices):
-            def handler(event):
-                for entry in choices:
-                    if "label" in entry and "enabled" in entry:
-                        flag = True
-                        label = entry["label"]
-                        try:
-                            flag = bool(entry["enabled"]())
-                        except AttributeError:
-                            flag = True
-                        if label:
-                            menu_id = self.edit_menu.FindItem(label)
-                            if menu_id != wx.NOT_FOUND:
-                                menu_item = self.edit_menu.FindItemById(menu_id)
-                                menu_item.Enable(flag)
-                        # print (entry["label"], entry["enabled"](), flag)
-                event.Skip()
-
-            return handler
-
-        self.edit_menu.Bind(wx.EVT_MENU_OPEN, update_status(choices))
+        self.edit_menu.Bind(wx.EVT_MENU_OPEN, self._update_status_edit_menu())
 
     def __set_view_menu(self):
         def toggle_draw_mode(bits):
@@ -3121,6 +3293,28 @@ class MeerK40t(MWindow):
         )
         self.help_menu.AppendSeparator()
         menuitem = self.help_menu.Append(
+            wx.ID_ANY,
+            _("Check for Updates"),
+            _("Check whether a newer version of Meerk40t is available"),
+        )
+
+        def update_check_from_menu():
+            if self.context.update_check == 1:
+                command = "check_for_updates --verbosity 3\n"
+            elif self.context.update_check == 2:
+                command = "check_for_updates --beta --verbosity 3\n"
+
+            self.context(command)
+            self.context.setting(int, "last_update_check", None)
+            now = datetime.date.today()
+            self.context.last_update_check = now.toordinal()
+
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: update_check_from_menu(),
+            id=menuitem.GetId(),
+        )
+        menuitem = self.help_menu.Append(
             wx.ID_ABOUT,
             _("&About MeerK40t"),
             _(
@@ -3170,6 +3364,8 @@ class MeerK40t(MWindow):
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
     @signal_listener("file;loaded")
+    @signal_listener("file;saved")
+    @signal_listener("file;cleared")
     @signal_listener("device;renamed")
     @lookup_listener("service/device/active")
     def on_active_change(self, *args):
@@ -3201,7 +3397,7 @@ class MeerK40t(MWindow):
     def window_close(self):
         context = self.context
 
-        context.perspective = self._mgr.SavePerspective()
+        context.aui = self._mgr.SavePerspective()
         self.on_panes_closed()
         self._mgr.UnInit()
 
@@ -3224,6 +3420,62 @@ class MeerK40t(MWindow):
         if len(self.context.elements.elem_branch.children) == 0:
             status = False
         self.set_needs_save_status(status)
+
+    @signal_listener("altered")
+    @signal_listener("modified")
+    @signal_listener("scaled")
+    def check_parametric_updates(self, origin, *args):
+        def getit(param, idx, default):
+            if idx >= len(param):
+                return default
+            return param[idx]
+
+        def read_information():
+            if self.parametric_info is None:
+                self.parametric_info = {}
+                for info, m, sname in self.context.kernel.find("element_update"):
+                    # function, path, shortname
+                    self.parametric_info[sname.lower()] = info
+
+        # Let's check for the need of parametric updates...
+        if len(args) == 0:
+            return
+        read_information()
+        data = args[0]
+        if not isinstance(data, (list, tuple)):
+            data = [args[0]]
+        for n in data:
+            if n is None:
+                continue
+            if not hasattr(n, "id"):
+                continue
+            if n.id is None:
+                continue
+            nid = n.id
+            for e in self.context.elements.elems():
+                if not hasattr(e, "functional_parameter"):
+                    continue
+                param = e.functional_parameter
+                if param is None:
+                    continue
+                ptype = getit(param, 0, None)
+                if ptype is None:
+                    continue
+                pid = getit(param, 2, None)
+                if pid != nid:
+                    continue
+                try:
+                    func_tuple = self.parametric_info[ptype.lower()]
+                    if not func_tuple[2]:  # No Autoupdate
+                        func_tuple = None
+                except IndexError:
+                    func_tuple = None
+                if func_tuple is not None:
+                    try:
+                        func = func_tuple[0]
+                        func(e)
+                    except IndexError:
+                        pass
 
     def validate_save(self):
         self.set_needs_save_status(False)
@@ -3251,6 +3503,22 @@ class MeerK40t(MWindow):
         )
         dlg.ShowModal()
         dlg.Destroy()
+
+    @signal_listener("default_operations")
+    def on_def_ops(self, origin, *args):
+        self.main_statusbar.Signal("default_operations")
+
+    @signal_listener("snap_grid")
+    @signal_listener("snap_points")
+    def on_sig_snap(self, origin, *args):
+        # will be used for both
+        self.main_statusbar.Signal("snap_grid")
+
+    @signal_listener("activate;device")
+    def on_device_active(self, origin, *args):
+        # A new device might have new default operations...
+        self.context.elements.init_default_operations_nodes()
+        self.main_statusbar.Signal("default_operations")
 
     @signal_listener("pipe;failing")
     def on_usb_error(self, origin, value):
@@ -3323,7 +3591,7 @@ class MeerK40t(MWindow):
     def on_spooler_queue_signal(self, origin, *args):
         self.main_statusbar.Signal("spooler;queue", args)
 
-        if not self.context.show_colorbar or not self.widgets_created:
+        if not self.widgets_created:
             return
         # Queue Len
         if len(args) > 0:
@@ -3362,8 +3630,6 @@ class MeerK40t(MWindow):
         self.main_statusbar.Reposition(value)
 
     def __set_titlebar(self):
-        device_name = ""
-        device_version = ""
         label = self.context.elements.filename
         if label is None:
             label = ""
@@ -3414,8 +3680,17 @@ class MeerK40t(MWindow):
             fileDialog.SetFilename(default_file)
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return  # the user changed their mind
+            idx = fileDialog.GetFilterIndex()
+            preferred_loader = None
+            if idx > 0:
+                lidx = 0
+                for loader, loader_name, sname in context.kernel.find("load"):
+                    lidx += 1
+                    if lidx == idx:
+                        preferred_loader = loader_name
+                        break
             pathname = fileDialog.GetPath()
-            self.load(pathname)
+            self.load(pathname, preferred_loader)
 
     def populate_recent_menu(self):
         if not hasattr(self, "recent_file_menu"):
@@ -3493,19 +3768,20 @@ class MeerK40t(MWindow):
                 break
         self.populate_recent_menu()
 
-    def clear_project(self):
+    def clear_project(self, ops_too=True):
         context = self.context
         kernel = context.kernel
         kernel.busyinfo.start(msg=_("Cleaning up..."))
         self.working_file = None
-        context.elements.clear_all()
+        context.elements.clear_all(ops_too=ops_too)
         self.context(".laserpath_clear\n")
         self.validate_save()
         kernel.busyinfo.end()
+        self.context("tool none\n")
 
-    def clear_and_open(self, pathname):
-        self.clear_project()
-        if self.load(pathname):
+    def clear_and_open(self, pathname, preferred_loader=None):
+        self.clear_project(ops_too=False)
+        if self.load(pathname, preferred_loader):
             try:
                 if self.context.uniform_svg and pathname.lower().endswith("svg"):
                     # or (len(elements) > 0 and "meerK40t" in elements[0].values):
@@ -3515,18 +3791,27 @@ class MeerK40t(MWindow):
             except AttributeError:
                 pass
 
-    def load(self, pathname):
+    def load(self, pathname, preferred_loader=None):
+        def unescaped(filename):
+            OS_NAME = platform.system()
+            if OS_NAME == "Windows":
+                newstring = filename.replace("&", "&&")
+            else:
+                newstring = filename.replace("&", "&&")
+            return newstring
+
         kernel = self.context.kernel
         try:
             # Reset to standard tool
             self.context("tool none\n")
-            info = _("Loading File...") + "\n" + pathname
+            info = _("Loading File...") + "\n" + unescaped(pathname)
             kernel.busyinfo.start(msg=info)
             n = self.context.elements.note
             results = self.context.elements.load(
                 pathname,
                 channel=self.context.channel("load"),
                 svg_ppi=self.context.elements.svg_ppi,
+                preferred_loader=preferred_loader,
             )
             kernel.busyinfo.end()
         except BadFileError as e:
@@ -3580,7 +3865,7 @@ class MeerK40t(MWindow):
         if self.context is None:
             return
         self.Layout()
-        if self.context.maintain_zoom_resize:
+        if self.context.autofocus_resize:
             zl = self.context.zoom_margin
             self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
 
@@ -3656,16 +3941,18 @@ class MeerK40t(MWindow):
             x_delta = (bbox[2] - bbox[0]) * zfact
             y_delta = (bbox[3] - bbox[1]) * zfact
             x0 = Length(
-                amount=bbox[0] - x_delta, relative_length=self.context.device.width
+                amount=bbox[0] - x_delta, relative_length=self.context.device.view.width
             ).length_mm
             y0 = Length(
-                amount=bbox[1] - y_delta, relative_length=self.context.device.height
+                amount=bbox[1] - y_delta,
+                relative_length=self.context.device.view.height,
             ).length_mm
             x1 = Length(
-                amount=bbox[2] + x_delta, relative_length=self.context.device.width
+                amount=bbox[2] + x_delta, relative_length=self.context.device.view.width
             ).length_mm
             y1 = Length(
-                amount=bbox[3] + y_delta, relative_length=self.context.device.height
+                amount=bbox[3] + y_delta,
+                relative_length=self.context.device.view.height,
             ).length_mm
             self.context(f"scene focus -a {x0} {y0} {x1} {y1}\n")
 

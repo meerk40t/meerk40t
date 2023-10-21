@@ -1,6 +1,6 @@
 import wx
 
-from meerk40t.core.element_types import elem_group_nodes, op_nodes
+from meerk40t.core.elements.element_types import elem_group_nodes, op_nodes
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
     icons8_diagonal_20,
@@ -8,6 +8,7 @@ from meerk40t.gui.icons import (
     icons8_file_20,
     icons8_group_objects_20,
     icons8_home_20,
+    icons8_home_location_20,
     icons8_image_20,
     icons8_image_50,
     icons8_input_20,
@@ -45,7 +46,6 @@ class FormatterPanel(wx.Panel):
             "util wait": icons8_timer_20,
             "util home": icons8_home_20,
             "util goto": icons8_return_20,
-            "util origin": icons8_return_20,
             "util output": icons8_output_20,
             "util input": icons8_input_20,
             "util console": icons8_system_task_20,
@@ -53,21 +53,23 @@ class FormatterPanel(wx.Panel):
             "op cut": icons8_laser_beam_20,
             "op image": icons8_image_20,
             "op raster": icons8_direction_20,
-            "op hatch": icons8_diagonal_20,
             "op dots": icons8_scatter_plot_20,
+            "effect hatch": icons8_diagonal_20,
+            "effect wobble": icons8_diagonal_20,
             "file": icons8_file_20,
             "group": icons8_group_objects_20,
             "elem point": icons8_scatter_plot_20,
             "elem ellipse": icons8_oval_50,
             "elem image": icons8_image_50,
             "elem path": icons8_vector_50,
-            "elem geomstr": icons8_vector_50,
             "elem polyline": icons8_polyline_50,
             "elem rect": icons8_rectangular_50,
             "elem line": icons8_polyline_50,
             "elem text": icons8_text_50,
+            "place current": icons8_home_location_20,
+            "place point": icons8_home_location_20,
         }
-        omit = ("elem geomstr", "elem line")
+        omit = ("elem line",)
         self.node_list = list(elem_group_nodes + op_nodes)
         for node in omit:
             try:
@@ -76,7 +78,38 @@ class FormatterPanel(wx.Panel):
                 # wasnt in list...
                 pass
 
-        choices = []
+        self.context.setting(bool, "use_percent_for_power_display", False)
+        self.context.setting(bool, "use_mm_min_for_speed_display", False)
+        choices = [
+            {
+                "attr": "use_percent_for_power_display",
+                "object": self.context,
+                "default": False,
+                "type": bool,
+                "label": _("Show power as %"),
+                "tip": _(
+                    "Active: Full power will be shown as 100%"
+                    + "\n"
+                    + "Inactive: Full power will be shown as 1000 ppi"
+                ),
+                "subsection": "_10_General",
+                "signals": ("rebuild_tree", "power_percent"),
+            },
+            {
+                "attr": "use_mm_min_for_speed_display",
+                "object": self.context,
+                "default": False,
+                "type": bool,
+                "label": _("Show speed in mm/min"),
+                "tip": _(
+                    "Active: Speed will be shown in mm/min"
+                    + "\n"
+                    + "Inactive: Speed will be shown in mm/s"
+                ),
+                "subsection": "_10_General",
+                "signals": ("rebuild_tree", "speed_min"),
+            },
+        ]
         for node in self.node_list:
             imgsize = 20
             if node in images:
@@ -158,7 +191,6 @@ class FormatterPanel(wx.Panel):
         from meerk40t.core.node.op_cut import CutOpNode
         from meerk40t.core.node.op_dots import DotsOpNode
         from meerk40t.core.node.op_engrave import EngraveOpNode
-        from meerk40t.core.node.op_hatch import HatchOpNode
         from meerk40t.core.node.op_image import ImageOpNode
         from meerk40t.core.node.op_raster import RasterOpNode
         from meerk40t.core.node.refnode import ReferenceNode
@@ -166,10 +198,8 @@ class FormatterPanel(wx.Panel):
         from meerk40t.core.node.util_goto import GotoOperation
         from meerk40t.core.node.util_home import HomeOperation
         from meerk40t.core.node.util_input import InputOperation
-        from meerk40t.core.node.util_origin import SetOriginOperation
         from meerk40t.core.node.util_output import OutputOperation
         from meerk40t.core.node.util_wait import WaitOperation
-        from meerk40t.svgelements import Ellipse, Path, Polyline, Rect
 
         bootstrap = {
             "op cut": CutOpNode,
@@ -177,10 +207,8 @@ class FormatterPanel(wx.Panel):
             "op raster": RasterOpNode,
             "op image": ImageOpNode,
             "op dots": DotsOpNode,
-            "op hatch": HatchOpNode,
             "util console": ConsoleOperation,
             "util wait": WaitOperation,
-            "util origin": SetOriginOperation,
             "util home": HomeOperation,
             "util goto": GotoOperation,
             "util input": InputOperation,
@@ -202,31 +230,18 @@ class FormatterPanel(wx.Panel):
         if nodetype in bootstrap:
             # print (f"Try to get an instance of {nodetype}")
             if nodetype.startswith("elem"):
-                param = None
-                shape = None
-                image = None
-                path = None
-                # might need a shape
                 if nodetype == "elem rect":
-                    shape = Rect(0, 0, 10, 10)
+                    node = bootstrap[nodetype](x=0, y=0, width=10, height=10)
                 elif nodetype == "elem ellipse":
-                    shape = Ellipse(0, 0, 10, 10)
+                    node = bootstrap[nodetype](cx=0, cy=0, rx=10, ry=10)
                 elif nodetype == "elem path":
-                    path = Path(Ellipse(0, 0, 10, 10))
+                    node = bootstrap[nodetype]()
                 elif nodetype == "elem image":
                     # Let's use an arbitrary image
                     image = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
-                elif nodetype == "elem polyline":
-                    shape = Polyline()
-
-                if shape is not None:
-                    node = bootstrap[nodetype](shape=shape)
-                elif image is not None:
                     node = bootstrap[nodetype](image=image)
-                elif path is not None:
-                    node = bootstrap[nodetype](path=path)
-                elif param is not None:
-                    node = bootstrap[nodetype](param)
+                elif nodetype == "elem polyline":
+                    node = bootstrap[nodetype]()
                 else:
                     node = bootstrap[nodetype]()
             else:

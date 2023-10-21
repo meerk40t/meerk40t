@@ -5,16 +5,17 @@ Moshiboard Device
 Defines the interactions between the device service and the meerk40t's viewport.
 Registers relevant commands and options.
 """
+from meerk40t.core.view import View
+from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
-from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, Service
-
+from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
-from ..core.units import UNITS_PER_MIL, Length, ViewPort
+from ..core.units import UNITS_PER_MIL, Length
 from .controller import MoshiController
 from .driver import MoshiDriver
 
 
-class MoshiDevice(Service, ViewPort):
+class MoshiDevice(Service):
     """
     MoshiDevice is driver for the Moshiboard boards.
     """
@@ -22,6 +23,7 @@ class MoshiDevice(Service, ViewPort):
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "MoshiDevice"
+        self.extension = "mos"
         if choices is not None:
             for c in choices:
                 attr = c.get("attr")
@@ -37,10 +39,7 @@ class MoshiDevice(Service, ViewPort):
         self.setting(int, "usb_bus", -1)
         self.setting(int, "usb_address", -1)
         self.setting(int, "usb_version", -1)
-        self.setting(bool, "mock", False)
 
-        self.setting(bool, "home_right", False)
-        self.setting(bool, "home_bottom", False)
         self.setting(bool, "enable_raster", True)
 
         self.setting(int, "packet_count", 0)
@@ -229,7 +228,7 @@ class MoshiDevice(Service, ViewPort):
                 "conditional": (self, "rotary_active"),
             },
             {
-                "attr": "rotary_mirror_x",
+                "attr": "rotary_flip_x",
                 "object": self,
                 "default": False,
                 "type": bool,
@@ -239,7 +238,7 @@ class MoshiDevice(Service, ViewPort):
                 "subsection": _("Mirror Output"),
             },
             {
-                "attr": "rotary_mirror_y",
+                "attr": "rotary_flip_y",
                 "object": self,
                 "default": False,
                 "type": bool,
@@ -270,21 +269,19 @@ class MoshiDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        ViewPort.__init__(
-            self,
-            self.bedwidth,
-            self.bedheight,
+        self.view = View(self.bedwidth, self.bedheight, dpi=1000.0)
+        self.view.transform(
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,
-            native_scale_x=UNITS_PER_MIL,
-            native_scale_y=UNITS_PER_MIL,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
-            origin_x=1.0 if self.home_right else 0.0,
-            origin_y=1.0 if self.home_bottom else 0.0,
         )
-
+        # rotary_active = self.rotary_active,
+        # rotary_scale_x = self.rotary_scale_x,
+        # rotary_scale_y = self.rotary_scale_y,
+        # rotary_flip_x = self.rotary_flip_x,
+        # rotary_flip_y = self.rotary_flip_y,
         self.state = 0
 
         self.driver = MoshiDriver(self)
@@ -296,6 +293,8 @@ class MoshiDevice(Service, ViewPort):
         self.spooler = Spooler(self, driver=self.driver)
         self.add_service_delegate(self.spooler)
 
+        self.driver.out_pipe = self.controller.write
+        self.driver.out_real = self.controller.realtime
         _ = self.kernel.translation
 
         @self.console_command("usb_connect", help=_("Connect USB"))
@@ -323,7 +322,7 @@ class MoshiDevice(Service, ViewPort):
             """
             Start output sending.
             """
-            self.controller.update_state(STATE_ACTIVE)
+            self.controller.update_state("active")
             self.controller.start()
             channel("Moshi Channel Started.")
 
@@ -332,7 +331,7 @@ class MoshiDevice(Service, ViewPort):
             """
             Pause output sending.
             """
-            self.controller.update_state(STATE_PAUSE)
+            self.controller.update_state("pause")
             self.controller.pause()
             channel(_("Moshi Channel Paused."))
             self.signal("pause")
@@ -342,7 +341,7 @@ class MoshiDevice(Service, ViewPort):
             """
             Resume output sending.
             """
-            self.controller.update_state(STATE_ACTIVE)
+            self.controller.update_state("active")
             self.controller.start()
             channel(_("Moshi Channel Resumed."))
             self.signal("pause")
@@ -353,7 +352,7 @@ class MoshiDevice(Service, ViewPort):
             Abort output job. Usually due to the functionality of Moshiboards this will do
             nothing as the job will have already sent to the backend.
             """
-            self.controller.estop()
+            self.driver.reset()
             channel(_("Moshi Channel Aborted."))
             self.signal("pipe;running", False)
 
@@ -382,6 +381,24 @@ class MoshiDevice(Service, ViewPort):
             """
             self.controller.abort_waiting = True
 
+        @self.console_argument("filename", type=str)
+        @self.console_command("save_job", help=_("save job export"), input_type="plan")
+        def moshi_save(channel, _, filename, data=None, **kwargs):
+            if filename is None:
+                raise CommandSyntaxError
+            try:
+                with open(filename, "wb") as f:
+                    driver = MoshiDriver(self)
+                    job = LaserJob(filename, list(data.plan), driver=driver)
+                    driver.out_pipe = f.write
+
+                    driver.job_start(job)
+                    job.execute()
+                    driver.job_finish(job)
+
+            except (PermissionError, OSError):
+                channel(_("Could not save: {filename}").format(filename=filename))
+
         @self.console_command(
             "viewport_update",
             hidden=True,
@@ -389,12 +406,11 @@ class MoshiDevice(Service, ViewPort):
         )
         def codes_update(**kwargs):
             self.origin_x = 1.0 if self.home_right else 0.0
-            self.show_flip_x = self.home_right
-            self.show_origin_x = self.origin_x
             self.origin_y = 1.0 if self.home_bottom else 0.0
-            self.show_origin_y = self.origin_y
-            self.show_flip_y = self.home_bottom
             self.realize()
+
+    def service_attach(self, *args, **kwargs):
+        self.realize()
 
     @property
     def viewbuffer(self):
@@ -405,7 +421,7 @@ class MoshiDevice(Service, ViewPort):
         """
         @return: the location in units for the current known position.
         """
-        return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
+        return self.view.iposition(self.driver.native_x, self.driver.native_y)
 
     @property
     def native(self):
@@ -414,9 +430,10 @@ class MoshiDevice(Service, ViewPort):
         """
         return self.driver.native_x, self.driver.native_y
 
+    @signal_listener("bedsize")
     def realize(self, origin=None):
-        self.width = self.bedwidth
-        self.height = self.bedheight
-        self.origin_x = 1.0 if self.home_right else 0.0
-        self.origin_y = 1.0 if self.home_bottom else 0.0
-        super().realize()
+        self.view.origin(
+            1.0 if self.home_right else 0.0, 1.0 if self.home_bottom else 0.0
+        )
+        self.view.realize()
+        self.space.update_bounds(0, 0, self.width, self.height)

@@ -1,6 +1,6 @@
 import socket
 
-from meerk40t.kernel import STATE_TERMINATE, Module
+from meerk40t.kernel import Module
 
 
 def plugin(kernel, lifecycle=None):
@@ -33,12 +33,12 @@ class TCPServer(Module):
         )
 
     def stop(self):
-        self.state = STATE_TERMINATE
+        self.state = "terminate"
 
     def module_close(self, *args, **kwargs):
         _ = self.context._
         self.events_channel(_("Shutting down server."))
-        self.state = STATE_TERMINATE
+        self.state = "terminate"
         if self.socket is not None:
             self.socket.close()
             self.socket = None
@@ -50,7 +50,6 @@ class TCPServer(Module):
         """
         _ = self.context._
         self.socket = socket.socket()
-        # self.socket.settimeout(0)
         try:
             self.socket.bind(("", self.port))
             self.socket.listen(1)
@@ -58,7 +57,7 @@ class TCPServer(Module):
             self.events_channel(_("Could not start listening."))
             return
         handle = 1
-        while self.state != STATE_TERMINATE:
+        while self.state != "terminate":
             self.events_channel(
                 _("Listening {name} on port {port}...").format(
                     name=self.name, port=self.port
@@ -101,17 +100,22 @@ class TCPServer(Module):
 
         def handle():
             def send(e):
-                if connection is not None:
-                    try:
-                        connection.send(bytes(e, "utf-8"))
-                        self.data_channel(f"<-- {str(e)}")
-                    except (ConnectionAbortedError, ConnectionResetError):
+                if connection is None:
+                    return
+                try:
+                    connection.send(bytes(e, "utf-8"))
+                    self.data_channel(f"<-- {str(e)}")
+                except (ConnectionAbortedError, ConnectionResetError):
+                    connection.close()
+                except OSError:
+                    # Connection is likely already closed.
+                    if connection is not None:
                         connection.close()
 
             recv = self.context.channel(f"{self.name}/recv", pure=True)
             send_channel_name = f"{self.name}/send"
             self.context.channel(send_channel_name, pure=True).watch(send)
-            while self.state != STATE_TERMINATE:
+            while self.state != "terminate":
                 try:
                     data_from_socket = connection.recv(1024)
                     if len(data_from_socket):

@@ -24,7 +24,6 @@ from .lifecycles import *
 from .module import Module
 from .service import Service
 from .settings import Settings
-from .states import *
 
 KERNEL_VERSION = "0.0.10"
 
@@ -74,6 +73,7 @@ class Kernel(Settings):
         profile: str,
         ansi: bool = True,
         ignore_settings: bool = False,
+        delay: float = 0.05,  # 20 ticks per second
     ):
         """
         Initialize the Kernel. This sets core attributes of the ecosystem that are accessible to all modules.
@@ -91,6 +91,7 @@ class Kernel(Settings):
             self, self.name, f"{profile}.cfg", ignore_settings=ignore_settings
         )
         self.settings = self
+        self.delay = delay
 
         # Boot State
         self._booted = False
@@ -133,7 +134,7 @@ class Kernel(Settings):
         self.scheduler_handles_main_thread_jobs = True
         self.scheduler_handles_default_thread_jobs = True
 
-        self.state = STATE_INITIALIZE
+        self.state = "init"
 
         # Scheduler
         self.jobs = {}
@@ -149,7 +150,7 @@ class Kernel(Settings):
         self._add_lock = threading.Lock()
         self._remove_lock = threading.Lock()
         self._message_queue = {}
-        self._is_queue_processing = False
+        self._processing = {}
 
         # Channels
         self.channels = {}
@@ -161,22 +162,48 @@ class Kernel(Settings):
 
         self.current_directory = "."
 
+        # Opened files
+        self._open_file_objects = {}
+
         # Arguments Objects
         self.args = None
 
     def __str__(self):
         return "Kernel()"
 
-    def open_safe(self, *args):
+    def open_safe(self, filename, *args):
+        """
+        Opens the given file with the arguments. If permissions are not granted, the safe path is used.
+
+        If the file already exists the same file object is returned.
+
+        @param filename:
+        @param args:
+        @return:
+        """
+
         try:
-            return open(*args)
-        except PermissionError:
-            original = os.getcwd()
+            file_obj = self._open_file_objects.get(filename)
+            if file_obj is not None and not file_obj.closed:
+                # Give cached file object.
+                return file_obj
+            file_obj = open(filename, *args)
+            self._open_file_objects[filename] = file_obj
+            return file_obj
+        except PermissionError as e:
+            original_dir = os.getcwd()
             os.chdir(get_safe_path(self.name, True))
+            safe_dir = os.getcwd()
+            if original_dir == safe_dir:
+                # Permissions error in safe dir. No solution.
+                raise PermissionError(
+                    "No permission to write to safe directory."
+                ) from e
+
             print(
-                f"Changing working directory from {str(original)} to {str(os.getcwd())}."
+                f"Changing working directory from {str(original_dir)} to {str(safe_dir)}."
             )
-            return open(*args)
+            return self.open_safe(filename, *args)
 
     def _start_debugging(self) -> None:
         """
@@ -1103,9 +1130,9 @@ class Kernel(Settings):
         self.signal_job = self.add_job(
             run=self.process_queue,
             name="kernel.signals",
-            interval=0.005,
+            interval=self.delay,
             run_main=True,
-            conditional=lambda: not self._is_queue_processing,
+            conditional=lambda: not self._processing,
         )
         self._booted = True
 
@@ -1147,6 +1174,12 @@ class Kernel(Settings):
         if hasattr(self.args, "console") and self.args.console:
             self.channel("console").watch(self.__print_delegate)
             import sys
+
+            if sys.stdin is None:
+                # This may happen if we are in gui-mode of a compiled application and launch with -c. There is no
+                # stdin and consequently trying to launch with this flag will otherwise crash.
+
+                return
 
             async def aio_readline(loop):
                 while not self._shutdown:
@@ -1225,7 +1258,7 @@ class Kernel(Settings):
         @return:
         """
         channel = self.channel("shutdown")
-        self.state = STATE_END  # Terminates the Scheduler.
+        self.state = "end"  # Terminates the Scheduler.
 
         _ = self.translation
 
@@ -1312,7 +1345,7 @@ class Kernel(Settings):
                     )
                 )
             try:
-                if thread is threading.currentThread():
+                if thread is threading.current_thread():
                     if channel:
                         channel(
                             _("{name} is the current shutdown thread").format(
@@ -1350,6 +1383,13 @@ class Kernel(Settings):
             if channel:
                 channel(_("No threads required halting."))
 
+        # Close any safe_files that are still opened.
+        for key, file_obj in self._open_file_objects.items():
+            try:
+                file_obj.close()
+            except:
+                pass
+
         # Process any remove attempts that were occurred too late for standard removal.
         self._process_remove_listeners()
         for key, listener in self.listeners.items():
@@ -1368,7 +1408,7 @@ class Kernel(Settings):
             self.scheduler_thread.join()
         if channel:
             channel(_("Shutdown."))
-        self._state = STATE_TERMINATE
+        self._state = "terminate"
 
     # ==========
     # REGISTRATION
@@ -1528,7 +1568,7 @@ class Kernel(Settings):
         @return:
         """
         self.channel("lookup")(
-            f"Changed all: {str(paths)} ({str(threading.currentThread().getName())})"
+            f"Changed all: {str(paths)} ({str(threading.current_thread().name)})"
         )
         with self._lookup_lock:
             if not self._dirty_paths:
@@ -1543,7 +1583,7 @@ class Kernel(Settings):
         @return:
         """
         self.channel("lookup")(
-            f"Changed {str(path)} ({str(threading.currentThread().getName())})"
+            f"Changed {str(path)} ({str(threading.current_thread().name)})"
         )
         with self._lookup_lock:
             if not self._dirty_paths:
@@ -1565,7 +1605,7 @@ class Kernel(Settings):
         channel = self.channel("lookup")
         if channel:
             channel(
-                f"Lookup Change Processing ({str(threading.currentThread().getName())})"
+                f"Lookup Change Processing ({str(threading.current_thread().name)})"
             )
         with self._lookup_lock:
             for matchtext in self.lookups:
@@ -1600,7 +1640,7 @@ class Kernel(Settings):
         Register an element at a given subpath.
         If this Kernel is not root, then it is registered relative to this location.
 
-        @param path: a "/" separated hierarchical index to the object
+        @param path: a "/" separated hierarchical index
         @param obj: object to be registered
         @return:
         """
@@ -1731,23 +1771,23 @@ class Kernel(Settings):
 
     def get_text_thread_state(self, state: int) -> str:
         _ = self.translation
-        if state == STATE_INITIALIZE:
+        if state == "init":
             return _("Unstarted")
-        elif state == STATE_TERMINATE:
+        elif state == "terminate":
             return _("Abort")
-        elif state == STATE_END:
+        elif state == "end":
             return _("Finished")
-        elif state == STATE_PAUSE:
+        elif state == "pause":
             return _("Pause")
-        elif state == STATE_BUSY:
+        elif state == "busy":
             return _("Busy")
-        elif state == STATE_WAIT:
+        elif state == "wait":
             return _("Waiting")
-        elif state == STATE_ACTIVE:
+        elif state == "active":
             return _("Active")
-        elif state == STATE_IDLE:
+        elif state == "idle":
             return _("Idle")
-        elif state == STATE_UNKNOWN:
+        elif state == "unknown":
             return _("Unknown")
 
     # ==========
@@ -1809,19 +1849,19 @@ class Kernel(Settings):
         Check each job, and if that job is scheduled to run. Executes that job.
         @return:
         """
-        self.state = STATE_ACTIVE
-        while self.state != STATE_END:
-            time.sleep(0.005)  # 200 ticks a second.
-            while self.state == STATE_PAUSE:
+        self.state = "active"
+        while self.state != "end":
+            time.sleep(self.delay)
+            while self.state == "pause":
                 # The scheduler is paused.
                 time.sleep(0.1)
-            if self.state == STATE_TERMINATE:
+            if self.state == "terminate":
                 break
             self.schedule_run(
                 self.scheduler_handles_default_thread_jobs,
                 self.scheduler_handles_main_thread_jobs,
             )
-        self.state = STATE_END
+        self.state = "end"
 
     def schedule(self, job: "Job") -> "Job":
         try:
@@ -2001,15 +2041,16 @@ class Kernel(Settings):
             and len(self._removing_listeners) == 0
         ):
             return
-        self._is_queue_processing = True
         with self._signal_lock:
-            queue = self._message_queue
-            self._message_queue = {}
+            self._message_queue, self._processing = (
+                self._processing,
+                self._message_queue,
+            )
         self._process_add_listeners()
         self._process_remove_listeners()
 
-        self._process_signal_queue(queue)
-        self._is_queue_processing = False
+        self._process_signal_queue(self._processing)
+        self._processing.clear()
 
     def last_signal(self, signal: str) -> Optional[Tuple]:
         """
@@ -2072,11 +2113,13 @@ class Kernel(Settings):
         """
         if cookie is None:
             cookie = scan_object
+        obj_class = type(scan_object)
         for attr in dir(scan_object):
             # Handle is excluded. triggers a knock-on effect bug in wxPython GTK systems.
             if attr == "Handle":
                 continue
-                # TODO: exclude properties.
+            if isinstance(getattr(obj_class, attr, None), property):
+                continue
             func = getattr(scan_object, attr)
             if hasattr(func, "signal_listener"):
                 for sl in func.signal_listener:
@@ -2302,6 +2345,7 @@ class Kernel(Settings):
                 "label": _("Print Shutdown"),
                 "tip": _("Print shutdown log when closed."),
                 "page": "Options",
+                "hidden": True,
             },
         ]
         self.register_choices("preferences", choices)
@@ -2658,10 +2702,8 @@ class Kernel(Settings):
                 except Exception:
                     pass
             elif OS_NAME == "Darwin":  # Mac
-
                 os.system("afplay /System/Library/Sounds/Ping.aiff")
             elif OS_NAME == "Linux":
-
                 print("\a")  # Beep.
                 os.system('say "Ding"')
 

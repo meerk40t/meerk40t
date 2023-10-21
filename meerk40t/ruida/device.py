@@ -4,16 +4,15 @@ Ruida Device
 Ruida device interfacing. We do not send or interpret ruida code, but we can emulate ruidacode into cutcode and read
 ruida files (*.rd) and turn them likewise into cutcode.
 """
-
-
+from meerk40t.core.view import View
 from meerk40t.kernel import Service
 
 from ..core.spoolers import Spooler
-from ..core.units import Length, ViewPort
+from ..core.units import UNITS_PER_NM, Length
 from .driver import RuidaDriver
 
 
-class RuidaDevice(Service, ViewPort):
+class RuidaDevice(Service):
     """
     RuidaDevice is driver for the Ruida Controllers
     """
@@ -72,6 +71,15 @@ class RuidaDevice(Service, ViewPort):
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
             },
+            {
+                "attr": "interpolate",
+                "object": self,
+                "default": 50,
+                "type": int,
+                "label": _("Curve Interpolation"),
+                "section": "_10_Parameters",
+                "tip": _("Number of curve interpolation points"),
+            },
         ]
         self.register_choices("bed_dim", choices)
         choices = [
@@ -113,7 +121,7 @@ class RuidaDevice(Service, ViewPort):
                 "conditional": (self, "rotary_active"),
             },
             {
-                "attr": "rotary_mirror_x",
+                "attr": "rotary_flip_x",
                 "object": self,
                 "default": False,
                 "type": bool,
@@ -123,7 +131,7 @@ class RuidaDevice(Service, ViewPort):
                 "subsection": _("Mirror Output"),
             },
             {
-                "attr": "rotary_mirror_y",
+                "attr": "rotary_flip_y",
                 "object": self,
                 "default": False,
                 "type": bool,
@@ -134,6 +142,28 @@ class RuidaDevice(Service, ViewPort):
             },
         ]
         self.register_choices("rotary", choices)
+
+        choices = [
+            {
+                "attr": "default_power",
+                "object": self,
+                "default": 20.0,
+                "type": float,
+                "label": _("Laser Power"),
+                "trailer": "%",
+                "tip": _("What power level do we cut at?"),
+            },
+            {
+                "attr": "default_speed",
+                "object": self,
+                "default": 40.0,
+                "type": float,
+                "trailer": "mm/s",
+                "label": _("Cut Speed"),
+                "tip": _("How fast do we cut?"),
+            },
+        ]
+        self.register_choices("ruida-global", choices)
 
         self.driver = RuidaDriver(self)
 
@@ -159,23 +189,29 @@ class RuidaDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        ViewPort.__init__(
-            self,
-            self.bedwidth,
-            self.bedheight,
+        self.view = View(self.bedwidth, self.bedheight, dpi=UNITS_PER_NM)
+        self.view.transform(
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,
         )
+        # rotary_active = self.rotary_active,
+        # rotary_scale_x = self.rotary_scale_x,
+        # rotary_scale_y = self.rotary_scale_y,
+        # rotary_flip_x = self.rotary_flip_x,
+        # rotary_flip_y = self.rotary_flip_y,
         self.state = 0
 
         self.viewbuffer = ""
 
         _ = self.kernel.translation
 
+    def service_attach(self, *args, **kwargs):
+        self.realize()
+
     def realize(self, origin=None):
-        self.width = self.bedwidth
-        self.height = self.bedheight
-        super().realize()
+        self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.realize()
+        self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)
 
     @property
     def current(self):

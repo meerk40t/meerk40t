@@ -12,7 +12,7 @@ from meerk40t.gui.propertypanels.attributes import (
     PositionSizePanel,
     PreventChangePanel,
 )
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.svgelements import Matrix
 
 _ = wx.GetTranslation
@@ -78,13 +78,15 @@ class CropPanel(wx.Panel):
         self.Bind(wx.EVT_SLIDER, self.on_slider_bottom, self.slider_bottom)
 
         flag = False
+        self.activate_controls(flag)
+        self.set_widgets(node)
+
+    def activate_controls(self, flag):
         self.button_reset.Enable(flag)
         self.slider_left.Enable(flag)
         self.slider_right.Enable(flag)
         self.slider_top.Enable(flag)
         self.slider_bottom.Enable(flag)
-
-        self.set_widgets(node)
 
     def set_widgets(self, node):
         if self.node is None:
@@ -115,6 +117,8 @@ class CropPanel(wx.Panel):
         self.set_slider_limits("lrtb", False)
 
         self.check_enable_crop.SetValue(flag)
+        self.activate_controls(flag)
+
         self.cropleft = self._bounds[0]
         self.cropright = self._bounds[2]
         self.croptop = self._bounds[1]
@@ -149,18 +153,18 @@ class CropPanel(wx.Panel):
         sizer_bottom = wx.BoxSizer(wx.HORIZONTAL)
 
         lbl_left = wx.StaticText(self, wx.ID_ANY, _("Left"))
-        lbl_left.SetMinSize((60, -1))
+        lbl_left.SetMinSize(dip_size(self, 60, -1))
         lbl_right = wx.StaticText(self, wx.ID_ANY, _("Right"))
-        lbl_right.SetMinSize((60, -1))
+        lbl_right.SetMinSize(dip_size(self, 60, -1))
         lbl_bottom = wx.StaticText(self, wx.ID_ANY, _("Bottom"))
-        lbl_bottom.SetMinSize((60, -1))
+        lbl_bottom.SetMinSize(dip_size(self, 60, -1))
         lbl_top = wx.StaticText(self, wx.ID_ANY, _("Top"))
-        lbl_top.SetMinSize((60, -1))
+        lbl_top.SetMinSize(dip_size(self, 60, -1))
 
-        self.text_left.SetMaxSize((60, -1))
-        self.text_right.SetMaxSize((60, -1))
-        self.text_top.SetMaxSize((60, -1))
-        self.text_bottom.SetMaxSize((60, -1))
+        self.text_left.SetMaxSize(dip_size(self, 60, -1))
+        self.text_right.SetMaxSize(dip_size(self, 60, -1))
+        self.text_top.SetMaxSize(dip_size(self, 60, -1))
+        self.text_bottom.SetMaxSize(dip_size(self, 60, -1))
 
         sizer_left.Add(lbl_left, 0, wx.ALIGN_CENTER_VERTICAL)
         sizer_left.Add(self.slider_left, 4, wx.ALIGN_CENTER_VERTICAL)
@@ -214,16 +218,14 @@ class CropPanel(wx.Panel):
                 self.croptop = 0
                 self.cropbottom = h
                 self._no_update = last
+            else:
+                self.op["enable"] = flag
         else:
             if self.op is not None:
                 self.op["enable"] = flag
         if self.op is not None and not self._no_update:
             self.node.update(self.context)
-        self.button_reset.Enable(flag)
-        self.slider_left.Enable(flag)
-        self.slider_right.Enable(flag)
-        self.slider_top.Enable(flag)
-        self.slider_bottom.Enable(flag)
+        self.activate_controls(flag)
 
     def on_slider_left(self, event=None):
         self.cropleft = self.slider_left.GetValue()
@@ -387,8 +389,7 @@ class ImageModificationPanel(ScrolledPanel):
         self.context = context
         self.node = node
         self.scripts = []
-        choices = []
-        choices.append(_("Set to None"))
+        choices = [_("Set to None")]
         for entry in list(self.context.match("raster_script/.*", suffix=True)):
             self.scripts.append(entry)
             choices.append(_("Apply {entry}").format(entry=entry))
@@ -649,7 +650,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_options.Add(sizer_turn, 0, wx.EXPAND, 0)
 
         label_turn = wx.StaticText(self, wx.ID_ANY, _("Turnpolicy"))
-        label_turn.SetMinSize((70, -1))
+        label_turn.SetMinSize(dip_size(self, 70, -1))
         sizer_turn.Add(label_turn, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.turn_choices = [
             "Black",
@@ -685,7 +686,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_options.Add(sizer_turd, 0, wx.EXPAND, 0)
 
         label_turd = wx.StaticText(self, wx.ID_ANY, _("Despeckle"))
-        label_turd.SetMinSize((70, -1))
+        label_turd.SetMinSize(dip_size(self, 70, -1))
         sizer_turd.Add(label_turd, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.slider_turdsize = wx.Slider(self, wx.ID_ANY, 2, 0, 10)
@@ -698,7 +699,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_options.Add(sizer_alphamax, 0, wx.EXPAND, 0)
 
         label_alphamax = wx.StaticText(self, wx.ID_ANY, _("Corners"))
-        label_alphamax.SetMinSize((70, -1))
+        label_alphamax.SetMinSize(dip_size(self, 70, -1))
         sizer_alphamax.Add(label_alphamax, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.slider_alphamax = wx.Slider(self, wx.ID_ANY, 9, 0, 12)
@@ -713,7 +714,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_options.Add(sizer_opticurve, 0, wx.EXPAND, 0)
 
         label_opticurve = wx.StaticText(self, wx.ID_ANY, _("Simplify"))
-        label_opticurve.SetMinSize((70, -1))
+        label_opticurve.SetMinSize(dip_size(self, 70, -1))
         sizer_opticurve.Add(label_opticurve, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.check_opticurve = wx.CheckBox(self, wx.ID_ANY, "")
@@ -729,7 +730,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_options.Add(sizer_opttolerance, 0, wx.EXPAND, 0)
 
         label_opttolerance = wx.StaticText(self, wx.ID_ANY, _("Tolerance"))
-        label_opttolerance.SetMinSize((70, -1))
+        label_opttolerance.SetMinSize(dip_size(self, 70, -1))
         sizer_opttolerance.Add(label_opttolerance, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.slider_tolerance = wx.Slider(self, wx.ID_ANY, 20, 0, 150)
@@ -745,7 +746,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_options.Add(sizer_blacklevel, 0, wx.EXPAND, 0)
 
         label_blacklevel = wx.StaticText(self, wx.ID_ANY, _("Black-Level"))
-        label_blacklevel.SetMinSize((70, -1))
+        label_blacklevel.SetMinSize(dip_size(self, 70, -1))
         sizer_blacklevel.Add(label_blacklevel, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.slider_blacklevel = wx.Slider(
@@ -882,7 +883,6 @@ class ImageVectorisationPanel(ScrolledPanel):
         self.bitmap_preview.SetBitmap(self.wximage)
 
     def generate_preview(self):
-
         # from time import sleep
         make_vector = self.context.kernel.lookup("render-op/make_vector")
         make_raster = self.context.kernel.lookup("render-op/make_raster")
@@ -989,7 +989,7 @@ class ImageVectorisationPanel(ScrolledPanel):
 
     @staticmethod
     def accepts(node):
-        # Changing the staticmethod into a regular method will cause a crash, so therefore this circumvention
+        # Changing the staticmethod into a regular method will cause a crash
         # Not the nicest thing in the world, as we need to instantiate the class once to reset the status flag
         global HAS_VECTOR_ENGINE
         if node.type == "elem image" and HAS_VECTOR_ENGINE:
@@ -1244,10 +1244,10 @@ class ImagePropertyPanel(ScrolledPanel):
         sizer_grayscale.Add(sizer_rg, 5, wx.EXPAND, 0)
         sizer_grayscale.Add(sizer_bl, 5, wx.EXPAND, 0)
 
-        self.text_grayscale_red.SetMaxSize(wx.Size(70, -1))
-        self.text_grayscale_green.SetMaxSize(wx.Size(70, -1))
-        self.text_grayscale_blue.SetMaxSize(wx.Size(70, -1))
-        self.text_grayscale_lightness.SetMaxSize(wx.Size(70, -1))
+        self.text_grayscale_red.SetMaxSize(dip_size(self, 70, -1))
+        self.text_grayscale_green.SetMaxSize(dip_size(self, 70, -1))
+        self.text_grayscale_blue.SetMaxSize(dip_size(self, 70, -1))
+        self.text_grayscale_lightness.SetMaxSize(dip_size(self, 70, -1))
 
         sizer_main.Add(sizer_grayscale, 0, wx.EXPAND, 0)
 
@@ -1275,7 +1275,8 @@ class ImagePropertyPanel(ScrolledPanel):
 
     def on_dither(self, event=None):
         # Dither can be set by two different means:
-        # a) directly b) via a script
+        # a. directly
+        # b. via a script
         dither_op = None
         for op in self.node.operations:
             if op["name"] == "dither":

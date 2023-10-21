@@ -2,7 +2,7 @@ import threading
 import time
 
 from meerk40t.core.cutcode.plotcut import PlotCut
-from meerk40t.core.units import UNITS_PER_MM, UNITS_PER_uM
+from meerk40t.core.units import UNITS_PER_uM
 from meerk40t.svgelements import Color
 
 from .exceptions import RuidaCommandError
@@ -150,12 +150,41 @@ def decode_bytes(data, magic=0x88):
     return bytes(array)
 
 
+def determine_magic_via_histogram(data):
+    """
+    Determines magic number via histogram. The number which occurs most in RDWorks files is overwhelmingly 0. It's
+    about 50% of all data. The swizzle algorithm means that the swizzle for 0 is magic + 1, so we find the most
+    frequent number and subtract one from that and that is *most* likely the magic number.
+
+    @param data:
+    @return:
+    """
+    histogram = [0] * 256
+    for d in data:
+        histogram[d] += 1
+    m = 0
+    magic = None
+    for i in range(len(histogram)):
+        v = histogram[i]
+        if v > m:
+            m = v
+            magic = i - 1
+    return magic
+
+
 def encode_bytes(data, magic=0x88):
     lut_swizzle, lut_unswizzle = swizzles_lut(magic)
     array = list()
     for b in data:
         array.append(lut_swizzle[b])
     return bytes(array)
+
+
+def magic_keys():
+    mk = dict()
+    for g in range(256):
+        mk[encode_bytes(b"\xda\x00\x05\x7E", magic=g)] = g
+    return mk
 
 
 class RDJob:
@@ -165,7 +194,6 @@ class RDJob:
         self.units_to_device_matrix = units_to_device_matrix
         self._driver = driver
         self.channel = channel
-        self.describe = None
         self.reply = None
         self.buffer = list()
         self.plotcut = None
@@ -177,6 +205,7 @@ class RDJob:
         self.runtime = 0
 
         self._stopped = True
+        self.enabled = True
         self._estimate = 0
 
         self.scale = UNITS_PER_uM
@@ -188,8 +217,6 @@ class RDJob:
         self.power1_min = None
         self.power2_max = None
         self.power2_min = None
-
-        self.program_mode = False
 
         self.color = None
         self.magic = 0x11  # 0x11 for the 634XG
@@ -213,12 +240,16 @@ class RDJob:
 
     @property
     def status(self):
-        if self.is_running and self.time_started is not None:
-            return "Running"
-        elif not self.is_running:
-            return "Disabled"
+        if self.is_running():
+            if self.time_started:
+                return "Running"
+            else:
+                return "Queued"
         else:
-            return "Queued"
+            if self.enabled:
+                return "Waiting"
+            else:
+                return "Disabled"
 
     def write_blob(self, data, magic=None):
         """
@@ -227,21 +258,11 @@ class RDJob:
         and send those to the command routine.
 
         @param data:
+        @param magic: magic number for unswizzling
         @return:
         """
         if magic is None:
-            d12 = 0
-            d89 = 0
-            for d in data:
-                if d == 0x12:
-                    d12 += 1
-                elif d == 0x89:
-                    d89 += 1
-            if d89 + d12 > 10:
-                if d89 > d12:
-                    magic = 0x88
-                else:
-                    magic = 0x11
+            magic = determine_magic_via_histogram(data)
         if magic is not None and magic != self.magic:
             self.magic = magic
             self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
@@ -264,15 +285,12 @@ class RDJob:
             self.time_started = time.time()
         with self.lock:
             array = self.buffer.pop(0)
-        # try:
-        self.process(array)
-        # except RuidaCommandError:
-        #     if self.channel:
-        #         self.channel(f"Process Failure: {str(bytes(array).hex())}")
-        # except Exception as e:
-        #     if self.channel:
-        #         self.channel(f"Crashed processing: {str(bytes(array).hex())}")
-        #         self.channel(str(e))
+        try:
+            self.process(array)
+        except IndexError as e:
+            raise RuidaCommandError(
+                f"Could not process Ruida buffer, {self.buffer[:25]} with magic: {self.magic:02}"
+            ) from e
         if not self.buffer:
             # Buffer is empty now. Job is complete
             self.runtime += time.time() - self.time_started
@@ -324,10 +342,12 @@ class RDJob:
         @return:
         """
         matrix = self.units_to_device_matrix
+        if matrix is None:
+            # Using job for something other than point plotting
+            return
         if self.plotcut is None:
-            if self.program_mode:
-                self.x = x
-                self.y = y
+            self.x = x
+            self.y = y
             ox, oy = matrix.transform_point([self.x, self.y])
             self.plotcut = PlotCut(
                 settings={
@@ -338,9 +358,9 @@ class RDJob:
             )
             self.plotcut.plot_init(int(round(ox)), int(round(oy)))
         tx, ty = matrix.transform_point([x, y])
-        self.plotcut.plot_append(int(round(tx)), int(round(ty)), power)
-        if not self.program_mode:
-            self.plot_commit()
+        self.plotcut.plot_append(
+            int(round(tx)), int(round(ty)), power * (self.power / 1000.0)
+        )
         self.x = x
         self.y = y
 
@@ -360,12 +380,6 @@ class RDJob:
             self._driver.plot(plot)
         except AttributeError:
             pass
-        if not self.program_mode:
-            # If we plotted this, and we aren't in program mode execute all of these commands right away
-            try:
-                self._driver.plot_start()
-            except AttributeError:
-                pass
 
     def __repr__(self):
         return f"RuidaEmulator(@{hex(id(self))})"
@@ -374,14 +388,6 @@ class RDJob:
     def current(self):
         return self.x, self.y
 
-    def set_speed(self, speed):
-        if speed != self.speed:
-            try:
-                self._driver.set("speed", speed)
-            except AttributeError:
-                pass
-            self.speed = speed
-
     def set_color(self, color):
         self.color = color
 
@@ -389,7 +395,7 @@ class RDJob:
         """
         Parses an individual unswizzled ruida command, updating the emulator state.
 
-        These commands can change the position, settings, speed, color, power, create elements, creates lasercode.
+        These commands can change the position, settings, speed, color, power, create elements.
         @param array:
         @return:
         """
@@ -439,152 +445,6 @@ class RDJob:
                 desc = f"Axis Y Move {value}"
             elif array[1] == 0x08:
                 desc = f"Axis U Move {value}"
-        elif array[0] == 0xA5:
-            key = None
-            if array[1] == 0x50:
-                key = "Down"
-            elif array[1] == 0x51:
-                key = "Up"
-            if array[1] == 0x53:
-                if array[2] == 0x00:
-                    desc = "Interface Frame"
-            else:
-                if array[2] == 0x02:
-                    desc = f"Interface +X {key}"
-                    if key == "Down":
-                        try:
-                            self._driver.move_right(True)
-                        except AttributeError:
-                            pass
-                    else:
-                        try:
-                            self._driver.move_right(False)
-                        except AttributeError:
-                            pass
-                elif array[2] == 0x01:
-                    desc = f"Interface -X {key}"
-                    if key == "Down":
-                        try:
-                            self._driver.move_left(True)
-                        except AttributeError:
-                            pass
-                    else:
-                        try:
-                            self._driver.move_left(False)
-                        except AttributeError:
-                            pass
-                if array[2] == 0x03:
-                    desc = f"Interface +Y {key}"
-                    if key == "Down":
-                        try:
-                            self._driver.move_top(True)
-                        except AttributeError:
-                            pass
-                    else:
-                        try:
-                            self._driver.move_top(False)
-                        except AttributeError:
-                            pass
-                elif array[2] == 0x04:
-                    desc = f"Interface -Y {key}"
-                    if key == "Down":
-                        try:
-                            self._driver.move_bottom(True)
-                        except AttributeError:
-                            pass
-                    else:
-                        try:
-                            self._driver.move_bottom(False)
-                        except AttributeError:
-                            pass
-                if array[2] == 0x0A:
-                    desc = f"Interface +Z {key}"
-                    if key == "Down":
-                        try:
-                            self._driver.move_plus_z(True)
-                        except AttributeError:
-                            pass
-                    else:
-                        try:
-                            self._driver.move_plus_z(False)
-                        except AttributeError:
-                            pass
-                elif array[2] == 0x0B:
-                    desc = f"Interface -Z {key}"
-                    if key == "Down":
-                        try:
-                            self._driver.move_minus_z(True)
-                        except AttributeError:
-                            pass
-                    else:
-                        try:
-                            self._driver.move_minus_z(False)
-                        except AttributeError:
-                            pass
-                if array[2] == 0x0C:
-                    desc = f"Interface +U {key}"
-                    if key == "Down":
-                        try:
-                            self._driver.move_plus_u(True)
-                        except AttributeError:
-                            pass
-                    else:
-                        try:
-                            self._driver.move_plus_u(False)
-                        except AttributeError:
-                            pass
-                elif array[2] == 0x0D:
-                    desc = f"Interface -U {key}"
-                    if key == "Down":
-                        try:
-                            self._driver.move_minus_u(True)
-                        except AttributeError:
-                            pass
-                    else:
-                        try:
-                            self._driver.move_minus_u(False)
-                        except AttributeError:
-                            pass
-                elif array[2] == 0x05:
-                    desc = f"Interface Pulse {key}"
-                    if key == "Down":
-                        try:
-                            self._driver.laser_on()
-                        except AttributeError:
-                            pass
-                    else:
-                        try:
-                            self._driver.laser_off()
-                        except AttributeError:
-                            pass
-                elif array[2] == 0x11:
-                    desc = "Interface Speed"
-                elif array[2] == 0x06:
-                    desc = "Interface Start/Pause"
-                    try:
-                        self._driver.pause()
-                    except AttributeError:
-                        pass
-                elif array[2] == 0x09:
-                    desc = "Interface Stop"
-                    try:
-                        self._driver.reset()
-                    except AttributeError:
-                        pass
-                elif array[2] == 0x5A:
-                    desc = "Interface Reset"
-                elif array[2] == 0x0F:
-                    desc = "Interface Trace On/Off"
-                elif array[2] == 0x07:
-                    desc = "Interface ESC"
-                elif array[2] == 0x12:
-                    desc = "Interface Laser Gate"
-                elif array[2] == 0x08:
-                    desc = "Interface Origin"
-                    try:
-                        self._driver.move_ori(0, 0)
-                    except AttributeError:
-                        pass
         elif array[0] == 0xA8:  # 0b10101000 11 characters.
             x = abscoord(array[1:6]) * self.scale
             y = abscoord(array[6:11]) * self.scale
@@ -601,10 +461,13 @@ class RDJob:
             desc = f"Cut Horizontal Relative ({dx} units)"
         elif array[0] == 0xAB:  # 0b10101011 3 characters
             dy = relcoord(array[1:3]) * self.scale
-            self.plot_location(self.x, self.y + dy, 0)
+            self.plot_location(self.x, self.y + dy, 1)
             desc = f"Cut Vertical Relative ({dy} units)"
         elif array[0] == 0xC7:
-            v0 = parse_power(array[1:3])  # TODO: Check command fewer values.
+            try:
+                v0 = parse_power(array[1:3])
+            except IndexError:
+                v0 = 0
             desc = f"Imd Power 1 ({v0})"
         elif array[0] == 0xC2:
             v0 = parse_power(array[1:3])
@@ -631,25 +494,15 @@ class RDJob:
             if array[1] == 0x01:
                 power = parse_power(array[2:4])
                 self.power1_min = power
-                power = self.power1_min * 10.0  # 1000 / 100
+                power = self.power1_min
                 desc = f"Power 1 min={power}"
-                if power != self.power:
-                    try:
-                        self._driver.set("power", power)
-                    except AttributeError:
-                        pass
-                    self.power = power
+                self.power = power * 10  # 1000 / 100
             elif array[1] == 0x02:
                 power = parse_power(array[2:4])
                 self.power1_max = power
-                power = self.power1_max * 10.0  # 1000 / 100
+                power = self.power1_max
                 desc = f"Power 1 max={power}"
-                if power != self.power:
-                    try:
-                        self._driver.set("power", power)
-                    except AttributeError:
-                        pass
-                    self.power = power
+                self.power = power * 10  # 1000 / 100
             elif array[1] == 0x05:
                 power = parse_power(array[2:4])
                 desc = f"Power 3 min={power}"
@@ -738,16 +591,13 @@ class RDJob:
                 frequency = parse_frequency(array[4:9])
                 desc = f"part, Laser {laser}, Frequency ({frequency})"
                 if frequency != self.frequency:
-                    try:
-                        self._driver.set("frequency", frequency)
-                    except AttributeError:
-                        pass
                     self.frequency = frequency
         elif array[0] == 0xC9:
             if array[1] == 0x02:
                 self.plot_commit()
                 speed = parse_speed(array[2:7])
-                self.set_speed(speed)
+                if speed != self.speed:
+                    self.speed = speed
                 desc = f"Speed Laser 1 {speed}mm/s"
             elif array[1] == 0x03:
                 speed = parse_speed(array[2:7])
@@ -756,7 +606,8 @@ class RDJob:
                 self.plot_commit()
                 part = array[2]
                 speed = parse_speed(array[3:8])
-                self.set_speed(speed)
+                if speed != self.speed:
+                    self.speed = speed
                 desc = f"{part}, Speed {speed}mm/s"
             elif array[1] == 0x05:
                 speed = parse_speed(array[2:7]) / 1000.0
@@ -843,18 +694,9 @@ class RDJob:
         elif array[0] == 0xCE:
             desc = "Keep Alive"
         elif array[0] == 0xD0:
-            if array[1] == 0x29:
-                desc = "Unknown LB Command"
+            zone = array[1]
+            desc = f"Set Inhale Zone {zone}"
         elif array[0] == 0xD7:
-            # if not self.saving:
-            #     pass
-            # If not saving send to spooler, if control
-            # self.saving = False
-            # self.filename = None
-            # if self.filestream is not None:
-            #     self.filestream.close()
-            #     self.filestream = None
-            self.program_mode = False
             self.plot_commit()
             try:
                 self._driver.plot_start()
@@ -864,122 +706,12 @@ class RDJob:
         elif array[0] == 0xD8:
             if array[1] == 0x00:
                 desc = "Start Process"
-                self.program_mode = True
-            if array[1] == 0x01:
-                desc = "Stop Process"
-                try:
-                    self._driver.reset()
-                    self._driver.home()
-                except AttributeError:
-                    pass
-            if array[1] == 0x02:
-                desc = "Pause Process"
-                try:
-                    self._driver.pause()
-                except AttributeError:
-                    pass
-            if array[1] == 0x03:
-                desc = "Restore Process"
-                try:
-                    self._driver.resume()
-                except AttributeError:
-                    pass
             if array[1] == 0x10:
                 desc = "Ref Point Mode 2, Machine Zero/Absolute Position"
             if array[1] == 0x11:
                 desc = "Ref Point Mode 1, Anchor Point"
             if array[1] == 0x12:
                 desc = "Ref Point Mode 0, Current Position"
-            if array[1] == 0x2C:
-                self.z = 0.0
-                desc = "Home Z"
-            if array[1] == 0x2D:
-                self.u = 0.0
-                desc = "Home U"
-            if array[1] == 0x2A:
-                self.x = 0.0
-                self.y = 0.0
-                desc = "Home XY"
-                try:
-                    self._driver.home()
-                except AttributeError:
-                    pass
-            if array[1] == 0x2E:
-                desc = "FocusZ"
-        elif array[0] == 0xD9:
-            if len(array) == 1:
-                desc = "Unknown Directional Setting"
-            else:
-                options = array[2]
-                if options == 0x03:
-                    param = "Light"
-                elif options == 0x02:
-                    param = ""
-                elif options == 0x01:
-                    param = "Light/Origin"
-                else:  # options == 0x00:
-                    param = "Origin"
-                if array[1] == 0x00 or array[1] == 0x50:
-                    coord = abscoord(array[3:8]) * self.scale
-                    desc = f"Move {param} X: {coord} ({self.x},{self.y})"
-                    self.plot_location(self.x + coord, self.y, 0)
-                elif array[1] == 0x01 or array[1] == 0x51:
-                    coord = abscoord(array[3:8]) * self.scale
-                    desc = f"Move {param} Y: {coord} ({self.x},{self.y})"
-                    self.plot_location(self.x, self.y + coord, 0)
-                elif array[1] == 0x02 or array[1] == 0x52:
-                    oz = self.z
-                    coord = abscoord(array[3:8])
-                    self.z += coord
-                    desc = f"Move {param} Z: {coord} ({self.x},{self.y})"
-                    if oz != self.z:
-                        try:
-                            self.plot_commit()  # We plot commit on z level change
-                            self._driver.axis("z", self.z)
-                        except AttributeError:
-                            pass
-                elif array[1] == 0x03 or array[1] == 0x53:
-                    ou = self.u
-                    coord = abscoord(array[3:8])
-                    self.u += coord
-                    desc = f"Move {param} U: {coord} ({self.x},{self.y})"
-                    if ou != self.u:
-                        try:
-                            self.plot_commit()  # We plot commit on u level change
-                            self._driver.axis("u", self.u)
-                        except AttributeError:
-                            pass
-                elif array[1] == 0x0F:
-                    desc = "Feed Axis Move"
-                elif array[1] == 0x10 or array[1] == 0x60:
-                    self.x = abscoord(array[3:8]) * self.scale
-                    self.y = abscoord(array[8:13]) * self.scale
-                    desc = f"Move {param} XY ({self.x}, {self.y})"
-                    if "Origin" in param:
-                        try:
-                            self._driver.move_ori(
-                                f"{self.x / UNITS_PER_MM}mm",
-                                f"{self.y / UNITS_PER_MM}mm",
-                            )
-                        except AttributeError:
-                            pass
-                    else:
-                        try:
-                            self._driver.home()
-                        except AttributeError:
-                            pass
-                elif array[1] == 0x30 or array[1] == 0x70:
-                    self.x = abscoord(array[3:8])
-                    self.y = abscoord(array[8:13])
-                    self.u = abscoord(array[13 : 13 + 5])
-                    desc = f"Move {param} XYU: {self.x * UNITS_PER_uM} ({self.y * UNITS_PER_uM},{self.u * UNITS_PER_uM})"
-                    try:
-                        self._driver.move_abs(
-                            self.x * UNITS_PER_uM, self.y * UNITS_PER_uM
-                        )
-                        self._driver.axis("u", self.u * UNITS_PER_uM)
-                    except AttributeError:
-                        pass
         elif array[0] == 0xDA:
             mem = parse_mem(array[2:4])
             if array[1] == 0x01:
@@ -1000,6 +732,10 @@ class RDJob:
                 if array[1] == 0x02:
                     # len 3
                     desc = "Document Data End"
+                elif array[1] == 0x05:
+                    sum = decodeu35(array[2:7])
+                    desc = f"Set File Sum {sum}"
+
         elif array[0] == 0xE6:
             if array[1] == 0x01:
                 desc = "Set Absolute"
@@ -1009,16 +745,7 @@ class RDJob:
                 self.plot_commit()
                 desc = "Block End"
             elif array[1] == 0x01:
-                self.filename = ""
-                for a in array[2:]:
-                    if a == 0x00:
-                        break
-                    self.filename += chr(a)
-                desc = f"Filename: {self.filename}"
-                if self.saving:
-                    pass
-                    # TODO: We cannot actually save the file within this type of job.
-                    # self.filestream = open(get_safe_path(f"{self.filename}.rd"), "wb")
+                pass  # Set filename for job (only realtime, see emulator)
             elif array[1] == 0x03:
                 c_x = abscoord(array[2:7]) * UNITS_PER_uM
                 c_y = abscoord(array[7:12]) * UNITS_PER_uM
@@ -1055,9 +782,17 @@ class RDJob:
             elif array[1] == 0x09:
                 v1 = decodeu35(array[2:7])
                 desc = f"Feed Length {v1}"
+            elif array[1] == 0x0A:
+                desc = f"Feed Info"
             elif array[1] == 0x0B:
                 v1 = array[2]
-                desc = f"Unknown 1 {v1}"
+                desc = f"Array En Mirror Cut {v1}"
+            elif array[1] == 0x0C:
+                v1 = array[2]
+                desc = f"Array Mirror Cut Distance {v1}"
+            elif array[1] == 0x0C:
+                v1 = array[2]
+                desc = f"Set File Head Distance {v1}"
             elif array[1] == 0x13:
                 c_x = abscoord(array[2:7]) * UNITS_PER_uM
                 c_y = abscoord(array[7:12]) * UNITS_PER_uM
@@ -1075,14 +810,24 @@ class RDJob:
                 desc = f"Array Mirror {v1}"
             elif array[1] == 0x32:
                 v1 = decodeu35(array[2:7])
-                desc = f"Unknown Preamble {v1}"
+                desc = f"Set Tick Count {v1}"
             elif array[1] == 0x35:
                 v1 = decodeu35(array[2:7])
                 v2 = decodeu35(array[7:12])
                 desc = f"Block X Size {v1} {v2}"
+            elif array[1] == 0x32:
+                desc = f"Set File Empty"
+            elif array[1] == 0x37:
+                v1 = decodeu35(array[2:7])
+                desc = f"Array Even Distance {v1}"
             elif array[1] == 0x38:
                 v1 = array[2]
-                desc = f"Unknown 2 {v1}"
+                desc = f"Set Feed Auto Pause {v1}"
+            elif array[1] == 0x3A:
+                desc = f"Union Block Property"
+            elif array[1] == 0x3B:
+                v1 = array[2]
+                desc = f"Set File Property {v1}"
             elif array[1] == 0x46:
                 desc = "BY Test 0x11227766"
             elif array[1] == 0x50:
@@ -1111,6 +856,8 @@ class RDJob:
                 axis = array[2]
                 c_x = abscoord(array[3:8]) * UNITS_PER_uM
                 desc = f"Layer Offset {axis}: {c_x}"
+            elif array[1] == 0x57:
+                desc = f"PList Feed"
             elif array[1] == 0x60:
                 desc = f"Set Current Element Index ({array[2]})"
             elif array[1] == 0x61:
@@ -1188,10 +935,8 @@ class RDJob:
                 desc = f"Element Array Mirror ({index})"
         else:
             desc = "Unknown Command!"
-        if self.describe:
-            self.describe(f"{str(bytes(array).hex())}\t{desc}")
         if self.channel:
-            self.channel(f"--> {str(bytes(array).hex())}\t({desc})")
+            self.channel(f"-**-> {str(bytes(array).hex())}\t({desc})")
 
     def unswizzle(self, data):
         return bytes([self.lut_unswizzle[b] for b in data])

@@ -116,7 +116,9 @@ class GuideWidget(Widget):
             tlen = float(Length(f"{self.scene.pane.grid.tick_distance}{p.units_name}"))
             amount = (
                 round(
-                    (p.device.unit_width / tlen) * (p.device.unit_height / tlen) / 1000,
+                    (p.device.view.unit_width / tlen)
+                    * (p.device.view.unit_height / tlen)
+                    / 1000,
                     0,
                 )
                 * 1000
@@ -136,14 +138,15 @@ class GuideWidget(Widget):
                     return
 
             x = 0
-            while x <= p.device.unit_width:
+            while x <= p.device.view.unit_width:
                 self.scene.pane.toggle_x_magnet(x)
                 x += tlen
 
             y = 0
-            while y <= p.device.unit_height:
+            while y <= p.device.view.unit_height:
                 self.scene.pane.toggle_y_magnet(y)
                 y += tlen
+            self.scene.pane.save_magnets()
         elif self.scene.pane.grid.draw_grid_secondary:
             # Placeholder for a use case, as you can define them manually...
             pass
@@ -220,7 +223,9 @@ class GuideWidget(Widget):
         menu.AppendSeparator()
         item = menu.Append(
             wx.ID_ANY,
-            f"User defined value: {self.scene.pane.grid.tick_distance}{units}",
+            _("User defined value: {value}").format(
+                value=f"{self.scene.pane.grid.tick_distance}{units}"
+            ),
             "",
             wx.ITEM_NORMAL,
         )
@@ -438,15 +443,17 @@ class GuideWidget(Widget):
                 self.scene.pane.clear_magnets()
             else:
                 self.fill_magnets()
+            # No need to call save magnets here as both routines already do that
         elif is_x:
             # Get the X coordinate from space_pos [0]
             value = float(Length(f"{mark_point_x:.1f}{self.units}"))
             self.scene.pane.toggle_x_magnet(value)
+            self.scene.pane.save_magnets()
         elif is_y:
             # Get the Y coordinate from space_pos [1]
             value = float(Length(f"{mark_point_y:.1f}{self.units}"))
             self.scene.pane.toggle_y_magnet(value)
-
+            self.scene.pane.save_magnets()
         self.scene.request_refresh()
 
     def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
@@ -497,8 +504,7 @@ class GuideWidget(Widget):
         Calculate center position for primary grid
         """
         p = self.scene.context
-        x = p.device.unit_width * p.device.show_origin_x
-        y = p.device.unit_height * p.device.show_origin_y
+        x, y = p.space.origin_zero()
         return self.scene.convert_scene_to_window([x, y])
 
     def _get_center_secondary(self):
@@ -506,8 +512,7 @@ class GuideWidget(Widget):
         Calculate center position for secondary grid
         """
         p = self.scene.context
-        x = p.device.unit_width * p.device.show_origin_x
-        y = p.device.unit_height * p.device.show_origin_y
+        x, y = p.space.origin_zero()
         if self.scene.pane.grid.grid_secondary_cx is not None:
             x = self.scene.pane.grid.grid_secondary_cx
 
@@ -518,7 +523,7 @@ class GuideWidget(Widget):
 
     def _set_scaled_conversion(self):
         p = self.scene.context
-        f = p.device.length(f"1{p.units_name}", as_float=True)
+        f = float(Length(f"1{p.units_name}"))
         m = self.scene.widget_root.scene_widget.matrix
         self.scaled_conversion_x = f * m.value_scale_x()
         self.scaled_conversion_y = f * m.value_scale_y()
@@ -526,6 +531,9 @@ class GuideWidget(Widget):
     def _draw_primary_guides(self, gc):
         w, h = gc.Size
         p = self.scene.context
+        mat = self.scene.widget_root.scene_widget.matrix
+        if mat.rotation != 0:
+            return
         sx_primary, sy_primary = self._get_center_primary()
         length = self.line_length
         edge_gap = self.edge_gap
@@ -541,9 +549,10 @@ class GuideWidget(Widget):
         x = offset_x_primary
         last_text_pos = x - 30  # Arbitrary
         while x < w:
+            # print (f"while 1: {x}, {w}")
             if x >= 45:
                 mark_point = (x - sx_primary) / self.scaled_conversion_x
-                if p.device.show_flip_x:
+                if not p.space.right_positive:
                     mark_point *= -1
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
@@ -576,7 +585,7 @@ class GuideWidget(Widget):
         while y < h:
             if y >= 20:
                 mark_point = (y - sy_primary) / self.scaled_conversion_y
-                if p.device.show_flip_y:
+                if not p.space.bottom_positive:
                     mark_point *= -1
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
@@ -606,6 +615,9 @@ class GuideWidget(Widget):
     def _draw_secondary_guides(self, gc):
         w, h = gc.Size
         p = self.scene.context
+        mat = self.scene.widget_root.scene_widget.matrix
+        if mat.rotation != 0:
+            return
 
         fx = 1.0
         if self.scene.pane.grid.grid_secondary_scale_x is not None:
@@ -632,10 +644,10 @@ class GuideWidget(Widget):
         offset_x = float(sx) % points_x
         x = offset_x
         last_text_pos = x - 30
-        while x < w:
+        while abs(x) < w:
             if x >= 45:
                 mark_point = (x - sx) / (fx * self.scaled_conversion_x)
-                if p.device.show_flip_x:
+                if not p.space.right_positive:
                     mark_point *= -1
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
@@ -663,10 +675,10 @@ class GuideWidget(Widget):
         offset_y = float(sy) % points_y
         y = offset_y
         last_text_pos = y - 30
-        while y < h:
+        while abs(y) < h:
             if y >= 20:
                 mark_point = (y - sy) / (fy * self.scaled_conversion_y)
-                if p.device.show_flip_y:
+                if not p.space.bottom_positive:
                     mark_point *= -1
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0

@@ -14,7 +14,7 @@ from meerk40t.extra.hershey import (
 )
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_choose_font_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 from meerk40t.kernel import get_safe_path
 
 _ = wx.GetTranslation
@@ -30,7 +30,7 @@ def create_preview_image(context, fontfile):
             context, 0, 0, pattern, font=simplefont, font_size=Length("12pt")
         )
     except:
-        # We my encounter an IndexError, a ValueError or an error thrown by struct
+        # We may encounter an IndexError, a ValueError or an error thrown by struct
         # The latter cannot be named? So a global except...
         return False
     if node is None:
@@ -140,14 +140,14 @@ class LineTextPropertyPanel(wx.Panel):
         )
 
         self.list_fonts = wx.ListBox(self, wx.ID_ANY)
-        self.list_fonts.SetMinSize((-1, 140))
+        self.list_fonts.SetMinSize(dip_size(self, -1, 140))
         self.list_fonts.SetToolTip(
             _("Select to preview the font, double-click to apply it")
         )
         sizer_fonts.Add(self.list_fonts, 0, wx.EXPAND, 0)
 
         self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
-        self.bmp_preview.SetMinSize((-1, 70))
+        self.bmp_preview.SetMinSize(dip_size(self, -1, 70))
         sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
 
         main_sizer.Add(sizer_text, 0, wx.EXPAND, 0)
@@ -173,7 +173,7 @@ class LineTextPropertyPanel(wx.Panel):
             and hasattr(node, "mkfontsize")
             and hasattr(node, "mktext")
         ):
-            # Let's us the opportunity to check for incorrept types and fix them...
+            # Let's take the opportunity to check for incorrect types and fix them...
             validate_node(node)
             return True
         else:
@@ -276,7 +276,6 @@ class PanelFontSelect(wx.Panel):
         fontinfo = fonts_registered()
         sizer_checker = wx.BoxSizer(wx.HORIZONTAL)
         for extension in fontinfo:
-
             info = fontinfo[extension]
             checker = wx.CheckBox(self, wx.ID_ANY, info[0])
             checker.SetValue(True)
@@ -300,7 +299,7 @@ class PanelFontSelect(wx.Panel):
         sizer_fonts.Add(sizer_checker, 0, wx.EXPAND, 0)
 
         self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
-        self.bmp_preview.SetMinSize((-1, 70))
+        self.bmp_preview.SetMinSize(dip_size(self, -1, 70))
         sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
 
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
@@ -407,7 +406,7 @@ class HersheyFontSelector(MWindow):
         super().__init__(450, 550, submenu="", *args, **kwds)
         self.panel = PanelFontSelect(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_choose_font_50.GetBitmap(resize=25))
+        _icon.CopyFromBitmap(icons8_choose_font_50.GetBitmap(resize=STD_ICON_SIZE / 2))
         # _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Font-Selection"))
@@ -424,7 +423,7 @@ class HersheyFontSelector(MWindow):
     @staticmethod
     def submenu():
         # Suppress = True
-        return ("", "Font-Selector", True)
+        return "", "Font-Selector", True
 
 
 class PanelFontManager(wx.Panel):
@@ -448,12 +447,13 @@ class PanelFontManager(wx.Panel):
             _(
                 "MeerK40t can use True-Type-Fonts, Hershey-Fonts or Autocad-86 shape fonts designed to be rendered purely with vectors.\n"
                 + "They can be scaled, burned like any other vector shape and are therefore very versatile.\n"
-                + "See more: https://en.wikipedia.org/wiki/Hershey_fonts , "
+                + "See more: https://en.wikipedia.org/wiki/Hershey_fonts "
             ),
             style=wx.BORDER_NONE | wx.TE_MULTILINE | wx.TE_READONLY,
         )
 
-        self.text_info.SetMinSize((-1, 90))
+        self.text_info.SetMinSize(dip_size(self, -1, 90))
+        self.text_info.SetBackgroundColour(self.GetBackgroundColour())
         sizer_info = StaticBoxSizer(self, wx.ID_ANY, _("Information"), wx.HORIZONTAL)
         mainsizer.Add(sizer_info, 0, wx.EXPAND, 0)
         sizer_info.Add(self.text_info, 1, wx.EXPAND, 0)
@@ -476,7 +476,7 @@ class PanelFontManager(wx.Panel):
         sizer_fonts.Add(self.list_fonts, 1, wx.EXPAND, 0)
 
         self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
-        self.bmp_preview.SetMinSize((-1, 70))
+        self.bmp_preview.SetMinSize(dip_size(self, -1, 70))
         sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
 
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
@@ -656,7 +656,6 @@ class PanelFontManager(wx.Panel):
             parent=None,
             style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT,
         )
-
         for idx, sourcefile in enumerate(font_files):
             basename = os.path.basename(sourcefile)
             destfile = os.path.join(self.context.font_directory, basename)
@@ -679,7 +678,7 @@ class PanelFontManager(wx.Panel):
                 keepgoing = progress.Update(
                     idx + 1, progress_string.format(count=idx + 1)
                 )
-                if not keepgoing:
+                if progress.WasCancelled():
                     break
             except (OSError, RuntimeError, PermissionError, FileNotFoundError):
                 stats[1] += 1
@@ -736,7 +735,7 @@ class PanelFontManager(wx.Panel):
                     webbrowser.open(url, new=0, autoraise=True)
             else:
                 # This is a local directory with existing font-files,
-                # eg the Windows-Font-Directory
+                # e.g. the Windows-Font-Directory
                 self.import_files(url, "ttf")
 
     def import_files(self, import_directory, extension):
@@ -758,7 +757,6 @@ class PanelFontManager(wx.Panel):
             parent=None,
             style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT,
         )
-
         for idx, sourcefile in enumerate(font_files):
             basename = os.path.basename(sourcefile)
             destfile = os.path.join(self.context.font_directory, basename)
@@ -783,7 +781,7 @@ class PanelFontManager(wx.Panel):
                 keepgoing = progress.Update(
                     idx + 1, progress_string.format(count=idx + 1)
                 )
-                if not keepgoing:
+                if progress.WasCancelled():
                     break
             except (OSError, RuntimeError, PermissionError, FileNotFoundError):
                 stats[1] += 1
@@ -811,7 +809,7 @@ class HersheyFontManager(MWindow):
         super().__init__(551, 234, submenu="", *args, **kwds)
         self.panel = PanelFontManager(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_choose_font_50.GetBitmap(resize=25))
+        _icon.CopyFromBitmap(icons8_choose_font_50.GetBitmap(resize=STD_ICON_SIZE / 2))
         # _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Font-Manager"))
@@ -828,7 +826,7 @@ class HersheyFontManager(MWindow):
     @staticmethod
     def submenu():
         # suppress in tool-menu
-        return ("", "Font-Manager", True)
+        return "", "Font-Manager", True
 
 
 def register_hershey_stuff(kernel):

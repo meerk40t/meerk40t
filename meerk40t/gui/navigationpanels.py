@@ -1,4 +1,6 @@
 import platform
+from math import isinf
+from time import time
 
 import wx
 from wx import aui
@@ -6,6 +8,7 @@ from wx import aui
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import (
+    STD_ICON_SIZE,
     EmptyIcon,
     get_default_icon_size,
     icon_corner1,
@@ -43,8 +46,9 @@ from meerk40t.gui.icons import (
     icons8up,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
-from meerk40t.kernel.kernel import signal_listener
+from meerk40t.gui.position import PositionPanel
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Angle
 
 _ = wx.GetTranslation
@@ -87,6 +91,7 @@ def register_panel_navigation(window, context):
         .MaxSize(300, 300)
         .Caption(_("Jog"))
         .Name("jog")
+        .Hide()
         .CaptionVisible(not context.pane_lock)
     )
     pane.dock_proportion = 3 * iconsize + dx
@@ -107,6 +112,7 @@ def register_panel_navigation(window, context):
         .Caption(_("Move"))
         .CaptionVisible(not context.pane_lock)
         .Name("move")
+        .Hide()
     )
     pane.dock_proportion = iconsize + 100
     pane.control = panel
@@ -133,23 +139,23 @@ def register_panel_navigation(window, context):
     window.on_pane_create(pane)
     context.register("pane/pulse", pane)
 
-    panel = SizePanel(window, wx.ID_ANY, context=context)
-    pane = (
-        aui.AuiPaneInfo()
-        .Right()
-        .MinSize(75, 50)
-        .FloatingSize(150, 75)
-        .Hide()
-        .Caption(_("Element-Size"))
-        .CaptionVisible(not context.pane_lock)
-        .Name("objsizer")
-    )
-    pane.dock_proportion = 150
-    pane.control = panel
-    pane.submenu = "_40_" + _("Editing")
+    # panel = PositionPanel(window, wx.ID_ANY, context=context, small=False)
+    # pane = (
+    #     aui.AuiPaneInfo()
+    #     .Right()
+    #     .MinSize(75, 50)
+    #     .FloatingSize(150, 75)
+    #     .Hide()
+    #     .Caption(_("Element-Size"))
+    #     .CaptionVisible(not context.pane_lock)
+    #     .Name("objsizer")
+    # )
+    # pane.dock_proportion = 150
+    # pane.control = panel
+    # pane.submenu = "_40_" + _("Editing")
 
-    window.on_pane_create(pane)
-    context.register("pane/objsizer", pane)
+    # window.on_pane_create(pane)
+    # context.register("pane/objsizer", pane)
 
     if platform.system() == "Windows":
         dx = 24
@@ -210,9 +216,9 @@ def get_movement(device, dx, dy):
     newx = float(Length(dx))
     newy = float(Length(dy))
     min_x = 0
-    max_x = float(Length(device.width))
+    max_x = float(Length(device.view.width))
     min_y = 0
-    max_y = float(Length(device.height))
+    max_y = float(Length(device.view.height))
     # print ("Delta:", newx, newy)
     # print ("Current:", current_x, current_y)
     if newx + current_x > max_x:
@@ -240,6 +246,130 @@ def get_movement(device, dx, dy):
     nx = f"{sx.mm:.4f}mm"
     ny = f"{sy.mm:.4f}mm"
     return nx, ny
+
+
+class TimerButtons:
+    """
+    This is a wrapper class around some buttons that
+    allow a click, hold & repeat action
+    Parameters: interval = time between repeats in seconds
+    After instantiation you can add buttons via the
+    add_button method.
+        add_button(button, routine, parameters)
+    this will call routine(parameters)
+
+    Usage:
+
+        def test1():
+            print ("Clicked")
+
+        def test2(p1, p2):
+            print (f"Clicked with {p1} and {p2}")
+
+        self.timer = TimerButton(self, interval=0.5)
+        button1 = wx.Button(self, wx.ID_ANY, "Click and hold me")
+        button2 = wx.Button(self, wx.ID_ANY, "Me too, please")
+        self.timer.add_button(button1, test1, None)
+        self.timer.add_button(button2, test2, ('First', 'Second'))
+    """
+
+    def __init__(self, *args, interval=0.5, accelerate=True, **kwds):
+        self.parent = args[0]
+        self.timer = wx.Timer(self.parent, wx.ID_ANY)
+        self.timer_buttons = dict()
+        self._interval = 0
+        self.interval = interval
+        self.accelerate = accelerate
+        self.timer_execution = None
+        self.timer_delta = 1.0
+        self.timer_looped = 0
+        self.active_button = None
+        self.parent.Bind(wx.EVT_TIMER, self.timer_event, self.timer)
+
+    @property
+    def interval(self):
+        return self._interval
+
+    @interval.setter
+    def interval(self, value):
+        self._interval = value
+
+    def add_button(self, button, routine):
+        id = button.GetId()
+        self.timer_buttons[id] = (button, routine)
+        button.Bind(wx.EVT_LEFT_DOWN, self.on_button_down)
+        button.Bind(wx.EVT_LEFT_UP, self.on_button_up)
+        button.Bind(wx.EVT_LEAVE_WINDOW, self.on_button_lost)
+        button.Bind(wx.EVT_BUTTON, self.on_button_click)
+
+    def execute(self, button):
+        if button is None:
+            return
+        id = button.GetId()
+        if id not in self.timer_buttons:
+            return
+        action = self.timer_buttons[id][1]
+        if action is None:
+            return
+        action()
+
+    def timer_event(self, event):
+        if self.active_button is None:
+            return
+        self.execute(self.active_button)
+        self.timer_execution = time()
+        self.timer_looped += 1
+        if self.timer_looped == 5 and self.accelerate:
+            self.timer.Stop()
+            if self.interval > 0:
+                self.timer.Start(int(self.interval * 500))
+        elif self.timer_looped == 10 and self.accelerate:
+            self.timer.Stop()
+            if self.interval > 0:
+                self.timer.Start(int(self.interval * 250))
+
+    def stop_timer(self, action):
+        self.timer.Stop()
+        t = time()
+        if self.active_button is not None and (
+            self.timer_execution is None
+            or t - self.timer_execution > self.interval * 500
+        ):
+            self.execute(self.active_button)
+        # self.timer_execution = None
+        self.timer_looped = 0
+        self.active_button = None
+
+    def start_timer(self, button=None):
+        self.stop_timer(action=False)
+        self.active_button = button
+        self.timer_execution = None
+        if self.active_button is not None:
+            if self.interval > 0:
+                self.timer.Start(int(self.interval * 1000))
+
+    def on_button_lost(self, event=None):
+        self.stop_timer(action=False)
+
+    def on_button_down(self, event=None):
+        self.stop_timer(action=False)
+        if event is None:
+            return
+        button = event.GetEventObject()
+        self.start_timer(button=button)
+
+    def on_button_up(self, event=None):
+        # That consumes the event and a wx.EVT_BUTTON will not be raised
+        self.stop_timer(action=True)
+
+    def on_button_click(self, event=None):
+        # That could still happen due to a keypress
+        # (ie return, space) while the button has focus
+        if event is None:
+            return
+        button = event.GetEventObject()
+        self.active_button = button
+        self.stop_timer(action=True)
 
 
 class Drag(wx.Panel):
@@ -288,33 +418,28 @@ class Drag(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
+        self.timer = TimerButtons(self)
+        self.timer.add_button(self.button_align_drag_left, self.drag_left)
+        self.timer.add_button(self.button_align_drag_right, self.drag_right)
+        self.timer.add_button(self.button_align_drag_up, self.drag_up)
+        self.timer.add_button(self.button_align_drag_down, self.drag_down)
+        self.set_timer_options()
+
         self.Bind(
             wx.EVT_BUTTON,
             self.on_button_align_corner_tl,
             self.button_align_corner_top_left,
         )
         self.Bind(
-            wx.EVT_BUTTON, self.on_button_align_drag_up, self.button_align_drag_up
-        )
-        self.Bind(
             wx.EVT_BUTTON,
             self.on_button_align_corner_tr,
             self.button_align_corner_top_right,
         )
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_align_drag_left, self.button_align_drag_left
-        )
         self.Bind(wx.EVT_BUTTON, self.on_button_align_center, self.button_align_center)
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_align_drag_right, self.button_align_drag_right
-        )
         self.Bind(
             wx.EVT_BUTTON,
             self.on_button_align_corner_bl,
             self.button_align_corner_bottom_left,
-        )
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_align_drag_down, self.button_align_drag_down
         )
         self.Bind(
             wx.EVT_BUTTON,
@@ -471,6 +596,26 @@ class Drag(wx.Panel):
         else:
             self.lockmode = button
 
+    def drag_left(self):
+        p1 = f"-{self.context.jog_amount}"
+        p2 = "0"
+        self.drag_relative(p1, p2)
+
+    def drag_right(self):
+        p1 = f"{self.context.jog_amount}"
+        p2 = "0"
+        self.drag_relative(p1, p2)
+
+    def drag_down(self):
+        p1 = "0"
+        p2 = f"{self.context.jog_amount}"
+        self.drag_relative(p1, p2)
+
+    def drag_up(self):
+        p1 = "0"
+        p2 = f"-{self.context.jog_amount}"
+        self.drag_relative(p1, p2)
+
     def on_button_lock_tl(self, event=None):
         self.lock_mode_toggle(1)
 
@@ -509,25 +654,35 @@ class Drag(wx.Panel):
         if value == 1:
             x = bbox[0]
             y = bbox[1]
+            if isinf(x) or isinf(y):
+                return
         elif value == 2:
             x = bbox[2]
             y = bbox[1]
+            if isinf(x) or isinf(y):
+                return
         elif value == 3:
             x = bbox[0]
             y = bbox[3]
+            if isinf(x) or isinf(y):
+                return
         elif value == 4:
             x = bbox[2]
             y = bbox[3]
+            if isinf(x) or isinf(y):
+                return
         elif value == 5:
             x = (bbox[0] + bbox[2]) / 2.0
             y = (bbox[3] + bbox[1]) / 2.0
+            if isinf(x) or isinf(y):
+                return
         else:
             return
         if _confined:
             min_x = 0
-            max_x = float(Length(self.context.device.width))
+            max_x = float(Length(self.context.device.view.width))
             min_y = 0
-            max_y = float(Length(self.context.device.height))
+            max_y = float(Length(self.context.device.view.height))
             if x < min_x or x > max_x or y < min_y or y > max_y:
                 dlg = wx.MessageDialog(
                     None,
@@ -566,26 +721,6 @@ class Drag(wx.Panel):
     def drag_relative(self, dx, dy):
         nx, ny = get_movement(self.context.device, dx, dy)
         self.context(f"move_relative {nx} {ny}\ntranslate {nx} {ny}\n")
-
-    def on_button_align_drag_down(
-        self, event=None
-    ):  # wxGlade: Navigation.<event_handler>
-        self.drag_relative(0, self.context.jog_amount)
-
-    def on_button_align_drag_right(
-        self, event=None
-    ):  # wxGlade: Navigation.<event_handler>
-        self.drag_relative(self.context.jog_amount, 0)
-
-    def on_button_align_drag_up(
-        self, event=None
-    ):  # wxGlade: Navigation.<event_handler>
-        self.drag_relative(0, str(-Length(self.context.jog_amount)))
-
-    def on_button_align_drag_left(
-        self, event=None
-    ):  # wxGlade: Navigation.<event_handler>
-        self.drag_relative(str(-Length(self.context.jog_amount)), 0)
 
     def on_button_align_first_position(self, event=None):
         elements = self.context.elements
@@ -627,12 +762,29 @@ class Drag(wx.Panel):
     def pane_show(self, *args):
         self.context.listen("driver;position", self.on_update)
         self.context.listen("emulator;position", self.on_update)
+        self.context.listen("button-repeat", self.on_button_repeat)
 
     # Not sure whether this is the right thing to do, if it's still locked and then
     # the pane gets hidden?! Let's call it a feature for now...
     def pane_hide(self, *args):
         self.context.unlisten("driver;position", self.on_update)
         self.context.unlisten("emulator;position", self.on_update)
+        self.context.unlisten("button-repeat", self.on_button_repeat)
+
+    def set_timer_options(self):
+        interval = self.context.button_repeat
+        if interval is None:
+            interval = 0.5
+        if interval < 0:
+            interval = 0
+        accelerate = self.context.button_accelerate
+        if accelerate is None:
+            accelerate = True
+        self.timer.interval = interval
+        self.timer.accelerate = accelerate
+
+    def on_button_repeat(self, origin, *args):
+        self.set_timer_options()
 
     def on_update(self, origin, pos):
         # bb = self.get_bbox()
@@ -674,6 +826,8 @@ class Jog(wx.Panel):
 
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        context.setting(float, "button_repeat", 0.5)
+        context.setting(bool, "button_accelerate", True)
         context.setting(str, "jog_amount", "10mm")
         self.button_navigate_up_left = wx.BitmapButton(
             self, wx.ID_ANY, icons8_up_left_50.GetBitmap(resize=icon_size)
@@ -714,14 +868,19 @@ class Jog(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_navigate_ul, self.button_navigate_up_left
-        )
-        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_u, self.button_navigate_up)
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_navigate_ur, self.button_navigate_up_right
-        )
-        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_l, self.button_navigate_left)
+        self.timer = TimerButtons(self)
+        self.timer.add_button(self.button_navigate_down, self.jog_down)
+        self.timer.add_button(self.button_navigate_left, self.jog_left)
+        self.timer.add_button(self.button_navigate_right, self.jog_right)
+        self.timer.add_button(self.button_navigate_up, self.jog_up)
+
+        self.timer.add_button(self.button_navigate_up_left, self.jog_up_left)
+        self.timer.add_button(self.button_navigate_up_right, self.jog_up_right)
+        self.timer.add_button(self.button_navigate_down_left, self.jog_down_left)
+        self.timer.add_button(self.button_navigate_down_right, self.jog_down_right)
+        self.set_timer_options()
+
+        # self.Bind(wx.EVT_BUTTON, self.on_button_navigate_l, self.button_navigate_left)
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_home, self.button_navigate_home
         )
@@ -729,14 +888,6 @@ class Jog(wx.Panel):
             wx.EVT_RIGHT_DOWN, self.on_button_navigate_physical_home
         )
 
-        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_r, self.button_navigate_right)
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_navigate_dl, self.button_navigate_down_left
-        )
-        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_d, self.button_navigate_down)
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_navigate_dr, self.button_navigate_down_right
-        )
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_unlock, self.button_navigate_unlock
         )
@@ -810,6 +961,46 @@ class Jog(wx.Panel):
         self.Layout()
         # end wxGlade
 
+    def jog_left(self):
+        p1 = f"-{self.context.jog_amount}"
+        p2 = "0"
+        self.move_rel(p1, p2)
+
+    def jog_up_left(self):
+        p1 = f"-{self.context.jog_amount}"
+        p2 = f"-{self.context.jog_amount}"
+        self.move_rel(p1, p2)
+
+    def jog_down_left(self):
+        p1 = f"-{self.context.jog_amount}"
+        p2 = f"{self.context.jog_amount}"
+        self.move_rel(p1, p2)
+
+    def jog_right(self):
+        p1 = f"{self.context.jog_amount}"
+        p2 = "0"
+        self.move_rel(p1, p2)
+
+    def jog_up_right(self):
+        p1 = f"{self.context.jog_amount}"
+        p2 = f"-{self.context.jog_amount}"
+        self.move_rel(p1, p2)
+
+    def jog_down_right(self):
+        p1 = f"{self.context.jog_amount}"
+        p2 = f"{self.context.jog_amount}"
+        self.move_rel(p1, p2)
+
+    def jog_up(self):
+        p1 = "0"
+        p2 = f"-{self.context.jog_amount}"
+        self.move_rel(p1, p2)
+
+    def jog_down(self):
+        p1 = "0"
+        p2 = f"{self.context.jog_amount}"
+        self.move_rel(p1, p2)
+
     @property
     def confined(self):
         global _confined
@@ -844,25 +1035,25 @@ class Jog(wx.Panel):
             self.confined = False
         if self.confined:
             min_x = 0
-            max_x = float(Length(self.context.device.width))
+            max_x = float(Length(self.context.device.view.width))
             min_y = 0
-            max_y = float(Length(self.context.device.height))
+            max_y = float(Length(self.context.device.view.height))
             # Are we outside? Then lets move back to the edge...
             new_x = min(max_x, max(min_x, current_x))
             new_y = min(max_y, max(min_y, current_y))
             if new_x != current_x or new_y != current_y:
                 self.context(
-                    f"move_absolute {Length(amount=new_x).mm:.3f}mm {Length(amount=new_y).mm:.3f}mm\n"
+                    f".move_absolute {Length(amount=new_x).mm:.3f}mm {Length(amount=new_y).mm:.3f}mm\n"
                 )
 
     def move_rel(self, dx, dy):
         nx, ny = get_movement(self.context.device, dx, dy)
-        self.context(f"move_relative {nx} {ny}\n")
+        self.context(f".move_relative {nx} {ny}\n")
 
     def on_button_navigate_home(
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
-        self.context("home\n")
+        self.context(".home\n")
 
     def on_button_navigate_physical_home(self, event=None):
         physical = False
@@ -873,42 +1064,6 @@ class Jog(wx.Panel):
             self.context("physical_home\n")
         else:
             self.context("home\n")
-
-    def on_button_navigate_ul(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel(
-            f"-{self.context.jog_amount}",
-            f"-{self.context.jog_amount}",
-        )
-
-    def on_button_navigate_u(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel("0", f"-{self.context.jog_amount}")
-
-    def on_button_navigate_ur(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel(
-            f"{self.context.jog_amount}",
-            f"-{self.context.jog_amount}",
-        )
-
-    def on_button_navigate_l(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel(f"-{self.context.jog_amount}", "0")
-
-    def on_button_navigate_r(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel(f"{self.context.jog_amount}", "0")
-
-    def on_button_navigate_dl(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel(
-            f"-{self.context.jog_amount}",
-            f"{self.context.jog_amount}",
-        )
-
-    def on_button_navigate_d(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel("0", f"{self.context.jog_amount}")
-
-    def on_button_navigate_dr(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel(
-            f"{self.context.jog_amount}",
-            f"{self.context.jog_amount}",
-        )
 
     def on_button_navigate_unlock(
         self, event=None
@@ -932,10 +1087,27 @@ class Jog(wx.Panel):
 
     def pane_show(self):
         self.context.listen("activate;device", self.on_update)
+        self.context.listen("button-repeat", self.on_button_repeat)
         self.set_home_logic()
 
     def pane_hide(self):
         self.context.unlisten("activate;device", self.on_update)
+        self.context.unlisten("button-repeat", self.on_button_repeat)
+
+    def set_timer_options(self):
+        interval = self.context.button_repeat
+        if interval is None:
+            interval = 0.5
+        if interval < 0:
+            interval = 0
+        accelerate = self.context.button_accelerate
+        if accelerate is None:
+            accelerate = True
+        self.timer.interval = interval
+        self.timer.accelerate = accelerate
+
+    def on_button_repeat(self, origin, *args):
+        self.set_timer_options()
 
 
 class MovePanel(wx.Panel):
@@ -968,10 +1140,14 @@ class MovePanel(wx.Panel):
             style=wx.TE_PROCESS_ENTER,
         )
         self.small_buttons = []
+        def_dim = self.text_position_x.Size[1]
+        def_size = wx.Size(def_dim + 5, def_dim + 5)
         for idx in range(9):
-            btn = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(25, 25))
-            icon = EmptyIcon(size=20, msg=str(idx + 1), ptsize=12, color=wx.LIGHT_GREY)
-            btn.SetBitmap(icon.GetBitmap(resize=20))
+            btn = wx.StaticBitmap(self, wx.ID_ANY, size=def_size)
+            icon = EmptyIcon(
+                size=def_dim, msg=str(idx + 1), ptsize=12, color=wx.LIGHT_GREY
+            )
+            btn.SetBitmap(icon.GetBitmap(resize=def_dim))
             self.small_buttons.append(btn)
             btn.Bind(wx.EVT_RIGHT_DOWN, self.on_right(idx))
             btn.Bind(wx.EVT_LEFT_DOWN, self.on_left(idx))
@@ -988,7 +1164,7 @@ class MovePanel(wx.Panel):
             else:
                 y = Length(self.context.elements.length_y("0%"))
             self.context.root.setting(
-                str, f"MovePos{idx}", f"{x.length_mm}|{y.length_mm}"
+                str, f"movepos{idx}", f"{x.length_mm}|{y.length_mm}"
             )
             label = _(
                 "Left click to go to saved position\nRight click to save coordinates"
@@ -996,7 +1172,7 @@ class MovePanel(wx.Panel):
             label += "\n" + _("Current: ") + f"{x.length_mm}, {y.length_mm}"
             btn.SetToolTip(label)
 
-        self.label_pos = wx.StaticText(self, wx.ID_ANY, "")
+        self.label_pos = wx.StaticText(self, wx.ID_ANY, "---")
         self.__set_properties()
         self.__do_layout()
 
@@ -1013,6 +1189,7 @@ class MovePanel(wx.Panel):
         self.button_navigate_move_to.Bind(
             wx.EVT_RIGHT_DOWN, self.on_button_navigate_move_to_right
         )
+        self.Bind(wx.EVT_SIZE, self.on_size, self)
 
     def __set_properties(self):
         # begin wxGlade: MovePanel.__set_properties
@@ -1042,8 +1219,8 @@ class MovePanel(wx.Panel):
         button_info_sizer.Add(self.label_pos, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
         main_sizer.Add(button_info_sizer, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         label_9 = wx.StaticText(self, wx.ID_ANY, "X:")
-        self.text_position_x.SetMinSize((45, 23))
-        self.text_position_y.SetMinSize((45, 23))
+        self.text_position_x.SetMinSize(dip_size(self, 45, -1))
+        self.text_position_y.SetMinSize(dip_size(self, 45, -1))
         h_x_sizer.Add(label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         h_x_sizer.Add(self.text_position_x, 1, wx.EXPAND, 0)
         v_main_sizer.Add(h_x_sizer, 0, wx.EXPAND, 0)
@@ -1052,14 +1229,22 @@ class MovePanel(wx.Panel):
         h_y_sizer.Add(self.text_position_y, 1, wx.EXPAND, 0)
         v_main_sizer.Add(h_y_sizer, 0, wx.EXPAND, 0)
         main_sizer.Add(v_main_sizer, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        btn_sizer = wx.GridSizer(3, 3, 2, 2)
+        self.btn_sizer = wx.GridSizer(3, 3, 2, 2)
         for idx in range(9):
-            btn_sizer.Add(self.small_buttons[idx], 0, 0, 0)
-        main_sizer.Add(btn_sizer, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+            self.btn_sizer.Add(self.small_buttons[idx], 0, 0, 0)
+        main_sizer.Add(self.btn_sizer, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.SetSizer(main_sizer)
         main_sizer.Fit(self)
         self.Layout()
         # end wxGlade
+
+    def on_size(self, event):
+        # Resize event - only display numpad buttons if enough horizontal space
+        winsize = self.GetSize()
+        display_it = bool(winsize[0] > 175)
+        self.btn_sizer.Show(display_it)
+        self.btn_sizer.ShowItems(display_it)
+        self.Layout()
 
     def on_label_dclick(self, event):
         p = self.context
@@ -1072,7 +1257,7 @@ class MovePanel(wx.Panel):
 
     def on_left(self, index):
         def handler(event):
-            gotostr = getattr(self.context.root, f"MovePos{index}", "")
+            gotostr = getattr(self.context.root, f"movepos{index}", "")
             if gotostr:
                 substr = gotostr.split("|")
                 if len(substr) < 2:
@@ -1096,7 +1281,7 @@ class MovePanel(wx.Panel):
                 ylen = Length(self.text_position_y.GetValue())
                 setattr(
                     self.context.root,
-                    f"MovePos{index}",
+                    f"movepos{index}",
                     f"{xlen.length_mm}|{ylen.length_mm}",
                 )
                 label = _(
@@ -1118,7 +1303,19 @@ class MovePanel(wx.Panel):
         try:
             x = self.text_position_x.GetValue()
             y = self.text_position_y.GetValue()
-            if not self.context.device.contains(x, y):
+            pos_x = Length(
+                x,
+                relative_length=self.context.space.display.width,
+                unitless=UNITS_PER_PIXEL,
+                preferred_units=self.context.units_name,
+            )
+            pos_y = Length(
+                y,
+                relative_length=self.context.space.display.height,
+                unitless=UNITS_PER_PIXEL,
+                preferred_units=self.context.units_name,
+            )
+            if not self.context.device.view.source_contains(float(pos_x), float(pos_y)):
                 dlg = wx.MessageDialog(
                     None,
                     _("Cannot move outside bed dimensions"),
@@ -1128,31 +1325,16 @@ class MovePanel(wx.Panel):
                 dlg.ShowModal()
                 dlg.Destroy()
                 return
-            pos_x = self.context.device.length(
-                self.text_position_x.GetValue(),
-                axis=0,
-                new_units=self.context.units_name,
-                unitless=UNITS_PER_PIXEL,
-            )
-            pos_y = self.context.device.length(
-                self.text_position_y.GetValue(),
-                axis=1,
-                new_units=self.context.units_name,
-                unitless=UNITS_PER_PIXEL,
-            )
             self.context(f"move {pos_x} {pos_y}\n")
         except ValueError:
             return
 
-    @signal_listener("driver;position")
-    @signal_listener("emulator;position")
     def update_position_info(self, origin, pos):
         # origin, pos
 
         if pos is None:
             return
         service = self.context.device
-        # print (f"origin={origin}, pos={pos}, driver={service.path}")
         # Might not come from the right device...
         if origin not in (service.path, "lhystudios"):
             # wrong device...
@@ -1165,7 +1347,21 @@ class MovePanel(wx.Panel):
         self.label_pos.SetLabel(
             f"{round(xpos.preferred, 6):.1f}{units}\n{round(ypos.preferred, 6):.1f}{units}"
         )
+        self.label_pos.Refresh()
+        # button_info_sizer.Layout()
+        # self.GetSizer().Layout()
         self.Layout()
+        self.Refresh()
+
+    def pane_show(self, *args):
+        self.context.listen("driver;position", self.update_position_info)
+        self.context.listen("emulator;position", self.update_position_info)
+
+    # Not sure whether this is the right thing to do, if it's still locked and then
+    # the pane gets hidden?! Let's call it a feature for now...
+    def pane_hide(self, *args):
+        self.context.unlisten("driver;position", self.update_position_info)
+        self.context.unlisten("emulator;position", self.update_position_info)
 
 
 class PulsePanel(wx.Panel):
@@ -1198,7 +1394,7 @@ class PulsePanel(wx.Panel):
         # begin wxGlade: PulsePanel.__set_properties
         self.button_navigate_pulse.SetToolTip(_("Fire a short laser pulse"))
         self.button_navigate_pulse.SetSize(self.button_navigate_pulse.GetBestSize())
-        self.spin_pulse_duration.SetMinSize((40, 23))
+        self.spin_pulse_duration.SetMinSize(dip_size(self, 40, -1))
         self.spin_pulse_duration.SetToolTip(_("Set the duration of the laser pulse"))
         # end wxGlade
 
@@ -1224,250 +1420,250 @@ class PulsePanel(wx.Panel):
         self.context.navigate_pulse = float(self.spin_pulse_duration.GetValue())
 
 
-class SizePanel(wx.Panel):
-    object_ratio = None
-    object_x = None
-    object_y = None
-    object_width = None
-    object_height = None
+# class SizePanel(wx.Panel):
+#     object_ratio = None
+#     object_x = None
+#     object_y = None
+#     object_width = None
+#     object_height = None
 
-    def __init__(self, *args, context=None, **kwds):
-        # begin wxGlade: SizePanel.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
+#     def __init__(self, *args, context=None, **kwds):
+#         # begin wxGlade: SizePanel.__init__
+#         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+#         wx.Panel.__init__(self, *args, **kwds)
+#         self.context = context
 
-        self.mainsizer = StaticBoxSizer(
-            self, wx.ID_ANY, _("Object Dimensions"), wx.HORIZONTAL
-        )
-        self.button_navigate_resize = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_compress_50.GetBitmap(resize=32)
-        )
-        self.label_9 = wx.StaticText(self, wx.ID_ANY, _("Width:"))
-        self.label_10 = wx.StaticText(self, wx.ID_ANY, _("Height:"))
+#         self.mainsizer = StaticBoxSizer(
+#             self, wx.ID_ANY, _("Object Dimensions"), wx.HORIZONTAL
+#         )
+#         self.button_navigate_resize = wx.BitmapButton(
+#             self, wx.ID_ANY, icons8_compress_50.GetBitmap(resize=32)
+#         )
+#         self.label_9 = wx.StaticText(self, wx.ID_ANY, _("Width:"))
+#         self.label_10 = wx.StaticText(self, wx.ID_ANY, _("Height:"))
 
-        self.text_width = TextCtrl(
-            self,
-            wx.ID_ANY,
-            style=wx.TE_PROCESS_ENTER,
-            value="0",
-            check="length",
-            nonzero=True,
-        )
-        self.text_height = TextCtrl(
-            self,
-            wx.ID_ANY,
-            style=wx.TE_PROCESS_ENTER,
-            value="0",
-            check="length",
-            nonzero=True,
-        )
-        self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
-        self.bitmap_locked = icons8_lock_50.GetBitmap(resize=25, use_theme=False)
-        self.bitmap_unlocked = icons8_padlock_50.GetBitmap(resize=25, use_theme=False)
+#         self.text_width = TextCtrl(
+#             self,
+#             wx.ID_ANY,
+#             style=wx.TE_PROCESS_ENTER,
+#             value="0",
+#             check="length",
+#             nonzero=True,
+#         )
+#         self.text_height = TextCtrl(
+#             self,
+#             wx.ID_ANY,
+#             style=wx.TE_PROCESS_ENTER,
+#             value="0",
+#             check="length",
+#             nonzero=True,
+#         )
+#         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
+#         self.bitmap_locked = icons8_lock_50.GetBitmap(resize=STD_ICON_SIZE/2, use_theme=False)
+#         self.bitmap_unlocked = icons8_padlock_50.GetBitmap(resize=STD_ICON_SIZE/2, use_theme=False)
 
-        # No change of fields during input
-        # self.text_height.execute_action_on_change = False
-        # self.text_width.execute_action_on_change = False
-        self._updating = False
-        self.__set_properties()
-        self.__do_layout()
+#         # No change of fields during input
+#         # self.text_height.execute_action_on_change = False
+#         # self.text_width.execute_action_on_change = False
+#         self._updating = False
+#         self.__set_properties()
+#         self.__do_layout()
 
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_navigate_resize, self.button_navigate_resize
-        )
-        self.btn_lock_ratio.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle_ratio)
-        self.text_width.SetActionRoutine(self.on_textenter_width)
-        self.text_height.SetActionRoutine(self.on_textenter_height)
+#         self.Bind(
+#             wx.EVT_BUTTON, self.on_button_navigate_resize, self.button_navigate_resize
+#         )
+#         self.btn_lock_ratio.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle_ratio)
+#         self.text_width.SetActionRoutine(self.on_textenter_width)
+#         self.text_height.SetActionRoutine(self.on_textenter_height)
 
-    def __set_properties(self):
-        # begin wxGlade: SizePanel.__set_properties
-        self.button_navigate_resize.SetToolTip(_("Resize the object"))
-        self.button_navigate_resize.SetSize(self.button_navigate_resize.GetBestSize())
-        self.text_width.SetToolTip(_("Define width of selected object"))
-        self.text_height.SetToolTip(_("Define height of selected object"))
-        self.btn_lock_ratio.SetMinSize((32, 32))
-        self.btn_lock_ratio.SetToolTip(
-            _("Lock the ratio of width / height to the original values")
-        )
-        # Set toggle bitmap
-        self.on_toggle_ratio(None)
-        self.text_height.Enable(False)
-        self.text_width.Enable(False)
-        self.button_navigate_resize.Enable(False)
+#     def __set_properties(self):
+#         # begin wxGlade: SizePanel.__set_properties
+#         self.button_navigate_resize.SetToolTip(_("Resize the object"))
+#         self.button_navigate_resize.SetSize(self.button_navigate_resize.GetBestSize())
+#         self.text_width.SetToolTip(_("Define width of selected object"))
+#         self.text_height.SetToolTip(_("Define height of selected object"))
+#         self.btn_lock_ratio.SetMinSize(dip_size(self, 32, 32))
+#         self.btn_lock_ratio.SetToolTip(
+#             _("Lock the ratio of width / height to the original values")
+#         )
+#         # Set toggle bitmap
+#         self.on_toggle_ratio(None)
+#         self.text_height.Enable(False)
+#         self.text_width.Enable(False)
+#         self.button_navigate_resize.Enable(False)
 
-        # end wxGlade
+#         # end wxGlade
 
-    def __do_layout(self):
-        # begin wxGlade: SizePanel.__do_layout
-        self.mainsizer.Add(self.button_navigate_resize, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_label = wx.BoxSizer(wx.VERTICAL)
-        fieldsizer1 = wx.BoxSizer(wx.HORIZONTAL)
-        fieldsizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        self.label_9.SetMinSize(wx.Size(45, -1))
-        self.label_10.SetMinSize(wx.Size(45, -1))
-        fieldsizer1.Add(self.label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        fieldsizer1.Add(self.text_width, 1, wx.EXPAND, 0)
+#     def __do_layout(self):
+#         # begin wxGlade: SizePanel.__do_layout
+#         self.mainsizer.Add(self.button_navigate_resize, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+#         sizer_label = wx.BoxSizer(wx.VERTICAL)
+#         fieldsizer1 = wx.BoxSizer(wx.HORIZONTAL)
+#         fieldsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+#         self.label_9.SetMinSize(dip_size(self, 45, -1))
+#         self.label_10.SetMinSize(dip_size(self, 45, -1))
+#         fieldsizer1.Add(self.label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+#         fieldsizer1.Add(self.text_width, 1, wx.EXPAND, 0)
 
-        fieldsizer2.Add(self.label_10, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        fieldsizer2.Add(self.text_height, 1, wx.EXPAND, 0)
+#         fieldsizer2.Add(self.label_10, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+#         fieldsizer2.Add(self.text_height, 1, wx.EXPAND, 0)
 
-        sizer_label.Add(fieldsizer1, 0, wx.EXPAND, 0)
-        sizer_label.Add(fieldsizer2, 0, wx.EXPAND, 0)
+#         sizer_label.Add(fieldsizer1, 0, wx.EXPAND, 0)
+#         sizer_label.Add(fieldsizer2, 0, wx.EXPAND, 0)
 
-        self.mainsizer.Add(sizer_label, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.mainsizer.Add(self.btn_lock_ratio, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+#         self.mainsizer.Add(sizer_label, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+#         self.mainsizer.Add(self.btn_lock_ratio, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.SetSizer(self.mainsizer)
-        self.mainsizer.Fit(self)
+#         self.SetSizer(self.mainsizer)
+#         self.mainsizer.Fit(self)
 
-        self.Layout()
-        # end wxGlade
+#         self.Layout()
+#         # end wxGlade
 
-    def pane_show(self, *args):
-        self.context.listen("emphasized", self.on_emphasized_elements_changed)
-        self.context.listen("modified", self.on_modified_element)
-        self.update_sizes()
+#     def pane_show(self, *args):
+#         self.context.listen("emphasized", self.on_emphasized_elements_changed)
+#         self.context.listen("modified", self.on_modified_element)
+#         self.update_sizes()
 
-    def pane_hide(self, *args):
-        self.context.unlisten("emphasized", self.on_emphasized_elements_changed)
-        self.context.unlisten("modified", self.on_modified_element)
+#     def pane_hide(self, *args):
+#         self.context.unlisten("emphasized", self.on_emphasized_elements_changed)
+#         self.context.unlisten("modified", self.on_modified_element)
 
-    def on_modified_element(self, origin, *args):
-        self.update_sizes()
+#     def on_modified_element(self, origin, *args):
+#         self.update_sizes()
 
-    def on_emphasized_elements_changed(self, origin, elements):
-        self.update_sizes()
+#     def on_emphasized_elements_changed(self, origin, elements):
+#         self.update_sizes()
 
-    def on_toggle_ratio(self, event):
-        if self.btn_lock_ratio.GetValue():
-            self.btn_lock_ratio.SetBitmap(self.bitmap_locked)
-        else:
-            self.btn_lock_ratio.SetBitmap(self.bitmap_unlocked)
+#     def on_toggle_ratio(self, event):
+#         if self.btn_lock_ratio.GetValue():
+#             self.btn_lock_ratio.SetBitmap(self.bitmap_locked)
+#         else:
+#             self.btn_lock_ratio.SetBitmap(self.bitmap_unlocked)
 
-    def update_sizes(self):
-        self.object_x = None
-        self.object_y = None
-        self.object_width = None
-        self.object_height = None
-        self.object_ratio = None
-        bbox = self.context.elements.selected_area()
-        if bbox is not None:
-            p = self.context
-            units = p.units_name
-            try:
-                self.object_x = bbox[0]
-                self.object_y = bbox[1]
-                self.object_width = bbox[2] - bbox[0]
-                self.object_height = bbox[3] - bbox[1]
-                try:
-                    self.object_ratio = self.object_width / self.object_height
-                except ZeroDivisionError:
-                    self.object_ratio = 0
-            except (ValueError, AttributeError, TypeError):
-                pass
+#     def update_sizes(self):
+#         self.object_x = None
+#         self.object_y = None
+#         self.object_width = None
+#         self.object_height = None
+#         self.object_ratio = None
+#         bbox = self.context.elements.selected_area()
+#         if bbox is not None:
+#             p = self.context
+#             units = p.units_name
+#             try:
+#                 self.object_x = bbox[0]
+#                 self.object_y = bbox[1]
+#                 self.object_width = bbox[2] - bbox[0]
+#                 self.object_height = bbox[3] - bbox[1]
+#                 try:
+#                     self.object_ratio = self.object_width / self.object_height
+#                 except ZeroDivisionError:
+#                     self.object_ratio = 0
+#             except (ValueError, AttributeError, TypeError):
+#                 pass
 
-        if self.object_width is not None:
-            self.text_width.SetValue(
-                Length(
-                    self.object_width, preferred_units=units, digits=3
-                ).preferred_length
-            )
-            self.text_width.Enable(True)
-        else:
-            self.text_width.SetValue("---")
-            self.text_width.Enable(False)
-        if self.object_height is not None:
-            self.text_height.SetValue(
-                Length(
-                    self.object_height, preferred_units=units, digits=3
-                ).preferred_length
-            )
-            self.text_height.Enable(True)
+#         if self.object_width is not None:
+#             self.text_width.SetValue(
+#                 Length(
+#                     self.object_width, preferred_units=units, digits=3
+#                 ).preferred_length
+#             )
+#             self.text_width.Enable(True)
+#         else:
+#             self.text_width.SetValue("---")
+#             self.text_width.Enable(False)
+#         if self.object_height is not None:
+#             self.text_height.SetValue(
+#                 Length(
+#                     self.object_height, preferred_units=units, digits=3
+#                 ).preferred_length
+#             )
+#             self.text_height.Enable(True)
 
-        else:
-            self.text_height.SetValue("---")
-            self.text_height.Enable(False)
-        if self.object_ratio is not None:
-            self.button_navigate_resize.Enable(True)
-        else:
-            self.button_navigate_resize.Enable(False)
+#         else:
+#             self.text_height.SetValue("---")
+#             self.text_height.Enable(False)
+#         if self.object_ratio is not None:
+#             self.button_navigate_resize.Enable(True)
+#         else:
+#             self.button_navigate_resize.Enable(False)
 
-    def on_button_navigate_resize(self, event):
-        new_width = Length(
-            self.text_width.GetValue(), relative_length=self.object_width
-        )
-        new_w = float(new_width)
-        new_height = Length(
-            self.text_height.GetValue(), relative_length=self.object_height
-        )
-        new_h = float(new_height)
-        if (
-            abs(new_h - self.object_height) < 1.0e-6
-            and abs(new_w - self.object_width) < 1.0e-6
-        ):
-            # No change
-            return
-        if new_w == 0 or new_h == 0:
-            return
-        self.context(f"resize {self.object_x} {self.object_y} {new_width} {new_height}")
-        self.update_sizes()
+#     def on_button_navigate_resize(self, event):
+#         new_width = Length(
+#             self.text_width.GetValue(), relative_length=self.object_width
+#         )
+#         new_w = float(new_width)
+#         new_height = Length(
+#             self.text_height.GetValue(), relative_length=self.object_height
+#         )
+#         new_h = float(new_height)
+#         if (
+#             abs(new_h - self.object_height) < 1.0e-6
+#             and abs(new_w - self.object_width) < 1.0e-6
+#         ):
+#             # No change
+#             return
+#         if new_w == 0 or new_h == 0:
+#             return
+#         self.context(f"resize {self.object_x} {self.object_y} {new_width} {new_height}")
+#         self.update_sizes()
 
-    def on_textenter_width(self):
-        if self._updating:
-            return
-        needsupdate = False
-        try:
-            p = self.context
-            units = p.units_name
-            new_width = Length(
-                self.text_width.GetValue(),
-                relative_length=self.object_width,
-                preferred_units=units,
-                digits=3,
-            )
-            new_w = float(new_width)
-            if new_w != self.object_width:
-                needsupdate = True
-        except ValueError:
-            pass
-        if not needsupdate:
-            return
-        self._updating = True
-        if self.btn_lock_ratio.GetValue():
-            new_h = new_w * (1.0 / self.object_ratio)
-            new_height = Length(new_h, preferred_units=units, digits=3)
-            self.text_height.SetValue(new_height.preferred_length)
-        self._updating = False
-        self.on_button_navigate_resize(None)
+#     def on_textenter_width(self):
+#         if self._updating:
+#             return
+#         needsupdate = False
+#         try:
+#             p = self.context
+#             units = p.units_name
+#             new_width = Length(
+#                 self.text_width.GetValue(),
+#                 relative_length=self.object_width,
+#                 preferred_units=units,
+#                 digits=3,
+#             )
+#             new_w = float(new_width)
+#             if new_w != self.object_width:
+#                 needsupdate = True
+#         except ValueError:
+#             pass
+#         if not needsupdate:
+#             return
+#         self._updating = True
+#         if self.btn_lock_ratio.GetValue():
+#             new_h = new_w * (1.0 / self.object_ratio)
+#             new_height = Length(new_h, preferred_units=units, digits=3)
+#             self.text_height.SetValue(new_height.preferred_length)
+#         self._updating = False
+#         self.on_button_navigate_resize(None)
 
-    def on_textenter_height(self):
-        if self._updating:
-            return
-        needsupdate = False
-        try:
-            p = self.context
-            units = p.units_name
-            new_height = Length(
-                self.text_height.GetValue(),
-                relative_length=self.object_height,
-                preferred_units=units,
-                digits=3,
-            )
-            new_h = float(new_height)
-            if new_h != self.object_height:
-                needsupdate = True
-        except ValueError:
-            pass
-        if not needsupdate:
-            return
-        self._updating = True
-        if self.btn_lock_ratio.GetValue():
-            new_w = new_h * (1.0 / self.object_ratio)
-            new_width = Length(new_w, preferred_units=units, digits=3)
-            self.text_width.SetValue(new_width.preferred_length)
-        self._updating = False
-        self.on_button_navigate_resize(None)
+#     def on_textenter_height(self):
+#         if self._updating:
+#             return
+#         needsupdate = False
+#         try:
+#             p = self.context
+#             units = p.units_name
+#             new_height = Length(
+#                 self.text_height.GetValue(),
+#                 relative_length=self.object_height,
+#                 preferred_units=units,
+#                 digits=3,
+#             )
+#             new_h = float(new_height)
+#             if new_h != self.object_height:
+#                 needsupdate = True
+#         except ValueError:
+#             pass
+#         if not needsupdate:
+#             return
+#         self._updating = True
+#         if self.btn_lock_ratio.GetValue():
+#             new_w = new_h * (1.0 / self.object_ratio)
+#             new_width = Length(new_w, preferred_units=units, digits=3)
+#             self.text_width.SetValue(new_width.preferred_length)
+#         self._updating = False
+#         self.on_button_navigate_resize(None)
 
 
 class Transform(wx.Panel):
@@ -1552,18 +1748,20 @@ class Transform(wx.Panel):
             limited=True,
         )
 
+        self.timer = TimerButtons(self)
+        self.timer.add_button(self.button_translate_left, self.trans_left)
+        self.timer.add_button(self.button_translate_right, self.trans_right)
+        self.timer.add_button(self.button_translate_up, self.trans_up)
+        self.timer.add_button(self.button_translate_down, self.trans_down)
+        self.set_timer_options()
         self.__set_properties()
         self.__do_layout()
 
         self.button_scale_down.Bind(wx.EVT_BUTTON, self.on_scale_down_5)
-        self.button_translate_up.Bind(wx.EVT_BUTTON, self.on_translate_up_1)
         self.button_scale_up.Bind(wx.EVT_BUTTON, self.on_scale_up_5)
-        self.button_translate_left.Bind(wx.EVT_BUTTON, self.on_translate_left_1)
         self.button_reset.Bind(wx.EVT_BUTTON, self.on_reset)
         self.button_rotate_ccw.Bind(wx.EVT_BUTTON, self.on_rotate_ccw_5)
-        self.button_translate_right.Bind(wx.EVT_BUTTON, self.on_translate_right_1)
         self.button_rotate_cw.Bind(wx.EVT_BUTTON, self.on_rotate_cw_5)
-        self.button_translate_down.Bind(wx.EVT_BUTTON, self.on_translate_down_1)
         self.text_a.SetActionRoutine(self.on_text_matrix)
         self.text_b.SetActionRoutine(self.on_text_matrix)
         self.text_c.SetActionRoutine(self.on_text_matrix)
@@ -1618,21 +1816,21 @@ class Transform(wx.Panel):
         self.button_rotate_cw.SetToolTip(
             _("Rotate Clockwise by 5° / by 90° on left / right click")
         )
-        self.text_a.SetMinSize((55, -1))
+        self.text_a.SetMinSize(dip_size(self, 55, -1))
         self.text_a.SetToolTip(
             _(
                 "Scale X - scales the element by this factor in the X-Direction, i.e. 2.0 means 200% of the original scale. "
                 "You may enter either this factor directly or state the scale as a %-value, so 0.5 or 50% will both cut the scale in half."
             )
         )
-        self.text_d.SetMinSize((55, -1))
+        self.text_d.SetMinSize(dip_size(self, 55, -1))
         self.text_d.SetToolTip(
             _(
                 "Scale Y - scales the element by this factor in the Y-Direction, i.e. 2.0 means 200% of the original scale. "
                 "You may enter either this factor directly or state the scale as a %-value, so 0.5 or 50% will both cut the scale in half."
             )
         )
-        self.text_c.SetMinSize((55, -1))
+        self.text_c.SetMinSize(dip_size(self, 55, -1))
         self.text_c.SetToolTip(
             _(
                 "Skew X - to skew the element in X-direction by alpha° you need either \n"
@@ -1641,7 +1839,7 @@ class Transform(wx.Panel):
                 "In any case this value will then be represented as tan(alpha)"
             )
         )
-        self.text_b.SetMinSize((55, -1))
+        self.text_b.SetMinSize(dip_size(self, 55, -1))
         self.text_b.SetToolTip(
             _(
                 "Skew Y - to skew the element in Y-direction by alpha° you need either \n"
@@ -1650,14 +1848,14 @@ class Transform(wx.Panel):
                 "In any case this value will then be represented as tan(alpha)"
             )
         )
-        self.text_e.SetMinSize((40, -1))
+        self.text_e.SetMinSize(dip_size(self, 40, -1))
         self.text_e.SetToolTip(
             _(
                 "Translate X - moves the element by this amount of mils in the X-direction; "
                 "you may use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"
             )
         )
-        self.text_f.SetMinSize((40, -1))
+        self.text_f.SetMinSize(dip_size(self, 40, -1))
         self.text_f.SetToolTip(
             _(
                 "Translate Y - moves the element by this amount of mils in the Y-direction; "
@@ -1717,11 +1915,39 @@ class Transform(wx.Panel):
     def pane_show(self, *args):
         self.context.listen("emphasized", self.on_emphasized_elements_changed)
         self.context.listen("modified", self.on_modified_element)
+        self.context.listen("button-repeat", self.on_button_repeat)
         self.update_matrix_text()
 
     def pane_hide(self, *args):
         self.context.unlisten("emphasized", self.on_emphasized_elements_changed)
         self.context.unlisten("modified", self.on_modified_element)
+        self.context.unlisten("button-repeat", self.on_button_repeat)
+
+    # To get updates about translation / scaling of selected elements
+    # we need to attach to some signals...
+    @signal_listener("refresh_scene")
+    def on_refresh_scene(self, origin, scene_name=None, *args):
+        if scene_name == "Scene":
+            self.update_matrix_text()
+
+    @signal_listener("tool_modified")
+    def on_modified(self, *args):
+        self.update_matrix_text()
+
+    def set_timer_options(self):
+        interval = self.context.button_repeat
+        if interval is None:
+            interval = 0.5
+        if interval < 0:
+            interval = 0
+        accelerate = self.context.button_accelerate
+        if accelerate is None:
+            accelerate = True
+        self.timer.interval = interval
+        self.timer.accelerate = accelerate
+
+    def on_button_repeat(self, origin, *args):
+        self.set_timer_options()
 
     def on_modified_element(self, origin, *args):
         self.update_matrix_text()
@@ -1806,20 +2032,22 @@ class Transform(wx.Panel):
         self.matrix_updated()
 
     def _translate(self, dx, dy, scale):
-        dx = self.context.device.length(
+        dx = Length(
             dx,
-            0,
-            scale=scale,
-            new_units=self.context.units_name,
+            relative_length=self.context.space.display.width,
             unitless=UNITS_PER_PIXEL,
+            preferred_units=self.context.units_name,
         )
-        dy = self.context.device.length(
+        dx *= scale
+
+        dy = Length(
             dy,
-            1,
-            scale=scale,
-            new_units=self.context.units_name,
+            relative_length=self.context.space.display.height,
             unitless=UNITS_PER_PIXEL,
+            preferred_units=self.context.units_name,
         )
+        dy *= scale
+
         self.context(f"translate {dx} {dy}\n")
         self.context.elements.signal("ext-modified")
         self.matrix_updated()
@@ -1840,40 +2068,40 @@ class Transform(wx.Panel):
         scale = 20.0 / 19.0
         self._scale(scale)
 
-    def on_translate_up_1(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def trans_down(self):
+        dx = 0
+        dy = self.context.jog_amount
+        self._translate(dx, dy, 1)
+
+    def trans_up(self):
         dx = 0
         dy = self.context.jog_amount
         self._translate(dx, dy, -1)
+
+    def trans_left(self):
+        dx = self.context.jog_amount
+        dy = 0
+        self._translate(dx, dy, -1)
+
+    def trans_right(self):
+        dx = self.context.jog_amount
+        dy = 0
+        self._translate(dx, dy, 1)
 
     def on_translate_up_10(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = 0
         dy = self.context.jog_amount * 10
         self._translate(dx, dy, -10)
 
-    def on_translate_left_1(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = self.context.jog_amount
-        dy = 0
-        self._translate(dx, dy, -1)
-
     def on_translate_left_10(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = self.context.jog_amount
         dy = 0
         self._translate(dx, dy, -10)
 
-    def on_translate_right_1(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = self.context.jog_amount
-        dy = 0
-        self._translate(dx, dy, 1)
-
     def on_translate_right_10(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = self.context.jog_amount
         dy = 0
         self._translate(dx, dy, 10)
-
-    def on_translate_down_1(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = 0
-        dy = self.context.jog_amount
-        self._translate(dx, dy, 1)
 
     def on_translate_down_10(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = 0
@@ -1982,11 +2210,11 @@ class JogDistancePanel(wx.Panel):
 
     def on_text_jog_amount(self):  # wxGlade: Navigation.<event_handler>
         try:
-            jog = self.context.device.length(
+            jog = Length(
                 self.text_jog_amount.GetValue(),
-                new_units=self.context.units_name,
                 unitless=UNITS_PER_PIXEL,
-            )
+                preferred_units=self.context.units_name,
+            ).preferred_length
         except ValueError:
             return
         self.context.jog_amount = str(jog)
@@ -2024,7 +2252,7 @@ class NavigationPanel(wx.Panel):
         move_panel = MovePanel(self, wx.ID_ANY, context=self.context)
         pulse_and_move_sizer.Add(move_panel, 1, wx.EXPAND, 0)
 
-        size_panel = SizePanel(self, wx.ID_ANY, context=self.context)
+        size_panel = PositionPanel(self, wx.ID_ANY, context=self.context, small=True)
         pulse_and_move_sizer.Add(size_panel, 1, wx.EXPAND, 0)
 
         main_sizer.Add(pulse_and_move_sizer, 0, wx.EXPAND, 0)
@@ -2075,7 +2303,6 @@ class Navigation(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-
         kernel.register("wxpane/Navigation", register_panel_navigation)
         kernel.register(
             "button/preparation/Navigation",
@@ -2096,4 +2323,4 @@ class Navigation(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Editing", "Jog, Move and Transform")
+        return "Editing", "Jog, Move and Transform"

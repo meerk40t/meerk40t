@@ -15,7 +15,6 @@ from ..core.cutcode.linecut import LineCut
 from ..core.cutcode.outputcut import OutputCut
 from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
-from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
@@ -51,8 +50,6 @@ class MoshiDriver(Parameters):
 
         self.native_x = 0
         self.native_y = 0
-        self.origin_x = 0
-        self.origin_y = 0
 
         self.plot_planner = PlotPlanner(self.settings)
         self.queue = list()
@@ -63,16 +60,24 @@ class MoshiDriver(Parameters):
         self.hold = False
         self.paused = False
 
-        self.service._buffer_size = 0
-
         self.preferred_offset_x = 0
         self.preferred_offset_y = 0
 
         name = self.service.label
         self.pipe_channel = service.channel(f"{name}/events")
+        self.program.channel = self.pipe_channel
+
+        self.out_pipe = None
+        self.out_real = None
 
     def __repr__(self):
         return f"MoshiDriver({self.name})"
+
+    def __call__(self, e, real=False):
+        if real:
+            self.out_real(e)
+        else:
+            self.out_pipe(e)
 
     def hold_work(self, priority):
         """
@@ -83,6 +88,12 @@ class MoshiDriver(Parameters):
         @return: hold?
         """
         return priority <= 0 and (self.paused or self.hold)
+
+    def job_start(self, job):
+        pass
+
+    def job_finish(self, job):
+        self.rapid_mode()
 
     def get(self, key, default=None):
         """
@@ -204,16 +215,7 @@ class MoshiDriver(Parameters):
                 self.home()
             elif isinstance(q, GotoCut):
                 start = q.start
-                self._goto_absolute(
-                    self.origin_x + start[0], self.origin_y + start[1], 0
-                )
-            elif isinstance(q, SetOriginCut):
-                if q.set_current:
-                    x = self.native_x
-                    y = self.native_y
-                else:
-                    x, y = q.start
-                self.set_origin(x, y)
+                self._goto_absolute(start[0], start[1], 0)
             elif isinstance(q, WaitCut):
                 # Moshi has no forced wait functionality.
                 # self.wait_finish()
@@ -277,20 +279,6 @@ class MoshiDriver(Parameters):
                     self._goto_absolute(x, y, on & 1)
         self.queue.clear()
 
-    def move_ori(self, x, y):
-        """
-        Requests laser move to origin offset position x,y in physical units
-
-        @param x:
-        @param y:
-        @return:
-        """
-        if self.service.swap_xy:
-            x, y = y, x
-        x, y = self.service.physical_to_device_position(x, y)
-        self.rapid_mode()
-        self._move_absolute(self.origin_x + int(x), self.origin_y + int(y))
-
     def move_abs(self, x, y):
         """
         Requests laser move to absolute position x, y in physical units
@@ -299,9 +287,7 @@ class MoshiDriver(Parameters):
         @param y:
         @return:
         """
-        if self.service.swap_xy:
-            x, y = y, x
-        x, y = self.service.physical_to_device_position(x, y)
+        x, y = self.service.view.position(x, y)
         self.rapid_mode()
         self._move_absolute(int(x), int(y))
 
@@ -313,12 +299,10 @@ class MoshiDriver(Parameters):
         @param dy:
         @return:
         """
-        if self.service.swap_xy:
-            dx, dy = dy, dx
-        dx, dy = self.service.physical_to_device_length(dx, dy)
+        unit_dx, unit_dy = self.service.view.position(dx, dy, vector=True)
         self.rapid_mode()
-        x = self.native_x + dx
-        y = self.native_y + dy
+        x = self.native_x + unit_dx
+        y = self.native_y + unit_dy
         self._move_absolute(int(x), int(y))
         self.rapid_mode()
 
@@ -347,10 +331,8 @@ class MoshiDriver(Parameters):
         Unlock the Rail or send a "FreeMotor" command.
         """
         self.rapid_mode()
-        try:
-            self.service.controller.unlock_rail()
-        except AttributeError:
-            pass
+        self.pipe_channel("Realtime: FreeMotor")
+        MoshiBuilder.freemotor(self.out_real, self.pipe_channel)
 
     def rapid_mode(self, *values):
         """
@@ -359,20 +341,10 @@ class MoshiDriver(Parameters):
         """
         if self.state == DRIVER_STATE_RAPID:
             return
-
+        self.commit()
         if self.pipe_channel:
             self.pipe_channel("Rapid Mode")
-        if self.state == DRIVER_STATE_FINISH:
-            pass
-        elif self.state in (
-            DRIVER_STATE_PROGRAM,
-            DRIVER_STATE_MODECHANGE,
-            DRIVER_STATE_RASTER,
-        ):
-            self.program.termination()
-            self.push_program()
         self.state = DRIVER_STATE_RAPID
-        self.service.signal("driver;mode", self.state)
 
     def finished_mode(self, *values):
         """
@@ -457,17 +429,6 @@ class MoshiDriver(Parameters):
         except (ValueError, IndexError):
             move_y = 0
         self._start_raster_mode(offset_x, offset_y, move_x, move_y)
-
-    def set_origin(self, x, y):
-        """
-        This should set the origin position.
-
-        @param x:
-        @param y:
-        @return:
-        """
-        self.origin_x = x
-        self.origin_y = y
 
     def wait(self, time_in_ms):
         """
@@ -559,10 +520,10 @@ class MoshiDriver(Parameters):
         """
         self.service.spooler.clear_queue()
         self.rapid_mode()
-        try:
-            self.service.controller.estop()
-        except AttributeError:
-            pass
+        self.queue.clear()
+        self.pipe_channel("Realtime: Stop")
+        MoshiBuilder.stop(self.out_real)
+        self.pipe_channel("Control Request: Stop")
 
     ####################
     # Protected Driver Functions
@@ -592,7 +553,6 @@ class MoshiDriver(Parameters):
         self.program.vector_speed(speed, normal_speed)
         self.program.set_offset(0, offset_x, offset_y)
         self.state = DRIVER_STATE_PROGRAM
-        self.service.signal("driver;mode", self.state)
 
         self.program.move_abs(move_x, move_y)
         self.native_x = move_x
@@ -612,7 +572,6 @@ class MoshiDriver(Parameters):
         self.program.raster_speed(speed)
         self.program.set_offset(0, offset_x, offset_y)
         self.state = DRIVER_STATE_RASTER
-        self.service.signal("driver;mode", self.state)
 
         self.program.move_abs(move_x, move_y)
         self.native_x = move_x
@@ -647,12 +606,14 @@ class MoshiDriver(Parameters):
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
-    def push_program(self):
+    def commit(self):
         self.pipe_channel("Pushed program to output...")
         if len(self.program):
-            self.service.controller.push_program(self.program)
-            self.program = MoshiBuilder()
-            self.program.channel = self.pipe_channel
+            self.program.termination()
+            if self.service.mock:
+                self.program.debug(self.pipe_channel)
+            self(bytearray(self.program.data))
+        self.program.clear()
 
     def _ensure_program_or_raster_mode(self, x, y, x1=None, y1=None):
         """

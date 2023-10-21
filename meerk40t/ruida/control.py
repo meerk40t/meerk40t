@@ -39,14 +39,18 @@ class RuidaControl:
 
         channel = root.channel("console")
         channel(
-            "[red]WARNING: [blue]This is currently being rewritten and is back in beta. Some parts do not work. Use MeerK40t 0.7.x if you want consistency.[normal]",
+            "[red]WARNING: [blue]Non-horizontal rasters may not work well.[normal]",
+            ansi=True,
+        )
+        channel(
+            "[red]WARNING: [blue]Cuts are expected below 80mm/s. Rasters above that speed.[normal]",
             ansi=True,
         )
         _ = channel._
         try:
             r2m = root.open_as("module/UDPServer", "rd2mk", port=50200)
             r2mj = root.open_as("module/UDPServer", "rd2mk-jog", port=50207)
-            emulator = RuidaEmulator(root.device, root.device.scene_to_device_matrix())
+            emulator = RuidaEmulator(root.device, root.device.view.matrix)
             self.emulator = emulator
             if r2m:
                 channel(

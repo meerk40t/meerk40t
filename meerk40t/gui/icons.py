@@ -58,6 +58,7 @@ class PyEmbeddedImage(py_embedded_image):
         rotate=None,
         noadjustment=False,
         keepalpha=False,
+        force_darkmode=False,
     ):
         """
         Assumes greyscale icon black on transparent background using alpha for shading
@@ -74,6 +75,28 @@ class PyEmbeddedImage(py_embedded_image):
         @param keepalpha: maintain the alpha from the original asset
         @return:
         """
+
+        def color_distance(color1, color2: str):
+            from math import sqrt
+
+            if hasattr(color1, "distance_to"):
+                return color1.distance_to(color2)
+            # That's wx stuff
+            c1 = color1
+            coldb = wx.ColourDatabase()
+            c2 = coldb.Find(color2.upper())
+            if not c2.IsOk():
+                return 0
+            red_mean = int((c1.red + c2.red) / 2.0)
+            r = c1.red - c2.red
+            g = c1.green - c2.green
+            b = c1.blue - c2.blue
+            distance_sq = (
+                (((512 + red_mean) * r * r) >> 8)
+                + (4 * g * g)
+                + (((767 - red_mean) * b * b) >> 8)
+            )
+            return sqrt(distance_sq)
 
         image = py_embedded_image.GetImage(self)
         if not noadjustment and _GLOBAL_FACTOR != 1.0:
@@ -121,15 +144,17 @@ class PyEmbeddedImage(py_embedded_image):
             and color.blue is not None
         ):
             image.Replace(0, 0, 0, color.red, color.green, color.blue)
-            if DARKMODE and use_theme:
-                reverse = color.distance_to("black") <= 200
+            if force_darkmode or (DARKMODE and use_theme):
+                dist = color_distance(color, "black")
+                reverse = dist <= 200
                 black_bg = False
             else:
-                reverse = color.distance_to("white") <= 200
+                dist = color_distance(color, "white")
+                reverse = dist <= 200
                 black_bg = True
             if reverse and not keepalpha:
                 self.RemoveAlpha(image, black_bg=black_bg)
-        elif DARKMODE and use_theme:
+        elif force_darkmode or (DARKMODE and use_theme):
             for x in range(image.GetWidth()):
                 for y in range(image.GetHeight()):
                     r = int(255 - image.GetRed(x, y))
@@ -157,10 +182,16 @@ class PyEmbeddedImage(py_embedded_image):
 
 class EmptyIcon:
     def __init__(self, size, color, msg=None, ptsize=None, **args):
-        if size <= 0:
-            size = 50
-        size = int(size)
-        self._size = size
+        if isinstance(size, (list, tuple)):
+            self._size_x = int(size[0])
+            self._size_y = int(size[1])
+        else:
+            self._size_x = int(size)
+            self._size_y = int(size)
+        if self._size_x <= 0:
+            self._size_x = 50
+        if self._size_y <= 0:
+            self._size_y = 50
         self._color = color
         bmp = self.populate_image(msg, ptsize)
         self._image = bmp.ConvertToImage()
@@ -170,7 +201,7 @@ class EmptyIcon:
         #         self._image.SetRGB(x, y, color.red, color.green, color.blue)
 
     def populate_image(self, msg=None, ptsize=None):
-        imgBit = wx.Bitmap(self._size, self._size)
+        imgBit = wx.Bitmap(self._size_x, self._size_y)
         dc = wx.MemoryDC(imgBit)
         dc.SelectObject(imgBit)
         brush = wx.Brush(self._color, wx.BRUSHSTYLE_SOLID)
@@ -186,10 +217,27 @@ class EmptyIcon:
                 "[black]": wx.BLACK,
             }
             txt_color = wx.BLACK
+            autocolor = True
             for pat in pattern:
                 if msg.startswith(pat):
                     txt_color = pattern[pat]
+                    autocolor = False
                     msg = msg[len(pat) :]
+            if autocolor:
+                c1 = self._color
+                c2 = wx.BLACK
+                red_mean = int((c1.red + c2.red) / 2.0)
+                r = c1.red - c2.red
+                g = c1.green - c2.green
+                b = c1.blue - c2.blue
+                distance = (
+                    (((512 + red_mean) * r * r) >> 8)
+                    + (4 * g * g)
+                    + (((767 - red_mean) * b * b) >> 8)
+                )
+                # print(c1.red, c1.blue, c1.green, c1.blue + c1.red)
+                if distance < 200 * 200 or c1.blue == 255 or c1.red == 255:
+                    txt_color = wx.WHITE
             if ptsize is None:
                 ptsize = 12
             font = wx.Font(
@@ -201,8 +249,8 @@ class EmptyIcon:
             dc.SetTextForeground(txt_color)
             dc.SetFont(font)
             (t_w, t_h) = dc.GetTextExtent(msg)
-            x = (self._size - t_w) / 2
-            y = (self._size - t_h) / 2
+            x = (self._size_x - t_w) / 2
+            y = (self._size_y - t_h) / 2
             pt = wx.Point(int(x), int(y))
             dc.DrawText(msg, pt)
         # Now release dc
@@ -3703,4 +3751,111 @@ icons8_checkmark_50 = PyEmbeddedImage(
     b"sD3zkeNPp0TasrwMPePS563Vvqqe5kwtOMlYnCCzDCjMEkc7urQnY7vYNKvznqhCoECn6HWr"
     b"Ep8xUrSPngZ9s7J1wNfdfjBgF59L4wS7rAfUrOzyTsKfcOwTASzkJxzlfP5MHWd+pnz6V61U"
     b"p97PKj3dpP1V1AXrQ1Bt3AVSX1y/4Zx+TQAAAABJRU5ErkJggg=="
+)
+
+icons8_home_location_20 = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAAsTAAALEwEAmpwY"
+    b"AAABYElEQVR4nKXVsUtWYRTH8Y+aEURDKAitTvISQUaakkNDIJi7+Ac4ODY4hFA4uIUO0tSg"
+    b"III0pLQ2OEjkUkMQEoFjUIiVKAR55cIhHl7ufbv39QcHLuc59/uc53eey6W1buErltCR5K9r"
+    b"Q7fxA1nES3RiBn/QVwc2GLATTOB1QDewEM+NqrARHOEYDyJ3OYEe1QGO4VfE/aa1brxKLGhU"
+    b"gf2ODu6V1HRhLYBvcKUM9jD8OsTd/2ycQueLCsZxGkPIJ1tF+bRncbNo8Xvs9gHL0cGFtI6/"
+    b"idkDFd7pxwu8xw4eF/n5tOL0hvEzaSCLeIerdYG5HV+i7gxvsZ9AF+sCh5KX82PmuoTdyB2o"
+    b"CXyUANO7+jxy+dX7pyeRzD0qUyMBbqEXd/Atcp/S4tHwJSuIvaTuc0lNhmfNHUxiFZtNMZfU"
+    b"TJXADtHT4nQttV0AnG4XlutafFmF16Vd3cBHrKS/h3MOR3bOP+nOwAAAAABJRU5ErkJggg=="
+)
+
+icons8_user_location_50 = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAABnRSTlMA/wD/AP83WBt9AAAA"
+    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAHOElEQVRYhc1Zb0ySaxQ/3JS0SHHiIGmVjchWUxdry2pI"
+    b"5bS+uAwzxYbVCifJzNj60FYzbatWc/3b+tD8ogtdNvqfW25l2sDUNcEN5jCD1FLxPxCOgOd+"
+    b"eHbfywVe4MXu3T2fzjnP75zn9/I+z3nO80JDCMH/T2KWEzw2Nvb06dO+vj6DwbCwsLBixQou"
+    b"l7t9+/YDBw7k5+evXLky6sy0KH6t+fn5K1euNDY22my25OTkzMzMzZs3r1mzxuPxTExMmEym"
+    b"/v5+AMjKylIqlcePH4+GF6IidrtdLpcDwLp1627cuGG328mQer0eE1q9enVbWxulWRBCFGh9"
+    b"/foVP0lra2uEIVarVSaTAUBJSQklWpG+xLt371ZXV9fU1DQ0NPj65+bmdDrdyMiIw+GIiYlh"
+    b"sVh8Pj8zM9MXY7PZ2Gy2y+UaHR1du3ZtJNNFROv+/fsKhaKhoaGmpoZw6nS6a9eueb1egUDA"
+    b"4/EYDIbb7Z6amjIajb29vQUFBVKplMViYbDb7RYKhVqt1mazMRiM8LzC/p5v374FgObmZsIz"
+    b"OjpaUFAgl8u/f/9OFtXa2qpQKPyc2dnZTCbT5XKFnTQMreHhYQC4efMm4VGr1fn5+ZOTk2FT"
+    b"I4QWFxclEsn09DThYTKZ+/btWy4tgUCwceNGwmxubpZIJJEQIkSj0WRkZBDmwMAAALx+/Tp6"
+    b"Wo8fPwaA8fFxbHZ3d4vF4qDIrq6ulpaWtra2kZGRwNHp6em9e/cS766uri7s4gk1nJ6eLpVK"
+    b"sb64uCgSiQIxGo1mw4YNf+8gGu3IkSOBMIvF4vF4sO52u/0WKwVaFosFAGZmZrB5+fLlFy9e"
+    b"+GE6OjoAoKioiFhq7e3tKSkpSUlJgQmHhoaGh4exfv78+bS0tGhoyWSyrKwsrM/MzBw+fNgP"
+    b"4PF4AKC2tjYwNikp6cSJE37OgYGBiooKrJtMJlxiKNPatGnTpUuXsH7v3r1nz575ARobG8mW"
+    b"iFqtptPpgbu1oKDg74kBHj58SI2WxWKJj4/XaDTYPH36tNVq9cPs37+/vLycNC9AZ2cn2ShC"
+    b"SCwW5+bmko3+EbTGWq1Wp9OZnp6OTYfDwWQy/TCzs7OJiYkhCvXS0lKIUYFAoNPpyEaD05qf"
+    b"nweApKQkbDqdzpgY/84sJiYGLy8yWbVqVYjRLVu2WK1WarT8HhRvaV8xGo39/f3btm0jy5ua"
+    b"mlpVVRXoN5vNWAn9SwenFRcX52uigON8YmICACorK8ny1tbW6vX6QH9FRQVWFhYWKNPCK2lq"
+    b"aiooSwDYsWMHg8F48uQJWd7bt2+Xl5f7OS0WC4/Hw/rg4CCbzaZGa/369QwGo6enB5vx8fF2"
+    b"u90XkJiYWFRUdPToUa/XGxiuUqkMBgNuAH3l06dPO3fuxHp7e7tQKCSjRVq30tPT5XI51qur"
+    b"qw0GQ9Aq0NPTE+jPzc0tLi4O9BcXF8/PzxOxIbpcUlrXr1+Pi4vDeldX18WLFwMxUqmUzWYv"
+    b"LS35OnF/Njg46AdeXFwkTvqXL1/SaDSz2UyZFq4RQ0ND2MzLy/v586cfxuVyMRgMNps9OzuL"
+    b"Pbj0BzaACCGVStXQ0ID10tJS326HAi2E0O7du4mWTavVlpWVBYXR6XRiCAAqKysDMXNzc0QD"
+    b"4nA48NqKkhbeaEQLderUqXfv3hGj3759UygUKSkpAPDlyxfsVCgUAJCRkdHU1OT7csVisVar"
+    b"xXp9fX2INR2eFkIoNjZWJpMR5q5du/BBKZFIAIDH49XX1//48cM3pLOzkygN3d3dCKGqqqoH"
+    b"Dx7g0aWlJTqdXldXtyxajx49AgCn00kkLSkpOXToEJ1O7+/vDx179epVACgrK7t16xbhxK2p"
+    b"1+tdFi2v15ucnHz27Flfp1Qq5fP5oQMRQvgkfvXq1T/mI2nRqNFCCH348AEATCaTr9NoNIpE"
+    b"ojNnzqjVamJhIYTsdvvnz5/v3Llz8OBBoukjRC6XM5lMt9sddtKIrq98Pp/L5b5//97Pr9Pp"
+    b"uru79Xq92WzG+4vD4aSlpWVnZ+fk5BB3VyyTk5McDqelpaWkpCTsjBF9g8CH7vPnzyMBk4lI"
+    b"JOJyuRGCI/00gnd+tJSQSqUKWvrJJNKZXC4XjUZTKpXR0SIrs6T4yKH4Qvzx40eqnI4dO8Zm"
+    b"symFUHsveXl5qamplEJwd9Tb20spihoth8NBo9HOnTsXeUh8fHzQe3ZoobyKcZkgDrjQUlhY"
+    b"yOFwfv369a/TQgiVlpYymcywMPwAYc+ooBLlnk9ISBAKhSEAY2NjAEA0WFQlSlp9fX0A0NTU"
+    b"RAbYunUrj8eLLjmKmhb6qxH1PRAJUSqVAOD7EfC/o4UQKiwsZLFYQXv5KMrbb6OFEIqNjc3J"
+    b"ySHMmZkZAKiqqlpm2uXSGh8fBwDiXgQAe/bsWWZOtHxaCKE3b94AQEdHh1QqTUhImJub+1/Q"
+    b"QghduHABt0mBn8Gik99DCyF08uRJtVr9u7JF88fdfyB/AsROR8G6/EH9AAAAAElFTkSuQmCC"
+)
+
+icon_kerf_50 = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAABnRSTlMA/wD/AP83WBt9AAAA"
+    b"CXBIWXMAAAsTAAALEwEAmpwYAAAHxElEQVRYhe2Ya0xTaRrHT1s4p6cXqFAsbimFKlM6yaCQ"
+    b"xRGF4GUSAXHMYhaYkLhdLGZHB8jQLNcEGQaclQWBgUYmURFB4hKVqVFqVkgTyzUCiojERG5C"
+    b"y62EFmgLvZyzH0pYppT2tLD7YbP/T708z3N+ffue5/m/B0AxyGQyXblyhUgkSiQSLPEWKisr"
+    b"JRKhhoZ67CkAxjij0Xj58mUymdzS0oK9OoIglZWVMAzfvVuLPcsBLDNZSkoKjebe3i7DmFJV"
+    b"9TMEQbW1dxxiQlHUBcAsAoFw8+ZNHA539uzZlpaWI0fCAAAoLi56//691XitVvv8+XORqJrP"
+    b"/zP2q5iFdyiaQCBUVVVRKNShoaH1fDwB3EZDQ+/PnIlNTr7oKBMAAA6s1nqCiwsIuhIIBPPb"
+    b"nJyc7SKTk5MBAMXhcE5gObZa/zX9H8sR/Q9hEQguEsnz1VWdjRiFQvHmzRsCweFbal2ONjoU"
+    b"Rdva2ry9vcPDjykUcqsB3d1dHI7/oUOHRkZGnKiPOtTl3717t7S0ZH49MvLx8OFQJpPZ2dmx"
+    b"OQZBkLq6OiqVGh8fvxE8OflpYmJi97H0en1+fj4EgU1N/9j4cHl5KSkpCYbh+vp7a2trq6ur"
+    b"Wq02OzsLgqCCggKj0bgRmZHxvYfHnvr6egRBdg1rbm4uMTEBhuHCwh/0ev3mrzQazaVLlyAI"
+    b"YrPZvr6+LBaLSCSWl5ebTKbNYUqlks//EwSBubk5a2tru4AlkUhYLBaPx+vq6rQagCDIo0cP"
+    b"U1NTcTjcjz8Wtre3b1eqoaHBy8srNPT3Q0NDzmNpNJrMzExXV9eLFy+q1WrbVXp6uvF4vN2w"
+    b"8fHxkydPUqmUmpqbFiuKCWtg4E1QUNDevXvFYjGWDYERC0VRg8FQUnIdhuGvvz4rl1u/ka1g"
+    b"GQyGiooKEokUExMzNTVp9zKOYpnV19cXFPQFk8nc7mf/Bksul0dHR5HJ5MrKCoPBgPEaTmCh"
+    b"KLq8vPzdd1dAEExLS11eXraOZTKZfvmlhkqlnjhxYmJi3CIIQZC0tLT79xu2Y7WNpVKprl27"
+    b"VlZWZi2xJyAgwMfHp7X1hSXWzMz0uXPnYBi+fv365n6zGSszM9PNzY3HC6ypqdFoNBix5ufn"
+    b"i4qKPDw8GAzG7du3rEKr1eqUlBQQBIVC4crKyjqWWCxmMn8XFPRFX1+v1bQNTU1NCoVCNzc3"
+    b"Pz8/kUik0azYwFIq5/Pz8+l0ure3d0lJyeLioo3KCII8fvxo3759wcGHXr9+jaIoAIJgenra"
+    b"xqCwK4VCnp2d7e7uzuFwNpbWAmtsbNTDw4PD4ZSWlmKvPDk5GRMTQ6FQSkv/Djx9+hT7TNjQ"
+    b"7OxMS8uzjbcWWGtrq8+ePdVqtY6WNRqNFRUVFArFGQexVW/fvqVSKU5wWNXg4CAORVEnLdFv"
+    b"pdfrQRAEAGBwcLCgoMBkMm2NMf+teLx9k7dr7hQEQQRB7t2ri4yMnJiYgK2JSqViPAjZcY9S"
+    b"qTQvLw8Atl3RyMjIn376GwAAKtViampaU1NTdnZ2Xl6eeeWclh0sNpsdHR299Y/W6XR1dXfn"
+    b"5uajoqIBAJDJXiYnJ6Mo0NraGhERsROgdTmxJUdGRsLCwuh0+pMnT1ZXdQUFV0EQTEpKUqls"
+    b"NSfsWlhYALbOI9sSi3+l0+lHjx4dHR39+PFjRES4p6dnQ0ODbaOCXS9e/NPf3x84fvz4+PgY"
+    b"lgQEQaqrq0kkUlzcH5RK5cuXL/38/Ljczzo6trV+DslkMolE1WQy+auvTgFhYUc8PT2bmx/b"
+    b"bqoLCwvffJNIJpMqKyu0Wm1eXi4EgXw+3yHXYEMKhSI2NhaG4Rs3yoxGI6DVaoVCoaura0bG"
+    b"9zqd9X746tUrHi+Qw/Hv7u768OHDsWNH6XR6Y2OjE+NhqxAEaW5uNg/E/v4+84frW14sFjMY"
+    b"jC+/PDw8PLw5x2QyiUQiEol0/nycUqm8c+f2nj00c2faORCKomq1+ttv/wJBUHp6+mZj8u87"
+    b"cWxs7NSpUzQabePkpFKpEhISYBguL78xPT0dH/9HEolUXFyE8fRiVz09PVwul8VibR6vllgo"
+    b"iur1+qtX811cXAQCQXu7jMvl7t+/v7OzQyqV+vr6HjhwoLu7a1eADAZDcXExkUg8fz5ubm5u"
+    b"a4CVvtXb2xsYGIjH4wUCgVwuT0kRQBCUlZW11f05p/7+/oMHD3p5eYnFv263O623U7VaLZPJ"
+    b"RkdHAwIOMJnMtrbWXQHS6/VlZWUkEik2NnZmZsZGpK0uPzw8zGaz2Wx2a+suYH369On06dNk"
+    b"Mrm6usru+cXO8FlYWODz+Wajjd1nWghBkAcPHtDp9JCQECxHavtY5qJisdjHx4fH4znR0FWq"
+    b"xQsXLoAgmJubg90nYh3V09OK+Ph4EASzsrJ0Oh3GLJlMxuVy/f39Hd0GDjgIvV5fVFQEw3BU"
+    b"1Gm77RRBkNraO+7u7uHh4U48fHPY2AwMDISGhtJotFu3bm3nGmZnZxMS4iEIKiwstHj29J/C"
+    b"QlFUp9MVFv5AJBLj4uIsnlMiCCKRSHx9fT//nNfV5Xzvdf7k09vbGxwczGAwGhvvm7viysqK"
+    b"UJgBgqBAIFha2pGz2NGBTKvVZmb+FYKgxMREqVQaEhLMYDAePny4c2exC+fEjo4OLvczAADO"
+    b"nImZmpraeUEURf8FcaHqfSGVp/MAAAAASUVORK5CYII="
+)
+
+icons8_finger_50 = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
+    b"AAACLklEQVR4nO2ZTUtXQRjFf2Ybo7+FhlDoIlAkEBcJQQujPkDQoqXlN2jZIgJXgR9A1IXg"
+    b"QtKKRANzY5Av7VoUiGFtFIIwLcgX0N3IwBGGi/69969znaF74IHLYe4zz+HMnbcLBQoEhxbg"
+    b"DbAO/NZzM5GhHdgCTCIs10ZEmFbhb4FrinFx74gI2yq6weGuitskIhhFWj5YmEJIYDCFI4HB"
+    b"FI4EBlM4EhjM/+LICPAH+Au8ApqIVIhJxE+gE5jQPs2KHARKZ1B7JiFTQKPifRmBC8B5AhbS"
+    b"6HBNDt8HXAFuyCXLPdURwB7O7FAcS7x/pkKO4usc7kkZp1YTbYMRMgt8THCtTvteoF5ufRL3"
+    b"3FPtqQrOgpKTp9bh74n7Qg7wuV5cVG47u3mH74XP5LWwFkJCceQc8Dh2Ry4AM04nH2IV8lrJ"
+    b"14CHQFWZtnPA5wo5r0LuKvE/3fkeh8MKSct5FTKsxM9Stg9WyA8ltpu9qIXsKLH94KMWsnXI"
+    b"nihKIYtKfDt2If1K/CJ2IXecA091zEKqnJmrK2YhFt1KvpzCFXupMF8h511ItUSkdaVS1Obx"
+    b"C+9RBlcqxU318Q2PsMV/9+xKj/IP4Bld6mjFw03hZd1CGm1U8e3KwQI5dMx2PuuhbVJ57bkn"
+    b"F9wC9tTpS6DmFJw4ELEBXCdHPHDE/NKFWgdwKeX7JbXvcYbTRoZt0KnPMF+def8kYYdTrk4k"
+    b"Ycf2fWBUE8BuysLtBdySfi+c+MPeB/5NUJYk4pDZAAAAAElFTkSuQmCC"
 )

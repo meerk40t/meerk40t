@@ -17,6 +17,6 @@ class GCodeLoader:
         basename = os.path.basename(pathname)
         with open(pathname, "rb") as f:
             op_branch = service.get(type="branch ops")
-            op_branch.add(data=f.read(), data_type="grbl", type="blob", name=basename)
+            op_branch.add(data=f.read(), data_type="grbl", type="blob", label=basename)
             kernel.root.close(basename)
             return True

@@ -9,21 +9,16 @@ from hashlib import md5
 
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
-from meerk40t.kernel import (
-    STATE_ACTIVE,
-    STATE_PAUSE,
-    CommandSyntaxError,
-    Service,
-    signal_listener,
-)
+from meerk40t.core.view import View
+from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
-from ..core.units import UNITS_PER_MIL, Length, ViewPort
+from ..core.units import UNITS_PER_MIL, Length
 from .controller import LihuiyuController
 from .driver import LihuiyuDriver
 from .tcp_connection import TCPOutput
 
 
-class LihuiyuDevice(Service, ViewPort):
+class LihuiyuDevice(Service):
     """
     LihuiyuDevice is driver for the M2 Nano and other classes of Lihuiyu boards.
     """
@@ -65,7 +60,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "signals": "bedsize",
             },
             {
-                "attr": "scale_x",
+                "attr": "user_scale_x",
                 "object": self,
                 "default": 1.000,
                 "type": float,
@@ -78,7 +73,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "nonzero": True,
             },
             {
-                "attr": "scale_y",
+                "attr": "user_scale_y",
                 "object": self,
                 "default": 1.000,
                 "type": float,
@@ -191,6 +186,46 @@ class LihuiyuDevice(Service, ViewPort):
                 "section": "_00_" + _("General Options"),
             },
             {
+                "attr": "plot_phase_type",
+                "object": self,
+                "default": 0,
+                "type": int,
+                "label": _("Phase Type"),
+                "style": "option",
+                "display": [
+                    _("Sequential"),
+                    _("Random"),
+                    _("Progressive"),
+                    _("Static"),
+                ],
+                "choices": (0, 1, 2, 3),
+                "tip": "\n".join(
+                    [
+                        _(
+                            "The PPI carry-forward algorithm is ambiguous when it comes to shifting from one location, typically it just maintained the count. However, in some rare cases this may artifact if the PPI is low enough to see individual dots. This feature allows very fine-grained control."
+                        ),
+                        "",
+                        _("Sequential: maintain phase between cuts"),
+                        _("Random: set the phase to a random value between cuts"),
+                        _("Progressive: linearly progress the phase between cuts"),
+                        _(
+                            "Static: always set the phase to the exact value between cuts"
+                        ),
+                    ]
+                ),
+                "section": "_01_" + _("Plot Planner"),
+            },
+            {
+                "attr": "plot_phase_value",
+                "object": self,
+                "default": 0,
+                "type": int,
+                "label": _("Phase Value"),
+                "tip": _("Value for progressive or static phase type"),
+                "section": "_01_" + _("Plot Planner"),
+                "trailer": _("/1000"),
+            },
+            {
                 "attr": "plot_shift",
                 "object": self,
                 "default": False,
@@ -214,7 +249,7 @@ class LihuiyuDevice(Service, ViewPort):
                         ),
                     ]
                 ),
-                "section": "_00_" + _("General Options"),
+                "section": "_01_" + _("Plot Planner"),
             },
             {
                 "attr": "strict",
@@ -370,7 +405,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "conditional": (self, "rotary_active"),
             },
             {
-                "attr": "rotary_mirror_x",
+                "attr": "rotary_flip_x",
                 "object": self,
                 "default": False,
                 "type": bool,
@@ -380,7 +415,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "subsection": _("Mirror Output"),
             },
             {
-                "attr": "rotary_mirror_y",
+                "attr": "rotary_flip_y",
                 "object": self,
                 "default": False,
                 "type": bool,
@@ -391,6 +426,9 @@ class LihuiyuDevice(Service, ViewPort):
             },
         ]
         self.register_choices("rotary", choices)
+
+        # This device prefers to display power level in ppi
+        self.setting(bool, "use_percent_for_power_display", False)
 
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
@@ -411,22 +449,19 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        ViewPort.__init__(
-            self,
-            self.bedwidth,
-            self.bedheight,
-            user_scale_x=self.scale_x,
-            user_scale_y=self.scale_y,
-            native_scale_x=UNITS_PER_MIL,
-            native_scale_y=UNITS_PER_MIL,
-            origin_x=1.0 if self.home_right else 0.0,
-            origin_y=1.0 if self.home_bottom else 0.0,
+        self.view = View(self.bedwidth, self.bedheight, dpi=1000.0)
+        self.view.transform(
+            user_scale_x=self.user_scale_x,
+            user_scale_y=self.user_scale_y,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
-            show_flip_x=self.home_right,
-            show_flip_y=self.home_bottom,
         )
+        # rotary_active = self.rotary_active,
+        # rotary_scale_x = self.rotary_scale_x,
+        # rotary_scale_y = self.rotary_scale_y,
+        # rotary_flip_x = self.rotary_flip_x,
+        # rotary_flip_y = self.rotary_flip_y,
         self.setting(int, "buffer_max", 900)
         self.setting(bool, "buffer_limit", True)
 
@@ -528,7 +563,7 @@ class LihuiyuDevice(Service, ViewPort):
                     list(move_at_speed()),
                     label=f"move {dx} {dy} at {speed}",
                     helper=True,
-                    outline=self.outline_move_relative(dx.length_mil, dy.length_mil),
+                    outline=self.outline_move_relative(dx.mil, dy.mil),
                 )
             else:
                 channel(_("Busy"))
@@ -542,41 +577,38 @@ class LihuiyuDevice(Service, ViewPort):
             help=_("Change speed by this amount."),
         )
         @self.console_argument("speed", type=str, help=_("Set the driver speed."))
-        @self.console_command(
-            "speed", input_type="lihuiyu", help=_("Set current speed of driver.")
-        )
+        @self.console_command("device_speed", help=_("Set current speed of driver."))
         def speed(
             command, channel, _, data=None, speed=None, difference=False, **kwargs
         ):
-            spooler, driver, output = data
+            driver = self.device.driver
+
             if speed is None:
                 current_speed = driver.speed
                 if current_speed is None:
                     channel(_("Speed is unset."))
                 else:
-                    channel(
-                        _("Speed set at: {speed} mm/s").format(
-                            speed=driver.settings.speed
-                        )
-                    )
+                    channel(_("Speed set at: {speed} mm/s").format(speed=driver.speed))
                 return
             if speed.endswith("%"):
                 speed = speed[:-1]
                 percent = True
             else:
                 percent = False
+
             try:
                 s = float(speed)
             except ValueError:
                 channel(_("Not a valid speed or percent."))
                 return
+
             if percent and difference:
                 s = driver.speed + driver.speed * (s / 100.0)
             elif difference:
                 s += driver.speed
             elif percent:
                 s = driver.speed * (s / 100.0)
-            driver.set("speed", s)
+            driver._set_speed(s)
             channel(_("Speed set at: {speed} mm/s").format(speed=driver.speed))
 
         @self.console_argument("ppi", type=int, help=_("pulses per inch [0-1000]"))
@@ -828,19 +860,19 @@ class LihuiyuDevice(Service, ViewPort):
 
         @self.console_command("start", help=_("Start Pipe to Controller"))
         def pipe_start(command, channel, _, **kwargs):
-            self.controller.update_state(STATE_ACTIVE)
+            self.controller.update_state("active")
             self.controller.start()
             channel(_("Lihuiyu Channel Started."))
 
         @self.console_command("hold", help=_("Hold Controller"))
         def pipe_pause(command, channel, _, **kwargs):
-            self.controller.update_state(STATE_PAUSE)
+            self.controller.update_state("pause")
             self.controller.pause()
             channel("Lihuiyu Channel Paused.")
 
         @self.console_command("resume", help=_("Resume Controller"))
         def pipe_resume(command, channel, _, **kwargs):
-            self.controller.update_state(STATE_ACTIVE)
+            self.controller.update_state("active")
             self.controller.start()
             channel(_("Lihuiyu Channel Resumed."))
 
@@ -849,7 +881,8 @@ class LihuiyuDevice(Service, ViewPort):
             try:
                 self.controller.open()
                 channel(_("Usb Connection Opened."))
-            except ConnectionRefusedError:
+            except (ConnectionRefusedError, ConnectionError):
+                # Refused is typical but inability to confirm serial would result in connection error.
                 channel(_("Usb Connection Refused"))
 
         @self.console_command("usb_disconnect", help=_("Disconnects USB"))
@@ -953,6 +986,18 @@ class LihuiyuDevice(Service, ViewPort):
                     channel(_("Intepreter cannot be attached to any device."))
                 return
 
+    def service_attach(self, *args, **kwargs):
+        self.realize()
+
+    @signal_listener("plot_shift")
+    @signal_listener("plot_phase_type")
+    @signal_listener("plot_phase_value")
+    def plot_attributes_update(self, origin=None, *args):
+        self.driver.plot_attribute_update()
+
+    @signal_listener("rotary_scale_x")
+    @signal_listener("rotary_scale_y")
+    @signal_listener("rotary_active")
     @signal_listener("user_scale_x")
     @signal_listener("user_scale_y")
     @signal_listener("bedsize")
@@ -960,9 +1005,15 @@ class LihuiyuDevice(Service, ViewPort):
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
     def realize(self, origin=None, *args):
-        self.width = self.bedwidth
-        self.height = self.bedheight
-        super().realize()
+        self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.transform(
+            user_scale_x=self.user_scale_x,
+            user_scale_y=self.user_scale_y,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
+        )
+        self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)
 
     def outline_move_relative(self, dx, dy):
         x, y = self.native
@@ -981,9 +1032,9 @@ class LihuiyuDevice(Service, ViewPort):
     @property
     def current(self):
         """
-        @return: the location in scene units for the current known position.
+        @return: the location in units for the current known position.
         """
-        return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
+        return self.view.iposition(self.driver.native_x, self.driver.native_y)
 
     @property
     def speed(self):

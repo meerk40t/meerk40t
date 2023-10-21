@@ -1,8 +1,6 @@
 import time
 from typing import Callable, Optional, Tuple
 
-from .states import *
-
 
 class Job:
     """
@@ -24,7 +22,7 @@ class Job:
         conditional: Callable = None,
     ):
         self.job_name = job_name
-        self.state = STATE_INITIALIZE
+        self.state = "init"
         self.run_main = run_main
         self.conditional = conditional
 

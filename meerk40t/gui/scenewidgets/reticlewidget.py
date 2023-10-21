@@ -1,3 +1,7 @@
+"""
+Somewhat related to laserpath widget, this draws the colored reticle circles for the current location of the laser.
+"""
+
 import wx
 
 from meerk40t.gui.laserrender import DRAW_MODE_RETICLE

@@ -7,7 +7,7 @@ from meerk40t.core.units import Length
 from meerk40t.kernel import CommandSyntaxError
 
 """
-This module defines a set of commands that usually send a single easy command to the spooler. Basic jogging, home, 
+This module defines a set of commands that usually send a single easy command to the spooler. Basic jogging, home,
 unlock rail commands. And it provides the the spooler class which should be provided by each driver.
 
 Spoolers process different jobs in order. A spooler job can be anything, but usually is a LaserJob which is a simple
@@ -211,30 +211,6 @@ def plugin(kernel, lifecycle):
         @kernel.console_argument("x", type=Length, help=_("change in x"))
         @kernel.console_argument("y", type=Length, help=_("change in y"))
         @kernel.console_command(
-            "move_origin",
-            input_type=("spooler", None),
-            output_type="spooler",
-            help=_("move <x> <y>: move to position."),
-        )
-        def move_origin(channel, _, x, y, data=None, force=False, **kwgs):
-            if data is None:
-                data = kernel.device.spooler
-            spooler = data
-            if y is None:
-                raise CommandSyntaxError
-            if force:
-                spooler.command("move_ori", x, y)
-            else:
-                if spooler.is_idle:
-                    spooler.command("move_ori", x, y)
-                else:
-                    channel(_("Busy Error"))
-            return "spooler", spooler
-
-        @kernel.console_option("force", "f", type=bool, action="store_true")
-        @kernel.console_argument("x", type=Length, help=_("change in x"))
-        @kernel.console_argument("y", type=Length, help=_("change in y"))
-        @kernel.console_command(
             ("move", "move_absolute"),
             input_type=("spooler", None),
             output_type="spooler",
@@ -277,25 +253,6 @@ def plugin(kernel, lifecycle):
                     spooler.command("move_rel", dx, dy)
                 else:
                     channel(_("Busy Error"))
-            return "spooler", spooler
-
-        @kernel.console_argument("x", type=Length, help=_("change in x"))
-        @kernel.console_argument("y", type=Length, help=_("change in y"))
-        @kernel.console_command(
-            "set_origin",
-            input_type=("spooler", None),
-            output_type="spooler",
-            help=_("set_origin <x> <y>: set origin to position"),
-        )
-        def set_origin(channel, _, x, y, data=None, **kwgs):
-            if data is None:
-                data = kernel.device.spooler
-            spooler = data
-            if y is None:
-                spooler.command("set_origin", None, None)
-            else:
-                x, y = kernel.device.physical_to_device_position(x, y)
-                spooler.command("set_origin", x, y)
             return "spooler", spooler
 
         @kernel.console_command(
@@ -455,7 +412,7 @@ class Spooler:
     `execute()` function passing the relevant driver as the one variable. The job itself is agnostic, and will
     execute whatever it wants calling the driver-like functions that may or may not exist on the driver.
 
-    If execute() returns true then it is fully executed and will be removed. Otherwise it will be repeatedly
+    If execute() returns true then it is fully executed and will be removed. Otherwise, it will be repeatedly
     called until whatever work it is doing is finished. This also means the driver itself is checked for holds
     (usually pausing or busy) each cycle.
     """
@@ -546,13 +503,30 @@ class Spooler:
         while not self._shutdown:
             if self.context.kernel.is_shutdown:
                 return  # Kernel shutdown spooler threads should die off.
+            is_valid = False
             with self._lock:
-                try:
-                    program = self._queue[0]
-                except IndexError:
-                    # There is no work to do.
-                    self._lock.wait()
-                    continue
+                idx = 0
+                while not is_valid:
+                    try:
+                        program = self._queue[idx]
+                        # Not all type of jobs are regular jobs,
+                        # so that needs to be checked...
+                        if hasattr(program, "enabled"):
+                            if program.enabled:
+                                is_valid = True
+                                break
+                            else:
+                                idx += 1
+                        else:
+                            is_valid = True
+                            break
+                    except IndexError:
+                        # There is no work to do.
+                        self._lock.wait()
+                        break
+            if not is_valid:
+                continue
+
             priority = program.priority
 
             # Check if the driver holds work at this priority level.
@@ -700,9 +674,9 @@ class Spooler:
     def remove(self, element):
         with self._lock:
             status = "completed"
-            if element.status == "running":
+            if element.status == "Running":
                 element.stop()
-                status = "stopped"
+                status = "Stopped"
             self.context.logging.event(
                 {
                     "uid": getattr(element, "uid"),

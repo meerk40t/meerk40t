@@ -28,7 +28,8 @@ class CircleTool(ToolWidget):
         self.p1 = None
         self.p2 = None
         # 0 -> from corner, 1 from center
-        self.creation_mode = 0
+        self.old_mode = self.scene.context.setting(bool, "circle_from_corner", False)
+        self.creation_mode = 0 if self.old_mode else 1
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.p1 is not None and self.p2 is not None:
@@ -69,7 +70,6 @@ class CircleTool(ToolWidget):
                 )
             bbox = ellipse.bbox()
             if bbox is not None:
-
                 gc.DrawEllipse(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1])
                 if (
                     abs(bbox[2] - bbox[0]) > 10 * pixel
@@ -99,7 +99,10 @@ class CircleTool(ToolWidget):
                     ),
                     radius=Length(amount=radius, digits=2, preferred_units=units),
                 )
-                s += _(" (Press Alt-Key to draw from center)")
+                if self.old_mode:
+                    s += _(" (Press Alt-Key to draw from center)")
+                else:
+                    s += _(" (Press Alt-Key to draw from corner)")
                 self.scene.context.signal("statusmsg", s)
 
     def event(
@@ -119,17 +122,27 @@ class CircleTool(ToolWidget):
             or (event_type == "key_up" and "alt" in modifiers)
             or ("alt" not in modifiers)
         ):
-            if self.creation_mode != 0:
-                self.creation_mode = 0
-                update_required = True
+            # No longer alternative mode
+            if self.old_mode:
+                newmode = 0
+            else:
+                newmode = 1
         else:
-            if self.creation_mode != 1:
-                self.creation_mode = 1
-                update_required = True
+            # Alternative mode
+            if self.old_mode:
+                newmode = 1
+            else:
+                newmode = 0
+        if self.creation_mode != newmode:
+            self.creation_mode = newmode
+            update_required = True
         if event_type == "leftdown":
             self.scene.pane.tool_active = True
             if nearest_snap is None:
-                self.p1 = complex(space_pos[0], space_pos[1])
+                sx, sy = self.scene.get_snap_point(
+                    space_pos[0], space_pos[1], modifiers
+                )
+                self.p1 = complex(sx, sy)
             else:
                 self.p1 = complex(nearest_snap[0], nearest_snap[1])
             response = RESPONSE_CONSUME
@@ -178,30 +191,33 @@ class CircleTool(ToolWidget):
                 x1 = max(self.p1.real, self.p2.real)
                 y1 = max(self.p1.imag, self.p2.imag)
                 if self.creation_mode == 1:
-                    ellipse = Ellipse(
-                        cx=cx,
-                        cy=cy,
-                        r=radius,
-                    )
-                else:
-                    ellipse = Ellipse(
-                        cx=(x1 + x0) / 2.0,
-                        cy=(y1 + y0) / 2.0,
-                        r=abs(self.p1 - self.p2) / 2,
-                    )
-
-                if not ellipse.is_degenerate():
                     elements = self.scene.context.elements
                     node = elements.elem_branch.add(
-                        shape=ellipse,
-                        type="elem ellipse",
+                        cx=cx,
+                        cy=cy,
+                        rx=radius,
+                        ry=radius,
                         stroke_width=elements.default_strokewidth,
                         stroke=elements.default_stroke,
                         fill=elements.default_fill,
+                        type="elem ellipse",
                     )
-                    if elements.classify_new:
-                        elements.classify([node])
-                    self.notify_created(node)
+                else:
+                    elements = self.scene.context.elements
+                    r = abs(self.p1 - self.p2) / 2
+                    node = elements.elem_branch.add(
+                        cx=(x1 + x0) / 2.0,
+                        cy=(y1 + y0) / 2.0,
+                        rx=r,
+                        ry=r,
+                        stroke_width=elements.default_strokewidth,
+                        stroke=elements.default_stroke,
+                        fill=elements.default_fill,
+                        type="elem ellipse",
+                    )
+                if elements.classify_new:
+                    elements.classify([node])
+                self.notify_created(node)
                 self.p1 = None
                 self.p2 = None
             except IndexError:

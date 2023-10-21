@@ -8,7 +8,7 @@ from meerk40t.gui.icons import (
     icons8_scatter_plot_20,
     icons8_small_beam_20,
 )
-from meerk40t.gui.wxutils import TextCtrl
+from meerk40t.gui.wxutils import TextCtrl, dip_size
 
 _ = wx.GetTranslation
 
@@ -56,7 +56,7 @@ class WarningPanel(wx.Panel):
                 }
                 self.data[opatt_id] = xdata
 
-        hsizer = wx.FlexGridSizer(cols=9, gap=wx.Size(2, 0))
+        hsizer = wx.FlexGridSizer(cols=9, gap=dip_size(self, 2, 0))
         # hsizer.SetCols(9)
         idx = -1
         for key in self.data:
@@ -85,7 +85,7 @@ class WarningPanel(wx.Panel):
                 limited=True,
                 check="float",
             )
-            ctrl1.SetMinSize(wx.Size(60, -1))
+            ctrl1.SetMinSize(dip_size(self, 60, -1))
             ctrl1.SetToolTip(
                 _("Warn level for minimum {unit}").format(unit=_(entry["attr"]))
             )
@@ -106,7 +106,7 @@ class WarningPanel(wx.Panel):
                 limited=True,
                 check="float",
             )
-            ctrl2.SetMinSize(wx.Size(60, -1))
+            ctrl2.SetMinSize(dip_size(self, 60, -1))
             ctrl2.SetToolTip(
                 _("Warn level for maximum {unit}").format(unit=_(entry["attr"]))
             )

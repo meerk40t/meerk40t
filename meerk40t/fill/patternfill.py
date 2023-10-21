@@ -1,3 +1,6 @@
+"""
+    Obsolete! No longer needed, just there for reference
+"""
 from copy import copy
 
 from meerk40t.svgelements import (
@@ -430,7 +433,7 @@ class LivingHinges:
                     new_ey = p[1]
                     if dx == 0:
                         # Vertical line needs special treatment
-                        if new_cx >= xmin and new_cx <= xmax:
+                        if xmin <= new_cx <= xmax:
                             new_cy = min(max(new_cy, ymin), ymax)
                             new_ey = min(max(new_ey, ymin), ymax)
                             if new_cx != current_x or new_cy != current_y:
@@ -545,7 +548,7 @@ class LivingHinges:
                     new_ey = e.end[1]
                     if dx == 0:
                         # Vertical line needs special treatment
-                        if new_cx >= xmin and new_cx <= xmax:
+                        if xmin <= new_cx <= xmax:
                             new_cy = min(max(new_cy, ymin), ymax)
                             new_ey = min(max(new_ey, ymin), ymax)
                             if new_cx != current_x or new_cy != current_y:
@@ -652,7 +655,7 @@ class LivingHinges:
         while flag:
             flag = False
             if len(newpath) > 0 and isinstance(newpath[-1], Move):
-                # We dont need a move at the end of the path...
+                # We don't need a move at the end of the path...
                 del newpath[-1]
                 flag = True
 

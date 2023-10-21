@@ -41,13 +41,6 @@ def plugin(service, lifecycle):
             },
         )
 
-        # service.register("property/RasterOpNode/Newly", NewlyOperationPanel)
-        # service.register("property/CutOpNode/Newly", NewlyOperationPanel)
-        # service.register("property/EngraveOpNode/Newly", NewlyOperationPanel)
-        # service.register("property/ImageOpNode/Newly", NewlyOperationPanel)
-        # service.register("property/DotsOpNode/Newly", NewlyOperationPanel)
-        # service.register("property/HatchOpNode/Newly", NewlyOperationPanel)
-
     if lifecycle == "service_attach":
         from meerk40t.gui.icons import (
             icons8_circled_play_50,
@@ -76,46 +69,55 @@ def plugin(service, lifecycle):
                     {
                         "identifier": 1,
                         "label": _("File {index}").format(index=1),
+                        "tip": _("File {index}").format(index=1),
                         "action": lambda v: service("select_file 1\n"),
                     },
                     {
                         "identifier": 2,
                         "label": _("File {index}").format(index=2),
+                        "tip": _("File {index}").format(index=2),
                         "action": lambda v: service("select_file 2\n"),
                     },
                     {
                         "identifier": 3,
                         "label": _("File {index}").format(index=3),
+                        "tip": _("File {index}").format(index=3),
                         "action": lambda v: service("select_file 3\n"),
                     },
                     {
                         "identifier": 4,
                         "label": _("File {index}").format(index=4),
+                        "tip": _("File {index}").format(index=4),
                         "action": lambda v: service("select_file 4\n"),
                     },
                     {
                         "identifier": 5,
                         "label": _("File {index}").format(index=5),
+                        "tip": _("File {index}").format(index=5),
                         "action": lambda v: service("select_file 5\n"),
                     },
                     {
                         "identifier": 6,
                         "label": _("File {index}").format(index=6),
+                        "tip": _("File {index}").format(index=6),
                         "action": lambda v: service("select_file 6\n"),
                     },
                     {
                         "identifier": 7,
                         "label": _("File {index}").format(index=7),
+                        "tip": _("File {index}").format(index=7),
                         "action": lambda v: service("select_file 7\n"),
                     },
                     {
                         "identifier": 8,
                         "label": _("File {index}").format(index=8),
+                        "tip": _("File {index}").format(index=8),
                         "action": lambda v: service("select_file 8\n"),
                     },
                     {
                         "identifier": 9,
                         "label": _("File {index}").format(index=9),
+                        "tip": _("File {index}").format(index=9),
                         "action": lambda v: service("select_file 9\n"),
                     },
                 ],
@@ -126,12 +128,13 @@ def plugin(service, lifecycle):
             {
                 "label": _("Send Only"),
                 "icon": icons8_circled_stop_50,
-                "tip": _("Automatically start the device after send"),
+                "tip": _("Send the file but do not start the file"),
                 "toggle_attr": "autoplay",
                 "object": service,
                 "priority": 1,
                 "toggle": {
                     "label": _("Send & Start"),
+                    "tip": _("Automatically start the device after send"),
                     "icon": icons8_circled_play_50,
                     "signal": "autoplay",
                 },

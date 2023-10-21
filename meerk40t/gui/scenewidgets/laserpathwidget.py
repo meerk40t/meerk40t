@@ -1,3 +1,7 @@
+"""
+This widget draws laser position updates in blue lines to highlight the changes in the laser positions.
+"""
+
 import wx
 
 from meerk40t.gui.laserrender import DRAW_MODE_LASERPATH

@@ -26,4 +26,4 @@ class GotoCut(CutObject):
         pass
 
     def generate(self):
-        yield "move_ori", self._start_x, self._start_y
+        yield "move_abs", self._start_x, self._start_y

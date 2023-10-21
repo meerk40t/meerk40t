@@ -3,7 +3,7 @@ from wx import aui
 
 from meerk40t.gui.icons import icons8_manager_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 from meerk40t.kernel import lookup_listener, signal_listener
 
 _ = wx.GetTranslation
@@ -93,7 +93,7 @@ class SelectDevice(wx.Dialog):
         self.text_filter.Bind(wx.EVT_TEXT, self.on_text_filter)
         self.tree_devices.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_selection)
         self.tree_devices.Bind(wx.EVT_LEFT_DCLICK, self.on_dclick)
-        self.SetSize(350, 450)
+        self.SetSize(dip_size(self, 350, 450))
         self.Layout()
         self.populate_tree()
 
@@ -137,7 +137,7 @@ class SelectDevice(wx.Dialog):
         if item:
             try:
                 index = tree.GetItemData(item)
-                if index is not None and index >= 0 and index < len(self.dev_infos):
+                if index is not None and 0 <= index < len(self.dev_infos):
                     obj = self.dev_infos[index][0]
                     info = obj.get("extended_info", "")
                     self.device_type = obj.get("provider", "")
@@ -195,6 +195,12 @@ class DevicePanel(wx.Panel):
 
         self.button_activate_device = wx.Button(self, wx.ID_ANY, _("Activate"))
         sizer_3.Add(self.button_activate_device, 0, 0, 0)
+        sizer_3.AddStretchSpacer()
+        self.button_config_device = wx.Button(self, wx.ID_ANY, _("Config"))
+        self.button_config_device.SetToolTip(
+            "Open the configuration window for the active device"
+        )
+        sizer_3.Add(self.button_config_device, 0, 0, 0)
 
         self.SetSizer(sizer_1)
 
@@ -226,6 +232,9 @@ class DevicePanel(wx.Panel):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_activate_device, self.button_activate_device
         )
+        self.Bind(
+            wx.EVT_BUTTON, self.on_button_config_device, self.button_config_device
+        )
         self.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_end_edit, self.devices_list)
         self.Parent.Bind(wx.EVT_SIZE, self.on_resize)
         # end wxGlade
@@ -248,9 +257,9 @@ class DevicePanel(wx.Panel):
         size = self.devices_list.GetSize()
         if size[0] == 0 or size[1] == 0:
             return
-        self.devices_list.SetColumnWidth(0, int(0.3 * size[0]))
-        self.devices_list.SetColumnWidth(1, int(0.3 * size[0]))
-        self.devices_list.SetColumnWidth(2, int(0.3 * size[0]))
+        self.devices_list.SetColumnWidth(0, int(0.5 * size[0]))
+        self.devices_list.SetColumnWidth(1, int(0.25 * size[0]))
+        self.devices_list.SetColumnWidth(2, int(0.25 * size[0]))
 
     def on_end_edit(self, event):
         prohibited = "'" + '"' + "/"
@@ -321,7 +330,7 @@ class DevicePanel(wx.Panel):
                 if family_default:
                     break
 
-            family_info = getattr(device, "source", family_default)
+            family_info = device.setting(str, "source", family_default)
             if family_info:
                 family_info = family_info.capitalize()
             self.devices_list.SetItem(index, 1, type_info)
@@ -331,6 +340,7 @@ class DevicePanel(wx.Panel):
                 self.devices_list.SetItemTextColour(index, wx.RED)
 
         self.devices_list.SetFocus()
+        self.on_item_selected(None)
 
     def get_new_label_for_device(self, device_type):
         ct = 0
@@ -361,9 +371,12 @@ class DevicePanel(wx.Panel):
         return label
 
     def on_item_selected(self, event):
-        self.current_item = event.Index
+        if event is None:
+            self.current_item = self.devices_list.GetFirstSelected()
+        else:
+            self.current_item = event.Index
+            event.Skip()
         self.enable_controls()
-        event.Skip()
 
     def on_item_deselected(self, event):
         self.current_item = -1
@@ -407,6 +420,9 @@ class DevicePanel(wx.Panel):
                 self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(data), item2)
                 item3 = menu.Append(wx.ID_ANY, _("Activate"), "", wx.ITEM_NORMAL)
                 self.Bind(wx.EVT_MENU, self.on_tree_popup_activate(data), item3)
+            else:
+                item4 = menu.Append(wx.ID_ANY, _("Config"), "", wx.ITEM_NORMAL)
+                self.Bind(wx.EVT_MENU, self.on_tree_popup_config(data), item4)
             self.PopupMenu(menu)
             menu.Destroy()
 
@@ -447,6 +463,13 @@ class DevicePanel(wx.Panel):
 
         return activateit
 
+    def on_tree_popup_config(self, service):
+        def configit(event=None):
+            if service is not None:
+                service("window toggle Configuration\n")
+
+        return configit
+
     def on_button_create_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         dlg = SelectDevice(None, wx.ID_ANY, context=self.context)
         result = dlg.ShowModal()
@@ -482,6 +505,11 @@ class DevicePanel(wx.Panel):
         if service is not None:
             service.kernel.activate_service_path("device", service.path)
             self.recolor_device_items()
+
+    def on_button_config_device(self, event):  # wxGlade: DevicePanel.<event_handler>
+        service = self.get_selected_device()
+        if service is not None:
+            service("window toggle Configuration\n")
 
     def on_button_rename_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         service = self.get_selected_device()
@@ -537,4 +565,4 @@ class DeviceManager(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Device-Settings", "Device Manager")
+        return "Device-Settings", "Device Manager"

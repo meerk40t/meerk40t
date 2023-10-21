@@ -13,12 +13,11 @@ from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.cutcode.outputcut import OutputCut
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
-from meerk40t.core.cutcode.setorigincut import SetOriginCut
 from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.node.node import Linecap, Linejoin
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
-from meerk40t.svgelements import Arc, Color, Matrix, Move, Path
+from meerk40t.svgelements import Arc, Color, Move, Path
 
 
 class PlotterDriver:
@@ -130,8 +129,6 @@ class PlotterDriver:
         elif isinstance(q, HomeCut):
             self.path.move((0, 0))
         elif isinstance(q, GotoCut):
-            pass
-        elif isinstance(q, SetOriginCut):
             pass
         elif isinstance(q, DwellCut):
             pass
@@ -457,7 +454,7 @@ class DriverToPath:
                     setattr(plotter, opt["attr"], getattr(self, opt["attr"]))
 
             spooler_job = elements.lookup(f"spoolerjob/{blob_type}")
-            job_object = spooler_job(plotter, elements.device.scene_to_show_matrix())
+            job_object = spooler_job(plotter, elements.space.display.matrix)
             job_object.write_blob(data)
             while not job_object.execute():
                 # Still more to execute.

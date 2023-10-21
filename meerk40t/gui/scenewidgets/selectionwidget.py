@@ -1,8 +1,24 @@
+"""
+The selection widget deals with the manipulated of emphasized elements. It provides a series of related subwidgets:
+
+BorderWidget: Draws the border of the selected object.
+RotationWidget: Little arrow in the corner allowing the object to be rotated.
+CornerWidget: Square in corner that typically governs uniform or x/y scaling.
+SideWidget: Square at different sides that typically does x-scaling or y-scaling.
+SkewWidget: Tiny squares along the side that deal with X-skew or y-skew.
+MoveWidget: Center widget that moves the entire selected object.
+MoveRotationOriginWidget: Function of rotating around an arbitrary center point.
+ReferenceWidget: Yellow-R widget that that makes this object the reference object.
+LockWidget: Widget to lock and unlock the given object.
+
+"""
+
+
 import math
 
 import wx
 
-from meerk40t.core.element_types import *
+from meerk40t.core.elements.element_types import *
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import DRAW_MODE_SELECTION
 from meerk40t.gui.scene.scene import (
@@ -30,7 +46,6 @@ def process_event(
     helptext="",
     optimize_drawing=True,
 ):
-
     if widget_identifier is None:
         widget_identifier = "none"
     try:
@@ -40,10 +55,6 @@ def process_event(
         return RESPONSE_CHAIN
     # if event_type in ("move", "leftdown", "leftup"):
     #     print(f"Event for {widget_identifier}: {event_type}, {nearest_snap}")
-
-    # Not during an edit !
-    if widget.scene.pane.active_tool.startswith("edit"):
-        return RESPONSE_CHAIN
 
     # Now all Mouse-Hover-Events
     _ = widget.scene.context._
@@ -437,7 +448,7 @@ class RotationWidget(Widget):
                 if hasattr(e, "update"):
                     images.append(e)
             for e in images:
-                e.update(None)
+                e.update(self.scene.context)
             self.master.last_angle = None
             self.master.start_angle = None
             self.master.rotated_angle = 0
@@ -450,7 +461,6 @@ class RotationWidget(Widget):
             elements.prepare_undo()
             return
         elif event == 0:
-
             if self.rotate_cx is None:
                 self.rotate_cx = self.master.rotation_cx
             if self.rotate_cy is None:
@@ -722,7 +732,7 @@ class CornerWidget(Widget):
                 if hasattr(e, "update"):
                     images.append(e)
             for e in images:
-                e.update(None)
+                e.update(self.scene.context)
             self.scene.pane.modif_active = False
             self.scene.context.signal("tool_modified")
         elif event == -1:
@@ -777,6 +787,8 @@ class CornerWidget(Widget):
                 return
 
             b = elements._emphasized_bounds
+            if b is None:
+                return
             if "n" in self.method:
                 orgy = self.master.bottom
             else:
@@ -969,7 +981,7 @@ class SideWidget(Widget):
                 if hasattr(e, "update"):
                     images.append(e)
             for e in images:
-                e.update(None)
+                e.update(self.scene.context)
             self.scene.pane.modif_active = False
             self.scene.context.signal("tool_modified")
         elif event == -1:
@@ -1198,7 +1210,7 @@ class SkewWidget(Widget):
                 if hasattr(e, "update"):
                     images.append(e)
             for e in images:
-                e.update(None)
+                e.update(self.scene.context)
             self.scene.context.signal("tool_modified")
         elif event == -1:
             self.scene.pane.modif_active = True
@@ -1455,6 +1467,8 @@ class MoveWidget(Widget):
         ):  # if Shift-Key pressed then ignore Magnets...
             elements = self.scene.context.elements
             b = elements._emphasized_bounds
+            if b is None:
+                return
             allowlockmove = elements.lock_allows_move
             dx, dy = self.scene.pane.revised_magnet_bound(b)
             self.total_dx += dx
@@ -1462,7 +1476,7 @@ class MoveWidget(Widget):
             if dx != 0 or dy != 0:
                 with elements.undofree():
                     for e in elements.flat(types=elem_nodes, emphasized=True):
-                        if hasattr(e, "lock") and e.lock and not allowlockmove:
+                        if not e.can_move(allowlockmove):
                             continue
                         e.matrix.post_translate(dx, dy)
                         # We would normally not adjust the node properties,
@@ -1491,7 +1505,7 @@ class MoveWidget(Widget):
             allowlockmove = elements.lock_allows_move
             with elements.undofree():
                 for e in elements.flat(types=elem_nodes, emphasized=True):
-                    if hasattr(e, "lock") and e.lock and not allowlockmove:
+                    if not e.can_move(allowlockmove):
                         continue
                     e.matrix.post_translate(dx, dy)
                     # We would normally not adjust the node properties,
@@ -2444,6 +2458,8 @@ class SelectionWidget(Widget):
         modifiers=None,
         **kwargs,
     ):
+        if self.scene.pane.suppress_selection:
+            return RESPONSE_CHAIN
         self.modifiers = modifiers
         elements = self.scene.context.elements
         if event_type == "hover_start":
@@ -2483,7 +2499,7 @@ class SelectionWidget(Widget):
                         self.scene.context.signal("statusmsg", "")
 
         elif event_type in ("leftdown", "leftup", "leftclick", "move"):
-            # self.scene.tool_active = False
+            # self.scene.pane.tool_active = False
             pass
         elif event_type == "rightdown":
             self.scene.pane.tool_active = False
@@ -2554,11 +2570,10 @@ class SelectionWidget(Widget):
         Draw routine for drawing the selection box.
         """
         self.gc = gc
+        self.clear()  # Clearing children as we are generating them in a bit...
         if self.scene.context.draw_mode & DRAW_MODE_SELECTION != 0:
             return
-        self.clear()  # Clearing children as we are generating them in a bit...
-        # Don't interfere during node editing
-        if self.scene.pane.active_tool.startswith("edit"):
+        if self.scene.pane.suppress_selection:
             return
         context = self.scene.context
         try:
@@ -2576,11 +2591,12 @@ class SelectionWidget(Widget):
         draw_mode = context.draw_mode
         elements = self.scene.context.elements
         bounds = elements.selected_area()
-        matrix = self.parent.matrix
+        matrix = self.scene.widget_root.scene_widget.matrix
         if bounds is not None:
             try:
-                self.line_width = 2.0 / matrix.value_scale_x()
-                self.font_size = 14.0 / matrix.value_scale_x()
+                factor = math.sqrt(abs(matrix.determinant))
+                self.line_width = 2.0 / factor
+                self.font_size = 14.0 / factor
             except ZeroDivisionError:
                 matrix.reset()
                 return
@@ -2601,7 +2617,7 @@ class SelectionWidget(Widget):
                     wx.FONTSTYLE_NORMAL,
                     wx.FONTWEIGHT_BOLD,
                 )
-            except TypeError:
+            except (TypeError, AssertionError):
                 font = wx.Font(
                     int(self.font_size),
                     wx.FONTFAMILY_SWISS,
@@ -2626,11 +2642,19 @@ class SelectionWidget(Widget):
             self.is_ref = False
             self.single_element = True
             is_locked = True
+            no_scale = True
+            no_skew = True
+            no_move = True
+            no_rotate = True
             for idx, e in enumerate(elements.flat(types=elem_nodes, emphasized=True)):
                 if e is self.scene.pane.reference_object:
                     self.is_ref = True
                 # Is one of the elements locked?
                 is_locked = is_locked and e.lock
+                no_scale = no_scale and not e.can_scale
+                no_skew = no_skew and not e.can_skew
+                no_move = no_move and not e.can_move()
+                no_rotate = no_rotate and not e.can_rotate
                 if idx > 0:
                     self.single_element = False
 
@@ -2673,21 +2697,21 @@ class SelectionWidget(Widget):
                         master=self, scene=self.scene, size=rotsize, drawsize=msize
                     ),
                 )
-            if show_skew_y and not is_locked:
+            if show_skew_y and not no_skew:
                 self.add_widget(
                     -1,
                     SkewWidget(
                         master=self, scene=self.scene, is_x=False, size=2 / 3 * msize
                     ),
                 )
-            if show_skew_x and not is_locked:
+            if show_skew_x and not no_skew:
                 self.add_widget(
                     -1,
                     SkewWidget(
                         master=self, scene=self.scene, is_x=True, size=2 / 3 * msize
                     ),
                 )
-            if self.use_handle_rotate and not is_locked:
+            if self.use_handle_rotate and not no_rotate:
                 for i in range(4):
                     self.add_widget(
                         -1,
@@ -2703,7 +2727,7 @@ class SelectionWidget(Widget):
                     -1,
                     MoveRotationOriginWidget(master=self, scene=self.scene, size=msize),
                 )
-            if self.use_handle_size and not is_locked:
+            if self.use_handle_size and not no_scale:
                 for i in range(4):
                     self.add_widget(
                         -1,

@@ -3,57 +3,56 @@ EGV Loader
 
 Registered loader for egv (engrave) data of lhymicro-gl.
 """
-from meerk40t.core.cutcode.cutcode import CutCode
-from meerk40t.core.cutcode.plotcut import PlotCut
-from meerk40t.lihuiyu.parser import LihuiyuParser
 
-
-class EGVBlob:
-    def __init__(self, data: bytearray, name=None):
-        self.name = name
-        self.data = data
-        self.operation = "blob"
-        self._cutcode = None
-        self._cut = None
-
-    def __repr__(self):
-        return f"EGV({self.name}, {len(self.data)} bytes)"
-
-    def as_cutobjects(self):
-        parser = LihuiyuParser()
-        self._cutcode = CutCode()
-        self._cut = PlotCut()
-
-        def new_cut():
-            if self._cut is not None and len(self._cut):
-                self._cutcode.append(self._cut)
-            self._cut = PlotCut()
-            self._cut.settings = dict(parser.settings)
-
-        def position(p):
-            if p is None or self._cut is None:
-                new_cut()
-                return
-
-            from_x, from_y, to_x, to_y = p
-
-            if parser.program_mode:
-                if len(self._cut) == 0:
-                    self._cut.plot_init(parser.x, parser.y)
-                self._cut.plot_append(int(to_x), int(to_y), parser.laser)
-            else:
-                new_cut()
-
-        parser.position = position
-        parser.header_write(self.data)
-
-        cutcode = self._cutcode
-        self._cut = None
-        self._cutcode = None
-        return cutcode
-
-    def generate(self):
-        yield "blob", "egv", LihuiyuParser.remove_header(self.data)
+# from meerk40t.core.cutcode.cutcode import CutCode
+# from meerk40t.core.cutcode.plotcut import PlotCut
+# from meerk40t.lihuiyu.parser import LihuiyuParser
+# class EGVBlob:
+#     def __init__(self, data: bytearray, name=None):
+#         self.name = name
+#         self.data = data
+#         self.operation = "blob"
+#         self._cutcode = None
+#         self._cut = None
+#
+#     def __repr__(self):
+#         return f"EGV({self.name}, {len(self.data)} bytes)"
+#
+#     def as_cutobjects(self):
+#         parser = LihuiyuParser()
+#         self._cutcode = CutCode()
+#         self._cut = PlotCut()
+#
+#         def new_cut():
+#             if self._cut is not None and len(self._cut):
+#                 self._cutcode.append(self._cut)
+#             self._cut = PlotCut()
+#             self._cut.settings = dict(parser.settings)
+#
+#         def position(p):
+#             if p is None or self._cut is None:
+#                 new_cut()
+#                 return
+#
+#             from_x, from_y, to_x, to_y = p
+#
+#             if parser.program_mode:
+#                 if len(self._cut) == 0:
+#                     self._cut.plot_init(parser.x, parser.y)
+#                 self._cut.plot_append(int(to_x), int(to_y), parser.laser)
+#             else:
+#                 new_cut()
+#
+#         parser.position = position
+#         parser.header_write(self.data)
+#
+#         cutcode = self._cutcode
+#         self._cut = None
+#         self._cutcode = None
+#         return cutcode
+#
+#     def generate(self):
+#         yield "blob", "egv", LihuiyuParser.remove_header(self.data)
 
 
 class EgvLoader:
@@ -76,16 +75,16 @@ class EgvLoader:
         yield "Engrave Files", ("egv",), "application/x-egv"
 
     @staticmethod
-    def load(kernel, elements_modifier, pathname, **kwargs):
+    def load(kernel, elements_service, pathname, **kwargs):
         import os
 
         basename = os.path.basename(pathname)
         with open(pathname, "rb") as f:
-            op_branch = elements_modifier.get(type="branch ops")
+            op_branch = elements_service.get(type="branch ops")
             op_branch.add(
                 data=bytearray(EgvLoader.remove_header(f.read())),
                 data_type="egv",
+                label=basename,
                 type="blob",
-                name=basename,
             )
         return True

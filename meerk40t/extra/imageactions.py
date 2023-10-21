@@ -1,13 +1,11 @@
 from copy import copy
 from math import isinf
 
-import PIL
-
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.elem_rect import RectNode
 from meerk40t.core.node.node import Node
-from meerk40t.core.units import UNITS_PER_INCH, Length
-from meerk40t.svgelements import Color, Matrix, Rect
+from meerk40t.core.units import UNITS_PER_INCH
+from meerk40t.svgelements import Color, Matrix
 
 
 def plugin(kernel, lifecycle):
@@ -39,6 +37,7 @@ def plugin(kernel, lifecycle):
             order=None,
             origin=None,
             data=None,
+            post=None,
             **kwargs,
         ):
             def prepare_data(data, dsort):
@@ -59,7 +58,7 @@ def plugin(kernel, lifecycle):
                 xmin, ymin, xmax, ymax = data_bounds
                 if isinf(xmin):
                     # No bounds for selected elements."))
-                    return None
+                    return None, None
                 width = xmax - xmin
                 height = ymax - ymin
 
@@ -128,6 +127,7 @@ def plugin(kernel, lifecycle):
                 return data_out
 
             elements = context.elements
+            classify_new = elements.post_classify
             if data is None:
                 data = list(elements.elems(emphasized=True))
             if cols is None:
@@ -144,6 +144,11 @@ def plugin(kernel, lifecycle):
                 data_out = None
             else:
                 data_out = split_image(image, matrix, bb, dpi, cols, rows)
+            if data_out is not None:
+                # Newly created! Classification needed?
+                post.append(classify_new(data_out))
+                elements.signal("element_added", data_out)
+                elements.signal("refresh_scene", "Scene")
             return "elements", data_out
 
         @kernel.console_argument("dpi", type=int, help=_("Resolution of created image"))
@@ -174,6 +179,7 @@ def plugin(kernel, lifecycle):
             outline=None,
             origin=None,
             data=None,
+            post=None,
             **kwargs,
         ):
             def prepare_data(dsort):
@@ -227,16 +233,21 @@ def plugin(kernel, lifecycle):
                 data_out = None
                 # elem_image.convert("RGBA")
                 imagematrix0 = copy(matrix)
+                dx = offset_x - imagematrix0.value_trans_x()
+                dy = offset_y - imagematrix0.value_trans_y()
                 imagematrix0.post_translate(offset_x, offset_y)
                 imagematrix1 = copy(imagematrix0)
-                imagematrix2 = copy(imagematrix1)
 
                 mask_pattern = mask_image.convert("1")
                 elem_image.putalpha(mask_pattern)
 
-                image_node1 = ImageNode(image=elem_image, matrix=imagematrix1, dpi=dpi)
+                image_node1 = ImageNode(
+                    image=elem_image,
+                    matrix=imagematrix1,
+                    dpi=dpi,
+                    label="Keyholed Elements",
+                )
                 image_node1.set_dirty_bounds()
-                image_node1.label = "Keyholed Elements"
                 elements.elem_branch.add_node(image_node1)
 
                 # image_node2 = ImageNode(image=mask_image, matrix=imagematrix2, dpi=dpi)
@@ -247,6 +258,7 @@ def plugin(kernel, lifecycle):
                 return data_out
 
             elements = context.elements
+            classify_new = elements.post_classify
             if data is None:
                 data = list(elements.elems(emphasized=True))
             if order is None:
@@ -258,13 +270,14 @@ def plugin(kernel, lifecycle):
             invert = bool(invert)
             # channel(f"will sort by {order}")
             total_bounds = Node.union_bounds(data, attr="paint_bounds")
-            emptyrec = Rect(
+            rectnode = RectNode(
                 x=total_bounds[0],
                 y=total_bounds[1],
                 width=total_bounds[2] - total_bounds[0],
                 height=total_bounds[3] - total_bounds[1],
+                stroke=None,
+                fill=None,
             )
-            rectnode = RectNode(shape=emptyrec, stroke=None, fill=None)
             bb, tempnode = prepare_data(order)
             masknode = copy(tempnode)
             if (
@@ -303,4 +316,9 @@ def plugin(kernel, lifecycle):
                 data_out = mask_image(
                     elemimage, maskimage, elemmatrix, total_bounds, dpi
                 )
+            if data_out is not None:
+                # Newly created! Classification needed?
+                post.append(classify_new(data_out))
+                elements.signal("element_added", data_out)
+                elements.signal("refresh_scene", "Scene")
             return "elements", data_out

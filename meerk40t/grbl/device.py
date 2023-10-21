@@ -6,23 +6,25 @@ Registers relevant commands and options.
 """
 from time import sleep
 
-import serial.tools.list_ports
-
 from meerk40t.kernel import CommandSyntaxError, Service
 
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
-from ..core.units import UNITS_PER_MIL, Length, ViewPort
+from ..core.units import UNITS_PER_MIL, Length
+from ..core.view import View
 from .controller import GrblController
 from .driver import GRBLDriver
 
 
-class GRBLDevice(Service, ViewPort):
+class GRBLDevice(Service):
     """
     GRBLDevice is driver for the Gcode Controllers
     """
 
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
+        self.permit_tcp = True
+        self.permit_serial = True
+
         Service.__init__(self, kernel, path)
         self.name = "GRBLDevice"
         self.extension = "gcode"
@@ -179,7 +181,7 @@ class GRBLDevice(Service, ViewPort):
                 "conditional": (self, "rotary_active"),
             },
             {
-                "attr": "rotary_mirror_x",
+                "attr": "rotary_flip_x",
                 "object": self,
                 "default": False,
                 "type": bool,
@@ -189,7 +191,7 @@ class GRBLDevice(Service, ViewPort):
                 "subsection": _("Mirror Output"),
             },
             {
-                "attr": "rotary_mirror_y",
+                "attr": "rotary_flip_y",
                 "object": self,
                 "default": False,
                 "type": bool,
@@ -200,6 +202,11 @@ class GRBLDevice(Service, ViewPort):
             },
         ]
         self.register_choices("rotary", choices)
+        # This device prefers to display power level in percent
+        self.setting(bool, "use_percent_for_power_display", True)
+        # This device prefers to display speed in mm/min
+        self.setting(bool, "use_mm_min_for_speed_display", False)
+
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
             list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
@@ -219,21 +226,13 @@ class GRBLDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        ViewPort.__init__(
-            self,
+        self.view = View(
             self.bedwidth,
             self.bedheight,
-            user_scale_x=self.scale_x,
-            user_scale_y=self.scale_y,
-            native_scale_x=UNITS_PER_MIL,
-            native_scale_y=UNITS_PER_MIL,
-            flip_x=self.flip_x,
-            flip_y=self.flip_y,
-            swap_xy=self.swap_xy,
-            origin_x=1.0 if self.home_right else 0.0,
-            origin_y=1.0 if self.home_bottom else 0.0,
+            dpi_x=1000.0,
+            dpi_y=1000.0,
         )
-
+        self.realize()
         self.settings = dict()
         self.state = 0
 
@@ -243,24 +242,20 @@ class GRBLDevice(Service, ViewPort):
             @param choice_dict:
             @return:
             """
-            ports = serial.tools.list_ports.comports()
-            serial_interface = [x.device for x in ports]
-            serial_interface_display = [str(x) for x in ports]
+            try:
+                import serial.tools.list_ports
 
-            choice_dict["choices"] = serial_interface
-            choice_dict["display"] = serial_interface_display
+                ports = serial.tools.list_ports.comports()
+                serial_interface = [x.device for x in ports]
+                serial_interface_display = [str(x) for x in ports]
+
+                choice_dict["choices"] = serial_interface
+                choice_dict["display"] = serial_interface_display
+            except ImportError:
+                choice_dict["choices"] = ["UNCONFIGURED"]
+                choice_dict["display"] = ["pyserial-not-installed"]
 
         choices = [
-            {
-                "attr": "label",
-                "object": self,
-                "default": "grbl",
-                "type": str,
-                "label": _("Label"),
-                "tip": _("What is this device called."),
-                "width": 250,
-                "signals": "device;renamed",
-            },
             {
                 "attr": "serial_port",
                 "object": self,
@@ -282,6 +277,59 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _("Baud Rate of the device"),
                 "section": "_10_Serial Interface",
                 "subsection": "_00_",
+            },
+        ]
+        if self.permit_serial:
+            self.register_choices("serial", choices)
+
+        choices = [
+            {
+                "attr": "address",
+                "object": self,
+                "default": "localhost",
+                "type": str,
+                # "style": "address",
+                "tip": _("What serial interface does this device connect to?"),
+            },
+            {
+                "attr": "port",
+                "object": self,
+                "default": 23,
+                "type": int,
+                "label": _("Port"),
+                "tip": _("TCP Port of the GRBL device"),
+            },
+        ]
+        if self.permit_tcp:
+            self.register_choices("tcp", choices)
+
+        choices = [
+            {
+                "attr": "interface",
+                "object": self,
+                "default": "serial",
+                "style": "combosmall",
+                "choices": ["serial", "tcp", "mock"],
+                "display": [_("Serial"), _("TCP-Network"), _("mock")],
+                "type": str,
+                "label": _("Interface Type"),
+                "tip": _("Select the interface type for the grbl device"),
+                "section": "_20_Protocol",
+                "signals": "update_interface",
+            },
+        ]
+        self.register_choices("interface", choices)
+
+        choices = [
+            {
+                "attr": "label",
+                "object": self,
+                "default": "grbl",
+                "type": str,
+                "label": _("Label"),
+                "tip": _("What is this device called."),
+                "width": 250,
+                "signals": "device;renamed",
             },
             {
                 "attr": "buffer_mode",
@@ -329,14 +377,26 @@ class GRBLDevice(Service, ViewPort):
                 "section": "_20_Protocol",
             },
             {
-                "attr": "mock",
+                "attr": "limit_buffer",
                 "object": self,
-                "default": False,
+                "default": True,
                 "type": bool,
-                "label": _("Run mock-usb backend"),
+                "label": _("Limit the controller buffer size"),
+                "tip": _("Enables the controller buffer limit."),
+                "section": "_30_Controller Buffer",
+            },
+            {
+                "attr": "max_buffer",
+                "object": self,
+                "default": 200,
+                "trailer": _("lines"),
+                "type": int,
+                "label": _("Controller Buffer"),
                 "tip": _(
-                    "This starts connects to fake software laser rather than real one for debugging."
+                    "This is the limit of the controller buffer size. Prevents full writing to the controller."
                 ),
+                "conditional": (self, "limit_buffer"),
+                "section": "_30_Controller Buffer",
             },
         ]
         self.register_choices("grbl-connection", choices)
@@ -373,32 +433,58 @@ class GRBLDevice(Service, ViewPort):
                     + "of the current position to help with focusing and positioning. Use with care!"
                 ),
                 "signals": "icons",  # Update ribbonbar if needed
+                "section": "_10_Red Dot",
             },
             {
                 "attr": "red_dot_level",
                 "object": self,
-                "default": 3,
+                "default": 30,
                 "type": int,
                 "style": "slider",
                 "min": 0,
-                "max": 50,
+                "max": 200,
                 "label": _("Reddot Laser strength"),
-                "trailer": "%",
+                "trailer": "/1000",
                 "tip": _(
                     "Provide the power level of the red dot indicator, needs to be under the critical laser strength to not burn the material"
                 ),
                 "conditional": (self, "use_red_dot"),
+                "section": "_10_Red Dot",
+            },
+            {
+                "attr": "requires_validation",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Require validation for device"),
+                "tip": _(
+                    "Ensure device is completely initialized before sending data. This is usually known to be valid at the 'Grbl xx.x' version message."
+                ),
+                "section": "_40_Validation",
+            },
+            {
+                "attr": "welcome",
+                "object": self,
+                "default": "Grbl",
+                "type": str,
+                "label": _("Welcome Validator"),
+                "tip": _(
+                    "If for some reason the device needs a different welcome validator than 'Grbl' (default), for example, somewhat custom grbl-like firmware"
+                ),
+                "conditional": (self, "requires_validation"),
+                "section": "_40_Validation",
             },
         ]
-        self.register_choices("grbl-global", choices)
+        self.register_choices("grbl-advanced", choices)
 
         self.driver = GRBLDriver(self)
-
         self.controller = GrblController(self)
-        self.channel("grbl").watch(self.controller.write)
-        self.channel("grbl-realtime").watch(self.controller.realtime)
+        self.driver.out_pipe = self.controller.write
+        self.driver.out_real = self.controller.realtime
 
         self.spooler = Spooler(self, driver=self.driver)
+
+        self.add_service_delegate(self.controller)
         self.add_service_delegate(self.spooler)
         self.add_service_delegate(self.driver)
 
@@ -406,31 +492,8 @@ class GRBLDevice(Service, ViewPort):
 
         _ = self.kernel.translation
 
-        @self.console_argument("com")
-        @self.console_option("baud", "b")
-        @self.console_command(
-            "serial",
-            help=_("link the serial connection"),
-            input_type=None,
-        )
-        def serial_connection(
-            command,
-            channel,
-            _,
-            data=None,
-            com=None,
-            baud=115200,
-            remainder=None,
-            **kwgs,
-        ):
-            if com is None:
-                import serial.tools.list_ports
-
-                ports = serial.tools.list_ports.comports()
-
-                channel("Available COM ports")
-                for x in ports:
-                    channel(str(x))
+        if self.permit_serial:
+            self._register_console_serial()
 
         @self.console_command(
             "gcode",
@@ -440,7 +503,18 @@ class GRBLDevice(Service, ViewPort):
         def gcode(command, channel, _, data=None, remainder=None, **kwgs):
             if remainder is not None:
                 channel(remainder)
-                self.channel("grbl")(remainder + "\r")
+                self.driver(remainder + self.driver.line_end)  # , real=True)
+                # self.channel("grbl/send")(remainder + self.driver.line_end)
+
+        @self.console_command(
+            "gcode_realtime",
+            help=_("Send raw gcode to the device (via realtime channel)"),
+            input_type=None,
+        )
+        def gcode_realtime(command, channel, _, data=None, remainder=None, **kwgs):
+            if remainder is not None:
+                channel(remainder)
+                self.driver(remainder + self.driver.line_end, real=True)
 
         @self.console_command(
             "soft_reset",
@@ -459,6 +533,7 @@ class GRBLDevice(Service, ViewPort):
         def estop(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.reset()
             self.signal("pipe;running", False)
+            self.signal("pause")
 
         @self.console_command(
             "clear_alarm",
@@ -497,9 +572,7 @@ class GRBLDevice(Service, ViewPort):
         )
         def codes_update(**kwargs):
             self.origin_x = 1.0 if self.home_right else 0.0
-            self.show_origin_x = self.origin_x
             self.origin_y = 1.0 if self.home_bottom else 0.0
-            self.show_origin_y = self.origin_y
             self.realize()
 
         @self.console_option(
@@ -521,9 +594,11 @@ class GRBLDevice(Service, ViewPort):
                 channel("Won't interfere with a running job, abort...")
                 return
             if strength is not None:
-                if strength >= 0 and strength <= 100:
+                if 0 <= strength <= 1000:
                     self.red_dot_level = strength
-                    channel(f"Laser strength for red dot is now: {self.red_dot_level}%")
+                    channel(
+                        f"Laser strength for red dot is now: {self.red_dot_level/10.0}%"
+                    )
             if off == "off":
                 self.driver.laser_off()
                 # self.driver.grbl("G0")
@@ -535,10 +610,8 @@ class GRBLDevice(Service, ViewPort):
                 # self.redlight_preferred = True
                 # self.driver.set("power", int(self.red_dot_level / 100 * 1000))
                 self.driver._clean()
-                self.driver.laser_on(
-                    power=int(self.red_dot_level / 100 * 1000), speed=1000
-                )
-                # By default any move is a G0 move which will not activate the laser,
+                self.driver.laser_on(power=int(self.red_dot_level), speed=1000)
+                # By default, any move is a G0 move which will not activate the laser,
                 # so we need to switch to G1 mode:
                 self.driver.move_mode = 1
                 # An arbitrary move to turn the laser really on!
@@ -599,7 +672,8 @@ class GRBLDevice(Service, ViewPort):
                     # f.write(b"(MeerK40t)\n")
                     driver = GRBLDriver(self)
                     job = LaserJob(filename, list(data.plan), driver=driver)
-                    driver.grbl = f.write
+                    driver.out_pipe = f.write
+                    driver.out_real = f.write
                     job.execute()
 
             except (PermissionError, OSError):
@@ -618,15 +692,52 @@ class GRBLDevice(Service, ViewPort):
                 channel(_("Interpreter cannot be attached to any device."))
             return
 
+    def _register_console_serial(self):
+        _ = self.kernel.translation
+
+        @self.console_argument("com")
+        @self.console_option("baud", "b")
+        @self.console_command(
+            "serial",
+            help=_("link the serial connection"),
+            input_type=None,
+        )
+        def serial_connection(
+            command,
+            channel,
+            _,
+            data=None,
+            com=None,
+            baud=115200,
+            remainder=None,
+            **kwgs,
+        ):
+            if com is None:
+                import serial.tools.list_ports
+
+                ports = serial.tools.list_ports.comports()
+
+                channel("Available COM ports")
+                for x in ports:
+                    channel(str(x))
+
+    def location(self):
+        if self.permit_tcp and self.interface == "tcp":
+            return f"{self.address}:{self.port}"
+        elif self.permit_serial and self.interface == "serial":
+            return f"{self.serial_port.lower()}:{self.baud_rate}"
+        else:
+            return "mock"
+
+    def service_attach(self, *args, **kwargs):
+        self.realize()
+
     @property
     def current(self):
         """
-        @return: the location in scene units for the current known x value.
+        @return: the location in units for the current known position.
         """
-        return self.device_to_scene_position(
-            self.driver.native_x,
-            self.driver.native_y,
-        )
+        return self.view.iposition(self.driver.native_x, self.driver.native_y)
 
     @property
     def native(self):
@@ -636,8 +747,17 @@ class GRBLDevice(Service, ViewPort):
         return self.driver.native_x, self.driver.native_y
 
     def realize(self, origin=None):
-        self.width = self.bedwidth
-        self.height = self.bedheight
-        self.origin_x = 1.0 if self.home_right else 0.0
-        self.origin_y = 1.0 if self.home_bottom else 0.0
-        super().realize()
+        self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.transform(
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
+        )
+        # rotary_active=self.rotary_active,
+        # rotary_scale_x=self.rotary_scale_x,
+        # rotary_scale_y=self.rotary_scale_y,
+        # rotary_flip_x=self.rotary_flip_x,
+        # rotary_flip_y=self.rotary_flip_y,
+        self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)

@@ -28,6 +28,7 @@ def get_inkscape(context, manual_candidate=None):
             "C:/Program Files (x86)/Inkscape/bin/inkscape.exe",
             "C:/Program Files/Inkscape/inkscape.exe",
             "C:/Program Files/Inkscape/bin/inkscape.exe",
+            "C:/inkscape/bin/inkscape.exe",
         ]
     elif system == "Linux":
         candidates = [
@@ -77,9 +78,12 @@ def run_command_and_log(command_array, logfile):
                 f"Executed successfully, result: {c.returncode} (execution time: {end_time-start_time:.1f} sec)\n"
             )
             f.write("Output:\n")
-            f.write(c.stdout.decode("utf-8") + "\n")
+            try:
+                f.write(c.stdout.decode("utf-8", errors="surrogateescape"))
+            except UnicodeDecodeError:
+                pass
         result = True
-    except (FileNotFoundError, TimeoutExpired) as e:
+    except (FileNotFoundError, TimeoutExpired, UnicodeDecodeError, OSError) as e:
         if f:
             f.write(f"Execution failed: {str(e)}\n")
     if f:
@@ -147,8 +151,10 @@ class MultiLoader:
         result, c = run_command_and_log([inkscape, "-V"], logfile)
         if not result:
             return pathname
-
-        version = c.stdout.decode("utf-8")
+        try:
+            version = c.stdout.decode("utf-8", errors="surrogateescape")
+        except UnicodeDecodeError:
+            version = "inkscape 1.x"
 
         svg_temp_file = os.path.join(safe_dir, "inkscape.svg")
         logfile = os.path.join(safe_dir, "inkscape.log")
@@ -176,8 +182,19 @@ class MultiLoader:
         result, c = run_command_and_log(cmd, logfile)
         if not result or c.returncode == 1:
             return False
+
+        def unescaped(filename):
+            OS_NAME = platform.system()
+            if OS_NAME == "Windows":
+                newstring = filename.replace("&", "&&")
+            else:
+                newstring = filename.replace("&", "&&")
+            return newstring
+
         if was_shown:
-            kernel.busyinfo.change(msg=_("Loading File...") + "\n" + svg_temp_file)
+            kernel.busyinfo.change(
+                msg=_("Loading File...") + "\n" + unescaped(svg_temp_file)
+            )
             kernel.busyinfo.show()
         filename_to_process = svg_temp_file
         preproc = elements_service.lookup("preprocessor/.svg")
@@ -327,9 +344,14 @@ def plugin(kernel, lifecycle):
                 channel(_("Inkscape not found. Try 'inkscape locate'"))
                 return
             c = run([inkscape_path, "-V"], stdout=PIPE)
+            try:
+                version = c.stdout.decode("utf-8", errors="surrogateescape")
+            except UnicodeDecodeError:
+                version = "unknown"
+
             channel(
                 _('Inkscape executable at "{path}" is: {version}').format(
-                    path=inkscape_path, version=c.stdout.decode("utf-8")
+                    path=inkscape_path, version=version
                 )
             )
             return "inkscape", data
@@ -371,10 +393,11 @@ def plugin(kernel, lifecycle):
             return "inkscape", (root_context.inkscape_path, None)
 
         def check_for_features(pathname, **kwargs):
-
             # We try to establish if a file contains certain features...
 
             source = pathname
+            if not os.path.exists(source):
+                return pathname
             if pathname.lower().endswith("svgz"):
                 source = gzip.open(pathname, "rb")
             METHOD_CONVERT_TO_OBJECT = 1
@@ -394,7 +417,7 @@ def plugin(kernel, lifecycle):
             svg_temp_file = os.path.join(safe_dir, "temp.svg")
             png_temp_file = os.path.join(safe_dir, "temp.png")
             needs_conversion = 0
-            with open(source, mode="r", encoding="utf8") as f:
+            with open(source, mode="r", encoding="utf8", errors="surrogateescape") as f:
                 while True:
                     line = f.readline().lower()
                     if not line:
@@ -467,8 +490,11 @@ def plugin(kernel, lifecycle):
             result, c = run_command_and_log([inkscape, "-V"], log_file)
             if not result:
                 return pathname
-
-            version = c.stdout.decode("utf-8")
+            version = None
+            try:
+                version = c.stdout.decode(encoding="utf-8", errors="surrogateescape")
+            except UnicodeDecodeError:
+                version = "inkscape 1.x"
 
             if needs_conversion == METHOD_CONVERT_TO_OBJECT:
                 # Ask inkscape to convert all text elements to paths
@@ -516,7 +542,7 @@ def plugin(kernel, lifecycle):
                         inkscape,
                         "--export-area-drawing",
                         "--export-dpi",
-                        dpi,
+                        str(dpi),
                         "--export-background",
                         "rgb(255, 255, 255)",
                         "--export-background-opacity",
@@ -532,7 +558,7 @@ def plugin(kernel, lifecycle):
                 return pathname
 
         kernel.register("preprocessor/.svg", check_for_features)
-        # Lets establish some settings too
+        # Let's establish some settings too
         stip = (
             _("Meerk40t does not support all svg-features, so you might want")
             + "\n"

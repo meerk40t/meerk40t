@@ -3,12 +3,12 @@ Newly Device
 """
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
-from meerk40t.core.units import UNITS_PER_INCH, ViewPort
+from meerk40t.core.view import View
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.newly.driver import NewlyDriver
 
 
-class NewlyDevice(Service, ViewPort):
+class NewlyDevice(Service):
     """
     Newly Device
     """
@@ -302,6 +302,17 @@ class NewlyDevice(Service, ViewPort):
                 "subsection": "_40_Power",
             },
             {
+                "attr": "max_pulse_power",
+                "object": self,
+                "default": 65.0,
+                "type": float,
+                "label": _("Max Pulse Power"),
+                "trailer": "%",
+                "tip": _("What max power level should pulses be fired at?"),
+                "section": "_10_Parameters",
+                "subsection": "_45_Pulse",
+            },
+            {
                 "attr": "pwm_enabled",
                 "object": self,
                 "default": False,
@@ -346,6 +357,18 @@ class NewlyDevice(Service, ViewPort):
                 "tip": _("Set the current for the regular movements."),
                 "section": "_10_Parameters",
                 "subsection": "_40_Current",
+            },
+            {
+                "attr": "max_raster_jog",
+                "object": self,
+                "default": 15,
+                "type": int,
+                "label": _("Maximum Raster Jog"),
+                "tip": _(
+                    "Maximum distance allowed to be done during a raster step/jog"
+                ),
+                "section": "_10_Parameters",
+                "subsection": "_50_Raster",
             },
         ]
         self.register_choices("newly-specific", choices)
@@ -408,7 +431,7 @@ class NewlyDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Raster Power"),
                 "trailer": "%",
-                "tip": _("How what power level do we raster at?"),
+                "tip": _("At what power level do we raster?"),
                 "subsection": "_30_Raster",
             },
             {
@@ -449,7 +472,7 @@ class NewlyDevice(Service, ViewPort):
                 "trailer": "mm/s",
                 "label": _("Rect Speed"),
                 "tip": _("Speed to perform frame trace?"),
-                "subsection": "_50_Rect",
+                "subsection": "_50_Framing",
             },
             {
                 "attr": "rect_power",
@@ -459,24 +482,22 @@ class NewlyDevice(Service, ViewPort):
                 "trailer": "/1000",
                 "label": _("Rect Power"),
                 "tip": _("Power usage for draw frame operation?"),
-                "subsection": "_50_Rect",
+                "subsection": "_50_Framing",
             },
         ]
         self.register_choices("newly-global", choices)
+        # This device prefers to display power level in percent
+        self.setting(bool, "use_percent_for_power_display", True)
 
         self.state = 0
-
-        ViewPort.__init__(
-            self,
+        self.view = View(
             self.bedwidth,
             self.bedheight,
-            native_scale_x=UNITS_PER_INCH / self.h_dpi,
-            native_scale_y=UNITS_PER_INCH / self.v_dpi,
-            origin_x=1.0 if self.home_right else 0.0,
-            origin_y=1.0 if self.home_bottom else 0.0,
-            flip_x=self.flip_x,
-            flip_y=self.flip_y,
-            swap_xy=self.swap_xy,
+            dpi_x=self.h_dpi,
+            dpi_y=self.v_dpi,
+        )
+        self.view.transform(
+            flip_x=self.flip_x, flip_y=self.flip_y, swap_xy=self.swap_xy
         )
         self.spooler = Spooler(self)
         self.driver = NewlyDriver(self)
@@ -489,7 +510,7 @@ class NewlyDevice(Service, ViewPort):
         @self.console_command(
             "estop",
             help=_("stops the current job, deletes the spooler"),
-            input_type=(None),
+            input_type=None,
         )
         def estop(command, channel, _, data=None, remainder=None, **kwgs):
             channel("Stopping Job")
@@ -623,7 +644,14 @@ class NewlyDevice(Service, ViewPort):
             all_arguments_required=True,
         )
         def move_rect(file_index, **kwargs):
-            self.driver.connection.move_frame(file_index)
+            try:
+                self.driver.connection.move_frame(file_index)
+            except ConnectionRefusedError:
+                self.signal(
+                    "warning",
+                    _("Connection was aborted. Manual connection required."),
+                    _("Not Connected"),
+                )
 
         @self.console_argument("file_index", type=int)
         @self.console_command(
@@ -632,7 +660,14 @@ class NewlyDevice(Service, ViewPort):
             all_arguments_required=True,
         )
         def draw_rect(file_index, **kwargs):
-            self.driver.connection.draw_frame(file_index)
+            try:
+                self.driver.connection.draw_frame(file_index)
+            except ConnectionRefusedError:
+                self.signal(
+                    "warning",
+                    _("Connection was aborted. Manual connection required."),
+                    _("Not Connected"),
+                )
 
         @self.console_argument("file_index", type=int)
         @self.console_command(
@@ -641,7 +676,14 @@ class NewlyDevice(Service, ViewPort):
             all_arguments_required=True,
         )
         def replay(file_index, **kwargs):
-            self.driver.connection.replay(file_index)
+            try:
+                self.driver.connection.replay(file_index)
+            except ConnectionRefusedError:
+                self.signal(
+                    "warning",
+                    _("Connection was aborted. Manual connection required."),
+                    _("Not Connected"),
+                )
 
         @self.console_command(
             "viewport_update",
@@ -651,27 +693,29 @@ class NewlyDevice(Service, ViewPort):
         def codes_update(**kwargs):
             self.realize()
 
+    def service_attach(self, *args, **kwargs):
+        self.realize()
+
     @signal_listener("flip_x")
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
     @signal_listener("v_dpi")
     @signal_listener("h_dpi")
     def realize(self, origin=None, *args):
-        self.width = self.bedwidth
-        self.height = self.bedheight
-        self.native_scale_x = UNITS_PER_INCH / self.h_dpi
-        self.native_scale_y = UNITS_PER_INCH / self.v_dpi
-        super().realize()
+        self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.dpi_x = self.h_dpi
+        self.view.dpi_y = self.v_dpi
+        self.view.transform(
+            flip_x=self.flip_x, flip_y=self.flip_y, swap_xy=self.swap_xy
+        )
+        self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)
 
     @property
     def current(self):
         """
-        @return: the location in nm for the current known x value.
+        @return: the location in units for the current known position.
         """
-        return self.device_to_scene_position(
-            self.driver.native_x,
-            self.driver.native_y,
-        )
+        return self.view.iposition(self.driver.native_x, self.driver.native_y)
 
     @property
     def native(self):

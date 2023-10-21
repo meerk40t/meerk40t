@@ -104,7 +104,7 @@ ERROR_UNUSED_AXIS_WORDS = 31
 ERROR_ARC_WITHOUT_WORDS = 32
 # The motion command has an invalid target. G2, G3, and G38.2 generates this error, if the arc is impossible to generate or if the probe target is the current position.
 ERROR_INVALID_TARGET = 33
-# A G2 or G3 arc, traced with the radius definition, had a mathematical error when computing the arc geometry. Try either breaking up the arc into semi-circles or quadrants, or redefine them with the arc offset definition.
+# A G2 or G3 arc, traced with the radius definition, had a mathematical error when computing the arc geometry. Try either breaking up the arc into semicircles or quadrants, or redefine them with the arc offset definition.
 ERROR_ARC_COMPUTATION = 34
 # A G2 or G3 arc, traced with the offset definition, is missing the IJK offset word in the selected plane to trace the arc.
 ERROR_ARC_OFFSET_WORDS_MISSING = 35
@@ -133,14 +133,17 @@ class GcodeJob:
         self.runtime = 0
 
         self._stopped = True
+        self.enabled = True
         self._estimate = 0
 
         # Initially assume mm mode. G21 mm DEFAULT
         self.scale = UNITS_PER_MM
+        self.units = "mm"
 
         self.compensation = False
         self.feed_convert = None
         self.feed_invert = None
+        self.feed_desc = None
         self._interpolate = 50
         self.program_mode = False
         self.plotcut = None
@@ -166,12 +169,34 @@ class GcodeJob:
 
     @property
     def status(self):
-        if self.is_running and self.time_started is not None:
-            return "Running"
-        elif not self.is_running:
-            return "Disabled"
+        if self.is_running():
+            if self.time_started:
+                return "Running"
+            else:
+                return "Queued"
         else:
-            return "Queued"
+            if self.enabled:
+                return "Waiting"
+            else:
+                return "Disabled"
+
+    def inform(self, last_command):
+        if not hasattr(self._driver, "signal"):
+            return
+        info = (
+            self.relative,
+            self.program_mode,
+            self.move_mode,
+            self.units,
+            self.x / self.scale,
+            self.y / self.scale,
+            self.z / self.scale,
+            self.power,
+            self.speed,
+            self.feed_desc,
+            last_command,
+        )
+        self._driver.signal("grbl-emulator", info)
 
     def reply_code(self, cmd):
         if cmd == 0:  # Execute GCode.
@@ -203,10 +228,14 @@ class GcodeJob:
         self._stopped = False
         if self.time_started is None:
             self.time_started = time.time()
-        with self.lock:
-            line = self.buffer.pop(0)
-        cmd = self._process_gcode(line)
-        self.reply_code(cmd)
+        try:
+            with self.lock:
+                line = self.buffer.pop(0)
+            cmd = self._process_gcode(line)
+            self.reply_code(cmd)
+        except IndexError:
+            # Could not pop, list is empty. Job is done.
+            pass
         if not self.buffer:
             # Buffer is empty now. Job is complete
             self.runtime += time.time() - self.time_started
@@ -277,6 +306,7 @@ class GcodeJob:
                 gc[g].append(c[1])
             else:
                 gc[g].append(None)
+        # self.inform(str(gc))
         if "m" in gc:
             for v in gc["m"]:
                 if v in (0, 1):
@@ -410,9 +440,11 @@ class GcodeJob:
                 elif v in (20, 70):
                     # g20 is inch mode.
                     self.scale = UNITS_PER_INCH
+                    self.units = "in"
                 elif v in (21, 71):
                     # g21 is mm mode. 39.3701 mils in a mm
                     self.scale = UNITS_PER_MM
+                    self.units = "mm"
                 elif v == 28:
                     # Move to Origin (Home)
                     try:
@@ -616,10 +648,9 @@ class GcodeJob:
                         end=(nx, ny),
                         ccw=self.move_mode == 3,
                     )
-                    power = self.power
                     for p in range(self._interpolate + 1):
                         x, y = arc.point(p / self._interpolate)
-                        self.plot_location(x, y, power)
+                        self.plot_location(x, y, self.power)
                 else:
                     arc = Arc(
                         start=(ox, oy),
@@ -627,10 +658,9 @@ class GcodeJob:
                         end=(nx, ny),
                         ccw=self.move_mode == 3,
                     )
-                    power = self.power
                     for p in range(self._interpolate + 1):
                         x, y = arc.point(p / self._interpolate)
-                        self.plot_location(x, y, power)
+                        self.plot_location(x, y, self.power)
         return OKAY
 
     def plot_location(self, x, y, power):
@@ -647,12 +677,16 @@ class GcodeJob:
         @return:
         """
         matrix = self.units_to_device_matrix
+        if matrix is None:
+            # Using job for something other than point plotting
+            return
+        power = min(1000, power)
         if self.plotcut is None:
             ox, oy = matrix.transform_point([self.x, self.y])
-            self.plotcut = PlotCut(settings={"speed": self.speed, "power": self.power})
+            self.plotcut = PlotCut(settings={"speed": self.speed})
             self.plotcut.plot_init(int(round(ox)), int(round(oy)))
         tx, ty = matrix.transform_point([x, y])
-        self.plotcut.plot_append(int(round(tx)), int(round(ty)), power)
+        self.plotcut.plot_append(int(round(tx)), int(round(ty)), (power / 1000.0))
         if not self.program_mode:
             self.plot_commit()
         self.x = x
@@ -697,9 +731,11 @@ class GcodeJob:
         if self.scale == UNITS_PER_INCH:
             self.feed_convert = lambda s: (60.0 * self.scale / UNITS_PER_INCH) / s
             self.feed_invert = lambda s: (60.0 * UNITS_PER_INCH / self.scale) / s
+            self.feed_desc = "min/inch"
         else:
             self.feed_convert = lambda s: (60.0 * self.scale / UNITS_PER_MM) / s
             self.feed_invert = lambda s: (60.0 * UNITS_PER_MM / self.scale) / s
+            self.feed_desc = "min/mm"
 
     def g94_feedrate(self):
         """
@@ -714,6 +750,8 @@ class GcodeJob:
         if self.scale == UNITS_PER_INCH:
             self.feed_convert = lambda s: s / ((self.scale / UNITS_PER_INCH) * 60.0)
             self.feed_invert = lambda s: s * ((self.scale / UNITS_PER_INCH) * 60.0)
+            self.feed_desc = "inch/min"
         else:
             self.feed_convert = lambda s: s / ((self.scale / UNITS_PER_MM) * 60.0)
             self.feed_invert = lambda s: s * ((self.scale / UNITS_PER_MM) * 60.0)
+            self.feed_desc = "mm/min"

@@ -7,7 +7,7 @@ import wx
 
 from meerk40t.gui.icons import icons8_roll_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size
 
 _ = wx.GetTranslation
 
@@ -87,10 +87,10 @@ class RotarySettingsPanel(ScrolledPanel):
             )
         )
         self.checkbox_rotary.SetToolTip(_("Use Rotary Settings"))
-        self.text_rotary_scaley.SetMinSize((80, 23))
+        self.text_rotary_scaley.SetMinSize(dip_size(self, 80, -1))
         self.text_rotary_scaley.SetToolTip(_("Rotary Scale Factor X"))
         self.text_rotary_scaley.Enable(False)
-        self.text_rotary_scalex.SetMinSize((80, 23))
+        self.text_rotary_scalex.SetMinSize(dip_size(self, 80, -1))
         self.text_rotary_scalex.SetToolTip(_("Rotary Scale Factor Y"))
         self.text_rotary_scalex.Enable(False)
         # self.checkbox_rotary_loop.SetFont(
@@ -104,13 +104,13 @@ class RotarySettingsPanel(ScrolledPanel):
         #     )
         # )
         # self.checkbox_rotary_loop.SetToolTip(_("Use Rotary Settings"))
-        # self.text_rotary_rotation.SetMinSize((80, 23))
+        # self.text_rotary_rotation.SetMinSize(dip_size(self, 80, -1))
         # self.text_rotary_rotation.SetToolTip(_("Steps required for a full rotation"))
         # self.text_rotary_rotation.Enable(False)
-        # self.text_rotary_roller_circumference.SetMinSize((80, 23))
+        # self.text_rotary_roller_circumference.SetMinSize(dip_size(self, 80, -1))
         # self.text_rotary_roller_circumference.SetToolTip(_("Circumference of roller"))
         # self.text_rotary_roller_circumference.Enable(False)
-        # self.text_rotary_object_circumference.SetMinSize((80, 23))
+        # self.text_rotary_object_circumference.SetMinSize(dip_size(self, 80, -1))
         # self.text_rotary_object_circumference.SetToolTip(
         #     _("Circumference of object in rotary")
         # )
@@ -229,4 +229,4 @@ class RotarySettings(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Device-Settings", "Rotary-Settings")
+        return "Device-Settings", "Rotary-Settings"

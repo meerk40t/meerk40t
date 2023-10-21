@@ -32,19 +32,19 @@ class LaserJob:
         self.item_index = 0
 
         self._stopped = True
+        self.enabled = True
 
         self._estimate = 0
 
         for item in self.items:
             if isinstance(item, CutCode):
-                time_travel = item.duration_travel()
-                time_cuts = item.duration_cut()
-                time_extra = item.extra_time()
-                self._estimate += time_travel + time_cuts + time_extra
+                stats = item.provide_statistics()
+                final_values = stats[-1]
+                self._estimate = final_values["time_at_end_of_burn"]
         self.outline = outline
 
     def __str__(self):
-        return f"{self.__class__.__name__}({self.label}: {self.loops_executed}/{self.loops})"
+        return f"{self.__class__.__name__}({self.label}{'' if self.enabled else '[x]'}: {self.loops_executed}/{self.loops})"
 
     def bounds(self):
         if self.outline is None:
@@ -66,12 +66,16 @@ class LaserJob:
 
     @property
     def status(self):
-        if self.is_running and self.time_started is not None:
-            return "Running"
-        elif not self.is_running:
-            return "Disabled"
+        if self.is_running():
+            if self.time_started:
+                return "Running"
+            else:
+                return "Queued"
         else:
-            return "Queued"
+            if self.enabled:
+                return "Waiting"
+            else:
+                return "Disabled"
 
     def is_running(self):
         return not self._stopped
@@ -183,71 +187,27 @@ class LaserJob:
         """
         How long is this job already running...
         """
-        result = 0
         if self.is_running():
-            result = time.time() - self.time_started
+            return time.time() - self.time_started
         else:
-            result = self.runtime
-        return result
+            return self.runtime
 
     def estimate_time(self):
         """
         Give laser job time estimate.
+
+        This is rather 'simple', we have no clue what exactly this job is doing, but we have some ideas,
+        if and only if the job is_running:
+        a) we know the elapsed time
+        b) we know current and total steps (if the driver has such a property)
         @return:
         """
-        # This is rather 'simple', we have no clue what exactly this job is doing,
-        # but we have some ideas, if and only if the job is_running:
-        # a) we know the elapsed time
-        # b) we know current and total steps (if the driver has such a property)
         if isinf(self.loops):
             return float("inf")
-        result = 0
-        time_for_past_passes = 0
-        time_for_future_passes = self.loops * self._estimate
-        if self.is_running and self.time_started is not None:
-            # We fall back on elapsed and some info from the driver...
-            elapsed = time.time() - self.time_started
-            ratio = 1
-            # As we have mainly disabled the driver preview, we do something simpler:
-            # We know the pass of passes and we know the steps of total steps...
-            if self.avg_time_per_pass is None:
-                time_for_past_passes = 0
-                time_for_future_passes = (
-                    max(self.loops - self.loops_executed - 1, 0) * self._estimate
-                )
-            else:
-                time_for_past_passes = self.time_pass_started - self.time_started
-                time_for_future_passes = self.avg_time_per_pass * max(
-                    self.loops - self.loops_executed - 1, 0
-                )
-
-            if self.time_pass_started is not None:
-                this_pass_seconds = time.time() - self.time_pass_started
-                if this_pass_seconds >= 5:
-                    result = max(
-                        self._estimate,
-                        this_pass_seconds / max(self.steps_done, 1) * self.steps_total,
-                    )
-                else:
-                    result = self._estimate
-            # print (f"Passes: {self.loops_executed} / {self.loops}")
-            # print (f"Past: {time_for_past_passes:.1f}, Current: {result:.1f}, Future: {time_for_future_passes:.1f}")
-            # print (f"Steps: {self.steps_done} / {self.steps_total}, Pass-Estimate: {self._estimate:.1f}")
-            # if hasattr(self._driver, "total_steps"):
-            #     total = self._driver.total_steps
-            #     current = self._driver.current_steps
-            #     # Safety belt, as we have disabled the logic partially
-            #     if total < current:
-            #         total = current + 1
-            #     if current > 10 and total > 0:
-            #         # Arbitrary minimum steps (if too low, value is erratic)
-            #         ratio = total / current
-            # result = elapsed * ratio
-        if result == 0:
-            # Nothing useful came out, so we fall back on the initial value
-            result = self._estimate
-        else:
-            # Acknowledge previous + future passes
-            result += time_for_past_passes + time_for_future_passes
-
-        return result
+        if (
+            self.is_running()
+            and self.time_started is not None
+            and self.avg_time_per_pass
+        ):
+            return self.avg_time_per_pass * self.loops
+        return self.loops * self._estimate

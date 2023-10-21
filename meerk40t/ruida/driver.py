@@ -14,7 +14,6 @@ from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.cutcode.outputcut import OutputCut
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
-from meerk40t.core.cutcode.setorigincut import SetOriginCut
 from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
@@ -229,9 +228,6 @@ class RuidaDriver:
                 con.home_xy()
             elif isinstance(q, GotoCut):
                 con.goto(0, 0)
-            elif isinstance(q, SetOriginCut):
-                # Currently not supporting set origin cut.
-                pass
             elif isinstance(q, OutputCut):
                 pass
             elif isinstance(q, InputCut):
@@ -284,10 +280,8 @@ class RuidaDriver:
         @param y:
         @return:
         """
-        if self.service.swap_xy:
-            x, y = y, x
         old_current = self.service.current
-        self.native_x, self.native_y = self.service.physical_to_device_position(x, y)
+        self.native_x, self.native_y = self.service.view.position(x, y)
         if self.native_x > 0xFFFF:
             self.native_x = 0xFFFF
         if self.native_x < 0:
@@ -312,10 +306,8 @@ class RuidaDriver:
         @param dy:
         @return:
         """
-        if self.service.swap_xy:
-            dx, dy = dy, dx
         old_current = self.service.current
-        unit_dx, unit_dy = self.service.physical_to_device_length(dx, dy)
+        unit_dx, unit_dy = self.service.view.position(dx, dy, vector=True)
         self.native_x += unit_dx
         self.native_y += unit_dy
 

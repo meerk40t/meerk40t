@@ -1241,6 +1241,6 @@ def plugin(kernel, lifecycle):
         )
 
     elif lifecycle == "preboot":
-        suffix = "newly"
-        for d in kernel.settings.derivable(suffix):
-            kernel.root(f"service device start -p {d} {suffix}\n")
+        prefix = "newly"
+        for d in kernel.settings.section_startswith(prefix):
+            kernel.root(f"service device start -p {d} {prefix}\n")

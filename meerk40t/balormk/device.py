@@ -10,16 +10,17 @@ import time
 
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.balormk.elementlightjob import ElementLightJob
-from meerk40t.balormk.livefulllightjob import LiveFullLightJob
-from meerk40t.balormk.liveselectionlightjob import LiveSelectionLightJob
+from meerk40t.balormk.livelightjob import LiveLightJob
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
-from meerk40t.core.units import Angle, Length, ViewPort
+from meerk40t.core.units import Angle, Length
+from meerk40t.core.view import View
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
-from meerk40t.svgelements import Path, Point, Polygon
+from meerk40t.svgelements import Path, Point
+from meerk40t.tools.geomstr import Geomstr
 
 
-class BalorDevice(Service, ViewPort):
+class BalorDevice(Service):
     """
     The BalorDevice is a MeerK40t service for the device type. It should be the main method of interacting with
     the rest of meerk40t. It defines how the scene should look and contains a spooler which meerk40t will give jobs
@@ -65,6 +66,8 @@ class BalorDevice(Service, ViewPort):
             "{danger}{defop}{enabled}{pass}{element_type} {dwell_time}ms dwell {frequency}kHz {colcode} {opstop}",
         )
         self.register("format/util console", "{enabled}{command}")
+        # This device prefers to display power level in percent
+        self.setting(bool, "use_percent_for_power_display", True)
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
             list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
@@ -95,6 +98,16 @@ class BalorDevice(Service, ViewPort):
                 "section": "_00_General",
                 "priority": "10",
                 "signals": "device;renamed",
+            },
+            {
+                "attr": "source",
+                "object": self,
+                "default": "fiber",
+                "type": str,
+                "style": "combo",
+                "choices": ["fiber", "co2", "uv"],
+                "label": _("Laser Source"),
+                "tip": _("What type of laser is this?"),
             },
             {
                 "attr": "corfile_enabled",
@@ -152,26 +165,6 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("Offset in the Y axis"),
                 "section": "_10_Parameters",
                 "subsection": "_25_Offset",
-            },
-            {
-                "attr": "scale_x",
-                "object": self,
-                "default": "1.0",
-                "type": float,
-                "label": _("X-Axis"),
-                "tip": _("Scale the X axis"),
-                "section": "_10_Parameters",
-                "subsection": "_20_Scale",
-            },
-            {
-                "attr": "scale_y",
-                "object": self,
-                "default": "1.0",
-                "type": float,
-                "label": _("Y-Axis"),
-                "tip": _("Scale the Y axis"),
-                "section": "_10_Parameters",
-                "subsection": "_20_Scale",
             },
             {
                 "attr": "flip_x",
@@ -341,6 +334,16 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("QSwitch Frequency value"),
             },
             {
+                "attr": "default_fpk",
+                "object": self,
+                "default": 10.0,
+                "type": float,
+                "trailer": "%",
+                "label": _("First Pulse Killer"),
+                "conditional": (self, "source", "co2"),
+                "tip": _("Percent of First Pulse Killer for co2 source"),
+            },
+            {
                 "attr": "default_rapid_speed",
                 "object": self,
                 "default": 2000.0,
@@ -356,6 +359,7 @@ class BalorDevice(Service, ViewPort):
                 "type": bool,
                 "label": _("Enable"),
                 "tip": _("Enable using Pulse Width (MOPA)"),
+                # "conditional": (self, "source", "fiber"),
                 "subsection": "Pulse Width",
             },
             {
@@ -740,17 +744,13 @@ class BalorDevice(Service, ViewPort):
         unit_size = float(Length(self.lens_size))
         galvo_range = 0xFFFF
         units_per_galvo = unit_size / galvo_range
-
-        ViewPort.__init__(
-            self,
+        self.view = View(
             self.lens_size,
             self.lens_size,
             native_scale_x=units_per_galvo,
             native_scale_y=units_per_galvo,
-            origin_x=1.0 if self.flip_x else 0.0,
-            origin_y=1.0 if self.flip_y else 0.0,
-            show_origin_x=0.5,
-            show_origin_y=0.5,
+        )
+        self.view.transform(
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
@@ -788,7 +788,7 @@ class BalorDevice(Service, ViewPort):
         )
         @self.console_command(
             ("light", "light-simulate"),
-            input_type="shapes",
+            input_type="geometry",
             help=_("runs light on events."),
         )
         def light(
@@ -808,26 +808,15 @@ class BalorDevice(Service, ViewPort):
             if data is None:
                 channel("Nothing sent")
                 return
-            if command == "light":
-                self.job = ElementLightJob(
-                    self,
-                    data,
-                    travel_speed=travel_speed,
-                    jump_delay=jump_delay,
-                    simulation_speed=simulation_speed,
-                    quantization=quantization,
-                    simulate=False,
-                )
-            else:
-                self.job = ElementLightJob(
-                    self,
-                    data,
-                    travel_speed=travel_speed,
-                    jump_delay=jump_delay,
-                    simulation_speed=simulation_speed,
-                    quantization=quantization,
-                    simulate=True,
-                )
+            self.job = ElementLightJob(
+                self,
+                data,
+                travel_speed=travel_speed,
+                jump_delay=jump_delay,
+                simulation_speed=simulation_speed,
+                quantization=quantization,
+                simulate=bool(command != "light"),
+            )
             self.spooler.send(self.job)
 
         @self.console_command(
@@ -840,14 +829,32 @@ class BalorDevice(Service, ViewPort):
             # Live Bounds Job.
             if self.job is not None:
                 self.job.stop()
-            self.job = LiveSelectionLightJob(self)
+            self.job = LiveLightJob(self, mode="bounds")
             self.spooler.send(self.job)
 
         @self.console_command("full-light", help=_("Execute full light idle job"))
         def full_light(**kwargs):
             if self.job is not None:
                 self.job.stop()
-            self.job = LiveFullLightJob(self)
+            self.job = LiveLightJob(self)
+            self.spooler.send(self.job)
+
+        @self.console_command(
+            "regmark-light", help=_("Execute regmark live light idle job")
+        )
+        def reg_light(**kwargs):
+            if self.job is not None:
+                self.job.stop()
+            self.job = LiveLightJob(self, mode="regmarks")
+            self.spooler.send(self.job)
+
+        @self.console_command(
+            "hull-light", help=_("Execute convex hull light idle job")
+        )
+        def hull_light(**kwargs):
+            if self.job is not None:
+                self.job.stop()
+            self.job = LiveLightJob(self, mode="hull")
             self.spooler.send(self.job)
 
         @self.console_command(
@@ -864,7 +871,7 @@ class BalorDevice(Service, ViewPort):
         @self.console_command(
             "estop",
             help=_("stops the current job, deletes the spooler"),
-            input_type=(None),
+            input_type=None,
         )
         def estop(command, channel, _, data=None, remainder=None, **kwgs):
             channel("Stopping Job")
@@ -872,6 +879,12 @@ class BalorDevice(Service, ViewPort):
                 self.job.stop()
             self.spooler.clear_queue()
             self.driver.set_abort()
+            try:
+                channel("Resetting controller.")
+                self.driver.reset()
+                self.signal("pause")
+            except ConnectionRefusedError:
+                pass
 
         @self.console_command(
             "pause",
@@ -882,7 +895,10 @@ class BalorDevice(Service, ViewPort):
                 channel("Resuming current job")
             else:
                 channel("Pausing current job")
-            self.driver.pause()
+            try:
+                self.driver.pause()
+            except ConnectionRefusedError:
+                channel(_("Could not contact Galvo laser."))
             self.signal("pause")
 
         @self.console_command(
@@ -891,7 +907,10 @@ class BalorDevice(Service, ViewPort):
         )
         def resume(command, channel, _, data=None, remainder=None, **kwgs):
             channel("Resume the current job")
-            self.driver.resume()
+            try:
+                self.driver.resume()
+            except ConnectionRefusedError:
+                channel(_("Could not contact Galvo laser."))
             self.signal("pause")
 
         @self.console_option(
@@ -954,10 +973,7 @@ class BalorDevice(Service, ViewPort):
                 with open(filename, "w") as f:
                     driver = BalorDriver(self, force_mock=True)
                     job = LaserJob(filename, list(data.plan), driver=driver)
-                    from meerk40t.balormk.controller import (
-                        list_command_lookup,
-                        single_command_lookup,
-                    )
+                    from meerk40t.balormk.controller import list_command_lookup
 
                     def write(index, cmd):
                         cmds = [
@@ -1232,6 +1248,73 @@ class BalorDevice(Service, ViewPort):
                 rx = int(0x8000 + x) & 0xFFFF
                 ry = int(0x8000 + y) & 0xFFFF
                 self.driver.connection.set_xy(rx, ry)
+
+        @self.console_option("minspeed", "n", type=int, default=100)
+        @self.console_option("maxspeed", "x", type=int, default=5000)
+        @self.console_option("acc_time", "a", type=int, default=100)
+        @self.console_argument("position", type=int, default=0)
+        @self.console_command(
+            "rotary_to",
+            help=_("Send laser rotary command info."),
+            all_arguments_required=True,
+        )
+        def galvo_rotary(
+            command, channel, _, position, minspeed, maxspeed, acc_time, **kwgs
+        ):
+            self.driver.connection.set_axis_motion_param(
+                minspeed & 0xFFFF, maxspeed & 0xFFFF
+            )
+            self.driver.connection.set_axis_origin_param(acc_time)  # Unsure why 100.
+            pos = position if position >= 0 else -position + 0x80000000
+            p1 = (pos >> 16) & 0xFFFF
+            p0 = pos & 0xFFFF
+            self.driver.connection.move_axis_to(p0, p1)
+            self.driver.connection.wait_axis()
+
+        @self.console_option("minspeed", "n", type=int, default=100)
+        @self.console_option("maxspeed", "x", type=int, default=5000)
+        @self.console_option("acc_time", "a", type=int, default=100)
+        @self.console_argument(
+            "delta_rotary", type=int, default=0, help="relative amount"
+        )
+        @self.console_command(
+            "rotary_relative",
+            help=_("Advance the rotary by the given amount"),
+            all_arguments_required=True,
+        )
+        def galvo_rotary_advance(
+            command, channel, _, delta_rotary, minspeed, maxspeed, acc_time, **kwgs
+        ):
+            pos_args = self.driver.connection.get_axis_pos()
+            current = pos_args[1] | pos_args[2] << 16
+            if current > 0x80000000:
+                current = -current + 0x80000000
+            position = current + delta_rotary
+
+            self.driver.connection.set_axis_motion_param(
+                minspeed & 0xFFFF, maxspeed & 0xFFFF
+            )
+            self.driver.connection.set_axis_origin_param(acc_time)  # Unsure why 100.
+            pos = position if position >= 0 else -position + 0x80000000
+            p1 = (pos >> 16) & 0xFFFF
+            p0 = pos & 0xFFFF
+            self.driver.connection.move_axis_to(p0, p1)
+            self.driver.connection.wait_axis()
+
+        @self.console_option("axis_index", "i", type=int, default=0)
+        @self.console_command(
+            "rotary_pos",
+            help=_("Check the rotary position"),
+        )
+        def galvo_rotary_pos(command, channel, _, axis_index=0, **kwgs):
+            pos_args = self.driver.connection.get_axis_pos(axis_index)
+            if pos_args is None:
+                channel("Not connected, cannot get axis pos.")
+                return
+            current = pos_args[1] | pos_args[2] << 16
+            if current > 0x80000000:
+                current = -current + 0x80000000
+            channel(f"Rotary Position: {current}")
 
         @self.console_argument("off", type=str)
         @self.console_command(
@@ -1642,8 +1725,8 @@ class BalorDevice(Service, ViewPort):
             if bounds is None:
                 channel(_("Nothing Selected"))
                 return
-            x0, y0 = self.scene_to_device_position(bounds[0], bounds[1])
-            x1, y1 = self.scene_to_device_position(bounds[2], bounds[3])
+            x0, y0 = self.view.position(bounds[0], bounds[1])
+            x1, y1 = self.view.position(bounds[2], bounds[3])
             channel(
                 f"Top,Right: ({x0:.02f}, {y0:.02f}). Lower, Left: ({x1:.02f},{y1:.02f})"
             )
@@ -1677,7 +1760,7 @@ class BalorDevice(Service, ViewPort):
         @self.console_command(
             "box",
             help=_("outline the current selected elements"),
-            output_type="shapes",
+            output_type="geometry",
         )
         def shapes_selected(
             command, channel, _, count=256, data=None, args=tuple(), **kwargs
@@ -1691,23 +1774,18 @@ class BalorDevice(Service, ViewPort):
                 return
             xmin, ymin, xmax, ymax = bounds
             channel(_("Element bounds: {bounds}").format(bounds=str(bounds)))
-            points = [
-                (xmin, ymin),
-                (xmax, ymin),
-                (xmax, ymax),
-                (xmin, ymax),
-            ]
+            geometry = Geomstr.rect(xmin, ymin, xmax - xmin, ymin - ymax)
             if count > 1:
-                points *= count
-            return "shapes", [Polygon(*points)]
+                geometry.copies(count)
+            return "geometry", geometry
 
         @self.console_command(
             "hull",
             help=_("convex hull of the current selected elements"),
             input_type=(None, "elements"),
-            output_type="shapes",
+            output_type="geometry",
         )
-        def shapes_hull(command, channel, _, data=None, args=tuple(), **kwargs):
+        def shapes_hull(channel, _, data=None, **kwargs):
             """
             Draws an outline of the current shape.
             """
@@ -1739,7 +1817,9 @@ class BalorDevice(Service, ViewPort):
                 channel(_("No elements bounds to trace."))
                 return
             hull.append(hull[0])  # loop
-            return "shapes", [Polygon(*hull)]
+            hull = list(map(complex, hull))
+            geometry = Geomstr.lines(*hull)
+            return "geometry", geometry
 
         def ant_points(points, steps):
             points = list(points)
@@ -1771,7 +1851,7 @@ class BalorDevice(Service, ViewPort):
             "ants",
             help=_("Marching ants of the given element path."),
             input_type=(None, "elements"),
-            output_type="shapes",
+            output_type="geometry",
         )
         def element_ants(command, channel, _, data=None, quantization=50, **kwargs):
             """
@@ -1779,18 +1859,69 @@ class BalorDevice(Service, ViewPort):
             """
             if data is None:
                 data = list(self.elements.elems(emphasized=True))
-            points_list = []
-            points = list()
+            geom = Geomstr()
             for e in data:
                 try:
-                    path = e.as_path()
+                    path = e.as_geometry()
                 except AttributeError:
                     continue
-                for i in range(0, quantization + 1):
-                    x, y = path.point(i / float(quantization))
-                    points.append((x, y))
-                points_list.append(list(ant_points(points, int(quantization / 2))))
-            return "shapes", [Polygon(*p) for p in points_list]
+                ants = list(
+                    ant_points(
+                        path.as_interpolated_points(interpolate=quantization),
+                        int(quantization / 2),
+                    )
+                )
+                geom.polyline(ants)
+                geom.end()
+            return "geometry", geom
+
+        @self.console_argument("filename", type=str)
+        @self.console_command(
+            "clone_init",
+            help=_("Initializes a galvo clone board from specified file."),
+        )
+        def codes_update(channel, filename, **kwargs):
+            import platform
+
+            from meerk40t.balormk.clone_loader import load_sys
+            from meerk40t.kernel import get_safe_path
+
+            self.setting(str, "clone_sys", "chunks")
+            if filename is not None:
+                self.clone_sys = filename
+            if self.clone_sys == "chunks":
+                from meerk40t.balormk.clone_loader import load_chunks
+
+                load_chunks(channel=channel)
+                return
+
+            # Check for file in local directory
+            p = self.clone_sys
+            if os.path.exists(p):
+                load_sys(p, channel=channel)
+                return
+
+            # Check for file in the meerk40t directory (safe_path)
+            directory = get_safe_path(kernel.name, create=True)
+            p = os.path.join(directory, self.clone_sys)
+            if os.path.exists(p):
+                load_sys(p, channel=channel)
+                return
+
+            if platform.system() != "Windows":
+                return
+
+            # In windows, check the system32/drivers directory.
+            system32 = os.path.join(
+                os.environ["SystemRoot"],
+                "SysNative" if platform.architecture()[0] == "32bit" else "System32",
+            )
+            p = os.path.join(system32, "drivers", self.clone_sys)
+            if os.path.exists(p):
+                load_sys(p, channel=channel)
+                return
+
+            channel(f"{self.clone_sys} file was not found.")
 
         @self.console_command(
             "viewport_update",
@@ -1800,23 +1931,27 @@ class BalorDevice(Service, ViewPort):
         def codes_update(**kwargs):
             self.realize()
 
+    def service_attach(self, *args, **kwargs):
+        self.realize()
+
     @signal_listener("flip_x")
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
     def realize(self, origin=None, *args):
-        self.width = self.lens_size
-        self.height = self.lens_size
-        super().realize()
+        self.view.set_dims(self.lens_size, self.lens_size)
+        self.view.transform(
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
+        )
+        self.space.update_bounds(0, 0, self.lens_size, self.lens_size)
 
     @property
     def current(self):
         """
-        @return: the location in nm for the current known x value.
+        @return: the location in units for the current known position.
         """
-        return self.device_to_scene_position(
-            self.driver.native_x,
-            self.driver.native_y,
-        )
+        return self.view.iposition(self.driver.native_x, self.driver.native_y)
 
     @property
     def native(self):

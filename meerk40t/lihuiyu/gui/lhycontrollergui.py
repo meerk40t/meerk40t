@@ -14,18 +14,8 @@ from meerk40t.gui.icons import (
     icons8_play_50,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
-from meerk40t.kernel import (
-    STATE_ACTIVE,
-    STATE_BUSY,
-    STATE_END,
-    STATE_IDLE,
-    STATE_INITIALIZE,
-    STATE_PAUSE,
-    STATE_TERMINATE,
-    STATE_WAIT,
-    signal_listener,
-)
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -67,11 +57,13 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.text_usb_log = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
         )
+        self.button_clear_stats = wx.Button(self, wx.ID_ANY, _("Reset\nstatistics"))
 
         self.__set_properties()
         self.__do_layout()
 
         self.Bind(wx.EVT_BUTTON, self.on_button_start_usb, self.button_device_connect)
+        self.Bind(wx.EVT_BUTTON, self.on_button_reset_stats, self.button_clear_stats)
         self.Bind(
             wx.EVT_BUTTON,
             self.on_button_start_controller,
@@ -134,21 +126,21 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.text_controller_status.SetToolTip(
             _("Displays the controller's current process.")
         )
-        self.packet_count_text.SetMinSize((77, 23))
+        self.packet_count_text.SetMinSize(dip_size(self, 77, 23))
         self.packet_count_text.SetToolTip(_("Total number of packets sent"))
-        self.rejected_packet_count_text.SetMinSize((77, 23))
+        self.rejected_packet_count_text.SetMinSize(dip_size(self, 77, 23))
         self.rejected_packet_count_text.SetToolTip(
             _("Total number of packets rejected")
         )
         self.packet_text_text.SetToolTip(_("Last packet information sent"))
-        self.text_byte_0.SetMinSize((77, 23))
-        self.text_byte_1.SetMinSize((77, 23))
-        self.text_desc.SetMinSize((75, 23))
+        self.text_byte_0.SetMinSize(dip_size(self, 77, 23))
+        self.text_byte_1.SetMinSize(dip_size(self, 77, 23))
+        self.text_desc.SetMinSize(dip_size(self, 75, 23))
         self.text_desc.SetToolTip(_("The meaning of Byte 1"))
-        self.text_byte_2.SetMinSize((77, 23))
-        self.text_byte_3.SetMinSize((77, 23))
-        self.text_byte_4.SetMinSize((77, 23))
-        self.text_byte_5.SetMinSize((77, 23))
+        self.text_byte_2.SetMinSize(dip_size(self, 77, 23))
+        self.text_byte_3.SetMinSize(dip_size(self, 77, 23))
+        self.text_byte_4.SetMinSize(dip_size(self, 77, 23))
+        self.text_byte_5.SetMinSize(dip_size(self, 77, 23))
         self.checkbox_show_usb_log.SetValue(1)
         self.button_device_connect.SetBitmap(
             icons8_disconnected_50.GetBitmap(use_theme=False)
@@ -159,8 +151,8 @@ class LihuiyuControllerPanel(ScrolledPanel):
         # end wxGlade
 
     def __do_layout(self):
-        sizer_24 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_1 = wx.BoxSizer(wx.VERTICAL)
+        sizer_main = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_main_vertical = wx.BoxSizer(wx.VERTICAL)
         sizer_show_usb_log = wx.BoxSizer(wx.HORIZONTAL)
         packet_count = StaticBoxSizer(self, wx.ID_ANY, _("Packet Info"), wx.VERTICAL)
         byte_data_status = StaticBoxSizer(
@@ -173,9 +165,13 @@ class LihuiyuControllerPanel(ScrolledPanel):
         byte1sizer = wx.BoxSizer(wx.VERTICAL)
         byte0sizer = wx.BoxSizer(wx.VERTICAL)
         packet_info = StaticBoxSizer(self, wx.ID_ANY, _("Last Packet"), wx.HORIZONTAL)
-        sizer_25 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_21 = StaticBoxSizer(self, wx.ID_ANY, _("Rejected Packets"), wx.VERTICAL)
-        sizer_22 = StaticBoxSizer(self, wx.ID_ANY, _("Packet Count"), wx.VERTICAL)
+        sizer_statistics = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_count_rejected = StaticBoxSizer(
+            self, wx.ID_ANY, _("Rejected Packets"), wx.VERTICAL
+        )
+        sizer_count_packets = StaticBoxSizer(
+            self, wx.ID_ANY, _("Packet Count"), wx.VERTICAL
+        )
         sizer_controller = StaticBoxSizer(self, wx.ID_ANY, _("Controller"), wx.VERTICAL)
         sizer_usb_settings = StaticBoxSizer(
             self, wx.ID_ANY, _("USB Settings"), wx.VERTICAL
@@ -190,15 +186,16 @@ class LihuiyuControllerPanel(ScrolledPanel):
         )
         sizer_usb_connect.Add(self.button_device_connect, 0, wx.EXPAND, 0)
         sizer_usb_connect.Add(self.text_connection_status, 0, wx.EXPAND, 0)
-        sizer_1.Add(sizer_usb_connect, 0, wx.EXPAND, 0)
+        sizer_main_vertical.Add(sizer_usb_connect, 0, wx.EXPAND, 0)
         sizer_controller.Add(self.button_controller_control, 0, wx.EXPAND, 0)
         sizer_controller.Add(self.text_controller_status, 0, wx.EXPAND, 0)
-        sizer_1.Add(sizer_controller, 0, wx.EXPAND, 0)
-        sizer_22.Add(self.packet_count_text, 0, wx.EXPAND, 0)
-        sizer_25.Add(sizer_22, 1, wx.EXPAND, 0)
-        sizer_21.Add(self.rejected_packet_count_text, 0, wx.EXPAND, 0)
-        sizer_25.Add(sizer_21, 1, wx.EXPAND, 0)
-        packet_count.Add(sizer_25, 1, wx.EXPAND, 0)
+        sizer_main_vertical.Add(sizer_controller, 0, wx.EXPAND, 0)
+        sizer_count_packets.Add(self.packet_count_text, 0, wx.EXPAND, 0)
+        sizer_statistics.Add(sizer_count_packets, 1, wx.EXPAND, 0)
+        sizer_count_rejected.Add(self.rejected_packet_count_text, 0, wx.EXPAND, 0)
+        sizer_statistics.Add(sizer_count_rejected, 1, wx.EXPAND, 0)
+        sizer_statistics.Add(self.button_clear_stats, 0, wx.EXPAND, 0)
+        packet_count.Add(sizer_statistics, 1, wx.EXPAND, 0)
         packet_info.Add(self.packet_text_text, 11, wx.EXPAND, 0)
         packet_count.Add(packet_info, 0, wx.EXPAND, 0)
         byte0sizer.Add(self.text_byte_0, 0, 0, 0)
@@ -227,14 +224,14 @@ class LihuiyuControllerPanel(ScrolledPanel):
         byte5sizer.Add(label_18, 0, 0, 0)
         byte_data_status.Add(byte5sizer, 1, wx.EXPAND, 0)
         packet_count.Add(byte_data_status, 0, wx.EXPAND, 0)
-        sizer_1.Add(packet_count, 0, 0, 0)
+        sizer_main_vertical.Add(packet_count, 0, 0, 0)
         label_6 = wx.StaticText(self, wx.ID_ANY, "")
         sizer_show_usb_log.Add(label_6, 10, wx.EXPAND, 0)
         sizer_show_usb_log.Add(self.checkbox_show_usb_log, 0, 0, 0)
-        sizer_1.Add(sizer_show_usb_log, 1, wx.EXPAND, 0)
-        sizer_24.Add(sizer_1, 1, 0, 0)
-        sizer_24.Add(self.text_usb_log, 2, wx.EXPAND, 0)
-        self.SetSizer(sizer_24)
+        sizer_main_vertical.Add(sizer_show_usb_log, 1, wx.EXPAND, 0)
+        sizer_main.Add(sizer_main_vertical, 1, 0, 0)
+        sizer_main.Add(self.text_usb_log, 2, wx.EXPAND, 0)
+        self.SetSizer(sizer_main)
         self.Layout()
         # end wxGlade
 
@@ -254,6 +251,12 @@ class LihuiyuControllerPanel(ScrolledPanel):
 
     def pane_hide(self):
         self.context.channel(self._channel_watching).unwatch(self.update_text)
+
+    def on_button_reset_stats(self, event):
+        self.context.packet_count = 0
+        self.context.rejected_count = 0
+        self.packet_count_text.SetValue(str(self.context.packet_count))
+        self.rejected_packet_count_text.SetValue(str(self.context.rejected_count))
 
     @signal_listener("network_update")
     def on_network_update(self, origin=None, *args):
@@ -282,7 +285,11 @@ class LihuiyuControllerPanel(ScrolledPanel):
             pass
 
     def set_widgets(self):
-        self.checkbox_show_usb_log.SetValue(self.context.show_usb_log)
+        try:
+            show_log = self.context.show_usb_log
+        except AttributeError:
+            show_log = True
+        self.checkbox_show_usb_log.SetValue(show_log)
         self.on_check_show_usb_log()
 
     def device_execute(self, control_name):
@@ -295,21 +302,25 @@ class LihuiyuControllerPanel(ScrolledPanel):
     def update_status(self, origin, status_data, code_string):
         if origin != self.context.path:
             return
-        if status_data is not None:
-            if isinstance(status_data, int):
-                self.text_desc.SetValue(str(status_data))
-                self.text_desc.SetValue(code_string)
-            else:
-                if len(status_data) == 6:
-                    self.text_byte_0.SetValue(str(status_data[0]))
-                    self.text_byte_1.SetValue(str(status_data[1]))
-                    self.text_byte_2.SetValue(str(status_data[2]))
-                    self.text_byte_3.SetValue(str(status_data[3]))
-                    self.text_byte_4.SetValue(str(status_data[4]))
-                    self.text_byte_5.SetValue(str(status_data[5]))
+        try:
+            if status_data is not None:
+                if isinstance(status_data, int):
+                    self.text_desc.SetValue(str(status_data))
                     self.text_desc.SetValue(code_string)
-        self.packet_count_text.SetValue(str(self.context.packet_count))
-        self.rejected_packet_count_text.SetValue(str(self.context.rejected_count))
+                else:
+                    if len(status_data) == 6:
+                        self.text_byte_0.SetValue(str(status_data[0]))
+                        self.text_byte_1.SetValue(str(status_data[1]))
+                        self.text_byte_2.SetValue(str(status_data[2]))
+                        self.text_byte_3.SetValue(str(status_data[3]))
+                        self.text_byte_4.SetValue(str(status_data[4]))
+                        self.text_byte_5.SetValue(str(status_data[5]))
+                        self.text_desc.SetValue(code_string)
+            self.packet_count_text.SetValue(str(self.context.packet_count))
+            self.rejected_packet_count_text.SetValue(str(self.context.rejected_count))
+        except RuntimeError:
+            # This should be handled when the controller window is closed.
+            pass
 
     @signal_listener("pipe;packet_text")
     def update_packet_text(self, origin, string_data):
@@ -334,7 +345,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
         if state == "STATE_CONNECTION_FAILED":
             self.button_device_connect.SetBackgroundColour("#dfdf00")
             origin, usb_status = self.context.last_signal("pipe;usb_status")
-            self.button_device_connect.SetLabel(_("Connect Failed"))
+            self.button_device_connect.SetLabel(_("Connect failed"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected_50.GetBitmap(use_theme=False)
             )
@@ -436,7 +447,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             return
         value = self.context.kernel.get_text_thread_state(state)
         self.text_controller_status.SetValue(str(value))
-        if state == STATE_INITIALIZE or state == STATE_END or state == STATE_IDLE:
+        if state in ("init", "end", "idle"):
 
             def f(event=None):
                 self.context("start\n")
@@ -447,12 +458,12 @@ class LihuiyuControllerPanel(ScrolledPanel):
             button.SetLabel(_("Hold Controller"))
             button.SetBitmap(icons8_play_50.GetBitmap(use_theme=False))
             button.Enable(True)
-        elif state == STATE_BUSY:
+        elif state == "busy":
             button.SetBackgroundColour("#00dd00")
             button.SetLabel(_("LOCKED"))
             button.SetBitmap(icons8_play_50.GetBitmap(use_theme=False))
             button.Enable(False)
-        elif state == STATE_WAIT:
+        elif state == "wait":
 
             def f(event=None):
                 self.context("continue\n")
@@ -462,7 +473,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             button.SetLabel(_("Force Continue"))
             button.SetBitmap(icons8_laser_beam_hazard_50.GetBitmap(use_theme=False))
             button.Enable(True)
-        elif state == STATE_PAUSE:
+        elif state == "pause":
 
             def f(event=None):
                 self.context("resume\n")
@@ -472,7 +483,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             button.SetLabel(_("Resume Controller"))
             button.SetBitmap(icons8_play_50.GetBitmap(use_theme=False))
             button.Enable(True)
-        elif state == STATE_ACTIVE:
+        elif state == "active":
 
             def f(event=None):
                 self.context("hold\n")
@@ -482,7 +493,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             button.SetLabel(_("Pause Controller"))
             button.SetBitmap(icons8_pause_50.GetBitmap(use_theme=False))
             button.Enable(True)
-        elif state == STATE_TERMINATE:
+        elif state == "terminate":
 
             def f(event=None):
                 self.context("abort\n")
@@ -591,4 +602,4 @@ class LihuiyuControllerGui(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Device-Control", "Controller")
+        return "Device-Control", "Controller"

@@ -4,20 +4,19 @@ import time
 
 import wx
 
-from meerk40t.core.element_types import elem_nodes
-from meerk40t.core.units import Length
+from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.gui.laserrender import (
     DRAW_MODE_ANIMATE,
     DRAW_MODE_FLIPXY,
     DRAW_MODE_INVERT,
     DRAW_MODE_REFRESH,
 )
-from meerk40t.gui.scene.guicolors import GuiColors
 from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_DELEGATE,
     HITCHAIN_DELEGATE_AND_HIT,
     HITCHAIN_HIT,
     HITCHAIN_HIT_AND_DELEGATE,
+    HITCHAIN_PRIORITY_HIT,
     ORIENTATION_RELATIVE,
     RESPONSE_ABORT,
     RESPONSE_CHAIN,
@@ -28,12 +27,16 @@ from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point
 
-# TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
-
-
 _reused_identity_widget = Matrix()
 XCELLS = 15
 YCELLS = 15
+
+TYPE_BOUND = 0
+TYPE_POINT = 1
+TYPE_MIDDLE = 2
+TYPE_CENTER = 3
+TYPE_GRID = 4
+TYPE_MIDDLE_SMALL = 5
 
 
 class SceneToast:
@@ -72,9 +75,22 @@ class SceneToast:
         """
         self.countdown -= 1
         if self.countdown <= 20:
-            self.scene.request_refresh_for_animation()
+            self.scene.invalidate(
+                self.left - 10,
+                self.top - 10,
+                self.right + 10,
+                self.bottom + 10,
+                animate=True,
+            )
         if self.countdown <= 0:
-            self.scene.request_refresh()
+            self.scene.invalidate(
+                self.left - 10,
+                self.top - 10,
+                self.right + 10,
+                self.bottom + 10,
+                animate=False,
+            )
+            # self.scene.request_refresh()
             self.message = None
             self.token = None
         return self.countdown > 0
@@ -185,6 +201,9 @@ class Scene(Module, Job):
             conditional=lambda: self.screen_refresh_is_requested,
             run_main=True,
         )
+        # Scene lock is used for widget structure modification and scene drawing.
+        self.scene_lock = threading.RLock()
+
         self.log = context.channel("scene")
         self.log_events = context.channel("scene-events")
         self.gui = gui
@@ -192,7 +211,7 @@ class Scene(Module, Job):
         self.hittable_elements = list()
         self.hit_chain = list()
         self.widget_root = SceneSpaceWidget(self)
-        self.screen_refresh_lock = threading.Lock()
+
         self.interval = 1.0 / 60.0  # 60fps
         self.last_position = None
         self._down_start_time = None
@@ -200,9 +219,11 @@ class Scene(Module, Job):
         self._cursor = None
         self.suppress_changes = True
 
-        self.colors = GuiColors(self.context)
+        self.colors = self.context.colors
 
         self.screen_refresh_is_requested = True
+        self.clip = wx.Rect(0, 0, 0, 0)
+
         self.background_brush = wx.Brush(self.colors.color_background)
         self.has_background = False
         # If set this color will be used for the scene background (used during burn)
@@ -218,10 +239,12 @@ class Scene(Module, Job):
             interval=1.0 / 60.0,
         )
         self._toast = None
+        # Snap information
+        self.snap_display_points = None
+        self.snap_attraction_points = None
 
     def module_open(self, *args, **kwargs):
         context = self.context
-        context.schedule(self)
         context.setting(int, "draw_mode", 0)
         context.setting(bool, "mouse_zoom_invert", False)
         context.setting(bool, "mouse_pan_invert", False)
@@ -240,7 +263,7 @@ class Scene(Module, Job):
 
     def module_close(self, *args, **kwargs):
         self._final_widget(self.widget_root, self.context)
-        self.screen_refresh_lock.acquire()  # calling shutdown live locks here since it's already shutting down.
+        self.scene_lock.acquire()  # calling shutdown live locks here since it's already shutting down.
         self.context.unschedule(self)
 
     def _init_widget(self, widget, context):
@@ -288,6 +311,13 @@ class Scene(Module, Job):
         except AttributeError:
             pass
 
+    def invalidate(self, min_x, min_y, max_x, max_y, animate=False):
+        self.clip.Union((min_x, min_y, max_x - min_x, max_y - min_y))
+        if animate:
+            self.request_refresh_for_animation()
+        else:
+            self.request_refresh()
+
     def animate(self, widget):
         with self._animate_lock:
             if widget not in self._adding_widgets:
@@ -332,27 +362,36 @@ class Scene(Module, Job):
         Called by the Scheduler at a given the specified framerate.
         Called in the UI thread.
         """
-        if self.screen_refresh_is_requested:
-            if self.screen_refresh_lock.acquire(timeout=0.2):
-                try:
-                    self.update_buffer_ui_thread()  # May hit runtime error.
-                    self.gui.Refresh()
-                    self.gui.Update()
-                except RuntimeError:
-                    pass
-                self.screen_refresh_is_requested = False
-                self.screen_refresh_lock.release()
-            else:
-                self.screen_refresh_is_requested = False
+        if not self.screen_refresh_is_requested:
+            return
+        if self.scene_lock.acquire(timeout=0.2):
+            try:
+                self._update_buffer_ui_thread()
+                self.gui.Refresh()
+                self.gui.Update()
+            except RuntimeError:
+                # May hit runtime error.
+                pass
+            self.screen_refresh_is_requested = False
+            self.scene_lock.release()
+        else:
+            self.screen_refresh_is_requested = False
 
-    def update_buffer_ui_thread(self):
+    def _update_buffer_ui_thread(self):
         """Performs redrawing of the data in the UI thread."""
         dm = self.context.draw_mode
-        buf = self.gui._Buffer
+        buf = self.gui.scene_buffer
         if buf is None or buf.GetSize() != self.gui.ClientSize or not buf.IsOk():
             self.gui.set_buffer()
-            buf = self.gui._Buffer
+            buf = self.gui.scene_buffer
         dc = wx.MemoryDC()
+        if self.clip.width != 0 and self.clip.height != 0:
+            dc.SetClippingRegion(self.clip)
+            self.clip.SetX(0)
+            self.clip.SetY(0)
+            self.clip.SetWidth(0)
+            self.clip.SetHeight(0)
+
         dc.SelectObject(buf)
         if self.overrule_background is None:
             self.background_brush.SetColour(self.colors.color_background)
@@ -511,8 +550,8 @@ class Scene(Module, Job):
         response = current_widget.hit()
         if response == HITCHAIN_HIT:
             self.hittable_elements.append((current_widget, matrix_within_scene))
-        # elif response == HITCHAIN_HIT_WITH_PRIORITY:
-        #    self.hittable_elements.insert(0, (current_widget, matrix_within_scene))
+        elif response == HITCHAIN_PRIORITY_HIT:
+            self.hittable_elements.insert(0, (current_widget, matrix_within_scene))
         elif response == HITCHAIN_DELEGATE:
             for w in current_widget:
                 self.rebuild_hit_chain(w, matrix_within_scene)
@@ -870,3 +909,143 @@ class Scene(Module, Job):
         Delegate to the SceneSpaceWidget interface.
         """
         self.widget_root.interface_widget.add_widget(-1, widget, properties)
+
+    # --- Centralised snap_point calculation
+    def _calculate_snap_points(self, my_x, my_y, length):
+        """
+        Recalculate the snap element attraction points
+
+        @param length:
+        @return:
+        """
+        for pts in self.snap_attraction_points:
+            if self.pane.modif_active:
+                if pts[3]:
+                    # No snap points for emphasized objects.
+                    continue
+            if abs(pts[0] - my_x) <= length and abs(pts[1] - my_y) <= length:
+                self.snap_display_points.append([pts[0], pts[1], pts[2]])
+
+    def _calculate_grid_points(self, my_x, my_y, length):
+        """
+        Recalculate the local grid points
+
+        @param length:
+        @return:
+        """
+        for pts in self.pane.grid.grid_points:
+            if abs(pts[0] - my_x) <= length and abs(pts[1] - my_y) <= length:
+                self.snap_display_points.append([pts[0], pts[1], TYPE_GRID])
+
+    def _calculate_attraction_points(self):
+        """
+        Looks at all elements (all_points=True) or at non-selected elements (all_points=False) and identifies all
+        attraction points (center, corners, sides)
+        """
+        self.context.elements.set_start_time("attr_calc_points")
+        self.snap_attraction_points = []  # Clear all
+        translation_table = {
+            "bounds top_left": TYPE_BOUND,
+            "bounds top_right": TYPE_BOUND,
+            "bounds bottom_left": TYPE_BOUND,
+            "bounds bottom_right": TYPE_BOUND,
+            "bounds center_center": TYPE_CENTER,
+            "bounds top_center": TYPE_MIDDLE,
+            "bounds bottom_center": TYPE_MIDDLE,
+            "bounds center_left": TYPE_MIDDLE,
+            "bounds center_right": TYPE_MIDDLE,
+            "endpoint": TYPE_POINT,
+            "point": TYPE_POINT,
+            "midpoint": TYPE_MIDDLE_SMALL,
+        }
+
+        for e in self.context.elements.flat(types=elem_nodes):
+            emph = e.emphasized
+            if hasattr(e, "points"):
+                for pt in e.points:
+                    try:
+                        pt_type = translation_table[pt[2]]
+                    except:
+                        print(f"Unknown type: {pt[2]}")
+                        pt_type = TYPE_POINT
+                    self.snap_attraction_points.append([pt[0], pt[1], pt_type, emph])
+
+        self.context.elements.set_end_time(
+            "attr_calc_points",
+            message=f"points added={len(self.snap_attraction_points)}",
+        )
+
+    def calculate_display_points(self, my_x, my_y, snap_points, snap_grid):
+        """
+        Recalculate the points that need to be displayed for the user.
+
+        @return:
+        """
+        self.snap_display_points = []
+        if my_x is None:
+            return
+        if self.snap_attraction_points is None and snap_points:
+            self._calculate_attraction_points()
+
+        matrix = self.widget_root.scene_widget.matrix
+        length = self.context.show_attract_len / matrix.value_scale_x()
+
+        if snap_points and self.snap_attraction_points:
+            self._calculate_snap_points(my_x, my_y, length)
+
+        if snap_grid and self.pane.grid.grid_points:
+            self._calculate_grid_points(my_x, my_y, length)
+
+    def calculate_snap(self, my_x, my_y):
+        """
+        Calculates the nearest_snap
+        """
+        # Loop through display points, find closest.
+        res_x = None
+        res_y = None
+        if self.snap_display_points and my_x is not None:
+            # Has to be lower than the action threshold
+            min_delta = float("inf")
+            new_x = None
+            new_y = None
+            for pt in self.snap_display_points:
+                dx = pt[0] - my_x
+                dy = pt[1] - my_y
+                delta = dx * dx + dy * dy
+                if delta < min_delta:
+                    new_x = pt[0]
+                    new_y = pt[1]
+                    min_delta = delta
+            if new_x is not None:
+                matrix = self.widget_root.scene_widget.matrix
+                pixel = self.context.action_attract_len / matrix.value_scale_x()
+                if abs(new_x - my_x) <= pixel and abs(new_y - my_y) <= pixel:
+                    # If the distance is small enough: snap.
+                    res_x = new_x
+                    res_y = new_y
+        return res_x, res_y
+
+    def get_snap_point(self, sx, sy, modifiers):
+        resx = sx
+        resy = sy
+        sgrid = self.context.snap_grid
+        spoints = self.context.snap_points
+        if "shift" in modifiers:
+            sgrid = not sgrid
+            spoints = False
+        if sgrid or spoints:
+            if "shift" in modifiers:
+                # Need to recalculate
+                self.reset_snap_attraction()
+            self.calculate_display_points(sx, sy, spoints, sgrid)
+            nx, ny = self.calculate_snap(sx, sy)
+            if nx is not None:
+                resx = nx
+                resy = ny
+            if "shift" in modifiers:
+                # Need to recalculate again
+                self.reset_snap_attraction()
+        return resx, resy
+
+    def reset_snap_attraction(self):
+        self.snap_attraction_points = None
