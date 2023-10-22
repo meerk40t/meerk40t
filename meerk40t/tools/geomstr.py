@@ -2549,22 +2549,22 @@ class Geomstr:
             if oinfo.real == TYPE_LINE:
                 yield from self._line_line_intersections(line1, line2)
                 return
-            if oinfo.real == TYPE_QUAD:
-                yield from self._line_quad_intersections(line1, line2)
-                return
-            if oinfo.real == TYPE_CUBIC:
-                yield from self._line_cubic_intersections(line1, line2)
-                return
-
-        if info.real == TYPE_QUAD:
-            if oinfo.real == TYPE_LINE:
-                yield from self._line_quad_intersections(line2, line1)
-                return
-
-        if info.real == TYPE_CUBIC:
-            if oinfo.real == TYPE_LINE:
-                yield from self._line_cubic_intersections(line2, line1)
-                return
+        #     if oinfo.real == TYPE_QUAD:
+        #         yield from self._line_quad_intersections(line1, line2)
+        #         return
+        #     if oinfo.real == TYPE_CUBIC:
+        #         yield from self._line_cubic_intersections(line1, line2)
+        #         return
+        #
+        # if info.real == TYPE_QUAD:
+        #     if oinfo.real == TYPE_LINE:
+        #         yield from self._line_quad_intersections(line2, line1)
+        #         return
+        #
+        # if info.real == TYPE_CUBIC:
+        #     if oinfo.real == TYPE_LINE:
+        #         yield from self._line_cubic_intersections(line2, line1)
+        #         return
         yield from self._find_intersections(line1, line2)
 
     def _line_line_intersections(self, line1, line2):
