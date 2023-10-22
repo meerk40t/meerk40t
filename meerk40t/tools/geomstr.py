@@ -185,6 +185,27 @@ class Clip:
 
         return splits
 
+    def _insides_only(self, subject, clip):
+        """
+        Modifies subject to only contain the segments found inside the given clip.
+        @param subject:
+        @param clip:
+        @return:
+        """
+        mid_points = subject.position(slice(subject.index), 0.5)
+
+        c = Geomstr()
+        # Pip currently only works with line segments
+        for sp in clip.as_subpaths():
+            for segs in sp.as_interpolated_segments(interpolate=100):
+                c.polyline(segs)
+                c.end()
+        sb = Scanbeam(c)
+        r = np.where(sb.points_in_polygon(mid_points))
+
+        subject.segments = subject.segments[r]
+        subject.index = len(subject.segments)
+
     def clip(self, subject, split=True):
         """
         Clip algorithm works in 3 steps. First find the splits between the subject and clip and split the subject at
@@ -208,12 +229,10 @@ class Clip:
                     continue
                 split_lines = list(subject.split(s0, s))
                 subject.replace(s0, s0, split_lines)
-
-        sb = Scanbeam(clip)
-        mid_points = subject.position(slice(subject.index), 0.5)
-        r = np.where(sb.points_in_polygon(mid_points))
-        subject.segments = subject.segments[r]
-        subject.index = len(subject.segments)
+            subject.validate()
+        clip.validate()
+        self._insides_only(subject, clip)
+        subject.validate()
         return subject
 
 
@@ -1512,6 +1531,26 @@ class Geomstr:
         ]
         self.index = new_capacity
 
+    def validate(self):
+        infos = self.segments[:self.index, 2]
+
+        starts = self.segments[:self.index, 0]
+        q = np.where(np.real(infos).astype(int) & 0b1000)
+        assert(not np.any(np.isnan(starts[q])))
+
+        ends = self.segments[:self.index, 4]
+        q = np.where(np.real(infos).astype(int) & 0b0001)
+        assert(not np.any(np.isnan(ends[q])))
+
+        c1 = self.segments[:self.index, 1]
+        q = np.where(np.real(infos).astype(int) & 0b0100)
+        assert(not np.any(np.isnan(c1[q])))
+
+        c2 = self.segments[:self.index, 3]
+        q = np.where(np.real(infos).astype(int) & 0b0010)
+        assert(not np.any(np.isnan(c2[q])))
+
+
     #######################
     # Geometric Primitives
     #######################
@@ -2754,22 +2793,22 @@ class Geomstr:
             if oinfo.real == TYPE_LINE:
                 yield from self._line_line_intersections(line1, line2)
                 return
-            if oinfo.real == TYPE_QUAD:
-                yield from self._line_quad_intersections(line1, line2)
-                return
-            if oinfo.real == TYPE_CUBIC:
-                yield from self._line_cubic_intersections(line1, line2)
-                return
-
-        if info.real == TYPE_QUAD:
-            if oinfo.real == TYPE_LINE:
-                yield from self._line_quad_intersections(line2, line1)
-                return
-
-        if info.real == TYPE_CUBIC:
-            if oinfo.real == TYPE_LINE:
-                yield from self._line_cubic_intersections(line2, line1)
-                return
+        #     if oinfo.real == TYPE_QUAD:
+        #         yield from self._line_quad_intersections(line1, line2)
+        #         return
+        #     if oinfo.real == TYPE_CUBIC:
+        #         yield from self._line_cubic_intersections(line1, line2)
+        #         return
+        #
+        # if info.real == TYPE_QUAD:
+        #     if oinfo.real == TYPE_LINE:
+        #         yield from self._line_quad_intersections(line2, line1)
+        #         return
+        #
+        # if info.real == TYPE_CUBIC:
+        #     if oinfo.real == TYPE_LINE:
+        #         yield from self._line_cubic_intersections(line2, line1)
+        #         return
         yield from self._find_intersections(line1, line2)
 
     def _line_line_intersections(self, line1, line2):

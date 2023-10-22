@@ -74,6 +74,14 @@ def init_commands(kernel):
                 path.append(e)
         return "geometry", path
 
+    @self.console_command("validate", input_type="geometry", output_type="geometry")
+    def geometry_validate(channel, _, data=None, **kwargs):
+        try:
+            data.validate()
+            channel(_("Geometry is valid."))
+        except AssertionError:
+            channel(_("Geometry was not valid."))
+
     @self.console_argument("x_pos", type=Length)
     @self.console_argument("y_pos", type=Length)
     @self.console_argument("r_pos", type=Length)
