@@ -1312,6 +1312,26 @@ class Geomstr:
         ]
         self.index += other.index
 
+    def validate(self):
+        infos = self.segments[:self.index, 2]
+
+        starts = self.segments[:self.index, 0]
+        q = np.where(np.real(infos).astype(int) & 0b1000)
+        assert(not np.any(np.isnan(starts[q])))
+
+        ends = self.segments[:self.index, 4]
+        q = np.where(np.real(infos).astype(int) & 0b0001)
+        assert(not np.any(np.isnan(ends[q])))
+
+        c1 = self.segments[:self.index, 1]
+        q = np.where(np.real(infos).astype(int) & 0b0100)
+        assert(not np.any(np.isnan(c1[q])))
+
+        c2 = self.segments[:self.index, 3]
+        q = np.where(np.real(infos).astype(int) & 0b0010)
+        assert(not np.any(np.isnan(c2[q])))
+
+
     #######################
     # Geometric Primitives
     #######################
