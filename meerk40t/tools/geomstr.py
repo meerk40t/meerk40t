@@ -97,82 +97,117 @@ class Clip:
         self.clipping_shape = shape
         self.bounds = shape.bbox()
 
+    def _splits(self, subject, clip):
+        """
+        Calculate the splits in `subject` by the clip. This should return a list of t positions with the list being
+        as long as the number of segments in subject. Finds all intersections between subject and clip and the given
+        split positions (of subject) that would make the intersection list non-existant.
+
+        @param subject:
+        @param clip:
+        @return:
+        """
+        s = subject.segments[: subject.index]
+        c = clip.segments[: clip.index]
+        cmaxx = np.where(
+            np.real(c[:, 0]) > np.real(c[:, -1]),
+            np.real(c[:, 0]),
+            np.real(c[:, -1]),
+            )
+        sminx = np.where(
+            np.real(s[:, 0]) < np.real(s[:, -1]),
+            np.real(s[:, 0]),
+            np.real(s[:, -1]),
+            )
+        cminx = np.where(
+            np.real(c[:, 0]) < np.real(c[:, -1]),
+            np.real(c[:, 0]),
+            np.real(c[:, -1]),
+            )
+        smaxx = np.where(
+            np.real(s[:, 0]) > np.real(s[:, -1]),
+            np.real(s[:, 0]),
+            np.real(s[:, -1]),
+            )
+        cmaxy = np.where(
+            np.imag(c[:, 0]) > np.imag(c[:, -1]),
+            np.imag(c[:, 0]),
+            np.imag(c[:, -1]),
+            )
+        sminy = np.where(
+            np.imag(s[:, 0]) < np.imag(s[:, -1]),
+            np.imag(s[:, 0]),
+            np.imag(s[:, -1]),
+            )
+        cminy = np.where(
+            np.imag(c[:, 0]) < np.imag(c[:, -1]),
+            np.imag(c[:, 0]),
+            np.imag(c[:, -1]),
+            )
+        smaxy = np.where(
+            np.imag(s[:, 0]) > np.imag(s[:, -1]),
+            np.imag(s[:, 0]),
+            np.imag(s[:, -1]),
+            )
+        x0, y0 = np.meshgrid(cmaxx, sminx)
+        x1, y1 = np.meshgrid(cminx, smaxx)
+        x2, y2 = np.meshgrid(cmaxy, sminy)
+        x3, y3 = np.meshgrid(cminy, smaxy)
+
+        checks = np.dstack(
+            (
+                x0 > y0,
+                x1 < y1,
+                x2 > y2,
+                x3 < y3,
+            )
+        ).all(axis=2)
+        splits = [list() for _ in range(len(subject))]
+        for s0, s1 in sorted(np.argwhere(checks), key=lambda e: e[0], reverse=True):
+            splits[s0].extend([
+                t for t, _ in subject.intersections(int(s0), clip.segments[s1])
+            ])
+        return splits
+
+    def _splits_brute(self, subject, clip):
+        """
+        Find the subject clip splits by brute force (for debug testing).
+
+        @param subject:
+        @param clip:
+        @return:
+        """
+        splits = [list() for _ in range(len(subject))]
+        for s0 in range(len(subject)):
+            for s1 in range(len(clip)):
+                for t0, t1 in subject.intersections(int(s0), clip.segments[s1]):
+                    splits[s0].append(t0)
+
+        return splits
+
     def clip(self, subject, split=True):
+        """
+        Clip algorithm works in 3 steps. First find the splits between the subject and clip and split the subject at
+        all positions where it intersects clip. Remove any subject line segment whose midpoint is not found within
+        clip.
+
+        @param subject:
+        @param split:
+        @return:
+        """
         clip = self.clipping_shape
         if split:
-            s = subject.segments[: subject.index]
-            c = clip.segments[: clip.index]
-            cmaxx = np.where(
-                np.real(c[:, 0]) > np.real(c[:, -1]),
-                np.real(c[:, 0]),
-                np.real(c[:, -1]),
-            )
-            sminx = np.where(
-                np.real(s[:, 0]) < np.real(s[:, -1]),
-                np.real(s[:, 0]),
-                np.real(s[:, -1]),
-            )
-            cminx = np.where(
-                np.real(c[:, 0]) < np.real(c[:, -1]),
-                np.real(c[:, 0]),
-                np.real(c[:, -1]),
-            )
-            smaxx = np.where(
-                np.real(s[:, 0]) > np.real(s[:, -1]),
-                np.real(s[:, 0]),
-                np.real(s[:, -1]),
-            )
-            cmaxy = np.where(
-                np.imag(c[:, 0]) > np.imag(c[:, -1]),
-                np.imag(c[:, 0]),
-                np.imag(c[:, -1]),
-            )
-            sminy = np.where(
-                np.imag(s[:, 0]) < np.imag(s[:, -1]),
-                np.imag(s[:, 0]),
-                np.imag(s[:, -1]),
-            )
-            cminy = np.where(
-                np.imag(c[:, 0]) < np.imag(c[:, -1]),
-                np.imag(c[:, 0]),
-                np.imag(c[:, -1]),
-            )
-            smaxy = np.where(
-                np.imag(s[:, 0]) > np.imag(s[:, -1]),
-                np.imag(s[:, 0]),
-                np.imag(s[:, -1]),
-            )
-            x0, y0 = np.meshgrid(cmaxx, sminx)
-            x1, y1 = np.meshgrid(cminx, smaxx)
-            x2, y2 = np.meshgrid(cmaxy, sminy)
-            x3, y3 = np.meshgrid(cminy, smaxy)
+            splits = self._splits(subject, clip)
+            # splits2 = self._splits_brute(subject, clip)
+            # for q1, q2 in zip(splits, splits2):
+            #     assert(q1, q2)
 
-            checks = np.dstack(
-                (
-                    x0 > y0,
-                    x1 < y1,
-                    x2 > y2,
-                    x3 < y3,
-                )
-            ).all(axis=2)
-            # new_subject = Geomstr(s)
-            for s0, s1 in sorted(np.argwhere(checks), key=lambda e: e[0], reverse=True):
-                splits0 = [
-                    t for t, _ in subject.intersections(int(s0), clip.segments[s1])
-                ]
-                if len(splits0):
-                    split_lines = list(subject.split(s0, splits0))
-                    subject.replace(s0, s0, split_lines)
-
-        # Previous bruteforce.
-        # for i in range(clip.index):
-        #     for c in range(subject.index - 1, -1, -1):
-        #         for t0, t1 in sorted(
-        #             list(subject.intersections(c, clip.segments[i])),
-        #             key=lambda t: t[0],
-        #             reverse=True,
-        #         ):
-        #             subject.split(c, t0)
+            for s0 in range(len(splits) -1, -1, -1):
+                s = splits[s0]
+                if not s:
+                    continue
+                split_lines = list(subject.split(s0, s))
+                subject.replace(s0, s0, split_lines)
 
         sb = Scanbeam(clip)
         mid_points = subject.position(slice(subject.index), 0.5)
