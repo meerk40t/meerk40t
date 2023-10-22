@@ -681,13 +681,18 @@ class Elemental(Service):
         #     pnode.targeted = True
         #     pnode = pnode.parent
 
+    def unassigned_elements(self):
+        for e in self.elems():
+            if (e._references is None or len(e._references) == 0) and e.type not in (
+                "file",
+                "group",
+            ):
+                yield e
+
     def have_unassigned_elements(self):
-        unassigned = False
-        for node in self.elems():
-            if len(node._references) == 0 and node.type not in ("file", "group"):
-                unassigned = True
-                break
-        return unassigned
+        for node in self.unassigned_elements():
+            return True
+        return False
 
     def have_unburnable_elements(self):
         unassigned = False
@@ -1443,6 +1448,7 @@ class Elemental(Service):
             # Restore emphasized flags
             for e in emph_data:
                 e.emphasized = True
+        self.signal("element_property_reload", data)
 
     def remove_unused_default_copies(self):
         # Let's clean non-used operations that come from defaults...
