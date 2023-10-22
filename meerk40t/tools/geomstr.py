@@ -208,12 +208,14 @@ class Clip:
                     continue
                 split_lines = list(subject.split(s0, s))
                 subject.replace(s0, s0, split_lines)
-
+            subject.validate()
+        clip.validate()
         sb = Scanbeam(clip)
         mid_points = subject.position(slice(subject.index), 0.5)
         r = np.where(sb.points_in_polygon(mid_points))
         subject.segments = subject.segments[r]
         subject.index = len(subject.segments)
+        subject.validate()
         return subject
 
 
