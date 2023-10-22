@@ -185,6 +185,27 @@ class Clip:
 
         return splits
 
+    def _insides_only(self, subject, clip):
+        """
+        Modifies subject to only contain the segments found inside the given clip.
+        @param subject:
+        @param clip:
+        @return:
+        """
+        mid_points = subject.position(slice(subject.index), 0.5)
+
+        c = Geomstr()
+        # Pip currently only works with line segments
+        for sp in clip.as_subpaths():
+            for segs in sp.as_interpolated_segments(interpolate=100):
+                c.polyline(segs)
+                c.end()
+        sb = Scanbeam(c)
+        r = np.where(sb.points_in_polygon(mid_points))
+
+        subject.segments = subject.segments[r]
+        subject.index = len(subject.segments)
+
     def clip(self, subject, split=True):
         """
         Clip algorithm works in 3 steps. First find the splits between the subject and clip and split the subject at
@@ -210,11 +231,7 @@ class Clip:
                 subject.replace(s0, s0, split_lines)
             subject.validate()
         clip.validate()
-        sb = Scanbeam(clip)
-        mid_points = subject.position(slice(subject.index), 0.5)
-        r = np.where(sb.points_in_polygon(mid_points))
-        subject.segments = subject.segments[r]
-        subject.index = len(subject.segments)
+        self._insides_only(subject, clip)
         subject.validate()
         return subject
 
