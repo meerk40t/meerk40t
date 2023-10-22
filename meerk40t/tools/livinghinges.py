@@ -533,7 +533,9 @@ class HingePanel(wx.Panel):
         self.button_generate.Enable(False)
         self.button_generate.SetLabel(_("Processing..."))
         start_time = time()
-        if self.hinge_generator.outershape is not None:
+        if self.hinge_generator.outershape is not None and hasattr(
+            self.hinge_generator.outershape, "as_geometry"
+        ):
             # As we have a reference shape, we make sure
             # we update the information...
             units = self.context.units_name
@@ -917,7 +919,7 @@ class HingePanel(wx.Panel):
             self.slider_param_b.SetValue(int(10 * self.hinge_param_b))
         if require_sync:
             self.sync_controls(True)
-        flag = wd > 0 and ht > 0
+        flag = wd > 0 and ht > 0 and self.hinge_generator.outershape is not None
         self.button_generate.Enable(flag)
         self.Layout()
 
@@ -931,9 +933,11 @@ class HingePanel(wx.Panel):
                 bounds = node.bbox()
                 self.hinge_generator.set_hinge_shape(first_selected)
                 flag = False
+                self.button_generate.Enable(True)
                 break
         if flag:
             self.hinge_generator.set_hinge_shape(None)
+            self.button_generate.Enable(False)
             if units in ("in", "inch"):
                 s = "2in"
             else:
