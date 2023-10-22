@@ -1791,35 +1791,20 @@ class BalorDevice(Service):
             """
             if data is None:
                 data = list(self.elements.elems(emphasized=True))
-            pts = []
+            g = Geomstr()
             for e in data:
-                if e.type == "elem image":
+                if hasattr(e, "as_image"):
                     bounds = e.bounds
-                    pts += [
-                        (bounds[0], bounds[1]),
-                        (bounds[0], bounds[3]),
-                        (bounds[2], bounds[1]),
-                        (bounds[2], bounds[3]),
-                    ]
+                    g.append(Geomstr.rect(bounds[0], bounds[1], bounds[2] - bounds[0], bounds[3] - bounds[1]))
                 elif e.type == "elem text":
                     continue  # We can't outline text.
                 else:
-                    try:
-                        path = abs(Path(e.shape))
-                    except AttributeError:
-                        try:
-                            path = abs(e.path)
-                        except AttributeError:
-                            continue
-                    pts += [q for q in path.as_points()]
-            hull = [p for p in Point.convex_hull(pts)]
+                    g.append(e.as_geometry())
+            hull = Geomstr.hull(g)
             if len(hull) == 0:
                 channel(_("No elements bounds to trace."))
                 return
-            hull.append(hull[0])  # loop
-            hull = list(map(complex, hull))
-            geometry = Geomstr.lines(*hull)
-            return "geometry", geometry
+            return "geometry", hull
 
         def ant_points(points, steps):
             points = list(points)

@@ -1,4 +1,5 @@
 import platform
+from copy import copy
 from math import isinf
 from time import time
 
@@ -728,7 +729,8 @@ class Drag(wx.Panel):
         first_node = e[0]
         if first_node.type == "elem path":
             try:
-                pos = first_node.path.first_point * first_node.matrix
+                g = first_node.as_geometry()
+                pos = g.first_point
             except (IndexError, AttributeError):
                 return
         elif first_node.type == "elem image":
