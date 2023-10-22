@@ -154,11 +154,8 @@ class LivingHinges:
         if outer_path is None:
             return
         self.path = Geomstr()
-        clip = Geomstr()
-        for sp in outer_path.as_subpaths():
-            for segs in sp.as_interpolated_segments(interpolate=100):
-                clip.polyline(segs)
-                clip.end()
+
+        clip = outer_path
 
         q = Clip(clip)
         subject = Geomstr()
