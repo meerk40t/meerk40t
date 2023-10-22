@@ -98,6 +98,15 @@ class Clip:
         self.bounds = shape.bbox()
 
     def _splits(self, subject, clip):
+        """
+        Calculate the splits in `subject` by the clip. This should return a list of t positions with the list being
+        as long as the number of segments in subject. Finds all intersections between subject and clip and the given
+        split positions (of subject) that would make the intersection list non-existant.
+
+        @param subject:
+        @param clip:
+        @return:
+        """
         s = subject.segments[: subject.index]
         c = clip.segments[: clip.index]
         cmaxx = np.where(
@@ -161,6 +170,13 @@ class Clip:
         return splits
 
     def _splits_brute(self, subject, clip):
+        """
+        Find the subject clip splits by brute force (for debug testing).
+
+        @param subject:
+        @param clip:
+        @return:
+        """
         splits = [list() for _ in range(len(subject))]
         for s0 in range(len(subject)):
             for s1 in range(len(clip)):
@@ -170,6 +186,15 @@ class Clip:
         return splits
 
     def clip(self, subject, split=True):
+        """
+        Clip algorithm works in 3 steps. First find the splits between the subject and clip and split the subject at
+        all positions where it intersects clip. Remove any subject line segment whose midpoint is not found within
+        clip.
+
+        @param subject:
+        @param split:
+        @return:
+        """
         clip = self.clipping_shape
         if split:
             splits = self._splits(subject, clip)
