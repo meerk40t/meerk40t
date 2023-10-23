@@ -153,7 +153,6 @@ class Clip:
         @return:
         """
         clip = self.clipping_shape
-        mid_points = subject.position(slice(subject.index), 0.5)
         c = Geomstr()
         # Pip currently only works with line segments
         for sp in clip.as_subpaths():
@@ -162,23 +161,22 @@ class Clip:
                 c.close()
                 c.end()
         sb = Scanbeam(c)
-        r = np.where(sb.points_in_polygon(mid_points))
 
-        # s = np.where(sb.points_in_polygon(subject.position(slice(subject.index), 0.05)))[0]
-        # e = np.where(sb.points_in_polygon(subject.position(slice(subject.index), 0.95)))[0]
-        # print("START WHISKERS")
-        # for q in r[0]:
-        #     if q not in s:
-        #         print("Whisker")
-        #     if q not in e:
-        #         print(subject.segments[q])
-        #         print("Whisker2")
-        # print("END WHISKERS")
+        mid_points = subject.position(slice(subject.index), 0.5)
+        r = np.where(sb.points_in_polygon(mid_points))
 
         subject.segments = subject.segments[r]
         subject.index = len(subject.segments)
+        return subject
 
     def polycut(self, subject):
+        """
+        Performs polycut on the subject using the preset clipping shape. This only prevents intersections making all
+        intersections into divided segments.
+
+        @param subject:
+        @return:
+        """
         clip = self.clipping_shape
         splits = self._splits(subject, clip)
         # splits2 = self._splits_brute(subject, clip)
@@ -194,7 +192,6 @@ class Clip:
         subject.validate()
         return subject
 
-
     def clip(self, subject, split=True):
         """
         Clip algorithm works in 3 steps. First find the splits between the subject and clip and split the subject at
@@ -207,8 +204,7 @@ class Clip:
         """
         if split:
             self.polycut(subject)
-        self.inside(subject)
-        return subject
+        return self.inside(subject)
 
 
 class Pattern:
