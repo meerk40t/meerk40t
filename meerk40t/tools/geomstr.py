@@ -292,26 +292,36 @@ class Pattern:
         ch = self.cell_height
         px = self.padding_x
         py = self.padding_y
-        cx = cw + px * 2
-        cy = ch + py * 2
-        start_index_x = math.floor(x0 / cx) - 1
-        start_index_y = math.floor(y0 / cy) - 1
-        end_index_x = math.ceil(x1 / cx) + 1
-        end_index_y = math.ceil(y1 / cy) + 1
+        if cw + 2 * px == 0:
+            cols = 1
+        else:
+            cols = int(((x1 - x0) + cw) / (cw + 2 * px)) + 1
+        if ch + 2 * py == 0:
+            rows = 1
+        else:
+            rows = int(((y1 - y0) + ch) / (ch + 2 * py)) + 1
 
         if self.extend_pattern:
-            row_offset = -0.5 * self.cell_width
-            start_index_x -= 1
+            start_value = -2
+            end_value = 1
+            off_x = -1 * (cw / 2)
         else:
-            row_offset = 0
+            cols = max(1, cols - 2)
+            rows = max(1, rows - 2)
+            start_value = 0
+            end_value = 0
+            off_x = 0
+        top_left_x = x0 + off_x
+        for col in range(start_value, cols + end_value, 1):
+            x_offset = col * (cw + 2 * px)
+            x = top_left_x + x_offset
+            for row in range(start_value, rows + end_value, 1):
+                top_left_y = y0
+                y_offset = row * (ch + 2 * py)
+                if col % 2:
+                    y_offset += (ch + 2 * py) / 2
+                y = top_left_y + y_offset
 
-        for c in range(start_index_x, end_index_x):
-            x = c * cx + row_offset
-            for r in range(start_index_y, end_index_y):
-                y = r * cy
-                if c % 2:
-                    y += 0.5 * cy
-                # Don't call draw if outside of hinge area
                 m = Matrix.scale(cw, ch)
                 m *= Matrix.translate(x - self.offset_x, y - self.offset_y)
                 yield self.geomstr.as_transformed(m)
