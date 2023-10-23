@@ -1836,6 +1836,33 @@ class Geomstr:
     # Universal Functions
     #######################
 
+    def aabb(self):
+        """
+        Calculate the per-segment `Axis Aligned Bounding Box` of each individual segment
+
+        @return:
+        """
+        c = self.segments[:self.index]
+        infos = np.real(c[:,2]).astype(int)
+
+        xs = np.dstack(
+            (
+                np.real(c[:, 0]),
+                np.real(c[:, 4]),
+                np.where(infos & 0b0100, np.real(c[:,1]), np.real(c[:, 0])),
+                np.where(infos & 0b0010, np.real(c[:,3]), np.real(c[:, 4])),
+            )
+        )
+        ys = np.dstack(
+            (
+                np.imag(c[:, 0]),
+                np.imag(c[:, 4]),
+                np.where(infos & 0b0100, np.imag(c[:,1]), np.imag(c[:, 0])),
+                np.where(infos & 0b0010, np.imag(c[:,3]), np.imag(c[:, 4])),
+            )
+        )
+        return xs.min(axis=2), ys.min(axis=2), xs.max(axis=2), ys.max(axis=2)
+
     def bbox(self, mx=None, e=None):
         """
         Get the bounds of the given geom primitive
