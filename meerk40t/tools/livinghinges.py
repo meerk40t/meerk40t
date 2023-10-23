@@ -103,7 +103,7 @@ class HingePanel(wx.Panel):
             self,
             wx.ID_ANY,
             0,
-            int(1 - _FACTOR / 2),
+            int(1 - _FACTOR / 2) + 1,
             int(_FACTOR / 2),
             style=wx.SL_HORIZONTAL,
         )
@@ -118,7 +118,7 @@ class HingePanel(wx.Panel):
             self,
             wx.ID_ANY,
             0,
-            int(1 - _FACTOR / 2),
+            int(1 - _FACTOR / 2) + 1,
             int(_FACTOR / 2),
             style=wx.SL_HORIZONTAL,
         )

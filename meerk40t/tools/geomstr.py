@@ -208,7 +208,6 @@ class Pattern:
         self.cell_height = y1 - y0
         self.padding_x = 0
         self.padding_y = 0
-        self.extend_pattern = False
 
     def create_from_pattern(self, pattern, a=None, b=None, *args, **kwargs):
         """
@@ -292,31 +291,73 @@ class Pattern:
         ch = self.cell_height
         px = self.padding_x
         py = self.padding_y
-        if cw + 2 * px == 0:
+        if abs(cw + 2 * px) <= 1E-4:
             cols = 1
         else:
             cols = int(((x1 - x0) + cw) / (cw + 2 * px)) + 1
-        if ch + 2 * py == 0:
+        if abs(ch + 2 * py) <= 1E-4:
             rows = 1
         else:
             rows = int(((y1 - y0) + ch) / (ch + 2 * py)) + 1
 
-        if self.extend_pattern:
-            start_value = -2
-            end_value = 1
-            off_x = -1 * (cw / 2)
-        else:
-            cols = max(1, cols - 2)
-            rows = max(1, rows - 2)
-            start_value = 0
-            end_value = 0
-            off_x = 0
-        top_left_x = x0 + off_x
-        for col in range(start_value, cols + end_value, 1):
+        cols = max(1, cols - 2)
+        rows = max(1, rows - 2)
+
+        start_value_x = 0
+        col = 0
+        x_offset = (col + start_value_x) * (cw + 2 * px)
+        x = x0 + x_offset
+        while x >= x0 - cw and x < x1:
+            start_value_x -= 1
+            x_offset = (col + start_value_x) * (cw + 2 * px)
+            x = x0 + x_offset
+            # print (f"X-lower bound: sx={start_value_x}, x={x:.2f}, x0={x0:.2f}, x1={x1:.2f}")
+
+        end_value_x = 0
+        col = cols - 1
+        x_offset = (col + end_value_x) * (cw + 2 * px)
+        x = x0 + x_offset
+        while x >= x0 and x < x1:
+            end_value_x += 1
+            x_offset = (col + end_value_x) * (cw + 2 * px)
+            x = x0 + x_offset
+            # print (f"X-upper bound: ex={end_value_x}, x={x:.2f}, x0={x0:.2f}, x1={x1:.2f}")
+
+        start_value_y = 0
+        row = 0
+        y_offset = (row + start_value_y) * (ch + 2 * py)
+        y = y0 + y_offset
+        while y >= y0 - ch and y < y1:
+            start_value_y -= 1
+            y_offset = (row + start_value_y) * (ch + 2 * py)
+            y = y0 + y_offset
+            # print (f"Y-lower bound: sy={start_value_y}, y={y:.2f}, y0={y0:.2f}, y1={y1:.2f}")
+
+        end_value_y = 0
+        row = rows - 1
+        y_offset = (row + end_value_y) * (ch + 2 * py)
+        y = y0 + y_offset
+        while y >= y0 and y < y1:
+            end_value_y += 1
+            y_offset = (row + end_value_y) * (ch + 2 * py)
+            y = y0 + y_offset
+            # print (f"Y-upper bound: ey={end_value_y}, y={y:.2f}, y0={y0:.2f}, y1={y1:.2f}")
+
+        # print (f"Cols={cols}, s_x={start_value_x}, e_x={end_value_x}")
+        # print (f"Rows={rows}, s_y={start_value_y}, e_y={end_value_y}")
+
+        # start_value_x -= 2
+        # start_value_y -= 2
+        # end_value_x += 1
+        # end_value_y += 1
+
+        top_left_x = x0
+        for col in range(start_value_x, cols + end_value_x, 1):
             x_offset = col * (cw + 2 * px)
             x = top_left_x + x_offset
-            for row in range(start_value, rows + end_value, 1):
-                top_left_y = y0
+
+            top_left_y = y0
+            for row in range(start_value_y, rows + end_value_y, 1):
                 y_offset = row * (ch + 2 * py)
                 if col % 2:
                     y_offset += (ch + 2 * py) / 2
