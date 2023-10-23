@@ -17426,3 +17426,42 @@ msgstr "Leistung"
 msgid "Power usage for draw frame operation?"
 msgstr "Welche Leistung sollen bei Abfahren von Umrissen genutzt werden?"
 
+#: ./meerk40t\core\elements\element_treeops.py:958
+msgid "Delete %s selected items from %s (Ref=%s)"
+msgstr "Lösche %s ausgewählte Einträge von %s (Ref=%s)"
+
+#: ./meerk40t\core\elements\element_treeops.py:1409
+msgid "Generate operations if needed"
+msgstr "Erzeuge Arbeitsgng falls notwendig"
+
+#: ./meerk40t\core\elements\element_treeops.py:1419
+msgid "Refresh classification for all"
+msgstr "Erneuere Klassifizierung für alle Elemente"
+
+#: ./meerk40t\core\elements\element_treeops.py:1434
+msgid "Classification for unassigned"
+msgstr "Klassifizierung für nicht zugeordnete Elemente"
+
+#: ./meerk40t\core\elements\element_treeops.py:1436
+msgid "Classify unassigned elements and create operations if necessary"
+msgstr "Klassifiziere nicht zugeordnete Elemente und lege falls notwendig Arbeitsgänge an"
+
+#: ./meerk40t\core\elements\element_treeops.py:1449
+msgid "Use only existing operations"
+msgstr "Nur vorhandene Arbeitsgänge nutzen"
+
+#: ./meerk40t\core\elements\element_treeops.py:1461
+msgid "Reclassify all elements and use only existing operations"
+msgstr "Erneuere Klassifizierung für alle Elemente und nutze nur bestehende Arbeitsgänge"
+
+#: ./meerk40t\core\elements\element_treeops.py:1476
+msgid "Classify unassigned elements and use only existing operations"
+msgstr "Klassifiziere nicht zugeordnete Elemente und nutze nur bestehende Arbeitsgänge"
+
+#: ./meerk40t\core\elements\element_treeops.py:1798
+msgid "Append wobble {type} {radius} @{interval}"
+msgstr "Wobble-Effekt hinzufügen {type} {radius} @{interval}"
+
+#: ./meerk40t\gui\wxmtree.py:190
+msgid "Reactivate disabled operations that prevent elements from being burnt"
+msgstr "Aktiviere inaktive Arbeitsgänge, ohne die sonst Elemente nicht gebrennt würden"

@@ -1358,37 +1358,23 @@ def init_tree(kernel):
         node.reverse()
         self.signal("refresh_tree", list(self.flat(types="reference")))
 
-    @tree_separator_after()
-    @tree_conditional(lambda node: self.classify_autogenerate)
+    @tree_submenu(_("Classification"))
     @tree_operation(
-        _("Refresh classification"),
-        node_type="branch ops",
+        _("Generate operations if needed"),
+        node_type=("branch ops", "branch elems"),
+        help="",
+        enable=False,
+    )
+    def do_classification_comment_1(node, **kwargs):
+        return
+
+    @tree_submenu(_("Classification"))
+    @tree_operation(
+        _("Refresh classification for all"),
+        node_type=("branch ops", "branch elems"),
         help=_("Reclassify elements and create operations if necessary"),
     )
-    def refresh_clasifications_1(node, **kwargs):
-        self.remove_elements_from_operations(list(self.elems()))
-        self.classify(list(self.elems()))
-        self.signal("refresh_tree", list(self.flat(types="reference")))
-
-    @tree_conditional(lambda node: not self.classify_autogenerate)
-    @tree_operation(
-        _("Refresh classification"),
-        node_type="branch ops",
-        help=_("Reclassify elements and use only existing operations"),
-    )
-    def refresh_clasifications_2(node, **kwargs):
-        self.remove_elements_from_operations(list(self.elems()))
-        self.classify(list(self.elems()))
-        self.signal("refresh_tree", list(self.flat(types="reference")))
-
-    @tree_separator_after()
-    @tree_conditional(lambda node: not self.classify_autogenerate)
-    @tree_operation(
-        _("Refresh ... (incl autogeneration)"),
-        node_type="branch ops",
-        help=_("Reclassify elements and create operations if necessary"),
-    )
-    def refresh_clasifications_3(node, **kwargs):
+    def refresh_classification_for_all_std(node, **kwargs):
         previous = self.classify_autogenerate
         self.classify_autogenerate = True
         self.remove_elements_from_operations(list(self.elems()))
@@ -1396,10 +1382,65 @@ def init_tree(kernel):
         self.classify_autogenerate = previous
         self.signal("refresh_tree", list(self.flat(types="reference")))
 
+    @tree_conditional(lambda node: self.have_unassigned_elements())
+    @tree_submenu(_("Classification"))
+    @tree_operation(
+        _("Classification for unassigned"),
+        node_type=("branch ops", "branch elems"),
+        help=_("Classify unassigned elements and create operations if necessary"),
+    )
+    def do_classification_for_unassigned_std(node, **kwargs):
+        previous = self.classify_autogenerate
+        self.classify_autogenerate = True
+        target_list = list(self.unassigned_elements())
+        self.classify(target_list)
+        self.classify_autogenerate = previous
+        self.signal("refresh_tree", list(self.flat(types="reference")))
+
+    @tree_submenu(_("Classification"))
+    @tree_separator_before()
+    @tree_operation(
+        _("Use only existing operations"),
+        node_type=("branch ops", "branch elems"),
+        help="",
+        enable=False,
+    )
+    def do_classification_comment_2(node, **kwargs):
+        return
+
+    @tree_submenu(_("Classification"))
+    @tree_operation(
+        _("Refresh classification for all"),
+        node_type=("branch ops", "branch elems"),
+        help=_("Reclassify all elements and use only existing operations"),
+    )
+    def refresh_classification_for_all_existing_only(node, **kwargs):
+        previous = self.classify_autogenerate
+        self.classify_autogenerate = False
+        self.remove_elements_from_operations(list(self.elems()))
+        self.classify(list(self.elems()))
+        self.classify_autogenerate = previous
+        self.signal("refresh_tree", list(self.flat(types="reference")))
+
+    @tree_submenu(_("Classification"))
+    @tree_conditional(lambda node: self.have_unassigned_elements())
+    @tree_operation(
+        _("Classification for unassigned"),
+        node_type=("branch ops", "branch elems"),
+        help=_("Classify unassigned elements and use only existing operations"),
+    )
+    def do_classification_for_unassigned_existing_only(node, **kwargs):
+        previous = self.classify_autogenerate
+        self.classify_autogenerate = False
+        target_list = list(self.unassigned_elements())
+        self.classify(target_list)
+        self.classify_autogenerate = previous
+        self.signal("refresh_tree", list(self.flat(types="reference")))
+
     @tree_conditional(lambda cond: self.have_unassigned_elements())
     @tree_operation(
         _("Select unassigned elements"),
-        node_type="branch ops",
+        node_type=("branch ops", "branch elems"),
         help=_("Select all elements that won't be burned"),
     )
     def select_unassigned(node, **kwargs):
@@ -1441,6 +1482,7 @@ def init_tree(kernel):
         difference = [m for m in materials if m not in secs]
         return difference
 
+    @tree_separator_before()
     @tree_submenu(_("Load"))
     @tree_values("opname", values=self.op_data.section_set)
     @tree_operation("{opname}", node_type="branch ops", help="")
@@ -1634,13 +1676,6 @@ def init_tree(kernel):
             corner=0,
         )
         self.signal("updateop_tree")
-
-    @tree_operation(_("Reclassify operations"), node_type="branch elems", help="")
-    def reclassify_operations(node, **kwargs):
-        elems = list(self.elems())
-        self.remove_elements_from_operations(elems)
-        self.classify(list(self.elems()))
-        self.signal("refresh_tree")
 
     @tree_operation(
         _("Remove all assignments from operations"),
