@@ -87,7 +87,7 @@ class NewlyDevice(Service):
                     },
                     {
                         "attr": "corner_speed",
-                        "type": 120,
+                        "type": int,
                         "label": _("Corner Speed"),
                         "width": 133,
                         "editable": True,
