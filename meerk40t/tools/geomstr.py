@@ -107,48 +107,8 @@ class Clip:
         @param clip:
         @return:
         """
-        s = subject.segments[: subject.index]
-        c = clip.segments[: clip.index]
-        cmaxx = np.where(
-            np.real(c[:, 0]) > np.real(c[:, -1]),
-            np.real(c[:, 0]),
-            np.real(c[:, -1]),
-            )
-        sminx = np.where(
-            np.real(s[:, 0]) < np.real(s[:, -1]),
-            np.real(s[:, 0]),
-            np.real(s[:, -1]),
-            )
-        cminx = np.where(
-            np.real(c[:, 0]) < np.real(c[:, -1]),
-            np.real(c[:, 0]),
-            np.real(c[:, -1]),
-            )
-        smaxx = np.where(
-            np.real(s[:, 0]) > np.real(s[:, -1]),
-            np.real(s[:, 0]),
-            np.real(s[:, -1]),
-            )
-        cmaxy = np.where(
-            np.imag(c[:, 0]) > np.imag(c[:, -1]),
-            np.imag(c[:, 0]),
-            np.imag(c[:, -1]),
-            )
-        sminy = np.where(
-            np.imag(s[:, 0]) < np.imag(s[:, -1]),
-            np.imag(s[:, 0]),
-            np.imag(s[:, -1]),
-            )
-        cminy = np.where(
-            np.imag(c[:, 0]) < np.imag(c[:, -1]),
-            np.imag(c[:, 0]),
-            np.imag(c[:, -1]),
-            )
-        smaxy = np.where(
-            np.imag(s[:, 0]) > np.imag(s[:, -1]),
-            np.imag(s[:, 0]),
-            np.imag(s[:, -1]),
-            )
+        cminx, cminy, cmaxx, cmaxy = clip.aabb()
+        sminx, sminy, smaxx, smaxy = subject.aabb()
         x0, y0 = np.meshgrid(cmaxx, sminx)
         x1, y1 = np.meshgrid(cminx, smaxx)
         x2, y2 = np.meshgrid(cmaxy, sminy)
@@ -1835,6 +1795,33 @@ class Geomstr:
     #######################
     # Universal Functions
     #######################
+
+    def aabb(self):
+        """
+        Calculate the per-segment `Axis Aligned Bounding Box` of each individual segment
+
+        @return:
+        """
+        c = self.segments[:self.index]
+        infos = np.real(c[:,2]).astype(int)
+
+        xs = np.dstack(
+            (
+                np.real(c[:, 0]),
+                np.real(c[:, 4]),
+                np.where(infos & 0b0100, np.real(c[:,1]), np.real(c[:, 0])),
+                np.where(infos & 0b0010, np.real(c[:,3]), np.real(c[:, 4])),
+            )
+        )
+        ys = np.dstack(
+            (
+                np.imag(c[:, 0]),
+                np.imag(c[:, 4]),
+                np.where(infos & 0b0100, np.imag(c[:,1]), np.imag(c[:, 0])),
+                np.where(infos & 0b0010, np.imag(c[:,3]), np.imag(c[:, 4])),
+            )
+        )
+        return xs.min(axis=2), ys.min(axis=2), xs.max(axis=2), ys.max(axis=2)
 
     def bbox(self, mx=None, e=None):
         """
