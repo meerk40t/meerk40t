@@ -178,6 +178,23 @@ class Clip:
         subject.segments = subject.segments[r]
         subject.index = len(subject.segments)
 
+    def polycut(self, subject):
+        clip = self.clipping_shape
+        splits = self._splits(subject, clip)
+        # splits2 = self._splits_brute(subject, clip)
+        # for q1, q2 in zip(splits, splits2):
+        #     assert(q1, q2)
+
+        for s0 in range(len(splits) -1, -1, -1):
+            s = splits[s0]
+            if not s:
+                continue
+            split_lines = list(subject.split(s0, s))
+            subject.replace(s0, s0, split_lines)
+        subject.validate()
+        return subject
+
+
     def clip(self, subject, split=True):
         """
         Clip algorithm works in 3 steps. First find the splits between the subject and clip and split the subject at
@@ -188,23 +205,9 @@ class Clip:
         @param split:
         @return:
         """
-        clip = self.clipping_shape
         if split:
-            splits = self._splits(subject, clip)
-            # splits2 = self._splits_brute(subject, clip)
-            # for q1, q2 in zip(splits, splits2):
-            #     assert(q1, q2)
-
-            for s0 in range(len(splits) -1, -1, -1):
-                s = splits[s0]
-                if not s:
-                    continue
-                split_lines = list(subject.split(s0, s))
-                subject.replace(s0, s0, split_lines)
-            subject.validate()
-        clip.validate()
-        self._insides_only(subject, clip)
-        subject.validate()
+            self.polycut(subject)
+        self.inside(subject)
         return subject
 
 
