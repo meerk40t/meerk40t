@@ -3,7 +3,11 @@ from copy import copy
 import wx
 
 from meerk40t.core.units import ACCEPTED_UNITS, Length
+
 from meerk40t.fill.patterns import LivingHinges
+
+# from meerk40t.fill.patternfill import LivingHinges
+
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_hinges_50
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
@@ -489,7 +493,7 @@ class HingePanel(wx.Panel):
                 )
                 gc.SetPen(mypen_path)
                 gspath = self.hinge_generator.preview_path
-                if gspath is not None:
+                if gspath is not None and self.hinge_generator.outershape is not None:
                     if isinstance(gspath, Path):
                         bb = self.hinge_generator.outershape.bbox()
                         gspath.transform *= Matrix.translate(-bb[0], -bb[1])
@@ -533,7 +537,9 @@ class HingePanel(wx.Panel):
         self.button_generate.Enable(False)
         self.button_generate.SetLabel(_("Processing..."))
         start_time = time()
-        if self.hinge_generator.outershape is not None:
+        if self.hinge_generator.outershape is not None and hasattr(
+            self.hinge_generator.outershape, "as_geometry"
+        ):
             # As we have a reference shape, we make sure
             # we update the information...
             units = self.context.units_name
@@ -917,7 +923,7 @@ class HingePanel(wx.Panel):
             self.slider_param_b.SetValue(int(10 * self.hinge_param_b))
         if require_sync:
             self.sync_controls(True)
-        flag = wd > 0 and ht > 0
+        flag = wd > 0 and ht > 0 and self.hinge_generator.outershape is not None
         self.button_generate.Enable(flag)
         self.Layout()
 
@@ -931,9 +937,11 @@ class HingePanel(wx.Panel):
                 bounds = node.bbox()
                 self.hinge_generator.set_hinge_shape(first_selected)
                 flag = False
+                self.button_generate.Enable(True)
                 break
         if flag:
             self.hinge_generator.set_hinge_shape(None)
+            self.button_generate.Enable(False)
             if units in ("in", "inch"):
                 s = "2in"
             else:

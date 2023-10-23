@@ -568,7 +568,7 @@ class PositionPanel(wx.Panel):
             try:
                 w = Length(
                     self.text_w.GetValue(),
-                    relative_length=self.context.view.width,
+                    relative_length=self.context.device.view.width,
                     unitless=UNITS_PER_PIXEL,
                     preferred_units=self.context.units_name,
                 )
@@ -600,7 +600,7 @@ class PositionPanel(wx.Panel):
             try:
                 h = Length(
                     self.text_h.GetValue(),
-                    relative_length=self.context.view.height,
+                    relative_length=self.context.device.view.height,
                     unitless=UNITS_PER_PIXEL,
                     preferred_units=self.context.units_name,
                 )
@@ -631,7 +631,7 @@ class PositionPanel(wx.Panel):
             try:
                 pos_x = Length(
                     self.text_h.GetValue(),
-                    relative_length=self.context.view.height,
+                    relative_length=self.context.device.view.height,
                     unitless=UNITS_PER_PIXEL,
                     preferred_units=self.context.units_name,
                 )
@@ -649,7 +649,7 @@ class PositionPanel(wx.Panel):
             try:
                 pos_y = Length(
                     self.text_h.GetValue(),
-                    relative_length=self.context.view.width,
+                    relative_length=self.context.device.view.width,
                     unitless=UNITS_PER_PIXEL,
                     preferred_units=self.context.units_name,
                 )

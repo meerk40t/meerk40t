@@ -107,48 +107,8 @@ class Clip:
         @param clip:
         @return:
         """
-        s = subject.segments[: subject.index]
-        c = clip.segments[: clip.index]
-        cmaxx = np.where(
-            np.real(c[:, 0]) > np.real(c[:, -1]),
-            np.real(c[:, 0]),
-            np.real(c[:, -1]),
-            )
-        sminx = np.where(
-            np.real(s[:, 0]) < np.real(s[:, -1]),
-            np.real(s[:, 0]),
-            np.real(s[:, -1]),
-            )
-        cminx = np.where(
-            np.real(c[:, 0]) < np.real(c[:, -1]),
-            np.real(c[:, 0]),
-            np.real(c[:, -1]),
-            )
-        smaxx = np.where(
-            np.real(s[:, 0]) > np.real(s[:, -1]),
-            np.real(s[:, 0]),
-            np.real(s[:, -1]),
-            )
-        cmaxy = np.where(
-            np.imag(c[:, 0]) > np.imag(c[:, -1]),
-            np.imag(c[:, 0]),
-            np.imag(c[:, -1]),
-            )
-        sminy = np.where(
-            np.imag(s[:, 0]) < np.imag(s[:, -1]),
-            np.imag(s[:, 0]),
-            np.imag(s[:, -1]),
-            )
-        cminy = np.where(
-            np.imag(c[:, 0]) < np.imag(c[:, -1]),
-            np.imag(c[:, 0]),
-            np.imag(c[:, -1]),
-            )
-        smaxy = np.where(
-            np.imag(s[:, 0]) > np.imag(s[:, -1]),
-            np.imag(s[:, 0]),
-            np.imag(s[:, -1]),
-            )
+        cminx, cminy, cmaxx, cmaxy = clip.aabb()
+        sminx, sminy, smaxx, smaxy = subject.aabb()
         x0, y0 = np.meshgrid(cmaxx, sminx)
         x1, y1 = np.meshgrid(cminx, smaxx)
         x2, y2 = np.meshgrid(cmaxy, sminy)
@@ -332,26 +292,36 @@ class Pattern:
         ch = self.cell_height
         px = self.padding_x
         py = self.padding_y
-        cx = cw + px * 2
-        cy = ch + py * 2
-        start_index_x = math.floor(x0 / cx) - 1
-        start_index_y = math.floor(y0 / cy) - 1
-        end_index_x = math.ceil(x1 / cx) + 1
-        end_index_y = math.ceil(y1 / cy) + 1
+        if cw + 2 * px == 0:
+            cols = 1
+        else:
+            cols = int(((x1 - x0) + cw) / (cw + 2 * px)) + 1
+        if ch + 2 * py == 0:
+            rows = 1
+        else:
+            rows = int(((y1 - y0) + ch) / (ch + 2 * py)) + 1
 
         if self.extend_pattern:
-            row_offset = -0.5 * self.cell_width
-            start_index_x -= 1
+            start_value = -2
+            end_value = 1
+            off_x = -1 * (cw / 2)
         else:
-            row_offset = 0
+            cols = max(1, cols - 2)
+            rows = max(1, rows - 2)
+            start_value = 0
+            end_value = 0
+            off_x = 0
+        top_left_x = x0 + off_x
+        for col in range(start_value, cols + end_value, 1):
+            x_offset = col * (cw + 2 * px)
+            x = top_left_x + x_offset
+            for row in range(start_value, rows + end_value, 1):
+                top_left_y = y0
+                y_offset = row * (ch + 2 * py)
+                if col % 2:
+                    y_offset += (ch + 2 * py) / 2
+                y = top_left_y + y_offset
 
-        for c in range(start_index_x, end_index_x):
-            x = c * cx + row_offset
-            for r in range(start_index_y, end_index_y):
-                y = r * cy
-                if c % 2:
-                    y += 0.5 * cy
-                # Don't call draw if outside of hinge area
                 m = Matrix.scale(cw, ch)
                 m *= Matrix.translate(x - self.offset_x, y - self.offset_y)
                 yield self.geomstr.as_transformed(m)
@@ -2035,6 +2005,33 @@ class Geomstr:
     #######################
     # Universal Functions
     #######################
+
+    def aabb(self):
+        """
+        Calculate the per-segment `Axis Aligned Bounding Box` of each individual segment
+
+        @return:
+        """
+        c = self.segments[:self.index]
+        infos = np.real(c[:,2]).astype(int)
+
+        xs = np.dstack(
+            (
+                np.real(c[:, 0]),
+                np.real(c[:, 4]),
+                np.where(infos & 0b0100, np.real(c[:,1]), np.real(c[:, 0])),
+                np.where(infos & 0b0010, np.real(c[:,3]), np.real(c[:, 4])),
+            )
+        )
+        ys = np.dstack(
+            (
+                np.imag(c[:, 0]),
+                np.imag(c[:, 4]),
+                np.where(infos & 0b0100, np.imag(c[:,1]), np.imag(c[:, 0])),
+                np.where(infos & 0b0010, np.imag(c[:,3]), np.imag(c[:, 4])),
+            )
+        )
+        return xs.min(axis=2), ys.min(axis=2), xs.max(axis=2), ys.max(axis=2)
 
     def bbox(self, mx=None, e=None):
         """
