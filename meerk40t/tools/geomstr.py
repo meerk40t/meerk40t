@@ -1205,6 +1205,11 @@ class Geomstr:
 
         return cls.wobble(algorithm, outer, radius, interval, speed)
 
+    def flag_settings(self):
+        for i in range(self.index):
+            info = self.segments[i][2]
+            self.segments[i][2] = complex(info.real, i)
+
     def copies(self, n):
         segs = self.segments[: self.index]
         self.segments = np.vstack([segs] * n)
