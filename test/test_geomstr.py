@@ -8,7 +8,7 @@ from math import tau
 import numpy as np
 
 from meerk40t.fill.fills import scanline_fill
-from meerk40t.fill.patterns import set_diamond1
+from meerk40t.fill.patterns import set_diamond1, set_line
 from meerk40t.svgelements import Arc, CubicBezier, Line, Matrix, QuadraticBezier
 from meerk40t.tools.geomstr import (
     TYPE_LINE,
@@ -1005,7 +1005,6 @@ class TestGeomstr(unittest.TestCase):
             pass
 
     def test_point_in_polygon(self):
-
         t1 = 0
         t2 = 0
         f = set_diamond1
@@ -1040,6 +1039,51 @@ class TestGeomstr(unittest.TestCase):
             )
         except ZeroDivisionError:
             print(f"{t2} vs {t1}")
+
+    def test_livinghinge_whiskers(self):
+        ellipse = Geomstr.ellipse(
+            rx=96436.11909338088,
+            ry=96436.11909338088,
+            cx=550118.9389283657,
+            cy=363374.1254904113,
+        )
+        p = Pattern()
+        p.create_from_pattern(set_line, 0, 0, outershape=ellipse)
+        p.set_cell_padding(-11377.615848868112, -257.2803475393701)
+        p.set_cell_dims(65766.56560039372, 5593.051033464568)
+        p.extend_pattern = True
+
+        outer_path = ellipse
+        if outer_path is None:
+            return
+        self.path = Geomstr()
+
+        clip = outer_path
+
+        q = Clip(clip)
+        subject = Geomstr()
+        for s in list(p.generate(*q.bounds)):
+            subject.append(s)
+
+        subject.flag_settings()
+        self.path.append(q.clip(subject))
+        #
+        # r = np.where(sb.points_in_polygon(mid_points))
+        #
+        # s = np.where(
+        #     sb.points_in_polygon(subject.position(slice(subject.index), 0.05))
+        # )[0]
+        # e = np.where(
+        #     sb.points_in_polygon(subject.position(slice(subject.index), 0.95))
+        # )[0]
+        # print("START WHISKERS")
+        # for q in r[0]:
+        #     if q not in s:
+        #         print("Whisker")
+        #     if q not in e:
+        #         print(subject.segments[q])
+        #         print("Whisker2")
+        # print("END WHISKERS")
 
     def test_point_towards_numpy(self):
         p1 = complex(0, 100)
@@ -1251,7 +1295,6 @@ class TestGeomstr(unittest.TestCase):
         g = Geomstr.rect(0, 0, 200, 200)
         nx, ny, mx, my = g.aabb()
         print(nx)
-
 
     # def test_geomstr_hatch(self):
     #     gs = Geomstr.svg(
