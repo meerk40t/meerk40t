@@ -8,6 +8,7 @@ from math import tau
 import numpy as np
 
 from meerk40t.fill.fills import scanline_fill
+from meerk40t.fill.patterns import set_diamond1
 from meerk40t.svgelements import Arc, CubicBezier, Line, Matrix, QuadraticBezier
 from meerk40t.tools.geomstr import (
     TYPE_LINE,
@@ -776,8 +777,6 @@ class TestGeomstr(unittest.TestCase):
         print(results)
 
     def test_pattern_generation(self):
-        from meerk40t.fill.patternfill import set_diamond1
-
         f = set_diamond1
         p = Pattern()
         p.create_from_pattern(f)
@@ -794,8 +793,6 @@ class TestGeomstr(unittest.TestCase):
             # self.assertTrue((array == array2).all())
 
     def test_pattern_generation_counts(self):
-        from meerk40t.fill.patternfill import set_diamond1
-
         f = set_diamond1
         p = Pattern()
         p.create_from_pattern(f)
@@ -812,8 +809,6 @@ class TestGeomstr(unittest.TestCase):
         print("finished.")
 
     def test_pattern_clip(self):
-        from meerk40t.fill.patternfill import set_diamond1
-
         t = time.time()
         f = set_diamond1
         p = Pattern()
@@ -1010,7 +1005,6 @@ class TestGeomstr(unittest.TestCase):
             pass
 
     def test_point_in_polygon(self):
-        from meerk40t.fill.patternfill import set_diamond1
 
         t1 = 0
         t2 = 0
