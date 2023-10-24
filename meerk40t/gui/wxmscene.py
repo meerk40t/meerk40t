@@ -1292,10 +1292,16 @@ class MeerK40tScenePanel(wx.Panel):
 
     @signal_listener("pipe;running")
     def on_driver_mode(self, origin, state):
+        new_color = None
         if state:
-            self.widget_scene.overrule_background = wx.RED
+            new_color = wx.RED
         else:
-            self.widget_scene.overrule_background = None
+            try:
+                if self.context.device.driver.paused:
+                    new_color = wx.YELLOW
+            except AttributeError:
+                pass
+        self.widget_scene.overrule_background = new_color
         self.widget_scene.request_refresh_for_animation()
 
     @signal_listener("background")
