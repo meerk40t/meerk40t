@@ -1040,6 +1040,18 @@ class TestGeomstr(unittest.TestCase):
         except ZeroDivisionError:
             print(f"{t2} vs {t1}")
 
+    def test_intersections_near(self):
+        for r1 in np.linspace(0,100,5):
+            r2 = r1 + 0.0001
+            circle1 = Geomstr.circle(cx=0, cy=0, r=r1)
+            circle2 = Geomstr.circle(cx=0, cy=0, r=r2)
+            circle1.rotate(r1)
+            for j in range(circle1.index):
+                for k in range(circle2.index):
+                    c = list(circle1.intersections(circle1.segments[j], circle2.segments[k]))
+                    print(r1, r2)
+                    self.assertFalse(c)
+
     def test_livinghinge_whiskers2(self):
         clip = Geomstr.ellipse(
             rx=96436.11909338088,
