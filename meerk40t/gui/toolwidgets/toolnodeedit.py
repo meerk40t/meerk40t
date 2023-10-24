@@ -45,7 +45,6 @@ class EditTool(ToolWidget):
         self.path = None
         self.element = None
         self.selected_index = None
-        self.anyselected = False
 
         self.move_type = "node"
         self.node_type = "path"
@@ -65,6 +64,8 @@ class EditTool(ToolWidget):
         self.pen_selection = wx.Pen()
         self.pen_selection.SetColour(self.scene.colors.color_selection3)
         self.pen_selection.SetStyle(wx.PENSTYLE_SHORT_DASH)
+        self.brush_highlight = wx.Brush(wx.RED_BRUSH)
+        self.brush_normal = wx.Brush(wx.TRANSPARENT_BRUSH)
         # want to have sharp edges
         self.pen_selection.SetJoin(wx.JOIN_MITER)
         # "key": (routine, info, available for poly, available for path)
@@ -808,13 +809,19 @@ class EditTool(ToolWidget):
             if entry["type"] == "point":
                 if idx == self.selected_index or entry["selected"]:
                     gc.SetPen(self.pen_highlight)
+                    gc.SetBrush(self.brush_highlight)
+                    factor = 1.25
                 else:
                     gc.SetPen(self.pen)
-                gc.DrawEllipse(ptx - offset, pty - offset, offset * 2, offset * 2)
+                    gc.SetBrush(self.brush_normal)
+                    factor = 1
+                gc.DrawEllipse(ptx - factor * offset, pty - factor * offset, offset * 2 * factor, offset * 2 * factor)
             elif entry["type"] == "control":
                 if idx == self.selected_index or entry["selected"]:
+                    factor = 1.25
                     gc.SetPen(self.pen_highlight)
                 else:
+                    factor = 1
                     gc.SetPen(self.pen_ctrl)
                     # Do we have a second controlpoint at the same segment?
                     if isinstance(entry["segment"], CubicBezier):
@@ -826,11 +833,11 @@ class EditTool(ToolWidget):
                         if orgnode is not None and orgnode["selected"]:
                             gc.SetPen(self.pen_ctrl_semi)
                 pattern = [
-                    (ptx - offset, pty),
-                    (ptx, pty + offset),
-                    (ptx + offset, pty),
-                    (ptx, pty - offset),
-                    (ptx - offset, pty),
+                    (ptx - factor * offset, pty),
+                    (ptx, pty + factor * offset),
+                    (ptx + factor * offset, pty),
+                    (ptx, pty - factor * offset),
+                    (ptx - factor * offset, pty),
                 ]
                 gc.DrawLines(pattern)
                 if 0 <= entry["connector"] < len(self.nodes):
@@ -841,15 +848,17 @@ class EditTool(ToolWidget):
                     gc.DrawLines(pattern)
             elif entry["type"] == "midpoint":
                 if idx == self.selected_index or entry["selected"]:
+                    factor = 1.25
                     gc.SetPen(self.pen_highlight)
                 else:
+                    factor = 1
                     gc.SetPen(self.pen_ctrl)
                 pattern = [
-                    (ptx - offset, pty),
-                    (ptx, pty + offset),
-                    (ptx + offset, pty),
-                    (ptx, pty - offset),
-                    (ptx - offset, pty),
+                    (ptx - factor * offset, pty),
+                    (ptx, pty + factor * offset),
+                    (ptx + factor * offset, pty),
+                    (ptx, pty - factor * offset),
+                    (ptx - factor * offset, pty),
                 ]
                 gc.DrawLines(pattern)
 
@@ -998,12 +1007,7 @@ class EditTool(ToolWidget):
             modified = True
         else:
             dealt_with = []
-            anyselected = False
-            for entry in self.nodes:
-                if entry["selected"] and entry["type"] == "point":
-                    anyselected = True
-                    break
-            if not anyselected:
+            if not self.anyselected:
                 # Let's select the last point, so the last segment will be closed/opened
                 for idx in range(len(self.nodes) - 1, -1, -1):
                     entry = self.nodes[idx]
@@ -1852,6 +1856,14 @@ class EditTool(ToolWidget):
         if modified:
             self.modify_element(True)
 
+    @property
+    def anyselected(self):
+        if self.nodes:
+            for entry in self.nodes:
+                if entry["selected"]:
+                    return True
+        return False
+
     def event(
         self,
         window_pos=None,
@@ -1895,7 +1907,6 @@ class EditTool(ToolWidget):
 
             xp = space_pos[0]
             yp = space_pos[1]
-            self.anyselected = False
             if self.nodes:
                 w = offset * 4
                 h = offset * 4
@@ -1920,19 +1931,13 @@ class EditTool(ToolWidget):
                             if orgnode is not None:
                                 orgnode["selected"] = True
                             entry["selected"] = True
-                            self.anyselected = True
                         else:
                             # Shift-Key Pressed?
                             if "shift" not in modifiers:
                                 self.clear_selection()
                                 entry["selected"] = True
-                                self.anyselected = True
                             else:
                                 entry["selected"] = not entry["selected"]
-                                for chk in self.nodes:
-                                    if chk["selected"]:
-                                        self.anyselected = True
-                                        break
                         break
                 else:  # For-else == icky
                     self.selected_index = None
@@ -2086,7 +2091,6 @@ class EditTool(ToolWidget):
                 if abs(dx) < 1e-10 or abs(dy) < 1e-10:
                     return RESPONSE_CONSUME
                 # We select all points (not controls) inside
-                anyselected = False
                 if self.element:
                     for entry in self.nodes:
                         pt = entry["point"]
@@ -2096,10 +2100,6 @@ class EditTool(ToolWidget):
                             and y0 <= pt.y <= y1
                         ):
                             entry["selected"] = True
-                        if entry["selected"]:
-                            # Could as well be another one not inside the
-                            # current selection
-                            anyselected = True
                 self.scene.request_refresh()
                 self.enable_rules()
             self.p1 = None
