@@ -526,8 +526,8 @@ class SpoolerPanel(wx.Panel):
             if element.loops > 1 and element.loops_executed < element.loops:
                 item = menu.Append(
                     wx.ID_ANY,
-                    f"Finish after this loop",
-                    _("Stop the current execution after the succesful execution of this loop"),
+                    _("Finish after this pass"),
+                    _("Stop the current execution after the succesful execution of this pass"),
                     wx.ITEM_NORMAL,
                 )
                 info_tuple = [spooler, element]
@@ -535,8 +535,8 @@ class SpoolerPanel(wx.Panel):
             if not isinf(element.loops):
                 item = menu.Append(
                     wx.ID_ANY,
-                    f"Add another loop",
-                    _("Add another loop to this job"),
+                    _("Add another pass"),
+                    _("Add another pass to this job"),
                     wx.ITEM_NORMAL,
                 )
                 info_tuple = [spooler, element]
@@ -551,6 +551,7 @@ class SpoolerPanel(wx.Panel):
             )
             info_tuple = [spooler, element]
             self.Bind(wx.EVT_MENU, self.on_menu_popup_toggle_enable(info_tuple), item)
+        menu.AppendSeparator()
         item = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_menu_popup_clear(element), item)
 
