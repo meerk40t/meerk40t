@@ -1040,41 +1040,64 @@ class TestGeomstr(unittest.TestCase):
         except ZeroDivisionError:
             print(f"{t2} vs {t1}")
 
+    def test_livinghinge_whiskers2(self):
+        clip = Geomstr.ellipse(
+            rx=96436.11909338088,
+            ry=96436.11909338088,
+            cx=550118.9389283657,
+            cy=363374.1254904113,
+        )
+        subject = Geomstr()
+        subject.line(5.82716822e05 + 343372.64182036j, 6.48483387e05 + 343372.64182036j)
+        q = Clip(clip)
+        subject = q.polycut(subject)
+        subject = q.inside(subject)
+
+        m = Geomstr()
+        m.append(clip)
+        m.append(subject)
+        m.uscale(0.002)
+        draw(list(m.as_interpolated_points()), *m.bbox(), filename="whiskers.png")
+
     def test_livinghinge_whiskers(self):
-        ellipse = Geomstr.ellipse(
+        clip = Geomstr.ellipse(
             rx=96436.11909338088,
             ry=96436.11909338088,
             cx=550118.9389283657,
             cy=363374.1254904113,
         )
         p = Pattern()
-        p.create_from_pattern(set_line, 0, 0, outershape=ellipse)
+        p.create_from_pattern(set_line, 0, 0, outershape=clip)
         p.set_cell_padding(-11377.615848868112, -257.2803475393701)
         p.set_cell_dims(65766.56560039372, 5593.051033464568)
         p.extend_pattern = True
-
-        outer_path = ellipse
-        if outer_path is None:
-            return
-        self.path = Geomstr()
-
-        clip = outer_path
-
-        q = Clip(clip)
         subject = Geomstr()
+        q = Clip(clip)
+        self.path = Geomstr()
         for s in list(p.generate(*q.bounds)):
             subject.append(s)
 
-        subject.flag_settings()
+        # subject.flag_settings()
+        # print(subject.segments[442])
+        # subject = Geomstr()
+        # subject.line(5.82716822e05 + 343372.64182036j, 6.48483387e05 + 343372.64182036j)
+
+        # s.append(subject.segments[442])
+        # print(s.segments)
         subject = q.polycut(subject)
         subject = q.inside(subject)
+
+        m = Geomstr()
+        m.append(clip)
+        m.append(subject)
+        m.uscale(0.002)
+        draw(list(m.as_interpolated_points()), *m.bbox())
 
         c = Geomstr()
         # Pip currently only works with line segments
         for sp in clip.as_subpaths():
             for segs in sp.as_interpolated_segments(interpolate=100):
                 c.polyline(segs)
-                c.close()
                 c.end()
         sb = Scanbeam(c)
 
@@ -1084,9 +1107,11 @@ class TestGeomstr(unittest.TestCase):
         s = np.where(
             sb.points_in_polygon(subject.position(slice(subject.index), 0.05))
         )[0]
+
         e = np.where(
             sb.points_in_polygon(subject.position(slice(subject.index), 0.95))
         )[0]
+
         print("START WHISKERS")
         for q in r[0]:
             if q not in s:
