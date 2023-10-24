@@ -158,7 +158,6 @@ class Clip:
         for sp in clip.as_subpaths():
             for segs in sp.as_interpolated_segments(interpolate=100):
                 c.polyline(segs)
-                c.close()
                 c.end()
         sb = Scanbeam(c)
 
