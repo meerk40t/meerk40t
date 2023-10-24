@@ -202,7 +202,7 @@ class Clip:
         @return:
         """
         if split:
-            self.polycut(subject)
+            subject = self.polycut(subject)
         return self.inside(subject)
 
 
