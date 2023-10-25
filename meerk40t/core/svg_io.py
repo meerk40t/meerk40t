@@ -833,6 +833,40 @@ class SVGProcessor:
             tag_label = local_dict.get("label")
         return tag_label
 
+    def _parse_text(self, element, ident, label, lock, context_node, e_list):
+        if element.text is None:
+            return
+
+        decor = element.values.get("text-decoration", "").lower()
+        node = context_node.add(
+            id=ident,
+            text=element.text,
+            x=element.x,
+            y=element.y,
+            font=element.values.get("font"),
+            anchor=element.values.get(SVG_ATTR_TEXT_ANCHOR),
+            baseline=element.values.get(
+                SVG_ATTR_TEXT_ALIGNMENT_BASELINE,
+                element.values.get(SVG_ATTR_TEXT_DOMINANT_BASELINE, "baseline"),
+            ),
+            matrix=element.transform,
+            fill=element.fill,
+            stroke=element.stroke,
+            stroke_width=element.stroke_width,
+            stroke_scale=bool(
+                SVG_VALUE_NON_SCALING_STROKE
+                not in element.values.get(SVG_ATTR_VECTOR_EFFECT, "")
+            ),
+            underline="underline" in decor,
+            strikethrough="line-through" in decor,
+            overline="overline" in decor,
+            texttransform=element.values.get("text-transform"),
+            type="elem text",
+            label=label,
+            settings=element.values,
+        )
+        e_list.append(node)
+
     def _parse_path(self, element, ident, label, lock, context_node, e_list):
         if len(element) >= 0:
             if element.values.get("type") == "elem polyline":
@@ -1108,38 +1142,7 @@ class SVGProcessor:
             )
             e_list.append(node)
         elif isinstance(element, SVGText):
-            if element.text is None:
-                return
-
-            decor = element.values.get("text-decoration", "").lower()
-            node = context_node.add(
-                id=ident,
-                text=element.text,
-                x=element.x,
-                y=element.y,
-                font=element.values.get("font"),
-                anchor=element.values.get(SVG_ATTR_TEXT_ANCHOR),
-                baseline=element.values.get(
-                    SVG_ATTR_TEXT_ALIGNMENT_BASELINE,
-                    element.values.get(SVG_ATTR_TEXT_DOMINANT_BASELINE, "baseline"),
-                ),
-                matrix=element.transform,
-                fill=element.fill,
-                stroke=element.stroke,
-                stroke_width=element.stroke_width,
-                stroke_scale=bool(
-                    SVG_VALUE_NON_SCALING_STROKE
-                    not in element.values.get(SVG_ATTR_VECTOR_EFFECT, "")
-                ),
-                underline="underline" in decor,
-                strikethrough="line-through" in decor,
-                overline="overline" in decor,
-                texttransform=element.values.get("text-transform"),
-                type="elem text",
-                label=_label,
-                settings=element.values,
-            )
-            e_list.append(node)
+            self._parse_text(element, ident, _label, _lock, context_node, e_list)
         elif isinstance(element, Path):
             self._parse_path(element, ident, _label, _lock, context_node, e_list)
         elif isinstance(element, (Polygon, Polyline)):
