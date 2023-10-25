@@ -1089,7 +1089,20 @@ class SVGProcessor:
             pass
 
     def _parse_element(self, element, ident, label, lock, context_node, e_list):
-        # SVGElement is type. Generic or unknown node type.
+        """
+        SVGElement is type. Generic or unknown node type. These nodes do not have children, these are used in
+        meerk40t contain notes and operations. Element type="elem point", and other points will also load with
+        this code.
+
+        @param element:
+        @param ident:
+        @param label:
+        @param lock:
+        @param context_node:
+        @param e_list:
+        @return:
+        """
+
         # Fix: we have mixed capitalisaton in full_ns and tag --> adjust
         tag = element.values.get(SVG_ATTR_TAG).lower()
         if tag is not None:
@@ -1097,11 +1110,13 @@ class SVGProcessor:
             full_ns = f"{{{MEERK40T_NAMESPACE.lower()}}}"
             if full_ns in tag:
                 tag = tag.replace(full_ns, "")
+
         # Check if note-type
         if tag == "note":
             self.elements.note = element.values.get(SVG_TAG_TEXT)
             self.elements.signal("note", self.pathname)
             return
+
         node_type = element.values.get("type")
         if node_type == "op":
             # Meerk40t 0.7.x fallback node types.
@@ -1116,14 +1131,20 @@ class SVGProcessor:
             return
 
         node_id = element.values.get("id")
+
+        # Get node dictionary.
         try:
             attrs = element.values["attributes"]
         except KeyError:
             attrs = element.values
+
+        # If type exists in the dictionary, delete it to avoid double attribute issues.
         try:
             del attrs["type"]
         except KeyError:
             pass
+
+        # Set dictionary types with proper classes.
         if "lock" in attrs:
             attrs["lock"] = lock
         if "transform" in element.values:
@@ -1163,6 +1184,7 @@ class SVGProcessor:
             except ValueError:
                 # This operation type failed to bootstrap.
                 return
+
         elif tag == "element":
             # Check if SVGElement: element
             if "settings" in attrs:
