@@ -1074,6 +1074,13 @@ class TestGeomstr(unittest.TestCase):
         draw(list(m.as_interpolated_points()), *m.bbox(), filename="whiskers.png")
 
     def test_livinghinge_whiskers(self):
+        """
+        Test for Whiskers bug. The given clip and exactly the right settings could allow a line to not clip correctly
+
+        We use a previously failing set of settings and make sure that the midpoints and both ends are always on the
+        same side of the polygon.
+        @return:
+        """
         clip = Geomstr.ellipse(
             rx=96436.11909338088,
             ry=96436.11909338088,
@@ -1091,13 +1098,6 @@ class TestGeomstr(unittest.TestCase):
         for s in list(p.generate(*q.bounds)):
             subject.append(s)
 
-        # subject.flag_settings()
-        # print(subject.segments[442])
-        # subject = Geomstr()
-        # subject.line(5.82716822e05 + 343372.64182036j, 6.48483387e05 + 343372.64182036j)
-
-        # s.append(subject.segments[442])
-        # print(s.segments)
         subject = q.polycut(subject)
         subject = q.inside(subject)
 
@@ -1126,15 +1126,9 @@ class TestGeomstr(unittest.TestCase):
             sb.points_in_polygon(subject.position(slice(subject.index), 0.95))
         )[0]
 
-        print("START WHISKERS")
         for q in r[0]:
-            if q not in s:
-                print(subject.segments[q])
-                print("Whisker")
-            if q not in e:
-                print(subject.segments[q])
-                print("Whisker2")
-        print("END WHISKERS")
+            self.assertIn(q, s)
+            self.assertIn(q, e)
 
     def test_point_towards_numpy(self):
         p1 = complex(0, 100)

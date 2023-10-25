@@ -3019,7 +3019,6 @@ class Geomstr:
                     enhance_samples=enhance_samples,
                 )
 
-
     def _find_polyline_intersections(self, a, b):
         """
         Find all intersections between complex-array polylines a and b
