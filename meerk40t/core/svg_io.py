@@ -1088,6 +1088,16 @@ class SVGProcessor:
         except OSError:
             pass
 
+    @staticmethod
+    def is_child(candidate, parent_node):
+        if candidate is None:
+            return False
+        if candidate is parent_node:
+            return True
+        if candidate.parent is None:
+            return False
+        return SVGProcessor.is_child(candidate.parent, parent_node)
+
     def parse(self, element, context_node, e_list, uselabel=None):
         """
         Parse does the bulk of the work. Given an element, here the base case is an SVG itself, we parse such that
@@ -1102,19 +1112,10 @@ class SVGProcessor:
         @return:
         """
 
-        def is_child(candidate, parent_node):
-            if candidate is None:
-                return False
-            if candidate is parent_node:
-                return True
-            if candidate.parent is None:
-                return False
-            return is_child(candidate.parent, parent_node)
-
         if element.values.get("visibility") == "hidden":
             # This does not allow substructures...
             # Are we already underneath regmark?
-            if not is_child(context_node, self.regmark):
+            if not SVGProcessor.is_child(context_node, self.regmark):
                 context_node = self.regmark
             e_list = self.regmark_list
         ident = element.id
