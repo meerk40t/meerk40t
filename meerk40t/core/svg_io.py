@@ -150,13 +150,6 @@ def rulestr(fillrule):
         return "nonzero"
 
 
-def copy_attributes(source, target):
-    if hasattr(source, "stroke"):
-        target.stroke = source.stroke
-    if hasattr(source, "fill"):
-        target.fill = source.fill
-
-
 class SVGWriter:
     @staticmethod
     def save_types():
