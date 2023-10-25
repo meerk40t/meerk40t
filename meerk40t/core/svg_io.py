@@ -1372,6 +1372,9 @@ class SVGProcessor:
                 # Load group with specific group attributes (if needed)
                 e_dict = dict(element.values["attributes"])
                 e_type = e_dict.get("type", "group")
+                if e_type.startswith("op "):
+                    context_node = self.elements.op_branch
+                    e_list = self.operation_list
                 stroke = e_dict.get("stroke")
                 for attr in ("type", "id", "label", "stroke"):
                     if attr in e_dict:
@@ -1388,6 +1391,8 @@ class SVGProcessor:
                         stroke=Color(stroke),
                         **e_dict,
                     )
+                if hasattr(context_node, "validate"):
+                    context_node.validate()
 
             # recurse to children
             if self.reverse:
