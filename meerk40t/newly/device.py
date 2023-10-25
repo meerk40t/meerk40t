@@ -95,6 +95,8 @@ class NewlyDevice(Service):
                 ],
                 "style": "chart",
                 "primary": "speed",
+                "allow_deletion": True,
+                "allow_duplication": True,
                 "label": _("Speed Chart"),
                 "tip": _("Raster speed to chart."),
             },
@@ -506,6 +508,9 @@ class NewlyDevice(Service):
         self.add_service_delegate(self.spooler)
 
         self.viewbuffer = ""
+
+        # Sort the entries for the rasterchart
+        self.speedchart.sort(key=lambda x: x["speed"])
 
         @self.console_command(
             "estop",
