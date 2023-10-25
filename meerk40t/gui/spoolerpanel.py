@@ -1018,7 +1018,8 @@ class SpoolerPanel(wx.Panel):
 
     @signal_listener("driver;position")
     @signal_listener("emulator;position")
-    def on_device_update(self, origin, pos):
+    @signal_listener("pipe;usb_status")
+    def on_device_update(self, origin, *args):
         # Only update every 2 seconds or so
         dtime = time.time()
         if dtime - self._last_invokation < 2:
