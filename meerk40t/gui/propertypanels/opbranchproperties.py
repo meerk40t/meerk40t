@@ -29,7 +29,7 @@ class OpBranchPanel(wx.Panel):
                 "object": self.operation,
                 "default": False,
                 "type": bool,
-                "label": _("Multiple loops"),
+                "label": _("Loop Parameter"),
                 "tip": _("Operation job should run set number of times"),
             },
             {

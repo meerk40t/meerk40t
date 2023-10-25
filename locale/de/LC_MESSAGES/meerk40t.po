@@ -10658,7 +10658,7 @@ msgstr "Wie oft soll der Laser-Job wiederholt werden"
 msgid "Loop"
 msgstr "Wiederholungen"
 
-msgid "Multiple loops"
+msgid "Loop Parameter"
 msgstr "Wiederholungen"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:42
