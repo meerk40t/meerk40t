@@ -2804,7 +2804,7 @@ class Geomstr:
         fun2 = self._get_segment_function(segment2[2].real)
         if fun1 is None or fun2 is None:
             return  # Only shapes can intersect. We don't do point x point.
-        yield from self._find_intersections_kross(segment1, segment2, fun1, fun2)
+        yield from self._find_intersections_intercept(segment1, segment2, fun1, fun2)
 
     def _find_intersections_intercept(
         self,
@@ -2968,23 +2968,19 @@ class Geomstr:
         # sqkross = kross * kross
         # sqLen0 = np.real(ad0) * np.real(ad0) + np.imag(ad0) * np.imag(ad0)
         # sqLen1 = np.real(ad1) * np.real(ad1) + np.imag(ad1) * np.imag(ad1)
-        old_np_seterr = np.seterr(divide="ignore", invalid="ignore")
-        try:
-            s = ((ex * d1y) - (ey * d1x)) / kross
-            t = ((ex * d0y) - (ey * d0x)) / kross
-            hits = np.dstack(
-                (
-                    kross != 0,
-                    s >= 0,
-                    s <= 1,
-                    t >= 0,
-                    t <= 1,
-                )
-            ).all(axis=2)
-        finally:
-            np.seterr(**old_np_seterr)
+        s = ((ex * d1y) - (ey * d1x)) / kross
+        t = ((ex * d0y) - (ey * d0x)) / kross
+        hits = np.dstack(
+            (
+                # sqkross > 0.01 * sqLen0 * sqLen1,
+                s >= 0,
+                s <= 1,
+                t >= 0,
+                t <= 1,
+            )
+        ).all(axis=2)
         where_hit = np.argwhere(hits)
-        # q = sqkross > 0.1 * sqLen0 * sqLen1
+
         # pos = ap0[hits] + s[hits] * ad0[hits]
         if len(where_hit) != 1 and step_a < 1e-10:
             # We're hits are becoming unstable give last best value.
