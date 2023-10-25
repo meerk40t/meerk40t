@@ -1201,6 +1201,10 @@ class SVGProcessor:
             return
 
         node_type = element.values.get("type")
+        if node_type is None:
+            # Type is not given. Abort.
+            return
+
         if node_type == "op":
             # Meerk40t 0.7.x fallback node types.
             op_type = element.values.get("operation")
@@ -1208,10 +1212,6 @@ class SVGProcessor:
                 return
             node_type = f"op {op_type.lower()}"
             element.values["attributes"]["type"] = node_type
-
-        if node_type is None:
-            # Type is not given. Abort.
-            return
 
         node_id = element.values.get("id")
 
@@ -1238,8 +1238,11 @@ class SVGProcessor:
         if "stroke" in attrs:
             attrs["stroke"] = Color(attrs["stroke"])
 
-        if self.load_operations and tag == "operation":
-            # Check if SVGElement: operation
+        if tag == "operation":
+            # Operation type node.
+            if self.load_operations:
+                # We don't do that.
+                return
             if not self.operations_replaced:
                 self.operations_replaced = True
 
