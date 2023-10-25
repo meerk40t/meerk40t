@@ -1088,6 +1088,95 @@ class SVGProcessor:
         except OSError:
             pass
 
+    def _parse_element(self, element, ident, label, lock, context_node, e_list):
+        # SVGElement is type. Generic or unknown node type.
+        # Fix: we have mixed capitalisaton in full_ns and tag --> adjust
+        tag = element.values.get(SVG_ATTR_TAG).lower()
+        if tag is not None:
+            # We remove the name space.
+            full_ns = f"{{{MEERK40T_NAMESPACE.lower()}}}"
+            if full_ns in tag:
+                tag = tag.replace(full_ns, "")
+        # Check if note-type
+        if tag == "note":
+            self.elements.note = element.values.get(SVG_TAG_TEXT)
+            self.elements.signal("note", self.pathname)
+            return
+        node_type = element.values.get("type")
+        if node_type == "op":
+            # Meerk40t 0.7.x fallback node types.
+            op_type = element.values.get("operation")
+            if op_type is None:
+                return
+            node_type = f"op {op_type.lower()}"
+            element.values["attributes"]["type"] = node_type
+
+        if node_type is None:
+            # Type is not given. Abort.
+            return
+
+        node_id = element.values.get("id")
+        try:
+            attrs = element.values["attributes"]
+        except KeyError:
+            attrs = element.values
+        try:
+            del attrs["type"]
+        except KeyError:
+            pass
+        if "lock" in attrs:
+            attrs["lock"] = lock
+        if "transform" in element.values:
+            # Uses chained transforms from primary context.
+            attrs["matrix"] = Matrix(element.values["transform"])
+        if "fill" in attrs:
+            attrs["fill"] = Color(attrs["fill"])
+        if "stroke" in attrs:
+            attrs["stroke"] = Color(attrs["stroke"])
+
+        if self.load_operations and tag == "operation":
+            # Check if SVGElement: operation
+            if not self.operations_replaced:
+                self.operations_replaced = True
+
+            try:
+                if node_type == "op hatch":
+                    # Special fallback operation, op hatch is an op engrave with an effect hatch within it.
+                    node_type = "op engrave"
+                    op = self.elements.op_branch.create(type=node_type, **attrs)
+                    op = op.add(type="effect hatch", **attrs)
+                else:
+                    op = self.elements.op_branch.create(type=node_type, **attrs)
+
+                if op is None or not hasattr(op, "type") or op.type is None:
+                    return
+                if hasattr(op, "validate"):
+                    op.validate()
+
+                op.id = node_id
+                if context_node.type.startswith("effect"):
+                    op.append_child(context_node)
+                self.operation_list.append(op)
+            except AttributeError:
+                # This operation is invalid.
+                return
+            except ValueError:
+                # This operation type failed to bootstrap.
+                return
+        elif tag == "element":
+            # Check if SVGElement: element
+            if "settings" in attrs:
+                del attrs[
+                    "settings"
+                ]  # If settings was set, delete it, or it will mess things up
+            elem = context_node.add(type=node_type, **attrs)
+            try:
+                elem.validate()
+            except AttributeError:
+                pass
+            elem.id = node_id
+            e_list.append(elem)
+
     @staticmethod
     def is_child(candidate, parent_node):
         if candidate is None:
@@ -1157,7 +1246,7 @@ class SVGProcessor:
         elif isinstance(element, SVGImage):
             self._parse_image(element, ident, _label, _lock, context_node, e_list)
         elif isinstance(element, SVG):
-            # SVG is type of group, must go first
+            # SVG is type of group, it must be processed before Group. Nothing special is done with the type.
             if self.reverse:
                 for child in reversed(element):
                     self.parse(child, context_node, e_list)
@@ -1208,93 +1297,7 @@ class SVGProcessor:
                 for child in element:
                     self.parse(child, context_node, e_list, uselabel=_label)
         else:
-            # SVGElement is type. Generic or unknown node type.
-            # Fix: we have mixed capitalisaton in full_ns and tag --> adjust
-            tag = element.values.get(SVG_ATTR_TAG).lower()
-            if tag is not None:
-                # We remove the name space.
-                full_ns = f"{{{MEERK40T_NAMESPACE.lower()}}}"
-                if full_ns in tag:
-                    tag = tag.replace(full_ns, "")
-            # Check if note-type
-            if tag == "note":
-                self.elements.note = element.values.get(SVG_TAG_TEXT)
-                self.elements.signal("note", self.pathname)
-                return
-            node_type = element.values.get("type")
-            if node_type == "op":
-                # Meerk40t 0.7.x fallback node types.
-                op_type = element.values.get("operation")
-                if op_type is None:
-                    return
-                node_type = f"op {op_type.lower()}"
-                element.values["attributes"]["type"] = node_type
-
-            if node_type is None:
-                # Type is not given. Abort.
-                return
-
-            node_id = element.values.get("id")
-            try:
-                attrs = element.values["attributes"]
-            except KeyError:
-                attrs = element.values
-            try:
-                del attrs["type"]
-            except KeyError:
-                pass
-            if "lock" in attrs:
-                attrs["lock"] = _lock
-            if "transform" in element.values:
-                # Uses chained transforms from primary context.
-                attrs["matrix"] = Matrix(element.values["transform"])
-            if "fill" in attrs:
-                attrs["fill"] = Color(attrs["fill"])
-            if "stroke" in attrs:
-                attrs["stroke"] = Color(attrs["stroke"])
-
-            if self.load_operations and tag == "operation":
-                # Check if SVGElement: operation
-                if not self.operations_replaced:
-                    self.operations_replaced = True
-
-                try:
-                    if node_type == "op hatch":
-                        # Special fallback operation, op hatch is an op engrave with an effect hatch within it.
-                        node_type = "op engrave"
-                        op = self.elements.op_branch.create(type=node_type, **attrs)
-                        op = op.add(type="effect hatch", **attrs)
-                    else:
-                        op = self.elements.op_branch.create(type=node_type, **attrs)
-
-                    if op is None or not hasattr(op, "type") or op.type is None:
-                        return
-                    if hasattr(op, "validate"):
-                        op.validate()
-
-                    op.id = node_id
-                    if context_node.type.startswith("effect"):
-                        op.append_child(context_node)
-                    self.operation_list.append(op)
-                except AttributeError:
-                    # This operation is invalid.
-                    return
-                except ValueError:
-                    # This operation type failed to bootstrap.
-                    return
-            elif tag == "element":
-                # Check if SVGElement: element
-                if "settings" in attrs:
-                    del attrs[
-                        "settings"
-                    ]  # If settings was set, delete it, or it will mess things up
-                elem = context_node.add(type=node_type, **attrs)
-                try:
-                    elem.validate()
-                except AttributeError:
-                    pass
-                elem.id = node_id
-                e_list.append(elem)
+            self._parse_element(element, ident, _label, _lock, context_node, e_list)
 
 
 class SVGLoader:
