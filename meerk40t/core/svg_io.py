@@ -556,12 +556,7 @@ class SVGWriter:
         @param node:
         @return:
         """
-        for c in node.children:
-            if c.type.startswith("effect"):
-                xml_tree = SubElement(xml_tree, SVG_TAG_GROUP)
-                SVGWriter._write_custom(xml_tree, c)
-
-        subelement = SubElement(xml_tree, MEERK40T_XMLS_ID + ":operation")
+        subelement = SubElement(xml_tree, SVG_TAG_GROUP)
         subelement.set("type", str(node.type))
         if node.label is not None:
             subelement.set("label", str(node.label))
@@ -584,6 +579,11 @@ class SVGWriter:
             pass
         contains = list()
         for c in node.children:
+            if c.type.startswith("effect"):
+                xml_tree = SubElement(xml_tree, SVG_TAG_GROUP)
+                SVGWriter._write_custom(xml_tree, c)
+                continue
+
             if c.type == "reference":
                 c = c.node  # Contain direct reference not reference node reference.
             contains.append(str(c.id))
