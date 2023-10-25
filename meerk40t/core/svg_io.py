@@ -637,6 +637,7 @@ class SVGProcessor:
 
     Special care is taken to load MK specific objects like `note` and `operations`
     """
+
     def __init__(self, elements, load_operations):
         self.elements = elements
         self.element_list = list()
@@ -832,6 +833,227 @@ class SVGProcessor:
             tag_label = local_dict.get("label")
         return tag_label
 
+    def _parse_path(self, element, ident, label, lock, context_node, e_list):
+        if len(element) >= 0:
+            if element.values.get("type") == "elem polyline":
+                # Type is polyline we should restore the node type if we have sufficient info to do so.
+                pass
+            if element.values.get("type") == "elem ellipse":
+                # There is not enough info to reconstruct this.
+                pass
+            if element.values.get("type") == "elem rect":
+                # There is not enough info to reconstruct this.
+                pass
+            if element.values.get("type") == "elem line":
+                pass
+            element.approximate_arcs_with_cubics()
+            node = context_node.add(
+                path=element, type="elem path", id=ident, label=label, lock=lock
+            )
+            self.check_for_line_attributes(node, element)
+            self.check_for_fill_attributes(node, element)
+            self.check_for_mk_path_attributes(node, element)
+            e_list.append(node)
+
+    def _parse_polyline(self, element, ident, label, lock, context_node, e_list):
+        if element.is_degenerate():
+            return
+        node = context_node.add(
+            shape=element,
+            type="elem polyline",
+            id=ident,
+            label=label,
+            lock=lock,
+        )
+        self.check_for_line_attributes(node, element)
+        self.check_for_fill_attributes(node, element)
+        self.check_for_mk_path_attributes(node, element)
+        if self.precalc_bbox:
+            # bounds will be done here, paintbounds wont...
+            if element.transform.is_identity():
+                points = element.points
+            else:
+                points = list(
+                    map(element.transform.point_in_matrix_space, element.points)
+                )
+            xmin = min(p.x for p in points if p is not None)
+            ymin = min(p.y for p in points if p is not None)
+            xmax = max(p.x for p in points if p is not None)
+            ymax = max(p.y for p in points if p is not None)
+            node._bounds = [
+                xmin,
+                ymin,
+                xmax,
+                ymax,
+            ]
+            node._bounds_dirty = False
+            node.revalidate_points()
+            node._points_dirty = False
+        e_list.append(node)
+
+    def _parse_ellipse(self, element, ident, label, lock, context_node, e_list):
+        if element.is_degenerate():
+            return
+        node = context_node.add(
+            shape=element,
+            type="elem ellipse",
+            id=ident,
+            label=label,
+            lock=lock,
+        )
+        e_list.append(node)
+
+    def _parse_rect(self, element, ident, label, lock, context_node, e_list):
+        if element.is_degenerate():
+            return
+        node = context_node.add(
+            shape=element, type="elem rect", id=ident, label=label, lock=lock
+        )
+        self.check_for_line_attributes(node, element)
+        if self.precalc_bbox:
+            # bounds will be done here, paintbounds wont...
+            points = (
+                Point(element.x, element.y),
+                Point(element.x + element.width, element.y),
+                Point(element.x + element.width, element.y + element.height),
+                Point(element.x, element.y + element.height),
+            )
+            if not element.transform.is_identity():
+                points = list(map(element.transform.point_in_matrix_space, points))
+            xmin = min(p.x for p in points)
+            ymin = min(p.y for p in points)
+            xmax = max(p.x for p in points)
+            ymax = max(p.y for p in points)
+            node._bounds = [
+                xmin,
+                ymin,
+                xmax,
+                ymax,
+            ]
+            node._bounds_dirty = False
+            node.revalidate_points()
+            node._points_dirty = False
+        e_list.append(node)
+
+    def _parse_line(self, element, ident, label, lock, context_node, e_list):
+        if element.is_degenerate():
+            return
+        node = context_node.add(
+            shape=element, type="elem line", id=ident, label=label, lock=lock
+        )
+        self.check_for_line_attributes(node, element)
+        if self.precalc_bbox:
+            # bounds will be done here, paintbounds wont...
+            points = (
+                Point(element.x1, element.y1),
+                Point(element.x2, element.y2),
+            )
+            if not element.transform.is_identity():
+                points = list(map(element.transform.point_in_matrix_space, points))
+            xmin = min(p.x for p in points)
+            ymin = min(p.y for p in points)
+            xmax = max(p.x for p in points)
+            ymax = max(p.y for p in points)
+            node._bounds = [
+                xmin,
+                ymin,
+                xmax,
+                ymax,
+            ]
+            node._bounds_dirty = False
+            node.revalidate_points()
+            node._points_dirty = False
+        e_list.append(node)
+
+    def _parse_image(self, element, ident, label, lock, context_node, e_list):
+        try:
+            element.load(os.path.dirname(self.pathname))
+            try:
+                operations = ast.literal_eval(element.values["operations"])
+            except (ValueError, SyntaxError, KeyError):
+                operations = None
+
+            if element.image is not None:
+                try:
+                    dpi = element.image.info["dpi"]
+                except KeyError:
+                    dpi = None
+                _dpi = 500
+                if (
+                    isinstance(dpi, tuple)
+                    and len(dpi) >= 2
+                    and dpi[0] != 0
+                    and dpi[1] != 0
+                ):
+                    _dpi = round((float(dpi[0]) + float(dpi[1])) / 2, 0)
+                _overscan = None
+                try:
+                    _overscan = str(element.values.get("overscan"))
+                except (ValueError, TypeError):
+                    pass
+                _direction = None
+                try:
+                    _direction = int(element.values.get("direction"))
+                except (ValueError, TypeError):
+                    pass
+                _invert = None
+                try:
+                    _invert = bool(element.values.get("invert") == "True")
+                except (ValueError, TypeError):
+                    pass
+                _dither = None
+                try:
+                    _dither = bool(element.values.get("dither") == "True")
+                except (ValueError, TypeError):
+                    pass
+                _dither_type = None
+                try:
+                    _dither_type = element.values.get("dither_type")
+                except (ValueError, TypeError):
+                    pass
+                _red = None
+                try:
+                    _red = float(element.values.get("red"))
+                except (ValueError, TypeError):
+                    pass
+                _green = None
+                try:
+                    _green = float(element.values.get("green"))
+                except (ValueError, TypeError):
+                    pass
+                _blue = None
+                try:
+                    _blue = float(element.values.get("blue"))
+                except (ValueError, TypeError):
+                    pass
+                _lightness = None
+                try:
+                    _lightness = float(element.values.get("lightness"))
+                except (ValueError, TypeError):
+                    pass
+                node = context_node.add(
+                    image=element.image,
+                    matrix=element.transform,
+                    type="elem image",
+                    id=ident,
+                    overscan=_overscan,
+                    direction=_direction,
+                    dpi=_dpi,
+                    invert=_invert,
+                    dither=_dither,
+                    dither_type=_dither_type,
+                    red=_red,
+                    green=_green,
+                    blue=_blue,
+                    lightness=_lightness,
+                    label=label,
+                    operations=operations,
+                    lock=lock,
+                )
+                e_list.append(node)
+        except OSError:
+            pass
+
     def parse(self, element, context_node, e_list, uselabel=None):
         """
         Parse does the bulk of the work. Given an element, here the base case is an SVG itself, we parse such that
@@ -845,6 +1067,7 @@ class SVGProcessor:
         @param uselabel:
         @return:
         """
+
         def is_child(candidate, parent_node):
             if candidate is None:
                 return False
@@ -918,220 +1141,17 @@ class SVGProcessor:
             )
             e_list.append(node)
         elif isinstance(element, Path):
-            if len(element) >= 0:
-                if element.values.get("type") == "elem polyline":
-                    # Type is polyline we should restore the node type if we have sufficient info to do so.
-                    pass
-                if element.values.get("type") == "elem ellipse":
-                    # There is not enough info to reconstruct this.
-                    pass
-                if element.values.get("type") == "elem rect":
-                    # There is not enough info to reconstruct this.
-                    pass
-                if element.values.get("type") == "elem line":
-                    pass
-                element.approximate_arcs_with_cubics()
-                node = context_node.add(
-                    path=element, type="elem path", id=ident, label=_label, lock=_lock
-                )
-                self.check_for_line_attributes(node, element)
-                self.check_for_fill_attributes(node, element)
-                self.check_for_mk_path_attributes(node, element)
-                e_list.append(node)
+            self._parse_path(element, ident, _label, _lock, context_node, e_list)
         elif isinstance(element, (Polygon, Polyline)):
-            if element.is_degenerate():
-                return
-            node = context_node.add(
-                shape=element,
-                type="elem polyline",
-                id=ident,
-                label=_label,
-                lock=_lock,
-            )
-            self.check_for_line_attributes(node, element)
-            self.check_for_fill_attributes(node, element)
-            self.check_for_mk_path_attributes(node, element)
-            if self.precalc_bbox:
-                # bounds will be done here, paintbounds wont...
-                if element.transform.is_identity():
-                    points = element.points
-                else:
-                    points = list(
-                        map(element.transform.point_in_matrix_space, element.points)
-                    )
-                xmin = min(p.x for p in points if p is not None)
-                ymin = min(p.y for p in points if p is not None)
-                xmax = max(p.x for p in points if p is not None)
-                ymax = max(p.y for p in points if p is not None)
-                node._bounds = [
-                    xmin,
-                    ymin,
-                    xmax,
-                    ymax,
-                ]
-                node._bounds_dirty = False
-                node.revalidate_points()
-                node._points_dirty = False
-            e_list.append(node)
+            self._parse_polyline(element, ident, _label, _lock, context_node, e_list)
         elif isinstance(element, (Circle, Ellipse)):
-            if element.is_degenerate():
-                return
-            node = context_node.add(
-                shape=element,
-                type="elem ellipse",
-                id=ident,
-                label=_label,
-                lock=_lock,
-            )
-            e_list.append(node)
+            self._parse_ellipse(element, ident, _label, _lock, context_node, e_list)
         elif isinstance(element, Rect):
-            if element.is_degenerate():
-                return
-            node = context_node.add(
-                shape=element, type="elem rect", id=ident, label=_label, lock=_lock
-            )
-            self.check_for_line_attributes(node, element)
-            if self.precalc_bbox:
-                # bounds will be done here, paintbounds wont...
-                points = (
-                    Point(element.x, element.y),
-                    Point(element.x + element.width, element.y),
-                    Point(element.x + element.width, element.y + element.height),
-                    Point(element.x, element.y + element.height),
-                )
-                if not element.transform.is_identity():
-                    points = list(map(element.transform.point_in_matrix_space, points))
-                xmin = min(p.x for p in points)
-                ymin = min(p.y for p in points)
-                xmax = max(p.x for p in points)
-                ymax = max(p.y for p in points)
-                node._bounds = [
-                    xmin,
-                    ymin,
-                    xmax,
-                    ymax,
-                ]
-                node._bounds_dirty = False
-                node.revalidate_points()
-                node._points_dirty = False
-            e_list.append(node)
+            self._parse_rect(element, ident, _label, _lock, context_node, e_list)
         elif isinstance(element, SimpleLine):
-            if element.is_degenerate():
-                return
-            node = context_node.add(
-                shape=element, type="elem line", id=ident, label=_label, lock=_lock
-            )
-            self.check_for_line_attributes(node, element)
-            if self.precalc_bbox:
-                # bounds will be done here, paintbounds wont...
-                points = (
-                    Point(element.x1, element.y1),
-                    Point(element.x2, element.y2),
-                )
-                if not element.transform.is_identity():
-                    points = list(map(element.transform.point_in_matrix_space, points))
-                xmin = min(p.x for p in points)
-                ymin = min(p.y for p in points)
-                xmax = max(p.x for p in points)
-                ymax = max(p.y for p in points)
-                node._bounds = [
-                    xmin,
-                    ymin,
-                    xmax,
-                    ymax,
-                ]
-                node._bounds_dirty = False
-                node.revalidate_points()
-                node._points_dirty = False
-            e_list.append(node)
+            self._parse_line(element, ident, _label, _lock, context_node, e_list)
         elif isinstance(element, SVGImage):
-            try:
-                element.load(os.path.dirname(self.pathname))
-                try:
-                    operations = ast.literal_eval(element.values["operations"])
-                except (ValueError, SyntaxError, KeyError):
-                    operations = None
-
-                if element.image is not None:
-                    try:
-                        dpi = element.image.info["dpi"]
-                    except KeyError:
-                        dpi = None
-                    _dpi = 500
-                    if (
-                        isinstance(dpi, tuple)
-                        and len(dpi) >= 2
-                        and dpi[0] != 0
-                        and dpi[1] != 0
-                    ):
-                        _dpi = round((float(dpi[0]) + float(dpi[1])) / 2, 0)
-                    _overscan = None
-                    try:
-                        _overscan = str(element.values.get("overscan"))
-                    except (ValueError, TypeError):
-                        pass
-                    _direction = None
-                    try:
-                        _direction = int(element.values.get("direction"))
-                    except (ValueError, TypeError):
-                        pass
-                    _invert = None
-                    try:
-                        _invert = bool(element.values.get("invert") == "True")
-                    except (ValueError, TypeError):
-                        pass
-                    _dither = None
-                    try:
-                        _dither = bool(element.values.get("dither") == "True")
-                    except (ValueError, TypeError):
-                        pass
-                    _dither_type = None
-                    try:
-                        _dither_type = element.values.get("dither_type")
-                    except (ValueError, TypeError):
-                        pass
-                    _red = None
-                    try:
-                        _red = float(element.values.get("red"))
-                    except (ValueError, TypeError):
-                        pass
-                    _green = None
-                    try:
-                        _green = float(element.values.get("green"))
-                    except (ValueError, TypeError):
-                        pass
-                    _blue = None
-                    try:
-                        _blue = float(element.values.get("blue"))
-                    except (ValueError, TypeError):
-                        pass
-                    _lightness = None
-                    try:
-                        _lightness = float(element.values.get("lightness"))
-                    except (ValueError, TypeError):
-                        pass
-                    node = context_node.add(
-                        image=element.image,
-                        matrix=element.transform,
-                        type="elem image",
-                        id=ident,
-                        overscan=_overscan,
-                        direction=_direction,
-                        dpi=_dpi,
-                        invert=_invert,
-                        dither=_dither,
-                        dither_type=_dither_type,
-                        red=_red,
-                        green=_green,
-                        blue=_blue,
-                        lightness=_lightness,
-                        label=_label,
-                        operations=operations,
-                        lock=_lock,
-                    )
-                    e_list.append(node)
-            except OSError:
-                pass
+            self._parse_image(element, ident, _label, _lock, context_node, e_list)
         elif isinstance(element, SVG):
             # SVG is type of group, must go first
             if self.reverse:
