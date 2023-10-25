@@ -800,6 +800,38 @@ class SVGProcessor:
                 return True, abs(Path(element)).first_point
         return False, None
 
+    def get_tag_label(self, element):
+        """
+        Gets the tag label from the element. This is usually an inkscape label.
+
+        Let's see whether we can get the label from an inkscape save
+        We only want the 'label' attribute from the current tag, so
+        we look at element.values["attributes"]
+
+        @param element:
+        @return:
+        """
+
+        if "attributes" in element.values:
+            local_dict = element.values["attributes"]
+        else:
+            local_dict = element.values
+        ink_tag = "inkscape:label"
+        try:
+            inkscape = element.values.get("inkscape")
+            if inkscape is not None and inkscape != "":
+                ink_tag = "{" + inkscape + "}label"
+        except (AttributeError, KeyError):
+            pass
+        try:
+            tag_label = local_dict.get(ink_tag)
+            if tag_label == "":
+                tag_label = None
+        except (AttributeError, KeyError):
+            # Label might simply be "label"
+            tag_label = local_dict.get("label")
+        return tag_label
+
     def parse(self, element, context_node, e_list, uselabel=None):
         """
         Parse does the bulk of the work. Given an element, here the base case is an SVG itself, we parse such that
@@ -830,33 +862,10 @@ class SVGProcessor:
             e_list = self.regmark_list
         ident = element.id
 
-        tag_label = None
-        # Let's see whether we can get the label from an inkscape save
-        # We only want the 'label' attribute from the current tag, so
-        # we look at element.values["attributes"]
-        if "attributes" in element.values:
-            local_dict = element.values["attributes"]
-        else:
-            local_dict = element.values
-        ink_tag = "inkscape:label"
-        try:
-            inkscape = element.values.get("inkscape")
-            if inkscape is not None and inkscape != "":
-                ink_tag = "{" + inkscape + "}label"
-        except (AttributeError, KeyError):
-            pass
-        try:
-            tag_label = local_dict.get(ink_tag)
-            if tag_label == "":
-                tag_label = None
-            # print ("Found label: %s" %_label)
-        except (AttributeError, KeyError):
-            # Label might simply be "label"
-            tag_label = local_dict.get("label")
         if uselabel:
             _label = uselabel
         else:
-            _label = tag_label
+            _label = self.get_tag_label(element)
 
         _lock = None
         try:
