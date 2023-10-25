@@ -1240,7 +1240,7 @@ class SVGProcessor:
 
         if tag == "operation":
             # Operation type node.
-            if self.load_operations:
+            if not self.load_operations:
                 # We don't do that.
                 return
             if not self.operations_replaced:
