@@ -95,7 +95,7 @@ class TestFileSVG(unittest.TestCase):
         self.addCleanup(os.remove, file1)
         with open(file1, "w") as f:
             f.write(
-            """
+                """
             <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:meerk40t="https://github.com/meerk40t/meerk40t/wiki/Namespace" width="400.0mm" height="430.0mm" viewBox="0 0 1032047 1109450">
             <meerk40t:operation type="op raster" lock="False" speed="150.0" dpi="500" color="black" frequency="30.0" stopop="False" allowed_attributes="[]" power="1000" dwell_time="50.0" id="meerk40t:3" />
             <meerk40t:operation type="op engrave" label="Engrave (100%, 20mm/s)" lock="False" id="E1" speed="20" power="1000" allowed_attributes="['stroke']" color="#0000ff00" dangerous="False" output="True" dwell_time="50.0" references="meerk40t:6" />
@@ -113,5 +113,32 @@ class TestFileSVG(unittest.TestCase):
             self.assertEqual(len(list(ob.flat(types="op raster"))), 1)
             self.assertEqual(len(list(ob.flat(types="op engrave"))), 1)
             self.assertEqual(len(list(ob.flat(types="op cut"))), 1)
+        finally:
+            kernel.shutdown()
+
+    def test_load_hatch_op(self):
+        """
+        test to ensure that `meerk40t:operation` op hatch loading.
+        """
+        file1 = "test-hatch.svg"
+        self.addCleanup(os.remove, file1)
+        with open(file1, "w") as f:
+            f.write(
+                """
+            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:meerk40t="https://github.com/meerk40t/meerk40t/wiki/Namespace" width="400.0mm" height="430.0mm" viewBox="0 0 1032047 1109450">
+            <meerk40t:operation type="op hatch" label="Engrave (100%, 20mm/s)" lock="False" id="E1" speed="20" power="1000" allowed_attributes="['stroke']" color="#0000ff00" dangerous="False" output="True" dwell_time="50.0" references="meerk40t:6" />
+            </svg>"""
+            )
+
+        kernel = bootstrap.bootstrap()
+        try:
+            ob = kernel.elements.op_branch
+            kernel.console("operation* delete\n")
+            kernel.console("element* delete\n")
+            kernel.console(f"load {file1}\n")
+            self.assertEqual(len(list(ob.flat(types="op raster"))), 0)
+            self.assertEqual(len(list(ob.flat(types="op engrave"))), 1)
+            self.assertEqual(len(list(ob.flat(types="op cut"))), 0)
+            self.assertEqual(len(list(ob.flat(types="effect hatch"))), 1)
         finally:
             kernel.shutdown()
