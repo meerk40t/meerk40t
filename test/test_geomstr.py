@@ -8,7 +8,7 @@ from math import tau
 import numpy as np
 
 from meerk40t.fill.fills import scanline_fill
-from meerk40t.fill.patterns import set_diamond1
+from meerk40t.fill.patterns import set_diamond1, set_line
 from meerk40t.svgelements import Arc, CubicBezier, Line, Matrix, QuadraticBezier
 from meerk40t.tools.geomstr import (
     TYPE_LINE,
@@ -1005,7 +1005,6 @@ class TestGeomstr(unittest.TestCase):
             pass
 
     def test_point_in_polygon(self):
-
         t1 = 0
         t2 = 0
         f = set_diamond1
@@ -1040,6 +1039,96 @@ class TestGeomstr(unittest.TestCase):
             )
         except ZeroDivisionError:
             print(f"{t2} vs {t1}")
+
+    def test_intersections_near(self):
+        for r1 in np.linspace(0, 100, 5):
+            r2 = r1 + 0.0001
+            circle1 = Geomstr.circle(cx=0, cy=0, r=r1)
+            circle2 = Geomstr.circle(cx=0, cy=0, r=r2)
+            circle1.rotate(r1)
+            for j in range(circle1.index):
+                for k in range(circle2.index):
+                    c = list(
+                        circle1.intersections(circle1.segments[j], circle2.segments[k])
+                    )
+                    print(r1, r2)
+                    self.assertFalse(c)
+
+    def test_livinghinge_whiskers2(self):
+        clip = Geomstr.ellipse(
+            rx=96436.11909338088,
+            ry=96436.11909338088,
+            cx=550118.9389283657,
+            cy=363374.1254904113,
+        )
+        subject = Geomstr()
+        subject.line(5.82716822e05 + 343372.64182036j, 6.48483387e05 + 343372.64182036j)
+        q = Clip(clip)
+        subject = q.polycut(subject)
+        subject = q.inside(subject)
+
+        m = Geomstr()
+        m.append(clip)
+        m.append(subject)
+        m.uscale(0.002)
+        draw(list(m.as_interpolated_points()), *m.bbox(), filename="whiskers.png")
+
+    def test_livinghinge_whiskers(self):
+        """
+        Test for Whiskers bug. The given clip and exactly the right settings could allow a line to not clip correctly
+
+        We use a previously failing set of settings and make sure that the midpoints and both ends are always on the
+        same side of the polygon.
+        @return:
+        """
+        clip = Geomstr.ellipse(
+            rx=96436.11909338088,
+            ry=96436.11909338088,
+            cx=550118.9389283657,
+            cy=363374.1254904113,
+        )
+        p = Pattern()
+        p.create_from_pattern(set_line, 0, 0, outershape=clip)
+        p.set_cell_padding(-11377.615848868112, -257.2803475393701)
+        p.set_cell_dims(65766.56560039372, 5593.051033464568)
+        p.extend_pattern = True
+        subject = Geomstr()
+        q = Clip(clip)
+        self.path = Geomstr()
+        for s in list(p.generate(*q.bounds)):
+            subject.append(s)
+
+        subject = q.polycut(subject)
+        subject = q.inside(subject)
+
+        m = Geomstr()
+        m.append(clip)
+        m.append(subject)
+        m.uscale(0.002)
+        draw(list(m.as_interpolated_points()), *m.bbox())
+
+        c = Geomstr()
+        # Pip currently only works with line segments
+        for sp in clip.as_subpaths():
+            for segs in sp.as_interpolated_segments(interpolate=100):
+                c.polyline(segs)
+                c.end()
+        sb = Scanbeam(c)
+
+        mid_points = subject.position(slice(subject.index), 0.5)
+        r = np.where(sb.points_in_polygon(mid_points))
+
+        s = np.where(
+            sb.points_in_polygon(subject.position(slice(subject.index), 0.05))
+        )[0]
+
+        e = np.where(
+            sb.points_in_polygon(subject.position(slice(subject.index), 0.95))
+        )[0]
+
+        for q in r[0]:
+            self.assertIn(q, s)
+            self.assertIn(q, e)
 
     def test_point_towards_numpy(self):
         p1 = complex(0, 100)
@@ -1251,7 +1340,6 @@ class TestGeomstr(unittest.TestCase):
         g = Geomstr.rect(0, 0, 200, 200)
         nx, ny, mx, my = g.aabb()
         print(nx)
-
 
     # def test_geomstr_hatch(self):
     #     gs = Geomstr.svg(
