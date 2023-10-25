@@ -1,5 +1,5 @@
 """
-This modeu
+This extension governs SVG loading and saving, registering both the load and the save values for SVG.
 """
 
 import ast
@@ -122,6 +122,11 @@ MEERK40T_XMLS_ID = "meerk40t"
 
 
 def capstr(linecap):
+    """
+    Given the mk enum values for linecap, returns the svg string.
+    @param linecap:
+    @return:
+    """
     if linecap == Linecap.CAP_BUTT:
         return "butt"
     elif linecap == Linecap.CAP_SQUARE:
@@ -131,6 +136,12 @@ def capstr(linecap):
 
 
 def joinstr(linejoin):
+    """
+    Given the mk enum value for linejoin, returns the svg string.
+
+    @param linejoin:
+    @return:
+    """
     if linejoin == Linejoin.JOIN_ARCS:
         return "arcs"
     elif linejoin == Linejoin.JOIN_BEVEL:
@@ -144,6 +155,12 @@ def joinstr(linejoin):
 
 
 def rulestr(fillrule):
+    """
+    Given the mk enum value for fillrule, returns the svg string.
+
+    @param fillrule:
+    @return:
+    """
     if fillrule == Fillrule.FILLRULE_EVENODD:
         return "evenodd"
     else:
@@ -614,6 +631,12 @@ class SVGWriter:
 
 
 class SVGProcessor:
+    """
+    SVGProcessor is the parser for svg objects. We employ svgelements to do the actual parsing of the file and convert
+    the parsed objects into mk nodes, operations, elements, and regmarks.
+
+    Special care is taken to load MK specific objects like `note` and `operations`
+    """
     def __init__(self, elements, load_operations):
         self.elements = elements
         self.element_list = list()
@@ -639,6 +662,14 @@ class SVGProcessor:
         self.precalc_bbox = True
 
     def process(self, svg, pathname):
+        """
+        Process sends the data to parse and deals with creating the file_node, setting the operations, classifying
+        either directly from the data within the file or automatically.
+
+        @param svg:
+        @param pathname:
+        @return:
+        """
         self.pathname = pathname
         context_node = self.elements.get(type="branch elems")
         file_node = context_node.add(type="file", filepath=pathname)
@@ -668,6 +699,14 @@ class SVGProcessor:
             self.elements.classify(self.element_list)
 
     def check_for_mk_path_attributes(self, node, element):
+        """
+        Checks for some mk special parameters starting with mk. Especially mkparam, and uses this property to fill in
+        the functional_parameter attribute for the node.
+
+        @param node:
+        @param element:
+        @return:
+        """
         for prop in element.values:
             lc = element.values.get(prop)
             if prop.startswith("mk"):
@@ -684,6 +723,13 @@ class SVGProcessor:
                             pass
 
     def check_for_fill_attributes(self, node, element):
+        """
+        Called for paths and poly lines. This checks for an attribute of `fill-rule` in the SVG and sets the MK equal.
+
+        @param node:
+        @param element:
+        @return:
+        """
         lc = element.values.get(SVG_ATTR_FILL_RULE)
         if lc is not None:
             nlc = Fillrule.FILLRULE_NONZERO
@@ -695,6 +741,14 @@ class SVGProcessor:
             node.fillrule = nlc
 
     def check_for_line_attributes(self, node, element):
+        """
+        Called for many element types. This checks for the stroke-cap and line-join attributes in the svgelements
+        primitive and sets the node with the mk equal
+
+        @param node:
+        @param element:
+        @return:
+        """
         lc = element.values.get(SVG_ATTR_STROKE_CAP)
         if lc is not None:
             nlc = Linecap.CAP_ROUND
@@ -747,6 +801,18 @@ class SVGProcessor:
         return False, None
 
     def parse(self, element, context_node, e_list, uselabel=None):
+        """
+        Parse does the bulk of the work. Given an element, here the base case is an SVG itself, we parse such that
+        any groups will call and check all children recursively, updating the context_node, and passing each element
+        to this same function.
+
+
+        @param element: Element to parse.
+        @param context_node: Current context parent we're writing to.
+        @param e_list: elements list of all the nodes added by this function.
+        @param uselabel:
+        @return:
+        """
         def is_child(candidate, parent_node):
             if candidate is None:
                 return False
