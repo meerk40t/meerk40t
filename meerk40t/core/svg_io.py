@@ -1253,7 +1253,7 @@ class SVGProcessor:
                     # Special fallback operation, op hatch is an op engrave with an effect hatch within it.
                     node_type = "op engrave"
                     op = self.elements.op_branch.create(type=node_type, **attrs)
-                    op = op.add(type="effect hatch", **attrs)
+                    effect = op.add(type="effect hatch", **attrs)
                 else:
                     op = self.elements.op_branch.create(type=node_type, **attrs)
 
@@ -1263,8 +1263,6 @@ class SVGProcessor:
                     op.validate()
 
                 op.id = node_id
-                if context_node.type.startswith("effect"):
-                    op.append_child(context_node)
                 self.operation_list.append(op)
             except AttributeError:
                 # This operation is invalid.
