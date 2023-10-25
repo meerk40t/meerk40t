@@ -834,6 +834,18 @@ class SVGProcessor:
         return tag_label
 
     def _parse_text(self, element, ident, label, lock, context_node, e_list):
+        """
+        Parses an SVGText object, into an `elem text` node.
+
+        @param element:
+        @param ident:
+        @param label:
+        @param lock:
+        @param context_node:
+        @param e_list:
+        @return:
+        """
+
         if element.text is None:
             return
 
@@ -868,28 +880,55 @@ class SVGProcessor:
         e_list.append(node)
 
     def _parse_path(self, element, ident, label, lock, context_node, e_list):
-        if len(element) >= 0:
-            if element.values.get("type") == "elem polyline":
-                # Type is polyline we should restore the node type if we have sufficient info to do so.
-                pass
-            if element.values.get("type") == "elem ellipse":
-                # There is not enough info to reconstruct this.
-                pass
-            if element.values.get("type") == "elem rect":
-                # There is not enough info to reconstruct this.
-                pass
-            if element.values.get("type") == "elem line":
-                pass
-            element.approximate_arcs_with_cubics()
-            node = context_node.add(
-                path=element, type="elem path", id=ident, label=label, lock=lock
-            )
-            self.check_for_line_attributes(node, element)
-            self.check_for_fill_attributes(node, element)
-            self.check_for_mk_path_attributes(node, element)
-            e_list.append(node)
+        """
+        Parses an SVG Path object.
+
+        There were a few versions of meerk40t where Path was used to store other save nodes. But, there is not
+        enough information to reconstruct those elements.
+
+        @param element:
+        @param ident:
+        @param label:
+        @param lock:
+        @param context_node:
+        @param e_list:
+        @return:
+        """
+        if len(element) < 0:
+            return
+
+        if element.values.get("type") == "elem polyline":
+            # Type is polyline we should restore the node type if we have sufficient info to do so.
+            pass
+        if element.values.get("type") == "elem ellipse":
+            # There is not enough info to reconstruct this.
+            pass
+        if element.values.get("type") == "elem rect":
+            # There is not enough info to reconstruct this.
+            pass
+        if element.values.get("type") == "elem line":
+            pass
+        element.approximate_arcs_with_cubics()
+        node = context_node.add(
+            path=element, type="elem path", id=ident, label=label, lock=lock
+        )
+        self.check_for_line_attributes(node, element)
+        self.check_for_fill_attributes(node, element)
+        self.check_for_mk_path_attributes(node, element)
+        e_list.append(node)
 
     def _parse_polyline(self, element, ident, label, lock, context_node, e_list):
+        """
+        Parses svg Polyline and Polygon objects into `elem polyline` nodes.
+
+        @param element:
+        @param ident:
+        @param label:
+        @param lock:
+        @param context_node:
+        @param e_list:
+        @return:
+        """
         if element.is_degenerate():
             return
         node = context_node.add(
@@ -926,6 +965,17 @@ class SVGProcessor:
         e_list.append(node)
 
     def _parse_ellipse(self, element, ident, label, lock, context_node, e_list):
+        """
+        Parses the SVG Circle, and Ellipse nodes into `elem ellipse` nodes.
+
+        @param element:
+        @param ident:
+        @param label:
+        @param lock:
+        @param context_node:
+        @param e_list:
+        @return:
+        """
         if element.is_degenerate():
             return
         node = context_node.add(
@@ -938,6 +988,17 @@ class SVGProcessor:
         e_list.append(node)
 
     def _parse_rect(self, element, ident, label, lock, context_node, e_list):
+        """
+        Parse SVG Rect objects into `elem rect` objects.
+
+        @param element:
+        @param ident:
+        @param label:
+        @param lock:
+        @param context_node:
+        @param e_list:
+        @return:
+        """
         if element.is_degenerate():
             return
         node = context_node.add(
@@ -970,6 +1031,17 @@ class SVGProcessor:
         e_list.append(node)
 
     def _parse_line(self, element, ident, label, lock, context_node, e_list):
+        """
+        Parse SVG Line objects into `elem line`
+
+        @param element:
+        @param ident:
+        @param label:
+        @param lock:
+        @param context_node:
+        @param e_list:
+        @return:
+        """
         if element.is_degenerate():
             return
         node = context_node.add(
@@ -1000,6 +1072,17 @@ class SVGProcessor:
         e_list.append(node)
 
     def _parse_image(self, element, ident, label, lock, context_node, e_list):
+        """
+        Parse SVG Image objects into either `image raster` or `elem image` objects, potentially other classes.
+
+        @param element:
+        @param ident:
+        @param label:
+        @param lock:
+        @param context_node:
+        @param e_list:
+        @return:
+        """
         try:
             element.load(os.path.dirname(self.pathname))
             try:
