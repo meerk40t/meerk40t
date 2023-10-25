@@ -2903,7 +2903,6 @@ class Geomstr:
                     enhance_samples=enhance_samples,
                 )
 
-
     def _find_intersections_kross(
         self,
         segment1,
@@ -2969,17 +2968,21 @@ class Geomstr:
         # sqkross = kross * kross
         # sqLen0 = np.real(ad0) * np.real(ad0) + np.imag(ad0) * np.imag(ad0)
         # sqLen1 = np.real(ad1) * np.real(ad1) + np.imag(ad1) * np.imag(ad1)
-        s = ((ex * d1y) - (ey * d1x)) / kross
-        t = ((ex * d0y) - (ey * d0x)) / kross
-        hits = np.dstack(
-            (
-                # sqkross > 0.1 * sqLen0 * sqLen1,
-                s >= 0,
-                s <= 1,
-                t >= 0,
-                t <= 1,
-            )
-        ).all(axis=2)
+        old_np_seterr = np.seterr(divide="ignore", invalid="ignore")
+        try:
+            s = ((ex * d1y) - (ey * d1x)) / kross
+            t = ((ex * d0y) - (ey * d0x)) / kross
+            hits = np.dstack(
+                (
+                    kross != 0,
+                    s >= 0,
+                    s <= 1,
+                    t >= 0,
+                    t <= 1,
+                )
+            ).all(axis=2)
+        finally:
+            np.seterr(**old_np_seterr)
         where_hit = np.argwhere(hits)
         # q = sqkross > 0.1 * sqLen0 * sqLen1
         # pos = ap0[hits] + s[hits] * ad0[hits]
