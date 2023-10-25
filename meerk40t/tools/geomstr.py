@@ -2881,27 +2881,28 @@ class Geomstr:
         tb_hit = qb[hits] / denom[hits]
 
         for i, hit in enumerate(where_hit):
-            at = ta[0] + float(hit[1]) * step_a  # Zoomed min+segment intersected.
-            bt = tb[0] + float(hit[0]) * step_b
+            # Zoomed min+segment intersected.
             # Fractional guess within intersected segment
-            a_fractional = ta_hit[i] * step_a
-            b_fractional = tb_hit[i] * step_b
+            at_guess = ta[0] + (hit[1] + ta_hit[i]) * step_a
+            bt_guess = tb[0] + (hit[0] + tb_hit[i]) * step_b
+
             if depth == enhancements:
                 # We've enhanced as best as we can, yield the current + segment t-value to our answer
-                yield at + a_fractional, bt + b_fractional
+                yield at_guess, bt_guess
             else:
                 yield from self._find_intersections_intercept(
                     segment1,
                     segment2,
                     fun1,
                     fun2,
-                    ta=(at, at + step_a, at + a_fractional),
-                    tb=(bt, bt + step_b, bt + b_fractional),
+                    ta=(at_guess - step_a/2, at_guess + step_a/2, at_guess),
+                    tb=(bt_guess - step_b/2, bt_guess + step_b/2, bt_guess),
                     samples=enhance_samples,
                     depth=depth + 1,
                     enhancements=enhancements,
                     enhance_samples=enhance_samples,
                 )
+
 
     def _find_intersections_kross(
         self,
@@ -2980,6 +2981,7 @@ class Geomstr:
             )
         ).all(axis=2)
         where_hit = np.argwhere(hits)
+        # q = sqkross > 0.1 * sqLen0 * sqLen1
         # pos = ap0[hits] + s[hits] * ad0[hits]
         if len(where_hit) != 1 and step_a < 1e-10:
             # We're hits are becoming unstable give last best value.
@@ -2988,26 +2990,26 @@ class Geomstr:
             return
 
         # Calculate the t values for the intersections
-        ta_hit = t[hits]
-        tb_hit = s[hits]
+        ta_hit = s[hits]
+        tb_hit = t[hits]
 
         for i, hit in enumerate(where_hit):
-            at = ta[0] + float(hit[1]) * step_a  # Zoomed min+segment intersected.
-            bt = tb[0] + float(hit[0]) * step_b
+            # Zoomed min+segment intersected.
             # Fractional guess within intersected segment
-            a_fractional = ta_hit[i] * step_a
-            b_fractional = tb_hit[i] * step_b
+            at_guess = ta[0] + (hit[1] + ta_hit[i]) * step_a
+            bt_guess = tb[0] + (hit[0] + tb_hit[i]) * step_b
+
             if depth == enhancements:
                 # We've enhanced as best as we can, yield the current + segment t-value to our answer
-                yield at + a_fractional, bt + b_fractional
+                yield at_guess, bt_guess
             else:
                 yield from self._find_intersections_kross(
                     segment1,
                     segment2,
                     fun1,
                     fun2,
-                    ta=(at, at + step_a, at + a_fractional),
-                    tb=(bt, bt + step_b, bt + b_fractional),
+                    ta=(at_guess - step_a/2, at_guess + step_a/2, at_guess),
+                    tb=(bt_guess - step_b/2, bt_guess + step_b/2, bt_guess),
                     samples=enhance_samples,
                     depth=depth + 1,
                     enhancements=enhancements,
