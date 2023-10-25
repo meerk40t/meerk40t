@@ -492,6 +492,13 @@ class SpoolerPanel(wx.Panel):
             return
 
         menu = wx.Menu()
+        item = menu.Append(
+            wx.ID_ANY,
+            f"{str(element)[:30]} [{spooler.context.label}]",
+            "",
+            wx.ITEM_NORMAL,
+        )
+        item.Enable(False)
         can_enable = False
         action = _("Remove")
         if element.status == "Running":
@@ -507,21 +514,44 @@ class SpoolerPanel(wx.Panel):
 
         item = menu.Append(
             wx.ID_ANY,
-            f"{action} {str(element)[:30]} [{spooler.context.label}]",
+            f"{action}",
             "",
             wx.ITEM_NORMAL,
         )
         info_tuple = [spooler, element, remove_mode]
         self.Bind(wx.EVT_MENU, self.on_menu_popup_delete(info_tuple), item)
+        # Are there more loops than just one?
+        if hasattr(element, "loops"):
+            # Still something to go?
+            if element.loops > 1 and element.loops_executed < element.loops:
+                item = menu.Append(
+                    wx.ID_ANY,
+                    _("Finish after this loop"),
+                    _("Stop the current execution after the succesful execution of this loop"),
+                    wx.ITEM_NORMAL,
+                )
+                info_tuple = [spooler, element]
+                self.Bind(wx.EVT_MENU, self.on_menu_popup_stop_loop(info_tuple), item)
+            if not isinf(element.loops):
+                item = menu.Append(
+                    wx.ID_ANY,
+                    _("add another loop"),
+                    _("add another loop to this job"),
+                    wx.ITEM_NORMAL,
+                )
+                info_tuple = [spooler, element]
+                self.Bind(wx.EVT_MENU, self.on_menu_popup_add_loop(info_tuple), item)
+
         if can_enable:
             item = menu.Append(
                 wx.ID_ANY,
-                f"{action2} {str(element)[:30]} [{spooler.context.label}]",
+                f"{action2}",
                 "",
                 wx.ITEM_NORMAL,
             )
             info_tuple = [spooler, element]
             self.Bind(wx.EVT_MENU, self.on_menu_popup_toggle_enable(info_tuple), item)
+        menu.AppendSeparator()
         item = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_menu_popup_clear(element), item)
 
@@ -564,13 +594,43 @@ class SpoolerPanel(wx.Panel):
         return delete
 
     def on_menu_popup_toggle_enable(self, element):
-        def toggle(event=None):
+        def routine(event=None):
             spooler = element[0]
             job = element[1]
             job.enabled = not job.enabled
             self.refresh_spooler_list()
 
-        return toggle
+        return routine
+
+    # def on_menu_popup_next_placement(self, element):
+    #     def routine(event=None):
+    #         spooler = element[0]
+    #         job = element[1]
+    #         if hasattr(job, "jump_to_next"):
+    #             job.jump_to_next()
+    #         self.refresh_spooler_list()
+
+    #     return routine
+
+    def on_menu_popup_stop_loop(self, element):
+        def routine(event=None):
+            spooler = element[0]
+            job = element[1]
+            if hasattr(job, "stop_after_loop"):
+                job.stop_after_loop()
+            self.refresh_spooler_list()
+
+        return routine
+
+    def on_menu_popup_add_loop(self, element):
+        def routine(event=None):
+            spooler = element[0]
+            job = element[1]
+            if hasattr(job, "add_another_loop"):
+                job.add_another_loop()
+            self.refresh_spooler_list()
+
+        return routine
 
     def pane_show(self, *args):
         self.refresh_spooler_list()
