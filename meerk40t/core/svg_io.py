@@ -830,6 +830,8 @@ class SVGProcessor:
                 tag_label = None
         except (AttributeError, KeyError):
             # Label might simply be "label"
+            pass
+        if tag_label is None:
             tag_label = local_dict.get("label")
         return tag_label
 
