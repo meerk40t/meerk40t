@@ -2870,7 +2870,7 @@ class Geomstr:
             )
         ).all(axis=2)
         where_hit = np.argwhere(hits)
-        if len(where_hit) != 1 and step_a < 1e-2:
+        if len(where_hit) != 1 and step_a < 1e-10:
             # We're hits are becoming unstable give last best value.
             if ta[2] is not None and tb[2] is not None:
                 yield ta[2], tb[2]
