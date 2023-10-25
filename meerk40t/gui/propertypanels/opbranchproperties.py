@@ -29,7 +29,7 @@ class OpBranchPanel(wx.Panel):
                 "object": self.operation,
                 "default": False,
                 "type": bool,
-                "label": _("Multiple Passes"),
+                "label": _("Multiple loops"),
                 "tip": _("Operation job should run set number of times"),
             },
             {
@@ -38,7 +38,7 @@ class OpBranchPanel(wx.Panel):
                 "default": 1,
                 "type": int,
                 "conditional": (self.operation, "loop_enabled"),
-                "label": _("Passes"),
+                "label": _("Loops"),
                 "trailing": _("times"),
                 "tip": _("How many times should the operation job loop"),
             },
