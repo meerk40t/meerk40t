@@ -142,3 +142,33 @@ class TestFileSVG(unittest.TestCase):
             self.assertEqual(len(list(ob.flat(types="effect hatch"))), 1)
         finally:
             kernel.shutdown()
+
+    def test_load_wobble(self):
+        """
+        test to ensure that `meerk40t:operation` types load.
+        """
+        file1 = "test-wobble.svg"
+        self.addCleanup(os.remove, file1)
+        with open(file1, "w") as f:
+            f.write(
+                """
+            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:meerk40t="https://github.com/meerk40t/meerk40t/wiki/Namespace" width="400.0mm" height="430.0mm" viewBox="0 0 1032047 1109450">
+            <g type="op engrave" label="Engrave (100%, 20mm/s)" lock="False" id="E1" speed="20" power="1000" allowed_attributes="['stroke']" color="#0000ff00" dangerous="False" output="True" dwell_time="50.0" references="meerk40t:6">
+            <g type="effect wobble" lock="False" output="True" />
+            </g>
+            <ellipse cx="550118.9389283657" cy="363374.1254904113" rx="96436.11909338088" ry="96436.11909338088" stroke_scale="False" type="elem ellipse" id="meerk40t:6" lock="False" mkparam="('circle', 0, 550118.9389283657, 363374.1254904113, 0, 618309.5726906088, 295183.49172816816)" vector-effect="non-scaling-stroke" fill-rule="evenodd" stroke="#0000ff" stroke-width="1000.0" fill="none" />
+            </svg>"""
+            )
+
+        kernel = bootstrap.bootstrap()
+        try:
+            ob = kernel.elements.op_branch
+            kernel.console("operation* delete\n")
+            kernel.console("element* delete\n")
+            kernel.console(f"load {file1}\n")
+            self.assertEqual(len(list(ob.flat(types="op raster"))), 0)
+            self.assertEqual(len(list(ob.flat(types="op engrave"))), 1)
+            self.assertEqual(len(list(ob.flat(types="op cut"))), 0)
+            self.assertEqual(len(list(ob.flat(types="effect wobble"))), 1)
+        finally:
+            kernel.shutdown()
