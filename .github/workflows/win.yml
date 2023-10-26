@@ -14,11 +14,11 @@ jobs:
     - name: Checkout meerk40t
       uses: actions/checkout@v3
 
-    - name: Set up Python 3.8
+    - name: Set up Python 3.7
       uses: actions/setup-python@v4
       with:
-        python-version: 3.8
-        # Latest version of python support by Windows 7 is Python 3.8
+        python-version: 3.7.1
+        # Latest version of python support Building with ancient python for pre-sp1
         architecture: x86
         # 32-bit architecture required for libusb to connect properly
 
@@ -36,6 +36,8 @@ jobs:
         pip install pyserial
         pip install bitarray
         pip install scipy
+        pip install pypotrace-windows
+        pip install pyclipr
         pip install .
         pip install meerk40t-camera opencv-python-headless==4.5.3.56
         pip install meerk40t-barcodes
