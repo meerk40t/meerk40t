@@ -1,9 +1,8 @@
 import random
 import unittest
 
+from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MIL, Length
 from meerk40t.core.view import View
-
-from meerk40t.core.units import UNITS_PER_MIL, Length, UNITS_PER_INCH
 
 
 class TestViewport(unittest.TestCase):
@@ -27,7 +26,8 @@ class TestViewport(unittest.TestCase):
                 user_scale_y=1.0,
                 flip_x=bool(random.randint(0, 1)),
                 flip_y=bool(random.randint(0, 1)),
-                swap_xy=bool(random.randint(0, 1)),)
+                swap_xy=bool(random.randint(0, 1)),
+            )
 
             x, y = view.position(0, 0)
             x, y = view.iposition(x, y)
@@ -65,9 +65,7 @@ class TestViewport(unittest.TestCase):
         self.assertAlmostEqual(x, 0, delta=10)
         self.assertAlmostEqual(y, float(Length(bed_height)), delta=10)
 
-        x, y = view.iposition(
-            Length(bed_width).mil, Length(bed_height).mil
-        )
+        x, y = view.iposition(Length(bed_width).mil, Length(bed_height).mil)
         self.assertAlmostEqual(x, float(Length(bed_width)) / 1.2, delta=10)
         self.assertAlmostEqual(y, float(Length(bed_height)), delta=10)
 
@@ -80,12 +78,7 @@ class TestViewport(unittest.TestCase):
         bed_width = "330mm"
         bed_height = "225mm"
 
-        view = View(
-            bed_width,
-            bed_height,
-            dpi_x=1000,
-            dpi_y=1000
-        )
+        view = View(bed_width, bed_height, dpi_x=1000, dpi_y=1000)
         view.transform(
             user_scale_x=1.2,
             user_scale_y=1.0,

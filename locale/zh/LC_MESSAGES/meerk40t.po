@@ -2086,10 +2086,12 @@ msgstr "您似乎已经有了最新版本。"
 
 msgid ""
 "Latest version on github: {name} v{version} ({label})\n"
-"Url: {url}"
+"Url: {url}\n"
+"Info: {info}"
 msgstr ""
 "github 上的最新版本：{name} v{version}（{label}）\n"
-"网址：{url}"
+"网址：{url}\n"
+"{info}"
 
 #: meerk40t/extra/updater.py:30
 msgid "Could not find any release information on github"

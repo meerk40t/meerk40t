@@ -70,7 +70,7 @@ class Stroked(ABC):
         stroke_one = sqrt(abs(matrix.determinant))
         try:
             return stroke_one / self._stroke_zero
-        except (AttributeError, ZeroDivisionError):
+        except (AttributeError, ZeroDivisionError, TypeError):
             return 1.0
 
     def stroke_reify(self):
@@ -92,6 +92,7 @@ class FunctionalParameter(ABC):
     """
     Functional Parameters mixin allows the use and utility of functional parameters for this node type.
     """
+
     def __init__(self, *args, **kwargs):
         self.mkparam = None
         super().__init__()

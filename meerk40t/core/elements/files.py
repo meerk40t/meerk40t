@@ -24,7 +24,9 @@ def init_commands(kernel):
             if self.load(filename):
                 channel(_("File loaded {filename}").format(filename=filename))
             else:
-                channel(_("Load handler not found: {filename}").format(filename=filename))
+                channel(
+                    _("Load handler not found: {filename}").format(filename=filename)
+                )
         except OSError as e:
             channel(str(e))
 
@@ -41,9 +43,17 @@ def init_commands(kernel):
     def file_save(command, channel, _, filename, version, **kwargs):
         try:
             if self.save(filename, version=version):
-                channel(_("File saved {version} {filename}").format(filename=filename, version=version))
+                channel(
+                    _("File saved {version} {filename}").format(
+                        filename=filename, version=version
+                    )
+                )
             else:
-                channel(_("Save handler not found: {version} {filename}").format(filename=filename, version=version))
+                channel(
+                    _("Save handler not found: {version} {filename}").format(
+                        filename=filename, version=version
+                    )
+                )
         except OSError as e:
             channel(str(e))
 
@@ -52,4 +62,3 @@ def init_commands(kernel):
         for saver, save_name, sname in kernel.find("save"):
             for description, extension, mimetype, version in saver.save_types():
                 channel(f"{description} ({version}: {extension})")
-

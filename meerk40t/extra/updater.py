@@ -59,9 +59,7 @@ def plugin(kernel, lifecycle):
 
         UPDATE_MESSAGE_HEADER = _("A new {type} release is available:")
         UPDATE_MESSAGE_BODY = _(
-            "Version: {name} v{version} ({label})\n"
-            + "Url: {url}\n"
-            + "Info: {info}"
+            "Version: {name} v{version} ({label})\n" + "Url: {url}\n" + "Info: {info}"
         )
         NO_UPDATE_MESSAGE_HEADER = _("You seem to have the latest version.")
         NO_UPDATE_MESSAGE_BODY = _(
@@ -328,9 +326,7 @@ def plugin(kernel, lifecycle):
 
                     if newer_version(version_beta, version_current):
                         something = True
-                        message_header = UPDATE_MESSAGE_HEADER.format(
-                            type="beta"
-                        )
+                        message_header = UPDATE_MESSAGE_HEADER.format(type="beta")
                         message_body = UPDATE_MESSAGE_BODY.format(
                             name=kernel.name,
                             version=tag_beta,
@@ -345,7 +341,10 @@ def plugin(kernel, lifecycle):
                     has_wx = False
                     try:
                         import wx
+
                         from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
+                        from meerk40t.gui.wxutils import dip_size
+
                         has_wx = True
                     except ImportError:
                         pass
@@ -355,18 +354,21 @@ def plugin(kernel, lifecycle):
                         if has_wx:
                             # Very simple panel
                             dlg = wx.Dialog(
-                                None, wx.ID_ANY,
+                                None,
+                                wx.ID_ANY,
                                 title=_("Update-Info"),
                                 size=wx.DefaultSize,
                                 pos=wx.DefaultPosition,
-                                style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
+                                style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
                             )
                             # contents
                             sizer = wx.BoxSizer(wx.VERTICAL)
 
                             label = wx.StaticText(dlg, wx.ID_ANY, header)
                             sizer.Add(label, 0, wx.EXPAND, 0)
-                            info = wx.TextCtrl(dlg, wx.ID_ANY, style = wx.TE_READONLY|wx.TE_MULTILINE)
+                            info = wx.TextCtrl(
+                                dlg, wx.ID_ANY, style=wx.TE_READONLY | wx.TE_MULTILINE
+                            )
                             info.SetValue(content)
                             sizer.Add(info, 1, wx.EXPAND, 0)
                             label = wx.StaticText(dlg, wx.ID_ANY, footer)
@@ -385,13 +387,11 @@ def plugin(kernel, lifecycle):
                             sizer.Add(panel, 1, wx.EXPAND, 0)
                             dlg.SetSizer(sizer)
                             sizer.Fit(dlg)
-                            dlg.SetSize(wx.Size(620, 400))
+                            dlg.SetSize(dip_size(dlg, 620, 400))
                             dlg.CenterOnScreen()
                             answer = dlg.ShowModal()
                             dlg.Destroy()
-                            response = bool(
-                                answer in (wx.YES, wx.ID_YES, wx.ID_OK)
-                            )
+                            response = bool(answer in (wx.YES, wx.ID_YES, wx.ID_OK))
                         else:
                             question = header + "\n" + content + "\n" + footer
                             response = kernel.yesno(question)
@@ -404,7 +404,7 @@ def plugin(kernel, lifecycle):
                             action = get_response(
                                 newest_message_header,
                                 newest_message_body,
-                                _("Do you want to go the download page?")
+                                _("Do you want to go the download page?"),
                             )
                     else:
                         if version_newest is not None:
@@ -422,7 +422,7 @@ def plugin(kernel, lifecycle):
                                 action = get_response(
                                     message_header,
                                     message_body,
-                                    _("Do you want to look for yourself?")
+                                    _("Do you want to look for yourself?"),
                                 )
                             elif verbosity > 0:
                                 channel(message_header + "\n" + message_body)
@@ -442,6 +442,7 @@ def plugin(kernel, lifecycle):
                 return update_test
 
             from meerk40t.kernel.kernel import Job
+
             _job = Job(
                 process=update_check(verbosity, beta),
                 job_name="update_check_job",

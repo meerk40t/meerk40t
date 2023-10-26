@@ -8,11 +8,10 @@ from time import sleep
 
 from meerk40t.kernel import CommandSyntaxError, Service
 
-
-from ..core.view import View
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_MIL, Length
+from ..core.view import View
 from .controller import GrblController
 from .driver import GRBLDriver
 
@@ -230,8 +229,8 @@ class GRBLDevice(Service):
         self.view = View(
             self.bedwidth,
             self.bedheight,
-            dpi_x=1000.,
-            dpi_y=1000.,
+            dpi_x=1000.0,
+            dpi_y=1000.0,
         )
         self.realize()
         self.settings = dict()
@@ -738,10 +737,7 @@ class GRBLDevice(Service):
         """
         @return: the location in units for the current known position.
         """
-        return self.view.iposition(
-            self.driver.native_x,
-            self.driver.native_y
-        )
+        return self.view.iposition(self.driver.native_x, self.driver.native_y)
 
     @property
     def native(self):
@@ -757,7 +753,7 @@ class GRBLDevice(Service):
             user_scale_y=self.scale_y,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
-            swap_xy=self.swap_xy
+            swap_xy=self.swap_xy,
         )
         # rotary_active=self.rotary_active,
         # rotary_scale_x=self.rotary_scale_x,

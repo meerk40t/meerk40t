@@ -1,21 +1,19 @@
 from copy import copy
 from math import sqrt
 
-from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import Angle, Length
 from meerk40t.svgelements import Color, Matrix
 from meerk40t.tools.geomstr import Geomstr  # ,  Scanbeam
 
 
-class HatchEffectNode(Node, Stroked):
+class HatchEffectNode(Node):
     """
     Effect node performing a hatch. Effects are themselves a sort of geometry node that contains other geometry and
     the required data to produce additional geometry.
     """
 
     def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
-        self.matrix = None
         self.fill = None
         self.stroke = Color("Blue")
         self.stroke_width = 1000.0
@@ -30,14 +28,7 @@ class HatchEffectNode(Node, Stroked):
         Node.__init__(
             self, type="effect hatch", id=id, label=label, lock=lock, **kwargs
         )
-        self._formatter = "{effect}{element_type} - {distance} {angle} ({children})"
-
-        if self.matrix is None:
-            self.matrix = Matrix()
-
-        if self._stroke_zero is None:
-            # This defines the stroke-width zero point scale
-            self.stroke_width_zero()
+        self._formatter = "{element_type} - {distance} {angle} ({children})"
 
         if label is None:
             self.label = "Hatch"
@@ -54,33 +45,62 @@ class HatchEffectNode(Node, Stroked):
             self.hatch_angle = "0deg"
         if self.hatch_angle_delta is None:
             self.hatch_angle_delta = "0deg"
-        self._operands = list()
         self._distance = None
         self._angle = None
         self._angle_delta = 0
         self._effect = True
         self.recalculate()
-        if "operands" in kwargs:
-            # If operands is a list, we make copies.
-            operands = kwargs.get("operands")
-            if isinstance(operands, list):
-                for c in operands:
-                    self._operands.append(copy(c))
-            # If it was in kwargs, it was added to main.
-            del self.operands
+
+    @property
+    def implied_stroke_width(self):
+        return self.stroke_width
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
     def __copy__(self):
         nd = self.node_dict
-        nd["matrix"] = copy(self.matrix)
         nd["stroke"] = copy(self.stroke)
         nd["fill"] = copy(self.fill)
-        nd["operands"] = copy(self._operands)
         return HatchEffectNode(**nd)
 
     def scaled(self, sx, sy, ox, oy):
+        self.altered()
+
+    def notify_attached(self, node=None, **kwargs):
+        Node.notify_attached(self, node=node, **kwargs)
+        if node is self:
+            return
+        self.altered()
+
+    def notify_detached(self, node=None, **kwargs):
+        Node.notify_detached(self, node=node, **kwargs)
+        if node is self:
+            return
+        self.altered()
+
+    def notify_modified(self, node=None, **kwargs):
+        Node.notify_modified(self, node=node, **kwargs)
+        if node is self:
+            return
+        self.altered()
+
+    def notify_altered(self, node=None, **kwargs):
+        Node.notify_altered(self, node=node, **kwargs)
+        if node is self:
+            return
+        self.altered()
+
+    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, **kwargs):
+        Node.notify_scaled(self, node, sx, sy, ox, oy, **kwargs)
+        if node is self:
+            return
+        self.altered()
+
+    def notify_translated(self, node=None, dx=0, dy=0, **kwargs):
+        Node.notify_translated(self, node, dx, dy, **kwargs)
+        if node is self:
+            return
         self.altered()
 
     @property
@@ -130,79 +150,47 @@ class HatchEffectNode(Node, Stroked):
         else:
             self._angle_delta = Angle(h_angle_delta).radians
 
-        transformed_vector = self.matrix.transform_vector([0, distance_y])
+        # transformed_vector = self.matrix.transform_vector([0, distance_y])
+        transformed_vector = [0, distance_y]
         self._distance = abs(complex(transformed_vector[0], transformed_vector[1]))
 
     def preprocess(self, context, matrix, plan):
-        self.stroke_scaled = False
-        self.stroke_scaled = True
         factor = sqrt(abs(matrix.determinant))
         self._distance *= factor
-        for c in self._operands:
-            c.matrix *= matrix
+        # for c in self._children:
+        #     c.matrix *= matrix
 
-        self.stroke_scaled = False
         self.set_dirty_bounds()
 
-    def bbox(self, transformed=True, with_stroke=False):
-        if not self.effect:
-            return None
-        geometry = self.as_geometry()
-        if transformed:
-            bounds = geometry.bbox(mx=self.matrix)
-        else:
-            bounds = geometry.bbox()
-        xmin, ymin, xmax, ymax = bounds
-        if with_stroke:
-            delta = float(self.implied_stroke_width) / 2.0
-            return (
-                xmin - delta,
-                ymin - delta,
-                xmax + delta,
-                ymax + delta,
-            )
-        return xmin, ymin, xmax, ymax
+    # def bbox(self, transformed=True, with_stroke=False):
+    #     geometry = self.as_geometry()
+    #     if transformed:
+    #         bounds = geometry.bbox(mx=self.matrix)
+    #     else:
+    #         bounds = geometry.bbox()
+    #     xmin, ymin, xmax, ymax = bounds
+    #     if with_stroke:
+    #         delta = float(self.implied_stroke_width) / 2.0
+    #         return (
+    #             xmin - delta,
+    #             ymin - delta,
+    #             xmax + delta,
+    #             ymax + delta,
+    #         )
+    #     return xmin, ymin, xmax, ymax
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Hatch"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
-        default_map["effect"] = "+" if self.effect else "-"
         default_map["loop"] = (
             f"{self.loops}X " if self.loops and self.loops != 1 else ""
         )
         default_map["angle"] = str(self.hatch_angle)
         default_map["distance"] = str(self.hatch_distance)
 
-        if len(self.children):
-            default_map["children"] = str(len(self.children))
-        else:
-            default_map["children"] = str(len(self._operands))
+        default_map["children"] = str(len(self.children))
         return default_map
-
-    @property
-    def effect(self):
-        return self._effect
-
-    @effect.setter
-    def effect(self, value):
-        self._effect = value
-        if self._effect:
-            self._operands.extend(self._children)
-            for c in self._children:
-                c.set_dirty_bounds()
-                c.matrix *= ~self.matrix
-            self.remove_all_children(destroy=False)
-            self.set_dirty_bounds()
-            self.altered()
-        else:
-            for c in self._operands:
-                c.matrix *= self.matrix
-                self.set_dirty_bounds()
-                self.add_node(c)
-            self._operands.clear()
-            self.set_dirty_bounds()
-            self.altered()
 
     def as_geometry(self, **kws):
         """
@@ -213,11 +201,9 @@ class HatchEffectNode(Node, Stroked):
         @return:
         """
         outlines = Geomstr()
-        if not self.effect:
-            return outlines
-        for node in self._operands:
+        for node in self._children:
             outlines.append(node.as_geometry(**kws))
-        outlines.transform(self.matrix)
+        # outlines.transform(self.matrix)
         path = Geomstr()
         if self._distance is None:
             self.recalculate()
@@ -236,33 +222,28 @@ class HatchEffectNode(Node, Stroked):
 
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
-        if self.parent.type.startswith("op"):
-            return self.parent.drop(drag_node, modify=modify)
         if drag_node.type.startswith("elem"):
             # Dragging element onto operation adds that element to the op.
-            if modify:
-                if self._effect:
-                    drag_node.matrix *= ~self.matrix
-                    self._operands.append(drag_node)
-                    drag_node.remove_node()
+            if not modify:
+                if self.parent.type.startswith("op") or self.parent.type.startswith(
+                    "effect"
+                ):
+                    self.add_reference(drag_node)
                 else:
                     self.append_child(drag_node)
                 self.altered()
             return True
         elif drag_node.type == "reference":
             if modify:
-                self.append_child(drag_node.node)
+                if self.parent.type.startswith("op") or self.parent.type.startswith(
+                    "effect"
+                ):
+                    self.append_child(drag_node)
+                else:
+                    self.append_child(drag_node.node)
             return True
         elif drag_node.type.startswith("op"):
             # If we drag an operation to this node,
             # then we will reverse the game
             return drag_node.drop(self, modify=modify)
         return False
-
-    def copy_children(self, obj):
-        for element in obj.children:
-            self.add_reference(element)
-
-    def copy_children_as_real(self, copy_node):
-        for node in copy_node.children:
-            self.add_node(copy(node.node))

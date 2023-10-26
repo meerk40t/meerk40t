@@ -40,12 +40,11 @@ class EditTool(ToolWidget):
     def __init__(self, scene):
         ToolWidget.__init__(self, scene)
         self._listener_active = False
-        self.nodes = None
+        self.nodes = []
         self.shape = None
         self.path = None
         self.element = None
         self.selected_index = None
-        self.anyselected = False
 
         self.move_type = "node"
         self.node_type = "path"
@@ -65,6 +64,8 @@ class EditTool(ToolWidget):
         self.pen_selection = wx.Pen()
         self.pen_selection.SetColour(self.scene.colors.color_selection3)
         self.pen_selection.SetStyle(wx.PENSTYLE_SHORT_DASH)
+        self.brush_highlight = wx.Brush(wx.RED_BRUSH)
+        self.brush_normal = wx.Brush(wx.TRANSPARENT_BRUSH)
         # want to have sharp edges
         self.pen_selection.SetJoin(wx.JOIN_MITER)
         # "key": (routine, info, available for poly, available for path)
@@ -194,6 +195,8 @@ class EditTool(ToolWidget):
                 # print(
                 #     f"Was asked to perform with {my_selection}, {my_active_poly}, {my_active_path} while {self.anyselected} + {self.node_type}"
                 # )
+                if self.element is None:
+                    return False
                 flag_sel = True
                 flag_poly = False
                 flag_path = False
@@ -205,6 +208,11 @@ class EditTool(ToolWidget):
                     flag_path = True
                 flag = flag_sel and (flag_path or flag_poly)
                 return flag
+
+            my_selection = needs_selection
+            my_active_poly = active_for_poly
+            my_active_path = active_for_path
+            return routine
 
         def becomes_visible(active_for_path, active_for_poly):
             def routine(*args):
@@ -801,13 +809,19 @@ class EditTool(ToolWidget):
             if entry["type"] == "point":
                 if idx == self.selected_index or entry["selected"]:
                     gc.SetPen(self.pen_highlight)
+                    gc.SetBrush(self.brush_highlight)
+                    factor = 1.25
                 else:
                     gc.SetPen(self.pen)
-                gc.DrawEllipse(ptx - offset, pty - offset, offset * 2, offset * 2)
+                    gc.SetBrush(self.brush_normal)
+                    factor = 1
+                gc.DrawEllipse(ptx - factor * offset, pty - factor * offset, offset * 2 * factor, offset * 2 * factor)
             elif entry["type"] == "control":
                 if idx == self.selected_index or entry["selected"]:
+                    factor = 1.25
                     gc.SetPen(self.pen_highlight)
                 else:
+                    factor = 1
                     gc.SetPen(self.pen_ctrl)
                     # Do we have a second controlpoint at the same segment?
                     if isinstance(entry["segment"], CubicBezier):
@@ -819,11 +833,11 @@ class EditTool(ToolWidget):
                         if orgnode is not None and orgnode["selected"]:
                             gc.SetPen(self.pen_ctrl_semi)
                 pattern = [
-                    (ptx - offset, pty),
-                    (ptx, pty + offset),
-                    (ptx + offset, pty),
-                    (ptx, pty - offset),
-                    (ptx - offset, pty),
+                    (ptx - factor * offset, pty),
+                    (ptx, pty + factor * offset),
+                    (ptx + factor * offset, pty),
+                    (ptx, pty - factor * offset),
+                    (ptx - factor * offset, pty),
                 ]
                 gc.DrawLines(pattern)
                 if 0 <= entry["connector"] < len(self.nodes):
@@ -834,15 +848,17 @@ class EditTool(ToolWidget):
                     gc.DrawLines(pattern)
             elif entry["type"] == "midpoint":
                 if idx == self.selected_index or entry["selected"]:
+                    factor = 1.25
                     gc.SetPen(self.pen_highlight)
                 else:
+                    factor = 1
                     gc.SetPen(self.pen_ctrl)
                 pattern = [
-                    (ptx - offset, pty),
-                    (ptx, pty + offset),
-                    (ptx + offset, pty),
-                    (ptx, pty - offset),
-                    (ptx - offset, pty),
+                    (ptx - factor * offset, pty),
+                    (ptx, pty + factor * offset),
+                    (ptx + factor * offset, pty),
+                    (ptx, pty - factor * offset),
+                    (ptx - factor * offset, pty),
                 ]
                 gc.DrawLines(pattern)
 
@@ -974,6 +990,8 @@ class EditTool(ToolWidget):
         """
         Toggle the closed status for a polyline or path element
         """
+        if self.element is None or self.nodes is None:
+            return
         modified = False
         if self.node_type == "polyline":
             dist = (self.shape.points[0].x - self.shape.points[-1].x) ** 2 + (
@@ -989,12 +1007,7 @@ class EditTool(ToolWidget):
             modified = True
         else:
             dealt_with = []
-            anyselected = False
-            for entry in self.nodes:
-                if entry["selected"] and entry["type"] == "point":
-                    anyselected = True
-                    break
-            if not anyselected:
+            if not self.anyselected:
                 # Let's select the last point, so the last segment will be closed/opened
                 for idx in range(len(self.nodes) - 1, -1, -1):
                     entry = self.nodes[idx]
@@ -1126,6 +1139,8 @@ class EditTool(ToolWidget):
         Smoothen a circular bezier segment to adjacent segments, ie adjust
         the control points so that they are an extension of the previous/next segment
         """
+        if self.element is None or self.nodes is None:
+            return
         modified = False
         if self.node_type == "polyline":
             # Not valid for a polyline Could make a path now but that might be more than the user expected...
@@ -1217,6 +1232,8 @@ class EditTool(ToolWidget):
         'prev control2' - 'prev/end=next start' - 'next control1'
         are collinear
         """
+        if self.element is None or self.nodes is None:
+            return
         modified = False
         if self.node_type == "polyline":
             # Not valid for a polyline Could make a path now but that might be more than the user expected...
@@ -1336,6 +1353,8 @@ class EditTool(ToolWidget):
         Adjust the two control points control1 and control2 of a cubic segment
         so that they are symmetrical to the perpendicular bisector on start - end
         """
+        if self.element is None or self.nodes is None:
+            return
         modified = False
         if self.node_type == "polyline":
             # Not valid for a polyline Could make a path now but that might be more than the user expected...
@@ -1368,6 +1387,8 @@ class EditTool(ToolWidget):
         """
         Delete all selected (point) nodes
         """
+        if self.element is None or self.nodes is None:
+            return
         modified = False
         for idx in range(len(self.nodes) - 1, -1, -1):
             entry = self.nodes[idx]
@@ -1436,6 +1457,8 @@ class EditTool(ToolWidget):
         """
         Convert all selected segments to a line
         """
+        if self.element is None or self.nodes is None:
+            return
         modified = False
         if self.node_type == "polyline":
             # Not valid for a polyline Could make a path now but that might be more than the user expected...
@@ -1459,6 +1482,8 @@ class EditTool(ToolWidget):
         """
         Convert all segments of the path to a line
         """
+        if self.element is None or self.nodes is None:
+            return
         modified = False
         if self.node_type == "polyline":
             # Not valid for a polyline Could make a path now but that might be more than the user expected...
@@ -1479,6 +1504,8 @@ class EditTool(ToolWidget):
         """
         Convert all selected segments to a circular bezier
         """
+        if self.element is None or self.nodes is None:
+            return
         modified = False
         if self.node_type == "polyline":
             # Not valid for a polyline Could make a path now but that might be more than the user expected...
@@ -1528,6 +1555,8 @@ class EditTool(ToolWidget):
         """
         Break a path at the selected (point) nodes
         """
+        if self.element is None or self.nodes is None:
+            return
         # Stub for breaking the path
         modified = False
         if self.node_type == "polyline":
@@ -1591,6 +1620,8 @@ class EditTool(ToolWidget):
         """
         Join two selected (point) nodes if they are on different subpath
         """
+        if self.element is None or self.nodes is None:
+            return
         modified = False
         if self.node_type == "polyline":
             # Not valid for a polyline
@@ -1638,6 +1669,8 @@ class EditTool(ToolWidget):
         """
         Insert a point in the middle of a selected segment
         """
+        if self.element is None or self.nodes is None:
+            return
         modified = False
         # Move backwards as len will change
         for idx in range(len(self.nodes) - 1, -1, -1):
@@ -1672,6 +1705,10 @@ class EditTool(ToolWidget):
                     if entry["segment"] is None:
                         continue
                     segment = entry["segment"]
+
+                    def pt_info(pt):
+                        return f"({pt.x:.0f}, {pt.y:.0f})"
+
                     if entry["segtype"] == "L":
                         # Line
                         mid_x = (segment.start.x + segment.end.x) / 2
@@ -1681,6 +1718,11 @@ class EditTool(ToolWidget):
                             end=Point(segment.end.x, segment.end.y),
                         )
                         self.path.insert(idx + 1, newsegment)
+                        # path.insert may change the start and end point
+                        # of the segement to make sure it maintains a
+                        # contiguous path, so we need to set it again...
+                        newsegment.start.x = mid_x
+                        newsegment.start.y = mid_y
                         segment.end.x = mid_x
                         segment.end.y = mid_y
                         modified = True
@@ -1699,6 +1741,8 @@ class EditTool(ToolWidget):
                         segment.end.y = mid_y
                         segment.control2.x = mid_x
                         segment.control2.y = mid_y
+                        newsegment.start.x = mid_x
+                        newsegment.start.y = mid_y
                         modified = True
                     elif entry["segtype"] == "A":
                         midpoint = segment.point(0.5)
@@ -1715,6 +1759,8 @@ class EditTool(ToolWidget):
                         self.path.insert(idx + 1, newsegment)
                         segment.end.x = mid_x
                         segment.end.y = mid_y
+                        newsegment.start.x = mid_x
+                        newsegment.start.y = mid_y
                         modified = True
                     elif entry["segtype"] == "Q":
                         midpoint = segment.point(0.5)
@@ -1730,6 +1776,8 @@ class EditTool(ToolWidget):
                         segment.end.y = mid_y
                         segment.control.x = mid_x
                         segment.control.y = mid_y
+                        newsegment.start.x = mid_x
+                        newsegment.start.y = mid_y
                         modified = True
                     elif entry["segtype"] == "M":
                         # Very first point? Mirror first segment and take midpoint
@@ -1747,6 +1795,8 @@ class EditTool(ToolWidget):
                         newsegment = Line(start=pt1, end=pt2)
                         self.path.insert(idx + 1, newsegment)
                         segment.end = pt1
+                        newsegment.start.x = pt1.x
+                        newsegment.start.y = pt1.y
                         # We need to step forward to assess whether there is a close segment
                         for idx2 in range(idx + 1, len(self.path)):
                             if isinstance(self.path[idx2], Move):
@@ -1766,6 +1816,8 @@ class EditTool(ToolWidget):
         """
         Append a point to the selected element, works all the time and does not require a valid selection
         """
+        if self.element is None or self.nodes is None:
+            return
         modified = False
         if self.node_type == "polyline":
             idx = len(self.shape.points) - 1
@@ -1797,10 +1849,20 @@ class EditTool(ToolWidget):
                     self.path[valididx + 1].start.y = newpt.y
 
                 self.path.insert(valididx + 1, newsegment)
+                newsegment.start.x = seg.end.x
+                newsegment.start.y = seg.end.y
                 modified = True
 
         if modified:
             self.modify_element(True)
+
+    @property
+    def anyselected(self):
+        if self.nodes:
+            for entry in self.nodes:
+                if entry["selected"]:
+                    return True
+        return False
 
     def event(
         self,
@@ -1845,7 +1907,6 @@ class EditTool(ToolWidget):
 
             xp = space_pos[0]
             yp = space_pos[1]
-            self.anyselected = False
             if self.nodes:
                 w = offset * 4
                 h = offset * 4
@@ -1870,19 +1931,13 @@ class EditTool(ToolWidget):
                             if orgnode is not None:
                                 orgnode["selected"] = True
                             entry["selected"] = True
-                            self.anyselected = True
                         else:
                             # Shift-Key Pressed?
                             if "shift" not in modifiers:
                                 self.clear_selection()
                                 entry["selected"] = True
-                                self.anyselected = True
                             else:
                                 entry["selected"] = not entry["selected"]
-                                for chk in self.nodes:
-                                    if chk["selected"]:
-                                        self.anyselected = True
-                                        break
                         break
                 else:  # For-else == icky
                     self.selected_index = None
@@ -2036,19 +2091,15 @@ class EditTool(ToolWidget):
                 if abs(dx) < 1e-10 or abs(dy) < 1e-10:
                     return RESPONSE_CONSUME
                 # We select all points (not controls) inside
-                anyselected = False
-                for entry in self.nodes:
-                    pt = entry["point"]
-                    if (
-                        entry["type"] == "point"
-                        and x0 <= pt.x <= x1
-                        and y0 <= pt.y <= y1
-                    ):
-                        entry["selected"] = True
-                    if entry["selected"]:
-                        # Could as well be another one not inside the
-                        # current selection
-                        anyselected = True
+                if self.element:
+                    for entry in self.nodes:
+                        pt = entry["point"]
+                        if (
+                            entry["type"] == "point"
+                            and x0 <= pt.x <= x1
+                            and y0 <= pt.y <= y1
+                        ):
+                            entry["selected"] = True
                 self.scene.request_refresh()
                 self.enable_rules()
             self.p1 = None
@@ -2061,6 +2112,8 @@ class EditTool(ToolWidget):
         Translates a keycode into a command to execute
         """
         # print(f"Perform action called with {code}")
+        if self.element is None or self.nodes is None:
+            return
         if code in self.commands:
             action = self.commands[code]
             # print(f"Execute {action[1]}")

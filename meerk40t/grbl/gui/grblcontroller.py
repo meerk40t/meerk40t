@@ -8,6 +8,7 @@ import wx
 
 from meerk40t.gui.icons import icons8_connected_50, icons8_disconnected_50
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import dip_size
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -50,7 +51,7 @@ class GRBLControllerPanel(wx.Panel):
         sizer_1.Add(self.button_device_connect, 0, wx.EXPAND, 0)
 
         static_line_2 = wx.StaticLine(self, wx.ID_ANY)
-        static_line_2.SetMinSize((483, 5))
+        static_line_2.SetMinSize(dip_size(self, 483, 5))
         sizer_1.Add(static_line_2, 0, wx.EXPAND, 0)
 
         self.data_exchange = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE)

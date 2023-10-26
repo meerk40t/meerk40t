@@ -13,19 +13,17 @@ FLOAT_PARAMETERS = (
     "delay_laser_on",
     "delay_laser_off",
     "delay_polygon",
-    "wobble_speed",
 )
 INT_PARAMETERS = ("pulse_width",)
 
 BOOL_PARAMETERS = (
-    "wobble_enabled",
     "timing_enabled",
     "rapid_enabled",
     "pulse_width_enabled",
 )
 
 
-STRING_PARAMETERS = ("wobble_type", "wobble_radius", "wobble_interval")
+STRING_PARAMETERS = ()
 
 
 class Parameters:
@@ -95,46 +93,6 @@ class Parameters:
     @timing_enabled.setter
     def timing_enabled(self, value):
         self.settings["timing_enabled"] = value
-
-    @property
-    def wobble_enabled(self):
-        return self.settings.get("wobble_enabled", False)
-
-    @wobble_enabled.setter
-    def wobble_enabled(self, value):
-        self.settings["wobble_enabled"] = value
-
-    @property
-    def wobble_radius(self):
-        return self.settings.get("wobble_radius", "1.5mm")
-
-    @wobble_radius.setter
-    def wobble_radius(self, value):
-        self.settings["wobble_radius"] = value
-
-    @property
-    def wobble_speed(self):
-        return self.settings.get("wobble_speed", 50.0)
-
-    @wobble_speed.setter
-    def wobble_speed(self, value):
-        self.settings["wobble_speed"] = value
-
-    @property
-    def wobble_interval(self):
-        return self.settings.get("wobble_interval", "0.3mm")
-
-    @wobble_interval.setter
-    def wobble_interval(self, value):
-        self.settings["wobble_interval"] = value
-
-    @property
-    def wobble_type(self):
-        return self.settings.get("wobble_type", "circle")
-
-    @wobble_type.setter
-    def wobble_type(self, value):
-        self.settings["wobble_type"] = value
 
     @property
     def speed(self):

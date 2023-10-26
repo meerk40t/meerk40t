@@ -4,7 +4,7 @@ from wx import aui
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import icons8_compress_50
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -61,10 +61,10 @@ class PositionPanel(wx.Panel):
             style=wx.TE_PROCESS_ENTER,
             nonzero=True,
         )
-        self.text_x.SetMinSize((70, 23))
-        self.text_y.SetMinSize((70, 23))
-        self.text_w.SetMinSize((70, 23))
-        self.text_h.SetMinSize((70, 23))
+        self.text_x.SetMinSize(dip_size(self, 70, 23))
+        self.text_y.SetMinSize(dip_size(self, 70, 23))
+        self.text_w.SetMinSize(dip_size(self, 70, 23))
+        self.text_h.SetMinSize(dip_size(self, 70, 23))
         self.chk_individually = wx.CheckBox(self, wx.ID_ANY, _("Individ."))
         self.chk_lock = wx.CheckBox(self, wx.ID_ANY, _("Keep ratio"))
         if self.small:
@@ -568,7 +568,7 @@ class PositionPanel(wx.Panel):
             try:
                 w = Length(
                     self.text_w.GetValue(),
-                    relative_length=self.context.view.width,
+                    relative_length=self.context.device.view.width,
                     unitless=UNITS_PER_PIXEL,
                     preferred_units=self.context.units_name,
                 )
@@ -600,7 +600,7 @@ class PositionPanel(wx.Panel):
             try:
                 h = Length(
                     self.text_h.GetValue(),
-                    relative_length=self.context.view.height,
+                    relative_length=self.context.device.view.height,
                     unitless=UNITS_PER_PIXEL,
                     preferred_units=self.context.units_name,
                 )
@@ -631,7 +631,7 @@ class PositionPanel(wx.Panel):
             try:
                 pos_x = Length(
                     self.text_h.GetValue(),
-                    relative_length=self.context.view.height,
+                    relative_length=self.context.device.view.height,
                     unitless=UNITS_PER_PIXEL,
                     preferred_units=self.context.units_name,
                 )
@@ -649,7 +649,7 @@ class PositionPanel(wx.Panel):
             try:
                 pos_y = Length(
                     self.text_h.GetValue(),
-                    relative_length=self.context.view.width,
+                    relative_length=self.context.device.view.width,
                     unitless=UNITS_PER_PIXEL,
                     preferred_units=self.context.units_name,
                 )

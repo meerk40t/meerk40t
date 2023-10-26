@@ -8,6 +8,7 @@ from meerk40t.gui.wxutils import (
     ScrolledPanel,
     StaticBoxSizer,
     TextCtrl,
+    dip_size,
 )
 from meerk40t.kernel import Context
 from meerk40t.svgelements import Color
@@ -424,13 +425,13 @@ class ChoicePropertyPanel(ScrolledPanel):
                     on_button(attr, obj, additional_signal),
                 )
                 if ctrl_width > 0:
-                    control.SetMaxSize(wx.Size(ctrl_width, -1))
+                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == bool:
                 # Bool type objects get a checkbox.
                 control = CheckBox(self, label=label)
                 control.SetValue(data)
-                control.SetMinSize(wx.Size(-1, 23))
+                control.SetMinSize(dip_size(self, -1, 23))
 
                 def on_checkbox_check(param, ctrl, obj, addsig):
                     def check(event=None):
@@ -513,12 +514,12 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 ctrl_width = c.get("width", 0)
                 if ctrl_width > 0:
-                    control.SetMaxSize(wx.Size(ctrl_width, -1))
+                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 control.SetValue(str(data))
                 if ctrl_width > 0:
-                    control.SetMaxSize(wx.Size(ctrl_width, -1))
+                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 if ctrl_width > 0:
-                    control.SetMaxSize(wx.Size(ctrl_width, -1))
+                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
                 control_sizer.Add(control_btn, 0, wx.EXPAND, 0)
                 control_btn.Bind(
@@ -565,7 +566,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     return select
 
                 if ctrl_width > 0:
-                    control.SetMaxSize(wx.Size(ctrl_width, -1))
+                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
                 control.Bind(
                     wx.EVT_SLIDER,
@@ -615,7 +616,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     return select
 
                 if ctrl_width > 0:
-                    control.SetMaxSize(wx.Size(ctrl_width, -1))
+                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
                 control.Bind(
                     wx.EVT_COMBOBOX,
@@ -658,7 +659,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     return select
 
                 if ctrl_width > 0:
-                    control.SetMaxSize(wx.Size(ctrl_width, -1))
+                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
                 control.Bind(
                     wx.EVT_RADIOBOX,
@@ -688,7 +689,7 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 # Constrain the width
                 testsize = control.GetBestSize()
-                control.SetMaxSize(wx.Size(testsize[0] + 30, -1))
+                control.SetMaxSize(dip_size(self, testsize[0] + 30, -1))
                 # print ("Display: %s" % display_list)
                 # print ("Choices: %s" % choice_list)
                 # print ("To set: %s" % str(data))
@@ -710,7 +711,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     # Try to center it vertically to the controls extent
                     wd, ht = control.GetSize()
                     label_text = wx.StaticText(self, id=wx.ID_ANY, label=label + " ")
-                    # label_text.SetMinSize((-1, ht))
+                    # label_text.SetMinSize(dip_size(self, -1, ht))
                     control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
                 control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
                 control.Bind(
@@ -732,7 +733,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 )
                 # Constrain the width
                 testsize = control.GetBestSize()
-                control.SetMaxSize(wx.Size(testsize[0] + 30, -1))
+                control.SetMaxSize(dip_size(self, testsize[0] + 30, -1))
                 # print ("Choices: %s" % choice_list)
                 # print ("To set: %s" % str(data))
                 if data is not None:
@@ -767,10 +768,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                     # Try to center it vertically to the controls extent
                     wd, ht = control.GetSize()
                     label_text = wx.StaticText(self, id=wx.ID_ANY, label=label + " ")
-                    # label_text.SetMinSize((-1, ht))
+                    # label_text.SetMinSize(dip_size(self, -1, ht))
                     control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
                 if ctrl_width > 0:
-                    control.SetMaxSize(wx.Size(ctrl_width, -1))
+                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
                 control.Bind(
                     wx.EVT_COMBOBOX,
@@ -917,7 +918,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 data = Color(datastr)
                 set_color(control, data)
                 if ctrl_width > 0:
-                    control.SetMaxSize(wx.Size(ctrl_width, -1))
+                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 control_sizer.Add(control, 0, wx.EXPAND, 0)
                 color_info = wx.StaticText(self, wx.ID_ANY, label)
                 control_sizer.Add(color_info, 1, wx.ALIGN_CENTER_VERTICAL)
@@ -927,7 +928,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     on_button_color(attr, control, obj, additional_signal),
                 )
                 if ctrl_width > 0:
-                    control.SetMaxSize(wx.Size(ctrl_width, -1))
+                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == list and data_style == "chart":
                 chart = EditableListCtrl(
@@ -936,19 +937,26 @@ class ChoicePropertyPanel(ScrolledPanel):
                     style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
                 )
                 columns = c.get("columns", [])
-                for column in columns:
-                    chart.AppendColumn(
-                        column.get("label", ""),
-                        format=wx.LIST_FORMAT_LEFT,
-                        width=column.get("width", 150),
-                    )
-                for dataline in data:
-                    row_id = chart.InsertItem(
-                        chart.GetItemCount(), dataline.get("speed", 0)
-                    )
-                    for column_id, column in enumerate(columns):
-                        c_attr = column.get("attr")
-                        chart.SetItem(row_id, column_id, str(dataline.get(c_attr, "")))
+
+                def fill_ctrl():
+                    chart.ClearAll()
+                    for column in columns:
+                        chart.AppendColumn(
+                            column.get("label", ""),
+                            format=wx.LIST_FORMAT_LEFT,
+                            width=column.get("width", 150),
+                        )
+                    for dataline in data:
+                        row_id = chart.InsertItem(
+                            chart.GetItemCount(), dataline.get("speed", 0)
+                        )
+                        for column_id, column in enumerate(columns):
+                            c_attr = column.get("attr")
+                            chart.SetItem(
+                                row_id, column_id, str(dataline.get(c_attr, ""))
+                            )
+
+                fill_ctrl()
 
                 def on_chart_start(columns, param, ctrl, obj):
                     def chart_start(event=None):
@@ -983,6 +991,86 @@ class ChoicePropertyPanel(ScrolledPanel):
                 chart.Bind(
                     wx.EVT_LIST_END_LABEL_EDIT, on_chart_stop(columns, attr, chart, obj)
                 )
+
+                allow_deletion = c.get("allow_deletion", False)
+                allow_duplication = c.get("allow_duplication", False)
+
+                def on_chart_contextmenu(columns, param, ctrl, obj):
+                    def chart_menu(event=None):
+                        row_id = event.GetIndex()  # Get the current row
+                        if row_id < 0:
+                            return
+                        menu = wx.Menu()
+                        if allow_deletion:
+
+                            def on_delete(event):
+                                values = getattr(obj, attr)
+                                # try:
+                                values.pop(row_id)
+                                self.context.signal(param, values, row_id, attr)
+                                fill_ctrl()
+                                # except IndexError:
+                                #    pass
+
+                            menuitem = menu.Append(
+                                wx.ID_ANY, _("Delete this entry"), ""
+                            )
+                            self.Bind(
+                                wx.EVT_MENU,
+                                on_delete,
+                                id=menuitem.GetId(),
+                            )
+                        if allow_duplication:
+
+                            def on_duplicate(event):
+                                values = getattr(obj, attr)
+                                newentry = dict()
+                                for key, content in values[row_id].items():
+                                    newentry[key] = content
+                                values.append(newentry)
+                                self.context.signal(param, values, row_id, attr)
+                                # except IndexError:
+                                #    pass
+                                fill_ctrl()
+
+                            menuitem = menu.Append(
+                                wx.ID_ANY, _("Duplicate this entry"), ""
+                            )
+                            self.Bind(
+                                wx.EVT_MENU,
+                                on_duplicate,
+                                id=menuitem.GetId(),
+                            )
+
+                        def on_default(event):
+                            values = getattr(obj, attr)
+                            default = c.get("default", [])
+                            values.clear()
+                            for e in default:
+                                values.append(e)
+
+                            self.context.signal(param, values, 0, attr)
+                            fill_ctrl()
+                            # except IndexError:
+                            #    pass
+
+                        menuitem = menu.Append(wx.ID_ANY, _("Restore defaults"), "")
+                        self.Bind(
+                            wx.EVT_MENU,
+                            on_default,
+                            id=menuitem.GetId(),
+                        )
+
+                        if menu.MenuItemCount != 0:
+                            self.PopupMenu(menu)
+                            menu.Destroy()
+
+                    return chart_menu
+
+                chart.Bind(
+                    wx.EVT_LIST_ITEM_RIGHT_CLICK,
+                    on_chart_contextmenu(columns, attr, chart, obj),
+                )
                 sizer_main.Add(chart, 0, wx.EXPAND, 0)
             elif data_type in (str, int, float):
                 # str, int, and float type objects get a TextCtrl setter.
@@ -1010,10 +1098,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                 )
                 ctrl_width = c.get("width", 0)
                 if ctrl_width > 0:
-                    control.SetMaxSize(wx.Size(ctrl_width, -1))
+                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 control.SetValue(str(data))
                 if ctrl_width > 0:
-                    control.SetMaxSize(wx.Size(ctrl_width, -1))
+                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
                 def on_generic_text(param, ctrl, obj, dtype, addsig):
@@ -1062,7 +1150,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             data._digits = 4
                 control.SetValue(str(data))
                 if ctrl_width > 0:
-                    control.SetMaxSize(wx.Size(ctrl_width, -1))
+                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
                 def on_length_text(param, ctrl, obj, dtype, addsig):
@@ -1103,7 +1191,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 )
                 control.SetValue(str(data))
                 if ctrl_width > 0:
-                    control.SetMaxSize(wx.Size(ctrl_width, -1))
+                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
                 def on_angle_text(param, ctrl, obj, dtype, addsig):
@@ -1175,7 +1263,7 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 set_color(control, data)
                 if ctrl_width > 0:
-                    control.SetMaxSize(wx.Size(ctrl_width, -1))
+                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 control_sizer.Add(control, 0, wx.EXPAND, 0)
 
                 control.Bind(
@@ -1183,7 +1271,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     on_button_color(attr, control, obj, additional_signal),
                 )
                 if ctrl_width > 0:
-                    control.SetMaxSize(wx.Size(ctrl_width, -1))
+                    control.SetMaxSize(dip_size(self, ctrl_width, -1))
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             else:
                 # Requires a registered data_type
@@ -1215,7 +1303,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         control.Enable(enabled)
                     elif len(conditional) == 4:
                         c_obj, c_attr, c_from, c_to = conditional
-                        enabled = bool( c_from <= getattr(c_obj, c_attr) <= c_to)
+                        enabled = bool(c_from <= getattr(c_obj, c_attr) <= c_to)
                         c_equals = (c_from, c_to)
                         control.Enable(enabled)
 
@@ -1223,9 +1311,11 @@ class ChoicePropertyPanel(ScrolledPanel):
                         def listen(origin, value, target=None):
                             try:
                                 if isinstance(eqs, (list, tuple)):
-                                    enable = bool(eqs[0] <= getattr(obj, param) <= eqs[1])
+                                    enable = bool(
+                                        eqs[0] <= getattr(obj, param) <= eqs[1]
+                                    )
                                 else:
-                                    enable = bool(getattr(obj, param) == eqs )
+                                    enable = bool(getattr(obj, param) == eqs)
                                 ctrl.Enable(enable)
                             except (IndexError, RuntimeError):
                                 pass

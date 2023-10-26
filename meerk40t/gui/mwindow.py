@@ -26,6 +26,15 @@ class MWindow(wx.Frame, Module):
                 )
         wx.Frame.__init__(self, parent, style=style)
         Module.__init__(self, context, path)
+        try:
+            dipsize = self.FromDIP(wx.Size(width, height))
+            d_width = dipsize[0]
+            d_height = dipsize[1]
+        except AttributeError:
+            d_width = width
+            d_height = height
+        width = d_width
+        height = d_height
         self.root_context = context.root
         self.window_context = context.get_context(path)
         self.root_context.setting(bool, "windows_save", True)
@@ -37,6 +46,15 @@ class MWindow(wx.Frame, Module):
                 self.window_context.width = 100
             if self.window_context.height < 100:
                 self.window_context.height = 100
+            display_idx = wx.Display.GetFromWindow(self)
+            if display_idx != wx.NOT_FOUND:
+                area = wx.Display(display_idx).GetClientArea()
+                if self.window_context.width >= area[2]:
+                    self.window_context.width = area[2]
+                    self.window_context.setting(int, "x", 0)
+                if self.window_context.height >= area[3]:
+                    self.window_context.height = area[3]
+                    self.window_context.setting(int, "y", 0)
             self.SetSize((self.window_context.width, self.window_context.height))
         else:
             self.SetSize(width, height)

@@ -18,7 +18,7 @@ from .icons import (
     icons8_scatter_plot_20,
     icons8_small_beam_20,
 )
-from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, create_menu
+from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, create_menu, dip_size
 
 _ = wx.GetTranslation
 
@@ -88,22 +88,29 @@ class BasicOpPanel(wx.Panel):
         self.combo_apply_color.Bind(wx.EVT_COMBOBOX, self.on_combo_color)
 
         self.btn_config = wx.Button(self, wx.ID_ANY, "...")
-        self.btn_config.SetMinSize(wx.Size(25, -1))
-        self.btn_config.SetMaxSize(wx.Size(25, -1))
+        self.btn_config.SetMinSize(dip_size(self, 25, -1))
+        self.btn_config.SetMaxSize(dip_size(self, 25, -1))
         self.btn_config.Bind(wx.EVT_BUTTON, self.on_config)
         self.main_sizer = wx.BoxSizer(wx.VERTICAL)
         self.op_panel = ScrolledPanel(self, wx.ID_ANY)
         self.op_panel.SetupScrolling()
         self.operation_sizer = None
+        classif_sizer = StaticBoxSizer(
+            self, wx.ID_ANY, _("Classification"), wx.VERTICAL
+        )
+        upper_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        upper_sizer.Add(self.combo_apply_color, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        upper_sizer.Add(self.btn_config, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        option_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Options"), wx.HORIZONTAL)
-        option_sizer.Add(self.combo_apply_color, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        option_sizer.Add(self.check_exclusive, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        option_sizer.Add(self.check_all_similar, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        option_sizer.Add(self.btn_config, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        classif_sizer.Add(upper_sizer, 0, wx.EXPAND, 0)
+
+        lower_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        lower_sizer.Add(self.check_exclusive, 1, wx.EXPAND, 0)
+        lower_sizer.Add(self.check_all_similar, 1, wx.EXPAND, 0)
+        classif_sizer.Add(lower_sizer, 0, wx.EXPAND, 0)
 
         self.main_sizer.Add(self.op_panel, 1, wx.EXPAND, 0)
-        self.main_sizer.Add(option_sizer, 0, wx.EXPAND, 0)
+        self.main_sizer.Add(classif_sizer, 0, wx.EXPAND, 0)
         self.SetSizer(self.main_sizer)
         self.Layout()
         self.use_percent = False
@@ -383,19 +390,19 @@ class BasicOpPanel(wx.Panel):
         check_filtered = wx.CheckBox(self.op_panel, wx.ID_ANY)
         check_filtered.SetToolTip(_("Suppress non-used operations"))
         check_filtered.SetValue(self.filtered)
-        check_filtered.SetMinSize(wx.Size(50, -1))
-        check_filtered.SetMaxSize(wx.Size(90, -1))
+        check_filtered.SetMinSize(dip_size(self, 50, -1))
+        check_filtered.SetMaxSize(dip_size(self, 90, -1))
         info_sizer.Add(check_filtered, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         check_filtered.Bind(wx.EVT_CHECKBOX, on_check_filtered)
 
         header = wx.StaticText(self.op_panel, wx.ID_ANY, label=_("Active"))
-        header.SetMinSize(wx.Size(30, -1))
-        header.SetMaxSize(wx.Size(50, -1))
+        header.SetMinSize(dip_size(self, 30, -1))
+        header.SetMaxSize(dip_size(self, 50, -1))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         header = wx.StaticText(self.op_panel, wx.ID_ANY, label=_("Show"))
-        header.SetMinSize(wx.Size(30, -1))
-        header.SetMaxSize(wx.Size(50, -1))
+        header.SetMinSize(dip_size(self, 30, -1))
+        header.SetMaxSize(dip_size(self, 50, -1))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         if self.use_percent:
             unit = " [%]"
@@ -404,12 +411,12 @@ class BasicOpPanel(wx.Panel):
         header = wx.StaticText(
             self.op_panel, wx.ID_ANY, label=_("Power {unit}").format(unit=unit)
         )
-        header.SetMaxSize(wx.Size(30, -1))
-        header.SetMaxSize(wx.Size(70, -1))
+        header.SetMaxSize(dip_size(self, 30, -1))
+        header.SetMaxSize(dip_size(self, 70, -1))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         header = wx.StaticText(self.op_panel, wx.ID_ANY, label=_("Speed"))
-        header.SetMaxSize(wx.Size(30, -1))
-        header.SetMaxSize(wx.Size(70, -1))
+        header.SetMaxSize(dip_size(self, 30, -1))
+        header.SetMaxSize(dip_size(self, 70, -1))
 
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -448,8 +455,8 @@ class BasicOpPanel(wx.Panel):
                     + "\n"
                     + _("Right click: Extended options for operation")
                 )
-                btn.SetMinSize(wx.Size(20, -1))
-                btn.SetMaxSize(wx.Size(20, -1))
+                btn.SetMinSize(dip_size(self, 20, -1))
+                btn.SetMaxSize(dip_size(self, 20, -1))
 
                 # btn.Bind(wx.EVT_ENTER_WINDOW, self.on_mouse_over)
                 # btn.Bind(wx.EVT_LEAVE_WINDOW, self.on_mouse_leave)
@@ -468,8 +475,8 @@ class BasicOpPanel(wx.Panel):
                     + "\n"
                     + _("Double click to open the property dialog for the operation")
                 )
-                header.SetMinSize(wx.Size(30, -1))
-                header.SetMaxSize(wx.Size(70, -1))
+                header.SetMinSize(dip_size(self, 30, -1))
+                header.SetMaxSize(dip_size(self, 70, -1))
                 op_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
                 if self.std_color_back is None:
                     self.std_color_back = wx.Colour(header.GetBackgroundColour())
@@ -479,8 +486,8 @@ class BasicOpPanel(wx.Panel):
                 header.Bind(wx.EVT_LEFT_DCLICK, on_label_double(op))
 
                 c_out = wx.CheckBox(self.op_panel, id=wx.ID_ANY)
-                c_out.SetMinSize(wx.Size(30, -1))
-                c_out.SetMaxSize(wx.Size(50, -1))
+                c_out.SetMinSize(dip_size(self, 30, -1))
+                c_out.SetMaxSize(dip_size(self, 50, -1))
 
                 if hasattr(op, "output"):
                     flag = bool(op.output)
@@ -495,8 +502,8 @@ class BasicOpPanel(wx.Panel):
                 op_sizer.Add(c_out, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
                 c_show = wx.CheckBox(self.op_panel, id=wx.ID_ANY)
-                c_show.SetMinSize(wx.Size(30, -1))
-                c_show.SetMaxSize(wx.Size(50, -1))
+                c_show.SetMinSize(dip_size(self, 30, -1))
+                c_show.SetMaxSize(dip_size(self, 50, -1))
                 c_show.SetToolTip(_("Hide all contained elements on scene if not set."))
 
                 self.op_panel.Bind(wx.EVT_CHECKBOX, on_check_output(op, c_show), c_out)
@@ -519,8 +526,8 @@ class BasicOpPanel(wx.Panel):
                     nonzero=True,
                 )
 
-                t_power.SetMinSize(wx.Size(30, -1))
-                t_power.SetMaxSize(wx.Size(70, -1))
+                t_power.SetMinSize(dip_size(self, 30, -1))
+                t_power.SetMaxSize(dip_size(self, 70, -1))
                 op_sizer.Add(t_power, 1, wx.ALIGN_CENTER_VERTICAL, 0)
                 if hasattr(op, "power"):
                     if op.power is not None:
@@ -547,8 +554,8 @@ class BasicOpPanel(wx.Panel):
                     style=wx.TE_PROCESS_ENTER,
                     nonzero=True,
                 )
-                t_speed.SetMinSize(wx.Size(30, -1))
-                t_speed.SetMaxSize(wx.Size(70, -1))
+                t_speed.SetMinSize(dip_size(self, 30, -1))
+                t_speed.SetMaxSize(dip_size(self, 70, -1))
                 op_sizer.Add(t_speed, 1, wx.ALIGN_CENTER_VERTICAL, 0)
                 if hasattr(op, "speed"):
                     if op.speed is not None:

@@ -1,7 +1,7 @@
 from copy import copy
-from math import cos, sin, tau, sqrt
+from math import cos, sin, sqrt, tau
 
-from meerk40t.core.node.mixins import Stroked, FunctionalParameter
+from meerk40t.core.node.mixins import FunctionalParameter, Stroked
 from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,

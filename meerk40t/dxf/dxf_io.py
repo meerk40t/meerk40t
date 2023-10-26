@@ -1,3 +1,5 @@
+import os.path
+
 import ezdxf
 from ezdxf import units
 
@@ -231,7 +233,11 @@ class DXFProcessor:
             e_list.append(node)
             return
         elif entity.dxftype() == "POINT":
-            x, y = entity.dxf.location
+            pos = entity.dxf.location
+            if len(pos) == 2:
+                x, y = pos
+            else:
+                x, y, z = pos
             node = context_node.add(x=x, y=y, matrix=Matrix(), type="elem point")
             self.check_for_attributes(node, entity)
             e_list.append(node)
@@ -248,7 +254,9 @@ class DXFProcessor:
                         SVG_ATTR_VECTOR_EFFECT
                     ] = SVG_VALUE_NON_SCALING_STROKE
                     element.transform.post_scale(self.scale, -self.scale)
-                    element.transform.post_translate_y(self.elements.device.view.unit_height)
+                    element.transform.post_translate_y(
+                        self.elements.device.view.unit_height
+                    )
                     node = context_node.add(shape=element, type="elem polyline")
                     self.check_for_attributes(node, entity)
                     e_list.append(node)
@@ -281,7 +289,9 @@ class DXFProcessor:
                         SVG_ATTR_VECTOR_EFFECT
                     ] = SVG_VALUE_NON_SCALING_STROKE
                     element.transform.post_scale(self.scale, -self.scale)
-                    element.transform.post_translate_y(self.elements.device.view.unit_height)
+                    element.transform.post_translate_y(
+                        self.elements.device.view.unit_height
+                    )
                     path = abs(Path(element))
                     if len(path) != 0:
                         if not isinstance(path[0], Move):
@@ -299,7 +309,9 @@ class DXFProcessor:
                     element = Polyline(*[(p[0], p[1]) for p in entity])
                 element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
                 element.transform.post_scale(self.scale, -self.scale)
-                element.transform.post_translate_y(self.elements.device.view.unit_height)
+                element.transform.post_translate_y(
+                    self.elements.device.view.unit_height
+                )
                 node = context_node.add(shape=element, type="elem polyline")
                 self.check_for_attributes(node, entity)
                 e_list.append(node)
@@ -327,7 +339,9 @@ class DXFProcessor:
                         element.closed()
                 element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
                 element.transform.post_scale(self.scale, -self.scale)
-                element.transform.post_translate_y(self.elements.device.view.unit_height)
+                element.transform.post_translate_y(
+                    self.elements.device.view.unit_height
+                )
                 path = abs(Path(element))
                 if len(path) != 0:
                     if not isinstance(path[0], Move):
@@ -400,12 +414,17 @@ class DXFProcessor:
         elif entity.dxftype() == "IMAGE":
             bottom_left_position = entity.dxf.insert
             size = entity.dxf.image_size
-            imagedef = entity.dxf.image_def_handle
-            if not isinstance(imagedef, str):
-                imagedef = imagedef.filename
+            imagedef = entity.image_def
+            filename = imagedef.dxf.filename
+            if not os.path.exists(filename) or os.path.isdir(filename):
+                filename = os.path.join(os.path.dirname(self.pathname), filename)
+            if not os.path.exists(filename) or os.path.isdir(filename):
+                # Image def refers to a path that does not exist.
+                return
+
             try:
                 node = context_node.add(
-                    href=imagedef,
+                    href=filename,
                     x=bottom_left_position[0],
                     y=bottom_left_position[1] - size[1],
                     width=size[0],

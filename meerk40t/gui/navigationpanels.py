@@ -1,4 +1,5 @@
 import platform
+from copy import copy
 from math import isinf
 from time import time
 
@@ -8,6 +9,7 @@ from wx import aui
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import (
+    STD_ICON_SIZE,
     EmptyIcon,
     get_default_icon_size,
     icon_corner1,
@@ -46,7 +48,7 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.position import PositionPanel
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Angle
 
@@ -727,7 +729,8 @@ class Drag(wx.Panel):
         first_node = e[0]
         if first_node.type == "elem path":
             try:
-                pos = first_node.path.first_point * first_node.matrix
+                g = first_node.as_geometry()
+                pos = g.first_point
             except (IndexError, AttributeError):
                 return
         elif first_node.type == "elem image":
@@ -1139,10 +1142,14 @@ class MovePanel(wx.Panel):
             style=wx.TE_PROCESS_ENTER,
         )
         self.small_buttons = []
+        def_dim = self.text_position_x.Size[1]
+        def_size = wx.Size(def_dim + 5, def_dim + 5)
         for idx in range(9):
-            btn = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(25, 25))
-            icon = EmptyIcon(size=20, msg=str(idx + 1), ptsize=12, color=wx.LIGHT_GREY)
-            btn.SetBitmap(icon.GetBitmap(resize=20))
+            btn = wx.StaticBitmap(self, wx.ID_ANY, size=def_size)
+            icon = EmptyIcon(
+                size=def_dim, msg=str(idx + 1), ptsize=12, color=wx.LIGHT_GREY
+            )
+            btn.SetBitmap(icon.GetBitmap(resize=def_dim))
             self.small_buttons.append(btn)
             btn.Bind(wx.EVT_RIGHT_DOWN, self.on_right(idx))
             btn.Bind(wx.EVT_LEFT_DOWN, self.on_left(idx))
@@ -1214,8 +1221,8 @@ class MovePanel(wx.Panel):
         button_info_sizer.Add(self.label_pos, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
         main_sizer.Add(button_info_sizer, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         label_9 = wx.StaticText(self, wx.ID_ANY, "X:")
-        self.text_position_x.SetMinSize((45, 23))
-        self.text_position_y.SetMinSize((45, 23))
+        self.text_position_x.SetMinSize(dip_size(self, 45, -1))
+        self.text_position_y.SetMinSize(dip_size(self, 45, -1))
         h_x_sizer.Add(label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         h_x_sizer.Add(self.text_position_x, 1, wx.EXPAND, 0)
         v_main_sizer.Add(h_x_sizer, 0, wx.EXPAND, 0)
@@ -1299,10 +1306,16 @@ class MovePanel(wx.Panel):
             x = self.text_position_x.GetValue()
             y = self.text_position_y.GetValue()
             pos_x = Length(
-                x, relative_length=self.context.space.display.width, unitless=UNITS_PER_PIXEL, preferred_units=self.context.units_name
+                x,
+                relative_length=self.context.space.display.width,
+                unitless=UNITS_PER_PIXEL,
+                preferred_units=self.context.units_name,
             )
             pos_y = Length(
-                y, relative_length=self.context.space.display.height, unitless=UNITS_PER_PIXEL, preferred_units=self.context.units_name
+                y,
+                relative_length=self.context.space.display.height,
+                unitless=UNITS_PER_PIXEL,
+                preferred_units=self.context.units_name,
             )
             if not self.context.device.view.source_contains(float(pos_x), float(pos_y)):
                 dlg = wx.MessageDialog(
@@ -1383,7 +1396,7 @@ class PulsePanel(wx.Panel):
         # begin wxGlade: PulsePanel.__set_properties
         self.button_navigate_pulse.SetToolTip(_("Fire a short laser pulse"))
         self.button_navigate_pulse.SetSize(self.button_navigate_pulse.GetBestSize())
-        self.spin_pulse_duration.SetMinSize((40, 23))
+        self.spin_pulse_duration.SetMinSize(dip_size(self, 40, -1))
         self.spin_pulse_duration.SetToolTip(_("Set the duration of the laser pulse"))
         # end wxGlade
 
@@ -1448,8 +1461,8 @@ class PulsePanel(wx.Panel):
 #             nonzero=True,
 #         )
 #         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
-#         self.bitmap_locked = icons8_lock_50.GetBitmap(resize=25, use_theme=False)
-#         self.bitmap_unlocked = icons8_padlock_50.GetBitmap(resize=25, use_theme=False)
+#         self.bitmap_locked = icons8_lock_50.GetBitmap(resize=STD_ICON_SIZE/2, use_theme=False)
+#         self.bitmap_unlocked = icons8_padlock_50.GetBitmap(resize=STD_ICON_SIZE/2, use_theme=False)
 
 #         # No change of fields during input
 #         # self.text_height.execute_action_on_change = False
@@ -1471,7 +1484,7 @@ class PulsePanel(wx.Panel):
 #         self.button_navigate_resize.SetSize(self.button_navigate_resize.GetBestSize())
 #         self.text_width.SetToolTip(_("Define width of selected object"))
 #         self.text_height.SetToolTip(_("Define height of selected object"))
-#         self.btn_lock_ratio.SetMinSize((32, 32))
+#         self.btn_lock_ratio.SetMinSize(dip_size(self, 32, 32))
 #         self.btn_lock_ratio.SetToolTip(
 #             _("Lock the ratio of width / height to the original values")
 #         )
@@ -1489,8 +1502,8 @@ class PulsePanel(wx.Panel):
 #         sizer_label = wx.BoxSizer(wx.VERTICAL)
 #         fieldsizer1 = wx.BoxSizer(wx.HORIZONTAL)
 #         fieldsizer2 = wx.BoxSizer(wx.HORIZONTAL)
-#         self.label_9.SetMinSize(wx.Size(45, -1))
-#         self.label_10.SetMinSize(wx.Size(45, -1))
+#         self.label_9.SetMinSize(dip_size(self, 45, -1))
+#         self.label_10.SetMinSize(dip_size(self, 45, -1))
 #         fieldsizer1.Add(self.label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 #         fieldsizer1.Add(self.text_width, 1, wx.EXPAND, 0)
 
@@ -1805,21 +1818,21 @@ class Transform(wx.Panel):
         self.button_rotate_cw.SetToolTip(
             _("Rotate Clockwise by 5° / by 90° on left / right click")
         )
-        self.text_a.SetMinSize((55, -1))
+        self.text_a.SetMinSize(dip_size(self, 55, -1))
         self.text_a.SetToolTip(
             _(
                 "Scale X - scales the element by this factor in the X-Direction, i.e. 2.0 means 200% of the original scale. "
                 "You may enter either this factor directly or state the scale as a %-value, so 0.5 or 50% will both cut the scale in half."
             )
         )
-        self.text_d.SetMinSize((55, -1))
+        self.text_d.SetMinSize(dip_size(self, 55, -1))
         self.text_d.SetToolTip(
             _(
                 "Scale Y - scales the element by this factor in the Y-Direction, i.e. 2.0 means 200% of the original scale. "
                 "You may enter either this factor directly or state the scale as a %-value, so 0.5 or 50% will both cut the scale in half."
             )
         )
-        self.text_c.SetMinSize((55, -1))
+        self.text_c.SetMinSize(dip_size(self, 55, -1))
         self.text_c.SetToolTip(
             _(
                 "Skew X - to skew the element in X-direction by alpha° you need either \n"
@@ -1828,7 +1841,7 @@ class Transform(wx.Panel):
                 "In any case this value will then be represented as tan(alpha)"
             )
         )
-        self.text_b.SetMinSize((55, -1))
+        self.text_b.SetMinSize(dip_size(self, 55, -1))
         self.text_b.SetToolTip(
             _(
                 "Skew Y - to skew the element in Y-direction by alpha° you need either \n"
@@ -1837,14 +1850,14 @@ class Transform(wx.Panel):
                 "In any case this value will then be represented as tan(alpha)"
             )
         )
-        self.text_e.SetMinSize((40, -1))
+        self.text_e.SetMinSize(dip_size(self, 40, -1))
         self.text_e.SetToolTip(
             _(
                 "Translate X - moves the element by this amount of mils in the X-direction; "
                 "you may use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"
             )
         )
-        self.text_f.SetMinSize((40, -1))
+        self.text_f.SetMinSize(dip_size(self, 40, -1))
         self.text_f.SetToolTip(
             _(
                 "Translate Y - moves the element by this amount of mils in the Y-direction; "
@@ -2022,14 +2035,18 @@ class Transform(wx.Panel):
 
     def _translate(self, dx, dy, scale):
         dx = Length(
-            dx, relative_length=self.context.space.display.width, unitless=UNITS_PER_PIXEL,
-            preferred_units=self.context.units_name
+            dx,
+            relative_length=self.context.space.display.width,
+            unitless=UNITS_PER_PIXEL,
+            preferred_units=self.context.units_name,
         )
         dx *= scale
 
         dy = Length(
-            dy, relative_length=self.context.space.display.height, unitless=UNITS_PER_PIXEL,
-            preferred_units=self.context.units_name
+            dy,
+            relative_length=self.context.space.display.height,
+            unitless=UNITS_PER_PIXEL,
+            preferred_units=self.context.units_name,
         )
         dy *= scale
 
@@ -2196,7 +2213,9 @@ class JogDistancePanel(wx.Panel):
     def on_text_jog_amount(self):  # wxGlade: Navigation.<event_handler>
         try:
             jog = Length(
-                self.text_jog_amount.GetValue(), unitless=UNITS_PER_PIXEL, preferred_units=self.context.units_name
+                self.text_jog_amount.GetValue(),
+                unitless=UNITS_PER_PIXEL,
+                preferred_units=self.context.units_name,
             ).preferred_length
         except ValueError:
             return

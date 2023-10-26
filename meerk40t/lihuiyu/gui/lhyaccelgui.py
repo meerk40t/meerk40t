@@ -2,7 +2,7 @@ import wx
 
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
 
 _ = wx.GetTranslation
 
@@ -102,22 +102,22 @@ class LihuiyuAccelerationChartPanel(ScrolledPanel):
         self.checkbox_vector_accel_enable.SetToolTip(
             _("Enable defined acceleration chart for vectors")
         )
-        self.text_vector_accel_1.SetMinSize((55, 23))
+        self.text_vector_accel_1.SetMinSize(dip_size(self, 55, 23))
         self.text_vector_accel_1.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=1)
         )
         self.text_vector_accel_1.Enable(False)
-        self.text_vector_accel_2.SetMinSize((55, 23))
+        self.text_vector_accel_2.SetMinSize(dip_size(self, 55, 23))
         self.text_vector_accel_2.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=2)
         )
         self.text_vector_accel_2.Enable(False)
-        self.text_vector_accel_3.SetMinSize((55, 23))
+        self.text_vector_accel_3.SetMinSize(dip_size(self, 55, 23))
         self.text_vector_accel_3.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=3)
         )
         self.text_vector_accel_3.Enable(False)
-        self.text_vector_accel_4.SetMinSize((55, 23))
+        self.text_vector_accel_4.SetMinSize(dip_size(self, 55, 23))
         self.text_vector_accel_4.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=4)
         )
@@ -125,22 +125,22 @@ class LihuiyuAccelerationChartPanel(ScrolledPanel):
         self.checkbox_vraster_accel_enable.SetToolTip(
             _("Enable defined acceleration chart for vertical rasters")
         )
-        self.text_vraster_accel_1.SetMinSize((55, 23))
+        self.text_vraster_accel_1.SetMinSize(dip_size(self, 55, 23))
         self.text_vraster_accel_1.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=1)
         )
         self.text_vraster_accel_1.Enable(False)
-        self.text_vraster_accel_2.SetMinSize((55, 23))
+        self.text_vraster_accel_2.SetMinSize(dip_size(self, 55, 23))
         self.text_vraster_accel_2.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=2)
         )
         self.text_vraster_accel_2.Enable(False)
-        self.text_vraster_accel_3.SetMinSize((55, 23))
+        self.text_vraster_accel_3.SetMinSize(dip_size(self, 55, 23))
         self.text_vraster_accel_3.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=3)
         )
         self.text_vraster_accel_3.Enable(False)
-        self.text_vraster_accel_4.SetMinSize((55, 23))
+        self.text_vraster_accel_4.SetMinSize(dip_size(self, 55, 23))
         self.text_vraster_accel_4.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=4)
         )
@@ -148,22 +148,22 @@ class LihuiyuAccelerationChartPanel(ScrolledPanel):
         self.checkbox_raster_accel_enable.SetToolTip(
             _("Enable defined acceleration chart for horizontal rasters")
         )
-        self.text_raster_accel_1.SetMinSize((55, 23))
+        self.text_raster_accel_1.SetMinSize(dip_size(self, 55, 23))
         self.text_raster_accel_1.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=1)
         )
         self.text_raster_accel_1.Enable(False)
-        self.text_raster_accel_2.SetMinSize((55, 23))
+        self.text_raster_accel_2.SetMinSize(dip_size(self, 55, 23))
         self.text_raster_accel_2.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=2)
         )
         self.text_raster_accel_2.Enable(False)
-        self.text_raster_accel_3.SetMinSize((55, 23))
+        self.text_raster_accel_3.SetMinSize(dip_size(self, 55, 23))
         self.text_raster_accel_3.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=3)
         )
         self.text_raster_accel_3.Enable(False)
-        self.text_raster_accel_4.SetMinSize((55, 23))
+        self.text_raster_accel_4.SetMinSize(dip_size(self, 55, 23))
         self.text_raster_accel_4.SetToolTip(
             _("Upper limit for accel level {acceleration}").format(acceleration=4)
         )

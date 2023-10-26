@@ -3,7 +3,7 @@ from wx import aui
 
 from meerk40t.gui.icons import icons8_manager_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 from meerk40t.kernel import lookup_listener, signal_listener
 
 _ = wx.GetTranslation
@@ -93,7 +93,7 @@ class SelectDevice(wx.Dialog):
         self.text_filter.Bind(wx.EVT_TEXT, self.on_text_filter)
         self.tree_devices.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_selection)
         self.tree_devices.Bind(wx.EVT_LEFT_DCLICK, self.on_dclick)
-        self.SetSize(350, 450)
+        self.SetSize(dip_size(self, 350, 450))
         self.Layout()
         self.populate_tree()
 

@@ -1,10 +1,9 @@
 """
 Newly Device
 """
-from meerk40t.core.view import View
-
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
+from meerk40t.core.view import View
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.newly.driver import NewlyDriver
 
@@ -88,7 +87,7 @@ class NewlyDevice(Service):
                     },
                     {
                         "attr": "corner_speed",
-                        "type": 120,
+                        "type": int,
                         "label": _("Corner Speed"),
                         "width": 133,
                         "editable": True,
@@ -96,6 +95,8 @@ class NewlyDevice(Service):
                 ],
                 "style": "chart",
                 "primary": "speed",
+                "allow_deletion": True,
+                "allow_duplication": True,
                 "label": _("Speed Chart"),
                 "tip": _("Raster speed to chart."),
             },
@@ -473,7 +474,7 @@ class NewlyDevice(Service):
                 "trailer": "mm/s",
                 "label": _("Rect Speed"),
                 "tip": _("Speed to perform frame trace?"),
-                "subsection": "_50_Rect",
+                "subsection": "_50_Framing",
             },
             {
                 "attr": "rect_power",
@@ -483,7 +484,7 @@ class NewlyDevice(Service):
                 "trailer": "/1000",
                 "label": _("Rect Power"),
                 "tip": _("Power usage for draw frame operation?"),
-                "subsection": "_50_Rect",
+                "subsection": "_50_Framing",
             },
         ]
         self.register_choices("newly-global", choices)
@@ -498,9 +499,7 @@ class NewlyDevice(Service):
             dpi_y=self.v_dpi,
         )
         self.view.transform(
-            flip_x=self.flip_x,
-            flip_y=self.flip_y,
-            swap_xy=self.swap_xy
+            flip_x=self.flip_x, flip_y=self.flip_y, swap_xy=self.swap_xy
         )
         self.spooler = Spooler(self)
         self.driver = NewlyDriver(self)
@@ -509,6 +508,9 @@ class NewlyDevice(Service):
         self.add_service_delegate(self.spooler)
 
         self.viewbuffer = ""
+
+        # Sort the entries for the rasterchart
+        self.speedchart.sort(key=lambda x: x["speed"])
 
         @self.console_command(
             "estop",
@@ -709,9 +711,7 @@ class NewlyDevice(Service):
         self.view.dpi_x = self.h_dpi
         self.view.dpi_y = self.v_dpi
         self.view.transform(
-            flip_x=self.flip_x,
-            flip_y=self.flip_y,
-            swap_xy=self.swap_xy
+            flip_x=self.flip_x, flip_y=self.flip_y, swap_xy=self.swap_xy
         )
         self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)
 
@@ -720,10 +720,7 @@ class NewlyDevice(Service):
         """
         @return: the location in units for the current known position.
         """
-        return self.view.iposition(
-            self.driver.native_x,
-            self.driver.native_y
-        )
+        return self.view.iposition(self.driver.native_x, self.driver.native_y)
 
     @property
     def native(self):
