@@ -17,7 +17,7 @@ jobs:
     - name: Set up Python 3.7
       uses: actions/setup-python@v4
       with:
-        python-version: 3.7.1
+        python-version: 3.7.0
         # Latest version of python support Building with ancient python for pre-sp1
         architecture: x86
         # 32-bit architecture required for libusb to connect properly
