@@ -683,14 +683,14 @@ class SVGProcessor:
             self.elements.clear_operations()
             for node in self.operation_list:
                 op = self.elements.op_branch.add_node(node)
-            for op in self.elements.ops():
-                if not hasattr(op, "settings"):
-                    # Some special nodes might lack settings these can't have references.
-                    continue
+
+            for op in self.elements.op_groups():
                 refs = op.settings.get("references")
                 if refs is None:
                     continue
+
                 self.requires_classification = False
+
                 for ref in refs.split(" "):
                     for e in self.element_list:
                         if e.id == ref:
