@@ -447,7 +447,7 @@ class VectorIcon:
         else:
             final_icon_width = resize
             final_icon_height = resize
-        bmp = wx.Bitmap(final_icon_width, final_icon_height, 32)
+        bmp = wx.Bitmap(int(final_icon_width), int(final_icon_height), 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
         dc.SetBackground(self._background)
