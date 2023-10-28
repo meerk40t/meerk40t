@@ -530,7 +530,7 @@ class SVGWriter:
         @return:
         """
         for c in op_tree.children:
-            SVGWriter._write_operation(xml_tree, c)
+            SVGWriter._write_operation(xml_tree, c, version)
 
     @staticmethod
     def _write_regmarks(xml_tree, reg_tree, version):
@@ -541,7 +541,7 @@ class SVGWriter:
             SVGWriter._write_elements(regmark, reg_tree, version)
 
     @staticmethod
-    def _write_operation(xml_tree, node):
+    def _write_operation(xml_tree, node, version):
         """
         Write an individual operation. This is any node directly under `branch ops`
 
@@ -602,7 +602,7 @@ class SVGWriter:
             # Recurse all non-ref nodes
             if c.type == "reference":
                 continue
-            SVGWriter._write_operation(subelement, c)
+            SVGWriter._write_operation(subelement, c, version)
 
     @staticmethod
     def _write_references(subelement, node):
