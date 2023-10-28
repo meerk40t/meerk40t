@@ -1004,6 +1004,11 @@ class TestGeomstr(unittest.TestCase):
         except ZeroDivisionError:
             pass
 
+    def test_render(self):
+        rect = Geomstr.rect(x=300, y=200, width=500, height=500, rx=50, ry=50)
+        image = rect.segmented().render()
+        image.save("render-test.png")
+
     def test_point_in_polygon(self):
         t1 = 0
         t2 = 0

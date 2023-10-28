@@ -3712,6 +3712,19 @@ class Geomstr:
         if last != self.index:
             yield Geomstr(self.segments[last : self.index])
 
+    def render(self, buffer=10, scale=1):
+        sb = Scanbeam(self)
+        nx, ny, mx, my = self.bbox()
+        px, py = np.mgrid[nx-buffer:mx+buffer:scale, ny-buffer:my+buffer:scale]
+        ppx = px + 1j * py
+        pxs = ppx.ravel()
+        data = sb.points_in_polygon(pxs)
+
+        from PIL import Image
+        size = ppx.shape[::-1]
+        databytes = np.packbits(data)
+        return Image.frombytes(mode='1', size=size, data=databytes)
+
     def draw(self, draw, offset_x, offset_y):
         """
         Though not a requirement, this draws with the given ImageDraw api found in Pillow.
