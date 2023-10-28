@@ -533,8 +533,8 @@ class CutPlan:
                     float(Length(stol))
                     * 2
                     / (
-                        self.context.device.native_scale_x
-                        + self.context.device.native_scale_y
+                        self.context.device.view.native_scale_x
+                        + self.context.device.view.native_scale_y
                     )
                 )
             except ValueError:
@@ -807,6 +807,8 @@ def inner_first_ident(context: CutGroup, channel=None, tolerance=0):
     groups = [cut for cut in context if isinstance(cut, (CutGroup, RasterCut))]
     closed_groups = [g for g in groups if isinstance(g, CutGroup) and g.closed]
     context.contains = closed_groups
+    if channel:
+        channel(f"Compare {len(groups)} groups against {len(closed_groups)} closed groups")
 
     constrained = False
     for outer in closed_groups:
@@ -844,7 +846,7 @@ def inner_first_ident(context: CutGroup, channel=None, tolerance=0):
     if channel:
         end_times = times()
         channel(
-            f"Inner paths identified in {time() - start_time:.3f} elapsed seconds "
+            f"Inner paths identified in {time() - start_time:.3f} elapsed seconds: {constrained} "
             f"using {end_times[0] - start_times[0]:.3f} seconds CPU"
         )
     return context
@@ -1177,11 +1179,12 @@ def inner_selection_cutcode(
     if channel:
         end_times = times()
         end_length = ordered.length_travel(True)
-        channel(
-            f"Length at end: {end_length:.0f} steps "
-            f"({(end_length - start_length) / start_length:+.0%}), "
-            f"optimized in {time() - start_time:.3f} "
-            f"elapsed seconds using {end_times[0] - start_times[0]:.3f} "
-            f"seconds CPU in {iterations} iterations"
-        )
+        msg = f"Length at end: {end_length:.0f} steps "
+        if start_length !=0:
+            msg += f"({(end_length - start_length) / start_length:+.0%}), "
+        msg += f"optimized in {time() - start_time:.3f} "
+        msg += f"elapsed seconds using {end_times[0] - start_times[0]:.3f} "
+        msg += f"seconds CPU in {iterations} iterations"
+
+        channel(msg)
     return ordered

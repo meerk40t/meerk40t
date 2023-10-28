@@ -3170,6 +3170,19 @@ msgstr "Durchgänge"
 msgid "Add 1 pass"
 msgstr "Füge einen Durchgang hinzu"
 
+msgid "Finish after this loop"
+msgstr "Nach Ende diesen Durchlaufs aufhören"
+
+msgid "Stop the current execution after the succesful execution of this loop"
+msgstr "Diesen Job nach erfolgreicher Beendigung des Durchlaufs beenden"
+
+msgid "add another loop"
+msgstr "Einen weiteren Durchlauf anfügen"
+
+msgid "add another loop to this job"
+msgstr "Einen weiteren Durchlauf für diesen Job anfügen"
+
+
 #: meerk40t/core/elements.py:7369
 msgid "Add {copies} passes"
 msgstr "Füge {copies} Duchgänge hinzu"
@@ -10643,6 +10656,9 @@ msgstr "Wie oft soll der Laser-Job wiederholt werden"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:41
 msgid "Loop"
+msgstr "Wiederholungen"
+
+msgid "Loop Parameter"
 msgstr "Wiederholungen"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:42
