@@ -4282,3 +4282,58 @@ node_append = VectorIcon(
         "M 0,85 h 85",
     ),
 )
+
+def savage_consumer():
+    import os.path
+    import argparse
+    import sys
+    from xml.etree.ElementTree import iterparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-V", "--version", action="store_true", help="icon consumer version"
+    )
+    parser.add_argument("input", nargs="?", type=str, help="input file")
+    argv = sys.argv[1:]
+    args = parser.parse_args(argv)
+
+    if args.version:
+        print("Version 1: SaVaGe Consumer")
+        return
+
+    if not args.input:
+        print("Input not specified.")
+        return
+
+    only_filename = os.path.split(args.input)[-1]
+    ext_split = os.path.splitext(only_filename)
+    assert ext_split[-1] == ".svg"
+    filename = ext_split[0]
+    filename = filename.replace("-", "_")
+
+    fills = []
+    strokes = []
+    with open(args.input, "r") as f:
+        for event, elem in iterparse(f, events=("end",)):
+            if not elem.tag.endswith("path"):
+                continue
+            path_d = elem.attrib.get("d")
+            if "stroke-width" in elem.attrib:
+                strokes.append(path_d)
+            else:
+                fills.append(path_d)
+
+    if not fills and not strokes:
+        print("Parsing error, blank.")
+        return
+
+    with open(__file__, "a") as f:
+        f.write(f'\n{filename} = VectorIcon(fill={str(tuple(fills))}, stroke={str(tuple(strokes))})\n')
+
+    print(f"{filename} was added as a vector icon.")
+
+
+if __name__ == "__main__":
+    savage_consumer()
+
+# The following icons were added with SaVaGe consumer.
