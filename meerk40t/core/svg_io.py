@@ -549,13 +549,7 @@ class SVGWriter:
         @param node:
         @return:
         """
-        if node.type.startswith("util") or node.type.startswith("place"):
-            # Utils should probably also be groups, but not doing that yet.
-            subelement = SubElement(xml_tree, MEERK40T_XMLS_ID + ":operation")
-            SVGWriter._write_custom(subelement, node)
-            return
-
-        # All other operations are groups.
+        # All operations are groups.
         subelement = SubElement(xml_tree, SVG_TAG_GROUP)
         subelement.set("type", str(node.type))
 
@@ -580,13 +574,32 @@ class SVGWriter:
                 subelement.set(key, str(value))
         except AttributeError:
             # Node does not have settings, write object dict
-            SVGWriter._write_custom(subelement, node)
+            for key, value in node.__dict__.items():
+                if not key:
+                    # If key is None, do not save.
+                    continue
+                if key.startswith("_"):
+                    continue
+                if value is None:
+                    continue
+                if key in (
+                    "references",
+                    "tag",
+                    "type",
+                    "draw",
+                    "stroke_width",
+                    "matrix",
+                ):
+                    # References key from previous loaded version (filter out, rebuild)
+                    continue
+                subelement.set(key, str(value))
 
         # Store current node reference values.
         SVGWriter._write_references(subelement, node)
         subelement.set(SVG_ATTR_ID, str(node.id))
 
         for c in node.children:
+            # Recurse all non-ref nodes
             if c.type == "reference":
                 continue
             SVGWriter._write_operation(subelement, c)
