@@ -561,8 +561,9 @@ class Preferences(MWindow):
 
     @signal_listener("preferences")
     def on_pref_signal(self, origin, *args):
-        if len(args):
-            panel = args[0]
+        if not args:
+            return
+        panel = args[0]
         if panel and panel in self.panel_ids:
             self.Show()
             self.notebook_main.SetSelection(self.panel_ids.index(panel))
