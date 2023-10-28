@@ -129,6 +129,7 @@ class DebugColorPanel(wx.Panel):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
+        from copy import copy
 
         self.context = context
 
@@ -140,9 +141,10 @@ class DebugColorPanel(wx.Panel):
         pattern = "SYS_COLOUR_"
         for prop in dir(wx):
             if prop.startswith(pattern):
-                sizer_line = wx.BoxSizer(wx.HORIZONTAL)
+                # print (prop)
                 count += 1
                 if count >= 5:
+                    sizer_line = wx.BoxSizer(wx.HORIZONTAL)
                     sizer_main.Add(sizer_line, 0, wx.EXPAND, 0)
                     count = 0
 
