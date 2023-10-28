@@ -403,9 +403,6 @@ class SVGWriter:
             group_element = SubElement(xml_tree, SVG_TAG_GROUP)
             SVGWriter._write_custom(group_element, c)
             SVGWriter._write_elements(group_element, c, version)
-            if hasattr(c, "_operands"):
-                for q in c._operands:
-                    SVGWriter._write_element(group_element, q, version)
             return
         elif c.type == "file":
             # This is a structural group node of elements. Recurse call to write values.
