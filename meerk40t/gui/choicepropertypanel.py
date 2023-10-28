@@ -8,7 +8,7 @@ from meerk40t.gui.wxutils import (
     ScrolledPanel,
     StaticBoxSizer,
     TextCtrl,
-    dip_size
+    dip_size,
 )
 from meerk40t.kernel import Context
 from meerk40t.svgelements import Color
@@ -937,19 +937,26 @@ class ChoicePropertyPanel(ScrolledPanel):
                     style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
                 )
                 columns = c.get("columns", [])
-                for column in columns:
-                    chart.AppendColumn(
-                        column.get("label", ""),
-                        format=wx.LIST_FORMAT_LEFT,
-                        width=column.get("width", 150),
-                    )
-                for dataline in data:
-                    row_id = chart.InsertItem(
-                        chart.GetItemCount(), dataline.get("speed", 0)
-                    )
-                    for column_id, column in enumerate(columns):
-                        c_attr = column.get("attr")
-                        chart.SetItem(row_id, column_id, str(dataline.get(c_attr, "")))
+
+                def fill_ctrl():
+                    chart.ClearAll()
+                    for column in columns:
+                        chart.AppendColumn(
+                            column.get("label", ""),
+                            format=wx.LIST_FORMAT_LEFT,
+                            width=column.get("width", 150),
+                        )
+                    for dataline in data:
+                        row_id = chart.InsertItem(
+                            chart.GetItemCount(), dataline.get("speed", 0)
+                        )
+                        for column_id, column in enumerate(columns):
+                            c_attr = column.get("attr")
+                            chart.SetItem(
+                                row_id, column_id, str(dataline.get(c_attr, ""))
+                            )
+
+                fill_ctrl()
 
                 def on_chart_start(columns, param, ctrl, obj):
                     def chart_start(event=None):
@@ -983,6 +990,86 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 chart.Bind(
                     wx.EVT_LIST_END_LABEL_EDIT, on_chart_stop(columns, attr, chart, obj)
+                )
+
+                allow_deletion = c.get("allow_deletion", False)
+                allow_duplication = c.get("allow_duplication", False)
+
+                def on_chart_contextmenu(columns, param, ctrl, obj):
+                    def chart_menu(event=None):
+                        row_id = event.GetIndex()  # Get the current row
+                        if row_id < 0:
+                            return
+                        menu = wx.Menu()
+                        if allow_deletion:
+
+                            def on_delete(event):
+                                values = getattr(obj, attr)
+                                # try:
+                                values.pop(row_id)
+                                self.context.signal(param, values, row_id, attr)
+                                fill_ctrl()
+                                # except IndexError:
+                                #    pass
+
+                            menuitem = menu.Append(
+                                wx.ID_ANY, _("Delete this entry"), ""
+                            )
+                            self.Bind(
+                                wx.EVT_MENU,
+                                on_delete,
+                                id=menuitem.GetId(),
+                            )
+                        if allow_duplication:
+
+                            def on_duplicate(event):
+                                values = getattr(obj, attr)
+                                newentry = dict()
+                                for key, content in values[row_id].items():
+                                    newentry[key] = content
+                                values.append(newentry)
+                                self.context.signal(param, values, row_id, attr)
+                                # except IndexError:
+                                #    pass
+                                fill_ctrl()
+
+                            menuitem = menu.Append(
+                                wx.ID_ANY, _("Duplicate this entry"), ""
+                            )
+                            self.Bind(
+                                wx.EVT_MENU,
+                                on_duplicate,
+                                id=menuitem.GetId(),
+                            )
+
+                        def on_default(event):
+                            values = getattr(obj, attr)
+                            default = c.get("default", [])
+                            values.clear()
+                            for e in default:
+                                values.append(e)
+
+                            self.context.signal(param, values, 0, attr)
+                            fill_ctrl()
+                            # except IndexError:
+                            #    pass
+
+                        menuitem = menu.Append(wx.ID_ANY, _("Restore defaults"), "")
+                        self.Bind(
+                            wx.EVT_MENU,
+                            on_default,
+                            id=menuitem.GetId(),
+                        )
+
+                        if menu.MenuItemCount != 0:
+                            self.PopupMenu(menu)
+                            menu.Destroy()
+
+                    return chart_menu
+
+                chart.Bind(
+                    wx.EVT_LIST_ITEM_RIGHT_CLICK,
+                    on_chart_contextmenu(columns, attr, chart, obj),
                 )
                 sizer_main.Add(chart, 0, wx.EXPAND, 0)
             elif data_type in (str, int, float):
@@ -1216,7 +1303,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         control.Enable(enabled)
                     elif len(conditional) == 4:
                         c_obj, c_attr, c_from, c_to = conditional
-                        enabled = bool( c_from <= getattr(c_obj, c_attr) <= c_to)
+                        enabled = bool(c_from <= getattr(c_obj, c_attr) <= c_to)
                         c_equals = (c_from, c_to)
                         control.Enable(enabled)
 
@@ -1224,9 +1311,11 @@ class ChoicePropertyPanel(ScrolledPanel):
                         def listen(origin, value, target=None):
                             try:
                                 if isinstance(eqs, (list, tuple)):
-                                    enable = bool(eqs[0] <= getattr(obj, param) <= eqs[1])
+                                    enable = bool(
+                                        eqs[0] <= getattr(obj, param) <= eqs[1]
+                                    )
                                 else:
-                                    enable = bool(getattr(obj, param) == eqs )
+                                    enable = bool(getattr(obj, param) == eqs)
                                 ctrl.Enable(enable)
                             except (IndexError, RuntimeError):
                                 pass

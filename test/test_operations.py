@@ -1,5 +1,6 @@
 import unittest
 from copy import copy
+from test import bootstrap
 
 from meerk40t.core.node.branch_ops import BranchOperationsNode
 from meerk40t.core.node.op_cut import CutOpNode
@@ -7,7 +8,6 @@ from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.node.rootnode import RootNode
-from test import bootstrap
 
 
 class TestOperations(unittest.TestCase):
@@ -61,7 +61,7 @@ class TestOperations(unittest.TestCase):
             fill="gray",
             stroke_width=7,
             dancing_bear=0.2,
-            speed=30.0
+            speed=30.0,
         )
         node.speed = 20.0
         node_copy = copy(node)
@@ -138,7 +138,7 @@ class TestOperations(unittest.TestCase):
             )
             root.add_node(node)
             self.assertIs(root, node._root)
-            
+
             node_copy = copy(node)
             self.assertIsNot(node_copy._root, root)
 

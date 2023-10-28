@@ -256,19 +256,6 @@ def init_commands(kernel):
                 node.append_child(n)
         node.focus()
 
-    @self.console_command(
-        "toggle",
-        help=_("Toggles effect from being group to an effect."),
-        input_type="elements",
-    )
-    def effect_toggle(command, data=None, **kwargs):
-        """
-        Toggles effect hatch object
-        """
-        for n in data:
-            if n.type.startswith("effect "):
-                n.effect = not n.effect
-
     @self.console_option(
         "size", "s", type=float, default=16, help=_("font size to for object")
     )
@@ -732,12 +719,12 @@ def init_commands(kernel):
     def element_pathd_info(command, channel, _, data, real=True, **kwargs):
         for node in data:
             try:
-                if node.path.transform.is_identity():
-                    channel(
-                        f"{str(node)} (Identity): {node.path.d(transformed=not real)}"
-                    )
-                else:
-                    channel(f"{str(node)}: {node.path.d(transformed=not real)}")
+                g = node.as_geometry()
+                path = g.as_path()
+                ident = " (Identity)" if node.matrix.is_identity() else ""
+                channel(
+                    f"{str(node)}{ident}: {path.d(transformed=not real)}"
+                )
             except AttributeError:
                 channel(f"{str(node)}: Invalid")
 
@@ -2021,7 +2008,10 @@ def init_commands(kernel):
             except AttributeError:
                 pass
             if e.type == "elem path":
-                e.path.approximate_bezier_with_circular_arcs()
+                g = e.geometry
+                path = g.as_path()
+                path.approximate_bezier_with_circular_arcs()
+                e.geometry = Geomstr.svg(path)
                 e.altered()
 
         return "elements", data

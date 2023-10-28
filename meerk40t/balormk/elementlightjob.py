@@ -105,12 +105,20 @@ class ElementLightJob:
         con._goto_speed = self.service.redlight_speed
         con.light_mode()
 
-        x_offset = float(Length(
-            self.service.redlight_offset_x, relative_length=self.service.view.width, unitless=UNITS_PER_PIXEL
-        ))
-        y_offset = float(Length(
-            self.service.redlight_offset_y, relative_length=self.service.view.height, unitless=UNITS_PER_PIXEL
-        ))
+        x_offset = float(
+            Length(
+                self.service.redlight_offset_x,
+                relative_length=self.service.view.width,
+                unitless=UNITS_PER_PIXEL,
+            )
+        )
+        y_offset = float(
+            Length(
+                self.service.redlight_offset_y,
+                relative_length=self.service.view.height,
+                unitless=UNITS_PER_PIXEL,
+            )
+        )
         delay_dark = self.jump_delay
 
         delay_between = 8

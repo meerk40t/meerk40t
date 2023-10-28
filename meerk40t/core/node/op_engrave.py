@@ -34,6 +34,7 @@ class EngraveOpNode(Node, Parameters):
             "elem rect",
             "elem line",
             "effect hatch",
+            "effect wobble",
         )
         # Which elements do we consider for automatic classification?
         self._allowed_elements = (
@@ -43,6 +44,7 @@ class EngraveOpNode(Node, Parameters):
             "elem rect",
             "elem line",
             "effect hatch",
+            "effect wobble",
         )
 
         # To which attributes does the classification color check respond
@@ -223,24 +225,6 @@ class EngraveOpNode(Node, Parameters):
         settings.write_persistent_attributes(section, self)
         settings.write_persistent(section, "hex_color", self.color.hexa)
         settings.write_persistent_dict(section, self.settings)
-
-    def copy_children(self, obj):
-        for element in obj.children:
-            self.add_reference(element)
-
-    def copy_children_as_real(self, copy_node):
-        context = self
-        for node in copy_node.children:
-            if node.type.startswith("effect"):
-                n = copy(node)
-                context.add_node(n)
-                context = n
-        for node in copy_node.children:
-            if node.type == "reference":
-                context.add_node(copy(node.node))
-        for node in self.children:
-            if node.type.startswith("effect"):
-                node.effect = True
 
     def time_estimate(self):
         estimate = 0

@@ -6,6 +6,7 @@ from wx import aui
 
 from ..kernel import signal_listener
 from .icons import (
+    STD_ICON_SIZE,
     icons8_add_new_25,
     icons8_circled_left_50,
     icons8_circled_right_50,
@@ -13,7 +14,6 @@ from .icons import (
     icons8_edit_25,
     icons8_paste_25,
     icons8_remove_25,
-    STD_ICON_SIZE,
 )
 from .mwindow import MWindow
 from .wxutils import StaticBoxSizer, dip_size
@@ -46,17 +46,23 @@ class WordlistMiniPanel(wx.Panel):
         self.context = context
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.button_edit = wx.Button(self, wx.ID_ANY, _("Edit"))
-        self.button_edit.SetBitmap(icons8_curly_brackets_50.GetBitmap(resize=STD_ICON_SIZE/2))
+        self.button_edit.SetBitmap(
+            icons8_curly_brackets_50.GetBitmap(resize=STD_ICON_SIZE / 2)
+        )
         self.button_edit.SetToolTip(_("Manages Wordlist-Entries"))
 
         self.button_next = wx.Button(self, wx.ID_ANY, _("Next"))
-        self.button_next.SetBitmap(icons8_circled_right_50.GetBitmap(resize=STD_ICON_SIZE/2))
+        self.button_next.SetBitmap(
+            icons8_circled_right_50.GetBitmap(resize=STD_ICON_SIZE / 2)
+        )
         self.button_next.SetToolTip(
             _("Wordlist: go to next page (right-click to next entry)")
         )
 
         self.button_prev = wx.Button(self, wx.ID_ANY, _("Prev"))
-        self.button_prev.SetBitmap(icons8_circled_left_50.GetBitmap(resize=STD_ICON_SIZE/2))
+        self.button_prev.SetBitmap(
+            icons8_circled_left_50.GetBitmap(resize=STD_ICON_SIZE / 2)
+        )
         self.button_prev.SetToolTip(
             _("Wordlist: go to previous page (right-click to previous entry)")
         )

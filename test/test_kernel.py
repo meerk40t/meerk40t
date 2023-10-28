@@ -49,23 +49,31 @@ class TestKernel(unittest.TestCase):
         """
         Tests all commands with no arguments to test for crashes...
         """
-        from meerk40t.core.treeop import tree_operations_for_node
         from PIL import Image
+
+        from meerk40t.core.treeop import tree_operations_for_node
+
         image = Image.new("RGBA", (256, 256))
         from PIL import ImageDraw
+
         draw = ImageDraw.Draw(image)
         draw.ellipse((0, 0, 255, 255), "black")
         image = image.convert("L")
 
         kwargs_nodes = (
-
             {"type": "elem ellipse", "center": 0j, "r": 10000},
             {"type": "elem image", "image": image, "dpi": 500},
             {"type": "elem path", "d": "M0,0L10000,10000"},
             {"type": "elem point", "x": 0, "y": 0},
-            {"type": "elem polyline", "points": (0j, 10000j, )},
+            {
+                "type": "elem polyline",
+                "points": (
+                    0j,
+                    10000j,
+                ),
+            },
             {"type": "elem rect", "x": 0, "y": 0, "width": 10000, "height": 20000},
-            {"type": "elem line","x1": 0, "y1": 0, "x2": 20000, "y2": 20000},
+            {"type": "elem line", "x1": 0, "y1": 0, "x2": 20000, "y2": 20000},
             {"type": "elem text", "text": "Hello World."},
         )
         kernel = bootstrap.bootstrap()
@@ -91,6 +99,7 @@ class TestKernel(unittest.TestCase):
 
         @return:
         """
+
         class Args:
             no_plugins = False
 
@@ -98,6 +107,7 @@ class TestKernel(unittest.TestCase):
         kernel.args = Args()
         try:
             from meerk40t.external_plugins import plugin
+
             q = plugin(kernel=kernel, lifecycle="plugins")
             print(q)
         finally:

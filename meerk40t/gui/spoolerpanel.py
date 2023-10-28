@@ -7,14 +7,13 @@ import wx.lib.mixins.listctrl as listmix
 from wx import aui
 
 from meerk40t.gui.icons import (
+    STD_ICON_SIZE,
     icons8_emergency_stop_button_50,
     icons8_pause_50,
     icons8_route_50,
-    STD_ICON_SIZE,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import HoverButton
-
 from meerk40t.kernel import get_safe_path, signal_listener
 
 _ = wx.GetTranslation
@@ -106,11 +105,17 @@ class SpoolerPanel(wx.Panel):
         self.combo_device.SetSelection(0)  # All by default...
         self.button_pause = wx.Button(self.win_top, wx.ID_ANY, _("Pause"))
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
-        self.button_pause.SetBitmap(icons8_pause_50.GetBitmap(resize=STD_ICON_SIZE/2))
+        self.button_pause.SetBitmap(icons8_pause_50.GetBitmap(resize=STD_ICON_SIZE / 2))
         self.button_stop = HoverButton(self.win_top, wx.ID_ANY, _("Abort"))
         self.button_stop.SetToolTip(_("Stop the laser"))
-        self.button_stop.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(resize=STD_ICON_SIZE/2, color=wx.WHITE, keepalpha=True))
-        self.button_stop.SetBitmapFocus(icons8_emergency_stop_button_50.GetBitmap(resize=STD_ICON_SIZE/2))
+        self.button_stop.SetBitmap(
+            icons8_emergency_stop_button_50.GetBitmap(
+                resize=STD_ICON_SIZE / 2, color=wx.WHITE, keepalpha=True
+            )
+        )
+        self.button_stop.SetBitmapFocus(
+            icons8_emergency_stop_button_50.GetBitmap(resize=STD_ICON_SIZE / 2)
+        )
         self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
         self.button_stop.SetForegroundColour(wx.WHITE)
         self.button_stop.SetFocusColour(wx.BLACK)
@@ -487,6 +492,13 @@ class SpoolerPanel(wx.Panel):
             return
 
         menu = wx.Menu()
+        item = menu.Append(
+            wx.ID_ANY,
+            f"{str(element)[:30]} [{spooler.context.label}]",
+            "",
+            wx.ITEM_NORMAL,
+        )
+        item.Enable(False)
         can_enable = False
         action = _("Remove")
         if element.status == "Running":
@@ -502,21 +514,44 @@ class SpoolerPanel(wx.Panel):
 
         item = menu.Append(
             wx.ID_ANY,
-            f"{action} {str(element)[:30]} [{spooler.context.label}]",
+            f"{action}",
             "",
             wx.ITEM_NORMAL,
         )
         info_tuple = [spooler, element, remove_mode]
         self.Bind(wx.EVT_MENU, self.on_menu_popup_delete(info_tuple), item)
+        # Are there more loops than just one?
+        if hasattr(element, "loops"):
+            # Still something to go?
+            if element.loops > 1 and element.loops_executed < element.loops:
+                item = menu.Append(
+                    wx.ID_ANY,
+                    _("Finish after this loop"),
+                    _("Stop the current execution after the succesful execution of this loop"),
+                    wx.ITEM_NORMAL,
+                )
+                info_tuple = [spooler, element]
+                self.Bind(wx.EVT_MENU, self.on_menu_popup_stop_loop(info_tuple), item)
+            if not isinf(element.loops):
+                item = menu.Append(
+                    wx.ID_ANY,
+                    _("add another loop"),
+                    _("add another loop to this job"),
+                    wx.ITEM_NORMAL,
+                )
+                info_tuple = [spooler, element]
+                self.Bind(wx.EVT_MENU, self.on_menu_popup_add_loop(info_tuple), item)
+
         if can_enable:
             item = menu.Append(
                 wx.ID_ANY,
-                f"{action2} {str(element)[:30]} [{spooler.context.label}]",
+                f"{action2}",
                 "",
                 wx.ITEM_NORMAL,
             )
             info_tuple = [spooler, element]
             self.Bind(wx.EVT_MENU, self.on_menu_popup_toggle_enable(info_tuple), item)
+        menu.AppendSeparator()
         item = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_menu_popup_clear(element), item)
 
@@ -559,13 +594,43 @@ class SpoolerPanel(wx.Panel):
         return delete
 
     def on_menu_popup_toggle_enable(self, element):
-        def toggle(event=None):
+        def routine(event=None):
             spooler = element[0]
             job = element[1]
             job.enabled = not job.enabled
             self.refresh_spooler_list()
 
-        return toggle
+        return routine
+
+    # def on_menu_popup_next_placement(self, element):
+    #     def routine(event=None):
+    #         spooler = element[0]
+    #         job = element[1]
+    #         if hasattr(job, "jump_to_next"):
+    #             job.jump_to_next()
+    #         self.refresh_spooler_list()
+
+    #     return routine
+
+    def on_menu_popup_stop_loop(self, element):
+        def routine(event=None):
+            spooler = element[0]
+            job = element[1]
+            if hasattr(job, "stop_after_loop"):
+                job.stop_after_loop()
+            self.refresh_spooler_list()
+
+        return routine
+
+    def on_menu_popup_add_loop(self, element):
+        def routine(event=None):
+            spooler = element[0]
+            job = element[1]
+            if hasattr(job, "add_another_loop"):
+                job.add_another_loop()
+            self.refresh_spooler_list()
+
+        return routine
 
     def pane_show(self, *args):
         self.refresh_spooler_list()
@@ -953,7 +1018,8 @@ class SpoolerPanel(wx.Panel):
 
     @signal_listener("driver;position")
     @signal_listener("emulator;position")
-    def on_device_update(self, origin, pos):
+    @signal_listener("pipe;usb_status")
+    def on_device_update(self, origin, *args):
         # Only update every 2 seconds or so
         dtime = time.time()
         if dtime - self._last_invokation < 2:

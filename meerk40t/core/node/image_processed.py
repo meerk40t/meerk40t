@@ -8,16 +8,16 @@ from meerk40t.image.imagetools import RasterScripts
 from meerk40t.svgelements import Matrix, Path, Polygon
 
 
-class ImageNode(Node):
+class ImageProcessedNode(Node):
     """
-    ImageNode is the bootstrapped node type for the 'elem image' type.
+    ImageProcessedNode is the bootstrapped node type for the 'image processed' type.
 
-    ImageNode contains a main matrix, main image. A processed image and a processed matrix.
-    The processed matrix must be concatenated with the main matrix to be accurate.
+    This node type accepts an image_node as an operand. And calculates a processed node. Unprocessed nodes cannot
+    rotate and will not resample. This node will allow rotation, resampling, and processing scripts.
     """
 
     def __init__(self, **kwargs):
-        self.image = None
+        self.node = None
         self.matrix = None
         self.overscan = None
         self.direction = None
@@ -33,7 +33,6 @@ class ImageNode(Node):
         self.view_invert = False
         self.prevent_crop = False
 
-        self.passthrough = False
         super().__init__(type="elem image", **kwargs)
         # kwargs can actually reset quite a lot of the properties to none
         # so we need to revert these changes...
@@ -54,6 +53,7 @@ class ImageNode(Node):
         if self.matrix is None:
             self.matrix = Matrix()
         if hasattr(self, "href"):
+            # TODO: Move all of this to svgio loading.
             try:
                 from PIL import Image as PILImage
 
@@ -107,22 +107,20 @@ class ImageNode(Node):
         nd = self.node_dict
         nd["matrix"] = copy(self.matrix)
         nd["operations"] = copy(self.operations)
-        return ImageNode(**nd)
+        return ImageProcessedNode(**nd)
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self.image)}, {str(self._parent)})"
 
-    @property
-    def active_image(self):
-        if self._processed_image is None:
+    def as_image(self):
+        if self._processed_image is None and (
+            (self.operations is not None and len(self.operations) > 0) or self.dither
+        ):
             step = UNITS_PER_INCH / self.dpi
             step_x = step
             step_y = step
             self.process_image(step_x, step_y, not self.prevent_crop)
-        if self._processed_image is not None:
-            return self._processed_image
-        else:
-            return self.image
+        return self._processed_image, self.bbox()
 
     @property
     def active_matrix(self):
@@ -140,9 +138,6 @@ class ImageNode(Node):
         self.matrix *= matrix
         self.set_dirty_bounds()
         self.process_image(self.step_x, self.step_y, not self.prevent_crop)
-
-    def as_image(self):
-        return self.active_image, self.bbox()
 
     def bbox(self, transformed=True, with_stroke=False):
         image_width, image_height = self.active_image.size
@@ -289,8 +284,7 @@ class ImageNode(Node):
             step_y = self.step_y
         try:
             actualized_matrix, image = self._process_image(step_x, step_y, crop=crop)
-            inverted_main_matrix = Matrix(self.matrix).inverse()
-            self._processed_matrix = actualized_matrix * inverted_main_matrix
+            self._processed_matrix = actualized_matrix * ~self.matrix
             self._processed_image = image
             self._process_image_failed = False
             bb = self.bbox()
@@ -454,10 +448,10 @@ class ImageNode(Node):
                             image = image.convert("P")
                             tone_values = op["values"]
                             if op["type"] == "spline":
-                                spline = ImageNode.spline(tone_values)
+                                spline = ImageProcessedNode.spline(tone_values)
                             else:
                                 tone_values = [q for q in tone_values if q is not None]
-                                spline = ImageNode.line(tone_values)
+                                spline = ImageProcessedNode.line(tone_values)
                             if len(spline) < 256:
                                 spline.extend([255] * (256 - len(spline)))
                             if len(spline) > 256:

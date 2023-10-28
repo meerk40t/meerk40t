@@ -50,7 +50,11 @@ class OperationAssignPanel(wx.Panel):
         self.buttons = []
         self.op_nodes = []
         for idx in range(self.MAXBUTTONS):
-            btn = wx.Button(self, id=wx.ID_ANY, size=dip_size(self, self.buttonsize, self.buttonsize))
+            btn = wx.Button(
+                self,
+                id=wx.ID_ANY,
+                size=dip_size(self, self.buttonsize, self.buttonsize),
+            )
             self.buttons.append(btn)
             self.op_nodes.append(None)
 

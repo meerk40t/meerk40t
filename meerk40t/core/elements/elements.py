@@ -117,7 +117,11 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/elem text", "{element_type} {desc} {text}")
         kernel.register(
             "format/effect hatch",
-            "{effect}{element_type} - {distance} {angle} ({children})",
+            "{element_type} - {distance} {angle} ({children})",
+        )
+        kernel.register(
+            "format/effect wobble",
+            "{element_type} - {type} {radius} ({children})",
         )
         kernel.register("format/reference", "*{reference}")
         kernel.register(
@@ -677,13 +681,18 @@ class Elemental(Service):
         #     pnode.targeted = True
         #     pnode = pnode.parent
 
+    def unassigned_elements(self):
+        for e in self.elems():
+            if (e._references is None or len(e._references) == 0) and e.type not in (
+                "file",
+                "group",
+            ):
+                yield e
+
     def have_unassigned_elements(self):
-        unassigned = False
-        for node in self.elems():
-            if len(node._references) == 0 and node.type not in ("file", "group"):
-                unassigned = True
-                break
-        return unassigned
+        for node in self.unassigned_elements():
+            return True
+        return False
 
     def have_unburnable_elements(self):
         unassigned = False
@@ -1439,6 +1448,7 @@ class Elemental(Service):
             # Restore emphasized flags
             for e in emph_data:
                 e.emphasized = True
+        self.signal("element_property_reload", data)
 
     def remove_unused_default_copies(self):
         # Let's clean non-used operations that come from defaults...
@@ -1611,7 +1621,6 @@ class Elemental(Service):
         return self._tree.get(type="branch elems")
 
     def ops(self, **kwargs):
-
         operations = self._tree.get(type="branch ops")
         for item in operations.flat(depth=1, **kwargs):
             if item.type.startswith("branch") or item.type.startswith("ref"):
@@ -2280,7 +2289,7 @@ class Elemental(Service):
                         whisperer = False
                     if debug:
                         debug(
-                            f"For {op.type}: black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}"
+                            f"For {op.type}.{op.id}: black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}"
                         )
                     if hasattr(op, "classify") and whisperer:
                         classified, should_break, feedback = op.classify(
@@ -2356,14 +2365,15 @@ class Elemental(Service):
                     ):
                         if fuzzy:
                             is_black = (
-                                Color.distance("black", node.stroke) <= fuzzydistance
-                                or Color.distance("white", node.stroke) <= fuzzydistance
+                                Color.distance("black", abs(node.stroke))
+                                <= fuzzydistance
+                                or Color.distance("white", abs(node.stroke))
+                                <= fuzzydistance
                             )
                         else:
-                            is_black = (
-                                Color("black") == node.stroke
-                                or Color("white") == node.stroke
-                            )
+                            is_black = Color("black") == abs(node.stroke) or Color(
+                                "white"
+                            ) == abs(node.stroke)
                     if (
                         not self.classify_black_as_raster
                         and is_black
@@ -2379,7 +2389,7 @@ class Elemental(Service):
                         whisperer = False
                     if debug:
                         debug(
-                            f"For {op.type}: black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}"
+                            f"For {op.type}.{op.id}: black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}"
                         )
                     if hasattr(op, "classify") and whisperer:
                         classified, should_break, feedback = op.classify(
@@ -2427,7 +2437,6 @@ class Elemental(Service):
                 if debug:
                     debug("Pass 3, not classified by ops or def ops")
                 stdops = []
-                has_raster = False
                 if node.type == "elem image":
                     found_default = False
                     for op_candidate in self.default_operations:
@@ -2436,10 +2445,15 @@ class Elemental(Service):
                             stdops.append(op_to_use)
                             found_default = True
                             break
-                    if not found_default:
-                        stdops.append(ImageOpNode(output=False))
-                    if debug:
-                        debug("add an op image")
+                    if found_default:
+                        if debug:
+                            debug(
+                                f"add an op image from default ops with id {op_to_use.id}"
+                            )
+                    else:
+                        stdops.append(ImageOpNode())
+                        if debug:
+                            debug("add an op image")
                     classif_info[0] = True
                     classif_info[1] = True
                 elif node.type == "elem point":
@@ -2450,10 +2464,15 @@ class Elemental(Service):
                             stdops.append(op_to_use)
                             found_default = True
                             break
-                    if not found_default:
-                        stdops.append(DotsOpNode(output=False))
-                    if debug:
-                        debug("add an op dots")
+                    if found_default:
+                        if debug:
+                            debug(
+                                f"add an op dots from default ops with id {op_to_use.id}"
+                            )
+                    else:
+                        stdops.append(DotsOpNode())
+                        if debug:
+                            debug("add an op dots")
                     classif_info[0] = True
                     classif_info[1] = True
                 # That should leave us with fulfilled criteria or stroke / fill stuff
@@ -2463,82 +2482,167 @@ class Elemental(Service):
                     and node.stroke is not None
                     and node.stroke.argb is not None
                 ):
-                    if fuzzy:
-                        is_cut = Color.distance("red", node.stroke) <= fuzzydistance
-                    else:
-                        is_cut = Color("red") == node.stroke
+                    # Let's loop through the default operations
+                    # First the whisperer case
                     if self.classify_black_as_raster:
                         if fuzzy:
                             is_raster = (
-                                Color.distance("black", node.stroke) <= fuzzydistance
-                                or Color.distance("white", node.stroke) <= fuzzydistance
+                                Color.distance("black", abs(node.stroke))
+                                <= fuzzydistance
+                                or Color.distance("white", abs(node.stroke))
+                                <= fuzzydistance
                             )
                         else:
-                            is_raster = (
-                                Color("black") == node.stroke
-                                or Color("white") == node.stroke
-                            )
+                            is_raster = Color("black") == abs(node.stroke) or Color(
+                                "white"
+                            ) == abs(node.stroke)
                     else:
                         is_raster = False
-                    # print (f"Need a new op: cut={is_cut},raster={is_raster}, color={node.stroke}")
-                    if is_cut:
-                        found_default = False
+                    if is_raster:
+                        stdops.append(RasterOpNode(color="black", output=True))
+                        if debug:
+                            debug("add an op raster based on black color")
+                        classif_info[0] = True
+                        classif_info[1] = True
+                # Still not something? Check default operations...
+                if (
+                    not classif_info[0]
+                    and hasattr(node, "stroke")
+                    and node.stroke is not None
+                    and node.stroke.argb is not None
+                ):
+                    if fuzzy:
+                        fuzzy_param = (False, True)
+                    else:
+                        fuzzy_param = (False,)
+                    was_classified = False
+                    for tempfuzzy in fuzzy_param:
+                        if debug:
+                            debug(
+                                f"Pass 3-stroke, fuzzy={tempfuzzy}): check {node.type}"
+                            )
                         for op_candidate in self.default_operations:
-                            if isinstance(op_candidate, CutOpNode):
-                                op_to_use = self.create_usable_copy(op_candidate)
-                                stdops.append(op_to_use)
-                                found_default = True
-                                break
-                        if not found_default:
-                            stdops.append(CutOpNode(color=Color("red"), speed=5.0))
+                            classified = False
+                            if isinstance(op_candidate, (CutOpNode, EngraveOpNode)):
+                                if tempfuzzy:
+                                    classified = (
+                                        Color.distance(
+                                            abs(node.stroke), abs(op_candidate.color)
+                                        )
+                                        <= fuzzydistance
+                                    )
+                                else:
+                                    classified = abs(node.stroke) == abs(
+                                        op_candidate.color
+                                    )
+
+                                if classified:
+                                    classif_info[0] = True
+                                    was_classified = True
+                                    op_to_use = self.create_usable_copy(op_candidate)
+                                    stdops.append(op_to_use)
+                                    if debug:
+                                        debug(
+                                            f"Found a default op with fitting stroke, id={op_to_use.id}"
+                                        )
+                                    break
+                        if was_classified:
+                            break
+                # Sigh, not even a default operation was found...
+                if (
+                    not classif_info[0]
+                    and hasattr(node, "stroke")
+                    and node.stroke is not None
+                    and node.stroke.argb is not None
+                ):
+                    is_cut = False
+                    if fuzzy:
+                        is_cut = (
+                            Color.distance(abs(node.stroke), "red") <= fuzzydistance
+                        )
+                    else:
+                        is_cut = abs(node.stroke) == Color("red")
+                    if is_cut:
+                        op = CutOpNode(color=Color("red"), speed=5.0)
+                        op.add_color_attribute("stroke")
+                        stdops.append(op)
                         if debug:
                             debug("add an op cut due to stroke")
-                    elif is_raster:
-                        found_default = False
-                        for op_candidate in self.default_operations:
-                            if isinstance(op_candidate, RasterOpNode):
-                                op_to_use = self.create_usable_copy(op_candidate)
-                                stdops.append(op_to_use)
-                                found_default = True
-                                break
-                        if not found_default:
-                            stdops.append(RasterOpNode(color="black", output=True))
-                        if debug:
-                            debug("add an op raster due to stroke")
-                        has_raster = True
                     else:
-                        found_default = False
-                        for op_candidate in self.default_operations:
-                            if isinstance(op_candidate, EngraveOpNode):
-                                op_to_use = self.create_usable_copy(op_candidate)
-                                stdops.append(op_to_use)
-                                found_default = True
-                                break
-                        if not found_default:
-                            stdops.append(EngraveOpNode(color=node.stroke, speed=35.0))
+                        op = EngraveOpNode(color=node.stroke, speed=35.0)
+                        op.add_color_attribute("stroke")
+                        stdops.append(op)
                         if debug:
                             debug(
                                 f"add an op engrave with color={node.stroke} due to stroke"
                             )
+
+                # -------------------------------------
                 # Do we need to add a fill operation?
+
                 if (
                     not classif_info[1]
                     and hasattr(node, "fill")
                     and node.fill is not None
                     and node.fill.argb is not None
-                    and not has_raster
                 ):
-                    found_default = False
-                    for op_candidate in self.default_operations:
-                        if isinstance(op_candidate, RasterOpNode):
-                            op_to_use = self.create_usable_copy(op_candidate)
-                            stdops.append(op_to_use)
-                            found_default = True
+                    if node.fill.red == node.fill.green == node.fill.blue:
+                        is_black = True
+                    elif fuzzy:
+                        is_black = (
+                            Color.distance("black", abs(node.fill)) <= fuzzydistance
+                            or Color.distance("white", abs(node.fill)) <= fuzzydistance
+                        )
+                    else:
+                        is_black = Color("black") == abs(node.fill) or Color(
+                            "white"
+                        ) == abs(node.fill)
+                    node_fill = Color("black") if is_black else abs(node.fill)
+                    if fuzzy:
+                        fuzzy_param = (False, True)
+                    else:
+                        fuzzy_param = (False,)
+                    was_classified = False
+                    for tempfuzzy in fuzzy_param:
+                        if debug:
+                            debug(f"Pass 3-fill (fuzzy={tempfuzzy}): check {node.type}")
+                        for op_candidate in self.default_operations:
+                            classified = False
+                            if isinstance(op_candidate, RasterOpNode):
+                                if tempfuzzy:
+                                    classified = (
+                                        Color.distance(
+                                            node_fill, abs(op_candidate.color)
+                                        )
+                                        <= fuzzydistance
+                                    )
+                                else:
+                                    classified = node_fill == abs(op_candidate.color)
+                            if classified:
+                                classif_info[1] = True
+                                was_classified = True
+                                op_to_use = self.create_usable_copy(op_candidate)
+                                stdops.append(op_to_use)
+                                if debug:
+                                    debug(
+                                        f"Found a default op with fitting fill, id={op_to_use.id}"
+                                    )
+                                break
+                        if was_classified:
                             break
-                    if not found_default:
-                        stdops.append(RasterOpNode(color="black", output=True))
+                # Sigh, not even a default operation was found...
+                if (
+                    not classif_info[1]
+                    and hasattr(node, "fill")
+                    and node.fill is not None
+                    and node.fill.argb is not None
+                ):
+                    op = RasterOpNode(color="black")
+                    stdops.append(op)
                     if debug:
                         debug("add an op raster due to fill")
+
+                # ---------------------------------------
                 for op in stdops:
                     # Let's make sure we don't have something like that already
                     if debug:
@@ -3393,7 +3497,11 @@ class Elemental(Service):
                             ):
                                 return True
                             elif results:
-                                self.signal("warning", _("File is Empty"), _("File is Malformed"))
+                                self.signal(
+                                    "warning",
+                                    _("File is Empty"),
+                                    _("File is Malformed"),
+                                )
                                 return True
 
                         except FileNotFoundError:

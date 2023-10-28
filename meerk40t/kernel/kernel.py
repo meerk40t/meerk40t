@@ -196,7 +196,9 @@ class Kernel(Settings):
             safe_dir = os.getcwd()
             if original_dir == safe_dir:
                 # Permissions error in safe dir. No solution.
-                raise PermissionError("No permission to write to safe directory.") from e
+                raise PermissionError(
+                    "No permission to write to safe directory."
+                ) from e
 
             print(
                 f"Changing working directory from {str(original_dir)} to {str(safe_dir)}."

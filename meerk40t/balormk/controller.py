@@ -12,7 +12,6 @@ from copy import copy
 
 from meerk40t.balormk.mock_connection import MockConnection
 from meerk40t.balormk.usb_connection import USBConnection
-from meerk40t.fill.fills import Wobble
 
 DRIVER_STATE_RAPID = 0
 DRIVER_STATE_LIGHT = 1
@@ -273,7 +272,6 @@ class GalvoController:
         self._delay_poly = None
         self._delay_end = None
 
-        self._wobble = None
         self._port_bits = 0
         self._machine_index = 0
 
@@ -597,7 +595,9 @@ class GalvoController:
         else:
             self.list_jump_speed(self.service.default_rapid_speed)
 
-        power = float(settings.get("power", self.service.default_power)) / 10.0   # Convert power, out of 1000
+        power = (
+            float(settings.get("power", self.service.default_power)) / 10.0
+        )  # Convert power, out of 1000
         frequency = float(settings.get("frequency", self.service.default_frequency))
         fpk = float(settings.get("fpk", self.service.default_fpk))
         if self.source == "fiber":
@@ -625,40 +625,6 @@ class GalvoController:
             self.list_laser_off_delay(self.service.delay_laser_off)
             self.list_polygon_delay(self.service.delay_polygon)
 
-    def set_wobble(self, settings):
-        """
-        Set the wobble parameters and mark modifications routines.
-
-        @param settings: The dict setting to extract parameters from.
-        @return:
-        """
-        if settings is None:
-            self._wobble = None
-            return
-        wobble_enabled = str(settings.get("wobble_enabled", False)).lower() == "true"
-        if not wobble_enabled:
-            self._wobble = None
-            return
-        wobble_radius = settings.get("wobble_radius", "1.5mm")
-        wobble_r, _ = self.service.view.position(wobble_radius, 0, vector=True)
-        wobble_interval = settings.get("wobble_interval", "0.3mm")
-        wobble_speed = settings.get("wobble_speed", 50.0)
-        wobble_type = settings.get("wobble_type", "circle")
-        wobble_interval, _ = self.service.view.position(wobble_interval, 0, vector=True)
-        algorithm = self.service.lookup(f"wobble/{wobble_type}")
-        if self._wobble is None:
-            self._wobble = Wobble(
-                algorithm=algorithm,
-                radius=wobble_r,
-                speed=wobble_speed,
-                interval=wobble_interval,
-            )
-        else:
-            # set our parameterizations
-            self._wobble.algorithm = algorithm
-            self._wobble.radius = wobble_r
-            self._wobble.speed = wobble_speed
-
     #######################
     # PLOTLIKE SHORTCUTS
     #######################
@@ -671,11 +637,7 @@ class GalvoController:
             return
         if self._mark_speed is not None:
             self.list_mark_speed(self._mark_speed)
-        if self._wobble:
-            for wx, wy in self._wobble(self._last_x, self._last_y, x, y):
-                self.list_mark(wx, wy)
-        else:
-            self.list_mark(x, y)
+        self.list_mark(x, y)
 
     def goto(self, x, y, long=None, short=None, distance_limit=None):
         if x == self._last_x and y == self._last_y:
@@ -778,6 +740,7 @@ class GalvoController:
         if self.mode == DRIVER_STATE_RAW:
             return
         self.stop_execute()
+        self.paused = False
         self.set_fiber_mo(0)
         self.reset_list()
         if dummy_packet:

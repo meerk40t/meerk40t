@@ -8,14 +8,13 @@ import re
 import struct
 import time
 
-from meerk40t.core.view import View
-
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.balormk.elementlightjob import ElementLightJob
 from meerk40t.balormk.livelightjob import LiveLightJob
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length
+from meerk40t.core.view import View
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.svgelements import Path, Point
 from meerk40t.tools.geomstr import Geomstr
@@ -745,7 +744,12 @@ class BalorDevice(Service):
         unit_size = float(Length(self.lens_size))
         galvo_range = 0xFFFF
         units_per_galvo = unit_size / galvo_range
-        self.view = View(self.lens_size, self.lens_size, native_scale_x=units_per_galvo, native_scale_y=units_per_galvo)
+        self.view = View(
+            self.lens_size,
+            self.lens_size,
+            native_scale_x=units_per_galvo,
+            native_scale_y=units_per_galvo,
+        )
         self.view.transform(
             flip_x=self.flip_x,
             flip_y=self.flip_y,
@@ -878,6 +882,7 @@ class BalorDevice(Service):
             try:
                 channel("Resetting controller.")
                 self.driver.reset()
+                self.signal("pause")
             except ConnectionRefusedError:
                 pass
 
@@ -1786,35 +1791,20 @@ class BalorDevice(Service):
             """
             if data is None:
                 data = list(self.elements.elems(emphasized=True))
-            pts = []
+            g = Geomstr()
             for e in data:
-                if e.type == "elem image":
+                if hasattr(e, "as_image"):
                     bounds = e.bounds
-                    pts += [
-                        (bounds[0], bounds[1]),
-                        (bounds[0], bounds[3]),
-                        (bounds[2], bounds[1]),
-                        (bounds[2], bounds[3]),
-                    ]
+                    g.append(Geomstr.rect(bounds[0], bounds[1], bounds[2] - bounds[0], bounds[3] - bounds[1]))
                 elif e.type == "elem text":
                     continue  # We can't outline text.
                 else:
-                    try:
-                        path = abs(Path(e.shape))
-                    except AttributeError:
-                        try:
-                            path = abs(e.path)
-                        except AttributeError:
-                            continue
-                    pts += [q for q in path.as_points()]
-            hull = [p for p in Point.convex_hull(pts)]
+                    g.append(e.as_geometry())
+            hull = Geomstr.hull(g)
             if len(hull) == 0:
                 channel(_("No elements bounds to trace."))
                 return
-            hull.append(hull[0])  # loop
-            hull = list(map(complex, hull))
-            geometry = Geomstr.lines(*hull)
-            return "geometry", geometry
+            return "geometry", hull
 
         def ant_points(points, steps):
             points = list(points)
@@ -1877,6 +1867,7 @@ class BalorDevice(Service):
         )
         def codes_update(channel, filename, **kwargs):
             import platform
+
             from meerk40t.balormk.clone_loader import load_sys
             from meerk40t.kernel import get_safe_path
 
@@ -1885,6 +1876,7 @@ class BalorDevice(Service):
                 self.clone_sys = filename
             if self.clone_sys == "chunks":
                 from meerk40t.balormk.clone_loader import load_chunks
+
                 load_chunks(channel=channel)
                 return
 
@@ -1944,10 +1936,7 @@ class BalorDevice(Service):
         """
         @return: the location in units for the current known position.
         """
-        return self.view.iposition(
-            self.driver.native_x,
-            self.driver.native_y
-        )
+        return self.view.iposition(self.driver.native_x, self.driver.native_y)
 
     @property
     def native(self):

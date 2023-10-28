@@ -75,6 +75,7 @@ from .propertypanels.rasterwizardpanels import (
 )
 from .propertypanels.textproperty import TextPropertyPanel
 from .propertypanels.waitproperty import WaitPropertyPanel
+from .propertypanels.wobbleproperty import WobblePropertyPanel
 from .simpleui import SimpleUI
 from .simulation import Simulation
 from .wordlisteditor import WordlistEditor
@@ -305,7 +306,8 @@ class wxMeerK40t(wx.App, Module):
         # monitors with font scaling enabled.
         from platform import system
 
-        if system() == "Windows":
+        high_dpi = context.setting(bool, "high_dpi", True)
+        if system() == "Windows" and high_dpi:
             try:
                 # https://discuss.wxpython.org/t/support-for-high-dpi-on-windows-10/32925
                 from ctypes import OleDLL
@@ -629,13 +631,12 @@ class wxMeerK40t(wx.App, Module):
             help=_("reset the supplied window, or '*' for all windows"),
         )
         def window_reset(channel, _, data, window=None, **kwargs):
-            for section in list(kernel.derivable("")):
-                if section.startswith("window"):
-                    kernel.clear_persistent(section)
-                    try:
-                        del kernel.contexts[section]
-                    except KeyError:
-                        pass  # No open context for that window, nothing will save out.
+            for section in list(kernel.section_startswith("window/")):
+                kernel.clear_persistent(section)
+                try:
+                    del kernel.contexts[section]
+                except KeyError:
+                    pass  # No open context for that window, nothing will save out.
 
         @kernel.console_command("refresh", help=_("Refresh the main wxMeerK40 window"))
         def scene_refresh(command, channel, _, **kwargs):
@@ -717,6 +718,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/PolylineNode/PathProperty", PathPropertyPanel)
         kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
         kernel.register("property/HatchEffectNode/HatchProperty", HatchPropertyPanel)
+        kernel.register("property/WobbleEffectNode/WobbleProperty", WobblePropertyPanel)
         kernel.register("property/PointNode/PointProperty", PointPropertyPanel)
         kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
         kernel.register("property/BlobNode/BlobProperty", BlobPropertyPanel)

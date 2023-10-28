@@ -3,6 +3,7 @@ from math import sin, sqrt, tan, tau
 import wx
 
 from meerk40t.core.units import Angle, Length
+from meerk40t.gui.icons import STD_ICON_SIZE, PyEmbeddedImage, icons8_polygon_50
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
     icon_crossing_star,
@@ -288,7 +289,9 @@ class PolygonTool(ToolWidget):
                 update_required = True
         if event_type == "leftclick":
             if nearest_snap is None:
-                sx, sy = self.scene.get_snap_point(space_pos[0], space_pos[1], modifiers)
+                sx, sy = self.scene.get_snap_point(
+                    space_pos[0], space_pos[1], modifiers
+                )
                 pos = [sx, sy]
             else:
                 pos = [nearest_snap[0], nearest_snap[1]]

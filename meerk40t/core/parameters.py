@@ -66,7 +66,7 @@ STRING_PARAMETERS = (
 
 COLOR_PARAMETERS = ("color", "line_color")
 
-LIST_PARAMETERS = ("allowed_attributes", )
+LIST_PARAMETERS = ("allowed_attributes",)
 
 
 class Parameters:
@@ -121,7 +121,6 @@ class Parameters:
                 except (ValueError, SyntaxError):
                     pass
 
-
     # def __getattr__(self, item):
     #     """
     #     Getattr replaces the unfound items.
@@ -150,7 +149,6 @@ class Parameters:
     #     """
     #     d = self.__dict__
     #     return d.get(item, None)
-
 
     @property
     def color(self):

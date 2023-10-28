@@ -183,7 +183,7 @@ def encode_bytes(data, magic=0x88):
 def magic_keys():
     mk = dict()
     for g in range(256):
-        mk[encode_bytes(b'\xda\x00\x05\x7E', magic=g)] = g
+        mk[encode_bytes(b"\xda\x00\x05\x7E", magic=g)] = g
     return mk
 
 
@@ -288,7 +288,9 @@ class RDJob:
         try:
             self.process(array)
         except IndexError as e:
-            raise RuidaCommandError(f"Could not process Ruida buffer, {self.buffer[:25]} with magic: {self.magic:02}") from e
+            raise RuidaCommandError(
+                f"Could not process Ruida buffer, {self.buffer[:25]} with magic: {self.magic:02}"
+            ) from e
         if not self.buffer:
             # Buffer is empty now. Job is complete
             self.runtime += time.time() - self.time_started

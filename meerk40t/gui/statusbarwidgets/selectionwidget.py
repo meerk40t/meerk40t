@@ -102,6 +102,7 @@ class SelectionOptionWidget(StatusBarWidget):
             self.context.enable_sel_skew = value
             self.context.signal("refresh_scene", "Scene")
 
+
 class SnapOptionsWidget(StatusBarWidget):
     """
     Panel to set some of the options for mouse snapping
@@ -117,7 +118,9 @@ class SnapOptionsWidget(StatusBarWidget):
 
         # These will fall into the last field
         self.cb_grid = wx.CheckBox(self.parent, id=wx.ID_ANY, label=_("Snap to Grid"))
-        self.cb_points = wx.CheckBox(self.parent, id=wx.ID_ANY, label=_("Snap to Element"))
+        self.cb_points = wx.CheckBox(
+            self.parent, id=wx.ID_ANY, label=_("Snap to Element")
+        )
         self.cb_grid.SetFont(
             wx.Font(
                 FONT_SIZE,
@@ -141,7 +144,9 @@ class SnapOptionsWidget(StatusBarWidget):
         self.cb_grid.SetValue(self.context.snap_grid)
         self.cb_points.SetValue(self.context.snap_points)
         self.EndPopulation()
-        self.cb_grid.SetToolTip(_("Shall the cursor snap to the next grid intersection?"))
+        self.cb_grid.SetToolTip(
+            _("Shall the cursor snap to the next grid intersection?")
+        )
         self.cb_points.SetToolTip(_("Shall the cursor snap to the next element point?"))
         self.PrependSpacer(5)
         self.Add(self.cb_grid, 1, 0, 0)

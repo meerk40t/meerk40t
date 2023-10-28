@@ -97,6 +97,6 @@ def plugin(kernel, lifecycle=None):
         except ImportError:
             pass
     if lifecycle == "preboot":
-        suffix = "lhystudios"
-        for d in kernel.derivable(suffix):
-            kernel.root(f"service device start -p {d} {suffix}\n")
+        prefix = "lhystudios"
+        for d in kernel.section_startswith(prefix):
+            kernel.root(f"service device start -p {d} {prefix}\n")

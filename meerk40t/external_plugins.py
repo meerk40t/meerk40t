@@ -37,6 +37,7 @@ def plugins_importlib():
     @return:
     """
     from importlib.metadata import entry_points
+
     entry_points = entry_points()
 
     try:

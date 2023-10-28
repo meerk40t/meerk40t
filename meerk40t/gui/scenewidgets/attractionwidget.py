@@ -106,9 +106,12 @@ class AttractionWidget(Widget):
 
         # Inform profiler
         ctx.elements.set_start_time("attr_calc_disp")
-        self.scene.calculate_display_points(self.my_x, self.my_y, snap_points, snap_grid)
+        self.scene.calculate_display_points(
+            self.my_x, self.my_y, snap_points, snap_grid
+        )
         ctx.elements.set_end_time(
-            "attr_calc_disp", message=f"points added={len(self.scene.snap_display_points)}"
+            "attr_calc_disp",
+            message=f"points added={len(self.scene.snap_display_points)}",
         )
 
         if event_type in (

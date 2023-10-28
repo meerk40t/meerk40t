@@ -84,14 +84,6 @@ class Context:
         """
         return self._kernel.get_context(path)
 
-    def derivable(self) -> Generator[str, None, None]:
-        """
-        Generate all sub derived paths.
-
-        @return:
-        """
-        yield from self._kernel.derivable(self._path)
-
     def subpaths(self) -> Generator["Context", None, None]:
         """
         Generate all subpaths of the current context with their path name and the relevant context.

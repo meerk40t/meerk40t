@@ -12,7 +12,6 @@ class TestElementLength(unittest.TestCase):
     def test_length_init2(self):
         self.assertRaises(ValueError, lambda: Length(amount="12garbage"))
 
-
     def test_length_parsing(self):
         self.assertAlmostEqual(Length("10cm"), (Length("100mm")))
         self.assertNotEqual(Length("1mm"), 0)

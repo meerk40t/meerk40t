@@ -406,7 +406,7 @@ class HersheyFontSelector(MWindow):
         super().__init__(450, 550, submenu="", *args, **kwds)
         self.panel = PanelFontSelect(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_choose_font_50.GetBitmap(resize=STD_ICON_SIZE/2))
+        _icon.CopyFromBitmap(icons8_choose_font_50.GetBitmap(resize=STD_ICON_SIZE / 2))
         # _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Font-Selection"))
@@ -809,7 +809,7 @@ class HersheyFontManager(MWindow):
         super().__init__(551, 234, submenu="", *args, **kwds)
         self.panel = PanelFontManager(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_choose_font_50.GetBitmap(resize=STD_ICON_SIZE/2))
+        _icon.CopyFromBitmap(icons8_choose_font_50.GetBitmap(resize=STD_ICON_SIZE / 2))
         # _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Font-Manager"))

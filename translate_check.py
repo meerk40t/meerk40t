@@ -28,7 +28,6 @@ import sys
 
 
 def read_source():
-
     id_strings_source = []
     id_usage = []
     # sourcedir = "./meerk40t"

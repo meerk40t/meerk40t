@@ -18,11 +18,11 @@ from .rdjob import (
     decode14,
     decodeu35,
     encode32,
+    magic_keys,
     parse_commands,
     parse_filenumber,
     parse_mem,
     swizzles_lut,
-    magic_keys,
 )
 
 

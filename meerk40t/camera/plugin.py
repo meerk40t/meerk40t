@@ -110,10 +110,7 @@ def plugin(kernel, lifecycle=None):
             **kwargs,
         ):
             channel(_("Camera Information:"))
-            camera_context = kernel.get_context("camera")
-            for d in camera_context.derivable():
-                if d == "camera":
-                    continue
+            for d in kernel.section_startswith("camera/"):
                 context = kernel.get_context(d)
                 channel(f"{d}: {getattr(context, 'uri', '---')}")
             return "camera", data

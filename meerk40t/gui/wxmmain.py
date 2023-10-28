@@ -1,6 +1,6 @@
+import datetime
 import os
 import platform
-import datetime
 import sys
 from functools import partial
 
@@ -9,18 +9,16 @@ from PIL import Image
 from wx import aui
 
 from meerk40t.core.exceptions import BadFileError
+from meerk40t.gui.statusbarwidgets.defaultoperations import DefaultOperationWidget
 from meerk40t.gui.statusbarwidgets.infowidget import (
     BurnProgressPanel,
     InformationWidget,
     StatusPanelWidget,
 )
-
-# from meerk40t.gui.statusbarwidgets.opassignwidget import (
-#     OperationAssignOptionWidget,
-#     OperationAssignWidget,
-# )
-from meerk40t.gui.statusbarwidgets.defaultoperations import DefaultOperationWidget
-from meerk40t.gui.statusbarwidgets.selectionwidget import SelectionOptionWidget, SnapOptionsWidget
+from meerk40t.gui.statusbarwidgets.selectionwidget import (
+    SelectionOptionWidget,
+    SnapOptionsWidget,
+)
 from meerk40t.gui.statusbarwidgets.shapepropwidget import (
     FillruleWidget,
     LinecapWidget,
@@ -52,6 +50,7 @@ from .icons import (  # icons8_replicate_rows_50,
     icons8_curly_brackets_50,
     icons8_cursor_50,
     icons8_delete_50,
+    icons8_finger_50,
     icons8_flip_vertical,
     icons8_group_objects_50,
     icons8_measure_50,
@@ -61,7 +60,6 @@ from .icons import (  # icons8_replicate_rows_50,
     icon_mk_ellipse,
     icons8_paste_50,
     icons8_pencil_drawing_50,
-    icons8_finger_50,
     icons8_place_marker_50,
     icon_mk_point,
     icon_mk_polygon,

@@ -9,7 +9,6 @@ import math
 import os.path
 from copy import copy
 
-from meerk40t.core.cutcode.cutcode import CutCode
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.treeop import (
@@ -29,6 +28,7 @@ from meerk40t.core.treeop import (
 from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Matrix, Point, Polygon
+from meerk40t.tools.geomstr import Geomstr
 
 from .element_types import *
 
@@ -982,24 +982,6 @@ def init_tree(kernel):
     # REMOVE SINGLE (Tree Selected - ELEMENT)
     # ==========
 
-    @tree_conditional(lambda node: hasattr(node, "effect") and not node.effect)
-    @tree_operation(
-        _("Effect: On"),
-        node_type=effect_nodes,
-        help="",
-    )
-    def effect_on(node, **kwargs):
-        node.effect = not node.effect
-
-    @tree_conditional(lambda node: hasattr(node, "effect") and node.effect)
-    @tree_operation(
-        _("Effect: Off"),
-        node_type=effect_nodes,
-        help="",
-    )
-    def effect_off(node, **kwargs):
-        node.effect = not node.effect
-
     @tree_conditional(lambda node: node.can_remove)
     @tree_conditional(
         lambda cond: len(
@@ -1221,7 +1203,7 @@ def init_tree(kernel):
         self.signal("make_reference", node)
 
     @tree_conditional(
-        lambda node: isinstance(node.shape, Polygon) and len(node.shape.points) >= 3
+        lambda node: node.closed and len(list(node.geometry.as_points())) >= 3
     )
     @tree_operation(
         _("Make Polygon regular"),
@@ -1229,74 +1211,28 @@ def init_tree(kernel):
         help="",
     )
     def make_polygon_regular(node, **kwargs):
-        # from .units import Length
-        # from ..svgelements import Color
-
-        # def mk_debug_point(x, y, col):
-        #     circ = Ellipse(cx=x, cy=y, r=float(Length("1mm")))
-        #     circ.transform = copy(node.shape.transform)
-        #     self.elem_branch.add(
-        #         shape=circ,
-        #         type="elem ellipse",
-        #         stroke=Color(col),
-        #         fill=Color(col),
-        #         matrix=copy(node.matrix),
-        #     )
-
         if node is None or node.type != "elem polyline":
             return
-        number_points = len(node.shape.points)
-        # print (f"Number of points: {number_points}")
-        # for prop in dir(node):
-        #     print (f"{prop} - {getattr(node, 'prop', '')}")
-        # for idx, pt in enumerate(node.shape.points):
-        #     print (f"{idx}: {pt.x:.1f}, {pt.y:.1f}")
-        if number_points < 3 or not isinstance(node.shape, Polygon):
-            return
-        pts = node.shape.points
-        dx = pts[1].x - pts[0].x
-        dy = pts[1].y - pts[0].y
-        baseline = math.sqrt(dx * dx + dy * dy)
-        apothem = baseline / (2 * math.tan(math.tau / (2 * number_points)))
-        circumradius = baseline / (2 * math.sin(math.tau / (2 * number_points)))
-        midpoint = Point(pts[0].x + 0.5 * dx, pts[0].y + 0.5 * dy)
-        #  mk_debug_point(midpoint.x, midpoint.y, "black")
-        ax = 0
-        ay = 0
-        for idx, pt in enumerate(pts):
-            ax += pt.x
-            ay += pt.y
-        ax /= number_points
-        ay /= number_points
+        pts = list(node.geometry.as_points())
+        vertex_count = len(pts) - 1
+        baseline = abs(pts[1] - pts[0])
+        circumradius = baseline / (2 * math.sin(math.tau / (2 * vertex_count)))
+        # apothem = baseline / (2 * math.tan(math.tau / (2 * vertex_count)))
+        # midpoint = (pts[0] - pts[1]) / 2
+
         # The arithmetic center (ax, ay) indicates to which
         # 'side' of the baseline the polygon needs to be constructed
-        arithmetic_center = Point(ax, ay)
-        # mk_debug_point(ax, ay, "green")
-        angle = pts[0].angle_to(pts[1])
-        midangle = midpoint.angle_to(arithmetic_center)
-        angle += math.tau / 4
-        first_point = Point.polar(midpoint, angle, apothem)
-        second_point = Point.polar(midpoint, angle + math.tau / 2, apothem)
-        # mk_debug_point(first_point.x, first_point.y, "yellow")
-        # mk_debug_point(second_point.x, second_point.y, "cyan")
-        deltaangle = math.tau / number_points
-        d1 = arithmetic_center.distance_to(first_point)
-        d2 = arithmetic_center.distance_to(second_point)
-        if d1 < d2:
-            center_point = copy(first_point)
-        else:
-            center_point = copy(second_point)
-        # mk_debug_point(center_point.x, center_point.y, "red")
+        arithmetic_center = sum(pts[:-1]) / vertex_count
 
-        if center_point.angle_to(pts[0]) > center_point.angle_to(pts[1]):
-            deltaangle *= -1
-        angle = center_point.angle_to(pts[0])
-        for idx in range(number_points):
-            # if idx > 1:
-            pt = Point.polar(center_point, angle, circumradius)
-            pts[idx].x = pt.x
-            pts[idx].y = pt.y
-            angle += deltaangle
+        start_angle = Geomstr.angle(None, arithmetic_center, pts[0])
+
+        node.geometry = Geomstr.regular_polygon(
+            vertex_count,
+            arithmetic_center,
+            radius=circumradius,
+            radius_inner=circumradius,
+            start_angle=start_angle,
+        )
         node.altered()
         self.signal("refresh_scene", "Scene")
 
@@ -1422,37 +1358,23 @@ def init_tree(kernel):
         node.reverse()
         self.signal("refresh_tree", list(self.flat(types="reference")))
 
-    @tree_separator_after()
-    @tree_conditional(lambda node: self.classify_autogenerate)
+    @tree_submenu(_("Classification"))
     @tree_operation(
-        _("Refresh classification"),
-        node_type="branch ops",
+        _("Generate operations if needed"),
+        node_type=("branch ops", "branch elems"),
+        help="",
+        enable=False,
+    )
+    def do_classification_comment_1(node, **kwargs):
+        return
+
+    @tree_submenu(_("Classification"))
+    @tree_operation(
+        _("Refresh classification for all"),
+        node_type=("branch ops", "branch elems"),
         help=_("Reclassify elements and create operations if necessary"),
     )
-    def refresh_clasifications_1(node, **kwargs):
-        self.remove_elements_from_operations(list(self.elems()))
-        self.classify(list(self.elems()))
-        self.signal("refresh_tree", list(self.flat(types="reference")))
-
-    @tree_conditional(lambda node: not self.classify_autogenerate)
-    @tree_operation(
-        _("Refresh classification"),
-        node_type="branch ops",
-        help=_("Reclassify elements and use only existing operations"),
-    )
-    def refresh_clasifications_2(node, **kwargs):
-        self.remove_elements_from_operations(list(self.elems()))
-        self.classify(list(self.elems()))
-        self.signal("refresh_tree", list(self.flat(types="reference")))
-
-    @tree_separator_after()
-    @tree_conditional(lambda node: not self.classify_autogenerate)
-    @tree_operation(
-        _("Refresh ... (incl autogeneration)"),
-        node_type="branch ops",
-        help=_("Reclassify elements and create operations if necessary"),
-    )
-    def refresh_clasifications_3(node, **kwargs):
+    def refresh_classification_for_all_std(node, **kwargs):
         previous = self.classify_autogenerate
         self.classify_autogenerate = True
         self.remove_elements_from_operations(list(self.elems()))
@@ -1460,10 +1382,65 @@ def init_tree(kernel):
         self.classify_autogenerate = previous
         self.signal("refresh_tree", list(self.flat(types="reference")))
 
+    @tree_conditional(lambda node: self.have_unassigned_elements())
+    @tree_submenu(_("Classification"))
+    @tree_operation(
+        _("Classification for unassigned"),
+        node_type=("branch ops", "branch elems"),
+        help=_("Classify unassigned elements and create operations if necessary"),
+    )
+    def do_classification_for_unassigned_std(node, **kwargs):
+        previous = self.classify_autogenerate
+        self.classify_autogenerate = True
+        target_list = list(self.unassigned_elements())
+        self.classify(target_list)
+        self.classify_autogenerate = previous
+        self.signal("refresh_tree", list(self.flat(types="reference")))
+
+    @tree_submenu(_("Classification"))
+    @tree_separator_before()
+    @tree_operation(
+        _("Use only existing operations"),
+        node_type=("branch ops", "branch elems"),
+        help="",
+        enable=False,
+    )
+    def do_classification_comment_2(node, **kwargs):
+        return
+
+    @tree_submenu(_("Classification"))
+    @tree_operation(
+        _("Refresh classification for all"),
+        node_type=("branch ops", "branch elems"),
+        help=_("Reclassify all elements and use only existing operations"),
+    )
+    def refresh_classification_for_all_existing_only(node, **kwargs):
+        previous = self.classify_autogenerate
+        self.classify_autogenerate = False
+        self.remove_elements_from_operations(list(self.elems()))
+        self.classify(list(self.elems()))
+        self.classify_autogenerate = previous
+        self.signal("refresh_tree", list(self.flat(types="reference")))
+
+    @tree_submenu(_("Classification"))
+    @tree_conditional(lambda node: self.have_unassigned_elements())
+    @tree_operation(
+        _("Classification for unassigned"),
+        node_type=("branch ops", "branch elems"),
+        help=_("Classify unassigned elements and use only existing operations"),
+    )
+    def do_classification_for_unassigned_existing_only(node, **kwargs):
+        previous = self.classify_autogenerate
+        self.classify_autogenerate = False
+        target_list = list(self.unassigned_elements())
+        self.classify(target_list)
+        self.classify_autogenerate = previous
+        self.signal("refresh_tree", list(self.flat(types="reference")))
+
     @tree_conditional(lambda cond: self.have_unassigned_elements())
     @tree_operation(
         _("Select unassigned elements"),
-        node_type="branch ops",
+        node_type=("branch ops", "branch elems"),
         help=_("Select all elements that won't be burned"),
     )
     def select_unassigned(node, **kwargs):
@@ -1505,6 +1482,7 @@ def init_tree(kernel):
         difference = [m for m in materials if m not in secs]
         return difference
 
+    @tree_separator_before()
     @tree_submenu(_("Load"))
     @tree_values("opname", values=self.op_data.section_set)
     @tree_operation("{opname}", node_type="branch ops", help="")
@@ -1699,13 +1677,6 @@ def init_tree(kernel):
         )
         self.signal("updateop_tree")
 
-    @tree_operation(_("Reclassify operations"), node_type="branch elems", help="")
-    def reclassify_operations(node, **kwargs):
-        elems = list(self.elems())
-        self.remove_elements_from_operations(elems)
-        self.classify(list(self.elems()))
-        self.signal("refresh_tree")
-
     @tree_operation(
         _("Remove all assignments from operations"),
         node_type="branch elems",
@@ -1772,6 +1743,66 @@ def init_tree(kernel):
             hatch_type="scanline",
             hatch_distance="1mm",
             hatch_angle="45deg",
+            pos=pos,
+        )
+        self.signal("updateelem_tree")
+
+    @tree_submenu(_("Append special effect"))
+    @tree_operation(
+        _("Append wobble {type} {radius} @{interval}").format(
+            type="Circle", radius="0.5mm", interval="0.05mm"
+        ),
+        node_type="branch elems",
+        help="",
+    )
+    def append_element_effect_wobble_c05(
+        node, node_type="branch elems", pos=None, **kwargs
+    ):
+        self.elem_branch.add(
+            type="effect wobble",
+            wobble_type="circle",
+            wobble_radius="0.5mm",
+            wobble_interval="0.05mm",
+            pos=pos,
+        )
+        self.signal("updateelem_tree")
+
+    @tree_submenu(_("Append special effect"))
+    @tree_operation(
+        _("Append wobble {type} {radius} @{interval}").format(
+            type="Circle", radius="1mm", interval="0.1mm"
+        ),
+        node_type="branch elems",
+        help="",
+    )
+    def append_element_effect_wobble_c1(
+        node, node_type="branch elems", pos=None, **kwargs
+    ):
+        self.elem_branch.add(
+            type="effect wobble",
+            wobble_type="circle",
+            wobble_radius="1mm",
+            wobble_interval="0.1mm",
+            pos=pos,
+        )
+        self.signal("updateelem_tree")
+
+    @tree_submenu(_("Append special effect"))
+    @tree_operation(
+        _("Append wobble {type} {radius} @{interval}").format(
+            type="Circle", radius="3mm", interval="0.1mm"
+        ),
+        node_type="branch elems",
+        help="",
+    )
+    def append_element_effect_wobble_c3(
+        node, node_type="branch elems", pos=None, **kwargs
+    ):
+        self.elem_branch.add(
+            type="effect wobble",
+            wobble_type="circle_right",
+            wobble_radius="3mm",
+            wobble_interval="0.1mm",
             pos=pos,
         )
         self.signal("updateelem_tree")
@@ -2572,12 +2603,6 @@ def init_tree(kernel):
             return
         self.signal("magnet_gen", ("center", node))
 
-    # @tree_conditional(lambda node: not node.lock)
-    # @tree_conditional_try(lambda node: not node.lock)
-    # @tree_operation(_("Actualize pixels"), node_type="elem image", help="")
-    # def image_actualize_pixels(node, **kwargs):
-    #     self("image resample\n")
-
     @tree_conditional(lambda node: not node.lock)
     @tree_submenu(_("Z-depth divide"))
     @tree_iterate("divide", 2, 10)
@@ -2652,6 +2677,16 @@ def init_tree(kernel):
     )
     def image_save_processed(node, **kwargs):
         self("image save output.png --processed\n")
+
+    @tree_conditional(lambda node: not node.lock)
+    @tree_submenu(_("Convert"))
+    @tree_operation(_("Raw Image"), node_type="elem image", help="")
+    def image_convert_raw(node, **kwargs):
+        node.replace_node(
+            image=node.image,
+            matrix=node.matrix,
+            type="image raster",
+        )
 
     @tree_conditional(lambda node: len(node.children) > 0)
     @tree_separator_before()

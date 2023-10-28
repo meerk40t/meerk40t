@@ -7,10 +7,9 @@ the given device type.
 
 from hashlib import md5
 
-from meerk40t.core.view import View
-
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
+from meerk40t.core.view import View
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.units import UNITS_PER_MIL, Length
@@ -450,17 +449,13 @@ class LihuiyuDevice(Service):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        self.view = View(
-            self.bedwidth,
-            self.bedheight,
-            dpi=1000.
-        )
+        self.view = View(self.bedwidth, self.bedheight, dpi=1000.0)
         self.view.transform(
             user_scale_x=self.user_scale_x,
             user_scale_y=self.user_scale_y,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
-            swap_xy=self.swap_xy
+            swap_xy=self.swap_xy,
         )
         # rotary_active = self.rotary_active,
         # rotary_scale_x = self.rotary_scale_x,
@@ -582,9 +577,7 @@ class LihuiyuDevice(Service):
             help=_("Change speed by this amount."),
         )
         @self.console_argument("speed", type=str, help=_("Set the driver speed."))
-        @self.console_command(
-            "device_speed", help=_("Set current speed of driver.")
-        )
+        @self.console_command("device_speed", help=_("Set current speed of driver."))
         def speed(
             command, channel, _, data=None, speed=None, difference=False, **kwargs
         ):
@@ -595,11 +588,7 @@ class LihuiyuDevice(Service):
                 if current_speed is None:
                     channel(_("Speed is unset."))
                 else:
-                    channel(
-                        _("Speed set at: {speed} mm/s").format(
-                            speed=driver.speed
-                        )
-                    )
+                    channel(_("Speed set at: {speed} mm/s").format(speed=driver.speed))
                 return
             if speed.endswith("%"):
                 speed = speed[:-1]
@@ -1022,7 +1011,7 @@ class LihuiyuDevice(Service):
             user_scale_y=self.user_scale_y,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
-            swap_xy=self.swap_xy
+            swap_xy=self.swap_xy,
         )
         self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)
 
@@ -1045,10 +1034,7 @@ class LihuiyuDevice(Service):
         """
         @return: the location in units for the current known position.
         """
-        return self.view.iposition(
-            self.driver.native_x,
-            self.driver.native_y
-        )
+        return self.view.iposition(self.driver.native_x, self.driver.native_y)
 
     @property
     def speed(self):

@@ -47,9 +47,9 @@ import threading
 
 import wx
 
+from meerk40t.gui.icons import STD_ICON_SIZE, PyEmbeddedImage
 from meerk40t.kernel import Job
 from meerk40t.svgelements import Color
-from meerk40t.gui.icons import PyEmbeddedImage, STD_ICON_SIZE
 
 _ = wx.GetTranslation
 

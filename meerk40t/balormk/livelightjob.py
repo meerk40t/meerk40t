@@ -251,12 +251,20 @@ class LiveLightJob:
         @return:
         """
 
-        x_offset = float(Length(
-            self.service.redlight_offset_x, relative_length=self.service.view.width, unitless=UNITS_PER_PIXEL
-        ))
-        y_offset = float(Length(
-            self.service.redlight_offset_y, relative_length=self.service.view.height, unitless=UNITS_PER_PIXEL
-        ))
+        x_offset = float(
+            Length(
+                self.service.redlight_offset_x,
+                relative_length=self.service.view.width,
+                unitless=UNITS_PER_PIXEL,
+            )
+        )
+        y_offset = float(
+            Length(
+                self.service.redlight_offset_y,
+                relative_length=self.service.view.height,
+                unitless=UNITS_PER_PIXEL,
+            )
+        )
         redlight_adjust_matrix = Matrix()
         redlight_adjust_matrix.post_rotate(
             self.service.redlight_angle.radians, 0x8000, 0x8000

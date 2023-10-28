@@ -1254,7 +1254,7 @@ msgstr "Questo non è un alias."
 
 #: meerk40t/core/planner.py:41 meerk40t/gui/plugin.py:106
 msgid "Launch Spooler on Job Start"
-msgstr "Avvia lo Spooler all'avvio del lavoro"
+msgstr "Mostra lo Spooler all'avvio del lavoro"
 
 #: meerk40t/core/planner.py:42 meerk40t/gui/plugin.py:107
 msgid "Open the Spooler window automatically when you Execute a Job"
@@ -1271,8 +1271,8 @@ msgid ""
 "burned. "
 msgstr ""
 "Utilizzando questa opzione è possibile ridurre significativamente il tempo "
-"trascorso durante gli spostamenti tra gli elementi con il laser spento, "
-"ottimizzando la sequenza con cui gli elementi vengono bruciati."
+"impiegato per gli spostamenti tra gli elementi con il laser spento, "
+"ottimizzando la sequenza con cui gli elementi vengono tagliati."
 
 #: meerk40t/core/planner.py:62
 msgid ""
@@ -1280,9 +1280,9 @@ msgid ""
 "order they appear in the Operation tree, and the Merge options will have "
 "no effect on the burn time. "
 msgstr ""
-"Quando questa opzione NON è selezionata, gli elementi vengono bruciati "
-"strettamente nell'ordine in cui appaiono nell'albero delle Operazioni e "
-"le opzioni di Unione non avranno alcun effetto sulla durata della masterizzazione."
+"Quando questa opzione NON è selezionata, gli elementi vengono tagliati "
+"tassativamente nell'ordine in cui appaiono in (Operation tree) e "
+"le opzioni di Unione non avranno alcun effetto sulla durata della lavorazione."
 
 #: meerk40t/core/planner.py:68
 msgid ""
@@ -1290,9 +1290,9 @@ msgid ""
 "move to the nearest remaining subpath instead, reducing the time taken "
 "moving between burn items."
 msgstr ""
-"Quando questa opzione è SELEZIONATA, Meerk40t masterizzerà ciascun sottopercorso "
-"e quindi si sposterà verso il sottopercorso rimanente più vicino, riducendo il tempo "
-"necessario per spostarsi tra gli elementi da masterizzare."
+"Quando questa opzione è SELEZIONATA, Meerk40t procederà da un sottotracciato "
+"all’altro scegliendo quello più vicino, riducendo così il tempo "
+"necessario allo spostamento tra gli elementi."
 
 #: meerk40t/core/planner.py:81
 msgid "Burn Complete Subpaths"
@@ -1306,8 +1306,8 @@ msgid ""
 msgstr ""
 "Per impostazione predefinita, Riduci il Tempo di Spostamento ottimizza "
 "utilizzando i singoli segmenti del percorso SVG, il che significa che i "
-"sottopercorsi non chiusi possono essere masterizzati in diverse masterizzazioni "
-"più brevi separate anziché in una sola masterizzazione continua dall'inizio alla fine."
+"sottopercorsi non chiusi possono essere tagliati in differenti lavorazioni "
+"più brevi anziché in una sola lavorazione continua, dall'inizio alla fine."
 
 #: meerk40t/core/planner.py:88
 msgid ""
@@ -1398,7 +1398,7 @@ msgstr ""
 
 #: meerk40t/core/planner.py:161
 msgid "Burn Inner First"
-msgstr "Masterizza Interno Per Primo"
+msgstr "Taglia prima l’interno"
 
 #: meerk40t/core/planner.py:162
 msgid ""
@@ -1406,9 +1406,8 @@ msgid ""
 "ensure that burns inside a cut-out piece are done before the cut piece "
 "shifts or drops out of the material."
 msgstr ""
-"Assicurarsi che le masterizzazioni interne vengano eseguite prima di un taglio esterno al fine "
-"di garantire che le masterizzazioni all'interno di un pezzo ritagliato vengano eseguite prima "
-"che il pezzo ritagliato si sposti o cada dal materiale."
+"Fa in modo che le lavorazioni interne vengano eseguite prima di un taglio esterno "
+"per evitare che gli eventuali pezzi ritagliati si spostino o cadano."
 
 #: meerk40t/core/planner.py:167
 msgid ""
@@ -1420,9 +1419,8 @@ msgid ""
 "using Merge Operations or Cut Inner First \n"
 "* If you are using multiple passes, check Merge Passes"
 msgstr ""
-"Se scopri che l'utilizzo di questa opzione aumenta significativamente il tempo di ottimizzazione, "
-"le alternative sono: \n"
-"* Deselezionare Taglia Interno Per Primo se non stai tagliando completamente il tuo materiale \n"
+"Se l'utilizzo di questa opzione aumenta significativamente il tempo di ottimizzazione, le alternative sono: \n"
+"* Deselezionare Tagliaprima l'interno se non stai tagliando completamente il tuo materiale \n"
 "* Inserire i percorsi interni in un'operazione (o operazioni) separata(e) in precedenza e non utilizzare "
 "Unisci Operazioni o Taglia Interno Per Primo \n"
 "* Se stai utilizzando passaggi multipli, seleziona Merge Passes"
@@ -1438,21 +1436,21 @@ msgstr "Tolleranza per decidere se una forma è veramente all'interno di un'altr
 
 #: meerk40t/core/planner.py:193
 msgid "Group Inner Burns"
-msgstr "Raggruppa Masterizzazioni Interne"
+msgstr "Raggruppa lavorazioni interne"
 
 #: meerk40t/core/planner.py:194
 msgid ""
 "Try to complete a set of inner burns and the associated outer cut before "
-"moving onto other elements. This option only does something if Burn Inner "
+"moving onto other elements.\nThis option only does something if Burn Inner "
 "First is also selected. If your design has multiple separate pieces on "
 "it, this should mostly cause each piece to be burned in entirety before "
 "moving on to burn another piece. This can reduce the risk of e.g. a shift"
 " ruining an entire piece of material by trying to ensure that one piece "
 "is finished before starting on another."
 msgstr ""
-"Cerca di completare un set di campiture interne unitamente al relativo "
+"Cerca di completare tutti i tagli interni unitamente al relativo "
 "contorno esterno prima di passare ad altri elementi. Questa opzione "
-"produce risultati solo se è selezionato anche (Burn Inner First). "
+"produce risultati solo se è selezionato anche Taglia prima l’interno. "
 "Se il progetto contiene più elementi separati, questo dovrebbe far "
 "sì che ciascuno di essi venga completato prima di passare a tagliare "
 "un altro elemento. In caso di interruzioni o errori ciò permette di "
@@ -2174,10 +2172,12 @@ msgstr "Sembra che tu abbia l'ultima versione."
 
 msgid ""
 "Latest version on github: {name} v{version} ({label})\n"
-"Url: {url}"
+"Url: {url}\n"
+"Info: {info}"
 msgstr ""
 "Ultima versione su GitHub: {name} v{version} ({label})\n"
-"URL: {url}"
+"URL: {url}\n"
+"{info}"
 
 #: meerk40t/extra/updater.py:30
 msgid "Could not find any release information on github"
@@ -2586,7 +2586,7 @@ msgstr "Oggetto di riferimento"
 #: meerk40t/gui/opassignment.py:57
 #: meerk40t/gui/statusbarwidgets/opassignwidget.py:31
 msgid "Leave"
-msgstr "Esci"
+msgstr "Nessuno"
 
 #: meerk40t/gui/alignment.py:190 meerk40t/gui/alignment.py:394
 #: meerk40t/gui/alignment.py:1140
@@ -2635,7 +2635,7 @@ msgid ""
 "Align object at the left side, centered or to the right side in relation "
 "to the target point"
 msgstr ""
-"Allinea l'oggetto sul lato sinistro, centrato o sul lato destro rispetto al punto di destinazione"
+"Allinea l’oggetto in base alle opzioni"
 
 #: meerk40t/gui/alignment.py:213 meerk40t/gui/alignment.py:1157
 msgid "Alignment relative to Y-Axis:"
@@ -2646,7 +2646,7 @@ msgid ""
 "Align object to the top, centered or to the bottom in relation to the "
 "target point"
 msgstr ""
-"Allinea l'oggetto in alto, centrato o in basso rispetto al punto di destinazione"
+"Allinea l’oggetto in base alle opzioni"
 
 #: meerk40t/gui/alignment.py:228
 msgid "Relative to:"
@@ -2654,7 +2654,7 @@ msgstr "Rispetto a:"
 
 #: meerk40t/gui/alignment.py:238 meerk40t/gui/alignment.py:467
 msgid "Treatment:"
-msgstr "Trattamento:"
+msgstr "Considera gli oggetti:"
 
 #: meerk40t/gui/alignment.py:239
 msgid "Individually"
@@ -3378,7 +3378,7 @@ msgstr "Sposta"
 
 #: meerk40t/gui/laserpanel.py:83
 msgid "Enable Laser Arm"
-msgstr "Abilita braccio laser"
+msgstr "Abilita pulsante Arma (il laser)"
 
 #: meerk40t/gui/laserpanel.py:84
 msgid "Enable Laser Panel Arm/Disarm feature."
@@ -3418,11 +3418,11 @@ msgstr "Arresta lavorazione"
 
 #: meerk40t/gui/laserpanel.py:156
 msgid "Arm"
-msgstr "Armamento"
+msgstr "Arma"
 
 #: meerk40t/gui/laserpanel.py:157
 msgid "Arm the job for execution"
-msgstr "Arma il laser per l'esecuzione"
+msgstr "Arma il laser per l'esecuzione lavoro"
 
 #: meerk40t/gui/laserpanel.py:162
 msgid "Outline"
@@ -4753,7 +4753,7 @@ msgstr "Fai questo a tuo rischio - sei davvero sicuro?"
 #: meerk40t/moshi/gui/moshidrivergui.py:87 meerk40t/newly/gui/newlyconfig.py:55
 #: meerk40t/ruida/gui/ruidaconfig.py:45
 msgid "Warning"
-msgstr "Attenzione"
+msgstr "Allarmi"
 
 #: meerk40t/gui/preferences.py:198
 msgid "Choose a previously saved configuration-file"
@@ -4825,6 +4825,9 @@ msgstr "Generale"
 #: meerk40t/gui/propertypanels/operationpropertymain.py:42
 msgid "Classification"
 msgstr "Classificazione"
+
+msgid "Restrict classification"
+msgstr "Limitare classificazione"
 
 #: meerk40t/gui/preferences.py:528
 msgid "GUI"
@@ -5234,7 +5237,7 @@ msgstr "Connessione USB"
 #: meerk40t/gui/wordlisteditor.py:29 meerk40t/gui/wordlisteditor.py:887
 #: meerk40t/gui/wxmmain.py:1216 meerk40t/gui/wxmmain.py:1228
 msgid "Wordlist"
-msgstr "Elenco delle Parole"
+msgstr "Variabili di testo"
 #: meerk40t/camera/gui/camerapanel.py:1001
 #: meerk40t/camera/gui/camerapanel.py:1031
 #: meerk40t/core/elements/element_treeops.py:79
@@ -5247,7 +5250,7 @@ msgstr "Modifica"
 #: meerk40t/gui/wxmmain.py:1218 meerk40t/gui/wxmmain.py:1227
 #: meerk40t/gui/wxmmain.py:2621
 msgid "Manages Wordlist-Entries"
-msgstr "Gestisce le voci dell'elenco delle parole"
+msgstr "Gestione variabili di testo"
 
 #: meerk40t/gui/wordlisteditor.py:51 meerk40t/gui/wxmmain.py:1236
 msgid "Next"
@@ -5255,7 +5258,7 @@ msgstr "Successivo"
 
 #: meerk40t/gui/wordlisteditor.py:54
 msgid "Wordlist: go to next page (right-click to next entry)"
-msgstr "Elenco delle parole: vai alla pagina successiva (click destro per la voce successiva)"
+msgstr "Variabili di testo: vai alla parola successiva, click destro per la voce precedente"
 
 #: meerk40t/gui/wordlisteditor.py:57 meerk40t/gui/wxmmain.py:1242
 msgid "Prev"
@@ -5263,7 +5266,7 @@ msgstr "Precedente"
 
 #: meerk40t/gui/wordlisteditor.py:60
 msgid "Wordlist: go to previous page (right-click to previous entry)"
-msgstr "Elenco delle parole: vai alla pagina precedente (click destro per la voce precedente)"
+msgstr "Variabili di testo: vai alla parola precedente, click destro per la voce successiva"
 
 #: meerk40t/gui/wordlisteditor.py:156
 msgid "Start Index for CSV-based data:"
@@ -5420,7 +5423,7 @@ msgstr "Come utilizzare"
 
 #: meerk40t/gui/wordlisteditor.py:866
 msgid "Wordlist Editor"
-msgstr "Editor dell'Elenco delle Parole"
+msgstr "Gestione variabili di testo"
 
 #: meerk40t/gui/wxmeerk40t.py:102
 msgid "Processing and sending..."
@@ -6010,15 +6013,15 @@ msgstr "Allinea bordi di sinistra (click destro: allinea al bordo del piano)"
 
 #: meerk40t/gui/wxmmain.py:1227 meerk40t/gui/wxmmain.py:1244
 msgid " (right go to next entry)"
-msgstr " (click destro vai all'entrata successiva)"
+msgstr " (click destro per la voce successiva)"
 
 #: meerk40t/gui/wxmmain.py:1235
 msgid "Wordlist: go to next entry"
-msgstr "Elenco delle parole: vai all'entrata successiva"
+msgstr "Variabili di testo: vai alla parola successiva, "
 
 #: meerk40t/gui/wxmmain.py:1235
 msgid " (right go to prev entry)"
-msgstr " (click destro vai all'entrata precedente)"
+msgstr " (click destro per la voce precedente)"
 
 #: meerk40t/gui/wxmmain.py:1244
 msgid "Wordlist: go to prev entry"
@@ -6368,7 +6371,7 @@ msgstr "Modifica le proprietà degli elementi"
 
 #: meerk40t/gui/wxmmain.py:2601
 msgid "Device-Manager"
-msgstr "Gestore Dispositivo"
+msgstr "Gestore Dispositivi"
 
 #: meerk40t/gui/wxmmain.py:2602
 msgid "Manage the Laser devices"
@@ -6384,7 +6387,7 @@ msgstr "Gestisci le impostazioni del dispositivo"
 
 #: meerk40t/gui/wxmmain.py:2620
 msgid "Wordlist-Editor"
-msgstr "Editor Wordlist"
+msgstr "Gestione variabili di testo"
 
 #: meerk40t/gui/wxmmain.py:2634
 msgid "Key-Bindings"
@@ -12703,7 +12706,7 @@ msgstr "Meerk40t può avvisarti se ritiene che i valori per"
 
 #: meerk40t/device/gui/warningpanel.py:137
 msgid "power and speed are too ambitious for your machine."
-msgstr "la potenza e la velocità siano troppo ambiziose per la tua macchina."
+msgstr "la potenza e la velocità siano troppo sostenuti per la tua macchina."
 
 #: meerk40t/device/gui/warningpanel.py:139
 msgid "It will display a warning indicator:"
@@ -12711,7 +12714,7 @@ msgstr "Verrà visualizzato un indicatore di avviso:"
 
 #: meerk40t/device/gui/warningpanel.py:142
 msgid "in the label of the associated operation-node"
-msgstr "nell'etichetta del nodo operazione associato"
+msgstr "nell'etichetta del nodo Operazioni associato"
 
 #: meerk40t/grbl/gui/grblconfiguration.py:25
 msgid "GRBL-Configuration"
@@ -14316,11 +14319,11 @@ msgid "Set the fillstyle to even-odd (alternating areas)"
 msgstr "Imposta lo stile di riempimento a even-odd (aree alternate)"
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:45
 msgid "Clear stroke-color (right click clear fill color)"
-msgstr "Cancella il colore del contorno (click destro per cancellare il colore di riempimento)"
+msgstr "Cancella il colore: Click sinistro per il contorno, click destro per il riempimento"
 
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:48
 msgid "Set stroke-color (right click set fill color)"
-msgstr "Imposta il colore del contorno (click destro per impostare il colore di riempimento)"
+msgstr "Imposta il colore: Click sinistro per il contorno, click destro per il riempimento"
 
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:118
 msgid "Stroke:"
@@ -14331,6 +14334,9 @@ msgstr "Contorno:"
 #: meerk40t/gui/toolwidgets/toolrect.py:88
 msgid " (Press Alt-Key to draw from center)"
 msgstr " (Premi il tasto Alt per disegnare dal centro)"
+
+msgid " (Press Alt-Key to draw from corner)"
+msgstr " (Premi il tasto Alt per disegnare dal angolo)"
 
 #: meerk40t/gui/toolwidgets/toollinetext.py:133
 msgid "Complete text-entry by pressing either Enter or Escape"
@@ -15053,7 +15059,7 @@ msgstr "Globale"
 
 #: meerk40t/newly/gui/newlyconfig.py:51
 msgid "Raster Chart"
-msgstr "Grafico raster"
+msgstr "Tabella raster"
 
 #: meerk40t/newly/gui/newlycontroller.py:163
 msgid "Newly-Controller"
@@ -17764,16 +17770,16 @@ msgid "If you hold the button for some time, then after some repetitions\nthe ac
 msgstr ""
 
 msgid "No, thank you"
-msgstr ""
+msgstr "No, grazie"
 
 msgid "Look for major releases"
-msgstr ""
+msgstr "Cerca le versioni principali"
 
 msgid "Look for major+beta releases"
-msgstr ""
+msgstr "Cerca versioni principali+beta"
 
 msgid "Check for available updates on startup."
-msgstr ""
+msgstr "Verifica aggiornamenti all'avvio del programma"
 
 msgid "Delete selected items"
 msgstr "Cancella oggetto selezionato"
