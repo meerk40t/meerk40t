@@ -533,11 +533,7 @@ class SVGWriter:
         @return:
         """
         for c in op_tree.children:
-            if c.type.startswith("util") or c.type.startswith("place"):
-                subelement = SubElement(xml_tree, MEERK40T_XMLS_ID + ":operation")
-                SVGWriter._write_custom(subelement, c)
-            else:
-                SVGWriter._write_operation(xml_tree, c)
+            SVGWriter._write_operation(xml_tree, c)
 
     @staticmethod
     def _write_regmarks(xml_tree, reg_tree, version):
@@ -556,12 +552,22 @@ class SVGWriter:
         @param node:
         @return:
         """
+        if node.type.startswith("util") or node.type.startswith("place"):
+            # Utils should probably also be groups, but not doing that yet.
+            subelement = SubElement(xml_tree, MEERK40T_XMLS_ID + ":operation")
+            SVGWriter._write_custom(subelement, node)
+            return
+
+        # All other operations are groups.
         subelement = SubElement(xml_tree, SVG_TAG_GROUP)
         subelement.set("type", str(node.type))
+
         if node.label is not None:
             subelement.set("label", str(node.label))
+
         if node.lock is not None:
             subelement.set("lock", str(node.lock))
+
         try:
             for key, value in node.settings.items():
                 if not key:
@@ -576,20 +582,27 @@ class SVGWriter:
                     continue
                 subelement.set(key, str(value))
         except AttributeError:
-            pass
+            # Node does not have settings, write object dict
+            SVGWriter._write_custom(subelement, node)
+
+        # Store current node reference values.
+        SVGWriter._write_references(subelement, node)
+        subelement.set(SVG_ATTR_ID, str(node.id))
+
+        for c in node.children:
+            if c.type == "reference":
+                continue
+            SVGWriter._write_operation(subelement, c)
+
+    @staticmethod
+    def _write_references(subelement, node):
         contains = list()
         for c in node.children:
-            if c.type.startswith("effect"):
-                xml_tree = SubElement(xml_tree, SVG_TAG_GROUP)
-                SVGWriter._write_custom(xml_tree, c)
-                continue
-
             if c.type == "reference":
                 c = c.node  # Contain direct reference not reference node reference.
-            contains.append(str(c.id))
+                contains.append(c.id)
         if contains:
             subelement.set("references", " ".join(contains))
-        subelement.set(SVG_ATTR_ID, str(node.id))
 
     @staticmethod
     def _write_custom(subelement, node):
@@ -606,15 +619,7 @@ class SVGWriter:
                 # References key from previous loaded version (filter out, rebuild)
                 continue
             subelement.set(key, str(value))
-
-        contains = list()
-        for c in node.children:
-            if c.type == "reference":
-                c = c.node  # Contain direct reference not reference node reference.
-            contains.append(c.id)
-        if contains:
-            subelement.set("references", " ".join(contains))
-
+        SVGWriter._write_references(subelement, node)
         subelement.set(SVG_ATTR_ID, str(node.id))
 
     @staticmethod
