@@ -1273,10 +1273,11 @@ class SVGProcessor:
                 if node_type == "op hatch":
                     # Special fallback operation, op hatch is an op engrave with an effect hatch within it.
                     node_type = "op engrave"
-                    op = self.elements.op_branch.create(type=node_type, **attrs)
+                    op = self.elements.op_branch.add(type=node_type, **attrs)
                     effect = op.add(type="effect hatch", **attrs)
                 else:
-                    op = self.elements.op_branch.create(type=node_type, **attrs)
+                    op = self.elements.op_branch.add(type=node_type, **attrs)
+                op._ref_load = element.values.get("references")
 
                 if op is None or not hasattr(op, "type") or op.type is None:
                     return
@@ -1374,14 +1375,10 @@ class SVGProcessor:
             # SVG is type of group, it must be processed before Group. Nothing special is done with the type.
             if self.reverse:
                 for child in reversed(element):
-                    self.parse(
-                        child, context_node, e_list, branch=branch
-                    )
+                    self.parse(child, context_node, e_list, branch=branch)
             else:
                 for child in element:
-                    self.parse(
-                        child, context_node, e_list, branch=branch
-                    )
+                    self.parse(child, context_node, e_list, branch=branch)
         elif isinstance(element, Group):
             if branch != "regmarks" and (_label == "regmarks" or ident == "regmarks"):
                 # Recurse at same level within regmarks.
@@ -1431,14 +1428,10 @@ class SVGProcessor:
             # recurse to children
             if self.reverse:
                 for child in reversed(element):
-                    self.parse(
-                        child, context_node, e_list, branch=branch
-                    )
+                    self.parse(child, context_node, e_list, branch=branch)
             else:
                 for child in element:
-                    self.parse(
-                        child, context_node, e_list, branch=branch
-                    )
+                    self.parse(child, context_node, e_list, branch=branch)
         elif isinstance(element, Use):
             # recurse to children, but do not subgroup elements.
             # We still use the original label
