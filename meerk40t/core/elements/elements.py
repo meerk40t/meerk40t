@@ -1627,6 +1627,13 @@ class Elemental(Service):
                 continue
             yield item
 
+    def op_groups(self, **kwargs):
+        operations = self._tree.get(type="branch ops")
+        for item in operations.flat(**kwargs):
+            if item.type.startswith("branch") or item.type.startswith("ref"):
+                continue
+            yield item
+
     def elems(self, **kwargs):
         elements = self._tree.get(type="branch elems")
         yield from elements.flat(types=elem_nodes, **kwargs)
