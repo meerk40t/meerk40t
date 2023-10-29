@@ -167,8 +167,10 @@ class TestFileSVG(unittest.TestCase):
             kernel.console("element* delete\n")
             kernel.console(f"load {file1}\n")
             self.assertEqual(len(list(ob.flat(types="op raster"))), 0)
-            self.assertEqual(len(list(ob.flat(types="op engrave"))), 1)
+            engrave = list(ob.flat(types="op engrave"))
+            self.assertEqual(len(engrave), 1)
             self.assertEqual(len(list(ob.flat(types="op cut"))), 0)
             self.assertEqual(len(list(ob.flat(types="effect wobble"))), 1)
+            self.assertEqual(len(list(engrave[0].flat(types="effect wobble"))), 1)
         finally:
             kernel.shutdown()
