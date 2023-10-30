@@ -2207,19 +2207,26 @@ def init_tree(kernel):
                 had_optional = False
                 # Need to add stroke and fill, as copy will take the
                 # default values for these attributes
-                for optional in ("fill", "stroke"):
-                    if hasattr(orgnode, optional):
+                options = ["fill", "stroke", "wxfont"]
+                for optional in options:
+                    if hasattr(e, optional):
                         setattr(copy_node, optional, getattr(orgnode, optional))
-                for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
-                    if hasattr(orgnode, optional):
-                        had_optional = True
+                hadoptional = False
+                options = []
+                for prop in dir(e):
+                    if prop.startswith("mk"):
+                        options.append(prop)
+                for optional in options:
+                    if hasattr(e, optional):
                         setattr(copy_node, optional, getattr(orgnode, optional))
+                        hadoptional = True
+
                 if self.copy_increases_wordlist_references and hasattr(orgnode, "text"):
                     copy_node.text = self.wordlist_delta(orgnode.text, delta_wordlist)
                 elif self.copy_increases_wordlist_references and hasattr(e, "mktext"):
                     copy_node.mktext = self.wordlist_delta(e.mktext, delta_wordlist)
                 orgparent.add_node(copy_node)
-                if had_optional:
+                if hadoptional:
                     for property_op in self.kernel.lookup_all("path_updater/.*"):
                         property_op(self.kernel.root, copy_node)
 

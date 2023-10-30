@@ -743,6 +743,12 @@ class SVGProcessor:
                             node.functional_parameter = value
                         except (ValueError, SyntaxError):
                             pass
+                    elif prop == "mkbcparam":
+                        try:
+                            value = ast.literal_eval(lc)
+                            node.mkbcparam = value
+                        except (ValueError, SyntaxError):
+                            pass
 
     def check_for_fill_attributes(self, node, element):
         """
