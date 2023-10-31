@@ -1173,6 +1173,9 @@ class Node:
             n_parent._children.insert(n_index, self)
             parent._children.insert(index, node)
 
+        node._parent = parent
+        self._parent = n_parent
+
         # Make a copy of children
         n_children = list(node._children)
         children = list(self._children)
@@ -1191,7 +1194,8 @@ class Node:
         for n in list(children):
             n._parent = node
 
-        self.notify_reorder()
+        #self._root._validate_tree()
+        self._root.notify_reorder()
 
     def remove_node(self, children=True, references=True, fast=False, destroy=True):
         """
