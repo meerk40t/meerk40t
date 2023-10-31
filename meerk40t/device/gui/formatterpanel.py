@@ -3,6 +3,9 @@ import wx
 from meerk40t.core.elements.element_types import elem_group_nodes, op_nodes
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
+    icon_mk_ellipse,
+    icon_mk_polyline,
+    icon_mk_rectangular,
     icons8_diagonal_20,
     icons8_direction_20,
     icons8_file_20,
@@ -14,9 +17,6 @@ from meerk40t.gui.icons import (
     icons8_input_20,
     icons8_laser_beam_20,
     icons8_output_20,
-    icon_mk_ellipse,
-    icon_mk_polyline,
-    icon_mk_rectangular,
     icons8_return_20,
     icons8_scatter_plot_20,
     icons8_small_beam_20,

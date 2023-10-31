@@ -1020,8 +1020,12 @@ def plugin(kernel, lifecycle=None):
             inode.remove_node()
             elements = context.elements
 
-            node1 = parent.add(type="elem image", matrix=Matrix(inode.matrix), image=image_left)
-            node2 = parent.add(type="elem image", matrix=Matrix(inode.matrix), image=image_right)
+            node1 = parent.add(
+                type="elem image", matrix=Matrix(inode.matrix), image=image_left
+            )
+            node2 = parent.add(
+                type="elem image", matrix=Matrix(inode.matrix), image=image_right
+            )
             node2.matrix.pre_translate(x)
             elements.classify([node1, node2])
             channel(_("Image sliced at position {position}").format(position=x))
@@ -1057,8 +1061,12 @@ def plugin(kernel, lifecycle=None):
             inode.remove_node()
             elements = context.elements
 
-            node1 = parent.add(type="elem image", matrix=Matrix(inode.matrix), image=image_top)
-            node2 = parent.add(type="elem image", matrix=Matrix(inode.matrix), image=image_bottom)
+            node1 = parent.add(
+                type="elem image", matrix=Matrix(inode.matrix), image=image_top
+            )
+            node2 = parent.add(
+                type="elem image", matrix=Matrix(inode.matrix), image=image_bottom
+            )
             node2.matrix.pre_translate(0, y)
 
             elements.classify([node1, node2])
