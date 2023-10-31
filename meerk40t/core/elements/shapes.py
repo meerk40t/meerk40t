@@ -728,9 +728,7 @@ def init_commands(kernel):
                 g = node.as_geometry()
                 path = g.as_path()
                 ident = " (Identity)" if node.matrix.is_identity() else ""
-                channel(
-                    f"{str(node)}{ident}: {path.d(transformed=not real)}"
-                )
+                channel(f"{str(node)}{ident}: {path.d(transformed=not real)}")
             except AttributeError:
                 channel(f"{str(node)}: Invalid")
 

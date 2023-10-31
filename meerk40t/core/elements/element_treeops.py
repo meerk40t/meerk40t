@@ -1701,9 +1701,7 @@ def init_tree(kernel):
         self.signal("updateelem_tree")
 
     @tree_submenu(_("Apply special effect"))
-    @tree_operation(
-        _("Append diagonal Line-fill 0.1mm"), node_type=elem_nodes, help=""
-    )
+    @tree_operation(_("Append diagonal Line-fill 0.1mm"), node_type=elem_nodes, help="")
     def append_element_effect_eulerian_45(
         node, node_type="branch elems", pos=None, **kwargs
     ):
@@ -1735,9 +1733,7 @@ def init_tree(kernel):
         self.signal("updateelem_tree")
 
     @tree_submenu(_("Apply special effect"))
-    @tree_operation(
-        _("Append diagonal Line-Fill 1mm"), node_type=elem_nodes, help=""
-    )
+    @tree_operation(_("Append diagonal Line-Fill 1mm"), node_type=elem_nodes, help="")
     def append_element_effect_line_45(
         node, node_type="branch elems", pos=None, **kwargs
     ):
@@ -2389,8 +2385,7 @@ def init_tree(kernel):
             newnode.altered()
 
     @tree_conditional(
-        lambda node: hasattr(node, "as_geometry")
-        and node.has_ancestor("branch elems")
+        lambda node: hasattr(node, "as_geometry") and node.has_ancestor("branch elems")
     )
     @tree_operation(
         _("Convert to path"),
@@ -2415,7 +2410,6 @@ def init_tree(kernel):
             for item in node_attributes:
                 setattr(newnode, item[0], item[1])
             newnode.altered()
-
 
     @tree_submenu(_("Flip"))
     @tree_separator_before()

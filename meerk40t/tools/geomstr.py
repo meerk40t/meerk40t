@@ -124,9 +124,9 @@ class Clip:
         ).all(axis=2)
         splits = [list() for _ in range(len(subject))]
         for s0, s1 in sorted(np.argwhere(checks), key=lambda e: e[0], reverse=True):
-            splits[s0].extend([
-                t for t, _ in subject.intersections(int(s0), clip.segments[s1])
-            ])
+            splits[s0].extend(
+                [t for t, _ in subject.intersections(int(s0), clip.segments[s1])]
+            )
         return splits
 
     def _splits_brute(self, subject, clip):
@@ -182,7 +182,7 @@ class Clip:
         # for q1, q2 in zip(splits, splits2):
         #     assert(q1, q2)
 
-        for s0 in range(len(splits) -1, -1, -1):
+        for s0 in range(len(splits) - 1, -1, -1):
             s = splits[s0]
             if not s:
                 continue
@@ -301,11 +301,11 @@ class Pattern:
         ch = self.cell_height
         px = self.padding_x
         py = self.padding_y
-        if abs(cw + 2 * px) <= 1E-4:
+        if abs(cw + 2 * px) <= 1e-4:
             cols = 1
         else:
             cols = int(((x1 - x0) + cw) / (cw + 2 * px)) + 1
-        if abs(ch + 2 * py) <= 1E-4:
+        if abs(ch + 2 * py) <= 1e-4:
             rows = 1
         else:
             rows = int(((y1 - y0) + ch) / (ch + 2 * py)) + 1
@@ -1358,24 +1358,23 @@ class Geomstr:
         self.index += other.index
 
     def validate(self):
-        infos = self.segments[:self.index, 2]
+        infos = self.segments[: self.index, 2]
 
-        starts = self.segments[:self.index, 0]
+        starts = self.segments[: self.index, 0]
         q = np.where(np.real(infos).astype(int) & 0b1000)
-        assert(not np.any(np.isnan(starts[q])))
+        assert not np.any(np.isnan(starts[q]))
 
-        ends = self.segments[:self.index, 4]
+        ends = self.segments[: self.index, 4]
         q = np.where(np.real(infos).astype(int) & 0b0001)
-        assert(not np.any(np.isnan(ends[q])))
+        assert not np.any(np.isnan(ends[q]))
 
-        c1 = self.segments[:self.index, 1]
+        c1 = self.segments[: self.index, 1]
         q = np.where(np.real(infos).astype(int) & 0b0100)
-        assert(not np.any(np.isnan(c1[q])))
+        assert not np.any(np.isnan(c1[q]))
 
-        c2 = self.segments[:self.index, 3]
+        c2 = self.segments[: self.index, 3]
         q = np.where(np.real(infos).astype(int) & 0b0010)
-        assert(not np.any(np.isnan(c2[q])))
-
+        assert not np.any(np.isnan(c2[q]))
 
     #######################
     # Geometric Primitives
@@ -1868,23 +1867,23 @@ class Geomstr:
 
         @return:
         """
-        c = self.segments[:self.index]
-        infos = np.real(c[:,2]).astype(int)
+        c = self.segments[: self.index]
+        infos = np.real(c[:, 2]).astype(int)
 
         xs = np.dstack(
             (
                 np.real(c[:, 0]),
                 np.real(c[:, 4]),
-                np.where(infos & 0b0100, np.real(c[:,1]), np.real(c[:, 0])),
-                np.where(infos & 0b0010, np.real(c[:,3]), np.real(c[:, 4])),
+                np.where(infos & 0b0100, np.real(c[:, 1]), np.real(c[:, 0])),
+                np.where(infos & 0b0010, np.real(c[:, 3]), np.real(c[:, 4])),
             )
         )
         ys = np.dstack(
             (
                 np.imag(c[:, 0]),
                 np.imag(c[:, 4]),
-                np.where(infos & 0b0100, np.imag(c[:,1]), np.imag(c[:, 0])),
-                np.where(infos & 0b0010, np.imag(c[:,3]), np.imag(c[:, 4])),
+                np.where(infos & 0b0100, np.imag(c[:, 1]), np.imag(c[:, 0])),
+                np.where(infos & 0b0010, np.imag(c[:, 3]), np.imag(c[:, 4])),
             )
         )
         return xs.min(axis=2), ys.min(axis=2), xs.max(axis=2), ys.max(axis=2)
@@ -2895,8 +2894,8 @@ class Geomstr:
                     segment2,
                     fun1,
                     fun2,
-                    ta=(at_guess - step_a/2, at_guess + step_a/2, at_guess),
-                    tb=(bt_guess - step_b/2, bt_guess + step_b/2, bt_guess),
+                    ta=(at_guess - step_a / 2, at_guess + step_a / 2, at_guess),
+                    tb=(bt_guess - step_b / 2, bt_guess + step_b / 2, bt_guess),
                     samples=enhance_samples,
                     depth=depth + 1,
                     enhancements=enhancements,
@@ -3007,8 +3006,8 @@ class Geomstr:
                     segment2,
                     fun1,
                     fun2,
-                    ta=(at_guess - step_a/2, at_guess + step_a/2, at_guess),
-                    tb=(bt_guess - step_b/2, bt_guess + step_b/2, bt_guess),
+                    ta=(at_guess - step_a / 2, at_guess + step_a / 2, at_guess),
+                    tb=(bt_guess - step_b / 2, bt_guess + step_b / 2, bt_guess),
                     samples=enhance_samples,
                     depth=depth + 1,
                     enhancements=enhancements,
@@ -3715,15 +3714,18 @@ class Geomstr:
     def render(self, buffer=10, scale=1):
         sb = Scanbeam(self)
         nx, ny, mx, my = self.bbox()
-        px, py = np.mgrid[nx-buffer:mx+buffer:scale, ny-buffer:my+buffer:scale]
+        px, py = np.mgrid[
+            nx - buffer : mx + buffer : scale, ny - buffer : my + buffer : scale
+        ]
         ppx = px + 1j * py
         pxs = ppx.ravel()
         data = sb.points_in_polygon(pxs)
 
         from PIL import Image
+
         size = ppx.shape[::-1]
         databytes = np.packbits(data)
-        return Image.frombytes(mode='1', size=size, data=databytes)
+        return Image.frombytes(mode="1", size=size, data=databytes)
 
     def draw(self, draw, offset_x, offset_y):
         """

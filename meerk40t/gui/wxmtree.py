@@ -44,7 +44,7 @@ from .icons import (
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
-from .wxutils import create_menu, get_key_name, is_navigation_key, StaticBoxSizer
+from .wxutils import StaticBoxSizer, create_menu, get_key_name, is_navigation_key
 
 _ = wx.GetTranslation
 

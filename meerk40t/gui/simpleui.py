@@ -13,10 +13,11 @@ from wx import aui
 from ..core.exceptions import BadFileError
 from .icons import icons8_computer_support_50, icons8_opened_folder_50
 from .mwindow import MWindow
-from .navigationpanels import Jog, Drag
+from .navigationpanels import Drag, Jog
 from .wxutils import StaticBoxSizer
 
 _ = wx.GetTranslation
+
 
 class JogMovePanel(wx.Panel):
     def __init__(self, *args, context=None, icon_size=None, **kwds):
@@ -38,6 +39,7 @@ class JogMovePanel(wx.Panel):
         main_sizer.AddStretchSpacer()
         self.SetSizer(main_sizer)
         self.Layout()
+
 
 class ProjectPanel(wx.Panel):
     """
@@ -99,8 +101,12 @@ class ProjectPanel(wx.Panel):
 
     def update_info(self, pathname):
         self.info_file.SetValue(pathname)
-        self.info_elements.SetValue(f"{len(list(self.context.elements.elems()))} elements")
-        self.info_operations.SetValue(f"{len(list(self.context.elements.ops()))} burn operations")
+        self.info_elements.SetValue(
+            f"{len(list(self.context.elements.elems()))} elements"
+        )
+        self.info_operations.SetValue(
+            f"{len(list(self.context.elements.ops()))} burn operations"
+        )
         unass, unburn = self.context.elements.have_unburnable_elements()
         status = ""
         if unass:
@@ -149,7 +155,7 @@ class ProjectPanel(wx.Panel):
             if self.load(pathname):
                 accepted += 1
                 if validpath:
-                    validpath +=","
+                    validpath += ","
                 validpath += pathname
             else:
                 rejected += 1
@@ -169,6 +175,7 @@ class ProjectPanel(wx.Panel):
     def load(self, pathname):
         def unescaped(filename):
             import platform
+
             OS_NAME = platform.system()
             if OS_NAME == "Windows":
                 newstring = filename.replace("&", "&&")
@@ -284,7 +291,6 @@ class SimpleUI(MWindow):
         self.Layout()
         self.Thaw()
 
-
     @staticmethod
     def sub_register(kernel):
         kernel.register("simpleui/load", (ProjectPanel, None))
@@ -292,11 +298,13 @@ class SimpleUI(MWindow):
         # from meerk40t.gui.wxmscene import MeerK40tScenePanel
         # kernel.register("simpleui/scene", MeerK40tScenePanel)
         from meerk40t.gui.laserpanel import LaserPanel
+
         kernel.register("simpleui/laserpanel", (LaserPanel, None))
 
         kernel.register("simpleui/navigation", (JogMovePanel, None))
 
         from meerk40t.gui.consolepanel import ConsolePanel
+
         kernel.register("simpleui/console", (ConsolePanel, None))
 
     def window_close(self):

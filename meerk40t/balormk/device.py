@@ -1795,7 +1795,14 @@ class BalorDevice(Service):
             for e in data:
                 if hasattr(e, "as_image"):
                     bounds = e.bounds
-                    g.append(Geomstr.rect(bounds[0], bounds[1], bounds[2] - bounds[0], bounds[3] - bounds[1]))
+                    g.append(
+                        Geomstr.rect(
+                            bounds[0],
+                            bounds[1],
+                            bounds[2] - bounds[0],
+                            bounds[3] - bounds[1],
+                        )
+                    )
                 elif e.type == "elem text":
                     continue  # We can't outline text.
                 else:

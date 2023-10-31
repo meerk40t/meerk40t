@@ -1194,7 +1194,7 @@ class Node:
         for n in list(children):
             n._parent = node
 
-        #self._root._validate_tree()
+        # self._root._validate_tree()
         self._root.notify_reorder()
 
     def remove_node(self, children=True, references=True, fast=False, destroy=True):

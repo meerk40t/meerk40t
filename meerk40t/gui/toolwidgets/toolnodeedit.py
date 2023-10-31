@@ -815,7 +815,12 @@ class EditTool(ToolWidget):
                     gc.SetPen(self.pen)
                     gc.SetBrush(self.brush_normal)
                     factor = 1
-                gc.DrawEllipse(ptx - factor * offset, pty - factor * offset, offset * 2 * factor, offset * 2 * factor)
+                gc.DrawEllipse(
+                    ptx - factor * offset,
+                    pty - factor * offset,
+                    offset * 2 * factor,
+                    offset * 2 * factor,
+                )
             elif entry["type"] == "control":
                 if idx == self.selected_index or entry["selected"]:
                     factor = 1.25

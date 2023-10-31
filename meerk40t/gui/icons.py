@@ -73,6 +73,7 @@ def write_png(buf, width, height):
         ]
     )
 
+
 class PyEmbeddedImage(py_embedded_image):
     def __init__(self, data):
         super().__init__(data)

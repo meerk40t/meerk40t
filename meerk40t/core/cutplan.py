@@ -808,7 +808,9 @@ def inner_first_ident(context: CutGroup, channel=None, tolerance=0):
     closed_groups = [g for g in groups if isinstance(g, CutGroup) and g.closed]
     context.contains = closed_groups
     if channel:
-        channel(f"Compare {len(groups)} groups against {len(closed_groups)} closed groups")
+        channel(
+            f"Compare {len(groups)} groups against {len(closed_groups)} closed groups"
+        )
 
     constrained = False
     for outer in closed_groups:
@@ -1180,7 +1182,7 @@ def inner_selection_cutcode(
         end_times = times()
         end_length = ordered.length_travel(True)
         msg = f"Length at end: {end_length:.0f} steps "
-        if start_length !=0:
+        if start_length != 0:
             msg += f"({(end_length - start_length) / start_length:+.0%}), "
         msg += f"optimized in {time() - start_time:.3f} "
         msg += f"elapsed seconds using {end_times[0] - start_times[0]:.3f} "
