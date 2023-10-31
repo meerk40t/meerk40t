@@ -1129,6 +1129,59 @@ class Node:
         self.unregister()
         return node
 
+    def swap_node(self, node):
+        """
+        Swap nodes swaps the current node with the provided node in the other position in the same tree. All children
+        during a swap are kept in place structurally. This permits swapping nodes between two positions that may be
+        nested, without creating a loop.
+
+        Special care is taken for both swaps being children of the same parent.
+
+        @param node: Node already in the tree that should be swapped with the current node.
+        @return:
+        """
+        # Remove self from tree.
+        parent = self._parent
+        n_parent = node._parent
+
+        index = parent._children.index(self)
+        n_index = n_parent._children.index(node)
+
+        if index < n_index:
+            # N_index is greater.
+            del n_parent._children[n_index]
+            del parent._children[index]
+
+            parent._children.insert(index, node)
+            n_parent._children.insert(n_index, self)
+        else:
+            # N_index is lesser, equal
+            del parent._children[index]
+            del n_parent._children[n_index]
+
+            n_parent._children.insert(n_index, self)
+            parent._children.insert(index, node)
+
+        # Make a copy of children
+        n_children = list(node._children)
+        children = list(self._children)
+
+        # Delete children.
+        node._children.clear()
+        self._children.clear()
+
+        # Move children without call attach / detach.
+        node._children.extend(children)
+        self._children.extend(n_children)
+
+        # Correct parent for all children.
+        for n in list(n_children):
+            n._parent = self
+        for n in list(children):
+            n._parent = node
+
+        self.notify_reorder()
+
     def remove_node(self, children=True, references=True, fast=False, destroy=True):
         """
         Remove the current node from the tree.
