@@ -202,8 +202,11 @@ class HatchEffectNode(Node):
         """
         outlines = Geomstr()
         for node in self._children:
-            outlines.append(node.as_geometry(**kws))
-        # outlines.transform(self.matrix)
+            try:
+                outlines.append(node.as_geometry(**kws))
+            except AttributeError:
+                # If direct children lack as_geometry(), do nothing.
+                pass
         path = Geomstr()
         if self._distance is None:
             self.recalculate()
