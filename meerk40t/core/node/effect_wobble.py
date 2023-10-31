@@ -274,15 +274,14 @@ class WobbleEffectNode(Node):
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if drag_node.type.startswith("effect"):
-            self.append_child(drag_node)
-            self.altered()
+            if modify:
+                self.swap_node(drag_node)
+                self.altered()
             return True
-        if drag_node.type.startswith("elem"):
+        if hasattr(drag_node, "as_geometry"):
             # Dragging element onto operation adds that element to the op.
             if not modify:
-                if self.parent.type.startswith("op") or self.parent.type.startswith(
-                    "effect"
-                ):
+                if self.has_ancestor("branch ops"):
                     self.add_reference(drag_node)
                 else:
                     self.append_child(drag_node)
@@ -290,9 +289,7 @@ class WobbleEffectNode(Node):
             return True
         elif drag_node.type == "reference":
             if modify:
-                if self.parent.type.startswith("op") or self.parent.type.startswith(
-                    "effect"
-                ):
+                if self.has_ancestor("branch ops"):
                     self.append_child(drag_node)
                 else:
                     self.append_child(drag_node.node)

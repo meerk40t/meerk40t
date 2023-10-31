@@ -222,12 +222,16 @@ class HatchEffectNode(Node):
 
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
-        if drag_node.type.startswith("elem"):
+        if drag_node.type.startswith("effect"):
+            if modify:
+                self.swap_node(drag_node)
+                drag_node.altered()
+                self.altered()
+            return True
+        if hasattr(drag_node, "as_geometry"):
             # Dragging element onto operation adds that element to the op.
-            if not modify:
-                if self.parent.type.startswith("op") or self.parent.type.startswith(
-                    "effect"
-                ):
+            if modify:
+                if self.has_ancestor("branch ops"):
                     self.add_reference(drag_node)
                 else:
                     self.append_child(drag_node)
@@ -235,9 +239,7 @@ class HatchEffectNode(Node):
             return True
         elif drag_node.type == "reference":
             if modify:
-                if self.parent.type.startswith("op") or self.parent.type.startswith(
-                    "effect"
-                ):
+                if self.has_ancestor("branch ops"):
                     self.append_child(drag_node)
                 else:
                     self.append_child(drag_node.node)
