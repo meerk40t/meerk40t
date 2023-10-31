@@ -1014,16 +1014,15 @@ def plugin(kernel, lifecycle=None):
             img = inode.image
             image_left = img.crop((0, 0, x, inode.image.height))
             image_right = img.crop((x, 0, inode.image.width, inode.image.height))
-            inode_left = copy(inode)
-            inode_left.image = image_left
-            inode_right = copy(inode)
-            inode_right.image = image_right
-            inode_right.matrix.pre_translate(x)
+
+            parent = inode.parent
 
             inode.remove_node()
             elements = context.elements
-            node1 = elements.elem_branch.add_node(inode_left)
-            node2 = elements.elem_branch.add(inode_right)
+
+            node1 = parent.add(type="elem image", matrix=Matrix(inode.matrix), image=image_left)
+            node2 = parent.add(type="elem image", matrix=Matrix(inode.matrix), image=image_right)
+            node2.matrix.pre_translate(x)
             elements.classify([node1, node2])
             channel(_("Image sliced at position {position}").format(position=x))
             return "image", [node1, node2]
@@ -1052,17 +1051,16 @@ def plugin(kernel, lifecycle=None):
             img = inode.image
             image_top = img.crop((0, 0, inode.image.width, y))
             image_bottom = img.crop((0, y, inode.image.width, inode.image.height))
-            inode_top = copy(inode)
-            inode_top.image = image_top
 
-            inode_bottom = copy(inode)
-            inode_bottom.image = image_bottom
-            inode_bottom.transform.pre_translate(0, y)
+            parent = inode.parent
 
-            update_image_node(inode)
+            inode.remove_node()
             elements = context.elements
-            node1 = elements.elem_branch.add_node(inode_top)
-            node2 = elements.elem_branch.add_node(inode_bottom)
+
+            node1 = parent.add(type="elem image", matrix=Matrix(inode.matrix), image=image_top)
+            node2 = parent.add(type="elem image", matrix=Matrix(inode.matrix), image=image_bottom)
+            node2.matrix.pre_translate(0, y)
+
             elements.classify([node1, node2])
             channel(_("Image slashed at position {position}").format(position=y))
             return "image", [node1, node2]
