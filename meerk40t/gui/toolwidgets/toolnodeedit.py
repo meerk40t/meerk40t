@@ -388,6 +388,8 @@ class EditTool(ToolWidget):
             else:
                 return
             # print(self.path.d(), self.path)
+            if self.path is None:
+                return
             self.path.approximate_arcs_with_cubics()
             # print(self.path.d(), self.path)
             # try:

@@ -189,7 +189,11 @@ class WobbleEffectNode(Node):
         """
         outlines = Geomstr()
         for node in self._children:
-            outlines.append(node.as_geometry(**kws))
+            try:
+                outlines.append(node.as_geometry(**kws))
+            except AttributeError:
+                # If direct children lack as_geometry(), do nothing.
+                pass
         path = Geomstr()
         if self._radius is None or self._interval is None:
             self.recalculate()

@@ -141,7 +141,10 @@ class LaserPanel(wx.Panel):
         self.button_start.SetToolTip(_("Execute the Job"))
         self.button_start.SetBitmap(
             icons8_gas_industry_50.GetBitmap(
-                resize=STD_ICON_SIZE / 2, color=wx.WHITE, keepalpha=True, force_darkmode=True
+                resize=STD_ICON_SIZE / 2,
+                color=wx.WHITE,
+                keepalpha=True,
+                force_darkmode=True,
             )
         )
         self.button_start.SetBitmapFocus(
@@ -167,7 +170,11 @@ class LaserPanel(wx.Panel):
         self.button_stop.SetToolTip(_("Stop the laser"))
         self.button_stop.SetBitmap(
             icons8_emergency_stop_button_50.GetBitmap(
-                resize=STD_ICON_SIZE / 2, color=wx.WHITE, keepalpha=True, force_darkmode=True, debug=True,
+                resize=STD_ICON_SIZE / 2,
+                color=wx.WHITE,
+                keepalpha=True,
+                force_darkmode=True,
+                debug=True,
             )
         )
         self.button_stop.SetBitmapFocus(

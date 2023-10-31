@@ -229,8 +229,7 @@ class Button:
         # as otherwise a strange type error is thrown:
         # TypeError: GetBitmap() got an unexpected keyword argument 'force_darkmode'
         # Well...
-        from meerk40t.gui.icons import PyEmbeddedImage
-        from meerk40t.gui.icons import VectorIcon
+        from meerk40t.gui.icons import PyEmbeddedImage, VectorIcon
 
         if not isinstance(icon, VectorIcon):
             icon = PyEmbeddedImage(icon.data)
@@ -443,7 +442,7 @@ class Button:
             if icon:
                 # There seems to be a bug to display icons in a submenu consistently
                 # print (f"Had a bitmap for {v.get('label')}")
-                item.SetBitmap(icon.GetBitmap(resize=STD_ICON_SIZE/2))
+                item.SetBitmap(icon.GetBitmap(resize=STD_ICON_SIZE / 2))
             top.Bind(wx.EVT_MENU, self.drop_menu_click(v), id=item.GetId())
         top.PopupMenu(menu)
 
@@ -741,7 +740,7 @@ class RibbonPanel:
             item.Enable(v.enabled)
             item.SetHelp(v.tip)
             if v.icon:
-                item.SetBitmap(v.icon.GetBitmap(resize=STD_ICON_SIZE/2))
+                item.SetBitmap(v.icon.GetBitmap(resize=STD_ICON_SIZE / 2))
             top.Bind(wx.EVT_MENU, v.click, id=item.Id)
         top.PopupMenu(menu)
 

@@ -10,6 +10,9 @@ from .basicops import BasicOpPanel
 from .icons import (
     get_default_scale_factor,
     icon_meerk40t,
+    icon_mk_ellipse,
+    icon_mk_polyline,
+    icon_mk_rectangular,
     icons8_bell_20,
     icons8_canvas_20,
     icons8_close_window_20,
@@ -28,7 +31,6 @@ from .icons import (
     icons8_lock,
     icons8_output_20,
     icons8_oval_20,
-    icon_mk_polyline,
     icons8_prototype_20,
     icons8_r_white,
     icons8_return_20,
@@ -40,8 +42,6 @@ from .icons import (
     icons8_timer_20,
     icons8_type_50,
     icons8_warning_shield_20,
-    icon_mk_rectangular,
-    icon_mk_ellipse,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
@@ -969,8 +969,12 @@ class ShadowTree:
                     return
 
         self.wxtree._freeze = False
-        self.wxtree.Expand(self.elements.get(type="branch elems")._item)
-        self.wxtree.Expand(self.elements.get(type="branch reg")._item)
+        branch_elems_item = self.elements.get(type="branch elems")._item
+        if branch_elems_item:
+            self.wxtree.Expand(branch_elems_item)
+        branch_reg_item = self.elements.get(type="branch reg")._item
+        if branch_reg_item:
+            self.wxtree.Expand(branch_reg_item)
         self.context.elements.signal("warn_state_update")
         self.context.elements.set_end_time("full_load", display=True, delete=True)
 

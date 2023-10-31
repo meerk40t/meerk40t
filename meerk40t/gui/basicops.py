@@ -292,8 +292,12 @@ class BasicOpPanel(wx.Panel):
                 self.context.elements.set_emphasis(None)
                 for elem in mynode.children:
                     elem.selected = True
-                    if elem.node is not None:
-                        elem.node.emphasized = True
+                    try:
+                        if elem.node is not None:
+                            elem.node.emphasized = True
+                    except AttributeError:
+                        # Is a structured node like hatch-effect
+                        pass
                 mynode.highlighted = True
                 self.context.elements.signal("refresh_scene", "Scene")
 

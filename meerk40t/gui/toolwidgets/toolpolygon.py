@@ -6,9 +6,9 @@ from meerk40t.core.units import Angle, Length
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
     icon_crossing_star,
+    icon_mk_polygon,
     icon_polygon,
     icon_regular_star,
-    icon_mk_polygon,
 )
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (

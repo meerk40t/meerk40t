@@ -1,7 +1,7 @@
 import wx
 from wx.lib.embeddedimage import PyEmbeddedImage as py_embedded_image
 
-from meerk40t.tools.geomstr import TYPE_LINE, TYPE_QUAD, TYPE_ARC, Geomstr, TYPE_CUBIC
+from meerk40t.tools.geomstr import TYPE_ARC, TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, Geomstr
 
 """
 icons serves as a central repository for icons and other assets. These are all processed as PyEmbeddedImages which is
@@ -554,8 +554,8 @@ class VectorIcon:
             scale_x = min(scale_x, scale_y)
             scale_y = scale_x
 
-        from meerk40t.svgelements import Matrix
         from meerk40t.gui.zmatrix import ZMatrix
+        from meerk40t.svgelements import Matrix
 
         matrix = Matrix()
         matrix.post_translate(
@@ -3364,7 +3364,10 @@ icons8_separate_for_every_new_imported_file = VectorIcon(
 )
 
 # The following icons were designed by the mk-Team themselves...
-icon_fractal = VectorIcon(fill="", stroke="M 0,0 L 4095,0 L 6143,-3547 L 4095,-7094 L 6143,-10641 L 10239,-10641 L 12287,-7094 M 12287,-7094 L 10239,-3547 L 12287,0 L 16383,0 M 16383,0 L 18431,-3547 L 22527,-3547 L 24575,0 L 28671,0 L 30719,-3547 L 28671,-7094 L 24575,-7094 L 22527,-10641 L 24575,-14188 M 24575,-14188 L 22527,-17735 L 18431,-17735 L 16383,-14188 M 16383,-14188 L 12287,-14188 L 10239,-17735 L 12287,-21283 L 16383,-21283 L 18431,-24830 L 16383,-28377 M 16383,-28377 L 18431,-31924 L 22527,-31924 L 24575,-28377 L 28671,-28377 L 30719,-31924 L 28671,-35471 L 24575,-35471 L 22527,-39019 L 24575,-42566 L 28671,-42566 L 30719,-46113 L 28671,-49660 L 30719,-53207 L 34815,-53207 L 36863,-49660 L 34815,-46113 L 36863,-42566 L 40959,-42566 L 43007,-39019 L 40959,-35471 L 36863,-35471 L 34815,-31924 L 36863,-28377 L 40959,-28377 L 43007,-31924 L 47103,-31924 L 49151,-28377 L 47103,-24830 L 49151,-21283 L 53247,-21283 L 55295,-17735 L 53247,-14188 L 49151,-14188 L 47103,-17735 L 43007,-17735 L 40959,-14188 L 43007,-10641 L 40959,-7094 L 36863,-7094 L 34815,-3547 L 36863,0 L 40959,0 M 40959,0 L 43007,-3547 L 47103,-3547 L 49151,0 M 49151,0 L 53247,0 L 55295,-3547 L 53247,-7094 L 55295,-10641 L 59391,-10641 L 61439,-7094 L 59391,-3547 L 61439,0 L 65535,0")
+icon_fractal = VectorIcon(
+    fill="",
+    stroke="M 0,0 L 4095,0 L 6143,-3547 L 4095,-7094 L 6143,-10641 L 10239,-10641 L 12287,-7094 M 12287,-7094 L 10239,-3547 L 12287,0 L 16383,0 M 16383,0 L 18431,-3547 L 22527,-3547 L 24575,0 L 28671,0 L 30719,-3547 L 28671,-7094 L 24575,-7094 L 22527,-10641 L 24575,-14188 M 24575,-14188 L 22527,-17735 L 18431,-17735 L 16383,-14188 M 16383,-14188 L 12287,-14188 L 10239,-17735 L 12287,-21283 L 16383,-21283 L 18431,-24830 L 16383,-28377 M 16383,-28377 L 18431,-31924 L 22527,-31924 L 24575,-28377 L 28671,-28377 L 30719,-31924 L 28671,-35471 L 24575,-35471 L 22527,-39019 L 24575,-42566 L 28671,-42566 L 30719,-46113 L 28671,-49660 L 30719,-53207 L 34815,-53207 L 36863,-49660 L 34815,-46113 L 36863,-42566 L 40959,-42566 L 43007,-39019 L 40959,-35471 L 36863,-35471 L 34815,-31924 L 36863,-28377 L 40959,-28377 L 43007,-31924 L 47103,-31924 L 49151,-28377 L 47103,-24830 L 49151,-21283 L 53247,-21283 L 55295,-17735 L 53247,-14188 L 49151,-14188 L 47103,-17735 L 43007,-17735 L 40959,-14188 L 43007,-10641 L 40959,-7094 L 36863,-7094 L 34815,-3547 L 36863,0 L 40959,0 M 40959,0 L 43007,-3547 L 47103,-3547 L 49151,0 M 49151,0 L 53247,0 L 55295,-3547 L 53247,-7094 L 55295,-10641 L 59391,-10641 L 61439,-7094 L 59391,-3547 L 61439,0 L 65535,0",
+)
 
 icon_mk_circle = VectorIcon(fill="", stroke="M 15, 15 a 15,15 0 1,0 1,0 z")
 
@@ -3376,11 +3379,8 @@ icon_mk_rectangular = VectorIcon(
         "M 50 0 a 5 5, 0 1,0 1,0",
         "M 50 30 a 5 5, 0 1,0 1,0",
         "M 5 30 a 5 5, 0 1,0 1,0",
-    )
-    ,
-    stroke=(
-        "M 5 5 h45 v30 h-45 v-30",
     ),
+    stroke=("M 5 5 h45 v30 h-45 v-30",),
 )
 
 icon_mk_polyline = VectorIcon(
@@ -3389,11 +3389,8 @@ icon_mk_polyline = VectorIcon(
         "M 20,15 a 5,5, 0 1,0 1,0",
         "M 40,35 a 5,5, 0 1,0 1,0",
         "M 60,5 a 5,5, 0 1,0 1,0",
-    )
-    ,
-    stroke=(
-        "M 5,50 L 20 20 L 40 40 L 60 10",
     ),
+    stroke=("M 5,50 L 20 20 L 40 40 L 60 10",),
 )
 
 icon_mk_point = VectorIcon(
@@ -3401,7 +3398,7 @@ icon_mk_point = VectorIcon(
     stroke=(
         "M 15, 0 a 15,15 0 1,0 1,0 z",
         "M 15, 5 a 10,10 0 1,0 1,0 z",
-    )
+    ),
 )
 
 icon_mk_align_right = VectorIcon(
@@ -3410,7 +3407,7 @@ icon_mk_align_right = VectorIcon(
         "M 10,20 h30 v10 h-30 z",
         "M 20,5 h20 v10 h-20 z",
         "M 45,0 v35",
-    )
+    ),
 )
 
 icon_mk_align_left = VectorIcon(
@@ -3419,7 +3416,7 @@ icon_mk_align_left = VectorIcon(
         "M 5,20 h30 v10 h-30 z",
         "M 5,5 h20 v10 h-20 z",
         "M 0,0 v35",
-    )
+    ),
 )
 
 icon_mk_align_top = VectorIcon(
@@ -3428,7 +3425,7 @@ icon_mk_align_top = VectorIcon(
         "M 5,5 v30 h10 v-30 z",
         "M 20,5 v20 h10 v-20 z",
         "M 0,0 h35",
-    )
+    ),
 )
 
 icon_mk_align_bottom = VectorIcon(
@@ -3437,11 +3434,11 @@ icon_mk_align_bottom = VectorIcon(
         "M 5,5 v30 h10 v-30 z",
         "M 20,15 v20 h10 v-20 z",
         "M 0,40 h35",
-    )
+    ),
 )
 
 icon_mk_polygon = VectorIcon(
-    fill = (
+    fill=(
         "M 20,50 a 5,5, 0 1,0 1,0",
         "M 40,50 a 5,5, 0 1,0 1,0",
         "M 20,0 a 5,5, 0 1,0 1,0",
@@ -3449,7 +3446,7 @@ icon_mk_polygon = VectorIcon(
         "M 55,25 a 5,5, 0 1,0 1,0",
         "M 5,25 a 5,5, 0 1,0 1,0",
     ),
-    stroke = "M 20,55 L 40,55 L 55,30 L 40,5 L 20,5 L 5,30 z",
+    stroke="M 20,55 L 40,55 L 55,30 L 40,5 L 20,5 L 5,30 z",
 )
 
 node_add = VectorIcon(
@@ -3473,9 +3470,10 @@ node_append = VectorIcon(
     ),
 )
 
+
 def savage_consumer():
-    import os.path
     import argparse
+    import os.path
     import sys
     from xml.etree.ElementTree import iterparse
 
@@ -3518,7 +3516,9 @@ def savage_consumer():
         return
 
     with open(__file__, "a") as f:
-        f.write(f'\n{filename} = VectorIcon(fill={str(tuple(fills))}, stroke={str(tuple(strokes))})\n')
+        f.write(
+            f"\n{filename} = VectorIcon(fill={str(tuple(fills))}, stroke={str(tuple(strokes))})\n"
+        )
 
     print(f"{filename} was added as a vector icon.")
 

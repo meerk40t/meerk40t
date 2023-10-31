@@ -817,7 +817,11 @@ class wxMeerK40t(wx.App, Module):
         context.setting(bool, "developer_mode", False)
         context.setting(bool, "debug_mode", False)
         if context.debug_mode:
-            from meerk40t.gui.mkdebug import register_panel_debugger, register_panel_color
+            from meerk40t.gui.mkdebug import (
+                register_panel_color,
+                register_panel_debugger,
+            )
+
             kernel.register("wxpane/debug_tree", register_panel_debugger)
             kernel.register("wxpane/debug_color", register_panel_color)
 
