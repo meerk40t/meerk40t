@@ -4,7 +4,7 @@ from meerk40t.gui.icons import (
     icons8_diagonal_20,
     icons8_direction_20,
     icons8_image_20,
-    icons8_laser_beam_20,
+    icons8_laser_beam,
     icons8_scatter_plot_20,
     icons8_small_beam_20,
 )
@@ -28,7 +28,7 @@ class WarningPanel(wx.Panel):
         self.data = {}
 
         self.images = {
-            "cut": icons8_laser_beam_20,
+            "cut": icons8_laser_beam,
             "engrave": icons8_small_beam_20,
             "raster": icons8_direction_20,
             "image": icons8_image_20,

@@ -5,7 +5,7 @@ from meerk40t.gui.icons import (
     icons8_diagonal_20,
     icons8_direction_20,
     icons8_image_20,
-    icons8_laser_beam_20,
+    icons8_laser_beam,
     icons8_scatter_plot_20,
     icons8_small_beam_20,
 )
@@ -62,7 +62,7 @@ class OpInfoPanel(ScrolledPanel):
         self.Layout()
 
         self.opinfo = {
-            "op cut": ("Cut", icons8_laser_beam_20, 0),
+            "op cut": ("Cut", icons8_laser_beam, 0),
             "op raster": ("Raster", icons8_direction_20, 0),
             "op image": ("Image", icons8_image_20, 0),
             "op engrave": ("Engrave", icons8_small_beam_20, 0),

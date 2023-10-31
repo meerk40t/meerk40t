@@ -23,9 +23,9 @@ from .icons import (
     icons8_image_20,
     icons8_input_20,
     icons8_journey_20,
-    icons8_laser_beam_20,
+    icons8_laser_beam,
     icons8_line_20,
-    icons8_lock_50,
+    icons8_lock,
     icons8_output_20,
     icons8_oval_20,
     icon_mk_polyline,
@@ -523,7 +523,7 @@ class ShadowTree:
             "util input": icons8_input_20,
             "util console": icons8_system_task_20,
             "op engrave": icons8_small_beam_20,
-            "op cut": icons8_laser_beam_20,
+            "op cut": icons8_laser_beam,
             "op image": icons8_image_20,
             "op raster": icons8_direction_20,
             "op dots": icons8_scatter_plot_20,
@@ -560,7 +560,7 @@ class ShadowTree:
         self.state_images = wx.ImageList()
         self.iconstates = {}
         self.state_images.Create(width=self.iconsize, height=self.iconsize)
-        image = icons8_lock_50.GetBitmap(
+        image = icons8_lock.GetBitmap(
             resize=(self.iconsize, self.iconsize), noadjustment=True
         )
         image_id = self.state_images.Add(bitmap=image)
@@ -1110,7 +1110,7 @@ class ShadowTree:
         node_operations = elemtree.get(type="branch ops")
         self.set_icon(
             node_operations,
-            icons8_laser_beam_20.GetBitmap(
+            icons8_laser_beam.GetBitmap(
                 resize=(self.iconsize, self.iconsize), noadjustment=True
             ),
         )

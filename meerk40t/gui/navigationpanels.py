@@ -20,23 +20,23 @@ from meerk40t.gui.icons import (
     icons8_compress_50,
     icons8_constraint_50,
     icons8_delete_50,
-    icons8_down,
+    icons8_caret_down,
     icons8_down_50,
     icons8_down_left_50,
     icons8_down_right_50,
     icons8_enlarge_50,
     icons8_expansion_50,
     icons8_home_filled_50,
-    icons8_laser_beam_52,
-    icons8_left,
+    icons8_laser_beam,
+    icons8_caret_left,
     icons8_left_50,
     icons8_level_1_50,
-    icons8_lock_50,
+    icons8_lock,
     icons8_move_50,
-    icons8_padlock_50,
+    icons8_unlock,
     icons8_pentagon_50,
     icons8_pentagon_square_50,
-    icons8_right,
+    icons8_caret_right,
     icons8_right_50,
     icons8_rotate_left_50,
     icons8_rotate_right_50,
@@ -44,7 +44,7 @@ from meerk40t.gui.icons import (
     icons8_up_50,
     icons8_up_left_50,
     icons8_up_right_50,
-    icons8up,
+    icons8_caret_up,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.position import PositionPanel
@@ -383,25 +383,25 @@ class Drag(wx.Panel):
             self, wx.ID_ANY, icon_corner1.GetBitmap(resize=icon_size)
         )
         self.button_align_drag_up = wx.BitmapButton(
-            self, wx.ID_ANY, icons8up.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_caret_up.GetBitmap(resize=icon_size)
         )
         self.button_align_corner_top_right = wx.BitmapButton(
             self, wx.ID_ANY, icon_corner2.GetBitmap(resize=icon_size)
         )
         self.button_align_drag_left = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_left.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_caret_left.GetBitmap(resize=icon_size)
         )
         self.button_align_center = wx.BitmapButton(
             self, wx.ID_ANY, icons8_square_border_50.GetBitmap(resize=icon_size)
         )
         self.button_align_drag_right = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_right.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_caret_right.GetBitmap(resize=icon_size)
         )
         self.button_align_corner_bottom_left = wx.BitmapButton(
             self, wx.ID_ANY, icon_corner4.GetBitmap(resize=icon_size)
         )
         self.button_align_drag_down = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_down.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_caret_down.GetBitmap(resize=icon_size)
         )
         self.button_align_corner_bottom_right = wx.BitmapButton(
             self, wx.ID_ANY, icon_corner3.GetBitmap(resize=icon_size)
@@ -859,10 +859,10 @@ class Jog(wx.Panel):
             self, wx.ID_ANY, icons8_down_right_50.GetBitmap(resize=icon_size)
         )
         self.button_navigate_unlock = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_padlock_50.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_unlock.GetBitmap(resize=icon_size)
         )
         self.button_navigate_lock = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_lock_50.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_lock.GetBitmap(resize=icon_size)
         )
         self.button_confine = wx.BitmapButton(
             self, wx.ID_ANY, icons8_constraint_50.GetBitmap(resize=icon_size)
@@ -1373,7 +1373,7 @@ class PulsePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.button_navigate_pulse = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_laser_beam_52.GetBitmap(resize=32)
+            self, wx.ID_ANY, icons8_laser_beam.GetBitmap(resize=32)
         )
         self.spin_pulse_duration = wx.SpinCtrl(
             self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="50", min=1, max=1000
@@ -1461,8 +1461,8 @@ class PulsePanel(wx.Panel):
 #             nonzero=True,
 #         )
 #         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
-#         self.bitmap_locked = icons8_lock_50.GetBitmap(resize=STD_ICON_SIZE/2, use_theme=False)
-#         self.bitmap_unlocked = icons8_padlock_50.GetBitmap(resize=STD_ICON_SIZE/2, use_theme=False)
+#         self.bitmap_locked = icons8_lock.GetBitmap(resize=STD_ICON_SIZE/2, use_theme=False)
+#         self.bitmap_unlocked = icons8_unlock.GetBitmap(resize=STD_ICON_SIZE/2, use_theme=False)
 
 #         # No change of fields during input
 #         # self.text_height.execute_action_on_change = False
