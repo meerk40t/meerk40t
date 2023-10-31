@@ -944,7 +944,7 @@ class Node:
         if node._parent is not None:
             raise ValueError("Cannot reparent node on add.")
         node._parent = self
-        node._root = self._root
+        node.set_root(self._root)
         if pos is None:
             self._children.append(node)
         else:
@@ -988,6 +988,17 @@ class Node:
         else:
             print(f"Did not produce a valid node for type '{type}'")
         return node
+
+    def set_root(self, root):
+        """
+        Set the root for this and all descendant to the provided root
+
+        @param root:
+        @return:
+        """
+        self._root = root
+        for c in self._children:
+            c.set_root(root)
 
     def _flatten(self, node):
         """
