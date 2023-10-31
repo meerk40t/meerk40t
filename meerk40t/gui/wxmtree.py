@@ -28,10 +28,9 @@ from .icons import (
     icons8_lock_50,
     icons8_output_20,
     icons8_oval_20,
-    icons8_polyline_50,
+    icon_mk_polyline,
     icons8_prototype_20,
     icons8_r_white,
-    icons8_rectangular_20,
     icons8_return_20,
     icons8_scatter_plot_20,
     icons8_small_beam_20,
@@ -41,6 +40,8 @@ from .icons import (
     icons8_timer_20,
     icons8_type_50,
     icons8_warning_shield_20,
+    icon_mk_rectangular,
+    icon_mk_ellipse,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
@@ -115,7 +116,11 @@ class TreePanel(wx.Panel):
             | wx.TR_HIDE_ROOT
             | wx.TR_LINES_AT_ROOT,
         )
-        if wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127:
+        try:
+            res = wx.SystemSettings().GetAppearance().IsDark()
+        except AttributeError:
+            res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        if res:
             self.wxtree.SetBackgroundColour(wx.Colour(50, 50, 50))
 
         self.setup_warn_panel()
@@ -529,12 +534,12 @@ class ShadowTree:
             "elem point": icons8_scatter_plot_20,
             "file": icons8_file_20,
             "group": icons8_group_objects_20,
-            "elem rect": icons8_rectangular_20,
-            "elem ellipse": icons8_oval_20,
+            "elem rect": icon_mk_rectangular,
+            "elem ellipse": icon_mk_ellipse,
             "elem image": icons8_image_20,
             "elem path": icons8_journey_20,
             "elem line": icons8_line_20,
-            "elem polyline": icons8_polyline_50,
+            "elem polyline": icon_mk_polyline,
             "elem text": icons8_type_50,
             "blob": icons8_file_20,
         }

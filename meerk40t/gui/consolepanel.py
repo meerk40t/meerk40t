@@ -219,7 +219,11 @@ class ConsolePanel(wx.ScrolledWindow):
 
     @property
     def is_dark(self):
-        return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        try:
+            res = wx.SystemSettings().GetAppearance().IsDark()
+        except AttributeError:
+            res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        return res
 
     def __set_properties(self):
         # begin wxGlade: ConsolePanel.__set_properties

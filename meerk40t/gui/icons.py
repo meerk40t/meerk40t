@@ -1,6 +1,8 @@
 import wx
 from wx.lib.embeddedimage import PyEmbeddedImage as py_embedded_image
 
+from meerk40t.tools.geomstr import TYPE_LINE, TYPE_QUAD, TYPE_ARC, Geomstr, TYPE_CUBIC
+
 """
 icons serves as a central repository for icons and other assets. These are all processed as PyEmbeddedImages which is
 extended from the wx.lib utility of the same name. We allow several additional modifications to these assets. For
@@ -415,6 +417,263 @@ class EmptyIcon:
                 image.SetRGB(x, y, r, g, b)
                 image.SetAlpha(x, y, wx.IMAGE_ALPHA_OPAQUE)
         image.ClearAlpha()
+
+
+class VectorIcon:
+    def __init__(self, fill, stroke=None):
+        self.list_fill = []
+        self.list_stroke = []
+        if not fill:
+            pass
+        elif isinstance(fill, str):
+            self.list_fill.append(fill)
+        elif isinstance(fill, (list, tuple)):
+            for e in fill:
+                self.list_fill.append(e)
+        if not stroke:
+            pass
+        elif isinstance(stroke, str):
+            self.list_stroke.append(stroke)
+        elif isinstance(stroke, (list, tuple)):
+            for e in stroke:
+                self.list_stroke.append(e)
+        self._pen = wx.Pen()
+        self._brush = wx.Brush()
+        self._background = wx.Brush()
+
+    def light_mode(self, color):
+        if color is None:
+            target = wx.BLACK
+        elif hasattr(color, "red"):
+            target = wx.Colour(color.red, color.green, color.blue)
+        else:
+            target = color
+        self._pen.SetColour(target)
+        self._brush.SetColour(target)
+        self._background.SetColour(wx.WHITE)
+        self._pen.SetWidth(2)
+
+    def dark_mode(self, color):
+        if color is None:
+            target = wx.WHITE
+        elif hasattr(color, "red"):
+            target = wx.Colour(color.red, color.green, color.blue)
+        else:
+            target = color
+        self._pen.SetColour(target)
+        self._brush.SetColour(target)
+        self._background.SetColour(wx.BLACK)
+        self._pen.SetWidth(2)
+
+    def GetBitmap(
+        self,
+        use_theme=True,
+        resize=None,
+        color=None,
+        rotate=None,
+        noadjustment=False,
+        keepalpha=False,
+        force_darkmode=False,
+        buffer=5,
+        **kwargs,
+    ):
+        # if debug:
+        #     print (f"Color: {color}, dark={force_darkmode}")
+        if force_darkmode:
+            self.dark_mode(color)
+        else:
+            self.light_mode(color)
+
+        from meerk40t.tools.geomstr import Geomstr
+
+        if resize is None:
+            resize = get_default_icon_size()
+
+        if isinstance(resize, tuple):
+            final_icon_width, final_icon_height = resize
+        else:
+            final_icon_width = resize
+            final_icon_height = resize
+        bmp = wx.Bitmap(int(final_icon_width), int(final_icon_height), 32)
+        dc = wx.MemoryDC()
+        dc.SelectObject(bmp)
+        dc.SetBackground(self._background)
+        # dc.SetBackground(wx.RED_BRUSH)
+        dc.Clear()
+        gc = wx.GraphicsContext.Create(dc)
+        gc.dc = dc
+        stroke_paths = []
+        fill_paths = []
+        # Establish the box...
+        min_x = min_y = max_x = max_y = None
+        for e in self.list_fill:
+            geom = Geomstr.svg(e)
+            gp = self.make_geomstr(gc, geom)
+            fill_paths.append(gp)
+            m_x, m_y, p_w, p_h = gp.Box
+            if min_x is None:
+                min_x = m_x
+                min_y = m_y
+                max_x = m_x + p_w
+                max_y = m_y + p_h
+            else:
+                min_x = min(min_x, m_x)
+                min_y = min(min_y, m_y)
+                max_x = max(max_x, m_x + p_w)
+                max_y = max(max_y, m_y + p_h)
+        for e in self.list_stroke:
+            geom = Geomstr.svg(e)
+            gp = self.make_geomstr(gc, geom)
+            stroke_paths.append(gp)
+            m_x, m_y, p_w, p_h = gp.Box
+            if min_x is None:
+                min_x = m_x
+                min_y = m_y
+                max_x = m_x + p_w
+                max_y = m_y + p_h
+            else:
+                min_x = min(min_x, m_x)
+                min_y = min(min_y, m_y)
+                max_x = max(max_x, m_x + p_w)
+                max_y = max(max_y, m_y + p_h)
+
+        path_width = max_x - min_x
+        path_height = max_y - min_y
+
+        scale_x = (final_icon_width - 2 * buffer) / path_width
+        scale_y = (final_icon_height - 2 * buffer) / path_height
+
+        scale = min(scale_x, scale_y)
+        width_scaled = int(round(path_width * scale))
+        height_scaled = int(round(path_height * scale))
+
+        # print (f"W: {final_icon_width} vs {width_scaled}, {final_icon_height} vs {height_scaled}")
+        keep_ratio = True
+
+        if keep_ratio:
+            scale_x = min(scale_x, scale_y)
+            scale_y = scale_x
+
+        from meerk40t.svgelements import Matrix
+        from meerk40t.gui.zmatrix import ZMatrix
+
+        matrix = Matrix()
+        matrix.post_translate(
+            -min_x + (final_icon_width - width_scaled) / 2 / scale_x,
+            -min_y + (final_icon_height - height_scaled) / 2 / scale_x,
+        )
+        matrix.post_scale(scale_x, scale_y)
+        if scale_y < 0:
+            matrix.pre_translate(0, -height_scaled)
+        if scale_x < 0:
+            matrix.pre_translate(-width_scaled, 0)
+
+        gc = wx.GraphicsContext.Create(dc)
+        gc.dc = dc
+        gc.SetInterpolationQuality(wx.INTERPOLATION_BEST)
+        gc.PushState()
+        if not matrix.is_identity():
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+
+        gc.SetBrush(self._brush)
+        for gp in fill_paths:
+            gc.FillPath(gp)
+        gc.SetPen(self._pen)
+        for gp in stroke_paths:
+            gc.StrokePath(gp)
+        dc.SelectObject(wx.NullBitmap)
+        gc.Destroy()
+        del gc.dc
+        del dc
+
+        # That has no effect...
+        # if force_darkmode:
+        #     mask = wx.Mask(bmp, wx.BLACK)
+        #     bmp.SetMask(mask)
+        #     bmp.SetMaskColour("black")
+        # else:
+        #     mask = wx.Mask(bmp, wx.WHITE)
+        #     effort = bmp.SetMask(mask)
+        #     bmp.SetMaskColour("white")
+        image = bmp.ConvertToImage()
+        if image.HasAlpha():
+            image.ClearAlpha()
+        image.InitAlpha()
+        if force_darkmode:
+            bgcol = 0
+        else:
+            bgcol = 255
+        for x in range(image.GetWidth()):
+            for y in range(image.GetHeight()):
+                r = image.GetRed(x, y)
+                g = image.GetGreen(x, y)
+                b = image.GetBlue(x, y)
+                if r == g == b == bgcol:
+                    image.SetAlpha(x, y, wx.IMAGE_ALPHA_TRANSPARENT)
+        bmp = wx.Bitmap(image)
+        return bmp
+
+    def make_geomstr(self, gc, path):
+        """
+        Takes a Geomstr path and converts it to a GraphicsContext.Graphics path
+
+        This also creates a point list of the relevant nodes and creates a ._cache_edit value to be used by node
+        editing view.
+        """
+        p = gc.CreatePath()
+        pts = list()
+        for subpath in path.as_subpaths():
+            if len(subpath) == 0:
+                continue
+            end = None
+            for e in subpath.segments:
+                seg_type = int(e[2].real)
+                start = e[0]
+                if end != start:
+                    # Start point does not equal previous end point.
+                    p.MoveToPoint(start.real, start.imag)
+                c0 = e[1]
+                c1 = e[3]
+                end = e[4]
+
+                if seg_type == TYPE_LINE:
+                    p.AddLineToPoint(end.real, end.imag)
+                    pts.append(start)
+                    pts.append(end)
+                elif seg_type == TYPE_QUAD:
+                    p.AddQuadCurveToPoint(c0.real, c0.imag, end.real, end.imag)
+                    pts.append(c0)
+                    pts.append(start)
+                    pts.append(end)
+                elif seg_type == TYPE_ARC:
+                    radius = Geomstr.arc_radius(None, line=e)
+                    center = Geomstr.arc_center(None, line=e)
+                    start_t = Geomstr.angle(None, center, start)
+                    end_t = Geomstr.angle(None, center, end)
+                    p.AddArc(
+                        center.real,
+                        center.imag,
+                        radius,
+                        start_t,
+                        end_t,
+                        clockwise="ccw" != Geomstr.orientation(None, start, c0, end),
+                    )
+                    pts.append(c0)
+                    pts.append(start)
+                    pts.append(end)
+                elif seg_type == TYPE_CUBIC:
+                    p.AddCurveToPoint(
+                        c0.real, c0.imag, c1.real, c1.imag, end.real, end.imag
+                    )
+                    pts.append(c0)
+                    pts.append(c1)
+                    pts.append(start)
+                    pts.append(end)
+                else:
+                    print(f"Unknown seg_type: {seg_type}")
+            if subpath.first_point == end:
+                p.CloseSubpath()
+        return p
 
 
 icons8_add_file_50 = PyEmbeddedImage(
@@ -1424,6 +1683,10 @@ icons8_camera_50 = PyEmbeddedImage(
     b"nc4JgyrkZnsE/9T3L5VZ4D0yJ9bCqYgiiihi6+EvESa3u9XaFVMAAAAASUVORK5CYII="
 )
 
+icons8_camera_50 = VectorIcon(
+    "M 19.09375 5 C 18.011719 5 17.105469 5.625 16.5625 6.4375 C 16.5625 6.449219 16.5625 6.457031 16.5625 6.46875 L 14.96875 9 L 6 9 C 3.253906 9 1 11.253906 1 14 L 1 38 C 1 40.746094 3.253906 43 6 43 L 44 43 C 46.746094 43 49 40.746094 49 38 L 49 14 C 49 11.253906 46.746094 9 44 9 L 34.9375 9 L 33.34375 6.46875 C 33.34375 6.457031 33.34375 6.449219 33.34375 6.4375 C 32.800781 5.625 31.894531 5 30.8125 5 Z M 19.09375 7 L 30.8125 7 C 31.132813 7 31.398438 7.175781 31.65625 7.5625 L 33.5625 10.53125 C 33.746094 10.820313 34.0625 11 34.40625 11 L 44 11 C 45.65625 11 47 12.34375 47 14 L 47 38 C 47 39.65625 45.65625 41 44 41 L 6 41 C 4.34375 41 3 39.65625 3 38 L 3 14 C 3 12.34375 4.34375 11 6 11 L 15.5 11 C 15.84375 11 16.160156 10.820313 16.34375 10.53125 L 18.21875 7.5625 L 18.25 7.53125 C 18.5 7.179688 18.789063 7 19.09375 7 Z M 10 13 C 8.355469 13 7 14.355469 7 16 C 7 17.644531 8.355469 19 10 19 C 11.644531 19 13 17.644531 13 16 C 13 14.355469 11.644531 13 10 13 Z M 10 15 C 10.554688 15 11 15.445313 11 16 C 11 16.554688 10.554688 17 10 17 C 9.445313 17 9 16.554688 9 16 C 9 15.445313 9.445313 15 10 15 Z M 25 15 C 18.9375 15 14 19.9375 14 26 C 14 32.0625 18.9375 37 25 37 C 31.0625 37 36 32.0625 36 26 C 36 19.9375 31.0625 15 25 15 Z M 25 17 C 29.980469 17 34 21.019531 34 26 C 34 30.980469 29.980469 35 25 35 C 20.019531 35 16 30.980469 16 26 C 16 21.019531 20.019531 17 25 17 Z"
+)
+
 icons8_detective_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAE"
     b"tUlEQVRoge2Zb2jVVRjHP1eh0nStsk1tumYJScIKCcI/s15EqETEZjgXZNGLwJIKp6KZoIXa"
@@ -2030,62 +2293,6 @@ icons8_about_50 = PyEmbeddedImage(
     b"qsR/ME41xQZApAYAAAAASUVORK5CYII="
 )
 
-icons8_align_bottom_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"oUlEQVRoge3ZTQ6CMBQA4afx/ldygZ4Ldi4MSX9oH5NmvoSVUjtAgNgI6RbviNg7ty1zoo/C"
-    b"5/vk8Yd5VX6vdUJXD0CzZ/YPzmIIjSE0htBkh3xj0ptC7ZO994H4v9+0NwUvLRpDaAyhMYTG"
-    b"EBpDaAyhMYTGEBpDaAyhMYTGEJplQmoXQ9MXN1uVzsjnwthn/56PHk9Yo9cvsv3mv8xdSzQH"
-    b"L7opUXxgNIwAAAAASUVORK5CYII="
-)
-
-
-icons8_align_top_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"qElEQVRoge3aTQqDMBQA4Vi8/5HcWM+lC7GL4B95Eqc6H3TRheENbVLQpiSWJns/3jJFud/8"
-    b"nzun0Jt1ad43Ja9+Zb0hsN53b9B8s+eim//qw2Rz3ja6wIbqp99jTi1DaAyhMYTGEBpDaAyh"
-    b"MYTGEBpDaAyhMYTGEBpDaGqHDIFrd+/GH1lu6de6rphfLRpDaAyheUzI2Yeh+L92HH0ikV/T"
-    b"tefs0r+ZAAn6K06SZpqKAAAAAElFTkSuQmCC"
-)
-
-icons8_align_right_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
-    b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAGYktHRAD/AP8A/6C9p5MAAACgSURB"
-    b"VGhD7dfLCoAgEIVh6/0fKip6rS4ys0hcWAs92f/BMAgRHkxoAoDUbhWN1j+PIGreBlnO8m+0"
-    b"Zs1nZQ3Wn7pe2orv2fcQ19wRNQRRQxA1BFFDEDUEUfP7IJv12lbrXfEZJeKOqOk2SKtZvLSK"
-    b"Z/brYXXZmT3lyRWle7utuexqCKKGIGoIooYgaroJ0s1PY3oik3VVzOyfQRDgF0I4AEuCXBYR"
-    b"wmDyAAAAAElFTkSuQmCC"
-)
-
-icons8_align_left_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
-    b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAGYktHRAD/AP8A/6C9p5MAAACvSURB"
-    b"VGhD7dnRCoMwDIXhbu//TsKcvpZrIBnDiuhAPa3/ByHUC+lBAi0m4HiTV5We3qtHEDVrQd65"
-    b"Ym7OrD7Xbg/vxl5i4lmsr/C7r02YETUEUUMQNQRRQxA1BFFziyCj97MN3v8W94EqMSNqbhHE"
-    b"7s4xN4r1yvWlemffavFuH0nDfK2k2BvDroYgagiihiBqCKKmmSDNHBrXvkjnXZX9GlxUnChr"
-    b"wrCraSYIcIiUPoSrXBiRr7O2AAAAAElFTkSuQmCC"
-)
-
-icons8_circle_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAD"
-    b"l0lEQVRoge2az0tVQRTHP6l5BU18Wgq1SOiXukjdFVhtQhGKWliE7toX4n/hDypJWmZ/gRkk"
-    b"/SCCqEVIKBjlr2ihtagMNAnqKb0Wc6/de+687o9352nhFwbu9Z5z5nucMzNnzhvYxtbCjgRt"
-    b"pYCTQAvQABwAqoFS+/t34BPwHngLvACeAcsJcogNC+gCHgLrQCZiWwceAJ22rbyjBOgBPoYg"
-    b"G7Z9ALpt23lBO/AuQQdkmwfaTDpQAtwKIDEBDAAdwFHUvNlpt5T9tw5bZjLA1hAGwq0GeJWl"
-    b"wxWgFzgSw24d0Gfb0NkeRy0YiaAWNdyykzTQD1Qk0EcKNUppTT9zNoecUIPeiTeoMEkajail"
-    b"WedM7JEpQR9OI/zZG0ygFLir6XecmHNGN7FvA4UJkA1CITCs6f9mVEPtGiMj5McJB4XAqIZH"
-    b"a1gDFjArlGeBXUkzDYFS/HNmnpCbZo9QTGNmYodFE7AmOF0NUrLwpx195jiGxjW8nBYJmPhd"
-    b"QmGFZPaJXFEJfMPL7dLfFB4J4V7DBKNgAC+3sWyCKfypeJy0wxQa8HJbA8p1gueF4ESeCEbB"
-    b"FF6OZ50PBS6hFqH01DyvyHgi3k84D25H6oTQS2N04kNyqnce3I4cFkKzxujEh+R0SCe0hDf+"
-    b"Kg2TioPdeDl+0Qn9FELF+WIXARZejj+cDwXZNP41uB1ZFd82I0kMguS0wdntyFchtNcYnfjY"
-    b"J96XnAe3I/NCaCvt6g4kpw3ObkemhdAxY3Ti47h4l5wBOId3RZg0TCoOXuPleEYnVIE/aZS7"
-    b"/WZCJo1pXEmjO7SW8ecyl02ziwDJ5THqjKJFJ/6DVcoYtfCoQi21oQ9WFqoq7lYYMMsxFG7g"
-    b"5bRAiMyjG38sNprjGIhm/MWHK2EULWBGKG6lctAcESqObUI5gypj5rNAVwTcExx+AaejGhrC"
-    b"78ww+XGmCLij6X8wjjELVTiWxkaBsty5ZkUZ/pHIoE6HsY8W1aiYlEanURXApNGMf346c3RP"
-    b"rsZr0TuzhqoAJnGSrEItsXJ1cpzYn0AfgBoZXZhlULtrPyqFiIoG1D4lNzt3OOU8EhIW6vcJ"
-    b"XYdOm0KN0gXU3lOJiuti1H+9CbgIXMefAMrVaRDDx+1W9KGWVJshxhIbFxaqtL+YoAMLqB17"
-    b"U25AFKOStzH0EzWorQH3bRs5hVGSl2rKgVOoMmY9cBA1UZ3UZhX4jLo1MQ08R12qkUWPbfwX"
-    b"+A3NNtEphGbglwAAAABJRU5ErkJggg=="
-)
 
 icons8_flip_vertical = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAB"
@@ -2118,26 +2325,6 @@ icons8_mirror_horizontal = PyEmbeddedImage(
     b"q6ampqYN/Ab7PEdZ7CnXLgAAAABJRU5ErkJggg=="
 )
 
-icons8_oval_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAD"
-    b"TElEQVRoge3ZzW8VVRzG8Q+3yltLWxcI9YWYGDHGEIFYMNGFVTdojBr1L3ADSohB3BsCuFJ3"
-    b"KqjhD0DRDejK+FaQutFECyTiQqoLSbA0JpbwUhdnGm/PzNw7vS9zr/F+k7OYM79zfs+9M+dl"
-    b"nkOPHj16/JdY0qJ+bsdWbMI9uC2pW4bhJGYas5hKyiS+x7fJdcfYirdwGnNNltN4E1vKEt+P"
-    b"l3C2BeLzyhm8iJXt+AFL8TIutPEHxOUCdiW561JkjDyED7C+RswV4V3/Tnjvf8Gv+EsYG4Sx"
-    b"MoB1uBMbMYoHcEONvs/iBYwX0JpJHw7gmux/bBYf4VmsajRJ0vY5HMXlnFzXEi19i+18CJ/l"
-    b"dHoJ+7C2CfF5jGB/kiMr93EMFu1sGKcyOrmOt7G6hcLzWI13kpyxjpPCH12TZfgmo/F5jLVF"
-    b"cm0eTnLHer5WZxI4nNFoHGvap7Uua3EiQ9d7eQ2eyQj+XFg7Os0AvpDW91Qc2I/fo6AfLWJg"
-    b"lcCQsK2p1vibaOF8NQr4W9gzdRv3CtN+tdZX5m/2ST+N10qXWJy90hNRBR6LbvypwPTWQYal"
-    b"15lHKtgWBR5JAruVaXwY1W2rCPudao6Xo6cpjkXXo4SRX/2Y1pUsqhHusFDzFGGGqq5c3iFx"
-    b"i2G5aJatdFZPw8S6r1dwMars5HakKLHGixWciyo3lySmGWKN5yqYiCofL0lMMzwRXU/AoxYO"
-    b"nGndvSDeJL0gjhG2KPEUvLczGguxT84WBfZEN2eFDVq3sUH6u353dUC/9FOZ1F2v2LDgecUL"
-    b"Ycr/ejoKmhM+ZgZKElqLVfhKWt+TeQ3ezwg+qT2OSVFGBM8s1vVurUZLhQ/7uNGUzpgPY7LN"
-    b"hy8VcCCHhKeQZQcdxM1tkbyQNTgk2w4at4ixO4hPMzqZw4zg+o20UPg8t+D1JEdW7mMacDXr"
-    b"WaaX8bFgdzZjUgzieXwi3zK9qo5lWsTEflAwse+uEXNV2CZM4Af8LLzbM0mZFzwoHADdhfuE"
-    b"85BRtU3sM4KJfaKA1rrcKFj8ZR4r/IGdSe6WsxI7tOaUKq9MYrs2HfRkMYo3pE2zRspPSV/3"
-    b"NyqmVYeht8o+DF3h34lgRvisPm/hYegpYXvUo0ePHv8j/gFzYrbzMmFdVAAAAABJRU5ErkJg"
-    b"gg=="
-)
 
 icons8_place_marker_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAF"
@@ -2169,54 +2356,6 @@ icons8_place_marker_50 = PyEmbeddedImage(
     b"zPAkRq8AjF6hYVXur8hjVngPsqKZ8D/iZ4huqztQ5AAAAABJRU5ErkJggg=="
 )
 
-icons8_polygon_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAC"
-    b"/0lEQVRogdXZT6gVZRjH8c+9edHECrWgugspCyJqJUirFv4Bb2FK0qJNLhRcikXoJhBdtYhA"
-    b"JajlRTcuNHPhIoJAF+FKCgnh3sXtamVGKvgv/02L5xxmzumce+f80XnnBwOHeZ/3eX/fmTnv"
-    b"zPu8DEfv4iIu4b0h5axEs8gax19Yj7FKHfWop3BIDlE8/sEk3sfiqgyW0TuYEabvNn7P4ADO"
-    b"a4W6hW+xFcurMNtJS/G13OQ5rOoQ9xJ24gweFOLvN87txiuPwW9HfYDL8qu8G0+U6PccPsJJ"
-    b"/Kv1bp3HXp0vxtA1ju8Kg/+AlX3mWiagjuOmVqhfcVA8orOYGMh1QSPYgWuNga5iW+P8MLRY"
-    b"TAaTYnJonzB+G8Ygr+LHQtJjeGEYibtoTEzbVwpjXhwk4QJ8Kv4DGf7AlsE89qRNjTGb/5++"
-    b"7v6bOCu/IkdVM10uwu8ND5vKdmp+XsyI90GGaax9BAZ70Z6Gl5/Kdih+XmT4Qhpv4qfF5JIp"
-    b"eVGn5RBTj85XX9ovfH1fJnitHKTqx6ldz+KG8La6TIcmSIr6Ung7XiY4ZZBx3MFDvDFfcMog"
-    b"8I3wNzlfYOogL+Oe+HKe84s5dRA4Ijx+NVdQHUBeF+uaO3ixW1AdQIhVZobPuwXUBWS18HlD"
-    b"l2/AuoAQb/kMn3VqrBPIGuH1byxpb6wTCFG8yLCrvaFuIBvlK8iFxYa6gYzgF+H5klhToX4g"
-    b"BEDT9+xoxWYGUbG2nBV/1OmOfKi1ZLSh2VAnkJW4Lvxub2+sC8iYKEY0Kzz/U11AmqvFaTzT"
-    b"KaAOIBNilXgXb3ULSh1kXF5K/WSuwJRBRkX1P8Mp85RQUwbZK7z9iefnC04V5G2xTn+AdWU6"
-    b"pAiyTL5Hua9sp9RARnBCeDottjpKKTWQj+Vb3Ct66ZgSyCr5hunmXjunArIEF4SXA/0kSAXk"
-    b"sPDxM57sJ0EKINvlpZ7X+klQ3B9ZMzxfPY0/VfCwtd9ExSRVH1f6hRjVVoWoWLcH6TwhNkSn"
-    b"VLP11ny0Wpasveo/T0QoE45QIQcAAAAASUVORK5CYII="
-)
-
-icons8_polyline_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAD"
-    b"E0lEQVRogd2azW+MQRzHP1tV4qA9IF4S4Wma6EGCiwtOxEtLpE2chCxWRYtGw9FFwhEXf4Aj"
-    b"J3rYNOEiIqFJaR3EQV1FSF+U7tq+OMzT9Jl55tl9dsx0uj7J5Nlndp/f7/vdZ+b37EwLtUc7"
-    b"8BaYCo9tfuWY0Q7Ma9pJn6JMGERv5I1PUSb8Qm9kss6nKgNGE/o/ZSwmCYCDQD0wAHy2GBtg"
-    b"K/ABWKv0zwPHbSXJAtMs3uo/QM5WcCCD+HKiw6kEvAKO2EoSIJuIJgos5chp4tv8ogDo0iRZ"
-    b"aL+BfuAM0GgYfwswpsR9jrhLVukh2Ui0zSCGwjVgc8rYGSCvxJlAzBfrBIg5kcbMQpsFXgLX"
-    b"ge1lYi/JkIqSBQqapGnbEHAL2BnGC4BuxLcf/dwADoaUSiswpyQ+AdxGlM20pkaBoqbf2ZDS"
-    b"MaQkPx95rwW4CbxGDK1q79rVJXEQckdJ/iThc+sQlayf9EOyy6Vwlf3Eh8PKCtesQTyZHxGf"
-    b"E9F2wY1kPfXEa/6BKq4PEA9S1cQ05aubEx4rIu5WeX0OuZxPA2dtCkxLFtnIO4MYzcBlhKlt"
-    b"1pRVyUbkMjxH+ie5MS7WI1+B4ch5BjjsII+Eq4VVXjk/6iiPc9QyPE7lMrwsWQH8QDazz2VC"
-    b"V0NrFnih9DkdXi43H/6bebKJeBlu9SUmAC4iVnUtBtePIM+TInDOmroI5RYpWeAhsDo8LwE3"
-    b"EMvVJsS2TKPm2BQeG4E9xKtVCdhB8h6VVZJ2Rmy1btuCkyb7IRbvhAuKtgMmGXH58CoQL83/"
-    b"TH1Cfx6xfaO+P4NYf0+EbbzM6zFgL3APaAivLwCXgC/WHFRgPfEtngJw2iBWM3AFTz/Je5FN"
-    b"fETs+NUc75GN9PmVY8ZuZBMlxGKp5niAbOSpXzlmNADfkI10eFVkSAeyie/AKq+KDHmGbOS+"
-    b"XzlmbCD+7NjlVZEhfcgmRvzKMaMTsY0TNdLrVZEBncT/rjEPnPIpyoRh9GuGQZ+iTJhCb2TS"
-    b"p6hqqUP8INSR1L9saUN/R475FGVKG+JfhX6Gx5oz8RfUZnMRWR+s4AAAAABJRU5ErkJggg=="
-)
-
-icons8_rectangular_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAB"
-    b"U0lEQVRoge2ZPU7DQBBGHwi3lAS65ATIiQInyQEQKOIGiANAzoAiwVkQFEAD3CBUEVSEFiQo"
-    b"lmI8sdeEyPaA5klb7NojvW/9U8yC4ziO4/yelZy1BNgHdoBn4AyY1OiURwcYAi3gFjgH3mMF"
-    b"CXANfIoxA9JKNeP0vh2k0xXBtZBDVWB5DKX4qgrSL9seQ+zKiQ7yUqPIskzlRH/sbeARWFfr"
-    b"I+C+OqcoKXCs1mbANvAUK+ySfRdPq7BbkBFZpx//fGTRoBK1xRiQdZpDfyN/Fg9iDQ9iDQ9i"
-    b"DQ9iDQ9iDQ9iDQ9iDQ9iDQ9ijbwg3ZJ5E5Q66XZQB3jAVjuoBxyptTdCO2hSVKTbLpbHiRTX"
-    b"r9ZG4b7YY1NOdJC7GkWW5SZ2MSG07OUjfKXZY4WU+WOFS2BN3lR00LNH6HZPgTElPdYaaAMH"
-    b"wBbhSVwAH00KOY7jOP+LL8rEkimh6HlnAAAAAElFTkSuQmCC"
-)
 
 icons8_type_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
@@ -2266,31 +2405,6 @@ icons8_end_50 = PyEmbeddedImage(
     b"Nx+iaAdF06CLpmUaRRM7itcK0bzoSSQSiUSiyAcoKiORfFCb+AAAAABJRU5ErkJggg=="
 )
 
-icons8_emergency_stop_button_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"CXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5QICAg0Rhg4xqwAABFlJREFUaN7tmW2IVFUY"
-    b"x38zrumOua6lI5ooGvjCJCnmh/yU+MX6UuELkUNpKpZQCiGUb2Ul9smXD4WEHyKQzbREJSTI"
-    b"ME2NXlhnYWFWymXXZdSo1hTUXXdn+/JceHg4d+bOvXd0hfnDZc7c85znnOec5+08F2qooYYa"
-    b"HiQkYuaXBGYB84EZwHhgtPR1AwWgDTgHtAADg21DZgF7gWuyuCDPVWCPjL3vyADHgGIFAtin"
-    b"CBwFZt4P1aoDtgMbgaGmrw/4BcgBl4Ab8r4BmArMBuYJD427wMfAB8Kj6hgHnHXsbDOwQhZc"
-    b"DqOAlcAFB58zQLraQkwGLpqJLwHLxdDDOIcs0G54XpS5qoKxQN5MeBBIxcB7OPCF4f2HnH6s"
-    b"GGrUqQhsitl9J4DNxnGcdthSJOwwu7WpBO1DwAvAPuA88Kc8PwOfAs+UUcMtZq7tcbrYXsX4"
-    b"QImTSAKtAVxuO/BSiZM5qGh7gOlxCHLMGHZ9GfotFcSQI+LBPHgLTgEdiu6bOCK21tnlAcY8"
-    b"DHTJIl8HngOeBdbKu14jzE8y5kUZ5+EVY5OZKILsNXEi6aMKzzvsxA8TgW+NMHmgX/IxraY5"
-    b"RbM7SgKoc6eVDpp5YtADwNwK+e9yqFq3oVml+gphveSTikmvidhpYL/sokfzSYX8xwP/lBGk"
-    b"UVIXrz9UgvmGYnBO5VjrZUK7m/8GcAQeZhtj9hMEcdte/9pS6uOHGardrBLCs8DnwH+GfrQY"
-    b"bBBMBZqA4+IJiyVom33WFBiH1U687eg/r/r75Pf7kPaYEhtb6ujbqOY5FOZERqr2DUf/BNVe"
-    b"BLwM3BavVCluAb/7LFSffEOpe0VYDDN3iSZ5qnkdHwhzIjfN/cHiL9WeEmGhCyRGrBEnYNHg"
-    b"s6bAgnQZ47TIqfbCCIJkgQ3AZ8Bbjv7HVftyGEHyxl1anFDtJcCYEEKkgWXq/3cOmjk+awoV"
-    b"EO861Csl6uXRHA6Qg1kcUOOvGbvzXLoOiE+ENbKrislrDpoNjrtDwieKnzDv3jdj1znGrY4j"
-    b"RbFJ4wWHKg6RYoFe0LuGpl6qKj3iJR8DvjJjfhBeVu1bFM2uONP4rE9VxbvL3zQeLGEWfVxi"
-    b"jRaiVeoBFq8qmv6oaTxSPNM3u3ofYX4E3jTvPyxzsToJPOrgNwLoVHRfxxGQZopaeEybfHS1"
-    b"zqhetkQFsiA24Xe/0ad4B5gWV3S1O7s5wJingd8c9arFUv7xwzYz5r0404Q6Y9RFuZuX8yJJ"
-    b"Sb3/lnG/lvGSW80pnnI4gchIO6qMXwYs0D0ipaDrPsKPcHiyfMggG7hk2mYm7JBCQZCS6Rwj"
-    b"eFK8U6dDiEnVrv+OlQqgNeCc3LEbA/BolGDX4uBzKsxJRPmssBV4x1Ex6RMjz4m77lbpxhTJ"
-    b"255y6H4PsBP4SOLGPcV0KZ5F+dDTL3FiGoMAGblTXKlAgIKkHZk4FhD3x9CEZKjz5bQmKpu5"
-    b"LnecNilgtDIIP4bWUEMNNdwb/A9jBMuJwvmIngAAAABJRU5ErkJggg=="
-)
 
 # ----------------------------------------------------------------------
 icons8_group_objects_20 = PyEmbeddedImage(
@@ -2986,36 +3100,6 @@ icons8_input_20 = PyEmbeddedImage(
     b"Rf4IXzjbQCQgdD/qAAAAAElFTkSuQmCC"
 )
 
-
-icons8_point_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAF"
-    b"JElEQVRoge2Za2xURRTHf31ZoQWqjTTUaiyCT9D6flRRxESlKmpiMEJQolTjK2qi0QTxERJN"
-    b"6jMhRoNIlPDBRJMqIRgTQyTxATY+0BBF66O0lvqoYCmN2O364ezKmbMzu3vvLvrB/Sc3mb1n"
-    b"zn/OuTNz5pxZKKGEEv4XKCsyVwswGzgDOAZoBManZMNAP7Ad+BjYCHwKJItoQ0E4DFgGfIsY"
-    b"FeXpBh4BJv/rVitMADqQLx3VAfvsBZ4CJsY1Ju7SuhR4CTjcIxsBPgS2At8hjgLUAM3AScA5"
-    b"yJKz+AloB9bHtCtvlAHLgTHcLzoGrAOuAqrz4KkGrgQ6gYSH63GgvMi2/4NK4BUyl8U7wIwC"
-    b"eE8ENnh41wJVBfB6UQasNgPtARYH+pcDJwOXAzcDS1LtFqAioLMIGDJjrKG4kZVlZoD+lKEW"
-    b"ZwMrgQHCG/tnYBXQ6tGfCfSa/o8Wy4nZwKgi3glMN32mAW+QuXdyPZ3AsYZrKtCn+iSAiwt1"
-    b"Yhzu+TACnGb6tAG7sxi7G9iVRT4EXG04W5CQnO7zPf4olzeWmkFvN/JbcGcrCfwOPA3MMoOP"
-    b"A84HngR+MzoJ4C7D3W76PBzXiVoz4Ae4IfESjxMrgPo8uA8BnsVdigkkIKRRBmzC/UCT4jhy"
-    b"mzHyPCVrShGnZX8CC2OMMR9ZrnoZHqXkZxkb7o4xBptxZ0NjlRkgFIbzwQLDtcbINyrZJ1HJ"
-    b"pxjyJUp2PO6SejkquQcv4i4xHdpvMLYcGYX4eqU4BjQo2XIlG8afb0VFA+5h2KFk9bhpzI1R"
-    b"iDuU4jYj+5LwMrCoAS5MPTU5+url+o2RfaZkz+XgcfCWUnxdva/HneZrs3C04p7SO5CsN4R5"
-    b"hrtRydaq92/7lEMZpi50flRtu4y2BvRrgNdM/6bUu9DB9rn53RSwoQEPQo7UqvaQak8x/foD"
-    b"+mfi3ztHIGWwD/3IF/eN9YdqT/AphxwZC/TZZ/rFSbOTgfdVuJmuHqtStRM+5ZAjehbqVNvO"
-    b"QCN+bEGqPYteoCugY2dQj6VP9CE8CDnSq9pHq3Yf7hcJbd5h5NTWzvSl3u0N6GiuJNATsGFH"
-    b"QN+Lx9gfJXqNTOc/G3Lw1AIXIaVArvD7puLdbGTdSvZEDh4HbbihUNcM96r3CeDUKMQBzMTN"
-    b"Fh5UsmZji035s2IistnSykuVbDISRdKy93A3Y1RUAO8qvmHcvXe/ko0imXMkrFME3bi19kO4"
-    b"XynSaWugs4gkkgKlUQ58pWTewzAXrjEDLFCyGiR10fLniRaOK5GaRHNsx72km2/k18Xwgwrg"
-    b"a0XSg3tQTiez0tuCVIG5cC5yiad1dyGZdRrjkRJXr4rYS9jWCi8YeSvwq+mTBD4CHgDmACek"
-    b"DJyDrPf3Pf0HkcimscL0WRTXCZCTVhc2vjR6KvCFx7h8n21k3sosNH02UYT7rWbcsnYfkqlq"
-    b"VAP34J+d0DMI3AccbLjmIqWzXnLTCnUijXm4cf4v3KoxjUlI2duJ3ERa4/cgJcJNuKlPGotx"
-    b"w34CCTpFxa0ew14le1w/FLnbnUH225U6pGS2/HcWbHUA7WReAQ0Ad5C5RPJBNXJbs9Nwjqbe"
-    b"H1BcBvxC5tcbQM6FWcBBWfSrkBD9DJkOJJF91hbVqLiRoAk5AK8IyEeQE/kH9l+X1iF3VscR"
-    b"rhLXIzPRE5AfMMxFDsG4oTf9dOHeMv5nuADZrINEC7+ryTwIY6Gof6IgSd4pwOlI6t+EpDVl"
-    b"SGXXh6Q9Xchf096ytYQSSighiL8BHpA7bZy+dDAAAAAASUVORK5CYII="
-)
-
 icons8_flash_off_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAC"
     b"L0lEQVRoge3aP2sUQRiA8V/UIoVgEBVbEQRBESWFpWjQTxCwvQ/gV9DD2kYsFHvzCSyM9oKJ"
@@ -3235,7 +3319,6 @@ fill_nonzero = PyEmbeddedImage(
     b"vxN8hrWnMN+XhkhvYQ8PIXOQIjzHFZYimRouQzZKFcfSeqsSstX85A/ci1xqR7HjbwAAAABJ"
     b"RU5ErkJggg=="
 )
-
 
 fill_evenodd = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABQAAAATCAYAAACQjC21AAAACXBIWXMAAAMpAAADKQG9Lnl1"
@@ -3615,7 +3698,7 @@ icons8_replicate_rows_50 = PyEmbeddedImage(
 )
 
 
-icons8_undo_50 = PyEmbeddedImage(
+icon_mk_undo = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
     b"AAABpElEQVR4nO3YTYhNYRjA8d8YDY2buSQ1NYtJFpItG6UsbCkfNZrdpIidsrSQrG1tLGRp"
     b"oyzZjMiMwUYToZnFLGSDBfkIo6NHnc2s3Pe6z+n86+xu9+nX073nPYe2toFsDHdwQ3LEPFax"
@@ -3628,7 +3711,7 @@ icons8_undo_50 = PyEmbeddedImage(
     b"AAAAAElFTkSuQmCC"
 )
 
-icons8_redo_50 = PyEmbeddedImage(
+icon_mk_redo = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
     b"AAABqUlEQVR4nO3Yu2sVURCA8Z8PxCdqTCMsgnYKVhaCWFhZpVBQCKmEpBFbESsFC0tbS9FK"
     b"xMbGRoRYJCHRq02SwgckVYqApgm+iSyMcP+APUvmZj847cz5OLN75gwdHQPLU7zEQcnpYQOz"
@@ -3906,3 +3989,398 @@ icons8_finger_50 = PyEmbeddedImage(
     b"F9wC9tTpS6DmFJw4ELEBXCdHPHDE/NKFWgdwKeX7JbXvcYbTRoZt0KnPMF+def8kYYdTrk4k"
     b"Ycf2fWBUE8BuysLtBdySfi+c+MPeB/5NUJYk4pDZAAAAAElFTkSuQmCC"
 )
+
+icon_regular_star = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
+    b"AAAD5klEQVR4nO2ZaahNaxjHf8c5uAfXlEPGpMzDByGzW265fCDXUPcDMuSTWfKB4pshlClj"
+    b"XVxdRd2MR9dMXeEDkumQFNec46Acw3G2Hv1Xve32OXvtY6119opfrdq969nP87zvWut9hhd+"
+    b"4IsawFngjH7Hll+BhK6hxJg9zkT+JqY0BkqBMl2lGosds/QkCoGj+j2TGHJFzo8Bxur3NWJG"
+    b"bzn+AqgN1AKeaawXMWKznF7ljK3W2CZiQj7wSk53ccY7aawEqEMMmCSH/0tx77zuTSQGnJOz"
+    b"U1Lcm6p7Fu2zmg5AOfAW+DnF/XrAG03GXrWsZbmc3FaJzHbJLCNLyQMey8m+lcj1k8xToCZZ"
+    b"yCg5eMuH7A3JjiQLOSjn5vmQnS/ZA1RDbCgA2gE9gcHAcGAcMB1YAHwCPkguHQWS/aT/Tpeu"
+    b"4dLdU7YKZNsXE4A/gX3AceACcB24DxQrc034vPZmsDh7M9BbJl/uy7cL8nWffLc58NyHolLl"
+    b"TfeAy4oVhXJmK7AGWAI0z2AiLfSfNdJhugql+7JsvZDtdP7ZHPhNaUNCe/x4oBvQFmgE5FL9"
+    b"5MqXtvJtvBOPSjSHr7QHbjoZ6y9kL/2BJ/L1blI+95X6zs5jH+EMso9p2iTMx3/1lCp8hF50"
+    b"tmtLlgStvBR+2Vha/gDe6U/28TWl+mgMnJAv74HJmSqwvfyBFNzTRxY1HYHb8uFxmtQn7RZ5"
+    b"UYosox1NdIxwdlPbjtt8q0KruXdIYbne1TC7hjnAQuCzbO4JuqKc7UR5C151CZ6fgL+cRVuq"
+    b"iYX6uK3d0zpA3abLayGVyFaoWGVXJIOW5wSF9/oWRVk9rpdRy5WCwl4j07mOCPHSmQEB6hwo"
+    b"nVZ0RUILJ8EMMupbpH4t3a2IsG91KATdh6Pse+2SsTkh6J4r3TuJgIcyFkbK0l26HxEynWXo"
+    b"ic9A1UlnI0d9bqk5Tq1htkJjpoxY9E334S5MKlM/Kr2xI4bK2C35UOuh/TJSWSrdRwc6Xpqx"
+    b"XVe5c9hjMhUxWXJmKxRyneOCVKlJvla8zEn97VTXY5CadwklhFvUC06mlZOm+CqeMsVrdVp9"
+    b"kMwQ4I5TJq+tIKnMVwT3ylVr7wxLIVfko/VaZRZL+QZnrKFW1nttrurYLR09gEtJ/bAmzv2N"
+    b"Gl8Uwjw4LeVecTXOORd8p5XOJNLnqTR4Kx0v1XE0ftfYqaAnUUf1sr3/XYF/nNU8p5K0qlhr"
+    b"9Jij74ieWJlewUDrnmHOynuNsWKdSgVR+ORIV7GTx3nNj1TfUJVZmdSitDyrJcHTzEmBvGtF"
+    b"kAZOSun/OgcJm1GylZDtwBiiXasB0dFANs3298MXw0hXuTS4jKMAAAAASUVORK5CYII="
+)
+
+icon_crossing_star = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAABnRSTlMA/wD/AP83WBt9AAAA"
+    b"CXBIWXMAAA7EAAAOxAGVKw4bAAACbUlEQVRYhd2YO08CQRDHZw/LCw0tHb3PgoJeOv08+gV8"
+    b"ND4a/QAajYaHET8CCT0JoaAlAZUooiWsxSXruXc7O8tsjLkJ1e3M3H/3tzO7h5BSwv+zwFsi"
+    b"kQtEzls2X4n8WqZlKXy+OGZ6tQBgIecLOfeVzYMsDZwXjpmGqPD54siVlYqMzzG7EDVwXjiy"
+    b"ZCGwmBwzCjEVGZ/j8rJywQrTAbHlZVnvj5wLJgtiuVw2DVUqFU5mIf7nrpdSCggEBCcnp5Js"
+    b"UQjfJ25HR8cqBOIp6FkEBLs7u7hPdbvqlDAuANRAvd4gKqNPwClhrVb/eSJ/14vqzkjviXwo"
+    b"zcnqaXqdvt/VMH56FAoFqyYAyOfzyCiyBCllqK6/gcj1ej1t9ObmFgBeXp8pst6nbwDQaj1p"
+    b"z7vdrlrI1LXUIf6SnDYbOkGTP2mfIBlNQEulElETABSLxaRKXBMAgLE8EpVyd3c/HA6dWpEK"
+    b"n0wmV1fXDiWMQEydpX2iPmKpJ89Czi8uL5zUaHZ2fuYwHzqLfr+verFTO41+g8GA/i4qRIjV"
+    b"FHHbxt2c65foF7d4YxuPx0mH0WiEtyW7EVe13W4nwaUCNVEWEHQ6Hc8QTRQ0oNh54sJx+eu2"
+    b"pobaJ2lG2luPjy3++5zCSRDx9Y9G9/f3pJQHB4dWT4o+lizkLEf8SRc1qwf+juQQcmPz2beQ"
+    b"v4qaD03TV3Wj2cBjcbND1FbeqeKSzkSOJIha0jAMiTgWch6GYao+liyVbm11XU30YzalpI7s"
+    b"YzZVvW1zY0tLazILRC2e07qcUlEr8fNrxm+nn18zorPzJwbfuJ8Y1uDlzFuX/3v7BikOKD82"
+    b"lTxEAAAAAElFTkSuQmCC"
+)
+
+icon_polygon = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
+    b"AAACZUlEQVR4nO2aT0sVURjGf7qo0EVIEUUYiYFCFLRIsEViGXTzC1hgfYeSbFVt0o1pu3Kj"
+    b"req61BbZoqCWldEHUFKvtJBKKPpH6Y0DT3AW/rn3zJxzz8j9wV3NnOd5z9yZOe/7noEqVaKh"
+    b"G1gCZoGzKeoaLaNZAHIEwBgVPf8WQ0xkLsBEZn1PYjewbJmleWt1WRdpWV7eGJTRS48ez+Ux"
+    b"4MvgIPAdWAPafZkAJ+XxEzjkw+ChrtQj/PNYXuNpCx8HVoHfQDP+OQz8kueJNIWf6QoNEY67"
+    b"8pxOS7BTgl+APYSjAfgk73NJxWqBGYldJTzX5P1esThzRUIfgJ2EZ4fWKxPDZVeRXcCCRHqo"
+    b"HBcVg8nv6lwEbkjgXdK/NSE1wGvF0u/yoH3W4DNUntOKZQXYW87Aexo4STxMKaaRUgc0aTH6"
+    b"CxwlHlqAP1qUj5QyYEIzv098PFBs+a1ObFPC9g3YT3zsA74qxlObnfhCM75JvNxSjK/WO3hB"
+    b"72lzwkegnnipV4zF9er7Quh6OSGFjeLN8kQW7AM562DWbq3zm9XL5oGKldul9A3s1+8B4n79"
+    b"tm91cl4zNotPbIwqNlPTZzZFaS03RUGJWVGJWiw8UUzDrml8mt1EVzqsNL7svkF/RIXVG8Vy"
+    b"3bXUnZeAKTcrxSVrzXAqdVHBH0vzoTeJkLml3krItGZC05dWO8hu0Dk9aAlosF44iRt0/5mW"
+    b"oGljhmJYnk/TFD2mBTJUE7vJVxMbtfhLTg8SkpfXWJY3etrk8QNo9GUyEHDr7U6ozdC5LG+G"
+    b"bpvt6W31wUBOk/H1CcfiRnV4lSqE5x+0Tyg887i34gAAAABJRU5ErkJggg=="
+)
+
+node_break = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAABcAAAAZAQMAAADg7ieTAAAABlBMVEUAAAD///+l2Z/dAAAA"
+    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAOElEQVQImWP4//8fw39GIK6FYIYaBjgbLA6Sf4+EGaG4"
+    b"GYiPQ8Qa/jEx7Pv3C4zt/v2As0HiQP0AnIQ8UXzwP+sAAAAASUVORK5CYII="
+)
+
+node_curve = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
+    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAARklEQVQImWP4//9/AwOUOAgi7gKJP7JA4iGIdR4kJg+U"
+    b"/VcPIkDq/oCInyDiN4j4DCK+w4nnIOI9iGgGEbtRiWYk2/43AADobVHMAT+avQAAAABJRU5E"
+    b"rkJggg=="
+)
+
+node_delete = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
+    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAKUlEQVQImWP4//9/AwM24g+DPDKBUx0SMakeSOyvh3FB"
+    b"LDBAE4OoA3IBbltJOc3s08cAAAAASUVORK5CYII="
+)
+
+node_join = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
+    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAPklEQVQImWP4//9/A8OD/80NDO/+74YSff93IHPBsv+/"
+    b"/0chGkDEQRDxGC72H04wgIg6GNFQx4DMhcgC1QEARo5M+gzPuwgAAAAASUVORK5CYII="
+)
+
+node_line = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
+    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAARElEQVQImWP4//9/A8P//wdAxD0sRAOIsAcS/+qBxB+Q"
+    b"4p8g4jOIeA4izoOI+SDCHkj8qwcSf0CGNoKIvViIRoiV/xsA49JQrrbQItQAAAAASUVORK5C"
+    b"YII="
+)
+
+node_symmetric = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
+    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAV0lEQVQImV3NqxGAMBRE0R2qQoXS2ApICVDJowRKQEYi"
+    b"YsIAWX6DIObIeyGJeGgllDTKwKjMl147MesgJq3Eoo0IjES0QCTzROdqYnAV4S1dZbvz/B5/"
+    b"TrOwSVb5BTbFAAAAAElFTkSuQmCC"
+)
+
+node_smooth = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAAAXNSR0IArs4c6QAAAARnQU1B"
+    b"AACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAIgSURBVEhLY/wPBAw0BkxQmqZg+FhC"
+    b"VJx8+fyZ4fKVK1AeBEhKSDAoKCpCefgBUZZcvHCBITo6CsqDgJjYWIaKikooDz8gKrjevX8P"
+    b"ZSHAh3fvGX7//g3l4Qc4ffLz50+G9evWMSxftpTh7r17UFFUwM3NzeDm6saQlJLMoKioBBXF"
+    b"BFgtOX/+HENNdRXDw4ePwHwZGVmGJ08eg9kwICQkxPDj+3eGb0DMxMTEkJySwpCdncPAwsIC"
+    b"VYEAGJZs3bqFoaaqiuH3nz8Mjg6ODHkFBWADFy1cCFUBAdo6Ogx2dnYMq1etYpg6dQrDly9f"
+    b"GKysbRgmTpzIwMnJCVUFBSBLYODgwYP/dXV1/usB8do1a6CihMGLF8//h4YE/9fW0vyfmZn5"
+    b"/++fP1AZCIBb8ubNm/8W5mb/dbS1/m/ftg0qSjz4/Pnz/4AAf7BF8+bOhYpCANyS2tpqsIKO"
+    b"jnaoCOng/v37/40MDf4bGxmCHQ0DYEtAAoYG+mCfAMMWLEEu6O7qAjt22rSpUJH//8H55MD+"
+    b"/Qy/fv1i8A8IACdLSkBkZCSY3rVzJ5gGAWZ+Pr6G7du3MgB9wyAsJMzwB5iq1DU0oNKkg/Xr"
+    b"1zFcOHeO4dWrVwzfvn4DZofzDIwgr0HlwcDZ2Ylh4qQpUB7pwNfHh+H+fUTmBYXMaH1CEmA8"
+    b"duwYSpyAihB1dXUoj3QAqhZA5RkMMDMzEVefUApGI54EwMAAANLW9DiEznjCAAAAAElFTkSu"
+    b"QmCC"
+)
+
+node_smooth_all = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
+    b"AAACs0lEQVR4nO2YO2hUQRSGj4r4loh2Rldws3P+/+zdK2xhSB+idop2FqJgFUEt1FJERBtt"
+    b"VKy0UvCBz0IR0UKsTBoRBEVREcEHiEh8JBrlZu+uIbmYx97sA+eDKbaY/86/c86cMyPi8Xg8"
+    b"Ho/nP6RYLM404PDIETjnpJlob22dY8TvkQPAOmkmzCxMMkJq9yaRGdLIFAqFeaa606DPkkwM"
+    b"Gx8NOBoE2VZpNACsJfR1ZbHQH0b8SjDxrbI70D5Sd4vIdGkESN1rxGApdPAmCp8gCBYRuEui"
+    b"Z/gw0w1mroPE5coc4FImk5ldVxMG7Bm2C6edcwvGPddcF6HvYjM36pY7Zq6rEj7Agclp2Mpy"
+    b"SJJ6UGpNsVicS+JFbOJMNVr5fK5A4iuh/aqal1pCanc5J7LZ7MIU9PbF4XkxnRWOEwJPSka4"
+    b"Q1LaYSM+EDoQtrUtlVpAMhsfn/1hGLakp4sTkW4e2CpTjVEvEHgQn1Sfo9+q2l6tLum2EHhY"
+    b"0tWnQ9+h7qpWN3DORVojhyS3HdxYvREcS2hnzlera+Y6ktbsjYyF35HJh9boxEkr2UsHifbF"
+    b"CX81tWSH3owNDEZ1aijZpxoC14eOYNXOtDTzwOa4eD+SWkHq9rjtOZeaJnAv1jyUlubYHyXn"
+    b"E/opqvCBc0G1ennVzrh4DwDISJ2uBr3R3X+yOrlcbolRX8Y16aTU5QWG6C0nfTabnTVRjTAM"
+    b"WyodCPRVmq3UhDCzZUa8jRdy3zm3YrxzA+cCoz6O534huUrqCYA2As//LkiPRIai4jnqCg3s"
+    b"V9WcAcfj94LolHoPYLU0Aqq62ICzw4pZdM///q9HDStdnW+RXC6NRqlC65Xyv53cvOKnUe+Q"
+    b"XCMi06SRiR43DHotwURPtHvSTBj0VIKR29Js5FXXJzyQb6v3ujwej8fj8Uid+AMS4JbuhXD/"
+    b"gAAAAABJRU5ErkJggg=="
+)
+
+node_close = PyEmbeddedImage(
+    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
+    b"AAACpklEQVR4nO2YSWsVQRRGjwlOcWM0YCDguFHzUKMrccClszEgiCKSgBiCYOJGI7qX4MYg"
+    b"auLsD3DnhD5F/AGaxAHEZKFunDfqwiQ+KbgNl6K7051+TbpNHajV++7te19VV9dX4HA4HA7H"
+    b"xDAFOA5cAGrJMTuBkoy3QB05Za1qJPfNHMtzM3OBrUCLvCOvIjSzAOgQfdhoAbbIM1KhEjgI"
+    b"PAFGrML9xh0r/k2EGD2GgcfAAaCiXE1sAgZiFvLUyvExZnxJjT5gY9Imjsi/Yyd/DzwEbslS"
+    b"0r99ApZbeVYD3UBPyDC5TM4PATPUNt4mTvkkuww0KM1ea6mZJgokpwG44rOMO+MmagL+qgTv"
+    b"gBWWZpU1W6aJesrLSmBQPWMUaIwaPAf4oYL7A3aRfSk34VFjvaPfgGoicFYFfQUWBuhmAL3A"
+    b"bWAp6bIY+K7q6horYBbwWwUcJTt0qLp+AVVh4t1K/BmYRnaYLivEq29XmLhXCa+RPW6o+i6F"
+    b"CR8o4SGyx2FV3/0w4Usl3Eb22GHtpoH0K+F2su2B+ibF0upRwutkj5uqvotRt98vsuXlcvut"
+    b"ko+NJ24nm270JzBzrIAu61yzKOUClwH3gPPA1ADNEuuIciZK4moraEAObmlQLwdO71l7fDQ1"
+    b"1mfBLK/ZUR/QKEdmL3hQju1pNmEsQcHHlwxZx3izBcei0zI1xuRcFbeXlILVxIiYNO/ib40c"
+    b"kWxjZS4oxkVbgNU1drQo9jTMvnZbjtJvJkpil02uYoC//wO0kpANwIsElwemMM2zmPHPgXWU"
+    b"iQq5mikGzFDYeG3luhshZhh4BOwv53WQnxXeDDQDp2UrDBongPlWfJ3PzcuQ5GqW3JGsbBao"
+    b"lZnSzZwkp/jNzHr+k2aayDHzgHPyjlROdDEOh8PhmJz8A+PVbUCLkfVDAAAAAElFTkSuQmCC"
+)
+
+
+icons8_centerh_50 = VectorIcon(
+    "M 23.4815320307,48.8124690662 C 23.1957961233,48.0678532274 23.0830594543,36.8929321171 23.2310060995,23.9793110433 C 23.4611043587,3.89503184947 23.716895111,0.5 25,0.5 C 26.2923777019,0.5 26.5,3.87962962963 26.5,24.9166666667 C 26.5,43.5556297706 26.204337579,49.4318874737 25.2505259312,49.7498246896 C 24.5633151933,49.9788949356 23.7672679381,49.557084905 23.4815320307,48.8124690662 Z M 5.2,31.8 C 3.49433315332,30.0943331533 3.64738544542,19.537533519 5.3988551522,18.083942768 C 6.77561936461,16.9413299568 10.1467515776,18.574363024 16.5,23.4615237926 L 18.5,25 L 16.5,26.5384762074 C 14.2357722318,28.2802064821 7.04496406527,33 6.65559094272,33 C 6.51501592422,33 5.86,32.46 5.2,31.8 Z M 37,29.6214380251 C 33.975,27.8650464301 31.5,25.7884692723 31.5,25.0068221188 C 31.5,24.2251749654 34.1464588219,22.0977065982 37.3810196041,20.2791146362 C 44.7105737226,16.1581631062 46,16.8528197296 46,24.9224447154 C 46,29.8955171137 44.7797216097,33.19853933 43.05,32.9074386443 C 42.7475,32.8565298987 40.025,31.37782962 37,29.6214380251 Z M 11.4529469789,26.8394849797 C 12.8538261405,26.2012017185 14,25.3734334777 14,25 C 14,24.3913047117 9.57843532493,22 8.45294697887,22 C 8.20382614049,22 8,23.35 8,25 C 8,28.4092552194 8.00353888442,28.4111404857 11.4529469789,26.8394849797 Z M 42,25 C 42,21.5907447806 41.9964611156,21.5888595143 38.5470530211,23.1605150203 C 35.4123272686,24.5887916561 35.3474130241,25.3796404509 38.25,26.779505359 C 41.6491195451,28.4188388948 42,28.2523339214 42,25 Z"
+)
+
+icons8_cog_50 = VectorIcon(
+    "M 40.25 0 C 39.902344 -0.0117188 39.566406 0.15625 39.375 0.46875 L 37.78125 3.0625 C 37.242188 3.019531 36.722656 3.015625 36.1875 3.0625 L 34.5625 0.5 C 34.300781 0.0859375 33.761719 -0.0625 33.3125 0.125 L 30.5 1.3125 C 30.054688 1.5 29.796875 1.996094 29.90625 2.46875 L 30.59375 5.4375 C 30.179688 5.792969 29.789063 6.175781 29.4375 6.59375 L 26.46875 5.90625 C 25.984375 5.796875 25.527344 6.078125 25.34375 6.53125 L 24.1875 9.375 C 24.003906 9.824219 24.152344 10.335938 24.5625 10.59375 L 27.125 12.1875 C 27.082031 12.730469 27.105469 13.300781 27.15625 13.84375 L 24.59375 15.4375 C 24.179688 15.699219 24.027344 16.238281 24.21875 16.6875 L 25.40625 19.5 C 25.59375 19.945313 26.058594 20.207031 26.53125 20.09375 L 29.5 19.4375 C 29.851563 19.847656 30.238281 20.214844 30.65625 20.5625 L 30 23.53125 C 29.894531 24.007813 30.140625 24.503906 30.59375 24.6875 L 33.4375 25.84375 C 33.558594 25.894531 33.6875 25.90625 33.8125 25.90625 C 34.148438 25.90625 34.46875 25.734375 34.65625 25.4375 L 36.3125 22.84375 C 36.855469 22.882813 37.402344 22.863281 37.9375 22.8125 L 39.59375 25.40625 C 39.859375 25.8125 40.367188 25.96875 40.8125 25.78125 L 43.65625 24.59375 C 44.109375 24.402344 44.332031 23.914063 44.21875 23.4375 L 43.5 20.46875 C 43.902344 20.121094 44.28125 19.722656 44.625 19.3125 L 47.625 19.96875 C 48.109375 20.074219 48.597656 19.824219 48.78125 19.375 L 49.9375 16.53125 C 50.121094 16.074219 49.949219 15.535156 49.53125 15.28125 L 46.90625 13.6875 C 46.945313 13.15625 46.953125 12.625 46.90625 12.09375 L 49.46875 10.40625 C 49.875 10.144531 50.0625 9.632813 49.875 9.1875 L 48.65625 6.375 C 48.46875 5.925781 47.984375 5.667969 47.5 5.78125 L 44.53125 6.5 C 44.179688 6.089844 43.820313 5.722656 43.40625 5.375 L 44.03125 2.375 C 44.132813 1.898438 43.886719 1.402344 43.4375 1.21875 L 40.59375 0.0625 C 40.480469 0.015625 40.367188 0.00390625 40.25 0 Z M 37 8.875 C 37.53125 8.867188 38.070313 8.945313 38.59375 9.15625 C 40.6875 10.007813 41.695313 12.40625 40.84375 14.5 C 39.992188 16.59375 37.59375 17.601563 35.5 16.75 C 33.40625 15.898438 32.398438 13.5 33.25 11.40625 C 33.890625 9.835938 35.40625 8.898438 37 8.875 Z M 14.53125 17 C 14.042969 17 13.609375 17.359375 13.53125 17.84375 L 12.90625 21.78125 C 12.164063 22.007813 11.429688 22.296875 10.75 22.65625 L 7.5 20.34375 C 7.101563 20.058594 6.566406 20.09375 6.21875 20.4375 L 3.46875 23.1875 C 3.125 23.53125 3.097656 24.070313 3.375 24.46875 L 5.65625 27.75 C 5.289063 28.4375 4.980469 29.160156 4.75 29.90625 L 0.84375 30.53125 C 0.359375 30.613281 0 31.042969 0 31.53125 L 0 35.40625 C 0 35.890625 0.335938 36.320313 0.8125 36.40625 L 4.75 37.09375 C 4.980469 37.839844 5.289063 38.5625 5.65625 39.25 L 3.34375 42.5 C 3.058594 42.898438 3.089844 43.433594 3.4375 43.78125 L 6.1875 46.53125 C 6.53125 46.875 7.070313 46.902344 7.46875 46.625 L 10.75 44.34375 C 11.433594 44.707031 12.132813 44.992188 12.875 45.21875 L 13.53125 49.15625 C 13.609375 49.636719 14.042969 50 14.53125 50 L 18.40625 50 C 18.890625 50 19.320313 49.664063 19.40625 49.1875 L 20.09375 45.1875 C 20.835938 44.957031 21.539063 44.675781 22.21875 44.3125 L 25.53125 46.625 C 25.929688 46.902344 26.46875 46.875 26.8125 46.53125 L 29.5625 43.78125 C 29.910156 43.433594 29.941406 42.867188 29.65625 42.46875 L 27.3125 39.21875 C 27.671875 38.539063 27.960938 37.824219 28.1875 37.09375 L 32.1875 36.40625 C 32.667969 36.320313 33 35.890625 33 35.40625 L 33 31.53125 C 33 31.042969 32.640625 30.640625 32.15625 30.5625 L 28.1875 29.90625 C 27.960938 29.175781 27.671875 28.460938 27.3125 27.78125 L 29.625 24.46875 C 29.902344 24.070313 29.875 23.53125 29.53125 23.1875 L 26.78125 20.4375 C 26.433594 20.089844 25.898438 20.058594 25.5 20.34375 L 22.21875 22.6875 C 21.535156 22.324219 20.832031 22.039063 20.09375 21.8125 L 19.40625 17.84375 C 19.324219 17.363281 18.890625 17 18.40625 17 Z M 16.5 28.34375 C 19.355469 28.34375 21.65625 30.644531 21.65625 33.5 C 21.65625 36.355469 19.351563 38.65625 16.5 38.65625 C 13.648438 38.65625 11.34375 36.355469 11.34375 33.5 C 11.34375 30.644531 13.644531 28.34375 16.5 28.34375 Z"
+)
+
+icons8_comments_50 = VectorIcon(
+    "M 3 6 L 3 26 L 12.585938 26 L 16 29.414063 L 19.414063 26 L 29 26 L 29 6 Z M 5 8 L 27 8 L 27 24 L 18.585938 24 L 16 26.585938 L 13.414063 24 L 5 24 Z M 9 11 L 9 13 L 23 13 L 23 11 Z M 9 15 L 9 17 L 23 17 L 23 15 Z M 9 19 L 9 21 L 19 21 L 19 19 Z"
+)
+
+icons8_computer_support_50 = VectorIcon(
+    "M 7 8 C 4.757 8 3 9.757 3 12 L 3 34 C 3 34.738 3.2050625 35.413 3.5390625 36 L 1 36 C 0.447 36 0 36.447 0 37 C 0 39.757 2.243 42 5 42 L 23.896484 42 L 25.896484 40 L 5 40 C 3.696 40 2.584875 39.164 2.171875 38 L 7 38 L 27.896484 38 L 29.896484 36 L 7 36 C 5.859 36 5 35.141 5 34 L 5 12 C 5 10.859 5.859 10 7 10 L 43 10 C 44.141 10 45 10.859 45 12 L 45 22.451172 C 45.705 22.701172 46.374 23.023156 47 23.410156 L 47 12 C 47 9.757 45.243 8 43 8 L 7 8 z M 41.5 24 C 36.81752 24 33 27.81752 33 32.5 C 33 33.484227 33.290881 34.378694 33.599609 35.255859 L 25.064453 43.789062 C 23.652066 45.20145 23.652066 47.521207 25.064453 48.933594 C 26.47684 50.345981 28.79855 50.345981 30.210938 48.933594 L 38.742188 40.400391 C 39.620086 40.709768 40.51563 41 41.5 41 C 46.18248 41 50 37.18248 50 32.5 C 50 31.568566 49.845983 30.67281 49.570312 29.837891 L 49.074219 28.335938 L 47.929688 29.429688 L 43.267578 33.882812 L 40.810547 33.189453 L 40.117188 30.732422 L 45.664062 24.923828 L 44.160156 24.429688 C 43.3262 24.155463 42.431434 24 41.5 24 z M 41.5 26 C 41.611788 26 41.710057 26.045071 41.820312 26.050781 L 37.882812 30.175781 L 39.189453 34.810547 L 43.822266 36.117188 L 47.947266 32.177734 C 47.95306 32.288755 48 32.387457 48 32.5 C 48 36.10152 45.10152 39 41.5 39 C 40.542813 39 39.642068 38.788477 38.818359 38.414062 L 38.1875 38.126953 L 28.794922 47.519531 C 28.147309 48.167144 27.126129 48.167144 26.478516 47.519531 C 25.830902 46.871918 25.830902 45.850738 26.478516 45.203125 L 35.871094 35.8125 L 35.583984 35.181641 C 35.21045 34.35882 35 33.457187 35 32.5 C 35 28.89848 37.89848 26 41.5 26 z"
+)
+
+icons8_connected_50 = VectorIcon(
+    "M 42.470703 3.9863281 A 1.50015 1.50015 0 0 0 41.439453 4.4394531 L 36.541016 9.3359375 C 34.254638 7.6221223 31.461881 6.8744981 28.753906 7.234375 A 1.50015 1.50015 0 1 0 29.148438 10.207031 C 31.419618 9.9052025 33.783172 10.625916 35.546875 12.357422 A 1.50015 1.50015 0 0 0 35.650391 12.460938 C 38.608211 15.481642 38.60254 20.274411 35.605469 23.271484 L 32.5 26.378906 L 21.621094 15.5 L 24.728516 12.394531 A 1.5012209 1.5012209 0 0 0 22.605469 10.271484 L 19.5 13.378906 L 18.560547 12.439453 A 1.50015 1.50015 0 1 0 16.439453 14.560547 L 18.265625 16.386719 A 1.50015 1.50015 0 0 0 18.611328 16.732422 L 31.265625 29.386719 A 1.50015 1.50015 0 0 0 31.611328 29.732422 L 33.439453 31.560547 A 1.50015 1.50015 0 1 0 35.560547 29.439453 L 34.621094 28.5 L 37.728516 25.394531 C 41.515681 21.607366 41.677294 15.729393 38.574219 11.548828 L 43.560547 6.5605469 A 1.50015 1.50015 0 0 0 42.470703 3.9863281 z M 13.484375 15.984375 A 1.50015 1.50015 0 0 0 12.439453 18.560547 L 13.378906 19.5 L 10.271484 22.605469 C 6.4843192 26.392634 6.3227056 32.270607 9.4257812 36.451172 L 4.4394531 41.439453 A 1.50015 1.50015 0 1 0 6.5605469 43.560547 L 11.542969 38.580078 C 15.593418 41.589531 21.232231 41.53733 25.033203 38.070312 A 1.50015 1.50015 0 1 0 23.011719 35.855469 C 20.007171 38.596036 15.400503 38.522732 12.464844 35.654297 A 1.50015 1.50015 0 0 0 12.349609 35.539062 C 9.3917898 32.518358 9.3974578 27.725589 12.394531 24.728516 L 15.5 21.621094 L 29.439453 35.560547 A 1.50015 1.50015 0 1 0 31.560547 33.439453 L 16.734375 18.613281 A 1.50015 1.50015 0 0 0 16.388672 18.267578 L 14.560547 16.439453 A 1.50015 1.50015 0 0 0 13.484375 15.984375 z"
+)
+
+icons8_console_50 = VectorIcon(
+    "M 2.84375 3 C 1.285156 3 0 4.285156 0 5.84375 L 0 10.8125 C -0.00390625 10.855469 -0.00390625 10.894531 0 10.9375 L 0 46 C 0 46.550781 0.449219 47 1 47 L 49 47 C 49.550781 47 50 46.550781 50 46 L 50 11 C 50 10.96875 50 10.9375 50 10.90625 L 50 5.84375 C 50 4.285156 48.714844 3 47.15625 3 Z M 2.84375 5 L 47.15625 5 C 47.636719 5 48 5.363281 48 5.84375 L 48 10 L 2 10 L 2 5.84375 C 2 5.363281 2.363281 5 2.84375 5 Z M 2 12 L 48 12 L 48 45 L 2 45 Z M 14.90625 19.9375 C 14.527344 19.996094 14.214844 20.265625 14.101563 20.628906 C 13.988281 20.996094 14.09375 21.394531 14.375 21.65625 L 19.59375 27.03125 L 14.21875 32.25 C 13.820313 32.636719 13.816406 33.273438 14.203125 33.671875 C 14.589844 34.070313 15.226563 34.074219 15.625 33.6875 L 21.6875 27.75 L 22.40625 27.0625 L 21.71875 26.34375 L 15.78125 20.25 C 15.601563 20.058594 15.355469 19.949219 15.09375 19.9375 C 15.03125 19.929688 14.96875 19.929688 14.90625 19.9375 Z M 22.8125 32 C 22.261719 32.050781 21.855469 32.542969 21.90625 33.09375 C 21.957031 33.644531 22.449219 34.050781 23 34 L 36 34 C 36.359375 34.003906 36.695313 33.816406 36.878906 33.503906 C 37.058594 33.191406 37.058594 32.808594 36.878906 32.496094 C 36.695313 32.183594 36.359375 31.996094 36 32 L 23 32 C 22.96875 32 22.9375 32 22.90625 32 C 22.875 32 22.84375 32 22.8125 32 Z"
+)
+
+icons8_curly_brackets_50 = VectorIcon(
+    "M 9.5703125 4 C 5.9553125 4 4.4385 5.3040312 4.4375 8.4570312 L 4.4375 10.648438 C 4.4375 12.498437 3.9412656 13.115234 2.4472656 13.115234 L 2.4472656 16.398438 C 3.9402656 16.398437 4.4375 17.014563 4.4375 18.851562 L 4.4375 21.435547 C 4.4375 24.660547 5.9673125 26 9.5703125 26 L 10.816406 26 L 10.816406 23.404297 L 10.283203 23.404297 C 8.3622031 23.404297 7.7460938 22.835328 7.7460938 20.986328 L 7.7460938 17.904297 C 7.7460938 16.091297 6.8912969 15.024141 5.2792969 14.869141 L 5.2792969 14.65625 C 6.9632969 14.50225 7.7460938 13.578656 7.7460938 11.847656 L 7.7460938 9.0371094 C 7.7460938 7.1761094 8.3512031 6.6074219 10.283203 6.6074219 L 10.816406 6.6074219 L 10.816406 4 L 9.5703125 4 z M 19.183594 4 L 19.183594 6.6074219 L 19.716797 6.6074219 C 21.648797 6.6074219 22.253906 7.1761094 22.253906 9.0371094 L 22.253906 11.847656 C 22.253906 13.577656 23.037703 14.50225 24.720703 14.65625 L 24.720703 14.871094 C 23.107703 15.025094 22.253906 16.090297 22.253906 17.904297 L 22.253906 20.986328 C 22.253906 22.835328 21.636797 23.404297 19.716797 23.404297 L 19.183594 23.404297 L 19.183594 26.001953 L 20.429688 26.001953 C 24.033688 26.001953 25.5625 24.6615 25.5625 21.4375 L 25.5625 18.853516 C 25.5625 17.015516 26.058734 16.398438 27.552734 16.398438 L 27.552734 13.115234 C 26.059734 13.115234 25.5625 12.499391 25.5625 10.650391 L 25.5625 8.4570312 C 25.5625 5.3040312 24.044687 4 20.429688 4 L 19.183594 4 z"
+)
+
+icons8_emergency_stop_button_50 = VectorIcon(
+    stroke="M33.1,40.2c-2.7,1.5-5.8,2.4-9.1,2.4C13.7,42.6,5.4,34.3,5.4,24c0-2.9,0.7-5.6,1.8-8.1 M13.7,8.5c2.9-2,6.5-3.1,10.3-3.1c10.3,0,18.6,8.3,18.6,18.6c0,2.8-0.6,5.4-1.7,7.7 M19.3,15.1c1.4-0.7,3-1.2,4.7-1.2c3.4,0,6.4,1.7,8.2,4.2 M18.4,32.5c-2.8-1.8-4.6-4.9-4.6-8.5c0-1.5,0.3-2.9,0.9-4.2 M34,25.7c-0.8,4.8-5,8.4-10,8.4",
+    fill="M30.5,21.4l4.2,0.7c0.6,0.1,1.2-0.4,1.2-1v-4.2c0-0.8-1-1.3-1.6-0.8L30,19.7C29.3,20.2,29.6,21.3,30.5,21.4zM24.4,30.7l-2.7,3.2c-0.4,0.5-0.3,1.2,0.3,1.5l3.6,2.1c0.7,0.4,1.6-0.2,1.5-1l-0.9-5.3C26,30.4,25,30.1,24.4,30.7zM18.2,22L16.6,18c-0.2-0.6-0.9-0.8-1.4-0.5l-3.6,2.1c-0.7,0.4-0.6,1.5,0.2,1.8l5.1,1.8C17.7,23.6,18.5,22.8,18.2,22z",
+)
+
+icons8_laptop_settings_50 = VectorIcon(
+    "M 37 0 L 36.400391 3.1992188 C 36.100391 3.2992188 35.700391 3.3996094 35.400391 3.5996094 L 32.699219 1.6992188 L 29.699219 4.6992188 L 31.5 7.1992188 C 31.4 7.5992188 31.199609 7.9007812 31.099609 8.3007812 L 28 8.8007812 L 28 13 L 31.099609 13.5 C 31.199609 13.8 31.3 14.2 31.5 14.5 L 29.699219 17.199219 L 32.699219 20.199219 L 35.400391 18.400391 C 35.800391 18.600391 36.1 18.700781 36.5 18.800781 L 37 22 L 41.099609 22 L 41.699219 18.900391 C 41.999219 18.800391 42.299219 18.7 42.699219 18.5 L 45.400391 20.300781 L 48.400391 17.300781 L 46.5 14.699219 C 46.7 14.299219 46.800391 13.899609 46.900391 13.599609 L 50 13 L 50 8.8007812 L 46.800781 8.3007812 C 46.700781 8.0007812 46.600391 7.6007812 46.400391 7.3007812 L 48.199219 4.5996094 L 45.300781 1.6992188 L 42.699219 3.5996094 C 42.399219 3.3996094 41.999219 3.2992188 41.699219 3.1992188 L 41.199219 0 L 37 0 z M 38.699219 2 L 39.5 2 L 39.900391 4.6992188 L 40.5 4.9003906 C 41.1 5.1003906 41.699219 5.2996094 42.199219 5.5996094 L 42.800781 6 L 45.099609 4.3007812 L 45.599609 4.8007812 L 44 7.0996094 L 44.300781 7.5996094 C 44.600781 8.1996094 44.8 8.8003906 45 9.4003906 L 45.199219 10 L 48 10.400391 L 48 11.199219 L 45.300781 11.800781 L 45.099609 12.400391 C 44.899609 13.000391 44.700391 13.599609 44.400391 14.099609 L 44 14.699219 L 45.699219 17 L 45.099609 17.599609 L 42.800781 16 L 42.300781 16.300781 C 41.700781 16.600781 41.1 16.8 40.5 17 L 39.900391 17.199219 L 39.400391 20 L 38.599609 20 L 38.199219 17.300781 L 37.599609 17.099609 C 36.999609 16.899609 36.400391 16.700391 35.900391 16.400391 L 35.300781 16 L 32.900391 17.599609 L 32.300781 17 L 33.900391 14.699219 L 33.599609 14.199219 C 33.299609 13.599219 33.100391 12.900391 32.900391 12.400391 L 32.699219 11.800781 L 30 11.300781 L 30 10.5 L 32.800781 10 L 32.900391 9.3007812 C 33.000391 8.8007812 33.2 8.1992188 33.5 7.6992188 L 33.900391 7.1992188 L 32.300781 4.9003906 L 32.900391 4.3007812 L 35.199219 5.9003906 L 35.699219 5.6992188 C 36.399219 5.3992188 36.999609 5.1003906 37.599609 4.9003906 L 38.199219 4.8007812 L 38.699219 2 z M 39 6.9003906 C 36.8 6.9003906 35 8.7003906 35 10.900391 C 35 13.100391 36.8 14.900391 39 14.900391 C 41.2 14.900391 43 13.200391 43 10.900391 C 43 8.7003906 41.2 6.9003906 39 6.9003906 z M 8 8 C 5.794 8 4 9.794 4 12 L 4 34 C 4 34.732221 4.2118795 35.409099 4.5566406 36 L 2 36 A 1.0001 1.0001 0 0 0 1 37 C 1 39.749516 3.2504839 42 6 42 L 44 42 C 46.749516 42 49 39.749516 49 37 A 1.0001 1.0001 0 0 0 48 36 L 45.443359 36 C 45.788121 35.409099 46 34.732221 46 34 L 46 21.943359 C 45.367 22.349359 44.702 22.708 44 23 L 44 34 C 44 35.103 43.103 36 42 36 L 8 36 C 6.897 36 6 35.103 6 34 L 6 12 C 6 10.897 6.897 10 8 10 L 26.050781 10 C 26.102781 9.317 26.208328 8.65 26.361328 8 L 8 8 z M 39 9 C 40.1 9 41 9.8 41 11 C 41 12.1 40.1 13 39 13 C 37.9 13 37 12.1 37 11 C 37 9.9 37.9 9 39 9 z M 3.4121094 38 L 8 38 L 42 38 L 46.587891 38 C 46.150803 39.112465 45.275852 40 44 40 L 6 40 C 4.7241482 40 3.8491966 39.112465 3.4121094 38 z"
+)
+
+icons8_laser_beam_52 = VectorIcon(
+    "M 24.90625 -0.03125 C 24.863281 -0.0234375 24.820313 -0.0117188 24.78125 0 C 24.316406 0.105469 23.988281 0.523438 24 1 L 24 27.9375 C 24 28.023438 24.011719 28.105469 24.03125 28.1875 C 22.859375 28.59375 22 29.6875 22 31 C 22 32.65625 23.34375 34 25 34 C 26.65625 34 28 32.65625 28 31 C 28 29.6875 27.140625 28.59375 25.96875 28.1875 C 25.988281 28.105469 26 28.023438 26 27.9375 L 26 1 C 26.011719 0.710938 25.894531 0.433594 25.6875 0.238281 C 25.476563 0.0390625 25.191406 -0.0585938 24.90625 -0.03125 Z M 35.125 12.15625 C 34.832031 12.210938 34.582031 12.394531 34.4375 12.65625 L 27.125 25.3125 C 26.898438 25.621094 26.867188 26.03125 27.042969 26.371094 C 27.222656 26.710938 27.578125 26.917969 27.960938 26.90625 C 28.347656 26.894531 28.6875 26.664063 28.84375 26.3125 L 36.15625 13.65625 C 36.34375 13.335938 36.335938 12.9375 36.140625 12.625 C 35.941406 12.308594 35.589844 12.128906 35.21875 12.15625 C 35.1875 12.15625 35.15625 12.15625 35.125 12.15625 Z M 17.78125 17.71875 C 17.75 17.726563 17.71875 17.738281 17.6875 17.75 C 17.375 17.824219 17.113281 18.042969 16.988281 18.339844 C 16.867188 18.636719 16.894531 18.976563 17.0625 19.25 L 21.125 26.3125 C 21.402344 26.796875 22.015625 26.964844 22.5 26.6875 C 22.984375 26.410156 23.152344 25.796875 22.875 25.3125 L 18.78125 18.25 C 18.605469 17.914063 18.253906 17.710938 17.875 17.71875 C 17.84375 17.71875 17.8125 17.71875 17.78125 17.71875 Z M 7 19.6875 C 6.566406 19.742188 6.222656 20.070313 6.140625 20.5 C 6.0625 20.929688 6.273438 21.359375 6.65625 21.5625 L 19.3125 28.875 C 19.796875 29.152344 20.410156 28.984375 20.6875 28.5 C 20.964844 28.015625 20.796875 27.402344 20.3125 27.125 L 7.65625 19.84375 C 7.488281 19.738281 7.292969 19.683594 7.09375 19.6875 C 7.0625 19.6875 7.03125 19.6875 7 19.6875 Z M 37.1875 22.90625 C 37.03125 22.921875 36.882813 22.976563 36.75 23.0625 L 29.6875 27.125 C 29.203125 27.402344 29.035156 28.015625 29.3125 28.5 C 29.589844 28.984375 30.203125 29.152344 30.6875 28.875 L 37.75 24.78125 C 38.164063 24.554688 38.367188 24.070313 38.230469 23.617188 C 38.09375 23.164063 37.660156 22.867188 37.1875 22.90625 Z M 0.71875 30 C 0.167969 30.078125 -0.21875 30.589844 -0.140625 31.140625 C -0.0625 31.691406 0.449219 32.078125 1 32 L 19 32 C 19.359375 32.003906 19.695313 31.816406 19.878906 31.503906 C 20.058594 31.191406 20.058594 30.808594 19.878906 30.496094 C 19.695313 30.183594 19.359375 29.996094 19 30 L 1 30 C 0.96875 30 0.9375 30 0.90625 30 C 0.875 30 0.84375 30 0.8125 30 C 0.78125 30 0.75 30 0.71875 30 Z M 30.71875 30 C 30.167969 30.078125 29.78125 30.589844 29.859375 31.140625 C 29.9375 31.691406 30.449219 32.078125 31 32 L 49 32 C 49.359375 32.003906 49.695313 31.816406 49.878906 31.503906 C 50.058594 31.191406 50.058594 30.808594 49.878906 30.496094 C 49.695313 30.183594 49.359375 29.996094 49 30 L 31 30 C 30.96875 30 30.9375 30 30.90625 30 C 30.875 30 30.84375 30 30.8125 30 C 30.78125 30 30.75 30 30.71875 30 Z M 19.75 32.96875 C 19.71875 32.976563 19.6875 32.988281 19.65625 33 C 19.535156 33.019531 19.417969 33.0625 19.3125 33.125 L 12.25 37.21875 C 11.898438 37.375 11.667969 37.714844 11.65625 38.101563 C 11.644531 38.484375 11.851563 38.839844 12.191406 39.019531 C 12.53125 39.195313 12.941406 39.164063 13.25 38.9375 L 20.3125 34.875 C 20.78125 34.675781 21.027344 34.160156 20.882813 33.671875 C 20.738281 33.183594 20.25 32.878906 19.75 32.96875 Z M 30.03125 33 C 29.597656 33.054688 29.253906 33.382813 29.171875 33.8125 C 29.09375 34.242188 29.304688 34.671875 29.6875 34.875 L 42.34375 42.15625 C 42.652344 42.382813 43.0625 42.414063 43.402344 42.238281 C 43.742188 42.058594 43.949219 41.703125 43.9375 41.320313 C 43.925781 40.933594 43.695313 40.59375 43.34375 40.4375 L 30.6875 33.125 C 30.488281 33.007813 30.257813 32.964844 30.03125 33 Z M 21.9375 35.15625 C 21.894531 35.164063 21.851563 35.175781 21.8125 35.1875 C 21.519531 35.242188 21.269531 35.425781 21.125 35.6875 L 13.84375 48.34375 C 13.617188 48.652344 13.585938 49.0625 13.761719 49.402344 C 13.941406 49.742188 14.296875 49.949219 14.679688 49.9375 C 15.066406 49.925781 15.40625 49.695313 15.5625 49.34375 L 22.875 36.6875 C 23.078125 36.367188 23.082031 35.957031 22.882813 35.628906 C 22.683594 35.304688 22.316406 35.121094 21.9375 35.15625 Z M 27.84375 35.1875 C 27.511719 35.234375 27.226563 35.445313 27.082031 35.746094 C 26.9375 36.046875 26.953125 36.398438 27.125 36.6875 L 31.21875 43.75 C 31.375 44.101563 31.714844 44.332031 32.101563 44.34375 C 32.484375 44.355469 32.839844 44.148438 33.019531 43.808594 C 33.195313 43.46875 33.164063 43.058594 32.9375 42.75 L 28.875 35.6875 C 28.671875 35.320313 28.257813 35.121094 27.84375 35.1875 Z M 24.90625 35.96875 C 24.863281 35.976563 24.820313 35.988281 24.78125 36 C 24.316406 36.105469 23.988281 36.523438 24 37 L 24 45.9375 C 23.996094 46.296875 24.183594 46.632813 24.496094 46.816406 C 24.808594 46.996094 25.191406 46.996094 25.503906 46.816406 C 25.816406 46.632813 26.003906 46.296875 26 45.9375 L 26 37 C 26.011719 36.710938 25.894531 36.433594 25.6875 36.238281 C 25.476563 36.039063 25.191406 35.941406 24.90625 35.96875 Z"
+)
+
+icons8_laser_beam_20 = icons8_laser_beam_52
+
+icons8_laser_beam_hazard_50 = VectorIcon(
+    "M 50 15.033203 C 48.582898 15.033232 47.16668 15.72259 46.375 17.101562 L 11.564453 77.705078 C 9.9806522 80.462831 12.019116 84 15.197266 84 L 84.802734 84 C 87.98159 84 90.021301 80.462831 88.4375 77.705078 L 53.626953 17.101562 C 52.834735 15.72278 51.417102 15.033174 50 15.033203 z M 50 16.966797 C 50.729648 16.966826 51.459796 17.344439 51.892578 18.097656 L 86.703125 78.701172 C 87.569324 80.209419 86.535879 82 84.802734 82 L 15.197266 82 C 13.465416 82 12.432629 80.209419 13.298828 78.701172 L 48.109375 18.097656 C 48.541695 17.344629 49.270352 16.966768 50 16.966797 z M 49.976562 21.332031 A 0.50005 0.50005 0 0 0 49.554688 21.607422 L 49.558594 21.595703 L 26.78125 61.25 A 0.5005035 0.5005035 0 1 0 27.648438 61.75 L 50.001953 22.833984 L 69.625 57 L 57.931641 57 C 57.862711 56.450605 57.737333 55.919306 57.5625 55.410156 L 59.892578 54.443359 A 0.50005 0.50005 0 0 0 59.689453 53.478516 A 0.50005 0.50005 0 0 0 59.509766 53.519531 L 57.177734 54.486328 C 56.861179 53.842222 56.462551 53.247463 55.992188 52.714844 L 61.314453 47.392578 A 0.50005 0.50005 0 0 0 60.949219 46.535156 A 0.50005 0.50005 0 0 0 60.607422 46.685547 L 55.285156 52.007812 C 54.752537 51.537449 54.157778 51.138821 53.513672 50.822266 L 54.480469 48.490234 A 0.50005 0.50005 0 0 0 54.009766 47.791016 A 0.50005 0.50005 0 0 0 53.556641 48.107422 L 52.589844 50.4375 C 51.927783 50.21016 51.227119 50.070675 50.5 50.025391 L 50.5 40.5 A 0.50005 0.50005 0 0 0 49.992188 39.992188 A 0.50005 0.50005 0 0 0 49.5 40.5 L 49.5 50.025391 C 48.772881 50.070675 48.072217 50.21016 47.410156 50.4375 L 46.443359 48.107422 A 0.50005 0.50005 0 0 0 45.974609 47.791016 A 0.50005 0.50005 0 0 0 45.519531 48.490234 L 46.486328 50.822266 C 45.842222 51.138821 45.247463 51.537449 44.714844 52.007812 L 39.392578 46.685547 A 0.50005 0.50005 0 0 0 39.035156 46.535156 A 0.50005 0.50005 0 0 0 38.685547 47.392578 L 44.007812 52.714844 C 43.537449 53.247463 43.138821 53.842222 42.822266 54.486328 L 40.490234 53.519531 A 0.50005 0.50005 0 0 0 40.294922 53.478516 A 0.50005 0.50005 0 0 0 40.107422 54.443359 L 42.4375 55.410156 C 42.21016 56.072217 42.070675 56.772881 42.025391 57.5 L 33.5 57.5 A 0.50005 0.50005 0 1 0 33.5 58.5 L 42.025391 58.5 C 42.070675 59.227119 42.21016 59.927783 42.4375 60.589844 L 40.107422 61.556641 A 0.50005 0.50005 0 1 0 40.490234 62.480469 L 42.822266 61.513672 C 43.138821 62.157778 43.537449 62.752537 44.007812 63.285156 L 38.685547 68.607422 A 0.50005 0.50005 0 1 0 39.392578 69.314453 L 44.714844 63.992188 C 45.247463 64.462551 45.842222 64.861179 46.486328 65.177734 L 45.519531 67.509766 A 0.50005 0.50005 0 1 0 46.443359 67.892578 L 47.410156 65.5625 C 48.072217 65.78984 48.772881 65.929325 49.5 65.974609 L 49.5 75.5 A 0.50005 0.50005 0 1 0 50.5 75.5 L 50.5 65.974609 C 51.227119 65.929325 51.927783 65.78984 52.589844 65.5625 L 53.556641 67.892578 A 0.50005 0.50005 0 1 0 54.480469 67.509766 L 53.513672 65.177734 C 54.157778 64.861179 54.752537 64.462551 55.285156 63.992188 L 60.607422 69.314453 A 0.50005 0.50005 0 1 0 61.314453 68.607422 L 55.992188 63.285156 C 56.462551 62.752537 56.861179 62.157778 57.177734 61.513672 L 59.509766 62.480469 A 0.50005 0.50005 0 1 0 59.892578 61.556641 L 57.5625 60.589844 C 57.737333 60.080694 57.862711 59.549395 57.931641 59 L 70.773438 59 L 81.685547 78 L 17.451172 78 A 0.50005 0.50005 0 1 0 17.451172 79 L 82.550781 79 A 0.50005 0.50005 0 0 0 82.984375 78.25 L 50.435547 21.582031 A 0.50005 0.50005 0 0 0 49.976562 21.332031 z M 44.826172 45.019531 A 0.50005 0.50005 0 0 0 44.371094 45.71875 L 44.753906 46.642578 A 0.50005 0.50005 0 1 0 45.677734 46.259766 L 45.294922 45.335938 A 0.50005 0.50005 0 0 0 44.826172 45.019531 z M 55.158203 45.021484 A 0.50005 0.50005 0 0 0 54.705078 45.335938 L 54.322266 46.259766 A 0.50005 0.50005 0 1 0 55.246094 46.642578 L 55.628906 45.71875 A 0.50005 0.50005 0 0 0 55.158203 45.021484 z M 49.939453 51.003906 A 0.50005 0.50005 0 0 0 50.0625 51.003906 C 50.967657 51.011882 51.829666 51.190519 52.621094 51.509766 A 0.50005 0.50005 0 0 0 52.751953 51.560547 C 53.549716 51.901213 54.268672 52.388578 54.880859 52.984375 A 0.50005 0.50005 0 0 0 55.009766 53.113281 C 55.608206 53.726739 56.097688 54.447709 56.439453 55.248047 A 0.50005 0.50005 0 0 0 56.488281 55.375 C 56.815986 56.185939 57 57.070277 57 58 C 57 58.944364 56.812181 59.84279 56.474609 60.664062 A 0.50005 0.50005 0 0 0 56.447266 60.736328 C 56.102786 61.548676 55.606272 62.280088 54.998047 62.900391 A 0.50005 0.50005 0 0 0 54.902344 62.996094 C 54.287775 63.59917 53.563359 64.091195 52.759766 64.435547 A 0.50005 0.50005 0 0 0 52.617188 64.490234 C 51.82726 64.808392 50.967598 64.987888 50.064453 64.996094 A 0.50005 0.50005 0 0 0 49.992188 64.992188 A 0.50005 0.50005 0 0 0 49.935547 64.996094 C 49.032638 64.98789 48.17257 64.810189 47.382812 64.492188 A 0.50005 0.50005 0 0 0 47.242188 64.435547 C 46.438807 64.091527 45.714172 63.600645 45.099609 62.998047 A 0.50005 0.50005 0 0 0 45 62.898438 C 44.391656 62.277526 43.894973 61.545514 43.550781 60.732422 A 0.50005 0.50005 0 0 0 43.525391 60.662109 C 43.195567 59.859085 43.011772 58.981915 43.003906 58.060547 A 0.50005 0.50005 0 0 0 43.003906 57.9375 C 43.011882 57.032344 43.190519 56.170334 43.509766 55.378906 A 0.50005 0.50005 0 0 0 43.560547 55.248047 C 43.901213 54.450284 44.388579 53.731328 44.984375 53.119141 A 0.50005 0.50005 0 0 0 45.113281 52.990234 C 45.726739 52.391794 46.447709 51.902313 47.248047 51.560547 A 0.50005 0.50005 0 0 0 47.375 51.511719 C 48.168096 51.191224 49.032048 51.011653 49.939453 51.003906 z M 37.523438 52.330078 A 0.50005 0.50005 0 0 0 37.335938 53.294922 L 38.259766 53.677734 A 0.50005 0.50005 0 1 0 38.642578 52.753906 L 37.71875 52.371094 A 0.50005 0.50005 0 0 0 37.523438 52.330078 z M 62.460938 52.330078 A 0.50005 0.50005 0 0 0 62.28125 52.371094 L 61.357422 52.753906 A 0.50005 0.50005 0 1 0 61.740234 53.677734 L 62.664062 53.294922 A 0.50005 0.50005 0 0 0 62.460938 52.330078 z M 38.439453 62.28125 A 0.50005 0.50005 0 0 0 38.259766 62.322266 L 37.335938 62.705078 A 0.50005 0.50005 0 1 0 37.71875 63.628906 L 38.642578 63.246094 A 0.50005 0.50005 0 0 0 38.439453 62.28125 z M 61.546875 62.28125 A 0.50005 0.50005 0 0 0 61.357422 63.246094 L 62.28125 63.628906 A 0.50005 0.50005 0 1 0 62.664062 62.705078 L 61.740234 62.322266 A 0.50005 0.50005 0 0 0 61.546875 62.28125 z M 25.498047 63.994141 A 0.50005 0.50005 0 0 0 25.058594 64.251953 L 23.335938 67.251953 A 0.50005 0.50005 0 1 0 24.203125 67.748047 L 25.925781 64.748047 A 0.50005 0.50005 0 0 0 25.498047 63.994141 z M 22.626953 68.994141 A 0.50005 0.50005 0 0 0 22.185547 69.251953 L 21.613281 70.251953 A 0.50005 0.50005 0 1 0 22.480469 70.748047 L 23.052734 69.748047 A 0.50005 0.50005 0 0 0 22.626953 68.994141 z M 45.207031 69.042969 A 0.50005 0.50005 0 0 0 44.753906 69.357422 L 44.371094 70.28125 A 0.50005 0.50005 0 1 0 45.294922 70.664062 L 45.677734 69.740234 A 0.50005 0.50005 0 0 0 45.207031 69.042969 z M 54.777344 69.042969 A 0.50005 0.50005 0 0 0 54.322266 69.740234 L 54.705078 70.664062 A 0.50005 0.50005 0 1 0 55.628906 70.28125 L 55.246094 69.357422 A 0.50005 0.50005 0 0 0 54.777344 69.042969 z"
+)
+
+icons8_laser_beam_hazard2_50 = icons8_laser_beam_hazard_50
+
+icons8_move_50 = VectorIcon(
+    "M50.6,21.7L61,11.2v32.5c0,1.7,1.3,3,3,3s3-1.3,3-3V11.2l10.4,10.4c0.6,0.6,1.4,0.9,2.1,0.9s1.5-0.3,2.1-0.9	c1.2-1.2,1.2-3.1,0-4.2L66.1,1.9c-1.2-1.2-3.1-1.2-4.2,0L46.3,17.4c-1.2,1.2-1.2,3.1,0,4.2C47.5,22.8,49.4,22.8,50.6,21.7z M61.9,126.1c0.6,0.6,1.4,0.9,2.1,0.9s1.5-0.3,2.1-0.9l15.6-15.6c1.2-1.2,1.2-3.1,0-4.2c-1.2-1.2-3.1-1.2-4.2,0	L67,116.8V84.3c0-1.7-1.3-3-3-3s-3,1.3-3,3v32.5l-10.4-10.4c-1.2-1.2-3.1-1.2-4.2,0c-1.2,1.2-1.2,3.1,0,4.2L61.9,126.1z M17.4,81.7c0.6,0.6,1.4,0.9,2.1,0.9s1.5-0.3,2.1-0.9c1.2-1.2,1.2-3.1,0-4.2L11.2,67h32.5c1.7,0,3-1.3,3-3	s-1.3-3-3-3H11.2l10.4-10.4c1.2-1.2,1.2-3.1,0-4.2c-1.2-1.2-3.1-1.2-4.2,0L1.9,61.9C1.3,62.4,1,63.2,1,64s0.3,1.6,0.9,2.1L17.4,81.7	z M126.1,61.9l-15.6-15.6c-1.2-1.2-3.1-1.2-4.2,0c-1.2,1.2-1.2,3.1,0,4.2L116.8,61H84.3c-1.7,0-3,1.3-3,3	s1.3,3,3,3h32.5l-10.4,10.4c-1.2,1.2-1.2,3.1,0,4.2c0.6,0.6,1.4,0.9,2.1,0.9s1.5-0.3,2.1-0.9l15.6-15.6c0.6-0.6,0.9-1.3,0.9-2.1	S126.7,62.4,126.1,61.9z"
+)
+
+icons8_opened_folder_50 = VectorIcon(
+    "M 3 4 C 1.355469 4 0 5.355469 0 7 L 0 43.90625 C -0.0625 44.136719 -0.0390625 44.378906 0.0625 44.59375 C 0.34375 45.957031 1.5625 47 3 47 L 42 47 C 43.492188 47 44.71875 45.875 44.9375 44.4375 C 44.945313 44.375 44.964844 44.3125 44.96875 44.25 C 44.96875 44.230469 44.96875 44.207031 44.96875 44.1875 L 45 44.03125 C 45 44.019531 45 44.011719 45 44 L 49.96875 17.1875 L 50 17.09375 L 50 17 C 50 15.355469 48.644531 14 47 14 L 47 11 C 47 9.355469 45.644531 8 44 8 L 18.03125 8 C 18.035156 8.003906 18.023438 8 18 8 C 17.96875 7.976563 17.878906 7.902344 17.71875 7.71875 C 17.472656 7.4375 17.1875 6.96875 16.875 6.46875 C 16.5625 5.96875 16.226563 5.4375 15.8125 4.96875 C 15.398438 4.5 14.820313 4 14 4 Z M 3 6 L 14 6 C 13.9375 6 14.066406 6 14.3125 6.28125 C 14.558594 6.5625 14.84375 7.03125 15.15625 7.53125 C 15.46875 8.03125 15.8125 8.5625 16.21875 9.03125 C 16.625 9.5 17.179688 10 18 10 L 44 10 C 44.5625 10 45 10.4375 45 11 L 45 14 L 8 14 C 6.425781 14 5.171875 15.265625 5.0625 16.8125 L 5.03125 16.8125 L 5 17 L 2 33.1875 L 2 7 C 2 6.4375 2.4375 6 3 6 Z M 8 16 L 47 16 C 47.5625 16 48 16.4375 48 17 L 43.09375 43.53125 L 43.0625 43.59375 C 43.050781 43.632813 43.039063 43.675781 43.03125 43.71875 C 43.019531 43.757813 43.007813 43.800781 43 43.84375 C 43 43.863281 43 43.886719 43 43.90625 C 43 43.917969 43 43.925781 43 43.9375 C 42.984375 43.988281 42.976563 44.039063 42.96875 44.09375 C 42.964844 44.125 42.972656 44.15625 42.96875 44.1875 C 42.964844 44.230469 42.964844 44.269531 42.96875 44.3125 C 42.84375 44.71875 42.457031 45 42 45 L 3 45 C 2.4375 45 2 44.5625 2 44 L 6.96875 17.1875 L 7 17.09375 L 7 17 C 7 16.4375 7.4375 16 8 16 Z"
+)
+
+icons8_pause_50 = VectorIcon(
+    "M 12 8 L 12 42 L 22 42 L 22 8 Z M 28 8 L 28 42 L 38 42 L 38 8 Z"
+)
+
+icons8_save_50 = VectorIcon(
+    "M 7 4 C 5.3545455 4 4 5.3545455 4 7 L 4 43 C 4 44.645455 5.3545455 46 7 46 L 43 46 C 44.645455 46 46 44.645455 46 43 L 46 13.199219 A 1.0001 1.0001 0 0 0 45.707031 12.492188 L 37.507812 4.2929688 A 1.0001 1.0001 0 0 0 36.800781 4 L 7 4 z M 7 6 L 12 6 L 12 18 C 12 19.645455 13.354545 21 15 21 L 34 21 C 35.645455 21 37 19.645455 37 18 L 37 6.6132812 L 44 13.613281 L 44 43 C 44 43.554545 43.554545 44 43 44 L 38 44 L 38 29 C 38 27.354545 36.645455 26 35 26 L 15 26 C 13.354545 26 12 27.354545 12 29 L 12 44 L 7 44 C 6.4454545 44 6 43.554545 6 43 L 6 7 C 6 6.4454545 6.4454545 6 7 6 z M 14 6 L 35 6 L 35 18 C 35 18.554545 34.554545 19 34 19 L 15 19 C 14.445455 19 14 18.554545 14 18 L 14 6 z M 29 8 A 1.0001 1.0001 0 0 0 28 9 L 28 16 A 1.0001 1.0001 0 0 0 29 17 L 32 17 A 1.0001 1.0001 0 0 0 33 16 L 33 9 A 1.0001 1.0001 0 0 0 32 8 L 29 8 z M 30 10 L 31 10 L 31 15 L 30 15 L 30 10 z M 15 28 L 35 28 C 35.554545 28 36 28.445455 36 29 L 36 44 L 14 44 L 14 29 C 14 28.445455 14.445455 28 15 28 z M 8 40 L 8 42 L 10 42 L 10 40 L 8 40 z M 40 40 L 40 42 L 42 42 L 42 40 L 40 40 z"
+)
+
+icons8_separate_for_every_new_imported_file = VectorIcon(
+    "M 16 4 L 16 8 L 10 8 L 10 12 L 4 12 L 4 28 L 7 28 L 12 28 L 12 26 L 7 26 L 6 26 L 6 14 L 14 14 L 14 19 L 16 19 L 16 12 L 12 12 L 12 10 L 20 10 L 20 24 L 22 24 L 22 20 L 24 20 L 24 18 L 22 18 L 22 8 L 18 8 L 18 6 L 26 6 L 26 11 L 28 11 L 28 4 L 16 4 z M 27 13 L 24 16 L 26 16 L 26 20 L 28 20 L 28 16 L 30 16 L 27 13 z M 15 21 L 12 24 L 14 24 L 14 28 L 16 28 L 16 24 L 18 24 L 15 21 z"
+)
+
+# The following icons were designed by the mk-Team themselves...
+icon_fractal = VectorIcon(fill="", stroke="M 0,0 L 4095,0 L 6143,-3547 L 4095,-7094 L 6143,-10641 L 10239,-10641 L 12287,-7094 M 12287,-7094 L 10239,-3547 L 12287,0 L 16383,0 M 16383,0 L 18431,-3547 L 22527,-3547 L 24575,0 L 28671,0 L 30719,-3547 L 28671,-7094 L 24575,-7094 L 22527,-10641 L 24575,-14188 M 24575,-14188 L 22527,-17735 L 18431,-17735 L 16383,-14188 M 16383,-14188 L 12287,-14188 L 10239,-17735 L 12287,-21283 L 16383,-21283 L 18431,-24830 L 16383,-28377 M 16383,-28377 L 18431,-31924 L 22527,-31924 L 24575,-28377 L 28671,-28377 L 30719,-31924 L 28671,-35471 L 24575,-35471 L 22527,-39019 L 24575,-42566 L 28671,-42566 L 30719,-46113 L 28671,-49660 L 30719,-53207 L 34815,-53207 L 36863,-49660 L 34815,-46113 L 36863,-42566 L 40959,-42566 L 43007,-39019 L 40959,-35471 L 36863,-35471 L 34815,-31924 L 36863,-28377 L 40959,-28377 L 43007,-31924 L 47103,-31924 L 49151,-28377 L 47103,-24830 L 49151,-21283 L 53247,-21283 L 55295,-17735 L 53247,-14188 L 49151,-14188 L 47103,-17735 L 43007,-17735 L 40959,-14188 L 43007,-10641 L 40959,-7094 L 36863,-7094 L 34815,-3547 L 36863,0 L 40959,0 M 40959,0 L 43007,-3547 L 47103,-3547 L 49151,0 M 49151,0 L 53247,0 L 55295,-3547 L 53247,-7094 L 55295,-10641 L 59391,-10641 L 61439,-7094 L 59391,-3547 L 61439,0 L 65535,0")
+
+icon_mk_circle = VectorIcon(fill="", stroke="M 15, 15 a 15,15 0 1,0 1,0 z")
+
+icon_mk_ellipse = VectorIcon(fill="", stroke="M 15, 7.5 a 15,7.5 0 1,0 1,0 z")
+
+icon_mk_rectangular = VectorIcon(
+    fill=(
+        "M 5 0 a 5 5, 0 1,0 1,0",
+        "M 50 0 a 5 5, 0 1,0 1,0",
+        "M 50 30 a 5 5, 0 1,0 1,0",
+        "M 5 30 a 5 5, 0 1,0 1,0",
+    )
+    ,
+    stroke=(
+        "M 5 5 h45 v30 h-45 v-30",
+    ),
+)
+
+icon_mk_polyline = VectorIcon(
+    fill=(
+        "M 5,45 a 5,5, 0 1,0 1,0",
+        "M 20,15 a 5,5, 0 1,0 1,0",
+        "M 40,35 a 5,5, 0 1,0 1,0",
+        "M 60,5 a 5,5, 0 1,0 1,0",
+    )
+    ,
+    stroke=(
+        "M 5,50 L 20 20 L 40 40 L 60 10",
+    ),
+)
+
+icon_mk_point = VectorIcon(
+    fill="M 15, 12 a 3,3 0 1,0 1,0 z",
+    stroke=(
+        "M 15, 0 a 15,15 0 1,0 1,0 z",
+        "M 15, 5 a 10,10 0 1,0 1,0 z",
+    )
+)
+
+icon_mk_align_right = VectorIcon(
+    fill="M 20,5 h20 v10 h-20 z",
+    stroke=(
+        "M 10,20 h30 v10 h-30 z",
+        "M 20,5 h20 v10 h-20 z",
+        "M 45,0 v35",
+    )
+)
+
+icon_mk_align_left = VectorIcon(
+    fill="M 5,5 h20 v10 h-20 z",
+    stroke=(
+        "M 5,20 h30 v10 h-30 z",
+        "M 5,5 h20 v10 h-20 z",
+        "M 0,0 v35",
+    )
+)
+
+icon_mk_align_top = VectorIcon(
+    fill="M 20,5 v20 h10 v-20 z",
+    stroke=(
+        "M 5,5 v30 h10 v-30 z",
+        "M 20,5 v20 h10 v-20 z",
+        "M 0,0 h35",
+    )
+)
+
+icon_mk_align_bottom = VectorIcon(
+    fill="M 20,15 v20 h10 v-20 z",
+    stroke=(
+        "M 5,5 v30 h10 v-30 z",
+        "M 20,15 v20 h10 v-20 z",
+        "M 0,40 h35",
+    )
+)
+
+icon_mk_polygon = VectorIcon(
+    fill = (
+        "M 20,50 a 5,5, 0 1,0 1,0",
+        "M 40,50 a 5,5, 0 1,0 1,0",
+        "M 20,0 a 5,5, 0 1,0 1,0",
+        "M 40,0 a 5,5, 0 1,0 1,0",
+        "M 55,25 a 5,5, 0 1,0 1,0",
+        "M 5,25 a 5,5, 0 1,0 1,0",
+    ),
+    stroke = "M 20,55 L 40,55 L 55,30 L 40,5 L 20,5 L 5,30 z",
+)
+
+icon_mk_undo = VectorIcon(
+    fill=(
+        "m 290,1112.362 v 2 h 5.5 c 0.8403,0 1.5,0.66 1.5,1.5 v 0.5 0.5 c 0,0.841 -0.6597,1.5 -1.5,1.5 H 295 v 2 h 0.5 c 1.9212,0 3.5,-1.579 3.5,-3.5 v -0.5 -0.5 c 0,-1.921 -1.5788,-3.5 -3.5,-3.5 z",
+        "m 286,1113.362 4,4 v -8 z"
+    ),
+)
+
+icon_mk_redo = VectorIcon(
+    fill=(
+        "m 328,1112 v 2 h -5.5 c -0.8403,0 -1.5,0.66 -1.5,1.5 v 0.5 0.5 c 0,0.841 0.6597,1.5 1.5,1.5 h 0.5 v 2 h -0.5 c -1.9212,0 -3.5,-1.579 -3.5,-3.5 v -0.5 -0.5 c 0,-1.921 1.5788,-3.5 3.5,-3.5 z",
+        "m 332,1113.362 -4,4 v -8 z",
+    ),
+)
+
+node_add = VectorIcon(
+    fill="",
+    stroke=(
+        "M 35, 15 h 30",
+        "M 50, 0 v 30",
+        "M 35,70 h 30 v 30 h -30 z",
+        "M 0,85 h 100",
+    ),
+)
+
+node_append = VectorIcon(
+    fill="",
+    stroke=(
+        "M 35, 15 h 30",
+        "M 50, 0 v 30",
+        "M 0,70 h 15 v 30 h -15",
+        "M 70,70 h 30 v 30 h -30 z",
+        "M 0,85 h 85",
+    ),
+)
+
+def savage_consumer():
+    import os.path
+    import argparse
+    import sys
+    from xml.etree.ElementTree import iterparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-V", "--version", action="store_true", help="icon consumer version"
+    )
+    parser.add_argument("input", nargs="?", type=str, help="input file")
+    argv = sys.argv[1:]
+    args = parser.parse_args(argv)
+
+    if args.version:
+        print("Version 1: SaVaGe Consumer")
+        return
+
+    if not args.input:
+        print("Input not specified.")
+        return
+
+    only_filename = os.path.split(args.input)[-1]
+    ext_split = os.path.splitext(only_filename)
+    assert ext_split[-1] == ".svg"
+    filename = ext_split[0]
+    filename = filename.replace("-", "_")
+
+    fills = []
+    strokes = []
+    with open(args.input, "r") as f:
+        for event, elem in iterparse(f, events=("end",)):
+            if not elem.tag.endswith("path"):
+                continue
+            path_d = elem.attrib.get("d")
+            if "stroke-width" in elem.attrib:
+                strokes.append(path_d)
+            else:
+                fills.append(path_d)
+
+    if not fills and not strokes:
+        print("Parsing error, blank.")
+        return
+
+    with open(__file__, "a") as f:
+        f.write(f'\n{filename} = VectorIcon(fill={str(tuple(fills))}, stroke={str(tuple(strokes))})\n')
+
+    print(f"{filename} was added as a vector icon.")
+
+
+if __name__ == "__main__":
+    savage_consumer()
+
+# The following icons were added with SaVaGe consumer.
