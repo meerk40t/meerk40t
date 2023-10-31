@@ -275,7 +275,11 @@ class WobbleEffectNode(Node):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if drag_node.type.startswith("effect"):
             if modify:
-                self.swap_node(drag_node)
+                if drag_node.parent is self.parent:
+                    self.append_child(drag_node)
+                else:
+                    self.swap_node(drag_node)
+                drag_node.altered()
                 self.altered()
             return True
         if hasattr(drag_node, "as_geometry"):
