@@ -2402,8 +2402,9 @@ def init_tree(kernel):
                     node_attributes.append([attrib, oldval])
             geometry = node.as_geometry()
             node.remove_all_children()
-            if len(geometry):
-                newnode = node.replace_node(geometry=geometry, type="elem path")
+            if not len(geometry):
+                return
+            newnode = node.replace_node(geometry=geometry, type="elem path")
             for item in node_attributes:
                 setattr(newnode, item[0], item[1])
             newnode.altered()

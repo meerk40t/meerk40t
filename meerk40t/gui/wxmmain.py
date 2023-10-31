@@ -32,6 +32,7 @@ from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from ..svgelements import Color, Matrix, Path
 from .icons import (  # icons8_replicate_rows_50,
     STD_ICON_SIZE,
+    PyEmbeddedImage,
     icon_cag_common_50,
     icon_cag_subtract_50,
     icon_cag_union_50,
@@ -78,6 +79,7 @@ from .icons import (  # icons8_replicate_rows_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
     set_icon_appearance,
+    icons8_diagonal_20,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -1011,6 +1013,31 @@ class MeerK40t(MWindow):
         bsize_normal = STD_ICON_SIZE
         # bsize_small = STD_ICON_SIZE / 2
         bsize_small = STD_ICON_SIZE
+
+        def contains_a_param():
+            result = False
+            for e in kernel.elements.elems(emphasized=True):
+                if e.functional_parameter is not None:
+                    result = True
+                    break
+            return result
+
+        def contains_a_path():
+            result = False
+            for e in kernel.elements.elems(emphasized=True):
+                if e.type in ("elem polyline", "elem path"):
+                    result = True
+                    break
+            return result
+
+        def contains_an_element():
+            from meerk40t.core.elements.element_types import elem_nodes
+
+            for e in kernel.elements.elems(emphasized=True):
+                if e.type in elem_nodes:
+                    return True
+            return False
+
         kernel.register(
             "button/project/Open",
             {
@@ -1087,7 +1114,19 @@ class MeerK40t(MWindow):
                 "rule_enabled": lambda cond: contains_a_path(),
             },
         )
-
+        kernel.register(
+            "button/tools/Hatch",
+            {
+                "label": _("Hatch"),
+                "icon": PyEmbeddedImage.message_icon(msg="H"),
+                "tip": _("Wrap the current node in a hatch"),
+                "action": lambda v: kernel.elements("effect-hatch\n"),
+                # "group": "tool",
+                "size": bsize_normal,
+                # "identifier": "edit",
+                "rule_enabled": lambda cond: contains_an_element(),
+            },
+        )
         kernel.register(
             "button/tools/Relocate",
             {
@@ -1358,22 +1397,6 @@ class MeerK40t(MWindow):
                 "identifier": "measure",
             },
         )
-
-        def contains_a_param():
-            result = False
-            for e in kernel.elements.elems(emphasized=True):
-                if e.functional_parameter is not None:
-                    result = True
-                    break
-            return result
-
-        def contains_a_path():
-            result = False
-            for e in kernel.elements.elems(emphasized=True):
-                if e.type in ("elem polyline", "elem path"):
-                    result = True
-                    break
-            return result
 
         # Default Size for smaller buttons
         buttonsize = STD_ICON_SIZE / 2
