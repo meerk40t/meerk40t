@@ -49,13 +49,7 @@ def init_tree(kernel):
     # --------------------------- TREE OPERATIONS ---------------------------
 
     def is_regmark(node):
-        result = False
-        try:
-            if node._parent.type == "branch reg":
-                result = True
-        except AttributeError:
-            pass
-        return result
+        return node.has_ancestor("branch reg")
 
     def has_changes(node):
         result = False
@@ -2365,6 +2359,34 @@ def init_tree(kernel):
             for item in node_attributes:
                 setattr(newnode, item[0], item[1])
             newnode.altered()
+
+    @tree_conditional(
+        lambda node: hasattr(node, "as_geometry")
+        and node.has_ancestor("branch elems")
+    )
+    @tree_operation(
+        _("Convert to path"),
+        node_type=effect_nodes,
+        help="Convert effect to path",
+    )
+    def convert_to_path(singlenode, **kwargs):
+        elements = self.elem_branch
+        for node in list(elements.flat(types=effect_nodes, emphasized=True)):
+            if not hasattr(node, "as_geometry"):
+                continue
+            node_attributes = []
+            for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
+                if hasattr(node, attrib):
+                    oldval = getattr(node, attrib, None)
+                    node_attributes.append([attrib, oldval])
+            geometry = node.as_geometry()
+            node.remove_all_children()
+            if len(geometry):
+                newnode = node.replace_node(geometry=geometry, type="elem path")
+            for item in node_attributes:
+                setattr(newnode, item[0], item[1])
+            newnode.altered()
+
 
     @tree_submenu(_("Flip"))
     @tree_separator_before()
