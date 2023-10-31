@@ -1409,14 +1409,19 @@ class MoveWidget(Widget):
             had_optional = False
             # Need to add stroke and fill, as copy will take the
             # default values for these attributes
-            for optional in ("fill", "stroke"):
+            options = ["fill", "stroke", "wxfont"]
+            for optional in options:
                 if hasattr(e, optional):
                     setattr(copy_node, optional, getattr(e, optional))
-
-            for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
+            options = []
+            for prop in dir(e):
+                if prop.startswith("mk"):
+                    options.append(prop)
+            for optional in options:
                 if hasattr(e, optional):
                     setattr(copy_node, optional, getattr(e, optional))
                     had_optional = True
+
             newparent.add_node(copy_node)
             copy_nodes.append(copy_node)
             # The copy remains at the same place, we are moving the originals,

@@ -45,7 +45,7 @@ from .icons import (
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
-from .wxutils import create_menu, get_key_name, is_navigation_key, StaticBoxSizer
+from .wxutils import StaticBoxSizer, create_menu, get_key_name, is_navigation_key
 
 _ = wx.GetTranslation
 
@@ -1811,6 +1811,9 @@ class ShadowTree:
             # have led to the creation of a new reference
             # node. For whatever reason this is not recognised
             # otherwise...
+            if not self.dragging_nodes:
+                # Dragging nodes were cleared (we must have rebuilt the entire tree)
+                return
             for node in self.dragging_nodes:
                 if node.type.startswith("op"):
                     self.context.signal("tree_changed")

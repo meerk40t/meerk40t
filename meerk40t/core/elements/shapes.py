@@ -243,17 +243,23 @@ def init_commands(kernel):
         """
         Add an effect hatch object
         """
-        node = self.elem_branch.add(
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            return
+        first_node = data[0]
+
+        node = first_node.parent.add(
             type="effect hatch",
             label="Hatch Effect",
             hatch_angle=angle.as_radians,
             hatch_angle_delta=angle_delta.as_radians,
             hatch_distance=distance,
         )
+        for n in data:
+            node.append_child(n)
+
         self.set_emphasis([node])
-        if data is not None:
-            for n in data:
-                node.append_child(n)
         node.focus()
 
     @self.console_option(
@@ -722,9 +728,7 @@ def init_commands(kernel):
                 g = node.as_geometry()
                 path = g.as_path()
                 ident = " (Identity)" if node.matrix.is_identity() else ""
-                channel(
-                    f"{str(node)}{ident}: {path.d(transformed=not real)}"
-                )
+                channel(f"{str(node)}{ident}: {path.d(transformed=not real)}")
             except AttributeError:
                 channel(f"{str(node)}: Invalid")
 

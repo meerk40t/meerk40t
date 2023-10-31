@@ -1627,6 +1627,13 @@ class Elemental(Service):
                 continue
             yield item
 
+    def op_groups(self, **kwargs):
+        operations = self._tree.get(type="branch ops")
+        for item in operations.flat(**kwargs):
+            if item.type.startswith("branch") or item.type.startswith("ref"):
+                continue
+            yield item
+
     def elems(self, **kwargs):
         elements = self._tree.get(type="branch elems")
         yield from elements.flat(types=elem_nodes, **kwargs)
@@ -1836,7 +1843,7 @@ class Elemental(Service):
             if drop_node.drop(drag_node, modify=False):
                 # Is the drag node coming from the regmarks branch?
                 # If yes then we might need to classify.
-                if drag_node._parent.type == "branch reg":
+                if drag_node.has_ancestor("branch reg"):
                     if drag_node.type in ("file", "group"):
                         for e in drag_node.flat(elem_nodes):
                             to_classify.append(e)

@@ -944,7 +944,7 @@ class Node:
         if node._parent is not None:
             raise ValueError("Cannot reparent node on add.")
         node._parent = self
-        node._root = self._root
+        node.set_root(self._root)
         if pos is None:
             self._children.append(node)
         else:
@@ -988,6 +988,17 @@ class Node:
         else:
             print(f"Did not produce a valid node for type '{type}'")
         return node
+
+    def set_root(self, root):
+        """
+        Set the root for this and all descendant to the provided root
+
+        @param root:
+        @return:
+        """
+        self._root = root
+        for c in self._children:
+            c.set_root(root)
 
     def _flatten(self, node):
         """
@@ -1129,6 +1140,63 @@ class Node:
         self.unregister()
         return node
 
+    def swap_node(self, node):
+        """
+        Swap nodes swaps the current node with the provided node in the other position in the same tree. All children
+        during a swap are kept in place structurally. This permits swapping nodes between two positions that may be
+        nested, without creating a loop.
+
+        Special care is taken for both swaps being children of the same parent.
+
+        @param node: Node already in the tree that should be swapped with the current node.
+        @return:
+        """
+        # Remove self from tree.
+        parent = self._parent
+        n_parent = node._parent
+
+        index = parent._children.index(self)
+        n_index = n_parent._children.index(node)
+
+        if index < n_index:
+            # N_index is greater.
+            del n_parent._children[n_index]
+            del parent._children[index]
+
+            parent._children.insert(index, node)
+            n_parent._children.insert(n_index, self)
+        else:
+            # N_index is lesser, equal
+            del parent._children[index]
+            del n_parent._children[n_index]
+
+            n_parent._children.insert(n_index, self)
+            parent._children.insert(index, node)
+
+        node._parent = parent
+        self._parent = n_parent
+
+        # Make a copy of children
+        n_children = list(node._children)
+        children = list(self._children)
+
+        # Delete children.
+        node._children.clear()
+        self._children.clear()
+
+        # Move children without call attach / detach.
+        node._children.extend(children)
+        self._children.extend(n_children)
+
+        # Correct parent for all children.
+        for n in list(n_children):
+            n._parent = self
+        for n in list(children):
+            n._parent = node
+
+        # self._root._validate_tree()
+        self._root.notify_reorder()
+
     def remove_node(self, children=True, references=True, fast=False, destroy=True):
         """
         Remove the current node from the tree.
@@ -1163,6 +1231,25 @@ class Node:
         for child in list(self.children):
             child.remove_all_children(fast=fast, destroy=destroy)
             child.remove_node(fast=fast, destroy=destroy)
+
+    def has_ancestor(self, type):
+        """
+        Return whether this node has an ancestor node that matches the given type, or matches the major type.
+
+        @param type:
+        @return:
+        """
+        if self.parent is None:
+            return False
+
+        if self.parent.type == type:
+            return True
+
+        if " " not in type:
+            if self.parent.type.startswith(type):
+                return True
+
+        return self.parent.has_ancestor(type=type)
 
     def get(self, type=None):
         """

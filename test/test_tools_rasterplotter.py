@@ -1,14 +1,13 @@
 import time
 import unittest
 
-from PIL import Image, ImageDraw
 import numpy as np
+from PIL import Image, ImageDraw
 
 from meerk40t.tools.rasterplotter import RasterPlotter
 
 
 class TestRasterPlotter(unittest.TestCase):
-
     def test_rasterplotter_largecircle(self):
         """
         Tests the speed of rasterplotter for large circle.

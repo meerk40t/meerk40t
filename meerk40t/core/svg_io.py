@@ -403,9 +403,6 @@ class SVGWriter:
             group_element = SubElement(xml_tree, SVG_TAG_GROUP)
             SVGWriter._write_custom(group_element, c)
             SVGWriter._write_elements(group_element, c, version)
-            if hasattr(c, "_operands"):
-                for q in c._operands:
-                    SVGWriter._write_element(group_element, q, version)
             return
         elif c.type == "file":
             # This is a structural group node of elements. Recurse call to write values.
@@ -529,15 +526,11 @@ class SVGWriter:
         Write the operations branch part of the tree to disk.
 
         @param xml_tree:
-        @param elem_tree:
+        @param op_tree:
         @return:
         """
         for c in op_tree.children:
-            if c.type.startswith("util") or c.type.startswith("place"):
-                subelement = SubElement(xml_tree, MEERK40T_XMLS_ID + ":operation")
-                SVGWriter._write_custom(subelement, c)
-            else:
-                SVGWriter._write_operation(xml_tree, c)
+            SVGWriter._write_operation(xml_tree, c, version)
 
     @staticmethod
     def _write_regmarks(xml_tree, reg_tree, version):
@@ -548,7 +541,7 @@ class SVGWriter:
             SVGWriter._write_elements(regmark, reg_tree, version)
 
     @staticmethod
-    def _write_operation(xml_tree, node):
+    def _write_operation(xml_tree, node, version):
         """
         Write an individual operation. This is any node directly under `branch ops`
 
@@ -556,17 +549,16 @@ class SVGWriter:
         @param node:
         @return:
         """
-        for c in node.children:
-            if c.type.startswith("effect"):
-                xml_tree = SubElement(xml_tree, SVG_TAG_GROUP)
-                SVGWriter._write_custom(xml_tree, c)
-
-        subelement = SubElement(xml_tree, MEERK40T_XMLS_ID + ":operation")
+        # All operations are groups.
+        subelement = SubElement(xml_tree, SVG_TAG_GROUP)
         subelement.set("type", str(node.type))
+
         if node.label is not None:
             subelement.set("label", str(node.label))
+
         if node.lock is not None:
             subelement.set("lock", str(node.lock))
+
         try:
             for key, value in node.settings.items():
                 if not key:
@@ -581,15 +573,46 @@ class SVGWriter:
                     continue
                 subelement.set(key, str(value))
         except AttributeError:
-            pass
+            # Node does not have settings, write object dict
+            for key, value in node.__dict__.items():
+                if not key:
+                    # If key is None, do not save.
+                    continue
+                if key.startswith("_"):
+                    continue
+                if value is None:
+                    continue
+                if key in (
+                    "references",
+                    "tag",
+                    "type",
+                    "draw",
+                    "stroke_width",
+                    "matrix",
+                ):
+                    # References key from previous loaded version (filter out, rebuild)
+                    continue
+                subelement.set(key, str(value))
+
+        # Store current node reference values.
+        SVGWriter._write_references(subelement, node)
+        subelement.set(SVG_ATTR_ID, str(node.id))
+
+        for c in node.children:
+            # Recurse all non-ref nodes
+            if c.type == "reference":
+                continue
+            SVGWriter._write_operation(subelement, c, version)
+
+    @staticmethod
+    def _write_references(subelement, node):
         contains = list()
         for c in node.children:
             if c.type == "reference":
                 c = c.node  # Contain direct reference not reference node reference.
-            contains.append(str(c.id))
+                contains.append(c.id)
         if contains:
             subelement.set("references", " ".join(contains))
-        subelement.set(SVG_ATTR_ID, str(node.id))
 
     @staticmethod
     def _write_custom(subelement, node):
@@ -606,15 +629,7 @@ class SVGWriter:
                 # References key from previous loaded version (filter out, rebuild)
                 continue
             subelement.set(key, str(value))
-
-        contains = list()
-        for c in node.children:
-            if c.type == "reference":
-                c = c.node  # Contain direct reference not reference node reference.
-            contains.append(c.id)
-        if contains:
-            subelement.set("references", " ".join(contains))
-
+        SVGWriter._write_references(subelement, node)
         subelement.set(SVG_ATTR_ID, str(node.id))
 
     @staticmethod
@@ -640,15 +655,16 @@ class SVGProcessor:
 
     def __init__(self, elements, load_operations):
         self.elements = elements
+
+        self.operation_list = list()
         self.element_list = list()
         self.regmark_list = list()
+
         self.reverse = False
         self.requires_classification = True
         self.operations_replaced = False
         self.pathname = None
-        self.regmark = None
         self.load_operations = load_operations
-        self.operation_list = list()
 
         # Setting this is bringing as much benefit as anticipated
         # Both the time to load the file (unexpectedly) and the time
@@ -672,25 +688,30 @@ class SVGProcessor:
         @return:
         """
         self.pathname = pathname
-        context_node = self.elements.get(type="branch elems")
+
+        context_node = self.elements.elem_branch
         file_node = context_node.add(type="file", filepath=pathname)
-        self.regmark = self.elements.reg_branch
         file_node.focus()
 
-        self.parse(svg, file_node, self.element_list)
+        self.parse(svg, file_node, self.element_list, branch="elements")
+
         if self.load_operations and self.operations_replaced:
+            for child in list(self.elements.op_branch.children):
+                if not hasattr(child, "_ref_load"):
+                    child.remove_all_children(fast=True, destroy=True)
+                    child.remove_node(fast=True, destroy=True)
             self.elements.undo.mark("op-replaced")
-            self.elements.clear_operations()
-            for node in self.operation_list:
-                op = self.elements.op_branch.add_node(node)
-            for op in self.elements.ops():
-                if not hasattr(op, "settings"):
-                    # Some special nodes might lack settings these can't have references.
+            for op in self.elements.op_branch.flat():
+                try:
+                    refs = op._ref_load
+                    del op._ref_load
+                except AttributeError:
                     continue
-                refs = op.settings.get("references")
                 if refs is None:
                     continue
+
                 self.requires_classification = False
+
                 for ref in refs.split(" "):
                     for e in self.element_list:
                         if e.id == ref:
@@ -720,6 +741,12 @@ class SVGProcessor:
                         try:
                             value = ast.literal_eval(lc)
                             node.functional_parameter = value
+                        except (ValueError, SyntaxError):
+                            pass
+                    elif prop == "mkbcparam":
+                        try:
+                            value = ast.literal_eval(lc)
+                            node.mkbcparam = value
                         except (ValueError, SyntaxError):
                             pass
 
@@ -830,6 +857,8 @@ class SVGProcessor:
                 tag_label = None
         except (AttributeError, KeyError):
             # Label might simply be "label"
+            pass
+        if tag_label is None:
             tag_label = local_dict.get("label")
         return tag_label
 
@@ -1250,10 +1279,11 @@ class SVGProcessor:
                 if node_type == "op hatch":
                     # Special fallback operation, op hatch is an op engrave with an effect hatch within it.
                     node_type = "op engrave"
-                    op = self.elements.op_branch.create(type=node_type, **attrs)
-                    op = op.add(type="effect hatch", **attrs)
+                    op = self.elements.op_branch.add(type=node_type, **attrs)
+                    effect = op.add(type="effect hatch", **attrs)
                 else:
-                    op = self.elements.op_branch.create(type=node_type, **attrs)
+                    op = self.elements.op_branch.add(type=node_type, **attrs)
+                op._ref_load = element.values.get("references")
 
                 if op is None or not hasattr(op, "type") or op.type is None:
                     return
@@ -1261,8 +1291,6 @@ class SVGProcessor:
                     op.validate()
 
                 op.id = node_id
-                if context_node.type.startswith("effect"):
-                    op.append_child(context_node)
                 self.operation_list.append(op)
             except AttributeError:
                 # This operation is invalid.
@@ -1285,17 +1313,7 @@ class SVGProcessor:
             elem.id = node_id
             e_list.append(elem)
 
-    @staticmethod
-    def is_child(candidate, parent_node):
-        if candidate is None:
-            return False
-        if candidate is parent_node:
-            return True
-        if candidate.parent is None:
-            return False
-        return SVGProcessor.is_child(candidate.parent, parent_node)
-
-    def parse(self, element, context_node, e_list, uselabel=None):
+    def parse(self, element, context_node, e_list, branch=None, uselabel=None):
         """
         Parse does the bulk of the work. Given an element, here the base case is an SVG itself, we parse such that
         any groups will call and check all children recursively, updating the context_node, and passing each element
@@ -1305,16 +1323,21 @@ class SVGProcessor:
         @param element: Element to parse.
         @param context_node: Current context parent we're writing to.
         @param e_list: elements list of all the nodes added by this function.
+        @param branch: Branch we are currently adding elements to.
         @param uselabel:
         @return:
         """
 
         if element.values.get("visibility") == "hidden":
-            # This does not allow substructures...
-            # Are we already underneath regmark?
-            if not SVGProcessor.is_child(context_node, self.regmark):
-                context_node = self.regmark
-            e_list = self.regmark_list
+            if branch != "regmarks":
+                self.parse(
+                    element,
+                    self.elements.reg_branch,
+                    self.regmark_list,
+                    branch="regmarks",
+                )
+                return
+
         ident = element.id
 
         if uselabel:
@@ -1327,6 +1350,7 @@ class SVGProcessor:
             _lock = bool(element.values.get("lock") == "True")
         except (ValueError, TypeError):
             pass
+
         is_dot, dot_point = SVGProcessor.is_dot(element)
         if is_dot:
             node = context_node.add(
@@ -1357,53 +1381,76 @@ class SVGProcessor:
             # SVG is type of group, it must be processed before Group. Nothing special is done with the type.
             if self.reverse:
                 for child in reversed(element):
-                    self.parse(child, context_node, e_list)
+                    self.parse(child, context_node, e_list, branch=branch)
             else:
                 for child in element:
-                    self.parse(child, context_node, e_list)
+                    self.parse(child, context_node, e_list, branch=branch)
         elif isinstance(element, Group):
-            if _label == "regmarks" or ident == "regmarks":
-                # We don't need a top-level group here, the regmarks node is a group...
-                context_node = self.regmark
-                e_list = self.regmark_list
-            else:
-                # Load group with specific group attributes (if needed)
-                e_dict = dict(element.values["attributes"])
-                e_type = e_dict.get("type", "group")
-                stroke = e_dict.get("stroke")
-                for attr in ("type", "id", "label", "stroke"):
-                    if attr in e_dict:
-                        del e_dict[attr]
-                if stroke is None:
-                    context_node = context_node.add(
-                        type=e_type, id=ident, label=_label, **e_dict
-                    )
-                else:
-                    context_node = context_node.add(
-                        type=e_type,
-                        id=ident,
-                        label=_label,
-                        stroke=Color(stroke),
-                        **e_dict,
-                    )
+            if branch != "regmarks" and (_label == "regmarks" or ident == "regmarks"):
+                # Recurse at same level within regmarks.
+                self.parse(
+                    element,
+                    self.elements.reg_branch,
+                    self.regmark_list,
+                    branch="regmarks",
+                )
+                return
+
+            # Load group with specific group attributes (if needed)
+            e_dict = dict(element.values["attributes"])
+            e_type = e_dict.get("type", "group")
+            if branch != "operations" and (
+                e_type.startswith("op ")
+                or e_type.startswith("place ")
+                or e_type.startswith("util ")
+            ):
+                # This is an operations but we are not in operations context.
+                if not self.load_operations:
+                    # We don't do that.
+                    return
+                self.operations_replaced = True
+                self.parse(
+                    element,
+                    self.elements.op_branch,
+                    self.operation_list,
+                    branch="operations",
+                )
+                return
+            if "stroke" in e_dict:
+                e_dict["stroke"] = Color(e_dict.get("stroke"))
+            if "fill" in e_dict:
+                e_dict["fill"] = Color(e_dict.get("fill"))
+            for attr in ("type", "id", "label"):
+                if attr in e_dict:
+                    del e_dict[attr]
+            context_node = context_node.add(
+                type=e_type, id=ident, label=_label, **e_dict
+            )
+            context_node._ref_load = element.values.get("references")
+            e_list.append(context_node)
+            if hasattr(context_node, "validate"):
+                context_node.validate()
 
             # recurse to children
             if self.reverse:
                 for child in reversed(element):
-                    self.parse(child, context_node, e_list)
+                    self.parse(child, context_node, e_list, branch=branch)
             else:
                 for child in element:
-                    self.parse(child, context_node, e_list)
+                    self.parse(child, context_node, e_list, branch=branch)
         elif isinstance(element, Use):
             # recurse to children, but do not subgroup elements.
             # We still use the original label
-
             if self.reverse:
                 for child in reversed(element):
-                    self.parse(child, context_node, e_list, uselabel=_label)
+                    self.parse(
+                        child, context_node, e_list, branch=branch, uselabel=_label
+                    )
             else:
                 for child in element:
-                    self.parse(child, context_node, e_list, uselabel=_label)
+                    self.parse(
+                        child, context_node, e_list, branch=branch, uselabel=_label
+                    )
         else:
             self._parse_element(element, ident, _label, _lock, context_node, e_list)
 

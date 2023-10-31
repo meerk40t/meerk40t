@@ -527,7 +527,9 @@ class SpoolerPanel(wx.Panel):
                 item = menu.Append(
                     wx.ID_ANY,
                     _("Finish after this loop"),
-                    _("Stop the current execution after the succesful execution of this loop"),
+                    _(
+                        "Stop the current execution after the succesful execution of this loop"
+                    ),
                     wx.ITEM_NORMAL,
                 )
                 info_tuple = [spooler, element]

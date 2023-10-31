@@ -1645,10 +1645,8 @@ class Kernel(Settings):
         @return:
         """
         self._registered[path] = obj
-        try:
+        if hasattr(obj, "sub_register"):
             obj.sub_register(self)
-        except AttributeError:
-            pass
         self.lookup_change(path)
 
     def unregister(self, path: str):

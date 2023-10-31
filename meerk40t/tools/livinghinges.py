@@ -3,17 +3,16 @@ from copy import copy
 import wx
 
 from meerk40t.core.units import ACCEPTED_UNITS, Length
-
 from meerk40t.fill.patterns import LivingHinges
-
-# from meerk40t.fill.patternfill import LivingHinges
-
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_hinges_50
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color, Matrix, Path
+
+# from meerk40t.fill.patternfill import LivingHinges
+
 
 _ = wx.GetTranslation
 
