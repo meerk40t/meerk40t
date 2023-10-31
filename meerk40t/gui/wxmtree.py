@@ -1806,6 +1806,9 @@ class ShadowTree:
             # have led to the creation of a new reference
             # node. For whatever reason this is not recognised
             # otherwise...
+            if not self.dragging_nodes:
+                # Dragging nodes were cleared (we must have rebuilt the entire tree)
+                return
             for node in self.dragging_nodes:
                 if node.type.startswith("op"):
                     self.context.signal("tree_changed")
