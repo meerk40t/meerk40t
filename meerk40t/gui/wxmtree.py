@@ -964,8 +964,12 @@ class ShadowTree:
                     return
 
         self.wxtree._freeze = False
-        self.wxtree.Expand(self.elements.get(type="branch elems")._item)
-        self.wxtree.Expand(self.elements.get(type="branch reg")._item)
+        branch_elems_item = self.elements.get(type="branch elems")._item
+        if branch_elems_item:
+            self.wxtree.Expand(branch_elems_item)
+        branch_reg_item = self.elements.get(type="branch reg")._item
+        if branch_reg_item:
+            self.wxtree.Expand(branch_reg_item)
         self.context.elements.signal("warn_state_update")
         self.context.elements.set_end_time("full_load", display=True, delete=True)
 
