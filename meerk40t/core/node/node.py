@@ -1164,6 +1164,25 @@ class Node:
             child.remove_all_children(fast=fast, destroy=destroy)
             child.remove_node(fast=fast, destroy=destroy)
 
+    def has_ancestor(self, type):
+        """
+        Return whether this node has an ancestor node that matches the given type, or matches the major type.
+
+        @param type:
+        @return:
+        """
+        if self.parent is None:
+            return False
+
+        if self.parent.type == type:
+            return True
+
+        if " " not in type:
+            if self.parent.type.startswith(type):
+                return True
+
+        return self.parent.has_ancestor(type=type)
+
     def get(self, type=None):
         """
         Recursive call for get to find first sub-nodes with the given type.
