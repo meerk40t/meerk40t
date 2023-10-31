@@ -1683,122 +1683,143 @@ def init_tree(kernel):
                     ref.remove_node()
         self.signal("refresh_tree")
 
-    @tree_submenu(_("Append special effect"))
-    @tree_operation(_("Append Line-fill 0.1mm"), node_type="branch elems", help="")
+    @tree_submenu(_("Apply special effect"))
+    @tree_operation(_("Append Line-fill 0.1mm"), node_type=elem_nodes, help="")
     def append_element_effect_eulerian(
         node, node_type="branch elems", pos=None, **kwargs
     ):
-        self.elem_branch.add(
+        group_node = node.parent.add(
             type="effect hatch",
             hatch_type="scanline",
             hatch_distance="0.1mm",
             hatch_angle="0deg",
             pos=pos,
         )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+
         self.signal("updateelem_tree")
 
-    @tree_submenu(_("Append special effect"))
+    @tree_submenu(_("Apply special effect"))
     @tree_operation(
-        _("Append diagonal Line-fill 0.1mm"), node_type="branch elems", help=""
+        _("Append diagonal Line-fill 0.1mm"), node_type=elem_nodes, help=""
     )
     def append_element_effect_eulerian_45(
         node, node_type="branch elems", pos=None, **kwargs
     ):
-        self.elem_branch.add(
+        group_node = node.parent.add(
             type="effect hatch",
             hatch_type="scanline",  # scanline / eulerian
             hatch_distance="0.1mm",
             hatch_angle="45deg",
             pos=pos,
         )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+
         self.signal("updateelem_tree")
 
-    @tree_submenu(_("Append special effect"))
-    @tree_operation(_("Append Line-Fill 1mm"), node_type="branch elems", help="")
+    @tree_submenu(_("Apply special effect"))
+    @tree_operation(_("Append Line-Fill 1mm"), node_type=elem_nodes, help="")
     def append_element_effect_line(node, node_type="branch elems", pos=None, **kwargs):
-        self.elem_branch.add(
+        group_node = node.parent.add(
             type="effect hatch",
             hatch_type="scanline",
             hatch_distance="1mm",
             hatch_angle="0deg",
             pos=pos,
         )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+
         self.signal("updateelem_tree")
 
-    @tree_submenu(_("Append special effect"))
+    @tree_submenu(_("Apply special effect"))
     @tree_operation(
-        _("Append diagonal Line-Fill 1mm"), node_type="branch elems", help=""
+        _("Append diagonal Line-Fill 1mm"), node_type=elem_nodes, help=""
     )
     def append_element_effect_line_45(
         node, node_type="branch elems", pos=None, **kwargs
     ):
-        self.elem_branch.add(
+        group_node = node.parent.add(
             type="effect hatch",
             hatch_type="scanline",
             hatch_distance="1mm",
             hatch_angle="45deg",
             pos=pos,
         )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+
         self.signal("updateelem_tree")
 
-    @tree_submenu(_("Append special effect"))
+    @tree_submenu(_("Apply special effect"))
     @tree_operation(
         _("Append wobble {type} {radius} @{interval}").format(
             type="Circle", radius="0.5mm", interval="0.05mm"
         ),
-        node_type="branch elems",
+        node_type=elem_nodes,
         help="",
     )
     def append_element_effect_wobble_c05(
         node, node_type="branch elems", pos=None, **kwargs
     ):
-        self.elem_branch.add(
+        group_node = node.parent.add(
             type="effect wobble",
             wobble_type="circle",
             wobble_radius="0.5mm",
             wobble_interval="0.05mm",
             pos=pos,
         )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+
         self.signal("updateelem_tree")
 
-    @tree_submenu(_("Append special effect"))
+    @tree_submenu(_("Apply special effect"))
     @tree_operation(
         _("Append wobble {type} {radius} @{interval}").format(
             type="Circle", radius="1mm", interval="0.1mm"
         ),
-        node_type="branch elems",
+        node_type=elem_nodes,
         help="",
     )
     def append_element_effect_wobble_c1(
         node, node_type="branch elems", pos=None, **kwargs
     ):
-        self.elem_branch.add(
+        group_node = node.parent.add(
             type="effect wobble",
             wobble_type="circle",
             wobble_radius="1mm",
             wobble_interval="0.1mm",
             pos=pos,
         )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+
         self.signal("updateelem_tree")
 
-    @tree_submenu(_("Append special effect"))
+    @tree_submenu(_("Apply special effect"))
     @tree_operation(
         _("Append wobble {type} {radius} @{interval}").format(
             type="Circle", radius="3mm", interval="0.1mm"
         ),
-        node_type="branch elems",
+        node_type=elem_nodes,
         help="",
     )
     def append_element_effect_wobble_c3(
         node, node_type="branch elems", pos=None, **kwargs
     ):
-        self.elem_branch.add(
+        group_node = node.parent.add(
             type="effect wobble",
             wobble_type="circle_right",
             wobble_radius="3mm",
             wobble_interval="0.1mm",
             pos=pos,
         )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+
         self.signal("updateelem_tree")
 
     @tree_operation(
