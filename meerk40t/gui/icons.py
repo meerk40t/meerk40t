@@ -46,9 +46,53 @@ def get_default_scale_factor():
     return _GLOBAL_FACTOR
 
 
+def write_png(buf, width, height):
+    import struct
+    import zlib
+
+    width_byte_3 = width * 3
+    raw_data = b"".join(
+        b"\x00" + buf[span : span + width_byte_3]
+        for span in range(0, height * width * 3, width_byte_3)
+    )
+
+    def png_pack(png_tag, data):
+        chunk_head = png_tag + data
+        return (
+            struct.pack("!I", len(data))
+            + chunk_head
+            + struct.pack("!I", 0xFFFFFFFF & zlib.crc32(chunk_head))
+        )
+
+    return b"".join(
+        [
+            b"\x89PNG\r\n\x1a\n",
+            png_pack(b"IHDR", struct.pack("!2I5B", width, height, 8, 2, 0, 0, 0)),
+            png_pack(b"IDAT", zlib.compress(raw_data, 9)),
+            png_pack(b"IEND", b""),
+        ]
+    )
+
 class PyEmbeddedImage(py_embedded_image):
     def __init__(self, data):
         super().__init__(data)
+
+    @classmethod
+    def message_icon(cls, msg, size=50, color=None, ptsize=48):
+        import base64
+
+        _icon_hatch = EmptyIcon(size=size, color=color, ptsize=ptsize, msg=msg)
+        bm = _icon_hatch.GetBitmap()
+        wxim = bm.ConvertToImage()
+
+        w = wxim.GetWidth()
+        h = wxim.GetHeight()
+        data = wxim.GetData()
+
+        png_b = write_png(data, width=w, height=h)
+
+        b64 = base64.b64encode(png_b)
+        return cls(b64)
 
     def GetBitmap(
         self,
@@ -202,10 +246,11 @@ class EmptyIcon:
 
     def populate_image(self, msg=None, ptsize=None):
         imgBit = wx.Bitmap(self._size_x, self._size_y)
-        dc = wx.MemoryDC(imgBit)
+        dc = wx.MemoryDC()
         dc.SelectObject(imgBit)
-        brush = wx.Brush(self._color, wx.BRUSHSTYLE_SOLID)
-        dc.SetBackground(brush)
+        if self._color is not None:
+            brush = wx.Brush(self._color, wx.BRUSHSTYLE_SOLID)
+            dc.SetBackground(brush)
         dc.Clear()
         if msg is not None and msg != "":
             # We only take the very first letter for
@@ -223,9 +268,9 @@ class EmptyIcon:
                     txt_color = pattern[pat]
                     autocolor = False
                     msg = msg[len(pat) :]
-            if autocolor:
+            if autocolor and self._color is not None:
                 c1 = self._color
-                c2 = wx.BLACK
+                c2 = txt_color
                 red_mean = int((c1.red + c2.red) / 2.0)
                 r = c1.red - c2.red
                 g = c1.green - c2.green
@@ -236,7 +281,7 @@ class EmptyIcon:
                     + (((767 - red_mean) * b * b) >> 8)
                 )
                 # print(c1.red, c1.blue, c1.green, c1.blue + c1.red)
-                if distance < 200 * 200 or c1.blue == 255 or c1.red == 255:
+                if distance < 200 * 200:
                     txt_color = wx.WHITE
             if ptsize is None:
                 ptsize = 12
@@ -255,6 +300,7 @@ class EmptyIcon:
             dc.DrawText(msg, pt)
         # Now release dc
         dc.SelectObject(wx.NullBitmap)
+        dc.Destroy()
         return imgBit
 
     def GetBitmap(
