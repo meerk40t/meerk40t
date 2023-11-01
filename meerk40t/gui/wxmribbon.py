@@ -366,6 +366,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
 
     def restart(self):
         self.storage.read_configuration()
+        self.art.establish_colors()
         self.pages = []
         self.set_default_pages()
         # Define Ribbon.

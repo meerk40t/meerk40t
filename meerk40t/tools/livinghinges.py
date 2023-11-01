@@ -3,17 +3,16 @@ from copy import copy
 import wx
 
 from meerk40t.core.units import ACCEPTED_UNITS, Length
-
 from meerk40t.fill.patterns import LivingHinges
-
-# from meerk40t.fill.patternfill import LivingHinges
-
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_hinges_50
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color, Matrix, Path
+
+# from meerk40t.fill.patternfill import LivingHinges
+
 
 _ = wx.GetTranslation
 
@@ -103,7 +102,7 @@ class HingePanel(wx.Panel):
             self,
             wx.ID_ANY,
             0,
-            int(1 - _FACTOR / 2),
+            int(1 - _FACTOR / 2) + 1,
             int(_FACTOR / 2),
             style=wx.SL_HORIZONTAL,
         )
@@ -118,7 +117,7 @@ class HingePanel(wx.Panel):
             self,
             wx.ID_ANY,
             0,
-            int(1 - _FACTOR / 2),
+            int(1 - _FACTOR / 2) + 1,
             int(_FACTOR / 2),
             style=wx.SL_HORIZONTAL,
         )

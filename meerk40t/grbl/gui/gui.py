@@ -21,7 +21,7 @@ def plugin(service, lifecycle):
             icons8_flash_off_50,
             icons8_info_50,
             icons8_pause_50,
-            icons8_quick_mode_on_50,
+            icons8_flash_on_50,
         )
 
         service.register("window/GRBLController", GRBLController)
@@ -82,7 +82,7 @@ def plugin(service, lifecycle):
             "button/control/Redlight",
             {
                 "label": _("Red Dot On"),
-                "icon": icons8_quick_mode_on_50,
+                "icon": icons8_flash_on_50,
                 "tip": _("Turn Redlight On"),
                 "action": lambda v: service("red on\n"),
                 "toggle": {

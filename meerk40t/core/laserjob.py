@@ -183,6 +183,13 @@ class LaserJob:
             self.runtime += time.time() - self.time_started
         self._stopped = True
 
+    def stop_after_loop(self):
+        self.loops = self.loops_executed + 1
+
+    def add_another_loop(self):
+        if not isinf(self.loops):
+            self.loops += 1
+
     def elapsed_time(self):
         """
         How long is this job already running...

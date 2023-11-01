@@ -49,13 +49,7 @@ def init_tree(kernel):
     # --------------------------- TREE OPERATIONS ---------------------------
 
     def is_regmark(node):
-        result = False
-        try:
-            if node._parent.type == "branch reg":
-                result = True
-        except AttributeError:
-            pass
-        return result
+        return node.has_ancestor("branch reg")
 
     def has_changes(node):
         result = False
@@ -1358,37 +1352,23 @@ def init_tree(kernel):
         node.reverse()
         self.signal("refresh_tree", list(self.flat(types="reference")))
 
-    @tree_separator_after()
-    @tree_conditional(lambda node: self.classify_autogenerate)
+    @tree_submenu(_("Classification"))
     @tree_operation(
-        _("Refresh classification"),
-        node_type="branch ops",
+        _("Generate operations if needed"),
+        node_type=("branch ops", "branch elems"),
+        help="",
+        enable=False,
+    )
+    def do_classification_comment_1(node, **kwargs):
+        return
+
+    @tree_submenu(_("Classification"))
+    @tree_operation(
+        _("Refresh classification for all"),
+        node_type=("branch ops", "branch elems"),
         help=_("Reclassify elements and create operations if necessary"),
     )
-    def refresh_clasifications_1(node, **kwargs):
-        self.remove_elements_from_operations(list(self.elems()))
-        self.classify(list(self.elems()))
-        self.signal("refresh_tree", list(self.flat(types="reference")))
-
-    @tree_conditional(lambda node: not self.classify_autogenerate)
-    @tree_operation(
-        _("Refresh classification"),
-        node_type="branch ops",
-        help=_("Reclassify elements and use only existing operations"),
-    )
-    def refresh_clasifications_2(node, **kwargs):
-        self.remove_elements_from_operations(list(self.elems()))
-        self.classify(list(self.elems()))
-        self.signal("refresh_tree", list(self.flat(types="reference")))
-
-    @tree_separator_after()
-    @tree_conditional(lambda node: not self.classify_autogenerate)
-    @tree_operation(
-        _("Refresh ... (incl autogeneration)"),
-        node_type="branch ops",
-        help=_("Reclassify elements and create operations if necessary"),
-    )
-    def refresh_clasifications_3(node, **kwargs):
+    def refresh_classification_for_all_std(node, **kwargs):
         previous = self.classify_autogenerate
         self.classify_autogenerate = True
         self.remove_elements_from_operations(list(self.elems()))
@@ -1396,10 +1376,65 @@ def init_tree(kernel):
         self.classify_autogenerate = previous
         self.signal("refresh_tree", list(self.flat(types="reference")))
 
+    @tree_conditional(lambda node: self.have_unassigned_elements())
+    @tree_submenu(_("Classification"))
+    @tree_operation(
+        _("Classification for unassigned"),
+        node_type=("branch ops", "branch elems"),
+        help=_("Classify unassigned elements and create operations if necessary"),
+    )
+    def do_classification_for_unassigned_std(node, **kwargs):
+        previous = self.classify_autogenerate
+        self.classify_autogenerate = True
+        target_list = list(self.unassigned_elements())
+        self.classify(target_list)
+        self.classify_autogenerate = previous
+        self.signal("refresh_tree", list(self.flat(types="reference")))
+
+    @tree_submenu(_("Classification"))
+    @tree_separator_before()
+    @tree_operation(
+        _("Use only existing operations"),
+        node_type=("branch ops", "branch elems"),
+        help="",
+        enable=False,
+    )
+    def do_classification_comment_2(node, **kwargs):
+        return
+
+    @tree_submenu(_("Classification"))
+    @tree_operation(
+        _("Refresh classification for all"),
+        node_type=("branch ops", "branch elems"),
+        help=_("Reclassify all elements and use only existing operations"),
+    )
+    def refresh_classification_for_all_existing_only(node, **kwargs):
+        previous = self.classify_autogenerate
+        self.classify_autogenerate = False
+        self.remove_elements_from_operations(list(self.elems()))
+        self.classify(list(self.elems()))
+        self.classify_autogenerate = previous
+        self.signal("refresh_tree", list(self.flat(types="reference")))
+
+    @tree_submenu(_("Classification"))
+    @tree_conditional(lambda node: self.have_unassigned_elements())
+    @tree_operation(
+        _("Classification for unassigned"),
+        node_type=("branch ops", "branch elems"),
+        help=_("Classify unassigned elements and use only existing operations"),
+    )
+    def do_classification_for_unassigned_existing_only(node, **kwargs):
+        previous = self.classify_autogenerate
+        self.classify_autogenerate = False
+        target_list = list(self.unassigned_elements())
+        self.classify(target_list)
+        self.classify_autogenerate = previous
+        self.signal("refresh_tree", list(self.flat(types="reference")))
+
     @tree_conditional(lambda cond: self.have_unassigned_elements())
     @tree_operation(
         _("Select unassigned elements"),
-        node_type="branch ops",
+        node_type=("branch ops", "branch elems"),
         help=_("Select all elements that won't be burned"),
     )
     def select_unassigned(node, **kwargs):
@@ -1441,6 +1476,7 @@ def init_tree(kernel):
         difference = [m for m in materials if m not in secs]
         return difference
 
+    @tree_separator_before()
     @tree_submenu(_("Load"))
     @tree_values("opname", values=self.op_data.section_set)
     @tree_operation("{opname}", node_type="branch ops", help="")
@@ -1635,13 +1671,6 @@ def init_tree(kernel):
         )
         self.signal("updateop_tree")
 
-    @tree_operation(_("Reclassify operations"), node_type="branch elems", help="")
-    def reclassify_operations(node, **kwargs):
-        elems = list(self.elems())
-        self.remove_elements_from_operations(elems)
-        self.classify(list(self.elems()))
-        self.signal("refresh_tree")
-
     @tree_operation(
         _("Remove all assignments from operations"),
         node_type="branch elems",
@@ -1654,122 +1683,139 @@ def init_tree(kernel):
                     ref.remove_node()
         self.signal("refresh_tree")
 
-    @tree_submenu(_("Append special effect"))
-    @tree_operation(_("Append Line-fill 0.1mm"), node_type="branch elems", help="")
+    @tree_submenu(_("Apply special effect"))
+    @tree_operation(_("Append Line-fill 0.1mm"), node_type=elem_nodes, help="")
     def append_element_effect_eulerian(
         node, node_type="branch elems", pos=None, **kwargs
     ):
-        self.elem_branch.add(
+        group_node = node.parent.add(
             type="effect hatch",
             hatch_type="scanline",
             hatch_distance="0.1mm",
             hatch_angle="0deg",
             pos=pos,
         )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+
         self.signal("updateelem_tree")
 
-    @tree_submenu(_("Append special effect"))
-    @tree_operation(
-        _("Append diagonal Line-fill 0.1mm"), node_type="branch elems", help=""
-    )
+    @tree_submenu(_("Apply special effect"))
+    @tree_operation(_("Append diagonal Line-fill 0.1mm"), node_type=elem_nodes, help="")
     def append_element_effect_eulerian_45(
         node, node_type="branch elems", pos=None, **kwargs
     ):
-        self.elem_branch.add(
+        group_node = node.parent.add(
             type="effect hatch",
             hatch_type="scanline",  # scanline / eulerian
             hatch_distance="0.1mm",
             hatch_angle="45deg",
             pos=pos,
         )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+
         self.signal("updateelem_tree")
 
-    @tree_submenu(_("Append special effect"))
-    @tree_operation(_("Append Line-Fill 1mm"), node_type="branch elems", help="")
+    @tree_submenu(_("Apply special effect"))
+    @tree_operation(_("Append Line-Fill 1mm"), node_type=elem_nodes, help="")
     def append_element_effect_line(node, node_type="branch elems", pos=None, **kwargs):
-        self.elem_branch.add(
+        group_node = node.parent.add(
             type="effect hatch",
             hatch_type="scanline",
             hatch_distance="1mm",
             hatch_angle="0deg",
             pos=pos,
         )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+
         self.signal("updateelem_tree")
 
-    @tree_submenu(_("Append special effect"))
-    @tree_operation(
-        _("Append diagonal Line-Fill 1mm"), node_type="branch elems", help=""
-    )
+    @tree_submenu(_("Apply special effect"))
+    @tree_operation(_("Append diagonal Line-Fill 1mm"), node_type=elem_nodes, help="")
     def append_element_effect_line_45(
         node, node_type="branch elems", pos=None, **kwargs
     ):
-        self.elem_branch.add(
+        group_node = node.parent.add(
             type="effect hatch",
             hatch_type="scanline",
             hatch_distance="1mm",
             hatch_angle="45deg",
             pos=pos,
         )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+
         self.signal("updateelem_tree")
 
-    @tree_submenu(_("Append special effect"))
+    @tree_submenu(_("Apply special effect"))
     @tree_operation(
         _("Append wobble {type} {radius} @{interval}").format(
             type="Circle", radius="0.5mm", interval="0.05mm"
         ),
-        node_type="branch elems",
+        node_type=elem_nodes,
         help="",
     )
     def append_element_effect_wobble_c05(
         node, node_type="branch elems", pos=None, **kwargs
     ):
-        self.elem_branch.add(
+        group_node = node.parent.add(
             type="effect wobble",
             wobble_type="circle",
             wobble_radius="0.5mm",
             wobble_interval="0.05mm",
             pos=pos,
         )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+
         self.signal("updateelem_tree")
 
-    @tree_submenu(_("Append special effect"))
+    @tree_submenu(_("Apply special effect"))
     @tree_operation(
         _("Append wobble {type} {radius} @{interval}").format(
             type="Circle", radius="1mm", interval="0.1mm"
         ),
-        node_type="branch elems",
+        node_type=elem_nodes,
         help="",
     )
     def append_element_effect_wobble_c1(
         node, node_type="branch elems", pos=None, **kwargs
     ):
-        self.elem_branch.add(
+        group_node = node.parent.add(
             type="effect wobble",
             wobble_type="circle",
             wobble_radius="1mm",
             wobble_interval="0.1mm",
             pos=pos,
         )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+
         self.signal("updateelem_tree")
 
-    @tree_submenu(_("Append special effect"))
+    @tree_submenu(_("Apply special effect"))
     @tree_operation(
         _("Append wobble {type} {radius} @{interval}").format(
             type="Circle", radius="3mm", interval="0.1mm"
         ),
-        node_type="branch elems",
+        node_type=elem_nodes,
         help="",
     )
     def append_element_effect_wobble_c3(
         node, node_type="branch elems", pos=None, **kwargs
     ):
-        self.elem_branch.add(
+        group_node = node.parent.add(
             type="effect wobble",
             wobble_type="circle_right",
             wobble_radius="3mm",
             wobble_interval="0.1mm",
             pos=pos,
         )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+
         self.signal("updateelem_tree")
 
     @tree_operation(
@@ -2172,19 +2218,26 @@ def init_tree(kernel):
                 had_optional = False
                 # Need to add stroke and fill, as copy will take the
                 # default values for these attributes
-                for optional in ("fill", "stroke"):
-                    if hasattr(orgnode, optional):
+                options = ["fill", "stroke", "wxfont"]
+                for optional in options:
+                    if hasattr(e, optional):
                         setattr(copy_node, optional, getattr(orgnode, optional))
-                for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
-                    if hasattr(orgnode, optional):
-                        had_optional = True
+                hadoptional = False
+                options = []
+                for prop in dir(e):
+                    if prop.startswith("mk"):
+                        options.append(prop)
+                for optional in options:
+                    if hasattr(e, optional):
                         setattr(copy_node, optional, getattr(orgnode, optional))
+                        hadoptional = True
+
                 if self.copy_increases_wordlist_references and hasattr(orgnode, "text"):
                     copy_node.text = self.wordlist_delta(orgnode.text, delta_wordlist)
                 elif self.copy_increases_wordlist_references and hasattr(e, "mktext"):
                     copy_node.mktext = self.wordlist_delta(e.mktext, delta_wordlist)
                 orgparent.add_node(copy_node)
-                if had_optional:
+                if hadoptional:
                     for property_op in self.kernel.lookup_all("path_updater/.*"):
                         property_op(self.kernel.root, copy_node)
 
@@ -2326,6 +2379,33 @@ def init_tree(kernel):
                     oldval = getattr(node, attrib, None)
                     node_attributes.append([attrib, oldval])
             geometry = node.as_geometry()
+            newnode = node.replace_node(geometry=geometry, type="elem path")
+            for item in node_attributes:
+                setattr(newnode, item[0], item[1])
+            newnode.altered()
+
+    @tree_conditional(
+        lambda node: hasattr(node, "as_geometry") and node.has_ancestor("branch elems")
+    )
+    @tree_operation(
+        _("Convert to path"),
+        node_type=effect_nodes,
+        help="Convert effect to path",
+    )
+    def convert_to_path(singlenode, **kwargs):
+        elements = self.elem_branch
+        for node in list(elements.flat(types=effect_nodes, emphasized=True)):
+            if not hasattr(node, "as_geometry"):
+                continue
+            node_attributes = []
+            for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
+                if hasattr(node, attrib):
+                    oldval = getattr(node, attrib, None)
+                    node_attributes.append([attrib, oldval])
+            geometry = node.as_geometry()
+            node.remove_all_children()
+            if not len(geometry):
+                return
             newnode = node.replace_node(geometry=geometry, type="elem path")
             for item in node_attributes:
                 setattr(newnode, item[0], item[1])

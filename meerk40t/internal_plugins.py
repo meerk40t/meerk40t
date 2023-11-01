@@ -56,9 +56,9 @@ def plugin(kernel, lifecycle):
 
         plugins.append(fills.plugin)
 
-        from .fill import patternfill
+        from .fill import patterns
 
-        plugins.append(patternfill.plugin)
+        plugins.append(patterns.plugin)
 
         from .extra import vectrace
 

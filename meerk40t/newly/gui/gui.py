@@ -43,6 +43,7 @@ def plugin(service, lifecycle):
 
     if lifecycle == "service_attach":
         from meerk40t.gui.icons import (
+            icon_mk_rectangular,
             icons8_circled_play_50,
             icons8_circled_stop_50,
             icons8_computer_support_50,
@@ -50,7 +51,6 @@ def plugin(service, lifecycle):
             icons8_file_50,
             icons8_move_50,
             icons8_play_50,
-            icons8_rectangular_50,
         )
 
         _ = service.kernel.translation
@@ -144,7 +144,7 @@ def plugin(service, lifecycle):
             "button/control/DrawFrame",
             {
                 "label": _("Draw Frame"),
-                "icon": icons8_rectangular_50,
+                "icon": icon_mk_rectangular,
                 "tip": _(
                     "Draw a bounding rectangle of the object saved in the machine"
                 ),

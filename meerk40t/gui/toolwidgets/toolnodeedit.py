@@ -3,7 +3,20 @@ from copy import copy
 
 import wx
 
-from meerk40t.gui.icons import STD_ICON_SIZE, PyEmbeddedImage
+from meerk40t.gui.icons import (
+    STD_ICON_SIZE,
+    node_add,
+    node_append,
+    node_break,
+    node_close,
+    node_curve,
+    node_delete,
+    node_join,
+    node_line,
+    node_smooth,
+    node_smooth_all,
+    node_symmetric,
+)
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.sceneconst import (
@@ -45,7 +58,6 @@ class EditTool(ToolWidget):
         self.path = None
         self.element = None
         self.selected_index = None
-        self.anyselected = False
 
         self.move_type = "node"
         self.node_type = "path"
@@ -65,6 +77,8 @@ class EditTool(ToolWidget):
         self.pen_selection = wx.Pen()
         self.pen_selection.SetColour(self.scene.colors.color_selection3)
         self.pen_selection.SetStyle(wx.PENSTYLE_SHORT_DASH)
+        self.brush_highlight = wx.Brush(wx.RED_BRUSH)
+        self.brush_normal = wx.Brush(wx.TRANSPARENT_BRUSH)
         # want to have sharp edges
         self.pen_selection.SetJoin(wx.JOIN_MITER)
         # "key": (routine, info, available for poly, available for path)
@@ -87,108 +101,6 @@ class EditTool(ToolWidget):
         self.message = ""
 
     def define_buttons(self):
-        node_add = PyEmbeddedImage(
-            b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
-            b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAJ0lEQVQImWP4//h/AwM24g+DPDKBU93//yCCoR5G2KEQ"
-            b"YIAmBlcMABg0P3m4MIsZAAAAAElFTkSuQmCC"
-        )
-
-        node_append = PyEmbeddedImage(
-            b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
-            b"CXBIWXMAAA7EAAAOxAGVKw4bAAAALklEQVQImWP4//h/AwM24g+DPDKBU93//zCC/wd7A8P7"
-            b"39+RiRfM3zHEwOpAOgBQXErXEDO0NAAAAABJRU5ErkJggg=="
-        )
-
-        node_break = PyEmbeddedImage(
-            b"iVBORw0KGgoAAAANSUhEUgAAABcAAAAZAQMAAADg7ieTAAAABlBMVEUAAAD///+l2Z/dAAAA"
-            b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAOElEQVQImWP4//8fw39GIK6FYIYaBjgbLA6Sf4+EGaG4"
-            b"GYiPQ8Qa/jEx7Pv3C4zt/v2As0HiQP0AnIQ8UXzwP+sAAAAASUVORK5CYII="
-        )
-
-        node_curve = PyEmbeddedImage(
-            b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
-            b"CXBIWXMAAA7EAAAOxAGVKw4bAAAARklEQVQImWP4//9/AwOUOAgi7gKJP7JA4iGIdR4kJg+U"
-            b"/VcPIkDq/oCInyDiN4j4DCK+w4nnIOI9iGgGEbtRiWYk2/43AADobVHMAT+avQAAAABJRU5E"
-            b"rkJggg=="
-        )
-
-        node_delete = PyEmbeddedImage(
-            b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
-            b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAKUlEQVQImWP4//9/AwM24g+DPDKBUx0SMakeSOyvh3FB"
-            b"LDBAE4OoA3IBbltJOc3s08cAAAAASUVORK5CYII="
-        )
-
-        node_join = PyEmbeddedImage(
-            b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
-            b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAPklEQVQImWP4//9/A8OD/80NDO/+74YSff93IHPBsv+/"
-            b"/0chGkDEQRDxGC72H04wgIg6GNFQx4DMhcgC1QEARo5M+gzPuwgAAAAASUVORK5CYII="
-        )
-
-        node_line = PyEmbeddedImage(
-            b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
-            b"CXBIWXMAAA7EAAAOxAGVKw4bAAAARElEQVQImWP4//9/A8P//wdAxD0sRAOIsAcS/+qBxB+Q"
-            b"4p8g4jOIeA4izoOI+SDCHkj8qwcSf0CGNoKIvViIRoiV/xsA49JQrrbQItQAAAAASUVORK5C"
-            b"YII="
-        )
-
-        node_symmetric = PyEmbeddedImage(
-            b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
-            b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAV0lEQVQImV3NqxGAMBRE0R2qQoXS2ApICVDJowRKQEYi"
-            b"YsIAWX6DIObIeyGJeGgllDTKwKjMl147MesgJq3Eoo0IjES0QCTzROdqYnAV4S1dZbvz/B5/"
-            b"TrOwSVb5BTbFAAAAAElFTkSuQmCC"
-        )
-
-        node_smooth = PyEmbeddedImage(
-            b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAAAXNSR0IArs4c6QAAAARnQU1B"
-            b"AACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAIgSURBVEhLY/wPBAw0BkxQmqZg+FhC"
-            b"VJx8+fyZ4fKVK1AeBEhKSDAoKCpCefgBUZZcvHCBITo6CsqDgJjYWIaKikooDz8gKrjevX8P"
-            b"ZSHAh3fvGX7//g3l4Qc4ffLz50+G9evWMSxftpTh7r17UFFUwM3NzeDm6saQlJLMoKioBBXF"
-            b"BFgtOX/+HENNdRXDw4ePwHwZGVmGJ08eg9kwICQkxPDj+3eGb0DMxMTEkJySwpCdncPAwsIC"
-            b"VYEAGJZs3bqFoaaqiuH3nz8Mjg6ODHkFBWADFy1cCFUBAdo6Ogx2dnYMq1etYpg6dQrDly9f"
-            b"GKysbRgmTpzIwMnJCVUFBSBLYODgwYP/dXV1/usB8do1a6CihMGLF8//h4YE/9fW0vyfmZn5"
-            b"/++fP1AZCIBb8ubNm/8W5mb/dbS1/m/ftg0qSjz4/Pnz/4AAf7BF8+bOhYpCANyS2tpqsIKO"
-            b"jnaoCOng/v37/40MDf4bGxmCHQ0DYEtAAoYG+mCfAMMWLEEu6O7qAjt22rSpUJH//8H55MD+"
-            b"/Qy/fv1i8A8IACdLSkBkZCSY3rVzJ5gGAWZ+Pr6G7du3MgB9wyAsJMzwB5iq1DU0oNKkg/Xr"
-            b"1zFcOHeO4dWrVwzfvn4DZofzDIwgr0HlwcDZ2Ylh4qQpUB7pwNfHh+H+fUTmBYXMaH1CEmA8"
-            b"duwYSpyAihB1dXUoj3QAqhZA5RkMMDMzEVefUApGI54EwMAAANLW9DiEznjCAAAAAElFTkSu"
-            b"QmCC"
-        )
-
-        node_smooth_all = PyEmbeddedImage(
-            b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
-            b"AAACs0lEQVR4nO2YO2hUQRSGj4r4loh2Rldws3P+/+zdK2xhSB+idop2FqJgFUEt1FJERBtt"
-            b"VKy0UvCBz0IR0UKsTBoRBEVREcEHiEh8JBrlZu+uIbmYx97sA+eDKbaY/86/c86cMyPi8Xg8"
-            b"Ho/nP6RYLM404PDIETjnpJlob22dY8TvkQPAOmkmzCxMMkJq9yaRGdLIFAqFeaa606DPkkwM"
-            b"Gx8NOBoE2VZpNACsJfR1ZbHQH0b8SjDxrbI70D5Sd4vIdGkESN1rxGApdPAmCp8gCBYRuEui"
-            b"Z/gw0w1mroPE5coc4FImk5ldVxMG7Bm2C6edcwvGPddcF6HvYjM36pY7Zq6rEj7Agclp2Mpy"
-            b"SJJ6UGpNsVicS+JFbOJMNVr5fK5A4iuh/aqal1pCanc5J7LZ7MIU9PbF4XkxnRWOEwJPSka4"
-            b"Q1LaYSM+EDoQtrUtlVpAMhsfn/1hGLakp4sTkW4e2CpTjVEvEHgQn1Sfo9+q2l6tLum2EHhY"
-            b"0tWnQ9+h7qpWN3DORVojhyS3HdxYvREcS2hnzlera+Y6ktbsjYyF35HJh9boxEkr2UsHifbF"
-            b"CX81tWSH3owNDEZ1aijZpxoC14eOYNXOtDTzwOa4eD+SWkHq9rjtOZeaJnAv1jyUlubYHyXn"
-            b"E/opqvCBc0G1ennVzrh4DwDISJ2uBr3R3X+yOrlcbolRX8Y16aTU5QWG6C0nfTabnTVRjTAM"
-            b"WyodCPRVmq3UhDCzZUa8jRdy3zm3YrxzA+cCoz6O534huUrqCYA2As//LkiPRIai4jnqCg3s"
-            b"V9WcAcfj94LolHoPYLU0Aqq62ICzw4pZdM///q9HDStdnW+RXC6NRqlC65Xyv53cvOKnUe+Q"
-            b"XCMi06SRiR43DHotwURPtHvSTBj0VIKR29Js5FXXJzyQb6v3ujwej8fj8Uid+AMS4JbuhXD/"
-            b"gAAAAABJRU5ErkJggg=="
-        )
-
-        node_close = PyEmbeddedImage(
-            b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
-            b"AAACpklEQVR4nO2YSWsVQRRGjwlOcWM0YCDguFHzUKMrccClszEgiCKSgBiCYOJGI7qX4MYg"
-            b"auLsD3DnhD5F/AGaxAHEZKFunDfqwiQ+KbgNl6K7051+TbpNHajV++7te19VV9dX4HA4HA7H"
-            b"xDAFOA5cAGrJMTuBkoy3QB05Za1qJPfNHMtzM3OBrUCLvCOvIjSzAOgQfdhoAbbIM1KhEjgI"
-            b"PAFGrML9xh0r/k2EGD2GgcfAAaCiXE1sAgZiFvLUyvExZnxJjT5gY9Imjsi/Yyd/DzwEbslS"
-            b"0r99ApZbeVYD3UBPyDC5TM4PATPUNt4mTvkkuww0KM1ea6mZJgokpwG44rOMO+MmagL+qgTv"
-            b"gBWWZpU1W6aJesrLSmBQPWMUaIwaPAf4oYL7A3aRfSk34VFjvaPfgGoicFYFfQUWBuhmAL3A"
-            b"bWAp6bIY+K7q6horYBbwWwUcJTt0qLp+AVVh4t1K/BmYRnaYLivEq29XmLhXCa+RPW6o+i6F"
-            b"CR8o4SGyx2FV3/0w4Usl3Eb22GHtpoH0K+F2su2B+ibF0upRwutkj5uqvotRt98vsuXlcvut"
-            b"ko+NJ24nm270JzBzrIAu61yzKOUClwH3gPPA1ADNEuuIciZK4moraEAObmlQLwdO71l7fDQ1"
-            b"1mfBLK/ZUR/QKEdmL3hQju1pNmEsQcHHlwxZx3izBcei0zI1xuRcFbeXlILVxIiYNO/ib40c"
-            b"kWxjZS4oxkVbgNU1drQo9jTMvnZbjtJvJkpil02uYoC//wO0kpANwIsElwemMM2zmPHPgXWU"
-            b"iQq5mikGzFDYeG3luhshZhh4BOwv53WQnxXeDDQDp2UrDBongPlWfJ3PzcuQ5GqW3JGsbBao"
-            b"lZnSzZwkp/jNzHr+k2aayDHzgHPyjlROdDEOh8PhmJz8A+PVbUCLkfVDAAAAAElFTkSuQmCC"
-        )
-
         def becomes_enabled(needs_selection, active_for_path, active_for_poly):
             def routine(*args):
                 # print(
@@ -476,6 +388,8 @@ class EditTool(ToolWidget):
             else:
                 return
             # print(self.path.d(), self.path)
+            if self.path is None:
+                return
             self.path.approximate_arcs_with_cubics()
             # print(self.path.d(), self.path)
             # try:
@@ -808,13 +722,24 @@ class EditTool(ToolWidget):
             if entry["type"] == "point":
                 if idx == self.selected_index or entry["selected"]:
                     gc.SetPen(self.pen_highlight)
+                    gc.SetBrush(self.brush_highlight)
+                    factor = 1.25
                 else:
                     gc.SetPen(self.pen)
-                gc.DrawEllipse(ptx - offset, pty - offset, offset * 2, offset * 2)
+                    gc.SetBrush(self.brush_normal)
+                    factor = 1
+                gc.DrawEllipse(
+                    ptx - factor * offset,
+                    pty - factor * offset,
+                    offset * 2 * factor,
+                    offset * 2 * factor,
+                )
             elif entry["type"] == "control":
                 if idx == self.selected_index or entry["selected"]:
+                    factor = 1.25
                     gc.SetPen(self.pen_highlight)
                 else:
+                    factor = 1
                     gc.SetPen(self.pen_ctrl)
                     # Do we have a second controlpoint at the same segment?
                     if isinstance(entry["segment"], CubicBezier):
@@ -826,11 +751,11 @@ class EditTool(ToolWidget):
                         if orgnode is not None and orgnode["selected"]:
                             gc.SetPen(self.pen_ctrl_semi)
                 pattern = [
-                    (ptx - offset, pty),
-                    (ptx, pty + offset),
-                    (ptx + offset, pty),
-                    (ptx, pty - offset),
-                    (ptx - offset, pty),
+                    (ptx - factor * offset, pty),
+                    (ptx, pty + factor * offset),
+                    (ptx + factor * offset, pty),
+                    (ptx, pty - factor * offset),
+                    (ptx - factor * offset, pty),
                 ]
                 gc.DrawLines(pattern)
                 if 0 <= entry["connector"] < len(self.nodes):
@@ -841,15 +766,17 @@ class EditTool(ToolWidget):
                     gc.DrawLines(pattern)
             elif entry["type"] == "midpoint":
                 if idx == self.selected_index or entry["selected"]:
+                    factor = 1.25
                     gc.SetPen(self.pen_highlight)
                 else:
+                    factor = 1
                     gc.SetPen(self.pen_ctrl)
                 pattern = [
-                    (ptx - offset, pty),
-                    (ptx, pty + offset),
-                    (ptx + offset, pty),
-                    (ptx, pty - offset),
-                    (ptx - offset, pty),
+                    (ptx - factor * offset, pty),
+                    (ptx, pty + factor * offset),
+                    (ptx + factor * offset, pty),
+                    (ptx, pty - factor * offset),
+                    (ptx - factor * offset, pty),
                 ]
                 gc.DrawLines(pattern)
 
@@ -998,12 +925,7 @@ class EditTool(ToolWidget):
             modified = True
         else:
             dealt_with = []
-            anyselected = False
-            for entry in self.nodes:
-                if entry["selected"] and entry["type"] == "point":
-                    anyselected = True
-                    break
-            if not anyselected:
+            if not self.anyselected:
                 # Let's select the last point, so the last segment will be closed/opened
                 for idx in range(len(self.nodes) - 1, -1, -1):
                     entry = self.nodes[idx]
@@ -1852,6 +1774,14 @@ class EditTool(ToolWidget):
         if modified:
             self.modify_element(True)
 
+    @property
+    def anyselected(self):
+        if self.nodes:
+            for entry in self.nodes:
+                if entry["selected"]:
+                    return True
+        return False
+
     def event(
         self,
         window_pos=None,
@@ -1895,7 +1825,6 @@ class EditTool(ToolWidget):
 
             xp = space_pos[0]
             yp = space_pos[1]
-            self.anyselected = False
             if self.nodes:
                 w = offset * 4
                 h = offset * 4
@@ -1920,19 +1849,13 @@ class EditTool(ToolWidget):
                             if orgnode is not None:
                                 orgnode["selected"] = True
                             entry["selected"] = True
-                            self.anyselected = True
                         else:
                             # Shift-Key Pressed?
                             if "shift" not in modifiers:
                                 self.clear_selection()
                                 entry["selected"] = True
-                                self.anyselected = True
                             else:
                                 entry["selected"] = not entry["selected"]
-                                for chk in self.nodes:
-                                    if chk["selected"]:
-                                        self.anyselected = True
-                                        break
                         break
                 else:  # For-else == icky
                     self.selected_index = None
@@ -2086,7 +2009,6 @@ class EditTool(ToolWidget):
                 if abs(dx) < 1e-10 or abs(dy) < 1e-10:
                     return RESPONSE_CONSUME
                 # We select all points (not controls) inside
-                anyselected = False
                 if self.element:
                     for entry in self.nodes:
                         pt = entry["point"]
@@ -2096,10 +2018,6 @@ class EditTool(ToolWidget):
                             and y0 <= pt.y <= y1
                         ):
                             entry["selected"] = True
-                        if entry["selected"]:
-                            # Could as well be another one not inside the
-                            # current selection
-                            anyselected = True
                 self.scene.request_refresh()
                 self.enable_rules()
             self.p1 = None

@@ -14,7 +14,7 @@ from ..svgelements import Color
 from .icons import (
     icons8_direction_20,
     icons8_image_20,
-    icons8_laser_beam_20,
+    icons8_laser_beam,
     icons8_scatter_plot_20,
     icons8_small_beam_20,
 )
@@ -292,8 +292,12 @@ class BasicOpPanel(wx.Panel):
                 self.context.elements.set_emphasis(None)
                 for elem in mynode.children:
                     elem.selected = True
-                    if elem.node is not None:
-                        elem.node.emphasized = True
+                    try:
+                        if elem.node is not None:
+                            elem.node.emphasized = True
+                    except AttributeError:
+                        # Is a structured node like hatch-effect
+                        pass
                 mynode.highlighted = True
                 self.context.elements.signal("refresh_scene", "Scene")
 
@@ -359,7 +363,7 @@ class BasicOpPanel(wx.Panel):
                 )
             elif node.type == "op cut":
                 c, d = get_color()
-                result = icons8_laser_beam_20.GetBitmap(
+                result = icons8_laser_beam.GetBitmap(
                     color=c,
                     resize=(iconsize, iconsize),
                     noadjustment=True,

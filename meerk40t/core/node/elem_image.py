@@ -224,9 +224,7 @@ class ImageNode(Node):
                 self._update_thread = None
                 if context is not None:
                     if self._process_image_failed:
-                        self.message = (
-                            "Process image could not exist in memory."
-                        )
+                        self.message = "Process image could not exist in memory."
                     else:
                         self.message = None
                     context.signal("refresh_scene", "Scene")

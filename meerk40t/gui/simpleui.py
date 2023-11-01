@@ -13,13 +13,37 @@ from wx import aui
 from ..core.exceptions import BadFileError
 from .icons import icons8_computer_support_50, icons8_opened_folder_50
 from .mwindow import MWindow
+from .navigationpanels import Drag, Jog
+from .wxutils import StaticBoxSizer
 
 _ = wx.GetTranslation
 
 
+class JogMovePanel(wx.Panel):
+    def __init__(self, *args, context=None, icon_size=None, **kwds):
+        # begin wxGlade: Jog.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        if icon_size is None:
+            iconsize = 50
+        else:
+            iconsize = icon_size
+        jog_panel = Jog(self, wx.ID_ANY, context=context, icon_size=iconsize)
+        drag_panel = Drag(self, wx.ID_ANY, context=context, icon_size=iconsize)
+        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        main_sizer.AddStretchSpacer()
+        main_sizer.Add(jog_panel, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        main_sizer.AddSpacer(25)
+        main_sizer.Add(drag_panel, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        main_sizer.AddStretchSpacer()
+        self.SetSizer(main_sizer)
+        self.Layout()
+
+
 class ProjectPanel(wx.Panel):
     """
-    Serves to allow the use of Load Project button. This couldn't be provided natively by any readily availible panel.
+    Serves to allow the use of Load Project button. This couldn't be provided natively by any readily available panel.
     """
 
     name = "Project"
@@ -31,12 +55,41 @@ class ProjectPanel(wx.Panel):
         self.context = context
         self.SetSize((400, 300))
 
-        sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_buttons = wx.BoxSizer(wx.VERTICAL)
 
         self.button_load = wx.Button(self, wx.ID_ANY, _("Load Project"))
 
         self.button_load.SetBitmap(icons8_opened_folder_50.GetBitmap())
-        sizer_buttons.Add(self.button_load, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        info_panel = StaticBoxSizer(self, wx.ID_ANY, "Project-Information", wx.VERTICAL)
+        line1 = wx.BoxSizer(wx.HORIZONTAL)
+        lbl = wx.StaticText(self, wx.ID_ANY, "File:")
+        lbl.SetMinSize(wx.Size(70, -1))
+        self.info_file = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        line1.Add(lbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        line1.Add(self.info_file, 1, wx.EXPAND, 0)
+
+        line2 = wx.BoxSizer(wx.HORIZONTAL)
+        lbl = wx.StaticText(self, wx.ID_ANY, "Content:")
+        lbl.SetMinSize(wx.Size(70, -1))
+        self.info_elements = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.info_operations = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        line2.Add(lbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        line2.Add(self.info_elements, 1, wx.EXPAND, 0)
+        line2.Add(self.info_operations, 1, wx.EXPAND, 0)
+
+        line3 = wx.BoxSizer(wx.HORIZONTAL)
+        lbl = wx.StaticText(self, wx.ID_ANY, "Status:")
+        lbl.SetMinSize(wx.Size(70, -1))
+        self.info_status = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        line3.Add(lbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        line3.Add(self.info_status, 1, wx.EXPAND, 0)
+
+        info_panel.Add(line1, 0, wx.EXPAND, 0)
+        info_panel.Add(line2, 0, wx.EXPAND, 0)
+        info_panel.Add(line3, 0, wx.EXPAND, 0)
+        # info_panel.Add(line4, 0, wx.EXPAND, 0)
+        sizer_buttons.Add(self.button_load, 0, 0, 0)
+        sizer_buttons.Add(info_panel, 1, wx.EXPAND, 0)
 
         self.SetSizer(sizer_buttons)
 
@@ -45,6 +98,27 @@ class ProjectPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_load, self.button_load)
         self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
         # end wxGlade
+
+    def update_info(self, pathname):
+        self.info_file.SetValue(pathname)
+        self.info_elements.SetValue(
+            f"{len(list(self.context.elements.elems()))} elements"
+        )
+        self.info_operations.SetValue(
+            f"{len(list(self.context.elements.ops()))} burn operations"
+        )
+        unass, unburn = self.context.elements.have_unburnable_elements()
+        status = ""
+        if unass:
+            status += "Unassigned elements! "
+        if unburn:
+            status += "Unburnable elements! "
+        if status == "":
+            status = "Ready to burn."
+            self.info_status.SetBackgroundColour(None)
+        else:
+            self.info_status.SetBackgroundColour(wx.YELLOW)
+        self.info_status.SetValue(status)
 
     def on_load(self, event):  # wxGlade: MyFrame.<event_handler>
         # This code should load just specific project files rather than all importable formats.
@@ -57,6 +131,7 @@ class ProjectPanel(wx.Panel):
             pathname = fileDialog.GetPath()
             self.clear_project()
             self.load(pathname)
+            self.update_info(pathname)
         event.Skip()
 
     def clear_project(self):
@@ -75,9 +150,13 @@ class ProjectPanel(wx.Panel):
         accepted = 0
         rejected = 0
         rejected_files = []
+        validpath = ""
         for pathname in event.GetFiles():
             if self.load(pathname):
                 accepted += 1
+                if validpath:
+                    validpath += ","
+                validpath += pathname
             else:
                 rejected += 1
                 rejected_files.append(pathname)
@@ -91,9 +170,12 @@ class ProjectPanel(wx.Panel):
             )
             dlg.ShowModal()
             dlg.Destroy()
+            self.update_info(validpath)
 
     def load(self, pathname):
         def unescaped(filename):
+            import platform
+
             OS_NAME = platform.system()
             if OS_NAME == "Windows":
                 newstring = filename.replace("&", "&&")
@@ -218,9 +300,9 @@ class SimpleUI(MWindow):
         from meerk40t.gui.laserpanel import LaserPanel
 
         kernel.register("simpleui/laserpanel", (LaserPanel, None))
-        from meerk40t.gui.navigationpanels import Jog
 
-        kernel.register("simpleui/navigation", (Jog, {"icon_size": 20}))
+        kernel.register("simpleui/navigation", (JogMovePanel, None))
+
         from meerk40t.gui.consolepanel import ConsolePanel
 
         kernel.register("simpleui/console", (ConsolePanel, None))

@@ -10,6 +10,9 @@ from .basicops import BasicOpPanel
 from .icons import (
     get_default_scale_factor,
     icon_meerk40t,
+    icon_mk_ellipse,
+    icon_mk_polyline,
+    icon_mk_rectangular,
     icons8_bell_20,
     icons8_canvas_20,
     icons8_close_window_20,
@@ -23,15 +26,13 @@ from .icons import (
     icons8_image_20,
     icons8_input_20,
     icons8_journey_20,
-    icons8_laser_beam_20,
+    icons8_laser_beam,
     icons8_line_20,
-    icons8_lock_50,
+    icons8_lock,
     icons8_output_20,
     icons8_oval_20,
-    icons8_polyline_50,
     icons8_prototype_20,
     icons8_r_white,
-    icons8_rectangular_20,
     icons8_return_20,
     icons8_scatter_plot_20,
     icons8_small_beam_20,
@@ -44,7 +45,7 @@ from .icons import (
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
-from .wxutils import create_menu, get_key_name, is_navigation_key
+from .wxutils import StaticBoxSizer, create_menu, get_key_name, is_navigation_key
 
 _ = wx.GetTranslation
 
@@ -115,11 +116,18 @@ class TreePanel(wx.Panel):
             | wx.TR_HIDE_ROOT
             | wx.TR_LINES_AT_ROOT,
         )
-        if wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127:
+        try:
+            res = wx.SystemSettings().GetAppearance().IsDark()
+        except AttributeError:
+            res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        if res:
             self.wxtree.SetBackgroundColour(wx.Colour(50, 50, 50))
+
+        self.setup_warn_panel()
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         main_sizer.Add(self.wxtree, 1, wx.EXPAND, 0)
+        main_sizer.Add(self.warn_panel, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         self.__set_tree()
         self.wxtree.Bind(wx.EVT_KEY_UP, self.on_key_up)
@@ -127,6 +135,95 @@ class TreePanel(wx.Panel):
         self._keybind_channel = self.context.channel("keybinds")
 
         self.context.signal("rebuild_tree")
+
+    def setup_warn_panel(self):
+        def fix_unassigned_create(event):
+            previous = self.context.elements.classify_autogenerate
+            self.context.elements.classify_autogenerate = True
+            target_list = list(self.context.elements.unassigned_elements())
+            self.context.elements.classify(target_list)
+            self.context.elements.classify_autogenerate = previous
+            self.context.elements.signal("refresh_tree")
+
+        def fix_unassigned_used(event):
+            previous = self.context.elements.classify_autogenerate
+            self.context.elements.classify_autogenerate = False
+            target_list = list(self.context.elements.unassigned_elements())
+            self.context.elements.classify(target_list)
+            self.context.elements.classify_autogenerate = previous
+            self.context.elements.signal("refresh_tree")
+
+        def fix_unburnt(event):
+            for node in self.context.elements.elems():
+                will_be_burnt = False
+                first_op = None
+                for refnode in node._references:
+                    op = refnode.parent
+                    if op is not None:
+                        try:
+                            if op.output:
+                                will_be_burnt = True
+                                break
+                            else:
+                                if first_op is None:
+                                    first_op = op
+                        except AttributeError:
+                            pass
+                if not will_be_burnt and first_op is not None:
+                    try:
+                        first_op.output = True
+                        self.context.elements.signal(
+                            "element_property_update", first_op
+                        )
+                        self.context.elements.signal("warn_state_update")
+                    except AttributeError:
+                        pass
+
+        self.warn_panel = wx.BoxSizer(wx.HORIZONTAL)
+        unassigned_frame = StaticBoxSizer(self, wx.ID_ANY, "Unassigned", wx.HORIZONTAL)
+        unburnt_frame = StaticBoxSizer(self, wx.ID_ANY, "Non-burnt", wx.HORIZONTAL)
+        self.btn_fix_assign_create = wx.Button(self, wx.ID_ANY, "Assign (+new)")
+        self.btn_fix_assign_existing = wx.Button(self, wx.ID_ANY, "Assign")
+        self.btn_fix_unburnt = wx.Button(self, wx.ID_ANY, "Enable")
+        self.btn_fix_assign_create.SetToolTip(
+            _("Classify unassigned elements and create operations if necessary")
+        )
+        self.btn_fix_assign_existing.SetToolTip(
+            _("Classify unassigned elements and use only existing operations")
+        )
+        self.btn_fix_unburnt.SetToolTip(
+            _("Reactivate disabled operations that prevent elements from being burnt")
+        )
+
+        unassigned_frame.Add(self.btn_fix_assign_create, 0, wx.EXPAND, 0)
+        unassigned_frame.Add(self.btn_fix_assign_existing, 0, wx.EXPAND, 0)
+        unburnt_frame.Add(self.btn_fix_unburnt, 0, wx.EXPAND, 0)
+        self.warn_panel.Add(unassigned_frame, 1, wx.EXPAND, 0)
+        self.warn_panel.Add(unburnt_frame, 1, wx.EXPAND, 0)
+        self._last_issue = None
+        self.warn_panel.Show(False)
+        self.warn_panel.ShowItems(False)
+        self.Bind(wx.EVT_BUTTON, fix_unassigned_create, self.btn_fix_assign_create)
+        self.Bind(wx.EVT_BUTTON, fix_unassigned_used, self.btn_fix_assign_existing)
+        self.Bind(wx.EVT_BUTTON, fix_unburnt, self.btn_fix_unburnt)
+        # self.Show(False)
+
+    def check_for_issues(self):
+        non_assigned, non_burn = self.context.elements.have_unburnable_elements()
+        self.btn_fix_assign_create.Enable(non_assigned)
+        self.btn_fix_assign_existing.Enable(non_assigned)
+        self.btn_fix_unburnt.Enable(non_burn)
+        new_issue = non_assigned or non_burn
+        if self._last_issue == new_issue:
+            return
+        self._last_issue = new_issue
+        if new_issue:
+            self.warn_panel.Show(True)
+            self.warn_panel.ShowItems(True)
+        else:
+            self.warn_panel.Show(False)
+            self.warn_panel.ShowItems(False)
+        self.Layout()
 
     def __set_tree(self):
         self.shadow_tree = ShadowTree(
@@ -216,6 +313,7 @@ class TreePanel(wx.Panel):
     def on_warn_state_update(self, origin, *args):
         # Updates the warning state, using signal to avoid unnecessary calls
         self.shadow_tree.update_warn_sign()
+        self.check_for_issues()
 
     @signal_listener("select_emphasized_tree")
     def on_shadow_select_emphasized_tree(self, origin, *args):
@@ -425,7 +523,7 @@ class ShadowTree:
             "util input": icons8_input_20,
             "util console": icons8_system_task_20,
             "op engrave": icons8_small_beam_20,
-            "op cut": icons8_laser_beam_20,
+            "op cut": icons8_laser_beam,
             "op image": icons8_image_20,
             "op raster": icons8_direction_20,
             "op dots": icons8_scatter_plot_20,
@@ -436,12 +534,12 @@ class ShadowTree:
             "elem point": icons8_scatter_plot_20,
             "file": icons8_file_20,
             "group": icons8_group_objects_20,
-            "elem rect": icons8_rectangular_20,
-            "elem ellipse": icons8_oval_20,
+            "elem rect": icon_mk_rectangular,
+            "elem ellipse": icon_mk_ellipse,
             "elem image": icons8_image_20,
             "elem path": icons8_journey_20,
             "elem line": icons8_line_20,
-            "elem polyline": icons8_polyline_50,
+            "elem polyline": icon_mk_polyline,
             "elem text": icons8_type_50,
             "blob": icons8_file_20,
         }
@@ -462,7 +560,7 @@ class ShadowTree:
         self.state_images = wx.ImageList()
         self.iconstates = {}
         self.state_images.Create(width=self.iconsize, height=self.iconsize)
-        image = icons8_lock_50.GetBitmap(
+        image = icons8_lock.GetBitmap(
             resize=(self.iconsize, self.iconsize), noadjustment=True
         )
         image_id = self.state_images.Add(bitmap=image)
@@ -871,9 +969,13 @@ class ShadowTree:
                     return
 
         self.wxtree._freeze = False
-        self.wxtree.Expand(self.elements.get(type="branch elems")._item)
-        self.wxtree.Expand(self.elements.get(type="branch reg")._item)
-        self.update_warn_sign()
+        branch_elems_item = self.elements.get(type="branch elems")._item
+        if branch_elems_item:
+            self.wxtree.Expand(branch_elems_item)
+        branch_reg_item = self.elements.get(type="branch reg")._item
+        if branch_reg_item:
+            self.wxtree.Expand(branch_reg_item)
+        self.context.elements.signal("warn_state_update")
         self.context.elements.set_end_time("full_load", display=True, delete=True)
 
     def update_warn_sign(self):
@@ -1012,7 +1114,7 @@ class ShadowTree:
         node_operations = elemtree.get(type="branch ops")
         self.set_icon(
             node_operations,
-            icons8_laser_beam_20.GetBitmap(
+            icons8_laser_beam.GetBitmap(
                 resize=(self.iconsize, self.iconsize), noadjustment=True
             ),
         )
@@ -1713,6 +1815,9 @@ class ShadowTree:
             # have led to the creation of a new reference
             # node. For whatever reason this is not recognised
             # otherwise...
+            if not self.dragging_nodes:
+                # Dragging nodes were cleared (we must have rebuilt the entire tree)
+                return
             for node in self.dragging_nodes:
                 if node.type.startswith("op"):
                     self.context.signal("tree_changed")

@@ -38,7 +38,7 @@ class OpBranchPanel(wx.Panel):
                 "default": 1,
                 "type": int,
                 "conditional": (self.operation, "loop_enabled"),
-                "label": _("Loop"),
+                "label": _("Loops"),
                 "trailing": _("times"),
                 "tip": _("How many times should the operation job loop"),
             },

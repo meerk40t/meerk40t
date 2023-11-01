@@ -32,46 +32,48 @@ from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from ..svgelements import Color, Matrix, Path
 from .icons import (  # icons8_replicate_rows_50,
     STD_ICON_SIZE,
+    PyEmbeddedImage,
     icon_cag_common_50,
     icon_cag_subtract_50,
     icon_cag_union_50,
     icon_cag_xor_50,
     icon_meerk40t,
-    icons8_align_bottom_50,
-    icons8_align_left_50,
-    icons8_align_right_50,
-    icons8_align_top_50,
+    icon_mk_align_bottom,
+    icon_mk_align_left,
+    icon_mk_align_right,
+    icon_mk_align_top,
+    icon_mk_circle,
+    icon_mk_ellipse,
+    icon_mk_point,
+    icon_mk_polygon,
+    icon_mk_polyline,
+    icon_mk_rectangular,
+    icon_mk_redo,
+    icon_mk_undo,
     icons8_centerh_50,
     icons8_centerv_50,
-    icons8_circle_50,
     icons8_circled_left_50,
     icons8_circled_right_50,
     icons8_copy_50,
     icons8_curly_brackets_50,
     icons8_cursor_50,
     icons8_delete_50,
+    icons8_diagonal_20,
     icons8_finger_50,
     icons8_flip_vertical,
     icons8_group_objects_50,
     icons8_measure_50,
-    icons8_mirror_horizontal,
+    icons8_flip_horizontal,
     icons8_node_edit_50,
     icons8_opened_folder_50,
-    icons8_oval_50,
     icons8_paste_50,
     icons8_pencil_drawing_50,
     icons8_place_marker_50,
-    icons8_point_50,
-    icons8_polygon_50,
-    icons8_polyline_50,
-    icons8_rectangular_50,
-    icons8_redo_50,
     icons8_rotate_left_50,
     icons8_rotate_right_50,
     icons8_save_50,
     icons8_scissors_50,
     icons8_type_50,
-    icons8_undo_50,
     icons8_ungroup_objects_50,
     icons8_user_location_50,
     icons8_vector_50,
@@ -1011,6 +1013,31 @@ class MeerK40t(MWindow):
         bsize_normal = STD_ICON_SIZE
         # bsize_small = STD_ICON_SIZE / 2
         bsize_small = STD_ICON_SIZE
+
+        def contains_a_param():
+            result = False
+            for e in kernel.elements.elems(emphasized=True):
+                if e.functional_parameter is not None:
+                    result = True
+                    break
+            return result
+
+        def contains_a_path():
+            result = False
+            for e in kernel.elements.elems(emphasized=True):
+                if e.type in ("elem polyline", "elem path"):
+                    result = True
+                    break
+            return result
+
+        def contains_an_element():
+            from meerk40t.core.elements.element_types import elem_nodes
+
+            for e in kernel.elements.elems(emphasized=True):
+                if e.type in elem_nodes:
+                    return True
+            return False
+
         kernel.register(
             "button/project/Open",
             {
@@ -1087,7 +1114,19 @@ class MeerK40t(MWindow):
                 "rule_enabled": lambda cond: contains_a_path(),
             },
         )
-
+        kernel.register(
+            "button/tools/Hatch",
+            {
+                "label": _("Hatch"),
+                "icon": PyEmbeddedImage.message_icon(msg="H"),
+                "tip": _("Wrap the current node in a hatch"),
+                "action": lambda v: kernel.elements("effect-hatch\n"),
+                # "group": "tool",
+                "size": bsize_normal,
+                # "identifier": "edit",
+                "rule_enabled": lambda cond: contains_an_element(),
+            },
+        )
         kernel.register(
             "button/tools/Relocate",
             {
@@ -1131,7 +1170,7 @@ class MeerK40t(MWindow):
             "button/tools/ellipse",
             {
                 "label": _("Ellipse"),
-                "icon": icons8_oval_50,
+                "icon": icon_mk_ellipse,
                 "tip": _("Add an ellipse element"),
                 "action": lambda v: kernel.elements("tool ellipse\n"),
                 "group": "tool",
@@ -1144,7 +1183,7 @@ class MeerK40t(MWindow):
             "button/tools/circle",
             {
                 "label": _("Circle"),
-                "icon": icons8_circle_50,
+                "icon": icon_mk_circle,
                 "tip": _("Add a circle element"),
                 "action": lambda v: kernel.elements("tool circle\n"),
                 "group": "tool",
@@ -1157,7 +1196,7 @@ class MeerK40t(MWindow):
             "button/tools/Polygon",
             {
                 "label": _("Polygon"),
-                "icon": icons8_polygon_50,
+                "icon": icon_mk_polygon,
                 "tip": _(
                     "Add a polygon element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
                 ),
@@ -1172,7 +1211,7 @@ class MeerK40t(MWindow):
             "button/tools/Polyline",
             {
                 "label": _("Polyline"),
-                "icon": icons8_polyline_50,
+                "icon": icon_mk_polyline,
                 "tip": _(
                     "Add a polyline element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
                 ),
@@ -1187,7 +1226,7 @@ class MeerK40t(MWindow):
             "button/tools/Rectangle",
             {
                 "label": _("Rectangle"),
-                "icon": icons8_rectangular_50,
+                "icon": icon_mk_rectangular,
                 "tip": _("Add a rectangular element"),
                 "action": lambda v: kernel.elements("tool rect\n"),
                 "group": "tool",
@@ -1200,7 +1239,7 @@ class MeerK40t(MWindow):
             "button/tools/Point",
             {
                 "label": _("Point"),
-                "icon": icons8_point_50,
+                "icon": icon_mk_point,
                 "tip": _("Add point to the scene"),
                 "action": lambda v: kernel.elements("tool point\n"),
                 "group": "tool",
@@ -1323,7 +1362,7 @@ class MeerK40t(MWindow):
             "button/undo/Undo",
             {
                 "label": _("Undo"),
-                "icon": icons8_undo_50,
+                "icon": icon_mk_undo,
                 "tip": _("Undo last operation"),
                 "action": lambda v: kernel.elements("undo\n"),
                 "size": bsize_small,
@@ -1335,7 +1374,7 @@ class MeerK40t(MWindow):
             "button/undo/Redo",
             {
                 "label": _("Redo"),
-                "icon": icons8_redo_50,
+                "icon": icon_mk_redo,
                 "tip": _("Redo last operation"),
                 "action": lambda v: kernel.elements("redo\n"),
                 "size": bsize_small,
@@ -1359,22 +1398,6 @@ class MeerK40t(MWindow):
             },
         )
 
-        def contains_a_param():
-            result = False
-            for e in kernel.elements.elems(emphasized=True):
-                if e.functional_parameter is not None:
-                    result = True
-                    break
-            return result
-
-        def contains_a_path():
-            result = False
-            for e in kernel.elements.elems(emphasized=True):
-                if e.type in ("elem polyline", "elem path"):
-                    result = True
-                    break
-            return result
-
         # Default Size for smaller buttons
         buttonsize = STD_ICON_SIZE / 2
 
@@ -1396,7 +1419,7 @@ class MeerK40t(MWindow):
             "button/modify/Mirror",
             {
                 "label": _("Mirror Horizontal"),
-                "icon": icons8_mirror_horizontal,
+                "icon": icons8_flip_horizontal,
                 "tip": _("Mirror the selected element horizontally"),
                 "action": lambda v: kernel.elements("scale -1 1\n"),
                 "size": bsize_small,
@@ -1594,7 +1617,7 @@ class MeerK40t(MWindow):
             "button/align/AlignLeft",
             {
                 "label": _("Left"),
-                "icon": icons8_align_left_50,
+                "icon": icon_mk_align_left,
                 "tip": _(
                     "Align selected elements at the leftmost position (right click: of the bed)"
                 ),
@@ -1663,7 +1686,7 @@ class MeerK40t(MWindow):
             "button/align/AlignRight",
             {
                 "label": _("Right"),
-                "icon": icons8_align_right_50,
+                "icon": icon_mk_align_right,
                 "tip": _(
                     "Align selected elements at the rightmost position (right click: of the bed)"
                 ),
@@ -1680,7 +1703,7 @@ class MeerK40t(MWindow):
             "button/align/AlignTop",
             {
                 "label": _("Top"),
-                "icon": icons8_align_top_50,
+                "icon": icon_mk_align_top,
                 "tip": _(
                     "Align selected elements at the topmost position (right click: of the bed)"
                 ),
@@ -1697,7 +1720,7 @@ class MeerK40t(MWindow):
             "button/align/AlignBottom",
             {
                 "label": _("Bottom"),
-                "icon": icons8_align_bottom_50,
+                "icon": icon_mk_align_bottom,
                 "tip": _(
                     "Align selected elements at the lowest position (right click: of the bed)"
                 ),
@@ -2371,7 +2394,11 @@ class MeerK40t(MWindow):
 
     @property
     def is_dark(self):
-        return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        try:
+            res = wx.SystemSettings().GetAppearance().IsDark()
+        except AttributeError:
+            res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        return res
 
     def __kernel_initialize(self):
         context = self.context

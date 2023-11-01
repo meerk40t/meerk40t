@@ -326,8 +326,11 @@ class wxMeerK40t(wx.App, Module):
         self.Bind(wx.EVT_TIMER, context._kernel.scheduler_main, self.timer)
         context._kernel.scheduler_handles_main_thread_jobs = False
         self.timer.Start(50)
-
-        icons.DARKMODE = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        try:
+            res = wx.SystemSettings().GetAppearance().IsDark()
+        except AttributeError:
+            res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        icons.DARKMODE = res
         icons.icon_r = 230
         icons.icon_g = 230
         icons.icon_b = 230
@@ -812,10 +815,15 @@ class wxMeerK40t(wx.App, Module):
         context = kernel.root
 
         context.setting(bool, "developer_mode", False)
-        # if context.developer_mode:
-        #     from meerk40t.gui.mkdebug import register_panel_debugger
+        context.setting(bool, "debug_mode", False)
+        if context.debug_mode:
+            from meerk40t.gui.mkdebug import (
+                register_panel_color,
+                register_panel_debugger,
+            )
 
-        #     kernel.register("wxpane/debug_tree", register_panel_debugger)
+            kernel.register("wxpane/debug_tree", register_panel_debugger)
+            kernel.register("wxpane/debug_color", register_panel_color)
 
         @context.console_argument("sure", type=str, help="Are you sure? 'yes'?")
         @context.console_command("nuke_settings", hidden=True)

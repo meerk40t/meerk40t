@@ -3,7 +3,7 @@ from math import sqrt
 import wx
 
 from meerk40t.core.units import Length
-from meerk40t.gui.icons import STD_ICON_SIZE, icons8_lock_50, icons8_padlock_50
+from meerk40t.gui.icons import STD_ICON_SIZE, icons8_lock, icons8_unlock
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.wxutils import CheckBox, StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.svgelements import Color
@@ -639,10 +639,10 @@ class PositionSizePanel(wx.Panel):
         )
         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
         self.btn_lock_ratio.SetValue(True)
-        self.bitmap_locked = icons8_lock_50.GetBitmap(
+        self.bitmap_locked = icons8_lock.GetBitmap(
             resize=STD_ICON_SIZE / 2, use_theme=False
         )
-        self.bitmap_unlocked = icons8_padlock_50.GetBitmap(
+        self.bitmap_unlocked = icons8_unlock.GetBitmap(
             resize=STD_ICON_SIZE / 2, use_theme=False
         )
         self.__set_properties()
@@ -970,10 +970,10 @@ class RoundedRectPanel(wx.Panel):
         self.btn_lock_ratio.SetMinSize(dip_size(self, 32, 32))
         self.btn_lock_ratio.SetToolTip(_("Lock the radii of X- and Y-axis"))
         # Set Bitmap
-        self.bitmap_locked = icons8_lock_50.GetBitmap(
+        self.bitmap_locked = icons8_lock.GetBitmap(
             resize=STD_ICON_SIZE / 2, use_theme=False
         )
-        self.bitmap_unlocked = icons8_padlock_50.GetBitmap(
+        self.bitmap_unlocked = icons8_unlock.GetBitmap(
             resize=STD_ICON_SIZE / 2, use_theme=False
         )
 

@@ -5,6 +5,8 @@ import platform
 
 import wx
 
+from meerk40t.kernel.kernel import signal_listener
+
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import icons8_administrative_tools_50
 from .mwindow import MWindow
@@ -525,11 +527,14 @@ class Preferences(MWindow):
         )
         self.panel_color.SetupScrolling()
 
+        self.panel_ribbon = RibbonEditor(self, wx.ID_ANY, context=self.context)
+
         self.notebook_main.AddPage(self.panel_main, _("General"))
         self.notebook_main.AddPage(self.panel_classification, _("Classification"))
         self.notebook_main.AddPage(self.panel_gui, _("GUI"))
         self.notebook_main.AddPage(self.panel_scene, _("Scene"))
         self.notebook_main.AddPage(self.panel_color, _("Colors"))
+        self.notebook_main.AddPage(self.panel_ribbon, _("Ribbon"))
 
         self.panels = [
             self.panel_main,
@@ -537,10 +542,9 @@ class Preferences(MWindow):
             self.panel_gui,
             self.panel_scene,
             self.panel_color,
+            self.panel_ribbon,
         ]
-        self.panel_ribbon = RibbonEditor(self, wx.ID_ANY, context=self.context)
-        self.notebook_main.AddPage(self.panel_ribbon, _("Ribbon"))
-        self.panels.append(self.panel_ribbon)
+        self.panel_ids = ["main", "classification", "gui", "scene", "color", "ribbon"]
         self.context.setting(bool, "developer_mode", False)
         if self.context.developer_mode:
             panel_space = ChoicePropertyPanel(
@@ -548,12 +552,22 @@ class Preferences(MWindow):
             )
             self.notebook_main.AddPage(panel_space, _("Coordinate Space"))
             self.panels.append(panel_space)
+            self.panel_ids.append("space")
         self.Layout()
 
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Preferences"))
+
+    @signal_listener("preferences")
+    def on_pref_signal(self, origin, *args):
+        if not args:
+            return
+        panel = args[0]
+        if panel and panel in self.panel_ids:
+            self.Show()
+            self.notebook_main.SetSelection(self.panel_ids.index(panel))
 
     @property
     def color_reset(self):

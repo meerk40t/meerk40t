@@ -124,9 +124,9 @@ class Clip:
         ).all(axis=2)
         splits = [list() for _ in range(len(subject))]
         for s0, s1 in sorted(np.argwhere(checks), key=lambda e: e[0], reverse=True):
-            splits[s0].extend([
-                t for t, _ in subject.intersections(int(s0), clip.segments[s1])
-            ])
+            splits[s0].extend(
+                [t for t, _ in subject.intersections(int(s0), clip.segments[s1])]
+            )
         return splits
 
     def _splits_brute(self, subject, clip):
@@ -145,15 +145,14 @@ class Clip:
 
         return splits
 
-    def _insides_only(self, subject, clip):
+    def inside(self, subject):
         """
         Modifies subject to only contain the segments found inside the given clip.
         @param subject:
         @param clip:
         @return:
         """
-        mid_points = subject.position(slice(subject.index), 0.5)
-
+        clip = self.clipping_shape
         c = Geomstr()
         # Pip currently only works with line segments
         for sp in clip.as_subpaths():
@@ -161,10 +160,36 @@ class Clip:
                 c.polyline(segs)
                 c.end()
         sb = Scanbeam(c)
+
+        mid_points = subject.position(slice(subject.index), 0.5)
         r = np.where(sb.points_in_polygon(mid_points))
 
         subject.segments = subject.segments[r]
         subject.index = len(subject.segments)
+        return subject
+
+    def polycut(self, subject):
+        """
+        Performs polycut on the subject using the preset clipping shape. This only prevents intersections making all
+        intersections into divided segments.
+
+        @param subject:
+        @return:
+        """
+        clip = self.clipping_shape
+        splits = self._splits(subject, clip)
+        # splits2 = self._splits_brute(subject, clip)
+        # for q1, q2 in zip(splits, splits2):
+        #     assert(q1, q2)
+
+        for s0 in range(len(splits) - 1, -1, -1):
+            s = splits[s0]
+            if not s:
+                continue
+            split_lines = list(subject.split(s0, s))
+            subject.replace(s0, s0, split_lines)
+        subject.validate()
+        return subject
 
     def clip(self, subject, split=True):
         """
@@ -176,24 +201,9 @@ class Clip:
         @param split:
         @return:
         """
-        clip = self.clipping_shape
         if split:
-            splits = self._splits(subject, clip)
-            # splits2 = self._splits_brute(subject, clip)
-            # for q1, q2 in zip(splits, splits2):
-            #     assert(q1, q2)
-
-            for s0 in range(len(splits) -1, -1, -1):
-                s = splits[s0]
-                if not s:
-                    continue
-                split_lines = list(subject.split(s0, s))
-                subject.replace(s0, s0, split_lines)
-            subject.validate()
-        clip.validate()
-        self._insides_only(subject, clip)
-        subject.validate()
-        return subject
+            subject = self.polycut(subject)
+        return self.inside(subject)
 
 
 class Pattern:
@@ -208,7 +218,6 @@ class Pattern:
         self.cell_height = y1 - y0
         self.padding_x = 0
         self.padding_y = 0
-        self.extend_pattern = False
 
     def create_from_pattern(self, pattern, a=None, b=None, *args, **kwargs):
         """
@@ -292,31 +301,73 @@ class Pattern:
         ch = self.cell_height
         px = self.padding_x
         py = self.padding_y
-        if cw + 2 * px == 0:
+        if abs(cw + 2 * px) <= 1e-4:
             cols = 1
         else:
             cols = int(((x1 - x0) + cw) / (cw + 2 * px)) + 1
-        if ch + 2 * py == 0:
+        if abs(ch + 2 * py) <= 1e-4:
             rows = 1
         else:
             rows = int(((y1 - y0) + ch) / (ch + 2 * py)) + 1
 
-        if self.extend_pattern:
-            start_value = -2
-            end_value = 1
-            off_x = -1 * (cw / 2)
-        else:
-            cols = max(1, cols - 2)
-            rows = max(1, rows - 2)
-            start_value = 0
-            end_value = 0
-            off_x = 0
-        top_left_x = x0 + off_x
-        for col in range(start_value, cols + end_value, 1):
+        cols = max(1, cols - 2)
+        rows = max(1, rows - 2)
+
+        start_value_x = 0
+        col = 0
+        x_offset = (col + start_value_x) * (cw + 2 * px)
+        x = x0 + x_offset
+        while x >= x0 - cw and x < x1:
+            start_value_x -= 1
+            x_offset = (col + start_value_x) * (cw + 2 * px)
+            x = x0 + x_offset
+            # print (f"X-lower bound: sx={start_value_x}, x={x:.2f}, x0={x0:.2f}, x1={x1:.2f}")
+
+        end_value_x = 0
+        col = cols - 1
+        x_offset = (col + end_value_x) * (cw + 2 * px)
+        x = x0 + x_offset
+        while x >= x0 and x < x1:
+            end_value_x += 1
+            x_offset = (col + end_value_x) * (cw + 2 * px)
+            x = x0 + x_offset
+            # print (f"X-upper bound: ex={end_value_x}, x={x:.2f}, x0={x0:.2f}, x1={x1:.2f}")
+
+        start_value_y = 0
+        row = 0
+        y_offset = (row + start_value_y) * (ch + 2 * py)
+        y = y0 + y_offset
+        while y >= y0 - ch and y < y1:
+            start_value_y -= 1
+            y_offset = (row + start_value_y) * (ch + 2 * py)
+            y = y0 + y_offset
+            # print (f"Y-lower bound: sy={start_value_y}, y={y:.2f}, y0={y0:.2f}, y1={y1:.2f}")
+
+        end_value_y = 0
+        row = rows - 1
+        y_offset = (row + end_value_y) * (ch + 2 * py)
+        y = y0 + y_offset
+        while y >= y0 and y < y1:
+            end_value_y += 1
+            y_offset = (row + end_value_y) * (ch + 2 * py)
+            y = y0 + y_offset
+            # print (f"Y-upper bound: ey={end_value_y}, y={y:.2f}, y0={y0:.2f}, y1={y1:.2f}")
+
+        # print (f"Cols={cols}, s_x={start_value_x}, e_x={end_value_x}")
+        # print (f"Rows={rows}, s_y={start_value_y}, e_y={end_value_y}")
+
+        # start_value_x -= 2
+        # start_value_y -= 2
+        # end_value_x += 1
+        # end_value_y += 1
+
+        top_left_x = x0
+        for col in range(start_value_x, cols + end_value_x, 1):
             x_offset = col * (cw + 2 * px)
             x = top_left_x + x_offset
-            for row in range(start_value, rows + end_value, 1):
-                top_left_y = y0
+
+            top_left_y = y0
+            for row in range(start_value_y, rows + end_value_y, 1):
                 y_offset = row * (ch + 2 * py)
                 if col % 2:
                     y_offset += (ch + 2 * py) / 2
@@ -1357,6 +1408,11 @@ class Geomstr:
 
         return cls.wobble(algorithm, outer, radius, interval, speed)
 
+    def flag_settings(self):
+        for i in range(self.index):
+            info = self.segments[i][2]
+            self.segments[i][2] = complex(info.real, i)
+
     def copies(self, n):
         segs = self.segments[: self.index]
         self.segments = np.vstack([segs] * n)
@@ -1502,24 +1558,23 @@ class Geomstr:
         self.index = new_capacity
 
     def validate(self):
-        infos = self.segments[:self.index, 2]
+        infos = self.segments[: self.index, 2]
 
-        starts = self.segments[:self.index, 0]
+        starts = self.segments[: self.index, 0]
         q = np.where(np.real(infos).astype(int) & 0b1000)
-        assert(not np.any(np.isnan(starts[q])))
+        assert not np.any(np.isnan(starts[q]))
 
-        ends = self.segments[:self.index, 4]
+        ends = self.segments[: self.index, 4]
         q = np.where(np.real(infos).astype(int) & 0b0001)
-        assert(not np.any(np.isnan(ends[q])))
+        assert not np.any(np.isnan(ends[q]))
 
-        c1 = self.segments[:self.index, 1]
+        c1 = self.segments[: self.index, 1]
         q = np.where(np.real(infos).astype(int) & 0b0100)
-        assert(not np.any(np.isnan(c1[q])))
+        assert not np.any(np.isnan(c1[q]))
 
-        c2 = self.segments[:self.index, 3]
+        c2 = self.segments[: self.index, 3]
         q = np.where(np.real(infos).astype(int) & 0b0010)
-        assert(not np.any(np.isnan(c2[q])))
-
+        assert not np.any(np.isnan(c2[q]))
 
     #######################
     # Geometric Primitives
@@ -2012,23 +2067,23 @@ class Geomstr:
 
         @return:
         """
-        c = self.segments[:self.index]
-        infos = np.real(c[:,2]).astype(int)
+        c = self.segments[: self.index]
+        infos = np.real(c[:, 2]).astype(int)
 
         xs = np.dstack(
             (
                 np.real(c[:, 0]),
                 np.real(c[:, 4]),
-                np.where(infos & 0b0100, np.real(c[:,1]), np.real(c[:, 0])),
-                np.where(infos & 0b0010, np.real(c[:,3]), np.real(c[:, 4])),
+                np.where(infos & 0b0100, np.real(c[:, 1]), np.real(c[:, 0])),
+                np.where(infos & 0b0010, np.real(c[:, 3]), np.real(c[:, 4])),
             )
         )
         ys = np.dstack(
             (
                 np.imag(c[:, 0]),
                 np.imag(c[:, 4]),
-                np.where(infos & 0b0100, np.imag(c[:,1]), np.imag(c[:, 0])),
-                np.where(infos & 0b0010, np.imag(c[:,3]), np.imag(c[:, 4])),
+                np.where(infos & 0b0100, np.imag(c[:, 1]), np.imag(c[:, 0])),
+                np.where(infos & 0b0010, np.imag(c[:, 3]), np.imag(c[:, 4])),
             )
         )
         return xs.min(axis=2), ys.min(axis=2), xs.max(axis=2), ys.max(axis=2)
@@ -2953,9 +3008,9 @@ class Geomstr:
         fun2 = self._get_segment_function(segment2[2].real)
         if fun1 is None or fun2 is None:
             return  # Only shapes can intersect. We don't do point x point.
-        yield from self._find_intersections_main(segment1, segment2, fun1, fun2)
+        yield from self._find_intersections_intercept(segment1, segment2, fun1, fun2)
 
-    def _find_intersections_main(
+    def _find_intersections_intercept(
         self,
         segment1,
         segment2,
@@ -3030,22 +3085,134 @@ class Geomstr:
         tb_hit = qb[hits] / denom[hits]
 
         for i, hit in enumerate(where_hit):
-            at = ta[0] + float(hit[1]) * step_a  # Zoomed min+segment intersected.
-            bt = tb[0] + float(hit[0]) * step_b
+            # Zoomed min+segment intersected.
             # Fractional guess within intersected segment
-            a_fractional = ta_hit[i] * step_a
-            b_fractional = tb_hit[i] * step_b
+            at_guess = ta[0] + (hit[1] + ta_hit[i]) * step_a
+            bt_guess = tb[0] + (hit[0] + tb_hit[i]) * step_b
+
             if depth == enhancements:
                 # We've enhanced as best as we can, yield the current + segment t-value to our answer
-                yield at + a_fractional, bt + b_fractional
+                yield at_guess, bt_guess
             else:
-                yield from self._find_intersections_main(
+                yield from self._find_intersections_intercept(
                     segment1,
                     segment2,
                     fun1,
                     fun2,
-                    ta=(at, at + step_a, at + a_fractional),
-                    tb=(bt, bt + step_b, bt + b_fractional),
+                    ta=(at_guess - step_a / 2, at_guess + step_a / 2, at_guess),
+                    tb=(bt_guess - step_b / 2, bt_guess + step_b / 2, bt_guess),
+                    samples=enhance_samples,
+                    depth=depth + 1,
+                    enhancements=enhancements,
+                    enhance_samples=enhance_samples,
+                )
+
+    def _find_intersections_kross(
+        self,
+        segment1,
+        segment2,
+        fun1,
+        fun2,
+        samples=50,
+        ta=(0.0, 1.0, None),
+        tb=(0.0, 1.0, None),
+        depth=0,
+        enhancements=2,
+        enhance_samples=50,
+    ):
+        """
+        Calculate intersections by linearized polyline intersections with enhancements.
+        We calculate probable intersections by linearizing our segment into `sample` polylines
+        we then find those intersecting segments and the range of t where those intersections
+        could have occurred and then subdivide those segments in a series of enhancements to
+        find their intersections with increased precision.
+
+        This code is fast, but it could fail by both finding a rare phantom intersection (if there
+        is a low or no enhancements) or by failing to find a real intersection. Because the polylines
+        approximation did not intersect in the base case.
+
+        At a resolution of about 1e-15 the intersection calculations become unstable and intersection
+        candidates can duplicate or become lost. We terminate at that point and give the last best
+        guess.
+
+        :param segment1:
+        :param segment2:
+        :param samples:
+        :param ta:
+        :param tb:
+        :param depth:
+        :param enhancements:
+        :param enhance_samples:
+        :return:
+        """
+        assert samples >= 2
+        a = np.linspace(ta[0], ta[1], num=samples)
+        b = np.linspace(tb[0], tb[1], num=samples)
+        step_a = a[1] - a[0]
+        step_b = b[1] - b[0]
+        j = fun1(segment1, a)
+        k = fun2(segment2, b)
+
+        p0 = j[:-1]
+        d0 = j[1:] - j[:-1]
+        p1 = k[:-1]
+        d1 = k[1:] - k[:-1]
+
+        ap0, ap1 = np.meshgrid(p0, p1)
+        ad0, ad1 = np.meshgrid(d0, d1)
+        e = ap1 - ap0
+        ex = np.real(e)
+        ey = np.imag(e)
+        d0x = np.real(ad0)
+        d0y = np.imag(ad0)
+        d1x = np.real(ad1)
+        d1y = np.imag(ad1)
+
+        kross = (d0x * d1y) - (d0y * d1x)
+        # sqkross = kross * kross
+        # sqLen0 = np.real(ad0) * np.real(ad0) + np.imag(ad0) * np.imag(ad0)
+        # sqLen1 = np.real(ad1) * np.real(ad1) + np.imag(ad1) * np.imag(ad1)
+        s = ((ex * d1y) - (ey * d1x)) / kross
+        t = ((ex * d0y) - (ey * d0x)) / kross
+        hits = np.dstack(
+            (
+                # sqkross > 0.01 * sqLen0 * sqLen1,
+                s >= 0,
+                s <= 1,
+                t >= 0,
+                t <= 1,
+            )
+        ).all(axis=2)
+        where_hit = np.argwhere(hits)
+
+        # pos = ap0[hits] + s[hits] * ad0[hits]
+        if len(where_hit) != 1 and step_a < 1e-10:
+            # We're hits are becoming unstable give last best value.
+            if ta[2] is not None and tb[2] is not None:
+                yield ta[2], tb[2]
+            return
+
+        # Calculate the t values for the intersections
+        ta_hit = s[hits]
+        tb_hit = t[hits]
+
+        for i, hit in enumerate(where_hit):
+            # Zoomed min+segment intersected.
+            # Fractional guess within intersected segment
+            at_guess = ta[0] + (hit[1] + ta_hit[i]) * step_a
+            bt_guess = tb[0] + (hit[0] + tb_hit[i]) * step_b
+
+            if depth == enhancements:
+                # We've enhanced as best as we can, yield the current + segment t-value to our answer
+                yield at_guess, bt_guess
+            else:
+                yield from self._find_intersections_kross(
+                    segment1,
+                    segment2,
+                    fun1,
+                    fun2,
+                    ta=(at_guess - step_a / 2, at_guess + step_a / 2, at_guess),
+                    tb=(bt_guess - step_b / 2, bt_guess + step_b / 2, bt_guess),
                     samples=enhance_samples,
                     depth=depth + 1,
                     enhancements=enhancements,
@@ -3748,6 +3915,22 @@ class Geomstr:
             last = m + 1
         if last != self.index:
             yield Geomstr(self.segments[last : self.index])
+
+    def render(self, buffer=10, scale=1):
+        sb = Scanbeam(self)
+        nx, ny, mx, my = self.bbox()
+        px, py = np.mgrid[
+            nx - buffer : mx + buffer : scale, ny - buffer : my + buffer : scale
+        ]
+        ppx = px + 1j * py
+        pxs = ppx.ravel()
+        data = sb.points_in_polygon(pxs)
+
+        from PIL import Image
+
+        size = ppx.shape[::-1]
+        databytes = np.packbits(data)
+        return Image.frombytes(mode="1", size=size, data=databytes)
 
     def draw(self, draw, offset_x, offset_y):
         """

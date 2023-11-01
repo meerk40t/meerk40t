@@ -7,7 +7,7 @@ The primary method of defining a panel is by calling the `set_buttons()` on the 
 control_panel.set_buttons(
     {
         "label": _("Red Dot On"),
-        "icon": icons8_quick_mode_on_50,
+        "icon": icons8_flash_on_50,
         "tip": _("Turn Redlight On"),
         "action": lambda v: service("red on\n"),
         "toggle": {
@@ -55,6 +55,10 @@ _ = wx.GetTranslation
 
 SMALL_RESIZE_FACTOR = 2 / 3
 TINY_RESIZE_FACTOR = 0.5
+
+COLOR_MODE_DEFAULT = 0
+COLOR_MODE_COLOR = 1
+COLOR_MODE_DARK = 2
 
 
 class DropDown:
@@ -135,14 +139,14 @@ class Button:
         self.default_width = 50
         self.set_aspect(**description)
         self.apply_enable_rules()
-        # self.sizes = {
-        #     "large_label": (0, 0),
-        #     "small_label": (0, 0),
-        #     "tiny_label": (0, 0),
-        #     "large": (0, 0),
-        #     "small": (0, 0),
-        #     "tiny": (0, 0),
-        # }
+        self.sizes = {
+            "large_label": (0, 0),
+            "small_label": (0, 0),
+            "tiny_label": (0, 0),
+            "large": (0, 0),
+            "small": (0, 0),
+            "tiny": (0, 0),
+        }
 
     # def calc_sizes(self, dc):
     #     def calc(bmap, uselabel):
@@ -198,7 +202,7 @@ class Button:
         self.icon = icon
         resize_param = kwargs.get("size")
         if resize_param is None:
-            resize_param = 50
+            resize_param = STD_ICON_SIZE
         if resize_param is None:
             # We can get the real icon width, that means though
             # all buttons will have slightly different dimensions
@@ -215,7 +219,7 @@ class Button:
             tiny_resize = int(TINY_RESIZE_FACTOR * resize_param)
 
         top = self.parent.parent.parent
-        if top.art.dark_mode:
+        if top.art.color_mode == COLOR_MODE_DARK:
             targetcolor = Color("white")
             darkm = True
         else:
@@ -225,8 +229,10 @@ class Button:
         # as otherwise a strange type error is thrown:
         # TypeError: GetBitmap() got an unexpected keyword argument 'force_darkmode'
         # Well...
+        from meerk40t.gui.icons import PyEmbeddedImage, VectorIcon
 
-        icon = PyEmbeddedImage(icon.data)
+        if not isinstance(icon, VectorIcon):
+            icon = PyEmbeddedImage(icon.data)
         self.bitmap_large = icon.GetBitmap(
             resize=resize_param,
             noadjustment=True,
@@ -239,13 +245,17 @@ class Button:
             force_darkmode=darkm,
         )
         self.bitmap_small = icon.GetBitmap(
-            resize=small_resize, noadjustment=True, force_darkmode=darkm
+            resize=small_resize,
+            noadjustment=True,
+            force_darkmode=darkm,
         )
         self.bitmap_small_disabled = icon.GetBitmap(
             resize=small_resize, color=Color("grey"), noadjustment=True
         )
         self.bitmap_tiny = icon.GetBitmap(
-            resize=tiny_resize, noadjustment=True, force_darkmode=darkm
+            resize=tiny_resize,
+            noadjustment=True,
+            force_darkmode=darkm,
         )
         self.bitmap_tiny_disabled = icon.GetBitmap(
             resize=tiny_resize, color=Color("grey"), noadjustment=True
@@ -1059,12 +1069,48 @@ class RibbonBarPanel(wx.Control):
         """
         pos = event.Position
         button = self._button_at_position(pos)
-        if button is None:
-            return
         if button is not None:
             action = button.action_right
             if action:
                 action(event)
+        else:
+            # Click on background, off menu to edit and set colors
+            def set_color(newmode):
+                self.context.root.ribbon_color = newmode
+                # Force refresh
+                self.context.signal("ribbon_recreate", None)
+
+            top = self  # .parent
+            c_mode = self.context.root.setting(int, "ribbon_color", COLOR_MODE_DEFAULT)
+            menu = wx.Menu()
+            item = menu.Append(wx.ID_ANY, _("Colorscheme"))
+            item.Enable(False)
+            item = menu.Append(wx.ID_ANY, _("System Default"), "", wx.ITEM_CHECK)
+            item.Check(bool(c_mode == COLOR_MODE_DEFAULT))
+            top.Bind(
+                wx.EVT_MENU, lambda v: set_color(COLOR_MODE_DEFAULT), id=item.GetId()
+            )
+            item = menu.Append(wx.ID_ANY, _("Colored"), "", wx.ITEM_CHECK)
+            item.Check(bool(c_mode == COLOR_MODE_COLOR))
+            top.Bind(
+                wx.EVT_MENU, lambda v: set_color(COLOR_MODE_COLOR), id=item.GetId()
+            )
+            item = menu.Append(wx.ID_ANY, _("Black"), "", wx.ITEM_CHECK)
+            item.Check(bool(c_mode == COLOR_MODE_DARK))
+            top.Bind(wx.EVT_MENU, lambda v: set_color(COLOR_MODE_DARK), id=item.GetId())
+            item = menu.AppendSeparator()
+            item = menu.Append(wx.ID_ANY, _("Customize Toolbars"))
+
+            def show_pref():
+                self.context("window open Preferences\n")
+                self.context.signal("preferences", "ribbon")
+
+            top.Bind(
+                wx.EVT_MENU,
+                lambda v: show_pref(),
+                id=item.GetId(),
+            )
+            top.PopupMenu(menu)
 
     def on_click(self, event: wx.MouseEvent):
         """
@@ -1213,14 +1259,14 @@ class Art:
         self.text_dropdown_buffer = 7
         self.show_labels = True
 
-        self._establish_colors()
+        self.establish_colors()
 
         self.current_page = None
         self.hover_tab = None
         self.hover_button = None
         self.hover_dropdown = None
 
-    def _establish_colors(self):
+    def establish_colors(self):
         self.text_color = copy.copy(
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
         )
@@ -1230,12 +1276,12 @@ class Art:
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
         )
 
-        # self.button_face_hover = copy.copy(
-        #     wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
-        # ).ChangeLightness(50)
         self.button_face_hover = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNHILIGHT)
-        )  # .ChangeLightness(25)
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
+        ).ChangeLightness(150)
+        # self.button_face_hover = copy.copy(
+        #     wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRADIENTACTIVECAPTION)
+        # )
         self.inactive_background = copy.copy(
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION)
         )
@@ -1249,21 +1295,34 @@ class Art:
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOBK)
         )
         self.button_face = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNFACE)
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNHILIGHT)
+        )
+        self.ribbon_background = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNHILIGHT)
         )
         self.highlight = copy.copy(
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_HOTLIGHT)
         )
 
-        self.dark_mode = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        manualmode = self.parent.context.root.setting(bool, "force_darkmode", False)
-        if manualmode:
-            self.dark_mode = True
+        # Do we have a setting for the color?
+        c_mode = self.parent.context.root.setting(int, "ribbon_color", 0)
+        # 0 system default
+        # 1 colored background
+        # 2 forced dark_mode
+        if c_mode < COLOR_MODE_DEFAULT or c_mode > COLOR_MODE_DARK:
+            c_mode = COLOR_MODE_DEFAULT
+        if (
+            c_mode == COLOR_MODE_DEFAULT
+            and wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        ):
+            c_mode = COLOR_MODE_DARK  # dark mode
+        self.color_mode = c_mode
 
-        if self.dark_mode:
+        if self.color_mode == COLOR_MODE_DARK:
             # This is rather crude, as a dark mode could also
             # be based eg on a dark blue scheme
             self.button_face = wx.BLACK
+            self.ribbon_background = wx.BLACK
             self.text_color = wx.WHITE
             self.text_color_inactive = copy.copy(self.text_color)
             self.text_color_disabled = wx.Colour("Light Grey")
@@ -1272,6 +1331,15 @@ class Art:
             OS_NAME = platform.system()
             if OS_NAME == "Windows":
                 self.button_face_hover = wx.BLUE
+        if self.color_mode == COLOR_MODE_COLOR:
+            self.ribbon_background = copy.copy(
+                wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRADIENTINACTIVECAPTION)
+            )
+            self.button_face = copy.copy(
+                wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRADIENTACTIVECAPTION)
+            )
+            self.button_face_hover = wx.Colour("gold").ChangeLightness(150)
+            self.highlight = wx.Colour("gold")
 
         self.default_font = wx.Font(
             10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
@@ -1306,7 +1374,7 @@ class Art:
             if page is not self.current_page or not page.visible:
                 continue
 
-            dc.SetBrush(wx.Brush(self.button_face))
+            dc.SetBrush(wx.Brush(self.ribbon_background))
             x, y, x1, y1 = page.position
             dc.DrawRoundedRectangle(
                 int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius
@@ -1368,7 +1436,7 @@ class Art:
         @return:
         """
         w, h = dc.Size
-        dc.SetBrush(wx.Brush(self.button_face))
+        dc.SetBrush(wx.Brush(self.ribbon_background))
         dc.SetPen(wx.TRANSPARENT_PEN)
         dc.DrawRectangle(0, 0, w, h)
 
@@ -1384,7 +1452,7 @@ class Art:
             return
         x, y, x1, y1 = panel.position
         # print(f"Painting panel {panel.label}: {panel.position}")
-        dc.SetBrush(wx.Brush(self.button_face))
+        dc.SetBrush(wx.Brush(self.ribbon_background))
         dc.SetPen(wx.Pen(self.black_color))
         dc.DrawRoundedRectangle(
             int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius
@@ -1407,13 +1475,18 @@ class Art:
         cx = (x + x1) / 2
         cy = -r / 2 + (y + y1) / 2
         # print (f"area: {x},{y}-{x1},{y1} - center={cx},{cy} r={r}")
-        points = [
-            (
-                int(cx + r * math.cos(math.radians(angle))),
-                int(cy + r * math.sin(math.radians(angle))),
-            )
-            for angle in (0, 90, 180)
-        ]
+        # points = [
+        #     (
+        #         int(cx + r * math.cos(math.radians(angle))),
+        #         int(cy + r * math.sin(math.radians(angle))),
+        #     )
+        #     for angle in (0, 90, 180)
+        # ]
+        lp_x = int(cx - r)
+        lp_y = int(cy)
+        dp_x = int(cx)
+        dp_y = int(cy + r)
+        points = [(lp_x, lp_y), (dp_x, dp_y), (2 * dp_x - lp_x, lp_y)]
         dc.SetPen(wx.Pen(self.black_color))
         dc.SetBrush(wx.Brush(self.inactive_background))
         dc.DrawPolygon(points)
@@ -1436,17 +1509,22 @@ class Art:
         dc.DrawRoundedRectangle(
             int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius
         )
-        r = min((x1 - x) / 2, (y1 - y) / 2)
+        r = min((y1 - y) / 2, (x1 - x) / 2) - 2
         cx = (x + x1) / 2
         cy = -r / 2 + (y + y1) / 2
-
-        points = [
-            (
-                int(cx + r * math.cos(math.radians(x))),
-                int(cy + r * math.sin(math.radians(x))),
-            )
-            for x in (0, 90, 180)
-        ]
+        # print (f"area: {x},{y}-{x1},{y1} - center={cx},{cy} r={r}")
+        # points = [
+        #     (
+        #         int(cx + r * math.cos(math.radians(angle))),
+        #         int(cy + r * math.sin(math.radians(angle))),
+        #     )
+        #     for angle in (0, 90, 180)
+        # ]
+        lp_x = int(cx - r)
+        lp_y = int(cy)
+        dp_x = int(cx)
+        dp_y = int(cy + r)
+        points = [(lp_x, lp_y), (dp_x, dp_y), (2 * dp_x - lp_x, lp_y)]
         dc.SetPen(wx.Pen(self.black_color))
         dc.SetBrush(wx.Brush(self.inactive_background))
         dc.DrawPolygon(points)
@@ -1814,9 +1892,36 @@ class Art:
         button_width, button_height = self.preferred_button_size_for_page(dc, page)
         x += self.page_panel_buffer
         y += self.page_panel_buffer
+        """
+        THIS ALGORITHM NEEDS STILL TO BE IMPLEMENTED
+        --------------------------------------------
+        We discuss now the horizontal case, the same
+        logic would apply for the vertical case.
+        We iterate through the sizes and establish the space
+        needed for every panel:
+        1) We calculate the required button dimensions for all
+        combinations of tiny/small/regular icons plus with/without labels
+        2) We get the minimum amount of columns required to display
+        the buttons (taking the vertical extent ie the amount
+        of available rows into account).
+        This will provide us with a solution that would need
+        the least horizontal space.
+        3) That may lead to a situation where you would still
+        have horizontal space available for the panels.
+        Hence we do a second pass where we assign additional space
+        to all panels that need more than one row of icons.
+        As we will do this for all possible size combinations,
+        we will chose eventually that solution that has the
+        fewest amount of buttons in overflow.
+        """
+        # 1 Calculate button sizes - this is not required
+        # here, already done during button creation
+
+        # 2 Loop over all sizes
+
+        # Now that we have gathered all information we can assign
+        # the space...
         for p, panel in enumerate(page.panels):
-            if panel.visible_button_count == 0:
-                continue
             if p != 0:
                 # Non-first move between panel gap.
                 if is_horizontal:
@@ -1845,6 +1950,7 @@ class Art:
             panel.position = x, y, x + panel_width, y + panel_height
             # if self.parent.visible_pages() == 1:
             #     print(f"panel: {panel.position}")
+
             self.panel_layout(dc, panel)
 
             if is_horizontal:

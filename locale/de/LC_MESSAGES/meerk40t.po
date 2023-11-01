@@ -3170,6 +3170,19 @@ msgstr "Durchgänge"
 msgid "Add 1 pass"
 msgstr "Füge einen Durchgang hinzu"
 
+msgid "Finish after this loop"
+msgstr "Nach Ende diesen Durchlaufs aufhören"
+
+msgid "Stop the current execution after the succesful execution of this loop"
+msgstr "Diesen Job nach erfolgreicher Beendigung des Durchlaufs beenden"
+
+msgid "add another loop"
+msgstr "Einen weiteren Durchlauf anfügen"
+
+msgid "add another loop to this job"
+msgstr "Einen weiteren Durchlauf für diesen Job anfügen"
+
+
 #: meerk40t/core/elements.py:7369
 msgid "Add {copies} passes"
 msgstr "Füge {copies} Duchgänge hinzu"
@@ -3669,7 +3682,7 @@ msgstr "Fasse Innere Brennvorgänge zusammen"
 #: meerk40t/core/planner.py:174
 msgid ""
 "Try to complete a set of inner burns and the associated outer cut before "
-"moving onto other elements.This option only does something if Burn Inner "
+"moving onto other elements.\nThis option only does something if Burn Inner "
 "First is also selected. If your design has multiple separate pieces on "
 "it, this should mostly cause each piece to be burned in entirety before "
 "moving on to burn another piece. This can reduce the risk of e.g. a shift"
@@ -10645,6 +10658,9 @@ msgstr "Wie oft soll der Laser-Job wiederholt werden"
 msgid "Loop"
 msgstr "Wiederholungen"
 
+msgid "Loop Parameter"
+msgstr "Wiederholungen"
+
 #: meerk40t/gui/propertypanels/opbranchproperties.py:42
 msgid "times"
 msgstr "mal"
@@ -17426,3 +17442,42 @@ msgstr "Leistung"
 msgid "Power usage for draw frame operation?"
 msgstr "Welche Leistung sollen bei Abfahren von Umrissen genutzt werden?"
 
+#: ./meerk40t\core\elements\element_treeops.py:958
+msgid "Delete %s selected items from %s (Ref=%s)"
+msgstr "Lösche %s ausgewählte Einträge von %s (Ref=%s)"
+
+#: ./meerk40t\core\elements\element_treeops.py:1409
+msgid "Generate operations if needed"
+msgstr "Erzeuge Arbeitsgng falls notwendig"
+
+#: ./meerk40t\core\elements\element_treeops.py:1419
+msgid "Refresh classification for all"
+msgstr "Erneuere Klassifizierung für alle Elemente"
+
+#: ./meerk40t\core\elements\element_treeops.py:1434
+msgid "Classification for unassigned"
+msgstr "Klassifizierung für nicht zugeordnete Elemente"
+
+#: ./meerk40t\core\elements\element_treeops.py:1436
+msgid "Classify unassigned elements and create operations if necessary"
+msgstr "Klassifiziere nicht zugeordnete Elemente und lege falls notwendig Arbeitsgänge an"
+
+#: ./meerk40t\core\elements\element_treeops.py:1449
+msgid "Use only existing operations"
+msgstr "Nur vorhandene Arbeitsgänge nutzen"
+
+#: ./meerk40t\core\elements\element_treeops.py:1461
+msgid "Reclassify all elements and use only existing operations"
+msgstr "Erneuere Klassifizierung für alle Elemente und nutze nur bestehende Arbeitsgänge"
+
+#: ./meerk40t\core\elements\element_treeops.py:1476
+msgid "Classify unassigned elements and use only existing operations"
+msgstr "Klassifiziere nicht zugeordnete Elemente und nutze nur bestehende Arbeitsgänge"
+
+#: ./meerk40t\core\elements\element_treeops.py:1798
+msgid "Append wobble {type} {radius} @{interval}"
+msgstr "Wobble-Effekt hinzufügen {type} {radius} @{interval}"
+
+#: ./meerk40t\gui\wxmtree.py:190
+msgid "Reactivate disabled operations that prevent elements from being burnt"
+msgstr "Aktiviere inaktive Arbeitsgänge, ohne die sonst Elemente nicht gebrennt würden"
