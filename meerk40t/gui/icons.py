@@ -638,22 +638,15 @@ class VectorIcon:
             bgcol = 0
         else:
             bgcol = 255
-        fuzzy = True
-        for x in range(image.GetWidth()):
-            for y in range(image.GetHeight()):
+        for y in range(image.GetHeight()):
+            for x in range(image.GetWidth()):
                 r = image.GetRed(x, y)
                 g = image.GetGreen(x, y)
                 b = image.GetBlue(x, y)
-                if fuzzy:
-                    set_alpha = bool(
-                        abs(r - bgcol) < 5 and abs(g - bgcol) < 5 and abs(b - bgcol) < 5
-                    )
-                else:
-                    set_alpha = bool(r == g == b == bgcol)
-                if set_alpha:
-                    # For debug purposes...
-                    # image.SetRGB(x, y, 255, 0, 0)
-                    image.SetAlpha(x, y, wx.IMAGE_ALPHA_TRANSPARENT)
+                alpha_value = max(abs(r - bgcol), abs(g - bgcol), abs(b - bgcol))
+                # For debug purposes...
+                # image.SetRGB(x, y, 255, 0, 0)
+                image.SetAlpha(x, y, alpha_value)
         bmp = wx.Bitmap(image)
         # Save bitmap for later retrieval
         _CACHE[cache_id] = bmp
@@ -1071,29 +1064,6 @@ icon_meerk40t = PyEmbeddedImage(
 )
 
 # ----------------------------------------------------------------------
-
-icons8_resize_horizontal_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
-    b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAECSURBVGhD7dhZDoJAEIRhzuNyKJcH"
-    b"vYnn8VjewaWbUMkEDRGmu2lI/UmFt2G+RF9oGGOMMcbaNt3TMo8zB7vInt3TKo8zB9MXvWTv"
-    b"7nmU1XaWlWe6Y0qE7iHbymrbyfQsnOuK8UKgEIw3ArliohDIBRONQKaYuRDIBPMLoQdHV4XJ"
-    b"gkCTMNkQaBQmKwL9hbnKSoTuLrslm96pvKPeWe/edpD1EUua3l0N64Foq/hpoT5mCX/2LwTK"
-    b"ihmFQNkwkxAoC6YKgebGmCDQXJi9zAyBojEuCBSFcUUgb0wIAnlhQhGoxOjT4gPdSVae6Y5A"
-    b"+iLrz5s4MwyBVvERmzHGGGP5apoPcwpl40zo9wQAAAAASUVORK5CYII="
-)
-
-
-icons8_trash_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1B"
-    b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFwSURBVGhD7ZmtSgVRFIVHBDEIahMU"
-    b"X0AFg8EgWHwEQRCsPoAWq8Fg1SCCVYuCJvEHk8VkEGwWX8AsFl0L9oaDHPHOZZ87w2V98JXF"
-    b"MPssmDn3cqYSQggBpuEBvIH3Ge/gMZyFrWUSfsDvDvyE87CV7MHcov/yDLaSS+iLPIWbGQ+h"
-    b"X/MMe8oAHO/AW+iL3Lbst2vQr3m17D8HYQij0Ic34RwMQUWCDCvi78gu9JufWxZtbkbYO+Ls"
-    b"QB/CXakEvZihInVotMgYXDGXGCR4TocZGAvQ8wkGRqNFuHjP3xkkeE75h9J5hJ6vMzBUpA4q"
-    b"YqpINCpiqkg0KmKqSDQqYqpINCpitr7IIuSZL31hkOA5nWJgXEPPVxkYjRaJREXq0DdFeDDt"
-    b"Qx4YFOAE+gye3BdhGfoQegRznw66dR9+Qb//BiwCj06fYFqmlG8wPT4Kh1sot9jc8Cj5WzQD"
-    b"izME+ShcwNwHz269gltwBAohRF9SVT/YcCJDemJ9EwAAAABJRU5ErkJggg=="
-)
 
 icons8_system_task_20 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
@@ -2343,37 +2313,10 @@ node_break = PyEmbeddedImage(
     b"GYiPQ8Qa/jEx7Pv3C4zt/v2As0HiQP0AnIQ8UXzwP+sAAAAASUVORK5CYII="
 )
 
-node_curve = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
-    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAARklEQVQImWP4//9/AwOUOAgi7gKJP7JA4iGIdR4kJg+U"
-    b"/VcPIkDq/oCInyDiN4j4DCK+w4nnIOI9iGgGEbtRiWYk2/43AADobVHMAT+avQAAAABJRU5E"
-    b"rkJggg=="
-)
-
-node_delete = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
-    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAKUlEQVQImWP4//9/AwM24g+DPDKBUx0SMakeSOyvh3FB"
-    b"LDBAE4OoA3IBbltJOc3s08cAAAAASUVORK5CYII="
-)
-
 node_join = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
     b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAPklEQVQImWP4//9/A8OD/80NDO/+74YSff93IHPBsv+/"
     b"/0chGkDEQRDxGC72H04wgIg6GNFQx4DMhcgC1QEARo5M+gzPuwgAAAAASUVORK5CYII="
-)
-
-node_line = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
-    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAARElEQVQImWP4//9/A8P//wdAxD0sRAOIsAcS/+qBxB+Q"
-    b"4p8g4jOIeA4izoOI+SDCHkj8qwcSf0CGNoKIvViIRoiV/xsA49JQrrbQItQAAAAASUVORK5C"
-    b"YII="
-)
-
-node_symmetric = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
-    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAV0lEQVQImV3NqxGAMBRE0R2qQoXS2ApICVDJowRKQEYi"
-    b"YsIAWX6DIObIeyGJeGgllDTKwKjMl147MesgJq3Eoo0IjES0QCTzROdqYnAV4S1dZbvz/B5/"
-    b"TrOwSVb5BTbFAAAAAElFTkSuQmCC"
 )
 
 node_smooth = PyEmbeddedImage(
@@ -2583,6 +2526,16 @@ node_add = VectorIcon(
     ),
 )
 
+node_delete = VectorIcon(
+    fill="",
+    stroke=(
+        "M 35, 15 h 30",
+        #        "M 50, 0 v 30",
+        "M 35,70 h 30 v 30 h -30 z",
+        "M 0,85 h 100",
+    ),
+)
+
 node_append = VectorIcon(
     fill="",
     stroke=(
@@ -2591,6 +2544,31 @@ node_append = VectorIcon(
         "M 0,70 h 15 v 30 h -15",
         "M 70,70 h 30 v 30 h -30 z",
         "M 0,85 h 85",
+    ),
+)
+
+node_line = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 40,70 L 70, 40",
+        "M 10,70 h 30 v 30 h -30 z",
+        "M 70,10 h 30 v 30 h -30 z",
+    ),
+)
+
+node_curve = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 25,70 Q 25,25 70,25",
+        "M 10,70 h 30 v 30 h -30 z",
+        "M 70,10 h 30 v 30 h -30 z",
+    ),
+)
+
+node_symmetric = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 0 0 Q 0,50 50,50 Q 100,50 100,0" "M 10 50 h 80" "M 35,35 h 30 v 30 h -30 z",
     ),
 )
 
@@ -3205,4 +3183,12 @@ icons8_node_edit_50 = VectorIcon(
         "M 23.277344 3.8632812 L 17.285156 5.7539062 C 16.187933 6.0517442 15.311459 6.8795343 14.953125 7.953125 L 14.943359 7.9804688 L 11.580078 20.419922 L 13.261719 19.964844 L 24.029297 17.052734 L 24.054688 17.042969 C 25.122208 16.688075 25.944797 15.819008 26.240234 14.732422 L 26.230469 14.771484 L 28.136719 8.7226562 L 23.277344 3.8632812 z M 22.722656 6.1367188 L 25.863281 9.2773438 L 24.316406 14.189453 L 24.310547 14.208984 C 24.190243 14.651449 23.860868 14.996916 23.425781 15.142578 C 23.425781 15.142578 23.423828 15.144531 23.423828 15.144531 L 16.357422 17.056641 L 19.484375 13.929688 A 2 2 0 0 0 20 14 A 2 2 0 0 0 20 10 A 2 2 0 0 0 18.070312 12.515625 L 14.943359 15.642578 L 16.853516 8.5820312 C 17.004183 8.1365066 17.347717 7.8092274 17.810547 7.6835938 L 17.830078 7.6796875 L 22.722656 6.1367188 z M 6 7 A 2 2 0 0 0 5.0371094 10.75 C 5.4223625 19.526772 12.471528 26.576647 21.248047 26.962891 A 2 2 0 0 0 23 28 A 2 2 0 0 0 23 24 A 2 2 0 0 0 21.291016 24.964844 C 13.563991 24.604238 7.3957618 18.436009 7.0351562 10.708984 A 2 2 0 0 0 6 7 z",
     ),
     stroke=(),
+)
+
+icons8_resize_horizontal_50 = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 0 30 h 100 M 0 30 L 30 10 M 0 30 L 30 50",
+        "M 100 70 h -100 M 100 70 L 70 50 M 100 70 L 70 90",
+    ),
 )
