@@ -36,6 +36,10 @@ def plugin(kernel, lifecycle):
 
         plugins.append(grbl_driver_plugin)
 
+        from .marlin.plugin import plugin as marlin_driver_plugin
+
+        plugins.append(marlin_driver_plugin)
+
         from .ruida import plugin as ruida_driver
 
         plugins.append(ruida_driver.plugin)
