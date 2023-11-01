@@ -14,7 +14,7 @@ from ..svgelements import Color
 from .icons import (
     icons8_direction_20,
     icons8_image_20,
-    icons8_laser_beam_20,
+    icons8_laser_beam,
     icons8_scatter_plot_20,
     icons8_small_beam_20,
 )
@@ -363,7 +363,7 @@ class BasicOpPanel(wx.Panel):
                 )
             elif node.type == "op cut":
                 c, d = get_color()
-                result = icons8_laser_beam_20.GetBitmap(
+                result = icons8_laser_beam.GetBitmap(
                     color=c,
                     resize=(iconsize, iconsize),
                     noadjustment=True,

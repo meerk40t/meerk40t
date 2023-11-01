@@ -7,7 +7,7 @@ The primary method of defining a panel is by calling the `set_buttons()` on the 
 control_panel.set_buttons(
     {
         "label": _("Red Dot On"),
-        "icon": icons8_quick_mode_on_50,
+        "icon": icons8_flash_on_50,
         "tip": _("Turn Redlight On"),
         "action": lambda v: service("red on\n"),
         "toggle": {

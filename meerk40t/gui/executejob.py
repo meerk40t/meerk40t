@@ -3,7 +3,7 @@ import wx
 from meerk40t.kernel import signal_listener
 
 from .choicepropertypanel import ChoicePropertyPanel
-from .icons import STD_ICON_SIZE, icons8_laser_beam_52
+from .icons import STD_ICON_SIZE, icons8_laser_beam
 from .mwindow import MWindow
 from .wxutils import disable_window
 
@@ -83,7 +83,7 @@ class PlannerPanel(wx.Panel):
             )
         )
         self.button_start.SetForegroundColour(wx.BLACK)
-        self.button_start.SetBitmap(icons8_laser_beam_52.GetBitmap())
+        self.button_start.SetBitmap(icons8_laser_beam.GetBitmap())
         # end wxGlade
 
     def __do_layout(self):
@@ -271,7 +271,7 @@ class ExecuteJob(MWindow):
         )
         # self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
+        _icon.CopyFromBitmap(icons8_laser_beam.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Execute Job"))
 
@@ -282,7 +282,7 @@ class ExecuteJob(MWindow):
         #     "button/jobstart/ExecuteJob",
         #     {
         #         "label": _("Execute Job"),
-        #         "icon": icons8_laser_beam_52,
+        #         "icon": icons8_laser_beam,
         #         "tip": _("Execute the current laser project"),
         #         "action": lambda v: kernel.console("window toggle ExecuteJob 0\n"),
         #         "size": STD_ICON_SIZE,
