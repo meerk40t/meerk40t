@@ -32,6 +32,7 @@ from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from ..svgelements import Color, Matrix, Path
 from .icons import (  # icons8_replicate_rows_50,
     STD_ICON_SIZE,
+    set_default_icon_size,
     PyEmbeddedImage,
     icon_cag_common_50,
     icon_cag_subtract_50,
@@ -122,6 +123,14 @@ class MeerK40t(MWindow):
             # Not WX 4.1
             pass
         # print(self.GetDPIScaleFactor())
+        # What is the standardsize of a textbox?
+        testbox = wx.TextCtrl(self, wx.ID_ANY)
+        tb_size = testbox.Size
+        factor = 4 * tb_size[1] / 100.0
+        # Round to nearest 5...
+        def_size = int(round(factor * 50 / 5, 0) * 5)
+        set_default_icon_size(def_size)
+
         self.context.gui = self
         self._usb_running = dict()
         context = self.context
@@ -2394,10 +2403,11 @@ class MeerK40t(MWindow):
 
     @property
     def is_dark(self):
-        try:
-            res = wx.SystemSettings().GetAppearance().IsDark()
-        except AttributeError:
-            res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        # try:
+        #     res = wx.SystemSettings().GetAppearance().IsDark()
+        # except AttributeError:
+        #     res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         return res
 
     def __kernel_initialize(self):

@@ -18,7 +18,7 @@ from .icons import (
     icons8_close_window_20,
     icons8_diagonal_20,
     icons8_direction_20,
-    icons8_file_20,
+    icons8_file_50,
     icons8_ghost_20,
     icons8_group_objects_20,
     icons8_home_20,
@@ -116,10 +116,11 @@ class TreePanel(wx.Panel):
             | wx.TR_HIDE_ROOT
             | wx.TR_LINES_AT_ROOT,
         )
-        try:
-            res = wx.SystemSettings().GetAppearance().IsDark()
-        except AttributeError:
-            res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        # try:
+        #     res = wx.SystemSettings().GetAppearance().IsDark()
+        # except AttributeError:
+        #     res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         if res:
             self.wxtree.SetBackgroundColour(wx.Colour(50, 50, 50))
 
@@ -532,7 +533,7 @@ class ShadowTree:
             "place current": icons8_home_location_20,
             "place point": icons8_home_location_20,
             "elem point": icons8_scatter_plot_20,
-            "file": icons8_file_20,
+            "file": icons8_file_50,
             "group": icons8_group_objects_20,
             "elem rect": icon_mk_rectangular,
             "elem ellipse": icon_mk_ellipse,
@@ -541,7 +542,7 @@ class ShadowTree:
             "elem line": icons8_line_20,
             "elem polyline": icon_mk_polyline,
             "elem text": icons8_type_50,
-            "blob": icons8_file_20,
+            "blob": icons8_file_50,
         }
         self.image_cache = []
         self.cache_hits = 0

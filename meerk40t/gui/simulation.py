@@ -990,7 +990,9 @@ class SimulationPanel(wx.Panel, Job):
                 "Segoe UI",
             )
         )
-        self.button_spool.SetBitmap(icons8_route_50.GetBitmap())
+        self.button_spool.SetBitmap(
+            icons8_route_50.GetBitmap(resize=1.5 * STD_ICON_SIZE)
+        )
         # end wxGlade
 
     def __do_layout(self):
