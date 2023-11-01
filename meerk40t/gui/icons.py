@@ -32,6 +32,9 @@ STD_ICON_SIZE = 50
 _MIN_ICON_SIZE = 0
 _GLOBAL_FACTOR = 1.0
 
+# Cache across all vector icons
+_CACHE = dict()
+
 
 def set_icon_appearance(factor, min_size):
     global _MIN_ICON_SIZE
@@ -484,8 +487,7 @@ class VectorIcon:
         buffer=5,
         **kwargs,
     ):
-        # if debug:
-        #     print (f"Color: {color}, dark={force_darkmode}")
+        global _CACHE
         if color is not None and hasattr(color, "red"):
             if color.red == color.green == color.blue == 255:
                 # Color is white...
@@ -506,6 +508,25 @@ class VectorIcon:
         else:
             final_icon_width = resize
             final_icon_height = resize
+
+        def color_id():
+            return "--" if color is None else f"{color.red}-{color.green}-{color.blue}"
+
+        def my_id():
+            res_fill = ""
+            for e in self.list_fill:
+                res_fill += str(hash(e)) + ","
+            res_stroke = ""
+            for e in self.list_stroke:
+                res_stroke += str(hash(e)) + ","
+
+            return res_fill + "|" + res_stroke
+
+        cache_id = f"{my_id()}|{color_id()}|{resize}|{force_darkmode}"
+        if cache_id in _CACHE:
+            # print(f"Cache Hit for {cache_id}")
+            return _CACHE[cache_id]
+
         bmp = wx.Bitmap(int(final_icon_width), int(final_icon_height), 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
@@ -631,6 +652,7 @@ class VectorIcon:
                     # image.SetRGB(x, y, 255, 0, 0)
                     image.SetAlpha(x, y, wx.IMAGE_ALPHA_TRANSPARENT)
         bmp = wx.Bitmap(image)
+        _CACHE[cache_id] = bmp
         return bmp
 
     def make_geomstr(self, gc, path):
