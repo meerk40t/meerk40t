@@ -638,9 +638,8 @@ class VectorIcon:
             bgcol = 0
         else:
             bgcol = 255
-        fuzzy = True
-        for x in range(image.GetWidth()):
-            for y in range(image.GetHeight()):
+        for y in range(image.GetHeight()):
+            for x in range(image.GetWidth()):
                 r = image.GetRed(x, y)
                 g = image.GetGreen(x, y)
                 b = image.GetBlue(x, y)
