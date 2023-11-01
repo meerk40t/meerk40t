@@ -1400,7 +1400,7 @@ class TestGeomstr(unittest.TestCase):
         for c in range(1):
             print("\n\n\n\n\n")
             g = Geomstr()
-            for i in range(10):
+            for i in range(50):
                 random_segment(
                     g, i=1000, arc=False, point=False, quad=False, cubic=False
                 )

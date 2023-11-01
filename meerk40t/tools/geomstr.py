@@ -379,33 +379,64 @@ class Pattern:
 
 
 class PolyBool:
+    """
+    Polybool performs scanline events with each _events value being a tuple of <position>, <add>, <remove>
+
+    Position is a complex, add and remove are integer values. If the value is ~ then it refers to the end.
+
+    For sorting complexes are sorted by real then by imag components, if reals are the same their imag are compared.
+    """
     def __init__(self):
         # List of each segment info about it.
-        self.path = Geomstr()
+        self.path = Geomstr()  # Geomstr of working info.
+
         self._scanline = -float("inf")
+
+        # Events
         self._events = list()
+
         self._actives = []
         self._active_table = []
-        self.inputs = list()
-        # List of each segment info about it.
-
-    def add_segments(self, g):
-        self.inputs.append(g)
 
     def union(self):
         pass
 
     def event_startpoint(self, p, s=None, e=None):
+        """
+        Adds event startpoint for each segment p.
+        @param p:
+        @param s:
+        @param e:
+        @return:
+        """
         assert s <= p <= e
         segment = self.path.segments[p]
         self._events.append((segment[0], (p,), tuple()))
 
     def event_endpoint(self, p, s=None, e=None):
+        """
+        Adds event endpoints for each segment p
+        @param p:
+        @param s:
+        @param e:
+        @return:
+        """
         assert s <= p <= e
         segment = self.path.segments[p]
         self._events.append((segment[-1], tuple(), (p,)))
 
     def event_vertex(self, p, q, s=None, e=None):
+        """
+        Adds vertex events for the segments of p and q.
+
+        Vertex events attempt to perform all the changes for polygon vertex.
+
+        @param p:
+        @param q:
+        @param s:
+        @param e:
+        @return:
+        """
         if p == -1:
             p = e - 1
 
@@ -431,9 +462,23 @@ class PolyBool:
             # disjointed
 
     def event_intersection(self, pt, s1, s2, e1, e2):
+        """
+        Add an intersection event between split point pt for s1, s2 and e1 e2
+        @param pt:
+        @param s1:
+        @param s2:
+        @param e1:
+        @param e2:
+        @return:
+        """
         self._events.append((pt, (s1, s2), (e1, e2)))
 
     def segments(self, segments):
+        """
+        For each segment add in events for the startpoint and endpoint of that segment.
+        @param segments:
+        @return:
+        """
         s = self.path.index
         self.path.append(segments, end=False)
         e = self.path.index
@@ -443,6 +488,11 @@ class PolyBool:
             self.event_endpoint(i, s, e)
 
     def polygon(self, segments):
+        """
+        For each segment within the polygon, we add segment vertex events.
+        @param segments:
+        @return:
+        """
         s = self.path.index
         self.path.append(segments, end=False)
         e = self.path.index
@@ -477,10 +527,22 @@ class PolyBool:
         return self.path.x_intercept(e, self._scanline)
 
     def correct_segment_directions(self, s, e):
-        for i in range(s, e):
-            self.correct_segment_direction(i)
+        """
+        For each segment ensure that y_start is greater than y_end by reversing segments.
 
-    def correct_segment_direction(self, index):
+        @param index:
+        @return:
+        """
+        for i in range(s, e):
+            self._correct_segment_direction(i)
+
+    def _correct_segment_direction(self, index):
+        """
+        Flips individual segment if y_start is greater than y_end.
+
+        @param index:
+        @return:
+        """
         segment = self.path.segments[index]
         start = segment[0]
         end = segment[-1]
@@ -559,20 +621,20 @@ class PolyBool:
             for index in add:
                 self._actives.append(index)
                 pos = self._actives.index(index)
-                #
-                # if pos > 0:
-                #     # Check before.
-                #     current = self._actives[pos]
-                #     before = self._actives[pos - 1]
-                # if pos < len(self._actives) - 1:
-                #     # Check after.
-                #     current = self._actives[pos]
-                #     after = self._actives[pos + 1]
-                #     self.check_intersections(current, after)
+
+                if pos > 0:
+                    # Check before.
+                    current = self._actives[pos]
+                    before = self._actives[pos - 1]
+                if pos < len(self._actives) - 1:
+                    # Check after.
+                    current = self._actives[pos]
+                    after = self._actives[pos + 1]
+                    self.check_intersections(current, after)
             self._actives.sort(key=self.x_intercept)
-            print("checking ALL intersections.")
-            for pos in range(1, len(self._actives)):
-                self.check_intersections(self._actives[pos - 1], self._actives[pos])
+            # print("checking ALL intersections.")
+            # for pos in range(1, len(self._actives)):
+            #     self.check_intersections(self._actives[pos - 1], self._actives[pos])
             # print(f"{index} at {pos} deleted in {self._actives}")
 
         assert len(self._actives) == 0
