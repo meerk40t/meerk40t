@@ -96,28 +96,75 @@ The Transformations work in Windows/OSX/Linux for wxPython 4.0+ (and likely befo
 _ = wx.GetTranslation
 
 
-class GoPanel(wx.Panel):
-    def __init__(self, *args, context=None, **kwds):
-        # begin wxGlade: PassesPanel.__init__
+class ActionPanel(wx.Panel):
+    def __init__(
+        self,
+        *args,
+        context=None,
+        action=None,
+        fgcolor=None,
+        bgcolor=None,
+        icon=None,
+        tooltip="",
+        **kwds,
+    ):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
-        self.click_time = 0
+
         self.context = context
         self.button_go = wx.BitmapButton(self, wx.ID_ANY)
-        self.button_go.SetBitmap(
-            icons8_gas_industry_50.GetBitmap(color=wx.WHITE, keepalpha=True)
-        )
-        self.button_go.SetBitmapFocus(icons8_gas_industry_50.GetBitmap())
-        self.was_mouse = False
-        self.button_go.Bind(wx.EVT_BUTTON, self.on_button_go_click)
-        self.button_go.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_down)
-        self.button_go.SetBackgroundColour(wx.Colour(0, 127, 0))
-        self.button_go.SetToolTip(_("One Touch: Send Job To Laser "))
+        self.icon = icon
+        self.fgcolor = fgcolor
+        self.button_go.SetBitmap(self.icon.GetBitmap(color=self.fgcolor))
+        self.button_go.SetBitmapFocus(self.icon.GetBitmap())
+        if bgcolor is not None:
+            self.button_go.SetBackgroundColour(bgcolor)
+        self.button_go.SetToolTip(tooltip)
+        self.action = action
 
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         main_sizer.Add(self.button_go, 1, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         main_sizer.Fit(self)
+        self.button_go.Bind(wx.EVT_BUTTON, self.on_button_go_click)
+        self.button_go.Bind(wx.EVT_SIZE, self.on_button_resize)
+
+    def on_button_go_click(self, event):
+        if self.action is not None:
+            self.action()
+
+    def on_button_resize(self, event):
+        size = self.button_go.Size
+        # Leave some room
+        best_size = min(size[0], size[1]) - 20
+        # At least 20 px high
+        best_size = max(best_size, 20)
+        self.button_go.SetBitmap(
+            self.icon.GetBitmap(color=self.fgcolor, resize=best_size)
+        )
+        self.button_go.SetBitmapFocus(self.icon.GetBitmap(resize=best_size))
+        event.Skip()
+
+
+class GoPanel(ActionPanel):
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: PassesPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        ActionPanel.__init__(
+            self,
+            context=context,
+            action=None,
+            fgcolor=wx.WHITE,
+            bgcolor=wx.Colour(0, 127, 0),
+            icon=icons8_gas_industry_50,
+            tooltip=_("One Touch: Send Job To Laser "),
+            *args,
+            **kwds,
+        )
+        self.click_time = 0
+        self.was_mouse = False
+        self.button_go.Bind(wx.EVT_BUTTON, self.on_button_go_click)
+        self.button_go.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_down)
 
     def on_mouse_down(self, event):
         self.was_mouse = True
@@ -176,19 +223,9 @@ def register_panel_go(window, context):
 
 def register_panel_stop(window, context):
     # Define Stop.
-    stop = wx.BitmapButton(window, wx.ID_ANY)
-    window.Bind(
-        wx.EVT_BUTTON,
-        ConsoleFunction(context, "estop\n"),
-        stop,
-    )
-    stop.SetBackgroundColour(wx.Colour(127, 0, 0))
-    stop.SetBitmap(
-        icons8_emergency_stop_button_50.GetBitmap(color=wx.WHITE, keepalpha=True)
-    )
-    stop.SetBitmapFocus(icons8_emergency_stop_button_50.GetBitmap())
-    stop.SetToolTip(_("Emergency stop/reset the controller."))
-    stop.SetSize(stop.GetBestSize())
+    def action():
+        context("estop\n")
+
     pane = (
         aui.AuiPaneInfo()
         .Bottom()
@@ -201,17 +238,26 @@ def register_panel_stop(window, context):
     )
     pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
-    pane.control = stop
-
+    panel = ActionPanel(
+        window,
+        wx.ID_ANY,
+        context=context,
+        action=action,
+        fgcolor=wx.WHITE,
+        bgcolor=wx.Colour(127, 0, 0),
+        icon=icons8_emergency_stop_button_50,
+        tooltip=_("Emergency stop/reset the controller."),
+    )
+    pane.control = panel
     window.on_pane_create(pane)
     context.register("pane/stop", pane)
 
 
 def register_panel_home(window, context):
     # Define Home.
-    home = wx.BitmapButton(window, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
-    # home.SetBackgroundColour((200, 225, 250))
-    window.Bind(wx.EVT_BUTTON, lambda e: context("home\n"), home)
+    def action():
+        context("home\n")
+
     pane = (
         aui.AuiPaneInfo()
         .Bottom()
@@ -224,35 +270,26 @@ def register_panel_home(window, context):
     )
     pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
-    pane.control = home
+    panel = ActionPanel(
+        window,
+        wx.ID_ANY,
+        context=context,
+        action=action,
+        fgcolor=None,
+        bgcolor=None,
+        icon=icons8_home_filled_50,
+        tooltip=_("Send laser to home position"),
+    )
+    pane.control = panel
     window.on_pane_create(pane)
     context.register("pane/home", pane)
 
 
 def register_panel_pause(window, context):
     # Define Pause.
-    pause = wx.BitmapButton(
-        window, wx.ID_ANY, icons8_pause_50.GetBitmap(use_theme=False)
-    )
+    def action():
+        context("pause\n")
 
-    def on_pause_button(event=None):
-        try:
-            context("pause\n")
-            # if self.pipe_state != 3:
-            #     pause.SetBitmap(icons8_play_50.GetBitmap())
-            # else:
-            # pause.SetBitmap(icons8_pause_50.GetBitmap(use_theme=False))
-        except AttributeError:
-            pass
-
-    window.Bind(
-        wx.EVT_BUTTON,
-        on_pause_button,
-        pause,
-    )
-    pause.SetBackgroundColour(wx.Colour(255, 255, 0))
-    pause.SetToolTip(_("Pause/Resume the controller"))
-    pause.SetSize(pause.GetBestSize())
     pane = (
         aui.AuiPaneInfo()
         .Caption(_("Pause"))
@@ -265,8 +302,17 @@ def register_panel_pause(window, context):
     )
     pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
-    pane.control = pause
-
+    panel = ActionPanel(
+        window,
+        wx.ID_ANY,
+        context=context,
+        action=action,
+        fgcolor=None,
+        bgcolor=wx.Colour(255, 255, 0),
+        icon=icons8_pause_50,
+        tooltip=_("Pause/Resume the controller"),
+    )
+    pane.control = panel
     window.on_pane_create(pane)
     context.register("pane/pause", pane)
 
