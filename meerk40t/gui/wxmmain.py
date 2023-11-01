@@ -2403,10 +2403,11 @@ class MeerK40t(MWindow):
 
     @property
     def is_dark(self):
-        try:
-            res = wx.SystemSettings().GetAppearance().IsDark()
-        except AttributeError:
-            res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        # try:
+        #     res = wx.SystemSettings().GetAppearance().IsDark()
+        # except AttributeError:
+        #     res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         return res
 
     def __kernel_initialize(self):
