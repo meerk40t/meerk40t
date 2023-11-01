@@ -530,11 +530,12 @@ class VectorIcon:
             return _CACHE[cache_id]
 
         bmp = wx.Bitmap(int(final_icon_width), int(final_icon_height), 32)
+        bmp.UseAlpha(True)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
-        dc.SetBackground(self._background)
+        # dc.SetBackground(self._background)
         # dc.SetBackground(wx.RED_BRUSH)
-        dc.Clear()
+        # dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
         gc.dc = dc
         stroke_paths = []
@@ -620,37 +621,39 @@ class VectorIcon:
         gc.Destroy()
         del gc.dc
         del dc
-
-        # That has no effect...
-        # if force_darkmode:
-        #     mask = wx.Mask(bmp, wx.BLACK)
-        #     bmp.SetMask(mask)
-        #     bmp.SetMaskColour("black")
-        # else:
-        #     mask = wx.Mask(bmp, wx.WHITE)
-        #     effort = bmp.SetMask(mask)
-        #     bmp.SetMaskColour("white")
-        image = bmp.ConvertToImage()
-        if image.HasAlpha():
-            image.ClearAlpha()
-        image.InitAlpha()
-        if force_darkmode:
-            bgcol = 0
-        else:
-            bgcol = 255
-        for y in range(image.GetHeight()):
-            for x in range(image.GetWidth()):
-                r = image.GetRed(x, y)
-                g = image.GetGreen(x, y)
-                b = image.GetBlue(x, y)
-                alpha_value = max(abs(r - bgcol), abs(g - bgcol), abs(b - bgcol))
-                # For debug purposes...
-                # image.SetRGB(x, y, 255, 0, 0)
-                image.SetAlpha(x, y, alpha_value)
-        bmp = wx.Bitmap(image)
         # Save bitmap for later retrieval
         _CACHE[cache_id] = bmp
         return bmp
+        #
+        # # That has no effect...
+        # # if force_darkmode:
+        # #     mask = wx.Mask(bmp, wx.BLACK)
+        # #     bmp.SetMask(mask)
+        # #     bmp.SetMaskColour("black")
+        # # else:
+        # #     mask = wx.Mask(bmp, wx.WHITE)
+        # #     effort = bmp.SetMask(mask)
+        # #     bmp.SetMaskColour("white")
+        # image = bmp.ConvertToImage()
+        # if image.HasAlpha():
+        #     image.ClearAlpha()
+        # image.InitAlpha()
+        # if force_darkmode:
+        #     bgcol = 0
+        # else:
+        #     bgcol = 255
+        # for y in range(image.GetHeight()):
+        #     for x in range(image.GetWidth()):
+        #         r = image.GetRed(x, y)
+        #         g = image.GetGreen(x, y)
+        #         b = image.GetBlue(x, y)
+        #         alpha_value = max(abs(r - bgcol), abs(g - bgcol), abs(b - bgcol))
+        #         # For debug purposes...
+        #         # image.SetRGB(x, y, 255, 0, 0)
+        #         image.SetAlpha(x, y, alpha_value)
+        # bmp = wx.Bitmap(image)
+        #
+        # return bmp
 
     def make_geomstr(self, gc, path):
         """
