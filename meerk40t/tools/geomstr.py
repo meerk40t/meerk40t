@@ -389,55 +389,124 @@ class StaticBeam:
 
     def compute_beam(self):
         g = self.geometry
-        low = complex(float("inf"), float("inf"))
-        high = -low
-
+        gs = g.segments
         events = []
         # Add start and end events.
         for i in range(g.index):
-            if g.segments[i][2] != TYPE_LINE:
+            if gs[i][2] != TYPE_LINE:
                 continue
-            if (g.segments[i][0].imag, g.segments[i][0].real) < (g.segments[i][-1].imag, g.segments[i][-1].real):
-                events.append((g.segments[i][0], i))
-                events.append((g.segments[i][-1], ~i))
+            if (gs[i][0].imag, gs[i][0].real) < (gs[i][-1].imag, gs[i][-1].real):
+                events.append((g.segments[i][0], i, None))
+                events.append((g.segments[i][-1], ~i, None))
             else:
-                events.append((g.segments[i][0], ~i))
-                events.append((g.segments[i][-1], i))
+                events.append((g.segments[i][0], ~i, None))
+                events.append((g.segments[i][-1], i, None))
 
+        # Sort start and end events.
         events.sort(key=self.sort_key)
 
-        largest_actives = 0
-        actives = []
-        beam_events = {}
-        intersections = []
-        for pt, index in events:
-            if len(actives) > largest_actives:
-                largest_actives = len(actives)
-            if index >= 0:
-                actives.append(index)
-            else:
-                actives.remove(~index)
-            for j in range(1, len(actives)):
-                for t1, t2 in g.intersections(j - 1, j):
-                    pt_intersect = g.point(j-1, t1)
-                    if pt_intersect is not None:
-                        beam_events[pt_intersect] = True
-            beam_events[pt] = True
+        def check_intersection(q, r, y):
+            """
+            Check for intersections between p and r, at y.
 
-        actives.append([])
-        self._nb_events = beam_events
-        self._nb_scan = np.zeros((len(actives), largest_actives), dtype=int)
+            p must occur before r in the sorted actives.
+
+            y is used to ensure this is a future point.
+            @param q: lower-active value
+            @param r: higher-active value
+            @param y: y value to not be equal
+            @return:
+            """
+            try:
+                for t1, t2 in g.intersections(q, r):
+                    if t1 in (0, 1) and t2 in (0, 1):
+                        continue
+                    pt_intersect = g.position(q, t1)
+                    if y != pt_intersect.imag:
+                        events.append((pt_intersect, 0, (q, r)))
+                    events.sort(key=self.sort_key)
+            except AttributeError:
+                pass
+
+        # Store currently active segments.
+        actives = []
+
+        # Store previously active segments
+        active_lists = []
+
+        largest_actives = 0
+        for pt, index, swap in events:
+            x_pos = pt.real
+            y_pos = pt.imag
+            if isinstance(swap, tuple):
+                idx1, idx2 = swap
+                pos1 = actives.index(idx1)
+                pos2 = actives.index(idx2)
+                actives[pos1], actives[pos2] = actives[pos2], actives[pos1]
+                # We swapped pos1 and pos2 so we must check the outer values of this swap.
+                try:
+                    check_intersection(actives[pos1-1], actives[pos1], y_pos)
+                except IndexError:
+                    pass
+                try:
+                    check_intersection(actives[pos2], actives[pos2+1], y_pos)
+                except IndexError:
+                    pass
+            elif index >= 0:
+                # Index is being inserted, find x-position sorted.
+                lines = g.segments[actives]
+                a = lines[:,0]
+                b = lines[:,-1]
+
+                old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
+                try:
+                    # If horizontal slope is undefined. But, all x-ints are at x since x0=x1
+                    m = (b.imag - a.imag) / (b.real - a.real)
+                    y0 = a.imag - (m * a.real)
+                    x_intercepts = np.where(~np.isinf(m), (y_pos - y0) / m, a.real)
+                finally:
+                    np.seterr(**old_np_seterr)
+                idx = np.searchsorted(x_intercepts, np.imag(pt))
+                actives.insert(idx, index)
+                if len(actives) > largest_actives:
+                    largest_actives = len(actives)
+
+                # Check intersections between idx, idx + 1
+                try:
+                    check_intersection(index, actives[idx+1], y_pos)
+                except IndexError:
+                    pass
+
+                # Check intersections between idx, idx - 1
+                try:
+                    check_intersection(actives[idx-1], index, y_pos)
+                except IndexError:
+                    pass
+            else:
+                remove_index = actives.index(~index)
+                # Check intersections between idx-1, idx+ 1
+                try:
+                    check_intersection(actives[idx-1], actives[idx+1], y_pos)
+                except IndexError:
+                    pass
+                del actives[remove_index]
+
+            active_lists.append(list(actives))
+
+        active_lists.append([])
+        self._nb_events = [e for e, _, _ in events]
+        self._nb_scan = np.zeros((len(active_lists), largest_actives), dtype=int)
         self._nb_scan -= 1
-        for i, active in enumerate(actives):
+        for i, active in enumerate(active_lists):
             self._nb_scan[i, 0 : len(active)] = active
+
 
     def actives_at(self, value):
         if not self._sb_scan:
             self.compute_beam()
         idx = np.searchsorted(self._nb_events, value)
-        actives = self._nb_scan[idx]
-        line = self.geometry.segments[actives]
-        return line
+        actives = self._nb_scan[idx + 1]
+        return np.where(actives != -1)[0]
 
 
 class Scanbeam:

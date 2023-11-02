@@ -1347,7 +1347,19 @@ class TestGeomstr(unittest.TestCase):
         nx, ny, mx, my = g.aabb()
         print(nx)
 
-    def test_static_beam(self):
+    def test_static_beam_horizontal_bowtie(self):
+        """
+        0: down-right
+        1: right side
+        2: down-left
+        3: left side
+        30    21
+        |\   /|
+        | \ / |
+        | / \ |
+        |/   \|
+        @return:
+        """
         bowtie = Geomstr.lines(
             complex(0, 0),
             complex(100, 100),
@@ -1356,7 +1368,35 @@ class TestGeomstr(unittest.TestCase):
             complex(0, 0),
         )
         sb = StaticBeam(bowtie)
-        self.assertEqual(sb.actives_at(25), (1, 3))
+        result = sb.actives_at(25)
+        for x, y in zip(result, (3, 0, 2, 1)):
+            self.assertEqual(x,y)
+
+    def test_static_beam_vertical_bowtie(self):
+        """
+       0   3
+        --------
+        \     /
+         \   /
+          \/
+          /\
+         /  \
+        /    \
+        ------
+        2   1
+        @return:
+        """
+        bowtie = Geomstr.lines(
+            complex(0, 0),
+            complex(100, 100),
+            complex(0, 100),
+            complex(100, 0),
+            complex(0, 0),
+        )
+        sb = StaticBeam(bowtie)
+        result = sb.actives_at(25)
+        for x, y in zip(result, (0,2)):
+            self.assertEqual(x,y)
 
     # def test_geomstr_hatch(self):
     #     gs = Geomstr.svg(
