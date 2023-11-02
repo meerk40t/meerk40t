@@ -16,7 +16,7 @@ from .icons import (
     icons8_bell_20,
     icons8_canvas_20,
     icons8_close_window_20,
-    icons8_diagonal_20,
+    icon_effect_hatch,
     icons8_direction_20,
     icons8_file_50,
     icons8_ghost_20,
@@ -42,6 +42,7 @@ from .icons import (
     icons8_timer_20,
     icons8_type_50,
     icons8_warning_shield_20,
+    icon_effect_wobble,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
@@ -528,8 +529,8 @@ class ShadowTree:
             "op image": icons8_image_20,
             "op raster": icons8_direction_20,
             "op dots": icons8_scatter_plot_20,
-            "effect hatch": icons8_diagonal_20,
-            "effect wobble": icons8_diagonal_20,
+            "effect hatch": icon_effect_hatch,
+            "effect wobble": icon_effect_wobble,
             "place current": icons8_home_location_20,
             "place point": icons8_home_location_20,
             "elem point": icons8_scatter_plot_20,

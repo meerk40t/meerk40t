@@ -2,7 +2,7 @@ import wx
 
 from meerk40t.gui.icons import (
     icons8_computer_support_50,
-    icons8_diagonal_20,
+    icon_effect_hatch,
     icons8_direction_20,
     icons8_image_20,
     icons8_laser_beam,
