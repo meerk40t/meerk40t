@@ -3729,12 +3729,21 @@ class Geomstr:
         @param y:
         @return:
         """
-        m = self.slope(e)
-        b = self.y_intercept(e)
-        if math.isnan(m) or math.isinf(m):
-            low = self.endpoint_min_y(e)
-            return low.real
-        return (y - b) / m
+        line = self.segments[e]
+        if len(line.shape) == 2:
+            a = line[:, 0]
+            b = line[:, -1]
+        else:
+            a = line[0]
+            b = line[-1]
+        old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
+        try:
+            # If horizontal slope is undefined. But, all x-ints are at x since x0=x1
+            m = (b.imag - a.imag) / (b.real - a.real)
+            y0 = a.imag - (m * a.real)
+            return np.where(~np.isinf(m), (y - y0) / m, a.real)
+        finally:
+            np.seterr(**old_np_seterr)
 
     #######################
     # Geometry Window Functions
