@@ -7,7 +7,7 @@ from meerk40t.gui.icons import (
     icons8_delete_50,
     icons8_emergency_stop_button_50,
     icons8_gas_industry_50,
-    icons8_goal_50,
+    icon_update_plan,
     icons8_laser_beam_hazard2_50,
     icons8_pause_50,
     icons8_pentagon_50,
@@ -201,12 +201,12 @@ class LaserPanel(wx.Panel):
         self.arm_toggle = wx.ToggleButton(self, wx.ID_ANY, _("Arm"))
         self.arm_toggle.SetToolTip(_("Arm the job for execution"))
         self.arm_toggle.SetBitmap(
-            icon_open_door.GetBitmap(
+            icon_closed_door.GetBitmap(
                 resize=default_icon_size,
             )
         )
         self.arm_toggle.SetBitmapPressed(
-            icon_closed_door.GetBitmap(
+            icon_open_door.GetBitmap(
                 resize=default_icon_size,
             )
         )
@@ -610,7 +610,7 @@ class JobPanel(wx.Panel):
         self.button_update = wx.Button(self, wx.ID_ANY, _("Update"))
         self.button_update.SetToolTip(_("Update the Plan"))
         self.button_update.SetBitmap(
-            icons8_goal_50.GetBitmap(
+            icon_update_plan.GetBitmap(
                 # resize=STD_ICON_SIZE / 2
             )
         )
