@@ -486,9 +486,10 @@ class VectorIcon:
         noadjustment=False,
         keepalpha=False,
         force_darkmode=False,
-        buffer=5,
+        buffer=None,
         **kwargs,
     ):
+
         global _CACHE
         if color is not None and hasattr(color, "red"):
             if color.red == color.green == color.blue == 255:
@@ -512,6 +513,10 @@ class VectorIcon:
             final_icon_height = resize
         final_icon_height = int(final_icon_height)
         final_icon_width = int(final_icon_width)
+        if buffer is None:
+            buffer = 5
+            if min(final_icon_height, final_icon_width) < 0.5 * get_default_icon_size():
+                buffer = 2
 
         def color_id():
             return "--" if color is None else f"{color.red}-{color.green}-{color.blue}"
@@ -578,6 +583,10 @@ class VectorIcon:
         path_width = max_x - min_x
         path_height = max_y - min_y
 
+        stroke_buffer = 2
+        path_width += 2 * stroke_buffer
+        path_height += 2 * stroke_buffer
+
         scale_x = (final_icon_width - 2 * buffer) / path_width
         scale_y = (final_icon_height - 2 * buffer) / path_height
 
@@ -597,8 +606,8 @@ class VectorIcon:
 
         matrix = Matrix()
         matrix.post_translate(
-            -min_x + (final_icon_width - width_scaled) / 2 / scale_x,
-            -min_y + (final_icon_height - height_scaled) / 2 / scale_x,
+            -min_x + stroke_buffer + (final_icon_width - width_scaled) / 2 / scale_x,
+            -min_y + stroke_buffer + (final_icon_height - height_scaled) / 2 / scale_x,
         )
         matrix.post_scale(scale_x, scale_y)
         if scale_y < 0:
@@ -626,16 +635,7 @@ class VectorIcon:
         # Save bitmap for later retrieval
         _CACHE[cache_id] = bmp
         return bmp
-        #
-        # # That has no effect...
-        # # if force_darkmode:
-        # #     mask = wx.Mask(bmp, wx.BLACK)
-        # #     bmp.SetMask(mask)
-        # #     bmp.SetMaskColour("black")
-        # # else:
-        # #     mask = wx.Mask(bmp, wx.WHITE)
-        # #     effort = bmp.SetMask(mask)
-        # #     bmp.SetMaskColour("white")
+
         # image = bmp.ConvertToImage()
         # if image.HasAlpha():
         #     image.ClearAlpha()
@@ -1081,14 +1081,6 @@ icons8_system_task_20 = PyEmbeddedImage(
     b"rZ7LCne8DPgDBhc9y356EnYAAAAASUVORK5CYII="
 )
 
-icons8_direction_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"yUlEQVQ4jc3UQUqCURDA8V/5RVAtwqBw0TmkGyhoeA33LTtHuGihtIs2FXoCpWu4EFwpHcGF"
-    b"84ELKV7fo/pv5r1h5s/AYx7/iBM0cws/0MkpPccUt2XiIOIlVlFQw3WCtI5H9DEpItnCGDc4"
-    b"insKxzHlJLFvL3d4RvFd4a/LrvCQS/Z3FBig8VPB4c65hiEWWFYaK2RPuK8qKjdlgB5eE/vf"
-    b"wzFDF6Pyyd/QxgvWCcJ5xE97tqRl+3tcJE75JZ2QnuWUNnGaU1iJDUKqGvOJPKhrAAAAAElF"
-    b"TkSuQmCC"
-)
 
 icons8_scatter_plot_20 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1B"
@@ -1151,37 +1143,6 @@ icons8_console_50 = PyEmbeddedImage(
     b"gg=="
 )
 
-icons8_text_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"3UlEQVRoge2ZWwqDMBBFr6WLq922O6nuo/0xICGayftS74EggsnkYDIfM4AQQvwjbwAbgG/n"
-    b"sQKYa4qMkHDjU1PELdobc9xH4410I1dkge1YLIVzzEzG79zvnbz3lBglc6L7fCYsfhUwxNnG"
-    b"c+ZEud0d2fbnMYtUTYu94sz7gsfc/orM8VOnJZXmxGlOjkg2t7sj9EiEDYmwIRE2JMKGRNiQ"
-    b"CBsSYUMibEiEDYkE8HsoZzTrfdQi1EOJFbFbFPmKSa1bVa1z6Y4E8Ou2sQGQHi2/bmvpDQ6v"
-    b"6wohxBh+1Qai3Sp+mhwAAAAASUVORK5CYII="
-)
-
-
-icons8_laser_beam_hazard_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAD"
-    b"tklEQVRoge3ZT2hdRRTH8U9erEltqjFtasVKg1i1GEQSja1VidQuRFCx+Kc0CCpmY6UWq6iI"
-    b"IqKNGmiLLYhQXUjRTV0ItouCiEihLvwDQguCqFijdVNcCF3pYs7z3b7c/LkvuUmE94VL5s09"
-    b"c+Y3c8+cmXtDkyZNmjSZB1pK9n8B7ovyx/i7rI7KHEgLPsNf8XspNuKfEvssha04jkpcx6Pu"
-    b"f8US/IL16IprfdQtmUddhXkFB6P8OnZF+WDcm3XKWCOr8A36sRzXSqF1AqfwLW7AzyX0Pat8"
-    b"hJekSdqjtkb2Rt3L+HDe1E2T7DrYglvr7j2Exfip7t6CooKv1MTuyrF5S22QX0ebBcejOCaF"
-    b"z7NYnWOzCjvD5gs8MmfqpslS/IoBXIZnJrF9ThpkH37DhaWrK8AI3ovyGybfK7Jh9778EJwX"
-    b"rsCfuBTrpPifiq24BZdE2zWlqSvAIbwgxX01xWZZhw11dVXbSrQ9VLLGKbkdP6IdD0trpJ7B"
-    b"uOrpxxDOxw/YVIrCadAq7dKb0WF8rFcHNag2kBvrbEai7ebw1dqomJnk8cdwRgqLbdgnxX5n"
-    b"3G+p81/J/O4M27fxZPg4Ez7nlIswhuvRg6czAvfF3x4Mqz2R4ajL2oi2PeFrLHzPGaN4N8pv"
-    b"Sim1Sif2S/vEYSl8RqLcF/c6M/aLpR1f+BwtTXUda3AaK3AbHoj6fmld9EiCD0hJoEp71PWF"
-    b"zUC0gfvD14rwPSfp+BPpmFGRTrfZdNsihdBhtOW0bcORsKlvVz0p74w+ClH0fWSTFBq90mL9"
-    b"Dn9gbZ3dRjw/gY9RaROspxef4wN8jydwdLrCimSt87BbmrF2XCmdYIvSgotzrlPSRLVHH7uj"
-    b"z1knO0PDWJljUzF5aLWrhVbeJK7Ei1E+Gn3OKl34XXr8EzEgbXjVk+0B5w6mTW2xrw7bvJPA"
-    b"U9LT7o0+u2ao/Rz2SmsDXp3Ctmj6radNLQXvj75nhbXSgl4mzeI9k9g2siHmca+UMJbJTyYN"
-    b"cQTbpXNQXihkGcoIvElaB4NxVaJO2AxN4WtP9Lk9NMyIu6TPOIvQjasKtM07NE41EVmuw+PR"
-    b"94nQ0hCLcBJ3NuogGJR/jJ8Or0nhdYd01M/LhFOyA582KCDLBuNfrKZLt/SNTGjZUdTBcunM"
-    b"c02DAmaTbbha0nJa0jaOiXbOLVK6PImbcXcJAovQjS8lTQ+qbQX/MdFAxqRvUB3St6pjJQks"
-    b"QgcuV/BA2Sq9G5yV/jGzEK6zeMcMXoebNGnSpEmTifgXBxu98dH6sbAAAAAASUVORK5CYII="
-)
 
 icons8_about_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAE"
@@ -1267,18 +1228,6 @@ icons8_smartphone_ram_50 = PyEmbeddedImage(
     b"lHVnG+Cjzpzr9wZcDa2/kiNkazcr6yy6bq0m+MUjpTnMI6WRR5pEHimIPNIk8khB5JEmkUcK"
     b"Io80if7ZK66z6MYj26b1AR0khDzD1+rIdMCPTMGPd3dx1B9O58YlpdjhB8S1C92LOYiw3P7H"
     b"krrJau8Df/ayCyGEHV4Hpj6QuXY7DQAAAABJRU5ErkJggg=="
-)
-
-icons8_image_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAB"
-    b"lklEQVRoge2YP0oDQRSHv2ghiFqZwl5whWgluYAgnsXGzhS5g72HUJEk4BFSiYJXMGJKBQMW"
-    b"iUVmyBB23Jnd2cyA74MfYZd9w3w7b/9kQRCEf0EDmMWeRAjWYk8gFCKSGiKSGiKSGiJSE32g"
-    b"DWyp34FP8SyR9Czzu3esjy6gc2IRabvUp/SutQN85ezfBj6Lin2ukTHw4nG8LweW/YeuA7gs"
-    b"+xg4AjLg27HGN33L/AaO9YUHfAAtY+CrmkS0zPJdy7XWWWIfWFcZ1ihTNoXtBPOWelerobfr"
-    b"arGgIuZKtNT2DJiwuPg6ltqfVERsEjpDFi3WA+6ALnAONC01KxfJa6e8og5/kwGjWCJFK2FG"
-    b"t1hTrUQXuAWePcaoRcRHwpTJ219mrCAiru3kE3NMGxnwFFKkrrO3/CDNYwO4BqYhRPTZCbES"
-    b"rpkAl8w/EAKcAm9VRVYtYeYR2FMyu8BDFZEY93wzI+BMyTSAC8q9NUSV0JkCN8AmFYgtYeYV"
-    b"OC4jkdI/xEqk9hWlNCKSGiKSGiKSGiIiCIIQhV9aqvtgADl99gAAAABJRU5ErkJggg=="
 )
 
 # ----------------------------------------------------------------------
@@ -2025,28 +1974,6 @@ icons8_canvas_20 = PyEmbeddedImage(
     b"AAAAAElFTkSuQmCC"
 )
 
-icons8_prototype_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAAsTAAALEwEAmpwY"
-    b"AAAAV0lEQVR4nGNgGPHgCAMDwwMS8RF8oQZSMIeBgSGBSDwHqod+Bh6htpepDo4Q6Zoj1IiU"
-    b"OUjhBVM3h5hIAWnGBhLQDIRZ9GDUQNqH4RxqxvIRaqdDhuEPAFGfZAHJHImuAAAAAElFTkSu"
-    b"QmCC"
-)
-
-icons8_rectangular_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAAsTAAALEwEAmpwY"
-    b"AAAATklEQVR4nGNgGNEgmYGBYTkDA8MqEvFyBgaGRHTDTBkYGP5TiE2QDQyFCoJoUkEoNr2j"
-    b"BpIEQkfDcIgkGxMqZD1jdJsSKSgcEsjw2XABAJi8Vfblja28AAAAAElFTkSuQmCC"
-)
-
-
-icons8_oval_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAAsTAAALEwEAmpwY"
-    b"AAAA8klEQVR4nO3UO0oEQRSF4Q80EVQM1QXoknwGGjrbUCMZFbMxM/eRmOkOZlB34iMaHwxy"
-    b"4SqttDPdjZH4Q0Fz6txbXdSp4p8C81hHGyc52qnNqcEiLvCGZ3RxmaOb2ivO0zuUTfRxgyVM"
-    b"lHhCW05PP2tKWcEA2xgzmvDsZE0s8IUZPGBffQ6zNnp80sIjJhs0nMITtoriMa405xqdotD5"
-    b"7Yat3HL8fl2my7b8cSgHDRoe4f77ocijH2QUqsRmHLtZE5kdGuzbzOVPwY65u/RujFp5AWd5"
-    b"vV7QK1y9Xmoxd5reysQDsIa9wuMQ36uYrd7GX+cdqXM6cP80NrIAAAAASUVORK5CYII="
-)
 
 icons8_line_20 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAAsTAAALEwEAmpwY"
@@ -2079,17 +2006,6 @@ icons8_warning_shield_20 = PyEmbeddedImage(
     b"jikTgSOdGv4BIclJf+4n3KEAAAAASUVORK5CYII="
 )
 
-
-icons8_home_location_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAAsTAAALEwEAmpwY"
-    b"AAABYElEQVR4nKXVsUtWYRTH8Y+aEURDKAitTvISQUaakkNDIJi7+Ac4ODY4hFA4uIUO0tSg"
-    b"III0pLQ2OEjkUkMQEoFjUIiVKAR55cIhHl7ufbv39QcHLuc59/uc53eey6W1buErltCR5K9r"
-    b"Q7fxA1nES3RiBn/QVwc2GLATTOB1QDewEM+NqrARHOEYDyJ3OYEe1QGO4VfE/aa1brxKLGhU"
-    b"gf2ODu6V1HRhLYBvcKUM9jD8OsTd/2ycQueLCsZxGkPIJ1tF+bRncbNo8Xvs9gHL0cGFtI6/"
-    b"idkDFd7pxwu8xw4eF/n5tOL0hvEzaSCLeIerdYG5HV+i7gxvsZ9AF+sCh5KX82PmuoTdyB2o"
-    b"CXyUANO7+jxy+dX7pyeRzD0qUyMBbqEXd/Atcp/S4tHwJSuIvaTuc0lNhmfNHUxiFZtNMZfU"
-    b"TJXADtHT4nQttV0AnG4XlutafFmF16Vd3cBHrKS/h3MOR3bOP+nOwAAAAABJRU5ErkJggg=="
-)
 
 icon_kerf_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAABnRSTlMA/wD/AP83WBt9AAAA"
@@ -2625,6 +2541,7 @@ icons8_home_filled_50 = VectorIcon(
 )
 
 icons8_home_20 = icons8_home_filled_50
+icons8_home_location_20 = icons8_home_filled_50
 
 icons8_copy_50 = VectorIcon(
     fill=(
@@ -3143,3 +3060,17 @@ icons8_image_50 = VectorIcon(
     stroke=()
 )
 icons8_image_20 = icons8_image_50
+
+icon_regmarks = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 0 0 h 100 v 20 h -100 v -20",
+        "M 0 30 h 60 v 60 h -60 v -60",
+        "M 70 30 h 30 v 60 h -30 v -60",
+    )
+)
+
+icons8_direction_20 = VectorIcon(
+    fill=('M 37.90625 3.96875 C 37.863281 3.976563 37.820313 3.988281 37.78125 4 C 37.40625 4.066406 37.105469 4.339844 37 4.703125 C 36.894531 5.070313 37.003906 5.460938 37.28125 5.71875 L 43.5625 12 L 12 12 C 11.96875 12 11.9375 12 11.90625 12 C 11.355469 12.027344 10.925781 12.496094 10.953125 13.046875 C 10.980469 13.597656 11.449219 14.027344 12 14 L 43.5625 14 L 37.28125 20.28125 C 36.882813 20.679688 36.882813 21.320313 37.28125 21.71875 C 37.679688 22.117188 38.320313 22.117188 38.71875 21.71875 L 46.5625 13.84375 C 46.617188 13.808594 46.671875 13.765625 46.71875 13.71875 C 46.742188 13.6875 46.761719 13.65625 46.78125 13.625 C 46.804688 13.605469 46.824219 13.585938 46.84375 13.5625 C 46.882813 13.503906 46.914063 13.441406 46.9375 13.375 C 46.949219 13.355469 46.960938 13.332031 46.96875 13.3125 C 46.96875 13.300781 46.96875 13.292969 46.96875 13.28125 C 46.980469 13.25 46.992188 13.21875 47 13.1875 C 47.015625 13.082031 47.015625 12.980469 47 12.875 C 47 12.855469 47 12.832031 47 12.8125 C 47 12.800781 47 12.792969 47 12.78125 C 46.992188 12.761719 46.980469 12.738281 46.96875 12.71875 C 46.96875 12.707031 46.96875 12.699219 46.96875 12.6875 C 46.960938 12.667969 46.949219 12.644531 46.9375 12.625 C 46.9375 12.613281 46.9375 12.605469 46.9375 12.59375 C 46.929688 12.574219 46.917969 12.550781 46.90625 12.53125 C 46.894531 12.519531 46.886719 12.511719 46.875 12.5 C 46.867188 12.480469 46.855469 12.457031 46.84375 12.4375 C 46.808594 12.382813 46.765625 12.328125 46.71875 12.28125 L 46.6875 12.28125 C 46.667969 12.257813 46.648438 12.238281 46.625 12.21875 L 38.71875 4.28125 C 38.511719 4.058594 38.210938 3.945313 37.90625 3.96875 Z M 4 12 C 3.449219 12 3 12.449219 3 13 C 3 13.550781 3.449219 14 4 14 C 4.550781 14 5 13.550781 5 13 C 5 12.449219 4.550781 12 4 12 Z M 8 12 C 7.449219 12 7 12.449219 7 13 C 7 13.550781 7.449219 14 8 14 C 8.550781 14 9 13.550781 9 13 C 9 12.449219 8.550781 12 8 12 Z M 11.875 28 C 11.652344 28.023438 11.441406 28.125 11.28125 28.28125 L 3.4375 36.15625 L 3.34375 36.1875 C 3.320313 36.207031 3.300781 36.226563 3.28125 36.25 L 3.28125 36.28125 C 3.257813 36.300781 3.238281 36.320313 3.21875 36.34375 C 3.195313 36.363281 3.175781 36.382813 3.15625 36.40625 C 3.15625 36.417969 3.15625 36.425781 3.15625 36.4375 C 3.132813 36.457031 3.113281 36.476563 3.09375 36.5 C 3.09375 36.511719 3.09375 36.519531 3.09375 36.53125 C 3.03125 36.636719 2.988281 36.753906 2.96875 36.875 C 2.96875 36.886719 2.96875 36.894531 2.96875 36.90625 C 2.96875 36.9375 2.96875 36.96875 2.96875 37 C 2.96875 37.019531 2.96875 37.042969 2.96875 37.0625 C 2.96875 37.074219 2.96875 37.082031 2.96875 37.09375 C 2.984375 37.226563 3.027344 37.351563 3.09375 37.46875 C 3.101563 37.488281 3.113281 37.511719 3.125 37.53125 C 3.136719 37.542969 3.144531 37.550781 3.15625 37.5625 C 3.164063 37.582031 3.175781 37.605469 3.1875 37.625 C 3.199219 37.636719 3.207031 37.644531 3.21875 37.65625 C 3.230469 37.667969 3.238281 37.675781 3.25 37.6875 C 3.261719 37.699219 3.269531 37.707031 3.28125 37.71875 C 3.335938 37.777344 3.398438 37.832031 3.46875 37.875 L 11.28125 45.71875 C 11.679688 46.117188 12.320313 46.117188 12.71875 45.71875 C 13.117188 45.320313 13.117188 44.679688 12.71875 44.28125 L 6.4375 38 L 38 38 C 38.359375 38.003906 38.695313 37.816406 38.878906 37.503906 C 39.058594 37.191406 39.058594 36.808594 38.878906 36.496094 C 38.695313 36.183594 38.359375 35.996094 38 36 L 6.4375 36 L 12.71875 29.71875 C 13.042969 29.417969 13.128906 28.941406 12.933594 28.546875 C 12.742188 28.148438 12.308594 27.929688 11.875 28 Z M 42 36 C 41.449219 36 41 36.449219 41 37 C 41 37.550781 41.449219 38 42 38 C 42.550781 38 43 37.550781 43 37 C 43 36.449219 42.550781 36 42 36 Z M 46 36 C 45.449219 36 45 36.449219 45 37 C 45 37.550781 45.449219 38 46 38 C 46.550781 38 47 37.550781 47 37 C 47 36.449219 46.550781 36 46 36 Z',),
+    stroke=()
+)
