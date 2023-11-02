@@ -3195,3 +3195,21 @@ icons8_resize_horizontal_50 = VectorIcon(
         "M 100 70 h -100 M 100 70 L 70 50 M 100 70 L 70 90",
     ),
 )
+
+icon_open_door = VectorIcon(
+    fill = (),
+    stroke=(
+        "M 0 20 L 60 0 L 60 120 L 0 100 L 0 20",
+        "M 70 20 h 30 v 80 h -30"
+        "M 45 60 a 3,5, 0 1,0 1,0"
+    ),
+)
+
+icon_closed_door = VectorIcon(
+    fill = (),
+    stroke=(
+        "M 0 0 h 100 v 120 h -100 v -120",
+        "M 10 10 h 80 v 110 h -80 v -110",
+        "M 70 60 a 5,5, 0 1,0 1,0"
+    ),
+)

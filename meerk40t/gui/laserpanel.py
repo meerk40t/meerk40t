@@ -12,6 +12,8 @@ from meerk40t.gui.icons import (
     icons8_pause_50,
     icons8_pentagon_50,
     icons8_save_50,
+    icon_open_door,
+    icon_closed_door,
 )
 from meerk40t.gui.navigationpanels import Drag, Jog, MovePanel
 from meerk40t.gui.wxutils import (
@@ -103,6 +105,7 @@ class LaserPanel(wx.Panel):
         self.context = context
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
+        default_icon_size = STD_ICON_SIZE * 0.75
 
         sizer_devices = StaticBoxSizer(self, wx.ID_ANY, _("Device"), wx.HORIZONTAL)
         sizer_main.Add(sizer_devices, 0, wx.EXPAND, 0)
@@ -141,7 +144,7 @@ class LaserPanel(wx.Panel):
         self.button_start.SetToolTip(_("Execute the Job"))
         self.button_start.SetBitmap(
             icons8_gas_industry_50.GetBitmap(
-                # resize=STD_ICON_SIZE / 2,
+                resize=default_icon_size,
                 color=wx.WHITE,
                 keepalpha=True,
                 force_darkmode=True,
@@ -149,7 +152,7 @@ class LaserPanel(wx.Panel):
         )
         self.button_start.SetBitmapFocus(
             icons8_gas_industry_50.GetBitmap(
-                # resize=STD_ICON_SIZE / 2
+                resize=default_icon_size,
             )
         )
         self.button_start.SetBackgroundColour(wx.Colour(0, 127, 0))
@@ -164,7 +167,7 @@ class LaserPanel(wx.Panel):
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
         self.button_pause.SetBitmap(
             icons8_pause_50.GetBitmap(
-                # resize=STD_ICON_SIZE / 2,
+                resize=default_icon_size,
                 use_theme=False
             )
         )
@@ -175,7 +178,7 @@ class LaserPanel(wx.Panel):
         self.button_stop.SetToolTip(_("Stop the laser"))
         self.button_stop.SetBitmap(
             icons8_emergency_stop_button_50.GetBitmap(
-                # resize=STD_ICON_SIZE / 2,
+                resize=default_icon_size,
                 color=wx.WHITE,
                 keepalpha=True,
                 force_darkmode=True,
@@ -184,7 +187,7 @@ class LaserPanel(wx.Panel):
         )
         self.button_stop.SetBitmapFocus(
             icons8_emergency_stop_button_50.GetBitmap(
-                # resize=STD_ICON_SIZE / 2
+                resize=default_icon_size,
             )
         )
         self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
@@ -197,6 +200,16 @@ class LaserPanel(wx.Panel):
 
         self.arm_toggle = wx.ToggleButton(self, wx.ID_ANY, _("Arm"))
         self.arm_toggle.SetToolTip(_("Arm the job for execution"))
+        self.arm_toggle.SetBitmap(
+            icon_open_door.GetBitmap(
+                resize=default_icon_size,
+            )
+        )
+        self.arm_toggle.SetBitmapPressed(
+            icon_closed_door.GetBitmap(
+                resize=default_icon_size,
+            )
+        )
         sizer_control_misc.Add(self.arm_toggle, 1, wx.EXPAND, 0)
 
         self.check_laser_arm()
@@ -205,7 +218,7 @@ class LaserPanel(wx.Panel):
         self.button_outline.SetToolTip(_("Trace the outline the job"))
         self.button_outline.SetBitmap(
             icons8_pentagon_50.GetBitmap(
-                # resize=STD_ICON_SIZE / 2
+                resize=default_icon_size,
             )
         )
         sizer_control_misc.Add(self.button_outline, 1, wx.EXPAND, 0)
@@ -214,7 +227,7 @@ class LaserPanel(wx.Panel):
         self.button_simulate.SetToolTip(_("Simulate the Design"))
         self.button_simulate.SetBitmap(
             icons8_laser_beam_hazard2_50.GetBitmap(
-                # resize=STD_ICON_SIZE / 2
+                resize=default_icon_size,
             )
         )
         sizer_control_misc.Add(self.button_simulate, 1, wx.EXPAND, 0)
