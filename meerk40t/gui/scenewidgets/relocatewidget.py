@@ -16,7 +16,7 @@ class RelocateWidget(Widget):
     def __init__(self, scene, x, y):
         size = 10000
         Widget.__init__(self, scene, x - size, y - size, x + size, y + size)
-        self.bitmap = icons.icons8_center_of_gravity_50.GetBitmap()
+        self.bitmap = icons.icons8_center_of_gravity.GetBitmap()
 
     def hit(self):
         return HITCHAIN_HIT

@@ -19,7 +19,7 @@ class ScaleWidget(HandleWidget):
             top,
             right,
             bottom,
-            icons.icons8_resize_horizontal_50.GetBitmap(use_theme=False),
+            icons.icon_resize_horizontal.GetBitmap(use_theme=False),
         )
         self.scale = 1.0
         self.current_scale = 1.0

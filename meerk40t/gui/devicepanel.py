@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from meerk40t.gui.icons import icons8_manager_50
+from meerk40t.gui.icons import icons8_manager
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 from meerk40t.kernel import lookup_listener, signal_listener
@@ -539,7 +539,7 @@ class DeviceManager(MWindow):
         self.panel = DevicePanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_manager_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_manager.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Devices"))
 
@@ -550,7 +550,7 @@ class DeviceManager(MWindow):
             "button/device/DeviceManager",
             {
                 "label": _("Devices"),
-                "icon": icons8_manager_50,
+                "icon": icons8_manager,
                 "tip": _("Opens Devices Window"),
                 "priority": -100,
                 "action": lambda v: kernel.console("window toggle DeviceManager\n"),

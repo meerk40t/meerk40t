@@ -8,7 +8,7 @@ from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH, Length
-from meerk40t.gui.icons import icons8_up_50
+from meerk40t.gui.icons import icons8_up
 from meerk40t.gui.statusbarwidgets.statusbarwidget import StatusBarWidget
 from meerk40t.svgelements import Color
 
@@ -47,7 +47,7 @@ class SimpleInfoWidget(StatusBarWidget):
         self.btn_next = wx.StaticBitmap(
             self.parent,
             id=wx.ID_ANY,
-            bitmap=icons8_up_50.GetBitmap(resize=20),
+            bitmap=icons8_up.GetBitmap(resize=20),
             size=wx.Size(20, 20),
             style=wx.BORDER_RAISED,
         )

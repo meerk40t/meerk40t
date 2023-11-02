@@ -1,6 +1,6 @@
 import wx
 
-from .icons import icons8_comments_50
+from .icons import icons8_comments
 from .mwindow import MWindow
 from .wxutils import dip_size
 
@@ -54,7 +54,7 @@ class BufferView(MWindow):
         self.panel = BufferViewPanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_comments_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_comments.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: BufferView.__set_properties
         self.SetTitle(_("BufferView"))

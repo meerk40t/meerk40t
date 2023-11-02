@@ -4,7 +4,7 @@ import threading
 import wx
 from wx import aui
 
-from meerk40t.gui.icons import STD_ICON_SIZE, icons8_console_50
+from meerk40t.gui.icons import STD_ICON_SIZE, icons8_console
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.kernel import get_safe_path, signal_listener
 
@@ -517,7 +517,7 @@ class Console(MWindow):
         self.panel = ConsolePanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_console_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_console.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Console"))
         self.Layout()
@@ -529,7 +529,7 @@ class Console(MWindow):
             "button/preparation/Console",
             {
                 "label": _("Console"),
-                "icon": icons8_console_50,
+                "icon": icons8_console,
                 "tip": _("Open Console Window"),
                 "action": lambda v: kernel.console("window toggle Console\n"),
                 "size": STD_ICON_SIZE,

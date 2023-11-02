@@ -10,7 +10,7 @@ from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
-from meerk40t.gui.icons import STD_ICON_SIZE, icons8_detective_50
+from meerk40t.gui.icons import STD_ICON_SIZE, icons8_detective
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.kernel import Settings, lookup_listener, signal_listener
@@ -284,7 +284,7 @@ class TemplatePanel(wx.Panel):
 
         self.button_create = wx.Button(self, wx.ID_ANY, _("Create Pattern"))
         self.button_create.SetBitmap(
-            icons8_detective_50.GetBitmap(resize=STD_ICON_SIZE / 2)
+            icons8_detective.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
@@ -1563,7 +1563,7 @@ class TemplateTool(MWindow):
         self.add_module_delegate(self.panel_saveload)
 
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_detective_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_detective.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Parameter-Test"))
 

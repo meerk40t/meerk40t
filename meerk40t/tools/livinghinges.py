@@ -4,7 +4,7 @@ import wx
 
 from meerk40t.core.units import ACCEPTED_UNITS, Length
 from meerk40t.fill.patterns import LivingHinges
-from meerk40t.gui.icons import STD_ICON_SIZE, icons8_hinges_50
+from meerk40t.gui.icons import STD_ICON_SIZE, icon_hinges
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
@@ -992,7 +992,7 @@ class LivingHingeTool(MWindow):
         )
         self.add_module_delegate(self.panel_template)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_hinges_50.GetBitmap())
+        _icon.CopyFromBitmap(icon_hinges.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Living-Hinges"))
         self.Layout()
@@ -1021,7 +1021,7 @@ class LivingHingeTool(MWindow):
             "button/extended_tools/LivingHinge",
             {
                 "label": _("Hinge"),
-                "icon": icons8_hinges_50,
+                "icon": icon_hinges,
                 "tip": _("Fill area with a living hinge pattern"),
                 "action": lambda v: kernel.console("window open Hingetool\n"),
                 "size": STD_ICON_SIZE,

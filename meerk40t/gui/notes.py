@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from .icons import STD_ICON_SIZE, icons8_comments_50
+from .icons import STD_ICON_SIZE, icons8_comments
 from .mwindow import MWindow
 
 _ = wx.GetTranslation
@@ -115,7 +115,7 @@ class Notes(MWindow):
         self.panel = NotePanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_comments_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_comments.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Notes"))
         self.Children[0].SetFocus()
@@ -127,7 +127,7 @@ class Notes(MWindow):
             "button/project/Notes",
             {
                 "label": _("Notes"),
-                "icon": icons8_comments_50,
+                "icon": icons8_comments,
                 "tip": _("Open Notes Window"),
                 "action": lambda v: kernel.console("window toggle Notes\n"),
                 "size": STD_ICON_SIZE,

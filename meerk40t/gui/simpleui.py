@@ -11,7 +11,7 @@ import wx
 from wx import aui
 
 from ..core.exceptions import BadFileError
-from .icons import icons8_computer_support_50, icons8_opened_folder_50
+from .icons import icons8_computer_support, icons8_opened_folder
 from .mwindow import MWindow
 from .navigationpanels import Drag, Jog
 from .wxutils import StaticBoxSizer
@@ -59,7 +59,7 @@ class ProjectPanel(wx.Panel):
 
         self.button_load = wx.Button(self, wx.ID_ANY, _("Load Project"))
 
-        self.button_load.SetBitmap(icons8_opened_folder_50.GetBitmap())
+        self.button_load.SetBitmap(icons8_opened_folder.GetBitmap())
         info_panel = StaticBoxSizer(self, wx.ID_ANY, "Project-Information", wx.VERTICAL)
         line1 = wx.BoxSizer(wx.HORIZONTAL)
         lbl = wx.StaticText(self, wx.ID_ANY, "File:")
@@ -218,7 +218,7 @@ class SimpleUI(MWindow):
         super().__init__(598, 429, *args, **kwds)
 
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_computer_support.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Navigation.__set_properties
         self.SetTitle(_("MeerK40t"))

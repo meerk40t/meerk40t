@@ -3,7 +3,7 @@ import wx
 from meerk40t.gui.wxutils import ScrolledPanel
 
 from ...core.node.blobnode import BlobNode
-from ..icons import icons8_vector_50
+from ..icons import icons8_vector
 from ..mwindow import MWindow
 from .attributes import IdPanel
 
@@ -100,7 +100,7 @@ class BlobProperty(MWindow):
         self.panel = BlobPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_vector_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_vector.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Blob Properties"))
 

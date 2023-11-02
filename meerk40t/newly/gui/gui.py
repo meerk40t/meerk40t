@@ -7,7 +7,7 @@ def plugin(service, lifecycle):
         # Needed to test wx import.
         import wx  # pylint: disable=unused-import
 
-        from meerk40t.gui.icons import icons8_computer_support_50, icons8_connected_50
+        from meerk40t.gui.icons import icons8_computer_support, icons8_connected
 
         from .newlyconfig import NewlyConfiguration
         from .newlycontroller import NewlyController
@@ -26,7 +26,7 @@ def plugin(service, lifecycle):
             "button/control/Controller",
             {
                 "label": _("Controller"),
-                "icon": icons8_connected_50,
+                "icon": icons8_connected,
                 "tip": _("Opens Controller Window"),
                 "action": lambda e: service("window toggle Controller\n"),
             },
@@ -35,7 +35,7 @@ def plugin(service, lifecycle):
             "button/device/Configuration",
             {
                 "label": _("Config"),
-                "icon": icons8_computer_support_50,
+                "icon": icons8_computer_support,
                 "tip": _("Opens device-specific configuration window"),
                 "action": lambda v: service("window toggle Configuration\n"),
             },
@@ -44,13 +44,13 @@ def plugin(service, lifecycle):
     if lifecycle == "service_attach":
         from meerk40t.gui.icons import (
             icon_mk_rectangular,
-            icons8_circled_play_50,
-            icons8_circled_stop_50,
-            icons8_computer_support_50,
-            icons8_connected_50,
-            icons8_file_50,
-            icons8_move_50,
-            icons8_play_50,
+            icons8_circled_play,
+            icons8_circled_stop,
+            icons8_computer_support,
+            icons8_connected,
+            icons8_file,
+            icons8_move,
+            icons8_circled_play,
         )
 
         _ = service.kernel.translation
@@ -60,7 +60,7 @@ def plugin(service, lifecycle):
             "button/control/SelectFile",
             {
                 "label": _("File {index}").format(index=selected),
-                "icon": icons8_file_50,
+                "icon": icons8_file,
                 "tip": _("Select active file to use for machine."),
                 "identifier": "file_index",
                 "object": service,
@@ -127,7 +127,7 @@ def plugin(service, lifecycle):
             "button/control/AutoStart",
             {
                 "label": _("Send Only"),
-                "icon": icons8_circled_stop_50,
+                "icon": icons8_circled_stop,
                 "tip": _("Send the file but do not start the file"),
                 "toggle_attr": "autoplay",
                 "object": service,
@@ -135,7 +135,7 @@ def plugin(service, lifecycle):
                 "toggle": {
                     "label": _("Send & Start"),
                     "tip": _("Automatically start the device after send"),
-                    "icon": icons8_circled_play_50,
+                    "icon": icons8_circled_play,
                     "signal": "autoplay",
                 },
             },
@@ -158,7 +158,7 @@ def plugin(service, lifecycle):
             "button/control/MoveFrame",
             {
                 "label": _("Move Frame"),
-                "icon": icons8_move_50,
+                "icon": icons8_move,
                 "tip": _(
                     "Move the bounding rectangle of the object saved in the machine"
                 ),
@@ -172,7 +172,7 @@ def plugin(service, lifecycle):
             "button/control/Replay",
             {
                 "label": _("Replay"),
-                "icon": icons8_play_50,
+                "icon": icons8_circled_play,
                 "tip": _("Replay the file saved in the machine"),
                 "action": lambda v: service(
                     "replay {index}\n".format(index=service.file_index)

@@ -11,9 +11,9 @@ from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
     icon_meerk40t,
-    icons8_menu_50,
+    icons8_menu,
     icons8_r_white,
-    icons8_text_50,
+    icons8_text,
 )
 from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
 from meerk40t.gui.mwindow import MWindow
@@ -237,7 +237,7 @@ class MeerK40tScenePanel(wx.Panel):
             "button/tools/Linetext",
             {
                 "label": _("Vector Text"),
-                "icon": icons8_text_50,
+                "icon": icons8_text,
                 "tip": _("Add a vector text element"),
                 "action": lambda v: proxy_linetext(),
                 "group": "tool",
@@ -300,7 +300,7 @@ class MeerK40tScenePanel(wx.Panel):
                     orgy,
                     orgx + 25,
                     orgy + 25,
-                    icons8_menu_50.GetBitmap(use_theme=False),
+                    icons8_menu.GetBitmap(use_theme=False),
                     "button/tool",
                 )
                 self.widget_scene.widget_root.interface_widget.add_widget(

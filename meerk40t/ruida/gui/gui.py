@@ -7,9 +7,9 @@ def plugin(service, lifecycle):
         import wx
 
         from meerk40t.gui.icons import (
-            icons8_computer_support_50,
-            icons8_connected_50,
-            icons8_info_50,
+            icons8_computer_support,
+            icons8_connected,
+            icons8_info,
         )
 
         _ = service._
@@ -28,7 +28,7 @@ def plugin(service, lifecycle):
             "button/control/Info",
             {
                 "label": _("Ruida Info"),
-                "icon": icons8_info_50,
+                "icon": icons8_info,
                 "tip": _("Provide information about the Ruida Driver"),
                 "action": popup_info,
             },
@@ -37,7 +37,7 @@ def plugin(service, lifecycle):
             "button/control/Controller",
             {
                 "label": _("Controller"),
-                "icon": icons8_connected_50,
+                "icon": icons8_connected,
                 "tip": _("Opens Controller Window"),
                 "action": lambda e: service("window toggle Controller\n"),
             },
@@ -46,7 +46,7 @@ def plugin(service, lifecycle):
             "button/device/Configuration",
             {
                 "label": _("Config"),
-                "icon": icons8_computer_support_50,
+                "icon": icons8_computer_support,
                 "tip": _("Opens device-specific configuration window"),
                 "action": lambda v: service("window toggle Configuration\n"),
             },

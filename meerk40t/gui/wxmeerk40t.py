@@ -36,10 +36,10 @@ from .hersheymanager import (
     register_hershey_stuff,
 )
 from .icons import (
-    icons8_emergency_stop_button_50,
-    icons8_gas_industry_50,
-    icons8_home_filled_50,
-    icons8_pause_50,
+    icons8_emergency_stop_button,
+    icons8_gas_industry,
+    icons8_home_filled,
+    icons8_pause,
 )
 from .imagesplitter import RenderSplit
 from .keymap import Keymap
@@ -173,7 +173,7 @@ class GoPanel(ActionPanel):
             action=None,
             fgcolor=wx.WHITE,
             bgcolor=wx.Colour(0, 127, 0),
-            icon=icons8_gas_industry_50,
+            icon=icons8_gas_industry,
             tooltip=_("One Touch: Send Job To Laser "),
             *args,
             **kwds,
@@ -262,7 +262,7 @@ def register_panel_stop(window, context):
         action=action,
         fgcolor=wx.WHITE,
         bgcolor=wx.Colour(127, 0, 0),
-        icon=icons8_emergency_stop_button_50,
+        icon=icons8_emergency_stop_button,
         tooltip=_("Emergency stop/reset the controller."),
     )
     pane.control = panel
@@ -294,7 +294,7 @@ def register_panel_home(window, context):
         action=action,
         fgcolor=None,
         bgcolor=None,
-        icon=icons8_home_filled_50,
+        icon=icons8_home_filled,
         tooltip=_("Send laser to home position"),
     )
     pane.control = panel
@@ -326,7 +326,7 @@ def register_panel_pause(window, context):
         action=action,
         fgcolor=None,
         bgcolor=wx.Colour(255, 255, 0),
-        icon=icons8_pause_50,
+        icon=icons8_pause,
         tooltip=_("Pause/Resume the controller"),
     )
     pane.control = panel

@@ -1,6 +1,6 @@
 import wx
 
-from meerk40t.gui.icons import icons8_usb_connector_50
+from meerk40t.gui.icons import icons8_usb_connector
 from meerk40t.gui.mwindow import MWindow
 
 _ = wx.GetTranslation
@@ -75,7 +75,7 @@ class UsbConnect(MWindow):
         self.panel = UsbConnectPanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_usb_connector_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_usb_connector.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Terminal.__set_properties
         self.SetTitle(_("UsbConnect"))

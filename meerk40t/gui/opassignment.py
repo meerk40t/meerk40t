@@ -4,8 +4,8 @@ from wx import aui
 from meerk40t.core.elements.element_types import op_nodes
 from meerk40t.gui.icons import (
     icon_effect_hatch,
-    icons8_direction_20,
-    icons8_image_20,
+    icons8_direction,
+    icons8_image,
     icons8_laser_beam,
     icons8_scatter_plot_20,
     icons8_small_beam_20,
@@ -165,7 +165,7 @@ class OperationAssignPanel(wx.Panel):
             d = None
             if node.type == "op raster":
                 c, d = get_color()
-                result = icons8_direction_20.GetBitmap(
+                result = icons8_direction.GetBitmap(
                     color=c,
                     resize=(iconsize, iconsize),
                     noadjustment=True,
@@ -173,7 +173,7 @@ class OperationAssignPanel(wx.Panel):
                 )
             elif node.type == "op image":
                 c, d = get_color()
-                result = icons8_image_20.GetBitmap(
+                result = icons8_image.GetBitmap(
                     color=c,
                     resize=(iconsize, iconsize),
                     noadjustment=True,

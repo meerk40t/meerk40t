@@ -2,8 +2,8 @@ import wx
 
 from meerk40t.gui.icons import (
     icon_effect_hatch,
-    icons8_direction_20,
-    icons8_image_20,
+    icons8_direction,
+    icons8_image,
     icons8_laser_beam,
     icons8_scatter_plot_20,
     icons8_small_beam_20,
@@ -30,8 +30,8 @@ class WarningPanel(wx.Panel):
         self.images = {
             "cut": icons8_laser_beam,
             "engrave": icons8_small_beam_20,
-            "raster": icons8_direction_20,
-            "image": icons8_image_20,
+            "raster": icons8_direction,
+            "image": icons8_image,
             "dots": icons8_scatter_plot_20,
             "hatch": icon_effect_hatch,
         }

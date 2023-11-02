@@ -2,7 +2,7 @@ import threading
 
 import wx
 
-from meerk40t.gui.icons import icons8_connected_50, icons8_disconnected_50
+from meerk40t.gui.icons import icons8_connected, icons8_disconnected
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 from meerk40t.kernel import signal_listener
@@ -94,7 +94,7 @@ class MoshiControllerPanel(wx.Panel):
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_device_connect.SetForegroundColour(wx.BLACK)
         self.button_device_connect.SetBitmap(
-            icons8_disconnected_50.GetBitmap(use_theme=False)
+            icons8_disconnected.GetBitmap(use_theme=False)
         )
         self.button_device_connect.SetFont(
             wx.Font(
@@ -319,35 +319,35 @@ class MoshiControllerPanel(wx.Panel):
             if usb_status is not None:
                 self.button_device_connect.SetLabel(str(usb_status[0]))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected_50.GetBitmap(use_theme=False)
+                icons8_disconnected.GetBitmap(use_theme=False)
             )
             self.button_device_connect.Enable()
         elif state == "STATE_UNINITIALIZED" or state == "STATE_USB_DISCONNECTED":
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connect"))
             self.button_device_connect.SetBitmap(
-                icons8_connected_50.GetBitmap(use_theme=False)
+                icons8_connected.GetBitmap(use_theme=False)
             )
             self.button_device_connect.Enable()
         elif state == "STATE_USB_SET_DISCONNECTING":
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Disconnecting..."))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected_50.GetBitmap(use_theme=False)
+                icons8_disconnected.GetBitmap(use_theme=False)
             )
             self.button_device_connect.Disable()
         elif state == "STATE_USB_CONNECTED" or state == "STATE_CONNECTED":
             self.button_device_connect.SetBackgroundColour("#00ff00")
             self.button_device_connect.SetLabel(_("Disconnect"))
             self.button_device_connect.SetBitmap(
-                icons8_connected_50.GetBitmap(use_theme=False)
+                icons8_connected.GetBitmap(use_theme=False)
             )
             self.button_device_connect.Enable()
         elif state == "STATE_CONNECTING":
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connecting..."))
             self.button_device_connect.SetBitmap(
-                icons8_connected_50.GetBitmap(use_theme=False)
+                icons8_connected.GetBitmap(use_theme=False)
             )
             self.button_device_connect.Disable()
 
@@ -425,7 +425,7 @@ class MoshiControllerGui(MWindow):
         self.panel = MoshiControllerPanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Moshiboard-Controller"))
 

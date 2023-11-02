@@ -4,8 +4,8 @@ from meerk40t.gui.icons import (
     STD_ICON_SIZE,
     icons8_bell_20,
     icons8_close_window_20,
-    icons8_down_50,
-    icons8_home_20,
+    icons8_down,
+    icons8_home_filled,
     icons8_input_20,
     icons8_output_20,
     icons8_remove_25,
@@ -13,7 +13,7 @@ from meerk40t.gui.icons import (
     icons8_stop_gesture_20,
     icons8_system_task_20,
     icons8_timer_20,
-    icons8_up_50,
+    icons8_up,
 )
 from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 
@@ -41,13 +41,13 @@ class DefaultActionPanel(wx.Panel):
             ("Console", "util console", ""),
         )
         self.default_images = [
-            ["console home -f", icons8_home_20],
+            ["console home -f", icons8_home_filled],
             ["console move_abs", icons8_return_20],
             ["console beep", icons8_bell_20],
             ["console interrupt", icons8_stop_gesture_20],
             ["console quit", icons8_close_window_20],
             ["util wait", icons8_timer_20],
-            ["util home", icons8_home_20],
+            ["util home", icons8_home_filled],
             ["util goto", icons8_return_20],  # icons8_visit_20
             ["util output", icons8_output_20],
             ["util input", icons8_input_20],
@@ -90,10 +90,10 @@ class DefaultActionPanel(wx.Panel):
             icons8_remove_25.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
         self.button_up_prepend.SetBitmap(
-            icons8_up_50.GetBitmap(resize=STD_ICON_SIZE / 2)
+            icons8_up.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
         self.button_down_prepend.SetBitmap(
-            icons8_down_50.GetBitmap(resize=STD_ICON_SIZE / 2)
+            icons8_down.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
 
         self.button_del_append = wx.StaticBitmap(
@@ -109,10 +109,10 @@ class DefaultActionPanel(wx.Panel):
             icons8_remove_25.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
         self.button_up_append.SetBitmap(
-            icons8_up_50.GetBitmap(resize=STD_ICON_SIZE / 2)
+            icons8_up.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
         self.button_down_append.SetBitmap(
-            icons8_down_50.GetBitmap(resize=STD_ICON_SIZE / 2)
+            icons8_down.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
 
         sizer_param = StaticBoxSizer(

@@ -33,10 +33,10 @@ from ..svgelements import Color, Matrix, Path
 from .icons import (
     STD_ICON_SIZE,
     PyEmbeddedImage,
-    icon_cag_common_50,
-    icon_cag_subtract_50,
-    icon_cag_union_50,
-    icon_cag_xor_50,
+    icon_cag_common,
+    icon_cag_subtract,
+    icon_cag_union,
+    icon_cag_xor,
     icon_hatch,
     icon_meerk40t,
     icon_mk_align_bottom,
@@ -51,33 +51,33 @@ from .icons import (
     icon_mk_rectangular,
     icon_mk_redo,
     icon_mk_undo,
-    icons8_centerh_50,
-    icons8_centerv_50,
-    icons8_circled_left_50,
-    icons8_circled_right_50,
-    icons8_copy_50,
-    icons8_curly_brackets_50,
-    icons8_cursor_50,
-    icons8_delete_50,
-    icons8_finger_50,
+    icons8_centerh,
+    icons8_centerv,
+    icons8_circled_left,
+    icons8_circled_right,
+    icons8_copy,
+    icons8_curly_brackets,
+    icons8_cursor,
+    icons8_delete,
+    icons8_finger,
     icons8_flip_horizontal,
     icons8_flip_vertical,
-    icons8_group_objects_50,
-    icons8_measure_50,
-    icons8_node_edit_50,
-    icons8_opened_folder_50,
-    icons8_paste_50,
-    icons8_pencil_drawing_50,
-    icons8_place_marker_50,
-    # icons8_replicate_rows_50,
-    icons8_rotate_left_50,
-    icons8_rotate_right_50,
-    icons8_save_50,
-    icons8_scissors_50,
-    icons8_type_50,
-    icons8_ungroup_objects_50,
-    icons8_user_location_50,
-    icons8_vector_50,
+    icons8_group_objects,
+    icons8_measure,
+    icons8_node_edit,
+    icons8_opened_folder,
+    icons8_paste,
+    icons8_pencil_drawing,
+    icons8_place_marker,
+    # icon_duplicate,
+    icons8_rotate_left,
+    icons8_rotate_right,
+    icons8_save,
+    icons8_scissors,
+    icon_bmap_text,
+    icons8_ungroup_objects,
+    icons8_user_location,
+    icons8_vector,
     icons_evenspace_horiz,
     icons_evenspace_vert,
     set_default_icon_size,
@@ -1053,7 +1053,7 @@ class MeerK40t(MWindow):
             "button/project/Open",
             {
                 "label": _("Open"),
-                "icon": icons8_opened_folder_50,
+                "icon": icons8_opened_folder,
                 "tip": _("Opens new project"),
                 "action": lambda e: kernel.console(".dialog_load\n"),
                 "priority": -200,
@@ -1064,7 +1064,7 @@ class MeerK40t(MWindow):
             "button/project/Save",
             {
                 "label": _("Save"),
-                "icon": icons8_save_50,
+                "icon": icons8_save,
                 "tip": _("Saves a project to disk"),
                 "action": lambda e: kernel.console(".dialog_save\n"),
                 "priority": -100,
@@ -1079,7 +1079,7 @@ class MeerK40t(MWindow):
             "button/tools/Scene",
             {
                 "label": _("Select"),
-                "icon": icons8_cursor_50,
+                "icon": icons8_cursor,
                 "tip": _("Regular selection tool"),
                 "action": lambda v: kernel.elements("tool none\n"),
                 "group": "tool",
@@ -1091,7 +1091,7 @@ class MeerK40t(MWindow):
         #     "button/tools/Nodeeditor",
         #     {
         #         "label": _("Node Edit"),
-        #         "icon": icons8_node_edit_50,
+        #         "icon": icons8_node_edit,
         #         "tip": _("Edit nodes of a polyline/path-object"),
         #         "action": lambda v: kernel.elements("tool nodemove\n"),
         #         "group": "tool",
@@ -1103,7 +1103,7 @@ class MeerK40t(MWindow):
             "button/tools/Parameter",
             {
                 "label": _("Parametric Edit"),
-                "icon": icons8_finger_50,
+                "icon": icons8_finger,
                 "tip": _("Parametric edit of a shape"),
                 "action": lambda v: kernel.elements("tool parameter\n"),
                 "group": "tool",
@@ -1116,7 +1116,7 @@ class MeerK40t(MWindow):
             "button/tools/Nodeeditor",
             {
                 "label": _("Node Edit"),
-                "icon": icons8_node_edit_50,
+                "icon": icons8_node_edit,
                 "tip": _("Edit nodes of a polyline/path-object"),
                 "action": lambda v: kernel.elements("tool edit\n"),
                 "group": "tool",
@@ -1142,7 +1142,7 @@ class MeerK40t(MWindow):
             "button/tools/Relocate",
             {
                 "label": _("Set Position"),
-                "icon": icons8_place_marker_50,
+                "icon": icons8_place_marker,
                 "tip": _("Set position to given location"),
                 "action": lambda v: kernel.elements("tool relocate\n"),
                 "group": "tool",
@@ -1155,7 +1155,7 @@ class MeerK40t(MWindow):
             "button/tools/Placement",
             {
                 "label": _("Job Start"),
-                "icon": icons8_user_location_50,
+                "icon": icons8_user_location,
                 "tip": _("Add a job starting point to the scene"),
                 "action": lambda v: kernel.elements("tool placement\n"),
                 "group": "tool",
@@ -1168,7 +1168,7 @@ class MeerK40t(MWindow):
             "button/tools/Draw",
             {
                 "label": _("Draw"),
-                "icon": icons8_pencil_drawing_50,
+                "icon": icons8_pencil_drawing,
                 "tip": _("Add a free-drawing element"),
                 "action": lambda v: kernel.elements("tool draw\n"),
                 "group": "tool",
@@ -1263,7 +1263,7 @@ class MeerK40t(MWindow):
             "button/tools/Vector",
             {
                 "label": _("Vector"),
-                "icon": icons8_vector_50,
+                "icon": icons8_vector,
                 "tip": _(
                     "Add a shape\nLeft click: point/line\nClick and hold: curve\nDouble click: complete\nRight click: end"
                 ),
@@ -1277,7 +1277,7 @@ class MeerK40t(MWindow):
             "button/tools/Text",
             {
                 "label": _("Text"),
-                "icon": icons8_type_50,
+                "icon": icon_bmap_text,
                 "tip": _("Add a text element"),
                 "action": lambda v: kernel.elements("tool text\n"),
                 "group": "tool",
@@ -1290,7 +1290,7 @@ class MeerK40t(MWindow):
             "button/basicediting/Delete",
             {
                 "label": _("Delete"),
-                "icon": icons8_delete_50,
+                "icon": icons8_delete,
                 "tip": _("Delete selected items"),
                 "action": lambda v: kernel.elements("tree selected delete\n"),
                 "size": bsize_normal,
@@ -1301,7 +1301,7 @@ class MeerK40t(MWindow):
             "button/basicediting/Cut",
             {
                 "label": _("Cut"),
-                "icon": icons8_scissors_50,
+                "icon": icons8_scissors,
                 "tip": _("Cut selected elements"),
                 "action": lambda v: kernel.elements("clipboard cut\n"),
                 "size": bsize_small,
@@ -1316,7 +1316,7 @@ class MeerK40t(MWindow):
             "button/basicediting/Copy",
             {
                 "label": _("Copy"),
-                "icon": icons8_copy_50,
+                "icon": icons8_copy,
                 "tip": _("Copy selected elements to clipboard"),
                 "action": lambda v: kernel.elements("clipboard copy\n"),
                 "size": bsize_small,
@@ -1342,7 +1342,7 @@ class MeerK40t(MWindow):
             "button/basicediting/Paste",
             {
                 "label": _("Paste"),
-                "icon": icons8_paste_50,
+                "icon": icons8_paste,
                 "tip": _("Paste elements from clipboard"),
                 "action": lambda v: kernel.elements(
                     "clipboard paste -dx 3mm -dy 3mm\n"
@@ -1356,7 +1356,7 @@ class MeerK40t(MWindow):
         #     "button/basicediting/Duplicate",
         #     {
         #         "label": _("Duplicate"),
-        #         "icon": icons8_replicate_rows_50,
+        #         "icon": icon_duplicate,
         #         "tip": _("Duplicate selected elements"),
         #         "action": lambda v: kernel.elements("element copy --dx=3mm --dy=3mm\n"),
         #         "size": bsize_small,
@@ -1396,7 +1396,7 @@ class MeerK40t(MWindow):
             "button/extended_tools/Measure",
             {
                 "label": _("Measure"),
-                "icon": icons8_measure_50,
+                "icon": icons8_measure,
                 "tip": _(
                     "Measure distance / perimeter / area\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
                 ),
@@ -1442,7 +1442,7 @@ class MeerK40t(MWindow):
             "button/modify/Rotate90CW",
             {
                 "label": _("Rotate CW"),
-                "icon": icons8_rotate_right_50,
+                "icon": icons8_rotate_right,
                 "tip": _("Rotate the selected element clockwise by 90 deg"),
                 "action": lambda v: kernel.elements("rotate 90deg\n"),
                 "size": bsize_small,
@@ -1456,7 +1456,7 @@ class MeerK40t(MWindow):
             "button/modify/Rotate90CCW",
             {
                 "label": _("Rotate CCW"),
-                "icon": icons8_rotate_left_50,
+                "icon": icons8_rotate_left,
                 "tip": _("Rotate the selected element counterclockwise by 90 deg"),
                 "action": lambda v: kernel.elements("rotate -90deg\n"),
                 "size": bsize_small,
@@ -1470,7 +1470,7 @@ class MeerK40t(MWindow):
             "button/geometry/Union",
             {
                 "label": _("Union"),
-                "icon": icon_cag_union_50,
+                "icon": icon_cag_union,
                 "tip": _("Create a union of the selected elements"),
                 "action": lambda v: kernel.elements("element union\n"),
                 "size": bsize_small,
@@ -1484,7 +1484,7 @@ class MeerK40t(MWindow):
             "button/geometry/Difference",
             {
                 "label": _("Difference"),
-                "icon": icon_cag_subtract_50,
+                "icon": icon_cag_subtract,
                 "tip": _("Create a difference of the selected elements"),
                 "action": lambda v: kernel.elements("element difference\n"),
                 "size": bsize_small,
@@ -1498,7 +1498,7 @@ class MeerK40t(MWindow):
             "button/geometry/Xor",
             {
                 "label": _("Xor"),
-                "icon": icon_cag_xor_50,
+                "icon": icon_cag_xor,
                 "tip": _("Create a xor of the selected elements"),
                 "action": lambda v: kernel.elements("element xor\n"),
                 "size": bsize_small,
@@ -1512,7 +1512,7 @@ class MeerK40t(MWindow):
             "button/geometry/Intersection",
             {
                 "label": _("Intersection"),
-                "icon": icon_cag_common_50,
+                "icon": icon_cag_common,
                 "tip": _("Create a intersection of the selected elements"),
                 "action": lambda v: kernel.elements("element intersection\n"),
                 "size": bsize_small,
@@ -1569,7 +1569,7 @@ class MeerK40t(MWindow):
             "button/group/Group",
             {
                 "label": _("Group"),
-                "icon": icons8_group_objects_50,
+                "icon": icons8_group_objects,
                 "tip": _("Group elements together"),
                 "action": lambda v: group_selection(),
                 "size": bsize_normal,
@@ -1614,7 +1614,7 @@ class MeerK40t(MWindow):
             "button/group/Ungroup",
             {
                 "label": _("Ungroup"),
-                "icon": icons8_ungroup_objects_50,
+                "icon": icons8_ungroup_objects,
                 "tip": _("Ungroup elements"),
                 "action": lambda v: ungroup_selection(),
                 "size": bsize_normal,
@@ -1648,7 +1648,7 @@ class MeerK40t(MWindow):
             "button/preparation/Wordlist",
             {
                 "label": _("Wordlist"),
-                "icon": icons8_curly_brackets_50,
+                "icon": icons8_curly_brackets,
                 "tip": _("Manages Wordlist-Entries")
                 + "\n"
                 + _(" (right go to next entry)"),
@@ -1659,7 +1659,7 @@ class MeerK40t(MWindow):
                 "multi": [
                     {
                         "identifier": "prep_wordlist_edit",
-                        "icon": icons8_curly_brackets_50,
+                        "icon": icons8_curly_brackets,
                         "tip": _("Manages Wordlist-Entries")
                         + _(" (right go to next entry)"),
                         "label": _("Wordlist Editor"),
@@ -1668,7 +1668,7 @@ class MeerK40t(MWindow):
                     },
                     {
                         "identifier": "prep_wordlist_plus_1",
-                        "icon": icons8_circled_right_50,
+                        "icon": icons8_circled_right,
                         "tip": _("Wordlist: go to next entry")
                         + _(" (right go to prev entry)"),
                         "label": _("Next"),
@@ -1678,7 +1678,7 @@ class MeerK40t(MWindow):
                     {
                         "identifier": "prep_wordlist_minus_1",
                         "label": _("Prev"),
-                        "icon": icons8_circled_left_50,
+                        "icon": icons8_circled_left,
                         "tip": _("Wordlist: go to prev entry")
                         + _(" (right go to next entry)"),
                         "action": lambda v: kernel.elements.wordlist_advance(-1),
@@ -1746,7 +1746,7 @@ class MeerK40t(MWindow):
             "button/align/AlignCenterH",
             {
                 "label": _("Center X"),
-                "icon": icons8_centerh_50,
+                "icon": icons8_centerh,
                 "tip": _(
                     "Align selected elements at their center horizontally (right click: of the bed)"
                 ),
@@ -1763,7 +1763,7 @@ class MeerK40t(MWindow):
             "button/align/AlignCenterV",
             {
                 "label": _("Center Y"),
-                "icon": icons8_centerv_50,
+                "icon": icons8_centerv,
                 "tip": _(
                     "Align selected elements at their center vertically (right click: of the bed)"
                 ),

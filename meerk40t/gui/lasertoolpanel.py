@@ -774,7 +774,7 @@ class LaserTool(MWindow):
         super().__init__(551, 234, submenu="Operations", *args, **kwds)
         self.panel = LaserToolPanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
-        # _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
+        # _icon.CopyFromBitmap(icons8_computer_support.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Place Template"))
 
