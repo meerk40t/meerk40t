@@ -20,6 +20,7 @@ from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
 from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
+from meerk40t.kernel.kernel import Job
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from ..tools.kerftest import KerfTool
@@ -115,8 +116,8 @@ class ActionPanel(wx.Panel):
         self.button_go = wx.BitmapButton(self, wx.ID_ANY)
         self.icon = icon
         self.fgcolor = fgcolor
-        self.button_go.SetBitmap(self.icon.GetBitmap(color=self.fgcolor))
-        self.button_go.SetBitmapFocus(self.icon.GetBitmap())
+        # Initial resize
+        self.resize_button()
         if bgcolor is not None:
             self.button_go.SetBackgroundColour(bgcolor)
         self.button_go.SetToolTip(tooltip)
@@ -128,21 +129,31 @@ class ActionPanel(wx.Panel):
         main_sizer.Fit(self)
         self.button_go.Bind(wx.EVT_BUTTON, self.on_button_go_click)
         self.button_go.Bind(wx.EVT_SIZE, self.on_button_resize)
+        self.resize_job = Job(
+            process=self.resize_button,
+            job_name=f"_resize_actionpanel_{self.Id}",
+            interval=0.1,
+            times=1,
+            run_main=True,
+        )
 
     def on_button_go_click(self, event):
         if self.action is not None:
             self.action()
 
-    def on_button_resize(self, event):
+    def resize_button(self):
         size = self.button_go.Size
         # Leave some room
-        best_size = min(size[0], size[1]) - 20
+        best_size = min(size[0], size[1]) - 40
         # At least 20 px high
         best_size = max(best_size, 20)
         self.button_go.SetBitmap(
             self.icon.GetBitmap(color=self.fgcolor, resize=best_size)
         )
         self.button_go.SetBitmapFocus(self.icon.GetBitmap(resize=best_size))
+
+    def on_button_resize(self, event):
+        self.context.schedule(self.resize_job)
         event.Skip()
 
 
