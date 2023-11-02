@@ -144,13 +144,19 @@ class ActionPanel(wx.Panel):
     def resize_button(self):
         size = self.button_go.Size
         # Leave some room
-        best_size = min(size[0], size[1]) - 40
+        room = 40
+        if size[1] < 100:
+            room = 10
+        best_size = min(size[0], size[1]) - room
         # At least 20 px high
         best_size = max(best_size, 20)
+        border = 5
+        if best_size < 30:
+            border = 2
         self.button_go.SetBitmap(
-            self.icon.GetBitmap(color=self.fgcolor, resize=best_size)
+            self.icon.GetBitmap(color=self.fgcolor, resize=best_size, buffer=border)
         )
-        self.button_go.SetBitmapFocus(self.icon.GetBitmap(resize=best_size))
+        self.button_go.SetBitmapFocus(self.icon.GetBitmap(resize=best_size, buffer=border))
 
     def on_button_resize(self, event):
         self.context.schedule(self.resize_job)
