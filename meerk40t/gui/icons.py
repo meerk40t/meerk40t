@@ -495,7 +495,7 @@ class VectorIcon:
                 # Color is white...
                 force_darkmode = True
 
-        if force_darkmode:
+        if force_darkmode or DARKMODE:
             self.dark_mode(color)
         else:
             self.light_mode(color)
@@ -534,8 +534,8 @@ class VectorIcon:
         if cache_id in _CACHE:
             # print(f"Cache Hit for {cache_id}")
             return _CACHE[cache_id]
-
-        bmp = wx.Bitmap(int(final_icon_width), int(final_icon_height), 32)
+        bmp = wx.Bitmap(final_icon_width, final_icon_height, 32)
+        
         bmp.UseAlpha(True)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
