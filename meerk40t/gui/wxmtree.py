@@ -562,22 +562,22 @@ class ShadowTree:
         self.iconstates = {}
         self.state_images.Create(width=self.iconsize, height=self.iconsize)
         image = icons8_lock.GetBitmap(
-            resize=(self.iconsize, self.iconsize), noadjustment=True
+            resize=(self.iconsize, self.iconsize), noadjustment=True, buffer=1,
         )
         image_id = self.state_images.Add(bitmap=image)
         self.iconstates["lock"] = image_id
         image = icons8_r_white.GetBitmap(
-            resize=(self.iconsize, self.iconsize), noadjustment=True
+            resize=(self.iconsize, self.iconsize), noadjustment=True, buffer=1,
         )
         image_id = self.state_images.Add(bitmap=image)
         self.iconstates["refobject"] = image_id
         image = icons8_warning_shield_20.GetBitmap(
-            resize=(self.iconsize, self.iconsize), noadjustment=True
+            resize=(self.iconsize, self.iconsize), noadjustment=True, buffer=1,
         )
         image_id = self.state_images.Add(bitmap=image)
         self.iconstates["warning"] = image_id
         image = icons8_ghost_20.GetBitmap(
-            resize=(self.iconsize, self.iconsize), noadjustment=True
+            resize=(self.iconsize, self.iconsize), noadjustment=True, buffer=1,
         )
         image_id = self.state_images.Add(bitmap=image)
         self.iconstates["ghost"] = image_id
@@ -1107,7 +1107,7 @@ class ShadowTree:
         self.set_icon(
             elemtree,
             icon_meerk40t.GetBitmap(
-                False, resize=(self.iconsize, self.iconsize), noadjustment=True
+                False, resize=(self.iconsize, self.iconsize), noadjustment=True, buffer=1,
             ),
         )
         self.register_children(elemtree)
@@ -1116,7 +1116,7 @@ class ShadowTree:
         self.set_icon(
             node_operations,
             icons8_laser_beam.GetBitmap(
-                resize=(self.iconsize, self.iconsize), noadjustment=True
+                resize=(self.iconsize, self.iconsize), noadjustment=True, buffer=1,
             ),
         )
 
@@ -1127,7 +1127,7 @@ class ShadowTree:
         self.set_icon(
             node_elements,
             icons8_canvas_20.GetBitmap(
-                resize=(self.iconsize, self.iconsize), noadjustment=True
+                resize=(self.iconsize, self.iconsize), noadjustment=True, buffer=1,
             ),
         )
 
@@ -1135,7 +1135,7 @@ class ShadowTree:
         self.set_icon(
             node_registration,
             icons8_prototype_20.GetBitmap(
-                resize=(self.iconsize, self.iconsize), noadjustment=True
+                resize=(self.iconsize, self.iconsize), noadjustment=True, buffer=1,
             ),
         )
         self.update_op_labels()
@@ -1411,7 +1411,7 @@ class ShadowTree:
                     image = img_obj.GetBitmap(
                         color=c,
                         resize=(self.iconsize, self.iconsize),
-                        noadjustment=True,
+                        noadjustment=True, buffer=1,
                     )
                     cached_id = self.tree_images.Add(bitmap=image)
                     # print(f"Store id {cached_id} for {c} - {found}")
