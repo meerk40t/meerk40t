@@ -30,16 +30,15 @@ from meerk40t.kernel import lookup_listener, signal_listener
 
 from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from ..svgelements import Color, Matrix, Path
-from .icons import (  # icons8_replicate_rows_50,
+from .icons import (
     STD_ICON_SIZE,
-    set_default_icon_size,
     PyEmbeddedImage,
     icon_cag_common_50,
     icon_cag_subtract_50,
     icon_cag_union_50,
     icon_cag_xor_50,
-    icon_meerk40t,
     icon_hatch,
+    icon_meerk40t,
     icon_mk_align_bottom,
     icon_mk_align_left,
     icon_mk_align_right,
@@ -61,15 +60,16 @@ from .icons import (  # icons8_replicate_rows_50,
     icons8_cursor_50,
     icons8_delete_50,
     icons8_finger_50,
+    icons8_flip_horizontal,
     icons8_flip_vertical,
     icons8_group_objects_50,
     icons8_measure_50,
-    icons8_flip_horizontal,
     icons8_node_edit_50,
     icons8_opened_folder_50,
     icons8_paste_50,
     icons8_pencil_drawing_50,
     icons8_place_marker_50,
+    # icons8_replicate_rows_50,
     icons8_rotate_left_50,
     icons8_rotate_right_50,
     icons8_save_50,
@@ -80,6 +80,7 @@ from .icons import (  # icons8_replicate_rows_50,
     icons8_vector_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
+    set_default_icon_size,
     set_icon_appearance,
 )
 from .laserrender import (
@@ -1356,9 +1357,7 @@ class MeerK40t(MWindow):
         #     {
         #         "label": _("Duplicate"),
         #         "icon": icons8_replicate_rows_50,
-        #         "tip": _(
-        #             "Duplicate selected elements"
-        #         ),
+        #         "tip": _("Duplicate selected elements"),
         #         "action": lambda v: kernel.elements("element copy --dx=3mm --dy=3mm\n"),
         #         "size": bsize_small,
         #         "identifier": "editduplicate",
