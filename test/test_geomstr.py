@@ -1369,6 +1369,8 @@ class TestGeomstr(unittest.TestCase):
         )
         sb = StaticBeam(bowtie)
         result = sb.actives_at(25)
+        actives = bowtie.x_intercept(result, 25)
+
         for x, y in zip(result, (3, 0, 2, 1)):
             self.assertEqual(x,y)
 
@@ -1394,7 +1396,9 @@ class TestGeomstr(unittest.TestCase):
             complex(0, 0),
         )
         sb = StaticBeam(bowtie)
-        result = sb.actives_at(25)
+        result = sb.actives_at(complex(25,0))
+        actives = bowtie.x_intercept(result, 25)
+
         for x, y in zip(result, (0,2)):
             self.assertEqual(x,y)
 
