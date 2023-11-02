@@ -378,13 +378,66 @@ class Pattern:
                 yield self.geomstr.as_transformed(m)
 
 
-class PolyBool:
-    def __init__(self):
-        self.inputs = list()
-        # List of each segment info about it.
+class StaticBeam:
+    def __init__(self, geom):
+        self.geometry = geom
+        self._sb_events = None
+        self._sb_scan = None
 
-    def add_segments(self, g):
-        self.inputs.append(g)
+    def sort_key(self, e):
+        return e[0].imag, e[0].real, ~e[1]
+
+    def compute_beam(self):
+        g = self.geometry
+        low = complex(float("inf"), float("inf"))
+        high = -low
+
+        events = []
+        # Add start and end events.
+        for i in range(g.index):
+            if g.segments[i][2] != TYPE_LINE:
+                continue
+            if (g.segments[i][0].imag, g.segments[i][0].real) < (g.segments[i][-1].imag, g.segments[i][-1].real):
+                events.append((g.segments[i][0], i))
+                events.append((g.segments[i][-1], ~i))
+            else:
+                events.append((g.segments[i][0], ~i))
+                events.append((g.segments[i][-1], i))
+
+        events.sort(key=self.sort_key)
+
+        largest_actives = 0
+        actives = []
+        beam_events = {}
+        intersections = []
+        for pt, index in events:
+            if len(actives) > largest_actives:
+                largest_actives = len(actives)
+            if index >= 0:
+                actives.append(index)
+            else:
+                actives.remove(~index)
+            for j in range(1, len(actives)):
+                for t1, t2 in g.intersections(j - 1, j):
+                    pt_intersect = g.point(j-1, t1)
+                    if pt_intersect is not None:
+                        beam_events[pt_intersect] = True
+            beam_events[pt] = True
+
+        actives.append([])
+        self._nb_events = beam_events
+        self._nb_scan = np.zeros((len(actives), largest_actives), dtype=int)
+        self._nb_scan -= 1
+        for i, active in enumerate(actives):
+            self._nb_scan[i, 0 : len(active)] = active
+
+    def actives_at(self, value):
+        if not self._sb_scan:
+            self.compute_beam()
+        idx = np.searchsorted(self._nb_events, value)
+        actives = self._nb_scan[idx]
+        line = self.geometry.segments[actives]
+        return line
 
 
 class Scanbeam:

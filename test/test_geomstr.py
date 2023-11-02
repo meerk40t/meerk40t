@@ -18,6 +18,7 @@ from meerk40t.tools.geomstr import (
     Pattern,
     Polygon,
     Scanbeam,
+    StaticBeam,
 )
 
 
@@ -1345,6 +1346,17 @@ class TestGeomstr(unittest.TestCase):
         g = Geomstr.rect(0, 0, 200, 200)
         nx, ny, mx, my = g.aabb()
         print(nx)
+
+    def test_static_beam(self):
+        bowtie = Geomstr.lines(
+            complex(0, 0),
+            complex(100, 100),
+            complex(100, 0),
+            complex(0, 100),
+            complex(0, 0),
+        )
+        sb = StaticBeam(bowtie)
+        self.assertEqual(sb.actives_at(25), (1, 3))
 
     # def test_geomstr_hatch(self):
     #     gs = Geomstr.svg(
