@@ -163,7 +163,7 @@ class SplitterPanel(wx.Panel):
         self.lbl_info = wx.StaticText(self, wx.ID_ANY, "")
         self.btn_align = wx.Button(self, wx.ID_ANY, _("Create split images"))
         self.btn_align.SetBitmap(
-            icons8_split_table_50.GetBitmap(resize=STD_ICON_SIZE / 2)
+            icons8_split_table_50.GetBitmap(resize=STD_ICON_SIZE * 0.75)
         )
 
         lbl_dpi = wx.StaticText(self, wx.ID_ANY, "DPI:")
@@ -303,7 +303,7 @@ class KeyholePanel(wx.Panel):
         self.info_panel = InfoPanel(self, wx.ID_ANY, context=self.context)
 
         self.btn_align = wx.Button(self, wx.ID_ANY, _("Create keyhole image"))
-        self.btn_align.SetBitmap(icons8_keyhole_50.GetBitmap(resize=STD_ICON_SIZE / 2))
+        self.btn_align.SetBitmap(icons8_keyhole_50.GetBitmap(resize=STD_ICON_SIZE * 0.75))
 
         lbl_dpi = wx.StaticText(self, wx.ID_ANY, "DPI:")
         sizer_dpi = StaticBoxSizer(
@@ -455,7 +455,7 @@ class RenderSplit(MWindow):
         self.Layout()
 
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_split_table_50.GetBitmap(resize=STD_ICON_SIZE / 2))
+        _icon.CopyFromBitmap(icons8_split_table_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Create split images"))
 

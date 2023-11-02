@@ -18,14 +18,12 @@ from meerk40t.gui.icons import (
     icon_corner4,
     icons8_center_of_gravity_50,
     icons8_compress_50,
-    icons8_constraint_50,
     icons8_delete_50,
     icons8_caret_down,
     icons8_down_50,
     icons8_down_left_50,
     icons8_down_right_50,
     icons8_enlarge_50,
-    icons8_expansion_50,
     icons8_home_filled_50,
     icons8_laser_beam,
     icons8_caret_left,
@@ -45,6 +43,8 @@ from meerk40t.gui.icons import (
     icons8_up_left_50,
     icons8_up_right_50,
     icons8_caret_up,
+    icon_fence_open,
+    icon_fence_closed,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.position import PositionPanel
@@ -882,7 +882,7 @@ class Jog(wx.Panel):
             self, wx.ID_ANY, icons8_lock.GetBitmap(resize=icon_size)
         )
         self.button_confine = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_constraint_50.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icon_fence_closed.GetBitmap(resize=icon_size)
         )
         self.__set_properties()
         self.__do_layout()
@@ -1036,13 +1036,13 @@ class Jog(wx.Panel):
 
         _confined = value
         if value == 0:
-            self.button_confine.SetBitmap(icons8_expansion_50.GetBitmap())
+            self.button_confine.SetBitmap(icon_fence_open.GetBitmap())
             self.button_confine.SetToolTip(
                 _("Caution: allow laser movement outside bed size")
             )
             # self.context("confine 0")
         else:
-            self.button_confine.SetBitmap(icons8_constraint_50.GetBitmap())
+            self.button_confine.SetBitmap(icon_fence_closed.GetBitmap())
             self.button_confine.SetToolTip(_("Limit laser movement to bed size"))
             # self.context("confine 1")
 

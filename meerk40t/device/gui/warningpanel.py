@@ -1,7 +1,7 @@
 import wx
 
 from meerk40t.gui.icons import (
-    icons8_diagonal_20,
+    icon_effect_hatch,
     icons8_direction_20,
     icons8_image_20,
     icons8_laser_beam,
@@ -33,7 +33,7 @@ class WarningPanel(wx.Panel):
             "raster": icons8_direction_20,
             "image": icons8_image_20,
             "dots": icons8_scatter_plot_20,
-            "hatch": icons8_diagonal_20,
+            "hatch": icon_effect_hatch,
         }
         self.checkboxes = []
         self.limits = []
