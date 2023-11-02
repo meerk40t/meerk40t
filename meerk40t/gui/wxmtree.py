@@ -30,8 +30,8 @@ from .icons import (
     icons8_line_20,
     icons8_lock,
     icons8_output_20,
-    icons8_oval_20,
-    icons8_prototype_20,
+    icon_mk_ellipse,
+    icon_regmarks,
     icons8_r_white,
     icons8_return_20,
     icons8_scatter_plot_20,
@@ -1134,7 +1134,7 @@ class ShadowTree:
         node_registration = elemtree.get(type="branch reg")
         self.set_icon(
             node_registration,
-            icons8_prototype_20.GetBitmap(
+            icon_regmarks.GetBitmap(
                 resize=(self.iconsize, self.iconsize), noadjustment=True, buffer=1,
             ),
         )
