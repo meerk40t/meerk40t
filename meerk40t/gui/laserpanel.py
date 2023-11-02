@@ -36,7 +36,7 @@ def register_panel_laser(window, context):
     # jog_drag = wx.Panel(window, wx.ID_ANY)
     jog_drag = ScrolledPanel(window, wx.ID_ANY)
     jog_drag.SetupScrolling()
-    iconsize = STD_ICON_SIZE
+    iconsize = STD_ICON_SIZE/2
     jog_panel = Jog(jog_drag, wx.ID_ANY, context=context, icon_size=iconsize)
     drag_panel = Drag(jog_drag, wx.ID_ANY, context=context, icon_size=iconsize)
     main_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -594,34 +594,28 @@ class JobPanel(wx.Panel):
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self._optimize = True
-
+        default_icon_size = STD_ICON_SIZE * 0.75
         sizer_control_update = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control_update, 0, wx.EXPAND, 0)
 
         self.button_clear = wx.Button(self, wx.ID_ANY, _("Clear"))
         self.button_clear.SetToolTip(_("Clear locally defined plan"))
         self.button_clear.SetBitmap(
-            icons8_delete_50.GetBitmap(
-                # resize=STD_ICON_SIZE / 2
-            )
+            icons8_delete_50.GetBitmap(resize=default_icon_size)
         )
         sizer_control_update.Add(self.button_clear, 1, 0, 0)
 
         self.button_update = wx.Button(self, wx.ID_ANY, _("Update"))
         self.button_update.SetToolTip(_("Update the Plan"))
         self.button_update.SetBitmap(
-            icon_update_plan.GetBitmap(
-                # resize=STD_ICON_SIZE / 2
-            )
+            icon_update_plan.GetBitmap(resize=default_icon_size)
         )
         sizer_control_update.Add(self.button_update, 1, 0, 0)
 
         self.button_save_file = wx.Button(self, wx.ID_ANY, _("Save"))
         self.button_save_file.SetToolTip(_("Save the job"))
         self.button_save_file.SetBitmap(
-            icons8_save_50.GetBitmap(
-                # resize=STD_ICON_SIZE / 2
-            )
+            icons8_save_50.GetBitmap(resize=default_icon_size)
         )
         sizer_control_update.Add(self.button_save_file, 1, 0, 0)
 
