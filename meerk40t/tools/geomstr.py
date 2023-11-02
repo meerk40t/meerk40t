@@ -3647,12 +3647,19 @@ class Geomstr:
         @return:
         """
         line = self.segments[e]
-        a = line[0]
-        b = line[-1]
-        if b.real - a.real == 0:
-            return float("inf")
-        im = (b.imag - a.imag) / (b.real - a.real)
-        return a.imag - (im * a.real)
+        if len(line.shape) == 2:
+            a = line[:, 0]
+            b = line[:, -1]
+        else:
+            a = line[0]
+            b = line[-1]
+        old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
+        try:
+            im = (b.imag - a.imag) / (b.real - a.real)
+            return a.imag - (im * a.real)
+        finally:
+            np.seterr(**old_np_seterr)
+
 
     def endpoint_min_y(self, e):
         """
