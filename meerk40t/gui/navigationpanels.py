@@ -475,6 +475,8 @@ class Drag(wx.Panel):
             wx.EVT_RIGHT_DOWN, self.on_button_lock_br
         )
         self.button_align_center.Bind(wx.EVT_RIGHT_DOWN, self.on_button_lock_center)
+        self.button_align_first_position.Bind(wx.EVT_BUTTON, self.on_button_align_first_position)
+
 
         # end wxGlade
         self.elements = None
@@ -724,23 +726,38 @@ class Drag(wx.Panel):
         self.context(f"move_relative {nx} {ny}\ntranslate {nx} {ny}\n")
 
     def on_button_align_first_position(self, event=None):
+        first_node = None
         elements = self.context.elements
         e = list(elements.elems(emphasized=True))
-        first_node = e[0]
-        if first_node.type == "elem path":
-            try:
-                g = first_node.as_geometry()
-                pos = g.first_point
-            except (IndexError, AttributeError):
-                return
+        if len(e) == 0:
+            for n in elements.elems():
+                first_node = n
+                break
+        else:
+            first_node = e[0]
+        if first_node is None:
+            return
+        if hasattr(first_node, "as_geometry"):
+            g = first_node.as_geometry()
+            pt = g.first_point
+            pos = (pt.real, pt.imag)
+            # try:
+            #     g = first_node.as_geometry()
+            #     pos = g.first_point
+            # except (IndexError, AttributeError):
+            #     return
         elif first_node.type == "elem image":
-            try:
-                pos = (
-                    first_node.matrix.value_trans_x(),
-                    first_node.matrix.value_trans_y(),
-                )
-            except (IndexError, AttributeError):
-                return
+            pos = (
+                first_node.matrix.value_trans_x(),
+                first_node.matrix.value_trans_y(),
+            )
+            # try:
+            #     pos = (
+            #         first_node.matrix.value_trans_x(),
+            #         first_node.matrix.value_trans_y(),
+            #     )
+            # except (IndexError, AttributeError):
+            #     return
         else:
             return
         self.context(

@@ -39,6 +39,7 @@ from .icons import (  # icons8_replicate_rows_50,
     icon_cag_union_50,
     icon_cag_xor_50,
     icon_meerk40t,
+    icon_hatch,
     icon_mk_align_bottom,
     icon_mk_align_left,
     icon_mk_align_right,
@@ -59,7 +60,6 @@ from .icons import (  # icons8_replicate_rows_50,
     icons8_curly_brackets_50,
     icons8_cursor_50,
     icons8_delete_50,
-    icons8_diagonal_20,
     icons8_finger_50,
     icons8_flip_vertical,
     icons8_group_objects_50,
@@ -126,6 +126,7 @@ class MeerK40t(MWindow):
         # What is the standardsize of a textbox?
         testbox = wx.TextCtrl(self, wx.ID_ANY)
         tb_size = testbox.Size
+        testbox.Destroy()
         factor = 4 * tb_size[1] / 100.0
         # Round to nearest 5...
         def_size = int(round(factor * 50 / 5, 0) * 5)
@@ -1127,7 +1128,7 @@ class MeerK40t(MWindow):
             "button/tools/Hatch",
             {
                 "label": _("Hatch"),
-                "icon": PyEmbeddedImage.message_icon(msg="H"),
+                "icon": icon_hatch,
                 "tip": _("Wrap the current node in a hatch"),
                 "action": lambda v: kernel.elements("effect-hatch\n"),
                 # "group": "tool",

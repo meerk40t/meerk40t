@@ -237,28 +237,32 @@ class Button:
             resize=resize_param,
             noadjustment=True,
             force_darkmode=darkm,
+            buffer=5,
         )
         self.bitmap_large_disabled = icon.GetBitmap(
             resize=resize_param,
             color=Color("grey"),
             noadjustment=True,
             force_darkmode=darkm,
+            buffer=5,
         )
         self.bitmap_small = icon.GetBitmap(
             resize=small_resize,
             noadjustment=True,
             force_darkmode=darkm,
+            buffer=2,
         )
         self.bitmap_small_disabled = icon.GetBitmap(
-            resize=small_resize, color=Color("grey"), noadjustment=True
+            resize=small_resize, color=Color("grey"), noadjustment=True, buffer=2,
         )
         self.bitmap_tiny = icon.GetBitmap(
             resize=tiny_resize,
             noadjustment=True,
             force_darkmode=darkm,
+            buffer=1,
         )
         self.bitmap_tiny_disabled = icon.GetBitmap(
-            resize=tiny_resize, color=Color("grey"), noadjustment=True
+            resize=tiny_resize, color=Color("grey"), noadjustment=True, buffer=1,
         )
         self.bitmap = self.bitmap_large
         self.bitmap_disabled = self.bitmap_large_disabled
@@ -442,7 +446,7 @@ class Button:
             if icon:
                 # There seems to be a bug to display icons in a submenu consistently
                 # print (f"Had a bitmap for {v.get('label')}")
-                item.SetBitmap(icon.GetBitmap(resize=STD_ICON_SIZE / 2))
+                item.SetBitmap(icon.GetBitmap(resize=STD_ICON_SIZE / 2, buffer=2))
             top.Bind(wx.EVT_MENU, self.drop_menu_click(v), id=item.GetId())
         top.PopupMenu(menu)
 
@@ -740,7 +744,7 @@ class RibbonPanel:
             item.Enable(v.enabled)
             item.SetHelp(v.tip)
             if v.icon:
-                item.SetBitmap(v.icon.GetBitmap(resize=STD_ICON_SIZE / 2))
+                item.SetBitmap(v.icon.GetBitmap(resize=STD_ICON_SIZE / 2, buffer=2))
             top.Bind(wx.EVT_MENU, v.click, id=item.Id)
         top.PopupMenu(menu)
 
