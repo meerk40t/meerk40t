@@ -126,6 +126,7 @@ class MeerK40t(MWindow):
         # What is the standardsize of a textbox?
         testbox = wx.TextCtrl(self, wx.ID_ANY)
         tb_size = testbox.Size
+        testbox.Destroy()
         factor = 4 * tb_size[1] / 100.0
         # Round to nearest 5...
         def_size = int(round(factor * 50 / 5, 0) * 5)
