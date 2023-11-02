@@ -494,7 +494,7 @@ class StaticBeam:
             active_lists.append(list(actives))
 
         active_lists.append([])
-        self._nb_events = [e for e, _, _ in events]
+        self._nb_events = [(e.imag, e.real) for e, _, _ in events]
         self._nb_scan = np.zeros((len(active_lists), largest_actives), dtype=int)
         self._nb_scan -= 1
         for i, active in enumerate(active_lists):
@@ -502,11 +502,14 @@ class StaticBeam:
 
 
     def actives_at(self, value):
+        from bisect import bisect
         if not self._sb_scan:
             self.compute_beam()
-        idx = np.searchsorted(self._nb_events, value)
+        idx = bisect(self._nb_events, (value.imag, value.real))
         actives = self._nb_scan[idx + 1]
-        return np.where(actives != -1)[0]
+        aw = np.argwhere(actives != -1)[:,0]
+        acts = actives[aw]
+        return acts[::-1]
 
 
 class Scanbeam:
