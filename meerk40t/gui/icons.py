@@ -495,7 +495,7 @@ class VectorIcon:
                 # Color is white...
                 force_darkmode = True
 
-        if force_darkmode:
+        if force_darkmode or DARKMODE:
             self.dark_mode(color)
         else:
             self.light_mode(color)
@@ -534,8 +534,8 @@ class VectorIcon:
         if cache_id in _CACHE:
             # print(f"Cache Hit for {cache_id}")
             return _CACHE[cache_id]
-
-        bmp = wx.Bitmap(int(final_icon_width), int(final_icon_height), 32)
+        bmp = wx.Bitmap(final_icon_width, final_icon_height, 32)
+        
         bmp.UseAlpha(True)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
@@ -2825,26 +2825,26 @@ icon_duplicate = VectorIcon(
 )
 
 icon_crossing_star = VectorIcon(
-    fill=(),
-    stroke=(
-        "M 128341,145628 L 108983,209299 L 162069,169166 L 95532,170431 L 150105,208517 L 128341,145628"
-    ),
+     fill=(),
+     stroke=(
+         "M 128.341,145.628 L 108.983,209.299 L 162.069,169.166 L 95.532,170.431 L 150.105,208.517 L 128.341,145.628"
+     ),
 )
 
 icon_regular_star = VectorIcon(
     fill=(),
     stroke=(
-        "M 232999,128821 L 240176,162177 L 269387,144547 L 250876,173208 L 283998,181397"
-        " L 250642,188574 L 268272,217785 L 239611,199274 L 231428,232395 L 224245,199040"
-        " L 195034,216669 L 213545,188009 L 180424,179819 L 213779,172643 L 196150,143432"
-        " L 224810,161943 L 232999,128821"
+        "M 232.999,128.821 L 240.176,162.177 L 269.387,144.547 L 250.876,173.208 L 283.998,181.397"
+        " L 250.642,188.574 L 268.272,217.785 L 239.611,199.274 L 231.428,232.395 L 224.245,199.040"
+        " L 195.034,216.669 L 213.545,188.009 L 180.424,179.819 L 213.779,172.643 L 196.150,143.432"
+        " L 224.810,161.943 L 232.999,128.821"
     ),
 )
 
 icon_polygon = VectorIcon(
     fill=(),
     stroke=(
-        "M 155460,171601 L 188113,196274 L 174738,234953 L 133818,234185 L 121904,195031 L 155460,171601",
+        "M 155.460,171.601 L 188.113,196.274 L 174.738,234.953 L 133.818,234.185 L 121.904,195.031 L 155.460,171.601",
     ),
 )
 
