@@ -498,7 +498,9 @@ class Angle:
         return self.angle_preferred
 
     def __copy__(self):
-        return Angle(self.angle, preferred_units=self.preferred_units, digits=self._digits)
+        return Angle(
+            self.angle, preferred_units=self.preferred_units, digits=self._digits
+        )
 
     def __eq__(self, other):
         if hasattr(other, "angle"):
@@ -508,17 +510,33 @@ class Angle:
 
     def __add__(self, other):
         if isinstance(other, Angle):
-            return Angle(self.angle + other.angle, preferred_units=self.preferred_units, digits=self._digits)
-        return Angle(self.angle + other, preferred_units=self.preferred_units, digits=self._digits)
+            return Angle(
+                self.angle + other.angle,
+                preferred_units=self.preferred_units,
+                digits=self._digits,
+            )
+        return Angle(
+            self.angle + other,
+            preferred_units=self.preferred_units,
+            digits=self._digits,
+        )
 
     def __sub__(self, other):
         return -self + other
 
     def __truediv__(self, other):
-        return Angle(self.radians / other, preferred_units=self.preferred_units, digits=self._digits)
+        return Angle(
+            self.radians / other,
+            preferred_units=self.preferred_units,
+            digits=self._digits,
+        )
 
     def __mul__(self, other):
-        return Angle(self.radians * other, preferred_units=self.preferred_units, digits=self._digits)
+        return Angle(
+            self.radians * other,
+            preferred_units=self.preferred_units,
+            digits=self._digits,
+        )
 
     def __radd__(self, other):
         return self.__add__(other)
@@ -554,10 +572,12 @@ class Angle:
         return self
 
     def __float__(self):
-        return self.radians
+        return self.angle
 
     def __neg__(self):
-        return Angle(-self.angle, preferred_units=self.preferred_units, digits=self._digits)
+        return Angle(
+            -self.angle, preferred_units=self.preferred_units, digits=self._digits
+        )
 
     def normalize(self):
         self.angle /= tau
@@ -591,47 +611,43 @@ class Angle:
 
     @property
     def radians(self):
-        amount = self.angle
-        if self._digits:
-            amount = round(amount, self._digits)
-        return amount
+        return self.angle
 
     @property
     def degrees(self):
-        amount = self.angle * 360.0 / tau
-        if self._digits:
-            amount = round(amount, self._digits)
-        return amount
+        return self.angle * 360.0 / tau
 
     @property
     def gradians(self):
-        amount = self.angle * 400.0 / tau
-        if self._digits:
-            amount = round(amount, self._digits)
-        return amount
+        return self.angle * 400.0 / tau
 
     @property
     def turns(self):
-        amount = self.angle / tau
-        if self._digits:
-            amount = round(amount, self._digits)
-        return amount
+        return self.angle / tau
 
     @property
     def angle_radians(self):
-        return f"{self.radians}rad"
+        digits = 4 if self._digits is None else self._digits
+        angle = f"{self.radians:.{digits}f}".rstrip("0").rstrip(".")
+        return f"{angle}rad"
 
     @property
     def angle_degrees(self):
-        return f"{self.degrees}deg"
+        digits = 4 if self._digits is None else self._digits
+        angle = f"{self.degrees:.{digits}f}".rstrip("0").rstrip(".")
+        return f"{angle}deg"
 
     @property
     def angle_gradians(self):
-        return f"{self.gradians}grad"
+        digits = 4 if self._digits is None else self._digits
+        angle = f"{self.gradians:.{digits}f}".rstrip('0').rstrip(".")
+        return f"{angle}grad"
 
     @property
     def angle_turns(self):
-        return f"{self.turns}turn"
+        digits = 4 if self._digits is None else self._digits
+        angle = f"{self.turns:.{digits}f}".rstrip('0').rstrip(".")
+        return f"{angle}turn"
 
     def is_orthogonal(self):
         return (self.angle % (tau / 4.0)) == 0
