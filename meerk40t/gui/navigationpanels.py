@@ -1,5 +1,4 @@
 import platform
-from copy import copy
 from math import isinf
 from time import time
 
@@ -7,7 +6,7 @@ import wx
 from wx import aui
 
 from meerk40t.core.node.node import Node
-from meerk40t.core.units import UNITS_PER_PIXEL, Length
+from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
     EmptyIcon,
@@ -50,7 +49,6 @@ from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.position import PositionPanel
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.kernel import signal_listener
-from meerk40t.svgelements import Angle
 
 _ = wx.GetTranslation
 
@@ -2149,7 +2147,7 @@ class Transform(wx.Panel):
 
     @staticmethod
     def skewed_value(stxt):
-        return Angle.parse(stxt).as_radians
+        return Angle(stxt).radians
 
     @staticmethod
     def scaled_value(stxt):
