@@ -175,11 +175,13 @@ class DefaultOperationWidget(StatusBarWidget):
 
     def on_button_left(self, event):
         button = event.GetEventObject()
+        shift_pressed = event.ShiftDown()
+        # print (f"Shift: {event.ShiftDown()}, ctrl={event.ControlDown()}, alt={event.AltDown()}, bitmask={event.GetModifiers()}")
         idx = 0
         while idx < len(self.assign_buttons):
             if button is self.assign_buttons[idx]:
                 node = self.assign_operations[idx]
-                self.execute_on(node)
+                self.execute_on(node, shift_pressed)
                 break
             idx += 1
 
@@ -289,9 +291,19 @@ class DefaultOperationWidget(StatusBarWidget):
             self.first_to_show = 0
         self.Show(True)
 
-    def execute_on(self, targetop):
-        data = None  # == selected elements
-        self.context.elements.assign_default_operation(data, targetop)
+    def execute_on(self, targetop, use_parent):
+        targetdata= []
+        data = list(self.context.elements.elems(emphasized=True))
+        for node in data:
+            add_node = node
+            if use_parent:
+                if node.parent is not None and node.parent.type.startswith("effect"):
+                    add_node = node.parent
+            if add_node not in targetdata:
+                targetdata.append(add_node)
+
+        self.context.elements.assign_default_operation(targetdata, targetop)
+        self.context.elements.set_emphasis(data)
 
         self.reset_tooltips()
 
