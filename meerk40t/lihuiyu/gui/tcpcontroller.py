@@ -1,6 +1,6 @@
 import wx
 
-from meerk40t.gui.icons import icons8_connected_50, icons8_disconnected_50
+from meerk40t.gui.icons import icons8_connected, icons8_disconnected
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import TextCtrl, dip_size
 from meerk40t.kernel import signal_listener
@@ -49,7 +49,7 @@ class TCPController(MWindow):
         # begin wxGlade: Controller.__set_properties
         self.SetTitle(_("TCP-Controller"))
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_device_connect.SetForegroundColour(wx.BLACK)
@@ -67,7 +67,7 @@ class TCPController(MWindow):
             _("Force connection/disconnection from the device.")
         )
         self.button_device_connect.SetBitmap(
-            icons8_disconnected_50.GetBitmap(use_theme=False)
+            icons8_disconnected.GetBitmap(use_theme=False)
         )
         self.text_status.SetToolTip(_("Connection status"))
         self.text_ip_host.SetToolTip(_("IP/Host if the server computer"))
@@ -142,14 +142,14 @@ class TCPController(MWindow):
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connect"))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected_50.GetBitmap(use_theme=False)
+                icons8_disconnected.GetBitmap(use_theme=False)
             )
             self.button_device_connect.Enable()
         elif state == "connected":
             self.button_device_connect.SetBackgroundColour("#00ff00")
             self.button_device_connect.SetLabel(_("Disconnect"))
             self.button_device_connect.SetBitmap(
-                icons8_connected_50.GetBitmap(use_theme=False)
+                icons8_connected.GetBitmap(use_theme=False)
             )
             self.button_device_connect.Enable()
 

@@ -4,10 +4,10 @@ import wx
 from wx import aui
 
 from meerk40t.gui.icons import (
-    icons8_camera_50,
-    icons8_connected_50,
-    icons8_detective_50,
-    icons8_picture_in_picture_alternative_50,
+    icons8_camera,
+    icons8_connected,
+    icons8_detective,
+    icons8_image_in_frame,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.sceneconst import (
@@ -75,13 +75,13 @@ class CameraPanel(wx.Panel, Job):
 
         if not pane:
             self.button_update = wx.BitmapButton(
-                self, wx.ID_ANY, icons8_camera_50.GetBitmap()
+                self, wx.ID_ANY, icons8_camera.GetBitmap()
             )
             self.button_export = wx.BitmapButton(
-                self, wx.ID_ANY, icons8_picture_in_picture_alternative_50.GetBitmap()
+                self, wx.ID_ANY, icons8_image_in_frame.GetBitmap()
             )
             self.button_reconnect = wx.BitmapButton(
-                self, wx.ID_ANY, icons8_connected_50.GetBitmap()
+                self, wx.ID_ANY, icons8_connected.GetBitmap()
             )
             self.check_fisheye = wx.CheckBox(self, wx.ID_ANY, _("Correct Fisheye"))
             self.check_perspective = wx.CheckBox(
@@ -96,7 +96,7 @@ class CameraPanel(wx.Panel, Job):
                 style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS,
             )
             self.button_detect = wx.BitmapButton(
-                self, wx.ID_ANY, icons8_detective_50.GetBitmap()
+                self, wx.ID_ANY, icons8_detective.GetBitmap()
             )
             scene_name = f"Camera{self.index}"
         else:
@@ -725,7 +725,7 @@ class CameraInterface(MWindow):
         # ==========
 
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_camera_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_camera.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("CameraInterface {index}").format(index=index))
         self.Layout()
@@ -800,7 +800,7 @@ class CameraInterface(MWindow):
             "button/preparation/Camera",
             {
                 "label": _("Camera"),
-                "icon": icons8_camera_50,
+                "icon": icons8_camera,
                 "tip": _("Opens Camera Window"),
                 "identifier": "camera_id",
                 "action": camera_click(),
@@ -1072,7 +1072,7 @@ class CameraURI(MWindow):
 
         self.panel = CameraURIPanel(self, wx.ID_ANY, context=self.context, index=index)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_camera_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_camera.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: CameraURI.__set_properties
         self.SetTitle(_("URI Manager"))

@@ -2,7 +2,7 @@ import platform
 
 import wx
 
-from .icons import icons8_keyboard_50
+from .icons import icons8_keyboard
 from .mwindow import MWindow
 from .wxutils import get_key_name
 
@@ -315,7 +315,7 @@ class Keymap(MWindow):
         self.panel = KeymapPanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_keyboard_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_keyboard.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Keymap.__set_properties
         self.SetTitle(_("Keymap Settings"))
@@ -326,7 +326,7 @@ class Keymap(MWindow):
             "button/config/Keymap",
             {
                 "label": _("Keymap"),
-                "icon": icons8_keyboard_50,
+                "icon": icons8_keyboard,
                 "tip": _("Opens Keymap Window"),
                 "action": lambda v: kernel.console("window toggle Keymap\n"),
             },

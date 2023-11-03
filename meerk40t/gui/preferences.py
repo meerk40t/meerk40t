@@ -8,7 +8,7 @@ import wx
 from meerk40t.kernel.kernel import signal_listener
 
 from .choicepropertypanel import ChoicePropertyPanel
-from .icons import icons8_administrative_tools_50
+from .icons import icons8_administrative_tools
 from .mwindow import MWindow
 from .wxmribbon import RibbonEditor
 from .wxutils import StaticBoxSizer, TextCtrl
@@ -556,7 +556,7 @@ class Preferences(MWindow):
         self.Layout()
 
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_administrative_tools.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Preferences"))
 
@@ -619,7 +619,7 @@ class Preferences(MWindow):
                 "button/config/Preferences",
                 {
                     "label": _("Preferences"),
-                    "icon": icons8_administrative_tools_50,
+                    "icon": icons8_administrative_tools,
                     "tip": _("Opens Preferences Window"),
                     "action": lambda v: kernel.console("window toggle Preferences\n"),
                 },

@@ -4,7 +4,7 @@ import wx
 
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH, Length
-from meerk40t.gui.icons import icons8_vector_50
+from meerk40t.gui.icons import icons8_vector
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.propertypanels.attributes import (
     ColorPanel,
@@ -365,7 +365,7 @@ class PathProperty(MWindow):
         self.panel = PathPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_vector_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_vector.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: PathProperty.__set_properties
         self.SetTitle(_("Path Properties"))

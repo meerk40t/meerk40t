@@ -5,7 +5,7 @@ from PIL import Image
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.units import UNITS_PER_INCH
 
-# from meerk40t.gui.icons import icons8_image_50
+# from meerk40t.gui.icons import icons8_image
 # from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.propertypanels.attributes import (
     IdPanel,
@@ -1365,7 +1365,7 @@ class ImagePropertyPanel(ScrolledPanel):
 #             self.add_module_delegate(panel)
 #         # begin wxGlade: ImageProperty.__set_properties
 #         _icon = wx.NullIcon
-#         _icon.CopyFromBitmap(icons8_image_50.GetBitmap())
+#         _icon.CopyFromBitmap(icons8_image.GetBitmap())
 #         self.SetIcon(_icon)
 #         self.SetTitle(_("Image Properties"))
 #         main_sizer.Add(notebook_main, 1, wx.EXPAND, 0)

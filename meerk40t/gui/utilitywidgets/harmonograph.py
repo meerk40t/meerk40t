@@ -178,7 +178,7 @@ class HarmonographWidget(Widget):
             size * -0.5,
             size * -1,
             size * 0.5,
-            icons.icons8_checkmark_50.GetBitmap(use_theme=False),
+            icons.icons8_checkmark.GetBitmap(use_theme=False),
             self.confirm,
         )
         accept_widget.background_brush = wx.WHITE_BRUSH
@@ -202,7 +202,7 @@ class HarmonographWidget(Widget):
             size * -0.5,
             size * 2,
             size * 0.5,
-            icons.icons8_delete_50.GetBitmap(use_theme=False),
+            icons.icons8_delete.GetBitmap(use_theme=False),
             self.cancel,
         )
         remove_widget.background_brush = wx.WHITE_BRUSH
@@ -222,7 +222,7 @@ class HarmonographWidget(Widget):
             size * 1,
             size * 0,
             size * 2,
-            icons.icons8_rotate_left_50.GetBitmap(use_theme=False),
+            icons.icons8_rotate_left.GetBitmap(use_theme=False),
             delta_theta,
         )
         rotation_widget.background_brush = wx.WHITE_BRUSH
@@ -277,7 +277,7 @@ class HarmonographWidget(Widget):
                 -1,
                 CurveWidget(
                     scene,
-                    icons.icons8_computer_support_50.GetBitmap(use_theme=False),
+                    icons.icons8_computer_support.GetBitmap(use_theme=False),
                     c,
                 ),
             )

@@ -3,7 +3,7 @@ from wx import aui
 
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
-from meerk40t.gui.icons import icons8_compress_50
+from meerk40t.gui.icons import icons8_compress
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.kernel import signal_listener
 
@@ -73,7 +73,7 @@ class PositionPanel(wx.Panel):
             resize_param = None
 
         self.button_execute = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_compress_50.GetBitmap(resize=resize_param)
+            self, wx.ID_ANY, icons8_compress.GetBitmap(resize=resize_param)
         )
         w, h = self.button_execute.GetBitmap().Size
         icon_size = w

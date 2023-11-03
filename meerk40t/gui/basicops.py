@@ -12,8 +12,8 @@ from meerk40t.gui.laserrender import swizzlecolor
 from ..kernel import Job, lookup_listener, signal_listener
 from ..svgelements import Color
 from .icons import (
-    icons8_direction_20,
-    icons8_image_20,
+    icons8_direction,
+    icons8_image,
     icons8_laser_beam,
     icons8_scatter_plot_20,
     icons8_small_beam_20,
@@ -339,7 +339,7 @@ class BasicOpPanel(wx.Panel):
             d = None
             if node.type == "op raster":
                 c, d = get_color()
-                result = icons8_direction_20.GetBitmap(
+                result = icons8_direction.GetBitmap(
                     color=c,
                     resize=(iconsize, iconsize),
                     noadjustment=True,
@@ -347,7 +347,7 @@ class BasicOpPanel(wx.Panel):
                 )
             elif node.type == "op image":
                 c, d = get_color()
-                result = icons8_image_20.GetBitmap(
+                result = icons8_image.GetBitmap(
                     color=c,
                     resize=(iconsize, iconsize),
                     noadjustment=True,

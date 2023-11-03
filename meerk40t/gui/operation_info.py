@@ -1,10 +1,10 @@
 import wx
 
 from meerk40t.gui.icons import (
-    icons8_computer_support_50,
+    icons8_computer_support,
     icon_effect_hatch,
-    icons8_direction_20,
-    icons8_image_20,
+    icons8_direction,
+    icons8_image,
     icons8_laser_beam,
     icons8_scatter_plot_20,
     icons8_small_beam_20,
@@ -63,8 +63,8 @@ class OpInfoPanel(ScrolledPanel):
 
         self.opinfo = {
             "op cut": ("Cut", icons8_laser_beam, 0),
-            "op raster": ("Raster", icons8_direction_20, 0),
-            "op image": ("Image", icons8_image_20, 0),
+            "op raster": ("Raster", icons8_direction, 0),
+            "op image": ("Image", icons8_image, 0),
             "op engrave": ("Engrave", icons8_small_beam_20, 0),
             "op dots": ("Dots", icons8_scatter_plot_20, 0),
         }
@@ -284,7 +284,7 @@ class OperationInformation(MWindow):
         self.panel = OpInfoPanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_computer_support.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Operation Information"))
 

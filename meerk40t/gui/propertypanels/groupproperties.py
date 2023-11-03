@@ -6,7 +6,7 @@ import wx
 from meerk40t.gui.wxutils import ScrolledPanel
 
 # from ...svgelements import SVG_ATTR_ID
-from ..icons import icons8_group_objects_50
+from ..icons import icons8_group_objects
 from ..mwindow import MWindow
 from ..wxutils import StaticBoxSizer
 from .attributes import IdPanel
@@ -100,7 +100,7 @@ class GroupProperty(MWindow):
         )
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_group_objects_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_group_objects.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Group Properties"))
 
@@ -203,7 +203,7 @@ class FileProperty(MWindow):
         )
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_group_objects_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_group_objects.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("File Properties"))
 

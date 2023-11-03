@@ -16,32 +16,32 @@ from meerk40t.gui.icons import (
     icon_corner2,
     icon_corner3,
     icon_corner4,
-    icons8_center_of_gravity_50,
-    icons8_compress_50,
-    icons8_delete_50,
+    icons8_center_of_gravity,
+    icons8_compress,
+    icons8_delete,
     icons8_caret_down,
-    icons8_down_50,
-    icons8_down_left_50,
-    icons8_down_right_50,
-    icons8_enlarge_50,
-    icons8_home_filled_50,
+    icons8_down,
+    icons8_down_left,
+    icons8_down_right,
+    icons8_enlarge,
+    icons8_home_filled,
     icons8_laser_beam,
     icons8_caret_left,
-    icons8_left_50,
-    icons8_level_1_50,
+    icons8_left,
+    icon_circled_1,
     icons8_lock,
-    icons8_move_50,
+    icons8_move,
     icons8_unlock,
-    icons8_pentagon_50,
-    icons8_pentagon_square_50,
+    icons8_pentagon,
+    icons8_pentagon_squared,
     icons8_caret_right,
-    icons8_right_50,
-    icons8_rotate_left_50,
-    icons8_rotate_right_50,
-    icons8_square_border_50,
-    icons8_up_50,
-    icons8_up_left_50,
-    icons8_up_right_50,
+    icons8_right,
+    icons8_rotate_left,
+    icons8_rotate_right,
+    icons8_square_border,
+    icons8_up,
+    icons8_up_left,
+    icons8_up_right,
     icons8_caret_up,
     icon_fence_open,
     icon_fence_closed,
@@ -392,7 +392,7 @@ class Drag(wx.Panel):
             self, wx.ID_ANY, icons8_caret_left.GetBitmap(resize=icon_size)
         )
         self.button_align_center = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_square_border_50.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_square_border.GetBitmap(resize=icon_size)
         )
         self.button_align_drag_right = wx.BitmapButton(
             self, wx.ID_ANY, icons8_caret_right.GetBitmap(resize=icon_size)
@@ -407,13 +407,13 @@ class Drag(wx.Panel):
             self, wx.ID_ANY, icon_corner3.GetBitmap(resize=icon_size)
         )
         self.button_align_first_position = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_level_1_50.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icon_circled_1.GetBitmap(resize=icon_size)
         )
         self.button_align_trace_hull = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_pentagon_50.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_pentagon.GetBitmap(resize=icon_size)
         )
         self.button_align_trace_quick = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_pentagon_square_50.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_pentagon_squared.GetBitmap(resize=icon_size)
         )
         self.bg_color = self.button_align_corner_top_left.BackgroundColour
         self.__set_properties()
@@ -849,31 +849,31 @@ class Jog(wx.Panel):
         context.setting(bool, "button_accelerate", True)
         context.setting(str, "jog_amount", "10mm")
         self.button_navigate_up_left = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_up_left_50.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_up_left.GetBitmap(resize=icon_size)
         )
         self.button_navigate_up = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_up_50.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_up.GetBitmap(resize=icon_size)
         )
         self.button_navigate_up_right = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_up_right_50.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_up_right.GetBitmap(resize=icon_size)
         )
         self.button_navigate_left = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_left_50.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_left.GetBitmap(resize=icon_size)
         )
         self.button_navigate_home = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_home_filled_50.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_home_filled.GetBitmap(resize=icon_size)
         )
         self.button_navigate_right = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_right_50.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_right.GetBitmap(resize=icon_size)
         )
         self.button_navigate_down_left = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_down_left_50.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_down_left.GetBitmap(resize=icon_size)
         )
         self.button_navigate_down = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_down_50.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_down.GetBitmap(resize=icon_size)
         )
         self.button_navigate_down_right = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_down_right_50.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_down_right.GetBitmap(resize=icon_size)
         )
         self.button_navigate_unlock = wx.BitmapButton(
             self, wx.ID_ANY, icons8_unlock.GetBitmap(resize=icon_size)
@@ -1136,7 +1136,7 @@ class MovePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.button_navigate_move_to = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_center_of_gravity_50.GetBitmap(resize=32)
+            self, wx.ID_ANY, icons8_center_of_gravity.GetBitmap(resize=32)
         )
         units = self.context.units_name
         if units in ("inch", "inches"):
@@ -1456,7 +1456,7 @@ class PulsePanel(wx.Panel):
 #             self, wx.ID_ANY, _("Object Dimensions"), wx.HORIZONTAL
 #         )
 #         self.button_navigate_resize = wx.BitmapButton(
-#             self, wx.ID_ANY, icons8_compress_50.GetBitmap(resize=32)
+#             self, wx.ID_ANY, icons8_compress.GetBitmap(resize=32)
 #         )
 #         self.label_9 = wx.StaticText(self, wx.ID_ANY, _("Width:"))
 #         self.label_10 = wx.StaticText(self, wx.ID_ANY, _("Height:"))
@@ -1692,31 +1692,31 @@ class Transform(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.button_scale_down = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_compress_50.GetBitmap()
+            self, wx.ID_ANY, icons8_compress.GetBitmap()
         )
         self.button_translate_up = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_up_50.GetBitmap()
+            self, wx.ID_ANY, icons8_up.GetBitmap()
         )
         self.button_scale_up = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_enlarge_50.GetBitmap()
+            self, wx.ID_ANY, icons8_enlarge.GetBitmap()
         )
         self.button_translate_left = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_left_50.GetBitmap()
+            self, wx.ID_ANY, icons8_left.GetBitmap()
         )
         self.button_reset = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_delete_50.GetBitmap()
+            self, wx.ID_ANY, icons8_delete.GetBitmap()
         )
         self.button_translate_right = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_right_50.GetBitmap()
+            self, wx.ID_ANY, icons8_right.GetBitmap()
         )
         self.button_rotate_ccw = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_rotate_left_50.GetBitmap()
+            self, wx.ID_ANY, icons8_rotate_left.GetBitmap()
         )
         self.button_translate_down = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_down_50.GetBitmap()
+            self, wx.ID_ANY, icons8_down.GetBitmap()
         )
         self.button_rotate_cw = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_rotate_right_50.GetBitmap()
+            self, wx.ID_ANY, icons8_rotate_right.GetBitmap()
         )
         self.text_a = TextCtrl(
             self,
@@ -2315,7 +2315,7 @@ class Navigation(MWindow):
         super().SetSizeHints(minW=minw, minH=minh)
 
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_move_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_move.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Navigation.__set_properties
         self.SetTitle(_("Navigation"))
@@ -2327,7 +2327,7 @@ class Navigation(MWindow):
             "button/preparation/Navigation",
             {
                 "label": _("Navigation"),
-                "icon": icons8_move_50,
+                "icon": icons8_move,
                 "tip": _("Opens Navigation Window"),
                 "action": lambda v: kernel.console("window toggle Navigation\n"),
                 "priority": 1,

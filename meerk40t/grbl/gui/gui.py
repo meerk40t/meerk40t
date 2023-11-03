@@ -15,13 +15,13 @@ def plugin(service, lifecycle):
         from meerk40t.grbl.gui.grblconfiguration import GRBLConfiguration
         from meerk40t.grbl.gui.grblcontroller import GRBLController
         from meerk40t.gui.icons import (
-            icons8_computer_support_50,
-            icons8_connected_50,
-            icons8_emergency_stop_button_50,
-            icons8_flash_off_50,
-            icons8_info_50,
-            icons8_pause_50,
-            icons8_flash_on_50,
+            icons8_computer_support,
+            icons8_connected,
+            icons8_emergency_stop_button,
+            icons8_flash_off,
+            icons8_info,
+            icons8_pause,
+            icons8_flash_on,
         )
 
         service.register("window/GRBLController", GRBLController)
@@ -36,7 +36,7 @@ def plugin(service, lifecycle):
             "button/control/Controller",
             {
                 "label": _("Controller"),
-                "icon": icons8_connected_50,
+                "icon": icons8_connected,
                 "tip": _("Opens Controller Window"),
                 "action": lambda v: service("window toggle GRBLController\n"),
             },
@@ -45,7 +45,7 @@ def plugin(service, lifecycle):
             "button/device/Configuration",
             {
                 "label": _("Config"),
-                "icon": icons8_computer_support_50,
+                "icon": icons8_computer_support,
                 "tip": _("Opens device-specific configuration window"),
                 "action": lambda v: service("window toggle Configuration\n"),
             },
@@ -54,7 +54,7 @@ def plugin(service, lifecycle):
             "button/control/Pause",
             {
                 "label": _("Pause"),
-                "icon": icons8_pause_50,
+                "icon": icons8_pause,
                 "tip": _("Pause the laser"),
                 "action": lambda v: service("pause\n"),
             },
@@ -64,7 +64,7 @@ def plugin(service, lifecycle):
             "button/control/Stop",
             {
                 "label": _("Stop"),
-                "icon": icons8_emergency_stop_button_50,
+                "icon": icons8_emergency_stop_button,
                 "tip": _("Emergency stop the laser"),
                 "action": lambda v: service("estop\n"),
             },
@@ -82,13 +82,13 @@ def plugin(service, lifecycle):
             "button/control/Redlight",
             {
                 "label": _("Red Dot On"),
-                "icon": icons8_flash_on_50,
+                "icon": icons8_flash_on,
                 "tip": _("Turn Redlight On"),
                 "action": lambda v: service("red on\n"),
                 "toggle": {
                     "label": _("Red Dot Off"),
                     "action": lambda v: service("red off\n"),
-                    "icon": icons8_flash_off_50,
+                    "icon": icons8_flash_off,
                     "signal": "grbl_red_dot",
                 },
                 "rule_enabled": lambda v: has_red_dot_enabled(),
@@ -99,7 +99,7 @@ def plugin(service, lifecycle):
             "button/control/ClearAlarm",
             {
                 "label": _("Clear Alarm"),
-                "icon": icons8_info_50,
+                "icon": icons8_info,
                 "tip": _("Send a GRBL Clear Alarm command"),
                 "action": lambda v: service("clear_alarm\n"),
             },

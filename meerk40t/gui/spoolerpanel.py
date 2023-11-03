@@ -8,9 +8,9 @@ from wx import aui
 
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
-    icons8_emergency_stop_button_50,
-    icons8_pause_50,
-    icons8_route_50,
+    icons8_emergency_stop_button,
+    icons8_pause,
+    icons8_route,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import HoverButton
@@ -105,16 +105,16 @@ class SpoolerPanel(wx.Panel):
         self.combo_device.SetSelection(0)  # All by default...
         self.button_pause = wx.Button(self.win_top, wx.ID_ANY, _("Pause"))
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
-        self.button_pause.SetBitmap(icons8_pause_50.GetBitmap(resize=STD_ICON_SIZE / 2))
+        self.button_pause.SetBitmap(icons8_pause.GetBitmap(resize=STD_ICON_SIZE / 2))
         self.button_stop = HoverButton(self.win_top, wx.ID_ANY, _("Abort"))
         self.button_stop.SetToolTip(_("Stop the laser"))
         self.button_stop.SetBitmap(
-            icons8_emergency_stop_button_50.GetBitmap(
+            icons8_emergency_stop_button.GetBitmap(
                 resize=STD_ICON_SIZE / 2, color=wx.WHITE, keepalpha=True
             )
         )
         self.button_stop.SetBitmapFocus(
-            icons8_emergency_stop_button_50.GetBitmap(resize=STD_ICON_SIZE / 2)
+            icons8_emergency_stop_button.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
         self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
         self.button_stop.SetForegroundColour(wx.WHITE)
@@ -1115,7 +1115,7 @@ class JobSpooler(MWindow):
         )
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_route_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_route.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Job Spooler"))
         self.Layout()
@@ -1127,7 +1127,7 @@ class JobSpooler(MWindow):
             "button/control/Spooler",
             {
                 "label": _("Spooler"),
-                "icon": icons8_route_50,
+                "icon": icons8_route,
                 "tip": _("Opens Spooler Window"),
                 "action": lambda v: kernel.console("window toggle JobSpooler\n"),
                 "priority": -1,

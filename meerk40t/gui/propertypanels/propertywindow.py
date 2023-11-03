@@ -2,7 +2,7 @@ import wx
 from wx import aui
 
 from ...kernel import signal_listener
-from ..icons import icons8_computer_support_50
+from ..icons import icons8_computer_support
 from ..mwindow import MWindow
 
 _ = wx.GetTranslation
@@ -13,7 +13,7 @@ class PropertyWindow(MWindow):
         super().__init__(598, 429, *args, **kwds)
 
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_computer_support.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Navigation.__set_properties
         self.SetTitle(_("Properties"))
@@ -151,7 +151,7 @@ class PropertyWindow(MWindow):
             "button/preparation/Properties",
             {
                 "label": _("Property Window"),
-                "icon": icons8_computer_support_50,
+                "icon": icons8_computer_support,
                 "tip": _("Opens Properties Window"),
                 "action": lambda v: kernel.console("window toggle Properties\n"),
                 "priority": 2,
@@ -161,7 +161,7 @@ class PropertyWindow(MWindow):
             "button/properties/Properties",
             {
                 "label": _("Property Window"),
-                "icon": icons8_computer_support_50,
+                "icon": icons8_computer_support,
                 "tip": _("Opens Properties Window"),
                 "action": lambda v: kernel.console("window toggle Properties\n"),
             },

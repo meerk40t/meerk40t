@@ -37,7 +37,7 @@ from ..tools.geomstr import (  # , TYPE_RAMP
     Geomstr,
 )
 from .fonts import wxfont_to_svg
-from .icons import icons8_image_50
+from .icons import icons8_image
 from .zmatrix import ZMatrix
 
 DRAW_MODE_FILLS = 0x000001
@@ -601,7 +601,7 @@ class LaserRender:
                     gc.SetBrush(wx.RED_BRUSH)
                     gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
                     gc.DrawBitmap(
-                        icons8_image_50.GetBitmap(),
+                        icons8_image.GetBitmap(),
                         0,
                         0,
                         cut._cache_width,

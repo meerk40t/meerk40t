@@ -8,13 +8,13 @@ def plugin(service, lifecycle):
         import wx  # pylint: disable=unused-import
 
         from meerk40t.gui.icons import (
-            icons8_center_of_gravity_50,
-            icons8_computer_support_50,
-            icons8_connected_50,
-            icons8_flash_off_50,
-            icons8_light_off_50,
-            icons8_light_on_50,
-            icons8_flash_on_50,
+            icons8_center_of_gravity,
+            icons8_computer_support,
+            icons8_connected,
+            icons8_flash_off,
+            icons8_light_off,
+            icons8_light_on,
+            icons8_flash_on,
         )
 
         from .balorconfig import BalorConfiguration
@@ -33,7 +33,7 @@ def plugin(service, lifecycle):
             "button/control/Controller",
             {
                 "label": _("Controller"),
-                "icon": icons8_connected_50,
+                "icon": icons8_connected,
                 "tip": _("Opens Controller Window"),
                 "action": lambda e: service("window toggle Controller\n"),
             },
@@ -42,7 +42,7 @@ def plugin(service, lifecycle):
             "button/device/Configuration",
             {
                 "label": _("Config"),
-                "icon": icons8_computer_support_50,
+                "icon": icons8_computer_support,
                 "tip": _("Opens device-specific configuration window"),
                 "action": lambda v: service("window toggle Configuration\n"),
             },
@@ -57,20 +57,20 @@ def plugin(service, lifecycle):
             "button/control/Light_On",
             {
                 "label": _("Galvo Light"),
-                "icon": icons8_light_on_50,
+                "icon": icons8_light_on,
                 "tip": _("Runs outline on selection"),
                 "identifier": "light_default",
                 "multi": [
                     {
                         "identifier": "live-full",
                         "label": _("Live Full"),
-                        "icon": icons8_computer_support_50,
+                        "icon": icons8_computer_support,
                         "action": lambda e: service("full-light\n"),
                     },
                     {
                         "identifier": "live-regmark",
                         "label": _("Regmarks"),
-                        "icon": icons8_computer_support_50,
+                        "icon": icons8_computer_support,
                         "action": lambda e: service("regmark-light\n"),
                     },
                     {
@@ -81,7 +81,7 @@ def plugin(service, lifecycle):
                     {
                         "identifier": "live-hull",
                         "label": _("Live Hull"),
-                        "icon": icons8_computer_support_50,
+                        "icon": icons8_computer_support,
                         "action": lambda e: service("hull-light\n"),
                     },
                     {
@@ -107,7 +107,7 @@ def plugin(service, lifecycle):
                 ],
                 "toggle": {
                     "label": _("Stop Tracing..."),
-                    "icon": icons8_light_off_50,
+                    "icon": icons8_light_off,
                     "tip": _("Turn light off"),
                     "action": lambda v: service("stop\n"),
                     "signal": "light_simulate",
@@ -118,13 +118,13 @@ def plugin(service, lifecycle):
             "button/control/Redlight",
             {
                 "label": _("Red Dot On"),
-                "icon": icons8_flash_on_50,
+                "icon": icons8_flash_on,
                 "tip": _("Turn Redlight On"),
                 "action": lambda v: service("red on\n"),
                 "toggle": {
                     "label": _("Red Dot Off"),
                     "action": lambda v: service("red off\n"),
-                    "icon": icons8_flash_off_50,
+                    "icon": icons8_flash_off,
                 },
             },
         )
@@ -132,7 +132,7 @@ def plugin(service, lifecycle):
             "button/control/Center",
             {
                 "label": _("Center"),
-                "icon": icons8_center_of_gravity_50,
+                "icon": icons8_center_of_gravity,
                 "tip": _("Center selection on laserbed"),
                 "action": lambda v: service("align bed group xy center center\n"),
             },

@@ -14,16 +14,16 @@ from .icons import (
     icon_mk_polyline,
     icon_mk_rectangular,
     icons8_bell_20,
-    icons8_canvas_20,
+    icon_canvas,
     icons8_close_window_20,
     icon_effect_hatch,
-    icons8_direction_20,
-    icons8_file_50,
-    icons8_ghost_20,
-    icons8_group_objects_20,
-    icons8_home_20,
-    icons8_home_location_20,
-    icons8_image_20,
+    icons8_direction,
+    icons8_file,
+    icons8_ghost,
+    icons8_group_objects,
+    icons8_home_filled,
+    icons8_home_filled,
+    icons8_image,
     icons8_input_20,
     icons8_journey_20,
     icons8_laser_beam,
@@ -40,7 +40,7 @@ from .icons import (
     icons8_stop_gesture_20,
     icons8_system_task_20,
     icons8_timer_20,
-    icons8_type_50,
+    icon_bmap_text,
     icons8_warning_shield_20,
     icon_effect_wobble,
 )
@@ -513,37 +513,37 @@ class ShadowTree:
         service.add_service_delegate(self)
         self.setup_state_images()
         self.default_images = {
-            "console home -f": icons8_home_20,
+            "console home -f": icons8_home_filled,
             "console move_abs": icons8_return_20,
             "console beep": icons8_bell_20,
             "console interrupt": icons8_stop_gesture_20,
             "console quit": icons8_close_window_20,
             "util wait": icons8_timer_20,
-            "util home": icons8_home_20,
+            "util home": icons8_home_filled,
             "util goto": icons8_return_20,
             "util output": icons8_output_20,
             "util input": icons8_input_20,
             "util console": icons8_system_task_20,
             "op engrave": icons8_small_beam_20,
             "op cut": icons8_laser_beam,
-            "op image": icons8_image_20,
-            "op raster": icons8_direction_20,
+            "op image": icons8_image,
+            "op raster": icons8_direction,
             "op dots": icons8_scatter_plot_20,
             "effect hatch": icon_effect_hatch,
             "effect wobble": icon_effect_wobble,
-            "place current": icons8_home_location_20,
-            "place point": icons8_home_location_20,
+            "place current": icons8_home_filled,
+            "place point": icons8_home_filled,
             "elem point": icons8_scatter_plot_20,
-            "file": icons8_file_50,
-            "group": icons8_group_objects_20,
+            "file": icons8_file,
+            "group": icons8_group_objects,
             "elem rect": icon_mk_rectangular,
             "elem ellipse": icon_mk_ellipse,
-            "elem image": icons8_image_20,
+            "elem image": icons8_image,
             "elem path": icons8_journey_20,
             "elem line": icons8_line_20,
             "elem polyline": icon_mk_polyline,
-            "elem text": icons8_type_50,
-            "blob": icons8_file_50,
+            "elem text": icon_bmap_text,
+            "blob": icons8_file,
         }
         self.image_cache = []
         self.cache_hits = 0
@@ -577,7 +577,7 @@ class ShadowTree:
         )
         image_id = self.state_images.Add(bitmap=image)
         self.iconstates["warning"] = image_id
-        image = icons8_ghost_20.GetBitmap(
+        image = icons8_ghost.GetBitmap(
             resize=(self.iconsize, self.iconsize), noadjustment=True, buffer=1,
         )
         image_id = self.state_images.Add(bitmap=image)
@@ -1127,7 +1127,7 @@ class ShadowTree:
         node_elements = elemtree.get(type="branch elems")
         self.set_icon(
             node_elements,
-            icons8_canvas_20.GetBitmap(
+            icon_canvas.GetBitmap(
                 resize=(self.iconsize, self.iconsize), noadjustment=True, buffer=1,
             ),
         )

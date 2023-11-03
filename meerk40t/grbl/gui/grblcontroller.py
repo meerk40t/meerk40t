@@ -6,7 +6,7 @@ import threading
 
 import wx
 
-from meerk40t.gui.icons import icons8_connected_50, icons8_disconnected_50
+from meerk40t.gui.icons import icons8_connected, icons8_disconnected
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import dip_size
 from meerk40t.kernel import signal_listener
@@ -46,7 +46,7 @@ class GRBLControllerPanel(wx.Panel):
             _("Force connection/disconnection from the device.")
         )
         self.button_device_connect.SetBitmap(
-            icons8_connected_50.GetBitmap(use_theme=False)
+            icons8_connected.GetBitmap(use_theme=False)
         )
         sizer_1.Add(self.button_device_connect, 0, wx.EXPAND, 0)
 
@@ -180,14 +180,14 @@ class GRBLControllerPanel(wx.Panel):
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connect"))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected_50.GetBitmap(use_theme=False)
+                icons8_disconnected.GetBitmap(use_theme=False)
             )
             self.button_device_connect.Enable()
         elif state == "connected":
             self.button_device_connect.SetBackgroundColour("#00ff00")
             self.button_device_connect.SetLabel(_("Disconnect"))
             self.button_device_connect.SetBitmap(
-                icons8_connected_50.GetBitmap(use_theme=False)
+                icons8_connected.GetBitmap(use_theme=False)
             )
             self.button_device_connect.Enable()
 
@@ -200,14 +200,14 @@ class GRBLControllerPanel(wx.Panel):
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connect"))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected_50.GetBitmap(use_theme=False)
+                icons8_disconnected.GetBitmap(use_theme=False)
             )
             self.button_device_connect.Enable()
         elif self.state == "connected":
             self.button_device_connect.SetBackgroundColour("#00ff00")
             self.button_device_connect.SetLabel(_("Disconnect"))
             self.button_device_connect.SetBitmap(
-                icons8_connected_50.GetBitmap(use_theme=False)
+                icons8_connected.GetBitmap(use_theme=False)
             )
             self.button_device_connect.Enable()
 
@@ -221,7 +221,7 @@ class GRBLController(MWindow):
         self.service = self.context.device
         self.SetTitle("GRBL Controller")
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)
 
         self.serial_panel = GRBLControllerPanel(self, wx.ID_ANY, context=self.service)
