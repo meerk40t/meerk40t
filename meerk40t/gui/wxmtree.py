@@ -1372,7 +1372,7 @@ class ShadowTree:
                     and node.fill.argb is not None
                 ):
                     c = node.fill
-            elif node.type.startswith("elem "):
+            elif node.type.startswith("elem ") or node.type.startswith("effect "):
                 if (
                     hasattr(node, "stroke")
                     and node.stroke is not None
