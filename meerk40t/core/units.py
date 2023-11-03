@@ -520,6 +520,15 @@ class Angle:
     def __mul__(self, other):
         return Angle(self.radians * other, preferred_units=self.preferred_units, digits=self._digits)
 
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    def __rsub__(self, other):
+        return self.__neg__().__add__(other)
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
     def __iadd__(self, other):
         if isinstance(other, Angle):
             other = other.angle
