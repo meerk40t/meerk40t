@@ -506,6 +506,10 @@ class Angle:
         c1 = abs((self.angle % tau) - (other % tau)) <= 1e-11
         return c1
 
+    def __add__(self, other):
+        if isinstance(other, Angle):
+            return Angle(self.radians + other.radians, preferred_units=self.preferred_units, digits=self._digits)
+
     def __float__(self):
         return self.radians
 
@@ -514,6 +518,22 @@ class Angle:
 
     def normalize(self):
         self.angle /= tau
+
+    @classmethod
+    def from_radians(cls, radians):
+        return cls(radians)
+
+    @classmethod
+    def from_degrees(cls, degrees):
+        return cls(tau * degrees / 360.0)
+
+    @classmethod
+    def from_gradians(cls, gradians):
+        return cls(tau * gradians / 400.0)
+
+    @classmethod
+    def from_turns(cls, turns):
+        return cls(tau * turns)
 
     @property
     def angle_preferred(self):
