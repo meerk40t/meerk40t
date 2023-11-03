@@ -25,6 +25,7 @@ from meerk40t.gui.icons import (
     icons8_text,
     icons8_timer_20,
     icons8_vector,
+    EmptyIcon,
 )
 
 _ = wx.GetTranslation
@@ -116,8 +117,12 @@ class FormatterPanel(wx.Panel):
             if node in images:
                 image = images[node].GetBitmap(resize=imgsize, noadjustment=True)
             else:
-                image = wx.Bitmap(8, imgsize, imgsize)
-            if node in elem_group_nodes:
+                # print (f"Did not find {node}")
+                continue
+                # image = EmptyIcon(size=imgsize, color=None, msg="??").GetBitmap()
+            if node.startswith("effect"):
+                sectname = "Elements (Effects)"
+            elif node in elem_group_nodes:
                 sectname = "Elements"
             elif node in elem_group_nodes:
                 sectname = "Grouping + Files"
