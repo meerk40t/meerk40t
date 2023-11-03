@@ -434,9 +434,11 @@ class EmptyIcon:
 
 
 class VectorIcon:
-    def __init__(self, fill, stroke=None):
+    def __init__(self, fill, stroke=None, edge=0):
         self.list_fill = []
         self.list_stroke = []
+        # Intentional edge
+        self.edge = edge
         if not fill:
             pass
         elif isinstance(fill, str):
@@ -582,6 +584,9 @@ class VectorIcon:
         path_width = max_x - min_x
         path_height = max_y - min_y
 
+        path_width += 2 * self.edge
+        path_height += 2 * self.edge
+
         stroke_buffer = 2
         path_width += 2 * stroke_buffer
         path_height += 2 * stroke_buffer
@@ -605,8 +610,8 @@ class VectorIcon:
 
         matrix = Matrix()
         matrix.post_translate(
-            -min_x + stroke_buffer + (final_icon_width - width_scaled) / 2 / scale_x,
-            -min_y + stroke_buffer + (final_icon_height - height_scaled) / 2 / scale_x,
+            -min_x + self.edge + stroke_buffer + (final_icon_width - width_scaled) / 2 / scale_x,
+            -min_y + self.edge + stroke_buffer + (final_icon_height - height_scaled) / 2 / scale_x,
         )
         matrix.post_scale(scale_x, scale_y)
         if scale_y < 0:
@@ -2506,7 +2511,7 @@ icon_hatch = VectorIcon(
     ),
 )
 
-icon_bmap_text = VectorIcon(fill=(), stroke=("M 20 0 h 60 h -30 v80"))
+icon_bmap_text = VectorIcon(fill=(), stroke=("M 20 0 h 60 h -30 v80"), edge=20)
 
 icons8_text = VectorIcon(
     fill=(),
