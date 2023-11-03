@@ -508,7 +508,41 @@ class Angle:
 
     def __add__(self, other):
         if isinstance(other, Angle):
-            return Angle(self.radians + other.radians, preferred_units=self.preferred_units, digits=self._digits)
+            return Angle(self.angle + other.angle, preferred_units=self.preferred_units, digits=self._digits)
+        return Angle(self.angle + other, preferred_units=self.preferred_units, digits=self._digits)
+
+    def __sub__(self, other):
+        return -self + other
+
+    def __truediv__(self, other):
+        return Angle(self.radians / other, preferred_units=self.preferred_units, digits=self._digits)
+
+    def __mul__(self, other):
+        return Angle(self.radians * other, preferred_units=self.preferred_units, digits=self._digits)
+
+    def __iadd__(self, other):
+        if isinstance(other, Angle):
+            other = other.angle
+        self.angle += other
+        return self
+
+    def __isub__(self, other):
+        if isinstance(other, Angle):
+            other = other.angle
+        self.angle -= other
+        return self
+
+    def __imul__(self, other):
+        if isinstance(other, Angle):
+            other = other.angle
+        self.angle *= other
+        return self
+
+    def __idiv__(self, other):
+        if isinstance(other, Angle):
+            other = other.angle
+        self.angle /= other
+        return self
 
     def __float__(self):
         return self.radians
