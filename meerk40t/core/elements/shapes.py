@@ -1431,7 +1431,7 @@ def init_commands(kernel):
                     name = name[:50] + "…"
                 channel(
                     _("{index}: rotate({angle}turn) - {name}").format(
-                        index=i, angle=Angle(node.matrix.rotation).turns, name=name
+                        index=i, angle=Angle(node.matrix.rotation).angle_turns[:-4], name=name
                     )
                 )
                 i += 1
