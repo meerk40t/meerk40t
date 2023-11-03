@@ -5,12 +5,11 @@ This is a giant list of console commands that deal with and often implement the 
 from math import sqrt
 
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
-from meerk40t.core.units import UNITS_PER_MM, UNITS_PER_PIXEL, UNITS_PER_POINT, Length
+from meerk40t.core.units import UNITS_PER_MM, UNITS_PER_PIXEL, UNITS_PER_POINT, Angle, Length
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import (
     SVG_RULE_EVENODD,
     SVG_RULE_NONZERO,
-    Angle,
     Color,
     Matrix,
     Path,
@@ -230,8 +229,8 @@ def init_commands(kernel):
         return "elements", data
 
     @self.console_option("distance", "d", type=Length, default="1mm")
-    @self.console_option("angle", "a", type=Angle.parse, default="0deg")
-    @self.console_option("angle_delta", "a", type=Angle.parse, default="0deg")
+    @self.console_option("angle", "a", type=Angle, default="0deg")
+    @self.console_option("angle_delta", "a", type=Angle, default="0deg")
     @self.console_command(
         "effect-hatch",
         help=_("adds hatch-effect to scene"),
@@ -252,8 +251,8 @@ def init_commands(kernel):
         node = first_node.parent.add(
             type="effect hatch",
             label="Hatch Effect",
-            hatch_angle=angle.as_radians,
-            hatch_angle_delta=angle_delta.as_radians,
+            hatch_angle=angle.radians,
+            hatch_angle_delta=angle_delta.radians,
             hatch_distance=distance,
         )
         for n in data:
@@ -1392,7 +1391,7 @@ def init_commands(kernel):
         post.append(classify_new(data))
         return "elements", data
 
-    @self.console_argument("angle", type=Angle.parse, help=_("angle to rotate by"))
+    @self.console_argument("angle", type=Angle, help=_("angle to rotate by"))
     @self.console_option("cx", "x", type=self.length_x, help=_("center x"))
     @self.console_option("cy", "y", type=self.length_y, help=_("center y"))
     @self.console_option(
@@ -1432,7 +1431,7 @@ def init_commands(kernel):
                     name = name[:50] + "…"
                 channel(
                     _("{index}: rotate({angle}turn) - {name}").format(
-                        index=i, angle=node.matrix.rotation.as_turns, name=name
+                        index=i, angle=Angle(node.matrix.rotation).turns, name=name
                     )
                 )
                 i += 1
