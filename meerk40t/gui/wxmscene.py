@@ -7,7 +7,7 @@ import wx
 from wx import aui
 
 from meerk40t.core.elements.element_types import elem_nodes
-from meerk40t.core.units import UNITS_PER_PIXEL, Length
+from meerk40t.core.units import UNITS_PER_PIXEL, Length, Angle
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
     icon_meerk40t,
@@ -55,7 +55,7 @@ from meerk40t.gui.utilitywidgets.seekbarwidget import SeekbarWidget
 from meerk40t.gui.utilitywidgets.togglewidget import ToggleWidget
 from meerk40t.gui.wxutils import get_key_name, is_navigation_key
 from meerk40t.kernel import CommandSyntaxError, signal_listener
-from meerk40t.svgelements import Angle, Color
+from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
 
@@ -583,7 +583,7 @@ class MeerK40tScenePanel(wx.Panel):
             return "scene", data
 
         @self.context.console_argument(
-            "angle", type=Angle.parse, default=0, help="Rotate scene"
+            "angle", type=Angle, default=0, help="Rotate scene"
         )
         @self.context.console_command("rotate", input_type="scene")
         def scene_rotate(command, _, channel, data, angle, **kwgs):
