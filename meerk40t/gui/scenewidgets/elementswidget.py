@@ -73,7 +73,15 @@ class ElementsWidget(Widget):
                 return
         except TypeError:
             return
-        if event_type == "rightdown" and not modifiers:
+        empty_or_right = True
+        if modifiers is not None:
+            for mod in modifiers:
+                if mod == "m_right":
+                    continue
+                empty_or_right = False
+                break
+
+        if event_type == "rightdown" and empty_or_right:
             if not self.scene.pane.tool_active:
                 if self.scene.pane.active_tool != "none":
                     self.scene.context("tool none")
@@ -82,9 +90,9 @@ class ElementsWidget(Widget):
                     self.scene.context.signal("scene_right_click")
                     return RESPONSE_CONSUME
         elif event_type == "rightdown":  # any modifier
-            if self.scene.context.use_toolmenu:
-                self.scene.context("tool_menu")
-                return RESPONSE_CONSUME
+            # if self.scene.context.use_toolmenu:
+            #     self.scene.context("tool_menu")
+            #     return RESPONSE_CONSUME
             return RESPONSE_CHAIN
         elif event_type == "leftclick":
             if self.scene.pane.modif_active:

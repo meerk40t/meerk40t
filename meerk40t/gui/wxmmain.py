@@ -927,19 +927,19 @@ class MeerK40t(MWindow):
         ]
         context.kernel.register_choices("preferences", choices)
         choices = [
-            {
-                "attr": "use_toolmenu",
-                "object": context.root,
-                "default": True,
-                "type": bool,
-                "label": _("Use in-scene tool-menu"),
-                "tip": _(
-                    "The scene-menu will appear if you right-click on the scene-background"
-                ),
-                "page": "Gui",
-                "hidden": True,
-                "section": "Scene",
-            },
+            # {
+            #     "attr": "use_toolmenu",
+            #     "object": context.root,
+            #     "default": True,
+            #     "type": bool,
+            #     "label": _("Use in-scene tool-menu"),
+            #     "tip": _(
+            #         "The scene-menu will appear if you right-click on the scene-background"
+            #     ),
+            #     "page": "Gui",
+            #     "hidden": True,
+            #     "section": "Scene",
+            # },
             {
                 "attr": "button_repeat",
                 "object": self.context.root,
