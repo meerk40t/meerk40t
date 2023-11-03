@@ -462,7 +462,7 @@ class Angle:
     converts to other forms of angle. Failures to parse raise ValueError.
     """
 
-    def __init__(self, angle, digits=None):
+    def __init__(self, angle, digits=None, preferred_units="rad"):
         if isinstance(angle, Angle):
             self._digits = angle._digits
             self.angle = angle.angle
@@ -471,7 +471,7 @@ class Angle:
         self._digits = digits
         if not isinstance(angle, str):
             self.angle = float(angle)
-            self.preferred_units = "rad"
+            self.preferred_units = preferred_units
             return
         angle = angle.lower()
         if angle.endswith("deg"):
@@ -492,19 +492,25 @@ class Angle:
             self.preferred_units = "%"
         else:
             self.angle = float(angle)
-            self.preferred_units = "rad"
+            self.preferred_units = preferred_units
 
     def __str__(self):
         return self.angle_preferred
 
     def __copy__(self):
-        return Angle(self.angle)
+        return Angle(self.angle, preferred_units=self.preferred_units, digits=self._digits)
 
     def __eq__(self, other):
         if hasattr(other, "angle"):
             other = other.angle
         c1 = abs((self.angle % tau) - (other % tau)) <= 1e-11
         return c1
+
+    def __float__(self):
+        return self.radians
+
+    def __neg__(self):
+        return Angle(-self.angle, preferred_units=self.preferred_units, digits=self._digits)
 
     def normalize(self):
         self.angle /= tau
