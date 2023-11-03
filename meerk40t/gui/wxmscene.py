@@ -280,34 +280,34 @@ class MeerK40tScenePanel(wx.Panel):
                     pass
             dlg.Destroy()
 
-        @context.console_command("tool_menu", hidden=True)
-        def tool_menu(channel, _, **kwgs):
-            orgx = 5
-            orgy = 5
-            # Are guides drawn?
-            if self.context.draw_mode & DRAW_MODE_GUIDES == 0:
-                orgx += 25
-                orgy += 25
-            if self._tool_widget is not None:
-                visible = self._tool_widget.visible
-                self._tool_widget.show(not visible)
-                self.widget_scene.request_refresh()
+        # @context.console_command("tool_menu", hidden=True)
+        # def tool_menu(channel, _, **kwgs):
+        #     orgx = 5
+        #     orgy = 5
+        #     # Are guides drawn?
+        #     if self.context.draw_mode & DRAW_MODE_GUIDES == 0:
+        #         orgx += 25
+        #         orgy += 25
+        #     if self._tool_widget is not None:
+        #         visible = self._tool_widget.visible
+        #         self._tool_widget.show(not visible)
+        #         self.widget_scene.request_refresh()
 
-            if self._tool_widget is None:
-                self._tool_widget = ToggleWidget(
-                    self.widget_scene,
-                    orgx,
-                    orgy,
-                    orgx + 25,
-                    orgy + 25,
-                    icons8_menu.GetBitmap(use_theme=False),
-                    "button/tool",
-                )
-                self.widget_scene.widget_root.interface_widget.add_widget(
-                    -1,
-                    self._tool_widget,
-                )
-            channel(_("Added tool widget to interface"))
+        #     if self._tool_widget is None:
+        #         self._tool_widget = ToggleWidget(
+        #             self.widget_scene,
+        #             orgx,
+        #             orgy,
+        #             orgx + 25,
+        #             orgy + 25,
+        #             icons8_menu.GetBitmap(use_theme=False),
+        #             "button/tool",
+        #         )
+        #         self.widget_scene.widget_root.interface_widget.add_widget(
+        #             -1,
+        #             self._tool_widget,
+        #         )
+        #     channel(_("Added tool widget to interface"))
 
         @context.console_command("seek_bar", hidden=True)
         def seek_bar(channel, _, **kwgs):
