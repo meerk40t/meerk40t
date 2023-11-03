@@ -7882,7 +7882,7 @@ msgstr "Behalte das Original-Aussehen z.B. Farbe von Bildern bei"
 
 #: meerk40t/gui/wxmmain.py:2185
 msgid "Do Not Cache Image"
-msgstr "Bild nicht zwischenspeichern"
+msgstr "Bilder nicht zwischenspeichern"
 
 #: meerk40t/gui/wxmmain.py:2186
 msgid "Forces a recalculation of nodes when drawing"
@@ -17484,3 +17484,138 @@ msgstr "Wobble-Effekt hinzufügen {type} {radius} @{interval}"
 #: ./meerk40t\gui\wxmtree.py:190
 msgid "Reactivate disabled operations that prevent elements from being burnt"
 msgstr "Aktiviere inaktive Arbeitsgänge, ohne die sonst Elemente nicht gebrennt würden"
+
+#: ./meerk40t\core\elements\element_treeops.py:1686
+msgid "Apply special effect"
+msgstr "Wende Effekt an"
+
+#: ./meerk40t\gui\choicepropertypanel.py:1037
+msgid "Duplicate this entry"
+msgstr "Diesen Eintrag duplizieren"
+
+#: ./meerk40t\gui\choicepropertypanel.py:1057
+msgid "Restore defaults"
+msgstr "Standardwerte wiederherstellen"
+
+#: ./meerk40t\gui\laserpanel.py:519
+msgid "Preparing Laserjob..."
+msgstr "Laserjob vorbereiten..."
+
+#: ./meerk40t\gui\mkdebug.py:35
+msgid "System-Colors"
+msgstr "System-Farben"
+
+#: ./meerk40t\gui\ribbon.py:1090
+msgid "Colorscheme"
+msgstr "Farbschema"
+
+#: ./meerk40t\gui\ribbon.py:1092
+msgid "System Default"
+msgstr "System Voreinstellungen"
+
+#: ./meerk40t\gui\ribbon.py:1097
+msgid "Colored"
+msgstr "Farbig"
+
+#: ./meerk40t\gui\ribbon.py:1102
+msgid "Black"
+msgstr "Schwarz"
+
+#: ./meerk40t\gui\ribbon.py:1106
+msgid "Customize Toolbars"
+msgstr "Toolbar anpassen"
+
+#: ./meerk40t\gui\wxmmain.py:1133
+msgid "Wrap the current node in a hatch"
+msgstr "Wende ein Füllmuster auf Element an"
+
+#: ./meerk40t\gui\wxmmain.py:1344
+msgid "Paste"
+msgstr "Einfügen"
+
+#: ./meerk40t\gui\wxmmain.py:1360
+msgid "Duplicate selected elements"
+msgstr "Dupliziere ausgewählte Elemente"
+
+#: ./meerk40t\gui\wxmmain.py:3077
+msgid "Don't refresh the scene when requested"
+msgstr "Ignoriere Kommandos zur Bildschirm-Aktualisierung"
+
+#: ./meerk40t\gui\propertypanels\wobbleproperty.py:57
+msgid "Wobble:"
+msgstr "Wobbel"
+
+#: ./meerk40t\gui\propertypanels\wobbleproperty.py:75
+msgid "Wobble Radius:"
+msgstr "Wobbel-Radius:"
+
+#: ./meerk40t\gui\propertypanels\wobbleproperty.py:90
+msgid "Wobble Interval:"
+msgstr "Wobbel-Intervall:"
+
+#: ./meerk40t\gui\propertypanels\inputproperty.py:27
+msgid "Mask Bits"
+msgstr "Bit-Maske"
+
+#: ./meerk40t\gui\propertypanels\inputproperty.py:28
+msgid "Mask bits for given value"
+msgstr "Maskiere Bits für einen gegebenen Wert aus"
+
+#: ./meerk40t\grbl\plugin.py:37
+msgid "Generic"
+msgstr "Generisch"
+
+msgid "Older CO2-Laser"
+msgstr "Älterer CO2-Laser"
+
+#: ./meerk40t\newly\gui\gui.py:62
+msgid "File {index}"
+msgstr "Slot {index}"
+
+#: ./meerk40t\newly\gui\gui.py:64
+msgid "Select active file to use for machine."
+msgstr "Wähle den aktiven Slot für die Maschine"
+
+#: ./meerk40t\newly\gui\gui.py:129
+msgid "Send Only"
+msgstr "Senden"
+
+#: ./meerk40t\newly\gui\gui.py:131
+msgid "Send the file but do not start the file"
+msgstr "Datei lediglich übertragen"
+
+#: ./meerk40t\newly\gui\gui.py:136
+msgid "Send & Start"
+msgstr "Senden & Los"
+
+#: ./meerk40t\newly\gui\gui.py:137
+msgid "Automatically start the device after send"
+msgstr "Gerät nach Dateiübertragung automatisch starten"
+
+#: ./meerk40t\newly\gui\gui.py:146
+msgid "Draw Frame"
+msgstr "Umrahmen"
+
+#: ./meerk40t\newly\gui\gui.py:150
+msgid "Draw a bounding rectangle of the object saved in the machine"
+msgstr "Bewege entlang des Umrisses der im Gerät gespeicherten Daten"
+
+#: ./meerk40t\newly\gui\gui.py:160
+msgid "Move Frame"
+msgstr "Verschieben"
+
+#: ./meerk40t\newly\gui\gui.py:164
+msgid "Move the bounding rectangle of the object saved in the machine"
+msgstr "Verschiebe die im Gerät gespeicherten Daten"
+
+#: ./meerk40t\newly\gui\gui.py:174
+msgid "Replay"
+msgstr "Erneut"
+
+#: ./meerk40t\newly\gui\gui.py:176
+msgid "Replay the file saved in the machine"
+msgstr "Starte die im Gerät gespeicherte Datei"
+
+#: ./meerk40t\newly\gui\newlyconfig.py:20
+msgid "Newly-Configuration"
+msgstr "Newly-Einstellungen"
