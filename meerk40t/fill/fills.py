@@ -1,7 +1,7 @@
 import math
 
-from meerk40t.core.units import Length
-from meerk40t.svgelements import Angle, Matrix, Point
+from meerk40t.core.units import Angle, Length
+from meerk40t.svgelements import Matrix, Point
 from meerk40t.tools.pathtools import EulerianFill, VectorMontonizer
 
 
@@ -69,9 +69,9 @@ def eulerian_fill(settings, outlines, matrix, limit=None):
     h_angle = settings.get("hatch_angle", "0deg")
     distance_y = float(Length(h_dist))
     if isinstance(h_angle, float):
-        angle = Angle.degrees(h_angle)
+        angle = Angle(f"{h_angle}deg")
     else:
-        angle = Angle.parse(h_angle)
+        angle = Angle(h_angle)
 
     rotate = Matrix.rotate(angle)
     counter_rotate = Matrix.rotate(-angle)
@@ -131,9 +131,9 @@ def scanline_fill(settings, outlines, matrix, limit=None):
     h_angle = settings.get("hatch_angle", "0deg")
     distance_y = float(Length(h_dist))
     if isinstance(h_angle, float):
-        angle = Angle.degrees(h_angle)
+        angle = Angle(f"{h_angle}deg")
     else:
-        angle = Angle.parse(h_angle)
+        angle = Angle(h_angle)
 
     rotate = Matrix.rotate(angle)
     counter_rotate = Matrix.rotate(-angle)
