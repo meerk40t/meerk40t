@@ -1697,6 +1697,8 @@ def init_tree(kernel):
         )
         for e in list(self.elems(emphasized=True)):
             group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
 
         self.signal("updateelem_tree")
 
@@ -1714,6 +1716,8 @@ def init_tree(kernel):
         )
         for e in list(self.elems(emphasized=True)):
             group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
 
         self.signal("updateelem_tree")
 
@@ -1729,6 +1733,8 @@ def init_tree(kernel):
         )
         for e in list(self.elems(emphasized=True)):
             group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
 
         self.signal("updateelem_tree")
 
@@ -1746,6 +1752,8 @@ def init_tree(kernel):
         )
         for e in list(self.elems(emphasized=True)):
             group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
 
         self.signal("updateelem_tree")
 
@@ -1769,6 +1777,8 @@ def init_tree(kernel):
         )
         for e in list(self.elems(emphasized=True)):
             group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
 
         self.signal("updateelem_tree")
 
@@ -1792,6 +1802,8 @@ def init_tree(kernel):
         )
         for e in list(self.elems(emphasized=True)):
             group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
 
         self.signal("updateelem_tree")
 
@@ -1815,6 +1827,8 @@ def init_tree(kernel):
         )
         for e in list(self.elems(emphasized=True)):
             group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
 
         self.signal("updateelem_tree")
 
