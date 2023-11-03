@@ -2,8 +2,8 @@ import wx
 
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 
-from ...core.units import Length
-from ...svgelements import Angle, Matrix
+from ...core.units import Length, Angle
+from ...svgelements import Matrix
 from ..wxutils import TextCtrl, set_ctrl_value
 from .attributes import ColorPanel, IdPanel
 
@@ -190,12 +190,12 @@ class HatchPropertyPanel(ScrolledPanel):
         set_ctrl_value(self.text_angle_delta, str(self.node.hatch_angle_delta))
         set_ctrl_value(self.text_distance, str(self.node.hatch_distance))
         try:
-            h_angle = float(Angle.parse(self.node.hatch_angle).as_degrees)
+            h_angle = float(Angle(self.node.hatch_angle).degrees)
             self.slider_angle.SetValue(int(h_angle))
         except ValueError:
             pass
         try:
-            h_angle = float(Angle.parse(self.node.hatch_angle_delta).as_degrees)
+            h_angle = float(Angle(self.node.hatch_angle_delta).degrees)
             self.slider_angle_delta.SetValue(int(h_angle))
         except ValueError:
             pass
@@ -259,7 +259,7 @@ class HatchPropertyPanel(ScrolledPanel):
 
     def on_text_angle(self):
         try:
-            angle = f"{Angle.parse(self.text_angle.GetValue()).as_degrees}deg"
+            angle = Angle(self.text_angle.GetValue()).angle_degrees
             if angle == self.node.hatch_angle:
                 return
             self.node.hatch_angle = angle
@@ -269,7 +269,7 @@ class HatchPropertyPanel(ScrolledPanel):
         except ValueError:
             return
         try:
-            h_angle = float(Angle.parse(self.node.angle).as_degrees)
+            h_angle = float(Angle(self.node.angle).degrees)
             while h_angle > self.slider_angle.GetMax():
                 h_angle -= 360
             while h_angle < self.slider_angle.GetMin():
@@ -288,7 +288,7 @@ class HatchPropertyPanel(ScrolledPanel):
 
     def on_text_angle_delta(self):
         try:
-            angle = f"{Angle.parse(self.text_angle_delta.GetValue()).as_degrees}deg"
+            angle = Angle(self.text_angle_delta.GetValue()).angle_degrees
             if angle == self.node.hatch_angle_delta:
                 return
             self.node.hatch_angle_delta = angle
@@ -297,7 +297,7 @@ class HatchPropertyPanel(ScrolledPanel):
         except ValueError:
             return
         try:
-            h_angle_delta = float(Angle.parse(self.node.delta).as_degrees)
+            h_angle_delta = float(Angle(self.node.delta).degrees)
             while h_angle_delta > self.slider_angle_delta.GetMax():
                 h_angle_delta -= 360
             while h_angle_delta < self.slider_angle_delta.GetMin():
