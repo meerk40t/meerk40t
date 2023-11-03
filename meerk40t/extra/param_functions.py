@@ -6,9 +6,9 @@ parametric editing
 import copy
 import math
 
-from meerk40t.core.units import Length
+from meerk40t.core.units import Length, Angle
 from meerk40t.kernel import CommandSyntaxError
-from meerk40t.svgelements import Angle, Point
+from meerk40t.svgelements import Point
 from meerk40t.tools.geomstr import Geomstr
 
 
@@ -945,7 +945,7 @@ def plugin(kernel, lifecycle):
             type=self.length_x,
             help=_("Radius (length of side if --side_length is used)"),
         )
-        @self.console_option("startangle", "s", type=Angle.parse, help=_("Start-Angle"))
+        @self.console_option("startangle", "s", type=Angle, help=_("Start-Angle"))
         @self.console_option(
             "inscribed",
             "i",
@@ -1040,7 +1040,7 @@ def plugin(kernel, lifecycle):
                     cx = 0
                     cy = 0
                 if startangle is None:
-                    startangle = Angle.parse("0deg")
+                    startangle = Angle("0deg")
 
                 sangle = float(startangle)
                 if alternate_seq is None:
@@ -1388,7 +1388,7 @@ def plugin(kernel, lifecycle):
                 if iterations < 1:
                     iterations = 1
                 if angle is None:
-                    angle = Angle.parse("0deg")
+                    angle = Angle("0deg")
                 startangle = float(angle)
                 if firstlength is None:
                     firstlength = Length("0.5cm")
