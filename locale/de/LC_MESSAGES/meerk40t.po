@@ -6725,6 +6725,9 @@ msgstr "Abgearbeitete Jobs:"
 msgid "Clear History"
 msgstr "Historie löschen"
 
+msgid "Clear spooler history (right click for more options)"
+msgstr "Lösche Spooler-Historie (Rechts-Click für mehr Optionen)"
+
 msgid "-- All available devices --"
 msgstr "-- Alle Geräte --"
 

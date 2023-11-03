@@ -185,6 +185,7 @@ class SpoolerPanel(wx.Panel):
         # begin wxGlade: SpoolerPanel.__set_properties
         self.combo_device.SetToolTip(_("Select the device"))
         self.list_job_spool.SetToolTip(_("List and modify the queued operations"))
+        self.button_clear_history.SetToolTip(_("Clear spooler history (right click for more options)"))
         self.list_job_spool.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=58)
         self.list_job_spool.AppendColumn(
             _("Device"),
