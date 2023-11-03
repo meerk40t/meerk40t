@@ -214,7 +214,9 @@ class HatchPropertyPanel(ScrolledPanel):
         if self.check_classify.GetValue():
             mynode = self.node
             wasemph = self.node.emphasized
-            self.context("declassify\nclassify\n")
+            data = [self.node]
+            self.context.elements.remove_elements_from_operations(data)
+            self.context.elements.classify(data)
             self.context.elements.signal("tree_changed")
             self.context.elements.signal("element_property_update", self.node)
             mynode.emphasized = wasemph
