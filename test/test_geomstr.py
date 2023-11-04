@@ -1400,7 +1400,7 @@ class TestGeomstr(unittest.TestCase):
         actives = bowtie.x_intercept(result, 25)
 
         for x, y in zip(result, (3, 0, 2, 1)):
-            self.assertEqual(x,y)
+            self.assertEqual(x, y)
 
     def test_static_beam_vertical_bowtie(self):
         """
@@ -1424,11 +1424,30 @@ class TestGeomstr(unittest.TestCase):
             complex(0, 0),
         )
         sb = StaticBeam(bowtie)
-        result = sb.actives_at(complex(25,0))
+        result = sb.actives_at(complex(25, 0))
         actives = bowtie.x_intercept(result, 25)
 
-        for x, y in zip(result, (0,2)):
-            self.assertEqual(x,y)
+        for x, y in zip(result, (0, 2)):
+            self.assertEqual(x, y)
+
+    def test_scan_table_random(self):
+        for c in range(1):
+            print("\n\n\n\n\n")
+            g = Geomstr()
+            for i in range(25):
+                random_segment(
+                    g, i=1000, arc=False, point=False, quad=False, cubic=False
+                )
+            t = time.time()
+            sb = StaticBeam(g)
+            sb.compute_beam()
+            intersections = sb.intersections
+            print(f"Time: {time.time() - t}")
+            try:
+                g.append(intersections)
+                draw_geom(g, *g.bbox(), filename="scantable.png")
+            except PermissionError:
+                pass
 
     # def test_geomstr_hatch(self):
     #     gs = Geomstr.svg(
