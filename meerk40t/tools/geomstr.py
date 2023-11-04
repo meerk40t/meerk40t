@@ -383,6 +383,7 @@ class StaticBeam:
         self.geometry = geom
         self._sb_events = None
         self._sb_scan = None
+        self.intersections = Geomstr()
 
     def sort_key(self, e):
         return e[0].imag, e[0].real, ~e[1]
@@ -401,6 +402,11 @@ class StaticBeam:
             else:
                 events.append((g.segments[i][0], ~i, None))
                 events.append((g.segments[i][-1], i, None))
+
+        # wh, p, ta, tb = g.brute_line_intersections()
+        # for w, pos in zip(wh, p):
+        #     events.append((pos, 0, w))
+        #     self.intersections.point(pos)
 
         # Sort start and end events.
         events.sort(key=self.sort_key)
@@ -424,7 +430,8 @@ class StaticBeam:
                     pt_intersect = g.position(q, t1)
                     if y < pt_intersect.imag:
                         events.append((pt_intersect, 0, (q, r)))
-                    events.sort(key=self.sort_key)
+                        self.intersections.point(pt_intersect)
+                        events.sort(key=self.sort_key)
             except AttributeError:
                 pass
 
