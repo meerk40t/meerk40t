@@ -178,12 +178,8 @@ class GoPanel(ActionPanel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PassesPanel.__init__
         kwds["style"] = kwds.get("style", 0)
-        fgcol = wx.WHITE
-        bgcol = wx.Colour(0, 127, 0)
-        res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        if platform.system() == "Darwin" and not res:
-            fgcol = None
-            bgcol = None
+        fgcol = context.themes.get("start_fg")
+        bgcol = context.themes.get("start_bg")
         ActionPanel.__init__(
             self,
             context=context,
@@ -272,12 +268,8 @@ def register_panel_stop(window, context):
     )
     pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
-    fgcol = wx.WHITE 
-    bgcol = wx.Colour(127, 0, 0)
-    res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-    if platform.system() == "Darwin" and not res:
-        fgcol = None
-        bgcol = None
+    fgcol = context.themes.get("stop_fg")
+    bgcol = context.themes.get("stop_bg")
     panel = ActionPanel(
         window,
         wx.ID_ANY,
@@ -316,10 +308,6 @@ def register_panel_home(window, context):
     
     fgcol = None
     bgcol = None
-    # res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-    # if platform.system() == "Darwin" and not res:
-    #     fgcol = None
-    #     bgcol = None
     panel = ActionPanel(
         window,
         wx.ID_ANY,
@@ -353,15 +341,8 @@ def register_panel_pause(window, context):
     )
     pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
-    res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-    
-    if res:
-        bcolor = "ORANGE"
-    else:
-        bcolor = "YELLOW"
-    bgcol = wx.Colour(bcolor)
-    if platform.system() == "Darwin" and not res:
-        bgcol = None
+   
+    bgcol = context.themes.get("pause_bg")
     fgcol = None
     panel = ActionPanel(
         window,

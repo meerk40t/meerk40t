@@ -1297,11 +1297,7 @@ class MeerK40tScenePanel(wx.Panel):
             new_color = wx.RED
         try:
             if self.context.device.driver.paused:
-                res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-                if res:
-                    new_color = wx.Colour("ORANGE")
-                else:
-                    new_color = wx.Colour("YELLOW")
+                new_color = self.context.themes.get("pause_bg")
         except AttributeError:
             pass
         self.widget_scene.overrule_background = new_color

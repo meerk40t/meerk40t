@@ -113,11 +113,7 @@ class LaserPanel(wx.Panel):
 
         # Devices Initialize.
         self.available_devices = self.context.kernel.services("device")
-        # self.color_arm_active = wx.Colour("STEEL BLUE")
-        self.color_arm_active = wx.Colour("MAROON")
-        self.color_arm_inactive = wx.Colour("GREEN")
-        self.color_go_active = wx.Colour(0, 127, 0)
-        self.color_go_inactive = wx.Colour("DARK SLATE GREY")
+
         self.selected_device = self.context.device
         index = -1
         for i, s in enumerate(self.available_devices):
@@ -160,9 +156,9 @@ class LaserPanel(wx.Panel):
                 resize=default_icon_size,
             )
         )
-        self.button_start.SetBackgroundColour(self.color_go_active)
-        self.button_start.SetForegroundColour(wx.WHITE)
-        self.button_start.SetFocusColour(wx.BLACK)
+        self.button_start.SetBackgroundColour(self.context.themes.get("start_bg"))
+        self.button_start.SetForegroundColour(self.context.themes.get("start_fg"))
+        self.button_start.SetFocusColour(self.context.themes.get("start_fg_focus"))
         # self.button_start.SetDisabledBackgroundColour(wx.Colour("FOREST GREEN"))
 
         sizer_control.Add(self.button_start, 1, wx.EXPAND, 0)
@@ -192,9 +188,9 @@ class LaserPanel(wx.Panel):
                 resize=default_icon_size,
             )
         )
-        self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
-        self.button_stop.SetForegroundColour(wx.WHITE)
-        self.button_stop.SetFocusColour(wx.BLACK)
+        self.button_stop.SetBackgroundColour(self.context.themes.get("stop_bg"))
+        self.button_stop.SetForegroundColour(self.context.themes.get("stop_fg"))
+        self.button_stop.SetFocusColour(self.context.themes.get("stop_fg_focus"))
         sizer_control.Add(self.button_stop, 1, wx.EXPAND, 0)
 
         sizer_control_misc = wx.BoxSizer(wx.HORIZONTAL)
@@ -442,12 +438,8 @@ class LaserPanel(wx.Panel):
         new_caption = _("Pause")
         try:
             if self.context.device.driver.paused:
-                if DARKMODE:
-                    new_bg_color = wx.Colour("ORANGE")
-                    new_fg_color = wx.WHITE
-                else:
-                    new_bg_color = wx.Colour("YELLOW")
-                    new_fg_color = wx.BLACK
+                new_bg_color = self.context.themes.get("pause_bg")
+                new_fg_color = self.context.themes.get("pause_fg")
                 new_caption = _("Resume")
         except AttributeError:
             pass
@@ -467,18 +459,18 @@ class LaserPanel(wx.Panel):
                 self.arm_toggle.Show(True)
                 self.Layout()
             if self.arm_toggle.GetValue():
-                self.arm_toggle.SetBackgroundColour(self.color_arm_active)
-                self.button_start.SetBackgroundColour(self.color_go_active)
+                self.arm_toggle.SetBackgroundColour(self.context.themes.get("arm_bg"))
+                self.button_start.SetBackgroundColour(self.context.themes.get("start_bg"))
                 self.button_start.Enable(True)
             else:
-                self.arm_toggle.SetBackgroundColour(self.color_arm_inactive)
-                self.button_start.SetBackgroundColour(self.color_go_inactive)
+                self.arm_toggle.SetBackgroundColour(self.context.themes.get("arm_bg_inactive"))
+                self.button_start.SetBackgroundColour(self.context.themes.get("start_bg_inactive"))
                 self.button_start.Enable(False)
         else:
             if self.arm_toggle.Shown:
                 self.arm_toggle.Show(False)
                 self.Layout()
-            self.button_start.SetBackgroundColour(self.color_go_active)
+            self.button_start.SetBackgroundColour(self.context.themes.get("start_bg"))
             self.button_start.Enable(True)
 
     def on_check_arm(self, event):

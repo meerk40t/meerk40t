@@ -976,13 +976,8 @@ class SpoolerPanel(wx.Panel):
         new_caption = _("Pause")
         try:
             if self.context.device.driver.paused:
-                res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-                if res:
-                    new_bg_color = wx.Colour("ORANGE")
-                    new_fg_color = wx.WHITE
-                else:
-                    new_bg_color = wx.Colour("YELLOW")
-                    new_fg_color = wx.BLACK
+                new_bg_color = self.context.themes.get("pause_bg")
+                new_fg_color = self.context.themes.get("pause_fg")
                 new_caption = _("Resume")
         except AttributeError:
             pass
