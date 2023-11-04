@@ -115,7 +115,7 @@ class ActionPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
 
         self.context = context
-        self.button_go = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_go = wx.Button(self, wx.ID_ANY)
         self.icon = icon
         self.fgcolor = fgcolor
         # Initial resize
@@ -179,9 +179,9 @@ class GoPanel(ActionPanel):
         fgcol = wx.WHITE
         bgcol = wx.Colour(0, 127, 0)
         res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        if platform.system() == "Darwin" and not res:
-            fgcol = None
-            bgcol = None
+        # if platform.system() == "Darwin" and not res:
+        #     fgcol = None
+        #     bgcol = None
         ActionPanel.__init__(
             self,
             context=context,
