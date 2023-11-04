@@ -19,6 +19,7 @@ from meerk40t.tools.geomstr import (
     Polygon,
     Scanbeam,
     StaticBeam,
+    TYPE_POINT,
 )
 
 
@@ -48,6 +49,33 @@ def draw(segments, min_x, min_y, max_x, max_y, buffer=0, filename="test.png"):
     #     t = segment[-1]
     #     draw.ellipse((f.real - 3, f.imag - 3, f.real + 3, f.imag + 3), fill="#FF0000")
     #     draw.ellipse((t.real - 2, t.imag - 2, t.real + 2, t.imag + 2), fill="#0000FF")
+    im.save(filename)
+
+
+def draw_geom(segments, min_x, min_y, max_x, max_y, buffer=0, filename="test.png"):
+    from PIL import Image, ImageDraw
+
+    min_x -= buffer
+    min_y -= buffer
+    max_x += buffer
+    max_y += buffer
+    im = Image.new("RGBA", (int(max_x - min_x) + 1, int(max_y - min_y) + 1), "white")
+
+    draw = ImageDraw.Draw(im)
+    for line in segments.segments[: segments.index]:
+        if line[2].real == TYPE_POINT:
+            f = line[0]
+            draw.ellipse(
+                (f.real - 3 - min_x, f.imag - 3 - min_y, f.real + 3 - min_x, f.imag + 3 - min_y), fill="#FF0000"
+            )
+        elif line[2].real == TYPE_LINE:
+            # Draw raw segments.
+            f = line[0]
+            t = line[-1]
+            draw.line(
+                ((f.real - min_x, f.imag - min_y), (t.real - min_x, t.imag - min_y)),
+                fill="#000000",
+            )
     im.save(filename)
 
 
