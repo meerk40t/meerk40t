@@ -1,6 +1,7 @@
 import wx
 from wx import aui
 
+from meerk40t.gui.button import MButton
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
@@ -162,7 +163,13 @@ class LaserPanel(wx.Panel):
 
         sizer_control.Add(self.button_start, 1, wx.EXPAND, 0)
 
-        self.button_pause = HoverButton(self, wx.ID_ANY, _("Pause"))
+        button_dict = {
+                "label": _("Pause"),
+                "icon": icons8_pause,
+                "tip": _("Pause the laser"),
+                "action": lambda v: context("pause\n"),
+        }
+        self.button_pause = MButton(self, wx.ID_ANY, kind="toggle", description=button_dict, context=context)
         self.button_pause.SetForegroundColour(wx.BLACK)  # Dark Mode correction.
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
         self.button_pause.SetBitmap(
