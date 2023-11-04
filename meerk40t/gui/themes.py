@@ -1,5 +1,5 @@
 """
-Basic Module to provide inforation about GUI
+Basic Module to provide infmoration about the GUI
 """
 import wx
 
@@ -31,9 +31,9 @@ class Themes(Service):
             self._theme = new_theme
             self.registered_themes[new_theme]()
 
-    def get(self, property):
-        if property in self._theme_properties:
-            return self._theme_properties[property]
+    def get(self, property_value):
+        if property_value in self._theme_properties:
+            return self._theme_properties[property_value]
         # property not found
         return None
 
@@ -42,10 +42,7 @@ class Themes(Service):
         self._dark = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         from platform import system
 
-        if system() == "Darwin" and not self._dark:
-            buggy_darwin = True
-        else:
-            buggy_darwin = False
+        buggy_darwin = bool(system() == "Darwin" and not self._dark)
 
         self._theme_properties = dict()
         tp = self._theme_properties

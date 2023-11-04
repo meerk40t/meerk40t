@@ -154,10 +154,10 @@ class ActionPanel(wx.Panel):
 
     def resize_button(self):
         size = self.button_go.Size
-        minsize = min(size[0], size[1]) 
-        # Leave some room at the edges, 
+        minsize = min(size[0], size[1])
+        # Leave some room at the edges,
         # for every 25 pixel 1 pixel at each side
-        room = int(minsize/25) * 2
+        room = int(minsize / 25) * 2
         best_size = minsize - room
         # At least 20 px high
         best_size = max(best_size, 20)
@@ -289,7 +289,7 @@ def register_panel_home(window, context):
     # Define Home.
     def action():
         context("home\n")
-        
+
     def action_right():
         context("physical_home\n")
 
@@ -305,7 +305,7 @@ def register_panel_home(window, context):
     )
     pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
-    
+
     fgcol = None
     bgcol = None
     panel = ActionPanel(
@@ -341,7 +341,7 @@ def register_panel_pause(window, context):
     )
     pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
-   
+
     bgcol = context.themes.get("pause_bg")
     fgcol = None
     panel = ActionPanel(
@@ -392,7 +392,7 @@ class wxMeerK40t(wx.App, Module):
         # Is this a Windows machine? If yes:
         # Turn on high-DPI awareness to make sure rendering is sharp on big
         # monitors with font scaling enabled.
-        
+
         high_dpi = context.setting(bool, "high_dpi", True)
         if platform.system() == "Windows" and high_dpi:
             try:
@@ -908,7 +908,7 @@ class wxMeerK40t(wx.App, Module):
             from meerk40t.gui.mkdebug import (
                 register_panel_color,
                 register_panel_debugger,
-                register_panel_icon
+                register_panel_icon,
             )
 
             kernel.register("wxpane/debug_tree", register_panel_debugger)
