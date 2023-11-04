@@ -5,7 +5,7 @@ import wx
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .icons import icon_meerk40t, icons8_about_50
 from .mwindow import MWindow
-from .wxutils import StaticBoxSizer
+from .wxutils import StaticBoxSizer, ScrolledPanel
 
 _ = wx.GetTranslation
 
@@ -139,11 +139,11 @@ class AboutPanel(wx.Panel):
         # end wxGlade
 
 
-class InformationPanel(wx.Panel):
+class InformationPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: MovePanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
+        ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
         self.mk_version = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.py_version = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
@@ -152,12 +152,14 @@ class InformationPanel(wx.Panel):
         self.os_version = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE
         )
+        self.os_version.SetMinSize(wx.Size(-1, 5 * 25))
         self.info_btn = wx.Button(self, wx.ID_ANY, _("Copy to Clipboard"))
         self.Bind(wx.EVT_BUTTON, self.copy_debug_info, self.info_btn)
         self.update_btn = wx.Button(self, wx.ID_ANY, _("Check for Updates"))
         self.Bind(wx.EVT_BUTTON, self.check_for_updates, self.update_btn)
         self.__set_properties()
         self.__do_layout()
+        self.SetupScrolling()
 
     def __set_properties(self):
         # Fill the content...
@@ -181,6 +183,7 @@ class InformationPanel(wx.Panel):
         info += f"Version: {uname.version}" + "\n"
         info += f"Machine: {uname.machine}" + "\n"
         info += f"Processor: {uname.processor}" + "\n"
+        info += f"Theme: {self.context.themes.theme}, Darkmode: {self.context.themes.dark}\n"
         try:
             info += f"Ip-Address: {socket.gethostbyname(socket.gethostname())}"
         except socket.gaierror:

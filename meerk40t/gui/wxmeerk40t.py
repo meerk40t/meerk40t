@@ -36,6 +36,7 @@ from .hersheymanager import (
     register_hershey_stuff,
 )
 from .icons import (
+    DARKMODE,
     icons8_emergency_stop_button,
     icons8_gas_industry,
     icons8_home_filled,
@@ -103,6 +104,7 @@ class ActionPanel(wx.Panel):
         *args,
         context=None,
         action=None,
+        action_right=None,
         fgcolor=None,
         bgcolor=None,
         icon=None,
@@ -113,22 +115,27 @@ class ActionPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
 
         self.context = context
-        self.button_go = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_go = wx.Button(self, wx.ID_ANY)
         self.icon = icon
         self.fgcolor = fgcolor
-        # Initial resize
-        self.resize_button()
         if bgcolor is not None:
             self.button_go.SetBackgroundColour(bgcolor)
         self.button_go.SetToolTip(tooltip)
+        # self.button_go.SetBitmapMargins(0, 0)
         self.action = action
+        self.action_right = action_right
 
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         main_sizer.Add(self.button_go, 1, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         main_sizer.Fit(self)
         self.button_go.Bind(wx.EVT_BUTTON, self.on_button_go_click)
+        if self.action_right is not None:
+            self.button_go.Bind(wx.EVT_RIGHT_DOWN, self.on_button_go_click_right)
+
         self.button_go.Bind(wx.EVT_SIZE, self.on_button_resize)
+        # Initial resize
+        self.resize_button()
         self.resize_job = Job(
             process=self.resize_button,
             job_name=f"_resize_actionpanel_{self.Id}",
@@ -141,24 +148,26 @@ class ActionPanel(wx.Panel):
         if self.action is not None:
             self.action()
 
+    def on_button_go_click_right(self, event):
+        if self.action_right is not None:
+            self.action_right()
+
     def resize_button(self):
         size = self.button_go.Size
-        # Leave some room
-        room = 40
-        if size[1] < 100:
-            room = 10
-        best_size = min(size[0], size[1]) - room
+        minsize = min(size[0], size[1])
+        # Leave some room at the edges,
+        # for every 25 pixel 1 pixel at each side
+        room = int(minsize / 25) * 2
+        best_size = minsize - room
         # At least 20 px high
         best_size = max(best_size, 20)
-        border = 5
-        if best_size < 30:
-            border = 2
-        self.button_go.SetBitmap(
-            self.icon.GetBitmap(color=self.fgcolor, resize=best_size, buffer=border)
-        )
-        self.button_go.SetBitmapFocus(
-            self.icon.GetBitmap(resize=best_size, buffer=border)
-        )
+        border = 2
+        bmp = self.icon.GetBitmap(color=self.fgcolor, resize=best_size, buffer=border)
+        # s = bmp.Size
+        # print(f"Was asking for {best_size}x{best_size}, got {s[0]}x{s[1]}")
+        self.button_go.SetBitmap(bmp)
+        bmp = self.icon.GetBitmap(resize=best_size, buffer=border)
+        self.button_go.SetBitmapFocus(bmp)
 
     def on_button_resize(self, event):
         self.context.schedule(self.resize_job)
@@ -169,12 +178,14 @@ class GoPanel(ActionPanel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PassesPanel.__init__
         kwds["style"] = kwds.get("style", 0)
+        fgcol = context.themes.get("start_fg")
+        bgcol = context.themes.get("start_bg")
         ActionPanel.__init__(
             self,
             context=context,
             action=None,
-            fgcolor=wx.WHITE,
-            bgcolor=wx.Colour(0, 127, 0),
+            fgcolor=fgcol,
+            bgcolor=bgcol,
             icon=icons8_gas_industry,
             tooltip=_("One Touch: Send Job To Laser "),
             *args,
@@ -257,13 +268,15 @@ def register_panel_stop(window, context):
     )
     pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
+    fgcol = context.themes.get("stop_fg")
+    bgcol = context.themes.get("stop_bg")
     panel = ActionPanel(
         window,
         wx.ID_ANY,
         context=context,
         action=action,
-        fgcolor=wx.WHITE,
-        bgcolor=wx.Colour(127, 0, 0),
+        fgcolor=fgcol,
+        bgcolor=bgcol,
         icon=icons8_emergency_stop_button,
         tooltip=_("Emergency stop/reset the controller."),
     )
@@ -277,6 +290,9 @@ def register_panel_home(window, context):
     def action():
         context("home\n")
 
+    def action_right():
+        context("physical_home\n")
+
     pane = (
         aui.AuiPaneInfo()
         .Bottom()
@@ -289,13 +305,17 @@ def register_panel_home(window, context):
     )
     pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
+
+    fgcol = None
+    bgcol = None
     panel = ActionPanel(
         window,
         wx.ID_ANY,
         context=context,
         action=action,
-        fgcolor=None,
-        bgcolor=None,
+        action_right=action_right,
+        fgcolor=fgcol,
+        bgcolor=bgcol,
         icon=icons8_home_filled,
         tooltip=_("Send laser to home position"),
     )
@@ -321,13 +341,16 @@ def register_panel_pause(window, context):
     )
     pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
+
+    bgcol = context.themes.get("pause_bg")
+    fgcol = None
     panel = ActionPanel(
         window,
         wx.ID_ANY,
         context=context,
         action=action,
-        fgcolor=None,
-        bgcolor=wx.Colour(255, 255, 0),
+        fgcolor=fgcol,
+        bgcolor=bgcol,
         icon=icons8_pause,
         tooltip=_("Pause/Resume the controller"),
     )
@@ -369,10 +392,9 @@ class wxMeerK40t(wx.App, Module):
         # Is this a Windows machine? If yes:
         # Turn on high-DPI awareness to make sure rendering is sharp on big
         # monitors with font scaling enabled.
-        from platform import system
 
         high_dpi = context.setting(bool, "high_dpi", True)
-        if system() == "Windows" and high_dpi:
+        if platform.system() == "Windows" and high_dpi:
             try:
                 # https://discuss.wxpython.org/t/support-for-high-dpi-on-windows-10/32925
                 from ctypes import OleDLL
@@ -886,10 +908,12 @@ class wxMeerK40t(wx.App, Module):
             from meerk40t.gui.mkdebug import (
                 register_panel_color,
                 register_panel_debugger,
+                register_panel_icon,
             )
 
             kernel.register("wxpane/debug_tree", register_panel_debugger)
             kernel.register("wxpane/debug_color", register_panel_color)
+            kernel.register("wxpane/debug_icons", register_panel_icon)
 
         @context.console_argument("sure", type=str, help="Are you sure? 'yes'?")
         @context.console_command("nuke_settings", hidden=True)

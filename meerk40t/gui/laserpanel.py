@@ -3,6 +3,7 @@ from wx import aui
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
+    DARKMODE,
     STD_ICON_SIZE,
     icon_closed_door,
     icon_open_door,
@@ -105,7 +106,7 @@ class LaserPanel(wx.Panel):
         self.context = context
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        default_icon_size = STD_ICON_SIZE * 0.75
+        self.icon_size = STD_ICON_SIZE * 0.75
 
         sizer_devices = StaticBoxSizer(self, wx.ID_ANY, _("Device"), wx.HORIZONTAL)
         sizer_main.Add(sizer_devices, 0, wx.EXPAND, 0)
@@ -144,7 +145,7 @@ class LaserPanel(wx.Panel):
         self.button_start.SetToolTip(_("Execute the Job"))
         self.button_start.SetBitmap(
             icons8_gas_industry.GetBitmap(
-                resize=default_icon_size,
+                resize=self.icon_size,
                 color=wx.WHITE,
                 keepalpha=True,
                 force_darkmode=True,
@@ -152,61 +153,64 @@ class LaserPanel(wx.Panel):
         )
         self.button_start.SetBitmapFocus(
             icons8_gas_industry.GetBitmap(
-                resize=default_icon_size,
+                resize=self.icon_size,
             )
         )
-        self.button_start.SetBackgroundColour(wx.Colour(0, 127, 0))
-        self.button_start.SetForegroundColour(wx.WHITE)
-        self.button_start.SetFocusColour(wx.BLACK)
-        self.button_start.SetDisabledBackgroundColour(wx.Colour(172, 192, 172))
+        self.button_start.SetBackgroundColour(self.context.themes.get("start_bg"))
+        self.button_start.SetForegroundColour(self.context.themes.get("start_fg"))
+        self.button_start.SetFocusColour(self.context.themes.get("start_fg_focus"))
+        # self.button_start.SetDisabledBackgroundColour(wx.Colour("FOREST GREEN"))
 
         sizer_control.Add(self.button_start, 1, wx.EXPAND, 0)
 
         self.button_pause = HoverButton(self, wx.ID_ANY, _("Pause"))
-        self.button_pause.SetForegroundColour(wx.BLACK)  # Dark Mode correction.
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
         self.button_pause.SetBitmap(
-            icons8_pause.GetBitmap(resize=default_icon_size, use_theme=False)
+            icons8_pause.GetBitmap(
+                resize=self.icon_size,
+            )
         )
-        self.button_pause.SetBackgroundColour(wx.Colour(255, 255, 0))
         sizer_control.Add(self.button_pause, 1, wx.EXPAND, 0)
 
         self.button_stop = HoverButton(self, wx.ID_ANY, _("Stop"))
         self.button_stop.SetToolTip(_("Stop the laser"))
         self.button_stop.SetBitmap(
             icons8_emergency_stop_button.GetBitmap(
-                resize=default_icon_size,
-                color=wx.WHITE,
+                resize=self.icon_size,
+                color=self.context.themes.get("stop_fg"),
                 keepalpha=True,
                 force_darkmode=True,
-                debug=True,
             )
         )
         self.button_stop.SetBitmapFocus(
             icons8_emergency_stop_button.GetBitmap(
-                resize=default_icon_size,
+                resize=self.icon_size,
             )
         )
-        self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
-        self.button_stop.SetForegroundColour(wx.WHITE)
-        self.button_stop.SetFocusColour(wx.BLACK)
+        self.button_stop.SetBackgroundColour(self.context.themes.get("stop_bg"))
+        self.button_stop.SetForegroundColour(self.context.themes.get("stop_fg"))
+        self.button_stop.SetFocusColour(self.context.themes.get("stop_fg_focus"))
         sizer_control.Add(self.button_stop, 1, wx.EXPAND, 0)
 
         sizer_control_misc = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control_misc, 0, wx.EXPAND, 0)
 
-        self.arm_toggle = wx.ToggleButton(self, wx.ID_ANY, _("Arm"))
+        self.arm_toggle = HoverButton(self, wx.ID_ANY, _("Arm"))
         self.arm_toggle.SetToolTip(_("Arm the job for execution"))
         self.arm_toggle.SetBitmap(
             icon_closed_door.GetBitmap(
-                resize=default_icon_size,
+                resize=self.icon_size,
+                color=self.context.themes.get("arm_fg"),
             )
         )
-        self.arm_toggle.SetBitmapPressed(
-            icon_open_door.GetBitmap(
-                resize=default_icon_size,
+        self.arm_toggle.SetBitmapFocus(
+            icon_closed_door.GetBitmap(
+                resize=self.icon_size,
             )
         )
+        self.arm_toggle.SetForegroundColour(self.context.themes.get("arm_fg"))
+        self.arm_toggle.SetFocusColour(self.context.themes.get("stop_fg_focus"))
+        self.armed = False
         sizer_control_misc.Add(self.arm_toggle, 1, wx.EXPAND, 0)
 
         self.check_laser_arm()
@@ -215,7 +219,7 @@ class LaserPanel(wx.Panel):
         self.button_outline.SetToolTip(_("Trace the outline the job"))
         self.button_outline.SetBitmap(
             icons8_pentagon.GetBitmap(
-                resize=default_icon_size,
+                resize=self.icon_size,
             )
         )
         sizer_control_misc.Add(self.button_outline, 1, wx.EXPAND, 0)
@@ -224,7 +228,7 @@ class LaserPanel(wx.Panel):
         self.button_simulate.SetToolTip(_("Simulate the Design"))
         self.button_simulate.SetBitmap(
             icons8_laser_beam_hazard.GetBitmap(
-                resize=default_icon_size,
+                resize=self.icon_size,
             )
         )
         sizer_control_misc.Add(self.button_simulate, 1, wx.EXPAND, 0)
@@ -291,7 +295,7 @@ class LaserPanel(wx.Panel):
         self.button_start.Bind(wx.EVT_LEFT_DOWN, self.on_start_left)
         self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.on_check_arm, self.arm_toggle)
+        self.Bind(wx.EVT_BUTTON, self.on_check_arm, self.arm_toggle)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_arm, self)
         self.Bind(wx.EVT_BUTTON, self.on_button_outline, self.button_outline)
         self.button_outline.Bind(wx.EVT_RIGHT_DOWN, self.on_button_outline_right)
@@ -432,15 +436,18 @@ class LaserPanel(wx.Panel):
         self.update_override_controls()
 
     def set_pause_color(self):
-        new_color = None
+        new_bg_color = None
+        new_fg_color = None
         new_caption = _("Pause")
         try:
             if self.context.device.driver.paused:
-                new_color = wx.YELLOW
+                new_bg_color = self.context.themes.get("pause_bg")
+                new_fg_color = self.context.themes.get("pause_fg")
                 new_caption = _("Resume")
         except AttributeError:
             pass
-        self.button_pause.SetBackgroundColour(new_color)
+        self.button_pause.SetBackgroundColour(new_bg_color)
+        self.button_pause.SetForegroundColour(new_fg_color)
         self.button_pause.SetLabelText(new_caption)
 
     @signal_listener("pause")
@@ -454,19 +461,51 @@ class LaserPanel(wx.Panel):
             if not self.arm_toggle.Shown:
                 self.arm_toggle.Show(True)
                 self.Layout()
-            if self.arm_toggle.GetValue():
-                self.arm_toggle.SetBackgroundColour(wx.RED)
+            if self.armed:
+                self.arm_toggle.SetBackgroundColour(self.context.themes.get("arm_bg"))
+                self.button_start.SetBackgroundColour(
+                    self.context.themes.get("start_bg")
+                )
+                self.arm_toggle.SetBitmap(
+                    icon_open_door.GetBitmap(
+                        resize=self.icon_size,
+                        color=self.context.themes.get("arm_fg"),
+                    )
+                )
+                self.arm_toggle.SetBitmapFocus(
+                    icon_open_door.GetBitmap(
+                        resize=self.icon_size,
+                    )
+                )
                 self.button_start.Enable(True)
             else:
-                self.arm_toggle.SetBackgroundColour(wx.GREEN)
+                self.arm_toggle.SetBackgroundColour(
+                    self.context.themes.get("arm_bg_inactive")
+                )
+                self.button_start.SetBackgroundColour(
+                    self.context.themes.get("start_bg_inactive")
+                )
                 self.button_start.Enable(False)
+                self.arm_toggle.SetBitmap(
+                    icon_closed_door.GetBitmap(
+                        resize=self.icon_size,
+                        color=self.context.themes.get("arm_fg"),
+                    )
+                )
+                self.arm_toggle.SetBitmapFocus(
+                    icon_closed_door.GetBitmap(
+                        resize=self.icon_size,
+                    )
+                )
         else:
             if self.arm_toggle.Shown:
                 self.arm_toggle.Show(False)
                 self.Layout()
+            self.button_start.SetBackgroundColour(self.context.themes.get("start_bg"))
             self.button_start.Enable(True)
 
     def on_check_arm(self, event):
+        self.armed = not self.armed
         self.check_laser_arm()
 
     def on_menu_arm_enable(self, event):
@@ -525,7 +564,7 @@ class LaserPanel(wx.Panel):
                 )
             else:
                 self.context("planz clear copy preprocess validate blob spool\n")
-        self.arm_toggle.SetValue(False)
+        self.armed = False
         self.check_laser_arm()
         if self.context.auto_spooler:
             self.context("window open JobSpooler\n")
@@ -591,25 +630,23 @@ class JobPanel(wx.Panel):
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self._optimize = True
-        default_icon_size = STD_ICON_SIZE * 0.75
+        self.icon_size = STD_ICON_SIZE * 0.75
         sizer_control_update = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control_update, 0, wx.EXPAND, 0)
 
         self.button_clear = wx.Button(self, wx.ID_ANY, _("Clear"))
         self.button_clear.SetToolTip(_("Clear locally defined plan"))
-        self.button_clear.SetBitmap(icons8_delete.GetBitmap(resize=default_icon_size))
+        self.button_clear.SetBitmap(icons8_delete.GetBitmap(resize=self.icon_size))
         sizer_control_update.Add(self.button_clear, 1, 0, 0)
 
         self.button_update = wx.Button(self, wx.ID_ANY, _("Update"))
         self.button_update.SetToolTip(_("Update the Plan"))
-        self.button_update.SetBitmap(
-            icon_update_plan.GetBitmap(resize=default_icon_size)
-        )
+        self.button_update.SetBitmap(icon_update_plan.GetBitmap(resize=self.icon_size))
         sizer_control_update.Add(self.button_update, 1, 0, 0)
 
         self.button_save_file = wx.Button(self, wx.ID_ANY, _("Save"))
         self.button_save_file.SetToolTip(_("Save the job"))
-        self.button_save_file.SetBitmap(icons8_save.GetBitmap(resize=default_icon_size))
+        self.button_save_file.SetBitmap(icons8_save.GetBitmap(resize=self.icon_size))
         sizer_control_update.Add(self.button_save_file, 1, 0, 0)
 
         sizer_source = wx.BoxSizer(wx.HORIZONTAL)
