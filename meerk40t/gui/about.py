@@ -183,6 +183,8 @@ class InformationPanel(ScrolledPanel):
         info += f"Version: {uname.version}" + "\n"
         info += f"Machine: {uname.machine}" + "\n"
         info += f"Processor: {uname.processor}" + "\n"
+        res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        info += f"Darkmode: {res}\n"
         try:
             info += f"Ip-Address: {socket.gethostbyname(socket.gethostname())}"
         except socket.gaierror:
