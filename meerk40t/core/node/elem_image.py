@@ -2,8 +2,6 @@ import threading
 from copy import copy
 from math import ceil, floor
 
-from PIL.Image import Transform, Resampling
-
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.image.imagetools import RasterScripts
@@ -576,6 +574,7 @@ class ImageNode(Node):
         @return:
         """
         from PIL import Image, ImageOps
+        from PIL.Image import Transform, Resampling
 
         image = self.image
 
