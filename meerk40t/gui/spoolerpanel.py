@@ -975,7 +975,7 @@ class SpoolerPanel(wx.Panel):
         new_caption = _("Pause")
         try:
             if self.context.device.driver.paused:
-                new_color = wx.YELLOW
+                new_color = wx.Colour("ORANGE")
                 new_caption = _("Resume")
         except AttributeError:
             pass

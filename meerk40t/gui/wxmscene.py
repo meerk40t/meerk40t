@@ -1295,12 +1295,11 @@ class MeerK40tScenePanel(wx.Panel):
         new_color = None
         if state:
             new_color = wx.RED
-        else:
-            try:
-                if self.context.device.driver.paused:
-                    new_color = wx.YELLOW
-            except AttributeError:
-                pass
+        try:
+            if self.context.device.driver.paused:
+                new_color = wx.Colour("ORANGE")
+        except AttributeError:
+            pass
         self.widget_scene.overrule_background = new_color
         self.widget_scene.request_refresh_for_animation()
 

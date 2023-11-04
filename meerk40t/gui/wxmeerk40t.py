@@ -103,6 +103,7 @@ class ActionPanel(wx.Panel):
         *args,
         context=None,
         action=None,
+        action_right=None,
         fgcolor=None,
         bgcolor=None,
         icon=None,
@@ -121,13 +122,18 @@ class ActionPanel(wx.Panel):
         if bgcolor is not None:
             self.button_go.SetBackgroundColour(bgcolor)
         self.button_go.SetToolTip(tooltip)
+        self.button_go.SetBitmapMargins(0, 0)
         self.action = action
+        self.action_right = action_right
 
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         main_sizer.Add(self.button_go, 1, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         main_sizer.Fit(self)
         self.button_go.Bind(wx.EVT_BUTTON, self.on_button_go_click)
+        if self.action_right is not None:
+            self.button_go.Bind(wx.EVT_RIGHT_DOWN, self.on_button_go_click_right)
+
         self.button_go.Bind(wx.EVT_SIZE, self.on_button_resize)
         self.resize_job = Job(
             process=self.resize_button,
@@ -141,18 +147,20 @@ class ActionPanel(wx.Panel):
         if self.action is not None:
             self.action()
 
+    def on_button_go_click_right(self, event):
+        if self.action_right is not None:
+            self.action_right()
+
     def resize_button(self):
         size = self.button_go.Size
-        # Leave some room
-        room = 40
-        if size[1] < 100:
-            room = 10
-        best_size = min(size[0], size[1]) - room
+        minsize = min(size[0], size[1]) 
+        # Leave some room at the edges, 
+        # for every 25 pixel 1 pixel at each side
+        room = int(minsize/25) * 2
+        best_size = minsize - room
         # At least 20 px high
         best_size = max(best_size, 20)
-        border = 5
-        if best_size < 30:
-            border = 2
+        border = 2
         self.button_go.SetBitmap(
             self.icon.GetBitmap(color=self.fgcolor, resize=best_size, buffer=border)
         )
@@ -274,6 +282,9 @@ def register_panel_home(window, context):
     # Define Home.
     def action():
         context("home\n")
+        
+    def action_right():
+        context("physical_home\n")
 
     pane = (
         aui.AuiPaneInfo()
@@ -292,6 +303,7 @@ def register_panel_home(window, context):
         wx.ID_ANY,
         context=context,
         action=action,
+        action_right=action_right,
         fgcolor=None,
         bgcolor=None,
         icon=icons8_home_filled,
@@ -325,7 +337,7 @@ def register_panel_pause(window, context):
         context=context,
         action=action,
         fgcolor=None,
-        bgcolor=wx.Colour(255, 255, 0),
+        bgcolor=wx.Colour("ORANGE"),
         icon=icons8_pause,
         tooltip=_("Pause/Resume the controller"),
     )

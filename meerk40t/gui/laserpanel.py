@@ -155,23 +155,24 @@ class LaserPanel(wx.Panel):
                 resize=default_icon_size,
             )
         )
-        self.button_start.SetBackgroundColour(wx.Colour(0, 127, 0))
+        self.button_start.SetBackgroundColour(wx.Colour(0, 192, 0))
         self.button_start.SetForegroundColour(wx.WHITE)
         self.button_start.SetFocusColour(wx.BLACK)
-        self.button_start.SetDisabledBackgroundColour(wx.Colour(172, 192, 172))
+        self.button_start.SetDisabledBackgroundColour(wx.Colour(128, 192, 128))
 
         sizer_control.Add(self.button_start, 1, wx.EXPAND, 0)
 
         self.button_pause = wx.Button(self, wx.ID_ANY, _("Pause"))
-        self.button_pause.SetForegroundColour(wx.BLACK)  # Dark Mode correction.
+        self.button_pause.SetBackgroundColour(wx.Colour("ORANGE"))
+        self.button_pause.SetForegroundColour(wx.WHITE) 
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
         self.button_pause.SetBitmap(
             icons8_pause.GetBitmap(
                 resize=default_icon_size,
+                color=wx.WHITE,
                 use_theme=False
             )
         )
-        self.button_pause.SetBackgroundColour(wx.Colour(255, 255, 0))
         sizer_control.Add(self.button_pause, 1, wx.EXPAND, 0)
 
         self.button_stop = HoverButton(self, wx.ID_ANY, _("Stop"))
@@ -439,7 +440,7 @@ class LaserPanel(wx.Panel):
         new_caption = _("Pause")
         try:
             if self.context.device.driver.paused:
-                new_color = wx.YELLOW
+                new_color = wx.Colour("ORANGE")
                 new_caption = _("Resume")
         except AttributeError:
             pass
