@@ -7,7 +7,6 @@ import wx.lib.mixins.listctrl as listmix
 from wx import aui
 
 from meerk40t.gui.icons import (
-    DARKMODE,
     STD_ICON_SIZE,
     icons8_emergency_stop_button,
     icons8_pause,
@@ -977,7 +976,8 @@ class SpoolerPanel(wx.Panel):
         new_caption = _("Pause")
         try:
             if self.context.device.driver.paused:
-                if DARKMODE:
+                res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+                if res:
                     new_bg_color = wx.Colour("ORANGE")
                     new_fg_color = wx.WHITE
                 else:
