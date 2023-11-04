@@ -176,12 +176,18 @@ class GoPanel(ActionPanel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PassesPanel.__init__
         kwds["style"] = kwds.get("style", 0)
+        fgcol = wx.WHITE
+        bgcol = wx.Colour(0, 127, 0)
+        res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        if platform.system() == "Darwin" and not res:
+            fgcol = None
+            bgcol = None
         ActionPanel.__init__(
             self,
             context=context,
             action=None,
-            fgcolor=wx.WHITE,
-            bgcolor=wx.Colour(0, 127, 0),
+            fgcolor=fgcol,
+            bgcolor=bgcol,
             icon=icons8_gas_industry,
             tooltip=_("One Touch: Send Job To Laser "),
             *args,
@@ -264,13 +270,19 @@ def register_panel_stop(window, context):
     )
     pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
+    fgcol = wx.WHITE 
+    bgcol = wx.Colour(127, 0, 0)
+    res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+    if platform.system() == "Darwin" and not res:
+        fgcol = None
+        bgcol = None
     panel = ActionPanel(
         window,
         wx.ID_ANY,
         context=context,
         action=action,
-        fgcolor=wx.WHITE,
-        bgcolor=wx.Colour(127, 0, 0),
+        fgcolor=fgcol,
+        bgcolor=bgcol,
         icon=icons8_emergency_stop_button,
         tooltip=_("Emergency stop/reset the controller."),
     )
@@ -299,14 +311,21 @@ def register_panel_home(window, context):
     )
     pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
+    
+    fgcol = None
+    bgcol = None
+    # res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+    # if platform.system() == "Darwin" and not res:
+    #     fgcol = None
+    #     bgcol = None
     panel = ActionPanel(
         window,
         wx.ID_ANY,
         context=context,
         action=action,
         action_right=action_right,
-        fgcolor=None,
-        bgcolor=None,
+        fgcolor=fgcol,
+        bgcolor=bgcol,
         icon=icons8_home_filled,
         tooltip=_("Send laser to home position"),
     )
@@ -333,18 +352,22 @@ def register_panel_pause(window, context):
     pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
     res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-
+    
     if res:
         bcolor = "ORANGE"
     else:
         bcolor = "YELLOW"
+    bgcol = wx.Colour(bcolor)
+    if platform.system() == "Darwin" and not res:
+        bgcol = None
+    fgcol = None
     panel = ActionPanel(
         window,
         wx.ID_ANY,
         context=context,
         action=action,
-        fgcolor=None,
-        bgcolor=wx.Colour(bcolor),
+        fgcolor=fgcol,
+        bgcolor=bgcol,
         icon=icons8_pause,
         tooltip=_("Pause/Resume the controller"),
     )
@@ -386,10 +409,9 @@ class wxMeerK40t(wx.App, Module):
         # Is this a Windows machine? If yes:
         # Turn on high-DPI awareness to make sure rendering is sharp on big
         # monitors with font scaling enabled.
-        from platform import system
-
+        
         high_dpi = context.setting(bool, "high_dpi", True)
-        if system() == "Windows" and high_dpi:
+        if platform.system() == "Windows" and high_dpi:
             try:
                 # https://discuss.wxpython.org/t/support-for-high-dpi-on-windows-10/32925
                 from ctypes import OleDLL
