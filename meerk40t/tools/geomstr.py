@@ -3178,26 +3178,23 @@ class Geomstr:
         infos = np.real(geoms[:, 2]).astype(int)
         q = np.where(infos == TYPE_LINE)
         starts = geoms[q][:,0]
-        starts = np.ravel(starts)
         ends = geoms[q][:,-1]
-        ends = np.ravel(ends)
         lines = np.dstack(
             (starts, ends)
         )[0]
-        x, y = np.mgrid[:len(ends),:len(starts)]
-
+        x, y = np.triu_indices(len(starts), 1)
         j = lines[x]
         k = lines[y]
-        a1 = j[:,:,0]
+        a1 = j[:,0]
         ax1 = np.real(a1)
         ay1 = np.imag(a1)
-        b1 = k[:,:,0]
+        b1 = k[:,0]
         bx1 = np.real(b1)
         by1 = np.imag(b1)
-        a2 = j[:,:,1]
+        a2 = j[:,1]
         ax2 = np.real(a2)
         ay2 = np.imag(a2)
-        b2 = k[:,:,1]
+        b2 = k[:,1]
         bx2 = np.real(b2)
         by2 = np.imag(b2)
 
@@ -3212,8 +3209,10 @@ class Geomstr:
                 abs(denom) >= abs(qa),  # D >= Qa (else not between 0 - 1)
                 abs(denom) >= abs(qb),  # D >= Qb (else not between 0 - 1)
             )
-        ).all(axis=2)
-        where_hits = np.argwhere(hits)
+        )
+        hits = hits.all(axis=2)[0]
+
+        where_hits = np.dstack((x[hits], y[hits]))[0]
         ta_hit = qa[hits] / denom[hits]
         tb_hit = qb[hits] / denom[hits]
 
