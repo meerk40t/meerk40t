@@ -170,12 +170,12 @@ class LaserPanel(wx.Panel):
                 "action": lambda v: context("pause\n"),
         }
         self.button_pause = MButton(self, wx.ID_ANY, kind="toggle", description=button_dict, context=context)
-        self.button_pause.SetForegroundColour(wx.BLACK)  # Dark Mode correction.
-        self.button_pause.SetToolTip(_("Pause/Resume the laser"))
-        self.button_pause.SetBitmap(
-            icons8_pause.GetBitmap(resize=default_icon_size, use_theme=False)
-        )
-        self.button_pause.SetBackgroundColour(wx.Colour(255, 255, 0))
+        # self.button_pause.SetForegroundColour(wx.BLACK)  # Dark Mode correction.
+        # self.button_pause.SetToolTip(_("Pause/Resume the laser"))
+        # self.button_pause.SetBitmap(
+        #     icons8_pause.GetBitmap(resize=default_icon_size, use_theme=False)
+        # )
+        # self.button_pause.SetBackgroundColour(wx.Colour(255, 255, 0))
         sizer_control.Add(self.button_pause, 1, wx.EXPAND, 0)
 
         self.button_stop = HoverButton(self, wx.ID_ANY, _("Stop"))
@@ -296,7 +296,7 @@ class LaserPanel(wx.Panel):
 
         self.Bind(wx.EVT_BUTTON, self.on_button_start, self.button_start)
         self.button_start.Bind(wx.EVT_LEFT_DOWN, self.on_start_left)
-        self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.button_pause)
+        # self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
         self.Bind(wx.EVT_TOGGLEBUTTON, self.on_check_arm, self.arm_toggle)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_arm, self)

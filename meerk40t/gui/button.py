@@ -541,6 +541,7 @@ class MButton(wx.Control):
 
         self.art = Art(self)
         self.button = Button(context, self, id, kind, description)
+        self.button.set_button_toggle(False)
 
 
     def modified(self):
@@ -791,7 +792,7 @@ class Art:
         @return:
         """
         self._paint_background(dc)
-        self._paint_button(dc, button)
+        self._paint_button(dc, button.button)
 
     def _paint_background(self, dc: wx.DC):
         """
@@ -812,8 +813,9 @@ class Art:
         @param button:
         @return:
         """
-        if button.overflow or not button.visible or button.position is None:
-            return
+        # if button.overflow or not button.visible or button.position is None:
+        #     return
+
         bitmap = button.bitmap_large
         bitmap_small = button.bitmap_small
         bitmap_tiny = button.bitmap_tiny
@@ -969,6 +971,8 @@ class Art:
         dc.DestroyClippingRegion()
 
     def layout(self, dc: wx.DC, button):
+        w, h = dc.GetSize()
+        button.button.position = 0, 0, w, h
         self.button_layout(dc, self.parent.button)
 
     def button_layout(self, dc: wx.DC, button):
