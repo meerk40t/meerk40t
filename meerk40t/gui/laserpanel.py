@@ -162,7 +162,7 @@ class LaserPanel(wx.Panel):
 
         sizer_control.Add(self.button_start, 1, wx.EXPAND, 0)
 
-        self.button_pause = wx.Button(self, wx.ID_ANY, _("Pause"))
+        self.button_pause = HoverButton(self, wx.ID_ANY, _("Pause"))
         self.button_pause.SetForegroundColour(wx.BLACK)  # Dark Mode correction.
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
         self.button_pause.SetBitmap(
