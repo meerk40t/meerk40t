@@ -3,6 +3,7 @@ from wx import aui
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
+    DARKMODE,
     STD_ICON_SIZE,
     icons8_delete,
     icons8_emergency_stop_button,
@@ -441,8 +442,12 @@ class LaserPanel(wx.Panel):
         new_caption = _("Pause")
         try:
             if self.context.device.driver.paused:
-                new_bg_color = wx.Colour("ORANGE")
-                new_fg_color = wx.WHITE
+                if DARKMODE:
+                    new_bg_color = wx.Colour("ORANGE")
+                    new_fg_color = wx.WHITE
+                else:
+                    new_bg_color = wx.Colour("YELLOW")
+                    new_fg_color = wx.BLACK
                 new_caption = _("Resume")
         except AttributeError:
             pass

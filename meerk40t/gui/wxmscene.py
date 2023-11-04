@@ -9,6 +9,7 @@ from wx import aui
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import (
+    DARKMODE,
     STD_ICON_SIZE,
     icon_meerk40t,
     icons8_menu,
@@ -1297,7 +1298,10 @@ class MeerK40tScenePanel(wx.Panel):
             new_color = wx.RED
         try:
             if self.context.device.driver.paused:
-                new_color = wx.Colour("ORANGE")
+                if DARKMODE:
+                    new_color = wx.Colour("ORANGE")
+                else:
+                    new_color = wx.Colour("YELLOW")
         except AttributeError:
             pass
         self.widget_scene.overrule_background = new_color

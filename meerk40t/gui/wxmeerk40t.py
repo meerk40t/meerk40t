@@ -36,6 +36,7 @@ from .hersheymanager import (
     register_hershey_stuff,
 )
 from .icons import (
+    DARKMODE,
     icons8_emergency_stop_button,
     icons8_gas_industry,
     icons8_home_filled,
@@ -331,13 +332,19 @@ def register_panel_pause(window, context):
     )
     pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
+    res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+
+    if res:
+        bcolor = "ORANGE"
+    else:
+        bcolor = "YELLOW"
     panel = ActionPanel(
         window,
         wx.ID_ANY,
         context=context,
         action=action,
         fgcolor=None,
-        bgcolor=wx.Colour("ORANGE"),
+        bgcolor=wx.Colour(bcolor),
         icon=icons8_pause,
         tooltip=_("Pause/Resume the controller"),
     )
