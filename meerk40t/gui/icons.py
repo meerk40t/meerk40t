@@ -615,8 +615,14 @@ class VectorIcon:
 
         matrix = Matrix()
         matrix.post_translate(
-            -min_x + self.edge + stroke_buffer + (final_icon_width - width_scaled) / 2 / scale_x,
-            -min_y + self.edge + stroke_buffer + (final_icon_height - height_scaled) / 2 / scale_x,
+            -min_x
+            + self.edge
+            + stroke_buffer
+            + (final_icon_width - width_scaled) / 2 / scale_x,
+            -min_y
+            + self.edge
+            + stroke_buffer
+            + (final_icon_height - height_scaled) / 2 / scale_x,
         )
         matrix.post_scale(scale_x, scale_y)
         if scale_y < 0:
@@ -2455,7 +2461,7 @@ icon_update_plan = VectorIcon(
     ),
 )
 
-icons8_vector= VectorIcon(
+icons8_vector = VectorIcon(
     fill=(
         "M 19 8 L 19 13 L 5.8125 13 C 5.398438 11.839844 4.300781 11 3 11 C 1.34375 11 0 12.34375 0 14 C 0 15.65625 1.34375 17 3 17 C 4.300781 17 5.398438 16.160156 5.8125 15 L 17 15 C 11.921875 17.714844 8.386719 22.941406 8.03125 29 L 3 29 L 3 41 L 15 41 L 15 29 L 10.0625 29 C 10.441406 23.277344 13.992188 18.433594 19 16.25 L 19 20 L 31 20 L 31 16.25 C 36 18.441406 39.5625 23.277344 39.9375 29 L 35 29 L 35 41 L 47 41 L 47 29 L 41.96875 29 C 41.621094 22.929688 38.082031 17.714844 33 15 L 44.1875 15 C 44.601563 16.160156 45.699219 17 47 17 C 48.65625 17 50 15.65625 50 14 C 50 12.34375 48.65625 11 47 11 C 45.699219 11 44.601563 11.839844 44.1875 13 L 31 13 L 31 8 Z M 21 10 L 29 10 L 29 13.65625 C 28.941406 13.851563 28.941406 14.054688 29 14.25 L 29 18 L 21 18 L 21 14.1875 C 21.027344 14.054688 21.027344 13.914063 21 13.78125 Z M 5 31 L 13 31 L 13 39 L 5 39 Z M 37 31 L 45 31 L 45 39 L 37 39 Z",
     ),
@@ -2679,10 +2685,10 @@ icon_duplicate = VectorIcon(
 )
 
 icon_crossing_star = VectorIcon(
-     fill=(),
-     stroke=(
-         "M 128.341,145.628 L 108.983,209.299 L 162.069,169.166 L 95.532,170.431 L 150.105,208.517 L 128.341,145.628"
-     ),
+    fill=(),
+    stroke=(
+        "M 128.341,145.628 L 108.983,209.299 L 162.069,169.166 L 95.532,170.431 L 150.105,208.517 L 128.341,145.628"
+    ),
 )
 
 icon_regular_star = VectorIcon(
@@ -2717,7 +2723,7 @@ instruction_circle = VectorIcon(
         "M 5 50 a 5,5, 0 1,0 1,0",
         "M 96 80 a 5,5, 0 1,0 1,0",
     ),
-    stroke = (
+    stroke=(
         "M 55 5 a 50,50, 0 1,0 1,0",
         # A
         "M 55 15 L 50 25",
@@ -2728,7 +2734,7 @@ instruction_circle = VectorIcon(
         "M 15 50 C 22.5,50 22.5,55 15,55 C 25,55 25,60 15,60"
         # C
         "M 85 80 C 75,80 75,90 85,90",
-    )
+    ),
 )
 
 instruction_frame = VectorIcon(
@@ -2736,7 +2742,7 @@ instruction_frame = VectorIcon(
         "M 5 0 a 5,5, 0 1,0 1,0",
         "M 100 75 a 5,5, 0 1,0 1,0",
     ),
-    stroke = (
+    stroke=(
         "M 5 5 h 95 v 75 h -95 z",
         # A
         "M 15 15 L 10 25",
@@ -2744,8 +2750,8 @@ instruction_frame = VectorIcon(
         "M 13 21 h 6",
         # B
         "M 75 60 v 10",
-        "M 75 60 C 82.5,60 82.5,65 75,65 C 85,65 85,70 75,70"
-    )
+        "M 75 60 C 82.5,60 82.5,65 75,65 C 85,65 85,70 75,70",
+    ),
 )
 
 instruction_rectangle = VectorIcon(
@@ -2755,7 +2761,7 @@ instruction_rectangle = VectorIcon(
         "M 77.5 60 a 5,5, 0 1,0 1,0",
     ),
     stroke=(
-      "M 0 50 L 30 100 L 100 50 L 70 0 z",
+        "M 0 50 L 30 100 L 100 50 L 70 0 z",
         # B
         "M 20 60 v 10",
         "M 20 60 C 27.5,60 27.5,65 20,65 C 30,65 30,70 20,70"
@@ -2771,6 +2777,5 @@ instruction_rectangle = VectorIcon(
         "M 68 51 h 6",
         # 2
         "M 79 45 h 5 v 5 h -5 v 5 h 5",
-
     ),
 )

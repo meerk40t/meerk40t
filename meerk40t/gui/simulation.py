@@ -27,6 +27,7 @@ from .choicepropertypanel import ChoicePropertyPanel
 from .icons import (
     STD_ICON_SIZE,
     icons8_bell_20,
+    icons8_circled_play,
     icons8_close_window_20,
     icons8_home_filled,
     icons8_image,
@@ -34,7 +35,6 @@ from .icons import (
     icons8_laser_beam_hazard,
     icons8_output_20,
     icons8_pause,
-    icons8_circled_play,
     icons8_return_20,
     icons8_route,
     icons8_stop_gesture_20,
@@ -990,9 +990,7 @@ class SimulationPanel(wx.Panel, Job):
                 "Segoe UI",
             )
         )
-        self.button_spool.SetBitmap(
-            icons8_route.GetBitmap(resize=1.5 * STD_ICON_SIZE)
-        )
+        self.button_spool.SetBitmap(icons8_route.GetBitmap(resize=1.5 * STD_ICON_SIZE))
         # end wxGlade
 
     def __do_layout(self):

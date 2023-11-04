@@ -498,7 +498,9 @@ class Angle:
         return self.angle_preferred
 
     def __copy__(self):
-        return Angle(self.angle, preferred_units=self.preferred_units, digits=self._digits)
+        return Angle(
+            self.angle, preferred_units=self.preferred_units, digits=self._digits
+        )
 
     def __eq__(self, other):
         if hasattr(other, "angle"):
@@ -510,7 +512,9 @@ class Angle:
         return self.radians
 
     def __neg__(self):
-        return Angle(-self.angle, preferred_units=self.preferred_units, digits=self._digits)
+        return Angle(
+            -self.angle, preferred_units=self.preferred_units, digits=self._digits
+        )
 
     def normalize(self):
         self.angle /= tau

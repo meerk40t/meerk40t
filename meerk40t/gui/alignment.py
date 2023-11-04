@@ -1165,9 +1165,7 @@ class ArrangementPanel(wx.Panel):
         )
 
         self.btn_arrange = wx.Button(self, wx.ID_ANY, _("Arrange"))
-        self.btn_arrange.SetBitmap(
-            icons8_arrange.GetBitmap(resize=STD_ICON_SIZE / 2)
-        )
+        self.btn_arrange.SetBitmap(icons8_arrange.GetBitmap(resize=STD_ICON_SIZE / 2))
 
         sizer_dimensions = wx.BoxSizer(wx.HORIZONTAL)
         sizer_dim_x = StaticBoxSizer(

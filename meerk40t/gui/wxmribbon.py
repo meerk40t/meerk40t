@@ -609,9 +609,7 @@ class RibbonEditor(wx.Panel):
             icons8_remove_25.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
         self.button_up_page.SetBitmap(icons8_up.GetBitmap(resize=STD_ICON_SIZE / 2))
-        self.button_down_page.SetBitmap(
-            icons8_down.GetBitmap(resize=STD_ICON_SIZE / 2)
-        )
+        self.button_down_page.SetBitmap(icons8_down.GetBitmap(resize=STD_ICON_SIZE / 2))
 
         self.button_del_panel = wx.StaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 30, 30)

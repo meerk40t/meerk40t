@@ -133,13 +133,13 @@ class DefaultOperationWidget(StatusBarWidget):
                 fontsize = 8
             elif len(opid) > 4:
                 fontsize = 6
-
+            # use_theme=False is needed as othewise colors will get reversed
             icon = EmptyIcon(
                 size=(self.iconsize, min(self.iconsize, self.height)),
                 color=wx.Colour(swizzlecolor(op.color)),
                 msg=opid,
                 ptsize=fontsize,
-            ).GetBitmap(noadjustment=True)
+            ).GetBitmap(noadjustment=True, use_theme=False)
             btn.SetBitmap(icon)
             op_label = op.label
             if op_label is None:
@@ -292,7 +292,7 @@ class DefaultOperationWidget(StatusBarWidget):
         self.Show(True)
 
     def execute_on(self, targetop, use_parent):
-        targetdata= []
+        targetdata = []
         data = list(self.context.elements.elems(emphasized=True))
         for node in data:
             add_node = node

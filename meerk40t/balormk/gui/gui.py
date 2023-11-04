@@ -12,9 +12,9 @@ def plugin(service, lifecycle):
             icons8_computer_support,
             icons8_connected,
             icons8_flash_off,
+            icons8_flash_on,
             icons8_light_off,
             icons8_light_on,
-            icons8_flash_on,
         )
 
         from .balorconfig import BalorConfiguration

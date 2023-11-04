@@ -253,7 +253,10 @@ class Button:
             buffer=2,
         )
         self.bitmap_small_disabled = icon.GetBitmap(
-            resize=small_resize, color=Color("grey"), noadjustment=True, buffer=2,
+            resize=small_resize,
+            color=Color("grey"),
+            noadjustment=True,
+            buffer=2,
         )
         self.bitmap_tiny = icon.GetBitmap(
             resize=tiny_resize,
@@ -262,7 +265,10 @@ class Button:
             buffer=1,
         )
         self.bitmap_tiny_disabled = icon.GetBitmap(
-            resize=tiny_resize, color=Color("grey"), noadjustment=True, buffer=1,
+            resize=tiny_resize,
+            color=Color("grey"),
+            noadjustment=True,
+            buffer=1,
         )
         self.bitmap = self.bitmap_large
         self.bitmap_disabled = self.bitmap_large_disabled
