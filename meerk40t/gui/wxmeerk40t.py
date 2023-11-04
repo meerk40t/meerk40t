@@ -118,10 +118,9 @@ class ActionPanel(wx.Panel):
         self.button_go = wx.Button(self, wx.ID_ANY)
         self.icon = icon
         self.fgcolor = fgcolor
-        # Initial resize
-        self.resize_button()
         if bgcolor is not None:
             self.button_go.SetBackgroundColour(bgcolor)
+            self.button_go.SetForegroundColour(bgcolor)
         self.button_go.SetToolTip(tooltip)
         # self.button_go.SetBitmapMargins(0, 0)
         self.action = action
@@ -136,6 +135,8 @@ class ActionPanel(wx.Panel):
             self.button_go.Bind(wx.EVT_RIGHT_DOWN, self.on_button_go_click_right)
 
         self.button_go.Bind(wx.EVT_SIZE, self.on_button_resize)
+        # Initial resize
+        self.resize_button()
         self.resize_job = Job(
             process=self.resize_button,
             job_name=f"_resize_actionpanel_{self.Id}",
@@ -162,10 +163,12 @@ class ActionPanel(wx.Panel):
         # At least 20 px high
         best_size = max(best_size, 20)
         border = 2
-        self.button_go.SetBitmap(
-            self.icon.GetBitmap(color=self.fgcolor, resize=best_size, buffer=border)
-        )
-        self.button_go.SetBitmapFocus(self.icon.GetBitmap(resize=best_size, buffer=border))
+        bmp = self.icon.GetBitmap(color=self.fgcolor, resize=best_size, buffer=border)
+        # s = bmp.Size
+        # print(f"Was asking for {best_size}x{best_size}, got {s[0]}x{s[1]}")
+        self.button_go.SetBitmap(bmp)
+        bmp = self.icon.GetBitmap(resize=best_size, buffer=border)
+        self.button_go.SetBitmapFocus(bmp)
 
     def on_button_resize(self, event):
         self.context.schedule(self.resize_job)
