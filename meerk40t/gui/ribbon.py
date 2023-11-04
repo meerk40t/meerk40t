@@ -1719,6 +1719,7 @@ class Art:
         xpos = 0
         ypos = 0
         has_page_header = ribbon.visible_pages() > 1
+        dc.SetFont(self.default_font)
         for pn, page in enumerate(ribbon.pages):
             if not page.visible:
                 continue
@@ -1727,6 +1728,16 @@ class Art:
             # if bigger than default then extend width
             if has_page_header:
                 line_width, line_height = dc.GetTextExtent(page.label)
+                if line_height + 4 > self.tab_height:
+                    self.tab_height = line_height + 4
+                    for former in range(0, pn):
+                        former_page = ribbon.pages[former]
+                        t_x, t_y, t_x1, t_y1 = former_page.tab_position
+                        if horizontal:
+                            t_y1 = t_y + self.tab_height * 2
+                        else:
+                            t_x1 = t_x + self.tab_height * 2
+                        former_page.tab_position = (t_x, t_y, t_x1, t_y1)
 
                 tabwidth = max(line_width + 2 * self.tab_tab_buffer, self.tab_width)
                 if horizontal:
