@@ -44,6 +44,7 @@ def register_panel_color(window, context):
     window.on_pane_create(pane)
     context.register("pane/debug_color", pane)
 
+
 def register_panel_icon(window, context):
     pane = (
         aui.AuiPaneInfo()
@@ -60,6 +61,7 @@ def register_panel_icon(window, context):
     pane.submenu = "_ZZ_" + _("Debug")
     window.on_pane_create(pane)
     context.register("pane/debug_icons", pane)
+
 
 class DebugTreePanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -263,7 +265,7 @@ class DebugColorPanel(ScrolledPanel):
                 self, wx.ID_ANY, size=wx.Size(32, 32), style=wx.SB_RAISED
             )
             box.SetBackgroundColour(col)
-            box.SetToolTip(prop)
+            box.SetToolTip(entry)
             lbl = wx.StaticText(self, wx.ID_ANY, entry)
             lbl.SetFont(font)
             lbl.SetMinSize(wx.Size(75, -1))
@@ -283,6 +285,7 @@ class DebugColorPanel(ScrolledPanel):
     def pane_hide(self, *args):
         return
 
+
 class DebugIconPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__
@@ -294,15 +297,20 @@ class DebugIconPanel(wx.Panel):
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         choose_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        
+
         lbl = wx.StaticText(self, wx.ID_ANY, "Pick icon")
-        
+
         self.icon_list = list()
         for entry in dir(mkicons):
             # print (entry)
             if entry.startswith("icon"):
                 self.icon_list.append(entry)
-        self.combo_icons = wx.ComboBox(self, wx.ID_ANY, choices = self.icon_list, style=wx.CB_SORT | wx.CB_READONLY | wx.CB_DROPDOWN)
+        self.combo_icons = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=self.icon_list,
+            style=wx.CB_SORT | wx.CB_READONLY | wx.CB_DROPDOWN,
+        )
         choose_sizer.Add(lbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         choose_sizer.Add(self.combo_icons, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_main.Add(choose_sizer, 0, wx.EXPAND, 0)
@@ -312,7 +320,7 @@ class DebugIconPanel(wx.Panel):
         sizer_main.Fit(self)
         self.combo_icons.Bind(wx.EVT_COMBOBOX, self.on_combo)
         self.Layout()
-        
+
     def on_combo(self, event):
         idx = self.combo_icons.GetSelection()
         if idx < 0:
