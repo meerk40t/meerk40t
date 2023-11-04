@@ -968,7 +968,7 @@ class Art:
                 i += 1
         dc.DestroyClippingRegion()
 
-    def layout(self, dc: wx.DC):
+    def layout(self, dc: wx.DC, button):
         self.button_layout(dc, self.parent.button)
 
     def button_layout(self, dc: wx.DC, button):
