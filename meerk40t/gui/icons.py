@@ -1,5 +1,5 @@
 import time
-
+import platform
 import wx
 from wx.lib.embeddedimage import PyEmbeddedImage as py_embedded_image
 
@@ -543,7 +543,8 @@ class VectorIcon:
         if cache_id in _CACHE:
             # print(f"Cache Hit for {cache_id}")
             return _CACHE[cache_id]
-        bmp = wx.Bitmap.FromRGBA(final_icon_width, final_icon_height, 0,0,0,0)
+        wincol = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
+        bmp = wx.Bitmap.FromRGBA(final_icon_width, final_icon_height, wincol.red, wincol.blue, wincol.green, 0)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
         # dc.SetBackground(self._background)
