@@ -112,7 +112,11 @@ class LaserPanel(wx.Panel):
 
         # Devices Initialize.
         self.available_devices = self.context.kernel.services("device")
-
+        # self.color_arm_active = wx.Colour("STEEL BLUE")
+        self.color_arm_active = wx.Colour("RED")
+        self.color_arm_inactive = wx.Colour("GREEN")
+        self.color_go_active = wx.GREEN
+        self.color_go_inactive = wx.Colour("DARK SLATE GREY")
         self.selected_device = self.context.device
         index = -1
         for i, s in enumerate(self.available_devices):
@@ -155,10 +159,10 @@ class LaserPanel(wx.Panel):
                 resize=default_icon_size,
             )
         )
-        self.button_start.SetBackgroundColour(wx.Colour(0, 192, 0))
+        self.button_start.SetBackgroundColour(self.color_go_active)
         self.button_start.SetForegroundColour(wx.WHITE)
         self.button_start.SetFocusColour(wx.BLACK)
-        self.button_start.SetDisabledBackgroundColour(wx.Colour(128, 192, 128))
+        # self.button_start.SetDisabledBackgroundColour(wx.Colour("FOREST GREEN"))
 
         sizer_control.Add(self.button_start, 1, wx.EXPAND, 0)
 
@@ -459,15 +463,18 @@ class LaserPanel(wx.Panel):
                 self.arm_toggle.Show(True)
                 self.Layout()
             if self.arm_toggle.GetValue():
-                self.arm_toggle.SetBackgroundColour(wx.RED)
+                self.arm_toggle.SetBackgroundColour(self.color_arm_active)
+                self.button_start.SetBackgroundColour(self.color_go_active)
                 self.button_start.Enable(True)
             else:
-                self.arm_toggle.SetBackgroundColour(wx.GREEN)
+                self.arm_toggle.SetBackgroundColour(self.color_arm_inactive)
+                self.button_start.SetBackgroundColour(self.color_go_inactive)
                 self.button_start.Enable(False)
         else:
             if self.arm_toggle.Shown:
                 self.arm_toggle.Show(False)
                 self.Layout()
+            self.button_start.SetBackgroundColour(self.color_go_active)
             self.button_start.Enable(True)
 
     def on_check_arm(self, event):
