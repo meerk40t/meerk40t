@@ -120,7 +120,6 @@ class ActionPanel(wx.Panel):
         self.fgcolor = fgcolor
         if bgcolor is not None:
             self.button_go.SetBackgroundColour(bgcolor)
-            self.button_go.SetForegroundColour(bgcolor)
         self.button_go.SetToolTip(tooltip)
         # self.button_go.SetBitmapMargins(0, 0)
         self.action = action
