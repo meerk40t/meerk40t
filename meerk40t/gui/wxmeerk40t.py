@@ -153,6 +153,8 @@ class ActionPanel(wx.Panel):
             self.action_right()
 
     def resize_button(self):
+        # dont set any bitmap
+        return
         size = self.button_go.Size
         minsize = min(size[0], size[1]) 
         # Leave some room at the edges, 
