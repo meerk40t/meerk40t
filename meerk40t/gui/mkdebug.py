@@ -3,7 +3,7 @@ import time
 import wx
 from wx import aui
 
-from meerk40t.gui.wxutils import StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, ScrolledPanel
 
 _ = wx.GetTranslation
 
@@ -124,11 +124,11 @@ class DebugTreePanel(wx.Panel):
         self.txt_first.SetValue(txt3)
 
 
-class DebugColorPanel(wx.Panel):
+class DebugColorPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
+        ScrolledPanel.__init__(self, *args, **kwds)
         from copy import copy
 
         self.context = context
@@ -162,9 +162,103 @@ class DebugColorPanel(wx.Panel):
                 infosizer.Add(lbl, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
 
                 sizer_line.Add(infosizer, 1, wx.EXPAND, 0)
+        count = 1000  # New line
+        coldb = (
+            "AQUAMARINE",
+            "FIREBRICK",
+            "MEDIUM FOREST GREEN",
+            "RED",
+            "BLACK",
+            "FOREST GREEN",
+            "MEDIUM GOLDENROD",
+            "SALMON",
+            "BLUE",
+            "GOLD",
+            "MEDIUM ORCHID",
+            "SEA GREEN",
+            "BLUE VIOLET",
+            "GOLDENROD",
+            "MEDIUM SEA GREEN",
+            "SIENNA",
+            "BROWN",
+            "GREY",
+            "MEDIUM SLATE BLUE",
+            "SKY BLUE",
+            "CADET BLUE",
+            "GREEN",
+            "MEDIUM SPRING GREEN",
+            "SLATE BLUE",
+            "CORAL",
+            "GREEN YELLOW",
+            "MEDIUM TURQUOISE",
+            "SPRING GREEN",
+            "CORNFLOWER BLUE",
+            "INDIAN RED",
+            "MEDIUM VIOLET RED",
+            "STEEL BLUE",
+            "CYAN",
+            "KHAKI",
+            "MIDNIGHT BLUE",
+            "TAN",
+            "DARK GREY",
+            "LIGHT BLUE",
+            "NAVY",
+            "THISTLE",
+            "DARK GREEN",
+            "LIGHT GREY",
+            "ORANGE",
+            "TURQUOISE",
+            "DARK OLIVE GREEN",
+            "LIGHT STEEL BLUE",
+            "ORANGE RED",
+            "VIOLET",
+            "DARK ORCHID",
+            "LIME GREEN",
+            "ORCHID",
+            "VIOLET RED",
+            "DARK SLATE BLUE",
+            "MAGENTA",
+            "PALE GREEN",
+            "WHEAT",
+            "DARK SLATE GREY",
+            "MAROON",
+            "PINK",
+            "WHITE",
+            "DARK TURQUOISE",
+            "MEDIUM AQUAMARINE",
+            "PLUM",
+            "YELLOW",
+            "DIM GREY",
+            "MEDIUM BLUE",
+            "PURPLE",
+            "YELLOW GREEN",
+        )
+        for entry in coldb:
+            count += 1
+            if count >= 5:
+                sizer_line = wx.BoxSizer(wx.HORIZONTAL)
+                sizer_main.Add(sizer_line, 0, wx.EXPAND, 0)
+                count = 0
+
+            col = wx.Colour(entry)
+            infosizer = wx.BoxSizer(wx.VERTICAL)
+            box = wx.StaticBitmap(
+                self, wx.ID_ANY, size=wx.Size(32, 32), style=wx.SB_RAISED
+            )
+            box.SetBackgroundColour(col)
+            box.SetToolTip(prop)
+            lbl = wx.StaticText(self, wx.ID_ANY, entry)
+            lbl.SetFont(font)
+            lbl.SetMinSize(wx.Size(75, -1))
+            infosizer.Add(box, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+            infosizer.Add(lbl, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+
+            sizer_line.Add(infosizer, 1, wx.EXPAND, 0)
+
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
         self.Layout()
+        self.SetupScrolling()
 
     def pane_show(self, *args):
         return
