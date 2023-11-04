@@ -51,7 +51,8 @@ class Themes(Service):
         tp = self._theme_properties
         # Just a scaffold, will be extended later
         # tp["button"] = wx.Button
-        tp["pause_bg"] = wx.Colour("ORANGE") if self._dark else wx.Colour("YELLOW")
+        tp["pause_bg"] = wx.Colour(200, 200, 0)
+        # wx.Colour("ORANGE") if self._dark else wx.Colour("YELLOW")
         tp["pause_fg"] = wx.Colour("WHITE") if self._dark else wx.Colour("BLACK")
         # Start Button
         tp["start_bg"] = wx.Colour(0, 127, 0)
