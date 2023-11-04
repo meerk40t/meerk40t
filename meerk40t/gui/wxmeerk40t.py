@@ -123,7 +123,7 @@ class ActionPanel(wx.Panel):
         if bgcolor is not None:
             self.button_go.SetBackgroundColour(bgcolor)
         self.button_go.SetToolTip(tooltip)
-        self.button_go.SetBitmapMargins(0, 0)
+        # self.button_go.SetBitmapMargins(0, 0)
         self.action = action
         self.action_right = action_right
 
@@ -178,7 +178,7 @@ class GoPanel(ActionPanel):
         kwds["style"] = kwds.get("style", 0)
         fgcol = wx.WHITE
         bgcol = wx.Colour(0, 127, 0)
-        res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        # res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         # if platform.system() == "Darwin" and not res:
         #     fgcol = None
         #     bgcol = None
