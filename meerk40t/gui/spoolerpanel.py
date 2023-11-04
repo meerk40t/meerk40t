@@ -110,15 +110,17 @@ class SpoolerPanel(wx.Panel):
         self.button_stop.SetToolTip(_("Stop the laser"))
         self.button_stop.SetBitmap(
             icons8_emergency_stop_button.GetBitmap(
-                resize=STD_ICON_SIZE / 2, color=wx.WHITE, keepalpha=True
+                resize=STD_ICON_SIZE / 2,
+                color=self.context.themes.get("stop_fg"),
+                keepalpha=True,
             )
         )
         self.button_stop.SetBitmapFocus(
             icons8_emergency_stop_button.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
-        self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
-        self.button_stop.SetForegroundColour(wx.WHITE)
-        self.button_stop.SetFocusColour(wx.BLACK)
+        self.button_stop.SetBackgroundColour(self.context.themes.get("stop_bg"))
+        self.button_stop.SetForegroundColour(self.context.themes.get("stop_fg"))
+        self.button_stop.SetFocusColour(self.context.themes.get("stop_fg_focus"))
 
         self.list_job_spool = wx.ListCtrl(
             self.win_top,
