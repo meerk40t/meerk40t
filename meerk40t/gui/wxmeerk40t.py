@@ -153,8 +153,6 @@ class ActionPanel(wx.Panel):
             self.action_right()
 
     def resize_button(self):
-        # dont set any bitmap
-        return
         size = self.button_go.Size
         minsize = min(size[0], size[1]) 
         # Leave some room at the edges, 
@@ -182,10 +180,10 @@ class GoPanel(ActionPanel):
         kwds["style"] = kwds.get("style", 0)
         fgcol = wx.WHITE
         bgcol = wx.Colour(0, 127, 0)
-        # res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        # if platform.system() == "Darwin" and not res:
-        #     fgcol = None
-        #     bgcol = None
+        res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        if platform.system() == "Darwin" and not res:
+            fgcol = None
+            bgcol = None
         ActionPanel.__init__(
             self,
             context=context,
