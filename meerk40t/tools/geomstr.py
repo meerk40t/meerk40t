@@ -422,7 +422,7 @@ class StaticBeam:
                     if t1 in (0, 1) and t2 in (0, 1):
                         continue
                     pt_intersect = g.position(q, t1)
-                    if y != pt_intersect.imag:
+                    if y < pt_intersect.imag:
                         events.append((pt_intersect, 0, (q, r)))
                     events.sort(key=self.sort_key)
             except AttributeError:
