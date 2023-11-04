@@ -156,7 +156,9 @@ class ActionPanel(wx.Panel):
         self.button_go.SetBitmap(
             self.icon.GetBitmap(color=self.fgcolor, resize=best_size, buffer=border)
         )
-        self.button_go.SetBitmapFocus(self.icon.GetBitmap(resize=best_size, buffer=border))
+        self.button_go.SetBitmapFocus(
+            self.icon.GetBitmap(resize=best_size, buffer=border)
+        )
 
     def on_button_resize(self, event):
         self.context.schedule(self.resize_job)

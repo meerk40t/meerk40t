@@ -4,16 +4,16 @@ from wx import aui
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
+    icon_closed_door,
+    icon_open_door,
+    icon_update_plan,
     icons8_delete,
     icons8_emergency_stop_button,
     icons8_gas_industry,
-    icon_update_plan,
     icons8_laser_beam_hazard,
     icons8_pause,
     icons8_pentagon,
     icons8_save,
-    icon_open_door,
-    icon_closed_door,
 )
 from meerk40t.gui.navigationpanels import Drag, Jog, MovePanel
 from meerk40t.gui.wxutils import (
@@ -36,7 +36,7 @@ def register_panel_laser(window, context):
     # jog_drag = wx.Panel(window, wx.ID_ANY)
     jog_drag = ScrolledPanel(window, wx.ID_ANY)
     jog_drag.SetupScrolling()
-    iconsize = STD_ICON_SIZE/2
+    iconsize = STD_ICON_SIZE / 2
     jog_panel = Jog(jog_drag, wx.ID_ANY, context=context, icon_size=iconsize)
     drag_panel = Drag(jog_drag, wx.ID_ANY, context=context, icon_size=iconsize)
     main_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -166,10 +166,7 @@ class LaserPanel(wx.Panel):
         self.button_pause.SetForegroundColour(wx.BLACK)  # Dark Mode correction.
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
         self.button_pause.SetBitmap(
-            icons8_pause.GetBitmap(
-                resize=default_icon_size,
-                use_theme=False
-            )
+            icons8_pause.GetBitmap(resize=default_icon_size, use_theme=False)
         )
         self.button_pause.SetBackgroundColour(wx.Colour(255, 255, 0))
         sizer_control.Add(self.button_pause, 1, wx.EXPAND, 0)
@@ -600,9 +597,7 @@ class JobPanel(wx.Panel):
 
         self.button_clear = wx.Button(self, wx.ID_ANY, _("Clear"))
         self.button_clear.SetToolTip(_("Clear locally defined plan"))
-        self.button_clear.SetBitmap(
-            icons8_delete.GetBitmap(resize=default_icon_size)
-        )
+        self.button_clear.SetBitmap(icons8_delete.GetBitmap(resize=default_icon_size))
         sizer_control_update.Add(self.button_clear, 1, 0, 0)
 
         self.button_update = wx.Button(self, wx.ID_ANY, _("Update"))
@@ -614,9 +609,7 @@ class JobPanel(wx.Panel):
 
         self.button_save_file = wx.Button(self, wx.ID_ANY, _("Save"))
         self.button_save_file.SetToolTip(_("Save the job"))
-        self.button_save_file.SetBitmap(
-            icons8_save.GetBitmap(resize=default_icon_size)
-        )
+        self.button_save_file.SetBitmap(icons8_save.GetBitmap(resize=default_icon_size))
         sizer_control_update.Add(self.button_save_file, 1, 0, 0)
 
         sizer_source = wx.BoxSizer(wx.HORIZONTAL)

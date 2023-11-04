@@ -292,7 +292,7 @@ class DefaultOperationWidget(StatusBarWidget):
         self.Show(True)
 
     def execute_on(self, targetop, use_parent):
-        targetdata= []
+        targetdata = []
         data = list(self.context.elements.elems(emphasized=True))
         for node in data:
             add_node = node

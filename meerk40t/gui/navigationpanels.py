@@ -12,39 +12,39 @@ from meerk40t.gui.icons import (
     STD_ICON_SIZE,
     EmptyIcon,
     get_default_icon_size,
+    icon_circled_1,
     icon_corner1,
     icon_corner2,
     icon_corner3,
     icon_corner4,
+    icon_fence_closed,
+    icon_fence_open,
+    icons8_caret_down,
+    icons8_caret_left,
+    icons8_caret_right,
+    icons8_caret_up,
     icons8_center_of_gravity,
     icons8_compress,
     icons8_delete,
-    icons8_caret_down,
     icons8_down,
     icons8_down_left,
     icons8_down_right,
     icons8_enlarge,
     icons8_home_filled,
     icons8_laser_beam,
-    icons8_caret_left,
     icons8_left,
-    icon_circled_1,
     icons8_lock,
     icons8_move,
-    icons8_unlock,
     icons8_pentagon,
     icons8_pentagon_squared,
-    icons8_caret_right,
     icons8_right,
     icons8_rotate_left,
     icons8_rotate_right,
     icons8_square_border,
+    icons8_unlock,
     icons8_up,
     icons8_up_left,
     icons8_up_right,
-    icons8_caret_up,
-    icon_fence_open,
-    icon_fence_closed,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.position import PositionPanel
@@ -475,8 +475,9 @@ class Drag(wx.Panel):
             wx.EVT_RIGHT_DOWN, self.on_button_lock_br
         )
         self.button_align_center.Bind(wx.EVT_RIGHT_DOWN, self.on_button_lock_center)
-        self.button_align_first_position.Bind(wx.EVT_BUTTON, self.on_button_align_first_position)
-
+        self.button_align_first_position.Bind(
+            wx.EVT_BUTTON, self.on_button_align_first_position
+        )
 
         # end wxGlade
         self.elements = None
@@ -1703,9 +1704,7 @@ class Transform(wx.Panel):
         self.button_translate_left = wx.BitmapButton(
             self, wx.ID_ANY, icons8_left.GetBitmap()
         )
-        self.button_reset = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_delete.GetBitmap()
-        )
+        self.button_reset = wx.BitmapButton(self, wx.ID_ANY, icons8_delete.GetBitmap())
         self.button_translate_right = wx.BitmapButton(
             self, wx.ID_ANY, icons8_right.GetBitmap()
         )

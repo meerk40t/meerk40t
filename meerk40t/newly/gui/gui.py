@@ -50,7 +50,6 @@ def plugin(service, lifecycle):
             icons8_connected,
             icons8_file,
             icons8_move,
-            icons8_circled_play,
         )
 
         _ = service.kernel.translation

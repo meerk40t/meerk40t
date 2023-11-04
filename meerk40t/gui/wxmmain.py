@@ -30,9 +30,10 @@ from meerk40t.kernel import lookup_listener, signal_listener
 
 from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from ..svgelements import Color, Matrix, Path
-from .icons import (
+from .icons import (  # icon_duplicate,
     STD_ICON_SIZE,
     PyEmbeddedImage,
+    icon_bmap_text,
     icon_cag_common,
     icon_cag_subtract,
     icon_cag_union,
@@ -69,12 +70,10 @@ from .icons import (
     icons8_paste,
     icons8_pencil_drawing,
     icons8_place_marker,
-    # icon_duplicate,
     icons8_rotate_left,
     icons8_rotate_right,
     icons8_save,
     icons8_scissors,
-    icon_bmap_text,
     icons8_ungroup_objects,
     icons8_user_location,
     icons8_vector,

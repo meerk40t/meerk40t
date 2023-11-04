@@ -3,17 +3,16 @@ import wx
 from meerk40t.core.elements.element_types import elem_group_nodes, op_nodes
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
+    EmptyIcon,
+    icon_effect_hatch,
+    icon_effect_wobble,
     icon_mk_ellipse,
     icon_mk_polyline,
     icon_mk_rectangular,
-    icon_effect_hatch,
-    icon_effect_wobble,
     icons8_direction,
     icons8_file,
     icons8_group_objects,
     icons8_home_filled,
-    icons8_home_filled,
-    icons8_image,
     icons8_image,
     icons8_input_20,
     icons8_laser_beam,
@@ -25,7 +24,6 @@ from meerk40t.gui.icons import (
     icons8_text,
     icons8_timer_20,
     icons8_vector,
-    EmptyIcon,
 )
 
 _ = wx.GetTranslation

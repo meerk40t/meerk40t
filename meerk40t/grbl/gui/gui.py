@@ -19,9 +19,9 @@ def plugin(service, lifecycle):
             icons8_connected,
             icons8_emergency_stop_button,
             icons8_flash_off,
+            icons8_flash_on,
             icons8_info,
             icons8_pause,
-            icons8_flash_on,
         )
 
         service.register("window/GRBLController", GRBLController)

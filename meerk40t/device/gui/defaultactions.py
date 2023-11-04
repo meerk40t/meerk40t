@@ -89,9 +89,7 @@ class DefaultActionPanel(wx.Panel):
         self.button_del_prepend.SetBitmap(
             icons8_remove_25.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
-        self.button_up_prepend.SetBitmap(
-            icons8_up.GetBitmap(resize=STD_ICON_SIZE / 2)
-        )
+        self.button_up_prepend.SetBitmap(icons8_up.GetBitmap(resize=STD_ICON_SIZE / 2))
         self.button_down_prepend.SetBitmap(
             icons8_down.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
@@ -108,9 +106,7 @@ class DefaultActionPanel(wx.Panel):
         self.button_del_append.SetBitmap(
             icons8_remove_25.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
-        self.button_up_append.SetBitmap(
-            icons8_up.GetBitmap(resize=STD_ICON_SIZE / 2)
-        )
+        self.button_up_append.SetBitmap(icons8_up.GetBitmap(resize=STD_ICON_SIZE / 2))
         self.button_down_append.SetBitmap(
             icons8_down.GetBitmap(resize=STD_ICON_SIZE / 2)
         )

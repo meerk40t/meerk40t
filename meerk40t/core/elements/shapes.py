@@ -238,7 +238,13 @@ def init_commands(kernel):
         input_type=(None, "elements"),
     )
     def effect_hatch(
-        command, data=None, angle=None, angle_delta=None, distance=None, post=None, **kwargs
+        command,
+        data=None,
+        angle=None,
+        angle_delta=None,
+        distance=None,
+        post=None,
+        **kwargs,
     ):
         """
         Add an effect hatch object
