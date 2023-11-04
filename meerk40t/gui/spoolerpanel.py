@@ -971,15 +971,18 @@ class SpoolerPanel(wx.Panel):
             self.list_job_history.SetItem(list_id, col_id, new_data)
 
     def set_pause_color(self):
-        new_color = None
+        new_bg_color = None
+        new_fg_color = None
         new_caption = _("Pause")
         try:
             if self.context.device.driver.paused:
-                new_color = wx.Colour("ORANGE")
+                new_bg_color = wx.Colour("ORANGE")
+                new_fg_color = wx.WHITE
                 new_caption = _("Resume")
         except AttributeError:
             pass
-        self.button_pause.SetBackgroundColour(new_color)
+        self.button_pause.SetBackgroundColour(new_bg_color)
+        self.button_pause.SetForegroundColour(new_fg_color)
         self.button_pause.SetLabelText(new_caption)
 
     @signal_listener("pause")

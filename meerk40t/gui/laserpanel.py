@@ -167,14 +167,10 @@ class LaserPanel(wx.Panel):
         sizer_control.Add(self.button_start, 1, wx.EXPAND, 0)
 
         self.button_pause = wx.Button(self, wx.ID_ANY, _("Pause"))
-        self.button_pause.SetBackgroundColour(wx.Colour("ORANGE"))
-        self.button_pause.SetForegroundColour(wx.WHITE) 
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
         self.button_pause.SetBitmap(
             icons8_pause.GetBitmap(
                 resize=default_icon_size,
-                color=wx.WHITE,
-                use_theme=False
             )
         )
         sizer_control.Add(self.button_pause, 1, wx.EXPAND, 0)
@@ -440,15 +436,18 @@ class LaserPanel(wx.Panel):
         self.update_override_controls()
 
     def set_pause_color(self):
-        new_color = None
+        new_bg_color = None
+        new_fg_color = None
         new_caption = _("Pause")
         try:
             if self.context.device.driver.paused:
-                new_color = wx.Colour("ORANGE")
+                new_bg_color = wx.Colour("ORANGE")
+                new_fg_color = wx.WHITE
                 new_caption = _("Resume")
         except AttributeError:
             pass
-        self.button_pause.SetBackgroundColour(new_color)
+        self.button_pause.SetBackgroundColour(new_bg_color)
+        self.button_pause.SetForegroundColour(new_fg_color)
         self.button_pause.SetLabelText(new_caption)
 
     @signal_listener("pause")
