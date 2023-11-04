@@ -115,7 +115,7 @@ class LaserPanel(wx.Panel):
         # self.color_arm_active = wx.Colour("STEEL BLUE")
         self.color_arm_active = wx.Colour("RED")
         self.color_arm_inactive = wx.Colour("GREEN")
-        self.color_go_active = wx.GREEN
+        self.color_go_active = wx.Colour(0, 127, 0)
         self.color_go_inactive = wx.Colour("DARK SLATE GREY")
         self.selected_device = self.context.device
         index = -1
