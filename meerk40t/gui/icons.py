@@ -434,11 +434,15 @@ class EmptyIcon:
 
 
 class VectorIcon:
-    def __init__(self, fill, stroke=None, edge=0):
+    def __init__(self, fill, stroke=None, edge=0, strokewidth=None):
         self.list_fill = []
         self.list_stroke = []
         # Intentional edge
         self.edge = edge
+        if strokewidth is None:
+            self.strokewidth = 2
+        else:
+            self.strokewidth = strokewidth
         if not fill:
             pass
         elif isinstance(fill, str):
@@ -456,6 +460,7 @@ class VectorIcon:
         self._pen = wx.Pen()
         self._brush = wx.Brush()
         self._background = wx.Brush()
+       
 
     def light_mode(self, color):
         if color is None:
@@ -467,7 +472,7 @@ class VectorIcon:
         self._pen.SetColour(target)
         self._brush.SetColour(target)
         self._background.SetColour(wx.WHITE)
-        self._pen.SetWidth(2)
+        self._pen.SetWidth(self.strokewidth)
 
     def dark_mode(self, color):
         if color is None:
@@ -479,7 +484,7 @@ class VectorIcon:
         self._pen.SetColour(target)
         self._brush.SetColour(target)
         self._background.SetColour(wx.BLACK)
-        self._pen.SetWidth(2)
+        self._pen.SetWidth(self.strokewidth)
 
     def GetBitmap(
         self,
@@ -587,7 +592,7 @@ class VectorIcon:
         path_width += 2 * self.edge
         path_height += 2 * self.edge
 
-        stroke_buffer = 2
+        stroke_buffer = self.strokewidth
         path_width += 2 * stroke_buffer
         path_height += 2 * stroke_buffer
 
@@ -2476,17 +2481,20 @@ icon_open_door = VectorIcon(
     fill=(),
     stroke=(
         "M 0 20 L 60 0 L 60 120 L 0 100 L 0 20",
-        "M 70 20 h 30 v 80 h -30" "M 45 60 a 3,5, 0 1,0 1,0",
+        "M 70 20 h 30 v 80 h -30",
+        "M 45 60 a 3,5, 0 1,0 1,0",
     ),
+    strokewidth=10,
 )
 
 icon_closed_door = VectorIcon(
     fill=(),
     stroke=(
         "M 0 0 h 100 v 120 h -100 v -120",
-        "M 10 10 h 80 v 110 h -80 v -110",
+        "M 15 15 h 70 v 105 h -70 v -105",
         "M 70 60 a 5,5, 0 1,0 1,0",
     ),
+    strokewidth=10,
 )
 
 icon_circled_1 = VectorIcon(
