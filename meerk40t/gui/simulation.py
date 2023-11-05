@@ -39,7 +39,7 @@ from .icons import (
     icons8_route,
     icons8_stop_gesture_20,
     icons8_system_task_20,
-    icons8_timer_20,
+    icon_timer,
 )
 from .laserrender import DRAW_MODE_BACKGROUND, LaserRender
 from .mwindow import MWindow
@@ -110,7 +110,7 @@ class OperationsPanel(wx.Panel):
             ["beep", icons8_bell_20],
             ["interrupt", icons8_stop_gesture_20],
             ["quit", icons8_close_window_20],
-            ["wait", icons8_timer_20],
+            ["wait", icon_timer],
             ["home", icons8_home_filled],
             ["goto", icons8_return_20],
             ["origin", icons8_return_20],

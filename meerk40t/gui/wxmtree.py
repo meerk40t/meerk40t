@@ -39,7 +39,7 @@ from .icons import (
     icons8_smartphone_ram_50,
     icons8_stop_gesture_20,
     icons8_system_task_20,
-    icons8_timer_20,
+    icon_timer,
     icons8_warning_shield_20,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
@@ -516,7 +516,7 @@ class ShadowTree:
             "console beep": icons8_bell_20,
             "console interrupt": icons8_stop_gesture_20,
             "console quit": icons8_close_window_20,
-            "util wait": icons8_timer_20,
+            "util wait": icon_timer,
             "util home": icons8_home_filled,
             "util goto": icons8_return_20,
             "util output": icons8_output_20,

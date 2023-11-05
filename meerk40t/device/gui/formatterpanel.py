@@ -22,7 +22,7 @@ from meerk40t.gui.icons import (
     icons8_laserbeam_weak,
     icons8_system_task_20,
     icons8_text,
-    icons8_timer_20,
+    icon_timer,
     icons8_vector,
 )
 
@@ -43,7 +43,7 @@ class FormatterPanel(wx.Panel):
         self.context = context
         self.data = {}
         images = {
-            "util wait": icons8_timer_20,
+            "util wait": icon_timer,
             "util home": icons8_home_filled,
             "util goto": icons8_return_20,
             "util output": icons8_output_20,
