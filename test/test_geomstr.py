@@ -66,7 +66,13 @@ def draw_geom(segments, min_x, min_y, max_x, max_y, buffer=0, filename="test.png
         if line[2].real == TYPE_POINT:
             f = line[0]
             draw.ellipse(
-                (f.real - 3 - min_x, f.imag - 3 - min_y, f.real + 3 - min_x, f.imag + 3 - min_y), fill="#FF0000"
+                (
+                    f.real - 3 - min_x,
+                    f.imag - 3 - min_y,
+                    f.real + 3 - min_x,
+                    f.imag + 3 - min_y,
+                ),
+                fill="#FF0000",
             )
         elif line[2].real == TYPE_LINE:
             # Draw raw segments.
@@ -1440,7 +1446,7 @@ class TestGeomstr(unittest.TestCase):
                 )
             t = time.time()
             sb = StaticBeam(g)
-            sb.compute_beam()
+            sb.compute_beam_brute()
             intersections = sb.intersections
             print(f"Time: {time.time() - t}")
             try:
