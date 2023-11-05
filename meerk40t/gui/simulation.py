@@ -35,10 +35,10 @@ from .icons import (
     icons8_laser_beam_hazard,
     icons8_output_20,
     icons8_pause,
-    icons8_return_20,
+    icon_return,
     icons8_route,
     icons8_stop_gesture_20,
-    icons8_system_task_20,
+    icon_console,
     icon_timer,
 )
 from .laserrender import DRAW_MODE_BACKGROUND, LaserRender
@@ -112,13 +112,13 @@ class OperationsPanel(wx.Panel):
             ["quit", icons8_close_window_20],
             ["wait", icon_timer],
             ["home", icons8_home_filled],
-            ["goto", icons8_return_20],
-            ["origin", icons8_return_20],
+            ["goto", icon_return],
+            ["origin", icon_return],
             ["output", icons8_output_20],
             ["input", icons8_input_20],
             ["cutcode", icons8_laser_beam_hazard],
             # Intentionally the last...
-            ["console", icons8_system_task_20],
+            ["console", icon_console],
         ]
         self.options_images = wx.ImageList()
         self.options_images.Create(width=iconsize, height=iconsize)

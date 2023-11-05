@@ -9,9 +9,9 @@ from meerk40t.gui.icons import (
     icons8_input_20,
     icons8_output_20,
     icons8_remove_25,
-    icons8_return_20,
+    icon_return,
     icons8_stop_gesture_20,
-    icons8_system_task_20,
+    icon_console,
     icon_timer,
     icons8_up,
 )
@@ -42,16 +42,16 @@ class DefaultActionPanel(wx.Panel):
         )
         self.default_images = [
             ["console home -f", icons8_home_filled],
-            ["console move_abs", icons8_return_20],
+            ["console move_abs", icon_return],
             ["console beep", icons8_bell_20],
             ["console interrupt", icons8_stop_gesture_20],
             ["console quit", icons8_close_window_20],
             ["util wait", icon_timer],
             ["util home", icons8_home_filled],
-            ["util goto", icons8_return_20],  # icons8_visit_20
+            ["util goto", icon_return],  # icons8_visit_20
             ["util output", icons8_output_20],
             ["util input", icons8_input_20],
-            ["util console", icons8_system_task_20],
+            ["util console", icon_console],
         ]
         self.prepend_ops = []
         self.append_ops = []

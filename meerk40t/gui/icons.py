@@ -1175,7 +1175,7 @@ icon_meerk40t = PyEmbeddedImage(
 
 # ----------------------------------------------------------------------
 
-icons8_system_task_20 = PyEmbeddedImage(
+icon_console = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
     b"TElEQVQ4ja3UzStEURjH8c9goWyxY1jITkrs8AewoPgLSLKztLJR/gEpxcbWwsbWhrLwlh3K"
     b"S40lKYlmIxbnjJm57ryU+dXt3OeeX9/znOc852bQiS6N0VMG1zhqEHCsCR9YRf4foHxkfLTE"
@@ -1306,15 +1306,6 @@ icons8_stop_gesture_20 = PyEmbeddedImage(
     b"wAaSpUSKAu/xiiZsx/SvkVXLaFPSOEZvEQl1C+Yxp8ZwjbYYsAG8F0qgUlC/FCbQ4eeQJzEs"
     b"KNFKjMCqMIVzQaPSoXNmvQvmczZM4JvyPbFEmGF7mFWmgQ/YF7yov9cn1P5B23nSvF4AAAAA"
     b"SUVORK5CYII="
-)
-
-icons8_return_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"8ElEQVQ4jdXUPUpDQRSG4SdyEcGAiEXAJoWdO0ghWNoIWllJGgu7LCCFdZp0QgKCiL1iFhCx"
-    b"cBcWigTBPyyNaGIxEW4R9V6dQt9qmDnn5YM5M/xHFrAWS7aMexzHkG2hjzaSn0oKmEATNTyg"
-    b"m6HvFmc4wUv6IMEAl3jDcLQefCGbQhl7aGAT5+MKV/CEI0xnSDmDFp6x9FnRIi5wmkH4wS6u"
-    b"hORjmUMlh7AoTEY1R8+3HOKAcMMxuEYpprAkjFwUJtHDdizhDu6EMfoVCep4xXp608ieJ/I8"
-    b"VjGLDanPpJAq6GSUDXEjvOV9POYI8gd4B8NqKf/2uJJfAAAAAElFTkSuQmCC"
 )
 
 icons8_bell_20 = PyEmbeddedImage(
@@ -2815,6 +2806,23 @@ icon_points = VectorIcon(
 icon_timer = VectorIcon(
     fill=(),
     stroke=(
-        "M4.51555 7C3.55827 8.4301 3 10.1499 3 12C3 16.9706 7.02944 21 12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3V6M12 12L8 8",
+        "M 4.51555 7 C 3.55827 8.4301 3 10.1499 3 12 C 3 16.9706 7.02944 21 12 21 C 16.9706 21 21 16.9706 21 12 C 21 7.02944 16.9706 3 12 3 V 6 M 12 12 L8 8",
+    ),
+)
+
+icon_return = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 12.9998 8 L 6 14 L 12.9998 21",
+        "M 6 14 H 28.9938 C 35.8768 14 41.7221 19.6204 41.9904 26.5 C 42.2739 33.7696 36.2671 40 28.9938 40 H 11.9984",
+    ),
+)
+
+icon_console = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 4 26.016 q 0 0.832 0.576 1.408 t 1.44 0.576 h 20 q 0.8 0 1.408-0.576 t 0.576-1.408 v -20 q 0 -0.832 -0.576 -1.408 t -1.408 -0.608 h -20 q -0.832 0 -1.44 0.608 t -0.576 1.408 v 20z",
+        "M 8 8 L 12 12 L 8 16",
+        "M 13 18 h 8",
     ),
 )
