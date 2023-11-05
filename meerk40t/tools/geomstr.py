@@ -571,6 +571,31 @@ class StaticBeam:
         for i, active in enumerate(active_lists):
             self._nb_scan[i, 0 : len(active)] = active
 
+    def points_in_polygon(self, e):
+        if self._nb_scan is None:
+            self.compute_beam_brute()
+        idx = np.searchsorted(np.imag(self._nb_events), np.imag(e))
+        actives = self._nb_scan[idx]
+        line = self.geometry.segments[actives]
+        a = line[:, :, 0]
+        a = np.where(actives == -1, np.nan + np.nan * 1j, a)
+        b = line[:, :, -1]
+        b = np.where(actives == -1, np.nan + np.nan * 1j, b)
+
+        old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
+        try:
+            # If horizontal slope is undefined. But, all x-ints are at x since x0=x1
+            m = (b.imag - a.imag) / (b.real - a.real)
+            y0 = a.imag - (m * a.real)
+            ys = np.reshape(np.repeat(np.imag(e), y0.shape[1]), y0.shape)
+            x_intercepts = np.where(~np.isinf(m), (ys - y0) / m, a.real)
+        finally:
+            np.seterr(**old_np_seterr)
+        xs = np.reshape(np.repeat(np.real(e), y0.shape[1]), y0.shape)
+        results = np.sum(x_intercepts <= xs, axis=1)
+        results %= 2
+        return results
+
     def actives_at(self, value):
         from bisect import bisect
 
