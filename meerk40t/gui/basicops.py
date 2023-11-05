@@ -382,7 +382,10 @@ class BasicOpPanel(wx.Panel):
         if self.operation_sizer:
             self.operation_sizer.Clear()
             self.op_panel.DestroyChildren()
-        self.op_panel.Freeze()
+        try:
+            self.op_panel.Freeze()
+        except RuntimeError:
+            return
         self.operation_sizer = StaticBoxSizer(
             self.op_panel, wx.ID_ANY, _("Operations"), wx.VERTICAL
         )
