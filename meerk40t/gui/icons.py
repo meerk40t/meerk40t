@@ -1465,26 +1465,9 @@ icons8_remove_25 = PyEmbeddedImage(
     b"eINZJ0jhuQp1DEu0WE60jG9UAAAAAElFTkSuQmCC"
 )
 # ----------------------------------------------------------------------
-icons8_visit_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
-    b"iUlEQVQ4ja3UsUvVURQH8M/LtDIQyfJRDS0ZDoKQW2QQtgQVDfontNRiVGMIDjXlEG2Cow29"
-    b"h4pNDWFGa7RUg7a4JErBWyOw4Xce7/bj/d57Zl84cO6553zv93fu79yS1jiNmxiO9VesYruo"
-    b"4FBB/DCeooqjWA7rxRKeRE5H6IqiBygViHgUhxUJ+gsPMZOQ35N95iruJiSzuN+OrBuf0BPq"
-    b"qngs6+WZOKgSuUcitzsl6MoRXsZxvMYtDGIOL/Abz3El6r5gBDVs1QnyjT2Hb+FfwgqmMYlR"
-    b"jQu6Fi3YiJr3dYJ8U3dQDv8nBqIIhvALJ/EjYmXsaoFBrCcEH2S/ykRYb8TOR846TqUEzRTW"
-    b"cCGUzWEN42Hv8AybkVNrpxCuYz5ZD+BG2IkkPh+5HeGtxrg1w1Co7RjjWGyx/xJX90MIb2S/"
-    b"Sh6jsbdvjMkuJJ3nUsTGioryk5LiOy7iLD5G7A72sPAvCqEPn2WzXA6/v1VBs+cpjyncDn9J"
-    b"43E4ECp49T+I6jgW1hZ/AFlFRTnCbQ/nAAAAAElFTkSuQmCC"
-)
 
 
-icons8_line_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAAsTAAALEwEAmpwY"
-    b"AAAAUElEQVR4nO2UsQkAIAwEj+jOruAiFuKQ2qSyEMQvLHJNuuMJ+cCHmFKWgAZUhSwDHZg+"
-    b"TZFsAsPlITsTO7snxZ1dY1vRn7qJUxRF35E+SwkL3b0jER3TDbgAAAAASUVORK5CYII="
-)
-
-icons8_journey_20 = PyEmbeddedImage(
+icon_path = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAAsTAAALEwEAmpwY"
     b"AAAA1klEQVR4nNWUOQ7CMBBFH1TQEDgNHAE4BwQ4QiSWK7AcBVFGIGhzgwS6cI2gkaZwgbEV"
     b"LCS+NI31/TTzvcC/KQJiYA70QsDuQKVV6FptxQbMhGaWugBroBUKWKonBZq2kQsDljtGbgB7"
@@ -2815,4 +2798,28 @@ icon_warning = VectorIcon(
         "[red]M33.631,40.581l-3.348,0l-0.368,-16.449l4.1,0l-0.384,16.449Zm-3.828,5.03c0,-0.609 0.197,-1.113 0.592,-1.514c0.396,-0.4 0.935,-0.601 1.618,-0.601c0.684,0 1.223,0.201 1.618,0.601c0.395,0.401 0.593,0.905 0.593,1.514c0,0.587 -0.193,1.078 -0.577,1.473c-0.385,0.395 -0.929,0.593 -1.634,0.593c-0.705,0 -1.249,-0.198 -1.634,-0.593c-0.384,-0.395 -0.576,-0.886 -0.576,-1.473Z",
     ),
     stroke=(),
+)
+
+icon_marker = VectorIcon(
+    fill=(),
+    stroke=(
+        "M12 13C13.6569 13 15 11.6569 15 10C15 8.34315 13.6569 7 12 7C10.3431 7 9 8.34315 9 10C9 11.6569 10.3431 13 12 13Z",
+        "M12 22C16 18 20 14.4183 20 10C20 5.58172 16.4183 2 12 2C7.58172 2 4 5.58172 4 10C4 14.4183 8 18 12 22Z",
+    ),
+)
+
+icon_line = VectorIcon(
+    fill=(
+        "M 5 0 a 5,5, 0 1,0 1,0",
+        "M 45 45 a 5,5, 0 1,0 1,0",
+    ),
+    stroke=("M 5 5 L 45 50",),
+)
+
+icon_path = VectorIcon(
+    fill=(
+        "M 5 0 a 5,5, 0 1,0 1,0",
+        "M 30 40 a 5,5, 0 1,0 1,0",
+    ),
+    stroke=("M 10 5 h 20 C 40 5 40 25 30 25 h -20 C 0 25 0 45 10 45 h 20"),
 )

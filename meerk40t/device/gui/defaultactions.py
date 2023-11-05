@@ -48,7 +48,7 @@ class DefaultActionPanel(wx.Panel):
             ["console quit", icons8_close_window_20],
             ["util wait", icon_timer],
             ["util home", icons8_home_filled],
-            ["util goto", icon_return],  # icons8_visit_20
+            ["util goto", icon_return],  # icon_marker
             ["util output", icon_external],
             ["util input", icon_internal],
             ["util console", icon_console],
