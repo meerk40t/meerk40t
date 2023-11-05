@@ -1288,15 +1288,6 @@ icons8_vga_20 = PyEmbeddedImage(
     b"TkSuQmCC"
 )
 
-icons8_input_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"20lEQVQ4jdXRvU0DQRAF4E8WGdJFUAmJzxJluASIfW3gCkCuwBWQkhBQAkSkICGRG0wy4s7n"
-    b"Xd/aCCGetNH7mbcz/Cc8YZbh5rjKcLPwJolPNAluGa+PJjy5It+Ci4LAyx0FNjDHS0Hga2g3"
-    b"MEoEPuB0aCpOQjsY+CP8amCFhXbJS+mFN9p9NuGpcgPO8IY17jvC7lGOcRead4yHWte47U3t"
-    b"X7kKTT0UtqtxcaPS0L3DHjHJcLX8987xnCLWmO7TIDANLzjqEB8O2884vFu4wUp7gNK3wvUB"
-    b"Rf4IXzjbQCQgdD/qAAAAAElFTkSuQmCC"
-)
-
 icons8_stop_gesture_20 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
     b"N0lEQVQ4jcXTzytEYRTG8c/4FTJZoSwUGxspGytlYWdvz0LJSrJhJayVhfJHKGLFwoKVslSU"
@@ -1316,17 +1307,6 @@ icons8_bell_20 = PyEmbeddedImage(
     b"pvMbkxE6xDresJOIdeAFU/nNXjyghi4stICOCCNVak4MtIme4Lwo2Sq6LczpUBE4KzT4MwHN"
     b"pmGpCOvAPXZRid9F6FbEVoow6BaaOxbXlYKb1lKwLOo4wzj2hefne7ohjNdaCkaY9nq86R1m"
     b"hB+VPf8Il6lYPrqb1hnawFw74E/Rg9H/wpLjGzFeVCqYlPuEAAAAAElFTkSuQmCC"
-)
-
-icons8_output_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
-    b"PUlEQVQ4ja3SOUpDURTG8d9zaATBJgtwaMQhQgoHsNPCDQhuIBsQrHQDWYGN0c4NCA5LULEV"
-    b"RCsLbdQuTSSx8IS8PK4Dxg8O3HuG/zl34HcaCPsXDeAIxxjsF5ZhH+2wQ31MmqEeoFZYO3zZ"
-    b"X4ATOcBNWKfB+F+nnIxprsOy8H2poR+AD4V9O+HrUfGC51D+oUleZcx+FVxDA6eJ2B52E/6z"
-    b"qFkrBtYj0EINmyh9M1kpcmpR0wgGGMad7l/r2CuWE7CViBXz74IFpvAY3XawgWdcJoBXeIqc"
-    b"nah5DEaPOtDz2NfRTACbOIj1RRGW/zb3mNd9+ab0txrCe6y3YsK3FFA+oHs3ReX9L4m4UZxg"
-    b"puBfwnYifxuLBd+Cz+OPQSU6VlPdfqlqMCr5I6/2Aeyp7Uz4H1bJMILpPqbL6/YDkzdghLDo"
-    b"+mMAAAAASUVORK5CYII="
 )
 
 icons8_close_window_20 = PyEmbeddedImage(
@@ -1511,22 +1491,6 @@ icons8_journey_20 = PyEmbeddedImage(
     b"9Q5tJgFMgRnQ9YhpoMCEAJIODwoc2UwS8EYDzxz1VNjRBpNgz2oqPYBXYAm0bcCxwrY6ztdK"
     b"FNj38MorWugBRq4Od44O5fQfvi/q5JGheVcrLen0rSTgFXALBazzieRAx2vnB0mO8sVNQsB+"
     b"qxdgAGI6yhzqowAAAABJRU5ErkJggg=="
-)
-
-icons8_warning_shield_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAAsTAAALEwEAmpwY"
-    b"AAACV0lEQVR4nJ2Tz2sTQRTHV9GDB/8GQXoT9eAf4KXszk6CoFj1VpqCVmNOVRSDRnvyB14k"
-    b"1GZnZheMBxGkhogmMxu0ojm0SWixgQpaE9M0UE0PWjTJJhmZQNLWTZsmX/jCY997n2Xem5Gk"
-    b"LRR/OLCPBZR+iuV7JnEsMgKXGFI0isHAS3xiv7QTRZDcxzTgMXWVUQzKDKvVmcnBUmbay4UT"
-    b"k4MVhtUaxaBiGo6YqI0guc8GokgeNQnMUgT4u+DJP2nzcm0lfZdXfxicrwY3WXwTubTpqU89"
-    b"PVUSPabuyFEMrrSA4m+psIuvZf02QKlAeH7uQcMi/j+/lvVz0WsSaLaAjMBQmrltxcICNH6j"
-    b"v2ERt6uZZ27OsPpiHYgULRV21XoFJsOuahSBxxtmCLzx5+dKvQI/PjtbYghcXwdqypmY4Szz"
-    b"1SddA+vFIDcNZyWqgdMbZug4KLb1O+PvGvhr8REXvTEMD7SAnEu7GIHFXOJW18DvMzc5w3DF"
-    b"dhcZUo1UeNjqFpgMDVkUqaQNUAYUq7XSsrbje/g3PyGOW49iINuAPp9vN8Mw9zV+rb5pRt8m"
-    b"+PSr0YZFvDH35cNVznRHRvS2fctRpFyIGc5KuYA7Hrlc0JrbHZa2UiJwbC/T4cI8dVudgJ+i"
-    b"I1Wmw/Rb3/E90nZ6oymHKFKtfOpO20ssvDw7xkUNC6iHt4W1FqQBDyPQKn62b/Xnwn3xbqsM"
-    b"gYtSN6IY+kRjYW6sBVtK3W7AKIHermBNRQPgEsWqNfv6vJUMDVVETDVlpCdYUxEiH2XE+Z7p"
-    b"jikTgSOdGv4BIclJf+4n3KEAAAAASUVORK5CYII="
 )
 
 
@@ -2825,4 +2789,30 @@ icon_console = VectorIcon(
         "M 8 8 L 12 12 L 8 16",
         "M 13 18 h 8",
     ),
+)
+
+icon_external = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 20 10 h -20 v 40 h 40 v -20",
+        "M 20 30 L 45 5",
+        "M 35 5 h 10 v 10",
+    ),
+)
+
+icon_internal = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 20 10 h -20 v 40 h 40 v -20",
+        "M 20 30 L 45 5",
+        "M 20 20 v 10 h 10",
+    ),
+)
+
+icon_warning = VectorIcon(
+    fill=(
+        "[red]M32.427,7.987c2.183,0.124 4,1.165 5.096,3.281l17.936,36.208c1.739,3.66 -0.954,8.585 -5.373,8.656l-36.119,0c-4.022,-0.064 -7.322,-4.631 -5.352,-8.696l18.271,-36.207c0.342,-0.65 0.498,-0.838 0.793,-1.179c1.186,-1.375 2.483,-2.111 4.748,-2.063Zm-0.295,3.997c-0.687,0.034 -1.316,0.419 -1.659,1.017c-6.312,11.979 -12.397,24.081 -18.301,36.267c-0.546,1.225 0.391,2.797 1.762,2.863c12.06,0.195 24.125,0.195 36.185,0c1.325,-0.064 2.321,-1.584 1.769,-2.85c-5.793,-12.184 -11.765,-24.286 -17.966,-36.267c-0.366,-0.651 -0.903,-1.042 -1.79,-1.03Z",
+        "[red]M33.631,40.581l-3.348,0l-0.368,-16.449l4.1,0l-0.384,16.449Zm-3.828,5.03c0,-0.609 0.197,-1.113 0.592,-1.514c0.396,-0.4 0.935,-0.601 1.618,-0.601c0.684,0 1.223,0.201 1.618,0.601c0.395,0.401 0.593,0.905 0.593,1.514c0,0.587 -0.193,1.078 -0.577,1.473c-0.385,0.395 -0.929,0.593 -1.634,0.593c-0.705,0 -1.249,-0.198 -1.634,-0.593c-0.384,-0.395 -0.576,-0.886 -0.576,-1.473Z",
+    ),
+    stroke=(),
 )

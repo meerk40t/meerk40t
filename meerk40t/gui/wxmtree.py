@@ -26,12 +26,12 @@ from .icons import (
     icons8_group_objects,
     icons8_home_filled,
     icons8_image,
-    icons8_input_20,
+    icon_internal,
     icons8_journey_20,
     icons8_laser_beam,
     icons8_line_20,
     icons8_lock,
-    icons8_output_20,
+    icon_external,
     icons8_r_white,
     icon_return,
     icon_points,
@@ -40,7 +40,7 @@ from .icons import (
     icons8_stop_gesture_20,
     icon_console,
     icon_timer,
-    icons8_warning_shield_20,
+    icon_warning,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
@@ -519,8 +519,8 @@ class ShadowTree:
             "util wait": icon_timer,
             "util home": icons8_home_filled,
             "util goto": icon_return,
-            "util output": icons8_output_20,
-            "util input": icons8_input_20,
+            "util output": icon_external,
+            "util input": icon_internal,
             "util console": icon_console,
             "op engrave": icons8_laserbeam_weak,
             "op cut": icons8_laser_beam,
@@ -574,7 +574,7 @@ class ShadowTree:
         )
         image_id = self.state_images.Add(bitmap=image)
         self.iconstates["refobject"] = image_id
-        image = icons8_warning_shield_20.GetBitmap(
+        image = icon_warning.GetBitmap(
             resize=(self.iconsize, self.iconsize),
             noadjustment=True,
             buffer=1,
