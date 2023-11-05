@@ -1410,7 +1410,7 @@ class TestGeomstr(unittest.TestCase):
         result = sb.actives_at(25)
         actives = bowtie.x_intercept(result, 25)
 
-        for x, y in zip(result, (3, 0, 2, 1)):
+        for x, y in zip(result, (0, 2)):
             self.assertEqual(x, y)
 
     def test_static_beam_vertical_bowtie(self):
@@ -1438,7 +1438,7 @@ class TestGeomstr(unittest.TestCase):
         result = sb.actives_at(complex(25, 0))
         actives = bowtie.x_intercept(result, 25)
 
-        for x, y in zip(result, (0, 2)):
+        for x, y in zip(result, (3, 0, 2, 1)):
             self.assertEqual(x, y)
 
     def test_scan_table_random(self):
