@@ -378,7 +378,7 @@ class Pattern:
                 yield self.geomstr.as_transformed(m)
 
 
-class StaticBeam:
+class BeamTable:
     def __init__(self, geom):
         self.geometry = geom
         self._nb_events = None

@@ -18,7 +18,7 @@ from meerk40t.tools.geomstr import (
     Pattern,
     Polygon,
     Scanbeam,
-    StaticBeam,
+    BeamTable,
     TYPE_POINT,
 )
 
@@ -1026,7 +1026,7 @@ class TestGeomstr(unittest.TestCase):
         # Convert to correct format.
 
         poly = Polygon(*pg)
-        q = StaticBeam(poly.geomstr)
+        q = BeamTable(poly.geomstr)
         q.compute_beam_brute()
         t = time.time()
         r = q.points_in_polygon(points)
@@ -1406,7 +1406,7 @@ class TestGeomstr(unittest.TestCase):
             complex(0, 100),
             complex(0, 0),
         )
-        sb = StaticBeam(bowtie)
+        sb = BeamTable(bowtie)
         result = sb.actives_at(25)
         actives = bowtie.x_intercept(result, 25)
 
@@ -1434,7 +1434,7 @@ class TestGeomstr(unittest.TestCase):
             complex(100, 0),
             complex(0, 0),
         )
-        sb = StaticBeam(bowtie)
+        sb = BeamTable(bowtie)
         result = sb.actives_at(complex(25, 0))
         actives = bowtie.x_intercept(result, 25)
 
@@ -1450,7 +1450,7 @@ class TestGeomstr(unittest.TestCase):
                     g, i=1000, arc=False, point=False, quad=False, cubic=False
                 )
             t = time.time()
-            sb = StaticBeam(g)
+            sb = BeamTable(g)
             sb.compute_beam_brute()
             intersections = sb.intersections
             print(f"Time: {time.time() - t}")
