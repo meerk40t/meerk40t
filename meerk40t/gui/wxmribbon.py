@@ -29,10 +29,10 @@ from wx import aui
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
     get_default_icon_size,
-    icons8_add_new_25,
+    icon_add_new,
     icons8_down,
     icons8_opened_folder,
-    icons8_remove_25,
+    icon_trash,
     icons8_up,
 )
 from meerk40t.gui.ribbon import RibbonBarPanel
@@ -602,14 +602,16 @@ class RibbonEditor(wx.Panel):
         self.button_down_page = wx.StaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 30, 20)
         )
+        testsize = dip_size(self, 20, 20)
+        iconsize = testsize[0]
         self.button_add_page.SetBitmap(
-            icons8_add_new_25.GetBitmap(resize=STD_ICON_SIZE / 2)
+            icon_add_new.GetBitmap(resize=iconsize, buffer=1)
         )
-        self.button_del_page.SetBitmap(
-            icons8_remove_25.GetBitmap(resize=STD_ICON_SIZE / 2)
+        self.button_del_page.SetBitmap(icon_trash.GetBitmap(resize=iconsize, buffer=1))
+        self.button_up_page.SetBitmap(icons8_up.GetBitmap(resize=iconsize, buffer=1))
+        self.button_down_page.SetBitmap(
+            icons8_down.GetBitmap(resize=iconsize, buffer=1)
         )
-        self.button_up_page.SetBitmap(icons8_up.GetBitmap(resize=STD_ICON_SIZE / 2))
-        self.button_down_page.SetBitmap(icons8_down.GetBitmap(resize=STD_ICON_SIZE / 2))
 
         self.button_del_panel = wx.StaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 30, 30)
@@ -620,12 +622,10 @@ class RibbonEditor(wx.Panel):
         self.button_down_panel = wx.StaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 30, 30)
         )
-        self.button_del_panel.SetBitmap(
-            icons8_remove_25.GetBitmap(resize=STD_ICON_SIZE / 2)
-        )
-        self.button_up_panel.SetBitmap(icons8_up.GetBitmap(resize=STD_ICON_SIZE / 2))
+        self.button_del_panel.SetBitmap(icon_trash.GetBitmap(resize=iconsize, buffer=1))
+        self.button_up_panel.SetBitmap(icons8_up.GetBitmap(resize=iconsize, buffer=1))
         self.button_down_panel.SetBitmap(
-            icons8_down.GetBitmap(resize=STD_ICON_SIZE / 2)
+            icons8_down.GetBitmap(resize=iconsize, buffer=1)
         )
 
         self.list_options = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)

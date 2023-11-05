@@ -444,21 +444,50 @@ class VectorIcon:
         if not fill:
             pass
         elif isinstance(fill, str):
-            self.list_fill.append(fill)
+            color, bright, pathstr = self.investigate(fill)
+            self.list_fill.append((color, bright, pathstr))
         elif isinstance(fill, (list, tuple)):
             for e in fill:
-                self.list_fill.append(e)
+                color, bright, pathstr = self.investigate(e)
+                self.list_fill.append((color, bright, pathstr))
         if not stroke:
             pass
         elif isinstance(stroke, str):
-            self.list_stroke.append(stroke)
+            color, bright, pathstr = self.investigate(stroke)
+            self.list_stroke.append((color, bright, pathstr))
         elif isinstance(stroke, (list, tuple)):
             for e in stroke:
-                self.list_stroke.append(e)
+                color, bright, pathstr = self.investigate(e)
+                self.list_stroke.append((color, bright, pathstr))
         self._pen = wx.Pen()
         self._brush = wx.Brush()
         self._background = wx.Brush()
-       
+
+    def investigate(self, svgstr):
+        color = None
+        bright = None
+        pathstr = svgstr
+        if pathstr.startswith("["):
+            idx = pathstr.find("]")
+            pattern = pathstr[1:idx]
+            subpattern = pattern.split(",")
+            for p in subpattern:
+                e = p.strip()
+                if e.endswith("%"):
+                    try:
+                        bright = int(e[:-1])
+                    except ValueError:
+                        pass
+                else:
+                    if e.startswith("0x"):
+                        try:
+                            e = int(e[2:], 16)
+                        except ValueError:
+                            pass
+                    color = e
+            pathstr = pathstr[idx + 1 :]
+            # print(f"{pattern}: {color}, {bright} -> {pathstr}")
+        return color, bright, pathstr
 
     def light_mode(self, color):
         if color is None:
@@ -533,7 +562,7 @@ class VectorIcon:
                 res_fill += str(hash(e)) + ","
             res_stroke = ""
             for e in self.list_stroke:
-                res_stroke += str(hash(e)) + ","
+                res_stroke += str(hash(e[2])) + ","
 
             return res_fill + "|" + res_stroke
 
@@ -543,7 +572,14 @@ class VectorIcon:
             return _CACHE[cache_id]
         # wincol = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
         wincol = self._background.GetColour()
-        bmp = wx.Bitmap.FromRGBA(final_icon_width, final_icon_height, wincol.red, wincol.blue, wincol.green, 0)
+        bmp = wx.Bitmap.FromRGBA(
+            final_icon_width,
+            final_icon_height,
+            wincol.red,
+            wincol.blue,
+            wincol.green,
+            0,
+        )
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
         # dc.SetBackground(self._background)
@@ -555,10 +591,46 @@ class VectorIcon:
         fill_paths = []
         # Establish the box...
         min_x = min_y = max_x = max_y = None
-        for e in self.list_fill:
+
+        def get_color(info_color, info_bright, default_color):
+            color = None
+            if info_color is not None:
+                try:
+                    color = wx.Colour(info_color)
+                except AttributeError:
+                    pass
+            if info_bright is not None:
+                if color is None:
+                    color = default_color
+                # brightness is a percentage values below 100 indicate darker
+                # values beyond 100 indicate lighter
+                # no change = 100
+                # What about black? This is a special case, so we only consider
+                ialpha = info_bright / 100.0
+                if color.red == color.green == color.blue == 0 and info_bright > 100:
+                    ialpha = (info_bright - 100) / 100.0
+                    cr = int(255 * ialpha)
+                    cg = int(255 * ialpha)
+                    cb = int(255 * ialpha)
+                else:
+                    cr = int(color.red * ialpha)
+                    cg = int(color.green * ialpha)
+                    cb = int(color.blue * ialpha)
+
+                # Make sure the stay with 0..255
+                cr = max(0, min(255, cr))
+                cg = max(0, min(255, cg))
+                cb = max(0, min(255, cb))
+                color = wx.Colour(cr, cg, cb)
+            return color
+
+        def_col = self._brush.GetColour()
+        for s_entry in self.list_fill:
+            e = s_entry[2]
             geom = Geomstr.svg(e)
+            color = get_color(s_entry[0], s_entry[1], def_col)
             gp = self.make_geomstr(gc, geom)
-            fill_paths.append(gp)
+            fill_paths.append((gp, color))
             m_x, m_y, p_w, p_h = gp.Box
             if min_x is None:
                 min_x = m_x
@@ -570,10 +642,14 @@ class VectorIcon:
                 min_y = min(min_y, m_y)
                 max_x = max(max_x, m_x + p_w)
                 max_y = max(max_y, m_y + p_h)
-        for e in self.list_stroke:
+
+        def_col = self._pen.GetColour()
+        for s_entry in self.list_stroke:
+            e = s_entry[2]
             geom = Geomstr.svg(e)
+            color = get_color(s_entry[0], s_entry[1], def_col)
             gp = self.make_geomstr(gc, geom)
-            stroke_paths.append(gp)
+            stroke_paths.append((gp, color))
             m_x, m_y, p_w, p_h = gp.Box
             if min_x is None:
                 min_x = m_x
@@ -637,11 +713,25 @@ class VectorIcon:
         if not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
 
-        gc.SetBrush(self._brush)
-        for gp in fill_paths:
+        for entry in fill_paths:
+            gp = entry[0]
+            if entry[1] is None:
+                sbrush = self._brush
+            else:
+                sbrush = wx.Brush()
+                sbrush.SetColour(entry[1])
+            gc.SetBrush(sbrush)
             gc.FillPath(gp)
-        gc.SetPen(self._pen)
-        for gp in stroke_paths:
+
+        for entry in stroke_paths:
+            gp = entry[0]
+            if entry[1] is None:
+                spen = self._pen
+            else:
+                spen = wx.Pen()
+                spen.SetColour(entry[1])
+                spen.SetWidth(self.strokewidth)
+            gc.SetPen(spen)
             gc.StrokePath(gp)
         dc.SelectObject(wx.NullBitmap)
         gc.Destroy()
@@ -1085,273 +1175,6 @@ icon_meerk40t = PyEmbeddedImage(
 
 # ----------------------------------------------------------------------
 
-icons8_system_task_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
-    b"TElEQVQ4ja3UzStEURjH8c9goWyxY1jITkrs8AewoPgLSLKztLJR/gEpxcbWwsbWhrLwlh3K"
-    b"S40lKYlmIxbnjJm57ryU+dXt3OeeX9/znOc852bQiS6N0VMG1zhqEHCsCR9YRf4foHxkfLTE"
-    b"DxN4x26KeQD3ceFKmo4MBWAzcrhIMW9iXfWyDEWGpiomyKIPwzV8v6oFnI3ZNQw4hR101OFF"
-    b"sYbQja2SuBlveMWtsPUnrKEtwXkWzqAM+IL9hDEXxzOMYBkPOEz4RtMy/JR+ynCKDdxhMWV+"
-    b"qPBSV11wiW8s1DIWMvxCb+lKKZpDT3yS6sYjZHCOSaygtb6E/ygvtNeBCPyPloRDg/OWas46"
-    b"dSLUF2HL2xisYG6P40uFOKmrTIWJcfQr9tdxHEvjGyk/jDRgFntC5tU0jxnF5kd5YxfULrRQ"
-    b"rZ7LCne8DPgDBhc9y356EnYAAAAASUVORK5CYII="
-)
-
-
-icons8_scatter_plot_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1B"
-    b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAGYktHRAD/AP8A/6C9p5MAAADtSURB"
-    b"VDhPzZS9EsFAFIUXjU5FT6FEpVFTKAyFFzKeAk+g1niJtLwFJYbhnLtZk2wiNkuRb+ab7Nlk"
-    b"bvYnG1V4SuHV0IVt3XTmBvfwIilCBz7gM6dX2IcJ5pAP/EQ5vP6NrIIreIYzSY5kFeQS1OBY"
-    b"kgf2Gk4gR9mU5DHib5tygry/luSAXbABR7AiKT5i9g0hn/mIXfAAmZeS4iwg7x0lRcjaFFM8"
-    b"+hJDWl8Ce4R1yGmZKU8h168FvaZsYzZlI0nDs0/f5DkpW8jPZidJFwpCe+yw4fd1100nWJA/"
-    b"ExobpaEKB7rpDP9QqcWKilIvu2w5UIty+GoAAAAASUVORK5CYII="
-)
-
-
-# ----------------------------------------------------------------------
-
-icons8_roll_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAD"
-    b"60lEQVRogd3a3Y9dUxgG8B89M1PpHKLtuBEqqSolbXzFx4UIE8y0IxE30vi64kJk2rpF8R+4"
-    b"J5qQ+A+4QLSIdlAXbWZ8lUjRb0GHpF8xLtbaWVv17Dnn7HXO4El21snJ2s/7vHuvtd53v2vx"
-    b"P8F5Gbkuwl24HWuwEiMYxhyO4xd8g734FO/G/xcci7ER7+CMILiT62S89yEMtGFvCjtzOnAB"
-    b"NuHgWaK243k8ILyVpRjEkPB2rsGDeCH2PV26/6fIOVhht+ibBWP4vkT6GZ4UhlanWIonhKFW"
-    b"8H2N+1r0z+LIYrxSItuN8bqkJYxjOnL/iZejzTJqO3KpMDnn8Ae2YFEdwhZo4BmciLamhCFZ"
-    b"oJYjK/BtJNiHtV3LbB/XR1tz+CpqoIYjgyXCXbi4vsa2cYkw/wpnlqvhyFAkeQ8XZhLYCZrS"
-    b"kN4l86rVb4wIK1k5/vyr8aH2A+k/0MgsZh3uxq1YjcuEFAV+x37h6e4UhuuezPZroSksxzM6"
-    b"T1GmsVlydkHQiCJ+loQdEILmI7gBy4QcakBYdW7Eo3jV39ObY5iUf4TMi9X4vCTkfazXWZBs"
-    b"YAN2lHh2Y1VWpRWYEFLvIi+6JwPnmBSvjgsPpad4WMpYt2FJRu5hvB65TwufBz3BhOTEc70y"
-    b"gq3Rxil5k1KEcftbNPBsbvJzoHBmVpiPWdCQJva2XKRt4A3peydLpr1Zmtg558R8GJYWgKfr"
-    b"kjWlOHFvXbIuMB5tH1XzIW6R4sRC4YOoYVMdkiLt6Pm6XoGJqGFvtwTrpLSj76lDCQ0cilqu"
-    b"bdXp/AqC0di+JdSsFgpn8Hb8PdqqU5Ujt8R2Ry5FNbA9tre16lDlyNWxnc6lpgZmYttVcDwm"
-    b"jMtl2eR0jxFpGe4YJ+PNVSXMfmFI0HKiVYeqofWfQpUjs7Ft9kPIPChKUbOtOlQ5ciC2Kyr6"
-    b"9AtXxPbHVh2qHPkittflUlMDRSD8slWHKkemYntHNjnd487YdrXJs1ZYKQ5a2BRlAIejljXd"
-    b"khT7FRsyieoG90cNtYp5xUfVQqYpH0UNk3VIhqUIP5ZBVKcoUvgjMnydTkqbPP0sbTbxXbT9"
-    b"VA7ChlABnBPqTv3Cm9HmJzJu810plYO25iKtwEtS1TFbOajAeqlA10tnXpQKdK22qWtjYzQw"
-    b"J9Sdcs6ZpjScTgmnIXqKcWmY7ZOnrDkhTexf9fBNnI1V0o7rnFCymdBZBjAgBLsiThQTe2VW"
-    b"pW1gkVABPFoScgiv4THcJGzuDMZrOW7G40Lp9XDpviPCEtuLQwhtY4lQPCufJ2n32iPEqdrB"
-    b"Lud5LUK6PSqc2boKl0sLwix+EPbtPxbOas2cg6Mr/AVMUjVunZJoRgAAAABJRU5ErkJggg=="
-)
-
-
-icons8_about_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAE"
-    b"cElEQVRogd3aaahVVRQH8N+7ms/qORSvjMih8EkWFWI2SoVlUERBaBEFCpFgZUESBRVaRBF9"
-    b"qQ8OfcuywqCiAQoqo5kmQiuTnLCQcMjZetXT24e1r+e+x5vuved6n/3hsM85d5+1/vvsfdaw"
-    b"1+V/gqac5AzBZFyMc3EGxqEFw1KffdiLzdiAVfgS3+PfnHhUhWbMxApBsljlsRvLcQMGV0um"
-    b"mhlpxb24A6PSvSJ+wBf4DuuxUQxwX+ozDMPFbI3HBbgEZ5XJ/g1LsEjMXl1wLB7GHtnb/Abz"
-    b"cFoNcsdhvngRJbnbcLcaZqgnXIq1ZYrewkV5K8E0fFim52ucnYfgJjyIjiR4FabmIbgPXCsM"
-    b"QhF/YXYtwo7BS0lYBx5N944Ujsdi2ew8rYpvulksnyJ24ZocCVaK2WhPXBarYDBNeDU9uBXn"
-    b"1YFcpbgKBwSnp/r70GPpgZ1y+tBywpX4W3Cb1VfnK3AQ/6QHBxpuFwM5gLaeOh2HTanjIzkp"
-    b"PkmELpPTeR5YJjh+qofv5aHU4Vv5OaJyq7MoJ5kjsSXJvLnrjyfIPPblOSkkwo3SQJbkKLe0"
-    b"xNZhEBTSD7NEHPQ+Ps5RYbGH81rxvBjEeOE8D2NNUnR9jsro/I205iz7PsH5ndKNCenGdmma"
-    b"jhK0ioijHS0Fmdd+T5jeowU78JWIQqYVxLTDJw2jVD1WpnZKQea9f6yDorkiQtiJBXWQX+J8"
-    b"9mCcmi421UHRKGHa4ZQ6yN+Q2jEFjEgXe+qgqN7YndoRBZkX72gQmVrQntqhBZ03B442lFbT"
-    b"3oIwY3Byg8jUgpKT3VXAz+liIOUe/UWJ89qC2FCAKQ0iUwsmpfanAj5IF43My6vF1aldWRD7"
-    b"r3+IPdsJDaNUOS7EGJGbrC4Is7ss/Xhno1hVgbmpXa4sRWgTA9orX+u1UH0SqzFi4+6g2Es+"
-    b"nFitw4vClyzMUWG98DiG4hWxWd4Jo7FfzExe26IL5D8j03FIzMjYnjrNTUo3yYK9WjAWc9Ix"
-    b"qY++/UErfhUcH+itYxPeTh0/EknLQEGzyJmK+Ew/stnhIs4v4jVRVms0huB1wWmzClKC0aLq"
-    b"VBQpcCMDyhbZKtmBcyoVMFo4yiLuypVa/zFeVsnaJpx2xWgTdrpDbaW1atAkDESpyLoWZ1Yr"
-    b"bIUu+0ZHCNNFbbJktpeJ5VUVbk1C2h2Z8L4Zt4i4rzSAzbiuFqHTZRWiXm11Nzixgr6n4za8"
-    b"LHLv8orufOG5+42u2/IzRajSjKWywKw3tIi3OQfnC8uyRoQO+0Utg6gJjhSxUZvOZYZSqfu5"
-    b"NLB2VaJJxFiHktBnZXFYdyjgMhF2lNfd/yw77+vYijdwj15CjUoGMFhUb28SFup+PNNN30GJ"
-    b"/AzcKHNKRbHjtxRvihmaKJbOCJkPOiCs0MZ0bKmVfFc8IStBzyi7P0Kkv/NEcXSbzm90PZ40"
-    b"gJKxz2XkOgTh7bpfDr+IgecRAOaOqXhXhMXlpA9gNV4Qf6CZ2CiC/UG51RoiLMtwUdX9vSGM"
-    b"qsR/ME41xQZApAYAAAAASUVORK5CYII="
-)
-
-
-icons8_fantasy_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAE"
-    b"70lEQVRogc3Za4hVVRQH8N/MpIVRoVZkDTUfggqLHn4ow6BQw0J6IPYCbUhTZ3ylidHLHtS3"
-    b"oj5UUlAgRUlKlJEaFdHL6kNZJFlRaQ8ijfxQpviYuX3Y+3DO3HvPnfuc8Q+He+7ea++z/mev"
-    b"vdba63BkYOZwK9AMHIu/MaaRSdqbo0tDmCmQuGa4FWkUH6KAt4ZbkXI4BUdVIXcm+gUiBzC6"
-    b"3ge2yrRG4hvcqjKhbrRlxlw7yLzHYC5Oa1C/mvCS8KZ/wCx0FPW349co84LK5nUSHsAuvN0K"
-    b"ZSvhfKnZFLAdN0ut4Eop0bE4qNS8zsaz2JeZ55Ih0L0EmzMKJNc2wVOtjf/vibIb4/9uXI43"
-    b"0Vc0dtgcwuSowG4swM9Fih1GZ5Ttjm37M/378Xq878eEoVO9FF9EReZiRPzdGds2Z+RGC6ZV"
-    b"wB+4T9gbj8e214ZM4xzcJN0jyf4YKazQ1UWyT2B27IdThf3Rh/Narukg6MCPApnB3Gsxnonj"
-    b"Xmm2UrWiA1dgi6DQxzWM7ZKa2sVN16wKdAibfLXg97Ob+zuMw3S8j++xRrrhs3gyM25flLus"
-    b"xbobIcSF5/CXUnf7IM6Nso8W9RewB5eWmfN6weUezshuxwqc3GwS47G1jHJbcWGR7COx7xDm"
-    b"4Sy8Edv2CrlXOXRildTbJbnZOlylNGuoG+2YKmzKbBzYg6cEQg9JY8eNmbEdeDH2rcmZfxx6"
-    b"8J6BL6sPH2FGs4hkMQaL8ZXSVTqMW8qMGR/7v860nYFlgoPIRvhDeBe9gnseEkzAT9K3NytH"
-    b"7u4osyHTlqxSEuE3CNF/bIt0rYj7pSS6c2R6hPSjz0CvdEEce9AQp+3FuFdKYk6OTK9Aol8g"
-    b"VHw+SvbEshbpOCgSU+kXvFM5LDSQxIlCUrkIR0eZ6XGeHao7cTYVy6UkFubIzJOSSGSWSffE"
-    b"LtyFUfg2tg1pyWiFlMTiHJnF0gPX1kz7ttj2i5TQ7/gk3m9pjcqlSFaigE+Vrwcska7Ewfh7"
-    b"uhDVC/hNMKEZgisudt8TW8oA8w10lQU8byCZLIkerI9yy6Vn9ocz8m1CipKNR6+2ksRtgmfq"
-    b"x1JMwr8GkllaRIIQ3ZMguDfO0VVm/jZchy+FYFhOpmHMyZDoybRnyXymlAShVPqf9G1nT4vl"
-    b"0CacZ2Y3Q/Es8kgkmCQ1szyZdVIiw1LIHowEwZwqkSAonxQnRubItAxzDU4iSTsquWFCnNiL"
-    b"x5qpYDWolcQdVcy5Fuc0RbsqcbvaSCytct68w1SCTuWPwnUhuyfy0o4s0TwSx+GGGp+9Ssii"
-    b"G0Y2L2p0JXrweQ3PbheOtzs1+OWgVhJLKsw1UaiiFOKYUVU8f5rUPU+rTuVSNIvEKLysNG/a"
-    b"IRyeKiFJYwrxvmbMVxuJSi42Qa0r0iVUSvridUCN6UnWxVazsSuZUzF6hZQlD+2YIiSHSZVx"
-    b"IzZJixfvCIG04kFrgdpWYlG1DCKOF4raxShXt+qLBC6K1yYDqyk745hOBnqCBULRmLASq3NI"
-    b"PB3vlwg1q1rwjxAAW4bJaluJPJNrFO2Cd1ovNa1NUtM6EPumyXHHybfuFTkPGAoSxehSx2bf"
-    b"LRA5oUxflkRvk5SsFjW73+T7xcqi9uEkQR0BcapU4ZXC97w7Db5vWo26UpQkfmSjbz0uttmo"
-    b"K2mcjA/wp1AFn9JkpepBU9P4Ix7/A6+u1m3fs0SBAAAAAElFTkSuQmCC"
-)
-
-# ----------------------------------------------------------------------
-icons8_smartphone_ram_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"5UlEQVRoge2YQQ7CIBBFX3tDvYj0jMZLVL1K6wIaF1ogJoUB/0smDWEW88N8SAeEECKwhrC6"
-    b"D8CYSmiFboR0ywhMwIN3b1qLO+CAISZkMlBobriYkO0kTrGkypzxNc6xpCUkRY+tMgO+xiWW"
-    b"lHVnG+Cjzpzr9wZcDa2/kiNkazcr6yy6bq0m+MUjpTnMI6WRR5pEHimIPNIk8khB5JEmkUcK"
-    b"Io80if7ZK66z6MYj26b1AR0khDzD1+rIdMCPTMGPd3dx1B9O58YlpdjhB8S1C92LOYiw3P7H"
-    b"krrJau8Df/ayCyGEHV4Hpj6QuXY7DQAAAABJRU5ErkJggg=="
-)
-
-# ----------------------------------------------------------------------
-
-
-icons8_timer_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
-    b"NElEQVQ4jd3TuUpDQRgF4C9Bg+BraGOigqWFhW+hIi5v4EMIaVwweQofwEYrawsxbo2FWNq4"
-    b"N2piMSPcJDNEO/HAwMy/nHvuv/BfsI8XnGMXtVxg+RektzjBIk7RQGVQ0gjmMwr3472CDbzh"
-    b"aBBpE/co9dh3sdNjmxXKsJcjq6GNhfg+yKgtYh0fqKacDVwU1M3H4CZGM4RlXGM75bzEZo+t"
-    b"iQ5uMJchraOVcrxgpcc2Gsk6+MR0Im8NT0XJ32jrH6PXmNCO706CsKuBQ4X7HcYSCceYiWRn"
-    b"Cf+4MKN92NHdlJ+gjCtspZxVoasLKWcGyzFnIhfQwAMmf0A2hUdh6LOoCOv0gCXp3y9FZY84"
-    b"xPCgL1eEdfoQZrOO1XjqQs3eo7KBZEVUhQ1o4TmeltCAbM3+Pr4AHQRErwawCkIAAAAASUVO"
-    b"RK5CYII="
-)
-
-icons8_vga_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"yUlEQVQ4je3SPU5CURDF8d+TaNyMGG1dDZYGG2qN1BhrE1fhIuyAwqAU2OEm/Ag8C+clI8FH"
-    b"oKLgn5zcmznJuTOTy46to4hzDxc4Q2PNjBmecI95VbxEiWmoRB8foX6NX4baVWdwEudDCFp4"
-    b"wQjnNX7FaW67m17aVDe5w9cUPsV13B9DcIX3Gn+cA8cpsLCcYoWfM+zjc80Rs75wkDv8xluM"
-    b"Uo1zhCEGaEZtmQ+TCP3Drc2/TW9xL3CIDo79v6dFSjzjzu/KdmwjPz1gX51NjwzGAAAAAElF"
-    b"TkSuQmCC"
-)
-
-icons8_input_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"20lEQVQ4jdXRvU0DQRAF4E8WGdJFUAmJzxJluASIfW3gCkCuwBWQkhBQAkSkICGRG0wy4s7n"
-    b"Xd/aCCGetNH7mbcz/Cc8YZbh5rjKcLPwJolPNAluGa+PJjy5It+Ci4LAyx0FNjDHS0Hga2g3"
-    b"MEoEPuB0aCpOQjsY+CP8amCFhXbJS+mFN9p9NuGpcgPO8IY17jvC7lGOcRead4yHWte47U3t"
-    b"X7kKTT0UtqtxcaPS0L3DHjHJcLX8987xnCLWmO7TIDANLzjqEB8O2884vFu4wUp7gNK3wvUB"
-    b"Rf4IXzjbQCQgdD/qAAAAAElFTkSuQmCC"
-)
-
-laser_cut_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAALKAAACygH/GNH1"
-    b"AAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAABKtJREFUaIHd2muIVVUU"
-    b"wPHfjM6kmY5OYllJakSJmaWmmRVGUvQurOhTZJh9slAq/RAVFERfLEEoiCwKKkEqKqKHkRBF"
-    b"WFBRVNCbssyw1CzzMdqHdQ5z5859nHPmnrH6w+Fyzl57n7X22Xvttde+5GM9luWsU5S1eDar"
-    b"8NCcjc/BnznrFGUyOrIKt+ds/ACG5KxTlHb05BHOQ0+BOkVpFx2XWTgPg/1FSjNkML/IEP+j"
-    b"L5J5juT1Wj04CXdgOw4mvwewo+r3C+yu0cYsjMVI0SmjEqW70IbRidxEbMupX2ZW4gf8hr3C"
-    b"kHrXwzXqj65Tb0dy9WAzPsIHuLwsQyq5OFHiTozB0cL3T8FM0cO16EJ3Uicd2u14Fz/r/SKD"
-    b"yjP4GycPsJ2lolOuHrBGBRmLrdgoxncRxuN3vNIinQpzg+jNGwvWf06EPZNapdBAeF14r2Ny"
-    b"1kvn2fKWa1SQidiFdTnqjMC3+FiO4HAwuF307hUZ5R8U7vbM0jQqyBDh+zdr7kKnYx8eKlup"
-    b"okwXC96aBjKpwT+pv9b8K3hADJmz65QvE0PwykHTqCDD8aWItYZVlU3AH8Ll/ieYLwLHu6ue"
-    b"v4CdOG6wFRoIj2MPpib3C8WQuuWQaVSQbmwRsVgP9mOTkvYzZW6SdmOD2HdsE6mkpWLhbMYw"
-    b"YXipLMRXosfLYBr+EvOsVCaLIO+JEtpO9yXf4YgS2u/HcjFxL8wgOw5fiw1XM27L0W5LaMc7"
-    b"oudGNpGdJpRb0ERukpg/aweqXF6mCI+0uoncdGHI+Q1k2vCG2OqWNfcaco/G4QicJgw5r4HM"
-    b"kkRmYcs0y0knPlE7HEmZIZScX6d8vMjKvNhq5fIyW/j8e+uUzxSGnFun/Hmxuzy29arlZ5XY"
-    b"X5xeo2yWMOScGmXXJWWLylMtH4eLRfJD/bets4Wy1fPoSBHCvKl4BiY3zVwsMZkPiC1vJXOE"
-    b"IWdVPX9KLKwnNGm3A8dneH9Txohd38si79uIx0R4cWLFs7nCkLkVzy5Knt3apL1LhSPZrkVf"
-    b"bZEYBnvFPntMHbku/Khvwi6dIzOS+xH4Bu+pH7ROxWtJvU36dsKAGSHWjd0iml0h3G81lyUK"
-    b"3Jzct4lhlRq2Rt99SiXdYoHdJ5IYS5QYoU/Ak3qPDi6pIbNepEGrz1/GiQX0rqrnHULpX4WR"
-    b"q8Vxw6AwX3ipgyK8OKWirBtXNahX2csL8GnSzksGkDrtEGO+2VUrV9WOxXrnT/U2dp7IJO7D"
-    b"Z/rHW48mBryvdpjTKRbU6mue6ID0mgrfa3xgU3nV22+Pwn165wUcJRIN+5O6+8X8qnSlN+F6"
-    b"9Y8AH8mo19Y2kUhulNVIj9JWCU+yuIFsJdeqnQteLNx0Fl4VRxcrxVett03+Zajs5xL3i4mY"
-    b"lS05n9dij1B+QzPBPKe6h8lnyNtiEaU3kbBR9HJW9ibvbUqeU928hqSZ+Wtwqpjs6+Q4ck7e"
-    b"d8gNIebWOvnOTSrJbEiZQ6sV7FE7euhHni/SIXz9iuS+Ot4arW9g1yU6argYWjvxeUX5LuGJ"
-    b"apH+EeEM9XeefchqSBveEq76ApFRT+lJlExJ//2Q0inWmU6RE6umQ+Mc1tNZFPwH6RsguE5X"
-    b"XQUAAAAASUVORK5CYII="
-)
-
-laser_engrave_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAALKAAACygH/GNH1"
-    b"AAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAA0RJREFUaIHt2UmIHGUU"
-    b"wPHf9IwzLmRmnIzBuGA0ByMiEWISBdeDiCIqqPdgjjEJERRFQfCkF/UgBBEUBHFFclJwAVFQ"
-    b"3HBFoyIeQozbqEmUUWMnHl41PRZTM/1VV/W00n8oiqp67/vet73ve69I4znsSNQpy6N4qlPh"
-    b"kcTCN+L3RJ2ynIGjOhVuJBZ+GMOJOmVpoJkinEKzhE5ZGqLjOhZOodcjUltDejkiw/5HI9Lx"
-    b"Gkn1Wk2cidvwK45k98PYn7vvxuw8ZZyHaSwTnTKeGT2BIUxmcqswk2hfx9yOPfgZf4mGFF07"
-    b"59GfLNDbn11N7MWHeA/X1NWQuVyVGXEXjseJwvefhXWih+djAlOZTmtqN/Am9mmPSE95En9g"
-    b"TZflbBWdckPXFpVkGj/gNTG/y7ASv+CFimwqzSbRmzeV1H9eHHtOr8qgbnhJeK+TEvVa6+yW"
-    b"yi0qySr8hqcTdI7DN/hIwuGwF9wqevfaDuUfEO72/NosKsmw8P17Le5C1+IQHqzbqLKsFRve"
-    b"QwvItBr8reK9pi+4T0yZCwu+7xBT8LqeWVSSY/CVOGsdnft2Kg4Kl/uf4FJxcLw7934XDuCU"
-    b"XhvUDY/hT5ydPV8vptS2JbOoJFP4TpzFmvgb76gpnqkzSJrFKyLumBGppK1i4xyw1KxeagOq"
-    b"4ssFvo1VUUFVGZHleFfx4a9oLR4rdvmuo8KqGjIjFvYdiXr34AkRAvQNY/hAe9+Yy9fzvFuP"
-    b"9/XZEb7FBSKJkJ9K+YaMiKm4rqqKq84aviVSOTcvIncnXhYj0reM43P/drlzR2QNPhaHy77n"
-    b"SryqnVlpNaSB13FR1RV2O7W2ixB3Re79iyLZtil7fju7b8MneCMnPypC5C1d2lOaE0Qe+FM8"
-    b"g8u1O2daTLHWwh/N5Maz5wYuxsNixB7Bhp5YvQBDuEzsCZ+J/WRYBFbrcT8uEa52FPfiCzwr"
-    b"IsVKdveqWY7Nwugp/CTikBmclr2/UZ/H63lOFpn7I9n9nLoqqvunzUExEivFb4ZddVVUNvG8"
-    b"GCMioFqMCcWec0wcKouY1LZ/3xAex9U5oWXS/2YtJT8O4Qqc20UhsyIu75RDFg53Dyj+d1ik"
-    b"+31C/QMGDBgwoDr+AWj/qA3v5WpJAAAAAElFTkSuQmCC"
-)
-
-icons8_small_beam_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
-    b"O0lEQVQ4jb3UzSuEURQG8B8mX1OTJqTUJE1s7EwpSdn4lyxY+q8oH8VCiLJRFpqkECUsEGNx"
-    b"72R6vWPuhqduve/5eM655zxd0jCA/sTYJGxiIyWwkEg4llq5OzXwrwm7MIuZVMJlzMXEPLJ5"
-    b"TKEvlfARk6jl+GqooI7jrLPdUg7wiUaOr4ELHLbxd0QJd/GUOgUX0INF9GZ857jEGoajbRUr"
-    b"mMB0Jv4Nu80ZZlsfQvWXRqoxphWNZocf2M44lzCCItZbCq5HWxm32MpWypMFjAtjuMceXqK9"
-    b"iIVIuIPrFMKmzirx/wMP8bsszJwgm32ZcfX4iZqgwTpOhJdmFIPCNY8E/VaErV91IiwLwj7A"
-    b"k7DpCl6FF+cpkpSivRs3zeQ8YZ/l2LJoCNd99j2OtoR5eG9DepqY/wPFeP4fX8KRO0UnWEma"
-    b"AAAAAElFTkSuQmCC"
-)
-
-icons8_stop_gesture_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
-    b"N0lEQVQ4jcXTzytEYRTG8c/4FTJZoSwUGxspGytlYWdvz0LJSrJhJayVhfJHKGLFwoKVslSU"
-    b"IiJDQolSDIt7J9cwM3emkafeuu957/me855zXv5BPVjHIqpLhTRiDUe4wyYucYgTjBYLnMEp"
-    b"FvCBLixHbG/oQ0u2Y0UOYCsOsBTuP8KVsVViD2fojwOMo0FsYaRcwAtcob4QsBaJUqNkA6fx"
-    b"hPFyAOswh0nshrYX3OIRN0gJmgPp34BVke+GcL+DTjTj2ddozEf+HRLMY15gMVrNdRAFZq6S"
-    b"wAaSpUSKAu/xiiZsx/SvkVXLaFPSOEZvEQl1C+Yxp8ZwjbYYsAG8F0qgUlC/FCbQ4eeQJzEs"
-    b"KNFKjMCqMIVzQaPSoXNmvQvmczZM4JvyPbFEmGF7mFWmgQ/YF7yov9cn1P5B23nSvF4AAAAA"
-    b"SUVORK5CYII="
-)
-
-icons8_return_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"8ElEQVQ4jdXUPUpDQRSG4SdyEcGAiEXAJoWdO0ghWNoIWllJGgu7LCCFdZp0QgKCiL1iFhCx"
-    b"cBcWigTBPyyNaGIxEW4R9V6dQt9qmDnn5YM5M/xHFrAWS7aMexzHkG2hjzaSn0oKmEATNTyg"
-    b"m6HvFmc4wUv6IMEAl3jDcLQefCGbQhl7aGAT5+MKV/CEI0xnSDmDFp6x9FnRIi5wmkH4wS6u"
-    b"hORjmUMlh7AoTEY1R8+3HOKAcMMxuEYpprAkjFwUJtHDdizhDu6EMfoVCep4xXp608ieJ/I8"
-    b"VjGLDanPpJAq6GSUDXEjvOV9POYI8gd4B8NqKf/2uJJfAAAAAElFTkSuQmCC"
-)
-
-icons8_bell_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
-    b"KUlEQVQ4ja3SvS5EQRQA4E8kCg9Asp1sRLb0k/jrJYRIKIQn8LuFxiNIqLyBqBQK22lEFLZV"
-    b"iDdALxHE3ypmbnKzcZndONWdOSffzJx7+OfobKG2hAn04QOP7R46jAt84RlPaOAKq7jFXiq2"
-    b"hFccYzC3X8YBPiN+k4Kt4B3bv9QsRnTzL2w5YtWEgw9w/VtBtQUM+oVnl5sT86jH5GkilsUT"
-    b"pvMbkxE6xDresJOIdeAFU/nNXjyghi4stICOCCNVak4MtIme4Lwo2Sq6LczpUBE4KzT4MwHN"
-    b"pmGpCOvAPXZRid9F6FbEVoow6BaaOxbXlYKb1lKwLOo4wzj2hefne7ohjNdaCkaY9nq86R1m"
-    b"hB+VPf8Il6lYPrqb1hnawFw74E/Rg9H/wpLjGzFeVCqYlPuEAAAAAElFTkSuQmCC"
-)
-
-icons8_output_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
-    b"PUlEQVQ4ja3SOUpDURTG8d9zaATBJgtwaMQhQgoHsNPCDQhuIBsQrHQDWYGN0c4NCA5LULEV"
-    b"RCsLbdQuTSSx8IS8PK4Dxg8O3HuG/zl34HcaCPsXDeAIxxjsF5ZhH+2wQ31MmqEeoFZYO3zZ"
-    b"X4ATOcBNWKfB+F+nnIxprsOy8H2poR+AD4V9O+HrUfGC51D+oUleZcx+FVxDA6eJ2B52E/6z"
-    b"qFkrBtYj0EINmyh9M1kpcmpR0wgGGMad7l/r2CuWE7CViBXz74IFpvAY3XawgWdcJoBXeIqc"
-    b"nah5DEaPOtDz2NfRTACbOIj1RRGW/zb3mNd9+ab0txrCe6y3YsK3FFA+oHs3ReX9L4m4UZxg"
-    b"puBfwnYifxuLBd+Cz+OPQSU6VlPdfqlqMCr5I6/2Aeyp7Uz4H1bJMILpPqbL6/YDkzdghLDo"
-    b"+mMAAAAASUVORK5CYII="
-)
-
-icons8_close_window_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"3ElEQVQ4jb3UQU4CMQAF0KdxA3sdbkCMGy/BIWThci7hbUzAeAXOoUFvAB5Alrpo0QJ1Jm0m"
-    b"/qRJ+2f6+/ubfAbGWTKfYIZRocYOK2xTcoIPfFWOLRo4j4IzXBY6S3EVNX4ES6+ZwzgVHAxd"
-    b"gg9YZ/h1/FYseI85XhPuPXLzjn2glX+9N9zi5Wie+7eFi56DpljiLq6fcN214V8fhd/MFnh2"
-    b"mumfyGWYy6wrx7bP4aOQ303C7TNd1jgsHb0Oq7AX3A2g9ZkuGqGCaq+7ERrnoGAboYLGFc5W"
-    b"Qp8Oj2+JXWSupLCkIQAAAABJRU5ErkJggg=="
-)
-
-
-icons8_next_page_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
-    b"HElEQVQ4jcXUMU5CQRDG8R92UgoeQKDEO1iLKOrVtFQ8gYqFEsMJRHuDxxCJVFjsEsnLewto"
-    b"jF+yzZeZf2ZmZ5d/UjWeX+kQPUwwi2cSvfa61QzwiQt00IynE70pHlepehtveMJOIq6GIUao"
-    b"pICDCCsveJso5cSW8Yx+EawttJmtrI/zAmhdaL+VB7wT5pPVHj4S0C5us2YpJh3l1p6GHmOc"
-    b"9avCWjQLgIvQs0zybsytwEY0ZwnQjzRvubOkuryWT/Ce4+vhck0YXOEmr4oDYQVqGT+1No2Y"
-    b"s58HJDynodUX+wX3RTDCbY+EF1BPxDVizCu2UkDC9feFVrrC0Oefw6kwsykeVoEtqiUMe+z7"
-    b"+xrjWmJmq6piya/yZ/oCgl5ESq9WShMAAAAASUVORK5CYII="
-)
-
 cap_butt_20 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABwAAAAPCAYAAAD3T6+hAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAAFiUAABYlAUlSJPAAAAAZdEVYdFNvZnR3YXJlAHd3dy5pbmtz"
@@ -1417,7 +1240,6 @@ join_miter = PyEmbeddedImage(
     b"RU5ErkJggg=="
 )
 
-
 join_bevel = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAIAAABLixI0AAAABnRSTlMA/wD/AP83WBt9AAAA"
     b"CXBIWXMAABYlAAAWJQFJUiTwAAAB0UlEQVQ4jc3TMWsTcRjH8e9dkxvSTImC24lQ2sFGhcIt"
@@ -1431,7 +1253,6 @@ join_bevel = PyEmbeddedImage(
     b"Xs/zvOu5ZSwpZaPRSCaThUKh2Ww6jjN7SAhNSjm/h3/xfX8ymWQymcVDS1lLxfdvH3f1/K/W"
     b"X6GtRkLtoYR+AAAAAElFTkSuQmCC"
 )
-
 
 join_round = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAIAAABLixI0AAAABnRSTlMA/wD/AP83WBt9AAAA"
@@ -1448,90 +1269,7 @@ join_round = PyEmbeddedImage(
     b"/yM6a1FRBwAAAABJRU5ErkJggg=="
 )
 
-
-icons8_add_new_25 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"7klEQVRIie2VOwrCQBCGP8Vr2FkE8VHFVgTPIVZ23kNSewCxFlSwU7AXbFQkhWDhPYyFE1gX"
-    b"E3fXRyH5IPzM7jA/sztLIMOCnBYXgSFQeaPmHugDl6SEORB94JuqRQuaSVW0AxwduigDY6Ce"
-    b"ZhIfXwhsHUzyWp2HRVN6wFLU2tmUEtAW/ZqJEz8x0S9epwt4StxUdKCsh8DI1PTMfc59iReY"
-    b"vYuF5PsSn206mQAHJW4BDWADrLVOjNE70QlkP0jYf9rJ/0yXrckJWIk68+pOXmE0XZGoB1wd"
-    b"TOI3FaUlzfjB/6QvSTWHLmJ2UifDjRsEWFa4krvEMAAAAABJRU5ErkJggg=="
-)
-
-icons8_edit_25 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"y0lEQVRIie3UP0oDQRTH8Q9uzmAqu9zBM6TI2qbRKrdKIygKKfQO9skJAoJewhVMUuwbMkqa"
-    b"ZTaN7A8ezPxm3vsyfxn0WxWW2GByLsAD9hGffYMqPEXxBtu+QRWeo+g3alxmoHWaeFEAeMQ8"
-    b"+iOMcY2r8NYn8joB0goavEZ7p13RPsarvgB1+C+OB18MSLeowU34U3yFv9Ju3QAYAP8VAPcZ"
-    b"YBbeLPrFDy3pPYrdnQuQQ24jegfkkDyKz+Bv8of2N016wwI/JZBBnXQAlthpgy5S6SYAAAAA"
-    b"SUVORK5CYII="
-)
-
-icons8_paste_25 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"3UlEQVRIie3VvU0DQRDF8R+IOoAMJ44IoBl3APVAARSAnfMlJyREJCcZXAAOccwRMEjWaHUL"
-    b"J5Ac3JNGqx29e/+dDfbYMp3iAW+4x8lfAw6xRrtR79H/tQ4ww2uqVQTfYoy72K8K3in2uyCz"
-    b"dNpcF+G7rPimXZBlmCY4xrwQ0BR68/BPYr/cDN1NkJ1YGzzhpXCQo0JvEf4m5YC9rrFwjqv8"
-    b"UVKLx66QGmSNm4qnqnxd/6IBMkAGyJZA8rPSxjrCR4+8UcopqvY/+Wldd01yFhOMe0zxrWdf"
-    b"r/egfvoE8sJYB3CAY3oAAAAASUVORK5CYII="
-)
-
-icons8_remove_25 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAABmJLR0QA/wD/AP+gvaeTAAAB"
-    b"g0lEQVRIie3Vu08UURTH8c+SjQGWVhOkIT4KqLUwsQBChQ3RoK2N/gPWkNBSUFGgiZaGREOl"
-    b"nYEE46Mh8gf4qLR0YyBxeQQo5m7cHe/sXsKEil9yM/fOOXO+M+fce4YzUCXBpwdTGAlz+I23"
-    b"+FXWi7zEUWTUcb0MwFAI+AJXcSWMcRxgISVINbeeQq1lPRyuG/jWcv87tnETM7kYH/GzE/SH"
-    b"eGoeRnzrBb7TnQBwG3PB+Qkmw7gc8R1rsX/FVphf7AYR3uQoBEnVF6wXGXuKDGUqBXLD/1u1"
-    b"ggfSzllXyAW8lqWiCapgGSu4XwZkD/fQj/cYxRIe4zlepUBiihX+Fv7gb7A91Z6qUgr/Ge/Q"
-    b"iwYWAyxJKZBmDe5iVZbCNSfoW90gFe01mMEE+vyr0akhVQziGR7hEJu4g13ZhuiqfIPMa192"
-    b"Hg601+CTLF17ZUCaoJiSAMTT1Xy4FrEVaaATNPYlm9iR1eFDAuASrsl+bFEV9Z4JzIu3+Lwa"
-    b"eINZJ0jhuQp1DEu0WE60jG9UAAAAAElFTkSuQmCC"
-)
 # ----------------------------------------------------------------------
-icons8_visit_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
-    b"iUlEQVQ4ja3UsUvVURQH8M/LtDIQyfJRDS0ZDoKQW2QQtgQVDfontNRiVGMIDjXlEG2Cow29"
-    b"h4pNDWFGa7RUg7a4JErBWyOw4Xce7/bj/d57Zl84cO6553zv93fu79yS1jiNmxiO9VesYruo"
-    b"4FBB/DCeooqjWA7rxRKeRE5H6IqiBygViHgUhxUJ+gsPMZOQ35N95iruJiSzuN+OrBuf0BPq"
-    b"qngs6+WZOKgSuUcitzsl6MoRXsZxvMYtDGIOL/Abz3El6r5gBDVs1QnyjT2Hb+FfwgqmMYlR"
-    b"jQu6Fi3YiJr3dYJ8U3dQDv8nBqIIhvALJ/EjYmXsaoFBrCcEH2S/ykRYb8TOR846TqUEzRTW"
-    b"cCGUzWEN42Hv8AybkVNrpxCuYz5ZD+BG2IkkPh+5HeGtxrg1w1Co7RjjWGyx/xJX90MIb2S/"
-    b"Sh6jsbdvjMkuJJ3nUsTGioryk5LiOy7iLD5G7A72sPAvCqEPn2WzXA6/v1VBs+cpjyncDn9J"
-    b"43E4ECp49T+I6jgW1hZ/AFlFRTnCbQ/nAAAAAElFTkSuQmCC"
-)
-
-
-icons8_line_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAAsTAAALEwEAmpwY"
-    b"AAAAUElEQVR4nO2UsQkAIAwEj+jOruAiFuKQ2qSyEMQvLHJNuuMJ+cCHmFKWgAZUhSwDHZg+"
-    b"TZFsAsPlITsTO7snxZ1dY1vRn7qJUxRF35E+SwkL3b0jER3TDbgAAAAASUVORK5CYII="
-)
-
-icons8_journey_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAAsTAAALEwEAmpwY"
-    b"AAAA1klEQVR4nNWUOQ7CMBBFH1TQEDgNHAE4BwQ4QiSWK7AcBVFGIGhzgwS6cI2gkaZwgbEV"
-    b"LCS+NI31/TTzvcC/KQJiYA70QsDuQKVV6FptxQbMhGaWugBroBUKWKonBZq2kQsDljtGbgB7"
-    b"9Q5tJgFMgRnQ9YhpoMCEAJIODwoc2UwS8EYDzxz1VNjRBpNgz2oqPYBXYAm0bcCxwrY6ztdK"
-    b"FNj38MorWugBRq4Od44O5fQfvi/q5JGheVcrLen0rSTgFXALBazzieRAx2vnB0mO8sVNQsB+"
-    b"qxdgAGI6yhzqowAAAABJRU5ErkJggg=="
-)
-
-icons8_warning_shield_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAAsTAAALEwEAmpwY"
-    b"AAACV0lEQVR4nJ2Tz2sTQRTHV9GDB/8GQXoT9eAf4KXszk6CoFj1VpqCVmNOVRSDRnvyB14k"
-    b"1GZnZheMBxGkhogmMxu0ojm0SWixgQpaE9M0UE0PWjTJJhmZQNLWTZsmX/jCY997n2Xem5Gk"
-    b"LRR/OLCPBZR+iuV7JnEsMgKXGFI0isHAS3xiv7QTRZDcxzTgMXWVUQzKDKvVmcnBUmbay4UT"
-    b"k4MVhtUaxaBiGo6YqI0guc8GokgeNQnMUgT4u+DJP2nzcm0lfZdXfxicrwY3WXwTubTpqU89"
-    b"PVUSPabuyFEMrrSA4m+psIuvZf02QKlAeH7uQcMi/j+/lvVz0WsSaLaAjMBQmrltxcICNH6j"
-    b"v2ERt6uZZ27OsPpiHYgULRV21XoFJsOuahSBxxtmCLzx5+dKvQI/PjtbYghcXwdqypmY4Szz"
-    b"1SddA+vFIDcNZyWqgdMbZug4KLb1O+PvGvhr8REXvTEMD7SAnEu7GIHFXOJW18DvMzc5w3DF"
-    b"dhcZUo1UeNjqFpgMDVkUqaQNUAYUq7XSsrbje/g3PyGOW49iINuAPp9vN8Mw9zV+rb5pRt8m"
-    b"+PSr0YZFvDH35cNVznRHRvS2fctRpFyIGc5KuYA7Hrlc0JrbHZa2UiJwbC/T4cI8dVudgJ+i"
-    b"I1Wmw/Rb3/E90nZ6oymHKFKtfOpO20ssvDw7xkUNC6iHt4W1FqQBDyPQKn62b/Xnwn3xbqsM"
-    b"gYtSN6IY+kRjYW6sBVtK3W7AKIHermBNRQPgEsWqNfv6vJUMDVVETDVlpCdYUxEiH2XE+Z7p"
-    b"jikTgSOdGv4BIclJf+4n3KEAAAAASUVORK5CYII="
-)
-
 
 icon_kerf_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAABnRSTlMA/wD/AP83WBt9AAAA"
@@ -1678,6 +1416,20 @@ icons8_emergency_stop_button = VectorIcon(
 
 icons8_laser_beam = VectorIcon(
     "M 24.90625 -0.03125 C 24.863281 -0.0234375 24.820313 -0.0117188 24.78125 0 C 24.316406 0.105469 23.988281 0.523438 24 1 L 24 27.9375 C 24 28.023438 24.011719 28.105469 24.03125 28.1875 C 22.859375 28.59375 22 29.6875 22 31 C 22 32.65625 23.34375 34 25 34 C 26.65625 34 28 32.65625 28 31 C 28 29.6875 27.140625 28.59375 25.96875 28.1875 C 25.988281 28.105469 26 28.023438 26 27.9375 L 26 1 C 26.011719 0.710938 25.894531 0.433594 25.6875 0.238281 C 25.476563 0.0390625 25.191406 -0.0585938 24.90625 -0.03125 Z M 35.125 12.15625 C 34.832031 12.210938 34.582031 12.394531 34.4375 12.65625 L 27.125 25.3125 C 26.898438 25.621094 26.867188 26.03125 27.042969 26.371094 C 27.222656 26.710938 27.578125 26.917969 27.960938 26.90625 C 28.347656 26.894531 28.6875 26.664063 28.84375 26.3125 L 36.15625 13.65625 C 36.34375 13.335938 36.335938 12.9375 36.140625 12.625 C 35.941406 12.308594 35.589844 12.128906 35.21875 12.15625 C 35.1875 12.15625 35.15625 12.15625 35.125 12.15625 Z M 17.78125 17.71875 C 17.75 17.726563 17.71875 17.738281 17.6875 17.75 C 17.375 17.824219 17.113281 18.042969 16.988281 18.339844 C 16.867188 18.636719 16.894531 18.976563 17.0625 19.25 L 21.125 26.3125 C 21.402344 26.796875 22.015625 26.964844 22.5 26.6875 C 22.984375 26.410156 23.152344 25.796875 22.875 25.3125 L 18.78125 18.25 C 18.605469 17.914063 18.253906 17.710938 17.875 17.71875 C 17.84375 17.71875 17.8125 17.71875 17.78125 17.71875 Z M 7 19.6875 C 6.566406 19.742188 6.222656 20.070313 6.140625 20.5 C 6.0625 20.929688 6.273438 21.359375 6.65625 21.5625 L 19.3125 28.875 C 19.796875 29.152344 20.410156 28.984375 20.6875 28.5 C 20.964844 28.015625 20.796875 27.402344 20.3125 27.125 L 7.65625 19.84375 C 7.488281 19.738281 7.292969 19.683594 7.09375 19.6875 C 7.0625 19.6875 7.03125 19.6875 7 19.6875 Z M 37.1875 22.90625 C 37.03125 22.921875 36.882813 22.976563 36.75 23.0625 L 29.6875 27.125 C 29.203125 27.402344 29.035156 28.015625 29.3125 28.5 C 29.589844 28.984375 30.203125 29.152344 30.6875 28.875 L 37.75 24.78125 C 38.164063 24.554688 38.367188 24.070313 38.230469 23.617188 C 38.09375 23.164063 37.660156 22.867188 37.1875 22.90625 Z M 0.71875 30 C 0.167969 30.078125 -0.21875 30.589844 -0.140625 31.140625 C -0.0625 31.691406 0.449219 32.078125 1 32 L 19 32 C 19.359375 32.003906 19.695313 31.816406 19.878906 31.503906 C 20.058594 31.191406 20.058594 30.808594 19.878906 30.496094 C 19.695313 30.183594 19.359375 29.996094 19 30 L 1 30 C 0.96875 30 0.9375 30 0.90625 30 C 0.875 30 0.84375 30 0.8125 30 C 0.78125 30 0.75 30 0.71875 30 Z M 30.71875 30 C 30.167969 30.078125 29.78125 30.589844 29.859375 31.140625 C 29.9375 31.691406 30.449219 32.078125 31 32 L 49 32 C 49.359375 32.003906 49.695313 31.816406 49.878906 31.503906 C 50.058594 31.191406 50.058594 30.808594 49.878906 30.496094 C 49.695313 30.183594 49.359375 29.996094 49 30 L 31 30 C 30.96875 30 30.9375 30 30.90625 30 C 30.875 30 30.84375 30 30.8125 30 C 30.78125 30 30.75 30 30.71875 30 Z M 19.75 32.96875 C 19.71875 32.976563 19.6875 32.988281 19.65625 33 C 19.535156 33.019531 19.417969 33.0625 19.3125 33.125 L 12.25 37.21875 C 11.898438 37.375 11.667969 37.714844 11.65625 38.101563 C 11.644531 38.484375 11.851563 38.839844 12.191406 39.019531 C 12.53125 39.195313 12.941406 39.164063 13.25 38.9375 L 20.3125 34.875 C 20.78125 34.675781 21.027344 34.160156 20.882813 33.671875 C 20.738281 33.183594 20.25 32.878906 19.75 32.96875 Z M 30.03125 33 C 29.597656 33.054688 29.253906 33.382813 29.171875 33.8125 C 29.09375 34.242188 29.304688 34.671875 29.6875 34.875 L 42.34375 42.15625 C 42.652344 42.382813 43.0625 42.414063 43.402344 42.238281 C 43.742188 42.058594 43.949219 41.703125 43.9375 41.320313 C 43.925781 40.933594 43.695313 40.59375 43.34375 40.4375 L 30.6875 33.125 C 30.488281 33.007813 30.257813 32.964844 30.03125 33 Z M 21.9375 35.15625 C 21.894531 35.164063 21.851563 35.175781 21.8125 35.1875 C 21.519531 35.242188 21.269531 35.425781 21.125 35.6875 L 13.84375 48.34375 C 13.617188 48.652344 13.585938 49.0625 13.761719 49.402344 C 13.941406 49.742188 14.296875 49.949219 14.679688 49.9375 C 15.066406 49.925781 15.40625 49.695313 15.5625 49.34375 L 22.875 36.6875 C 23.078125 36.367188 23.082031 35.957031 22.882813 35.628906 C 22.683594 35.304688 22.316406 35.121094 21.9375 35.15625 Z M 27.84375 35.1875 C 27.511719 35.234375 27.226563 35.445313 27.082031 35.746094 C 26.9375 36.046875 26.953125 36.398438 27.125 36.6875 L 31.21875 43.75 C 31.375 44.101563 31.714844 44.332031 32.101563 44.34375 C 32.484375 44.355469 32.839844 44.148438 33.019531 43.808594 C 33.195313 43.46875 33.164063 43.058594 32.9375 42.75 L 28.875 35.6875 C 28.671875 35.320313 28.257813 35.121094 27.84375 35.1875 Z M 24.90625 35.96875 C 24.863281 35.976563 24.820313 35.988281 24.78125 36 C 24.316406 36.105469 23.988281 36.523438 24 37 L 24 45.9375 C 23.996094 46.296875 24.183594 46.632813 24.496094 46.816406 C 24.808594 46.996094 25.191406 46.996094 25.503906 46.816406 C 25.816406 46.632813 26.003906 46.296875 26 45.9375 L 26 37 C 26.011719 36.710938 25.894531 36.433594 25.6875 36.238281 C 25.476563 36.039063 25.191406 35.941406 24.90625 35.96875 Z"
+)
+
+icons8_laserbeam_weak = VectorIcon(
+    fill=("M 50 45 a 5 5, 0 1,0 1,0",),
+    stroke=(
+        "M 50 20 v 30",
+        "[150%]M 50 57.5 v 10",
+        "[150%]M 42.5 50 h -15",
+        "[150%]M 57.5 50 h 15",
+        "[150%]M 45 45 L 40 40",
+        "[150%]M 45 55 L 40 60",
+        "[150%]M 55 45 L 60 40",
+        "[150%]M 55 55 L 60 60",
+    ),
 )
 
 icons8_laser_beam_hazard = VectorIcon(
@@ -2717,7 +2469,7 @@ icons8_menu = VectorIcon(
     stroke=(),
 )
 
-instruction_circle = VectorIcon(
+icon_instruct_circle = VectorIcon(
     fill=(
         "M 55 0 a 5,5, 0 1,0 1,0",
         "M 5 50 a 5,5, 0 1,0 1,0",
@@ -2737,7 +2489,7 @@ instruction_circle = VectorIcon(
     ),
 )
 
-instruction_frame = VectorIcon(
+icon_instruct_rect = VectorIcon(
     fill=(
         "M 5 0 a 5,5, 0 1,0 1,0",
         "M 100 75 a 5,5, 0 1,0 1,0",
@@ -2754,7 +2506,7 @@ instruction_frame = VectorIcon(
     ),
 )
 
-instruction_rectangle = VectorIcon(
+icon_instruct_square = VectorIcon(
     fill=(
         "M 15 70 a 5,5, 0 1,0 1,0",
         "M 50 80 a 5,5, 0 1,0 1,0",
@@ -2777,5 +2529,175 @@ instruction_rectangle = VectorIcon(
         "M 68 51 h 6",
         # 2
         "M 79 45 h 5 v 5 h -5 v 5 h 5",
+    ),
+)
+
+icon_points = VectorIcon(
+    fill=(
+        "M 15 8 a 4,4, 0 1,0 1,0",
+        "M 15 28 a 4,4, 0 1,0 1,0",
+        "M 35 8 a 4,4 0 1,0 1,0",
+        "M 50 28 a 4,4, 0 1,0 1,0",
+        "M 30 48 a 4,4, 0 1,0 1,0",
+        "M 50 48 a 4,4, 0 1,0 1,0",
+    ),
+    stroke=("M 0 60 v -60 h 60",),
+)
+
+icon_timer = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 4.51555 7 C 3.55827 8.4301 3 10.1499 3 12 C 3 16.9706 7.02944 21 12 21 C 16.9706 21 21 16.9706 21 12 C 21 7.02944 16.9706 3 12 3 V 6 M 12 12 L8 8",
+    ),
+)
+
+icon_return = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 12.9998 8 L 6 14 L 12.9998 21",
+        "M 6 14 H 28.9938 C 35.8768 14 41.7221 19.6204 41.9904 26.5 C 42.2739 33.7696 36.2671 40 28.9938 40 H 11.9984",
+    ),
+)
+
+icon_console = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 4 26.016 q 0 0.832 0.576 1.408 t 1.44 0.576 h 20 q 0.8 0 1.408-0.576 t 0.576-1.408 v -20 q 0 -0.832 -0.576 -1.408 t -1.408 -0.608 h -20 q -0.832 0 -1.44 0.608 t -0.576 1.408 v 20z",
+        "M 8 8 L 12 12 L 8 16",
+        "M 13 18 h 8",
+    ),
+)
+
+icon_external = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 20 10 h -20 v 40 h 40 v -20",
+        "M 20 30 L 45 5",
+        "M 35 5 h 10 v 10",
+    ),
+)
+
+icon_internal = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 20 10 h -20 v 40 h 40 v -20",
+        "M 20 30 L 45 5",
+        "M 20 20 v 10 h 10",
+    ),
+)
+
+icon_warning = VectorIcon(
+    fill=(
+        "[red]M32.427,7.987c2.183,0.124 4,1.165 5.096,3.281l17.936,36.208c1.739,3.66 -0.954,8.585 -5.373,8.656l-36.119,0c-4.022,-0.064 -7.322,-4.631 -5.352,-8.696l18.271,-36.207c0.342,-0.65 0.498,-0.838 0.793,-1.179c1.186,-1.375 2.483,-2.111 4.748,-2.063Zm-0.295,3.997c-0.687,0.034 -1.316,0.419 -1.659,1.017c-6.312,11.979 -12.397,24.081 -18.301,36.267c-0.546,1.225 0.391,2.797 1.762,2.863c12.06,0.195 24.125,0.195 36.185,0c1.325,-0.064 2.321,-1.584 1.769,-2.85c-5.793,-12.184 -11.765,-24.286 -17.966,-36.267c-0.366,-0.651 -0.903,-1.042 -1.79,-1.03Z",
+        "[red]M33.631,40.581l-3.348,0l-0.368,-16.449l4.1,0l-0.384,16.449Zm-3.828,5.03c0,-0.609 0.197,-1.113 0.592,-1.514c0.396,-0.4 0.935,-0.601 1.618,-0.601c0.684,0 1.223,0.201 1.618,0.601c0.395,0.401 0.593,0.905 0.593,1.514c0,0.587 -0.193,1.078 -0.577,1.473c-0.385,0.395 -0.929,0.593 -1.634,0.593c-0.705,0 -1.249,-0.198 -1.634,-0.593c-0.384,-0.395 -0.576,-0.886 -0.576,-1.473Z",
+    ),
+    stroke=(),
+)
+
+icon_marker = VectorIcon(
+    fill=(),
+    stroke=(
+        "M12 13C13.6569 13 15 11.6569 15 10C15 8.34315 13.6569 7 12 7C10.3431 7 9 8.34315 9 10C9 11.6569 10.3431 13 12 13Z",
+        "M12 22C16 18 20 14.4183 20 10C20 5.58172 16.4183 2 12 2C7.58172 2 4 5.58172 4 10C4 14.4183 8 18 12 22Z",
+    ),
+)
+
+icon_line = VectorIcon(
+    fill=(
+        "M 5 0 a 5,5, 0 1,0 1,0",
+        "M 45 45 a 5,5, 0 1,0 1,0",
+    ),
+    stroke=("M 5 5 L 45 50",),
+)
+
+icon_path = VectorIcon(
+    fill=(
+        "M 5 0 a 5,5, 0 1,0 1,0",
+        "M 30 40 a 5,5, 0 1,0 1,0",
+    ),
+    stroke=("M 10 5 h 20 C 40 5 40 25 30 25 h -20 C 0 25 0 45 10 45 h 20"),
+)
+
+icon_add_new = VectorIcon(
+    fill=(),
+    stroke=("M 0 0 h 40 v 40 h -40 z", "M 20 10 v 20 M 10 20 h 20"),
+)
+
+icon_trash = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 4 6 H 20",
+        "M 16 6 L 15.7294 5.18807 C 15.4671 4.40125 15.3359 4.00784 15.0927 3.71698 C 14.8779 3.46013 14.6021 3.26132 14.2905 3.13878 C 13.9376 3 13.523 3 12.6936 3 H 11.3064 C 10.477 3 10.0624 3 9.70951 3.13878 C 9.39792 3.26132 9.12208 3.46013 8.90729 3.71698 C 8.66405 4.00784 8.53292 4.40125 8.27064 5.18807 L 8 6",
+        "M 18 6 V 16.2 C 18 17.8802 18 18.7202 17.673 19.362 C 17.3854 19.9265 16.9265 20.3854 16.362 20.673 C 15.7202 21 14.8802 21 13.2 21 H 10.8 C 9.11984 21 8.27976 21 7.63803 20.673 C 7.07354 20.3854 6.6146 19.9265 6.32698 19.362 C 6 18.7202 6 17.8802 6 16.2 V 6",
+        "M 14 10 V 17",
+        "M 10 10 V 17",
+    ),
+)
+
+icon_round_stop = VectorIcon(
+    fill=("M 30 30 h 40 v 40 h -40 Z",),
+    stroke=("M 50 0 a 50,50, 0 1,0 1,0",),
+    strokewidth=5,
+)
+
+icon_bell = VectorIcon(
+    fill=(),
+    stroke=(
+        "M9.00195 17H5.60636C4.34793 17 3.71872 17 3.58633 16.9023C3.4376 16.7925 3.40126 16.7277 3.38515 16.5436C3.37082 16.3797 3.75646 15.7486 4.52776 14.4866C5.32411 13.1835 6.00031 11.2862 6.00031 8.6C6.00031 7.11479 6.63245 5.69041 7.75766 4.6402C8.88288 3.59 10.409 3 12.0003 3C13.5916 3 15.1177 3.59 16.2429 4.6402C17.3682 5.69041 18.0003 7.11479 18.0003 8.6C18.0003 11.2862 18.6765 13.1835 19.4729 14.4866C20.2441 15.7486 20.6298 16.3797 20.6155 16.5436C20.5994 16.7277 20.563 16.7925 20.4143 16.9023C20.2819 17 19.6527 17 18.3943 17H15.0003",
+        "M9.00195 17L9.00031 18C9.00031 19.6569 10.3435 21 12.0003 21C13.6572 21 15.0003 19.6569 15.0003 18V17",
+        "M9.00195 17H15.0003",
+    ),
+)
+
+icon_close_window = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 0 0 h 40 v 40 h -40 z",
+        "M 10 10 L 30 30",
+        "M 30 10 L 10 30",
+    ),
+)
+
+icon_edit = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 18 10 L 21 7 L 17 3 L 14 6",
+        "M 18 10 L 8 20 H 4 V 16 L 14 6",
+        "M 18 10 L 14 6",
+    ),
+)
+
+icon_tree = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 0 0 h 10 v 10 h -10 z",
+        "M 30 20 h 10 v 10 h -10 z",
+        "M 30 40 h 10 v 10 h -10 z",
+        "M 5 10 v 35 h 25",
+        "M 5 25 h 25",
+    ),
+)
+
+icon_rotary = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 17.8 21 H 22 v 1 h -6 v -6 h 1 v 4.508 a 9.861 9.861 0 1 0-5 1.373 v .837 A 10.748 10.748 0 1 1 17.8 21z",
+        "M 11 11 v 2 h 2 v -2 z",
+    ),
+)
+
+icon_magic_wand = VectorIcon(
+    fill=(),
+    stroke=(
+        "M31.891 13.418l-3.212-4.802 1.599-5.588c0.099-0.35 0.002-0.728-0.257-0.985-0.258-0.258-0.633-0.353-0.986-0.251l-5.578 1.629-4.822-3.247c-0.303-0.204-0.692-0.229-1.014-0.061-0.324 0.166-0.532 0.496-0.544 0.859l-0.173 5.811-4.578 3.581c-0.287 0.225-0.428 0.588-0.371 0.947s0.306 0.659 0.65 0.782l4.296 1.54c-0.029 0.023-0.059 0.044-0.087 0.071l-16.586 16.586c-0.391 0.39-0.391 1.023 0 1.414 0.196 0.195 0.451 0.293 0.707 0.293s0.511-0.098 0.707-0.293l16.586-16.586c0.064-0.065 0.114-0.137 0.157-0.213l1.681 4.611c0.125 0.342 0.426 0.589 0.786 0.645 0.051 0.008 0.102 0.012 0.154 0.012 0.306 0 0.599-0.142 0.791-0.389l3.555-4.599 5.747-0.205c0.364-0.012 0.692-0.223 0.858-0.548s0.139-0.714-0.066-1.015z",
+    ),
+    strokewidth=1,
+)
+
+icon_about = VectorIcon(
+    fill=(
+        "M26,52A26,26,0,0,1,22.88.19,25.78,25.78,0,0,1,34.73,1.5a2,2,0,1,1-1.35,3.77,22,22,0,0,0-21,38,22,22,0,0,0,35.41-20,2,2,0,1,1,4-.48A26,26,0,0,1,26,52Z"
+        "M26,43.86a2,2,0,0,1-2-2V22.66a2,2,0,1,1,4,0v19.2A2,2,0,0,1,26,43.86Z",
+        "M 26 13.44 a 2.57,2.57, 0 1,0 1,0",
     ),
 )

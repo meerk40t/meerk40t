@@ -18,29 +18,29 @@ from .icons import (
     icon_mk_polyline,
     icon_mk_rectangular,
     icon_regmarks,
-    icons8_bell_20,
-    icons8_close_window_20,
+    icon_bell,
+    icon_close_window,
     icons8_direction,
     icons8_file,
     icons8_ghost,
     icons8_group_objects,
     icons8_home_filled,
     icons8_image,
-    icons8_input_20,
-    icons8_journey_20,
+    icon_internal,
+    icon_path,
     icons8_laser_beam,
-    icons8_line_20,
+    icon_line,
     icons8_lock,
-    icons8_output_20,
+    icon_external,
     icons8_r_white,
-    icons8_return_20,
-    icons8_scatter_plot_20,
-    icons8_small_beam_20,
-    icons8_smartphone_ram_50,
-    icons8_stop_gesture_20,
-    icons8_system_task_20,
-    icons8_timer_20,
-    icons8_warning_shield_20,
+    icon_return,
+    icon_points,
+    icons8_laserbeam_weak,
+    icon_tree,
+    icon_round_stop,
+    icon_console,
+    icon_timer,
+    icon_warning,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
@@ -463,7 +463,7 @@ class ElementsTree(MWindow):
         self.panel = TreePanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_smartphone_ram_50.GetBitmap())
+        _icon.CopyFromBitmap(icon_tree.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Tree"))
 
@@ -512,33 +512,33 @@ class ShadowTree:
         self.setup_state_images()
         self.default_images = {
             "console home -f": icons8_home_filled,
-            "console move_abs": icons8_return_20,
-            "console beep": icons8_bell_20,
-            "console interrupt": icons8_stop_gesture_20,
-            "console quit": icons8_close_window_20,
-            "util wait": icons8_timer_20,
+            "console move_abs": icon_return,
+            "console beep": icon_bell,
+            "console interrupt": icon_round_stop,
+            "console quit": icon_close_window,
+            "util wait": icon_timer,
             "util home": icons8_home_filled,
-            "util goto": icons8_return_20,
-            "util output": icons8_output_20,
-            "util input": icons8_input_20,
-            "util console": icons8_system_task_20,
-            "op engrave": icons8_small_beam_20,
+            "util goto": icon_return,
+            "util output": icon_external,
+            "util input": icon_internal,
+            "util console": icon_console,
+            "op engrave": icons8_laserbeam_weak,
             "op cut": icons8_laser_beam,
             "op image": icons8_image,
             "op raster": icons8_direction,
-            "op dots": icons8_scatter_plot_20,
+            "op dots": icon_points,
             "effect hatch": icon_effect_hatch,
             "effect wobble": icon_effect_wobble,
             "place current": icons8_home_filled,
             "place point": icons8_home_filled,
-            "elem point": icons8_scatter_plot_20,
+            "elem point": icon_points,
             "file": icons8_file,
             "group": icons8_group_objects,
             "elem rect": icon_mk_rectangular,
             "elem ellipse": icon_mk_ellipse,
             "elem image": icons8_image,
-            "elem path": icons8_journey_20,
-            "elem line": icons8_line_20,
+            "elem path": icon_path,
+            "elem line": icon_line,
             "elem polyline": icon_mk_polyline,
             "elem text": icon_bmap_text,
             "blob": icons8_file,
@@ -574,7 +574,7 @@ class ShadowTree:
         )
         image_id = self.state_images.Add(bitmap=image)
         self.iconstates["refobject"] = image_id
-        image = icons8_warning_shield_20.GetBitmap(
+        image = icon_warning.GetBitmap(
             resize=(self.iconsize, self.iconsize),
             noadjustment=True,
             buffer=1,

@@ -3,7 +3,7 @@ import datetime
 import wx
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
-from .icons import icon_meerk40t, icons8_about_50
+from .icons import icon_meerk40t, icon_about
 from .mwindow import MWindow
 from .wxutils import StaticBoxSizer, ScrolledPanel
 
@@ -287,7 +287,7 @@ class About(MWindow):
         self.add_module_delegate(self.panel_about)
         self.add_module_delegate(self.panel_info)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_about_50.GetBitmap())
+        _icon.CopyFromBitmap(icon_about.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("About"))
 

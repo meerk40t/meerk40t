@@ -6,8 +6,8 @@ from meerk40t.gui.icons import (
     icons8_direction,
     icons8_image,
     icons8_laser_beam,
-    icons8_scatter_plot_20,
-    icons8_small_beam_20,
+    icon_points,
+    icons8_laserbeam_weak,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import ScrolledPanel
@@ -65,8 +65,8 @@ class OpInfoPanel(ScrolledPanel):
             "op cut": ("Cut", icons8_laser_beam, 0),
             "op raster": ("Raster", icons8_direction, 0),
             "op image": ("Image", icons8_image, 0),
-            "op engrave": ("Engrave", icons8_small_beam_20, 0),
-            "op dots": ("Dots", icons8_scatter_plot_20, 0),
+            "op engrave": ("Engrave", icons8_laserbeam_weak, 0),
+            "op dots": ("Dots", icon_points, 0),
         }
         self.state_images = wx.ImageList()
         self.state_images.Create(width=25, height=25)
