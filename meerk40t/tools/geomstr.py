@@ -3245,27 +3245,25 @@ class Geomstr:
 
         @return: intersection-indexes, position, t-values
         """
-        geoms = self.segments[:self.index]
+        geoms = self.segments[: self.index]
         infos = np.real(geoms[:, 2]).astype(int)
         q = np.where(infos == TYPE_LINE)
-        starts = geoms[q][:,0]
-        ends = geoms[q][:,-1]
-        lines = np.dstack(
-            (starts, ends)
-        )[0]
+        starts = geoms[q][:, 0]
+        ends = geoms[q][:, -1]
+        lines = np.dstack((starts, ends))[0]
         x, y = np.triu_indices(len(starts), 1)
         j = lines[x]
         k = lines[y]
-        a1 = j[:,0]
+        a1 = j[:, 0]
         ax1 = np.real(a1)
         ay1 = np.imag(a1)
-        b1 = k[:,0]
+        b1 = k[:, 0]
         bx1 = np.real(b1)
         by1 = np.imag(b1)
-        a2 = j[:,1]
+        a2 = j[:, 1]
         ax2 = np.real(a2)
         ay2 = np.imag(a2)
-        b2 = k[:,1]
+        b2 = k[:, 1]
         bx2 = np.real(b2)
         by2 = np.imag(b2)
 
@@ -3786,7 +3784,6 @@ class Geomstr:
             return a.imag - (im * a.real)
         finally:
             np.seterr(**old_np_seterr)
-
 
     def endpoint_min_y(self, e):
         """
