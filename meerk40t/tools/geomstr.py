@@ -386,7 +386,7 @@ class BeamTable:
         self.intersections = Geomstr()
 
     def sort_key(self, e):
-        return e[0].imag, e[0].real, ~e[1]
+        return e[0].real, e[0].imag, ~e[1]
 
     def compute_beam(self):
         g = self.geometry
@@ -510,7 +510,7 @@ class BeamTable:
         for i in range(g.index):
             if gs[i][2] != TYPE_LINE:
                 continue
-            if (gs[i][0].imag, gs[i][0].real) < (gs[i][-1].imag, gs[i][-1].real):
+            if (gs[i][0].real, gs[i][0].imag) < (gs[i][-1].real, gs[i][-1].imag):
                 events.append((g.segments[i][0], i, None))
                 events.append((g.segments[i][-1], ~i, None))
             else:
@@ -531,7 +531,7 @@ class BeamTable:
         scanline = None
 
         def x_ints(e):
-            return g.x_intercept(e, np.imag(scanline))
+            return g.x_intercept(e, np.real(scanline))
 
         # Store previously active segments
         active_lists = []
@@ -565,7 +565,7 @@ class BeamTable:
                 real_events.append(pt)
                 active_lists.append(list(actives))
 
-        self._nb_events = [(e.imag, e.real) for e in real_events]
+        self._nb_events = [(e.real, e.imag) for e in real_events]
         self._nb_scan = np.zeros((len(active_lists), largest_actives), dtype=int)
         self._nb_scan -= 1
         for i, active in enumerate(active_lists):
@@ -574,7 +574,7 @@ class BeamTable:
     def points_in_polygon(self, e):
         if self._nb_scan is None:
             self.compute_beam_brute()
-        idx = np.searchsorted(np.imag(self._nb_events), np.imag(e))
+        idx = np.searchsorted(np.real(self._nb_events), np.real(e))
         actives = self._nb_scan[idx]
         line = self.geometry.segments[actives]
         a = line[:, :, 0]
