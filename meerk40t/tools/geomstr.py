@@ -3788,7 +3788,7 @@ class Geomstr:
             np.seterr(**old_np_seterr)
         return m
 
-    def y_intercept(self, e):
+    def y_at_axis(self, e):
         """
         y_intercept value between start and end points.
 
@@ -3892,6 +3892,31 @@ class Geomstr:
             return np.where(~np.isinf(m), (y - y0) / m, a.real)
         finally:
             np.seterr(**old_np_seterr)
+
+    def y_intercept(self, e, x):
+        """
+        Gives the y_intercept of a line at a specific value of x.
+
+        @param e:
+        @param x:
+        @return:
+        """
+        line = self.segments[e]
+        if len(line.shape) == 2:
+            a = line[:, 0]
+            b = line[:, -1]
+        else:
+            a = line[0]
+            b = line[-1]
+        old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
+        try:
+            # If vertical slope is undefined. But, all y-ints are at y since y0=y1
+            m = (b.real - a.real) / (b.imag - a.imag)
+            x0 = a.real - (m * a.imag)
+            return np.where(~np.isinf(m), (x - x0) / m, a.imag)
+        finally:
+            np.seterr(**old_np_seterr)
+
 
     #######################
     # Geometry Window Functions
