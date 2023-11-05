@@ -444,21 +444,50 @@ class VectorIcon:
         if not fill:
             pass
         elif isinstance(fill, str):
-            self.list_fill.append(fill)
+            color, bright, pathstr = self.investigate(fill)
+            self.list_fill.append((color, bright, pathstr))
         elif isinstance(fill, (list, tuple)):
             for e in fill:
-                self.list_fill.append(e)
+                color, bright, pathstr = self.investigate(e)
+                self.list_fill.append((color, bright, pathstr))
         if not stroke:
             pass
         elif isinstance(stroke, str):
-            self.list_stroke.append(stroke)
+            color, bright, pathstr = self.investigate(stroke)
+            self.list_stroke.append((color, bright, pathstr))
         elif isinstance(stroke, (list, tuple)):
             for e in stroke:
-                self.list_stroke.append(e)
+                color, bright, pathstr = self.investigate(e)
+                self.list_stroke.append((color, bright, pathstr))
         self._pen = wx.Pen()
         self._brush = wx.Brush()
         self._background = wx.Brush()
-       
+
+    def investigate(self, svgstr):
+        color = None
+        bright = None
+        pathstr = svgstr
+        if pathstr.startswith("["):
+            idx = pathstr.find("]")
+            pattern = pathstr[1:idx]
+            subpattern = pattern.split(",")
+            for p in subpattern:
+                e = p.strip()
+                if e.endswith("%"):
+                    try:
+                        bright = int(e[:-1])
+                    except ValueError:
+                        pass
+                else:
+                    if e.startswith("0x"):
+                        try:
+                            e = int(e[2:], 16)
+                        except ValueError:
+                            pass
+                    color = e
+            pathstr = pathstr[idx + 1 :]
+            # print(f"{pattern}: {color}, {bright} -> {pathstr}")
+        return color, bright, pathstr
 
     def light_mode(self, color):
         if color is None:
@@ -533,7 +562,7 @@ class VectorIcon:
                 res_fill += str(hash(e)) + ","
             res_stroke = ""
             for e in self.list_stroke:
-                res_stroke += str(hash(e)) + ","
+                res_stroke += str(hash(e[2])) + ","
 
             return res_fill + "|" + res_stroke
 
@@ -543,7 +572,14 @@ class VectorIcon:
             return _CACHE[cache_id]
         # wincol = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
         wincol = self._background.GetColour()
-        bmp = wx.Bitmap.FromRGBA(final_icon_width, final_icon_height, wincol.red, wincol.blue, wincol.green, 0)
+        bmp = wx.Bitmap.FromRGBA(
+            final_icon_width,
+            final_icon_height,
+            wincol.red,
+            wincol.blue,
+            wincol.green,
+            0,
+        )
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
         # dc.SetBackground(self._background)
@@ -555,10 +591,46 @@ class VectorIcon:
         fill_paths = []
         # Establish the box...
         min_x = min_y = max_x = max_y = None
-        for e in self.list_fill:
+
+        def get_color(info_color, info_bright, default_color):
+            color = None
+            if info_color is not None:
+                try:
+                    color = wx.Colour(info_color)
+                except AttributeError:
+                    pass
+            if info_bright is not None:
+                if color is None:
+                    color = default_color
+                # brightness is a percentage values below 100 indicate darker
+                # values beyond 100 indicate lighter
+                # no change = 100
+                # What about black? This is a special case, so we only consider
+                ialpha = info_bright / 100.0
+                if color.red == color.green == color.blue == 0 and info_bright > 100:
+                    ialpha = (info_bright - 100) / 100.0
+                    cr = int(255 * ialpha)
+                    cg = int(255 * ialpha)
+                    cb = int(255 * ialpha)
+                else:
+                    cr = int(color.red * ialpha)
+                    cg = int(color.green * ialpha)
+                    cb = int(color.blue * ialpha)
+
+                # Make sure the stay with 0..255
+                cr = max(0, min(255, cr))
+                cg = max(0, min(255, cg))
+                cb = max(0, min(255, cb))
+                color = wx.Colour(cr, cg, cb)
+            return color
+
+        def_col = self._brush.GetColour()
+        for s_entry in self.list_fill:
+            e = s_entry[2]
             geom = Geomstr.svg(e)
+            color = get_color(s_entry[0], s_entry[1], def_col)
             gp = self.make_geomstr(gc, geom)
-            fill_paths.append(gp)
+            fill_paths.append((gp, color))
             m_x, m_y, p_w, p_h = gp.Box
             if min_x is None:
                 min_x = m_x
@@ -570,10 +642,14 @@ class VectorIcon:
                 min_y = min(min_y, m_y)
                 max_x = max(max_x, m_x + p_w)
                 max_y = max(max_y, m_y + p_h)
-        for e in self.list_stroke:
+
+        def_col = self._pen.GetColour()
+        for s_entry in self.list_stroke:
+            e = s_entry[2]
             geom = Geomstr.svg(e)
+            color = get_color(s_entry[0], s_entry[1], def_col)
             gp = self.make_geomstr(gc, geom)
-            stroke_paths.append(gp)
+            stroke_paths.append((gp, color))
             m_x, m_y, p_w, p_h = gp.Box
             if min_x is None:
                 min_x = m_x
@@ -637,11 +713,25 @@ class VectorIcon:
         if not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
 
-        gc.SetBrush(self._brush)
-        for gp in fill_paths:
+        for entry in fill_paths:
+            gp = entry[0]
+            if entry[1] is None:
+                sbrush = self._brush
+            else:
+                sbrush = wx.Brush()
+                sbrush.SetColour(entry[1])
+            gc.SetBrush(sbrush)
             gc.FillPath(gp)
-        gc.SetPen(self._pen)
-        for gp in stroke_paths:
+
+        for entry in stroke_paths:
+            gp = entry[0]
+            if entry[1] is None:
+                spen = self._pen
+            else:
+                spen = wx.Pen()
+                spen.SetColour(entry[1])
+                spen.SetWidth(self.strokewidth)
+            gc.SetPen(spen)
             gc.StrokePath(gp)
         dc.SelectObject(wx.NullBitmap)
         gc.Destroy()
@@ -1096,18 +1186,6 @@ icons8_system_task_20 = PyEmbeddedImage(
     b"rZ7LCne8DPgDBhc9y356EnYAAAAASUVORK5CYII="
 )
 
-
-icons8_scatter_plot_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1B"
-    b"AACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAGYktHRAD/AP8A/6C9p5MAAADtSURB"
-    b"VDhPzZS9EsFAFIUXjU5FT6FEpVFTKAyFFzKeAk+g1niJtLwFJYbhnLtZk2wiNkuRb+ab7Nlk"
-    b"bvYnG1V4SuHV0IVt3XTmBvfwIilCBz7gM6dX2IcJ5pAP/EQ5vP6NrIIreIYzSY5kFeQS1OBY"
-    b"kgf2Gk4gR9mU5DHib5tygry/luSAXbABR7AiKT5i9g0hn/mIXfAAmZeS4iwg7x0lRcjaFFM8"
-    b"+hJDWl8Ce4R1yGmZKU8h168FvaZsYzZlI0nDs0/f5DkpW8jPZidJFwpCe+yw4fd1100nWJA/"
-    b"ExobpaEKB7rpDP9QqcWKilIvu2w5UIty+GoAAAAASUVORK5CYII="
-)
-
-
 # ----------------------------------------------------------------------
 
 icons8_roll_50 = PyEmbeddedImage(
@@ -1201,7 +1279,6 @@ icons8_smartphone_ram_50 = PyEmbeddedImage(
 
 # ----------------------------------------------------------------------
 
-
 icons8_timer_20 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
     b"NElEQVQ4jd3TuUpDQRgF4C9Bg+BraGOigqWFhW+hIi5v4EMIaVwweQofwEYrawsxbo2FWNq4"
@@ -1229,66 +1306,6 @@ icons8_input_20 = PyEmbeddedImage(
     b"MEoEPuB0aCpOQjsY+CP8amCFhXbJS+mFN9p9NuGpcgPO8IY17jvC7lGOcRead4yHWte47U3t"
     b"X7kKTT0UtqtxcaPS0L3DHjHJcLX8987xnCLWmO7TIDANLzjqEB8O2884vFu4wUp7gNK3wvUB"
     b"Rf4IXzjbQCQgdD/qAAAAAElFTkSuQmCC"
-)
-
-laser_cut_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAALKAAACygH/GNH1"
-    b"AAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAABKtJREFUaIHd2muIVVUU"
-    b"wPHfjM6kmY5OYllJakSJmaWmmRVGUvQurOhTZJh9slAq/RAVFERfLEEoiCwKKkEqKqKHkRBF"
-    b"WFBRVNCbssyw1CzzMdqHdQ5z5859nHPmnrH6w+Fyzl57n7X22Xvttde+5GM9luWsU5S1eDar"
-    b"8NCcjc/BnznrFGUyOrIKt+ds/ACG5KxTlHb05BHOQ0+BOkVpFx2XWTgPg/1FSjNkML/IEP+j"
-    b"L5J5juT1Wj04CXdgOw4mvwewo+r3C+yu0cYsjMVI0SmjEqW70IbRidxEbMupX2ZW4gf8hr3C"
-    b"kHrXwzXqj65Tb0dy9WAzPsIHuLwsQyq5OFHiTozB0cL3T8FM0cO16EJ3Uicd2u14Fz/r/SKD"
-    b"yjP4GycPsJ2lolOuHrBGBRmLrdgoxncRxuN3vNIinQpzg+jNGwvWf06EPZNapdBAeF14r2Ny"
-    b"1kvn2fKWa1SQidiFdTnqjMC3+FiO4HAwuF307hUZ5R8U7vbM0jQqyBDh+zdr7kKnYx8eKlup"
-    b"okwXC96aBjKpwT+pv9b8K3hADJmz65QvE0PwykHTqCDD8aWItYZVlU3AH8Ll/ieYLwLHu6ue"
-    b"v4CdOG6wFRoIj2MPpib3C8WQuuWQaVSQbmwRsVgP9mOTkvYzZW6SdmOD2HdsE6mkpWLhbMYw"
-    b"YXipLMRXosfLYBr+EvOsVCaLIO+JEtpO9yXf4YgS2u/HcjFxL8wgOw5fiw1XM27L0W5LaMc7"
-    b"oudGNpGdJpRb0ERukpg/aweqXF6mCI+0uoncdGHI+Q1k2vCG2OqWNfcaco/G4QicJgw5r4HM"
-    b"kkRmYcs0y0knPlE7HEmZIZScX6d8vMjKvNhq5fIyW/j8e+uUzxSGnFun/Hmxuzy29arlZ5XY"
-    b"X5xeo2yWMOScGmXXJWWLylMtH4eLRfJD/bets4Wy1fPoSBHCvKl4BiY3zVwsMZkPiC1vJXOE"
-    b"IWdVPX9KLKwnNGm3A8dneH9Txohd38si79uIx0R4cWLFs7nCkLkVzy5Knt3apL1LhSPZrkVf"
-    b"bZEYBnvFPntMHbku/Khvwi6dIzOS+xH4Bu+pH7ROxWtJvU36dsKAGSHWjd0iml0h3G81lyUK"
-    b"3Jzct4lhlRq2Rt99SiXdYoHdJ5IYS5QYoU/Ak3qPDi6pIbNepEGrz1/GiQX0rqrnHULpX4WR"
-    b"q8Vxw6AwX3ipgyK8OKWirBtXNahX2csL8GnSzksGkDrtEGO+2VUrV9WOxXrnT/U2dp7IJO7D"
-    b"Z/rHW48mBryvdpjTKRbU6mue6ID0mgrfa3xgU3nV22+Pwn165wUcJRIN+5O6+8X8qnSlN+F6"
-    b"9Y8AH8mo19Y2kUhulNVIj9JWCU+yuIFsJdeqnQteLNx0Fl4VRxcrxVett03+Zajs5xL3i4mY"
-    b"lS05n9dij1B+QzPBPKe6h8lnyNtiEaU3kbBR9HJW9ibvbUqeU928hqSZ+Wtwqpjs6+Q4ck7e"
-    b"d8gNIebWOvnOTSrJbEiZQ6sV7FE7euhHni/SIXz9iuS+Ot4arW9g1yU6argYWjvxeUX5LuGJ"
-    b"apH+EeEM9XeefchqSBveEq76ApFRT+lJlExJ//2Q0inWmU6RE6umQ+Mc1tNZFPwH6RsguE5X"
-    b"XQUAAAAASUVORK5CYII="
-)
-
-laser_engrave_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAALKAAACygH/GNH1"
-    b"AAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAA0RJREFUaIHt2UmIHGUU"
-    b"wPHf9IwzLmRmnIzBuGA0ByMiEWISBdeDiCIqqPdgjjEJERRFQfCkF/UgBBEUBHFFclJwAVFQ"
-    b"3HBFoyIeQozbqEmUUWMnHl41PRZTM/1VV/W00n8oiqp67/vet73ve69I4znsSNQpy6N4qlPh"
-    b"kcTCN+L3RJ2ynIGjOhVuJBZ+GMOJOmVpoJkinEKzhE5ZGqLjOhZOodcjUltDejkiw/5HI9Lx"
-    b"Gkn1Wk2cidvwK45k98PYn7vvxuw8ZZyHaSwTnTKeGT2BIUxmcqswk2hfx9yOPfgZf4mGFF07"
-    b"59GfLNDbn11N7MWHeA/X1NWQuVyVGXEXjseJwvefhXWih+djAlOZTmtqN/Am9mmPSE95En9g"
-    b"TZflbBWdckPXFpVkGj/gNTG/y7ASv+CFimwqzSbRmzeV1H9eHHtOr8qgbnhJeK+TEvVa6+yW"
-    b"yi0qySr8hqcTdI7DN/hIwuGwF9wqevfaDuUfEO72/NosKsmw8P17Le5C1+IQHqzbqLKsFRve"
-    b"QwvItBr8reK9pi+4T0yZCwu+7xBT8LqeWVSSY/CVOGsdnft2Kg4Kl/uf4FJxcLw7934XDuCU"
-    b"XhvUDY/hT5ydPV8vptS2JbOoJFP4TpzFmvgb76gpnqkzSJrFKyLumBGppK1i4xyw1KxeagOq"
-    b"4ssFvo1VUUFVGZHleFfx4a9oLR4rdvmuo8KqGjIjFvYdiXr34AkRAvQNY/hAe9+Yy9fzvFuP"
-    b"9/XZEb7FBSKJkJ9K+YaMiKm4rqqKq84aviVSOTcvIncnXhYj0reM43P/drlzR2QNPhaHy77n"
-    b"SryqnVlpNaSB13FR1RV2O7W2ixB3Re79iyLZtil7fju7b8MneCMnPypC5C1d2lOaE0Qe+FM8"
-    b"g8u1O2daTLHWwh/N5Maz5wYuxsNixB7Bhp5YvQBDuEzsCZ+J/WRYBFbrcT8uEa52FPfiCzwr"
-    b"IsVKdveqWY7Nwugp/CTikBmclr2/UZ/H63lOFpn7I9n9nLoqqvunzUExEivFb4ZddVVUNvG8"
-    b"GCMioFqMCcWec0wcKouY1LZ/3xAex9U5oWXS/2YtJT8O4Qqc20UhsyIu75RDFg53Dyj+d1ik"
-    b"+31C/QMGDBgwoDr+AWj/qA3v5WpJAAAAAElFTkSuQmCC"
-)
-
-icons8_small_beam_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
-    b"O0lEQVQ4jb3UzSuEURQG8B8mX1OTJqTUJE1s7EwpSdn4lyxY+q8oH8VCiLJRFpqkECUsEGNx"
-    b"72R6vWPuhqduve/5eM655zxd0jCA/sTYJGxiIyWwkEg4llq5OzXwrwm7MIuZVMJlzMXEPLJ5"
-    b"TKEvlfARk6jl+GqooI7jrLPdUg7wiUaOr4ELHLbxd0QJd/GUOgUX0INF9GZ857jEGoajbRUr"
-    b"mMB0Jv4Nu80ZZlsfQvWXRqoxphWNZocf2M44lzCCItZbCq5HWxm32MpWypMFjAtjuMceXqK9"
-    b"iIVIuIPrFMKmzirx/wMP8bsszJwgm32ZcfX4iZqgwTpOhJdmFIPCNY8E/VaErV91IiwLwj7A"
-    b"k7DpCl6FF+cpkpSivRs3zeQ8YZ/l2LJoCNd99j2OtoR5eG9DepqY/wPFeP4fX8KRO0UnWEma"
-    b"AAAAAElFTkSuQmCC"
 )
 
 icons8_stop_gesture_20 = PyEmbeddedImage(
@@ -1678,6 +1695,20 @@ icons8_emergency_stop_button = VectorIcon(
 
 icons8_laser_beam = VectorIcon(
     "M 24.90625 -0.03125 C 24.863281 -0.0234375 24.820313 -0.0117188 24.78125 0 C 24.316406 0.105469 23.988281 0.523438 24 1 L 24 27.9375 C 24 28.023438 24.011719 28.105469 24.03125 28.1875 C 22.859375 28.59375 22 29.6875 22 31 C 22 32.65625 23.34375 34 25 34 C 26.65625 34 28 32.65625 28 31 C 28 29.6875 27.140625 28.59375 25.96875 28.1875 C 25.988281 28.105469 26 28.023438 26 27.9375 L 26 1 C 26.011719 0.710938 25.894531 0.433594 25.6875 0.238281 C 25.476563 0.0390625 25.191406 -0.0585938 24.90625 -0.03125 Z M 35.125 12.15625 C 34.832031 12.210938 34.582031 12.394531 34.4375 12.65625 L 27.125 25.3125 C 26.898438 25.621094 26.867188 26.03125 27.042969 26.371094 C 27.222656 26.710938 27.578125 26.917969 27.960938 26.90625 C 28.347656 26.894531 28.6875 26.664063 28.84375 26.3125 L 36.15625 13.65625 C 36.34375 13.335938 36.335938 12.9375 36.140625 12.625 C 35.941406 12.308594 35.589844 12.128906 35.21875 12.15625 C 35.1875 12.15625 35.15625 12.15625 35.125 12.15625 Z M 17.78125 17.71875 C 17.75 17.726563 17.71875 17.738281 17.6875 17.75 C 17.375 17.824219 17.113281 18.042969 16.988281 18.339844 C 16.867188 18.636719 16.894531 18.976563 17.0625 19.25 L 21.125 26.3125 C 21.402344 26.796875 22.015625 26.964844 22.5 26.6875 C 22.984375 26.410156 23.152344 25.796875 22.875 25.3125 L 18.78125 18.25 C 18.605469 17.914063 18.253906 17.710938 17.875 17.71875 C 17.84375 17.71875 17.8125 17.71875 17.78125 17.71875 Z M 7 19.6875 C 6.566406 19.742188 6.222656 20.070313 6.140625 20.5 C 6.0625 20.929688 6.273438 21.359375 6.65625 21.5625 L 19.3125 28.875 C 19.796875 29.152344 20.410156 28.984375 20.6875 28.5 C 20.964844 28.015625 20.796875 27.402344 20.3125 27.125 L 7.65625 19.84375 C 7.488281 19.738281 7.292969 19.683594 7.09375 19.6875 C 7.0625 19.6875 7.03125 19.6875 7 19.6875 Z M 37.1875 22.90625 C 37.03125 22.921875 36.882813 22.976563 36.75 23.0625 L 29.6875 27.125 C 29.203125 27.402344 29.035156 28.015625 29.3125 28.5 C 29.589844 28.984375 30.203125 29.152344 30.6875 28.875 L 37.75 24.78125 C 38.164063 24.554688 38.367188 24.070313 38.230469 23.617188 C 38.09375 23.164063 37.660156 22.867188 37.1875 22.90625 Z M 0.71875 30 C 0.167969 30.078125 -0.21875 30.589844 -0.140625 31.140625 C -0.0625 31.691406 0.449219 32.078125 1 32 L 19 32 C 19.359375 32.003906 19.695313 31.816406 19.878906 31.503906 C 20.058594 31.191406 20.058594 30.808594 19.878906 30.496094 C 19.695313 30.183594 19.359375 29.996094 19 30 L 1 30 C 0.96875 30 0.9375 30 0.90625 30 C 0.875 30 0.84375 30 0.8125 30 C 0.78125 30 0.75 30 0.71875 30 Z M 30.71875 30 C 30.167969 30.078125 29.78125 30.589844 29.859375 31.140625 C 29.9375 31.691406 30.449219 32.078125 31 32 L 49 32 C 49.359375 32.003906 49.695313 31.816406 49.878906 31.503906 C 50.058594 31.191406 50.058594 30.808594 49.878906 30.496094 C 49.695313 30.183594 49.359375 29.996094 49 30 L 31 30 C 30.96875 30 30.9375 30 30.90625 30 C 30.875 30 30.84375 30 30.8125 30 C 30.78125 30 30.75 30 30.71875 30 Z M 19.75 32.96875 C 19.71875 32.976563 19.6875 32.988281 19.65625 33 C 19.535156 33.019531 19.417969 33.0625 19.3125 33.125 L 12.25 37.21875 C 11.898438 37.375 11.667969 37.714844 11.65625 38.101563 C 11.644531 38.484375 11.851563 38.839844 12.191406 39.019531 C 12.53125 39.195313 12.941406 39.164063 13.25 38.9375 L 20.3125 34.875 C 20.78125 34.675781 21.027344 34.160156 20.882813 33.671875 C 20.738281 33.183594 20.25 32.878906 19.75 32.96875 Z M 30.03125 33 C 29.597656 33.054688 29.253906 33.382813 29.171875 33.8125 C 29.09375 34.242188 29.304688 34.671875 29.6875 34.875 L 42.34375 42.15625 C 42.652344 42.382813 43.0625 42.414063 43.402344 42.238281 C 43.742188 42.058594 43.949219 41.703125 43.9375 41.320313 C 43.925781 40.933594 43.695313 40.59375 43.34375 40.4375 L 30.6875 33.125 C 30.488281 33.007813 30.257813 32.964844 30.03125 33 Z M 21.9375 35.15625 C 21.894531 35.164063 21.851563 35.175781 21.8125 35.1875 C 21.519531 35.242188 21.269531 35.425781 21.125 35.6875 L 13.84375 48.34375 C 13.617188 48.652344 13.585938 49.0625 13.761719 49.402344 C 13.941406 49.742188 14.296875 49.949219 14.679688 49.9375 C 15.066406 49.925781 15.40625 49.695313 15.5625 49.34375 L 22.875 36.6875 C 23.078125 36.367188 23.082031 35.957031 22.882813 35.628906 C 22.683594 35.304688 22.316406 35.121094 21.9375 35.15625 Z M 27.84375 35.1875 C 27.511719 35.234375 27.226563 35.445313 27.082031 35.746094 C 26.9375 36.046875 26.953125 36.398438 27.125 36.6875 L 31.21875 43.75 C 31.375 44.101563 31.714844 44.332031 32.101563 44.34375 C 32.484375 44.355469 32.839844 44.148438 33.019531 43.808594 C 33.195313 43.46875 33.164063 43.058594 32.9375 42.75 L 28.875 35.6875 C 28.671875 35.320313 28.257813 35.121094 27.84375 35.1875 Z M 24.90625 35.96875 C 24.863281 35.976563 24.820313 35.988281 24.78125 36 C 24.316406 36.105469 23.988281 36.523438 24 37 L 24 45.9375 C 23.996094 46.296875 24.183594 46.632813 24.496094 46.816406 C 24.808594 46.996094 25.191406 46.996094 25.503906 46.816406 C 25.816406 46.632813 26.003906 46.296875 26 45.9375 L 26 37 C 26.011719 36.710938 25.894531 36.433594 25.6875 36.238281 C 25.476563 36.039063 25.191406 35.941406 24.90625 35.96875 Z"
+)
+
+icons8_laserbeam_weak = VectorIcon(
+    fill=("M 50 45 a 5 5, 0 1,0 1,0",),
+    stroke=(
+        "M 50 20 v 30",
+        "[150%]M 50 57.5 v 10",
+        "[150%]M 42.5 50 h -15",
+        "[150%]M 57.5 50 h 15",
+        "[150%]M 45 45 L 40 40",
+        "[150%]M 45 55 L 40 60",
+        "[150%]M 55 45 L 60 40",
+        "[150%]M 55 55 L 60 60",
+    ),
 )
 
 icons8_laser_beam_hazard = VectorIcon(
@@ -2717,7 +2748,7 @@ icons8_menu = VectorIcon(
     stroke=(),
 )
 
-instruction_circle = VectorIcon(
+icon_instruct_circle = VectorIcon(
     fill=(
         "M 55 0 a 5,5, 0 1,0 1,0",
         "M 5 50 a 5,5, 0 1,0 1,0",
@@ -2737,7 +2768,7 @@ instruction_circle = VectorIcon(
     ),
 )
 
-instruction_frame = VectorIcon(
+icon_instruct_rect = VectorIcon(
     fill=(
         "M 5 0 a 5,5, 0 1,0 1,0",
         "M 100 75 a 5,5, 0 1,0 1,0",
@@ -2754,7 +2785,7 @@ instruction_frame = VectorIcon(
     ),
 )
 
-instruction_rectangle = VectorIcon(
+icon_instruct_square = VectorIcon(
     fill=(
         "M 15 70 a 5,5, 0 1,0 1,0",
         "M 50 80 a 5,5, 0 1,0 1,0",
@@ -2778,4 +2809,16 @@ instruction_rectangle = VectorIcon(
         # 2
         "M 79 45 h 5 v 5 h -5 v 5 h 5",
     ),
+)
+
+icon_points = VectorIcon(
+    fill=(
+        "M 15 8 a 4,4, 0 1,0 1,0",
+        "M 15 28 a 4,4, 0 1,0 1,0",
+        "M 35 8 a 4,4 0 1,0 1,0",
+        "M 50 28 a 4,4, 0 1,0 1,0",
+        "M 30 48 a 4,4, 0 1,0 1,0",
+        "M 50 48 a 4,4, 0 1,0 1,0",
+    ),
+    stroke=("M 0 60 v -60 h 60",),
 )

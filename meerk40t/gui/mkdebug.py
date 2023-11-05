@@ -72,6 +72,7 @@ class DebugTreePanel(wx.Panel):
     """
     Displays information about selected elements
     """
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -155,6 +156,7 @@ class DebugColorPanel(ScrolledPanel):
     """
     Displays system defined (OS and wxpython) colors to simplify identifying / choosing them
     """
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

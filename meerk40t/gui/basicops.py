@@ -15,8 +15,8 @@ from .icons import (
     icons8_direction,
     icons8_image,
     icons8_laser_beam,
-    icons8_scatter_plot_20,
-    icons8_small_beam_20,
+    icon_points,
+    icons8_laserbeam_weak,
 )
 from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, create_menu, dip_size
 
@@ -355,7 +355,7 @@ class BasicOpPanel(wx.Panel):
                 )
             elif node.type == "op engrave":
                 c, d = get_color()
-                result = icons8_small_beam_20.GetBitmap(
+                result = icons8_laserbeam_weak.GetBitmap(
                     color=c,
                     resize=(iconsize, iconsize),
                     noadjustment=True,
@@ -371,7 +371,7 @@ class BasicOpPanel(wx.Panel):
                 )
             elif node.type == "op dots":
                 c, d = get_color()
-                result = icons8_scatter_plot_20.GetBitmap(
+                result = icon_points.GetBitmap(
                     color=c,
                     resize=(iconsize, iconsize),
                     noadjustment=True,
