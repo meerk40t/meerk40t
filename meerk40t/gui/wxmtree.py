@@ -18,8 +18,8 @@ from .icons import (
     icon_mk_polyline,
     icon_mk_rectangular,
     icon_regmarks,
-    icons8_bell_20,
-    icons8_close_window_20,
+    icon_bell,
+    icon_close_window,
     icons8_direction,
     icons8_file,
     icons8_ghost,
@@ -36,8 +36,8 @@ from .icons import (
     icon_return,
     icon_points,
     icons8_laserbeam_weak,
-    icons8_smartphone_ram_50,
-    icons8_stop_gesture_20,
+    icon_tree,
+    icon_round_stop,
     icon_console,
     icon_timer,
     icon_warning,
@@ -463,7 +463,7 @@ class ElementsTree(MWindow):
         self.panel = TreePanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_smartphone_ram_50.GetBitmap())
+        _icon.CopyFromBitmap(icon_tree.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Tree"))
 
@@ -513,9 +513,9 @@ class ShadowTree:
         self.default_images = {
             "console home -f": icons8_home_filled,
             "console move_abs": icon_return,
-            "console beep": icons8_bell_20,
-            "console interrupt": icons8_stop_gesture_20,
-            "console quit": icons8_close_window_20,
+            "console beep": icon_bell,
+            "console interrupt": icon_round_stop,
+            "console quit": icon_close_window,
             "util wait": icon_timer,
             "util home": icons8_home_filled,
             "util goto": icon_return,

@@ -2,15 +2,15 @@ import wx
 
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
-    icons8_bell_20,
-    icons8_close_window_20,
+    icon_bell,
+    icon_close_window,
     icons8_down,
     icons8_home_filled,
     icon_internal,
     icon_external,
-    icons8_remove_25,
+    icon_trash,
     icon_return,
-    icons8_stop_gesture_20,
+    icon_round_stop,
     icon_console,
     icon_timer,
     icons8_up,
@@ -43,9 +43,9 @@ class DefaultActionPanel(wx.Panel):
         self.default_images = [
             ["console home -f", icons8_home_filled],
             ["console move_abs", icon_return],
-            ["console beep", icons8_bell_20],
-            ["console interrupt", icons8_stop_gesture_20],
-            ["console quit", icons8_close_window_20],
+            ["console beep", icon_bell],
+            ["console interrupt", icon_round_stop],
+            ["console quit", icon_close_window],
             ["util wait", icon_timer],
             ["util home", icons8_home_filled],
             ["util goto", icon_return],  # icon_marker
@@ -87,7 +87,7 @@ class DefaultActionPanel(wx.Panel):
             self, wx.ID_ANY, size=dip_size(self, 30, 20)
         )
         self.button_del_prepend.SetBitmap(
-            icons8_remove_25.GetBitmap(resize=STD_ICON_SIZE / 2)
+            icon_trash.GetBitmap(resize=STD_ICON_SIZE / 2)
         )
         self.button_up_prepend.SetBitmap(icons8_up.GetBitmap(resize=STD_ICON_SIZE / 2))
         self.button_down_prepend.SetBitmap(
@@ -103,9 +103,7 @@ class DefaultActionPanel(wx.Panel):
         self.button_down_append = wx.StaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 30, 30)
         )
-        self.button_del_append.SetBitmap(
-            icons8_remove_25.GetBitmap(resize=STD_ICON_SIZE / 2)
-        )
+        self.button_del_append.SetBitmap(icon_trash.GetBitmap(resize=STD_ICON_SIZE / 2))
         self.button_up_append.SetBitmap(icons8_up.GetBitmap(resize=STD_ICON_SIZE / 2))
         self.button_down_append.SetBitmap(
             icons8_down.GetBitmap(resize=STD_ICON_SIZE / 2)

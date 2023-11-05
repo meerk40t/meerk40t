@@ -26,9 +26,9 @@ from ..svgelements import Matrix
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import (
     STD_ICON_SIZE,
-    icons8_bell_20,
+    icon_bell,
     icons8_circled_play,
-    icons8_close_window_20,
+    icon_close_window,
     icons8_home_filled,
     icons8_image,
     icon_internal,
@@ -37,7 +37,7 @@ from .icons import (
     icons8_pause,
     icon_return,
     icons8_route,
-    icons8_stop_gesture_20,
+    icon_round_stop,
     icon_console,
     icon_timer,
 )
@@ -107,9 +107,9 @@ class OperationsPanel(wx.Panel):
     def setup_state_images(self):
         iconsize = 20
         self.default_images = [
-            ["beep", icons8_bell_20],
-            ["interrupt", icons8_stop_gesture_20],
-            ["quit", icons8_close_window_20],
+            ["beep", icon_bell],
+            ["interrupt", icon_round_stop],
+            ["quit", icon_close_window],
             ["wait", icon_timer],
             ["home", icons8_home_filled],
             ["goto", icon_return],

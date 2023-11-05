@@ -7,7 +7,7 @@ def plugin(kernel, lifecycle):
     if lifecycle == "invalidate":
         return not kernel.has_feature("wx")
     if lifecycle == "register":
-        from meerk40t.gui.icons import icons8_roll_50
+        from meerk40t.gui.icons import icon_rotary
         from meerk40t.rotary.gui.rotarysettings import RotarySettings
 
         _ = kernel.translation
@@ -21,7 +21,7 @@ def plugin(kernel, lifecycle):
             "button/device/Rotary",
             {
                 "label": _("Rotary"),
-                "icon": icons8_roll_50,
+                "icon": icon_rotary,
                 "tip": _("Opens Rotary Window"),
                 "action": lambda v: kernel.console("window toggle Rotary\n"),
             },

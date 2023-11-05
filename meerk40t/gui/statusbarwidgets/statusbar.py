@@ -1,6 +1,6 @@
 import wx
 
-from meerk40t.gui.icons import icons8_next_page_20
+from meerk40t.gui.icons import icons8_circled_right
 
 
 class CustomStatusBar(wx.StatusBar):
@@ -32,12 +32,14 @@ class CustomStatusBar(wx.StatusBar):
             btn = wx.StaticBitmap(
                 self,
                 id=wx.ID_ANY,
-                bitmap=icons8_next_page_20.GetBitmap(noadjustment=True),
-                size=wx.Size(20, self.MinHeight),
+                bitmap=icons8_circled_right.GetBitmap(
+                    resize=self.MinHeight - 5, buffer=1
+                ),
+                size=wx.Size(self.MinHeight, self.MinHeight),
                 # style=wx.BORDER_RAISED,
             )
             # btn.SetBackgroundColour(wx.RED)
-            # btn.SetBitmap(icons8_next_page_20.GetBitmap(noadjustment=True, color=Color("red")))
+            # btn.SetBitmap(icons8_circled_right.GetBitmap(noadjustment=True, color=Color("red")))
             btn.Show(False)
             btn.Bind(wx.EVT_LEFT_DOWN, self.on_button_next)
             btn.Bind(wx.EVT_RIGHT_DOWN, self.on_button_prev)

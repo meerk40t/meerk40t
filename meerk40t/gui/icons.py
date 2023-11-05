@@ -1175,43 +1175,6 @@ icon_meerk40t = PyEmbeddedImage(
 
 # ----------------------------------------------------------------------
 
-icon_console = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
-    b"TElEQVQ4ja3UzStEURjH8c9goWyxY1jITkrs8AewoPgLSLKztLJR/gEpxcbWwsbWhrLwlh3K"
-    b"S40lKYlmIxbnjJm57ryU+dXt3OeeX9/znOc852bQiS6N0VMG1zhqEHCsCR9YRf4foHxkfLTE"
-    b"DxN4x26KeQD3ceFKmo4MBWAzcrhIMW9iXfWyDEWGpiomyKIPwzV8v6oFnI3ZNQw4hR101OFF"
-    b"sYbQja2SuBlveMWtsPUnrKEtwXkWzqAM+IL9hDEXxzOMYBkPOEz4RtMy/JR+ynCKDdxhMWV+"
-    b"qPBSV11wiW8s1DIWMvxCb+lKKZpDT3yS6sYjZHCOSaygtb6E/ygvtNeBCPyPloRDg/OWas46"
-    b"dSLUF2HL2xisYG6P40uFOKmrTIWJcfQr9tdxHEvjGyk/jDRgFntC5tU0jxnF5kd5YxfULrRQ"
-    b"rZ7LCne8DPgDBhc9y356EnYAAAAASUVORK5CYII="
-)
-
-# ----------------------------------------------------------------------
-
-icons8_roll_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAD"
-    b"60lEQVRogd3a3Y9dUxgG8B89M1PpHKLtuBEqqSolbXzFx4UIE8y0IxE30vi64kJk2rpF8R+4"
-    b"J5qQ+A+4QLSIdlAXbWZ8lUjRb0GHpF8xLtbaWVv17Dnn7HXO4El21snJ2s/7vHuvtd53v2vx"
-    b"P8F5Gbkuwl24HWuwEiMYxhyO4xd8g734FO/G/xcci7ER7+CMILiT62S89yEMtGFvCjtzOnAB"
-    b"NuHgWaK243k8ILyVpRjEkPB2rsGDeCH2PV26/6fIOVhht+ibBWP4vkT6GZ4UhlanWIonhKFW"
-    b"8H2N+1r0z+LIYrxSItuN8bqkJYxjOnL/iZejzTJqO3KpMDnn8Ae2YFEdwhZo4BmciLamhCFZ"
-    b"oJYjK/BtJNiHtV3LbB/XR1tz+CpqoIYjgyXCXbi4vsa2cYkw/wpnlqvhyFAkeQ8XZhLYCZrS"
-    b"kN4l86rVb4wIK1k5/vyr8aH2A+k/0MgsZh3uxq1YjcuEFAV+x37h6e4UhuuezPZroSksxzM6"
-    b"T1GmsVlydkHQiCJ+loQdEILmI7gBy4QcakBYdW7Eo3jV39ObY5iUf4TMi9X4vCTkfazXWZBs"
-    b"YAN2lHh2Y1VWpRWYEFLvIi+6JwPnmBSvjgsPpad4WMpYt2FJRu5hvB65TwufBz3BhOTEc70y"
-    b"gq3Rxil5k1KEcftbNPBsbvJzoHBmVpiPWdCQJva2XKRt4A3peydLpr1Zmtg558R8GJYWgKfr"
-    b"kjWlOHFvXbIuMB5tH1XzIW6R4sRC4YOoYVMdkiLt6Pm6XoGJqGFvtwTrpLSj76lDCQ0cilqu"
-    b"bdXp/AqC0di+JdSsFgpn8Hb8PdqqU5Ujt8R2Ry5FNbA9tre16lDlyNWxnc6lpgZmYttVcDwm"
-    b"jMtl2eR0jxFpGe4YJ+PNVSXMfmFI0HKiVYeqofWfQpUjs7Ft9kPIPChKUbOtOlQ5ciC2Kyr6"
-    b"9AtXxPbHVh2qHPkittflUlMDRSD8slWHKkemYntHNjnd487YdrXJs1ZYKQ5a2BRlAIejljXd"
-    b"khT7FRsyieoG90cNtYp5xUfVQqYpH0UNk3VIhqUIP5ZBVKcoUvgjMnydTkqbPP0sbTbxXbT9"
-    b"VA7ChlABnBPqTv3Cm9HmJzJu810plYO25iKtwEtS1TFbOajAeqlA10tnXpQKdK22qWtjYzQw"
-    b"J9Sdcs6ZpjScTgmnIXqKcWmY7ZOnrDkhTexf9fBNnI1V0o7rnFCymdBZBjAgBLsiThQTe2VW"
-    b"pW1gkVABPFoScgiv4THcJGzuDMZrOW7G40Lp9XDpviPCEtuLQwhtY4lQPCufJ2n32iPEqdrB"
-    b"Lud5LUK6PSqc2boKl0sLwix+EPbtPxbOas2cg6Mr/AVMUjVunZJoRgAAAABJRU5ErkJggg=="
-)
-
-
 icons8_about_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAE"
     b"cElEQVRogd3aaahVVRQH8N+7ms/qORSvjMih8EkWFWI2SoVlUERBaBEFCpFgZUESBRVaRBF9"
@@ -1238,96 +1201,7 @@ icons8_about_50 = PyEmbeddedImage(
     b"qsR/ME41xQZApAYAAAAASUVORK5CYII="
 )
 
-
-icons8_fantasy_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAE"
-    b"70lEQVRogc3Za4hVVRQH8N/MpIVRoVZkDTUfggqLHn4ow6BQw0J6IPYCbUhTZ3ylidHLHtS3"
-    b"oj5UUlAgRUlKlJEaFdHL6kNZJFlRaQ8ijfxQpviYuX3Y+3DO3HvPnfuc8Q+He+7ea++z/mev"
-    b"vdba63BkYOZwK9AMHIu/MaaRSdqbo0tDmCmQuGa4FWkUH6KAt4ZbkXI4BUdVIXcm+gUiBzC6"
-    b"3ge2yrRG4hvcqjKhbrRlxlw7yLzHYC5Oa1C/mvCS8KZ/wCx0FPW349co84LK5nUSHsAuvN0K"
-    b"ZSvhfKnZFLAdN0ut4Eop0bE4qNS8zsaz2JeZ55Ih0L0EmzMKJNc2wVOtjf/vibIb4/9uXI43"
-    b"0Vc0dtgcwuSowG4swM9Fih1GZ5Ttjm37M/378Xq878eEoVO9FF9EReZiRPzdGds2Z+RGC6ZV"
-    b"wB+4T9gbj8e214ZM4xzcJN0jyf4YKazQ1UWyT2B27IdThf3Rh/Narukg6MCPApnB3Gsxnonj"
-    b"Xmm2UrWiA1dgi6DQxzWM7ZKa2sVN16wKdAibfLXg97Ob+zuMw3S8j++xRrrhs3gyM25flLus"
-    b"xbobIcSF5/CXUnf7IM6Nso8W9RewB5eWmfN6weUezshuxwqc3GwS47G1jHJbcWGR7COx7xDm"
-    b"4Sy8Edv2CrlXOXRildTbJbnZOlylNGuoG+2YKmzKbBzYg6cEQg9JY8eNmbEdeDH2rcmZfxx6"
-    b"8J6BL6sPH2FGs4hkMQaL8ZXSVTqMW8qMGR/7v860nYFlgoPIRvhDeBe9gnseEkzAT9K3NytH"
-    b"7u4osyHTlqxSEuE3CNF/bIt0rYj7pSS6c2R6hPSjz0CvdEEce9AQp+3FuFdKYk6OTK9Aol8g"
-    b"VHw+SvbEshbpOCgSU+kXvFM5LDSQxIlCUrkIR0eZ6XGeHao7cTYVy6UkFubIzJOSSGSWSffE"
-    b"LtyFUfg2tg1pyWiFlMTiHJnF0gPX1kz7ttj2i5TQ7/gk3m9pjcqlSFaigE+Vrwcska7Ewfh7"
-    b"uhDVC/hNMKEZgisudt8TW8oA8w10lQU8byCZLIkerI9yy6Vn9ocz8m1CipKNR6+2ksRtgmfq"
-    b"x1JMwr8GkllaRIIQ3ZMguDfO0VVm/jZchy+FYFhOpmHMyZDoybRnyXymlAShVPqf9G1nT4vl"
-    b"0CacZ2Y3Q/Es8kgkmCQ1szyZdVIiw1LIHowEwZwqkSAonxQnRubItAxzDU4iSTsquWFCnNiL"
-    b"x5qpYDWolcQdVcy5Fuc0RbsqcbvaSCytct68w1SCTuWPwnUhuyfy0o4s0TwSx+GGGp+9Ssii"
-    b"G0Y2L2p0JXrweQ3PbheOtzs1+OWgVhJLKsw1UaiiFOKYUVU8f5rUPU+rTuVSNIvEKLysNG/a"
-    b"IRyeKiFJYwrxvmbMVxuJSi42Qa0r0iVUSvridUCN6UnWxVazsSuZUzF6hZQlD+2YIiSHSZVx"
-    b"IzZJixfvCIG04kFrgdpWYlG1DCKOF4raxShXt+qLBC6K1yYDqyk745hOBnqCBULRmLASq3NI"
-    b"PB3vlwg1q1rwjxAAW4bJaluJPJNrFO2Cd1ovNa1NUtM6EPumyXHHybfuFTkPGAoSxehSx2bf"
-    b"LRA5oUxflkRvk5SsFjW73+T7xcqi9uEkQR0BcapU4ZXC97w7Db5vWo26UpQkfmSjbz0uttmo"
-    b"K2mcjA/wp1AFn9JkpepBU9P4Ix7/A6+u1m3fs0SBAAAAAElFTkSuQmCC"
-)
-
 # ----------------------------------------------------------------------
-icons8_smartphone_ram_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"5UlEQVRoge2YQQ7CIBBFX3tDvYj0jMZLVL1K6wIaF1ogJoUB/0smDWEW88N8SAeEECKwhrC6"
-    b"D8CYSmiFboR0ywhMwIN3b1qLO+CAISZkMlBobriYkO0kTrGkypzxNc6xpCUkRY+tMgO+xiWW"
-    b"lHVnG+Cjzpzr9wZcDa2/kiNkazcr6yy6bq0m+MUjpTnMI6WRR5pEHimIPNIk8khB5JEmkUcK"
-    b"Io80if7ZK66z6MYj26b1AR0khDzD1+rIdMCPTMGPd3dx1B9O58YlpdjhB8S1C92LOYiw3P7H"
-    b"krrJau8Df/ayCyGEHV4Hpj6QuXY7DQAAAABJRU5ErkJggg=="
-)
-
-# ----------------------------------------------------------------------
-
-icons8_vga_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"yUlEQVQ4je3SPU5CURDF8d+TaNyMGG1dDZYGG2qN1BhrE1fhIuyAwqAU2OEm/Ag8C+clI8FH"
-    b"oKLgn5zcmznJuTOTy46to4hzDxc4Q2PNjBmecI95VbxEiWmoRB8foX6NX4baVWdwEudDCFp4"
-    b"wQjnNX7FaW67m17aVDe5w9cUPsV13B9DcIX3Gn+cA8cpsLCcYoWfM+zjc80Rs75wkDv8xluM"
-    b"Uo1zhCEGaEZtmQ+TCP3Drc2/TW9xL3CIDo79v6dFSjzjzu/KdmwjPz1gX51NjwzGAAAAAElF"
-    b"TkSuQmCC"
-)
-
-icons8_stop_gesture_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
-    b"N0lEQVQ4jcXTzytEYRTG8c/4FTJZoSwUGxspGytlYWdvz0LJSrJhJayVhfJHKGLFwoKVslSU"
-    b"IiJDQolSDIt7J9cwM3emkafeuu957/me855zXv5BPVjHIqpLhTRiDUe4wyYucYgTjBYLnMEp"
-    b"FvCBLixHbG/oQ0u2Y0UOYCsOsBTuP8KVsVViD2fojwOMo0FsYaRcwAtcob4QsBaJUqNkA6fx"
-    b"hPFyAOswh0nshrYX3OIRN0gJmgPp34BVke+GcL+DTjTj2ddozEf+HRLMY15gMVrNdRAFZq6S"
-    b"wAaSpUSKAu/xiiZsx/SvkVXLaFPSOEZvEQl1C+Yxp8ZwjbYYsAG8F0qgUlC/FCbQ4eeQJzEs"
-    b"KNFKjMCqMIVzQaPSoXNmvQvmczZM4JvyPbFEmGF7mFWmgQ/YF7yov9cn1P5B23nSvF4AAAAA"
-    b"SUVORK5CYII="
-)
-
-icons8_bell_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
-    b"KUlEQVQ4ja3SvS5EQRQA4E8kCg9Asp1sRLb0k/jrJYRIKIQn8LuFxiNIqLyBqBQK22lEFLZV"
-    b"iDdALxHE3ypmbnKzcZndONWdOSffzJx7+OfobKG2hAn04QOP7R46jAt84RlPaOAKq7jFXiq2"
-    b"hFccYzC3X8YBPiN+k4Kt4B3bv9QsRnTzL2w5YtWEgw9w/VtBtQUM+oVnl5sT86jH5GkilsUT"
-    b"pvMbkxE6xDresJOIdeAFU/nNXjyghi4stICOCCNVak4MtIme4Lwo2Sq6LczpUBE4KzT4MwHN"
-    b"pmGpCOvAPXZRid9F6FbEVoow6BaaOxbXlYKb1lKwLOo4wzj2hefne7ohjNdaCkaY9nq86R1m"
-    b"hB+VPf8Il6lYPrqb1hnawFw74E/Rg9H/wpLjGzFeVCqYlPuEAAAAAElFTkSuQmCC"
-)
-
-icons8_close_window_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"3ElEQVQ4jb3UQU4CMQAF0KdxA3sdbkCMGy/BIWThci7hbUzAeAXOoUFvAB5Alrpo0QJ1Jm0m"
-    b"/qRJ+2f6+/ubfAbGWTKfYIZRocYOK2xTcoIPfFWOLRo4j4IzXBY6S3EVNX4ES6+ZwzgVHAxd"
-    b"gg9YZ/h1/FYseI85XhPuPXLzjn2glX+9N9zi5Wie+7eFi56DpljiLq6fcN214V8fhd/MFnh2"
-    b"mumfyGWYy6wrx7bP4aOQ303C7TNd1jgsHb0Oq7AX3A2g9ZkuGqGCaq+7ERrnoGAboYLGFc5W"
-    b"Qp8Oj2+JXWSupLCkIQAAAABJRU5ErkJggg=="
-)
-
-
-icons8_next_page_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB"
-    b"HElEQVQ4jcXUMU5CQRDG8R92UgoeQKDEO1iLKOrVtFQ8gYqFEsMJRHuDxxCJVFjsEsnLewto"
-    b"jF+yzZeZf2ZmZ5d/UjWeX+kQPUwwi2cSvfa61QzwiQt00IynE70pHlepehtveMJOIq6GIUao"
-    b"pICDCCsveJso5cSW8Yx+EawttJmtrI/zAmhdaL+VB7wT5pPVHj4S0C5us2YpJh3l1p6GHmOc"
-    b"9avCWjQLgIvQs0zybsytwEY0ZwnQjzRvubOkuryWT/Ce4+vhck0YXOEmr4oDYQVqGT+1No2Y"
-    b"s58HJDynodUX+wX3RTDCbY+EF1BPxDVizCu2UkDC9feFVrrC0Oefw6kwsykeVoEtqiUMe+z7"
-    b"+xrjWmJmq6piya/yZ/oCgl5ESq9WShMAAAAASUVORK5CYII="
-)
 
 cap_butt_20 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABwAAAAPCAYAAAD3T6+hAAAAAXNSR0IArs4c6QAAAARnQU1B"
@@ -1394,7 +1268,6 @@ join_miter = PyEmbeddedImage(
     b"RU5ErkJggg=="
 )
 
-
 join_bevel = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAIAAABLixI0AAAABnRSTlMA/wD/AP83WBt9AAAA"
     b"CXBIWXMAABYlAAAWJQFJUiTwAAAB0UlEQVQ4jc3TMWsTcRjH8e9dkxvSTImC24lQ2sFGhcIt"
@@ -1408,7 +1281,6 @@ join_bevel = PyEmbeddedImage(
     b"Xs/zvOu5ZSwpZaPRSCaThUKh2Ww6jjN7SAhNSjm/h3/xfX8ymWQymcVDS1lLxfdvH3f1/K/W"
     b"X6GtRkLtoYR+AAAAAElFTkSuQmCC"
 )
-
 
 join_round = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAIAAABLixI0AAAABnRSTlMA/wD/AP83WBt9AAAA"
@@ -1425,57 +1297,7 @@ join_round = PyEmbeddedImage(
     b"/yM6a1FRBwAAAABJRU5ErkJggg=="
 )
 
-
-icons8_add_new_25 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"7klEQVRIie2VOwrCQBCGP8Vr2FkE8VHFVgTPIVZ23kNSewCxFlSwU7AXbFQkhWDhPYyFE1gX"
-    b"E3fXRyH5IPzM7jA/sztLIMOCnBYXgSFQeaPmHugDl6SEORB94JuqRQuaSVW0AxwduigDY6Ce"
-    b"ZhIfXwhsHUzyWp2HRVN6wFLU2tmUEtAW/ZqJEz8x0S9epwt4StxUdKCsh8DI1PTMfc59iReY"
-    b"vYuF5PsSn206mQAHJW4BDWADrLVOjNE70QlkP0jYf9rJ/0yXrckJWIk68+pOXmE0XZGoB1wd"
-    b"TOI3FaUlzfjB/6QvSTWHLmJ2UifDjRsEWFa4krvEMAAAAABJRU5ErkJggg=="
-)
-
-icons8_edit_25 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"y0lEQVRIie3UP0oDQRTH8Q9uzmAqu9zBM6TI2qbRKrdKIygKKfQO9skJAoJewhVMUuwbMkqa"
-    b"ZTaN7A8ezPxm3vsyfxn0WxWW2GByLsAD9hGffYMqPEXxBtu+QRWeo+g3alxmoHWaeFEAeMQ8"
-    b"+iOMcY2r8NYn8joB0goavEZ7p13RPsarvgB1+C+OB18MSLeowU34U3yFv9Ju3QAYAP8VAPcZ"
-    b"YBbeLPrFDy3pPYrdnQuQQ24jegfkkDyKz+Bv8of2N016wwI/JZBBnXQAlthpgy5S6SYAAAAA"
-    b"SUVORK5CYII="
-)
-
-icons8_paste_25 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAABmJLR0QA/wD/AP+gvaeTAAAA"
-    b"3UlEQVRIie3VvU0DQRDF8R+IOoAMJ44IoBl3APVAARSAnfMlJyREJCcZXAAOccwRMEjWaHUL"
-    b"J5Ac3JNGqx29e/+dDfbYMp3iAW+4x8lfAw6xRrtR79H/tQ4ww2uqVQTfYoy72K8K3in2uyCz"
-    b"dNpcF+G7rPimXZBlmCY4xrwQ0BR68/BPYr/cDN1NkJ1YGzzhpXCQo0JvEf4m5YC9rrFwjqv8"
-    b"UVKLx66QGmSNm4qnqnxd/6IBMkAGyJZA8rPSxjrCR4+8UcopqvY/+Wldd01yFhOMe0zxrWdf"
-    b"r/egfvoE8sJYB3CAY3oAAAAASUVORK5CYII="
-)
-
-icons8_remove_25 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAABmJLR0QA/wD/AP+gvaeTAAAB"
-    b"g0lEQVRIie3Vu08UURTH8c+SjQGWVhOkIT4KqLUwsQBChQ3RoK2N/gPWkNBSUFGgiZaGREOl"
-    b"nYEE46Mh8gf4qLR0YyBxeQQo5m7cHe/sXsKEil9yM/fOOXO+M+fce4YzUCXBpwdTGAlz+I23"
-    b"+FXWi7zEUWTUcb0MwFAI+AJXcSWMcRxgISVINbeeQq1lPRyuG/jWcv87tnETM7kYH/GzE/SH"
-    b"eGoeRnzrBb7TnQBwG3PB+Qkmw7gc8R1rsX/FVphf7AYR3uQoBEnVF6wXGXuKDGUqBXLD/1u1"
-    b"ggfSzllXyAW8lqWiCapgGSu4XwZkD/fQj/cYxRIe4zlepUBiihX+Fv7gb7A91Z6qUgr/Ge/Q"
-    b"iwYWAyxJKZBmDe5iVZbCNSfoW90gFe01mMEE+vyr0akhVQziGR7hEJu4g13ZhuiqfIPMa192"
-    b"Hg601+CTLF17ZUCaoJiSAMTT1Xy4FrEVaaATNPYlm9iR1eFDAuASrsl+bFEV9Z4JzIu3+Lwa"
-    b"eINZJ0jhuQp1DEu0WE60jG9UAAAAAElFTkSuQmCC"
-)
 # ----------------------------------------------------------------------
-
-
-icon_path = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAAsTAAALEwEAmpwY"
-    b"AAAA1klEQVR4nNWUOQ7CMBBFH1TQEDgNHAE4BwQ4QiSWK7AcBVFGIGhzgwS6cI2gkaZwgbEV"
-    b"LCS+NI31/TTzvcC/KQJiYA70QsDuQKVV6FptxQbMhGaWugBroBUKWKonBZq2kQsDljtGbgB7"
-    b"9Q5tJgFMgRnQ9YhpoMCEAJIODwoc2UwS8EYDzxz1VNjRBpNgz2oqPYBXYAm0bcCxwrY6ztdK"
-    b"FNj38MorWugBRq4Od44O5fQfvi/q5JGheVcrLen0rSTgFXALBazzieRAx2vnB0mO8sVNQsB+"
-    b"qxdgAGI6yhzqowAAAABJRU5ErkJggg=="
-)
-
 
 icon_kerf_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAABnRSTlMA/wD/AP83WBt9AAAA"
@@ -2822,4 +2644,80 @@ icon_path = VectorIcon(
         "M 30 40 a 5,5, 0 1,0 1,0",
     ),
     stroke=("M 10 5 h 20 C 40 5 40 25 30 25 h -20 C 0 25 0 45 10 45 h 20"),
+)
+
+icon_add_new = VectorIcon(
+    fill=(),
+    stroke=("M 0 0 h 40 v 40 h -40 z", "M 20 10 v 20 M 10 20 h 20"),
+)
+
+icon_trash = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 4 6 H 20",
+        "M 16 6 L 15.7294 5.18807 C 15.4671 4.40125 15.3359 4.00784 15.0927 3.71698 C 14.8779 3.46013 14.6021 3.26132 14.2905 3.13878 C 13.9376 3 13.523 3 12.6936 3 H 11.3064 C 10.477 3 10.0624 3 9.70951 3.13878 C 9.39792 3.26132 9.12208 3.46013 8.90729 3.71698 C 8.66405 4.00784 8.53292 4.40125 8.27064 5.18807 L 8 6",
+        "M 18 6 V 16.2 C 18 17.8802 18 18.7202 17.673 19.362 C 17.3854 19.9265 16.9265 20.3854 16.362 20.673 C 15.7202 21 14.8802 21 13.2 21 H 10.8 C 9.11984 21 8.27976 21 7.63803 20.673 C 7.07354 20.3854 6.6146 19.9265 6.32698 19.362 C 6 18.7202 6 17.8802 6 16.2 V 6",
+        "M 14 10 V 17",
+        "M 10 10 V 17",
+    ),
+)
+
+icon_round_stop = VectorIcon(
+    fill=("M 30 30 h 40 v 40 h -40 Z"),
+    stroke=("M 50 0 a 50,50, 0 1,0 1,0",),
+    strokewidth=5,
+)
+
+icon_bell = VectorIcon(
+    fill=(),
+    stroke=(
+        "M9.00195 17H5.60636C4.34793 17 3.71872 17 3.58633 16.9023C3.4376 16.7925 3.40126 16.7277 3.38515 16.5436C3.37082 16.3797 3.75646 15.7486 4.52776 14.4866C5.32411 13.1835 6.00031 11.2862 6.00031 8.6C6.00031 7.11479 6.63245 5.69041 7.75766 4.6402C8.88288 3.59 10.409 3 12.0003 3C13.5916 3 15.1177 3.59 16.2429 4.6402C17.3682 5.69041 18.0003 7.11479 18.0003 8.6C18.0003 11.2862 18.6765 13.1835 19.4729 14.4866C20.2441 15.7486 20.6298 16.3797 20.6155 16.5436C20.5994 16.7277 20.563 16.7925 20.4143 16.9023C20.2819 17 19.6527 17 18.3943 17H15.0003",
+        "M9.00195 17L9.00031 18C9.00031 19.6569 10.3435 21 12.0003 21C13.6572 21 15.0003 19.6569 15.0003 18V17",
+        "M9.00195 17H15.0003",
+    ),
+)
+
+icon_close_window = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 0 0 h 40 v 40 h -40 z",
+        "M 10 10 L 30 30",
+        "M 30 10 L 10 30",
+    ),
+)
+
+icon_edit = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 18 10 L 21 7 L 17 3 L 14 6",
+        "M 18 10 L 8 20 H 4 V 16 L 14 6",
+        "M 18 10 L 14 6",
+    ),
+)
+
+icon_tree = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 0 0 h 10 v 10 h -10 z",
+        "M 30 20 h 10 v 10 h -10 z",
+        "M 30 40 h 10 v 10 h -10 z",
+        "M 5 10 v 35 h 25",
+        "M 5 25 h 25",
+    ),
+)
+
+icon_rotary = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 17.8 21 H 22 v 1 h -6 v -6 h 1 v 4.508 a 9.861 9.861 0 1 0-5 1.373 v .837 A 10.748 10.748 0 1 1 17.8 21z",
+        "M 11 11 v 2 h 2 v -2 z",
+    ),
+)
+
+icon_magic_wand = VectorIcon(
+    fill=(),
+    stroke=(
+        "M31.891 13.418l-3.212-4.802 1.599-5.588c0.099-0.35 0.002-0.728-0.257-0.985-0.258-0.258-0.633-0.353-0.986-0.251l-5.578 1.629-4.822-3.247c-0.303-0.204-0.692-0.229-1.014-0.061-0.324 0.166-0.532 0.496-0.544 0.859l-0.173 5.811-4.578 3.581c-0.287 0.225-0.428 0.588-0.371 0.947s0.306 0.659 0.65 0.782l4.296 1.54c-0.029 0.023-0.059 0.044-0.087 0.071l-16.586 16.586c-0.391 0.39-0.391 1.023 0 1.414 0.196 0.195 0.451 0.293 0.707 0.293s0.511-0.098 0.707-0.293l16.586-16.586c0.064-0.065 0.114-0.137 0.157-0.213l1.681 4.611c0.125 0.342 0.426 0.589 0.786 0.645 0.051 0.008 0.102 0.012 0.154 0.012 0.306 0 0.599-0.142 0.791-0.389l3.555-4.599 5.747-0.205c0.364-0.012 0.692-0.223 0.858-0.548s0.139-0.714-0.066-1.015z",
+    ),
+    strokewidth=1,
 )

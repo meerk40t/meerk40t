@@ -7,13 +7,13 @@ from wx import aui
 from ..kernel import signal_listener
 from .icons import (
     STD_ICON_SIZE,
-    icons8_add_new_25,
+    icon_add_new,
     icons8_circled_left,
     icons8_circled_right,
     icons8_curly_brackets,
-    icons8_edit_25,
-    icons8_paste_25,
-    icons8_remove_25,
+    icon_edit,
+    icons8_paste,
+    icon_trash,
 )
 from .mwindow import MWindow
 from .wxutils import StaticBoxSizer, dip_size
@@ -196,6 +196,8 @@ class WordlistPanel(wx.Panel):
         sizer_index_left.Add(
             sizer_edit_wordlist_buttons, 0, wx.ALIGN_CENTER_VERTICAL, 0
         )
+        testsize = dip_size(self, 22, 22)
+        icon_size = testsize[0]
 
         self.btn_edit_wordlist_del = wx.StaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 25, 25)
@@ -215,12 +217,24 @@ class WordlistPanel(wx.Panel):
         self.btn_edit_content_paste = wx.StaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
-        self.btn_edit_wordlist_del.SetBitmap(icons8_remove_25.GetBitmap())
-        self.btn_edit_wordlist_edit.SetBitmap(icons8_edit_25.GetBitmap())
-        self.btn_edit_content_add.SetBitmap(icons8_add_new_25.GetBitmap())
-        self.btn_edit_content_del.SetBitmap(icons8_remove_25.GetBitmap())
-        self.btn_edit_content_edit.SetBitmap(icons8_edit_25.GetBitmap())
-        self.btn_edit_content_paste.SetBitmap(icons8_paste_25.GetBitmap())
+        self.btn_edit_wordlist_del.SetBitmap(
+            icon_trash.GetBitmap(resize=icon_size, buffer=1)
+        )
+        self.btn_edit_wordlist_edit.SetBitmap(
+            icon_edit.GetBitmap(resize=icon_size, buffer=1)
+        )
+        self.btn_edit_content_add.SetBitmap(
+            icon_add_new.GetBitmap(resize=icon_size, buffer=1)
+        )
+        self.btn_edit_content_del.SetBitmap(
+            icon_trash.GetBitmap(resize=icon_size, buffer=1)
+        )
+        self.btn_edit_content_edit.SetBitmap(
+            icon_edit.GetBitmap(resize=icon_size, buffer=1)
+        )
+        self.btn_edit_content_paste.SetBitmap(
+            icons8_paste.GetBitmap(resize=icon_size, buffer=1)
+        )
 
         self.btn_edit_wordlist_del.SetToolTip(_("Delete the current variable"))
         self.btn_edit_wordlist_edit.SetToolTip(
