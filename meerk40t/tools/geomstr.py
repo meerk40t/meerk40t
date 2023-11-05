@@ -381,8 +381,8 @@ class Pattern:
 class StaticBeam:
     def __init__(self, geom):
         self.geometry = geom
-        self._sb_events = None
-        self._sb_scan = None
+        self._nb_events = None
+        self._nb_scan = None
         self.intersections = Geomstr()
 
     def sort_key(self, e):
@@ -574,13 +574,12 @@ class StaticBeam:
     def actives_at(self, value):
         from bisect import bisect
 
-        if not self._sb_scan:
+        if not self._nb_scan:
             self.compute_beam_brute()
         idx = bisect(self._nb_events, (value.imag, value.real))
-        actives = self._nb_scan[idx + 1]
+        actives = self._nb_scan[idx]
         aw = np.argwhere(actives != -1)[:, 0]
-        acts = actives[aw]
-        return acts[::-1]
+        return actives[aw]
 
 
 class Scanbeam:
