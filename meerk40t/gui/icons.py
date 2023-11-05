@@ -1175,34 +1175,6 @@ icon_meerk40t = PyEmbeddedImage(
 
 # ----------------------------------------------------------------------
 
-icons8_about_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAE"
-    b"cElEQVRogd3aaahVVRQH8N+7ms/qORSvjMih8EkWFWI2SoVlUERBaBEFCpFgZUESBRVaRBF9"
-    b"qQ8OfcuywqCiAQoqo5kmQiuTnLCQcMjZetXT24e1r+e+x5vuved6n/3hsM85d5+1/vvsfdaw"
-    b"1+V/gqac5AzBZFyMc3EGxqEFw1KffdiLzdiAVfgS3+PfnHhUhWbMxApBsljlsRvLcQMGV0um"
-    b"mhlpxb24A6PSvSJ+wBf4DuuxUQxwX+ozDMPFbI3HBbgEZ5XJ/g1LsEjMXl1wLB7GHtnb/Abz"
-    b"cFoNcsdhvngRJbnbcLcaZqgnXIq1ZYrewkV5K8E0fFim52ucnYfgJjyIjiR4FabmIbgPXCsM"
-    b"QhF/YXYtwo7BS0lYBx5N944Ujsdi2ew8rYpvulksnyJ24ZocCVaK2WhPXBarYDBNeDU9uBXn"
-    b"1YFcpbgKBwSnp/r70GPpgZ1y+tBywpX4W3Cb1VfnK3AQ/6QHBxpuFwM5gLaeOh2HTanjIzkp"
-    b"PkmELpPTeR5YJjh+qofv5aHU4Vv5OaJyq7MoJ5kjsSXJvLnrjyfIPPblOSkkwo3SQJbkKLe0"
-    b"xNZhEBTSD7NEHPQ+Ps5RYbGH81rxvBjEeOE8D2NNUnR9jsro/I205iz7PsH5ndKNCenGdmma"
-    b"jhK0ioijHS0Fmdd+T5jeowU78JWIQqYVxLTDJw2jVD1WpnZKQea9f6yDorkiQtiJBXWQX+J8"
-    b"9mCcmi421UHRKGHa4ZQ6yN+Q2jEFjEgXe+qgqN7YndoRBZkX72gQmVrQntqhBZ03B442lFbT"
-    b"3oIwY3Byg8jUgpKT3VXAz+liIOUe/UWJ89qC2FCAKQ0iUwsmpfanAj5IF43My6vF1aldWRD7"
-    b"r3+IPdsJDaNUOS7EGJGbrC4Is7ss/Xhno1hVgbmpXa4sRWgTA9orX+u1UH0SqzFi4+6g2Es+"
-    b"nFitw4vClyzMUWG98DiG4hWxWd4Jo7FfzExe26IL5D8j03FIzMjYnjrNTUo3yYK9WjAWc9Ix"
-    b"qY++/UErfhUcH+itYxPeTh0/EknLQEGzyJmK+Ew/stnhIs4v4jVRVms0huB1wWmzClKC0aLq"
-    b"VBQpcCMDyhbZKtmBcyoVMFo4yiLuypVa/zFeVsnaJpx2xWgTdrpDbaW1atAkDESpyLoWZ1Yr"
-    b"bIUu+0ZHCNNFbbJktpeJ5VUVbk1C2h2Z8L4Zt4i4rzSAzbiuFqHTZRWiXm11Nzixgr6n4za8"
-    b"LHLv8orufOG5+42u2/IzRajSjKWywKw3tIi3OQfnC8uyRoQO+0Utg6gJjhSxUZvOZYZSqfu5"
-    b"NLB2VaJJxFiHktBnZXFYdyjgMhF2lNfd/yw77+vYijdwj15CjUoGMFhUb28SFup+PNNN30GJ"
-    b"/AzcKHNKRbHjtxRvihmaKJbOCJkPOiCs0MZ0bKmVfFc8IStBzyi7P0Kkv/NEcXSbzm90PZ40"
-    b"gJKxz2XkOgTh7bpfDr+IgecRAOaOqXhXhMXlpA9gNV4Qf6CZ2CiC/UG51RoiLMtwUdX9vSGM"
-    b"qsR/ME41xQZApAYAAAAASUVORK5CYII="
-)
-
-# ----------------------------------------------------------------------
-
 cap_butt_20 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAABwAAAAPCAYAAAD3T6+hAAAAAXNSR0IArs4c6QAAAARnQU1B"
     b"AACxjwv8YQUAAAAJcEhZcwAAFiUAABYlAUlSJPAAAAAZdEVYdFNvZnR3YXJlAHd3dy5pbmtz"
@@ -2663,7 +2635,7 @@ icon_trash = VectorIcon(
 )
 
 icon_round_stop = VectorIcon(
-    fill=("M 30 30 h 40 v 40 h -40 Z"),
+    fill=("M 30 30 h 40 v 40 h -40 Z",),
     stroke=("M 50 0 a 50,50, 0 1,0 1,0",),
     strokewidth=5,
 )
@@ -2720,4 +2692,12 @@ icon_magic_wand = VectorIcon(
         "M31.891 13.418l-3.212-4.802 1.599-5.588c0.099-0.35 0.002-0.728-0.257-0.985-0.258-0.258-0.633-0.353-0.986-0.251l-5.578 1.629-4.822-3.247c-0.303-0.204-0.692-0.229-1.014-0.061-0.324 0.166-0.532 0.496-0.544 0.859l-0.173 5.811-4.578 3.581c-0.287 0.225-0.428 0.588-0.371 0.947s0.306 0.659 0.65 0.782l4.296 1.54c-0.029 0.023-0.059 0.044-0.087 0.071l-16.586 16.586c-0.391 0.39-0.391 1.023 0 1.414 0.196 0.195 0.451 0.293 0.707 0.293s0.511-0.098 0.707-0.293l16.586-16.586c0.064-0.065 0.114-0.137 0.157-0.213l1.681 4.611c0.125 0.342 0.426 0.589 0.786 0.645 0.051 0.008 0.102 0.012 0.154 0.012 0.306 0 0.599-0.142 0.791-0.389l3.555-4.599 5.747-0.205c0.364-0.012 0.692-0.223 0.858-0.548s0.139-0.714-0.066-1.015z",
     ),
     strokewidth=1,
+)
+
+icon_about = VectorIcon(
+    fill=(
+        "M26,52A26,26,0,0,1,22.88.19,25.78,25.78,0,0,1,34.73,1.5a2,2,0,1,1-1.35,3.77,22,22,0,0,0-21,38,22,22,0,0,0,35.41-20,2,2,0,1,1,4-.48A26,26,0,0,1,26,52Z"
+        "M26,43.86a2,2,0,0,1-2-2V22.66a2,2,0,1,1,4,0v19.2A2,2,0,0,1,26,43.86Z",
+        "M 26 13.44 a 2.57,2.57, 0 1,0 1,0",
+    ),
 )
