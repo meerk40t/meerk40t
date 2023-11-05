@@ -403,11 +403,6 @@ class StaticBeam:
                 events.append((g.segments[i][0], ~i, None))
                 events.append((g.segments[i][-1], i, None))
 
-        # wh, p, ta, tb = g.brute_line_intersections()
-        # for w, pos in zip(wh, p):
-        #     events.append((pos, 0, w))
-        #     self.intersections.point(pos)
-
         # Sort start and end events.
         events.sort(key=self.sort_key)
 
@@ -452,18 +447,18 @@ class StaticBeam:
                 actives[pos1], actives[pos2] = actives[pos2], actives[pos1]
                 # We swapped pos1 and pos2 so we must check the outer values of this swap.
                 try:
-                    check_intersection(actives[pos1-1], actives[pos1], y_pos)
+                    check_intersection(actives[pos1 - 1], actives[pos1], y_pos)
                 except IndexError:
                     pass
                 try:
-                    check_intersection(actives[pos2], actives[pos2+1], y_pos)
+                    check_intersection(actives[pos2], actives[pos2 + 1], y_pos)
                 except IndexError:
                     pass
             elif index >= 0:
                 # Index is being inserted, find x-position sorted.
                 lines = g.segments[actives]
-                a = lines[:,0]
-                b = lines[:,-1]
+                a = lines[:, 0]
+                b = lines[:, -1]
 
                 old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
                 try:
@@ -480,20 +475,20 @@ class StaticBeam:
 
                 # Check intersections between idx, idx + 1
                 try:
-                    check_intersection(index, actives[idx+1], y_pos)
+                    check_intersection(index, actives[idx + 1], y_pos)
                 except IndexError:
                     pass
 
                 # Check intersections between idx, idx - 1
                 try:
-                    check_intersection(actives[idx-1], index, y_pos)
+                    check_intersection(actives[idx - 1], index, y_pos)
                 except IndexError:
                     pass
             else:
                 remove_index = actives.index(~index)
                 # Check intersections between idx-1, idx+ 1
                 try:
-                    check_intersection(actives[idx-1], actives[idx+1], y_pos)
+                    check_intersection(actives[idx - 1], actives[idx + 1], y_pos)
                 except IndexError:
                     pass
                 del actives[remove_index]
@@ -507,14 +502,83 @@ class StaticBeam:
         for i, active in enumerate(active_lists):
             self._nb_scan[i, 0 : len(active)] = active
 
+    def compute_beam_brute(self):
+        g = self.geometry
+        gs = g.segments
+        events = []
+        # Add start and end events.
+        for i in range(g.index):
+            if gs[i][2] != TYPE_LINE:
+                continue
+            if (gs[i][0].imag, gs[i][0].real) < (gs[i][-1].imag, gs[i][-1].real):
+                events.append((g.segments[i][0], i, None))
+                events.append((g.segments[i][-1], ~i, None))
+            else:
+                events.append((g.segments[i][0], ~i, None))
+                events.append((g.segments[i][-1], i, None))
+
+        wh, p, ta, tb = g.brute_line_intersections()
+        for w, pos in zip(wh, p):
+            events.append((pos, 0, w))
+            self.intersections.point(pos)
+
+        # Sort start, end, intersections events.
+        events.sort(key=self.sort_key)
+
+        # Store currently active segments.
+        actives = []
+
+        scanline = None
+
+        def x_ints(e):
+            return g.x_intercept(e, np.imag(scanline))
+
+        # Store previously active segments
+        active_lists = []
+        real_events = []
+
+        largest_actives = 0
+
+        for i in range(len(events)):
+            event = events[i]
+            pt, index, swap = event
+
+            try:
+                next, _, _ = events[i+1]
+                scanline = (pt + next) / 2
+            except IndexError:
+                next = complex(float("inf"), float("inf"))
+                scanline = next
+
+            if swap is not None:
+                pass
+            elif index >= 0:
+                actives.append(index)
+            else:
+                remove_index = actives.index(~index)
+                del actives[remove_index]
+
+            if pt != next:
+                if len(actives) > largest_actives:
+                    largest_actives = len(actives)
+                actives.sort(key=x_ints)
+                real_events.append(pt)
+                active_lists.append(list(actives))
+
+        self._nb_events = [(e.imag, e.real) for e in real_events]
+        self._nb_scan = np.zeros((len(active_lists), largest_actives), dtype=int)
+        self._nb_scan -= 1
+        for i, active in enumerate(active_lists):
+            self._nb_scan[i, 0 : len(active)] = active
 
     def actives_at(self, value):
         from bisect import bisect
+
         if not self._sb_scan:
-            self.compute_beam()
+            self.compute_beam_brute()
         idx = bisect(self._nb_events, (value.imag, value.real))
         actives = self._nb_scan[idx + 1]
-        aw = np.argwhere(actives != -1)[:,0]
+        aw = np.argwhere(actives != -1)[:, 0]
         acts = actives[aw]
         return acts[::-1]
 
