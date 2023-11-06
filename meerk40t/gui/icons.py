@@ -444,21 +444,21 @@ class VectorIcon:
         if not fill:
             pass
         elif isinstance(fill, str):
-            color, bright, pathstr = self.investigate(fill)
-            self.list_fill.append((color, bright, pathstr))
+            color, bright, pathstr, attrib = self.investigate(fill)
+            self.list_fill.append((color, bright, pathstr, attrib))
         elif isinstance(fill, (list, tuple)):
             for e in fill:
-                color, bright, pathstr = self.investigate(e)
-                self.list_fill.append((color, bright, pathstr))
+                color, bright, pathstr, attrib = self.investigate(e)
+                self.list_fill.append((color, bright, pathstr, attrib))
         if not stroke:
             pass
         elif isinstance(stroke, str):
-            color, bright, pathstr = self.investigate(stroke)
-            self.list_stroke.append((color, bright, pathstr))
+            color, bright, pathstr, attrib = self.investigate(stroke)
+            self.list_stroke.append((color, bright, pathstr, attrib))
         elif isinstance(stroke, (list, tuple)):
             for e in stroke:
-                color, bright, pathstr = self.investigate(e)
-                self.list_stroke.append((color, bright, pathstr))
+                color, bright, pathstr, attrib = self.investigate(e)
+                self.list_stroke.append((color, bright, pathstr, attrib))
         self._pen = wx.Pen()
         self._brush = wx.Brush()
         self._background = wx.Brush()
@@ -466,6 +466,7 @@ class VectorIcon:
     def investigate(self, svgstr):
         color = None
         bright = None
+        attribs = ""
         pathstr = svgstr
         if pathstr.startswith("["):
             idx = pathstr.find("]")
@@ -473,7 +474,15 @@ class VectorIcon:
             subpattern = pattern.split(",")
             for p in subpattern:
                 e = p.strip()
-                if e.endswith("%"):
+                if e.startswith("fill"):
+                    attribs += e + ","
+                elif e.startswith("join"):
+                    attribs += e + ","
+                elif e.startswith("cap"):
+                    attribs += e + ","
+                elif e.startswith("width"):
+                    attribs += e + ","
+                elif e.endswith("%"):
                     try:
                         bright = int(e[:-1])
                     except ValueError:
@@ -487,7 +496,7 @@ class VectorIcon:
                     color = e
             pathstr = pathstr[idx + 1 :]
             # print(f"{pattern}: {color}, {bright} -> {pathstr}")
-        return color, bright, pathstr
+        return color, bright, pathstr, attribs
 
     def light_mode(self, color):
         if color is None:
@@ -627,10 +636,11 @@ class VectorIcon:
         def_col = self._brush.GetColour()
         for s_entry in self.list_fill:
             e = s_entry[2]
+            attrib = s_entry[3]
             geom = Geomstr.svg(e)
             color = get_color(s_entry[0], s_entry[1], def_col)
             gp = self.make_geomstr(gc, geom)
-            fill_paths.append((gp, color))
+            fill_paths.append((gp, color, attrib))
             m_x, m_y, p_w, p_h = gp.Box
             if min_x is None:
                 min_x = m_x
@@ -646,10 +656,11 @@ class VectorIcon:
         def_col = self._pen.GetColour()
         for s_entry in self.list_stroke:
             e = s_entry[2]
+            attrib = s_entry[3]
             geom = Geomstr.svg(e)
             color = get_color(s_entry[0], s_entry[1], def_col)
             gp = self.make_geomstr(gc, geom)
-            stroke_paths.append((gp, color))
+            stroke_paths.append((gp, color, attrib))
             m_x, m_y, p_w, p_h = gp.Box
             if min_x is None:
                 min_x = m_x
@@ -714,23 +725,48 @@ class VectorIcon:
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
 
         for entry in fill_paths:
+            fill_style = wx.WINDING_RULE
             gp = entry[0]
-            if entry[1] is None:
+            colpat = entry[1]
+            attrib = entry[2]
+            if "fill_evenodd" in attrib:
+                fill_style = wx.ODDEVEN_RULE
+            if "fill_nonzero" in attrib:
+                fill_style = wx.WINDING_RULE
+
+            if colpat is None:
                 sbrush = self._brush
             else:
                 sbrush = wx.Brush()
-                sbrush.SetColour(entry[1])
+                sbrush.SetColour(colpat)
             gc.SetBrush(sbrush)
-            gc.FillPath(gp)
-
+            gc.FillPath(gp, fillStyle=fill_style)
         for entry in stroke_paths:
             gp = entry[0]
+            attrib = entry[2]
             if entry[1] is None:
                 spen = self._pen
             else:
                 spen = wx.Pen()
                 spen.SetColour(entry[1])
                 spen.SetWidth(self.strokewidth)
+            spen.SetCap(wx.CAP_ROUND)
+            if "cap_butt" in attrib:
+                spen.SetCap(wx.CAP_BUTT)
+            if "cap_round" in attrib:
+                spen.SetCap(wx.CAP_BUTT)
+            if "cap_square" in attrib:
+                spen.SetCap(wx.CAP_PROJECTING)
+
+            spen.SetJoin(wx.JOIN_ROUND)
+            if "join_arcs" in attrib:
+                spen.SetJoin(wx.JOIN_ROUND)
+            if "join_bevel" in attrib:
+                spen.SetJoin(wx.JOIN_BEVEL)
+            if "join_miter" in attrib:
+                spen.SetJoin(wx.JOIN_MITER)
+            if "join_miterclip" in attrib:
+                spen.SetJoin(wx.JOIN_MITER)
             gc.SetPen(spen)
             gc.StrokePath(gp)
         dc.SelectObject(wx.NullBitmap)
@@ -1175,208 +1211,6 @@ icon_meerk40t = PyEmbeddedImage(
 
 # ----------------------------------------------------------------------
 
-cap_butt_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABwAAAAPCAYAAAD3T6+hAAAAAXNSR0IArs4c6QAAAARnQU1B"
-    b"AACxjwv8YQUAAAAJcEhZcwAAFiUAABYlAUlSJPAAAAAZdEVYdFNvZnR3YXJlAHd3dy5pbmtz"
-    b"Y2FwZS5vcmeb7jwaAAAAfklEQVQ4T+2TMQ5AERBE59MpVe5/A5XEGSSuwAWUOtnPRqlE5SUj"
-    b"bCSTXQbUcc4RgCsSfbnKM9wOG0opoZTiwmlEzhlaa1hrYYyZ5XN8MUZqrfGhlIJaK++PkVKi"
-    b"EAJ576l3uMzOVo3gD7P+husLm8WfZoz0+CgnL/jbuWwI/AHZfOz8osNGAAAAAElFTkSuQmCC"
-)
-
-cap_round_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAACEAAAAPCAYAAABqQqYpAAAAAXNSR0IArs4c6QAAAARnQU1B"
-    b"AACxjwv8YQUAAAAJcEhZcwAAFiUAABYlAUlSJPAAAAAZdEVYdFNvZnR3YXJlAHd3dy5pbmtz"
-    b"Y2FwZS5vcmeb7jwaAAAAzElEQVRIS81VywmEMBCdKGoDindvnkwbYoXmKiL2YgNJAxYh8tZZ"
-    b"XHbB2ZtRHzzI5A1kmF8IP1iWBV3Xoa5rZFkGpRSIyD/392GtRVVVspNvcgDOOaRpKjtcQS6B"
-    b"1loWr2Lf97JwJZumEYU4jlEUBcIwFPVTmef54TJJEozjiGmaYIxBEAQHnzOpoiji0dzOX5Rl"
-    b"Sduo7hbRPM+0rutueYCUCS7FMAzvTLRt6z0Tf3uCM8Q94T0A5iOm4xF74hEbk4Ng3P53fHDP"
-    b"L0p4AczxLpvGSdCBAAAAAElFTkSuQmCC"
-)
-
-cap_square_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAACEAAAAPCAYAAABqQqYpAAAAAXNSR0IArs4c6QAAAARnQU1B"
-    b"AACxjwv8YQUAAAAJcEhZcwAAFiUAABYlAUlSJPAAAAAZdEVYdFNvZnR3YXJlAHd3dy5pbmtz"
-    b"Y2FwZS5vcmeb7jwaAAAAh0lEQVRIS+2UOw6AIBBERwhwDzqODC0F4S7cg1OQFRULI6WoBS+Z"
-    b"kN1QTPa3AKCqT2Ht/ZRp4uTfJqSU0FqDc94yY9m24yKlFMUYKaVEzjlijN3+PKnuihpj4L1v"
-    b"EZBzRimlRWO4OautoBDCXglr7fBKVHWTJISgOhNvGOi3423mnTiZJg6AFWbye0A3zNrCAAAA"
-    b"AElFTkSuQmCC"
-)
-
-fill_nonzero = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAATCAYAAACQjC21AAAACXBIWXMAAAMpAAADKQG9Lnl1"
-    b"AAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAAQ5JREFUOI2t07FKA0EU"
-    b"RuHPkAQUEdTSSrCIoHZ2KvgCgiiYwkILIfggljY2voB2PoKItvZaK8QqChIVRDAWO8IaspOJ"
-    b"5MAtZuafM7uzd0ljOVRfyonCTXRwOyzhamIuiXm84wML/cKlBOEOxjCK7WEI86+7kpCPMou2"
-    b"7IN08Ia52IYRHGIL3z3WZ2R3mOcezR7ZEi5+B/t4zD3JoNVEo/uEGq7/IbvBYtEVlHGE1wRR"
-    b"G6eoFMnybKAVkbVCJpkpPEeEL5jutbGoD3eDtIhJ1AcRrnWN70LlWY8c+IdxWRt08IUzTMh+"
-    b"vxN8hrWnMN+XhkhvYQ8PIXOQIjzHFZYimRouQzZKFcfSeqsSstX85A/ci1xqR7HjbwAAAABJ"
-    b"RU5ErkJggg=="
-)
-
-fill_evenodd = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAATCAYAAACQjC21AAAACXBIWXMAAAMpAAADKQG9Lnl1"
-    b"AAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAASdJREFUOI2t088qRGEY"
-    b"x/EPmQlhwRUoi1FYsdHMLShRtizURLkMC8rGhtWsWGhcgkQkyUVQFDv5EyljMe9wTMeZV/nV"
-    b"szi/5/v+es95nkOcJkK1VEdk4DRquPivwFIkF6VhPOMFI63g9ojAOXSjC7P/EZh83WIEn6lB"
-    b"PKoPpIYnDGUdaMMSZvCR0n/FSZNXRGcK2479xsMCrhM3adRaysH1FO4G5WawgKME9C59XUqh"
-    b"1+COMZrCob6Xq3jA5W9Q6D1iC7kM7ktTqGT0K4GJVj/usIfehN+Fbdxj4C+BK76/0TkmMY6z"
-    b"hL/8l8Cqn1M8DZX0qrFhPepr0Jj0DvrUf79NvIXebfBbqixjtzCPq8AsxgTu4hBjGUwBB4HN"
-    b"VB4b4nYrF9h80vwExRFNC/by8doAAAAASUVORK5CYII="
-)
-
-join_miter = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAIAAABLixI0AAAABnRSTlMA/wD/AP83WBt9AAAA"
-    b"CXBIWXMAABYlAAAWJQFJUiTwAAACL0lEQVQ4jZ3SMWgaURzH8a+aE2tEUZAuBWkIuik4VCmF"
-    b"gENKIZ0KDhbMVDN0KAmFop3sGnRwKEiHQkgyGLqUQoeQIUuwUCuUGkICtk6lDjVWmju1eh1s"
-    b"Lnrxqpcft9zx/314791D7vf1PttbW5zHC7/gKZgAWWeq1arD4RhAZvgI78F4BavT6YTDYWVR"
-    b"GfgO14ErWMlkUoHuwR+4e/6qzyoWi4IgDJouqEGei+iwTk9P5+bmBjUDvIEvYB2yZs3maa1Y"
-    b"LKbUVkAEPyN5mclMZeXzF7sJgAiPRiG73X4nHJ5sVSoVq/XfbmbhEApgQJ3J5yWKYiAQUAqv"
-    b"4Bs4L0FTWYlEQpl+CG0IjYMmWzs7O8roPDThmQZ0A1b+Y9VqNZfLNRgV4APsgnGob4Rb8AI+"
-    b"QQ9qWla/319aWlJqz6EBN8/dBViHQ+jDIazDAlzTsnK5nALdhg48hhhsw0+QYBeewPzE8yqX"
-    b"yxaLZTBhg6/Qgw78gNfwABwaZz+j+tRqtaLRqCRJg9ff8Bbq8A4+g6xx9j6f7/7ionpdy8vL"
-    b"GvPqmM3mSCSSzWaPj49lWZbPzkaszc3NiYTb7Y7H44VCodFojKxi2Do6OrLZbGP7JpMpFAql"
-    b"0+lSqdTr9cZfIsWSJCkYDKoIp9MZjUY3Njbq9fr4/lhrdXVVIbxe79ra2t7eXrvdnkyorP39"
-    b"fUEQ/H5/KpU6ODjodrs6iCFrBmg2mycnJx6PZ8o/qBWDLGtdGp0Rxb+5WqWcYv6HwAAAAABJ"
-    b"RU5ErkJggg=="
-)
-
-join_bevel = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAIAAABLixI0AAAABnRSTlMA/wD/AP83WBt9AAAA"
-    b"CXBIWXMAABYlAAAWJQFJUiTwAAAB0UlEQVQ4jc3TMWsTcRjH8e9dkxvSTImC24lQ2sFGhcIt"
-    b"IZopQ4YGg7h1Kg4e6isQgmQIeQMam1cggRKXgGPokuDY6wvokamSEiqn0v/d3+HsvylNcrlM"
-    b"/raD5/lw/J47ZMwIIfL5PFd5Bx48hDUgrlWr1RT0GH7Ba2AFq9/vJxKJEFqHEzgEbQVrPB6b"
-    b"pqle6jO4cOfqMYYVBEG1WlXQS7iEp1wnhtVqtdTafTiHD9zI1sbGUpbjOKlUKtxJwBEcQXIK"
-    b"Mgzj+2AQbXmel8vl1FodxmDefCnLsnbL5WjLtm218wwu4QUzEt1Xt9vVtPDoZOEUDmZB0Zbr"
-    b"utlsNhzVoAvHkFrBEkIUi0U1aoMHj+ZAOlgLrHq9rka3wYM3t4h12IUDGIFcYJVKJbXgTP0r"
-    b"wAN4C9/gN/yEr/AqvGxkWZ/AhXuQhwYcQwCn8BHKU/VFdN/pdJ5DACdwBj4M4D08AT3uHaWU"
-    b"P/b3z+EL7MHdOcUDuq5bOzsR1p+Li+3NzXlEOp2uVCrtdns0Gkkhor/74XBoGMY0YZqmbdu9"
-    b"Xs/zvOu5ZSwpZaPRSCaThUKh2Ww6jjN7SAhNSjm/h3/xfX8ymWQymcVDS1lLxfdvH3f1/K/W"
-    b"X6GtRkLtoYR+AAAAAElFTkSuQmCC"
-)
-
-join_round = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAIAAABLixI0AAAABnRSTlMA/wD/AP83WBt9AAAA"
-    b"CXBIWXMAABYlAAAWJQFJUiTwAAACBUlEQVQ4jb3SP4iScQDG8a/vnffaayloKEQ4ZDQJ4iGI"
-    b"29EfqFGnhqQtBG1saUi4IohuaGhwcSiCNqVQ2hpEL9ShQYe6ITDRFukuSSR4/zTI/S659+29"
-    b"t6GHd3lffs8H3ud9MZzn4fb2Giyvc/ANXoAbcAo1m0232w0AEryDT3Aa1pxa0+k0EolwmHuw"
-    b"gATg1NJ1PZPJCCgFv+Du4a0zq1wuC+gMfIYGSP9g9ft9RVGE9RLGEOIoJ7Xm83ksFhO126DC"
-    b"FVayGY+fyCoUCqJzEX7Ak1XI6/V2dnftrWq16nK5lh0ZuvABNlYtv9+vyLKNNRwOg8Gg6OzA"
-    b"PlzAJDZ7LRaLRCIhTt8EFW6YQfZWsVgUR6NwAE8tIBurVquJmTagA51jMy3jgk14YGWNx+NQ"
-    b"6OjveQwzuLRKnILr8By+gAFfraxcLic6V0EFcX8e7sAb+AkqtOE+xGHd1JrNZrIsL5thmMAr"
-    b"SMMj+Ag6fIfXcAvO2u41GAzEEG/BgH0wYA+ewTXwWGy/fvxpIBCQJEnXdQMO4D00oAF7YJgp"
-    b"gKIol7e2zPdKp9MWrZVEIpF8Pl+v1+fzuWEY5la73fZ4TF8FSZKSyWSpVOp2u6qq/tmy/L9a"
-    b"rVY0GhWEz+fLZrOVSmUymVhVXIZhNQKapvV6vdFoFA6HU6mU+LhW+ZvlNJL9kf9saZoG/Aa3"
-    b"/yM6a1FRBwAAAABJRU5ErkJggg=="
-)
-
-# ----------------------------------------------------------------------
-
-icon_kerf_50 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAABnRSTlMA/wD/AP83WBt9AAAA"
-    b"CXBIWXMAAAsTAAALEwEAmpwYAAAHxElEQVRYhe2Ya0xTaRrHT1s4p6cXqFAsbimFKlM6yaCQ"
-    b"xRGF4GUSAXHMYhaYkLhdLGZHB8jQLNcEGQaclQWBgUYmURFB4hKVqVFqVkgTyzUCiojERG5C"
-    b"y62EFmgLvZyzH0pYppT2tLD7YbP/T708z3N+ffue5/m/B0AxyGQyXblyhUgkSiQSLPEWKisr"
-    b"JRKhhoZ67CkAxjij0Xj58mUymdzS0oK9OoIglZWVMAzfvVuLPcsBLDNZSkoKjebe3i7DmFJV"
-    b"9TMEQbW1dxxiQlHUBcAsAoFw8+ZNHA539uzZlpaWI0fCAAAoLi56//691XitVvv8+XORqJrP"
-    b"/zP2q5iFdyiaQCBUVVVRKNShoaH1fDwB3EZDQ+/PnIlNTr7oKBMAAA6s1nqCiwsIuhIIBPPb"
-    b"nJyc7SKTk5MBAMXhcE5gObZa/zX9H8sR/Q9hEQguEsnz1VWdjRiFQvHmzRsCweFbal2ONjoU"
-    b"Rdva2ry9vcPDjykUcqsB3d1dHI7/oUOHRkZGnKiPOtTl3717t7S0ZH49MvLx8OFQJpPZ2dmx"
-    b"OQZBkLq6OiqVGh8fvxE8OflpYmJi97H0en1+fj4EgU1N/9j4cHl5KSkpCYbh+vp7a2trq6ur"
-    b"Wq02OzsLgqCCggKj0bgRmZHxvYfHnvr6egRBdg1rbm4uMTEBhuHCwh/0ev3mrzQazaVLlyAI"
-    b"YrPZvr6+LBaLSCSWl5ebTKbNYUqlks//EwSBubk5a2tru4AlkUhYLBaPx+vq6rQagCDIo0cP"
-    b"U1NTcTjcjz8Wtre3b1eqoaHBy8srNPT3Q0NDzmNpNJrMzExXV9eLFy+q1WrbVXp6uvF4vN2w"
-    b"8fHxkydPUqmUmpqbFiuKCWtg4E1QUNDevXvFYjGWDYERC0VRg8FQUnIdhuGvvz4rl1u/ka1g"
-    b"GQyGiooKEokUExMzNTVp9zKOYpnV19cXFPQFk8nc7mf/Bksul0dHR5HJ5MrKCoPBgPEaTmCh"
-    b"KLq8vPzdd1dAEExLS11eXraOZTKZfvmlhkqlnjhxYmJi3CIIQZC0tLT79xu2Y7WNpVKprl27"
-    b"VlZWZi2xJyAgwMfHp7X1hSXWzMz0uXPnYBi+fv365n6zGSszM9PNzY3HC6ypqdFoNBix5ufn"
-    b"i4qKPDw8GAzG7du3rEKr1eqUlBQQBIVC4crKyjqWWCxmMn8XFPRFX1+v1bQNTU1NCoVCNzc3"
-    b"Pz8/kUik0azYwFIq5/Pz8+l0ure3d0lJyeLioo3KCII8fvxo3759wcGHXr9+jaIoAIJgenra"
-    b"xqCwK4VCnp2d7e7uzuFwNpbWAmtsbNTDw4PD4ZSWlmKvPDk5GRMTQ6FQSkv/Djx9+hT7TNjQ"
-    b"7OxMS8uzjbcWWGtrq8+ePdVqtY6WNRqNFRUVFArFGQexVW/fvqVSKU5wWNXg4CAORVEnLdFv"
-    b"pdfrQRAEAGBwcLCgoMBkMm2NMf+teLx9k7dr7hQEQQRB7t2ri4yMnJiYgK2JSqViPAjZcY9S"
-    b"qTQvLw8Atl3RyMjIn376GwAAKtViampaU1NTdnZ2Xl6eeeWclh0sNpsdHR299Y/W6XR1dXfn"
-    b"5uajoqIBAJDJXiYnJ6Mo0NraGhERsROgdTmxJUdGRsLCwuh0+pMnT1ZXdQUFV0EQTEpKUqls"
-    b"NSfsWlhYALbOI9sSi3+l0+lHjx4dHR39+PFjRES4p6dnQ0ODbaOCXS9e/NPf3x84fvz4+PgY"
-    b"lgQEQaqrq0kkUlzcH5RK5cuXL/38/Ljczzo6trV+DslkMolE1WQy+auvTgFhYUc8PT2bmx/b"
-    b"bqoLCwvffJNIJpMqKyu0Wm1eXi4EgXw+3yHXYEMKhSI2NhaG4Rs3yoxGI6DVaoVCoaura0bG"
-    b"9zqd9X746tUrHi+Qw/Hv7u768OHDsWNH6XR6Y2OjE+NhqxAEaW5uNg/E/v4+84frW14sFjMY"
-    b"jC+/PDw8PLw5x2QyiUQiEol0/nycUqm8c+f2nj00c2faORCKomq1+ttv/wJBUHp6+mZj8u87"
-    b"cWxs7NSpUzQabePkpFKpEhISYBguL78xPT0dH/9HEolUXFyE8fRiVz09PVwul8VibR6vllgo"
-    b"iur1+qtX811cXAQCQXu7jMvl7t+/v7OzQyqV+vr6HjhwoLu7a1eADAZDcXExkUg8fz5ubm5u"
-    b"a4CVvtXb2xsYGIjH4wUCgVwuT0kRQBCUlZW11f05p/7+/oMHD3p5eYnFv263O623U7VaLZPJ"
-    b"RkdHAwIOMJnMtrbWXQHS6/VlZWUkEik2NnZmZsZGpK0uPzw8zGaz2Wx2a+suYH369On06dNk"
-    b"Mrm6usru+cXO8FlYWODz+Wajjd1nWghBkAcPHtDp9JCQECxHavtY5qJisdjHx4fH4znR0FWq"
-    b"xQsXLoAgmJubg90nYh3V09OK+Ph4EASzsrJ0Oh3GLJlMxuVy/f39Hd0GDjgIvV5fVFQEw3BU"
-    b"1Gm77RRBkNraO+7u7uHh4U48fHPY2AwMDISGhtJotFu3bm3nGmZnZxMS4iEIKiwstHj29J/C"
-    b"QlFUp9MVFv5AJBLj4uIsnlMiCCKRSHx9fT//nNfV5Xzvdf7k09vbGxwczGAwGhvvm7viysqK"
-    b"UJgBgqBAIFha2pGz2NGBTKvVZmb+FYKgxMREqVQaEhLMYDAePny4c2exC+fEjo4OLvczAADO"
-    b"nImZmpraeUEURf8FcaHqfSGVp/MAAAAASUVORK5CYII="
-)
-
-node_break = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABcAAAAZAQMAAADg7ieTAAAABlBMVEUAAAD///+l2Z/dAAAA"
-    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAOElEQVQImWP4//8fw39GIK6FYIYaBjgbLA6Sf4+EGaG4"
-    b"GYiPQ8Qa/jEx7Pv3C4zt/v2As0HiQP0AnIQ8UXzwP+sAAAAASUVORK5CYII="
-)
-
-node_join = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
-    b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAPklEQVQImWP4//9/A8OD/80NDO/+74YSff93IHPBsv+/"
-    b"/0chGkDEQRDxGC72H04wgIg6GNFQx4DMhcgC1QEARo5M+gzPuwgAAAAASUVORK5CYII="
-)
-
-node_smooth = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAAAXNSR0IArs4c6QAAAARnQU1B"
-    b"AACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAIgSURBVEhLY/wPBAw0BkxQmqZg+FhC"
-    b"VJx8+fyZ4fKVK1AeBEhKSDAoKCpCefgBUZZcvHCBITo6CsqDgJjYWIaKikooDz8gKrjevX8P"
-    b"ZSHAh3fvGX7//g3l4Qc4ffLz50+G9evWMSxftpTh7r17UFFUwM3NzeDm6saQlJLMoKioBBXF"
-    b"BFgtOX/+HENNdRXDw4ePwHwZGVmGJ08eg9kwICQkxPDj+3eGb0DMxMTEkJySwpCdncPAwsIC"
-    b"VYEAGJZs3bqFoaaqiuH3nz8Mjg6ODHkFBWADFy1cCFUBAdo6Ogx2dnYMq1etYpg6dQrDly9f"
-    b"GKysbRgmTpzIwMnJCVUFBSBLYODgwYP/dXV1/usB8do1a6CihMGLF8//h4YE/9fW0vyfmZn5"
-    b"/++fP1AZCIBb8ubNm/8W5mb/dbS1/m/ftg0qSjz4/Pnz/4AAf7BF8+bOhYpCANyS2tpqsIKO"
-    b"jnaoCOng/v37/40MDf4bGxmCHQ0DYEtAAoYG+mCfAMMWLEEu6O7qAjt22rSpUJH//8H55MD+"
-    b"/Qy/fv1i8A8IACdLSkBkZCSY3rVzJ5gGAWZ+Pr6G7du3MgB9wyAsJMzwB5iq1DU0oNKkg/Xr"
-    b"1zFcOHeO4dWrVwzfvn4DZofzDIwgr0HlwcDZ2Ylh4qQpUB7pwNfHh+H+fUTmBYXMaH1CEmA8"
-    b"duwYSpyAihB1dXUoj3QAqhZA5RkMMDMzEVefUApGI54EwMAAANLW9DiEznjCAAAAAElFTkSu"
-    b"QmCC"
-)
-
-node_smooth_all = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
-    b"AAACs0lEQVR4nO2YO2hUQRSGj4r4loh2Rldws3P+/+zdK2xhSB+idop2FqJgFUEt1FJERBtt"
-    b"VKy0UvCBz0IR0UKsTBoRBEVREcEHiEh8JBrlZu+uIbmYx97sA+eDKbaY/86/c86cMyPi8Xg8"
-    b"Ho/nP6RYLM404PDIETjnpJlob22dY8TvkQPAOmkmzCxMMkJq9yaRGdLIFAqFeaa606DPkkwM"
-    b"Gx8NOBoE2VZpNACsJfR1ZbHQH0b8SjDxrbI70D5Sd4vIdGkESN1rxGApdPAmCp8gCBYRuEui"
-    b"Z/gw0w1mroPE5coc4FImk5ldVxMG7Bm2C6edcwvGPddcF6HvYjM36pY7Zq6rEj7Agclp2Mpy"
-    b"SJJ6UGpNsVicS+JFbOJMNVr5fK5A4iuh/aqal1pCanc5J7LZ7MIU9PbF4XkxnRWOEwJPSka4"
-    b"Q1LaYSM+EDoQtrUtlVpAMhsfn/1hGLakp4sTkW4e2CpTjVEvEHgQn1Sfo9+q2l6tLum2EHhY"
-    b"0tWnQ9+h7qpWN3DORVojhyS3HdxYvREcS2hnzlera+Y6ktbsjYyF35HJh9boxEkr2UsHifbF"
-    b"CX81tWSH3owNDEZ1aijZpxoC14eOYNXOtDTzwOa4eD+SWkHq9rjtOZeaJnAv1jyUlubYHyXn"
-    b"E/opqvCBc0G1ennVzrh4DwDISJ2uBr3R3X+yOrlcbolRX8Y16aTU5QWG6C0nfTabnTVRjTAM"
-    b"WyodCPRVmq3UhDCzZUa8jRdy3zm3YrxzA+cCoz6O534huUrqCYA2As//LkiPRIai4jnqCg3s"
-    b"V9WcAcfj94LolHoPYLU0Aqq62ICzw4pZdM///q9HDStdnW+RXC6NRqlC65Xyv53cvOKnUe+Q"
-    b"XCMi06SRiR43DHotwURPtHvSTBj0VIKR29Js5FXXJzyQb6v3ujwej8fj8Uid+AMS4JbuhXD/"
-    b"gAAAAABJRU5ErkJggg=="
-)
-
-node_close = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
-    b"AAACpklEQVR4nO2YSWsVQRRGjwlOcWM0YCDguFHzUKMrccClszEgiCKSgBiCYOJGI7qX4MYg"
-    b"auLsD3DnhD5F/AGaxAHEZKFunDfqwiQ+KbgNl6K7051+TbpNHajV++7te19VV9dX4HA4HA7H"
-    b"xDAFOA5cAGrJMTuBkoy3QB05Za1qJPfNHMtzM3OBrUCLvCOvIjSzAOgQfdhoAbbIM1KhEjgI"
-    b"PAFGrML9xh0r/k2EGD2GgcfAAaCiXE1sAgZiFvLUyvExZnxJjT5gY9Imjsi/Yyd/DzwEbslS"
-    b"0r99ApZbeVYD3UBPyDC5TM4PATPUNt4mTvkkuww0KM1ea6mZJgokpwG44rOMO+MmagL+qgTv"
-    b"gBWWZpU1W6aJesrLSmBQPWMUaIwaPAf4oYL7A3aRfSk34VFjvaPfgGoicFYFfQUWBuhmAL3A"
-    b"bWAp6bIY+K7q6horYBbwWwUcJTt0qLp+AVVh4t1K/BmYRnaYLivEq29XmLhXCa+RPW6o+i6F"
-    b"CR8o4SGyx2FV3/0w4Usl3Eb22GHtpoH0K+F2su2B+ibF0upRwutkj5uqvotRt98vsuXlcvut"
-    b"ko+NJ24nm270JzBzrIAu61yzKOUClwH3gPPA1ADNEuuIciZK4moraEAObmlQLwdO71l7fDQ1"
-    b"1mfBLK/ZUR/QKEdmL3hQju1pNmEsQcHHlwxZx3izBcei0zI1xuRcFbeXlILVxIiYNO/ib40c"
-    b"kWxjZS4oxkVbgNU1drQo9jTMvnZbjtJvJkpil02uYoC//wO0kpANwIsElwemMM2zmPHPgXWU"
-    b"iQq5mikGzFDYeG3luhshZhh4BOwv53WQnxXeDDQDp2UrDBongPlWfJ3PzcuQ5GqW3JGsbBao"
-    b"lZnSzZwkp/jNzHr+k2aayDHzgHPyjlROdDEOh8PhmJz8A+PVbUCLkfVDAAAAAElFTkSuQmCC"
-)
-
-
 icons8_camera = VectorIcon(
     "M 19.09375 5 C 18.011719 5 17.105469 5.625 16.5625 6.4375 C 16.5625 6.449219 16.5625 6.457031 16.5625 6.46875 L 14.96875 9 L 6 9 C 3.253906 9 1 11.253906 1 14 L 1 38 C 1 40.746094 3.253906 43 6 43 L 44 43 C 46.746094 43 49 40.746094 49 38 L 49 14 C 49 11.253906 46.746094 9 44 9 L 34.9375 9 L 33.34375 6.46875 C 33.34375 6.457031 33.34375 6.449219 33.34375 6.4375 C 32.800781 5.625 31.894531 5 30.8125 5 Z M 19.09375 7 L 30.8125 7 C 31.132813 7 31.398438 7.175781 31.65625 7.5625 L 33.5625 10.53125 C 33.746094 10.820313 34.0625 11 34.40625 11 L 44 11 C 45.65625 11 47 12.34375 47 14 L 47 38 C 47 39.65625 45.65625 41 44 41 L 6 41 C 4.34375 41 3 39.65625 3 38 L 3 14 C 3 12.34375 4.34375 11 6 11 L 15.5 11 C 15.84375 11 16.160156 10.820313 16.34375 10.53125 L 18.21875 7.5625 L 18.25 7.53125 C 18.5 7.179688 18.789063 7 19.09375 7 Z M 10 13 C 8.355469 13 7 14.355469 7 16 C 7 17.644531 8.355469 19 10 19 C 11.644531 19 13 17.644531 13 16 C 13 14.355469 11.644531 13 10 13 Z M 10 15 C 10.554688 15 11 15.445313 11 16 C 11 16.554688 10.554688 17 10 17 C 9.445313 17 9 16.554688 9 16 C 9 15.445313 9.445313 15 10 15 Z M 25 15 C 18.9375 15 14 19.9375 14 26 C 14 32.0625 18.9375 37 25 37 C 31.0625 37 36 32.0625 36 26 C 36 19.9375 31.0625 15 25 15 Z M 25 17 C 29.980469 17 34 21.019531 34 26 C 34 30.980469 29.980469 35 25 35 C 20.019531 35 16 30.980469 16 26 C 16 21.019531 20.019531 17 25 17 Z"
 )
@@ -1538,7 +1372,7 @@ icon_mk_polygon = VectorIcon(
     stroke="M 20,55 L 40,55 L 55,30 L 40,5 L 20,5 L 5,30 z",
 )
 
-node_add = VectorIcon(
+icon_node_add = VectorIcon(
     fill="",
     stroke=(
         "M 35, 15 h 30",
@@ -1548,7 +1382,7 @@ node_add = VectorIcon(
     ),
 )
 
-node_delete = VectorIcon(
+icon_node_delete = VectorIcon(
     fill="",
     stroke=(
         "M 35, 15 h 30",
@@ -1558,7 +1392,7 @@ node_delete = VectorIcon(
     ),
 )
 
-node_append = VectorIcon(
+icon_node_append = VectorIcon(
     fill="",
     stroke=(
         "M 35, 15 h 30",
@@ -1569,7 +1403,7 @@ node_append = VectorIcon(
     ),
 )
 
-node_line = VectorIcon(
+icon_node_line = VectorIcon(
     fill=(),
     stroke=(
         "M 40,70 L 70, 40",
@@ -1578,7 +1412,7 @@ node_line = VectorIcon(
     ),
 )
 
-node_curve = VectorIcon(
+icon_node_curve = VectorIcon(
     fill=(),
     stroke=(
         "M 25,70 Q 25,25 70,25",
@@ -1587,12 +1421,87 @@ node_curve = VectorIcon(
     ),
 )
 
-node_symmetric = VectorIcon(
+icon_node_symmetric = VectorIcon(
     fill=(),
     stroke=(
         "M 0 0 Q 0,50 50,50 Q 100,50 100,0" "M 10 50 h 80" "M 35,35 h 30 v 30 h -30 z",
     ),
 )
+
+icon_node_break = VectorIcon(
+    fill=(
+        'M 70,60 h 10 v 20 h 20 l -25,30 -25,-30 h 20 z',
+    ),
+    stroke=(
+        'M 55 5 h 40 v 40 h -40 z',
+        'M 15 115 h 40 v 40 h -40 z',
+        'M 95 115 h 40 v 40 h -40 z',
+        'M 5, 25 h 140',
+        'M 5, 135 h 20',
+        'M 125,135 h 20',
+    ),
+)
+
+icon_node_join = VectorIcon(
+    fill=(
+        'M 70 60 h 10 v 20 h 20 l -25,30 -25,-30 h 20 z',
+    ),
+
+    stroke=(
+        'M 15 5 h 40 v 40 h -40 z',
+        'M 95 5 h 40 v 40 h -40 z',
+        'M 55 115 h 40 v 40 h -40 z',
+        'M 5, 135 h 140',
+        'M 5, 25 h 20',
+        'M 125, 25 h 20',
+    ),
+)
+
+icon_node_close = VectorIcon(
+    fill=(),
+    stroke = (
+        "M 25 10 h -5 C 0 10 0 40 20 40 h 20",
+        "M 40 0 L 30 10 L 40 20",
+        "M 30 30 L 40 40 L 30 50",
+        "M 45 40 h 5 C 70 40 70 10 50 10 h -20",
+    )
+)
+
+icon_node_smooth = VectorIcon(
+    fill=(),
+    stroke = (
+        "M 0 30 h 10 v 10 h -10 z",
+        "M 25 0 h 10 v 10 h -10 z",
+        "M 50 30 h 10 v 10 h -10 z",
+        "M 5 30 Q 5 5 25 5",
+        "M 35 5 Q 55 5 55 30",
+    )
+)
+
+icon_node_smooth_all = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 0 30 h 10 v 10 h -10 z",
+        "M 25 0 h 10 v 10 h -10 z",
+        "M 50 30 h 10 v 10 h -10 z",
+        "M 75 60 h 10 v 10 h -10 z",
+        "M 100 30 h 10 v 10 h -10 z",
+        "M 5 30 Q 5 5 30 5 Q 55 5 55 35 Q 55 65 80 65 Q 105 65 105 40",
+        ),
+)
+
+icon_node_line_all = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 0 30 h 10 v 10 h -10 z",
+        "M 25 0 h 10 v 10 h -10 z",
+        "M 50 30 h 10 v 10 h -10 z",
+        "M 75 60 h 10 v 10 h -10 z",
+        "M 100 30 h 10 v 10 h -10 z",
+        "M 5 30 L 30 5 55 35 80 65 105 40",
+        ),
+)
+
 
 
 def savage_consumer():
@@ -1622,18 +1531,45 @@ def savage_consumer():
     assert ext_split[-1] == ".svg"
     filename = ext_split[0]
     filename = filename.replace("-", "_")
+    if not filename.startswith("icon"):
+        filename = "icon_" + filename
 
     fills = []
     strokes = []
+
+    def splitted(org):
+        s = org
+        splits = list()
+        flag = True
+        while flag and len(s) > 0:
+            idx = s.find("Z")
+            if idx >= 0:
+                print(s[: idx + 1])
+                splits.append(s[: idx + 1])
+                s = s[idx + 1 :]
+            else:
+                flag = False
+                splits.append(s)
+
+        return splits
+
     with open(args.input, "r") as f:
         for event, elem in iterparse(f, events=("end",)):
             if not elem.tag.endswith("path"):
                 continue
             path_d = elem.attrib.get("d")
+            l_path = splitted(path_d)
+            is_stroke = False
             if "stroke-width" in elem.attrib:
-                strokes.append(path_d)
+                is_stroke = True
+            if "style" in elem.attrib:
+                path_style = elem.attrib.get("style")
+                if "fill:none" in path_style:
+                    is_stroke = True
+            if is_stroke:
+                strokes.extend(l_path)
             else:
-                fills.append(path_d)
+                fills.extend(l_path)
 
     if not fills and not strokes:
         print("Parsing error, blank.")
@@ -2701,3 +2637,77 @@ icon_about = VectorIcon(
         "M 26 13.44 a 2.57,2.57, 0 1,0 1,0",
     ),
 )
+
+
+icon_fill_evenodd = VectorIcon(
+    fill=(
+        "[fill_evenodd]M 1105,339 C 1115.397,339 1117.885,319 1111.421,319 1104.873,319 1094.578,335.0032 1105.037,335.0032 1115.363,335.0032 1105.127,319 1098.605,319 1092.082,319 1094.42,339 1105,339 Z",
+    ),
+    stroke=(),
+)
+
+icon_fill_nonzero = VectorIcon(
+    fill=(
+        "[fill_nonzero]M 1135,339 C 1145.397,339 1147.885,319 1141.421,319 1134.873,319 1124.578,335.0031 1135.037,335.0031 1145.363,335.0031 1135.127,319 1128.605,319 1122.082,319 1124.42,339 1135,339 Z",
+    ),
+    stroke=(),
+)
+
+icon_cap_butt = VectorIcon(
+    fill=("m 3.5,24 0,-14.5 17,0 0,14.5",), stroke=("[red,cap_butt]m 12,24 0,-14")
+)
+
+icon_cap_round = VectorIcon(
+    fill=("m 3.5,24 0,-14.5 a 8.5,8.5 0 0 1 17,0 l 0,14.5",),
+    stroke=("[red,cap_butt]m 12,24 0,-14"),
+)
+
+icon_cap_square = VectorIcon(
+    fill=("m 3.5,24 0,-23.5 17,0 0,23.5",), stroke=("[red,cap_butt]m 12,24 0,-14")
+)
+
+icon_join_bevel = VectorIcon(
+    fill=("m 0.5,24 0,-13 10.5,-10.5 13,0   0,17 -6.5,0 0,6.5 z",),
+    stroke=(
+        "m 0.5,24 0,-13 10.5,-10.5 13,0 m 0,17 -6.5,0 0,6.5  ",
+        "[red]m 9,24 0,-15 15,0",
+    ),
+)
+
+icon_join_miter = VectorIcon(
+    fill=("m 0.5,24 0,-23.5 23.5,0   0,17 -6.5,0 0,6.5 z",),
+    stroke=("m 0.5,24 0,-23.5 23.5,0 m 0,17 -6.5,0 0,6.5", "[red]m 9,24 0,-15 15,0"),
+)
+
+icon_join_round = VectorIcon(
+    fill=("m 0.5,24 0,-11 a 12.5,12.5 0 0 1 12.5,-12.5 l 11,0   0,17 -6.5,0 0,6.5 z",),
+    stroke=(
+        "m 0.5,24 0,-11 a 12.5,12.5 0 0 1 12.5,-12.5 l 11,0 m 0,17 -6.5,0 0,6.5",
+        "[red]m 9,24 0,-15 15,0",
+    ),
+)
+
+icon_kerf = VectorIcon(
+    fill=(),
+    stroke=(
+        "m 41.079941,10.060393 0.209589,15.300182 27.875675,0.209591 0.209591,9.222029 -7.335704,-10e-7 -0.20959,26.198941 15.719363,-10e-7 10e-7,38.879228 -6.497338,0.419178 0.104795,9.74601 c 0,0 39.298407,0.52398 38.879227,-0.31439 -0.41918,-0.83836 -0.31439,-9.53641 -0.31439,-9.53641 l -5.76376,-0.209592 -0.20959,-27.456489",
+        "M 140.42632,10.060393 V 25.570166 H 79.644781",
+        "m 112.55065,25.150983 -0.20959,9.850801 7.75489,0.209593 v 25.150984 l -42.756676,0.628774",
+        "M 62.248684,46.73891 H 119.88636",
+        "m 68.955612,34.792195 43.490248,0.20959",
+        "m 78.282435,110.24515 0.104798,8.80284 24.312617,0.20959 0.1048,-8.69805",
+        "M 133.5098,113.38902 120.30554,128.6892",
+        "m 128.47961,130.9947 14.881,-5.86856",
+        "m 187.79401,142.73183 -86.98049,-0.41918 -0.62877,24.10302 88.65722,0.2096",
+        "m -7.9644781,142.31265 88.0284411,0.20959 0.419185,22.84548 -87.1900769,0.62877",
+        "M 68.326838,188.63238 82.159879,176.89525",
+        "m 87.818851,176.89525 -3.982239,14.67141",
+        "m 93.687412,176.68566 5.449382,14.881",
+        "m 99.136794,174.79933 14.252226,13.41386",
+        "M 91.381907,164.63414 91.172315,134.76735",
+        "M 62.248684,129.31797 C 60.781543,128.06042 47.577277,113.59861 47.577277,113.59861",
+        "M 53.865023,131.2043 38.355251,124.49737",
+        "m 86.246914,119.46717 c 0,0 -0.368821,8.75297 -0.104797,11.52753 0.201722,2.11984 2.692579,4.11493 4.820605,4.19183 1.745456,0.0631 4.004355,-1.40737 4.191831,-3.14387 0.407704,-3.77637 0.209592,-12.3659 0.209592,-12.3659",
+    ),
+)
+

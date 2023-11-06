@@ -9,7 +9,7 @@ from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
-from meerk40t.gui.icons import STD_ICON_SIZE, icon_kerf_50, icons8_detective
+from meerk40t.gui.icons import STD_ICON_SIZE, icon_kerf, icons8_detective
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.kernel import lookup_listener, signal_listener
@@ -156,7 +156,7 @@ class KerfPanel(wx.Panel):
         sizer_param.Add(hline_dim, 0, wx.EXPAND, 0)
         sizer_param.Add(hline_delta, 0, wx.EXPAND, 0)
 
-        sizer_info = StaticBoxSizer(self, wx.ID_ANY, _("How to use it"), wx.VERTICAL)
+        sizer_info = StaticBoxSizer(self, wx.ID_ANY, _("How to use it"), wx.HORIZONTAL)
         infomsg = _(
             "If you want to produce cut out shapes with *exact* dimensions"
             + " after the burn, then you need to take half the width of the"
@@ -166,10 +166,12 @@ class KerfPanel(wx.Panel):
             + " label together. Choose the pair that has a perfect fit and use the"
             + " label as your kerf-compensation value."
         )
+        info_pic = wx.StaticBitmap(self, wx.ID_ANY, bitmap=icon_kerf.GetBitmap(resize=STD_ICON_SIZE))
         info_label = wx.TextCtrl(
             self, wx.ID_ANY, value=infomsg, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         info_label.SetBackgroundColour(self.GetBackgroundColour())
+        sizer_info.Add(info_pic, 0, 0, 0)
         sizer_info.Add(info_label, 1, wx.EXPAND, 0)
 
         main_sizer.Add(sizer_cutop, 0, wx.EXPAND, 1)
@@ -863,7 +865,7 @@ class KerfTool(MWindow):
         )
         self.add_module_delegate(self.panel_template)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icon_kerf_50.GetBitmap())
+        _icon.CopyFromBitmap(icon_kerf.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Kerf-Test"))
         self.Layout()
