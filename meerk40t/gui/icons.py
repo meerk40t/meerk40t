@@ -444,21 +444,21 @@ class VectorIcon:
         if not fill:
             pass
         elif isinstance(fill, str):
-            color, bright, pathstr = self.investigate(fill)
-            self.list_fill.append((color, bright, pathstr))
+            color, bright, pathstr, attrib = self.investigate(fill)
+            self.list_fill.append((color, bright, pathstr, attrib))
         elif isinstance(fill, (list, tuple)):
             for e in fill:
-                color, bright, pathstr = self.investigate(e)
-                self.list_fill.append((color, bright, pathstr))
+                color, bright, pathstr, attrib = self.investigate(e)
+                self.list_fill.append((color, bright, pathstr, attrib))
         if not stroke:
             pass
         elif isinstance(stroke, str):
-            color, bright, pathstr = self.investigate(stroke)
-            self.list_stroke.append((color, bright, pathstr))
+            color, bright, pathstr, attrib = self.investigate(stroke)
+            self.list_stroke.append((color, bright, pathstr, attrib))
         elif isinstance(stroke, (list, tuple)):
             for e in stroke:
-                color, bright, pathstr = self.investigate(e)
-                self.list_stroke.append((color, bright, pathstr))
+                color, bright, pathstr, attrib = self.investigate(e)
+                self.list_stroke.append((color, bright, pathstr, attrib))
         self._pen = wx.Pen()
         self._brush = wx.Brush()
         self._background = wx.Brush()
@@ -466,6 +466,7 @@ class VectorIcon:
     def investigate(self, svgstr):
         color = None
         bright = None
+        attribs = ""
         pathstr = svgstr
         if pathstr.startswith("["):
             idx = pathstr.find("]")
@@ -473,7 +474,15 @@ class VectorIcon:
             subpattern = pattern.split(",")
             for p in subpattern:
                 e = p.strip()
-                if e.endswith("%"):
+                if e.startswith("fill"):
+                    attribs += e + ","
+                elif e.startswith("join"):
+                    attribs += e + ","
+                elif e.startswith("cap"):
+                    attribs += e + ","
+                elif e.startswith("width"):
+                    attribs += e + ","
+                elif e.endswith("%"):
                     try:
                         bright = int(e[:-1])
                     except ValueError:
@@ -487,7 +496,7 @@ class VectorIcon:
                     color = e
             pathstr = pathstr[idx + 1 :]
             # print(f"{pattern}: {color}, {bright} -> {pathstr}")
-        return color, bright, pathstr
+        return color, bright, pathstr, attribs
 
     def light_mode(self, color):
         if color is None:
@@ -627,10 +636,11 @@ class VectorIcon:
         def_col = self._brush.GetColour()
         for s_entry in self.list_fill:
             e = s_entry[2]
+            attrib = s_entry[3]
             geom = Geomstr.svg(e)
             color = get_color(s_entry[0], s_entry[1], def_col)
             gp = self.make_geomstr(gc, geom)
-            fill_paths.append((gp, color))
+            fill_paths.append((gp, color, attrib))
             m_x, m_y, p_w, p_h = gp.Box
             if min_x is None:
                 min_x = m_x
@@ -646,10 +656,11 @@ class VectorIcon:
         def_col = self._pen.GetColour()
         for s_entry in self.list_stroke:
             e = s_entry[2]
+            attrib = s_entry[3]
             geom = Geomstr.svg(e)
             color = get_color(s_entry[0], s_entry[1], def_col)
             gp = self.make_geomstr(gc, geom)
-            stroke_paths.append((gp, color))
+            stroke_paths.append((gp, color, attrib))
             m_x, m_y, p_w, p_h = gp.Box
             if min_x is None:
                 min_x = m_x
@@ -714,23 +725,48 @@ class VectorIcon:
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
 
         for entry in fill_paths:
+            fill_style = wx.WINDING_RULE
             gp = entry[0]
-            if entry[1] is None:
+            colpat = entry[1]
+            attrib = entry[2]
+            if "fill_evenodd" in attrib:
+                fill_style = wx.ODDEVEN_RULE
+            if "fill_nonzero" in attrib:
+                fill_style = wx.WINDING_RULE
+
+            if colpat is None:
                 sbrush = self._brush
             else:
                 sbrush = wx.Brush()
-                sbrush.SetColour(entry[1])
+                sbrush.SetColour(colpat)
             gc.SetBrush(sbrush)
-            gc.FillPath(gp)
-
+            gc.FillPath(gp, fillStyle=fill_style)
         for entry in stroke_paths:
             gp = entry[0]
+            attrib = entry[2]
             if entry[1] is None:
                 spen = self._pen
             else:
                 spen = wx.Pen()
                 spen.SetColour(entry[1])
                 spen.SetWidth(self.strokewidth)
+            spen.SetCap(wx.CAP_ROUND)
+            if "cap_butt" in attrib:
+                spen.SetCap(wx.CAP_BUTT)
+            if "cap_round" in attrib:
+                spen.SetCap(wx.CAP_BUTT)
+            if "cap_square" in attrib:
+                spen.SetCap(wx.CAP_PROJECTING)
+
+            spen.SetJoin(wx.JOIN_ROUND)
+            if "join_arcs" in attrib:
+                spen.SetJoin(wx.JOIN_ROUND)
+            if "join_bevel" in attrib:
+                spen.SetJoin(wx.JOIN_BEVEL)
+            if "join_miter" in attrib:
+                spen.SetJoin(wx.JOIN_MITER)
+            if "join_miterclip" in attrib:
+                spen.SetJoin(wx.JOIN_MITER)
             gc.SetPen(spen)
             gc.StrokePath(gp)
         dc.SelectObject(wx.NullBitmap)
@@ -1175,101 +1211,6 @@ icon_meerk40t = PyEmbeddedImage(
 
 # ----------------------------------------------------------------------
 
-cap_butt_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABwAAAAPCAYAAAD3T6+hAAAAAXNSR0IArs4c6QAAAARnQU1B"
-    b"AACxjwv8YQUAAAAJcEhZcwAAFiUAABYlAUlSJPAAAAAZdEVYdFNvZnR3YXJlAHd3dy5pbmtz"
-    b"Y2FwZS5vcmeb7jwaAAAAfklEQVQ4T+2TMQ5AERBE59MpVe5/A5XEGSSuwAWUOtnPRqlE5SUj"
-    b"bCSTXQbUcc4RgCsSfbnKM9wOG0opoZTiwmlEzhlaa1hrYYyZ5XN8MUZqrfGhlIJaK++PkVKi"
-    b"EAJ576l3uMzOVo3gD7P+husLm8WfZoz0+CgnL/jbuWwI/AHZfOz8osNGAAAAAElFTkSuQmCC"
-)
-
-cap_round_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAACEAAAAPCAYAAABqQqYpAAAAAXNSR0IArs4c6QAAAARnQU1B"
-    b"AACxjwv8YQUAAAAJcEhZcwAAFiUAABYlAUlSJPAAAAAZdEVYdFNvZnR3YXJlAHd3dy5pbmtz"
-    b"Y2FwZS5vcmeb7jwaAAAAzElEQVRIS81VywmEMBCdKGoDindvnkwbYoXmKiL2YgNJAxYh8tZZ"
-    b"XHbB2ZtRHzzI5A1kmF8IP1iWBV3Xoa5rZFkGpRSIyD/392GtRVVVspNvcgDOOaRpKjtcQS6B"
-    b"1loWr2Lf97JwJZumEYU4jlEUBcIwFPVTmef54TJJEozjiGmaYIxBEAQHnzOpoiji0dzOX5Rl"
-    b"Sduo7hbRPM+0rutueYCUCS7FMAzvTLRt6z0Tf3uCM8Q94T0A5iOm4xF74hEbk4Ng3P53fHDP"
-    b"L0p4AczxLpvGSdCBAAAAAElFTkSuQmCC"
-)
-
-cap_square_20 = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAACEAAAAPCAYAAABqQqYpAAAAAXNSR0IArs4c6QAAAARnQU1B"
-    b"AACxjwv8YQUAAAAJcEhZcwAAFiUAABYlAUlSJPAAAAAZdEVYdFNvZnR3YXJlAHd3dy5pbmtz"
-    b"Y2FwZS5vcmeb7jwaAAAAh0lEQVRIS+2UOw6AIBBERwhwDzqODC0F4S7cg1OQFRULI6WoBS+Z"
-    b"kN1QTPa3AKCqT2Ht/ZRp4uTfJqSU0FqDc94yY9m24yKlFMUYKaVEzjlijN3+PKnuihpj4L1v"
-    b"EZBzRimlRWO4OautoBDCXglr7fBKVHWTJISgOhNvGOi3423mnTiZJg6AFWbye0A3zNrCAAAA"
-    b"AElFTkSuQmCC"
-)
-
-fill_nonzero = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAATCAYAAACQjC21AAAACXBIWXMAAAMpAAADKQG9Lnl1"
-    b"AAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAAQ5JREFUOI2t07FKA0EU"
-    b"RuHPkAQUEdTSSrCIoHZ2KvgCgiiYwkILIfggljY2voB2PoKItvZaK8QqChIVRDAWO8IaspOJ"
-    b"5MAtZuafM7uzd0ljOVRfyonCTXRwOyzhamIuiXm84wML/cKlBOEOxjCK7WEI86+7kpCPMou2"
-    b"7IN08Ia52IYRHGIL3z3WZ2R3mOcezR7ZEi5+B/t4zD3JoNVEo/uEGq7/IbvBYtEVlHGE1wRR"
-    b"G6eoFMnybKAVkbVCJpkpPEeEL5jutbGoD3eDtIhJ1AcRrnWN70LlWY8c+IdxWRt08IUzTMh+"
-    b"vxN8hrWnMN+XhkhvYQ8PIXOQIjzHFZYimRouQzZKFcfSeqsSstX85A/ci1xqR7HjbwAAAABJ"
-    b"RU5ErkJggg=="
-)
-
-fill_evenodd = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABQAAAATCAYAAACQjC21AAAACXBIWXMAAAMpAAADKQG9Lnl1"
-    b"AAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAASdJREFUOI2t088qRGEY"
-    b"x/EPmQlhwRUoi1FYsdHMLShRtizURLkMC8rGhtWsWGhcgkQkyUVQFDv5EyljMe9wTMeZV/nV"
-    b"szi/5/v+es95nkOcJkK1VEdk4DRquPivwFIkF6VhPOMFI63g9ojAOXSjC7P/EZh83WIEn6lB"
-    b"PKoPpIYnDGUdaMMSZvCR0n/FSZNXRGcK2479xsMCrhM3adRaysH1FO4G5WawgKME9C59XUqh"
-    b"1+COMZrCob6Xq3jA5W9Q6D1iC7kM7ktTqGT0K4GJVj/usIfehN+Fbdxj4C+BK76/0TkmMY6z"
-    b"hL/8l8Cqn1M8DZX0qrFhPepr0Jj0DvrUf79NvIXebfBbqixjtzCPq8AsxgTu4hBjGUwBB4HN"
-    b"VB4b4nYrF9h80vwExRFNC/by8doAAAAASUVORK5CYII="
-)
-
-join_miter = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAIAAABLixI0AAAABnRSTlMA/wD/AP83WBt9AAAA"
-    b"CXBIWXMAABYlAAAWJQFJUiTwAAACL0lEQVQ4jZ3SMWgaURzH8a+aE2tEUZAuBWkIuik4VCmF"
-    b"gENKIZ0KDhbMVDN0KAmFop3sGnRwKEiHQkgyGLqUQoeQIUuwUCuUGkICtk6lDjVWmju1eh1s"
-    b"Lnrxqpcft9zx/314791D7vf1PttbW5zHC7/gKZgAWWeq1arD4RhAZvgI78F4BavT6YTDYWVR"
-    b"GfgO14ErWMlkUoHuwR+4e/6qzyoWi4IgDJouqEGei+iwTk9P5+bmBjUDvIEvYB2yZs3maa1Y"
-    b"LKbUVkAEPyN5mclMZeXzF7sJgAiPRiG73X4nHJ5sVSoVq/XfbmbhEApgQJ3J5yWKYiAQUAqv"
-    b"4Bs4L0FTWYlEQpl+CG0IjYMmWzs7O8roPDThmQZ0A1b+Y9VqNZfLNRgV4APsgnGob4Rb8AI+"
-    b"QQ9qWla/319aWlJqz6EBN8/dBViHQ+jDIazDAlzTsnK5nALdhg48hhhsw0+QYBeewPzE8yqX"
-    b"yxaLZTBhg6/Qgw78gNfwABwaZz+j+tRqtaLRqCRJg9ff8Bbq8A4+g6xx9j6f7/7ionpdy8vL"
-    b"GvPqmM3mSCSSzWaPj49lWZbPzkaszc3NiYTb7Y7H44VCodFojKxi2Do6OrLZbGP7JpMpFAql"
-    b"0+lSqdTr9cZfIsWSJCkYDKoIp9MZjUY3Njbq9fr4/lhrdXVVIbxe79ra2t7eXrvdnkyorP39"
-    b"fUEQ/H5/KpU6ODjodrs6iCFrBmg2mycnJx6PZ8o/qBWDLGtdGp0Rxb+5WqWcYv6HwAAAAABJ"
-    b"RU5ErkJggg=="
-)
-
-join_bevel = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAIAAABLixI0AAAABnRSTlMA/wD/AP83WBt9AAAA"
-    b"CXBIWXMAABYlAAAWJQFJUiTwAAAB0UlEQVQ4jc3TMWsTcRjH8e9dkxvSTImC24lQ2sFGhcIt"
-    b"IZopQ4YGg7h1Kg4e6isQgmQIeQMam1cggRKXgGPokuDY6wvokamSEiqn0v/d3+HsvylNcrlM"
-    b"/raD5/lw/J47ZMwIIfL5PFd5Bx48hDUgrlWr1RT0GH7Ba2AFq9/vJxKJEFqHEzgEbQVrPB6b"
-    b"pqle6jO4cOfqMYYVBEG1WlXQS7iEp1wnhtVqtdTafTiHD9zI1sbGUpbjOKlUKtxJwBEcQXIK"
-    b"Mgzj+2AQbXmel8vl1FodxmDefCnLsnbL5WjLtm218wwu4QUzEt1Xt9vVtPDoZOEUDmZB0Zbr"
-    b"utlsNhzVoAvHkFrBEkIUi0U1aoMHj+ZAOlgLrHq9rka3wYM3t4h12IUDGIFcYJVKJbXgTP0r"
-    b"wAN4C9/gN/yEr/AqvGxkWZ/AhXuQhwYcQwCn8BHKU/VFdN/pdJ5DACdwBj4M4D08AT3uHaWU"
-    b"P/b3z+EL7MHdOcUDuq5bOzsR1p+Li+3NzXlEOp2uVCrtdns0Gkkhor/74XBoGMY0YZqmbdu9"
-    b"Xs/zvOu5ZSwpZaPRSCaThUKh2Ww6jjN7SAhNSjm/h3/xfX8ymWQymcVDS1lLxfdvH3f1/K/W"
-    b"X6GtRkLtoYR+AAAAAElFTkSuQmCC"
-)
-
-join_round = PyEmbeddedImage(
-    b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAIAAABLixI0AAAABnRSTlMA/wD/AP83WBt9AAAA"
-    b"CXBIWXMAABYlAAAWJQFJUiTwAAACBUlEQVQ4jb3SP4iScQDG8a/vnffaayloKEQ4ZDQJ4iGI"
-    b"29EfqFGnhqQtBG1saUi4IohuaGhwcSiCNqVQ2hpEL9ShQYe6ITDRFukuSSR4/zTI/S659+29"
-    b"t6GHd3lffs8H3ud9MZzn4fb2Giyvc/ANXoAbcAo1m0232w0AEryDT3Aa1pxa0+k0EolwmHuw"
-    b"gATg1NJ1PZPJCCgFv+Du4a0zq1wuC+gMfIYGSP9g9ft9RVGE9RLGEOIoJ7Xm83ksFhO126DC"
-    b"FVayGY+fyCoUCqJzEX7Ak1XI6/V2dnftrWq16nK5lh0ZuvABNlYtv9+vyLKNNRwOg8Gg6OzA"
-    b"PlzAJDZ7LRaLRCIhTt8EFW6YQfZWsVgUR6NwAE8tIBurVquJmTagA51jMy3jgk14YGWNx+NQ"
-    b"6OjveQwzuLRKnILr8By+gAFfraxcLic6V0EFcX8e7sAb+AkqtOE+xGHd1JrNZrIsL5thmMAr"
-    b"SMMj+Ag6fIfXcAvO2u41GAzEEG/BgH0wYA+ewTXwWGy/fvxpIBCQJEnXdQMO4D00oAF7YJgp"
-    b"gKIol7e2zPdKp9MWrZVEIpF8Pl+v1+fzuWEY5la73fZ4TF8FSZKSyWSpVOp2u6qq/tmy/L9a"
-    b"rVY0GhWEz+fLZrOVSmUymVhVXIZhNQKapvV6vdFoFA6HU6mU+LhW+ZvlNJL9kf9saZoG/Aa3"
-    b"/yM6a1FRBwAAAABJRU5ErkJggg=="
-)
-
-# ----------------------------------------------------------------------
 
 icon_kerf_50 = PyEmbeddedImage(
     b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAABnRSTlMA/wD/AP83WBt9AAAA"
@@ -1622,18 +1563,38 @@ def savage_consumer():
     assert ext_split[-1] == ".svg"
     filename = ext_split[0]
     filename = filename.replace("-", "_")
+    if not filename.startswith("icon"):
+        filename = "icon_" + filename
 
     fills = []
     strokes = []
+
+    def splitted(org):
+        s = org
+        splits = list()
+        flag = True
+        while flag and len(s) > 0:
+            idx = s.find("Z")
+            if idx >= 0:
+                print(s[: idx + 1])
+                splits.append(s[: idx + 1])
+                s = s[idx + 1 :]
+            else:
+                flag = False
+                splits.append(s)
+
+        return splits
+
     with open(args.input, "r") as f:
         for event, elem in iterparse(f, events=("end",)):
             if not elem.tag.endswith("path"):
                 continue
             path_d = elem.attrib.get("d")
+            l_path = splitted(path_d)
             if "stroke-width" in elem.attrib:
-                strokes.append(path_d)
+                strokes.extend(l_path)
             else:
-                fills.append(path_d)
+                fills.extend(l_path)
 
     if not fills and not strokes:
         print("Parsing error, blank.")
@@ -2699,5 +2660,54 @@ icon_about = VectorIcon(
         "M26,52A26,26,0,0,1,22.88.19,25.78,25.78,0,0,1,34.73,1.5a2,2,0,1,1-1.35,3.77,22,22,0,0,0-21,38,22,22,0,0,0,35.41-20,2,2,0,1,1,4-.48A26,26,0,0,1,26,52Z"
         "M26,43.86a2,2,0,0,1-2-2V22.66a2,2,0,1,1,4,0v19.2A2,2,0,0,1,26,43.86Z",
         "M 26 13.44 a 2.57,2.57, 0 1,0 1,0",
+    ),
+)
+
+
+icon_fill_evenodd = VectorIcon(
+    fill=(
+        "[fill_evenodd]M 1105,339 C 1115.397,339 1117.885,319 1111.421,319 1104.873,319 1094.578,335.0032 1105.037,335.0032 1115.363,335.0032 1105.127,319 1098.605,319 1092.082,319 1094.42,339 1105,339 Z",
+    ),
+    stroke=(),
+)
+
+icon_fill_nonzero = VectorIcon(
+    fill=(
+        "[fill_nonzero]M 1135,339 C 1145.397,339 1147.885,319 1141.421,319 1134.873,319 1124.578,335.0031 1135.037,335.0031 1145.363,335.0031 1135.127,319 1128.605,319 1122.082,319 1124.42,339 1135,339 Z",
+    ),
+    stroke=(),
+)
+
+icon_cap_butt = VectorIcon(
+    fill=("m 3.5,24 0,-14.5 17,0 0,14.5",), stroke=("[red,cap_butt]m 12,24 0,-14")
+)
+
+icon_cap_round = VectorIcon(
+    fill=("m 3.5,24 0,-14.5 a 8.5,8.5 0 0 1 17,0 l 0,14.5",),
+    stroke=("[red,cap_butt]m 12,24 0,-14"),
+)
+
+icon_cap_square = VectorIcon(
+    fill=("m 3.5,24 0,-23.5 17,0 0,23.5",), stroke=("[red,cap_butt]m 12,24 0,-14")
+)
+
+icon_join_bevel = VectorIcon(
+    fill=("m 0.5,24 0,-13 10.5,-10.5 13,0   0,17 -6.5,0 0,6.5 z",),
+    stroke=(
+        "m 0.5,24 0,-13 10.5,-10.5 13,0 m 0,17 -6.5,0 0,6.5  ",
+        "[red]m 9,24 0,-15 15,0",
+    ),
+)
+
+icon_join_miter = VectorIcon(
+    fill=("m 0.5,24 0,-23.5 23.5,0   0,17 -6.5,0 0,6.5 z",),
+    stroke=("m 0.5,24 0,-23.5 23.5,0 m 0,17 -6.5,0 0,6.5", "[red]m 9,24 0,-15 15,0"),
+)
+
+icon_join_round = VectorIcon(
+    fill=("m 0.5,24 0,-11 a 12.5,12.5 0 0 1 12.5,-12.5 l 11,0   0,17 -6.5,0 0,6.5 z",),
+    stroke=(
+        "m 0.5,24 0,-11 a 12.5,12.5 0 0 1 12.5,-12.5 l 11,0 m 0,17 -6.5,0 0,6.5",
+        "[red]m 9,24 0,-15 15,0",
     ),
 )
