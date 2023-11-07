@@ -2,8 +2,8 @@ from math import sqrt
 
 import wx
 
+import meerk40t.gui.icons as mkicons
 from meerk40t.core.units import Length
-from meerk40t.gui.icons import STD_ICON_SIZE, icons8_lock, icons8_unlock
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.wxutils import CheckBox, StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.svgelements import Color
@@ -248,6 +248,9 @@ class IdPanel(wx.Panel):
         self.sizer_label.Add(self.text_label, 1, wx.EXPAND, 0)
         sizer_id_label.Add(self.sizer_id, 1, wx.EXPAND, 0)
         sizer_id_label.Add(self.sizer_label, 1, wx.EXPAND, 0)
+        self.icon_display = wx.StaticBitmap(self, wx.ID_ANY)
+        self.icon_display.SetSize(wx.Size(mkicons.STD_ICON_SIZE, mkicons.STD_ICON_SIZE))
+        sizer_id_label.Add(self.icon_display, 0, wx.EXPAND, 0)
 
         main_sizer.Add(sizer_id_label, 0, wx.EXPAND, 0)
 
@@ -307,6 +310,48 @@ class IdPanel(wx.Panel):
         except RuntimeError:
             # Could happen if the propertypanel has been destroyed
             pass
+
+        bmp = None
+        type_patterns = {
+            "util wait": mkicons.icon_timer,
+            "util home": mkicons.icons8_home_filled,
+            "util goto": mkicons.icon_return,
+            "util output": mkicons.icon_external,
+            "util input": mkicons.icon_internal,
+            "util console": mkicons.icon_console,
+            "op engrave": mkicons.icons8_laserbeam_weak,
+            "op cut": mkicons.icons8_laser_beam,
+            "op image": mkicons.icons8_image,
+            "op raster": mkicons.icons8_direction,
+            "op dots": mkicons.icon_points,
+            "effect hatch": mkicons.icon_effect_hatch,
+            "effect wobble": mkicons.icon_effect_wobble,
+            "place current": mkicons.icons8_home_filled,
+            "place point": mkicons.icons8_home_filled,
+            "elem point": mkicons.icon_points,
+            "file": mkicons.icons8_file,
+            "group": mkicons.icons8_group_objects,
+            "elem rect": mkicons.icon_mk_rectangular,
+            "elem ellipse": mkicons.icon_mk_ellipse,
+            "elem image": mkicons.icons8_image,
+            "elem path": mkicons.icon_path,
+            "elem line": mkicons.icon_line,
+            "elem polyline": mkicons.icon_mk_polyline,
+            "elem text": mkicons.icon_bmap_text,
+            "blob": mkicons.icons8_file,
+        }
+        if hasattr(self.node, "type"):
+            if node.type in type_patterns:
+                icon = type_patterns[node.type]
+                bmp = icon.GetBitmap(resize=mkicons.STD_ICON_SIZE, buffer=2)
+        if bmp is None:
+            self.icon_display.Show(False)
+        else:
+            try:
+                self.icon_display.SetBitmap(bmp)
+                self.icon_display.Show(True)
+            except RuntimeError:
+                pass
 
         if vis1 or vis2:
             self.Show()
@@ -639,11 +684,11 @@ class PositionSizePanel(wx.Panel):
         )
         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
         self.btn_lock_ratio.SetValue(True)
-        self.bitmap_locked = icons8_lock.GetBitmap(
-            resize=STD_ICON_SIZE / 2, use_theme=False
+        self.bitmap_locked = mkicons.icons8_lock.GetBitmap(
+            resize=mkicons.STD_ICON_SIZE / 2, use_theme=False
         )
-        self.bitmap_unlocked = icons8_unlock.GetBitmap(
-            resize=STD_ICON_SIZE / 2, use_theme=False
+        self.bitmap_unlocked = mkicons.icons8_unlock.GetBitmap(
+            resize=mkicons.STD_ICON_SIZE / 2, use_theme=False
         )
         self.__set_properties()
         self.__do_layout()
@@ -970,11 +1015,11 @@ class RoundedRectPanel(wx.Panel):
         self.btn_lock_ratio.SetMinSize(dip_size(self, 32, 32))
         self.btn_lock_ratio.SetToolTip(_("Lock the radii of X- and Y-axis"))
         # Set Bitmap
-        self.bitmap_locked = icons8_lock.GetBitmap(
-            resize=STD_ICON_SIZE / 2, use_theme=False
+        self.bitmap_locked = mkicons.icons8_lock.GetBitmap(
+            resize=mkicons.STD_ICON_SIZE / 2, use_theme=False
         )
-        self.bitmap_unlocked = icons8_unlock.GetBitmap(
-            resize=STD_ICON_SIZE / 2, use_theme=False
+        self.bitmap_unlocked = mkicons.icons8_unlock.GetBitmap(
+            resize=mkicons.STD_ICON_SIZE / 2, use_theme=False
         )
 
         sizer_x.Add(self.slider_x, 1, wx.EXPAND, 0)
