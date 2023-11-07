@@ -557,6 +557,10 @@ class VectorIcon:
             final_icon_height = resize
         final_icon_height = int(final_icon_height)
         final_icon_width = int(final_icon_width)
+        if final_icon_height <= 0:
+            final_icon_height = 1
+        if final_icon_width <= 0:
+            final_icon_width = 1
         if buffer is None:
             buffer = 5
             if min(final_icon_height, final_icon_width) < 0.5 * get_default_icon_size():
