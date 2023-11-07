@@ -294,10 +294,11 @@ class ImageNode(Node):
             bb = self.bbox()
             self._bounds = bb
             self._paint_bounds = bb
-        except (MemoryError, Image.DecompressionBombError, ValueError):
+        except (MemoryError, Image.DecompressionBombError, ValueError, ZeroDivisionError):
             # Memory error if creating requires too much memory.
             # DecompressionBomb if over 272 megapixels.
             # ValueError if bounds are NaN.
+            # ZeroDivide if inverting the processed matrix cannot happen because image is a line
             self._process_image_failed = True
         self.updated()
 
