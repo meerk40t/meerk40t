@@ -33,9 +33,9 @@ class CustomStatusBar(wx.StatusBar):
                 self,
                 id=wx.ID_ANY,
                 bitmap=icons8_circled_right.GetBitmap(
-                    resize=self.MinHeight - 5, buffer=1
+                    resize=max(20, self.available_height - 4), buffer=1
                 ),
-                size=wx.Size(self.MinHeight, self.MinHeight),
+                size=wx.Size(self.available_height - 2, self.available_height - 2),
                 # style=wx.BORDER_RAISED,
             )
             # btn.SetBackgroundColour(wx.RED)
@@ -50,6 +50,11 @@ class CustomStatusBar(wx.StatusBar):
         # set the initial position of the checkboxes
         self.Reposition()
         self.startup = False
+
+    @property
+    def available_height(self):
+        sb_size = self.GetSize()
+        return sb_size[1]
 
     def Clear(self):
         """
