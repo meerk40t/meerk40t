@@ -290,8 +290,8 @@ class GridWidget(Widget):
 
         self.min_x = max(0, self.min_x)
         self.min_y = max(0, self.min_y)
-        self.max_x = min(float(self.scene.context.device.view.unit_width), self.max_x)
-        self.max_y = min(float(self.scene.context.device.view.unit_height), self.max_y)
+        self.max_x = min(self.scene.context.space.width, self.max_x)
+        self.max_y = min(self.scene.context.space.height, self.max_y)
 
     def calculate_tick_length(self):
         tick_length = float(
