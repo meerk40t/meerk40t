@@ -523,13 +523,13 @@ class LihuiyuController:
                 # If we are paused just wait until the state changes.
                 if len(self._realtime_buffer) == 0 and len(self._preempt) == 0:
                     # Only pause if there are no realtime commands to queue.
-                    self.context.signal("pipe;running", False)
+                    self.context.has_data_to_send = False
                     with self._loop_cond:
                         self._loop_cond.wait()
                     continue
             if self.aborted_retries:
                 # We are not trying reconnection anymore.
-                self.context.signal("pipe;running", False)
+                self.context.has_data_to_send = False
                 with self._loop_cond:
                     self._loop_cond.wait()
                 continue
@@ -537,7 +537,7 @@ class LihuiyuController:
             self._check_transfer_buffer()
             if len(self._realtime_buffer) <= 0 and len(self._buffer) <= 0:
                 # The buffer and realtime buffers are empty. No packet creation possible.
-                self.context.signal("pipe;running", False)
+                self.context.has_data_to_send = False
                 with self._loop_cond:
                     self._loop_cond.wait()
                 continue
@@ -557,7 +557,7 @@ class LihuiyuController:
                 if self.refuse_counts >= 5:
                     self.context.signal("pipe;state", "STATE_FAILED_RETRYING")
                 self.context.signal("pipe;failing", self.refuse_counts)
-                self.context.signal("pipe;running", False)
+                self.context.has_data_to_send = False
                 if self.is_shutdown:
                     return  # Sometimes it could reset this and escape.
                 time.sleep(3)  # 3-second sleep on failed connection attempt.
@@ -567,12 +567,12 @@ class LihuiyuController:
                 self.connection_errors += 1
                 self.pre_ok = False
 
-                self.context.signal("pipe;running", False)
+                self.context.has_data_to_send = False
                 time.sleep(0.5)
                 self.close()
                 continue
 
-            self.context.signal("pipe;running", queue_processed)
+            self.context.has_data_to_send = queue_processed
             if queue_processed:
                 # Packet was sent.
                 if self.state not in (
@@ -603,7 +603,7 @@ class LihuiyuController:
             self._thread = None
             self.update_state("end")
             self.pre_ok = False
-            self.context.signal("pipe;running", False)
+            self.context.has_data_to_send = False
 
     def _check_transfer_buffer(self):
         if len(self._queue):  # check for and append queue

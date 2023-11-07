@@ -31,6 +31,7 @@ class BalorDevice(Service):
         Service.__init__(self, kernel, path)
         self.name = "balor"
         self.extension = "lmc"
+        self._has_data_to_send = False
         self.job = None
         if choices is not None:
             for c in choices:
@@ -1922,6 +1923,15 @@ class BalorDevice(Service):
         )
         def codes_update(**kwargs):
             self.realize()
+
+    @property
+    def has_data_to_send(self):
+        return self._has_data_to_send
+
+    @has_data_to_send.setter
+    def has_data_to_send(self, new_value):
+        self._has_data_to_send = new_value
+        self.signal("pipe;running", new_value)
 
     def service_attach(self, *args, **kwargs):
         self.realize()

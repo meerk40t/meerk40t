@@ -352,12 +352,14 @@ class NewlyController:
             self("ZED")
 
     def _execute_job(self):
+        self.service.has_data_to_send = True
         self("ZED")
         cmd = b";".join(self._command_buffer) + b";"
         self.connect_if_needed()
         self.connection.write(index=self._machine_index, data=cmd)
         self._command_buffer.clear()
         self._clear_settings()
+        self.service.has_data_to_send = False
 
     def open_job(self, job=None):
         """

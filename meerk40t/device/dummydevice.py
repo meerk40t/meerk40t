@@ -50,6 +50,7 @@ class DummyDevice(Service):
         self.spooler = Spooler(self, "default")
         self.viewbuffer = ""
         self.label = "Dummy Device"
+        self._has_data_to_send = False
 
         _ = self.kernel.translation
         choices = [
@@ -111,6 +112,15 @@ class DummyDevice(Service):
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
         self.view = View(self.bedwidth, self.bedheight)
+
+    @property
+    def has_data_to_send(self):
+        return self._has_data_to_send
+
+    @has_data_to_send.setter
+    def has_data_to_send(self, new_value):
+        self._has_data_to_send = new_value
+        self.signal("pipe;running", new_value)
 
     @property
     def current(self):

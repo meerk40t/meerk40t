@@ -24,6 +24,7 @@ class GRBLDevice(Service):
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
         self.permit_tcp = True
         self.permit_serial = True
+        self._has_data_to_send = False
 
         Service.__init__(self, kernel, path)
         self.name = "GRBLDevice"
@@ -720,6 +721,15 @@ class GRBLDevice(Service):
                 channel("Available COM ports")
                 for x in ports:
                     channel(str(x))
+
+    @property
+    def has_data_to_send(self):
+        return self._has_data_to_send
+
+    @has_data_to_send.setter
+    def has_data_to_send(self, new_value):
+        self._has_data_to_send = new_value
+        self.signal("pipe;running", new_value)
 
     def location(self):
         if self.permit_tcp and self.interface == "tcp":

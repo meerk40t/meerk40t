@@ -476,9 +476,9 @@ class GrblController:
         @return:
         """
         with self._loop_cond:
-            self.service.signal("pipe;running", False)
+            self.service.has_data_to_send = False
             self._loop_cond.wait()
-            self.service.signal("pipe;running", True)
+            self.service.has_data_to_send = True
 
     def _send_resume(self):
         """
@@ -497,7 +497,7 @@ class GrblController:
         @return:
 
         """
-        self.service.signal("pipe;running", True)
+        self.service.has_data_to_send = True
         while self.connection.connected:
             if self._realtime_queue:
                 # Send realtime data.
@@ -525,7 +525,7 @@ class GrblController:
                     continue
             # Go for send_line
             self._sending_single_line()
-        self.service.signal("pipe;running", False)
+        self.service.has_data_to_send = False
 
     ####################
     # GRBL RECV ROUTINES
@@ -635,7 +635,7 @@ class GrblController:
                 self._connection_validated = True
             else:
                 self._assembled_response.append(response)
-        self.service.signal("pipe;running", False)
+        self.service.has_data_to_send = False
 
     def _process_status_message(self, response):
         message = response[1:-1]

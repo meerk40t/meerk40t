@@ -24,6 +24,7 @@ class MoshiDevice(Service):
         Service.__init__(self, kernel, path)
         self.name = "MoshiDevice"
         self.extension = "mos"
+        self._has_data_to_send = False
         if choices is not None:
             for c in choices:
                 attr = c.get("attr")
@@ -408,6 +409,15 @@ class MoshiDevice(Service):
             self.origin_x = 1.0 if self.home_right else 0.0
             self.origin_y = 1.0 if self.home_bottom else 0.0
             self.realize()
+
+    @property
+    def has_data_to_send(self):
+        return self._has_data_to_send
+
+    @has_data_to_send.setter
+    def has_data_to_send(self, new_value):
+        self._has_data_to_send = new_value
+        self.signal("pipe;running", new_value)
 
     def service_attach(self, *args, **kwargs):
         self.realize()

@@ -20,6 +20,8 @@ class RuidaDevice(Service):
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "RuidaDevice"
+        self._has_data_to_send = False
+
         if choices is not None:
             for c in choices:
                 attr = c.get("attr")
@@ -204,6 +206,15 @@ class RuidaDevice(Service):
         self.viewbuffer = ""
 
         _ = self.kernel.translation
+
+    @property
+    def has_data_to_send(self):
+        return self._has_data_to_send
+
+    @has_data_to_send.setter
+    def has_data_to_send(self, new_value):
+        self._has_data_to_send = new_value
+        self.signal("pipe;running", new_value)
 
     def service_attach(self, *args, **kwargs):
         self.realize()
