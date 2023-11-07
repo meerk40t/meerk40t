@@ -431,6 +431,7 @@ class RuidaDriver:
             return
         self.paused = True
         self.connection.pause()
+        self.service.signal("pause")
 
     def resume(self):
         """
@@ -443,6 +444,7 @@ class RuidaDriver:
         """
         self.paused = False
         self.connection.resume()
+        self.service.signal("pause")
 
     def reset(self):
         """
@@ -451,6 +453,8 @@ class RuidaDriver:
         @return:
         """
         self.connection.abort()
+        self.paused = False
+        self.service.signal("pause")
 
     def dwell(self, time_in_ms):
         """

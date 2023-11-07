@@ -517,6 +517,7 @@ class GRBLDriver(Parameters):
         """
         self.paused = True
         self(f"!{self.line_end}", real=True)
+        self.service.signal("pause")
 
     def resume(self, *args):
         """
@@ -529,6 +530,7 @@ class GRBLDriver(Parameters):
         """
         self.paused = False
         self(f"~{self.line_end}", real=True)
+        self.service.signal("pause")
 
     def clear_states(self):
         self.power_dirty = True
@@ -562,6 +564,7 @@ class GRBLDriver(Parameters):
         self.units_dirty = True
 
         self.paused = False
+        self.service.signal("pause")
 
     def clear_alarm(self):
         """
