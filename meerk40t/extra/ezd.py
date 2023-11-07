@@ -42,7 +42,9 @@ def _parse_struct(file):
         b = file.read(4)
         if len(b) != 4:
             return p
-        (length,) = struct.unpack("<I", b)
+        (length,) = struct.unpack("<i", b)
+        if length == -1:
+            return p
         b = file.read(length)
         if len(b) != length:
             return p
