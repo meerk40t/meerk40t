@@ -3672,9 +3672,15 @@ class MeerK40t(MWindow):
         else:
             label = " - " + label
 
+        try:
+            dev_label = self.context.device.label
+        except AttributeError:
+            # Label cannot be found because device does not exist.
+            dev_label = ""
+
         title = (
             f"{str(self.context.kernel.name)} v{self.context.kernel.version} - "
-            f"{self.context.device.label}{label}"
+            f"{dev_label}{label}"
         )
         self.SetTitle(title)
 
