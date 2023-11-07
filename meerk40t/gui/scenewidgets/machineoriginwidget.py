@@ -54,9 +54,13 @@ class MachineOriginWidget(Widget):
         y_dx, y_dy = space.display.iposition(0, 50000)
         ya1_dx, ya1_dy = space.display.iposition(5000, 45000)
         ya2_dx, ya2_dy = space.display.iposition(-5000, 45000)
-        dev0x, dev0y = space.device.view.iposition(0, 0)
         gc.SetBrush(self.brush)
-        gc.DrawRectangle(dev0x - margin, dev0y - margin, margin * 2, margin * 2)
+        try:
+            dev0x, dev0y = space.device.view.iposition(0, 0)
+            gc.DrawRectangle(dev0x - margin, dev0y - margin, margin * 2, margin * 2)
+        except AttributeError:
+            # device view does not exist, so we cannot draw the device machine origin widget
+            pass
 
         gc.SetBrush(wx.NullBrush)
         gc.SetPen(self.x_axis_pen)

@@ -27,19 +27,19 @@ from .choicepropertypanel import ChoicePropertyPanel
 from .icons import (
     STD_ICON_SIZE,
     icon_bell,
-    icons8_circled_play,
     icon_close_window,
+    icon_console,
+    icon_external,
+    icon_internal,
+    icon_return,
+    icon_round_stop,
+    icon_timer,
+    icons8_circled_play,
     icons8_home_filled,
     icons8_image,
-    icon_internal,
     icons8_laser_beam_hazard,
-    icon_external,
     icons8_pause,
-    icon_return,
     icons8_route,
-    icon_round_stop,
-    icon_console,
-    icon_timer,
 )
 from .laserrender import DRAW_MODE_BACKGROUND, LaserRender
 from .mwindow import MWindow

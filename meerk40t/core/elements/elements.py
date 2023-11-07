@@ -722,17 +722,23 @@ class Elemental(Service):
         return float(Length(v))
 
     def length_x(self, v):
-        return float(Length(v, relative_length=self.device.view.width))
+        try:
+            return float(Length(v, relative_length=self.device.view.width))
+        except AttributeError:
+            return 0.0
 
     def length_y(self, v):
-        return float(Length(v, relative_length=self.device.view.height))
+        try:
+            return float(Length(v, relative_length=self.device.view.height))
+        except AttributeError:
+            return 0.0
 
     def bounds(self, x0, y0, x1, y1):
         return (
-            float(Length(x0, relative_length=self.device.view.width)),
-            float(Length(y0, relative_length=self.device.view.height)),
-            float(Length(x1, relative_length=self.device.view.width)),
-            float(Length(y1, relative_length=self.device.view.height)),
+            self.length_x(x0),
+            self.length_y(y0),
+            self.length_x(x1),
+            self.length_y(y1),
         )
 
     def area(self, v):

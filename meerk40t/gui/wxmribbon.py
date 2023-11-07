@@ -30,9 +30,9 @@ from meerk40t.gui.icons import (
     STD_ICON_SIZE,
     get_default_icon_size,
     icon_add_new,
+    icon_trash,
     icons8_down,
     icons8_opened_folder,
-    icon_trash,
     icons8_up,
 )
 from meerk40t.gui.ribbon import RibbonBarPanel

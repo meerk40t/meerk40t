@@ -13,9 +13,9 @@ from meerk40t.gui.icons import (
     icon_node_delete,
     icon_node_join,
     icon_node_line,
+    icon_node_line_all,
     icon_node_smooth,
     icon_node_smooth_all,
-    icon_node_line_all,
     icon_node_symmetric,
 )
 from meerk40t.gui.laserrender import swizzlecolor

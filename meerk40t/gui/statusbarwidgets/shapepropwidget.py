@@ -38,6 +38,7 @@ class LinecapWidget(StatusBarWidget):
         self.btn_cap_butt = wx.StaticBitmap(
             self.parent, id=wx.ID_ANY, size=wx.Size(30, -1), style=wx.BORDER_RAISED
         )
+
         self.btn_cap_butt.SetBitmap(icon_cap_butt.GetBitmap(resize=max(20, self.parent.available_height - 4), buffer=1))
         self.btn_cap_butt.SetMaxSize(wx.Size(50, -1))
         self.btn_cap_butt.SetToolTip(_("Set the end of the lines to a butt-shape"))
@@ -54,6 +55,7 @@ class LinecapWidget(StatusBarWidget):
         self.btn_cap_square = wx.StaticBitmap(
             self.parent, id=wx.ID_ANY, size=wx.Size(30, -1), style=wx.BORDER_RAISED
         )
+
         self.btn_cap_square.SetBitmap(icon_cap_square.GetBitmap(resize=max(20, self.parent.available_height - 4), buffer=1))
         self.btn_cap_square.SetMaxSize(wx.Size(50, -1))
         self.btn_cap_square.SetToolTip(_("Set the end of the lines to a square-shape"))
@@ -101,6 +103,7 @@ class LinejoinWidget(StatusBarWidget):
         self.btn_join_bevel = wx.StaticBitmap(
             self.parent, id=wx.ID_ANY, size=wx.Size(25, -1), style=wx.BORDER_RAISED
         )
+
         self.btn_join_bevel.SetBitmap(icon_join_bevel.GetBitmap(resize=max(20, self.parent.available_height - 4), buffer=1))
         self.btn_join_bevel.SetMaxSize(wx.Size(50, -1))
         self.btn_join_bevel.SetToolTip(_("Set the join of the lines to a bevel-shape"))

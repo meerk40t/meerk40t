@@ -3,10 +3,10 @@ import wx
 from meerk40t.core.elements.element_types import op_nodes
 from meerk40t.gui.icons import (
     icon_effect_hatch,
+    icon_points,
     icons8_direction,
     icons8_image,
     icons8_laser_beam,
-    icon_points,
     icons8_laserbeam_weak,
 )
 from meerk40t.gui.laserrender import swizzlecolor

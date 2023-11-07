@@ -3,9 +3,9 @@ import datetime
 import wx
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
-from .icons import icon_meerk40t, icon_about
+from .icons import icon_about, icon_meerk40t
 from .mwindow import MWindow
-from .wxutils import StaticBoxSizer, ScrolledPanel
+from .wxutils import ScrolledPanel, StaticBoxSizer
 
 _ = wx.GetTranslation
 

@@ -12,10 +12,10 @@ from meerk40t.gui.laserrender import swizzlecolor
 from ..kernel import Job, lookup_listener, signal_listener
 from ..svgelements import Color
 from .icons import (
+    icon_points,
     icons8_direction,
     icons8_image,
     icons8_laser_beam,
-    icon_points,
     icons8_laserbeam_weak,
 )
 from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, create_menu, dip_size
@@ -121,10 +121,13 @@ class BasicOpPanel(wx.Panel):
         self.std_color_fore = None
 
     def set_display(self):
-        self.context.device.setting(bool, "use_percent_for_power_display", False)
-        self.use_percent = self.context.device.use_percent_for_power_display
-        self.context.device.setting(bool, "use_mm_min_for_speed_display", False)
-        self.use_mm_min = self.context.device.use_mm_min_for_speed_display
+        dev = self.context.device
+        if dev is None:
+            dev = self.context.root
+        dev.setting(bool, "use_percent_for_power_display", False)
+        self.use_percent = dev.use_percent_for_power_display
+        dev.setting(bool, "use_mm_min_for_speed_display", False)
+        self.use_mm_min = dev.use_mm_min_for_speed_display
 
     def on_combo_color(self, event):
         value = self.combo_apply_color.GetCurrentSelection()
