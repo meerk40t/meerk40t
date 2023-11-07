@@ -294,7 +294,12 @@ class ImageNode(Node):
             bb = self.bbox()
             self._bounds = bb
             self._paint_bounds = bb
-        except (MemoryError, Image.DecompressionBombError, ValueError, ZeroDivisionError):
+        except (
+            MemoryError,
+            Image.DecompressionBombError,
+            ValueError,
+            ZeroDivisionError,
+        ):
             # Memory error if creating requires too much memory.
             # DecompressionBomb if over 272 megapixels.
             # ValueError if bounds are NaN.
@@ -575,7 +580,7 @@ class ImageNode(Node):
         @return:
         """
         from PIL import Image, ImageOps
-        from PIL.Image import Transform, Resampling
+        from PIL.Image import Resampling, Transform
 
         image = self.image
 

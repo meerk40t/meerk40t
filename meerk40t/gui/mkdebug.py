@@ -8,8 +8,8 @@ import time
 import wx
 from wx import aui
 
-from meerk40t.gui.wxutils import StaticBoxSizer, ScrolledPanel
 import meerk40t.gui.icons as mkicons
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 
 _ = wx.GetTranslation
 

@@ -166,7 +166,9 @@ class KerfPanel(wx.Panel):
             + " label together. Choose the pair that has a perfect fit and use the"
             + " label as your kerf-compensation value."
         )
-        info_pic = wx.StaticBitmap(self, wx.ID_ANY, bitmap=icon_kerf.GetBitmap(resize=STD_ICON_SIZE))
+        info_pic = wx.StaticBitmap(
+            self, wx.ID_ANY, bitmap=icon_kerf.GetBitmap(resize=STD_ICON_SIZE)
+        )
         info_label = wx.TextCtrl(
             self, wx.ID_ANY, value=infomsg, style=wx.TE_READONLY | wx.TE_MULTILINE
         )

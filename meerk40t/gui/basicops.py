@@ -12,10 +12,10 @@ from meerk40t.gui.laserrender import swizzlecolor
 from ..kernel import Job, lookup_listener, signal_listener
 from ..svgelements import Color
 from .icons import (
+    icon_points,
     icons8_direction,
     icons8_image,
     icons8_laser_beam,
-    icon_points,
     icons8_laserbeam_weak,
 )
 from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, create_menu, dip_size

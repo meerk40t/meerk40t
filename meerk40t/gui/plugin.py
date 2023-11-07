@@ -79,6 +79,7 @@ and a wxpython version <= 4.1.1."""
         kernel.register("module/Scene", Scene)
 
         from meerk40t.gui.themes import Themes
+
         kernel.add_service("themes", Themes(kernel))
 
     elif lifecycle == "boot":

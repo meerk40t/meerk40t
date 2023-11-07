@@ -8,12 +8,12 @@ from ..kernel import signal_listener
 from .icons import (
     STD_ICON_SIZE,
     icon_add_new,
+    icon_edit,
+    icon_trash,
     icons8_circled_left,
     icons8_circled_right,
     icons8_curly_brackets,
-    icon_edit,
     icons8_paste,
-    icon_trash,
 )
 from .mwindow import MWindow
 from .wxutils import StaticBoxSizer, dip_size

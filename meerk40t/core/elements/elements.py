@@ -725,13 +725,13 @@ class Elemental(Service):
         try:
             return float(Length(v, relative_length=self.device.view.width))
         except AttributeError:
-            return 0.
+            return 0.0
 
     def length_y(self, v):
         try:
             return float(Length(v, relative_length=self.device.view.height))
         except AttributeError:
-            return 0.
+            return 0.0
 
     def bounds(self, x0, y0, x1, y1):
         return (

@@ -1433,53 +1433,48 @@ icon_node_symmetric = VectorIcon(
 )
 
 icon_node_break = VectorIcon(
-    fill=(
-        'M 70,60 h 10 v 20 h 20 l -25,30 -25,-30 h 20 z',
-    ),
+    fill=("M 70,60 h 10 v 20 h 20 l -25,30 -25,-30 h 20 z",),
     stroke=(
-        'M 55 5 h 40 v 40 h -40 z',
-        'M 15 115 h 40 v 40 h -40 z',
-        'M 95 115 h 40 v 40 h -40 z',
-        'M 5, 25 h 140',
-        'M 5, 135 h 20',
-        'M 125,135 h 20',
+        "M 55 5 h 40 v 40 h -40 z",
+        "M 15 115 h 40 v 40 h -40 z",
+        "M 95 115 h 40 v 40 h -40 z",
+        "M 5, 25 h 140",
+        "M 5, 135 h 20",
+        "M 125,135 h 20",
     ),
 )
 
 icon_node_join = VectorIcon(
-    fill=(
-        'M 70 60 h 10 v 20 h 20 l -25,30 -25,-30 h 20 z',
-    ),
-
+    fill=("M 70 60 h 10 v 20 h 20 l -25,30 -25,-30 h 20 z",),
     stroke=(
-        'M 15 5 h 40 v 40 h -40 z',
-        'M 95 5 h 40 v 40 h -40 z',
-        'M 55 115 h 40 v 40 h -40 z',
-        'M 5, 135 h 140',
-        'M 5, 25 h 20',
-        'M 125, 25 h 20',
+        "M 15 5 h 40 v 40 h -40 z",
+        "M 95 5 h 40 v 40 h -40 z",
+        "M 55 115 h 40 v 40 h -40 z",
+        "M 5, 135 h 140",
+        "M 5, 25 h 20",
+        "M 125, 25 h 20",
     ),
 )
 
 icon_node_close = VectorIcon(
     fill=(),
-    stroke = (
+    stroke=(
         "M 25 10 h -5 C 0 10 0 40 20 40 h 20",
         "M 40 0 L 30 10 L 40 20",
         "M 30 30 L 40 40 L 30 50",
         "M 45 40 h 5 C 70 40 70 10 50 10 h -20",
-    )
+    ),
 )
 
 icon_node_smooth = VectorIcon(
     fill=(),
-    stroke = (
+    stroke=(
         "M 0 30 h 10 v 10 h -10 z",
         "M 25 0 h 10 v 10 h -10 z",
         "M 50 30 h 10 v 10 h -10 z",
         "M 5 30 Q 5 5 25 5",
         "M 35 5 Q 55 5 55 30",
-    )
+    ),
 )
 
 icon_node_smooth_all = VectorIcon(
@@ -1491,7 +1486,7 @@ icon_node_smooth_all = VectorIcon(
         "M 75 60 h 10 v 10 h -10 z",
         "M 100 30 h 10 v 10 h -10 z",
         "M 5 30 Q 5 5 30 5 Q 55 5 55 35 Q 55 65 80 65 Q 105 65 105 40",
-        ),
+    ),
 )
 
 icon_node_line_all = VectorIcon(
@@ -1503,9 +1498,8 @@ icon_node_line_all = VectorIcon(
         "M 75 60 h 10 v 10 h -10 z",
         "M 100 30 h 10 v 10 h -10 z",
         "M 5 30 L 30 5 55 35 80 65 105 40",
-        ),
+    ),
 )
-
 
 
 def savage_consumer():
@@ -2714,4 +2708,3 @@ icon_kerf = VectorIcon(
         "m 86.246914,119.46717 c 0,0 -0.368821,8.75297 -0.104797,11.52753 0.201722,2.11984 2.692579,4.11493 4.820605,4.19183 1.745456,0.0631 4.004355,-1.40737 4.191831,-3.14387 0.407704,-3.77637 0.209592,-12.3659 0.209592,-12.3659",
     ),
 )
-
