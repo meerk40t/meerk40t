@@ -1293,10 +1293,10 @@ class MeerK40tScenePanel(wx.Panel):
     @signal_listener("pipe;running")
     def on_driver_mode(self, origin, state):
         new_color = None
-        if state:
-            new_color = wx.RED
         try:
-            if self.context.device.driver.paused:
+            if self.context.device.laser_status == "active":
+                new_color = self.context.themes.get("stop_bg")
+            elif self.context.device.driver.paused:
                 new_color = self.context.themes.get("pause_bg")
         except AttributeError:
             pass

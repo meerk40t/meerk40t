@@ -28,7 +28,7 @@ class LihuiyuDevice(Service):
         self.name = "LihuiyuDevice"
         _ = kernel.translation
         self.extension = "egv"
-        self._has_data_to_send = False
+        self._laser_status = "idle"
         if choices is not None:
             for c in choices:
                 attr = c.get("attr")
@@ -1027,13 +1027,14 @@ class LihuiyuDevice(Service):
         return (min_x, min_y), (max_x, min_y), (max_x, max_y), (min_x, max_y)
 
     @property
-    def has_data_to_send(self):
-        return self._has_data_to_send
+    def laser_status(self):
+        return self._laser_status
 
-    @has_data_to_send.setter
-    def has_data_to_send(self, new_value):
-        self._has_data_to_send = new_value
-        self.signal("pipe;running", new_value)
+    @laser_status.setter
+    def laser_status(self, new_value):
+        self._laser_status = new_value
+        flag = bool(new_value == "active")
+        self.signal("pipe;running", flag)
 
     @property
     def viewbuffer(self):

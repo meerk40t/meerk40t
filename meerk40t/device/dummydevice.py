@@ -50,7 +50,7 @@ class DummyDevice(Service):
         self.spooler = Spooler(self, "default")
         self.viewbuffer = ""
         self.label = "Dummy Device"
-        self._has_data_to_send = False
+        self._laser_status = "idle"
 
         _ = self.kernel.translation
         choices = [
@@ -114,13 +114,14 @@ class DummyDevice(Service):
         self.view = View(self.bedwidth, self.bedheight)
 
     @property
-    def has_data_to_send(self):
-        return self._has_data_to_send
+    def laser_status(self):
+        return self._laser_status
 
-    @has_data_to_send.setter
-    def has_data_to_send(self, new_value):
-        self._has_data_to_send = new_value
-        self.signal("pipe;running", new_value)
+    @laser_status.setter
+    def laser_status(self, new_value):
+        self._laser_status = new_value
+        flag = bool(new_value == "active")
+        self.signal("pipe;running", flag)
 
     @property
     def current(self):
