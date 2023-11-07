@@ -37,7 +37,7 @@ def _parse_struct(file):
     @return:
     """
     p = list()
-    count = struct.unpack("<I", file.read(4))[0]
+    count = struct.unpack("<i", file.read(4))[0]
     for i in range(count):
         b = file.read(4)
         if len(b) != 4:
@@ -68,7 +68,7 @@ def _interpret(data, index, type):
     elif type == "short":
         (data[index],) = struct.unpack("<H", data[index])
     elif type == int:
-        (data[index],) = struct.unpack("<I", data[index])
+        (data[index],) = struct.unpack("<i", data[index])
     elif type == float:
         (data[index],) = struct.unpack("d", data[index])
     elif type == "matrix":
@@ -239,8 +239,8 @@ class EZCFile:
         header = magic_number.decode("utf_16")
         if header != "EZCADUNI":
             return False
-        v0 = struct.unpack("<I", file.read(4))  # 0
-        v1 = struct.unpack("<I", file.read(4))  # 2001
+        v0 = struct.unpack("<i", file.read(4))  # 0
+        v1 = struct.unpack("<i", file.read(4))  # 2001
         s1 = file.read(60)
         s1 = s1.decode("utf-16")
         s2 = file.read(60)
@@ -256,13 +256,13 @@ class EZCFile:
         @param file:
         @return:
         """
-        self._locations["preview"] = struct.unpack("<I", file.read(4))[0]
-        self._locations["v1"] = struct.unpack("<I", file.read(4))[0]
-        self._locations["pens"] = struct.unpack("<I", file.read(4))[0]
-        self._locations["font"] = struct.unpack("<I", file.read(4))[0]
-        self._locations["v4"] = struct.unpack("<I", file.read(4))[0]
-        self._locations["vectors"] = struct.unpack("<I", file.read(4))[0]
-        self._locations["prevectors"] = struct.unpack("<I", file.read(4))[0]
+        self._locations["preview"] = struct.unpack("<i", file.read(4))[0]
+        self._locations["v1"] = struct.unpack("<i", file.read(4))[0]
+        self._locations["pens"] = struct.unpack("<i", file.read(4))[0]
+        self._locations["font"] = struct.unpack("<i", file.read(4))[0]
+        self._locations["v4"] = struct.unpack("<i", file.read(4))[0]
+        self._locations["vectors"] = struct.unpack("<i", file.read(4))[0]
+        self._locations["prevectors"] = struct.unpack("<i", file.read(4))[0]
 
     def parse_unknown_nontable(self, file):
         """
@@ -324,10 +324,10 @@ class EZCFile:
         if seek == 0:
             return
         file.seek(seek, 0)
-        unknown = struct.unpack("<I", file.read(4))[0]
-        width = struct.unpack("<I", file.read(4))[0]
-        height = struct.unpack("<I", file.read(4))[0]
-        v3 = struct.unpack("<3I", file.read(12))
+        unknown = struct.unpack("<i", file.read(4))[0]
+        width = struct.unpack("<i", file.read(4))[0]
+        height = struct.unpack("<i", file.read(4))[0]
+        v3 = struct.unpack("<3i", file.read(12))
         # 800, 0x200002
 
         # RGB0
@@ -346,7 +346,7 @@ class EZCFile:
         if seek == 0:
             return
         file.seek(seek, 0)
-        font_count = struct.unpack("<I", file.read(4))[0]
+        font_count = struct.unpack("<i", file.read(4))[0]
 
         for i in range(font_count):
             f = file.read(100)
@@ -364,8 +364,8 @@ class EZCFile:
             return
         file.seek(seek, 0)
 
-        parameter_count = struct.unpack("<I", file.read(4))[0]
-        seek = struct.unpack("<I", file.read(4))[0]
+        parameter_count = struct.unpack("<i", file.read(4))[0]
+        seek = struct.unpack("<i", file.read(4))[0]
         file.seek(seek, 0)
         for c in range(parameter_count):
             self.pens.append(Pen(file))
@@ -445,7 +445,7 @@ class EZObject:
         self.position = header[13]
         self.z_pos = header[14]
         if isinstance(self, list):
-            (count,) = struct.unpack("<I", file.read(4))
+            (count,) = struct.unpack("<i", file.read(4))
             for c in range(count):
                 parse_object(file, self)
 
@@ -502,7 +502,7 @@ class EZCurve(EZObject):
                 d = struct.unpack(f"<5d", file.read(40))
                 # print(d)
                 continue
-            (pt_count,) = struct.unpack("<I", file.read(4))
+            (pt_count,) = struct.unpack("<i", file.read(4))
             # print(unk1, curve_type, unk2, unk2, pt_count)
             pts.append(
                 (
@@ -718,7 +718,7 @@ class EZText(EZObject):
         self.circle_text_button_flags = args[
             85
         ]  # 2 is first button, 1 is right to left.
-        (count,) = struct.unpack("<I", file.read(4))
+        (count,) = struct.unpack("<i", file.read(4))
         for i in range(count):
             (type,) = struct.unpack("<H", file.read(2))
             # type, 7 file. 1 Text. 2 Serial
@@ -726,7 +726,7 @@ class EZText(EZObject):
             _construct(extradata)
             extradata2 = _parse_struct(file)
             _construct(extradata2)
-        (unk,) = struct.unpack("<I", file.read(4))
+        (unk,) = struct.unpack("<i", file.read(4))
 
 
 class EZImage(EZObject):
@@ -741,7 +741,7 @@ class EZImage(EZObject):
 
         image_bytes = bytearray(file.read(2))  # BM
         image_length = file.read(4)  # int32le
-        (size,) = struct.unpack("<I", image_length)
+        (size,) = struct.unpack("<i", image_length)
         image_bytes += image_length
         image_bytes += file.read(size - 6)
 
@@ -831,7 +831,7 @@ class EZHatch(list, EZObject):
         self.hatch3_loop_distance = args[37]
         self.hatch3_angle_inc = args[28]
         tell = file.tell()
-        (check,) = struct.unpack("<I", file.read(4))
+        (check,) = struct.unpack("<i", file.read(4))
         file.seek(tell, 0)
         if check == 15:
             self.group = EZGroup(file)
@@ -861,7 +861,7 @@ object_map = {
 
 
 def parse_object(file, objects):
-    object_type = struct.unpack("<I", file.read(4))[0]  # 0
+    object_type = struct.unpack("<i", file.read(4))[0]  # 0
     if object_type == 0:
         return False
     ez_class = object_map.get(object_type)
