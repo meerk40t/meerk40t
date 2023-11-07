@@ -436,4 +436,5 @@ class MoshiDevice(Service):
             1.0 if self.home_right else 0.0, 1.0 if self.home_bottom else 0.0
         )
         self.view.realize()
-        self.space.update_bounds(0, 0, self.width, self.height)
+        # self.space.update_bounds(0, 0, self.width, self.height)
+        self.space.update_bounds(0, 0, self.view.width, self.view.height)
