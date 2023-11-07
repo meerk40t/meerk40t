@@ -4048,7 +4048,7 @@ msgstr "Generatore"
 
 #: meerk40t/gui/materialtest.py:1230
 msgid "Parameter-Test"
-msgstr "Test Parametro"
+msgstr "Test parametri sui materiali"
 
 #: meerk40t/gui/mkdebug.py:24
 msgid "Debug"
@@ -5769,7 +5769,7 @@ msgstr "Imposta Posizione"
 
 #: meerk40t/gui/wxmmain.py:702
 msgid "Set position to given location"
-msgstr "Imposta la posizione alla posizione data"
+msgstr "Imposta posizione del laser"
 
 #: meerk40t/gui/wxmmain.py:713
 msgid "Job Start"
@@ -5777,7 +5777,7 @@ msgstr "Inizio Lavoro"
 
 #: meerk40t/gui/wxmmain.py:715
 msgid "Add a job starting point to the scene"
-msgstr "Aggiungi un punto di inizio del lavoro alla scena"
+msgstr "Imposta punto zero"
 
 #: meerk40t/gui/wxmmain.py:726
 msgid "Draw"
@@ -15015,7 +15015,7 @@ msgstr "Invia solo"
 
 #: meerk40t/newly/gui/gui.py:129
 msgid "Automatically start the device after send"
-msgstr "Avvia automaticamente il dispositivo dopo l'invio"
+msgstr "Esegui automaticamente il lavoro dopo Avvia"
 
 #: meerk40t/newly/gui/gui.py:134
 msgid "Send & Start"
@@ -15027,7 +15027,7 @@ msgstr "Disegna cornice"
 
 #: meerk40t/newly/gui/gui.py:145
 msgid "Draw a bounding rectangle of the object saved in the machine"
-msgstr "Disegna un rettangolo di delimitazione dell'oggetto salvato nella macchina"
+msgstr "Disegna un rettangolo del contorno del lavoro salvato nella macchina"
 
 #: meerk40t/newly/gui/gui.py:157
 msgid "Move Frame"
@@ -15035,7 +15035,7 @@ msgstr "Sposta cornice"
 
 #: meerk40t/newly/gui/gui.py:159
 msgid "Move the bounding rectangle of the object saved in the machine"
-msgstr "Sposta il rettangolo di delimitazione dell'oggetto salvato nella macchina"
+msgstr "Sposta il rettangolo di delimitazione del lavoro salvato nella macchina"
 
 #: meerk40t/newly/gui/gui.py:171
 msgid "Replay"
@@ -15043,7 +15043,7 @@ msgstr "Riproduci"
 
 #: meerk40t/newly/gui/gui.py:173
 msgid "Replay the file saved in the machine"
-msgstr "Riproduci il file salvato nella macchina"
+msgstr "Esegui il lavoro del file salvato nella macchina"
 
 #: meerk40t/newly/gui/newlyconfig.py:20
 msgid "Newly-Configuration"
@@ -17891,7 +17891,7 @@ msgid "You have elements in disabled operations, that won't be burned"
 msgstr ""
 
 msgid "This is a special node that will consume any other closed path\nyou drag onto it and will fill the shape with a line pattern.\nTo activate / deactivate this effect please use the context menu."
-msgstr ""
+msgstr "Con questa funzione ogni altro tracciato chiuso viene incorporato e la superficie riempita con un tratteggio.\nPer attivare/disattivare l’effetto usare il menu contestuale"
 
 msgid "N/A"
 msgstr ""
@@ -18081,4 +18081,3 @@ msgstr ""
 
 msgid "Kerf-Test"
 msgstr "Test compensazione taglio -Kerf-"
-
