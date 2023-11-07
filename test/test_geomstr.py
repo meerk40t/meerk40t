@@ -413,7 +413,6 @@ class TestGeomstr(unittest.TestCase):
         self.assertEqual(q[3], 60.0)
         self.assertEqual(q[4], 100.0)
 
-
     def test_geomstr_classmethods(self):
         """
         Test various classmethods for making defined geomstr shapes.

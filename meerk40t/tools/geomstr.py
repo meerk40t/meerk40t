@@ -565,7 +565,7 @@ class BeamTable:
                 real_events.append(pt)
                 active_lists.append(list(actives))
 
-        self._nb_events = [(e.real, e.imag) for e in real_events]
+        self._nb_events = real_events
         self._nb_scan = np.zeros((len(active_lists), largest_actives), dtype=int)
         self._nb_scan -= 1
         for i, active in enumerate(active_lists):
@@ -574,7 +574,7 @@ class BeamTable:
     def points_in_polygon(self, e):
         if self._nb_scan is None:
             self.compute_beam_brute()
-        idx = np.searchsorted(np.real(self._nb_events), np.real(e))
+        idx = np.searchsorted(self._nb_events, e)
         actives = self._nb_scan[idx]
         line = self.geometry.segments[actives]
         a = line[:, :, 0]
@@ -582,17 +582,20 @@ class BeamTable:
         b = line[:, :, -1]
         b = np.where(actives == -1, np.nan + np.nan * 1j, b)
 
+        q = self.geometry.y_intercept(actives, np.real(e))
+        # print(q)
+
         old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
         try:
             # If horizontal slope is undefined. But, all x-ints are at x since x0=x1
-            m = (b.imag - a.imag) / (b.real - a.real)
-            y0 = a.imag - (m * a.real)
-            ys = np.reshape(np.repeat(np.imag(e), y0.shape[1]), y0.shape)
-            x_intercepts = np.where(~np.isinf(m), (ys - y0) / m, a.real)
+            m = (b.real - a.real) / (b.imag - a.imag)
+            y0 = a.real - (m * a.imag)
+            ys = np.reshape(np.repeat(np.real(e), y0.shape[1]), y0.shape)
+            y_intercepts = np.where(~np.isinf(m), (ys - y0) / m, a.imag)
         finally:
             np.seterr(**old_np_seterr)
-        xs = np.reshape(np.repeat(np.real(e), y0.shape[1]), y0.shape)
-        results = np.sum(x_intercepts <= xs, axis=1)
+        xs = np.reshape(np.repeat(np.imag(e), y0.shape[1]), y0.shape)
+        results = np.sum(y_intercepts <= xs, axis=1)
         results %= 2
         return results
 
@@ -601,8 +604,9 @@ class BeamTable:
 
         if not self._nb_scan:
             self.compute_beam_brute()
-        idx = bisect(self._nb_events, (value.imag, value.real))
-        actives = self._nb_scan[idx]
+        idx = np.searchsorted(self._nb_events, value)
+        # idx = bisect(self._nb_events, (value.imag, value.real))
+        actives = self._nb_scan[idx-1]
         aw = np.argwhere(actives != -1)[:, 0]
         return actives[aw]
 
