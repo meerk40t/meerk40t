@@ -1745,6 +1745,37 @@ class Geomstr:
         r.translate(p1.real, p1.imag)
         return r
 
+    def divide(self, other):
+        """
+        Divide the current closed point shape by the other.
+
+        This should probably use the other part doing to splitting to create a proper divide. So if cut with a bezier
+        we would get a bezier segment making the connection on both sides of the shape.
+
+        @param other:
+        @return:
+        """
+        closed = self.is_closed()
+        c = Clip(other)
+        polycut = c.polycut(self, breaks=True)
+
+        geoms = list()
+        g = Geomstr()
+        geoms.append(g)
+        for e in polycut.segments[:self.index]:
+            if e[2].real == TYPE_END:
+                g = Geomstr()
+                geoms.append(g)
+            else:
+                g.append_lines([e])
+        if closed and len(geoms) >= 2:
+            first = geoms[0]
+            last = geoms[-1]
+            del geoms[-1]
+            first.insert(0, last.segments[:last.index])
+        return geoms
+
+
     def round_corners(self, amount=0.2):
         """
         Round segment corners.
