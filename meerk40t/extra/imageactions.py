@@ -8,30 +8,15 @@ from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.svgelements import Color, Matrix
 
 
-def prepare_data2(data, dsort):
-    # def debug_data(msg):
-    #     print (f"{msg}")
-    #     for idx, node in enumerate(data):
-    #         print (f"{idx} - {node.type}")
-
+def prepare_data(data, dsort, pop):
     if dsort == "first":
         data.sort(key=lambda n: n.emphasized_time)
     elif dsort == "last":
         data.sort(reverse=True, key=lambda n: n.emphasized_time)
-    mnode = data[0]
-    data.pop(0)
-    bounds = Node.union_bounds(data, attr="paint_bounds")
-    return bounds, mnode
-
-
-def prepare_data1(data, dsort):
-    if dsort == "first":
-        data.sort(key=lambda n: n.emphasized_time)
-    elif dsort == "last":
-        data.sort(reverse=True, key=lambda n: n.emphasized_time)
-    bounds = Node.union_bounds(data, attr="paint_bounds")
-    return bounds
-
+    if pop:
+        mnode = data.pop(0)
+        return Node.union_bounds(data, attr="paint_bounds"), mnode
+    return Node.union_bounds(data, attr="paint_bounds")
 
 def create_image1(elements, data, data_bounds, dpi):
     make_raster = elements.lookup("render-op/make_raster")
@@ -219,7 +204,7 @@ def plugin(kernel, lifecycle):
             order = ""
         if dpi is None or dpi <= 0:
             dpi = 500
-        bb = prepare_data1(data, order)
+        bb = prepare_data(data, order, pop=False)
         image, matrix = create_image1(elements, data, bb, dpi)
         if image is None:
             data_out = None
@@ -282,7 +267,7 @@ def plugin(kernel, lifecycle):
             stroke=None,
             fill=None,
         )
-        bb, tempnode = prepare_data2(data, order)
+        bb, tempnode = prepare_data(data, order, pop=True)
         masknode = copy(tempnode)
         if (
             outline is not None
