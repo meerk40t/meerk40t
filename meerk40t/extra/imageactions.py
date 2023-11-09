@@ -299,14 +299,13 @@ def plugin(kernel, lifecycle):
 
         if maskimage is None or elemimage is None:
             channel(_("Intermediary images were none"))
-            data_out = None
-        else:
-            data_out = mask_image(
-                elements, elemimage, maskimage, elemmatrix, total_bounds, dpi
-            )
-        if data_out is not None:
-            # Newly created! Classification needed?
-            post.append(classify_new(data_out))
-            elements.signal("element_added", data_out)
-            elements.signal("refresh_scene", "Scene")
+            return "elements", None
+
+        data_out = mask_image(
+            elements, elemimage, maskimage, elemmatrix, total_bounds, dpi
+        )
+        # Newly created! Classification needed?
+        post.append(classify_new(data_out))
+        elements.signal("element_added", data_out)
+        elements.signal("refresh_scene", "Scene")
         return "elements", data_out
