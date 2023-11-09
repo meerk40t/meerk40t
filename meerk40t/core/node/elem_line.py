@@ -72,6 +72,15 @@ class LineNode(Node, Stroked, FunctionalParameter):
             self.stroke_width_zero()
 
         self.set_dirty_bounds()
+        self.functional_parameter = (
+            "line",
+            0,
+            self.x1,
+            self.y1,
+            0,
+            self.x2,
+            self.x2,
+        )
 
     def __copy__(self):
         nd = self.node_dict
@@ -230,3 +239,29 @@ class LineNode(Node, Stroked, FunctionalParameter):
             SVG_VALUE_NON_SCALING_STROKE if not self.stroke_scale else ""
         )
         return path
+
+    @property
+    def functional_parameter(self):
+        return self.mkparam
+
+    @functional_parameter.setter
+    def functional_parameter(self, value):
+        def getit(data, idx, default):
+            if idx < len(data):
+                return data[idx]
+            else:
+                return default
+
+        if isinstance(value, (list, tuple)):
+            self.mkparam = value
+            if self.mkparam:
+                method = self.mkparam[0]
+                ncx = getit(self.mkparam, 2, self.x1)
+                ncy = getit(self.mkparam, 3, self.y1)
+                ptx = getit(self.mkparam, 5, self.x2)
+                pty = getit(self.mkparam, 6, self.y2)
+                self.x1 = ncx
+                self.y1 = ncy
+                self.x2 = ptx
+                self.y2 = pty
+                self.altered()
