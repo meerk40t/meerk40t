@@ -215,9 +215,9 @@ def plugin(kernel, lifecycle):
     @kernel.console_option(
         "order", "o", help=_("ordering selection: none, first, last"), type=str
     )
-    @kernel.console_option("invert", "i", help=_("invert masking of image"), type=int)
+    @kernel.console_option("invert", "i", help=_("invert masking of image"), type=bool, action="store_true")
     @kernel.console_option(
-        "outline", "o", help=_("add outline of keyhole shape"), type=int
+        "outline", "o", help=_("add outline of keyhole shape"), type=bool, action="store_true"
     )
     @kernel.console_command(
         "render_keyhole",
@@ -233,8 +233,8 @@ def plugin(kernel, lifecycle):
         _,
         dpi=None,
         order=None,
-        invert=None,
-        outline=None,
+        invert=False,
+        outline=False,
         origin=None,
         data=None,
         post=None,
@@ -248,9 +248,6 @@ def plugin(kernel, lifecycle):
             order = ""
         if dpi is None or dpi <= 0:
             dpi = 500
-        if invert is None or invert == 0:
-            invert = False
-        invert = bool(invert)
         # channel(f"will sort by {order}")
         total_bounds = Node.union_bounds(data, attr="paint_bounds")
         rectnode = RectNode(
@@ -264,8 +261,7 @@ def plugin(kernel, lifecycle):
         bb, tempnode = prepare_data(data, order, pop=True)
         masknode = copy(tempnode)
         if (
-            outline is not None
-            and outline != 0
+            outline
             and tempnode.type not in ("elem text", "elem image")
             and hasattr(tempnode, "stroke")
         ):

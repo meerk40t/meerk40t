@@ -385,11 +385,11 @@ class KeyholePanel(wx.Panel):
         except ValueError:
             mydpi = 500
         if self.check_invert.GetValue():
-            invert = " --invert 1"
+            invert = " --invert"
         else:
             invert = ""
         if self.check_outline.GetValue():
-            outline = " --outline 1"
+            outline = " --outline"
         else:
             outline = ""
         cmdstr = f"render_keyhole {mydpi} --order {esort}{invert}{outline}\n"
