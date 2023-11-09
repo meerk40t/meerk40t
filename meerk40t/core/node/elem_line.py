@@ -80,6 +80,9 @@ class LineNode(Node, Stroked, FunctionalParameter):
             0,
             self.x2,
             self.y2,
+            0,
+            (self.x1 + self.x2) / 2.0,
+            (self.y1 + self.y2) / 2.0,
         )
 
     def __copy__(self):
@@ -256,8 +259,34 @@ class LineNode(Node, Stroked, FunctionalParameter):
             self.mkparam = value
             if self.mkparam:
                 method = self.mkparam[0]
-                self.x1 = getit(self.mkparam, 2, self.x1)
-                self.y1 = getit(self.mkparam, 3, self.y1)
-                self.x2 = getit(self.mkparam, 5, self.x2)
-                self.y2 = getit(self.mkparam, 6, self.y2)
+
+                cx = (self.x1 + self.x2) / 2
+                cy = (self.y1 + self.y2) / 2
+                mx = getit(self.mkparam, 8, cx)
+                my = getit(self.mkparam, 9, cy)
+
+                if self.x1 != self.mkparam[2] or self.y1 != self.mkparam[3]:
+                    # Start changed.
+                    self.x1 = getit(self.mkparam, 2, self.x1)
+                    self.y1 = getit(self.mkparam, 3, self.y1)
+                    self.mkparam[8] = cx
+                    self.mkparam[9] = cy
+                elif self.x2 != self.mkparam[5] or self.y2 != self.mkparam[6]:
+                    # End changed
+                    self.x2 = getit(self.mkparam, 5, self.x2)
+                    self.y2 = getit(self.mkparam, 6, self.y2)
+                    self.mkparam[8] = cx
+                    self.mkparam[9] = cy
+                elif cx != mx or cy != my:
+                    # Midpoint changed.
+                    dx = mx - cx
+                    dy = my - cy
+                    self.x1 += dx
+                    self.y1 += dy
+                    self.x2 += dx
+                    self.y2 += dy
+                    self.mkparam[2] = self.x1
+                    self.mkparam[3] = self.y1
+                    self.mkparam[5] = self.x2
+                    self.mkparam[6] = self.y2
                 self.altered()
