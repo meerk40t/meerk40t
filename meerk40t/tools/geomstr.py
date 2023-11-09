@@ -1348,6 +1348,11 @@ class Geomstr:
         self.allocate_at_position(e, space)
         self.segments[e : e + space] = lines
 
+    def append_lines(self, lines):
+        self._ensure_capacity(self.index + len(lines))
+        self.segments[self.index : self.index + len(lines)] = lines
+        self.index += len(lines)
+
     def append(self, other):
         self._ensure_capacity(self.index + other.index + 1)
         if self.index != 0:
