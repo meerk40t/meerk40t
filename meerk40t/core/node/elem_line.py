@@ -79,7 +79,7 @@ class LineNode(Node, Stroked, FunctionalParameter):
             self.y1,
             0,
             self.x2,
-            self.x2,
+            self.y2,
         )
 
     def __copy__(self):
@@ -256,12 +256,8 @@ class LineNode(Node, Stroked, FunctionalParameter):
             self.mkparam = value
             if self.mkparam:
                 method = self.mkparam[0]
-                ncx = getit(self.mkparam, 2, self.x1)
-                ncy = getit(self.mkparam, 3, self.y1)
-                ptx = getit(self.mkparam, 5, self.x2)
-                pty = getit(self.mkparam, 6, self.y2)
-                self.x1 = ncx
-                self.y1 = ncy
-                self.x2 = ptx
-                self.y2 = pty
+                self.x1 = getit(self.mkparam, 2, self.x1)
+                self.y1 = getit(self.mkparam, 3, self.y1)
+                self.x2 = getit(self.mkparam, 5, self.x2)
+                self.y2 = getit(self.mkparam, 6, self.y2)
                 self.altered()
