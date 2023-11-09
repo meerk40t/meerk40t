@@ -9,6 +9,16 @@ from meerk40t.svgelements import Color, Matrix
 
 
 def prepare_data(data, dsort, pop):
+    """
+    Prepares the elements data.
+
+    Sorts by the emphasized time, and optionally pops the first element from the remaining elements.
+
+    @param data:
+    @param dsort:
+    @param pop:
+    @return:
+    """
     if dsort == "first":
         data.sort(key=lambda n: n.emphasized_time)
     elif dsort == "last":
@@ -20,6 +30,16 @@ def prepare_data(data, dsort, pop):
 
 
 def create_image(make_raster, data, data_bounds, dpi, keep_ratio=True):
+    """
+    Creates the image with the make_raster command.
+
+    @param make_raster: function to perform raster operation
+    @param data: elements to render
+    @param data_bounds: bounds around the data.
+    @param dpi: dots per inch for the resulting image
+    @param keep_ratio: should this create command be forced to keep the ratio.
+    @return:
+    """
     if not make_raster:
         return None, None
 
@@ -50,43 +70,53 @@ def create_image(make_raster, data, data_bounds, dpi, keep_ratio=True):
 
 
 def mask_image(elements, elem_image, mask_image, matrix, bbounds, dpi):
-    offset_x = bbounds[0]
-    offset_y = bbounds[1]
-    data_out = None
-    # elem_image.convert("RGBA")
-    imagematrix0 = copy(matrix)
-    dx = offset_x - imagematrix0.value_trans_x()
-    dy = offset_y - imagematrix0.value_trans_y()
-    imagematrix0.post_translate(offset_x, offset_y)
-    imagematrix1 = copy(imagematrix0)
+    """
+    Masks the elem_image with the mask_image.
+
+    @param elements: elements service
+    @param elem_image: image to be masked
+    @param mask_image: mask to use
+    @param matrix: Matrix of the current image
+    @param bbounds: bounds in of the elem_image
+    @param dpi: Requested dots per inch.
+    @return: Created ImageNode
+    """
+    imagematrix = copy(matrix)
+    imagematrix.post_translate(bbounds[0], bbounds[1])
 
     mask_pattern = mask_image.convert("1")
     elem_image.putalpha(mask_pattern)
 
     image_node1 = ImageNode(
         image=elem_image,
-        matrix=imagematrix1,
+        matrix=imagematrix,
         dpi=dpi,
         label="Keyholed Elements",
     )
     image_node1.set_dirty_bounds()
     elements.elem_branch.add_node(image_node1)
-
-    # image_node2 = ImageNode(image=mask_image, matrix=imagematrix2, dpi=dpi)
-    # image_node2.set_dirty_bounds()
-    # image_node2.label = "Mask"
-    # elements.elem_branch.add_node(image_node2)
-    data_out = [image_node1]
-    return data_out
+    return [image_node1]
 
 
 def split_image(elements, image, matrix, bounds, dpi, cols, rows):
+    """
+    Performs the split operation of render+split. Divides those elements into even sized chunks. These chunks are
+    positioned where the previous rendered elements were located.
+
+    @param elements: elements service
+    @param image: image to be split
+    @param matrix: matrix of the image being split
+    @param bounds: bounds of the image being split
+    @param dpi: dpi of the resulting images.
+    @param cols:
+    @param rows:
+    @return:
+    """
     data_out = []
-    groupit = False
+    context = elements.elem_branch
     if cols != 1 or rows != 1:
-        groupit = True
-        group_node = elements.elem_branch.add(type="group", label="Splitted Images")
-        data_out.append(group_node)
+        context = elements.elem_branch.add(type="group", label="Splitted Images")
+        data_out.append(context)
 
     imgwidth, imgheight = image.size
     deltax_image = imgwidth // cols
@@ -108,16 +138,11 @@ def split_image(elements, image, matrix, bounds, dpi, cols, rows):
             if xidx == cols - 1:
                 # Just to make sure we get the residual pixels
                 endx = imgwidth - 1
-            # print(
-            #     f"Image={imgwidth}x{imgheight}, Segment={xidx}:{yidx}, Box={startx},{starty}-{endx},{endy}"
-            # )
             tile = image.crop((startx, starty, endx, endy))
             tilematrix = copy(matrix)
             tilematrix.post_translate(offset_x, offset_y)
-            image_node = ImageNode(image=tile, matrix=tilematrix, dpi=dpi)
-            elements.elem_branch.add_node(image_node)
-            if groupit:
-                group_node.append_child(image_node)
+
+            image_node = context.add(type="elem image", image=tile, matrix=tilematrix, dpi=dpi)
             data_out.append(image_node)
 
             startx = endx + 1
