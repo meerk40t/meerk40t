@@ -8,6 +8,171 @@ from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.svgelements import Color, Matrix
 
 
+def prepare_data2(data, dsort):
+    # def debug_data(msg):
+    #     print (f"{msg}")
+    #     for idx, node in enumerate(data):
+    #         print (f"{idx} - {node.type}")
+
+    if dsort == "first":
+        data.sort(key=lambda n: n.emphasized_time)
+    elif dsort == "last":
+        data.sort(reverse=True, key=lambda n: n.emphasized_time)
+    mnode = data[0]
+    data.pop(0)
+    bounds = Node.union_bounds(data, attr="paint_bounds")
+    return bounds, mnode
+
+
+def prepare_data1(data, dsort):
+    if dsort == "first":
+        data.sort(key=lambda n: n.emphasized_time)
+    elif dsort == "last":
+        data.sort(reverse=True, key=lambda n: n.emphasized_time)
+    bounds = Node.union_bounds(data, attr="paint_bounds")
+    return bounds
+
+
+def create_image1(elements, data, data_bounds, dpi):
+    make_raster = elements.lookup("render-op/make_raster")
+    if not make_raster:
+        return None, None
+
+    if data_bounds is None:
+        return None, None
+    xmin, ymin, xmax, ymax = data_bounds
+    if isinf(xmin):
+        # No bounds for selected elements."))
+        return None, None
+    width = xmax - xmin
+    height = ymax - ymin
+
+    dots_per_units = dpi / UNITS_PER_INCH
+    new_width = width * dots_per_units
+    new_height = height * dots_per_units
+    new_height = max(new_height, 1)
+    new_width = max(new_width, 1)
+
+    image = make_raster(
+        data,
+        bounds=data_bounds,
+        width=new_width,
+        height=new_height,
+    )
+
+    matrix = Matrix.scale(width / new_width, height / new_height)
+    return image, matrix
+
+
+def create_image2(elements, data, data_bounds, dpi):
+    make_raster = elements.lookup("render-op/make_raster")
+    if not make_raster:
+        return None, None
+
+    if data_bounds is None:
+        return None, None
+    xmin, ymin, xmax, ymax = data_bounds
+    if isinf(xmin):
+        # No bounds for selected elements."))
+        return None
+    width = xmax - xmin
+    height = ymax - ymin
+
+    dots_per_units = dpi / UNITS_PER_INCH
+    new_width = width * dots_per_units
+    new_height = height * dots_per_units
+    new_height = max(new_height, 1)
+    new_width = max(new_width, 1)
+
+    image = make_raster(
+        data,
+        bounds=data_bounds,
+        width=new_width,
+        height=new_height,
+        keep_ratio=True,
+    )
+    matrix = Matrix.scale(width / new_width, height / new_height)
+    return image, matrix
+
+
+def mask_image(elements, elem_image, mask_image, matrix, bbounds, dpi):
+    offset_x = bbounds[0]
+    offset_y = bbounds[1]
+    data_out = None
+    # elem_image.convert("RGBA")
+    imagematrix0 = copy(matrix)
+    dx = offset_x - imagematrix0.value_trans_x()
+    dy = offset_y - imagematrix0.value_trans_y()
+    imagematrix0.post_translate(offset_x, offset_y)
+    imagematrix1 = copy(imagematrix0)
+
+    mask_pattern = mask_image.convert("1")
+    elem_image.putalpha(mask_pattern)
+
+    image_node1 = ImageNode(
+        image=elem_image,
+        matrix=imagematrix1,
+        dpi=dpi,
+        label="Keyholed Elements",
+    )
+    image_node1.set_dirty_bounds()
+    elements.elem_branch.add_node(image_node1)
+
+    # image_node2 = ImageNode(image=mask_image, matrix=imagematrix2, dpi=dpi)
+    # image_node2.set_dirty_bounds()
+    # image_node2.label = "Mask"
+    # elements.elem_branch.add_node(image_node2)
+    data_out = [image_node1]
+    return data_out
+
+
+def split_image(elements, image, matrix, bounds, dpi, cols, rows):
+    data_out = []
+    groupit = False
+    if cols != 1 or rows != 1:
+        groupit = True
+        group_node = elements.elem_branch.add(type="group", label="Splitted Images")
+        data_out.append(group_node)
+
+    imgwidth, imgheight = image.size
+    deltax_image = imgwidth // cols
+    deltay_image = imgheight // rows
+
+    starty = 0
+    offset_y = bounds[1]
+    deltax_bound = (bounds[2] - bounds[0]) / cols
+    deltay_bound = (bounds[3] - bounds[1]) / rows
+    for yidx in range(rows):
+        startx = 0
+        offset_x = bounds[0]
+        endy = starty + deltay_image - 1
+        if yidx == rows - 1:
+            # Just to make sure we get the residual pixels
+            endy = imgheight - 1
+        for xidx in range(cols):
+            endx = startx + deltax_image - 1
+            if xidx == cols - 1:
+                # Just to make sure we get the residual pixels
+                endx = imgwidth - 1
+            # print(
+            #     f"Image={imgwidth}x{imgheight}, Segment={xidx}:{yidx}, Box={startx},{starty}-{endx},{endy}"
+            # )
+            tile = image.crop((startx, starty, endx, endy))
+            tilematrix = copy(matrix)
+            tilematrix.post_translate(offset_x, offset_y)
+            image_node = ImageNode(image=tile, matrix=tilematrix, dpi=dpi)
+            elements.elem_branch.add_node(image_node)
+            if groupit:
+                group_node.append_child(image_node)
+            data_out.append(image_node)
+
+            startx = endx + 1
+            offset_x += deltax_bound
+        starty = endy + 1
+        offset_y += deltay_bound
+    return data_out
+
+
 def plugin(kernel, lifecycle):
     if lifecycle != "register":
         return
@@ -42,92 +207,6 @@ def plugin(kernel, lifecycle):
         post=None,
         **kwargs,
     ):
-        def prepare_data(data, dsort):
-            if dsort == "first":
-                data.sort(key=lambda n: n.emphasized_time)
-            elif dsort == "last":
-                data.sort(reverse=True, key=lambda n: n.emphasized_time)
-            bounds = Node.union_bounds(data, attr="paint_bounds")
-            return bounds
-
-        def create_image(data, data_bounds, dpi):
-            make_raster = elements.lookup("render-op/make_raster")
-            if not make_raster:
-                return None, None
-
-            if data_bounds is None:
-                return None, None
-            xmin, ymin, xmax, ymax = data_bounds
-            if isinf(xmin):
-                # No bounds for selected elements."))
-                return None, None
-            width = xmax - xmin
-            height = ymax - ymin
-
-            dots_per_units = dpi / UNITS_PER_INCH
-            new_width = width * dots_per_units
-            new_height = height * dots_per_units
-            new_height = max(new_height, 1)
-            new_width = max(new_width, 1)
-
-            image = make_raster(
-                data,
-                bounds=data_bounds,
-                width=new_width,
-                height=new_height,
-            )
-
-            matrix = Matrix.scale(width / new_width, height / new_height)
-            return image, matrix
-
-        def split_image(image, matrix, bounds, dpi, cols, rows):
-            data_out = []
-            groupit = False
-            if cols != 1 or rows != 1:
-                groupit = True
-                group_node = elements.elem_branch.add(
-                    type="group", label="Splitted Images"
-                )
-                data_out.append(group_node)
-
-            imgwidth, imgheight = image.size
-            deltax_image = imgwidth // cols
-            deltay_image = imgheight // rows
-
-            starty = 0
-            offset_y = bounds[1]
-            deltax_bound = (bounds[2] - bounds[0]) / cols
-            deltay_bound = (bounds[3] - bounds[1]) / rows
-            for yidx in range(rows):
-                startx = 0
-                offset_x = bounds[0]
-                endy = starty + deltay_image - 1
-                if yidx == rows - 1:
-                    # Just to make sure we get the residual pixels
-                    endy = imgheight - 1
-                for xidx in range(cols):
-                    endx = startx + deltax_image - 1
-                    if xidx == cols - 1:
-                        # Just to make sure we get the residual pixels
-                        endx = imgwidth - 1
-                    # print(
-                    #     f"Image={imgwidth}x{imgheight}, Segment={xidx}:{yidx}, Box={startx},{starty}-{endx},{endy}"
-                    # )
-                    tile = image.crop((startx, starty, endx, endy))
-                    tilematrix = copy(matrix)
-                    tilematrix.post_translate(offset_x, offset_y)
-                    image_node = ImageNode(image=tile, matrix=tilematrix, dpi=dpi)
-                    elements.elem_branch.add_node(image_node)
-                    if groupit:
-                        group_node.append_child(image_node)
-                    data_out.append(image_node)
-
-                    startx = endx + 1
-                    offset_x += deltax_bound
-                starty = endy + 1
-                offset_y += deltay_bound
-            return data_out
-
         elements = context.elements
         classify_new = elements.post_classify
         if data is None:
@@ -140,12 +219,12 @@ def plugin(kernel, lifecycle):
             order = ""
         if dpi is None or dpi <= 0:
             dpi = 500
-        bb = prepare_data(data, order)
-        image, matrix = create_image(data, bb, dpi)
+        bb = prepare_data1(data, order)
+        image, matrix = create_image1(elements, data, bb, dpi)
         if image is None:
             data_out = None
         else:
-            data_out = split_image(image, matrix, bb, dpi, cols, rows)
+            data_out = split_image(elements, image, matrix, bb, dpi, cols, rows)
         if data_out is not None:
             # Newly created! Classification needed?
             post.append(classify_new(data_out))
@@ -157,9 +236,7 @@ def plugin(kernel, lifecycle):
     @kernel.console_option(
         "order", "o", help=_("ordering selection: none, first, last"), type=str
     )
-    @kernel.console_option(
-        "invert", "i", help=_("invert masking of image"), type=int
-    )
+    @kernel.console_option("invert", "i", help=_("invert masking of image"), type=int)
     @kernel.console_option(
         "outline", "o", help=_("add outline of keyhole shape"), type=int
     )
@@ -184,81 +261,6 @@ def plugin(kernel, lifecycle):
         post=None,
         **kwargs,
     ):
-        def prepare_data(dsort):
-            # def debug_data(msg):
-            #     print (f"{msg}")
-            #     for idx, node in enumerate(data):
-            #         print (f"{idx} - {node.type}")
-
-            if dsort == "first":
-                data.sort(key=lambda n: n.emphasized_time)
-            elif dsort == "last":
-                data.sort(reverse=True, key=lambda n: n.emphasized_time)
-            mnode = data[0]
-            data.pop(0)
-            bounds = Node.union_bounds(data, attr="paint_bounds")
-            return bounds, mnode
-
-        def create_image(data, data_bounds, dpi):
-            make_raster = elements.lookup("render-op/make_raster")
-            if not make_raster:
-                return None, None
-
-            if data_bounds is None:
-                return None, None
-            xmin, ymin, xmax, ymax = data_bounds
-            if isinf(xmin):
-                # No bounds for selected elements."))
-                return None
-            width = xmax - xmin
-            height = ymax - ymin
-
-            dots_per_units = dpi / UNITS_PER_INCH
-            new_width = width * dots_per_units
-            new_height = height * dots_per_units
-            new_height = max(new_height, 1)
-            new_width = max(new_width, 1)
-
-            image = make_raster(
-                data,
-                bounds=data_bounds,
-                width=new_width,
-                height=new_height,
-                keep_ratio=True,
-            )
-            matrix = Matrix.scale(width / new_width, height / new_height)
-            return image, matrix
-
-        def mask_image(elem_image, mask_image, matrix, bbounds, dpi):
-            offset_x = bbounds[0]
-            offset_y = bbounds[1]
-            data_out = None
-            # elem_image.convert("RGBA")
-            imagematrix0 = copy(matrix)
-            dx = offset_x - imagematrix0.value_trans_x()
-            dy = offset_y - imagematrix0.value_trans_y()
-            imagematrix0.post_translate(offset_x, offset_y)
-            imagematrix1 = copy(imagematrix0)
-
-            mask_pattern = mask_image.convert("1")
-            elem_image.putalpha(mask_pattern)
-
-            image_node1 = ImageNode(
-                image=elem_image,
-                matrix=imagematrix1,
-                dpi=dpi,
-                label="Keyholed Elements",
-            )
-            image_node1.set_dirty_bounds()
-            elements.elem_branch.add_node(image_node1)
-
-            # image_node2 = ImageNode(image=mask_image, matrix=imagematrix2, dpi=dpi)
-            # image_node2.set_dirty_bounds()
-            # image_node2.label = "Mask"
-            # elements.elem_branch.add_node(image_node2)
-            data_out = [image_node1]
-            return data_out
-
         elements = context.elements
         classify_new = elements.post_classify
         if data is None:
@@ -280,7 +282,7 @@ def plugin(kernel, lifecycle):
             stroke=None,
             fill=None,
         )
-        bb, tempnode = prepare_data(order)
+        bb, tempnode = prepare_data2(data, order)
         masknode = copy(tempnode)
         if (
             outline is not None
@@ -304,8 +306,8 @@ def plugin(kernel, lifecycle):
         if hasattr(masknode, "stroke"):
             masknode.stroke = Color("black")
             masknode.altered()
-        elemimage, elemmatrix = create_image(data, total_bounds, dpi)
-        maskimage, maskmatrix = create_image(maskdata, total_bounds, dpi)
+        elemimage, elemmatrix = create_image2(elements, data, total_bounds, dpi)
+        maskimage, maskmatrix = create_image2(elements, maskdata, total_bounds, dpi)
         if not invert:
             from PIL import ImageOps
 
@@ -316,7 +318,7 @@ def plugin(kernel, lifecycle):
             data_out = None
         else:
             data_out = mask_image(
-                elemimage, maskimage, elemmatrix, total_bounds, dpi
+                elements, elemimage, maskimage, elemmatrix, total_bounds, dpi
             )
         if data_out is not None:
             # Newly created! Classification needed?
