@@ -217,7 +217,7 @@ def plugin(kernel, lifecycle):
     )
     @kernel.console_option("invert", "i", help=_("invert masking of image"), type=bool, action="store_true")
     @kernel.console_option(
-        "outline", "o", help=_("add outline of keyhole shape"), type=bool, action="store_true"
+        "outline", "b", help=_("add outline of keyhole shape"), type=bool, action="store_true"
     )
     @kernel.console_command(
         "render_keyhole",
