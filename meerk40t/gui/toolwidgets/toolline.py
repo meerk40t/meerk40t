@@ -1,3 +1,5 @@
+import math
+
 import wx
 
 from meerk40t.gui.laserrender import swizzlecolor
@@ -7,6 +9,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CONSUME,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
+from meerk40t.tools.geomstr import Geomstr
 
 _ = wx.GetTranslation
 
@@ -71,10 +74,20 @@ class LineTool(ToolWidget):
             response = RESPONSE_CONSUME
         elif event_type == "move":
             if self.p1 is not None:
-                if nearest_snap is None:
-                    self.p2 = complex(space_pos[0], space_pos[1])
+                self.p2 = complex(space_pos[0], space_pos[1])
+                if "shift" in modifiers:
+                    r = abs(self.p1 - self.p2)
+                    a = Geomstr.angle(None, self.p1, self.p2)
+                    delta = math.tau / 32
+
+                    for i in range(-4, 4):
+                        s = i * math.tau / 8 - delta
+                        e = i * math.tau / 8 + delta
+                        if s <= a <= e:
+                            self.p2 = Geomstr.polar(None, self.p1, i * math.tau / 8, r)
                 else:
-                    self.p2 = complex(nearest_snap[0], nearest_snap[1])
+                    if nearest_snap is not None:
+                        self.p2 = complex(nearest_snap[0], nearest_snap[1])
                 self.scene.request_refresh()
                 response = RESPONSE_CONSUME
         elif event_type == "leftclick":
@@ -89,10 +102,6 @@ class LineTool(ToolWidget):
             try:
                 if self.p1 is None:
                     return
-                if nearest_snap is None:
-                    self.p2 = complex(space_pos[0], space_pos[1])
-                else:
-                    self.p2 = complex(nearest_snap[0], nearest_snap[1])
                 x1 = self.p1.real
                 y1 = self.p1.imag
                 x2 = self.p2.real
