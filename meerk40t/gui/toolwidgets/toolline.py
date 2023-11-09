@@ -100,7 +100,7 @@ class LineTool(ToolWidget):
         elif event_type == "leftup":
             self.scene.pane.tool_active = False
             try:
-                if self.p1 is None:
+                if self.p1 is None or self.p2 is None:
                     return
                 x1 = self.p1.real
                 y1 = self.p1.imag
