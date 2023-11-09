@@ -18,38 +18,8 @@ def prepare_data(data, dsort, pop):
         return Node.union_bounds(data, attr="paint_bounds"), mnode
     return Node.union_bounds(data, attr="paint_bounds")
 
-def create_image1(elements, data, data_bounds, dpi):
-    make_raster = elements.lookup("render-op/make_raster")
-    if not make_raster:
-        return None, None
 
-    if data_bounds is None:
-        return None, None
-    xmin, ymin, xmax, ymax = data_bounds
-    if isinf(xmin):
-        # No bounds for selected elements."))
-        return None, None
-    width = xmax - xmin
-    height = ymax - ymin
-
-    dots_per_units = dpi / UNITS_PER_INCH
-    new_width = width * dots_per_units
-    new_height = height * dots_per_units
-    new_height = max(new_height, 1)
-    new_width = max(new_width, 1)
-
-    image = make_raster(
-        data,
-        bounds=data_bounds,
-        width=new_width,
-        height=new_height,
-    )
-
-    matrix = Matrix.scale(width / new_width, height / new_height)
-    return image, matrix
-
-
-def create_image2(elements, data, data_bounds, dpi):
+def create_image(elements, data, data_bounds, dpi, keep_ratio=True):
     make_raster = elements.lookup("render-op/make_raster")
     if not make_raster:
         return None, None
@@ -74,7 +44,7 @@ def create_image2(elements, data, data_bounds, dpi):
         bounds=data_bounds,
         width=new_width,
         height=new_height,
-        keep_ratio=True,
+        keep_ratio=keep_ratio,
     )
     matrix = Matrix.scale(width / new_width, height / new_height)
     return image, matrix
@@ -205,7 +175,7 @@ def plugin(kernel, lifecycle):
         if dpi is None or dpi <= 0:
             dpi = 500
         bb = prepare_data(data, order, pop=False)
-        image, matrix = create_image1(elements, data, bb, dpi)
+        image, matrix = create_image(elements, data, bb, dpi, keep_ratio=False)
         if image is None:
             data_out = None
         else:
@@ -291,8 +261,8 @@ def plugin(kernel, lifecycle):
         if hasattr(masknode, "stroke"):
             masknode.stroke = Color("black")
             masknode.altered()
-        elemimage, elemmatrix = create_image2(elements, data, total_bounds, dpi)
-        maskimage, maskmatrix = create_image2(elements, maskdata, total_bounds, dpi)
+        elemimage, elemmatrix = create_image(elements, data, total_bounds, dpi, keep_ratio=True)
+        maskimage, maskmatrix = create_image(elements, maskdata, total_bounds, dpi, keep_ratio=True)
         if not invert:
             from PIL import ImageOps
 
