@@ -19,8 +19,7 @@ def prepare_data(data, dsort, pop):
     return Node.union_bounds(data, attr="paint_bounds")
 
 
-def create_image(elements, data, data_bounds, dpi, keep_ratio=True):
-    make_raster = elements.lookup("render-op/make_raster")
+def create_image(make_raster, data, data_bounds, dpi, keep_ratio=True):
     if not make_raster:
         return None, None
 
@@ -175,7 +174,8 @@ def plugin(kernel, lifecycle):
         if dpi is None or dpi <= 0:
             dpi = 500
         bb = prepare_data(data, order, pop=False)
-        image, matrix = create_image(elements, data, bb, dpi, keep_ratio=False)
+        make_raster = elements.lookup("render-op/make_raster")
+        image, matrix = create_image(make_raster, data, bb, dpi, keep_ratio=False)
         if image is None:
             data_out = None
         else:
@@ -261,8 +261,13 @@ def plugin(kernel, lifecycle):
         if hasattr(masknode, "stroke"):
             masknode.stroke = Color("black")
             masknode.altered()
-        elemimage, elemmatrix = create_image(elements, data, total_bounds, dpi, keep_ratio=True)
-        maskimage, maskmatrix = create_image(elements, maskdata, total_bounds, dpi, keep_ratio=True)
+        make_raster = elements.lookup("render-op/make_raster")
+        elemimage, elemmatrix = create_image(
+            make_raster, data, total_bounds, dpi, keep_ratio=True
+        )
+        maskimage, maskmatrix = create_image(
+            make_raster, maskdata, total_bounds, dpi, keep_ratio=True
+        )
         if not invert:
             from PIL import ImageOps
 
