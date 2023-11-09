@@ -69,19 +69,20 @@ def create_image(make_raster, data, data_bounds, dpi, keep_ratio=True):
     return image, matrix
 
 
-def mask_image(elem_image, mask_image, matrix, bbounds, dpi):
+def mask_image(elem_image, mask_image, matrix, dpi, dx=0, dy=0):
     """
     Masks the elem_image with the mask_image.
 
     @param elem_image: image to be masked
     @param mask_image: mask to use
     @param matrix: Matrix of the current image
-    @param bbounds: bounds in of the elem_image
     @param dpi: Requested dots per inch.
+    @param dx: adjustment to position
+    @param dy: adjustment to position
     @return: Created ImageNode
     """
     imagematrix = copy(matrix)
-    imagematrix.post_translate(bbounds[0], bbounds[1])
+    imagematrix.post_translate(dx, dy)
 
     mask_pattern = mask_image.convert("1")
     elem_image.putalpha(mask_pattern)
@@ -296,7 +297,7 @@ def plugin(kernel, lifecycle):
             return "elements", None
 
         data_out = mask_image(
-            elemimage, maskimage, elemmatrix, total_bounds, dpi
+            elemimage, maskimage, elemmatrix, dpi, total_bounds[0], total_bounds[1]
         )
         for imnode in data_out:
             elements.elem_branch.add_node(imnode)
