@@ -69,11 +69,10 @@ def create_image(make_raster, data, data_bounds, dpi, keep_ratio=True):
     return image, matrix
 
 
-def mask_image(elements, elem_image, mask_image, matrix, bbounds, dpi):
+def mask_image(elem_image, mask_image, matrix, bbounds, dpi):
     """
     Masks the elem_image with the mask_image.
 
-    @param elements: elements service
     @param elem_image: image to be masked
     @param mask_image: mask to use
     @param matrix: Matrix of the current image
@@ -94,7 +93,6 @@ def mask_image(elements, elem_image, mask_image, matrix, bbounds, dpi):
         label="Keyholed Elements",
     )
     image_node1.set_dirty_bounds()
-    elements.elem_branch.add_node(image_node1)
     return [image_node1]
 
 
@@ -298,8 +296,10 @@ def plugin(kernel, lifecycle):
             return "elements", None
 
         data_out = mask_image(
-            elements, elemimage, maskimage, elemmatrix, total_bounds, dpi
+            elemimage, maskimage, elemmatrix, total_bounds, dpi
         )
+        for imnode in data_out:
+            elements.elem_branch.add_node(imnode)
         # Newly created! Classification needed?
         post.append(classify_new(data_out))
         elements.signal("element_added", data_out)
