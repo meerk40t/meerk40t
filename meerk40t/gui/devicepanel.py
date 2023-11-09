@@ -30,7 +30,7 @@ def register_panel(window, context):
 
 
 class SelectDevice(wx.Dialog):
-    def __init__(self, *args, context=None, **kwds):
+    def __init__(self, *args, context=None, greetings=None, **kwds):
         # begin wxGlade: SelectDevice.__init__
         kwds["style"] = (
             kwds.get("style", 0) | wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
@@ -41,6 +41,18 @@ class SelectDevice(wx.Dialog):
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
 
+        if greetings is not None:
+            welcome = wx.StaticText(self, wx.ID_ANY, label=greetings)
+            font= wx.Font(
+                11,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+                0,
+                "Segoe UI",
+            )
+            welcome.SetFont(font)
+            sizer_main.Add(welcome, 0, wx.EXPAND, 0)
         sizer_3 = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Filter")), wx.HORIZONTAL
         )
@@ -470,8 +482,8 @@ class DevicePanel(wx.Panel):
 
         return configit
 
-    def on_button_create_device(self, event):  # wxGlade: DevicePanel.<event_handler>
-        dlg = SelectDevice(None, wx.ID_ANY, context=self.context)
+    def on_button_create_device(self, event, welcome=None):  # wxGlade: DevicePanel.<event_handler>
+        dlg = SelectDevice(None, wx.ID_ANY, context=self.context, greetings=welcome)
         result = dlg.ShowModal()
         if result == wx.ID_OK:
             device_type = dlg.device_type
@@ -531,6 +543,20 @@ class DevicePanel(wx.Panel):
             dev_index = item.GetData()
             service = self.devices[dev_index]
         return service
+
+    @signal_listener("nodevice")
+    def on_welcome(self, *args):
+        self.pane_show()
+        message = _(
+            "You do not seem to have any laser device yet.\n" +
+            "Select a matching device from the list\n" +
+            " to add it to the available lasers.\n" +
+            "You can come back at any time to add\n" +
+            "more devices, if you have another laser\n"+
+            "or want to set up a different configuration\n" +
+            "for an existing device."
+        )
+        self.on_button_create_device(None, message)
 
 
 class DeviceManager(MWindow):
