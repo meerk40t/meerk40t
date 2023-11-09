@@ -202,14 +202,13 @@ def plugin(kernel, lifecycle):
         make_raster = elements.lookup("render-op/make_raster")
         image, matrix = create_image(make_raster, data, bb, dpi, keep_ratio=False)
         if image is None:
-            data_out = None
-        else:
-            data_out = split_image(elements, image, matrix, bb, dpi, cols, rows)
-        if data_out is not None:
-            # Newly created! Classification needed?
-            post.append(classify_new(data_out))
-            elements.signal("element_added", data_out)
-            elements.signal("refresh_scene", "Scene")
+            return "elements", None
+
+        data_out = split_image(elements, image, matrix, bb, dpi, cols, rows)
+        # Newly created! Classification needed?
+        post.append(classify_new(data_out))
+        elements.signal("element_added", data_out)
+        elements.signal("refresh_scene", "Scene")
         return "elements", data_out
 
     @kernel.console_argument("dpi", type=int, help=_("Resolution of created image"))
