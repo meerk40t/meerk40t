@@ -20,6 +20,8 @@ class RuidaDevice(Service):
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "RuidaDevice"
+        self._laser_status = "idle"
+
         if choices is not None:
             for c in choices:
                 attr = c.get("attr")
@@ -204,6 +206,16 @@ class RuidaDevice(Service):
         self.viewbuffer = ""
 
         _ = self.kernel.translation
+
+    @property
+    def laser_status(self):
+        return self._laser_status
+
+    @laser_status.setter
+    def laser_status(self, new_value):
+        self._laser_status = new_value
+        flag = bool(new_value == "active")
+        self.signal("pipe;running", flag)
 
     def service_attach(self, *args, **kwargs):
         self.realize()

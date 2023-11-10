@@ -24,6 +24,7 @@ class GRBLDevice(Service):
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
         self.permit_tcp = True
         self.permit_serial = True
+        self._laser_status = "idle"
 
         Service.__init__(self, kernel, path)
         self.name = "GRBLDevice"
@@ -720,6 +721,16 @@ class GRBLDevice(Service):
                 channel("Available COM ports")
                 for x in ports:
                     channel(str(x))
+
+    @property
+    def laser_status(self):
+        return self._laser_status
+
+    @laser_status.setter
+    def laser_status(self, new_value):
+        self._laser_status = new_value
+        flag = bool(new_value == "active")
+        self.signal("pipe;running", flag)
 
     def location(self):
         if self.permit_tcp and self.interface == "tcp":

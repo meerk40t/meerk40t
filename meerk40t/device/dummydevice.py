@@ -50,6 +50,7 @@ class DummyDevice(Service):
         self.spooler = Spooler(self, "default")
         self.viewbuffer = ""
         self.label = "Dummy Device"
+        self._laser_status = "idle"
 
         _ = self.kernel.translation
         choices = [
@@ -111,6 +112,16 @@ class DummyDevice(Service):
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
         self.view = View(self.bedwidth, self.bedheight)
+
+    @property
+    def laser_status(self):
+        return self._laser_status
+
+    @laser_status.setter
+    def laser_status(self, new_value):
+        self._laser_status = new_value
+        flag = bool(new_value == "active")
+        self.signal("pipe;running", flag)
 
     @property
     def current(self):

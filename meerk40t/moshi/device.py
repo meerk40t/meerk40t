@@ -24,6 +24,7 @@ class MoshiDevice(Service):
         Service.__init__(self, kernel, path)
         self.name = "MoshiDevice"
         self.extension = "mos"
+        self._laser_status = "idle"
         if choices is not None:
             for c in choices:
                 attr = c.get("attr")
@@ -408,6 +409,16 @@ class MoshiDevice(Service):
             self.origin_x = 1.0 if self.home_right else 0.0
             self.origin_y = 1.0 if self.home_bottom else 0.0
             self.realize()
+
+    @property
+    def laser_status(self):
+        return self._laser_status
+
+    @laser_status.setter
+    def laser_status(self, new_value):
+        self._laser_status = new_value
+        flag = bool(new_value == "active")
+        self.signal("pipe;running", flag)
 
     def service_attach(self, *args, **kwargs):
         self.realize()

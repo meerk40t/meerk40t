@@ -61,6 +61,8 @@ class DefaultActionPanel(wx.Panel):
         sizer_after = StaticBoxSizer(self, wx.ID_ANY, _("At job end"), wx.VERTICAL)
         sizer_middle = wx.BoxSizer(wx.VERTICAL)
 
+        iconsize = dip_size(self, 30, 20)
+        bmpsize = min(iconsize[0], iconsize[1])
         self.option_list = wx.ListCtrl(
             self,
             wx.ID_ANY,
@@ -77,36 +79,24 @@ class DefaultActionPanel(wx.Panel):
 
         self.append_list = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_LIST)
         self.text_param_append = wx.TextCtrl(self, wx.ID_ANY)
-        self.button_del_prepend = wx.StaticBitmap(
-            self, wx.ID_ANY, size=dip_size(self, 30, 30)
-        )
-        self.button_up_prepend = wx.StaticBitmap(
-            self, wx.ID_ANY, size=dip_size(self, 30, 30)
-        )
-        self.button_down_prepend = wx.StaticBitmap(
-            self, wx.ID_ANY, size=dip_size(self, 30, 20)
-        )
+        self.button_del_prepend = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
+        self.button_up_prepend = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
+        self.button_down_prepend = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
         self.button_del_prepend.SetBitmap(
-            icon_trash.GetBitmap(resize=STD_ICON_SIZE / 2)
+            icon_trash.GetBitmap(resize=bmpsize, buffer=1)
         )
-        self.button_up_prepend.SetBitmap(icons8_up.GetBitmap(resize=STD_ICON_SIZE / 2))
+        self.button_up_prepend.SetBitmap(icons8_up.GetBitmap(resize=bmpsize, buffer=1))
         self.button_down_prepend.SetBitmap(
-            icons8_down.GetBitmap(resize=STD_ICON_SIZE / 2)
+            icons8_down.GetBitmap(resize=bmpsize, buffer=1)
         )
 
-        self.button_del_append = wx.StaticBitmap(
-            self, wx.ID_ANY, size=dip_size(self, 30, 30)
-        )
-        self.button_up_append = wx.StaticBitmap(
-            self, wx.ID_ANY, size=dip_size(self, 30, 30)
-        )
-        self.button_down_append = wx.StaticBitmap(
-            self, wx.ID_ANY, size=dip_size(self, 30, 30)
-        )
-        self.button_del_append.SetBitmap(icon_trash.GetBitmap(resize=STD_ICON_SIZE / 2))
-        self.button_up_append.SetBitmap(icons8_up.GetBitmap(resize=STD_ICON_SIZE / 2))
+        self.button_del_append = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
+        self.button_up_append = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
+        self.button_down_append = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
+        self.button_del_append.SetBitmap(icon_trash.GetBitmap(resize=bmpsize, buffer=1))
+        self.button_up_append.SetBitmap(icons8_up.GetBitmap(resize=bmpsize, buffer=1))
         self.button_down_append.SetBitmap(
-            icons8_down.GetBitmap(resize=STD_ICON_SIZE / 2)
+            icons8_down.GetBitmap(resize=bmpsize, buffer=1)
         )
 
         sizer_param = StaticBoxSizer(
@@ -473,7 +463,9 @@ class DefaultActionPanel(wx.Panel):
         setattr(self.context, str_count, len(self.append_ops))
 
     def setup_state_images(self):
-        iconsize = 20
+        testsize = dip_size(self, 20, 20)
+        iconsize = testsize[1]
+
         self.options_images = wx.ImageList()
         self.options_images.Create(width=iconsize, height=iconsize)
         self.prepend_images = wx.ImageList()
@@ -481,7 +473,9 @@ class DefaultActionPanel(wx.Panel):
         self.append_images = wx.ImageList()
         self.append_images.Create(width=iconsize, height=iconsize)
         for entry in self.default_images:
-            image = entry[1].GetBitmap(resize=(iconsize, iconsize), noadjustment=True)
+            image = entry[1].GetBitmap(
+                resize=(iconsize, iconsize), buffer=2, noadjustment=True
+            )
             image_id1 = self.options_images.Add(bitmap=image)
             image_id2 = self.prepend_images.Add(bitmap=image)
             image_id3 = self.append_images.Add(bitmap=image)

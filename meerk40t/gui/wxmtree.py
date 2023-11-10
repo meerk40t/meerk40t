@@ -44,7 +44,13 @@ from .icons import (
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
-from .wxutils import StaticBoxSizer, create_menu, get_key_name, is_navigation_key
+from .wxutils import (
+    StaticBoxSizer,
+    create_menu,
+    get_key_name,
+    is_navigation_key,
+    dip_size,
+)
 
 _ = wx.GetTranslation
 
@@ -498,13 +504,14 @@ class ShadowTree:
         self.tree_images = None
         self.name = "Project"
         self._freeze = False
-        self.iconsize = 20
+        testsize = dip_size(self, 20, 20)
+        self.iconsize = testsize[1]
         self.iconstates = {}
         self.last_call = 0
 
-        fact = get_default_scale_factor()
-        if fact > 1.0:
-            self.iconsize = int(self.iconsize * fact)
+        # fact = get_default_scale_factor()
+        # if fact > 1.0:
+        #    self.iconsize = int(self.iconsize * fact)
 
         self.do_not_select = False
         self.was_already_expanded = []

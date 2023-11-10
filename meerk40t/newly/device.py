@@ -17,6 +17,7 @@ class NewlyDevice(Service):
         Service.__init__(self, kernel, path)
         self.name = "newly"
         self.extension = "hpgl"
+        self._laser_status = "idle"
         self.job = None
         if choices is not None:
             for c in choices:
@@ -697,6 +698,16 @@ class NewlyDevice(Service):
         )
         def codes_update(**kwargs):
             self.realize()
+
+    @property
+    def laser_status(self):
+        return self._laser_status
+
+    @laser_status.setter
+    def laser_status(self, new_value):
+        self._laser_status = new_value
+        flag = bool(new_value == "active")
+        self.signal("pipe;running", flag)
 
     def service_attach(self, *args, **kwargs):
         self.realize()
