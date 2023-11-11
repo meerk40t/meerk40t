@@ -10,13 +10,14 @@ from meerk40t.kernel import CommandSyntaxError, Service
 
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
-from ..core.units import UNITS_PER_MIL, Length
+from ..core.units import Length
 from ..core.view import View
 from .controller import GrblController
 from .driver import GRBLDriver
+from ..device.mixins import Status
 
 
-class GRBLDevice(Service):
+class GRBLDevice(Service, Status):
     """
     GRBLDevice is driver for the Gcode Controllers
     """
@@ -24,9 +25,9 @@ class GRBLDevice(Service):
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
         self.permit_tcp = True
         self.permit_serial = True
-        self._laser_status = "idle"
 
         Service.__init__(self, kernel, path)
+        Status.__init__(self)
         self.name = "GRBLDevice"
         self.extension = "gcode"
         if choices is not None:
@@ -721,16 +722,6 @@ class GRBLDevice(Service):
                 channel("Available COM ports")
                 for x in ports:
                     channel(str(x))
-
-    @property
-    def laser_status(self):
-        return self._laser_status
-
-    @laser_status.setter
-    def laser_status(self, new_value):
-        self._laser_status = new_value
-        flag = bool(new_value == "active")
-        self.signal("pipe;running", flag)
 
     def location(self):
         if self.permit_tcp and self.interface == "tcp":

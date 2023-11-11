@@ -16,19 +16,20 @@ from ..core.units import UNITS_PER_MIL, Length
 from .controller import LihuiyuController
 from .driver import LihuiyuDriver
 from .tcp_connection import TCPOutput
+from ..device.mixins import Status
 
 
-class LihuiyuDevice(Service):
+class LihuiyuDevice(Service, Status):
     """
     LihuiyuDevice is driver for the M2 Nano and other classes of Lihuiyu boards.
     """
 
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
+        Status.__init__(self)
         self.name = "LihuiyuDevice"
         _ = kernel.translation
         self.extension = "egv"
-        self._laser_status = "idle"
         if choices is not None:
             for c in choices:
                 attr = c.get("attr")
@@ -1025,16 +1026,6 @@ class LihuiyuDevice(Service):
         max_x = max(x, new_x)
         max_y = max(y, new_y)
         return (min_x, min_y), (max_x, min_y), (max_x, max_y), (min_x, max_y)
-
-    @property
-    def laser_status(self):
-        return self._laser_status
-
-    @laser_status.setter
-    def laser_status(self, new_value):
-        self._laser_status = new_value
-        flag = bool(new_value == "active")
-        self.signal("pipe;running", flag)
 
     @property
     def viewbuffer(self):
