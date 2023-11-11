@@ -976,24 +976,24 @@ def init_tree(kernel):
     # REMOVE SINGLE (Tree Selected - ELEMENT)
     # ==========
 
-    @tree_conditional(lambda node: node.can_remove)
-    @tree_conditional(
-        lambda cond: len(
-            list(self.flat(selected=True, cascade=False, types=elem_nodes))
-        )
-        == 1
-    )
-    @tree_operation(
-        _("Delete element '{name}' fully"),
-        node_type=elem_nodes,
-        help="",
-    )
-    def remove_type_elem(node, **kwargs):
-        if hasattr(node, "can_remove") and not node.can_remove:
-            pass
-        else:
-            self.set_emphasis(None)
-            node.remove_node()
+    # @tree_conditional(lambda node: node.can_remove)
+    # @tree_conditional(
+    #     lambda cond: len(
+    #         list(self.flat(selected=True, cascade=False, types=elem_nodes))
+    #     )
+    #     == 1
+    # )
+    # @tree_operation(
+    #     _("Delete element '{name}' fully"),
+    #     node_type=elem_nodes,
+    #     help="",
+    # )
+    # def remove_type_elem(node, **kwargs):
+    #     if hasattr(node, "can_remove") and not node.can_remove:
+    #         pass
+    #     else:
+    #         self.set_emphasis(None)
+    #         node.remove_node()
 
     @tree_conditional(
         lambda cond: len(list(self.flat(selected=True, cascade=False, types=op_nodes)))
@@ -1178,7 +1178,7 @@ def init_tree(kernel):
     # REMOVE ELEMENTS
     # ==========
     # More than one, special case == 1 already dealt with
-    @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
+    @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) >= 1)
     @tree_calc("ecount", lambda i: len(list(self.elems(emphasized=True))))
     @tree_operation(
         _("Delete {ecount} elements, as selected in scene"),
