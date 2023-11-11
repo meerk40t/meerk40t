@@ -175,6 +175,8 @@ class CutPlan:
         #     axis = rotary.axis
 
         original_ops = copy(self.plan)
+        if self.context.opt_raster_optimisation:
+            self.optimize_rasters(original_ops)
         self.plan.clear()
 
         idx = 0
@@ -638,6 +640,74 @@ class CutPlan:
         self._previous_bounds = None
         self.plan.clear()
         self.commands.clear()
+
+    def optimize_rasters(self, operation_list):
+        from meerk40t.core.node.op_raster import RasterOpNode
+
+        def generate_clusters(operation):
+            clusters = list()
+            cluster_bounds = list()
+            for node in operation.children:
+                if node.type == "reference":
+                    node = node.node
+                try:
+                    bb = node.paint_bounds
+                except AttributeError:
+                    continue
+                overlap = False
+                idx = 0
+                while idx < len(cluster_bounds):
+                    cc = cluster_bounds[idx]
+                    # The rectangles don't overlap if
+                    # one rectangle's minimum in some dimension
+                    # is greater than the other's maximum in
+                    # that dimension.
+                    flagx = (bb[0] > cc[2]) or (cc[0] > bb[2])
+                    flagy = (bb[1] > cc[3]) or (cc[1] > bb[3])
+                    # print (f"Checking\n"
+                    #        f"({bb[0]:.0f}, {bb[1]:.0f}, {bb[2]:.0f}, {bb[3]:.0f}) vs\n"
+                    #        f"({cc[0]:.0f}, {cc[1]:.0f}, {cc[2]:.0f}, {cc[3]:.0f}) "
+                    #        f"Overlaps: x={flagx}, y={flagy}"
+                    #     )
+                    if not (flagx or flagy):
+                        # print (f"Reuse cluster for {node.type}")
+                        overlap = True
+                        clusters[idx].append(node)
+                        cluster_bounds[idx] = (
+                            min(bb[0], cc[0]),
+                            min(bb[1], cc[1]),
+                            max(bb[2], cc[2]),
+                            max(bb[3], cc[3]),
+                        )
+                        break
+                    idx += 1
+
+                if not overlap:
+                    # print (f"Generate new cluster for {node.type}")
+                    cluster_bounds.append(
+                        ( bb[0], bb[1], bb[2], bb[3] )
+                    )
+                    clusters.append( [node] )
+            return clusters
+
+        idx = 0
+        for idx in range(len(operation_list) - 1, -1, -1):
+            op = operation_list[idx]
+            if not isinstance(op, RasterOpNode):
+                continue
+            clusters = generate_clusters(op)
+            if len(clusters) > 0:
+                # Create cluster copies of the raster op
+                for entry in clusters:
+                    newop = copy(op)
+                    newop._references.clear()
+                    for node in entry:
+                        newop.add_reference(node)
+                    newop.set_dirty_bounds()
+                    operation_list.insert(idx + 1, newop)
+
+                # And remove the original one...
+                operation_list.pop(idx)
 
 
 def is_inside(inner, outer, tolerance=0):
