@@ -18,6 +18,8 @@ from meerk40t.tools.geomstr import (
     Pattern,
     Polygon,
     Scanbeam,
+    BeamTable,
+    TYPE_POINT,
 )
 
 
@@ -47,6 +49,39 @@ def draw(segments, min_x, min_y, max_x, max_y, buffer=0, filename="test.png"):
     #     t = segment[-1]
     #     draw.ellipse((f.real - 3, f.imag - 3, f.real + 3, f.imag + 3), fill="#FF0000")
     #     draw.ellipse((t.real - 2, t.imag - 2, t.real + 2, t.imag + 2), fill="#0000FF")
+    im.save(filename)
+
+
+def draw_geom(segments, min_x, min_y, max_x, max_y, buffer=0, filename="test.png"):
+    from PIL import Image, ImageDraw
+
+    min_x -= buffer
+    min_y -= buffer
+    max_x += buffer
+    max_y += buffer
+    im = Image.new("RGBA", (int(max_x - min_x) + 1, int(max_y - min_y) + 1), "white")
+
+    draw = ImageDraw.Draw(im)
+    for line in segments.segments[: segments.index]:
+        if line[2].real == TYPE_POINT:
+            f = line[0]
+            draw.ellipse(
+                (
+                    f.real - 3 - min_x,
+                    f.imag - 3 - min_y,
+                    f.real + 3 - min_x,
+                    f.imag + 3 - min_y,
+                ),
+                fill="#FF0000",
+            )
+        elif line[2].real == TYPE_LINE:
+            # Draw raw segments.
+            f = line[0]
+            t = line[-1]
+            draw.line(
+                ((f.real - min_x, f.imag - min_y), (t.real - min_x, t.imag - min_y)),
+                fill="#000000",
+            )
     im.save(filename)
 
 
@@ -341,6 +376,42 @@ class TestGeomstr(unittest.TestCase):
         # print(p.travel_distance())
         # print(p.segments)
         # draw(p.segments, w, h)
+
+    def test_geomstr_y_intercepts(self):
+        """
+        Draws, 5 perfectly horizontal lines. Queries the y_intercepts
+        @return:
+        """
+        g = Geomstr()
+        g.line(complex(0, 20), complex(100, 20))
+        g.line(complex(0, 40), complex(100, 40))
+        g.line(complex(0, 80), complex(100, 80))
+        g.line(complex(0, 60), complex(100, 60))
+        g.line(complex(0, 100), complex(100, 100))
+        q = g.y_intercept([0, 1, 2, 3, 4], 10)
+        self.assertEqual(q[0], 20.0)
+        self.assertEqual(q[1], 40.0)
+        self.assertEqual(q[2], 80.0)
+        self.assertEqual(q[3], 60.0)
+        self.assertEqual(q[4], 100.0)
+
+    def test_geomstr_x_intercepts(self):
+        """
+        Draws, 5 perfectly vertical lines. Queries the x_intercepts
+        @return:
+        """
+        g = Geomstr()
+        g.line(complex(20, 0), complex(20, 100))
+        g.line(complex(40, 0), complex(40, 100))
+        g.line(complex(80, 0), complex(80, 100))
+        g.line(complex(60, 0), complex(60, 100))
+        g.line(complex(100, 0), complex(100, 100))
+        q = g.x_intercept([0, 1, 2, 3, 4], 10)
+        self.assertEqual(q[0], 20.0)
+        self.assertEqual(q[1], 40.0)
+        self.assertEqual(q[2], 80.0)
+        self.assertEqual(q[3], 60.0)
+        self.assertEqual(q[4], 100.0)
 
     def test_geomstr_classmethods(self):
         """
@@ -1004,6 +1075,18 @@ class TestGeomstr(unittest.TestCase):
         except ZeroDivisionError:
             pass
 
+        # q = BeamTable(poly.geomstr)
+        # q.compute_beam_brute()
+        # t = time.time()
+        # r = q.points_in_polygon(points)
+        # t2 = time.time() - t
+        # i = 0
+        # for p1, p2 in zip(r, mask):
+        #     i += 1
+        #     if bool(p1) != bool(p2):
+        #         print(f"{i} {points[i]}")
+        # self.assertEqual(bool(p1), bool(p2))
+
     def test_render(self):
         rect = Geomstr.rect(x=300, y=200, width=500, height=500, rx=50, ry=50)
         image = rect.segmented().render()
@@ -1345,6 +1428,80 @@ class TestGeomstr(unittest.TestCase):
         g = Geomstr.rect(0, 0, 200, 200)
         nx, ny, mx, my = g.aabb()
         print(nx)
+
+    def test_static_beam_horizontal_bowtie(self):
+        """
+        0: down-right
+        1: right side
+        2: down-left
+        3: left side
+        30    21
+        |\   /|
+        | \ / |
+        | / \ |
+        |/   \|
+        @return:
+        """
+        bowtie = Geomstr.lines(
+            complex(0, 0),
+            complex(100, 100),
+            complex(100, 0),
+            complex(0, 100),
+            complex(0, 0),
+        )
+        sb = BeamTable(bowtie)
+        result = sb.actives_at(25)
+        actives = bowtie.x_intercept(result, 25)
+
+        for x, y in zip(result, (0, 2)):
+            self.assertEqual(x, y)
+
+    def test_static_beam_vertical_bowtie(self):
+        """
+       0   3
+        --------
+        \     /
+         \   /
+          \/
+          /\
+         /  \
+        /    \
+        ------
+        2   1
+        @return:
+        """
+        bowtie = Geomstr.lines(
+            complex(0, 0),
+            complex(100, 100),
+            complex(0, 100),
+            complex(100, 0),
+            complex(0, 0),
+        )
+        sb = BeamTable(bowtie)
+        result = sb.actives_at(complex(25, 0))
+        actives = bowtie.x_intercept(result, 25)
+
+        for x, y in zip(result, (3, 0, 2, 1)):
+            self.assertEqual(x, y)
+
+    def test_scan_table_random(self):
+        for c in range(1):
+            print("\n\n\n\n\n")
+            g = Geomstr()
+            for i in range(25):
+                random_segment(
+                    g, i=1000, arc=False, point=False, quad=False, cubic=False
+                )
+            t = time.time()
+            sb = BeamTable(g)
+            sb.compute_beam_brute()
+            intersections = sb.intersections
+            print(f"Time: {time.time() - t}")
+            try:
+                g.append(intersections)
+                draw_geom(g, *g.bbox(), filename="scantable.png")
+            except PermissionError:
+                pass
 
     # def test_geomstr_hatch(self):
     #     gs = Geomstr.svg(
