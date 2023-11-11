@@ -101,7 +101,7 @@ class ImageCutTool(ToolWidget):
             self.scene.pane.tool_active = False
             try:
                 if self.p1 is None or self.p2 is None:
-                    return
+                    return RESPONSE_ABORT
                 x1 = self.p1.real
                 y1 = self.p1.imag
                 x2 = self.p2.real
