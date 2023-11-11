@@ -476,9 +476,7 @@ class GrblController:
         @return:
         """
         with self._loop_cond:
-            self.service.laser_status = "idle"
             self._loop_cond.wait()
-            self.service.laser_status = "active"
 
     def _send_resume(self):
         """
@@ -497,7 +495,6 @@ class GrblController:
         @return:
 
         """
-        self.service.laser_status = "active"
         while self.connection.connected:
             if self._realtime_queue:
                 # Send realtime data.
@@ -509,9 +506,13 @@ class GrblController:
                 continue
             if not self._sending_queue:
                 # There is nothing to write/realtime
+                self.service.laser_status = "idle"
                 self._send_halt()
                 continue
             buffer = len(self._forward_buffer)
+            if buffer:
+                self.service.laser_status = "active"
+
             if self.service.buffer_mode == "sync":
                 if buffer:
                     # Any buffer is too much buffer. Halt.
@@ -635,7 +636,6 @@ class GrblController:
                 self._connection_validated = True
             else:
                 self._assembled_response.append(response)
-        self.service.laser_status = "idle"
 
     def _process_status_message(self, response):
         message = response[1:-1]
