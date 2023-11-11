@@ -3590,6 +3590,46 @@ class Elemental(Service):
             node.geometry = g
         return changed, before, after
 
+    def group_by_overlap(self, nodes):
+        # todo make work, is random peices
+        geoms = self.segments[: self.index]
+        import numpy as np
+        infos = np.real(geoms[:, 2]).astype(int)
+        starts = geoms[q][:, 0]
+        ends = geoms[q][:, -1]
+        lines = np.dstack((starts, ends))[0]
+        x, y = np.triu_indices(len(starts), 1)
+        j = lines[x]
+        k = lines[y]
+        a1 = j[:, 0]
+        ax1 = np.real(a1)
+        ay1 = np.imag(a1)
+        b1 = k[:, 0]
+        bx1 = np.real(b1)
+        by1 = np.imag(b1)
+        a2 = j[:, 1]
+        ax2 = np.real(a2)
+        ay2 = np.imag(a2)
+        b2 = k[:, 1]
+        bx2 = np.real(b2)
+        by2 = np.imag(b2)
+
+        cminx, cminy, cmaxx, cmaxy = clip.aabb()
+        sminx, sminy, smaxx, smaxy = subject.aabb()
+        x0, y0 = np.meshgrid(cmaxx, sminx)
+        x1, y1 = np.meshgrid(cminx, smaxx)
+        x2, y2 = np.meshgrid(cmaxy, sminy)
+        x3, y3 = np.meshgrid(cminy, smaxy)
+
+        checks = np.dstack(
+            (
+                x0 > y0,
+                x1 < y1,
+                x2 > y2,
+                x3 < y3,
+            )
+        ).all(axis=2)
+        where_hits = np.dstack((x[hits], y[hits]))[0]
 
 def linearize_path(path, interp=50, point=False):
     import numpy as np
