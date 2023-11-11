@@ -34,6 +34,8 @@ from meerk40t.gui.toolwidgets.toolcircle import CircleTool
 from meerk40t.gui.toolwidgets.toolcontainer import ToolContainer
 from meerk40t.gui.toolwidgets.tooldraw import DrawTool
 from meerk40t.gui.toolwidgets.toolellipse import EllipseTool
+from meerk40t.gui.toolwidgets.toolimagecut import ImageCutTool
+from meerk40t.gui.toolwidgets.toolline import LineTool
 from meerk40t.gui.toolwidgets.toollinetext import LineTextTool
 from meerk40t.gui.toolwidgets.toolmeasure import MeasureTool
 from meerk40t.gui.toolwidgets.toolnodeedit import EditTool
@@ -207,6 +209,7 @@ class MeerK40tScenePanel(wx.Panel):
 
         context.register("tool/draw", DrawTool)
         context.register("tool/rect", RectTool)
+        context.register("tool/line", LineTool)
         context.register("tool/polyline", PolylineTool)
         context.register("tool/polygon", PolygonTool)
         context.register("tool/point", PointTool)
@@ -222,6 +225,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/placement", PlacementTool)
         context.register("tool/nodemove", NodeMoveTool)
         context.register("tool/parameter", ParameterTool)
+        context.register("tool/imagecut", ImageCutTool)
 
         bsize_normal = STD_ICON_SIZE
 
