@@ -357,8 +357,6 @@ class DevicePanel(wx.Panel):
             self.devices_list.SetItemData(index, dev_index)
             if self.context.device is device:
                 self.devices_list.SetItemTextColour(index, wx.RED)
-
-        self.devices_list.SetFocus()
         self.on_item_selected(None)
 
     def get_new_label_for_device(self, device_type):
