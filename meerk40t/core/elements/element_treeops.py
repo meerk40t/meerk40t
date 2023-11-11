@@ -115,6 +115,17 @@ def init_tree(kernel):
         if activate is not None:
             activate(node)
 
+    # @tree_operation(_("Debug group"), node_type=("group", "file"), help="")
+    # def debug_group(node, **kwargs):
+    #     if node is None:
+    #         return
+    #     info = ""
+    #     for idx, e in enumerate(list(node.children)):
+    #         if info:
+    #             info += "\n"
+    #         info += f"{idx}#: {e.type}, identical to parent: {e is node}"
+    #     print (info)
+
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(_("Ungroup elements"), node_type=("group", "file"), help="")
     def ungroup_elements(node, **kwargs):
@@ -184,8 +195,32 @@ def init_tree(kernel):
     @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
     @tree_operation(_("Group elements"), node_type=elem_nodes, help="")
     def group_elements(node, **kwargs):
-        group_node = node.parent.add(type="group", label="Group")
-        for e in list(self.elems(emphasized=True)):
+
+        def minimal_parent(data):
+            result = None
+            root = self.elem_branch
+            curr_level = None
+            for node in data:
+                plevel = 0
+                candidate = node.parent
+                while candidate is not None and candidate.parent is not root:
+                    candidate = candidate.parent
+                    plevel += 1
+                if curr_level is None or plevel < curr_level:
+                    curr_level = plevel
+                    result = node.parent
+                if plevel == 0:
+                    # No need to continue
+                    break
+            if result is None:
+                result = root
+            return result
+
+        raw_data = list(self.elems(emphasized=True))
+        data = self.condense_elements(raw_data, expand_at_end=False)
+        parent_node = minimal_parent(data)
+        group_node = parent_node.add(type="group", label="Group")
+        for e in data:
             group_node.append_child(e)
 
     @tree_conditional(
