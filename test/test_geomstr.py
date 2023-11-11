@@ -1062,23 +1062,30 @@ class TestGeomstr(unittest.TestCase):
         # Convert to correct format.
 
         poly = Polygon(*pg)
-        q = BeamTable(poly.geomstr)
-        q.compute_beam_brute()
         t = time.time()
+        q = Scanbeam(poly.geomstr)
         r = q.points_in_polygon(points)
         t2 = time.time() - t
-        i = 0
         for p1, p2 in zip(r, mask):
-            i += 1
-            if bool(p1) != bool(p2):
-                print(f"{i} {points[i]}")
-            # self.assertEqual(bool(p1), bool(p2))
+            assert bool(p1) == bool(p2)
         try:
             print(
                 f"geomstr points in poly took {t2} seconds. Simple Scanline {t1}. Speed-up {t1 / t2}x"
             )
         except ZeroDivisionError:
             pass
+
+        # q = BeamTable(poly.geomstr)
+        # q.compute_beam_brute()
+        # t = time.time()
+        # r = q.points_in_polygon(points)
+        # t2 = time.time() - t
+        # i = 0
+        # for p1, p2 in zip(r, mask):
+        #     i += 1
+        #     if bool(p1) != bool(p2):
+        #         print(f"{i} {points[i]}")
+        # self.assertEqual(bool(p1), bool(p2))
 
     def test_render(self):
         rect = Geomstr.rect(x=300, y=200, width=500, height=500, rx=50, ry=50)
