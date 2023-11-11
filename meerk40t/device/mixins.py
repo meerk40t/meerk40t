@@ -1,5 +1,4 @@
 class Status:
-
     def __init__(self):
         self._laser_status = "idle"
 

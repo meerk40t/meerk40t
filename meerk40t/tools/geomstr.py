@@ -545,7 +545,7 @@ class BeamTable:
             pt, index, swap = event
 
             try:
-                next, _, _ = events[i+1]
+                next, _, _ = events[i + 1]
                 scanline = (pt + next) / 2
             except IndexError:
                 next = complex(float("inf"), float("inf"))
@@ -607,7 +607,7 @@ class BeamTable:
             self.compute_beam_brute()
         idx = np.searchsorted(self._nb_events, value)
         # idx = bisect(self._nb_events, (value.imag, value.real))
-        actives = self._nb_scan[idx-1]
+        actives = self._nb_scan[idx - 1]
         aw = np.argwhere(actives != -1)[:, 0]
         return actives[aw]
 
@@ -1986,7 +1986,7 @@ class Geomstr:
         geoms = list()
         g = Geomstr()
         geoms.append(g)
-        for e in polycut.segments[:self.index]:
+        for e in polycut.segments[: self.index]:
             if e[2].real == TYPE_END:
                 g = Geomstr()
                 geoms.append(g)
@@ -1996,9 +1996,8 @@ class Geomstr:
             first = geoms[0]
             last = geoms[-1]
             del geoms[-1]
-            first.insert(0, last.segments[:last.index])
+            first.insert(0, last.segments[: last.index])
         return geoms
-
 
     def round_corners(self, amount=0.2):
         """
@@ -2588,7 +2587,9 @@ class Geomstr:
                 yield start, control, info, control2, mid[0]
                 for i in range(1, len(mid)):
                     if breaks:
-                        yield mid[i - 1], mid[i - 1], complex(TYPE_END, info.imag), mid[i - 1], mid[i - 1]
+                        yield mid[i - 1], mid[i - 1], complex(TYPE_END, info.imag), mid[
+                            i - 1
+                        ], mid[i - 1]
                     yield mid[i - 1], control, info, control2, mid[i]
                 if breaks:
                     yield mid[-1], 0, complex(TYPE_END, info.imag), 0, mid[-1]
@@ -2616,7 +2617,9 @@ class Geomstr:
                 last = 0.0
                 for t0 in sorted(t):
                     # Thanks tiger.
-                    splits = list(self._split_quad(e, (t0 - last) / (1 - last), breaks=breaks))
+                    splits = list(
+                        self._split_quad(e, (t0 - last) / (1 - last), breaks=breaks)
+                    )
                     last = t0
                     yield splits[0]
                     e = splits[1]
@@ -2644,7 +2647,9 @@ class Geomstr:
                 t = np.sort(t)
                 last = 0.0
                 for t0 in sorted(t):
-                    splits = list(self._split_cubic(e, (t0 - last) / (1 - last), breaks=breaks))
+                    splits = list(
+                        self._split_cubic(e, (t0 - last) / (1 - last), breaks=breaks)
+                    )
                     last = t0
                     yield splits[0]
                     e = splits[1]
@@ -3965,7 +3970,6 @@ class Geomstr:
             return np.where(~np.isinf(m), (x - x0) / m, a.imag)
         finally:
             np.seterr(**old_np_seterr)
-
 
     #######################
     # Geometry Window Functions

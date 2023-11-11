@@ -13,10 +13,10 @@ from meerk40t.core.view import View
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.units import UNITS_PER_MIL, Length
+from ..device.mixins import Status
 from .controller import LihuiyuController
 from .driver import LihuiyuDriver
 from .tcp_connection import TCPOutput
-from ..device.mixins import Status
 
 
 class LihuiyuDevice(Service, Status):

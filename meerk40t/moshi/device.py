@@ -11,9 +11,9 @@ from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_MIL, Length
+from ..device.mixins import Status
 from .controller import MoshiController
 from .driver import MoshiDriver
-from ..device.mixins import Status
 
 
 class MoshiDevice(Service, Status):

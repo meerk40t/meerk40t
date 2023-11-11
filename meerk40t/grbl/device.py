@@ -12,9 +12,9 @@ from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
 from ..core.units import Length
 from ..core.view import View
+from ..device.mixins import Status
 from .controller import GrblController
 from .driver import GRBLDriver
-from ..device.mixins import Status
 
 
 class GRBLDevice(Service, Status):
