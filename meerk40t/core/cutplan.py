@@ -17,7 +17,7 @@ CutPlan handles the various complicated algorithms to optimising the sequence of
 from copy import copy
 from math import isinf
 from os import times
-from time import time
+from time import time, perf_counter
 from typing import Optional
 
 import numpy as np
@@ -175,6 +175,10 @@ class CutPlan:
         #     axis = rotary.axis
 
         original_ops = copy(self.plan)
+        if self.context.opt_raster_optimisation:
+            self.optimize_rasters(original_ops, "op raster")
+            # We could do this as well, but images are burnt separately anyway...
+            # self.optimize_rasters(original_ops, "op image")
         self.plan.clear()
 
         idx = 0
@@ -638,6 +642,88 @@ class CutPlan:
         self._previous_bounds = None
         self.plan.clear()
         self.commands.clear()
+
+    def optimize_rasters(self, operation_list, op_type):
+        def generate_clusters(operation):
+            clusters = list()
+            cluster_bounds = list()
+            for node in operation.children:
+                if node.type == "reference":
+                    node = node.node
+                try:
+                    bb = node.paint_bounds
+                except AttributeError:
+                    continue
+                clusters.append([node])
+                cluster_bounds.append((bb[0], bb[1], bb[2], bb[3]))
+
+            needs_repeat = True
+            while needs_repeat:
+                needs_repeat = False
+                for outer_idx in range(len(clusters) - 1, -1, -1):
+                    # Loop downwards as we are manipulating the arrays
+                    bb = cluster_bounds[outer_idx]
+                    inner_idx = outer_idx - 1
+                    while inner_idx >= 0:
+                        cc = cluster_bounds[inner_idx]
+                        # The rectangles don't overlap if
+                        # one rectangle's minimum in some dimension
+                        # is greater than the other's maximum in
+                        # that dimension.
+                        flagx = (bb[0] > cc[2]) or (cc[0] > bb[2])
+                        flagy = (bb[1] > cc[3]) or (cc[1] > bb[3])
+                        # print (f"Checking\n"
+                        #        f"({bb[0]:.0f}, {bb[1]:.0f}, {bb[2]:.0f}, {bb[3]:.0f}) vs\n"
+                        #        f"({cc[0]:.0f}, {cc[1]:.0f}, {cc[2]:.0f}, {cc[3]:.0f}) "
+                        #        f"Overlaps: x={flagx}, y={flagy}"
+                        #     )
+                        if not (flagx or flagy):
+                            # Overlap!
+                            # print (f"Reuse cluster {inner_idx} for {outer_idx}")
+                            needs_repeat = True
+                            # We need to extend the inner cluster by the outer
+                            clusters[inner_idx].extend(clusters[outer_idx])
+                            cluster_bounds[inner_idx] = (
+                                min(bb[0], cc[0]),
+                                min(bb[1], cc[1]),
+                                max(bb[2], cc[2]),
+                                max(bb[3], cc[3]),
+                            )
+                            clusters.pop(outer_idx)
+                            cluster_bounds.pop(outer_idx)
+                            break
+                        inner_idx -= 1
+
+            return clusters
+
+        stime = perf_counter()
+        scount = 0
+        ecount = 0
+        idx = 0
+        for idx in range(len(operation_list) - 1, -1, -1):
+            op = operation_list[idx]
+            if op.type != op_type:
+                continue
+            scount += 1
+            clusters = generate_clusters(op)
+            ecount += len(clusters)
+            if len(clusters) > 0:
+                # Create cluster copies of the raster op
+                for entry in clusters:
+                    newop = copy(op)
+                    newop._references.clear()
+                    for node in entry:
+                        newop.add_reference(node)
+                    newop.set_dirty_bounds()
+                    operation_list.insert(idx + 1, newop)
+
+                # And remove the original one...
+                operation_list.pop(idx)
+        etime = perf_counter()
+        if self.channel:
+            self.channel(
+                f"Optimise {op_type} finished after {etime-stime:.2f} seconds, inflated {scount} operations to {ecount}"
+            )
 
 
 def is_inside(inner, outer, tolerance=0):
