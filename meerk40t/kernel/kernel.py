@@ -131,6 +131,8 @@ class Kernel(Settings):
         # define translation
         from . import _
         self.translation = _
+        if language is not None:
+            self.set_language(language)
 
         # The function used to process the signals. This is useful if signals should be kept to a single thread.
         self.scheduler_handles_main_thread_jobs = True
