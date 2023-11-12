@@ -1,12 +1,11 @@
 import wx
 
 from meerk40t.gui.wxutils import ScrolledPanel
+from meerk40t.kernel import _
 
 from ..icons import icons8_vector
 from ..mwindow import MWindow
 from .attributes import ColorPanel, IdPanel, PositionSizePanel, PreventChangePanel
-
-_ = wx.GetTranslation
 
 
 class PointPropertyPanel(ScrolledPanel):

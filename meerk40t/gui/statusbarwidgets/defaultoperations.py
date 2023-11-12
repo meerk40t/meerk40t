@@ -6,10 +6,9 @@ from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.gui.icons import EmptyIcon
 from meerk40t.gui.laserrender import swizzlecolor
+from meerk40t.kernel import _
 
 from .statusbarwidget import StatusBarWidget
-
-_ = wx.GetTranslation
 
 
 class DefaultOperationWidget(StatusBarWidget):

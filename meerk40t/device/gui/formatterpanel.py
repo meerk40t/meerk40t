@@ -26,8 +26,7 @@ from meerk40t.gui.icons import (
     icons8_vector,
 )
 from meerk40t.gui.wxutils import dip_size
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _
 
 
 class FormatterPanel(wx.Panel):

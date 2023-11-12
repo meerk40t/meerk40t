@@ -2,6 +2,7 @@ import wx
 from wx import aui
 
 from meerk40t.core.elements.element_types import op_nodes
+from meerk40t.kernel import _
 
 from ..core.units import Length
 from ..kernel import signal_listener
@@ -51,8 +52,6 @@ from .wxutils import (
     get_key_name,
     is_navigation_key,
 )
-
-_ = wx.GetTranslation
 
 
 def register_panel_tree(window, context):

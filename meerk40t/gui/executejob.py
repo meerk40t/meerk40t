@@ -1,13 +1,11 @@
 import wx
 
-from meerk40t.kernel import signal_listener
+from meerk40t.kernel import _, signal_listener
 
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import STD_ICON_SIZE, icons8_laser_beam
 from .mwindow import MWindow
 from .wxutils import disable_window
-
-_ = wx.GetTranslation
 
 
 class PlannerPanel(wx.Panel):

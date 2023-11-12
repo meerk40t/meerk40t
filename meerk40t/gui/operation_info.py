@@ -11,9 +11,7 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import ScrolledPanel
-from meerk40t.kernel import signal_listener
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _, signal_listener
 
 
 class OpInfoPanel(ScrolledPanel):

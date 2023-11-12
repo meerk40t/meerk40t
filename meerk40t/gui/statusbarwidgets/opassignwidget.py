@@ -10,11 +10,10 @@ from meerk40t.gui.icons import (
     icons8_laserbeam_weak,
 )
 from meerk40t.gui.laserrender import swizzlecolor
+from meerk40t.kernel import _
 from meerk40t.svgelements import Color
 
 from .statusbarwidget import StatusBarWidget
-
-_ = wx.GetTranslation
 
 
 class OperationAssignOptionWidget(StatusBarWidget):

@@ -1,8 +1,6 @@
 import wx
 
-from meerk40t.kernel import Module
-
-_ = wx.GetTranslation
+from meerk40t.kernel import Module, _
 
 
 class MWindow(wx.Frame, Module):

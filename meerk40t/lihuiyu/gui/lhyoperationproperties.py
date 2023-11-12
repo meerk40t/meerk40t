@@ -1,8 +1,7 @@
 import wx
 
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _
 
 
 class LhyAdvancedPanel(wx.Panel):

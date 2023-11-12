@@ -16,8 +16,7 @@ from meerk40t.gui.icons import (
     icons8_up,
 )
 from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _
 
 
 class DefaultActionPanel(wx.Panel):

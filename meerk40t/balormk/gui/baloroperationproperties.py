@@ -2,11 +2,10 @@ import wx
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.wxutils import ScrolledPanel
+from meerk40t.kernel import _
 
 from ...core.units import Length
 from ..balor_params import Parameters
-
-_ = wx.GetTranslation
 
 
 class BalorOperationPanel(ScrolledPanel):

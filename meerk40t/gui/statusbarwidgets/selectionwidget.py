@@ -1,8 +1,8 @@
 import wx
 
-from .statusbarwidget import StatusBarWidget
+from meerk40t.kernel import _
 
-_ = wx.GetTranslation
+from .statusbarwidget import StatusBarWidget
 
 
 class SelectionOptionWidget(StatusBarWidget):

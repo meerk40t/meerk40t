@@ -24,9 +24,7 @@ from meerk40t.gui.wxutils import (
     dip_size,
     disable_window,
 )
-from meerk40t.kernel import lookup_listener, signal_listener
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _, lookup_listener, signal_listener
 
 
 def register_panel_laser(window, context):

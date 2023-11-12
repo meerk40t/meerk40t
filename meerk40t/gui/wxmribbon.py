@@ -37,9 +37,7 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.ribbon import RibbonBarPanel
 from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
-from meerk40t.kernel import Settings, lookup_listener, signal_listener
-
-_ = wx.GetTranslation
+from meerk40t.kernel import Settings, _, lookup_listener, signal_listener
 
 
 def register_panel_ribbon(window, context):

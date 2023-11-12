@@ -5,7 +5,7 @@
 #
 # from ..newly_params import Parameters
 #
-# _ = wx.GetTranslation
+# from meerk40t.kernel import _
 #
 #
 # class NewlyOperationPanel(ScrolledPanel):

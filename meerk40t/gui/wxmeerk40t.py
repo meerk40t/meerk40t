@@ -95,7 +95,7 @@ The Transformations work in Windows/OSX/Linux for wxPython 4.0+ (and likely befo
 
 """
 
-_ = wx.GetTranslation
+from meerk40t.kernel import _
 
 
 class ActionPanel(wx.Panel):

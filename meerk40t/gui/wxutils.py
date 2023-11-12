@@ -9,9 +9,7 @@ import wx.lib.mixins.listctrl as listmix
 from wx.lib.scrolledpanel import ScrolledPanel as SP
 
 from meerk40t.core.units import ACCEPTED_UNITS, Angle, Length
-
-_ = wx.GetTranslation
-
+from meerk40t.kernel import _
 
 ##############
 # DYNAMIC CHOICE

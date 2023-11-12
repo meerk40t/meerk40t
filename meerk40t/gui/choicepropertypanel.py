@@ -10,10 +10,8 @@ from meerk40t.gui.wxutils import (
     TextCtrl,
     dip_size,
 )
-from meerk40t.kernel import Context
+from meerk40t.kernel import Context, _
 from meerk40t.svgelements import Color
-
-_ = wx.GetTranslation
 
 
 class ChoicePropertyPanel(ScrolledPanel):

@@ -4,8 +4,7 @@ import wx
 
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _
 
 
 class ContrastPanel(wx.Panel):

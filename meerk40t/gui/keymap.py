@@ -2,11 +2,11 @@ import platform
 
 import wx
 
+from meerk40t.kernel import _
+
 from .icons import icons8_keyboard
 from .mwindow import MWindow
 from .wxutils import get_key_name
-
-_ = wx.GetTranslation
 
 
 class KeymapPanel(wx.Panel):

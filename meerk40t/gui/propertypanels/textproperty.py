@@ -5,14 +5,13 @@ import wx
 from meerk40t.gui.fonts import wxfont_to_svg
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
+from meerk40t.kernel import _
 
 from ...svgelements import Color
 from ..icons import STD_ICON_SIZE, icons8_choose_font, icons8_text
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
 from .attributes import ColorPanel, IdPanel, PositionSizePanel, PreventChangePanel
-
-_ = wx.GetTranslation
 
 
 class PromptingComboBox(wx.ComboBox):

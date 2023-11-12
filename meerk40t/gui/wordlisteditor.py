@@ -4,6 +4,8 @@ import re
 import wx
 from wx import aui
 
+from meerk40t.kernel import _
+
 from ..kernel import signal_listener
 from .icons import (
     STD_ICON_SIZE,
@@ -17,8 +19,6 @@ from .icons import (
 )
 from .mwindow import MWindow
 from .wxutils import StaticBoxSizer, dip_size
-
-_ = wx.GetTranslation
 
 
 def register_panel_wordlist(window, context):

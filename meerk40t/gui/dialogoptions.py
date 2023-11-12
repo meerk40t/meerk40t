@@ -6,8 +6,7 @@ for a GRBL import / blob conversion
 import wx
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _
 
 
 class DialogOptions:

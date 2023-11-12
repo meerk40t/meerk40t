@@ -2,12 +2,12 @@ import datetime
 
 import wx
 
+from meerk40t.kernel import _
+
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .icons import icon_about, icon_meerk40t
 from .mwindow import MWindow
 from .wxutils import ScrolledPanel, StaticBoxSizer
-
-_ = wx.GetTranslation
 
 HEADER_TEXT = (
     "MeerK40t is a free MIT Licensed open source project\n"

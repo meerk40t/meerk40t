@@ -10,8 +10,7 @@ from wx import aui
 
 import meerk40t.gui.icons as mkicons
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _
 
 
 def register_panel_debugger(window, context):

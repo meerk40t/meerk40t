@@ -1,11 +1,11 @@
 import wx
 from wx import aui
 
+from meerk40t.kernel import _
+
 from ...kernel import signal_listener
 from ..icons import icons8_computer_support
 from ..mwindow import MWindow
-
-_ = wx.GetTranslation
 
 
 class PropertyWindow(MWindow):

@@ -15,9 +15,7 @@ from meerk40t.extra.hershey import (
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_choose_font
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
-from meerk40t.kernel import get_safe_path
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _, get_safe_path
 
 
 def create_preview_image(context, fontfile):

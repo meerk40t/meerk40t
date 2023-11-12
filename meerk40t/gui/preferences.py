@@ -5,6 +5,7 @@ import platform
 
 import wx
 
+from meerk40t.kernel import _
 from meerk40t.kernel.kernel import signal_listener
 
 from .choicepropertypanel import ChoicePropertyPanel
@@ -12,8 +13,6 @@ from .icons import icons8_administrative_tools
 from .mwindow import MWindow
 from .wxmribbon import RibbonEditor
 from .wxutils import StaticBoxSizer, TextCtrl
-
-_ = wx.GetTranslation
 
 
 class PreferencesUnitsPanel(wx.Panel):

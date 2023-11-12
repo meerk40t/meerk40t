@@ -3,7 +3,7 @@ import platform
 
 import wx
 
-from meerk40t.kernel import Job, signal_listener
+from meerk40t.kernel import Job, _, signal_listener
 
 from ..core.cutcode.cubiccut import CubicCut
 from ..core.cutcode.cutcode import CutCode
@@ -49,8 +49,6 @@ from .scenewidgets.bedwidget import BedWidget
 from .scenewidgets.gridwidget import GridWidget
 from .wxutils import StaticBoxSizer, dip_size
 from .zmatrix import ZMatrix
-
-_ = wx.GetTranslation
 
 
 class OperationsPanel(wx.Panel):

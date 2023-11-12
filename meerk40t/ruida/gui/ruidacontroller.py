@@ -5,9 +5,7 @@ import wx
 from meerk40t.gui.icons import icons8_connected, icons8_disconnected
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import dip_size
-from meerk40t.kernel import signal_listener
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _, signal_listener
 
 
 class RuidaControllerPanel(wx.ScrolledWindow):

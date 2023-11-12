@@ -2,8 +2,7 @@ import wx
 
 from meerk40t.gui.icons import icons8_usb_connector
 from meerk40t.gui.mwindow import MWindow
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _
 
 
 class UsbConnectPanel(wx.Panel):

@@ -13,10 +13,8 @@ from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_detective
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
-from meerk40t.kernel import Settings, lookup_listener, signal_listener
+from meerk40t.kernel import Settings, _, lookup_listener, signal_listener
 from meerk40t.svgelements import Color, Matrix
-
-_ = wx.GetTranslation
 
 
 class SaveLoadPanel(wx.Panel):

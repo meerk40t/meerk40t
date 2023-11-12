@@ -7,9 +7,7 @@ import wx
 from meerk40t.core.units import Angle, Length
 from meerk40t.gui.propertypanels.attributes import IdPanel
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, set_ctrl_value
-from meerk40t.kernel import signal_listener
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _, signal_listener
 
 
 class PlacementPanel(wx.Panel):

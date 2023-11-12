@@ -15,9 +15,7 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
-from meerk40t.kernel import signal_listener
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _, signal_listener
 
 _simple_width = 500
 _advanced_width = 952

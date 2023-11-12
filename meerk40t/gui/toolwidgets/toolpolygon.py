@@ -17,10 +17,9 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CONSUME,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
+from meerk40t.kernel import _
 from meerk40t.kernel.kernel import Job
 from meerk40t.svgelements import Point, Polygon
-
-_ = wx.GetTranslation
 
 
 class PolygonTool(ToolWidget):

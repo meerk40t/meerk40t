@@ -48,10 +48,8 @@ import threading
 import wx
 
 from meerk40t.gui.icons import STD_ICON_SIZE, PyEmbeddedImage
-from meerk40t.kernel import Job
+from meerk40t.kernel import Job, _
 from meerk40t.svgelements import Color
-
-_ = wx.GetTranslation
 
 SMALL_RESIZE_FACTOR = 2 / 3
 TINY_RESIZE_FACTOR = 0.5

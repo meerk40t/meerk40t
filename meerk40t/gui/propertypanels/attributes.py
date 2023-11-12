@@ -6,9 +6,8 @@ import meerk40t.gui.icons as mkicons
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.wxutils import CheckBox, StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.kernel import _
 from meerk40t.svgelements import Color
-
-_ = wx.GetTranslation
 
 
 class ColorPanel(wx.Panel):

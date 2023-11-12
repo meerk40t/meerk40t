@@ -8,8 +8,7 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.utilitywidgets.buttonwidget import ButtonWidget
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _
 
 
 class ToggleWidget(Widget):

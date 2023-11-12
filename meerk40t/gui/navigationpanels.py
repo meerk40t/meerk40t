@@ -49,10 +49,8 @@ from meerk40t.gui.icons import (
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.position import PositionPanel
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
-from meerk40t.kernel import signal_listener
+from meerk40t.kernel import _, signal_listener
 from meerk40t.svgelements import Angle
-
-_ = wx.GetTranslation
 
 
 def register_panel_navigation(window, context):

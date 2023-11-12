@@ -10,10 +10,9 @@ from meerk40t.gui.icons import (
     icon_join_miter,
     icon_join_round,
 )
+from meerk40t.kernel import _
 
 from .statusbarwidget import StatusBarWidget
-
-_ = wx.GetTranslation
 
 
 class LinecapWidget(StatusBarWidget):

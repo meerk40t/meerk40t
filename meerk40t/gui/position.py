@@ -5,9 +5,7 @@ from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import icons8_compress
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
-from meerk40t.kernel import signal_listener
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _, signal_listener
 
 
 def register_panel_position(window, context):

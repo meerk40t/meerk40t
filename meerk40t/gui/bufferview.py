@@ -1,10 +1,10 @@
 import wx
 
+from meerk40t.kernel import _
+
 from .icons import icons8_comments
 from .mwindow import MWindow
 from .wxutils import dip_size
-
-_ = wx.GetTranslation
 
 
 class BufferViewPanel(wx.Panel):

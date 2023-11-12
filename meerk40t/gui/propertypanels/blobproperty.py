@@ -1,13 +1,12 @@
 import wx
 
 from meerk40t.gui.wxutils import ScrolledPanel
+from meerk40t.kernel import _
 
 from ...core.node.blobnode import BlobNode
 from ..icons import icons8_vector
 from ..mwindow import MWindow
 from .attributes import IdPanel
-
-_ = wx.GetTranslation
 
 
 class BlobPropertyPanel(ScrolledPanel):

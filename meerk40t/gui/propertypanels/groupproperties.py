@@ -4,14 +4,13 @@ import time
 import wx
 
 from meerk40t.gui.wxutils import ScrolledPanel
+from meerk40t.kernel import _
 
 # from ...svgelements import SVG_ATTR_ID
 from ..icons import icons8_group_objects
 from ..mwindow import MWindow
 from ..wxutils import StaticBoxSizer
 from .attributes import IdPanel
-
-_ = wx.GetTranslation
 
 
 class ElemcountPanel(wx.Panel):

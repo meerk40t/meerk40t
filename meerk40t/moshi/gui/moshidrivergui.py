@@ -6,8 +6,7 @@ from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _
 
 
 class MoshiDriverGui(MWindow):

@@ -6,8 +6,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_ABORT,
 )
 from meerk40t.gui.scene.widget import Widget
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _
 
 
 class OpenCloseWidget(Widget):

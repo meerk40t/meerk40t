@@ -9,8 +9,7 @@ from meerk40t.gui.icons import (
     icons8_laserbeam_weak,
 )
 from meerk40t.gui.wxutils import TextCtrl, dip_size
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _
 
 
 class WarningPanel(wx.Panel):

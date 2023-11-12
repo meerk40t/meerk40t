@@ -4,9 +4,7 @@ from wx import aui
 from meerk40t.gui.icons import icons8_manager
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
-from meerk40t.kernel import lookup_listener, signal_listener
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _, lookup_listener, signal_listener
 
 
 def register_panel(window, context):

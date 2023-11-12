@@ -4,8 +4,7 @@ import wx
 
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _
 
 
 class SimpleCheckbox:

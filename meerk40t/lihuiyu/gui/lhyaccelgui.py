@@ -3,8 +3,7 @@ import wx
 from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _
 
 
 class LihuiyuAccelerationChartPanel(ScrolledPanel):

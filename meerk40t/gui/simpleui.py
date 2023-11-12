@@ -10,13 +10,13 @@ https://github.com/meerk40t/meerk40t/discussions/1944
 import wx
 from wx import aui
 
+from meerk40t.kernel import _
+
 from ..core.exceptions import BadFileError
 from .icons import icons8_computer_support, icons8_opened_folder
 from .mwindow import MWindow
 from .navigationpanels import Drag, Jog
 from .wxutils import StaticBoxSizer
-
-_ = wx.GetTranslation
 
 
 class JogMovePanel(wx.Panel):

@@ -3,10 +3,8 @@ import wx
 from meerk40t.gui.icons import STD_ICON_SIZE, icon_keyhole, icon_split_image
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
-from meerk40t.kernel import signal_listener
+from meerk40t.kernel import _, signal_listener
 from meerk40t.svgelements import Color
-
-_ = wx.GetTranslation
 
 
 class InfoPanel(wx.Panel):

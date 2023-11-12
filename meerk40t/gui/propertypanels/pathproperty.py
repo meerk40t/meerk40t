@@ -16,9 +16,8 @@ from meerk40t.gui.propertypanels.attributes import (
     StrokeWidthPanel,
 )
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
+from meerk40t.kernel import _
 from meerk40t.svgelements import Color
-
-_ = wx.GetTranslation
 
 
 class PathPropertyPanel(ScrolledPanel):

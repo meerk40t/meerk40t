@@ -1,15 +1,13 @@
 import wx
 
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
-from meerk40t.kernel import lookup_listener, signal_listener
+from meerk40t.kernel import _, lookup_listener, signal_listener
 
 from ...core.units import UNITS_PER_MM, Length
 from ...svgelements import Angle, Color, Matrix
 from ..laserrender import swizzlecolor
 from ..wxutils import TextCtrl, set_ctrl_value
 from .attributes import IdPanel
-
-_ = wx.GetTranslation
 
 # OPERATION_TYPE_TOOLTIP = _(
 #     """Operation Type

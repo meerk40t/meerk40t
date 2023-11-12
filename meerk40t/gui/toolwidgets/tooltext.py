@@ -5,9 +5,8 @@ from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 
 # from meerk40t.gui.toolwidgets.textentry import TextEntry
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
+from meerk40t.kernel import _
 from meerk40t.svgelements import Color, Matrix
-
-_ = wx.GetTranslation
 
 
 class TextTool(ToolWidget):

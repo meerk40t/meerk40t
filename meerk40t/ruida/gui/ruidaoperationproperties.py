@@ -2,8 +2,7 @@ import wx
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.wxutils import ScrolledPanel
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _
 
 
 class RuidaOperationPanel(ScrolledPanel):

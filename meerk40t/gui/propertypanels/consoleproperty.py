@@ -1,9 +1,9 @@
 import wx
 
+from meerk40t.kernel import _
+
 from ..icons import icons8_comments
 from ..mwindow import MWindow
-
-_ = wx.GetTranslation
 
 
 class ConsoleProperty(MWindow):

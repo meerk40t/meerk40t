@@ -8,6 +8,7 @@ import wx
 
 from meerk40t.core.elements.element_types import elem_nodes, op_nodes
 from meerk40t.gui.laserrender import swizzlecolor
+from meerk40t.kernel import _
 
 from ..kernel import Job, lookup_listener, signal_listener
 from ..svgelements import Color
@@ -19,8 +20,6 @@ from .icons import (
     icons8_laserbeam_weak,
 )
 from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, create_menu, dip_size
-
-_ = wx.GetTranslation
 
 BUTTONSIZE = 20
 

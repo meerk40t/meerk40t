@@ -9,9 +9,8 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CONSUME,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
+from meerk40t.kernel import _
 from meerk40t.tools.geomstr import Geomstr
-
-_ = wx.GetTranslation
 
 
 class LineTool(ToolWidget):

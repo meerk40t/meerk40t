@@ -8,13 +8,12 @@ from meerk40t.gui.icons import STD_ICON_SIZE, icon_hinges
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
-from meerk40t.kernel import signal_listener
+from meerk40t.kernel import _, signal_listener
 from meerk40t.svgelements import Color, Matrix, Path
 
 # from meerk40t.fill.patternfill import LivingHinges
 
 
-_ = wx.GetTranslation
 
 """
 TODO:

@@ -12,11 +12,10 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.wxutils import dip_size
+from meerk40t.kernel import _
 from meerk40t.svgelements import Color
 
 from ..kernel import signal_listener
-
-_ = wx.GetTranslation
 
 
 def register_panel_operation_assign(window, context):

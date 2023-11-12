@@ -7,9 +7,8 @@ from meerk40t.extra.hershey import create_linetext_node, update_linetext
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
+from meerk40t.kernel import _
 from meerk40t.svgelements import Color
-
-_ = wx.GetTranslation
 
 
 class LineTextTool(ToolWidget):

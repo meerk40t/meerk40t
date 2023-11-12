@@ -1,13 +1,12 @@
 import wx
 
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
+from meerk40t.kernel import _
 
 from ...core.units import Angle, Length
 from ...svgelements import Matrix
 from ..wxutils import TextCtrl, set_ctrl_value
 from .attributes import ColorPanel, IdPanel
-
-_ = wx.GetTranslation
 
 
 class HatchPropertyPanel(ScrolledPanel):

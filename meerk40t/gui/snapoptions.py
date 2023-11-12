@@ -1,9 +1,7 @@
 import wx
 from wx import aui
 
-from meerk40t.kernel import signal_listener
-
-_ = wx.GetTranslation
+from meerk40t.kernel import _, signal_listener
 
 
 def register_panel_snapoptions(window, context):

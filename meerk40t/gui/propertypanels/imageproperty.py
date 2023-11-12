@@ -13,9 +13,8 @@ from meerk40t.gui.propertypanels.attributes import (
     PreventChangePanel,
 )
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.kernel import _
 from meerk40t.svgelements import Matrix
-
-_ = wx.GetTranslation
 
 # The default value needs to be true, as the static method will be called before init happened...
 HAS_VECTOR_ENGINE = True

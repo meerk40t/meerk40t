@@ -1,10 +1,10 @@
 import wx
 from wx import aui
 
+from meerk40t.kernel import _
+
 from .icons import STD_ICON_SIZE, icons8_comments
 from .mwindow import MWindow
-
-_ = wx.GetTranslation
 
 
 def register_panel(window, context):

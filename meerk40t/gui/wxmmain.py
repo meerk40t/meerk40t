@@ -26,7 +26,7 @@ from meerk40t.gui.statusbarwidgets.shapepropwidget import (
 )
 from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
 from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
-from meerk40t.kernel import lookup_listener, signal_listener
+from meerk40t.kernel import _, lookup_listener, signal_listener
 
 from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from ..svgelements import Color, Matrix, Path
@@ -106,8 +106,6 @@ from .laserrender import (
     swizzlecolor,
 )
 from .mwindow import MWindow
-
-_ = wx.GetTranslation
 
 
 class MeerK40t(MWindow):

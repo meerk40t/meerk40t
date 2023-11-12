@@ -5,6 +5,7 @@ import wx
 
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.node.node import Node
+from meerk40t.kernel import _
 from meerk40t.svgelements import (
     Arc,
     Close,
@@ -23,8 +24,6 @@ from ..gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
 from ..kernel import signal_listener
 from .icons import STD_ICON_SIZE, icons8_arrange
 from .mwindow import MWindow
-
-_ = wx.GetTranslation
 
 
 class InfoPanel(wx.Panel):
