@@ -753,16 +753,15 @@ class wxMeerK40t(wx.App, Module):
 
         context.app = self  # Registers self as kernel.app
 
-        context.setting(int, "language", None)
-        language = context.language
+        context.setting(str, "i18n", "en")
+        language = context.i18n
         from meerk40t.gui.help_assets.help_assets import asset
 
         def get_asset(asset_name):
             return asset(context, asset_name)
 
         context.asset = get_asset
-        if language is not None and language != 0:
-            self.update_language(language)
+        self.update_language(language)
 
         kernel.register("window/MeerK40t", MeerK40t)
 
@@ -905,27 +904,27 @@ class wxMeerK40t(wx.App, Module):
                     'Argument "sure" is required. Requires typing: "nuke_settings yes"'
                 )
 
-    def update_language(self, lang):
+    def update_language(self, lang_code):
         """
         Update language to the requested language.
         """
         context = self.context
-        try:
-            language_code, language_name, language_index = supported_languages[lang]
-        except (IndexError, ValueError):
-            return
-        context.language = lang
-        self.context.kernel.set_language(language_code)
-        if self.locale:
-            assert sys.getrefcount(self.locale) <= 2
-            del self.locale
-        self.locale = wx.Locale(language_index)
-        # wxWidgets is broken. IsOk()==false and pops up error dialog, but it translates fine!
-        if self.locale.IsOk() or platform.system() == "Linux":
-            self.locale.AddCatalog("meerk40t")
-        else:
-            self.locale = None
-        context.signal("language", (lang, language_code, language_name, language_index))
+        for i, suplang in enumerate(supported_languages):
+            language_code, language_name, language_index = suplang
+            if language_code != lang_code:
+                continue
+            context.i18n = language_code
+            self.context.kernel.set_language(language_code)
+            if self.locale:
+                assert sys.getrefcount(self.locale) <= 2
+                del self.locale
+            self.locale = wx.Locale(language_index)
+            # wxWidgets is broken. IsOk()==false and pops up error dialog, but it translates fine!
+            if self.locale.IsOk() or platform.system() == "Linux":
+                self.locale.AddCatalog("meerk40t")
+            else:
+                self.locale = None
+            context.signal("language", (i, language_code, language_name, language_index))
 
 
 # end of class MeerK40tGui

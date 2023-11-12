@@ -3366,36 +3366,36 @@ class MeerK40t(MWindow):
         self.SetMenuBar(self.main_menubar)
 
     def add_language_menu(self):
-        tl = wx.FileTranslationsLoader()
-        trans = tl.GetAvailableTranslations("meerk40t")
+        from ..kernel import _gettext_language
 
-        if trans:
-            wxglade_tmp_menu = wx.Menu()
-            i = 0
-            for lang in self.context.app.supported_languages:
-                language_code, language_name, language_index = lang
-                m = wxglade_tmp_menu.Append(
-                    wx.ID_ANY, language_name, language_name, wx.ITEM_RADIO
-                )
-                if i == self.context.language:
-                    m.Check(True)
+        trans = _gettext_language
+        if not trans:
+            trans = "en"
 
-                def language_update(q):
-                    def check(event):
-                        self.context.app.update_language(q)
-                        # Intentionally no translation...
-                        wx.MessageBox(
-                            message="This requires a program restart before the language change will kick in!",
-                            caption="Language changed",
-                        )
+        wxglade_tmp_menu = wx.Menu()
+        for lang in self.context.app.supported_languages:
+            language_code, language_name, language_index = lang
+            m = wxglade_tmp_menu.Append(
+                wx.ID_ANY, language_name, language_name, wx.ITEM_RADIO
+            )
+            if trans == language_code:
+                m.Check(True)
 
-                    return check
+            def language_update(q):
+                def check(event):
+                    self.context.app.update_language(q)
+                    # Intentionally no translation...
+                    wx.MessageBox(
+                        message="This requires a program restart before the language change will kick in!",
+                        caption="Language changed",
+                    )
 
-                self.Bind(wx.EVT_MENU, language_update(i), id=m.GetId())
-                if language_code not in trans and i != 0:
-                    m.Enable(False)
-                i += 1
-            self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
+                return check
+
+            self.Bind(wx.EVT_MENU, language_update(language_code), id=m.GetId())
+            # if language_code not in trans and i != 0:
+            #     m.Enable(False)
+        self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
     @signal_listener("file;loaded")
     @signal_listener("file;saved")
