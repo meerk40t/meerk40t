@@ -1721,9 +1721,9 @@ def init_tree(kernel):
     hatchable_elems = ("elem path", "elem rect", "elem circle", "elem ellipse", "elem polyline")
 
     @tree_submenu(_("Apply special effect"))
-    @tree_operation(_("Append Line-fill 0.1mm"), node_type=elem_nodes, help="")
+    @tree_operation(_("Append Line-fill 0.1mm"), node_type=hatchable_elems, help="")
     def append_element_effect_eulerian(
-        node, node_type=hatchable_elems, pos=None, **kwargs
+        node, pos=None, **kwargs
     ):
         if node is None:
             return
@@ -1743,9 +1743,9 @@ def init_tree(kernel):
         self.signal("updateelem_tree")
 
     @tree_submenu(_("Apply special effect"))
-    @tree_operation(_("Append diagonal Line-fill 0.1mm"), node_type=elem_nodes, help="")
+    @tree_operation(_("Append diagonal Line-fill 0.1mm"), node_type=hatchable_elems, help="")
     def append_element_effect_eulerian_45(
-        node, node_type=hatchable_elems, pos=None, **kwargs
+        node, pos=None, **kwargs
     ):
         if node is None:
             return
@@ -1764,8 +1764,8 @@ def init_tree(kernel):
         self.signal("updateelem_tree")
 
     @tree_submenu(_("Apply special effect"))
-    @tree_operation(_("Append Line-Fill 1mm"), node_type=elem_nodes, help="")
-    def append_element_effect_line(node, node_type=hatchable_elems, pos=None, **kwargs):
+    @tree_operation(_("Append Line-Fill 1mm"), node_type=hatchable_elems, help="")
+    def append_element_effect_line(node, pos=None, **kwargs):
         if node is None:
             return
         group_node = node.parent.add(
@@ -1783,9 +1783,9 @@ def init_tree(kernel):
         self.signal("updateelem_tree")
 
     @tree_submenu(_("Apply special effect"))
-    @tree_operation(_("Append diagonal Line-Fill 1mm"), node_type=elem_nodes, help="")
+    @tree_operation(_("Append diagonal Line-Fill 1mm"), node_type=hatchable_elems, help="")
     def append_element_effect_line_45(
-        node, node_type=hatchable_elems, pos=None, **kwargs
+        node, pos=None, **kwargs
     ):
         if node is None:
             return
@@ -1808,11 +1808,11 @@ def init_tree(kernel):
         _("Append wobble {type} {radius} @{interval}").format(
             type="Circle", radius="0.5mm", interval="0.05mm"
         ),
-        node_type=elem_nodes,
+        node_type=hatchable_elems,
         help="",
     )
     def append_element_effect_wobble_c05(
-        node, node_type=hatchable_elems, pos=None, **kwargs
+        node, pos=None, **kwargs
     ):
         if node is None:
             return
@@ -1835,11 +1835,11 @@ def init_tree(kernel):
         _("Append wobble {type} {radius} @{interval}").format(
             type="Circle", radius="1mm", interval="0.1mm"
         ),
-        node_type=elem_nodes,
+        node_type=hatchable_elems,
         help="",
     )
     def append_element_effect_wobble_c1(
-        node, node_type=hatchable_elems, pos=None, **kwargs
+        node, pos=None, **kwargs
     ):
         if node is None:
             return
@@ -1862,11 +1862,11 @@ def init_tree(kernel):
         _("Append wobble {type} {radius} @{interval}").format(
             type="Circle", radius="3mm", interval="0.1mm"
         ),
-        node_type=elem_nodes,
+        node_type=hatchable_elems,
         help="",
     )
     def append_element_effect_wobble_c3(
-        node, node_type=hatchable_elems, pos=None, **kwargs
+        node, pos=None, **kwargs
     ):
         if node is None:
             return
