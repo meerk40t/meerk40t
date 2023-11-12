@@ -751,26 +751,6 @@ class wxMeerK40t(wx.App, Module):
         context = self.context
         kernel = context.kernel
 
-        try:  # pyinstaller internal location
-            # pylint: disable=no-member
-            _resource_path = os.path.join(sys._MEIPASS, "locale")
-            wx.Locale.AddCatalogLookupPathPrefix(_resource_path)
-        except Exception:
-            pass
-
-        try:  # Mac py2app resource
-            _resource_path = os.path.join(os.environ["RESOURCEPATH"], "locale")
-            wx.Locale.AddCatalogLookupPathPrefix(_resource_path)
-        except Exception:
-            pass
-
-        wx.Locale.AddCatalogLookupPathPrefix("locale")
-
-        # Default Locale, prepended. Check this first.
-        basepath = os.path.abspath(os.path.dirname(sys.argv[0]))
-        localedir = os.path.join(basepath, "locale")
-        wx.Locale.AddCatalogLookupPathPrefix(localedir)
-
         context.app = self  # Registers self as kernel.app
 
         context.setting(int, "language", None)

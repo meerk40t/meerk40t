@@ -20,7 +20,33 @@ def _(message):
 
 
 def set_language(domain, localedir, language):
-    el = gettext.translation(domain, localedir=localedir, languages=[language], fallback=True)
-    el.install()
-    global _gettext
-    _gettext = el.gettext
+    import sys
+
+    localedirs = list()
+    try:  # pyinstaller internal location
+        # pylint: disable=no-member
+        _resource_path = os.path.join(sys._MEIPASS, localedir)
+        localedirs.append(_resource_path)
+    except Exception:
+        pass
+
+    try:  # Mac py2app resource
+        _resource_path = os.path.join(os.environ["RESOURCEPATH"], localedir)
+        localedirs.append(_resource_path)
+    except Exception:
+        pass
+
+    localedirs.append(localedir)
+
+    # Default Locale, prepended. Check this first.
+    basepath = os.path.abspath(os.path.dirname(sys.argv[0]))
+    working_dir = os.path.join(basepath, localedir)
+    localedirs.append(working_dir)
+
+    for localedir in localedirs:
+        el = gettext.translation(
+            domain, localedir=localedir, languages=[language]
+        )
+        el.install()
+        global _gettext
+        _gettext = el.gettext
