@@ -52,10 +52,28 @@ def plugin(kernel, lifecycle=None):
                 "type": bool,
                 "label": _("Cluster raster objects"),
                 "tip": _(
-                    "Separate non-overlapping raster objects"
+                    "Separate non-overlapping raster objects.\n"
+                    "Active: this will raster close (ie overlapping) objects as one,\n"
+                    "but will separately process objects lying apart from each other.\n"
+                    "Inactive: all objects will be lasered as one single unit."
                 ),
                 "page": "Optimisations",
                 "section": "_20_Reducing Movements",
+                "subsection": "Splitting rasters",
+            },
+            {
+                "attr": "opt_raster_opt_margin",
+                "object": context,
+                "default": "1mm",
+                "type": Length,
+                "label": _("Margin:"),
+                "tip": _(
+                    "Allowed gap between rasterable objects, to still be counted as one."
+                ),
+                "page": "Optimisations",
+                "section": "_20_Reducing Movements",
+                "subsection": "Splitting rasters",
+                "conditional": (context, "opt_raster_optimisation"),
             },
             {
                 "attr": "opt_reduce_travel",
