@@ -20,7 +20,7 @@ def _(message):
 
 
 def set_language(domain, localedir, language):
-    el = gettext.translation(domain, localedir=localedir, languages=[language])
+    el = gettext.translation(domain, localedir=localedir, languages=[language], fallback=True)
     el.install()
     global _gettext
     _gettext = el.gettext
