@@ -829,6 +829,7 @@ def path_offset(
     result = results[0]
     for idx in range(1, len(results)):
         result += results[idx]
+    result.approximate_arcs_with_cubics()
     return result
 
 
