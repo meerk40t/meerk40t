@@ -47,9 +47,9 @@ from .mwindow import MWindow
 from .wxutils import (
     StaticBoxSizer,
     create_menu,
+    dip_size,
     get_key_name,
     is_navigation_key,
-    dip_size,
 )
 
 _ = wx.GetTranslation

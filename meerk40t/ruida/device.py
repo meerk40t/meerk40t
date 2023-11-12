@@ -9,8 +9,8 @@ from meerk40t.kernel import Service
 
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_NM, Length
-from .driver import RuidaDriver
 from ..device.mixins import Status
+from .driver import RuidaDriver
 
 
 class RuidaDevice(Service):

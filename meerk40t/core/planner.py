@@ -51,9 +51,7 @@ def plugin(kernel, lifecycle=None):
                 "default": True,
                 "type": bool,
                 "label": _("Cluster raster objects"),
-                "tip": _(
-                    "Separate non-overlapping raster objects"
-                ),
+                "tip": _("Separate non-overlapping raster objects"),
                 "page": "Optimisations",
                 "section": "_20_Reducing Movements",
             },
