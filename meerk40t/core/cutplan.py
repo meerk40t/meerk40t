@@ -17,7 +17,7 @@ CutPlan handles the various complicated algorithms to optimising the sequence of
 from copy import copy
 from math import isinf
 from os import times
-from time import time, perf_counter
+from time import perf_counter, time
 from typing import Optional
 
 import numpy as np
