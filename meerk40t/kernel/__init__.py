@@ -13,6 +13,7 @@ from .service import *
 from .settings import *
 
 _gettext = lambda e: e
+_gettext_language = None
 
 
 def _(message):
@@ -43,10 +44,17 @@ def set_language(domain, localedir, language):
     working_dir = os.path.join(basepath, localedir)
     localedirs.append(working_dir)
 
+    localedirs.append(None)
+
     for localedir in localedirs:
-        el = gettext.translation(
-            domain, localedir=localedir, languages=[language]
-        )
+        try:
+            el = gettext.translation(
+                domain, localedir=localedir, languages=[language], fallback=localedir is None
+            )
+        except FileNotFoundError:
+            continue
         el.install()
-        global _gettext
+        global _gettext, _gettext_language
         _gettext = el.gettext
+        _gettext_language = language
+        break
