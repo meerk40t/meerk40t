@@ -12,7 +12,7 @@ from .module import *
 from .service import *
 from .settings import *
 
-_gettext = None
+_gettext = lambda e: e
 
 
 def _(message):
