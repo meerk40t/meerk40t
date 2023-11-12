@@ -1,5 +1,5 @@
 """
-This is a large number of flagged tree operations. The details of how these are registered is availible in the treeop.py
+This is a large number of flagged tree operations. The details of how these are registered is available in the treeop.py
 file. These define the right-click node menu operations. That menu is dynamically created based on various context
 cues.
 """
@@ -195,7 +195,6 @@ def init_tree(kernel):
     @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
     @tree_operation(_("Group elements"), node_type=elem_nodes, help="")
     def group_elements(node, **kwargs):
-
         def minimal_parent(data):
             result = None
             root = self.elem_branch
@@ -1718,13 +1717,17 @@ def init_tree(kernel):
                     ref.remove_node()
         self.signal("refresh_tree")
 
-    hatchable_elems = ("elem path", "elem rect", "elem circle", "elem ellipse", "elem polyline")
+    hatchable_elems = (
+        "elem path",
+        "elem rect",
+        "elem circle",
+        "elem ellipse",
+        "elem polyline",
+    )
 
     @tree_submenu(_("Apply special effect"))
     @tree_operation(_("Append Line-fill 0.1mm"), node_type=hatchable_elems, help="")
-    def append_element_effect_eulerian(
-        node, pos=None, **kwargs
-    ):
+    def append_element_effect_eulerian(node, pos=None, **kwargs):
         if node is None:
             return
 
@@ -1743,10 +1746,10 @@ def init_tree(kernel):
         self.signal("updateelem_tree")
 
     @tree_submenu(_("Apply special effect"))
-    @tree_operation(_("Append diagonal Line-fill 0.1mm"), node_type=hatchable_elems, help="")
-    def append_element_effect_eulerian_45(
-        node, pos=None, **kwargs
-    ):
+    @tree_operation(
+        _("Append diagonal Line-fill 0.1mm"), node_type=hatchable_elems, help=""
+    )
+    def append_element_effect_eulerian_45(node, pos=None, **kwargs):
         if node is None:
             return
         group_node = node.parent.add(
@@ -1783,10 +1786,10 @@ def init_tree(kernel):
         self.signal("updateelem_tree")
 
     @tree_submenu(_("Apply special effect"))
-    @tree_operation(_("Append diagonal Line-Fill 1mm"), node_type=hatchable_elems, help="")
-    def append_element_effect_line_45(
-        node, pos=None, **kwargs
-    ):
+    @tree_operation(
+        _("Append diagonal Line-Fill 1mm"), node_type=hatchable_elems, help=""
+    )
+    def append_element_effect_line_45(node, pos=None, **kwargs):
         if node is None:
             return
         group_node = node.parent.add(
@@ -1811,9 +1814,7 @@ def init_tree(kernel):
         node_type=hatchable_elems,
         help="",
     )
-    def append_element_effect_wobble_c05(
-        node, pos=None, **kwargs
-    ):
+    def append_element_effect_wobble_c05(node, pos=None, **kwargs):
         if node is None:
             return
         group_node = node.parent.add(
@@ -1838,9 +1839,7 @@ def init_tree(kernel):
         node_type=hatchable_elems,
         help="",
     )
-    def append_element_effect_wobble_c1(
-        node, pos=None, **kwargs
-    ):
+    def append_element_effect_wobble_c1(node, pos=None, **kwargs):
         if node is None:
             return
         group_node = node.parent.add(
@@ -1865,9 +1864,7 @@ def init_tree(kernel):
         node_type=hatchable_elems,
         help="",
     )
-    def append_element_effect_wobble_c3(
-        node, pos=None, **kwargs
-    ):
+    def append_element_effect_wobble_c3(node, pos=None, **kwargs):
         if node is None:
             return
         group_node = node.parent.add(
