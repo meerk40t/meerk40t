@@ -127,8 +127,9 @@ class Kernel(Settings):
         self._dirty_paths = []
         self._lookup_lock = threading.Lock()
 
-        # The translation object to be overridden by any valid translation functions
-        self.translation = lambda e: e
+        # define translation
+        from . import _
+        self.translation = _
 
         # The function used to process the signals. This is useful if signals should be kept to a single thread.
         self.scheduler_handles_main_thread_jobs = True
@@ -170,6 +171,10 @@ class Kernel(Settings):
 
     def __str__(self):
         return "Kernel()"
+
+    def set_language(self, language, localedir="locale"):
+        from . import set_language
+        set_language(self.name, localedir=localedir, language=language)
 
     def open_safe(self, filename, *args):
         """
