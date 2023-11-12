@@ -4,17 +4,19 @@ Newly Device
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.view import View
+from meerk40t.device.mixins import Status
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.newly.driver import NewlyDriver
 
 
-class NewlyDevice(Service):
+class NewlyDevice(Service, Status):
     """
     Newly Device
     """
 
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
+        Status.__init__(self)
         self.name = "newly"
         self.extension = "hpgl"
         self.job = None

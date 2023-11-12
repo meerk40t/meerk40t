@@ -168,12 +168,13 @@ class Clip:
         subject.index = len(subject.segments)
         return subject
 
-    def polycut(self, subject):
+    def polycut(self, subject, breaks=False):
         """
         Performs polycut on the subject using the preset clipping shape. This only prevents intersections making all
         intersections into divided segments.
 
         @param subject:
+        @param breaks: should the polycut insert overt breaks.
         @return:
         """
         clip = self.clipping_shape
@@ -186,7 +187,7 @@ class Clip:
             s = splits[s0]
             if not s:
                 continue
-            split_lines = list(subject.split(s0, s))
+            split_lines = list(subject.split(s0, s, breaks=breaks))
             subject.replace(s0, s0, split_lines)
         subject.validate()
         return subject
@@ -378,13 +379,237 @@ class Pattern:
                 yield self.geomstr.as_transformed(m)
 
 
-class PolyBool:
-    def __init__(self):
-        self.inputs = list()
-        # List of each segment info about it.
+class BeamTable:
+    def __init__(self, geom):
+        self.geometry = geom
+        self._nb_events = None
+        self._nb_scan = None
+        self.intersections = Geomstr()
 
-    def add_segments(self, g):
-        self.inputs.append(g)
+    def sort_key(self, e):
+        return e[0].real, e[0].imag, ~e[1]
+
+    def compute_beam(self):
+        g = self.geometry
+        gs = g.segments
+        events = []
+        # Add start and end events.
+        for i in range(g.index):
+            if gs[i][2] != TYPE_LINE:
+                continue
+            if (gs[i][0].imag, gs[i][0].real) < (gs[i][-1].imag, gs[i][-1].real):
+                events.append((g.segments[i][0], i, None))
+                events.append((g.segments[i][-1], ~i, None))
+            else:
+                events.append((g.segments[i][0], ~i, None))
+                events.append((g.segments[i][-1], i, None))
+
+        # Sort start and end events.
+        events.sort(key=self.sort_key)
+
+        def check_intersection(q, r, y):
+            """
+            Check for intersections between p and r, at y.
+
+            p must occur before r in the sorted actives.
+
+            y is used to ensure this is a future point.
+            @param q: lower-active value
+            @param r: higher-active value
+            @param y: y value to not be equal
+            @return:
+            """
+            try:
+                for t1, t2 in g.intersections(q, r):
+                    if t1 in (0, 1) and t2 in (0, 1):
+                        continue
+                    pt_intersect = g.position(q, t1)
+                    if y < pt_intersect.imag:
+                        events.append((pt_intersect, 0, (q, r)))
+                        self.intersections.point(pt_intersect)
+                        events.sort(key=self.sort_key)
+            except AttributeError:
+                pass
+
+        # Store currently active segments.
+        actives = []
+
+        # Store previously active segments
+        active_lists = []
+
+        largest_actives = 0
+        for pt, index, swap in events:
+            x_pos = pt.real
+            y_pos = pt.imag
+            if isinstance(swap, tuple):
+                idx1, idx2 = swap
+                pos1 = actives.index(idx1)
+                pos2 = actives.index(idx2)
+                actives[pos1], actives[pos2] = actives[pos2], actives[pos1]
+                # We swapped pos1 and pos2 so we must check the outer values of this swap.
+                try:
+                    check_intersection(actives[pos1 - 1], actives[pos1], y_pos)
+                except IndexError:
+                    pass
+                try:
+                    check_intersection(actives[pos2], actives[pos2 + 1], y_pos)
+                except IndexError:
+                    pass
+            elif index >= 0:
+                # Index is being inserted, find x-position sorted.
+                lines = g.segments[actives]
+                a = lines[:, 0]
+                b = lines[:, -1]
+
+                old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
+                try:
+                    # If horizontal slope is undefined. But, all x-ints are at x since x0=x1
+                    m = (b.imag - a.imag) / (b.real - a.real)
+                    y0 = a.imag - (m * a.real)
+                    x_intercepts = np.where(~np.isinf(m), (y_pos - y0) / m, a.real)
+                finally:
+                    np.seterr(**old_np_seterr)
+                idx = np.searchsorted(x_intercepts, np.imag(pt))
+                actives.insert(idx, index)
+                if len(actives) > largest_actives:
+                    largest_actives = len(actives)
+
+                # Check intersections between idx, idx + 1
+                try:
+                    check_intersection(index, actives[idx + 1], y_pos)
+                except IndexError:
+                    pass
+
+                # Check intersections between idx, idx - 1
+                try:
+                    check_intersection(actives[idx - 1], index, y_pos)
+                except IndexError:
+                    pass
+            else:
+                remove_index = actives.index(~index)
+                # Check intersections between idx-1, idx+ 1
+                try:
+                    check_intersection(actives[idx - 1], actives[idx + 1], y_pos)
+                except IndexError:
+                    pass
+                del actives[remove_index]
+
+            active_lists.append(list(actives))
+
+        active_lists.append([])
+        self._nb_events = [(e.imag, e.real) for e, _, _ in events]
+        self._nb_scan = np.zeros((len(active_lists), largest_actives), dtype=int)
+        self._nb_scan -= 1
+        for i, active in enumerate(active_lists):
+            self._nb_scan[i, 0 : len(active)] = active
+
+    def compute_beam_brute(self):
+        g = self.geometry
+        gs = g.segments
+        events = []
+        # Add start and end events.
+        for i in range(g.index):
+            if gs[i][2] != TYPE_LINE:
+                continue
+            if (gs[i][0].real, gs[i][0].imag) < (gs[i][-1].real, gs[i][-1].imag):
+                events.append((g.segments[i][0], i, None))
+                events.append((g.segments[i][-1], ~i, None))
+            else:
+                events.append((g.segments[i][0], ~i, None))
+                events.append((g.segments[i][-1], i, None))
+
+        wh, p, ta, tb = g.brute_line_intersections()
+        for w, pos in zip(wh, p):
+            events.append((pos, 0, w))
+            self.intersections.point(pos)
+
+        # Sort start, end, intersections events.
+        events.sort(key=self.sort_key)
+
+        # Store currently active segments.
+        actives = []
+
+        scanline = None
+
+        def x_ints(e):
+            return g.x_intercept(e, np.real(scanline))
+
+        # Store previously active segments
+        active_lists = []
+        real_events = []
+
+        largest_actives = 0
+
+        for i in range(len(events)):
+            event = events[i]
+            pt, index, swap = event
+
+            try:
+                next, _, _ = events[i + 1]
+                scanline = (pt + next) / 2
+            except IndexError:
+                next = complex(float("inf"), float("inf"))
+                scanline = next
+
+            if swap is not None:
+                pass
+            elif index >= 0:
+                actives.append(index)
+            else:
+                remove_index = actives.index(~index)
+                del actives[remove_index]
+
+            if pt != next:
+                if len(actives) > largest_actives:
+                    largest_actives = len(actives)
+                actives.sort(key=x_ints)
+                real_events.append(pt)
+                active_lists.append(list(actives))
+
+        self._nb_events = real_events
+        self._nb_scan = np.zeros((len(active_lists), largest_actives), dtype=int)
+        self._nb_scan -= 1
+        for i, active in enumerate(active_lists):
+            self._nb_scan[i, 0 : len(active)] = active
+
+    def points_in_polygon(self, e):
+        if self._nb_scan is None:
+            self.compute_beam_brute()
+        idx = np.searchsorted(self._nb_events, e)
+        actives = self._nb_scan[idx]
+        line = self.geometry.segments[actives]
+        a = line[:, :, 0]
+        a = np.where(actives == -1, np.nan + np.nan * 1j, a)
+        b = line[:, :, -1]
+        b = np.where(actives == -1, np.nan + np.nan * 1j, b)
+
+        q = self.geometry.y_intercept(actives, np.real(e))
+        # print(q)
+
+        old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
+        try:
+            # If horizontal slope is undefined. But, all x-ints are at x since x0=x1
+            m = (b.real - a.real) / (b.imag - a.imag)
+            y0 = a.real - (m * a.imag)
+            ys = np.reshape(np.repeat(np.real(e), y0.shape[1]), y0.shape)
+            y_intercepts = np.where(~np.isinf(m), (ys - y0) / m, a.imag)
+        finally:
+            np.seterr(**old_np_seterr)
+        xs = np.reshape(np.repeat(np.imag(e), y0.shape[1]), y0.shape)
+        results = np.sum(y_intercepts <= xs, axis=1)
+        results %= 2
+        return results
+
+    def actives_at(self, value):
+        from bisect import bisect
+
+        if not self._nb_scan:
+            self.compute_beam_brute()
+        idx = np.searchsorted(self._nb_events, value)
+        # idx = bisect(self._nb_events, (value.imag, value.real))
+        actives = self._nb_scan[idx - 1]
+        aw = np.argwhere(actives != -1)[:, 0]
+        return actives[aw]
 
 
 class Scanbeam:
@@ -1348,6 +1573,11 @@ class Geomstr:
         self.allocate_at_position(e, space)
         self.segments[e : e + space] = lines
 
+    def append_lines(self, lines):
+        self._ensure_capacity(self.index + len(lines))
+        self.segments[self.index : self.index + len(lines)] = lines
+        self.index += len(lines)
+
     def append(self, other):
         self._ensure_capacity(self.index + other.index + 1)
         if self.index != 0:
@@ -1738,6 +1968,36 @@ class Geomstr:
         # Map 0 to position of p1
         r.translate(p1.real, p1.imag)
         return r
+
+    def divide(self, other):
+        """
+        Divide the current closed point shape by the other.
+
+        This should probably use the other part doing to splitting to create a proper divide. So if cut with a bezier
+        we would get a bezier segment making the connection on both sides of the shape.
+
+        @param other:
+        @return:
+        """
+        closed = self.is_closed()
+        c = Clip(other)
+        polycut = c.polycut(self, breaks=True)
+
+        geoms = list()
+        g = Geomstr()
+        geoms.append(g)
+        for e in polycut.segments[: self.index]:
+            if e[2].real == TYPE_END:
+                g = Geomstr()
+                geoms.append(g)
+            else:
+                g.append_lines([e])
+        if closed and len(geoms) >= 2:
+            first = geoms[0]
+            last = geoms[-1]
+            del geoms[-1]
+            first.insert(0, last.segments[: last.index])
+        return geoms
 
     def round_corners(self, amount=0.2):
         """
@@ -2299,7 +2559,7 @@ class Geomstr:
 
         return quad(_abs_derivative, 0.0, 1.0, epsabs=1e-12, limit=1000)[0]
 
-    def split(self, e, t):
+    def split(self, e, t, breaks=False):
         """
         Splits individual geom e at position t [0-1]
 
@@ -2319,19 +2579,27 @@ class Geomstr:
             mid = self.towards(start, end, t)
             if isinstance(mid, complex):
                 yield start, control, info, control2, mid
+                if breaks:
+                    yield mid, mid, complex(TYPE_END, info.imag), mid, mid
                 yield mid, control, info, control2, end
             else:
                 # Mid is an array of complexes
                 yield start, control, info, control2, mid[0]
                 for i in range(1, len(mid)):
+                    if breaks:
+                        yield mid[i - 1], mid[i - 1], complex(TYPE_END, info.imag), mid[
+                            i - 1
+                        ], mid[i - 1]
                     yield mid[i - 1], control, info, control2, mid[i]
+                if breaks:
+                    yield mid[-1], 0, complex(TYPE_END, info.imag), 0, mid[-1]
                 yield mid[-1], control, info, control2, end
         if info.real == TYPE_QUAD:
-            yield from self._split_quad(e, t)
+            yield from self._split_quad(e, t, breaks=breaks)
         if info.real == TYPE_CUBIC:
-            yield from self._split_cubic(e, t)
+            yield from self._split_cubic(e, t, breaks=breaks)
 
-    def _split_quad(self, e, t):
+    def _split_quad(self, e, t, breaks):
         """
         Performs deCasteljau's algorithm unrolled.
         """
@@ -2349,7 +2617,9 @@ class Geomstr:
                 last = 0.0
                 for t0 in sorted(t):
                     # Thanks tiger.
-                    splits = list(self._split_quad(e, (t0 - last) / (1 - last)))
+                    splits = list(
+                        self._split_quad(e, (t0 - last) / (1 - last), breaks=breaks)
+                    )
                     last = t0
                     yield splits[0]
                     e = splits[1]
@@ -2360,9 +2630,10 @@ class Geomstr:
         r1_1 = t * (end - control) + control
         r2 = t * (r1_1 - r1_0) + r1_0
         yield start, r1_0, info, r1_0, r2
+        # yield r2, 0, complex(TYPE_END, info.imag), 0, r2
         yield r2, r1_1, info, r1_1, end
 
-    def _split_cubic(self, e, t):
+    def _split_cubic(self, e, t, breaks=False):
         if (
             not isinstance(e, (np.ndarray, tuple, list))
             or len(e) == 0
@@ -2376,7 +2647,9 @@ class Geomstr:
                 t = np.sort(t)
                 last = 0.0
                 for t0 in sorted(t):
-                    splits = list(self._split_cubic(e, (t0 - last) / (1 - last)))
+                    splits = list(
+                        self._split_cubic(e, (t0 - last) / (1 - last), breaks=breaks)
+                    )
                     last = t0
                     yield splits[0]
                     e = splits[1]
@@ -2390,6 +2663,7 @@ class Geomstr:
         r2_1 = t * (r1_2 - r1_1) + r1_1
         r3 = t * (r2_1 - r2_0) + r2_0
         yield start, r1_0, info, r2_0, r3
+        # yield r3, 0, complex(TYPE_END, info.imag), 0, r3
         yield r3, r2_1, info, r1_2, end
 
     def normal(self, e, t):
@@ -3043,6 +3317,57 @@ class Geomstr:
         finally:
             np.seterr(**old_np_seterr)
 
+    def brute_line_intersections(self):
+        """
+        Brute line intersections finds all the intersections of all the lines in the geomstr with brute force.
+
+        @return: intersection-indexes, position, t-values
+        """
+        geoms = self.segments[: self.index]
+        infos = np.real(geoms[:, 2]).astype(int)
+        q = np.where(infos == TYPE_LINE)
+        starts = geoms[q][:, 0]
+        ends = geoms[q][:, -1]
+        lines = np.dstack((starts, ends))[0]
+        x, y = np.triu_indices(len(starts), 1)
+        j = lines[x]
+        k = lines[y]
+        a1 = j[:, 0]
+        ax1 = np.real(a1)
+        ay1 = np.imag(a1)
+        b1 = k[:, 0]
+        bx1 = np.real(b1)
+        by1 = np.imag(b1)
+        a2 = j[:, 1]
+        ax2 = np.real(a2)
+        ay2 = np.imag(a2)
+        b2 = k[:, 1]
+        bx2 = np.real(b2)
+        by2 = np.imag(b2)
+
+        denom = (by2 - by1) * (ax2 - ax1) - (bx2 - bx1) * (ay2 - ay1)
+        qa = (bx2 - bx1) * (ay1 - by1) - (by2 - by1) * (ax1 - bx1)
+        qb = (ax2 - ax1) * (ay1 - by1) - (ay2 - ay1) * (ax1 - bx1)
+        hits = np.dstack(
+            (
+                denom != 0,  # Cannot be parallel.
+                np.sign(denom) == np.sign(qa),  # D and Qa must have same sign.
+                np.sign(denom) == np.sign(qb),  # D and Qb must have same sign.
+                abs(denom) >= abs(qa),  # D >= Qa (else not between 0 - 1)
+                abs(denom) >= abs(qb),  # D >= Qb (else not between 0 - 1)
+            )
+        )
+        hits = hits.all(axis=2)[0]
+
+        where_hits = np.dstack((x[hits], y[hits]))[0]
+        ta_hit = qa[hits] / denom[hits]
+        tb_hit = qb[hits] / denom[hits]
+
+        x_vals = ax1[hits] + ta_hit * (ax2[hits] - ax1[hits])
+        y_vals = ay1[hits] + ta_hit * (ay2[hits] - ay1[hits])
+
+        return where_hits, x_vals + y_vals * 1j, ta_hit, tb_hit
+
     #######################
     # Geom Tranformations
     #######################
@@ -3504,13 +3829,20 @@ class Geomstr:
         @return:
         """
         line = self.segments[e]
-        a = line[0]
-        b = line[-1]
-        if b.real - a.real == 0:
-            return float("inf")
-        return (b.imag - a.imag) / (b.real - a.real)
+        if len(line.shape) == 2:
+            a = line[:, 0]
+            b = line[:, -1]
+        else:
+            a = line[0]
+            b = line[-1]
+        old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
+        try:
+            m = (b.imag - a.imag) / (b.real - a.real)
+        finally:
+            np.seterr(**old_np_seterr)
+        return m
 
-    def y_intercept(self, e):
+    def y_at_axis(self, e):
         """
         y_intercept value between start and end points.
 
@@ -3518,12 +3850,18 @@ class Geomstr:
         @return:
         """
         line = self.segments[e]
-        a = line[0]
-        b = line[-1]
-        if b.real - a.real == 0:
-            return float("inf")
-        im = (b.imag - a.imag) / (b.real - a.real)
-        return a.imag - (im * a.real)
+        if len(line.shape) == 2:
+            a = line[:, 0]
+            b = line[:, -1]
+        else:
+            a = line[0]
+            b = line[-1]
+        old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
+        try:
+            im = (b.imag - a.imag) / (b.real - a.real)
+            return a.imag - (im * a.real)
+        finally:
+            np.seterr(**old_np_seterr)
 
     def endpoint_min_y(self, e):
         """
@@ -3593,12 +3931,45 @@ class Geomstr:
         @param y:
         @return:
         """
-        m = self.slope(e)
-        b = self.y_intercept(e)
-        if math.isnan(m) or math.isinf(m):
-            low = self.endpoint_min_y(e)
-            return low.real
-        return (y - b) / m
+        line = self.segments[e]
+        if len(line.shape) == 2:
+            a = line[:, 0]
+            b = line[:, -1]
+        else:
+            a = line[0]
+            b = line[-1]
+        old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
+        try:
+            # If horizontal slope is undefined. But, all x-ints are at x since x0=x1
+            m = (b.imag - a.imag) / (b.real - a.real)
+            y0 = a.imag - (m * a.real)
+            return np.where(~np.isinf(m), (y - y0) / m, a.real)
+        finally:
+            np.seterr(**old_np_seterr)
+
+    def y_intercept(self, e, x):
+        """
+        Gives the y_intercept of a line at a specific value of x.
+
+        @param e:
+        @param x:
+        @return:
+        """
+        line = self.segments[e]
+        if len(line.shape) == 2:
+            a = line[:, 0]
+            b = line[:, -1]
+        else:
+            a = line[0]
+            b = line[-1]
+        old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
+        try:
+            # If vertical slope is undefined. But, all y-ints are at y since y0=y1
+            m = (b.real - a.real) / (b.imag - a.imag)
+            x0 = a.real - (m * a.imag)
+            return np.where(~np.isinf(m), (x - x0) / m, a.imag)
+        finally:
+            np.seterr(**old_np_seterr)
 
     #######################
     # Geometry Window Functions

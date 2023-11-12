@@ -7,6 +7,7 @@ from meerk40t.kernel import CommandSyntaxError
 from ..core.exceptions import BadFileError
 from ..core.units import DEFAULT_PPI, UNITS_PER_PIXEL
 from ..svgelements import Angle, Color, Matrix, Path
+from ..tools.geomstr import Geomstr
 
 
 def plugin(kernel, lifecycle=None):
@@ -992,6 +993,87 @@ def plugin(kernel, lifecycle=None):
             channel(_("Image Equalized."))
         context.signal("element_property_update", data)
         return "image", data
+
+    @context.console_argument(
+        "x1",
+        type=float,
+        help=_("X position of image cutline"),
+    )
+    @context.console_argument(
+        "y1",
+        type=float,
+        help=_("Y position of image cutline"),
+    )
+    @context.console_argument(
+        "x2",
+        type=float,
+        help=_("X position of image cutline"),
+    )
+    @context.console_argument(
+        "y2",
+        type=float,
+        help=_("Y position of image cutline"),
+    )
+    @context.console_command(
+        "linecut",
+        help=_("Cuts and image with a line"),
+        input_type="image",
+        output_type="image",
+        hidden=True,
+    )
+    def image_linecut(command, channel, _, data, x1, y1, x2, y2, **kwargs):
+        data_out = list()
+        for inode in data:
+            if inode.lock:
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
+                continue
+            b = inode.bounds
+
+            from meerk40t.core.node.elem_path import PathNode
+            from meerk40t.core.node.elem_rect import RectNode
+            from meerk40t.extra.imageactions import create_image, mask_image
+
+            rectnode = RectNode(
+                x=b[0],
+                y=b[1],
+                width=b[2] - b[0],
+                height=b[3] - b[1],
+                stroke=None,
+                fill=None,
+            )
+            bounds_rect = Geomstr.rect(b[0], b[1], b[2] - b[0], b[3] - b[1])
+            line = Geomstr.lines(complex(x1, y1), complex(x2, y2))
+            geoms = bounds_rect.divide(line)
+            parent = inode.parent
+
+            make_raster = context.elements.lookup("render-op/make_raster")
+
+            elemimage, elemmatrix = create_image(
+                make_raster, [inode], b, inode.dpi, keep_ratio=True
+            )
+
+            for g in geoms:
+                masknode = PathNode(geometry=g, stroke=None, fill=Color("black"))
+                # Make sure they have the right size by adding a dummy node to it...
+
+                maskimage, maskmatrix = create_image(
+                    make_raster, (masknode, rectnode), b, inode.dpi, keep_ratio=True
+                )
+                if maskimage is None or elemimage is None:
+                    channel(_("Intermediary images were none"))
+                    continue
+
+                out = mask_image(
+                    elemimage, maskimage, elemmatrix, inode.dpi, dx=b[0], dy=b[1]
+                )
+                for imnode in out:
+                    parent.add_node(imnode)
+                data_out.extend(out)
+
+        context.signal("element_property_update", data_out)
+        return "image", data_out
 
     @context.console_argument(
         "x",

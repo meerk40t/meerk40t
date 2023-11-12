@@ -175,6 +175,7 @@ class DevicePanel(wx.Panel):
         self.devices_list.InsertColumn(0, _("Device"))
         self.devices_list.InsertColumn(1, _("Driver"))
         self.devices_list.InsertColumn(2, _("Type"))
+        self.devices_list.InsertColumn(3, _("Status"))
         sizer_1.Add(self.devices_list, 7, wx.EXPAND, 0)
 
         sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
@@ -257,9 +258,10 @@ class DevicePanel(wx.Panel):
         size = self.devices_list.GetSize()
         if size[0] == 0 or size[1] == 0:
             return
-        self.devices_list.SetColumnWidth(0, int(0.5 * size[0]))
+        self.devices_list.SetColumnWidth(0, int(0.4 * size[0]))
         self.devices_list.SetColumnWidth(1, int(0.25 * size[0]))
         self.devices_list.SetColumnWidth(2, int(0.25 * size[0]))
+        self.devices_list.SetColumnWidth(3, int(0.10 * size[0]))
 
     def on_end_edit(self, event):
         prohibited = "'" + '"' + "/"
@@ -292,6 +294,8 @@ class DevicePanel(wx.Panel):
             else:
                 self.devices_list.SetItemTextColour(idx, stdcol)
 
+    @signal_listener("pause")
+    @signal_listener("pipe;running")
     @signal_listener("activate;device")
     @lookup_listener("service/device/available")
     def refresh_device_tree(self, *args):
@@ -333,13 +337,26 @@ class DevicePanel(wx.Panel):
             family_info = device.setting(str, "source", family_default)
             if family_info:
                 family_info = family_info.capitalize()
+            active_status = ""
+            try:
+                if hasattr(device, "laser_status"):
+                    active_status = device.laser_status
+            except AttributeError:
+                active_status = "??"
+
+            try:
+                if hasattr(device, "driver") and hasattr(device.driver, "paused"):
+                    if device.driver.paused:
+                        active_status = "paused"
+            except AttributeError:
+                pass
+
             self.devices_list.SetItem(index, 1, type_info)
             self.devices_list.SetItem(index, 2, family_info)
+            self.devices_list.SetItem(index, 3, _(active_status))
             self.devices_list.SetItemData(index, dev_index)
             if self.context.device is device:
                 self.devices_list.SetItemTextColour(index, wx.RED)
-
-        self.devices_list.SetFocus()
         self.on_item_selected(None)
 
     def get_new_label_for_device(self, device_type):

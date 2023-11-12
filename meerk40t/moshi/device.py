@@ -11,17 +11,19 @@ from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_MIL, Length
+from ..device.mixins import Status
 from .controller import MoshiController
 from .driver import MoshiDriver
 
 
-class MoshiDevice(Service):
+class MoshiDevice(Service, Status):
     """
     MoshiDevice is driver for the Moshiboard boards.
     """
 
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
+        Status.__init__(self)
         self.name = "MoshiDevice"
         self.extension = "mos"
         if choices is not None:

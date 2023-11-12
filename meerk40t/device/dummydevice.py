@@ -2,7 +2,7 @@ from meerk40t.core.spoolers import Spooler
 from meerk40t.core.view import View
 from meerk40t.kernel import Service
 
-from ..core.units import UNITS_PER_MIL
+from .mixins import Status
 
 
 def plugin(kernel, lifecycle=None):
@@ -27,7 +27,7 @@ def plugin(kernel, lifecycle=None):
         )
 
 
-class DummyDevice(Service):
+class DummyDevice(Service, Status):
     """
     DummyDevice is a mock device service. It provides no actual device.
 
@@ -36,6 +36,7 @@ class DummyDevice(Service):
 
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
+        Status.__init__(self)
         self.name = "Dummy Device"
         if choices is not None:
             for c in choices:

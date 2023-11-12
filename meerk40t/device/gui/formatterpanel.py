@@ -25,6 +25,7 @@ from meerk40t.gui.icons import (
     icons8_text,
     icons8_vector,
 )
+from meerk40t.gui.wxutils import dip_size
 
 _ = wx.GetTranslation
 
@@ -110,10 +111,13 @@ class FormatterPanel(wx.Panel):
                 "signals": ("rebuild_tree", "speed_min"),
             },
         ]
+        testsize = dip_size(self, 20, 20)
+        imgsize = testsize[1]
         for node in self.node_list:
-            imgsize = 20
             if node in images:
-                image = images[node].GetBitmap(resize=imgsize, noadjustment=True)
+                image = images[node].GetBitmap(
+                    resize=imgsize, buffer=2, noadjustment=True
+                )
             else:
                 # print (f"Did not find {node}")
                 continue
