@@ -1728,9 +1728,6 @@ def init_tree(kernel):
     @tree_submenu(_("Apply special effect"))
     @tree_operation(_("Append Line-fill 0.1mm"), node_type=hatchable_elems, help="")
     def append_element_effect_eulerian(node, pos=None, **kwargs):
-        if node is None:
-            return
-
         group_node = node.parent.add(
             type="effect hatch",
             hatch_type="scanline",
@@ -1750,8 +1747,6 @@ def init_tree(kernel):
         _("Append diagonal Line-fill 0.1mm"), node_type=hatchable_elems, help=""
     )
     def append_element_effect_eulerian_45(node, pos=None, **kwargs):
-        if node is None:
-            return
         group_node = node.parent.add(
             type="effect hatch",
             hatch_type="scanline",  # scanline / eulerian
@@ -1769,8 +1764,6 @@ def init_tree(kernel):
     @tree_submenu(_("Apply special effect"))
     @tree_operation(_("Append Line-Fill 1mm"), node_type=hatchable_elems, help="")
     def append_element_effect_line(node, pos=None, **kwargs):
-        if node is None:
-            return
         group_node = node.parent.add(
             type="effect hatch",
             hatch_type="scanline",
@@ -1790,8 +1783,6 @@ def init_tree(kernel):
         _("Append diagonal Line-Fill 1mm"), node_type=hatchable_elems, help=""
     )
     def append_element_effect_line_45(node, pos=None, **kwargs):
-        if node is None:
-            return
         group_node = node.parent.add(
             type="effect hatch",
             hatch_type="scanline",
@@ -1815,8 +1806,6 @@ def init_tree(kernel):
         help="",
     )
     def append_element_effect_wobble_c05(node, pos=None, **kwargs):
-        if node is None:
-            return
         group_node = node.parent.add(
             type="effect wobble",
             wobble_type="circle",
@@ -1840,8 +1829,6 @@ def init_tree(kernel):
         help="",
     )
     def append_element_effect_wobble_c1(node, pos=None, **kwargs):
-        if node is None:
-            return
         group_node = node.parent.add(
             type="effect wobble",
             wobble_type="circle",
@@ -1865,8 +1852,6 @@ def init_tree(kernel):
         help="",
     )
     def append_element_effect_wobble_c3(node, pos=None, **kwargs):
-        if node is None:
-            return
         group_node = node.parent.add(
             type="effect wobble",
             wobble_type="circle_right",
@@ -2666,8 +2651,6 @@ def init_tree(kernel):
     @tree_separator_before()
     @tree_operation(_("Create placement"), node_type=elem_nodes, help="")
     def regmark_as_placement(node, **kwargs):
-        if node is None:
-            return
         if hasattr(node, "path"):
             bb = node.path.bbox(transformed=False)
         elif hasattr(node, "shape"):
@@ -2695,8 +2678,6 @@ def init_tree(kernel):
     @tree_submenu(_("Toggle Magnet-Lines"))
     @tree_operation(_("Around border"), node_type=elem_group_nodes, help="")
     def regmark_to_magnet_1(node, **kwargs):
-        if node is None:
-            return
         if not hasattr(node, "bounds"):
             return
         self.signal("magnet_gen", ("outer", node))
@@ -2705,8 +2686,6 @@ def init_tree(kernel):
     @tree_submenu(_("Toggle Magnet-Lines"))
     @tree_operation(_("At center"), node_type=elem_group_nodes, help="")
     def regmark_to_magnet_2(node, **kwargs):
-        if node is None:
-            return
         if not hasattr(node, "bounds"):
             return
         self.signal("magnet_gen", ("center", node))
