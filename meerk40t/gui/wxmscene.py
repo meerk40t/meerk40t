@@ -1294,14 +1294,16 @@ class MeerK40tScenePanel(wx.Panel):
     def on_close(self, event):
         self.save_magnets()
 
+    @signal_listener("pause")
     @signal_listener("pipe;running")
-    def on_driver_mode(self, origin, state):
+    def on_driver_mode(self, origin, *args):
+        # pipe running has (state) as args
         new_color = None
         try:
-            if self.context.device.laser_status == "active":
-                new_color = self.context.themes.get("stop_bg")
-            elif self.context.device.driver.paused:
+            if self.context.device.driver.paused:
                 new_color = self.context.themes.get("pause_bg")
+            elif self.context.device.laser_status == "active":
+                new_color = self.context.themes.get("stop_bg")
         except AttributeError:
             pass
         self.widget_scene.overrule_background = new_color

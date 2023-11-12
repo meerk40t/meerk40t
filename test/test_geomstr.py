@@ -12,14 +12,14 @@ from meerk40t.fill.patterns import set_diamond1, set_line
 from meerk40t.svgelements import Arc, CubicBezier, Line, Matrix, QuadraticBezier
 from meerk40t.tools.geomstr import (
     TYPE_LINE,
+    TYPE_POINT,
+    BeamTable,
     Clip,
     Geomstr,
     MergeGraph,
     Pattern,
     Polygon,
     Scanbeam,
-    BeamTable,
-    TYPE_POINT,
 )
 
 

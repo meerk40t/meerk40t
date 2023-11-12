@@ -88,6 +88,9 @@ class TestKernel(unittest.TestCase):
                     func_dict = dict(func.func_dict)
                     print(f"Executing: {func.name}")
                     func(n, **func_dict)
+                    if n.parent is None:
+                        # This function removed the element. Put it back in the tree.
+                        kernel.elements.elem_branch.add_node(n)
         finally:
             kernel.console("elements\n")
             kernel.shutdown()

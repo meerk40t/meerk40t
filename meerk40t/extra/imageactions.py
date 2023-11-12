@@ -141,7 +141,9 @@ def split_image(elements, image, matrix, bounds, dpi, cols, rows):
             tilematrix = copy(matrix)
             tilematrix.post_translate(offset_x, offset_y)
 
-            image_node = context.add(type="elem image", image=tile, matrix=tilematrix, dpi=dpi)
+            image_node = context.add(
+                type="elem image", image=tile, matrix=tilematrix, dpi=dpi
+            )
             data_out.append(image_node)
 
             startx = endx + 1
@@ -214,9 +216,15 @@ def plugin(kernel, lifecycle):
     @kernel.console_option(
         "order", "o", help=_("ordering selection: none, first, last"), type=str
     )
-    @kernel.console_option("invert", "i", help=_("invert masking of image"), type=bool, action="store_true")
     @kernel.console_option(
-        "outline", "b", help=_("add outline of keyhole shape"), type=bool, action="store_true"
+        "invert", "i", help=_("invert masking of image"), type=bool, action="store_true"
+    )
+    @kernel.console_option(
+        "outline",
+        "b",
+        help=_("add outline of keyhole shape"),
+        type=bool,
+        action="store_true",
     )
     @kernel.console_command(
         "render_keyhole",

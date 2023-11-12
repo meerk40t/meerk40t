@@ -1031,10 +1031,9 @@ def plugin(kernel, lifecycle=None):
                 continue
             b = inode.bounds
 
-            from meerk40t.core.node.elem_rect import RectNode
             from meerk40t.core.node.elem_path import PathNode
-            from meerk40t.extra.imageactions import create_image
-            from meerk40t.extra.imageactions import mask_image
+            from meerk40t.core.node.elem_rect import RectNode
+            from meerk40t.extra.imageactions import create_image, mask_image
 
             rectnode = RectNode(
                 x=b[0],

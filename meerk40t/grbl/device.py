@@ -12,9 +12,9 @@ from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
 from ..core.units import Length
 from ..core.view import View
+from ..device.mixins import Status
 from .controller import GrblController
 from .driver import GRBLDriver
-from ..device.mixins import Status
 
 
 class GRBLDevice(Service, Status):
@@ -525,7 +525,7 @@ class GRBLDevice(Service, Status):
         )
         def soft_reset(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.reset()
-            self.signal("pipe;running", False)
+            self.laser_status = "idle"
 
         @self.console_command(
             "estop",
@@ -534,8 +534,7 @@ class GRBLDevice(Service, Status):
         )
         def estop(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.reset()
-            self.signal("pipe;running", False)
-            self.signal("pause")
+            self.laser_status = "idle"
 
         @self.console_command(
             "clear_alarm",
@@ -544,7 +543,7 @@ class GRBLDevice(Service, Status):
         )
         def clear_alarm(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.clear_alarm()
-            self.signal("pipe;running", False)
+            self.laser_status = "idle"
 
         @self.console_command(
             "pause",
