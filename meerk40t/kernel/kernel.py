@@ -74,6 +74,7 @@ class Kernel(Settings):
         ansi: bool = True,
         ignore_settings: bool = False,
         delay: float = 0.05,  # 20 ticks per second
+        language: str = None,
     ):
         """
         Initialize the Kernel. This sets core attributes of the ecosystem that are accessible to all modules.
