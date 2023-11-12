@@ -23,6 +23,7 @@ def tree_calc(value_name, calc_func):
     @param calc_func:
     @return:
     """
+
     def decor(func):
         func.calcs.append((value_name, calc_func))
         return func
@@ -37,6 +38,7 @@ def tree_values(value_name, values):
     @param values:
     @return:
     """
+
     def decor(func):
         func.value_name = value_name
         func.values = values
@@ -55,6 +57,7 @@ def tree_iterate(value_name, start, stop, step=1):
     @param step: step amount
     @return:
     """
+
     def decor(func):
         func.value_name = value_name
         func.values = range(start, stop, step)
@@ -70,6 +73,7 @@ def tree_radio(radio_function):
     @param radio_function:
     @return:
     """
+
     def decor(func):
         func.radio = radio_function
         return func
@@ -84,6 +88,7 @@ def tree_check(check_function):
     @param check_function:
     @return:
     """
+
     def decor(func):
         func.check = check_function
         return func
@@ -98,6 +103,7 @@ def tree_submenu(submenu):
     @param submenu: submenu to use.
     @return:
     """
+
     def decor(func):
         func.submenu = submenu
         return func
@@ -115,6 +121,7 @@ def tree_prompt(attr, prompt, data_type=str):
     @param data_type:
     @return:
     """
+
     def decor(func):
         func.user_prompt.append(
             {
@@ -137,6 +144,7 @@ def tree_conditional(conditional):
     @param conditional:
     @return:
     """
+
     def decor(func):
         func.conditionals.append(conditional)
         return func
@@ -153,6 +161,7 @@ def tree_conditional_try(conditional):
     @param conditional:
     @return:
     """
+
     def decor(func):
         func.try_conditionals.append(conditional)
         return func
@@ -166,6 +175,7 @@ def tree_reference(node):
     @param node:
     @return:
     """
+
     def decor(func):
         func.reference = node
         return func
@@ -179,6 +189,7 @@ def tree_separator_after():
 
     @return:
     """
+
     def decor(func):
         func.separate_after = True
         return func
@@ -192,6 +203,7 @@ def tree_separator_before():
 
     @return:
     """
+
     def decor(func):
         func.separate_before = True
         return func
@@ -213,6 +225,7 @@ def tree_operation(
     @param kwargs: Any remaining keywords.
     @return:
     """
+
     def decorator(func):
         @functools.wraps(func)
         def inner(node, **ik):
@@ -296,6 +309,7 @@ def get_tree_operation(registration):
     @param registration:
     @return:
     """
+
     def treeop(name, node_type=None, help=None, enable=True, **kwargs):
         return tree_operation(
             registration, name, node_type=node_type, help=help, enable=enable, **kwargs
@@ -424,6 +438,7 @@ def get_tree_operation_for_node(registration):
     @param registration:
     @return:
     """
+
     def treeop(node):
         return tree_operations_for_node(registration, node)
 
