@@ -23,6 +23,7 @@ class GRBLDevice(Service, Status):
     """
 
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
+        self.hardware_config = {}
         self.permit_tcp = True
         self.permit_serial = True
 
