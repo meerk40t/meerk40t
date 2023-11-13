@@ -849,41 +849,42 @@ class Jog(wx.Panel):
         context.setting(float, "button_repeat", 0.5)
         context.setting(bool, "button_accelerate", True)
         context.setting(str, "jog_amount", "10mm")
+        self.icon_size = icon_size
         self.button_navigate_up_left = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_up_left.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_up_left.GetBitmap(resize=self.icon_size)
         )
         self.button_navigate_up = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_up.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_up.GetBitmap(resize=self.icon_size)
         )
         self.button_navigate_up_right = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_up_right.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_up_right.GetBitmap(resize=self.icon_size)
         )
         self.button_navigate_left = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_left.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_left.GetBitmap(resize=self.icon_size)
         )
         self.button_navigate_home = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_home_filled.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_home_filled.GetBitmap(resize=self.icon_size)
         )
         self.button_navigate_right = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_right.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_right.GetBitmap(resize=self.icon_size)
         )
         self.button_navigate_down_left = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_down_left.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_down_left.GetBitmap(resize=self.icon_size)
         )
         self.button_navigate_down = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_down.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_down.GetBitmap(resize=self.icon_size)
         )
         self.button_navigate_down_right = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_down_right.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_down_right.GetBitmap(resize=self.icon_size)
         )
         self.button_navigate_unlock = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_unlock.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_unlock.GetBitmap(resize=self.icon_size)
         )
         self.button_navigate_lock = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_lock.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icons8_lock.GetBitmap(resize=self.icon_size)
         )
         self.button_confine = wx.BitmapButton(
-            self, wx.ID_ANY, icon_fence_closed.GetBitmap(resize=icon_size)
+            self, wx.ID_ANY, icon_fence_closed.GetBitmap(resize=self.icon_size)
         )
         self.__set_properties()
         self.__do_layout()
@@ -1037,13 +1038,13 @@ class Jog(wx.Panel):
 
         _confined = value
         if value == 0:
-            self.button_confine.SetBitmap(icon_fence_open.GetBitmap())
+            self.button_confine.SetBitmap(icon_fence_open.GetBitmap(resize=self.icon_size))
             self.button_confine.SetToolTip(
                 _("Caution: allow laser movement outside bed size")
             )
             # self.context("confine 0")
         else:
-            self.button_confine.SetBitmap(icon_fence_closed.GetBitmap())
+            self.button_confine.SetBitmap(icon_fence_closed.GetBitmap(resize=self.icon_size))
             self.button_confine.SetToolTip(_("Limit laser movement to bed size"))
             # self.context("confine 1")
 
@@ -2314,7 +2315,7 @@ class Navigation(MWindow):
         super().SetSizeHints(minW=minw, minH=minh)
 
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_move.GetBitmap())
+        _icon.CopyFromBitmap(icons8_move.GetBitmap(resize=iconsize))
         self.SetIcon(_icon)
         # begin wxGlade: Navigation.__set_properties
         self.SetTitle(_("Navigation"))
