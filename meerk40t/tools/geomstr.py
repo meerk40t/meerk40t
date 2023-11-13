@@ -1149,6 +1149,7 @@ class Geomstr:
                 )
             elif isinstance(seg, Arc):
                 if seg.is_circular():
+                    midp = seg.point(0.5)
                     obj.arc(
                         complex(seg.start), complex(seg.point(0.5)), complex(seg.end)
                     )
