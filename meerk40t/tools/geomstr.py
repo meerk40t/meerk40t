@@ -3995,7 +3995,8 @@ class Geomstr:
             elif np.real(i) == TYPE_CUBIC:
                 path.cubic(c0, c1, e)
             elif np.real(i) == TYPE_ARC:
-                path.arc(start=s, control=c0, end=e)
+                path.append(Arc(start=s, control=c0, end=e))
+                # path.arc(start=s, control=c0, end=e)
             elif np.real(i) == TYPE_POINT:
                 path.move(s)
                 path.closed()
