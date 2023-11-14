@@ -10,7 +10,7 @@ from meerk40t.kernel import CommandSyntaxError, Service
 
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
-from ..core.units import Length
+from ..core.units import Length, MM_PER_INCH
 from ..core.view import View
 from ..device.mixins import Status
 from .controller import GrblController
@@ -234,6 +234,12 @@ class GRBLDevice(Service, Status):
             self.bedheight,
             dpi_x=1000.0,
             dpi_y=1000.0,
+        )
+        self.view_mm = View(
+            self.bedwidth,
+            self.bedheight,
+            dpi_x=MM_PER_INCH,
+            dpi_y=MM_PER_INCH,
         )
         self.realize()
         self.settings = dict()
@@ -745,6 +751,15 @@ class GRBLDevice(Service, Status):
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
         )
+        self.view_mm.set_dims(self.bedwidth, self.bedheight)
+        self.view_mm.transform(
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
+        )
+
         # rotary_active=self.rotary_active,
         # rotary_scale_x=self.rotary_scale_x,
         # rotary_scale_y=self.rotary_scale_y,
