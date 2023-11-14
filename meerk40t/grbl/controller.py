@@ -673,9 +673,9 @@ class GrblController:
             elif response.startswith(">"):
                 self.log(f"STARTUP: {response}", type="event")
             elif response.startswith(self.welcome):
-                if not self._connection_validated:
-                    self.log("Connection Confirmed.", type="event")
-                    self._connection_validated = True
+                self.log("Device Reset, revalidation required", type="event")
+                self._connection_validated = False
+                self.realtime("$\r")
             else:
                 self._assembled_response.append(response)
 
@@ -754,6 +754,8 @@ class GrblController:
                 self.driver.declare_modals(states)
             self.log(message, type="event")
             self.service.signal("grbl:states", states)
+            if not self._connection_validated:
+                self.realtime("?\r")
         elif response.startswith("[HLP:"):
             message = response[5:-1]
             if not self._connection_validated:
@@ -761,7 +763,8 @@ class GrblController:
                     self.realtime("$$\r")
                 if "$G" in message:
                     self.realtime("$G\r")
-                if "?" in message:
+                elif "?" in message:
+                    # Only triggered if $G does not exist.
                     self.realtime("?\r")
             self.log(message, type="event")
         elif response.startswith("[G54:"):
