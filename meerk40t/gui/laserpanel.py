@@ -115,7 +115,7 @@ class LaserPanel(wx.Panel):
         self.context = context
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        self.icon_size = get_default_icon_size()
+        self.icon_size = 0.5 * get_default_icon_size()
 
         sizer_devices = StaticBoxSizer(self, wx.ID_ANY, _("Device"), wx.HORIZONTAL)
         sizer_main.Add(sizer_devices, 0, wx.EXPAND, 0)
@@ -639,7 +639,7 @@ class JobPanel(wx.Panel):
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self._optimize = True
-        self.icon_size = get_default_icon_size()
+        self.icon_size = 0.5 * get_default_icon_size()
         sizer_control_update = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control_update, 0, wx.EXPAND, 0)
 
