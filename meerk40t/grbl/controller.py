@@ -672,13 +672,13 @@ class GrblController:
             elif response.startswith(">"):
                 self.log(f"STARTUP: {response}", type="event")
             elif response.startswith(self.welcome):
-                self.log("Connection Confirmed.", type="event")
-                self._connection_validated = True
+                if not self._connection_validated:
+                    self.log("Connection Confirmed.", type="event")
+                    self._connection_validated = True
             else:
                 self._assembled_response.append(response)
 
     def _process_status_message(self, response):
-        self._connection_validated = True
         message = response[1:-1]
         data = list(message.split("|"))
         self.service.signal("grbl:state", data[0])
@@ -731,6 +731,9 @@ class GrblController:
             # Lim: limits states
             # Ctl: control pins and mask (binary).
             self.service.signal(f"grbl:status:{name}", info)
+        if not self._connection_validated:
+            self.log("Connection Confirmed.", type="event")
+            self._connection_validated = True
 
     def _process_feedback_message(self, response):
         if response.startswith("[MSG:"):
