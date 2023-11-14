@@ -4,7 +4,7 @@ from wx import aui
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
     DARKMODE,
-    STD_ICON_SIZE,
+    get_default_icon_size,
     icon_closed_door,
     icon_open_door,
     icon_update_plan,
@@ -37,15 +37,13 @@ def register_panel_laser(window, context):
     # jog_drag = wx.Panel(window, wx.ID_ANY)
     jog_drag = ScrolledPanel(window, wx.ID_ANY)
     jog_drag.SetupScrolling()
-    iconsize = STD_ICON_SIZE / 2
-    jog_panel = Jog(jog_drag, wx.ID_ANY, context=context, icon_size=iconsize)
-    drag_panel = Drag(jog_drag, wx.ID_ANY, context=context, icon_size=iconsize)
+    jog_panel = Jog(jog_drag, wx.ID_ANY, context=context)
+    drag_panel = Drag(jog_drag, wx.ID_ANY, context=context)
     main_sizer = wx.BoxSizer(wx.HORIZONTAL)
-    main_sizer.AddStretchSpacer()
-    main_sizer.Add(jog_panel, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-    main_sizer.AddSpacer(25)
-    main_sizer.Add(drag_panel, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-    main_sizer.AddStretchSpacer()
+    # main_sizer.AddStretchSpacer()
+    main_sizer.Add(jog_panel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+    main_sizer.Add(drag_panel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+    # main_sizer.AddStretchSpacer()
     jog_drag.SetSizer(main_sizer)
     jog_drag.Layout()
     move_panel = MovePanel(window, wx.ID_ANY, context=context)
@@ -93,6 +91,17 @@ def register_panel_laser(window, context):
     ]
     context.kernel.register_choices("preferences", choices)
 
+    def on_resize(event):
+        wb_size = notebook.Size
+        panel_size = (wb_size[0] / 2, wb_size[1])
+
+        jog_panel.set_icons(dimension=panel_size)
+        drag_panel.set_icons(dimension=panel_size)
+
+    notebook.Bind(wx.EVT_SIZE, on_resize)
+
+
+
 
 class LaserPanel(wx.Panel):
     """
@@ -106,7 +115,7 @@ class LaserPanel(wx.Panel):
         self.context = context
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        self.icon_size = STD_ICON_SIZE * 0.75
+        self.icon_size = 0.5 * get_default_icon_size()
 
         sizer_devices = StaticBoxSizer(self, wx.ID_ANY, _("Device"), wx.HORIZONTAL)
         sizer_main.Add(sizer_devices, 0, wx.EXPAND, 0)
@@ -629,7 +638,8 @@ class JobPanel(wx.Panel):
         self.context = context
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        self.icon_size = STD_ICON_SIZE * 0.75
+        self._optimize = True
+        self.icon_size = 0.5 * get_default_icon_size()
         sizer_control_update = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control_update, 0, wx.EXPAND, 0)
 
