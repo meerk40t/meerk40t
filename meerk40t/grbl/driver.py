@@ -254,6 +254,8 @@ class GRBLDriver(Parameters):
             self(f"M4{self.line_end}")
         for q in self.queue:
             while self.hold_work(0):
+                if self.service.kernel.is_shutdown:
+                    return
                 time.sleep(0.05)
             x = self.native_x
             y = self.native_y
