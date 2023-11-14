@@ -724,7 +724,7 @@ def init_commands(kernel):
         input_type=(None, "elements"),
         output_type="elements",
     )
-    def element_offset_path(
+    def element_pocket_path(
         command,
         channel,
         _,
