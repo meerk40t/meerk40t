@@ -233,6 +233,7 @@ class GrblController:
     def __init__(self, context):
         self.service = context
         self.connection = None
+        self._connection_validated = False
 
         self.update_connection()
 
@@ -240,10 +241,6 @@ class GrblController:
 
         # Welcome message into, indicates the device is initialized.
         self.welcome = self.service.setting(str, "welcome", "Grbl")
-        self._requires_validation = self.service.setting(
-            bool, "requires_validation", True
-        )
-        self._connection_validated = not self._requires_validation
 
         # Sending variables.
         self._sending_thread = None
@@ -362,6 +359,8 @@ class GrblController:
             self.log("Could not connect.", type="event")
             return
         self.log("Connecting to GRBL...", type="event")
+        self._connection_validated = False
+        self.realtime("?\r")
 
     def close(self):
         """
@@ -372,7 +371,7 @@ class GrblController:
         if not self.connection.connected:
             return
         self.connection.disconnect()
-        self._connection_validated = not self._requires_validation
+        self._connection_validated = False
         self.log("Disconnecting from GRBL...", type="event")
 
     def write(self, data):
@@ -653,6 +652,7 @@ class GrblController:
                 self._send_resume()
                 continue
             elif response.startswith("<"):
+                self._connection_validated = True
                 self._process_status_message(response)
             elif response.startswith("["):
                 self._process_feedback_message(response)

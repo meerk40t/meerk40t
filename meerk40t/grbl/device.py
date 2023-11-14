@@ -455,17 +455,6 @@ class GRBLDevice(Service, Status):
                 "section": "_10_Red Dot",
             },
             {
-                "attr": "requires_validation",
-                "object": self,
-                "default": True,
-                "type": bool,
-                "label": _("Require validation for device"),
-                "tip": _(
-                    "Ensure device is completely initialized before sending data. This is usually known to be valid at the 'Grbl xx.x' version message."
-                ),
-                "section": "_40_Validation",
-            },
-            {
                 "attr": "welcome",
                 "object": self,
                 "default": "Grbl",
@@ -474,7 +463,6 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "If for some reason the device needs a different welcome validator than 'Grbl' (default), for example, somewhat custom grbl-like firmware"
                 ),
-                "conditional": (self, "requires_validation"),
                 "section": "_40_Validation",
             },
         ]
