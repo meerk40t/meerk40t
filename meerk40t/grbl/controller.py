@@ -704,7 +704,10 @@ class GrblController:
                     nx = float(coords[0])
                     ny = float(coords[1])
                     x, y = self.service.view_mm.position(f"{nx}mm", f"{ny}mm")
-                    self.driver.mpos_x, self.driver.mpos_y = self.service.view_mm.scene_position(f"{x}mm", f"{y}mm")
+                    (
+                        self.driver.mpos_x,
+                        self.driver.mpos_y,
+                    ) = self.service.view_mm.scene_position(f"{x}mm", f"{y}mm")
                     if len(coords) >= 3:
                         self.driver.mpos_z = float(coords[2])
                     self.service.signal(
@@ -736,8 +739,11 @@ class GrblController:
             self.service.channel("console")(message)
         elif response.startswith("[GC:"):
             message = response[4:-1]
+            states = list(message.split(" "))
+            if not self._connection_validated:
+                self.driver.declare_modals(states)
             self.log(message, type="event")
-            self.service.signal("grbl:states", list(message.split(" ")))
+            self.service.signal("grbl:states", states)
         elif response.startswith("[HLP:"):
             message = response[5:-1]
             if not self._connection_validated:

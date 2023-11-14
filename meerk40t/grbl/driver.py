@@ -585,6 +585,27 @@ class GRBLDriver(Parameters):
         """
         self(f"$X{self.line_end}", real=True)
 
+    def declare_modals(self, modals):
+        self.move_mode = 0 if "G0" in modals else 1
+        if "G90" in modals:
+            self._g90_absolute()
+            self.absolute_dirty = False
+        if "G91" in modals:
+            self._g91_relative()
+            self.absolute_dirty = False
+        if "G94" in modals:
+            self._g94_feedrate()
+            self.feedrate_dirty = False
+        if "G93" in modals:
+            self._g93_feedrate()
+            self.feedrate_dirty = False
+        if "G20" in modals:
+            self._g20_units_inch()
+            self.units_dirty = False
+        if "G21" in modals:
+            self._g21_units_mm()
+            self.units_dirty = False
+
     ####################
     # PROTECTED DRIVER CODE
     ####################
