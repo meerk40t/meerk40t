@@ -159,19 +159,29 @@ class MKRibbonBarPanel(RibbonBarPanel):
                     "label": "Tools",  # Label
                     "panels": [  # Panels to include
                         {
-                            "id": "tool",
-                            "label": "Project",
+                            "id": "select",
+                            "label": "Select + Edit",
                             "seq": 1,
                         },
                         {
-                            "id": "extended_tools",
-                            "label": "group",
+                            "id": "lasercontrol",
+                            "label": "Laser",
                             "seq": 2,
+                        },
+                        {
+                            "id": "tool",
+                            "label": "Create",
+                            "seq": 3,
+                        },
+                        {
+                            "id": "extended_tools",
+                            "label": "Extended Tools",
+                            "seq": 4,
                         },
                         {
                             "id": "group",
                             "label": "Group",
-                            "seq": 3,
+                            "seq": 5,
                         },
                     ],
                     "seq": 1,  # Sequence
@@ -441,9 +451,17 @@ class MKRibbonBarPanel(RibbonBarPanel):
     def set_align_buttons(self, new_values, old_values):
         self.set_panel_buttons("align", new_values)
 
+    @lookup_listener("button/select")
+    def set_select_buttons(self, new_values, old_values):
+        self.set_panel_buttons("select", new_values)
+
     @lookup_listener("button/tool")
     def set_tool_buttons(self, new_values, old_values):
         self.set_panel_buttons("tool", new_values)
+
+    @lookup_listener("button/lasercontrol")
+    def set_lasercontrol_buttons(self, new_values, old_values):
+        self.set_panel_buttons("lasercontrol", new_values)
 
     @lookup_listener("button/extended_tools")
     def set_tool_extended_buttons(self, new_values, old_values):
