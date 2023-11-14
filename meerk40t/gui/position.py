@@ -70,7 +70,7 @@ class PositionPanel(wx.Panel):
         if self.small:
             resize_param = 32
         else:
-            resize_param = int(get_default_icon_size() / 2)
+            resize_param = min(32, int(get_default_icon_size() / 2))
 
         self.button_execute = wx.BitmapButton(self, wx.ID_ANY)
         self.button_param = wx.BitmapButton(self, wx.ID_ANY)
