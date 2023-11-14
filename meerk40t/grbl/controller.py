@@ -699,15 +699,21 @@ class GrblController:
             elif name == "MPos":
                 coords = info.split(",")
                 try:
-                    ox = self.driver.mpos_x
-                    oy = self.driver.mpos_y
                     nx = float(coords[0])
                     ny = float(coords[1])
+
+                    if not self._connection_validated:
+                        self.driver.declare_position(nx, ny)
+                    ox = self.driver.mpos_x
+                    oy = self.driver.mpos_y
+
                     x, y = self.service.view_mm.position(f"{nx}mm", f"{ny}mm")
+
                     (
                         self.driver.mpos_x,
                         self.driver.mpos_y,
                     ) = self.service.view_mm.scene_position(f"{x}mm", f"{y}mm")
+
                     if len(coords) >= 3:
                         self.driver.mpos_z = float(coords[2])
                     self.service.signal(

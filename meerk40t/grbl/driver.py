@@ -606,6 +606,10 @@ class GRBLDriver(Parameters):
             self._g21_units_mm()
             self.units_dirty = False
 
+    def declare_position(self, x, y):
+        self.native_x = x * self.unit_scale
+        self.native_y = y * self.unit_scale
+
     ####################
     # PROTECTED DRIVER CODE
     ####################
