@@ -34,6 +34,15 @@ class GRBLDriver(Parameters):
         self.paused = False
         self.native_x = 0
         self.native_y = 0
+
+        self.mpos_x = 0
+        self.mpos_y = 0
+        self.mpos_z = 0
+
+        self.wpos_x = 0
+        self.wpos_y = 0
+        self.wpos_z = 0
+
         self.stepper_step_size = UNITS_PER_MIL
 
         self.plot_planner = PlotPlanner(
