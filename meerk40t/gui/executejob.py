@@ -3,7 +3,7 @@ import wx
 from meerk40t.kernel import signal_listener
 
 from .choicepropertypanel import ChoicePropertyPanel
-from .icons import STD_ICON_SIZE, icons8_laser_beam
+from .icons import get_default_icon_size, icons8_laser_beam
 from .mwindow import MWindow
 from .wxutils import disable_window
 
@@ -83,7 +83,7 @@ class PlannerPanel(wx.Panel):
             )
         )
         self.button_start.SetForegroundColour(wx.BLACK)
-        self.button_start.SetBitmap(icons8_laser_beam.GetBitmap())
+        self.button_start.SetBitmap(icons8_laser_beam.GetBitmap(resize=get_default_icon_size()))
         # end wxGlade
 
     def __do_layout(self):

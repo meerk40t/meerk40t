@@ -1148,8 +1148,9 @@ class MovePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        iconsize = 0.5 * get_default_icon_size()
         self.button_navigate_move_to = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_center_of_gravity.GetBitmap(resize=32)
+            self, wx.ID_ANY, icons8_center_of_gravity.GetBitmap(resize=iconsize)
         )
         units = self.context.units_name
         if units in ("inch", "inches"):
@@ -1402,8 +1403,9 @@ class PulsePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        iconsize = 0.5 * get_default_icon_size()
         self.button_navigate_pulse = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_laser_beam.GetBitmap(resize=32)
+            self, wx.ID_ANY, icons8_laser_beam.GetBitmap(resize=iconsize)
         )
         self.spin_pulse_duration = wx.SpinCtrl(
             self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="50", min=1, max=1000
@@ -2335,7 +2337,7 @@ class Navigation(MWindow):
         super().SetSizeHints(minW=minw, minH=minh)
 
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_move.GetBitmap(resize=iconsize))
+        _icon.CopyFromBitmap(icons8_move.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Navigation.__set_properties
         self.SetTitle(_("Navigation"))

@@ -67,10 +67,7 @@ class PositionPanel(wx.Panel):
         self.text_h.SetMinSize(dip_size(self, 70, 23))
         self.chk_individually = wx.CheckBox(self, wx.ID_ANY, _("Individ."))
         self.chk_lock = wx.CheckBox(self, wx.ID_ANY, _("Keep ratio"))
-        if self.small:
-            resize_param = 32
-        else:
-            resize_param = min(32, int(get_default_icon_size() / 2))
+        resize_param = 0.5 * get_default_icon_size()
 
         self.button_execute = wx.BitmapButton(self, wx.ID_ANY)
         self.button_param = wx.BitmapButton(self, wx.ID_ANY)
