@@ -16,8 +16,6 @@ except ImportError:
 
 from ezdxf.units import decode
 
-import meerk40t.tools.geomstr
-
 from ..svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,

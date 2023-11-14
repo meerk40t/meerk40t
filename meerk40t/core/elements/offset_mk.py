@@ -633,7 +633,8 @@ def path_offset(
         # print (f"Subpath {spct}")
         p = Path(subpath)
         if not linearize:
-            p.approximate_arcs_with_cubics()
+            # p.approximate_arcs_with_cubics()
+            pass
         offset = offset_value
         # # No offset bigger than half the path size, otherwise stuff will get crazy
         # if offset > 0:
@@ -829,7 +830,7 @@ def path_offset(
     result = results[0]
     for idx in range(1, len(results)):
         result += results[idx]
-    result.approximate_arcs_with_cubics()
+    # result.approximate_arcs_with_cubics()
     return result
 
 
