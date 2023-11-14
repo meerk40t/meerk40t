@@ -127,6 +127,7 @@ class PreferencesLanguagePanel(wx.Panel):
         lang = self.combo_language.GetSelection()
         if lang != -1 and self.context.app is not None:
             self.context.app.update_language(lang)
+            self.context.signal("restart")
 
 
 # end of class PreferencesLanguagePanel
