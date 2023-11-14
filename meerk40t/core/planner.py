@@ -257,7 +257,6 @@ def plugin(kernel, lifecycle=None):
             },
         ]
         kernel.register_choices("optimize", choices)
-
         context.setting(bool, "opt_2opt", False)
         context.setting(bool, "opt_nearest_neighbor", True)
         context.setting(bool, "opt_reduce_directions", False)
@@ -289,6 +288,7 @@ class Planner(Service):
         Service.__init__(self, kernel, "planner")
         self._plan = dict()
         self._default_plan = "0"
+        self.do_optimization = True
 
     def length(self, v):
         return float(Length(v))

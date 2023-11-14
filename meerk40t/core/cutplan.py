@@ -175,7 +175,7 @@ class CutPlan:
         #     axis = rotary.axis
 
         original_ops = copy(self.plan)
-        if self.context.opt_raster_optimisation:
+        if self.context.opt_raster_optimisation and self.context.do_optimization:
             try:
                 margin = float(Length(self.context.opt_raster_opt_margin, "0"))
             except (AttributeError, ValueError):
@@ -654,22 +654,19 @@ class CutPlan:
                 # one rectangle's minimum in some dimension
                 # is greater than the other's maximum in
                 # that dimension.
-                flagx = (bounds1[0] - 0.5 * margin > bounds2[2] + 0.5 * margin) or (
-                    bounds2[0] - 0.5 * margin > bounds1[2] + 0.5 * margin
-                )
-                flagy = (bounds1[1] - 0.5 * margin > bounds2[3] + 0.5 * margin) or (
-                    bounds2[1] - 0.5 * margin > bounds1[3] + 0.5 * margin
-                )
+                flagx = (bounds1[0] > bounds2[2] + margin) or (bounds2[0] > bounds1[2] + margin)
+                flagy = (bounds1[1] > bounds2[3] + margin) or (bounds2[1] > bounds1[3] + margin)
                 return bool(not (flagx or flagy))
 
             clusters = list()
             cluster_bounds = list()
             for node in operation.children:
-                if node.type == "reference":
-                    node = node.node
                 try:
+                    if node.type == "reference":
+                        node = node.node
                     bb = node.paint_bounds
                 except AttributeError:
+                    # Either no element node or does not have bounds
                     continue
                 clusters.append([node])
                 cluster_bounds.append(
@@ -681,6 +678,23 @@ class CutPlan:
                     )
                 )
 
+            def detail_overlap(index1, index2):
+                # But is there a real overlap, or just one with the union bounds?
+                for outer_node in clusters[index1]:
+                    try:
+                        bb_outer = outer_node.paint_bounds
+                    except AttributeError:
+                        continue
+                    for inner_node in clusters[index2]:
+                        try:
+                            bb_inner = inner_node.paint_bounds
+                        except AttributeError:
+                            continue
+                        if overlapping(bb_outer, bb_inner, margin):
+                            return True
+                # We did not find anything...
+                return False
+
             needs_repeat = True
             while needs_repeat:
                 needs_repeat = False
@@ -689,50 +703,36 @@ class CutPlan:
                     bb = cluster_bounds[outer_idx]
                     for inner_idx in range(outer_idx - 1, -1, -1):
                         cc = cluster_bounds[inner_idx]
-                        if overlapping(bb, cc, margin):
-                            # Overlap!
-                            # print (f"Reuse cluster {inner_idx} for {outer_idx}")
-
-                            # But is there a real overlap, or just one with the union bounds?
-                            real_overlap = False
-                            for outer_node in clusters[outer_idx]:
-                                try:
-                                    bb_outer = outer_node.paint_bounds
-                                except AttributeError:
-                                    continue
-                                for inner_node in clusters[inner_idx]:
-                                    try:
-                                        bb_inner = inner_node.paint_bounds
-                                    except AttributeError:
-                                        continue
-                                    if overlapping(bb_outer, bb_inner, margin):
-                                        real_overlap = True
-                                        break
-                                if real_overlap:
-                                    break
-                            if real_overlap:
-                                needs_repeat = True
-                                # We need to extend the inner cluster by the outer
-                                clusters[inner_idx].extend(clusters[outer_idx])
-                                cluster_bounds[inner_idx] = (
-                                    min(bb[0], cc[0]),
-                                    min(bb[1], cc[1]),
-                                    max(bb[2], cc[2]),
-                                    max(bb[3], cc[3]),
-                                )
-                                clusters.pop(outer_idx)
-                                cluster_bounds.pop(outer_idx)
-                                break
+                        if not overlapping(bb, cc, margin):
+                            continue
+                        # Overlap!
+                        # print (f"Reuse cluster {inner_idx} for {outer_idx}")
+                        real_overlap = detail_overlap(outer_idx, inner_idx)
+                        if real_overlap:
+                            needs_repeat = True
+                            # We need to extend the inner cluster by the outer
+                            clusters[inner_idx].extend(clusters[outer_idx])
+                            cluster_bounds[inner_idx] = (
+                                min(bb[0], cc[0]),
+                                min(bb[1], cc[1]),
+                                max(bb[2], cc[2]),
+                                max(bb[3], cc[3]),
+                            )
+                            clusters.pop(outer_idx)
+                            cluster_bounds.pop(outer_idx)
+                            # We are done with the inner loop, as we effectively
+                            # destroyed the cluster element we compared
+                            break
 
             return clusters
 
         stime = perf_counter()
         scount = 0
         ecount = 0
-        idx = 0
         for idx in range(len(operation_list) - 1, -1, -1):
             op = operation_list[idx]
-            if op.type != op_type:
+            if not hasattr(op, "type") or not hasattr(op, "children") or op.type != op_type:
+                # That's not what we are looking for
                 continue
             scount += 1
             clusters = generate_clusters(op)
