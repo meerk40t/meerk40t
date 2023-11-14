@@ -360,7 +360,7 @@ class GrblController:
             return
         self.log("Connecting to GRBL...", type="event")
         self._connection_validated = False
-        self.realtime("?\r")
+        self.realtime("$\r")
 
     def close(self):
         """
@@ -652,7 +652,6 @@ class GrblController:
                 self._send_resume()
                 continue
             elif response.startswith("<"):
-                self._connection_validated = True
                 self._process_status_message(response)
             elif response.startswith("["):
                 self._process_feedback_message(response)
@@ -679,6 +678,7 @@ class GrblController:
                 self._assembled_response.append(response)
 
     def _process_status_message(self, response):
+        self._connection_validated = True
         message = response[1:-1]
         data = list(message.split("|"))
         self.service.signal("grbl:state", data[0])
@@ -740,6 +740,13 @@ class GrblController:
             self.service.signal("grbl:states", list(message.split(" ")))
         elif response.startswith("[HLP:"):
             message = response[5:-1]
+            if not self._connection_validated:
+                if "$$" in message:
+                    self.realtime("$$\r")
+                if "$G" in message:
+                    self.realtime("$G\r")
+                if "?" in message:
+                    self.realtime("?\r")
             self.log(message, type="event")
         elif response.startswith("[G54:"):
             message = response[5:-1]
