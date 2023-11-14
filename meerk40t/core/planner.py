@@ -51,9 +51,29 @@ def plugin(kernel, lifecycle=None):
                 "default": True,
                 "type": bool,
                 "label": _("Cluster raster objects"),
-                "tip": _("Separate non-overlapping raster objects"),
+                "tip": _(
+                    "Separate non-overlapping raster objects.\n"
+                    "Active: this will raster close (ie overlapping) objects as one,\n"
+                    "but will separately process objects lying apart from each other.\n"
+                    "Inactive: all objects will be lasered as one single unit."
+                ),
                 "page": "Optimisations",
                 "section": "_20_Reducing Movements",
+                "subsection": "Splitting rasters",
+            },
+            {
+                "attr": "opt_raster_opt_margin",
+                "object": context,
+                "default": "1mm",
+                "type": Length,
+                "label": _("Margin:"),
+                "tip": _(
+                    "Allowed gap between rasterable objects, to still be counted as one."
+                ),
+                "page": "Optimisations",
+                "section": "_20_Reducing Movements",
+                "subsection": "Splitting rasters",
+                "conditional": (context, "opt_raster_optimisation"),
             },
             {
                 "attr": "opt_reduce_travel",
@@ -237,7 +257,6 @@ def plugin(kernel, lifecycle=None):
             },
         ]
         kernel.register_choices("optimize", choices)
-
         context.setting(bool, "opt_2opt", False)
         context.setting(bool, "opt_nearest_neighbor", True)
         context.setting(bool, "opt_reduce_directions", False)
@@ -269,6 +288,7 @@ class Planner(Service):
         Service.__init__(self, kernel, "planner")
         self._plan = dict()
         self._default_plan = "0"
+        self.do_optimization = True
 
     def length(self, v):
         return float(Length(v))

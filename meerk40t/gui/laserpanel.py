@@ -239,10 +239,9 @@ class LaserPanel(wx.Panel):
         sizer_source = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_source, 0, wx.EXPAND, 0)
 
-        self._optimize = True
         self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
-        self.checkbox_optimize.SetValue(self._optimize)
+        self.checkbox_optimize.SetValue(self.context.planner.do_optimization)
         self.checkbox_adjust = wx.CheckBox(self, wx.ID_ANY, _("Override"))
         self.checkbox_adjust.SetToolTip(
             _("Allow ad-hoc adjustment of speed and power.")
@@ -398,7 +397,8 @@ class LaserPanel(wx.Panel):
 
     def on_optimize(self, event):
         newval = bool(self.checkbox_optimize.GetValue())
-        if newval != self._optimize:
+        if newval != self.context.planner.do_optimization:
+            self.context.planner.do_optimization = newval
             self.context.signal("optimize", newval)
 
     @signal_listener("optimize")
@@ -408,8 +408,8 @@ class LaserPanel(wx.Panel):
         except ValueError:
             # You never know
             return
-        if self._optimize != newvalue:
-            self._optimize = newvalue
+        if self.context.planner.do_optimization != newvalue:
+            self.context.planner.do_optimization = newvalue
             self.checkbox_optimize.SetValue(newvalue)
 
     @signal_listener("device;modified")
@@ -629,7 +629,6 @@ class JobPanel(wx.Panel):
         self.context = context
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        self._optimize = True
         self.icon_size = STD_ICON_SIZE * 0.75
         sizer_control_update = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control_update, 0, wx.EXPAND, 0)
@@ -691,7 +690,8 @@ class JobPanel(wx.Panel):
         except ValueError:
             # You never know
             return
-        self._optimize = newvalue
+        if newval != self.context.planner.do_optimization:
+            self.context.planner.do_optimization = newvalue
 
     def on_button_save(self, event):  # wxGlade: LaserPanel.<event_handler>
         gui = self.context.gui
@@ -723,7 +723,7 @@ class JobPanel(wx.Panel):
 
     def on_button_update(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context.kernel.busyinfo.start(msg=_("Updating Plan..."))
-        if self._optimize:
+        if self.context.planner.do_optimization:
             self.context("planz clear copy preprocess validate blob preopt optimize\n")
         else:
             self.context("planz clear copy preprocess validate blob\n")
@@ -753,12 +753,10 @@ class OptimizePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        self._optimize = True
         self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
-        self.checkbox_optimize.SetValue(self._optimize)
+        self.checkbox_optimize.SetValue(self.context.planner.do_optimization)
         prechoices = context.lookup("choices/optimize")
         choices = list(map(copy, prechoices))
         # Clear the page-entry
@@ -783,15 +781,15 @@ class OptimizePanel(wx.Panel):
         except ValueError:
             # You never know
             return
-        if self._optimize != newvalue:
-            self._optimize = newvalue
+        if self.context.planner.do_optimization != newvalue:
+            self.context.planner.do_optimization = newvalue
             self.checkbox_optimize.SetValue(newvalue)
             self.optimize_panel.Enable(newvalue)
 
     def on_optimize(self, event):
         newvalue = bool(self.checkbox_optimize.GetValue())
-        if newvalue != self._optimize:
-            self._optimize = newvalue
+        if newvalue != self.context.planner.do_optimization:
+            self.context.planner.do_optimization = newvalue
             self.context.signal("optimize", newvalue)
             self.optimize_panel.Enable(newvalue)
 

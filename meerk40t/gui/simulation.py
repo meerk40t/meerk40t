@@ -832,10 +832,7 @@ class SimulationPanel(wx.Panel, Job):
         self.panel_optimize.AddPage(self.subpanel_cutcode, _("Cutcode"))
         self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
-        if optimise_at_start:
-            self.checkbox_optimize.SetValue(1)
-        else:
-            self.checkbox_optimize.SetValue(0)
+        self.checkbox_optimize.SetValue(self.context.planner.do_optimization)
         self.btn_redo_it = wx.Button(self, wx.ID_ANY, _("Recalculate"))
         self.btn_redo_it.Bind(wx.EVT_BUTTON, self.on_redo_it)
 
@@ -1547,8 +1544,10 @@ class SimulationPanel(wx.Panel, Job):
         plan = self.plan_name
         if self.checkbox_optimize.GetValue():
             opt = " optimize"
+            self.context.planner.do_optimization = True
         else:
             opt = ""
+            self.context.planner.do_optimization = False
         self.context(
             f"plan{plan} clear\nplan{plan} copy preprocess validate blob preopt{opt}\n"
         )
