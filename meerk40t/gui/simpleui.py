@@ -25,19 +25,22 @@ class JogMovePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        if icon_size is None:
-            iconsize = 50
-        else:
-            iconsize = icon_size
-        jog_panel = Jog(self, wx.ID_ANY, context=context, icon_size=iconsize)
-        drag_panel = Drag(self, wx.ID_ANY, context=context, icon_size=iconsize)
-        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        main_sizer.AddStretchSpacer()
-        main_sizer.Add(jog_panel, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        main_sizer.AddSpacer(25)
-        main_sizer.Add(drag_panel, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        main_sizer.AddStretchSpacer()
-        self.SetSizer(main_sizer)
+        jog_panel = Jog(self, wx.ID_ANY, context=context)
+        drag_panel = Drag(self, wx.ID_ANY, context=context)
+        self.panels = [jog_panel, drag_panel]
+        self.main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.main_sizer.Add(jog_panel, 1, wx.EXPAND, 0)
+        self.main_sizer.Add(drag_panel, 1, wx.EXPAND, 0)
+        self.SetSizer(self.main_sizer)
+        self.Layout()
+        self.Bind(wx.EVT_SIZE, self.on_resize)
+
+    def on_resize(self, event):
+        wb_size = event.GetSize()
+        panel_size = (wb_size[0] / 2, wb_size[1])
+        for p in self.panels:
+            if hasattr(p, "set_icons"):
+                p.set_icons(dimension=panel_size)
         self.Layout()
 
 
