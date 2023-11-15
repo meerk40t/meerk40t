@@ -473,14 +473,27 @@ def init_commands(kernel):
                 pyc_method = pyclipr.ClipType.Xor
             else:
                 pyc_method = pyclipr.ClipType.Union
+            # Definition of enumerators has changed, so let#s try to be backwards compatible
             if filltype.startswith("no") or filltype.startswith("z"):
-                pyc_filltype = pyclipr.FillType.NonZero
+                try:
+                    pyc_filltype = pyclipr.FillRule.NonZero
+                except AttributeError:
+                    pyc_filltype = pyclipr.FillType.NonZero
             elif filltype.startswith("p") or filltype.startswith("+"):
-                pyc_filltype = pyclipr.FillType.Positive
+                try:
+                    pyc_filltype = pyclipr.FillRule.Positive
+                except AttributeError:
+                    pyc_filltype = pyclipr.FillType.Positive
             elif filltype.startswith("ne") or filltype.startswith("-"):
-                pyc_filltype = pyclipr.FillType.Negative
+                try:
+                    pyc_filltype = pyclipr.FillRule.Negative
+                except AttributeError:
+                    pyc_filltype = pyclipr.FillType.Negative
             else:
-                pyc_filltype = pyclipr.FillType.EvenOdd
+                try:
+                    pyc_filltype = pyclipr.FillRule.EvenOdd
+                except AttributeError:
+                    pyc_filltype = pyclipr.FillType.EvenOdd
 
             if self.any_open and pyc_method in (pyclipr.ClipType.Union,):
                 self.newpath = self.clipr_clipper.execute(
@@ -677,6 +690,117 @@ def init_commands(kernel):
             post.append(classify_new(data_out))
             self.signal("refresh_scene", "Scene")
         return "elements", data_out
+
+    # Pocketing
+    @self.console_argument(
+        "offset",
+        type=str,
+        help=_(
+            "offset to line mm (negative values to left/outside, positive values to right/inside)"
+        ),
+    )
+    @self.console_option(
+        "jointype", "j", type=str, help=_("join type: round, miter, square")
+    )
+    @self.console_option(
+        "separate",
+        "s",
+        action="store_true",
+        type=bool,
+        help=_("deal with subpaths separately"),
+    )
+    @self.console_option(
+        "repeats",
+        "r",
+        type=int,
+        help=_("amount of repetitions, 0=until area is fully filled"),
+    )
+    @self.console_option(
+        "interpolation", "i", type=int, help=_("interpolation points per segment")
+    )
+    @self.console_command(
+        "pocket",
+        help=_("create a pocketing path for any of the given elements"),
+        input_type=(None, "elements"),
+        output_type="elements",
+    )
+    def element_pocket_path(
+        command,
+        channel,
+        _,
+        offset=None,
+        jointype=None,
+        separate=None,
+        repeats=0,
+        interpolation=None,
+        data=None,
+        post=None,
+        **kwargs,
+    ):
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            channel(_("No elements selected"))
+            return "elements", data
+        if interpolation is None:
+            interpolation = 500
+        if separate is None:
+            separate = False
+        if offset is None:
+            offset = 0
+        else:
+            try:
+                ll = Length(offset)
+                offset = float(ll)
+            except ValueError:
+                offset = 0
+        if offset == 0.0:
+            channel("Invalid offset, nothing to do")
+            return
+        # Our definition for an offset is different this time
+        offset *= -1
+        if repeats is None or repeats < 0:
+            repeats = 0
+        if offset > 0 and repeats == 0:
+            channel("You need to provide the -r parameter to set the amount of repetitions")
+            return
+
+        if jointype is None:
+            jointype = "miter"
+        jointype = jointype.lower()
+        default_stroke = None
+        for node in data:
+            if hasattr(node, "stroke"):
+                default_stroke = node.stroke
+                break
+        if default_stroke is None:
+            default_stroke = self._default_stroke
+        data_out = []
+        rep_count = 0
+        mydata = [e for e in data]
+        while (rep_count < repeats or repeats==0) and len(mydata) > 0:
+            rep_count += 1
+            c_off = ClipperOffset(interpolation=interpolation)
+            c_off.add_nodes(mydata)
+            c_off.process_data(offset, jointype=jointype, separate=separate)
+            mydata.clear()
+            for geom in c_off.result_geometry():
+                if geom is not None:
+                    newnode = self.elem_branch.add(
+                        geometry=geom, type="elem path", stroke=default_stroke
+                    )
+                    newnode.stroke_width = UNITS_PER_PIXEL
+                    newnode.linejoin = Linejoin.JOIN_ROUND
+                    newnode.label = f"Offset: {Length(offset).length_mm}"
+                    mydata.append(newnode)
+                    data_out.append(newnode)
+
+        # Newly created! Classification needed?
+        if len(data_out) > 0:
+            post.append(classify_new(data_out))
+            self.signal("refresh_scene", "Scene")
+        return "elements", data_out
+
 
     # ---- Let's add some CAG commands....
     @self.console_argument(
