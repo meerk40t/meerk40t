@@ -1300,13 +1300,17 @@ class Art:
             self.highlight = wx.Colour("gold")
 
         # Let's adjust the fontsize for the page headers
+        screen_wd, screen_ht = wx.GetDisplaySize()
+        ptdefault = 10
+        if screen_wd <= 800 or screen_ht <= 600:
+            ptdefault = 8
+            self.tab_height = 16
         try:
-            wxsize = wx.Size(10, 10)
+            wxsize = wx.Size(ptdefault, ptdefault)
             dipsize = self.parent.FromDIP(wxsize)
             ptsize = int(dipsize[0])
         except AttributeError:
-            ptsize = 10
-
+            ptsize = ptdefault
         self.default_font = wx.Font(
             ptsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
