@@ -92,13 +92,13 @@ def register_panel_laser(window, context):
     context.kernel.register_choices("preferences", choices)
 
     def on_resize(event):
-        wb_size = notebook.Size
+        wb_size = jog_drag.ClientSize
         panel_size = (wb_size[0] / 2, wb_size[1])
 
         jog_panel.set_icons(dimension=panel_size)
         drag_panel.set_icons(dimension=panel_size)
 
-    notebook.Bind(wx.EVT_SIZE, on_resize)
+    jog_drag.Bind(wx.EVT_SIZE, on_resize)
 
 
 
