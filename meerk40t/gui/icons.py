@@ -1,3 +1,4 @@
+import threading
 import wx
 from wx.lib.embeddedimage import PyEmbeddedImage as py_embedded_image
 
@@ -462,6 +463,15 @@ class VectorIcon:
         self._pen = wx.Pen()
         self._brush = wx.Brush()
         self._background = wx.Brush()
+        res_fill = ""
+        for e in self.list_fill:
+            res_fill += str(hash(e)) + ","
+        res_stroke = ""
+        for e in self.list_stroke:
+            res_stroke += str(hash(e[2])) + ","
+
+        self._prehash = res_fill + "|" + res_stroke
+        self._lock = threading.Lock()
 
     def investigate(self, svgstr):
         color = None
@@ -532,6 +542,7 @@ class VectorIcon:
         keepalpha=False,
         force_darkmode=False,
         buffer=None,
+        resolution=1,
         **kwargs,
     ):
         global _CACHE
@@ -555,6 +566,12 @@ class VectorIcon:
         else:
             final_icon_width = resize
             final_icon_height = resize
+        if resolution > 1:
+            # We don't need to have a one pixel resolution=size
+            # It#s good enough to have one every resolution pixel
+            final_icon_height = int(final_icon_height / resolution) * resolution
+            final_icon_width = int(final_icon_width / resolution) * resolution
+
         final_icon_height = int(final_icon_height)
         final_icon_width = int(final_icon_width)
         if final_icon_height <= 0:
@@ -569,216 +586,207 @@ class VectorIcon:
         def color_id():
             return "--" if color is None else f"{color.red}-{color.green}-{color.blue}"
 
-        def my_id():
-            res_fill = ""
-            for e in self.list_fill:
-                res_fill += str(hash(e)) + ","
-            res_stroke = ""
-            for e in self.list_stroke:
-                res_stroke += str(hash(e[2])) + ","
-
-            return res_fill + "|" + res_stroke
-
-        cache_id = f"{my_id()}|{color_id()}|{resize}|{force_darkmode}"
+        cache_id = f"{self._prehash}|{color_id()}|{resize}|{force_darkmode}"
         if cache_id in _CACHE:
             # print(f"Cache Hit for {cache_id}")
             return _CACHE[cache_id]
         # wincol = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
-        wincol = self._background.GetColour()
-        bmp = wx.Bitmap.FromRGBA(
-            final_icon_width,
-            final_icon_height,
-            wincol.red,
-            wincol.blue,
-            wincol.green,
-            0,
-        )
-        dc = wx.MemoryDC()
-        dc.SelectObject(bmp)
-        # dc.SetBackground(self._background)
-        # dc.SetBackground(wx.RED_BRUSH)
-        # dc.Clear()
-        gc = wx.GraphicsContext.Create(dc)
-        gc.dc = dc
-        stroke_paths = []
-        fill_paths = []
-        # Establish the box...
-        min_x = min_y = max_x = max_y = None
+        with self._lock:
+            wincol = self._background.GetColour()
+            bmp = wx.Bitmap.FromRGBA(
+                final_icon_width,
+                final_icon_height,
+                wincol.red,
+                wincol.blue,
+                wincol.green,
+                0,
+            )
+            dc = wx.MemoryDC()
+            dc.SelectObject(bmp)
+            # dc.SetBackground(self._background)
+            # dc.SetBackground(wx.RED_BRUSH)
+            # dc.Clear()
+            gc = wx.GraphicsContext.Create(dc)
+            gc.dc = dc
+            stroke_paths = []
+            fill_paths = []
+            # Establish the box...
+            min_x = min_y = max_x = max_y = None
 
-        def get_color(info_color, info_bright, default_color):
-            color = None
-            if info_color is not None:
-                try:
-                    color = wx.Colour(info_color)
-                except AttributeError:
-                    pass
-            if info_bright is not None:
-                if color is None:
-                    color = default_color
-                # brightness is a percentage values below 100 indicate darker
-                # values beyond 100 indicate lighter
-                # no change = 100
-                # What about black? This is a special case, so we only consider
-                ialpha = info_bright / 100.0
-                if color.red == color.green == color.blue == 0 and info_bright > 100:
-                    ialpha = (info_bright - 100) / 100.0
-                    cr = int(255 * ialpha)
-                    cg = int(255 * ialpha)
-                    cb = int(255 * ialpha)
+            def get_color(info_color, info_bright, default_color):
+                color = None
+                if info_color is not None:
+                    try:
+                        color = wx.Colour(info_color)
+                    except AttributeError:
+                        pass
+                if info_bright is not None:
+                    if color is None:
+                        color = default_color
+                    # brightness is a percentage values below 100 indicate darker
+                    # values beyond 100 indicate lighter
+                    # no change = 100
+                    # What about black? This is a special case, so we only consider
+                    ialpha = info_bright / 100.0
+                    if color.red == color.green == color.blue == 0 and info_bright > 100:
+                        ialpha = (info_bright - 100) / 100.0
+                        cr = int(255 * ialpha)
+                        cg = int(255 * ialpha)
+                        cb = int(255 * ialpha)
+                    else:
+                        cr = int(color.red * ialpha)
+                        cg = int(color.green * ialpha)
+                        cb = int(color.blue * ialpha)
+
+                    # Make sure the stay with 0..255
+                    cr = max(0, min(255, cr))
+                    cg = max(0, min(255, cg))
+                    cb = max(0, min(255, cb))
+                    color = wx.Colour(cr, cg, cb)
+                return color
+
+            def_col = self._brush.GetColour()
+            for s_entry in self.list_fill:
+                e = s_entry[2]
+                attrib = s_entry[3]
+                geom = Geomstr.svg(e)
+                color = get_color(s_entry[0], s_entry[1], def_col)
+                gp = self.make_geomstr(gc, geom)
+                fill_paths.append((gp, color, attrib))
+                m_x, m_y, p_w, p_h = gp.Box
+                if min_x is None:
+                    min_x = m_x
+                    min_y = m_y
+                    max_x = m_x + p_w
+                    max_y = m_y + p_h
                 else:
-                    cr = int(color.red * ialpha)
-                    cg = int(color.green * ialpha)
-                    cb = int(color.blue * ialpha)
+                    min_x = min(min_x, m_x)
+                    min_y = min(min_y, m_y)
+                    max_x = max(max_x, m_x + p_w)
+                    max_y = max(max_y, m_y + p_h)
 
-                # Make sure the stay with 0..255
-                cr = max(0, min(255, cr))
-                cg = max(0, min(255, cg))
-                cb = max(0, min(255, cb))
-                color = wx.Colour(cr, cg, cb)
-            return color
+            def_col = self._pen.GetColour()
+            for s_entry in self.list_stroke:
+                e = s_entry[2]
+                attrib = s_entry[3]
+                geom = Geomstr.svg(e)
+                color = get_color(s_entry[0], s_entry[1], def_col)
+                gp = self.make_geomstr(gc, geom)
+                stroke_paths.append((gp, color, attrib))
+                m_x, m_y, p_w, p_h = gp.Box
+                if min_x is None:
+                    min_x = m_x
+                    min_y = m_y
+                    max_x = m_x + p_w
+                    max_y = m_y + p_h
+                else:
+                    min_x = min(min_x, m_x)
+                    min_y = min(min_y, m_y)
+                    max_x = max(max_x, m_x + p_w)
+                    max_y = max(max_y, m_y + p_h)
 
-        def_col = self._brush.GetColour()
-        for s_entry in self.list_fill:
-            e = s_entry[2]
-            attrib = s_entry[3]
-            geom = Geomstr.svg(e)
-            color = get_color(s_entry[0], s_entry[1], def_col)
-            gp = self.make_geomstr(gc, geom)
-            fill_paths.append((gp, color, attrib))
-            m_x, m_y, p_w, p_h = gp.Box
-            if min_x is None:
-                min_x = m_x
-                min_y = m_y
-                max_x = m_x + p_w
-                max_y = m_y + p_h
-            else:
-                min_x = min(min_x, m_x)
-                min_y = min(min_y, m_y)
-                max_x = max(max_x, m_x + p_w)
-                max_y = max(max_y, m_y + p_h)
+            path_width = max_x - min_x
+            path_height = max_y - min_y
 
-        def_col = self._pen.GetColour()
-        for s_entry in self.list_stroke:
-            e = s_entry[2]
-            attrib = s_entry[3]
-            geom = Geomstr.svg(e)
-            color = get_color(s_entry[0], s_entry[1], def_col)
-            gp = self.make_geomstr(gc, geom)
-            stroke_paths.append((gp, color, attrib))
-            m_x, m_y, p_w, p_h = gp.Box
-            if min_x is None:
-                min_x = m_x
-                min_y = m_y
-                max_x = m_x + p_w
-                max_y = m_y + p_h
-            else:
-                min_x = min(min_x, m_x)
-                min_y = min(min_y, m_y)
-                max_x = max(max_x, m_x + p_w)
-                max_y = max(max_y, m_y + p_h)
+            path_width += 2 * self.edge
+            path_height += 2 * self.edge
 
-        path_width = max_x - min_x
-        path_height = max_y - min_y
+            stroke_buffer = self.strokewidth
+            path_width += 2 * stroke_buffer
+            path_height += 2 * stroke_buffer
 
-        path_width += 2 * self.edge
-        path_height += 2 * self.edge
+            scale_x = (final_icon_width - 2 * buffer) / path_width
+            scale_y = (final_icon_height - 2 * buffer) / path_height
 
-        stroke_buffer = self.strokewidth
-        path_width += 2 * stroke_buffer
-        path_height += 2 * stroke_buffer
+            scale = min(scale_x, scale_y)
+            width_scaled = int(round(path_width * scale))
+            height_scaled = int(round(path_height * scale))
 
-        scale_x = (final_icon_width - 2 * buffer) / path_width
-        scale_y = (final_icon_height - 2 * buffer) / path_height
+            # print (f"W: {final_icon_width} vs {width_scaled}, {final_icon_height} vs {height_scaled}")
+            keep_ratio = True
 
-        scale = min(scale_x, scale_y)
-        width_scaled = int(round(path_width * scale))
-        height_scaled = int(round(path_height * scale))
+            if keep_ratio:
+                scale_x = min(scale_x, scale_y)
+                scale_y = scale_x
 
-        # print (f"W: {final_icon_width} vs {width_scaled}, {final_icon_height} vs {height_scaled}")
-        keep_ratio = True
+            from meerk40t.gui.zmatrix import ZMatrix
+            from meerk40t.svgelements import Matrix
 
-        if keep_ratio:
-            scale_x = min(scale_x, scale_y)
-            scale_y = scale_x
+            matrix = Matrix()
+            matrix.post_translate(
+                -min_x
+                + self.edge
+                + stroke_buffer
+                + (final_icon_width - width_scaled) / 2 / scale_x,
+                -min_y
+                + self.edge
+                + stroke_buffer
+                + (final_icon_height - height_scaled) / 2 / scale_x,
+            )
+            matrix.post_scale(scale_x, scale_y)
+            if scale_y < 0:
+                matrix.pre_translate(0, -height_scaled)
+            if scale_x < 0:
+                matrix.pre_translate(-width_scaled, 0)
 
-        from meerk40t.gui.zmatrix import ZMatrix
-        from meerk40t.svgelements import Matrix
+            gc = wx.GraphicsContext.Create(dc)
+            gc.dc = dc
+            gc.SetInterpolationQuality(wx.INTERPOLATION_BEST)
+            gc.PushState()
+            if not matrix.is_identity():
+                gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
 
-        matrix = Matrix()
-        matrix.post_translate(
-            -min_x
-            + self.edge
-            + stroke_buffer
-            + (final_icon_width - width_scaled) / 2 / scale_x,
-            -min_y
-            + self.edge
-            + stroke_buffer
-            + (final_icon_height - height_scaled) / 2 / scale_x,
-        )
-        matrix.post_scale(scale_x, scale_y)
-        if scale_y < 0:
-            matrix.pre_translate(0, -height_scaled)
-        if scale_x < 0:
-            matrix.pre_translate(-width_scaled, 0)
-
-        gc = wx.GraphicsContext.Create(dc)
-        gc.dc = dc
-        gc.SetInterpolationQuality(wx.INTERPOLATION_BEST)
-        gc.PushState()
-        if not matrix.is_identity():
-            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-
-        for entry in fill_paths:
-            fill_style = wx.WINDING_RULE
-            gp = entry[0]
-            colpat = entry[1]
-            attrib = entry[2]
-            if "fill_evenodd" in attrib:
-                fill_style = wx.ODDEVEN_RULE
-            if "fill_nonzero" in attrib:
+            for entry in fill_paths:
                 fill_style = wx.WINDING_RULE
+                gp = entry[0]
+                colpat = entry[1]
+                attrib = entry[2]
+                if "fill_evenodd" in attrib:
+                    fill_style = wx.ODDEVEN_RULE
+                if "fill_nonzero" in attrib:
+                    fill_style = wx.WINDING_RULE
 
-            if colpat is None:
-                sbrush = self._brush
-            else:
-                sbrush = wx.Brush()
-                sbrush.SetColour(colpat)
-            gc.SetBrush(sbrush)
-            gc.FillPath(gp, fillStyle=fill_style)
-        for entry in stroke_paths:
-            gp = entry[0]
-            attrib = entry[2]
-            if entry[1] is None:
-                spen = self._pen
-            else:
-                spen = wx.Pen()
-                spen.SetColour(entry[1])
-                spen.SetWidth(self.strokewidth)
-            spen.SetCap(wx.CAP_ROUND)
-            if "cap_butt" in attrib:
-                spen.SetCap(wx.CAP_BUTT)
-            if "cap_round" in attrib:
-                spen.SetCap(wx.CAP_BUTT)
-            if "cap_square" in attrib:
-                spen.SetCap(wx.CAP_PROJECTING)
+                if colpat is None:
+                    sbrush = self._brush
+                else:
+                    sbrush = wx.Brush()
+                    sbrush.SetColour(colpat)
+                gc.SetBrush(sbrush)
+                gc.FillPath(gp, fillStyle=fill_style)
+            for entry in stroke_paths:
+                gp = entry[0]
+                attrib = entry[2]
+                if entry[1] is None:
+                    spen = self._pen
+                else:
+                    spen = wx.Pen()
+                    spen.SetColour(entry[1])
+                    spen.SetWidth(self.strokewidth)
+                spen.SetCap(wx.CAP_ROUND)
+                if "cap_butt" in attrib:
+                    spen.SetCap(wx.CAP_BUTT)
+                if "cap_round" in attrib:
+                    spen.SetCap(wx.CAP_BUTT)
+                if "cap_square" in attrib:
+                    spen.SetCap(wx.CAP_PROJECTING)
 
-            spen.SetJoin(wx.JOIN_ROUND)
-            if "join_arcs" in attrib:
                 spen.SetJoin(wx.JOIN_ROUND)
-            if "join_bevel" in attrib:
-                spen.SetJoin(wx.JOIN_BEVEL)
-            if "join_miter" in attrib:
-                spen.SetJoin(wx.JOIN_MITER)
-            if "join_miterclip" in attrib:
-                spen.SetJoin(wx.JOIN_MITER)
-            gc.SetPen(spen)
-            gc.StrokePath(gp)
-        dc.SelectObject(wx.NullBitmap)
-        gc.Destroy()
-        del gc.dc
-        del dc
-        # Save bitmap for later retrieval
-        _CACHE[cache_id] = bmp
+                if "join_arcs" in attrib:
+                    spen.SetJoin(wx.JOIN_ROUND)
+                if "join_bevel" in attrib:
+                    spen.SetJoin(wx.JOIN_BEVEL)
+                if "join_miter" in attrib:
+                    spen.SetJoin(wx.JOIN_MITER)
+                if "join_miterclip" in attrib:
+                    spen.SetJoin(wx.JOIN_MITER)
+                gc.SetPen(spen)
+                gc.StrokePath(gp)
+            dc.SelectObject(wx.NullBitmap)
+            gc.Destroy()
+            del gc.dc
+            del dc
+            # Save bitmap for later retrieval
+            _CACHE[cache_id] = bmp
         return bmp
 
         # image = bmp.ConvertToImage()
@@ -1647,6 +1655,7 @@ icons8_down_left = VectorIcon(
         "M 42.980469 5.992188 C 42.71875 5.996094 42.472656 6.105469 42.292969 6.292969 L 8 40.585938 L 8 27 C 8.003906 26.730469 7.898438 26.46875 7.707031 26.277344 C 7.515625 26.085938 7.253906 25.980469 6.984375 25.984375 C 6.433594 25.996094 5.992188 26.449219 6 27 L 6 42.847656 C 5.980469 42.957031 5.980469 43.070313 6 43.179688 L 6 44 L 6.824219 44 C 6.933594 44.019531 7.042969 44.019531 7.152344 44 L 23 44 C 23.359375 44.003906 23.695313 43.816406 23.878906 43.503906 C 24.058594 43.191406 24.058594 42.808594 23.878906 42.496094 C 23.695313 42.183594 23.359375 41.996094 23 42 L 9.414063 42 L 43.707031 7.707031 C 44.003906 7.417969 44.089844 6.980469 43.929688 6.601563 C 43.769531 6.21875 43.394531 5.976563 42.980469 5.992188 Z",
     ),
     stroke=(),
+    edge=10,
 )
 
 icons8_down_right = VectorIcon(
@@ -1654,6 +1663,7 @@ icons8_down_right = VectorIcon(
         "M 6.992188 5.992188 C 6.582031 5.992188 6.21875 6.238281 6.0625 6.613281 C 5.910156 6.992188 6 7.421875 6.292969 7.707031 L 40.585938 42 L 27 42 C 26.640625 41.996094 26.304688 42.183594 26.121094 42.496094 C 25.941406 42.808594 25.941406 43.191406 26.121094 43.503906 C 26.304688 43.816406 26.640625 44.003906 27 44 L 42.847656 44 C 42.957031 44.019531 43.070313 44.019531 43.179688 44 L 44 44 L 44 43.175781 C 44.019531 43.066406 44.019531 42.957031 44 42.847656 L 44 27 C 44.003906 26.730469 43.898438 26.46875 43.707031 26.277344 C 43.515625 26.085938 43.253906 25.980469 42.984375 25.984375 C 42.433594 25.996094 41.992188 26.449219 42 27 L 42 40.585938 L 7.707031 6.292969 C 7.519531 6.097656 7.261719 5.992188 6.992188 5.992188 Z",
     ),
     stroke=(),
+    edge=10,
 )
 
 icons8_up_left = VectorIcon(
@@ -1661,6 +1671,7 @@ icons8_up_left = VectorIcon(
         "M 6.992188 5.992188 C 6.945313 5.992188 6.902344 5.992188 6.859375 6 L 6 6 L 6 6.863281 C 5.988281 6.953125 5.988281 7.039063 6 7.128906 L 6 23 C 5.996094 23.359375 6.183594 23.695313 6.496094 23.878906 C 6.808594 24.058594 7.191406 24.058594 7.503906 23.878906 C 7.816406 23.695313 8.003906 23.359375 8 23 L 8 9.414063 L 42.292969 43.707031 C 42.542969 43.96875 42.917969 44.074219 43.265625 43.980469 C 43.617188 43.890625 43.890625 43.617188 43.980469 43.265625 C 44.074219 42.917969 43.96875 42.542969 43.707031 42.292969 L 9.414063 8 L 23 8 C 23.359375 8.003906 23.695313 7.816406 23.878906 7.503906 C 24.058594 7.191406 24.058594 6.808594 23.878906 6.496094 C 23.695313 6.183594 23.359375 5.996094 23 6 L 7.117188 6 C 7.074219 5.992188 7.03125 5.992188 6.992188 5.992188 Z",
     ),
     stroke=(),
+    edge=10,
 )
 
 icons8_up_right = VectorIcon(
@@ -1668,6 +1679,7 @@ icons8_up_right = VectorIcon(
         "M 42.980469 5.992188 C 42.941406 5.992188 42.90625 5.996094 42.871094 6 L 27 6 C 26.640625 5.996094 26.304688 6.183594 26.121094 6.496094 C 25.941406 6.808594 25.941406 7.191406 26.121094 7.503906 C 26.304688 7.816406 26.640625 8.003906 27 8 L 40.585938 8 L 6.292969 42.292969 C 6.03125 42.542969 5.925781 42.917969 6.019531 43.265625 C 6.109375 43.617188 6.382813 43.890625 6.734375 43.980469 C 7.082031 44.074219 7.457031 43.96875 7.707031 43.707031 L 42 9.414063 L 42 23 C 41.996094 23.359375 42.183594 23.695313 42.496094 23.878906 C 42.808594 24.058594 43.191406 24.058594 43.503906 23.878906 C 43.816406 23.695313 44.003906 23.359375 44 23 L 44 7.125 C 44.011719 7.035156 44.011719 6.941406 44 6.851563 L 44 6 L 43.144531 6 C 43.089844 5.992188 43.035156 5.988281 42.980469 5.992188 Z",
     ),
     stroke=(),
+    edge=10,
 )
 
 icons8_administrative_tools = VectorIcon(
