@@ -17647,3 +17647,6 @@ msgstr "Minndest-Abstand zwischen zu rasternden Objekten, damit sie getrennt wer
 #: ./meerk40t\core\planner.py:633
 msgid "Converting data"
 msgstr "Wandle Daten um"
+
+msgid "Do you really want to remove this device?\nThis can not be undone!"
+msgstr "Soll dieses Gerät wirklich gelöscht werden?\nDiese Aktion kann nicht rückgängig gemacht werden!"
