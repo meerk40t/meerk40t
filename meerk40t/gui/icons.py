@@ -727,7 +727,7 @@ class VectorIcon:
         del dc
         return bmp
 
-    @lru_cache(maxsize=32)
+    @lru_cache(maxsize=1024)
     def retrieve_bitmap(self, color_dark, final_icon_width, final_icon_height, buffer):
         # Even if we don't use color_dark in this routine, it is needed
         # to create the proper function hash?!
