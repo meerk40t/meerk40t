@@ -117,35 +117,26 @@ class LaserPanel(wx.Panel):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.icon_size = 0.5 * get_default_icon_size()
 
-        sizer_devices = StaticBoxSizer(self, wx.ID_ANY, _("Device"), wx.HORIZONTAL)
-        sizer_main.Add(sizer_devices, 0, wx.EXPAND, 0)
+        self.sizer_devices = StaticBoxSizer(self, wx.ID_ANY, _("Device"), wx.HORIZONTAL)
+        sizer_main.Add(self.sizer_devices, 0, wx.EXPAND, 0)
 
         # Devices Initialize.
         self.available_devices = self.context.kernel.services("device")
 
-        self.selected_device = self.context.device
-        index = -1
-        for i, s in enumerate(self.available_devices):
-            if s is self.selected_device:
-                index = i
-                break
-        spools = [s.label for s in self.available_devices]
-
         self.combo_devices = wx.ComboBox(
-            self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN | wx.CB_READONLY
+            self, wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
         self.combo_devices.SetToolTip(
             _("Select device from list of configured devices")
         )
-        self.combo_devices.SetSelection(index)
         self.btn_config_laser = wx.Button(self, wx.ID_ANY, "*")
         self.btn_config_laser.SetToolTip(
             _("Opens device-specific configuration window")
         )
 
-        sizer_devices.Add(self.combo_devices, 1, wx.EXPAND, 0)
+        self.sizer_devices.Add(self.combo_devices, 1, wx.EXPAND, 0)
         self.btn_config_laser.SetMinSize(dip_size(self, 20, -1))
-        sizer_devices.Add(self.btn_config_laser, 0, wx.EXPAND, 0)
+        self.sizer_devices.Add(self.btn_config_laser, 0, wx.EXPAND, 0)
 
         sizer_control = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control, 0, wx.EXPAND, 0)
@@ -315,11 +306,13 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_CHECKBOX, self.on_optimize, self.checkbox_optimize)
         self.Bind(wx.EVT_BUTTON, self.on_config_button, self.btn_config_laser)
         # end wxGlade
-        if index == -1:
-            disable_window(self)
         self.checkbox_adjust.SetValue(False)
         self.on_check_adjust(None)
         self.update_override_controls()
+        self.on_device_changes()
+        index = self.combo_devices.GetSelection()
+        if index == -1:
+            disable_window(self)
         # Check for a real click of the execute button
         self.button_start_was_clicked = False
 
@@ -425,19 +418,24 @@ class LaserPanel(wx.Panel):
     @signal_listener("device;renamed")
     @lookup_listener("service/device/active")
     @lookup_listener("service/device/available")
-    def spooler_lookup(self, *args):
+    def on_device_changes(self, *args):
         # Devices Initialize.
         self.available_devices = self.context.kernel.services("device")
         self.selected_device = self.context.device
         index = -1
+        count = 0
         self.combo_devices.Clear()
         for i, spool in enumerate(self.available_devices):
             if index < 0 and spool is self.selected_device:
                 index = i
             self.combo_devices.Append(spool.label)
+            count += 1
         self.combo_devices.SetSelection(index)
         self.set_pause_color()
         self.update_override_controls()
+        showit = count > 1
+        self.sizer_devices.ShowItems(showit)
+        self.Layout()
 
     @signal_listener("device;connected")
     def on_connectivity(self, *args):
