@@ -175,6 +175,7 @@ and a wxpython version <= 4.1.1."""
                 ),
                 "page": "Gui",
                 "section": "General",
+                "signals": "restart",
             },
             {
                 "attr": "disable_tree_tool_tips",
