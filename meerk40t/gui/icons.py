@@ -1,4 +1,6 @@
 import threading
+from functools import lru_cache
+
 import wx
 from wx.lib.embeddedimage import PyEmbeddedImage as py_embedded_image
 
@@ -32,10 +34,6 @@ STD_ICON_SIZE = 50
 
 _MIN_ICON_SIZE = 0
 _GLOBAL_FACTOR = 1.0
-
-# Cache across all vector icons
-_CACHE = dict()
-
 
 def set_icon_appearance(factor, min_size):
     global _MIN_ICON_SIZE
@@ -463,14 +461,15 @@ class VectorIcon:
         self._pen = wx.Pen()
         self._brush = wx.Brush()
         self._background = wx.Brush()
-        res_fill = ""
-        for e in self.list_fill:
-            res_fill += str(hash(e)) + ","
-        res_stroke = ""
-        for e in self.list_stroke:
-            res_stroke += str(hash(e[2])) + ","
 
-        self._prehash = res_fill + "|" + res_stroke
+        # res_fill = ""
+        # for e in self.list_fill:
+        #     res_fill += str(hash(e)) + ","
+        # res_stroke = ""
+        # for e in self.list_stroke:
+        #     res_stroke += str(hash(e[2])) + ","
+        #
+        # self._prehash = res_fill + "|" + res_stroke
         self._lock = threading.Lock()
 
     def investigate(self, svgstr):
@@ -532,6 +531,210 @@ class VectorIcon:
         self._background.SetColour(wx.BLACK)
         self._pen.SetWidth(self.strokewidth)
 
+    def prepare_bitmap(self, final_icon_width, final_icon_height, buffer):
+        wincol = self._background.GetColour()
+        bmp = wx.Bitmap.FromRGBA(
+            final_icon_width,
+            final_icon_height,
+            wincol.red,
+            wincol.blue,
+            wincol.green,
+            0,
+        )
+        dc = wx.MemoryDC()
+        dc.SelectObject(bmp)
+        # dc.SetBackground(self._background)
+        # dc.SetBackground(wx.RED_BRUSH)
+        # dc.Clear()
+        gc = wx.GraphicsContext.Create(dc)
+        gc.dc = dc
+        stroke_paths = []
+        fill_paths = []
+        # Establish the box...
+        min_x = min_y = max_x = max_y = None
+
+        def get_color(info_color, info_bright, default_color):
+            color = None
+            if info_color is not None:
+                try:
+                    color = wx.Colour(info_color)
+                except AttributeError:
+                    pass
+            if info_bright is not None:
+                if color is None:
+                    color = default_color
+                # brightness is a percentage values below 100 indicate darker
+                # values beyond 100 indicate lighter
+                # no change = 100
+                # What about black? This is a special case, so we only consider
+                ialpha = info_bright / 100.0
+                if color.red == color.green == color.blue == 0 and info_bright > 100:
+                    ialpha = (info_bright - 100) / 100.0
+                    cr = int(255 * ialpha)
+                    cg = int(255 * ialpha)
+                    cb = int(255 * ialpha)
+                else:
+                    cr = int(color.red * ialpha)
+                    cg = int(color.green * ialpha)
+                    cb = int(color.blue * ialpha)
+
+                # Make sure the stay with 0..255
+                cr = max(0, min(255, cr))
+                cg = max(0, min(255, cg))
+                cb = max(0, min(255, cb))
+                color = wx.Colour(cr, cg, cb)
+            return color
+
+        def_col = self._brush.GetColour()
+        for s_entry in self.list_fill:
+            e = s_entry[2]
+            attrib = s_entry[3]
+            geom = Geomstr.svg(e)
+            color = get_color(s_entry[0], s_entry[1], def_col)
+            gp = self.make_geomstr(gc, geom)
+            fill_paths.append((gp, color, attrib))
+            m_x, m_y, p_w, p_h = gp.Box
+            if min_x is None:
+                min_x = m_x
+                min_y = m_y
+                max_x = m_x + p_w
+                max_y = m_y + p_h
+            else:
+                min_x = min(min_x, m_x)
+                min_y = min(min_y, m_y)
+                max_x = max(max_x, m_x + p_w)
+                max_y = max(max_y, m_y + p_h)
+
+        def_col = self._pen.GetColour()
+        for s_entry in self.list_stroke:
+            e = s_entry[2]
+            attrib = s_entry[3]
+            geom = Geomstr.svg(e)
+            color = get_color(s_entry[0], s_entry[1], def_col)
+            gp = self.make_geomstr(gc, geom)
+            stroke_paths.append((gp, color, attrib))
+            m_x, m_y, p_w, p_h = gp.Box
+            if min_x is None:
+                min_x = m_x
+                min_y = m_y
+                max_x = m_x + p_w
+                max_y = m_y + p_h
+            else:
+                min_x = min(min_x, m_x)
+                min_y = min(min_y, m_y)
+                max_x = max(max_x, m_x + p_w)
+                max_y = max(max_y, m_y + p_h)
+
+        path_width = max_x - min_x
+        path_height = max_y - min_y
+
+        path_width += 2 * self.edge
+        path_height += 2 * self.edge
+
+        stroke_buffer = self.strokewidth
+        path_width += 2 * stroke_buffer
+        path_height += 2 * stroke_buffer
+
+        scale_x = (final_icon_width - 2 * buffer) / path_width
+        scale_y = (final_icon_height - 2 * buffer) / path_height
+
+        scale = min(scale_x, scale_y)
+        width_scaled = int(round(path_width * scale))
+        height_scaled = int(round(path_height * scale))
+
+        # print (f"W: {final_icon_width} vs {width_scaled}, {final_icon_height} vs {height_scaled}")
+        keep_ratio = True
+
+        if keep_ratio:
+            scale_x = min(scale_x, scale_y)
+            scale_y = scale_x
+
+        from meerk40t.gui.zmatrix import ZMatrix
+        from meerk40t.svgelements import Matrix
+
+        matrix = Matrix()
+        matrix.post_translate(
+            -min_x
+            + self.edge
+            + stroke_buffer
+            + (final_icon_width - width_scaled) / 2 / scale_x,
+            -min_y
+            + self.edge
+            + stroke_buffer
+            + (final_icon_height - height_scaled) / 2 / scale_x,
+        )
+        matrix.post_scale(scale_x, scale_y)
+        if scale_y < 0:
+            matrix.pre_translate(0, -height_scaled)
+        if scale_x < 0:
+            matrix.pre_translate(-width_scaled, 0)
+
+        gc = wx.GraphicsContext.Create(dc)
+        gc.dc = dc
+        gc.SetInterpolationQuality(wx.INTERPOLATION_BEST)
+        gc.PushState()
+        if not matrix.is_identity():
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+
+        for entry in fill_paths:
+            fill_style = wx.WINDING_RULE
+            gp = entry[0]
+            colpat = entry[1]
+            attrib = entry[2]
+            if "fill_evenodd" in attrib:
+                fill_style = wx.ODDEVEN_RULE
+            if "fill_nonzero" in attrib:
+                fill_style = wx.WINDING_RULE
+
+            if colpat is None:
+                sbrush = self._brush
+            else:
+                sbrush = wx.Brush()
+                sbrush.SetColour(colpat)
+            gc.SetBrush(sbrush)
+            gc.FillPath(gp, fillStyle=fill_style)
+        for entry in stroke_paths:
+            gp = entry[0]
+            attrib = entry[2]
+            if entry[1] is None:
+                spen = self._pen
+            else:
+                spen = wx.Pen()
+                spen.SetColour(entry[1])
+                spen.SetWidth(self.strokewidth)
+            spen.SetCap(wx.CAP_ROUND)
+            if "cap_butt" in attrib:
+                spen.SetCap(wx.CAP_BUTT)
+            if "cap_round" in attrib:
+                spen.SetCap(wx.CAP_BUTT)
+            if "cap_square" in attrib:
+                spen.SetCap(wx.CAP_PROJECTING)
+
+            spen.SetJoin(wx.JOIN_ROUND)
+            if "join_arcs" in attrib:
+                spen.SetJoin(wx.JOIN_ROUND)
+            if "join_bevel" in attrib:
+                spen.SetJoin(wx.JOIN_BEVEL)
+            if "join_miter" in attrib:
+                spen.SetJoin(wx.JOIN_MITER)
+            if "join_miterclip" in attrib:
+                spen.SetJoin(wx.JOIN_MITER)
+            gc.SetPen(spen)
+            gc.StrokePath(gp)
+        dc.SelectObject(wx.NullBitmap)
+        gc.Destroy()
+        del gc.dc
+        del dc
+        return bmp
+
+    @lru_cache(maxsize=32)
+    def retrieve_bitmap(self, color_dark, final_icon_width, final_icon_height, buffer):
+        # Even if we don't use color_dark in this routine, it is needed
+        # to create the proper function hash?!
+        with self._lock:
+            bmp = self.prepare_bitmap(final_icon_width, final_icon_height, buffer)
+        return bmp
+
     def GetBitmap(
         self,
         use_theme=True,
@@ -545,7 +748,6 @@ class VectorIcon:
         resolution=1,
         **kwargs,
     ):
-        global _CACHE
         if color is not None and hasattr(color, "red"):
             if color.red == color.green == color.blue == 255:
                 # Color is white...
@@ -553,10 +755,10 @@ class VectorIcon:
 
         if force_darkmode or DARKMODE:
             self.dark_mode(color)
+            darkm = True
         else:
             self.light_mode(color)
-
-        from meerk40t.tools.geomstr import Geomstr
+            darkm = False
 
         if resize is None:
             resize = get_default_icon_size()
@@ -582,233 +784,11 @@ class VectorIcon:
             buffer = 5
             if min(final_icon_height, final_icon_width) < 0.5 * get_default_icon_size():
                 buffer = 2
+        # Dummy variable for proper hashing via lru_cache
+        color_dark = f"{color}|{darkm}"
+        bmp = self.retrieve_bitmap(color_dark, final_icon_width, final_icon_height, buffer)
 
-        def color_id():
-            return "--" if color is None else f"{color.red}-{color.green}-{color.blue}"
-
-        cache_id = f"{self._prehash}|{color_id()}|{resize}|{force_darkmode}"
-        if cache_id in _CACHE:
-            # print(f"Cache Hit for {cache_id}")
-            return _CACHE[cache_id]
-        # wincol = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
-        with self._lock:
-            wincol = self._background.GetColour()
-            bmp = wx.Bitmap.FromRGBA(
-                final_icon_width,
-                final_icon_height,
-                wincol.red,
-                wincol.blue,
-                wincol.green,
-                0,
-            )
-            dc = wx.MemoryDC()
-            dc.SelectObject(bmp)
-            # dc.SetBackground(self._background)
-            # dc.SetBackground(wx.RED_BRUSH)
-            # dc.Clear()
-            gc = wx.GraphicsContext.Create(dc)
-            gc.dc = dc
-            stroke_paths = []
-            fill_paths = []
-            # Establish the box...
-            min_x = min_y = max_x = max_y = None
-
-            def get_color(info_color, info_bright, default_color):
-                color = None
-                if info_color is not None:
-                    try:
-                        color = wx.Colour(info_color)
-                    except AttributeError:
-                        pass
-                if info_bright is not None:
-                    if color is None:
-                        color = default_color
-                    # brightness is a percentage values below 100 indicate darker
-                    # values beyond 100 indicate lighter
-                    # no change = 100
-                    # What about black? This is a special case, so we only consider
-                    ialpha = info_bright / 100.0
-                    if color.red == color.green == color.blue == 0 and info_bright > 100:
-                        ialpha = (info_bright - 100) / 100.0
-                        cr = int(255 * ialpha)
-                        cg = int(255 * ialpha)
-                        cb = int(255 * ialpha)
-                    else:
-                        cr = int(color.red * ialpha)
-                        cg = int(color.green * ialpha)
-                        cb = int(color.blue * ialpha)
-
-                    # Make sure the stay with 0..255
-                    cr = max(0, min(255, cr))
-                    cg = max(0, min(255, cg))
-                    cb = max(0, min(255, cb))
-                    color = wx.Colour(cr, cg, cb)
-                return color
-
-            def_col = self._brush.GetColour()
-            for s_entry in self.list_fill:
-                e = s_entry[2]
-                attrib = s_entry[3]
-                geom = Geomstr.svg(e)
-                color = get_color(s_entry[0], s_entry[1], def_col)
-                gp = self.make_geomstr(gc, geom)
-                fill_paths.append((gp, color, attrib))
-                m_x, m_y, p_w, p_h = gp.Box
-                if min_x is None:
-                    min_x = m_x
-                    min_y = m_y
-                    max_x = m_x + p_w
-                    max_y = m_y + p_h
-                else:
-                    min_x = min(min_x, m_x)
-                    min_y = min(min_y, m_y)
-                    max_x = max(max_x, m_x + p_w)
-                    max_y = max(max_y, m_y + p_h)
-
-            def_col = self._pen.GetColour()
-            for s_entry in self.list_stroke:
-                e = s_entry[2]
-                attrib = s_entry[3]
-                geom = Geomstr.svg(e)
-                color = get_color(s_entry[0], s_entry[1], def_col)
-                gp = self.make_geomstr(gc, geom)
-                stroke_paths.append((gp, color, attrib))
-                m_x, m_y, p_w, p_h = gp.Box
-                if min_x is None:
-                    min_x = m_x
-                    min_y = m_y
-                    max_x = m_x + p_w
-                    max_y = m_y + p_h
-                else:
-                    min_x = min(min_x, m_x)
-                    min_y = min(min_y, m_y)
-                    max_x = max(max_x, m_x + p_w)
-                    max_y = max(max_y, m_y + p_h)
-
-            path_width = max_x - min_x
-            path_height = max_y - min_y
-
-            path_width += 2 * self.edge
-            path_height += 2 * self.edge
-
-            stroke_buffer = self.strokewidth
-            path_width += 2 * stroke_buffer
-            path_height += 2 * stroke_buffer
-
-            scale_x = (final_icon_width - 2 * buffer) / path_width
-            scale_y = (final_icon_height - 2 * buffer) / path_height
-
-            scale = min(scale_x, scale_y)
-            width_scaled = int(round(path_width * scale))
-            height_scaled = int(round(path_height * scale))
-
-            # print (f"W: {final_icon_width} vs {width_scaled}, {final_icon_height} vs {height_scaled}")
-            keep_ratio = True
-
-            if keep_ratio:
-                scale_x = min(scale_x, scale_y)
-                scale_y = scale_x
-
-            from meerk40t.gui.zmatrix import ZMatrix
-            from meerk40t.svgelements import Matrix
-
-            matrix = Matrix()
-            matrix.post_translate(
-                -min_x
-                + self.edge
-                + stroke_buffer
-                + (final_icon_width - width_scaled) / 2 / scale_x,
-                -min_y
-                + self.edge
-                + stroke_buffer
-                + (final_icon_height - height_scaled) / 2 / scale_x,
-            )
-            matrix.post_scale(scale_x, scale_y)
-            if scale_y < 0:
-                matrix.pre_translate(0, -height_scaled)
-            if scale_x < 0:
-                matrix.pre_translate(-width_scaled, 0)
-
-            gc = wx.GraphicsContext.Create(dc)
-            gc.dc = dc
-            gc.SetInterpolationQuality(wx.INTERPOLATION_BEST)
-            gc.PushState()
-            if not matrix.is_identity():
-                gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-
-            for entry in fill_paths:
-                fill_style = wx.WINDING_RULE
-                gp = entry[0]
-                colpat = entry[1]
-                attrib = entry[2]
-                if "fill_evenodd" in attrib:
-                    fill_style = wx.ODDEVEN_RULE
-                if "fill_nonzero" in attrib:
-                    fill_style = wx.WINDING_RULE
-
-                if colpat is None:
-                    sbrush = self._brush
-                else:
-                    sbrush = wx.Brush()
-                    sbrush.SetColour(colpat)
-                gc.SetBrush(sbrush)
-                gc.FillPath(gp, fillStyle=fill_style)
-            for entry in stroke_paths:
-                gp = entry[0]
-                attrib = entry[2]
-                if entry[1] is None:
-                    spen = self._pen
-                else:
-                    spen = wx.Pen()
-                    spen.SetColour(entry[1])
-                    spen.SetWidth(self.strokewidth)
-                spen.SetCap(wx.CAP_ROUND)
-                if "cap_butt" in attrib:
-                    spen.SetCap(wx.CAP_BUTT)
-                if "cap_round" in attrib:
-                    spen.SetCap(wx.CAP_BUTT)
-                if "cap_square" in attrib:
-                    spen.SetCap(wx.CAP_PROJECTING)
-
-                spen.SetJoin(wx.JOIN_ROUND)
-                if "join_arcs" in attrib:
-                    spen.SetJoin(wx.JOIN_ROUND)
-                if "join_bevel" in attrib:
-                    spen.SetJoin(wx.JOIN_BEVEL)
-                if "join_miter" in attrib:
-                    spen.SetJoin(wx.JOIN_MITER)
-                if "join_miterclip" in attrib:
-                    spen.SetJoin(wx.JOIN_MITER)
-                gc.SetPen(spen)
-                gc.StrokePath(gp)
-            dc.SelectObject(wx.NullBitmap)
-            gc.Destroy()
-            del gc.dc
-            del dc
-            # Save bitmap for later retrieval
-            _CACHE[cache_id] = bmp
         return bmp
-
-        # image = bmp.ConvertToImage()
-        # if image.HasAlpha():
-        #     image.ClearAlpha()
-        # image.InitAlpha()
-        # if force_darkmode:
-        #     bgcol = 0
-        # else:
-        #     bgcol = 255
-        # for y in range(image.GetHeight()):
-        #     for x in range(image.GetWidth()):
-        #         r = image.GetRed(x, y)
-        #         g = image.GetGreen(x, y)
-        #         b = image.GetBlue(x, y)
-        #         alpha_value = max(abs(r - bgcol), abs(g - bgcol), abs(b - bgcol))
-        #         # For debug purposes...
-        #         # image.SetRGB(x, y, 255, 0, 0)
-        #         image.SetAlpha(x, y, alpha_value)
-        # bmp = wx.Bitmap(image)
-        #
-        # return bmp
 
     def make_geomstr(self, gc, path):
         """
