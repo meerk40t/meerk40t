@@ -3345,6 +3345,7 @@ class Kernel(Settings):
             if self._shutdown:
                 return
             self._shutdown = True
+            self.restart = True
             self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_SHUTDOWN)
 
         # ==========
