@@ -458,17 +458,7 @@ class DevicePanel(wx.Panel):
 
     def on_tree_popup_delete(self, service):
         def deleteit(event=None):
-            if self.context.device is service:
-                wx.MessageDialog(
-                    None, _("Cannot remove the currently active device."), _("Error")
-                ).ShowModal()
-                return
-            try:
-                service.destroy()
-                self.context.signal("device;modified")
-            except AttributeError:
-                pass
-            self.refresh_device_tree()
+            self.remove_device(service)
 
         return deleteit
 
@@ -502,20 +492,24 @@ class DevicePanel(wx.Panel):
             self.context.signal("device;modified")
         dlg.Destroy()
 
-    def on_button_remove_device(self, event):  # wxGlade: DevicePanel.<event_handler>
-        service = self.get_selected_device()
+    def remove_device(self, service):
         if service is not None:
             if self.context.device is service:
                 wx.MessageDialog(
                     None, _("Cannot remove the currently active device."), _("Error")
                 ).ShowModal()
                 return
-            try:
-                service.destroy()
-                self.context.signal("device;modified")
-            except AttributeError:
-                pass
-            self.refresh_device_tree()
+            if self.context.kernel.yesno(_("Do you really want to remove this device?\nThis can not be undone!")):
+                try:
+                    service.destroy()
+                    self.context.signal("device;modified")
+                except AttributeError:
+                    pass
+                self.refresh_device_tree()
+
+    def on_button_remove_device(self, event):  # wxGlade: DevicePanel.<event_handler>
+        service = self.get_selected_device()
+        self.remove_device(service)
 
     def on_button_activate_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         service = self.get_selected_device()
