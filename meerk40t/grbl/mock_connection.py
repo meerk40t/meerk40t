@@ -45,7 +45,6 @@ class MockConnection:
         try:
             self.controller.log("Attempting to Connect...", type="connection")
             self.laser = True
-            self.just_connected = True
             self.controller.log("Connected", type="connection")
             self.service.signal("grbl;status", "connected")
         except ConnectionError:

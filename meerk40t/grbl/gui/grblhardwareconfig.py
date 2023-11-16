@@ -29,11 +29,11 @@ class GrblIoButtons(wx.Panel):
         sizer_2.Add(self.button_refresh, 1, 0, 0)
         self.Bind(wx.EVT_BUTTON, self.on_button_refresh, self.button_refresh)
 
-        self.button_write = wx.Button(self, wx.ID_ANY, "Write")
-        sizer_2.Add(self.button_write, 1, 0, 0)
-
-        self.button_export = wx.Button(self, wx.ID_ANY, "Export")
-        sizer_2.Add(self.button_export, 1, 0, 0)
+        # self.button_write = wx.Button(self, wx.ID_ANY, "Write")
+        # sizer_2.Add(self.button_write, 1, 0, 0)
+        #
+        # self.button_export = wx.Button(self, wx.ID_ANY, "Export")
+        # sizer_2.Add(self.button_export, 1, 0, 0)
 
         self.SetSizer(sizer_2)
 
