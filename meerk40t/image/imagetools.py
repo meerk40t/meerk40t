@@ -1386,13 +1386,19 @@ def plugin(kernel, lifecycle=None):
     @context.console_option(
         "line", "l", type=bool, help=_("Show split line candidates"), action="store_true",
     )
+    @context.console_option(
+        "breakdown", "b", type=bool, help=_("Break the image apart into slices"), action="store_true",
+    )
+    @context.console_option(
+        "whiten", "w", type=bool, help=_("Break the image apart but whiten non-used areas"), action="store_true",
+    )
     @context.console_command(
         "innerwhite",
         help=_("identify inner white areas in image"),
         input_type="image",
         output_type="image",
     )
-    def image_white(command, channel, _, minimal=None, outer=False, simplified=False, line=False, data=None, post=None, **kwargs):
+    def image_white(command, channel, _, minimal=None, outer=False, simplified=False, line=False, breakdown=False, whiten=False, data=None, post=None, **kwargs):
         import cv2
         import numpy as np
         # from PIL import Image
@@ -1408,10 +1414,19 @@ def plugin(kernel, lifecycle=None):
 
         show_contour = not simplified
         show_simplified = simplified
+        if breakdown and whiten:
+            channel("You can't use --breakdown and --whiten at the same time")
+            return
+        if breakdown or whiten:
+            line = False
+            show_simplified = False
+            show_contour = False
 
-
+        # channel (f"Options: breakdown={breakdown}, contour={show_contour}, simplified contour={show_simplified}, lines={line}")
         for inode in data:
-            width, height = inode.image.size
+            # node_image = inode.active_image
+            node_image = inode.image
+            width, height = node_image.size
             if width == 0 or height == 0:
                 continue
             if not hasattr(inode, "bounds"):
@@ -1429,7 +1444,7 @@ def plugin(kernel, lifecycle=None):
                     oy + iy / height * coord_height,
                 )
 
-            gray = np.array(inode.image.convert("L"))
+            gray = np.array(node_image.convert("L"))
             # Threshold the image
             _, thresh = cv2.threshold(gray, 250, 255, cv2.THRESH_BINARY)
 
@@ -1562,7 +1577,8 @@ def plugin(kernel, lifecycle=None):
                 #         type="elem path",
                 #     )
                 #     data_out.append(node)
-            if line:
+            linecandidates.sort(key=lambda e: e[0])
+            if line or breakdown or whiten:
                 for idx1, c in enumerate(linecandidates):
                     if c[0] < 0:
                         continue
@@ -1573,7 +1589,7 @@ def plugin(kernel, lifecycle=None):
                         # Does c line inside d? if yes then we don't need d
                         if d[0] <= c[0] and d[0] + d[1] >= c[0] + c[1]:
                             linecandidates[idx2] = (-1, -1)
-
+            if line:
                 for c in linecandidates:
                     if c[0] < 0:
                         continue
@@ -1586,6 +1602,73 @@ def plugin(kernel, lifecycle=None):
                         type="elem line",
                     )
                     data_out.append(node)
+            white_paste = (255, 255, 255)
+            if breakdown or whiten:
+                anyslices = 0
+                right_image = node_image.copy()
+                dx = 0
+                for c in linecandidates:
+                    if c[0] < 0:
+                        continue
+                    rdx, rdy = getpoint(dx, 0)
+                    rdx -= ox
+                    rwidth, rheight = right_image.size
+                    anyslices += 1
+                    if breakdown:
+                        x = int(c[0] + c[1] / 2 - dx)
+                        left_image = right_image.crop((0, 0, x, rheight))
+                        dx = x + 1
+                        right_image = right_image.crop((dx, 0, rwidth, rheight))
+                    elif whiten:
+                        x = int(c[0] + c[1] / 2)
+                        left_image = right_image.copy()
+                        # print(f"Break position: {x}")
+                        if dx > 0:
+                            # print(f"Erasing left: 0:{dx - 1}")
+                            left_image.paste(white_paste, (0, 0, dx - 1, rheight))
+                        dx = x + 1
+                        left_image.paste(white_paste, (dx, 0, rwidth, rheight))
+                        # print(f"Erasing right: {dx}:{rwidth}")
+                    newnode = copy(inode)
+                    newnode.label = f"[{anyslices}]{'' if inode.label is None else inode.label}"
+                    # newnode.dither = False
+                    # newnode.operations.clear()
+                    # newnode.prevent_crop = True
+                    newnode.image = left_image
+                    if breakdown and rdx != 0:
+                        newnode.matrix.post_translate_x(rdx)
+                    if whiten:
+                        newnode.prevent_crop = True
+
+                    newnode.altered()
+                    newnode._processed_image = None
+
+                    context.elements.elem_branch.add_node(newnode)
+                    data_out.append(newnode)
+                if anyslices > 0:
+                    rdx, rdy = getpoint(dx, 0)
+                    rdx -= ox
+                    anyslices += 1
+                    newnode = copy(inode)
+                    newnode.label = f"[{anyslices}]{'' if inode.label is None else inode.label}"
+                    # newnode.dither = False
+                    # newnode.operations.clear()
+                    # newnode.prevent_crop = True
+                    if whiten:
+                        if dx > 0:
+                            # print(f"Last, erasing left: 0:{dx - 1}")
+                            right_image.paste(white_paste, (0, 0, dx - 1, rheight))
+                    newnode.image = right_image
+                    if breakdown and rdx != 0:
+                        newnode.matrix.post_translate_x(rdx)
+                    if whiten:
+                        newnode.prevent_crop = True
+                    newnode.altered()
+                    newnode._processed_image = None
+                    context.elements.elem_branch.add_node(newnode)
+                    data_out.append(newnode)
+
+                    inode.remove_node()
 
         post.append(context.elements.post_classify(data_out))
         return "image", data_out
