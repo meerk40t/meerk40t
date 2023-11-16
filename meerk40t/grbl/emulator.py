@@ -389,13 +389,30 @@ class GRBLEmulator:
                     "[G92:0.000,0.000,0.000]",
                     "[TLO:0.000]",
                     "[PRB:0.000,0.000,0.000:0]",
+                    "",
                 ]
                 self.reply("\r\n".join(data))
             return 0
         elif data == "$G":
             # View GCode Parser state
             if self.reply:
-                self.reply("[GC:G0 G54 G17 G21 G90 G94 M5 M9 T0 F0 S0]\r\n")
+                job = self.job
+                modals = list()
+                # G0 G54 G17 G21 G90 G94 M5 M9 T0 F0 S0
+                modals.append(f"G{job.move_mode}")
+                modals.append("G54")  # default coord system.
+                modals.append("G17")  # XY plane
+                modals.append("G21" if job.units == "mm" else "G20")  # MM data.
+                modals.append("G91" if job.relative else "G90")
+                modals.append("G94" if job.feed_desc in ("inch/min", "mm/min") else "G93")
+                modals.append("M5")  # Not currently in a program job.
+                modals.append("M9")  # Mist cooling.
+                modals.append("T0")  # Tool 0
+                modals.append(f"F{int(job.get_feed_rate())}")
+                modals.append(f"S{int(job.get_power_rate())}")
+
+                modes = " ".join(modals)
+                self.reply(f"[GC:{modes}]\r\n")
             return 0
         elif data == "$N":
             # View saved start up code.
