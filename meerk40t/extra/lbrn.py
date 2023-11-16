@@ -193,8 +193,19 @@ class LbrnLoader:
                     app_version = elem.attrib.get("AppVersion")
                     format = elem.attrib.get("FormatVersion")
                     material_height = elem.attrib.get("MaterialHeight")
+                    try:
+                        cx = elements.space.width / 2
+                        cy = elements.space.height / 2
+                    except AttributeError:
+                        cx = 0
+                        cy = 0
                     mirror_x = elem.attrib.get("MirrorX")
                     mirror_y = elem.attrib.get("MirrorY")
+                    if mirror_x == "True":
+                        matrix.post_scale_x(-1, cx, cy)
+                    if mirror_y == "True":
+                        matrix.post_scale_y(-1, cx, cy)
+
                 elif elem.tag in ("Shape", "BackupPath"):
                     stack.append((context, matrix))
                     matrix = Matrix(matrix)
