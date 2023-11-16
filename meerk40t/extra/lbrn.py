@@ -420,4 +420,5 @@ class LbrnLoader:
                     pass
         except (IOError, IndexError) as e:
             raise BadFileError(str(e)) from e
+        elements_service._loading_cleared = True
         return True
