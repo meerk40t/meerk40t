@@ -426,8 +426,8 @@ class MeerK40tScenePanel(wx.Panel):
                             )
                             select_values = (
                                 (
-                                    context.lookup("button/tools/Scene"),
-                                    "button/tools/Scene",
+                                    context.lookup("button/select/Scene"),
+                                    "button/select/Scene",
                                     "Select",
                                 ),
                             )
