@@ -663,6 +663,14 @@ class ImageNode(Node):
             )
         actualized_matrix = Matrix()
 
+
+        if step_y < 0:
+            # if step_y is negative, translate.
+            actualized_matrix.post_translate(0, -image_height)
+        if step_x < 0:
+            # if step_x is negative, translate.
+            actualized_matrix.post_translate(-image_width, 0)
+
         # If crop applies, apply crop.
         if crop:
             cbox = self._get_crop_box(image)
@@ -672,14 +680,7 @@ class ImageNode(Node):
                 height = cbox[3] - cbox[1]
                 if width != image.width or height != image.height:
                     image = image.crop(cbox)
-                    actualized_matrix.post_translate(box[0] - orgbox[0], box[1] - orgbox[1])
-
-        if step_y < 0:
-            # if step_y is negative, translate.
-            actualized_matrix.post_translate(0, -image_height)
-        if step_x < 0:
-            # if step_x is negative, translate.
-            actualized_matrix.post_translate(-image_width, 0)
+                    actualized_matrix.post_translate(cbox[0], cbox[1])
 
         actualized_matrix.post_scale(step_x, step_y)
         actualized_matrix.post_translate(tx, ty)
