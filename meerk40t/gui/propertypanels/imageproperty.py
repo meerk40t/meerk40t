@@ -1260,8 +1260,9 @@ class ImagePropertyPanel(ScrolledPanel):
         # end wxGlade
 
     def node_update(self):
-        self.context.elements.emphasized()
+        self.node.set_dirty_bounds()
         self.node.update(self.context)
+        self.context.elements.emphasized()
         self.context.signal("element_property_update", self.node)
 
     def on_text_dpi(self):
