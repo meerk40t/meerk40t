@@ -580,7 +580,17 @@ class ImageNode(Node):
         @return:
         """
         from PIL import Image, ImageOps
-        from PIL.Image import Resampling, Transform
+        try:
+            from PIL.Image import Transform
+            AFFINE = Transform.AFFINE
+        except ImportError:
+            AFFINE = Image.AFFINE
+
+        try:
+            from PIL.Image import Resampling
+            BICUBIC = Resampling.BICUBIC
+        except ImportError:
+            BICUBIC = Image.BICUBIC
 
         image = self.image
 
@@ -648,7 +658,7 @@ class ImageNode(Node):
                 image_width = 1
             image = image.transform(
                 (image_width, image_height),
-                Transform.AFFINE,
+                AFFINE,
                 (
                     transform_matrix.a,
                     transform_matrix.c,
@@ -657,7 +667,7 @@ class ImageNode(Node):
                     transform_matrix.d,
                     transform_matrix.f,
                 ),
-                resample=Resampling.BICUBIC,
+                resample=BICUBIC,
                 fillcolor="black" if self.invert else "white",
             )
         actualized_matrix = Matrix()
