@@ -426,6 +426,7 @@ class GrblController:
             self.add_watcher(self._channel_log)
 
         if self._sending_thread is None:
+            self._sending_thread = True # Avoid race condition.
             self._sending_thread = self.service.threaded(
                 self._sending,
                 thread_name=f"sender-{self.service.location()}",
@@ -433,6 +434,7 @@ class GrblController:
                 daemon=True,
             )
         if self._recving_thread is None:
+            self._recving_thread = True # Avoid race condition.
             self._recving_thread = self.service.threaded(
                 self._recving,
                 thread_name=f"recver-{self.service.location()}",
