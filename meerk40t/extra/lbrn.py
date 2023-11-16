@@ -412,9 +412,8 @@ class LbrnLoader:
     def load(context, elements_service, pathname, **kwargs):
         try:
             with open(pathname, "r") as source:
-                LbrnLoader.parse(pathname, source, elements_service)
                 try:
-                    pass
+                    LbrnLoader.parse(pathname, source, elements_service)
                 except ParseError:
                     # This is likely `Junk after Document` which is already parsed. Unsure if this is because the
                     # format will sometimes have some extra information or because of a malformed xml.
