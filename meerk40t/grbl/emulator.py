@@ -160,19 +160,27 @@ class GRBLEmulator:
     def status_update(self):
         # TODO: This should reference only the driver.status.
         # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
-        pos, state, minor = self.device.driver.status()
-        x, y = self.units_to_device_matrix.point_in_inverse_space(pos)
+        try:
+            pos, state, minor = self.device.driver.status()
+            x, y = self.units_to_device_matrix.point_in_inverse_space(pos)
+            z = 0.0
+            if state == "busy":
+                state = "Run"
+            elif state == "hold":
+                state = "Hold"
+            else:
+                state = "Idle"
+            f = self.device.driver.speed
+            s = self.device.driver.power
+        except AttributeError:
+            state = "Idle"
+            x = self.job.x
+            y = self.job.y
+            z = self.job.z
+            f = 0
+            s = 0
         x /= self.job.scale
         y /= self.job.scale
-        z = 0.0
-        if state == "busy":
-            state = "Run"
-        elif state == "hold":
-            state = "Hold"
-        else:
-            state = "Idle"
-        f = self.device.driver.speed
-        s = self.device.driver.power
         return f"<{state}|MPos:{x:.3f},{y:.3f},{z:.3f}|FS:{f},{s}>\r\n"
 
     def write(self, data):
