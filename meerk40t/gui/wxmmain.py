@@ -3838,7 +3838,7 @@ class MeerK40t(MWindow):
         self.context(".laserpath_clear\n")
         self.validate_save()
         kernel.busyinfo.end()
-        self.context("tool none\n")
+        self.context(".tool none\n")
 
     def clear_and_open(self, pathname, preferred_loader=None):
         self.clear_project(ops_too=False)
@@ -3939,9 +3939,11 @@ class MeerK40t(MWindow):
 
     def on_click_open(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         self.context(".dialog_load\n")
+        self.context(".tool none\n")
 
     def on_click_import(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         self.context(".dialog_import\n")
+        self.context(".tool none\n")
 
     def on_click_stop(self, event=None):
         self.context("estop\n")
@@ -3951,9 +3953,11 @@ class MeerK40t(MWindow):
 
     def on_click_save(self, event):
         self.context(".dialog_save\n")
+        self.context(".tool none\n")
 
     def on_click_save_as(self, event=None):
         self.context(".dialog_save_as\n")
+        self.context(".tool none\n")
 
     def on_click_close(self, event=None):
         try:
