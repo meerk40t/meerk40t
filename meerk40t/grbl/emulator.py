@@ -394,7 +394,9 @@ class GRBLEmulator:
             return 0
         elif data == "$G":
             # View GCode Parser state
-            return 3
+            if self.reply:
+                self.reply("[GC:G0 G54 G17 G21 G90 G94 M5 M9 T0 F0 S0]\r\n")
+            return 0
         elif data == "$N":
             # View saved start up code.
             return 3
