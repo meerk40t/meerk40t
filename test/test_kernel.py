@@ -21,6 +21,7 @@ class TestKernel(unittest.TestCase):
                 if command in (
                     "quit",
                     "shutdown",
+                    "restart",
                     "interrupt",
                     "+laser",
                     "-laser",

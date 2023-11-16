@@ -1,3 +1,6 @@
+import threading
+from functools import lru_cache
+
 import wx
 from wx.lib.embeddedimage import PyEmbeddedImage as py_embedded_image
 
@@ -31,10 +34,6 @@ STD_ICON_SIZE = 50
 
 _MIN_ICON_SIZE = 0
 _GLOBAL_FACTOR = 1.0
-
-# Cache across all vector icons
-_CACHE = dict()
-
 
 def set_icon_appearance(factor, min_size):
     global _MIN_ICON_SIZE
@@ -463,6 +462,16 @@ class VectorIcon:
         self._brush = wx.Brush()
         self._background = wx.Brush()
 
+        # res_fill = ""
+        # for e in self.list_fill:
+        #     res_fill += str(hash(e)) + ","
+        # res_stroke = ""
+        # for e in self.list_stroke:
+        #     res_stroke += str(hash(e[2])) + ","
+        #
+        # self._prehash = res_fill + "|" + res_stroke
+        self._lock = threading.Lock()
+
     def investigate(self, svgstr):
         color = None
         bright = None
@@ -522,68 +531,7 @@ class VectorIcon:
         self._background.SetColour(wx.BLACK)
         self._pen.SetWidth(self.strokewidth)
 
-    def GetBitmap(
-        self,
-        use_theme=True,
-        resize=None,
-        color=None,
-        rotate=None,
-        noadjustment=False,
-        keepalpha=False,
-        force_darkmode=False,
-        buffer=None,
-        **kwargs,
-    ):
-        global _CACHE
-        if color is not None and hasattr(color, "red"):
-            if color.red == color.green == color.blue == 255:
-                # Color is white...
-                force_darkmode = True
-
-        if force_darkmode or DARKMODE:
-            self.dark_mode(color)
-        else:
-            self.light_mode(color)
-
-        from meerk40t.tools.geomstr import Geomstr
-
-        if resize is None:
-            resize = get_default_icon_size()
-
-        if isinstance(resize, tuple):
-            final_icon_width, final_icon_height = resize
-        else:
-            final_icon_width = resize
-            final_icon_height = resize
-        final_icon_height = int(final_icon_height)
-        final_icon_width = int(final_icon_width)
-        if final_icon_height <= 0:
-            final_icon_height = 1
-        if final_icon_width <= 0:
-            final_icon_width = 1
-        if buffer is None:
-            buffer = 5
-            if min(final_icon_height, final_icon_width) < 0.5 * get_default_icon_size():
-                buffer = 2
-
-        def color_id():
-            return "--" if color is None else f"{color.red}-{color.green}-{color.blue}"
-
-        def my_id():
-            res_fill = ""
-            for e in self.list_fill:
-                res_fill += str(hash(e)) + ","
-            res_stroke = ""
-            for e in self.list_stroke:
-                res_stroke += str(hash(e[2])) + ","
-
-            return res_fill + "|" + res_stroke
-
-        cache_id = f"{my_id()}|{color_id()}|{resize}|{force_darkmode}"
-        if cache_id in _CACHE:
-            # print(f"Cache Hit for {cache_id}")
-            return _CACHE[cache_id]
-        # wincol = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
+    def prepare_bitmap(self, final_icon_width, final_icon_height, buffer):
         wincol = self._background.GetColour()
         bmp = wx.Bitmap.FromRGBA(
             final_icon_width,
@@ -777,30 +725,70 @@ class VectorIcon:
         gc.Destroy()
         del gc.dc
         del dc
-        # Save bitmap for later retrieval
-        _CACHE[cache_id] = bmp
         return bmp
 
-        # image = bmp.ConvertToImage()
-        # if image.HasAlpha():
-        #     image.ClearAlpha()
-        # image.InitAlpha()
-        # if force_darkmode:
-        #     bgcol = 0
-        # else:
-        #     bgcol = 255
-        # for y in range(image.GetHeight()):
-        #     for x in range(image.GetWidth()):
-        #         r = image.GetRed(x, y)
-        #         g = image.GetGreen(x, y)
-        #         b = image.GetBlue(x, y)
-        #         alpha_value = max(abs(r - bgcol), abs(g - bgcol), abs(b - bgcol))
-        #         # For debug purposes...
-        #         # image.SetRGB(x, y, 255, 0, 0)
-        #         image.SetAlpha(x, y, alpha_value)
-        # bmp = wx.Bitmap(image)
-        #
-        # return bmp
+    @lru_cache(maxsize=1024)
+    def retrieve_bitmap(self, color_dark, final_icon_width, final_icon_height, buffer):
+        # Even if we don't use color_dark in this routine, it is needed
+        # to create the proper function hash?!
+        with self._lock:
+            bmp = self.prepare_bitmap(final_icon_width, final_icon_height, buffer)
+        return bmp
+
+    def GetBitmap(
+        self,
+        use_theme=True,
+        resize=None,
+        color=None,
+        rotate=None,
+        noadjustment=False,
+        keepalpha=False,
+        force_darkmode=False,
+        buffer=None,
+        resolution=1,
+        **kwargs,
+    ):
+        if color is not None and hasattr(color, "red"):
+            if color.red == color.green == color.blue == 255:
+                # Color is white...
+                force_darkmode = True
+
+        if force_darkmode or DARKMODE:
+            self.dark_mode(color)
+            darkm = True
+        else:
+            self.light_mode(color)
+            darkm = False
+
+        if resize is None:
+            resize = get_default_icon_size()
+
+        if isinstance(resize, tuple):
+            final_icon_width, final_icon_height = resize
+        else:
+            final_icon_width = resize
+            final_icon_height = resize
+        if resolution > 1:
+            # We don't need to have a one pixel resolution=size
+            # It#s good enough to have one every resolution pixel
+            final_icon_height = int(final_icon_height / resolution) * resolution
+            final_icon_width = int(final_icon_width / resolution) * resolution
+
+        final_icon_height = int(final_icon_height)
+        final_icon_width = int(final_icon_width)
+        if final_icon_height <= 0:
+            final_icon_height = 1
+        if final_icon_width <= 0:
+            final_icon_width = 1
+        if buffer is None:
+            buffer = 5
+            if min(final_icon_height, final_icon_width) < 0.5 * get_default_icon_size():
+                buffer = 2
+        # Dummy variable for proper hashing via lru_cache
+        color_dark = f"{color}|{darkm}"
+        bmp = self.retrieve_bitmap(color_dark, final_icon_width, final_icon_height, buffer)
+
+        return bmp
 
     def make_geomstr(self, gc, path):
         """
@@ -1647,6 +1635,7 @@ icons8_down_left = VectorIcon(
         "M 42.980469 5.992188 C 42.71875 5.996094 42.472656 6.105469 42.292969 6.292969 L 8 40.585938 L 8 27 C 8.003906 26.730469 7.898438 26.46875 7.707031 26.277344 C 7.515625 26.085938 7.253906 25.980469 6.984375 25.984375 C 6.433594 25.996094 5.992188 26.449219 6 27 L 6 42.847656 C 5.980469 42.957031 5.980469 43.070313 6 43.179688 L 6 44 L 6.824219 44 C 6.933594 44.019531 7.042969 44.019531 7.152344 44 L 23 44 C 23.359375 44.003906 23.695313 43.816406 23.878906 43.503906 C 24.058594 43.191406 24.058594 42.808594 23.878906 42.496094 C 23.695313 42.183594 23.359375 41.996094 23 42 L 9.414063 42 L 43.707031 7.707031 C 44.003906 7.417969 44.089844 6.980469 43.929688 6.601563 C 43.769531 6.21875 43.394531 5.976563 42.980469 5.992188 Z",
     ),
     stroke=(),
+    edge=10,
 )
 
 icons8_down_right = VectorIcon(
@@ -1654,6 +1643,7 @@ icons8_down_right = VectorIcon(
         "M 6.992188 5.992188 C 6.582031 5.992188 6.21875 6.238281 6.0625 6.613281 C 5.910156 6.992188 6 7.421875 6.292969 7.707031 L 40.585938 42 L 27 42 C 26.640625 41.996094 26.304688 42.183594 26.121094 42.496094 C 25.941406 42.808594 25.941406 43.191406 26.121094 43.503906 C 26.304688 43.816406 26.640625 44.003906 27 44 L 42.847656 44 C 42.957031 44.019531 43.070313 44.019531 43.179688 44 L 44 44 L 44 43.175781 C 44.019531 43.066406 44.019531 42.957031 44 42.847656 L 44 27 C 44.003906 26.730469 43.898438 26.46875 43.707031 26.277344 C 43.515625 26.085938 43.253906 25.980469 42.984375 25.984375 C 42.433594 25.996094 41.992188 26.449219 42 27 L 42 40.585938 L 7.707031 6.292969 C 7.519531 6.097656 7.261719 5.992188 6.992188 5.992188 Z",
     ),
     stroke=(),
+    edge=10,
 )
 
 icons8_up_left = VectorIcon(
@@ -1661,6 +1651,7 @@ icons8_up_left = VectorIcon(
         "M 6.992188 5.992188 C 6.945313 5.992188 6.902344 5.992188 6.859375 6 L 6 6 L 6 6.863281 C 5.988281 6.953125 5.988281 7.039063 6 7.128906 L 6 23 C 5.996094 23.359375 6.183594 23.695313 6.496094 23.878906 C 6.808594 24.058594 7.191406 24.058594 7.503906 23.878906 C 7.816406 23.695313 8.003906 23.359375 8 23 L 8 9.414063 L 42.292969 43.707031 C 42.542969 43.96875 42.917969 44.074219 43.265625 43.980469 C 43.617188 43.890625 43.890625 43.617188 43.980469 43.265625 C 44.074219 42.917969 43.96875 42.542969 43.707031 42.292969 L 9.414063 8 L 23 8 C 23.359375 8.003906 23.695313 7.816406 23.878906 7.503906 C 24.058594 7.191406 24.058594 6.808594 23.878906 6.496094 C 23.695313 6.183594 23.359375 5.996094 23 6 L 7.117188 6 C 7.074219 5.992188 7.03125 5.992188 6.992188 5.992188 Z",
     ),
     stroke=(),
+    edge=10,
 )
 
 icons8_up_right = VectorIcon(
@@ -1668,6 +1659,7 @@ icons8_up_right = VectorIcon(
         "M 42.980469 5.992188 C 42.941406 5.992188 42.90625 5.996094 42.871094 6 L 27 6 C 26.640625 5.996094 26.304688 6.183594 26.121094 6.496094 C 25.941406 6.808594 25.941406 7.191406 26.121094 7.503906 C 26.304688 7.816406 26.640625 8.003906 27 8 L 40.585938 8 L 6.292969 42.292969 C 6.03125 42.542969 5.925781 42.917969 6.019531 43.265625 C 6.109375 43.617188 6.382813 43.890625 6.734375 43.980469 C 7.082031 44.074219 7.457031 43.96875 7.707031 43.707031 L 42 9.414063 L 42 23 C 41.996094 23.359375 42.183594 23.695313 42.496094 23.878906 C 42.808594 24.058594 43.191406 24.058594 43.503906 23.878906 C 43.816406 23.695313 44.003906 23.359375 44 23 L 44 7.125 C 44.011719 7.035156 44.011719 6.941406 44 6.851563 L 44 6 L 43.144531 6 C 43.089844 5.992188 43.035156 5.988281 42.980469 5.992188 Z",
     ),
     stroke=(),
+    edge=10,
 )
 
 icons8_administrative_tools = VectorIcon(
@@ -1713,27 +1705,61 @@ icons8_paste = VectorIcon(
 )
 
 
-icon_fence_closed = VectorIcon(
-    fill=(),
-    stroke=(
-        "M 10 10 L 10 80 L 20 80 L 20 10 L 15 0 z",
-        "M 30 10 L 30 80 L 40 80 L 40 10 L 35 0 z",
-        "M 50 10 L 50 80 L 60 80 L 60 10 L 55 0 z",
-        "M 70 10 L 70 80 L 80 80 L 80 10 L 75 0 z",
-        "M 0 30 h 10 M 20 30 h 10 M 40 30 h 10 M 60 30 h 10 M 80 30 h 10"
-        "M 0 70 h 10 M 20 70 h 10 M 40 70 h 10 M 60 70 h 10 M 80 70 h 10",
-    ),
-)
+# icon_fence_closed = VectorIcon(
+#     fill=(),
+#     stroke=(
+#         "M 10 10 L 10 80 L 20 80 L 20 10 L 15 0 z",
+#         "M 30 10 L 30 80 L 40 80 L 40 10 L 35 0 z",
+#         "M 50 10 L 50 80 L 60 80 L 60 10 L 55 0 z",
+#         "M 70 10 L 70 80 L 80 80 L 80 10 L 75 0 z",
+#         "M 0 30 h 10 M 20 30 h 10 M 40 30 h 10 M 60 30 h 10 M 80 30 h 10"
+#         "M 0 70 h 10 M 20 70 h 10 M 40 70 h 10 M 60 70 h 10 M 80 70 h 10",
+#     ),
+# )
+#
+# icon_fence_open = VectorIcon(
+#     fill=(),
+#     stroke=(
+#         "M 10 10 L 10 80 L 20 80 L 20 10 L 15 0 z",
+#         "M 70 10 L 70 80 L 80 80 L 80 10 L 75 0 z",
+#         "M 30 60 L 40 10",
+#         "M 60 60 L 50 10",
+#         "M 0 30 h 10 M 80 30 h 10" "M 0 70 h 10  M 80 70 h 10",
+#     ),
+# )
 
 icon_fence_open = VectorIcon(
     fill=(),
-    stroke=(
-        "M 10 10 L 10 80 L 20 80 L 20 10 L 15 0 z",
-        "M 70 10 L 70 80 L 80 80 L 80 10 L 75 0 z",
-        "M 30 60 L 40 10",
-        "M 60 60 L 50 10",
-        "M 0 30 h 10 M 80 30 h 10" "M 0 70 h 10  M 80 70 h 10",
-    ),
+    stroke = (
+        "M 100 95 a 5,5, 0 1,0 1,0",
+        "M 100 50 a 50,50, 0 1,0 1,0",
+        "M 100 120 l 0 70 l -20 -20 m 20 20 l 20 -20",
+        "M 100 80 l 0 -70 l -20 20 m 20 -20 l 20 20",
+        "M 80 100 l -70 0 l 20 20 m -20 -20 l 20 -20",
+        "M 120 100 l 70 0 l -20 20 m 20 -20 l -20 -20",
+        "M 110 90 l 50 -50 l -10 0 m 10 0 l 0 10",
+        "M 110 110 l 50 50 l -10 0 m 10 0 l 0 -10",
+        "M 90 90 l -50 -50 l 10 0 m -10 0 l 0 10",
+        "M 90 110 l -50 50 l 10 0 m -10 0 l 0 -10",
+    )
+)
+
+icon_fence_closed = VectorIcon(
+    fill=(),
+    stroke = (
+        "M 0 0 h 200 v 200 h -200 z",
+        "M 5 5 h 190 v 190 h -190 z",
+        "M 100 95 a 5,5, 0 1,0 1,0",
+        "M 100 50 a 50,50, 0 1,0 1,0",
+        "M 100 120 l 0 70 l -20 -20 m 20 20 l 20 -20",
+        "M 100 80 l 0 -70 l -20 20 m 20 -20 l 20 20",
+        "M 80 100 l -70 0 l 20 20 m -20 -20 l 20 -20",
+        "M 120 100 l 70 0 l -20 20 m 20 -20 l -20 -20",
+        "M 110 90 l 50 -50 l -10 0 m 10 0 l 0 10",
+        "M 110 110 l 50 50 l -10 0 m 10 0 l 0 -10",
+        "M 90 90 l -50 -50 l 10 0 m -10 0 l 0 10",
+        "M 90 110 l -50 50 l 10 0 m -10 0 l 0 -10",
+    )
 )
 
 icons8_center_of_gravity = VectorIcon(
@@ -2707,4 +2733,12 @@ icon_kerf = VectorIcon(
         "M 53.865023,131.2043 38.355251,124.49737",
         "m 86.246914,119.46717 c 0,0 -0.368821,8.75297 -0.104797,11.52753 0.201722,2.11984 2.692579,4.11493 4.820605,4.19183 1.745456,0.0631 4.004355,-1.40737 4.191831,-3.14387 0.407704,-3.77637 0.209592,-12.3659 0.209592,-12.3659",
     ),
+)
+
+icon_power_button = VectorIcon(
+    fill=(
+        "[yellow]M262 -10 a 280,280, 0 1,0 1,0",
+        "[red]M228.576 26.213v207.32h54.848V26.214h-54.848zm-28.518 45.744C108.44 96.58 41 180.215 41 279.605c0 118.74 96.258 215 215 215 118.74 0 215-96.26 215-215 0-99.39-67.44-183.025-159.057-207.647v50.47c64.6 22.994 110.85 84.684 110.85 157.177 0 92.117-74.676 166.794-166.793 166.794-92.118 0-166.794-74.678-166.794-166.795 0-72.494 46.25-134.183 110.852-157.178v-50.47z",
+    ),
+    stroke=(),
 )

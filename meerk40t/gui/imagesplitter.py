@@ -1,6 +1,6 @@
 import wx
 
-from meerk40t.gui.icons import STD_ICON_SIZE, icon_keyhole, icon_split_image
+from meerk40t.gui.icons import STD_ICON_SIZE, get_default_icon_size, icon_keyhole, icon_split_image
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.kernel import signal_listener
@@ -163,7 +163,7 @@ class SplitterPanel(wx.Panel):
         self.lbl_info = wx.StaticText(self, wx.ID_ANY, "")
         self.btn_align = wx.Button(self, wx.ID_ANY, _("Create split images"))
         self.btn_align.SetBitmap(
-            icon_split_image.GetBitmap(resize=STD_ICON_SIZE * 0.75)
+            icon_split_image.GetBitmap(resize=0.5 * get_default_icon_size())
         )
 
         lbl_dpi = wx.StaticText(self, wx.ID_ANY, "DPI:")
@@ -303,7 +303,7 @@ class KeyholePanel(wx.Panel):
         self.info_panel = InfoPanel(self, wx.ID_ANY, context=self.context)
 
         self.btn_align = wx.Button(self, wx.ID_ANY, _("Create keyhole image"))
-        self.btn_align.SetBitmap(icon_keyhole.GetBitmap(resize=STD_ICON_SIZE * 0.75))
+        self.btn_align.SetBitmap(icon_keyhole.GetBitmap(resize=0.5 * get_default_icon_size()))
 
         lbl_dpi = wx.StaticText(self, wx.ID_ANY, "DPI:")
         sizer_dpi = StaticBoxSizer(

@@ -457,6 +457,21 @@ class TextCtrl(wx.TextCtrl):
         maxw = 100
         minpattern = "0000"
         maxpattern = "999999999.99mm"
+        if self._check == "length":
+            minpattern = "0000"
+            maxpattern = "999999999.99mm"
+        elif self._check == "percent":
+            minpattern = "0000"
+            maxpattern = "99.99%"
+        elif self._check == "float":
+            minpattern = "0000"
+            maxpattern = "99999.99"
+        elif self._check == "angle":
+            minpattern = "0000"
+            maxpattern = "9999.99deg"
+        elif self._check == "int":
+            minpattern = "0000"
+            maxpattern = "-999999"
         # Let's be a bit more specific: what is the minimum size of the textcontrol fonts
         # to hold these patterns
         tfont = self.GetFont()

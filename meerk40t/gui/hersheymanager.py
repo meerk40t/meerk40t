@@ -12,7 +12,7 @@ from meerk40t.extra.hershey import (
     update_linetext,
     validate_node,
 )
-from meerk40t.gui.icons import STD_ICON_SIZE, icons8_choose_font
+from meerk40t.gui.icons import STD_ICON_SIZE, get_default_icon_size, icons8_choose_font
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 from meerk40t.kernel import get_safe_path
@@ -406,7 +406,7 @@ class HersheyFontSelector(MWindow):
         super().__init__(450, 550, submenu="", *args, **kwds)
         self.panel = PanelFontSelect(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_choose_font.GetBitmap(resize=STD_ICON_SIZE / 2))
+        _icon.CopyFromBitmap(icons8_choose_font.GetBitmap(resize=0.5 * get_default_icon_size()))
         # _icon.CopyFromBitmap(icons8_computer_support.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Font-Selection"))
@@ -809,7 +809,7 @@ class HersheyFontManager(MWindow):
         super().__init__(551, 234, submenu="", *args, **kwds)
         self.panel = PanelFontManager(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_choose_font.GetBitmap(resize=STD_ICON_SIZE / 2))
+        _icon.CopyFromBitmap(icons8_choose_font.GetBitmap())
         # _icon.CopyFromBitmap(icons8_computer_support.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Font-Manager"))

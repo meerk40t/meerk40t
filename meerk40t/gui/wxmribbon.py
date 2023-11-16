@@ -141,8 +141,9 @@ class MKRibbonBarPanel(RibbonBarPanel):
         self.storage = Settings(self.context.kernel.name, f"ribbon_{identifier}.cfg")
         self.storage.read_configuration()
 
+        self.allow_labels = bool(show_labels is None or show_labels)
         # Layout properties.
-        if show_labels is None or show_labels:
+        if self.allow_labels:
             self.toggle_show_labels(context.setting(bool, "ribbon_show_labels", True))
 
         self._pages = []
@@ -158,19 +159,29 @@ class MKRibbonBarPanel(RibbonBarPanel):
                     "label": "Tools",  # Label
                     "panels": [  # Panels to include
                         {
-                            "id": "tool",
-                            "label": "Project",
+                            "id": "select",
+                            "label": "Select + Edit",
                             "seq": 1,
                         },
                         {
-                            "id": "extended_tools",
-                            "label": "group",
+                            "id": "lasercontrol",
+                            "label": "Laser",
                             "seq": 2,
+                        },
+                        {
+                            "id": "tool",
+                            "label": "Create",
+                            "seq": 3,
+                        },
+                        {
+                            "id": "extended_tools",
+                            "label": "Extended Tools",
+                            "seq": 4,
                         },
                         {
                             "id": "group",
                             "label": "Group",
-                            "seq": 3,
+                            "seq": 5,
                         },
                     ],
                     "seq": 1,  # Sequence
@@ -393,7 +404,8 @@ class MKRibbonBarPanel(RibbonBarPanel):
 
     @signal_listener("ribbon_show_labels")
     def on_show_labels_change(self, origin, value, *args):
-        self.toggle_show_labels(value)
+        if self.allow_labels:
+            self.toggle_show_labels(value)
 
     @lookup_listener("button/basicediting")
     def set_editing_buttons(self, new_values, old_values):
@@ -439,9 +451,17 @@ class MKRibbonBarPanel(RibbonBarPanel):
     def set_align_buttons(self, new_values, old_values):
         self.set_panel_buttons("align", new_values)
 
+    @lookup_listener("button/select")
+    def set_select_buttons(self, new_values, old_values):
+        self.set_panel_buttons("select", new_values)
+
     @lookup_listener("button/tool")
     def set_tool_buttons(self, new_values, old_values):
         self.set_panel_buttons("tool", new_values)
+
+    @lookup_listener("button/lasercontrol")
+    def set_lasercontrol_buttons(self, new_values, old_values):
+        self.set_panel_buttons("lasercontrol", new_values)
 
     @lookup_listener("button/extended_tools")
     def set_tool_extended_buttons(self, new_values, old_values):
@@ -823,6 +843,7 @@ class RibbonEditor(wx.Panel):
             self.ribbon_identifier = rlist[idx]
             rib = self.current_ribbon()
             self.check_labels.SetValue(rib.art.show_labels)
+            self.check_labels.Enable(rib.allow_labels)
             self.fill_pages(reload=True)
 
     def on_move_page_up(self, event):

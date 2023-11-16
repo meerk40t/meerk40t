@@ -142,7 +142,11 @@ def run():
     ###################
     # END Old Python Code.
     ###################
+    while _exe(args):
+        pass
 
+
+def _exe(args):
     from meerk40t.external_plugins import plugin as external_plugins
     from meerk40t.internal_plugins import plugin as internal_plugins
     from meerk40t.kernel import Kernel
@@ -158,3 +162,4 @@ def run():
     kernel.add_plugin(internal_plugins)
     kernel.add_plugin(external_plugins)
     kernel()
+    return hasattr(kernel, "restart") and kernel.restart

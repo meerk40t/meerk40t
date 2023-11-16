@@ -1187,7 +1187,7 @@ class Kernel(Settings):
 
                     line = await loop.run_in_executor(None, sys.stdin.readline)
                     line = line.strip()
-                    if line in ("quit", "shutdown"):
+                    if line in ("quit", "shutdown", "restart"):
                         self._quit = True
                         break
                     self.console(f".{line}\n")
@@ -3336,6 +3336,16 @@ class Kernel(Settings):
             if self._shutdown:
                 return
             self._shutdown = True
+            self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_SHUTDOWN)
+
+        @self.console_command(
+            "restart", help=_("shuts down all processes, exits and restarts meerk40t")
+        )
+        def restart(**kwargs):
+            if self._shutdown:
+                return
+            self._shutdown = True
+            self.restart = True
             self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_SHUTDOWN)
 
         # ==========

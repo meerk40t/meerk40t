@@ -26,6 +26,7 @@ from ..svgelements import Matrix
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import (
     STD_ICON_SIZE,
+    get_default_icon_size,
     icon_bell,
     icon_close_window,
     icon_console,
@@ -832,10 +833,7 @@ class SimulationPanel(wx.Panel, Job):
         self.panel_optimize.AddPage(self.subpanel_cutcode, _("Cutcode"))
         self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
-        if optimise_at_start:
-            self.checkbox_optimize.SetValue(1)
-        else:
-            self.checkbox_optimize.SetValue(0)
+        self.checkbox_optimize.SetValue(self.context.planner.do_optimization)
         self.btn_redo_it = wx.Button(self, wx.ID_ANY, _("Recalculate"))
         self.btn_redo_it.Bind(wx.EVT_BUTTON, self.on_redo_it)
 
@@ -977,7 +975,7 @@ class SimulationPanel(wx.Panel, Job):
             _("Time Estimate: Extra Time (ie to swing around)")
         )
         self.text_time_total.SetToolTip(_("Time Estimate: Total Time"))
-        self.button_play.SetBitmap(icons8_circled_play.GetBitmap())
+        self.button_play.SetBitmap(icons8_circled_play.GetBitmap(resize=get_default_icon_size()))
         self.text_playback_speed.SetMinSize(dip_size(self, 55, 23))
         # self.combo_device.SetToolTip(_("Select the device"))
         self.button_spool.SetFont(
@@ -990,7 +988,7 @@ class SimulationPanel(wx.Panel, Job):
                 "Segoe UI",
             )
         )
-        self.button_spool.SetBitmap(icons8_route.GetBitmap(resize=1.5 * STD_ICON_SIZE))
+        self.button_spool.SetBitmap(icons8_route.GetBitmap(resize=1.5 * get_default_icon_size()))
         # end wxGlade
 
     def __do_layout(self):
@@ -1547,8 +1545,10 @@ class SimulationPanel(wx.Panel, Job):
         plan = self.plan_name
         if self.checkbox_optimize.GetValue():
             opt = " optimize"
+            self.context.planner.do_optimization = True
         else:
             opt = ""
+            self.context.planner.do_optimization = False
         self.context(
             f"plan{plan} clear\nplan{plan} copy preprocess validate blob preopt{opt}\n"
         )
@@ -1599,12 +1599,12 @@ class SimulationPanel(wx.Panel, Job):
         self.context.signal("refresh_scene", self.widget_scene.name)
 
     def _start(self):
-        self.button_play.SetBitmap(icons8_pause.GetBitmap())
+        self.button_play.SetBitmap(icons8_pause.GetBitmap(resize=get_default_icon_size()))
         self.context.schedule(self)
         self.running = True
 
     def _stop(self):
-        self.button_play.SetBitmap(icons8_circled_play.GetBitmap())
+        self.button_play.SetBitmap(icons8_circled_play.GetBitmap(resize=get_default_icon_size()))
         self.context.unschedule(self)
         self.running = False
 

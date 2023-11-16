@@ -52,6 +52,7 @@ from .icons import (  # icon_duplicate,
     icon_mk_rectangular,
     icon_mk_redo,
     icon_mk_undo,
+    icon_power_button,
     icons8_centerh,
     icons8_centerv,
     icons8_circled_left,
@@ -672,6 +673,7 @@ class MeerK40t(MWindow):
                 ),
                 "page": "Gui",
                 "section": "Appearance",
+                "signals": "restart",
             },
             {
                 "attr": "mini_icon",
@@ -1075,7 +1077,7 @@ class MeerK40t(MWindow):
         buttonsize = STD_ICON_SIZE
 
         kernel.register(
-            "button/tools/Scene",
+            "button/select/Scene",
             {
                 "label": _("Select"),
                 "icon": icons8_cursor,
@@ -1099,7 +1101,7 @@ class MeerK40t(MWindow):
         #     },
         # )
         kernel.register(
-            "button/tools/Parameter",
+            "button/select/Parameter",
             {
                 "label": _("Parametric Edit"),
                 "icon": icons8_finger,
@@ -1112,7 +1114,7 @@ class MeerK40t(MWindow):
             },
         )
         kernel.register(
-            "button/tools/Nodeeditor",
+            "button/select/Nodeeditor",
             {
                 "label": _("Node Edit"),
                 "icon": icons8_node_edit,
@@ -1125,7 +1127,7 @@ class MeerK40t(MWindow):
             },
         )
         kernel.register(
-            "button/tools/Hatch",
+            "button/select/Hatch",
             {
                 "label": _("Hatch"),
                 "icon": icon_hatch,
@@ -1138,7 +1140,7 @@ class MeerK40t(MWindow):
             },
         )
         kernel.register(
-            "button/tools/Relocate",
+            "button/lasercontrol/Relocate",
             {
                 "label": _("Set Position"),
                 "icon": icons8_place_marker,
@@ -1151,7 +1153,7 @@ class MeerK40t(MWindow):
         )
 
         kernel.register(
-            "button/tools/Placement",
+            "button/lasercontrol/Placement",
             {
                 "label": _("Job Start"),
                 "icon": icons8_user_location,
@@ -1164,15 +1166,15 @@ class MeerK40t(MWindow):
         )
 
         kernel.register(
-            "button/tools/Draw",
+            "button/tools/circle",
             {
-                "label": _("Draw"),
-                "icon": icons8_pencil_drawing,
-                "tip": _("Add a free-drawing element"),
-                "action": lambda v: kernel.elements("tool draw\n"),
+                "label": _("Circle"),
+                "icon": icon_mk_circle,
+                "tip": _("Add a circle element"),
+                "action": lambda v: kernel.elements("tool circle\n"),
                 "group": "tool",
                 "size": bsize_normal,
-                "identifier": "draw",
+                "identifier": "circle",
             },
         )
 
@@ -1190,15 +1192,15 @@ class MeerK40t(MWindow):
         )
 
         kernel.register(
-            "button/tools/circle",
+            "button/tools/Rectangle",
             {
-                "label": _("Circle"),
-                "icon": icon_mk_circle,
-                "tip": _("Add a circle element"),
-                "action": lambda v: kernel.elements("tool circle\n"),
+                "label": _("Rectangle"),
+                "icon": icon_mk_rectangular,
+                "tip": _("Add a rectangular element"),
+                "action": lambda v: kernel.elements("tool rect\n"),
                 "group": "tool",
                 "size": bsize_normal,
-                "identifier": "circle",
+                "identifier": "rect",
             },
         )
 
@@ -1233,19 +1235,6 @@ class MeerK40t(MWindow):
         )
 
         kernel.register(
-            "button/tools/Rectangle",
-            {
-                "label": _("Rectangle"),
-                "icon": icon_mk_rectangular,
-                "tip": _("Add a rectangular element"),
-                "action": lambda v: kernel.elements("tool rect\n"),
-                "group": "tool",
-                "size": bsize_normal,
-                "identifier": "rect",
-            },
-        )
-
-        kernel.register(
             "button/tools/Point",
             {
                 "label": _("Point"),
@@ -1272,6 +1261,20 @@ class MeerK40t(MWindow):
                 "identifier": "vector",
             },
         )
+
+        kernel.register(
+            "button/tools/Draw",
+            {
+                "label": _("Draw"),
+                "icon": icons8_pencil_drawing,
+                "tip": _("Add a free-drawing element"),
+                "action": lambda v: kernel.elements("tool draw\n"),
+                "group": "tool",
+                "size": bsize_normal,
+                "identifier": "draw",
+            },
+        )
+
         kernel.register(
             "button/tools/Text",
             {
@@ -3390,6 +3393,7 @@ class MeerK40t(MWindow):
                             message="This requires a program restart before the language change will kick in!",
                             caption="Language changed",
                         )
+                        self.context.signal("restart")
 
                     return check
 
@@ -3398,6 +3402,20 @@ class MeerK40t(MWindow):
                     m.Enable(False)
                 i += 1
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
+
+    @signal_listener("restart")
+    def on_restart_required(self, *args):
+        self.context.kernel.register(
+            "button/project/Restart",
+            {
+                "label": _("Restart"),
+                "icon": icon_power_button,
+                "tip": _("Restart needed to apply new parameters"),
+                "action": lambda v: self.context("restart\n"),
+                "size": STD_ICON_SIZE,
+            },
+        )
+
 
     @signal_listener("file;loaded")
     @signal_listener("file;saved")
