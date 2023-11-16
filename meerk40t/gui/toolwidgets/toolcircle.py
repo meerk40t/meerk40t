@@ -160,7 +160,8 @@ class CircleTool(ToolWidget):
             self.p2 = None
             self.scene.pane.tool_active = False
             self.scene.request_refresh()
-            response = RESPONSE_ABORT
+            # Allow other widgets (like the selection widget to take over)
+            response = RESPONSE_CHAIN
         elif event_type == "leftup":
             self.scene.pane.tool_active = False
             try:
