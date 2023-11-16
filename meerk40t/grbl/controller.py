@@ -668,6 +668,9 @@ class GrblController:
                 self._process_feedback_message(response)
                 continue
             elif response.startswith("$"):
+                if self._validation_stage == 2:
+                    self.log("Stage 3: $$ was successfully parsed.", type="event")
+                    self._validation_stage = 3
                 self._process_settings_message(response)
                 continue
             elif response.startswith("ALARM"):
@@ -767,6 +770,7 @@ class GrblController:
             message = response[4:-1]
             states = list(message.split(" "))
             if not self.fully_validated():
+                self.log("Stage 4: $G was successfully parsed.", type="event")
                 self.driver.declare_modals(states)
                 self._validation_stage = 4
                 self.realtime("?\n\r")
@@ -776,7 +780,7 @@ class GrblController:
             # Parsing $
             message = response[5:-1]
             if self._validation_stage == 1:
-                # $ was successfully parsed.
+                self.log("Stage 2: $ was successfully parsed.", type="event")
                 self._validation_stage = 2
                 if "$$" in message:
                     self.realtime("$$\n\r")
