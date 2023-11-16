@@ -597,7 +597,7 @@ class ImageNode(Node):
         if box is None:
             # If box is entirely white, bbox caused value error, or crop not set.
             box = (0, 0, image.width, image.height)
-        initial_box = list(box)
+        orgbox = (box[0], box[1], box[2], box[3])
 
         transform_matrix = copy(self.matrix)  # Prevent Knock-on effect.
 
@@ -665,13 +665,14 @@ class ImageNode(Node):
 
         # If crop applies, apply crop.
         if crop:
-            box = self._get_crop_box(image)
-            if box is not None:
-                width = box[2] - box[0]
-                height = box[3] - box[1]
+            cbox = self._get_crop_box(image)
+            if cbox is not None:
+                # print (cbox, orgbox)
+                width = cbox[2] - cbox[0]
+                height = cbox[3] - cbox[1]
                 if width != image.width or height != image.height:
-                    image = image.crop(box)
-                    actualized_matrix.post_translate(box[0] - initial_box[0], box[1] - initial_box[1])
+                    image = image.crop(cbox)
+                    actualized_matrix.post_translate(box[0] - orgbox[0], box[1] - orgbox[1])
 
         if step_y < 0:
             # if step_y is negative, translate.
@@ -682,6 +683,7 @@ class ImageNode(Node):
 
         actualized_matrix.post_scale(step_x, step_y)
         actualized_matrix.post_translate(tx, ty)
+
         # Invert black to white if needed.
         if self.invert:
             image = ImageOps.invert(image)
