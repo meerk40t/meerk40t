@@ -8,7 +8,7 @@ Lightburn files are xml files denoting simple types with a narrowly nested style
 import base64
 import re
 from io import BytesIO
-from xml.etree.ElementTree import iterparse, ParseError
+from xml.etree.ElementTree import ParseError, iterparse
 
 import PIL.Image
 

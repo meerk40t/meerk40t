@@ -1374,23 +1374,41 @@ def plugin(kernel, lifecycle=None):
             update_image_node(inode)
         return "image", data
 
+    @context.console_option("minimal", "m", type=int, help=_("minimal area"), default=2)
     @context.console_option(
-        "minimal", "m", type=int, help=_("minimal area"), default=2
+        "outer",
+        "o",
+        type=bool,
+        help=_("Ignore outer areas"),
+        action="store_true",
     )
     @context.console_option(
-        "outer", "o", type=bool, help=_("Ignore outer areas"), action="store_true",
+        "simplified",
+        "s",
+        type=bool,
+        help=_("Display simplified outline"),
+        action="store_true",
     )
     @context.console_option(
-        "simplified", "s", type=bool, help=_("Display simplified outline"), action="store_true",
+        "line",
+        "l",
+        type=bool,
+        help=_("Show split line candidates"),
+        action="store_true",
     )
     @context.console_option(
-        "line", "l", type=bool, help=_("Show split line candidates"), action="store_true",
+        "breakdown",
+        "b",
+        type=bool,
+        help=_("Break the image apart into slices"),
+        action="store_true",
     )
     @context.console_option(
-        "breakdown", "b", type=bool, help=_("Break the image apart into slices"), action="store_true",
-    )
-    @context.console_option(
-        "whiten", "w", type=bool, help=_("Break the image apart but whiten non-used areas"), action="store_true",
+        "whiten",
+        "w",
+        type=bool,
+        help=_("Break the image apart but whiten non-used areas"),
+        action="store_true",
     )
     @context.console_command(
         "innerwhite",
@@ -1398,7 +1416,20 @@ def plugin(kernel, lifecycle=None):
         input_type="image",
         output_type="image",
     )
-    def image_white(command, channel, _, minimal=None, outer=False, simplified=False, line=False, breakdown=False, whiten=False, data=None, post=None, **kwargs):
+    def image_white(
+        command,
+        channel,
+        _,
+        minimal=None,
+        outer=False,
+        simplified=False,
+        line=False,
+        breakdown=False,
+        whiten=False,
+        data=None,
+        post=None,
+        **kwargs,
+    ):
         try:
             import cv2
             import numpy as np
@@ -1465,7 +1496,6 @@ def plugin(kernel, lifecycle=None):
 
             # Create some rectangles around the white areas
             for contour in large_contours:
-
                 # Each individual contour is a Numpy array of (x, y) coordinates of boundary points of the object
                 x, y, w, h = cv2.boundingRect(contour)
                 rx, ry = getpoint(x, y)
@@ -1600,7 +1630,10 @@ def plugin(kernel, lifecycle=None):
                     sx, sy = getpoint(c[0] + c[1] / 2, 0)
                     ex, ey = getpoint(c[0] + c[1] / 2, height)
                     node = context.elements.elem_branch.add(
-                        x1=sx, y1=sy, x2=ex, y2=ey,
+                        x1=sx,
+                        y1=sy,
+                        x2=ex,
+                        y2=ey,
                         stroke=Color("red"),
                         label="Splitline",
                         type="elem line",
@@ -1634,7 +1667,9 @@ def plugin(kernel, lifecycle=None):
                         left_image.paste(white_paste, (dx, 0, rwidth, rheight))
                         # print(f"Erasing right: {dx}:{rwidth}")
                     newnode = copy(inode)
-                    newnode.label = f"[{anyslices}]{'' if inode.label is None else inode.label}"
+                    newnode.label = (
+                        f"[{anyslices}]{'' if inode.label is None else inode.label}"
+                    )
                     # newnode.dither = False
                     # newnode.operations.clear()
                     # newnode.prevent_crop = True
@@ -1654,7 +1689,9 @@ def plugin(kernel, lifecycle=None):
                     rdx -= ox
                     anyslices += 1
                     newnode = copy(inode)
-                    newnode.label = f"[{anyslices}]{'' if inode.label is None else inode.label}"
+                    newnode.label = (
+                        f"[{anyslices}]{'' if inode.label is None else inode.label}"
+                    )
                     # newnode.dither = False
                     # newnode.operations.clear()
                     # newnode.prevent_crop = True

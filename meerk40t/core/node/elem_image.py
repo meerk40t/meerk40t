@@ -580,14 +580,17 @@ class ImageNode(Node):
         @return:
         """
         from PIL import Image, ImageOps
+
         try:
             from PIL.Image import Transform
+
             AFFINE = Transform.AFFINE
         except ImportError:
             AFFINE = Image.AFFINE
 
         try:
             from PIL.Image import Resampling
+
             BICUBIC = Resampling.BICUBIC
         except ImportError:
             BICUBIC = Image.BICUBIC
