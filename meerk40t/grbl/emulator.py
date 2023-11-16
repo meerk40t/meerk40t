@@ -83,7 +83,9 @@ lookup = {
 
 
 class GRBLEmulator:
-    def __init__(self, device=None, units_to_device_matrix=None):
+    def __init__(
+        self, device=None, units_to_device_matrix=None, reply=None, channel=None
+    ):
         self.device = device
         self.units_to_device_matrix = units_to_device_matrix
         self.settings = {
@@ -127,14 +129,18 @@ class GRBLEmulator:
         self.rapid_scale = 1.0
         self.power_scale = 1.0
 
-        self.reply = None
-        self.channel = None
+        self.reply = reply
+        self.channel = channel
 
         self._grbl_specific = False
 
         self._buffer = list()
+        try:
+            driver = device.driver
+        except AttributeError:
+            driver = None
         self.job = GcodeJob(
-            driver=device.driver,
+            driver=driver,
             priority=0,
             channel=self.channel,
             units_to_device_matrix=units_to_device_matrix,
