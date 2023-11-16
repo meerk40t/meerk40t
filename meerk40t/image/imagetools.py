@@ -1399,8 +1399,12 @@ def plugin(kernel, lifecycle=None):
         output_type="image",
     )
     def image_white(command, channel, _, minimal=None, outer=False, simplified=False, line=False, breakdown=False, whiten=False, data=None, post=None, **kwargs):
-        import cv2
-        import numpy as np
+        try:
+            import cv2
+            import numpy as np
+        except ImportError:
+            channel("Either cv2 or numpy weren't installed")
+            return
         # from PIL import Image
         if data is None:
             channel(_("No elements selected"))
