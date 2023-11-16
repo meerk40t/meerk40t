@@ -248,6 +248,7 @@ class RectNode(Node, Stroked, FunctionalParameter):
         )
         return path
 
+    @property
     def functional_parameter(self):
         dimens = 0.5 * min(self.width, self.height)
         try:
