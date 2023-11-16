@@ -34,6 +34,15 @@ class GRBLDriver(Parameters):
         self.paused = False
         self.native_x = 0
         self.native_y = 0
+
+        self.mpos_x = 0
+        self.mpos_y = 0
+        self.mpos_z = 0
+
+        self.wpos_x = 0
+        self.wpos_y = 0
+        self.wpos_z = 0
+
         self.stepper_step_size = UNITS_PER_MIL
 
         self.plot_planner = PlotPlanner(
@@ -254,6 +263,8 @@ class GRBLDriver(Parameters):
             self(f"M4{self.line_end}")
         for q in self.queue:
             while self.hold_work(0):
+                if self.service.kernel.is_shutdown:
+                    return
                 time.sleep(0.05)
             x = self.native_x
             y = self.native_y
@@ -573,6 +584,31 @@ class GRBLDriver(Parameters):
         @return:
         """
         self(f"$X{self.line_end}", real=True)
+
+    def declare_modals(self, modals):
+        self.move_mode = 0 if "G0" in modals else 1
+        if "G90" in modals:
+            self._g90_absolute()
+            self.absolute_dirty = False
+        if "G91" in modals:
+            self._g91_relative()
+            self.absolute_dirty = False
+        if "G94" in modals:
+            self._g94_feedrate()
+            self.feedrate_dirty = False
+        if "G93" in modals:
+            self._g93_feedrate()
+            self.feedrate_dirty = False
+        if "G20" in modals:
+            self._g20_units_inch()
+            self.units_dirty = False
+        if "G21" in modals:
+            self._g21_units_mm()
+            self.units_dirty = False
+
+    def declare_position(self, x, y):
+        self.native_x = x * self.unit_scale
+        self.native_y = y * self.unit_scale
 
     ####################
     # PROTECTED DRIVER CODE

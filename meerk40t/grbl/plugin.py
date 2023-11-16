@@ -65,10 +65,6 @@ def plugin(kernel, lifecycle=None):
                         "default": "FluidNC",
                     },
                     {
-                        "attr": "requires_validation",
-                        "default": False,
-                    },
-                    {
                         "attr": "source",
                         "default": "generic",
                     },

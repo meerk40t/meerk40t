@@ -765,6 +765,7 @@ class LaserToolPanel(wx.Panel):
 
     @signal_listener("driver;position")
     @signal_listener("emulator;position")
+    @signal_listener("status;position")
     def on_update_laser(self, origin, pos):
         self.laserposition = (pos[2], pos[3])
 
