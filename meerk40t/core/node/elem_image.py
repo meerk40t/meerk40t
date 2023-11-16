@@ -591,8 +591,13 @@ class ImageNode(Node):
         image = self._apply_mask(image, transparent_mask)
 
         # Calculate image box.
-        # The real box not a cropped one (yet)...
-        box = (0, 0, image.width, image.height)
+        box = None
+        if crop:
+            box = self._get_crop_box(image)
+        if box is None:
+            # If box is entirely white, bbox caused value error, or crop not set.
+            box = (0, 0, image.width, image.height)
+        initial_box = list(box)
 
         transform_matrix = copy(self.matrix)  # Prevent Knock-on effect.
 
@@ -666,7 +671,7 @@ class ImageNode(Node):
                 height = box[3] - box[1]
                 if width != image.width or height != image.height:
                     image = image.crop(box)
-                    actualized_matrix.post_translate(box[0], box[1])
+                    actualized_matrix.post_translate(box[0] - initial_box[0], box[1] - initial_box[1])
 
         if step_y < 0:
             # if step_y is negative, translate.
