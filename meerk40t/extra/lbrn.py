@@ -8,7 +8,7 @@ Lightburn files are xml files denoting simple types with a narrowly nested style
 import base64
 import re
 from io import BytesIO
-from xml.etree.ElementTree import iterparse
+from xml.etree.ElementTree import iterparse, ParseError
 
 import PIL.Image
 
@@ -193,8 +193,19 @@ class LbrnLoader:
                     app_version = elem.attrib.get("AppVersion")
                     format = elem.attrib.get("FormatVersion")
                     material_height = elem.attrib.get("MaterialHeight")
+                    try:
+                        cx = elements.space.width / 2
+                        cy = elements.space.height / 2
+                    except AttributeError:
+                        cx = 0
+                        cy = 0
                     mirror_x = elem.attrib.get("MirrorX")
                     mirror_y = elem.attrib.get("MirrorY")
+                    if mirror_x == "True":
+                        matrix.post_scale_x(-1, cx, cy)
+                    if mirror_y == "True":
+                        matrix.post_scale_y(-1, cx, cy)
+
                 elif elem.tag in ("Shape", "BackupPath"):
                     stack.append((context, matrix))
                     matrix = Matrix(matrix)
@@ -401,7 +412,13 @@ class LbrnLoader:
     def load(context, elements_service, pathname, **kwargs):
         try:
             with open(pathname, "r") as source:
-                LbrnLoader.parse(pathname, source, elements_service)
+                try:
+                    LbrnLoader.parse(pathname, source, elements_service)
+                except ParseError:
+                    # This is likely `Junk after Document` which is already parsed. Unsure if this is because the
+                    # format will sometimes have some extra information or because of a malformed xml.
+                    pass
         except (IOError, IndexError) as e:
             raise BadFileError(str(e)) from e
+        elements_service._loading_cleared = True
         return True

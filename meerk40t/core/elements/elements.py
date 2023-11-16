@@ -3494,6 +3494,7 @@ class Elemental(Service):
                             # self.unlisten_tree(self)
                             elemcount_then = self.count_elems()
                             opcount_then = self.count_op()
+                            self._loading_cleared = False
                             results = loader.load(
                                 self, self, filename_to_process, **kwargs
                             )
@@ -3510,11 +3511,12 @@ class Elemental(Service):
                             ):
                                 return True
                             elif results:
-                                self.signal(
-                                    "warning",
-                                    _("File is Empty"),
-                                    _("File is Malformed"),
-                                )
+                                if not self._loading_cleared:
+                                    self.signal(
+                                        "warning",
+                                        _("File is Empty"),
+                                        _("File is Malformed"),
+                                    )
                                 return True
 
                         except FileNotFoundError:
