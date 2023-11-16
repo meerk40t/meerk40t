@@ -1,4 +1,5 @@
 import time
+import threading
 from math import isinf, isnan
 from pathlib import Path
 
@@ -15,7 +16,7 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import HoverButton
-from meerk40t.kernel import get_safe_path, signal_listener
+from meerk40t.kernel import get_safe_path, signal_listener, Job
 
 _ = wx.GetTranslation
 
@@ -185,6 +186,17 @@ class SpoolerPanel(wx.Panel):
         self.set_pause_color()
         if self.context.spool_history_clear_on_start:
             self.clear_history()
+        # We set a timer job that will periodically check the spooler queue
+        # in case no signal was received
+        self.shown = False
+        self.update_lock = threading.Lock()
+        self.timerjob = Job(
+            process=self.update_queue,
+            job_name="spooler-update",
+            interval=5,
+            run_main=True,
+        )
+
 
     def __set_properties(self):
         # begin wxGlade: SpoolerPanel.__set_properties
@@ -643,10 +655,13 @@ class SpoolerPanel(wx.Panel):
         return routine
 
     def pane_show(self, *args):
+        self.shown = True
+        self.context.schedule(self.timerjob)
         self.refresh_spooler_list()
 
     def pane_hide(self, *args):
-        pass
+        self.context.unschedule(self.timerjob)
+        self.shown = False
 
     @staticmethod
     def _name_str(named_obj):
@@ -1033,10 +1048,17 @@ class SpoolerPanel(wx.Panel):
     @signal_listener("emulator;position")
     @signal_listener("pipe;usb_status")
     def on_device_update(self, origin, *args):
-        # Only update every 2 seconds or so
-        dtime = time.time()
-        if dtime - self._last_invokation < 2:
+        doit = True
+        with self.update_lock:
+            # Only update every 2 seconds or so
+            dtime = time.time()
+            if dtime - self._last_invokation < 2:
+                doit = False
+            else:
+                self._last_invokation = dtime
+        if not doit:
             return
+
         # Two things (at least) could go wrong:
         # 1) You are in the wrong queue, ie there's a job running in the background a
         #    that provides an update but the user has changed the device so a different
@@ -1049,7 +1071,6 @@ class SpoolerPanel(wx.Panel):
             listctrl = self.list_job_spool
         except RuntimeError:
             return
-        self._last_invokation = dtime
         for list_id, entry in enumerate(self.queue_entries):
             spooler = entry[0]
             qindex = entry[1]
@@ -1113,6 +1134,10 @@ class SpoolerPanel(wx.Panel):
         if refresh_needed:
             self.refresh_spooler_list()
             self.refresh_history()
+
+    def update_queue(self):
+        if self.shown:
+            self.on_device_update(None)
 
 
 class JobSpooler(MWindow):
