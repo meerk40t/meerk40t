@@ -215,7 +215,10 @@ class GRBLEmulator:
                     self._grbl_specific = False
                     self.reply_code(self._grbl_special(line))
                 else:
-                    self.device.spooler.send(self.job, prevent_duplicate=True)
+                    try:
+                        self.device.spooler.send(self.job, prevent_duplicate=True)
+                    except AttributeError:
+                        self.job.execute(None)
                     self.job.reply = self.reply
                     self.job.write(line)
                 self._buffer.clear()
