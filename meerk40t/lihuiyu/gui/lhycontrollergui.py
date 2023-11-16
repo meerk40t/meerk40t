@@ -265,10 +265,13 @@ class LihuiyuControllerPanel(ScrolledPanel):
 
     @signal_listener("network_update")
     def on_network_update(self, origin=None, *args):
-        if self.context.networked:
-            self.button_device_connect.Enable(False)
-        else:
-            self.button_device_connect.Enable(True)
+        try:
+            if self.context.networked:
+                self.button_device_connect.Enable(False)
+            else:
+                self.button_device_connect.Enable(True)
+        except AttributeError:
+            pass
 
     def restore(self, *args, **kwargs):
         self.set_widgets()
