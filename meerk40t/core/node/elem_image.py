@@ -597,6 +597,7 @@ class ImageNode(Node):
         if box is None:
             # If box is entirely white, bbox caused value error, or crop not set.
             box = (0, 0, image.width, image.height)
+        orgbox = (box[0], box[1], box[2], box[3])
 
         transform_matrix = copy(self.matrix)  # Prevent Knock-on effect.
 
@@ -620,6 +621,8 @@ class ImageNode(Node):
         image_height = ceil(bbox[3] * step_scale_y) - floor(bbox[1] * step_scale_y)
         tx = bbox[0]
         ty = bbox[1]
+        # Caveat: we move the picture backward, so that the non-white
+        # image content aligns at 0 , 0 - but we don't crop the image
         transform_matrix.post_translate(-tx, -ty)
         transform_matrix.post_scale(step_scale_x, step_scale_y)
         if step_y < 0:
@@ -662,22 +665,28 @@ class ImageNode(Node):
             )
         actualized_matrix = Matrix()
 
-        # If crop applies, apply crop.
-        if crop:
-            box = self._get_crop_box(image)
-            if box is not None:
-                width = box[2] - box[0]
-                height = box[3] - box[1]
-                if width != image.width or height != image.height:
-                    image = image.crop(box)
-                    actualized_matrix.post_translate(box[0], box[1])
-
         if step_y < 0:
             # if step_y is negative, translate.
             actualized_matrix.post_translate(0, -image_height)
         if step_x < 0:
             # if step_x is negative, translate.
             actualized_matrix.post_translate(-image_width, 0)
+
+        # If crop applies, apply crop.
+        if crop:
+            cbox = self._get_crop_box(image)
+            if cbox is not None:
+                width = cbox[2] - cbox[0]
+                height = cbox[3] - cbox[1]
+                if width != image.width or height != image.height:
+                    image = image.crop(cbox)
+                    # TODO:
+                    # We did not crop the image so far, but we already applied
+                    # the cropped transformation! That may be faulty, and needs to
+                    # be corrected at a later stage, but this logic, even if clumsy
+                    # is good enough: don't shift things twice!
+                    if orgbox[0] == 0 and orgbox[1] == 0:
+                        actualized_matrix.post_translate(cbox[0], cbox[1])
 
         actualized_matrix.post_scale(step_x, step_y)
         actualized_matrix.post_translate(tx, ty)

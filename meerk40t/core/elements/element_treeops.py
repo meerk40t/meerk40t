@@ -2751,7 +2751,21 @@ def init_tree(kernel):
     def image_ccw(node, **kwargs):
         self("image ccw\n")
 
+    @tree_conditional(lambda node: not node.lock)
+    @tree_separator_before()
     @tree_submenu(_("Image"))
+    @tree_operation(_("Identify inner white areas"), node_type="elem image", help="")
+    def image_white_area(node, **kwargs):
+        self("image innerwhite -l -o -m 2\n")
+
+    @tree_conditional(lambda node: not node.lock)
+    @tree_submenu(_("Image"))
+    @tree_operation(_("Split image along white areas"), node_type="elem image", help="")
+    def image_white_area_split(node, **kwargs):
+        self("image innerwhite -w -o -m 2\n")
+
+    @tree_submenu(_("Image"))
+    @tree_separator_before()
     @tree_operation(
         _("Save original image to output.png"), node_type="elem image", help=""
     )
