@@ -8,7 +8,7 @@ Lightburn files are xml files denoting simple types with a narrowly nested style
 import base64
 import re
 from io import BytesIO
-from xml.etree.ElementTree import iterparse
+from xml.etree.ElementTree import iterparse, ParseError
 
 import PIL.Image
 
@@ -402,6 +402,12 @@ class LbrnLoader:
         try:
             with open(pathname, "r") as source:
                 LbrnLoader.parse(pathname, source, elements_service)
+                try:
+                    pass
+                except ParseError:
+                    # This is likely `Junk after Document` which is already parsed. Unsure if this is because the
+                    # format will sometimes have some extra information or because of a malformed xml.
+                    pass
         except (IOError, IndexError) as e:
             raise BadFileError(str(e)) from e
         return True
