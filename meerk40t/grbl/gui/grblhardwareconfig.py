@@ -11,7 +11,7 @@ import wx
 from meerk40t.grbl.controller import hardware_settings
 from meerk40t.gui.icons import icons8_curly_brackets
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import dip_size, EditableListCtrl, ScrolledPanel
+from meerk40t.gui.wxutils import EditableListCtrl, ScrolledPanel, dip_size
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation

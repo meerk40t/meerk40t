@@ -10,7 +10,7 @@ from meerk40t.kernel import CommandSyntaxError, Service
 
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
-from ..core.units import Length, MM_PER_INCH
+from ..core.units import MM_PER_INCH, Length
 from ..core.view import View
 from ..device.mixins import Status
 from .controller import GrblController

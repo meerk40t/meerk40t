@@ -762,7 +762,9 @@ def init_commands(kernel):
         if repeats is None or repeats < 0:
             repeats = 0
         if offset > 0 and repeats == 0:
-            channel("You need to provide the -r parameter to set the amount of repetitions")
+            channel(
+                "You need to provide the -r parameter to set the amount of repetitions"
+            )
             return
 
         if jointype is None:
@@ -778,7 +780,7 @@ def init_commands(kernel):
         data_out = []
         rep_count = 0
         mydata = [e for e in data]
-        while (rep_count < repeats or repeats==0) and len(mydata) > 0:
+        while (rep_count < repeats or repeats == 0) and len(mydata) > 0:
             rep_count += 1
             c_off = ClipperOffset(interpolation=interpolation)
             c_off.add_nodes(mydata)
@@ -800,7 +802,6 @@ def init_commands(kernel):
             post.append(classify_new(data_out))
             self.signal("refresh_scene", "Scene")
         return "elements", data_out
-
 
     # ---- Let's add some CAG commands....
     @self.console_argument(

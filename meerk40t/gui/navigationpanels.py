@@ -78,6 +78,7 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = 3 * iconsize + dx
     pane.control = dragpanel
+
     def on_drag_resize(event):
         panelsize = event.GetSize()
         dragpanel.set_icons(dimension=panelsize)
@@ -102,6 +103,7 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = 3 * iconsize + dx
     pane.control = jogpanel
+
     def on_jog_resize(event):
         panelsize = event.GetSize()
         jogpanel.set_icons(dimension=panelsize)
@@ -566,27 +568,60 @@ class Drag(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def set_icons(self, iconsize = None, dimension=None):
+    def set_icons(self, iconsize=None, dimension=None):
         if iconsize is None and dimension is not None:
             dim_x = int(dimension[0] / 3) - 8
             dim_y = int(dimension[1] / 4) - 8
             iconsize = max(15, min(dim_x, dim_y))
         self.icon_size = iconsize
-        self.button_align_corner_top_left.SetBitmap(icon_corner1.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_align_drag_up.SetBitmap(icons8_caret_up.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_align_corner_top_right.SetBitmap(icon_corner2.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_align_drag_left.SetBitmap(icons8_caret_left.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_align_center.SetBitmap(icons8_square_border.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_align_drag_right.SetBitmap(icons8_caret_right.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_align_corner_bottom_left.SetBitmap(icon_corner4.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_align_drag_down.SetBitmap(icons8_caret_down.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_align_corner_bottom_right.SetBitmap(icon_corner3.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_align_first_position.SetBitmap(icon_circled_1.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_align_trace_hull.SetBitmap(icons8_pentagon.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_align_trace_quick.SetBitmap(icons8_pentagon_squared.GetBitmap(resize=self.icon_size, resolution=self.resolution))
+        self.button_align_corner_top_left.SetBitmap(
+            icon_corner1.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_align_drag_up.SetBitmap(
+            icons8_caret_up.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_align_corner_top_right.SetBitmap(
+            icon_corner2.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_align_drag_left.SetBitmap(
+            icons8_caret_left.GetBitmap(
+                resize=self.icon_size, resolution=self.resolution
+            )
+        )
+        self.button_align_center.SetBitmap(
+            icons8_square_border.GetBitmap(
+                resize=self.icon_size, resolution=self.resolution
+            )
+        )
+        self.button_align_drag_right.SetBitmap(
+            icons8_caret_right.GetBitmap(
+                resize=self.icon_size, resolution=self.resolution
+            )
+        )
+        self.button_align_corner_bottom_left.SetBitmap(
+            icon_corner4.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_align_drag_down.SetBitmap(
+            icons8_caret_down.GetBitmap(
+                resize=self.icon_size, resolution=self.resolution
+            )
+        )
+        self.button_align_corner_bottom_right.SetBitmap(
+            icon_corner3.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_align_first_position.SetBitmap(
+            icon_circled_1.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_align_trace_hull.SetBitmap(
+            icons8_pentagon.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_align_trace_quick.SetBitmap(
+            icons8_pentagon_squared.GetBitmap(
+                resize=self.icon_size, resolution=self.resolution
+            )
+        )
         self.navigation_sizer.Layout()
         self.Layout()
-
 
     @property
     def lockmode(self):
@@ -973,24 +1008,56 @@ class Jog(wx.Panel):
         self.navigation_sizer.Fit(self)
         self.Layout()
 
-    def set_icons(self, iconsize = None, dimension=None):
+    def set_icons(self, iconsize=None, dimension=None):
         if iconsize is None and dimension is not None:
             dim_x = int(dimension[0] / 3) - 8
             dim_y = int(dimension[1] / 4) - 8
             iconsize = max(15, min(dim_x, dim_y))
         self.icon_size = iconsize
-        self.button_navigate_up_left.SetBitmap(icons8_up_left.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_navigate_up.SetBitmap(icons8_up.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_navigate_up_right.SetBitmap(icons8_up_right.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_navigate_left.SetBitmap(icons8_left.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_navigate_home.SetBitmap(icons8_home_filled.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_navigate_right.SetBitmap(icons8_right.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_navigate_down_left.SetBitmap(icons8_down_left.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_navigate_down.SetBitmap(icons8_down.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_navigate_down_right.SetBitmap(icons8_down_right.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_navigate_unlock.SetBitmap(icons8_unlock.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_navigate_lock.SetBitmap(icons8_lock.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_confine.SetBitmap(icon_fence_closed.GetBitmap(resize=self.icon_size, resolution=self.resolution))
+        self.button_navigate_up_left.SetBitmap(
+            icons8_up_left.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_navigate_up.SetBitmap(
+            icons8_up.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_navigate_up_right.SetBitmap(
+            icons8_up_right.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_navigate_left.SetBitmap(
+            icons8_left.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_navigate_home.SetBitmap(
+            icons8_home_filled.GetBitmap(
+                resize=self.icon_size, resolution=self.resolution
+            )
+        )
+        self.button_navigate_right.SetBitmap(
+            icons8_right.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_navigate_down_left.SetBitmap(
+            icons8_down_left.GetBitmap(
+                resize=self.icon_size, resolution=self.resolution
+            )
+        )
+        self.button_navigate_down.SetBitmap(
+            icons8_down.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_navigate_down_right.SetBitmap(
+            icons8_down_right.GetBitmap(
+                resize=self.icon_size, resolution=self.resolution
+            )
+        )
+        self.button_navigate_unlock.SetBitmap(
+            icons8_unlock.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_navigate_lock.SetBitmap(
+            icons8_lock.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_confine.SetBitmap(
+            icon_fence_closed.GetBitmap(
+                resize=self.icon_size, resolution=self.resolution
+            )
+        )
         self.navigation_sizer.Layout()
         self.Layout()
 
@@ -1050,13 +1117,21 @@ class Jog(wx.Panel):
 
         _confined = value
         if value == 0:
-            self.button_confine.SetBitmap(icon_fence_open.GetBitmap(resize=self.icon_size, resolution=self.resolution))
+            self.button_confine.SetBitmap(
+                icon_fence_open.GetBitmap(
+                    resize=self.icon_size, resolution=self.resolution
+                )
+            )
             self.button_confine.SetToolTip(
                 _("Caution: allow laser movement outside bed size")
             )
             # self.context("confine 0")
         else:
-            self.button_confine.SetBitmap(icon_fence_closed.GetBitmap(resize=self.icon_size, resolution=self.resolution))
+            self.button_confine.SetBitmap(
+                icon_fence_closed.GetBitmap(
+                    resize=self.icon_size, resolution=self.resolution
+                )
+            )
             self.button_confine.SetToolTip(_("Limit laser movement to bed size"))
             # self.context("confine 1")
 
@@ -1937,15 +2012,37 @@ class Transform(wx.Panel):
             dim_y = int(dimension[1] / 4) - 8
             iconsize = max(15, min(dim_x, dim_y))
         self.icon_size = iconsize
-        self.button_scale_down.SetBitmap(icons8_compress.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_translate_up.SetBitmap(icons8_up.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_scale_up.SetBitmap(icons8_enlarge.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_translate_left.SetBitmap(icons8_left.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_reset.SetBitmap(icons8_delete.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_translate_right.SetBitmap(icons8_right.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_rotate_ccw.SetBitmap(icons8_rotate_left.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_translate_down.SetBitmap(icons8_down.GetBitmap(resize=self.icon_size, resolution=self.resolution))
-        self.button_rotate_cw.SetBitmap(icons8_rotate_right.GetBitmap(resize=self.icon_size, resolution=self.resolution))
+        self.button_scale_down.SetBitmap(
+            icons8_compress.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_translate_up.SetBitmap(
+            icons8_up.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_scale_up.SetBitmap(
+            icons8_enlarge.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_translate_left.SetBitmap(
+            icons8_left.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_reset.SetBitmap(
+            icons8_delete.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_translate_right.SetBitmap(
+            icons8_right.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_rotate_ccw.SetBitmap(
+            icons8_rotate_left.GetBitmap(
+                resize=self.icon_size, resolution=self.resolution
+            )
+        )
+        self.button_translate_down.SetBitmap(
+            icons8_down.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        )
+        self.button_rotate_cw.SetBitmap(
+            icons8_rotate_right.GetBitmap(
+                resize=self.icon_size, resolution=self.resolution
+            )
+        )
         self.Layout()
 
     def pane_show(self, *args):

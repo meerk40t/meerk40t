@@ -3,7 +3,7 @@ from wx import aui
 
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
-from meerk40t.gui.icons import icons8_compress, get_default_icon_size
+from meerk40t.gui.icons import get_default_icon_size, icons8_compress
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.kernel import signal_listener
 
@@ -219,8 +219,12 @@ class PositionPanel(wx.Panel):
         self.chk_lock.SetToolTip(
             _("If checked then the aspect ratio (width / height) will be maintained")
         )
-        self.button_param.SetToolTip(_("Set the point of reference for the element,\n" +
-                                       "which edge/corner should be put on the given location"))
+        self.button_param.SetToolTip(
+            _(
+                "Set the point of reference for the element,\n"
+                + "which edge/corner should be put on the given location"
+            )
+        )
         self.button_execute.SetSize(self.button_execute.GetBestSize())
         self.combo_box_units.SetSelection(0)
         # end wxGlade

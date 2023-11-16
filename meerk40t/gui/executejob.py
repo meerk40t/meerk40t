@@ -83,7 +83,9 @@ class PlannerPanel(wx.Panel):
             )
         )
         self.button_start.SetForegroundColour(wx.BLACK)
-        self.button_start.SetBitmap(icons8_laser_beam.GetBitmap(resize=get_default_icon_size()))
+        self.button_start.SetBitmap(
+            icons8_laser_beam.GetBitmap(resize=get_default_icon_size())
+        )
         # end wxGlade
 
     def __do_layout(self):

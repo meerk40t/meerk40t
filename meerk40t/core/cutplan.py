@@ -654,8 +654,12 @@ class CutPlan:
                 # one rectangle's minimum in some dimension
                 # is greater than the other's maximum in
                 # that dimension.
-                flagx = (bounds1[0] > bounds2[2] + margin) or (bounds2[0] > bounds1[2] + margin)
-                flagy = (bounds1[1] > bounds2[3] + margin) or (bounds2[1] > bounds1[3] + margin)
+                flagx = (bounds1[0] > bounds2[2] + margin) or (
+                    bounds2[0] > bounds1[2] + margin
+                )
+                flagy = (bounds1[1] > bounds2[3] + margin) or (
+                    bounds2[1] > bounds1[3] + margin
+                )
                 return bool(not (flagx or flagy))
 
             clusters = list()
@@ -731,7 +735,11 @@ class CutPlan:
         ecount = 0
         for idx in range(len(operation_list) - 1, -1, -1):
             op = operation_list[idx]
-            if not hasattr(op, "type") or not hasattr(op, "children") or op.type != op_type:
+            if (
+                not hasattr(op, "type")
+                or not hasattr(op, "children")
+                or op.type != op_type
+            ):
                 # That's not what we are looking for
                 continue
             scount += 1

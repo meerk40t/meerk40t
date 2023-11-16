@@ -499,7 +499,9 @@ class DevicePanel(wx.Panel):
                     None, _("Cannot remove the currently active device."), _("Error")
                 ).ShowModal()
                 return
-            if self.context.kernel.yesno(_("Do you really want to remove this device?\nThis can not be undone!")):
+            if self.context.kernel.yesno(
+                _("Do you really want to remove this device?\nThis can not be undone!")
+            ):
                 try:
                     service.destroy()
                     self.context.signal("device;modified")

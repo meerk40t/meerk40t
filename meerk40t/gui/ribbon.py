@@ -232,7 +232,7 @@ class Button:
                 color=Color("grey"),
                 noadjustment=True,
                 buffer=edge,
-                )
+            )
         self.bitmap = self.available_bitmaps[key]
         self.bitmap_disabled = self.available_bitmaps_disabled[key]
 
@@ -1315,7 +1315,6 @@ class Art:
             ptsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
 
-
     def paint_main(self, dc, ribbon):
         """
         Main paint routine. This should delegate, in paint order, to the things on screen that require painting.
@@ -1524,7 +1523,7 @@ class Art:
         h = int(round(y1 - y, 2))
         img_h = h
         # do we have text? if yes let's reduce the available space in y
-        if self.show_labels: # Regardless whether we have a label or not...
+        if self.show_labels:  # Regardless whether we have a label or not...
             img_h -= self.bitmap_text_buffer
             ptsize = min(18, int(round(min(w, img_h) / 5.0, 2)) * 2)
             img_h -= int(ptsize * 1.35)
@@ -1560,21 +1559,24 @@ class Art:
             wouldfit = False
             while not wouldfit:
                 testfont = wx.Font(
-                    ptsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+                    ptsize,
+                    wx.FONTFAMILY_SWISS,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
                 )
                 test_y = y + self.bitmap_text_buffer
                 dc.SetFont(testfont)
                 wouldfit = True
                 for word in label_text:
                     text_width, text_height = dc.GetTextExtent(word)
-                    if text_width > w: # or text_height + test_y > h:
+                    if text_width > w:  # or text_height + test_y > h:
                         wouldfit = False
                         break
                 if wouldfit:
                     font = testfont
                     break
                 ptsize -= 2
-                if ptsize < 6: # too small
+                if ptsize < 6:  # too small
                     break
             if not wouldfit:
                 show_text = False
@@ -1877,12 +1879,16 @@ class Art:
             if panel._overflow_position is None:
                 # print (f"({x}, {y}) - ({x + panel_width},  {y+panel_height}), sx={sx}, sy={sy}")
                 if is_horizontal:
-                    available_space = max(0, x + panel_width - panel_max_x - self.panel_button_buffer)
+                    available_space = max(
+                        0, x + panel_width - panel_max_x - self.panel_button_buffer
+                    )
                     # print (f"x={x + panel_width}, {panel_max_x} will become: {panel_max_x + self.panel_button_buffer}, available={available_space}")
                     if available_space != 0:
                         panel_width = panel_max_x + self.panel_button_buffer - x
                 else:
-                    available_space = max(0, y + panel_height - panel_max_y - self.panel_button_buffer)
+                    available_space = max(
+                        0, y + panel_height - panel_max_y - self.panel_button_buffer
+                    )
                     # print (f"y={y + panel_height}, {panel_max_y} will become: {panel_max_y + self.panel_button_buffer}, available={available_space}")
                     if available_space != 0:
                         panel_height = panel_max_y + self.panel_button_buffer - y

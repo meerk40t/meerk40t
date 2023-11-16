@@ -406,7 +406,9 @@ class HersheyFontSelector(MWindow):
         super().__init__(450, 550, submenu="", *args, **kwds)
         self.panel = PanelFontSelect(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_choose_font.GetBitmap(resize=0.5 * get_default_icon_size()))
+        _icon.CopyFromBitmap(
+            icons8_choose_font.GetBitmap(resize=0.5 * get_default_icon_size())
+        )
         # _icon.CopyFromBitmap(icons8_computer_support.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Font-Selection"))

@@ -144,10 +144,14 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.text_byte_5.SetMinSize(dip_size(self, 77, 23))
         self.checkbox_show_usb_log.SetValue(1)
         self.button_device_connect.SetBitmap(
-            icons8_disconnected.GetBitmap(use_theme=False, resize=get_default_icon_size())
+            icons8_disconnected.GetBitmap(
+                use_theme=False, resize=get_default_icon_size()
+            )
         )
         self.button_controller_control.SetBitmap(
-            icons8_circled_play.GetBitmap(use_theme=False, resize=get_default_icon_size())
+            icons8_circled_play.GetBitmap(
+                use_theme=False, resize=get_default_icon_size()
+            )
         )
         # end wxGlade
 
@@ -348,7 +352,9 @@ class LihuiyuControllerPanel(ScrolledPanel):
             origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("Connect failed"))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected.GetBitmap(use_theme=False, resize=get_default_icon_size())
+                icons8_disconnected.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
             )
             self.button_device_connect.Enable()
         elif state == "STATE_FAILED_RETRYING":
@@ -356,7 +362,9 @@ class LihuiyuControllerPanel(ScrolledPanel):
             origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("Retrying..."))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected.GetBitmap(use_theme=False, resize=get_default_icon_size())
+                icons8_disconnected.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
             )
             self.button_device_connect.Enable()
         elif state == "STATE_FAILED_SUSPENDED":
@@ -364,7 +372,9 @@ class LihuiyuControllerPanel(ScrolledPanel):
             origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("Suspended Retrying"))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected.GetBitmap(use_theme=False, resize=get_default_icon_size())
+                icons8_disconnected.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
             )
             self.button_device_connect.Enable()
         elif state == "STATE_DRIVER_NO_BACKEND":
@@ -372,35 +382,45 @@ class LihuiyuControllerPanel(ScrolledPanel):
             origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("No Backend"))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected.GetBitmap(use_theme=False, resize=get_default_icon_size())
+                icons8_disconnected.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
             )
             self.button_device_connect.Enable()
         elif state == "STATE_UNINITIALIZED" or state == "STATE_USB_DISCONNECTED":
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connect"))
             self.button_device_connect.SetBitmap(
-                icons8_connected.GetBitmap(use_theme=False, resize=get_default_icon_size())
+                icons8_connected.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
             )
             self.button_device_connect.Enable()
         elif state == "STATE_USB_SET_DISCONNECTING":
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Disconnecting..."))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected.GetBitmap(use_theme=False, resize=get_default_icon_size())
+                icons8_disconnected.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
             )
             self.button_device_connect.Disable()
         elif state == "STATE_USB_CONNECTED" or state == "STATE_CONNECTED":
             self.button_device_connect.SetBackgroundColour("#00ff00")
             self.button_device_connect.SetLabel(_("Disconnect"))
             self.button_device_connect.SetBitmap(
-                icons8_connected.GetBitmap(use_theme=False, resize=get_default_icon_size())
+                icons8_connected.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
             )
             self.button_device_connect.Enable()
         elif state == "STATE_CONNECTING":
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connecting..."))
             self.button_device_connect.SetBitmap(
-                icons8_connected.GetBitmap(use_theme=False, resize=get_default_icon_size())
+                icons8_connected.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
             )
             self.button_device_connect.Disable()
 
@@ -457,12 +477,20 @@ class LihuiyuControllerPanel(ScrolledPanel):
             button.function = f
             button.SetBackgroundColour("#009900")
             button.SetLabel(_("Hold Controller"))
-            button.SetBitmap(icons8_circled_play.GetBitmap(use_theme=False, resize=get_default_icon_size()))
+            button.SetBitmap(
+                icons8_circled_play.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
+            )
             button.Enable(True)
         elif state == "busy":
             button.SetBackgroundColour("#00dd00")
             button.SetLabel(_("LOCKED"))
-            button.SetBitmap(icons8_circled_play.GetBitmap(use_theme=False, resize=get_default_icon_size()))
+            button.SetBitmap(
+                icons8_circled_play.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
+            )
             button.Enable(False)
         elif state == "wait":
 
@@ -472,7 +500,11 @@ class LihuiyuControllerPanel(ScrolledPanel):
             button.function = f
             button.SetBackgroundColour("#dddd00")
             button.SetLabel(_("Force Continue"))
-            button.SetBitmap(icons8_laser_beam_hazard.GetBitmap(use_theme=False, resize=get_default_icon_size()))
+            button.SetBitmap(
+                icons8_laser_beam_hazard.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
+            )
             button.Enable(True)
         elif state == "pause":
 
@@ -482,7 +514,11 @@ class LihuiyuControllerPanel(ScrolledPanel):
             button.function = f
             button.SetBackgroundColour("#00dd00")
             button.SetLabel(_("Resume Controller"))
-            button.SetBitmap(icons8_circled_play.GetBitmap(use_theme=False, resize=get_default_icon_size()))
+            button.SetBitmap(
+                icons8_circled_play.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
+            )
             button.Enable(True)
         elif state == "active":
 
@@ -492,7 +528,9 @@ class LihuiyuControllerPanel(ScrolledPanel):
             button.function = f
             button.SetBackgroundColour("#00ff00")
             button.SetLabel(_("Pause Controller"))
-            button.SetBitmap(icons8_pause.GetBitmap(use_theme=False, resize=get_default_icon_size()))
+            button.SetBitmap(
+                icons8_pause.GetBitmap(use_theme=False, resize=get_default_icon_size())
+            )
             button.Enable(True)
         elif state == "terminate":
 
@@ -502,7 +540,11 @@ class LihuiyuControllerPanel(ScrolledPanel):
             button.function = f
             button.SetBackgroundColour("#00ffff")
             button.SetLabel(_("Manual Reset"))
-            button.SetBitmap(icons8_emergency_stop_button.GetBitmap(use_theme=False, resize=get_default_icon_size()))
+            button.SetBitmap(
+                icons8_emergency_stop_button.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
+            )
             button.Enable(True)
 
     @signal_listener("pipe;failing")

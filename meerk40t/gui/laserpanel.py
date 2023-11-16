@@ -101,8 +101,6 @@ def register_panel_laser(window, context):
     jog_drag.Bind(wx.EVT_SIZE, on_resize)
 
 
-
-
 class LaserPanel(wx.Panel):
     """
     Contains all elements to control the execution of the job

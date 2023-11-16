@@ -3416,7 +3416,6 @@ class MeerK40t(MWindow):
             },
         )
 
-
     @signal_listener("file;loaded")
     @signal_listener("file;saved")
     @signal_listener("file;cleared")

@@ -948,7 +948,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                         )
                     for dataline in data:
                         row_id = chart.InsertItem(
-                            chart.GetItemCount(), dataline.get("speed", 0) # TODO: Speed hardcoded
+                            chart.GetItemCount(),
+                            dataline.get("speed", 0),  # TODO: Speed hardcoded
                         )
                         for column_id, column in enumerate(columns):
                             c_attr = column.get("attr")

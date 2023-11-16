@@ -35,6 +35,7 @@ STD_ICON_SIZE = 50
 _MIN_ICON_SIZE = 0
 _GLOBAL_FACTOR = 1.0
 
+
 def set_icon_appearance(factor, min_size):
     global _MIN_ICON_SIZE
     global _GLOBAL_FACTOR
@@ -786,7 +787,9 @@ class VectorIcon:
                 buffer = 2
         # Dummy variable for proper hashing via lru_cache
         color_dark = f"{color}|{darkm}"
-        bmp = self.retrieve_bitmap(color_dark, final_icon_width, final_icon_height, buffer)
+        bmp = self.retrieve_bitmap(
+            color_dark, final_icon_width, final_icon_height, buffer
+        )
 
         return bmp
 
@@ -1730,7 +1733,7 @@ icons8_paste = VectorIcon(
 
 icon_fence_open = VectorIcon(
     fill=(),
-    stroke = (
+    stroke=(
         "M 100 95 a 5,5, 0 1,0 1,0",
         "M 100 50 a 50,50, 0 1,0 1,0",
         "M 100 120 l 0 70 l -20 -20 m 20 20 l 20 -20",
@@ -1741,12 +1744,12 @@ icon_fence_open = VectorIcon(
         "M 110 110 l 50 50 l -10 0 m 10 0 l 0 -10",
         "M 90 90 l -50 -50 l 10 0 m -10 0 l 0 10",
         "M 90 110 l -50 50 l 10 0 m -10 0 l 0 -10",
-    )
+    ),
 )
 
 icon_fence_closed = VectorIcon(
     fill=(),
-    stroke = (
+    stroke=(
         "M 0 0 h 200 v 200 h -200 z",
         "M 5 5 h 190 v 190 h -190 z",
         "M 100 95 a 5,5, 0 1,0 1,0",
@@ -1759,7 +1762,7 @@ icon_fence_closed = VectorIcon(
         "M 110 110 l 50 50 l -10 0 m 10 0 l 0 -10",
         "M 90 90 l -50 -50 l 10 0 m -10 0 l 0 10",
         "M 90 110 l -50 50 l 10 0 m -10 0 l 0 -10",
-    )
+    ),
 )
 
 icons8_center_of_gravity = VectorIcon(
