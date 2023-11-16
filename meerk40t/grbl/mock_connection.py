@@ -13,7 +13,6 @@ class MockConnection:
         self.service = service
         self.controller = controller
         self.laser = None
-        self.just_connected = False
         self.read_buffer = bytearray()
         self.emulator = GRBLEmulator(
             device=None, units_to_device_matrix=service.view.matrix, reply=self.add_read
@@ -27,10 +26,6 @@ class MockConnection:
         self.read_buffer += bytes(code, encoding="raw_unicode_escape")
 
     def read(self):
-        if self.just_connected:
-            self.just_connected = False
-            return "Grbl 1.1f ['$' for help]\r\n" "[MSG:’$H’|’$X’ to unlock]\r\n"
-
         f = self.read_buffer.find(b"\n")
         if f == -1:
             return None

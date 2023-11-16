@@ -231,6 +231,11 @@ class GRBLEmulator:
                     self.device.driver.reset()
                 except AttributeError:
                     pass
+                self._buffer.clear()
+                if self.reply:
+                    self.reply(
+                        "Grbl 1.1f ['$' for help]\r\n" "[MSG:’$H’|’$X’ to unlock]\r\n"
+                    )
             elif c > 0x80:
                 if c == 0x84:
                     # Safety Door
@@ -404,7 +409,9 @@ class GRBLEmulator:
                 modals.append("G17")  # XY plane
                 modals.append("G21" if job.units == "mm" else "G20")  # MM data.
                 modals.append("G91" if job.relative else "G90")
-                modals.append("G94" if job.feed_desc in ("inch/min", "mm/min") else "G93")
+                modals.append(
+                    "G94" if job.feed_desc in ("inch/min", "mm/min") else "G93"
+                )
                 modals.append("M5")  # Not currently in a program job.
                 modals.append("M9")  # Mist cooling.
                 modals.append("T0")  # Tool 0
