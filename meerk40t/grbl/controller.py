@@ -2,6 +2,14 @@
 GRBL Controller
 
 Tasked with sending data to the different connection.
+
+Validation Stages.
+        Stage 0, we are disconnected and invalid.
+        Stage 1, we are connected and need to check if we are GRBL send $
+        Stage 2, we parsed $ and need to try $$ $G
+        Stage 3, we successfully parsed $$
+        Stage 4, we successfully parsed $G, send ?
+        Stage 5, we successfully parsed ?
 """
 import re
 import threading
@@ -233,7 +241,7 @@ class GrblController:
     def __init__(self, context):
         self.service = context
         self.connection = None
-        self._connection_validated = False
+        self._validation_stage = 0
 
         self.update_connection()
 
@@ -359,8 +367,8 @@ class GrblController:
             self.log("Could not connect.", type="event")
             return
         self.log("Connecting to GRBL...", type="event")
-        self._connection_validated = False
-        self.realtime("$\r")
+        self._validation_stage = 1
+        self.realtime("$\r\n")
 
     def close(self):
         """
@@ -371,8 +379,8 @@ class GrblController:
         if not self.connection.connected:
             return
         self.connection.disconnect()
-        self._connection_validated = False
         self.log("Disconnecting from GRBL...", type="event")
+        self._validation_stage = 0
 
     def write(self, data):
         """
@@ -426,7 +434,7 @@ class GrblController:
             self.add_watcher(self._channel_log)
 
         if self._sending_thread is None:
-            self._sending_thread = True # Avoid race condition.
+            self._sending_thread = True  # Avoid race condition.
             self._sending_thread = self.service.threaded(
                 self._sending,
                 thread_name=f"sender-{self.service.location()}",
@@ -434,7 +442,7 @@ class GrblController:
                 daemon=True,
             )
         if self._recving_thread is None:
-            self._recving_thread = True # Avoid race condition.
+            self._recving_thread = True  # Avoid race condition.
             self._recving_thread = self.service.threaded(
                 self._recving,
                 thread_name=f"recver-{self.service.location()}",
@@ -543,8 +551,8 @@ class GrblController:
                 # Send realtime data.
                 self._sending_realtime()
                 continue
-            if self._paused or not self._connection_validated:
-                # We are paused. We do not send anything other than realtime commands.
+            if self._paused or not self.fully_validated():
+                # We are paused or invalid. We do not send anything other than realtime commands.
                 time.sleep(0.05)
                 continue
             if not self._sending_queue:
@@ -676,10 +684,14 @@ class GrblController:
                 self.log(f"STARTUP: {response}", type="event")
             elif response.startswith(self.welcome):
                 self.log("Device Reset, revalidation required", type="event")
-                self._connection_validated = False
-                self.realtime("$\r")
+                if self.fully_validated():
+                    self._validation_stage = 1
+                    self.realtime("$\r\n")
             else:
                 self._assembled_response.append(response)
+
+    def fully_validated(self):
+        return self._validation_stage == 5
 
     def _process_status_message(self, response):
         message = response[1:-1]
@@ -705,7 +717,8 @@ class GrblController:
                     nx = float(coords[0])
                     ny = float(coords[1])
 
-                    if not self._connection_validated:
+                    if not self.fully_validated():
+                        # During validation, we declare positions.
                         self.driver.declare_position(nx, ny)
                     ox = self.driver.mpos_x
                     oy = self.driver.mpos_y
@@ -740,9 +753,9 @@ class GrblController:
             # Lim: limits states
             # Ctl: control pins and mask (binary).
             self.service.signal(f"grbl:status:{name}", info)
-        if not self._connection_validated:
+        if self._validation_stage in (2, 3, 4):
             self.log("Connection Confirmed.", type="event")
-            self._connection_validated = True
+            self._validation_stage = 5
 
     def _process_feedback_message(self, response):
         if response.startswith("[MSG:"):
@@ -750,24 +763,28 @@ class GrblController:
             self.log(message, type="event")
             self.service.channel("console")(message)
         elif response.startswith("[GC:"):
+            # Parsing $G
             message = response[4:-1]
             states = list(message.split(" "))
-            if not self._connection_validated:
+            if not self.fully_validated():
                 self.driver.declare_modals(states)
+                self._validation_stage = 4
+                self.realtime("?\n\r")
             self.log(message, type="event")
             self.service.signal("grbl:states", states)
-            if not self._connection_validated:
-                self.realtime("?\r")
         elif response.startswith("[HLP:"):
+            # Parsing $
             message = response[5:-1]
-            if not self._connection_validated:
+            if self._validation_stage == 1:
+                # $ was successfully parsed.
+                self._validation_stage = 2
                 if "$$" in message:
-                    self.realtime("$$\r")
+                    self.realtime("$$\n\r")
                 if "$G" in message:
-                    self.realtime("$G\r")
+                    self.realtime("$G\n\r")
                 elif "?" in message:
-                    # Only triggered if $G does not exist.
-                    self.realtime("?\r")
+                    # No $G just request status.
+                    self.realtime("?\n\r")
             self.log(message, type="event")
         elif response.startswith("[G54:"):
             message = response[5:-1]
