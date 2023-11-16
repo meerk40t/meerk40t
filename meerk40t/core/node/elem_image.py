@@ -591,12 +591,8 @@ class ImageNode(Node):
         image = self._apply_mask(image, transparent_mask)
 
         # Calculate image box.
-        box = None
-        if crop:
-            box = self._get_crop_box(image)
-        if box is None:
-            # If box is entirely white, bbox caused value error, or crop not set.
-            box = (0, 0, image.width, image.height)
+        # The real box not a cropped one (yet)...
+        box = (0, 0, image.width, image.height)
 
         transform_matrix = copy(self.matrix)  # Prevent Knock-on effect.
 
@@ -681,7 +677,6 @@ class ImageNode(Node):
 
         actualized_matrix.post_scale(step_x, step_y)
         actualized_matrix.post_translate(tx, ty)
-
         # Invert black to white if needed.
         if self.invert:
             image = ImageOps.invert(image)
