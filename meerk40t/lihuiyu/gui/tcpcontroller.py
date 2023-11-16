@@ -135,10 +135,13 @@ class TCPController(MWindow):
 
     @signal_listener("network_update")
     def on_network_update(self, origin=None, *args):
-        if not self.service.networked:
-            self.button_device_connect.Enable(False)
-        else:
-            self.button_device_connect.Enable(True)
+        try:
+            if not self.service.networked:
+                self.button_device_connect.Enable(False)
+            else:
+                self.button_device_connect.Enable(True)
+        except AttributeError:
+            pass
 
     @signal_listener("tcp;status")
     def on_tcp_status(self, origin, state):
