@@ -167,6 +167,7 @@ class MeerK40t(MWindow):
 
         self.edit_menu_choice = None
         self._setup_edit_menu_choice()
+        self.view_menu_choice = None
 
         # Menu Bar
         self.main_menubar = wx.MenuBar()
@@ -606,7 +607,8 @@ class MeerK40t(MWindow):
     @signal_listener("emphasized")
     def on_update_statusbar(self, origin, *args):
         value = self.context.elements.has_emphasis()
-        self._update_status_edit_menu()(None)
+        self._update_status_menu(self.edit_menu, self.edit_menu_choice)
+        self._update_status_menu(self.view_menu, self.view_menu_choice)
         if not self.widgets_created:
             return
 
@@ -2839,9 +2841,9 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_MENU, self.on_click_exit, id=menu_item.GetId())
         self.main_menubar.Append(self.file_menu, _("File"))
 
-    def _update_status_edit_menu(self, *args):
+    def _update_status_menu(self, menu, choices, *args):
         def handler(event):
-            for entry in self.edit_menu_choice:
+            for entry in local_choices:
                 if "label" in entry and "enabled" in entry:
                     flag = True
                     label = entry["label"]
@@ -2850,13 +2852,15 @@ class MeerK40t(MWindow):
                     except AttributeError:
                         flag = True
                     if label:
-                        menu_id = self.edit_menu.FindItem(label)
+                        menu_id = local_menu.FindItem(label)
                         if menu_id != wx.NOT_FOUND:
-                            menu_item = self.edit_menu.FindItemById(menu_id)
+                            menu_item = local_menu.FindItemById(menu_id)
                             menu_item.Enable(flag)
             if event:
                 event.Skip()
 
+        local_menu = menu
+        local_choices = choices
         return handler
 
     def __set_edit_menu(self):
@@ -2872,7 +2876,7 @@ class MeerK40t(MWindow):
         else:
             self.main_menubar.Append(self.edit_menu, label)
 
-        self.edit_menu.Bind(wx.EVT_MENU_OPEN, self._update_status_edit_menu())
+        self.edit_menu.Bind(wx.EVT_MENU_OPEN, self._update_status_menu(self.edit_menu, self.edit_menu_choice))
 
     def __set_view_menu(self):
         def toggle_draw_mode(bits):
@@ -2913,6 +2917,7 @@ class MeerK40t(MWindow):
                 "action": self.on_click_zoom_selected,
                 "id": wx.ID_ZOOM_100,
                 "level": 1,
+                "enabled": self.context.elements.has_emphasis,
                 "segment": "",
             },
             {
@@ -3177,8 +3182,10 @@ class MeerK40t(MWindow):
         ]
 
         self.view_menu = wx.Menu()
+        self.view_menu_choice = choices
         self._create_menu_from_choices(self.view_menu, choices)
         self.main_menubar.Append(self.view_menu, _("View"))
+        self.view_menu.Bind(wx.EVT_MENU_OPEN, self._update_status_menu(self.view_menu, self.view_menu_choice))
 
     def __set_pane_menu(self):
         # ==========

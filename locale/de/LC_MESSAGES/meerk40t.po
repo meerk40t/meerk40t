@@ -15875,6 +15875,10 @@ msgstr "Gerät auswählen"
 msgid "Quicksearch for device-entry"
 msgstr "Schnellsuche nach Gerätetyp"
 
+#: ./meerk40t\gui\devicepanel.py:91
+msgid "Select a matching entry for your new device"
+msgstr "Suche nach passenden Einträgen für das neue Gerät"
+
 msgid "Filter"
 msgstr "Filter"
 
@@ -16445,6 +16449,9 @@ msgstr "Bewege das selektierte Panel nach oben"
 
 msgid "Apply the configuration"
 msgstr "Wende die Konfiguration an"
+
+msgid "Apply"
+msgstr "Anwenden"
 
 msgid "Allow/suppress the display of labels beneath the icons in the ribbon"
 msgstr "Sollen Beschriftungen unter den Icons in der Symbolleiste angezeigt werden"
@@ -17650,3 +17657,28 @@ msgstr "Wandle Daten um"
 
 msgid "Do you really want to remove this device?\nThis can not be undone!"
 msgstr "Soll dieses Gerät wirklich gelöscht werden?\nDiese Aktion kann nicht rückgängig gemacht werden!"
+
+#: ./meerk40t\core\elements\element_treeops.py:2757
+msgid "Identify inner white areas"
+msgstr "Markiere innere weiße Bereiche"
+
+#: ./meerk40t\core\elements\element_treeops.py:2763
+msgid "Split image along white areas"
+msgstr "Teile Bild horizontal entlang weißer Flächen auf"
+
+#: ./meerk40t\gui\position.py:226
+msgid ""
+"Set the point of reference for the element,\n"
+"which edge/corner should be put on the given location"
+msgstr ""
+"Setzen den Referenzpunkt für das Element,\n"
+"also welcher Seitenmittelpunkt/welche Ecke\n"
+"auf die Koordinate gesetzt werden sollen"
+
+#: ./meerk40t\gui\wxmmain.py:3411
+msgid "Restart"
+msgstr "Neustart"
+
+#: ./meerk40t\gui\wxmmain.py:3413
+msgid "Restart needed to apply new parameters"
+msgstr "Programm-Neustart erforderlich, um neue Einstellungen anzuwenden"
