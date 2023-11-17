@@ -22,7 +22,6 @@ def init_commands(kernel):
     )
     def undo_mark(data=None, **kwgs):
         self.undo.mark()
-        self.signal("undoredo")
 
     @self.console_command(
         "undo",
@@ -34,7 +33,6 @@ def init_commands(kernel):
             return
         self.validate_selected_area()
         channel(f"Undo: {self.undo}")
-        self.signal("undoredo")
         self.signal("refresh_scene", "Scene")
         self.signal("rebuild_tree")
 
@@ -47,7 +45,6 @@ def init_commands(kernel):
             return
         channel(f"Redo: {self.undo}")
         self.validate_selected_area()
-        self.signal("undoredo")
         self.signal("refresh_scene", "Scene")
         self.signal("rebuild_tree")
 

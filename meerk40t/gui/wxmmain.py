@@ -3844,7 +3844,6 @@ class MeerK40t(MWindow):
 
     def clear_project(self, ops_too=True):
         context = self.context
-        context.elements.undo.mark("new-project")
         kernel = context.kernel
         kernel.busyinfo.start(msg=_("Cleaning up..."))
         self.working_file = None
@@ -3853,6 +3852,7 @@ class MeerK40t(MWindow):
         self.validate_save()
         kernel.busyinfo.end()
         self.context(".tool none\n")
+        context.elements.undo.mark("blank")
 
     def clear_and_open(self, pathname, preferred_loader=None):
         self.clear_project(ops_too=False)

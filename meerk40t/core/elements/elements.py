@@ -498,7 +498,7 @@ class Elemental(Service):
         self.points = list()
         self.segments = list()
 
-        self.undo = Undo(self._tree)
+        self.undo = Undo(self, self._tree)
         self.do_undo = True
         self.suppress_updates = False
 
