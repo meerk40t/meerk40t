@@ -2876,7 +2876,10 @@ class MeerK40t(MWindow):
         else:
             self.main_menubar.Append(self.edit_menu, label)
 
-        self.edit_menu.Bind(wx.EVT_MENU_OPEN, self._update_status_menu(self.edit_menu, self.edit_menu_choice))
+        self.edit_menu.Bind(
+            wx.EVT_MENU_OPEN,
+            self._update_status_menu(self.edit_menu, self.edit_menu_choice),
+        )
 
     def __set_view_menu(self):
         def toggle_draw_mode(bits):
@@ -3185,7 +3188,10 @@ class MeerK40t(MWindow):
         self.view_menu_choice = choices
         self._create_menu_from_choices(self.view_menu, choices)
         self.main_menubar.Append(self.view_menu, _("View"))
-        self.view_menu.Bind(wx.EVT_MENU_OPEN, self._update_status_menu(self.view_menu, self.view_menu_choice))
+        self.view_menu.Bind(
+            wx.EVT_MENU_OPEN,
+            self._update_status_menu(self.view_menu, self.view_menu_choice),
+        )
 
     def __set_pane_menu(self):
         # ==========

@@ -1,5 +1,5 @@
-import time
 import threading
+import time
 from math import isinf, isnan
 from pathlib import Path
 
@@ -16,7 +16,7 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import HoverButton
-from meerk40t.kernel import get_safe_path, signal_listener, Job
+from meerk40t.kernel import Job, get_safe_path, signal_listener
 
 _ = wx.GetTranslation
 
@@ -196,7 +196,6 @@ class SpoolerPanel(wx.Panel):
             interval=5,
             run_main=True,
         )
-
 
     def __set_properties(self):
         # begin wxGlade: SpoolerPanel.__set_properties

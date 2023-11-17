@@ -20,7 +20,9 @@ class LaserPathWidget(Widget):
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
         self.buffer_size = 1000
-        self.laserpath = [[0, 0] for _ in range(self.buffer_size)], [[0, 0] for _ in range(self.buffer_size)]
+        self.laserpath = [[0, 0] for _ in range(self.buffer_size)], [
+            [0, 0] for _ in range(self.buffer_size)
+        ]
         self.laserpath_index = 0
 
     def init(self, context):
@@ -43,7 +45,9 @@ class LaserPathWidget(Widget):
         self.laserpath_index = index
 
     def clear_laserpath(self):
-        self.laserpath = [[0, 0] for _ in range(self.buffer_size)], [[0, 0] for _ in range(self.buffer_size)]
+        self.laserpath = [[0, 0] for _ in range(self.buffer_size)], [
+            [0, 0] for _ in range(self.buffer_size)
+        ]
         self.laserpath_index = 0
 
     def process_draw(self, gc):
