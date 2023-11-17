@@ -145,6 +145,7 @@ class GRBLEmulator:
             channel=self.channel,
             units_to_device_matrix=units_to_device_matrix,
         )
+        self.job.reply = self.reply
 
     def __repr__(self):
         return "GRBLInterpreter()"
@@ -208,19 +209,18 @@ class GRBLEmulator:
                     self.device.driver.pause()
                 except AttributeError:
                     pass
-            elif c in (ord("\r"), ord("\n")):
+            elif c in (13, 10):  # "\r","\n"
                 # Process CRLF endlines
                 line = "".join(self._buffer)
                 if self._grbl_specific:
                     self._grbl_specific = False
                     self.reply_code(self._grbl_special(line))
                 else:
+                    self.job.write(line)
                     try:
                         self.device.spooler.send(self.job, prevent_duplicate=True)
                     except AttributeError:
                         self.job.execute(None)
-                    self.job.reply = self.reply
-                    self.job.write(line)
                 self._buffer.clear()
             elif c == 0x08:
                 # Process Backspaces.
