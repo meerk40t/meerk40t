@@ -1560,6 +1560,8 @@ class Art:
         dc.DrawBitmap(bitmap, int(x + (w - bitmap_width) / 2), int(y))
         y += bitmap_height
 
+        text_edge = self.bitmap_text_buffer
+
         if button.label and self.show_labels:
             show_text = True
             label_text = list(button.label.split(" "))
@@ -1574,17 +1576,42 @@ class Art:
                     wx.FONTSTYLE_NORMAL,
                     wx.FONTWEIGHT_NORMAL,
                 )
-                test_y = y + self.bitmap_text_buffer
+                test_y = y + text_edge
                 dc.SetFont(testfont)
                 wouldfit = True
-                for word in label_text:
+                i = 0
+                while i < len(label_text):
+                    # We know by definition that all single words
+                    # are okay for drawing, now we check whether
+                    # we can draw multiple in one line
+                    word = label_text[i]
+                    cont = True
+                    while cont:
+                        cont = False
+                        if i < len(label_text) - 1:
+                            nextword = label_text[i + 1]
+                            test = word + " " + nextword
+                            tw, th = dc.GetTextExtent(test)
+                            if tw < w:
+                                word = test
+                                i += 1
+                                cont = True
+
                     text_width, text_height = dc.GetTextExtent(word)
-                    if text_width > w:  # or text_height + test_y > h:
+                    if text_width > w:
                         wouldfit = False
                         break
+                    test_y += text_height
+                    if test_y > y1:
+                        wouldfit = False
+                        text_edge = 0
+                        break
+                    i += 1
+
                 if wouldfit:
                     font = testfont
                     break
+
                 ptsize -= 2
                 if ptsize < 6:  # too small
                     break
@@ -1595,7 +1622,7 @@ class Art:
             show_text = False
             label_text = list()
         if show_text:
-            y += self.bitmap_text_buffer
+            y += text_edge
             dc.SetFont(font)
             i = 0
             while i < len(label_text):
@@ -2083,7 +2110,6 @@ class Art:
     def button_calc(self, dc: wx.DC, button):
         bitmap = button.bitmap
         ptsize = self.get_font_size(button.icon_size)
-        # print (f"{button.icon_size}, {ptsize}")
         font = wx.Font(
             ptsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
@@ -2097,10 +2123,28 @@ class Art:
         text_width = 0
         text_height = 0
         if button.label and self.show_labels:
-            for word in button.label.split(" "):
+            label_text = list(button.label.split(" "))
+            i = 0
+            while i < len(label_text):
+                # We know by definition that all single words
+                # are okay for drawing, now we check whether
+                # we can draw multiple in one line
+                word = label_text[i]
+                cont = True
+                while cont:
+                    cont = False
+                    if i < len(label_text) - 1:
+                        nextword = label_text[i + 1]
+                        test = word + " " + nextword
+                        tw, th = dc.GetTextExtent(test)
+                        if tw < bitmap_width:
+                            word = test
+                            i += 1
+                            cont = True
                 line_width, line_height = dc.GetTextExtent(word)
                 text_width = max(text_width, line_width)
                 text_height += line_height
+                i += 1
 
         # Calculate button_width/button_height
         button_width = max(bitmap_width, text_width)
