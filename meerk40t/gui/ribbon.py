@@ -1344,6 +1344,7 @@ class Art:
                 int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius
             )
             for panel in page.panels:
+                # We suppress empty panels
                 if panel is None or panel.visible_button_count == 0:
                     continue
                 self._paint_panel(dc, panel)
