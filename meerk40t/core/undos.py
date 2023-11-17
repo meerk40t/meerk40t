@@ -20,7 +20,8 @@ class UndoState:
 
 
 class Undo:
-    def __init__(self, tree):
+    def __init__(self, service, tree):
+        self.service = service
         self.tree = tree
         self._lock = threading.Lock()
         self._undo_stack = []
@@ -53,6 +54,7 @@ class Undo:
                 pass
             del self._undo_stack[self._undo_index + 1 :]
             self.message = None
+        self.service.signal("undoredo")
 
     def undo(self):
         """
@@ -81,6 +83,7 @@ class Undo:
                 undo.state = self.tree.backup_tree()  # Get unused copy
             except KeyError:
                 pass
+            self.service.signal("undoredo")
             return True
 
     def redo(self):
@@ -102,6 +105,7 @@ class Undo:
                 redo.state = self.tree.backup_tree()  # Get unused copy
             except KeyError:
                 pass
+            self.service.signal("undoredo")
             return True
 
     def undolist(self):
