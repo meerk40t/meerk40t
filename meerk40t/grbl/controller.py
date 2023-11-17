@@ -773,7 +773,7 @@ class GrblController:
                 self.log("Stage 4: $G was successfully parsed.", type="event")
                 self.driver.declare_modals(states)
                 self._validation_stage = 4
-                self.realtime("?\n\r")
+                self.realtime("?\r\n")
             self.log(message, type="event")
             self.service.signal("grbl:states", states)
         elif response.startswith("[HLP:"):
@@ -783,12 +783,12 @@ class GrblController:
                 self.log("Stage 2: $ was successfully parsed.", type="event")
                 self._validation_stage = 2
                 if "$$" in message:
-                    self.realtime("$$\n\r")
+                    self.realtime("$$\r\n")
                 if "$G" in message:
-                    self.realtime("$G\n\r")
+                    self.realtime("$G\r\n")
                 elif "?" in message:
                     # No $G just request status.
-                    self.realtime("?\n\r")
+                    self.realtime("?\r\n")
             self.log(message, type="event")
         elif response.startswith("[G54:"):
             message = response[5:-1]
