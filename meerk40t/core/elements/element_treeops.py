@@ -61,6 +61,10 @@ def init_tree(kernel):
             pass
         return result
 
+    def is_developer_mode():
+        flag = getattr(self.kernel.root, "developer_mode", False)
+        return flag
+
     @tree_separator_after()
     @tree_conditional(lambda node: len(list(self.ops(selected=True))) == 1)
     @tree_operation(_("Operation properties"), node_type=op_nodes, help="")
@@ -2779,7 +2783,7 @@ def init_tree(kernel):
     def image_save_processed(node, **kwargs):
         self("image save output.png --processed\n")
 
-    @tree_conditional(lambda node: not node.lock)
+    @tree_conditional(lambda node: not node.lock and is_developer_mode())
     @tree_submenu(_("Convert"))
     @tree_operation(_("Raw Image"), node_type="elem image", help="")
     def image_convert_raw(node, **kwargs):
