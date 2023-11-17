@@ -475,6 +475,10 @@ class MKRibbonBarPanel(RibbonBarPanel):
     def on_emphasis_change(self, origin, *args):
         self.apply_enable_rules()
 
+    @signal_listener("undoredo")
+    def on_undostate_change(self, origin, *args):
+        self.apply_enable_rules()
+
     @signal_listener("selected")
     def on_selected_change(self, origin, node=None, *args):
         self.apply_enable_rules()

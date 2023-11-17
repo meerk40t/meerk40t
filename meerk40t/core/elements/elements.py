@@ -526,14 +526,15 @@ class Elemental(Service):
 
         direct = os.path.dirname(self.op_data._config_file)
         self.mywordlist = Wordlist(self.kernel.version, direct)
-        self.load_persistent_operations("previous")
+        with self.undofree():
+            self.load_persistent_operations("previous")
 
-        ops = list(self.ops())
-        if len(ops) == 0 and not self.operation_default_empty:
-            self.load_default(performclassify=False)
-        if list(self.ops()):
-            # Something was loaded for default ops. Mark that.
-            self.undo.mark("op-loaded")  # Mark defaulted
+            ops = list(self.ops())
+            if len(ops) == 0 and not self.operation_default_empty:
+                self.load_default(performclassify=False)
+            if list(self.ops()):
+                # Something was loaded for default ops. Mark that.
+                self.undo.mark("op-loaded")  # Mark defaulted
 
         self._default_stroke = None
         self._default_strokewidth = None

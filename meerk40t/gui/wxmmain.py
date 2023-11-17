@@ -392,6 +392,7 @@ class MeerK40t(MWindow):
                 "help": _("Undo last action"),
                 "action": on_click_undo,
                 "id": wx.ID_UNDO,
+                "enabled": self.context.elements.undo.has_undo,
                 "level": 1,
                 "segment": "",
             },
@@ -400,6 +401,7 @@ class MeerK40t(MWindow):
                 "help": _("Revert last undo"),
                 "action": on_click_redo,
                 "id": wx.ID_REDO,
+                "enabled": self.context.elements.undo.has_redo,
                 "level": 1,
                 "segment": "",
             },
@@ -1380,7 +1382,7 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements("undo\n"),
                 "size": bsize_small,
                 "identifier": "editundo",
-                # "rule_enabled": lambda cond: kernel.elements.undo.has_undo,
+                "rule_enabled": lambda cond: kernel.elements.undo.has_undo(),
             },
         )
         kernel.register(
@@ -1392,7 +1394,7 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements("redo\n"),
                 "size": bsize_small,
                 "identifier": "editredo",
-                # "rule_enabled": lambda cond: kernel.elements.undo.has_undo,
+                "rule_enabled": lambda cond: kernel.elements.undo.has_redo(),
             },
         )
 
@@ -3842,7 +3844,7 @@ class MeerK40t(MWindow):
 
     def clear_project(self, ops_too=True):
         context = self.context
-        context.elements.undo.mark()
+        context.elements.undo.mark("new-project")
         kernel = context.kernel
         kernel.busyinfo.start(msg=_("Cleaning up..."))
         self.working_file = None
