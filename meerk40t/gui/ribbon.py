@@ -1057,6 +1057,15 @@ class RibbonBarPanel(wx.Control):
             item.Check(bool(c_mode == COLOR_MODE_DARK))
             top.Bind(wx.EVT_MENU, lambda v: set_color(COLOR_MODE_DARK), id=item.GetId())
             item = menu.AppendSeparator()
+            haslabel = self.art.show_labels
+            item = menu.Append(wx.ID_ANY, _("Show Labels"), "", wx.ITEM_CHECK)
+            if not getattr(self, "allow_labels", True):
+                item.Enable(False)
+            item.Check(haslabel)
+            top.Bind(
+                wx.EVT_MENU, lambda v: self.toggle_show_labels(not haslabel), id=item.GetId()
+            )
+            item = menu.AppendSeparator()
             item = menu.Append(wx.ID_ANY, _("Customize Toolbars"))
 
             def show_pref():
