@@ -1,4 +1,4 @@
-from meerk40t.kernel import Kernel
+from kernel import Kernel
 
 
 def bootstrap(profile="MeerK40t_TEST"):

@@ -122,7 +122,7 @@ class TestGetSafePath(unittest.TestCase):
     def test_get_safe_path(self):
         import os
 
-        from meerk40t.kernel import get_safe_path
+        from kernel import get_safe_path
 
         """
         Tests the get_safe_path method for all o/ses

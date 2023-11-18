@@ -1,6 +1,6 @@
 import unittest
 
-from meerk40t.kernel import Kernel
+from kernel import Kernel
 
 state = 0
 
