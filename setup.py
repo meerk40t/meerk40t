@@ -4,6 +4,7 @@ setup(
     install_requires=[
         "mkernel",
         "svgelements",
+        "shxparser",
         "pyusb>=1.0.0",
         "pyserial",
         "numpy",
