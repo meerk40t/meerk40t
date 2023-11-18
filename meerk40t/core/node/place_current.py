@@ -5,8 +5,9 @@ a copy of the plan will be executed with the placement indicating
 the relative position
 """
 
+from svgelements import Matrix
+
 from meerk40t.core.node.node import Node
-from meerk40t.svgelements import Matrix
 
 
 class PlaceCurrentNode(Node):

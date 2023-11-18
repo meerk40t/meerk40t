@@ -1,7 +1,8 @@
 import math
 
+from svgelements import Matrix, Point
+
 from meerk40t.core.units import Angle, Length
-from meerk40t.svgelements import Matrix, Point
 from meerk40t.tools.pathtools import EulerianFill, VectorMontonizer
 
 

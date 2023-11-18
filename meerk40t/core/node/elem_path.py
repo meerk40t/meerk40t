@@ -1,12 +1,9 @@
 from copy import copy
 
+from svgelements import SVG_ATTR_VECTOR_EFFECT, SVG_VALUE_NON_SCALING_STROKE, Matrix
+
 from meerk40t.core.node.mixins import FunctionalParameter, Stroked
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
-from meerk40t.svgelements import (
-    SVG_ATTR_VECTOR_EFFECT,
-    SVG_VALUE_NON_SCALING_STROKE,
-    Matrix,
-)
 from meerk40t.tools.geomstr import Geomstr
 
 

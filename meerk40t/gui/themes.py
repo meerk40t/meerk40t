@@ -2,8 +2,7 @@
 Basic Module to provide infmoration about the GUI
 """
 import wx
-
-from meerk40t.kernel import Service
+from kernel import Service
 
 
 class Themes(Service):

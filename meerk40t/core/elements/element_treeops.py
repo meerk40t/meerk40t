@@ -9,6 +9,9 @@ import math
 import os.path
 from copy import copy
 
+from kernel import CommandSyntaxError
+from svgelements import Matrix, Point, Polygon
+
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.treeop import (
@@ -26,8 +29,6 @@ from meerk40t.core.treeop import (
     tree_values,
 )
 from meerk40t.core.units import UNITS_PER_INCH, Length
-from meerk40t.kernel import CommandSyntaxError
-from meerk40t.svgelements import Matrix, Point, Polygon
 from meerk40t.tools.geomstr import Geomstr
 
 from .element_types import *

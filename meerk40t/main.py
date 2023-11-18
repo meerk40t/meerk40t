@@ -147,9 +147,10 @@ def run():
 
 
 def _exe(args):
+    from kernel import Kernel
+
     from meerk40t.external_plugins import plugin as external_plugins
     from meerk40t.internal_plugins import plugin as internal_plugins
-    from meerk40t.kernel import Kernel
 
     kernel = Kernel(
         APPLICATION_NAME,

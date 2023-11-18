@@ -3,7 +3,7 @@ This is a giant list of console commands that deal with and often implement the 
 """
 
 
-from meerk40t.kernel import CommandSyntaxError
+from kernel import CommandSyntaxError
 
 from .element_types import *
 

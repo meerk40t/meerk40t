@@ -3,10 +3,7 @@ from math import ceil, isnan, sqrt
 
 import wx
 from PIL import Image
-
-from meerk40t.core.elements.element_types import place_nodes
-from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
-from meerk40t.svgelements import (
+from svgelements import (
     Arc,
     Close,
     Color,
@@ -16,6 +13,9 @@ from meerk40t.svgelements import (
     Move,
     QuadraticBezier,
 )
+
+from meerk40t.core.elements.element_types import place_nodes
+from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 
 from ..core.cutcode.cubiccut import CubicCut
 from ..core.cutcode.cutcode import CutCode

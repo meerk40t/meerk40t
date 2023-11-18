@@ -4,9 +4,10 @@ Lihuiyu Parser
 Parses the LHYMicro-GL code with a state diagram to reinterpret the given laser bytecode.
 """
 
+from svgelements import Color
+
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import UNITS_PER_MIL
-from meerk40t.svgelements import Color
 
 
 class LihuiyuParser:

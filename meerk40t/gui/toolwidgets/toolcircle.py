@@ -1,6 +1,7 @@
 from math import sqrt
 
 import wx
+from svgelements import Ellipse
 
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import swizzlecolor
@@ -10,7 +11,6 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CONSUME,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.svgelements import Ellipse
 
 _ = wx.GetTranslation
 

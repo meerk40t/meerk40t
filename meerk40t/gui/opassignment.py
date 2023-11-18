@@ -1,4 +1,6 @@
 import wx
+from kernel import signal_listener
+from svgelements import Color
 from wx import aui
 
 from meerk40t.core.elements.element_types import op_nodes
@@ -12,9 +14,6 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.wxutils import dip_size
-from meerk40t.svgelements import Color
-
-from ..kernel import signal_listener
 
 _ = wx.GetTranslation
 

@@ -4,16 +4,8 @@ This is a giant list of console commands that deal with and often implement the 
 
 from math import sqrt
 
-from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
-from meerk40t.core.units import (
-    UNITS_PER_MM,
-    UNITS_PER_PIXEL,
-    UNITS_PER_POINT,
-    Angle,
-    Length,
-)
-from meerk40t.kernel import CommandSyntaxError
-from meerk40t.svgelements import (
+from kernel import CommandSyntaxError
+from svgelements import (
     SVG_RULE_EVENODD,
     SVG_RULE_NONZERO,
     Color,
@@ -21,6 +13,15 @@ from meerk40t.svgelements import (
     Path,
     Polygon,
     Polyline,
+)
+
+from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
+from meerk40t.core.units import (
+    UNITS_PER_MM,
+    UNITS_PER_PIXEL,
+    UNITS_PER_POINT,
+    Angle,
+    Length,
 )
 from meerk40t.tools.geomstr import Geomstr
 
@@ -1446,7 +1447,9 @@ def init_commands(kernel):
                     name = name[:50] + "…"
                 channel(
                     _("{index}: rotate({angle}turn) - {name}").format(
-                        index=i, angle=Angle(node.matrix.rotation).angle_turns[:-4], name=name
+                        index=i,
+                        angle=Angle(node.matrix.rotation).angle_turns[:-4],
+                        name=name,
                     )
                 )
                 i += 1

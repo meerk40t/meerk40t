@@ -1,5 +1,6 @@
+from svgelements import Color, Matrix, Path
+
 from meerk40t.core.node.node import Fillrule
-from meerk40t.svgelements import Color, Matrix, Path
 
 """
 Potracer routines, please be aware that potrace is not part of the standard

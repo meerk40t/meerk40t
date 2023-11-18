@@ -4,8 +4,9 @@ This is a giant list of console commands that deal with and often implement the 
 
 from copy import copy
 
+from svgelements import Matrix
+
 from meerk40t.core.units import Length
-from meerk40t.svgelements import Matrix
 
 
 def plugin(kernel, lifecycle=None):

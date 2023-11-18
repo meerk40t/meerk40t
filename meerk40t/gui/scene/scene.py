@@ -3,6 +3,8 @@ import threading
 import time
 
 import wx
+from kernel import Job, Module
+from svgelements import Matrix, Point
 
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.gui.laserrender import (
@@ -24,8 +26,6 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_DROP,
 )
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
-from meerk40t.kernel import Job, Module
-from meerk40t.svgelements import Matrix, Point
 
 _reused_identity_widget = Matrix()
 XCELLS = 15

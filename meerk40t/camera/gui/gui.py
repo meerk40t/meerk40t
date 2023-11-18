@@ -1,5 +1,6 @@
+from kernel import CommandSyntaxError
+
 from meerk40t.core.units import Length
-from meerk40t.kernel import CommandSyntaxError
 
 
 def plugin(kernel, lifecycle):

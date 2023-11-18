@@ -5,8 +5,9 @@ Moshiboard Device
 Defines the interactions between the device service and the meerk40t's viewport.
 Registers relevant commands and options.
 """
+from kernel import CommandSyntaxError, Service, signal_listener
+
 from meerk40t.core.view import View
-from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler

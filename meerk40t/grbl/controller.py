@@ -15,7 +15,7 @@ import re
 import threading
 import time
 
-from meerk40t.kernel import signal_listener
+from kernel import signal_listener
 
 SETTINGS_MESSAGE = re.compile(r"^\$([0-9]+)=(.*)")
 

@@ -2,7 +2,7 @@
 This is a giant list of console commands that deal with and often implement the elements system in the program.
 """
 
-from meerk40t.svgelements import Viewbox
+from svgelements import Viewbox
 
 from .element_types import *
 

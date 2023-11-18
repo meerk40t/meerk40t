@@ -11,10 +11,10 @@ from io import BytesIO
 from xml.etree.ElementTree import ParseError, iterparse
 
 import PIL.Image
+from svgelements import Color, Matrix
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.core.units import UNITS_PER_MM
-from meerk40t.svgelements import Color, Matrix
 from meerk40t.tools.geomstr import Geomstr
 
 

@@ -10,9 +10,9 @@ This job works as a spoolerjob. Implementing all the regular calls for being a s
 import time
 
 import numpy as np
+from svgelements import Matrix
 
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
-from meerk40t.svgelements import Matrix
 from meerk40t.tools.geomstr import Geomstr
 
 

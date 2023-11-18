@@ -4,8 +4,7 @@
 import platform
 
 import wx
-
-from meerk40t.kernel.kernel import signal_listener
+from kernel.kernel import signal_listener
 
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import icons8_administrative_tools

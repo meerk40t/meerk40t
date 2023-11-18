@@ -1,9 +1,10 @@
 import threading
 import time
 
+from svgelements import Color
+
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.units import UNITS_PER_uM
-from meerk40t.svgelements import Color
 
 from .exceptions import RuidaCommandError
 

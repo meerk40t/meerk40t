@@ -8,6 +8,9 @@ import re
 import struct
 import time
 
+from kernel import CommandSyntaxError, Service, signal_listener
+from svgelements import Path, Point
+
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.balormk.elementlightjob import ElementLightJob
 from meerk40t.balormk.livelightjob import LiveLightJob
@@ -16,8 +19,6 @@ from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length
 from meerk40t.core.view import View
 from meerk40t.device.mixins import Status
-from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
-from meerk40t.svgelements import Path, Point
 from meerk40t.tools.geomstr import Geomstr
 
 
@@ -1877,8 +1878,9 @@ class BalorDevice(Service, Status):
         def codes_update(channel, filename, **kwargs):
             import platform
 
+            from kernel import get_safe_path
+
             from meerk40t.balormk.clone_loader import load_sys
-            from meerk40t.kernel import get_safe_path
 
             self.setting(str, "clone_sys", "chunks")
             if filename is not None:

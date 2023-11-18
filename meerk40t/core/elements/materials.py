@@ -2,7 +2,7 @@
 This is a giant list of console commands that deal with and often implement the elements system in the program.
 """
 
-from meerk40t.kernel import CommandSyntaxError
+from kernel import CommandSyntaxError
 
 
 def plugin(kernel, lifecycle=None):

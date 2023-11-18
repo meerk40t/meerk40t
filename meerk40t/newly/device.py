@@ -1,11 +1,12 @@
 """
 Newly Device
 """
+from kernel import CommandSyntaxError, Service, signal_listener
+
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.view import View
 from meerk40t.device.mixins import Status
-from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.newly.driver import NewlyDriver
 
 

@@ -2,9 +2,10 @@ import time
 from math import isinf
 from threading import Condition
 
+from kernel import CommandSyntaxError
+
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.units import Length
-from meerk40t.kernel import CommandSyntaxError
 
 """
 This module defines a set of commands that usually send a single easy command to the spooler. Basic jogging, home,

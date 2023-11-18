@@ -8,7 +8,7 @@ the received data into laser commands to be executed by the local driver.
 import os
 from typing import Tuple, Union
 
-from meerk40t.kernel import get_safe_path
+from kernel import get_safe_path
 
 from ..core.units import UNITS_PER_MM, UNITS_PER_uM
 from .exceptions import RuidaCommandError

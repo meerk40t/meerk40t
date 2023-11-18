@@ -1,4 +1,4 @@
-from ...svgelements import Point
+from svgelements import Point
 
 
 class CutObject:

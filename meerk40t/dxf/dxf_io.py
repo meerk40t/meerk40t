@@ -15,8 +15,7 @@ except ImportError:
     from ezdxf.colors import DXF_DEFAULT_COLORS
 
 from ezdxf.units import decode
-
-from ..svgelements import (
+from svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
     Angle,

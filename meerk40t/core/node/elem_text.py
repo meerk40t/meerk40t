@@ -2,10 +2,7 @@ import re
 from copy import copy
 from math import tau
 
-from meerk40t.core.node.mixins import FunctionalParameter, Stroked
-from meerk40t.core.node.node import Node
-from meerk40t.core.units import UNITS_PER_POINT, Length
-from meerk40t.svgelements import (
+from svgelements import (
     SVG_ATTR_FONT_FAMILY,
     SVG_ATTR_FONT_SIZE,
     SVG_ATTR_FONT_STRETCH,
@@ -14,6 +11,10 @@ from meerk40t.svgelements import (
     SVG_ATTR_FONT_WEIGHT,
     Matrix,
 )
+
+from meerk40t.core.node.mixins import FunctionalParameter, Stroked
+from meerk40t.core.node.node import Node
+from meerk40t.core.units import UNITS_PER_POINT, Length
 
 REGEX_CSS_FONT = re.compile(
     r"^"

@@ -1,11 +1,11 @@
 import math
 
 import wx
+from svgelements import Path, Point
 
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.svgelements import Path, Point
 
 
 class RibbonTool(ToolWidget):

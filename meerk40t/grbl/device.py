@@ -6,7 +6,7 @@ Registers relevant commands and options.
 """
 from time import sleep
 
-from meerk40t.kernel import CommandSyntaxError, Service
+from kernel import CommandSyntaxError, Service
 
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler

@@ -1,15 +1,16 @@
 from copy import copy
 from math import cos, sin, sqrt, tau
 
-from meerk40t.core.node.mixins import FunctionalParameter, Stroked
-from meerk40t.core.node.node import Fillrule, Node
-from meerk40t.svgelements import (
+from svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
     Ellipse,
     Matrix,
     Point,
 )
+
+from meerk40t.core.node.mixins import FunctionalParameter, Stroked
+from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.tools.geomstr import Geomstr
 
 

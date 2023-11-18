@@ -6,9 +6,10 @@ parametric editing
 import copy
 import math
 
+from kernel import CommandSyntaxError
+from svgelements import Point
+
 from meerk40t.core.units import Angle, Length
-from meerk40t.kernel import CommandSyntaxError
-from meerk40t.svgelements import Point
 from meerk40t.tools.geomstr import Geomstr
 
 

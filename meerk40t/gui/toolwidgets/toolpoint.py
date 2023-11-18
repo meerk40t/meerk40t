@@ -1,8 +1,8 @@
 import wx
+from svgelements import Matrix, Point
 
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.svgelements import Matrix, Point
 
 
 class PointTool(ToolWidget):

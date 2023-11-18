@@ -1,4 +1,5 @@
 import wx
+from svgelements import Color
 
 from meerk40t.core.elements.element_types import op_nodes
 from meerk40t.gui.icons import (
@@ -10,7 +11,6 @@ from meerk40t.gui.icons import (
     icons8_laserbeam_weak,
 )
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.svgelements import Color
 
 from .statusbarwidget import StatusBarWidget
 

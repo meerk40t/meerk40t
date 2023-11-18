@@ -1,4 +1,5 @@
-from ...svgelements import Point
+from svgelements import Point
+
 from ...tools.zinglplotter import ZinglPlotter
 from .cutobject import CutObject
 

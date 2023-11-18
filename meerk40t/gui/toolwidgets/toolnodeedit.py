@@ -2,6 +2,19 @@ import math
 from copy import copy
 
 import wx
+from kernel import signal_listener
+from svgelements import (
+    Arc,
+    Close,
+    CubicBezier,
+    Line,
+    Move,
+    Path,
+    Point,
+    Polygon,
+    Polyline,
+    QuadraticBezier,
+)
 
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
@@ -26,19 +39,6 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_DROP,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.kernel import signal_listener
-from meerk40t.svgelements import (
-    Arc,
-    Close,
-    CubicBezier,
-    Line,
-    Move,
-    Path,
-    Point,
-    Polygon,
-    Polyline,
-    QuadraticBezier,
-)
 from meerk40t.tools.geomstr import Geomstr
 
 _ = wx.GetTranslation

@@ -6,10 +6,10 @@ from copy import copy
 from math import tau
 
 import numpy as np
+from svgelements import Arc, CubicBezier, Line, Matrix, QuadraticBezier
 
 from meerk40t.fill.fills import scanline_fill
 from meerk40t.fill.patterns import set_diamond1, set_line
-from meerk40t.svgelements import Arc, CubicBezier, Line, Matrix, QuadraticBezier
 from meerk40t.tools.geomstr import (
     TYPE_LINE,
     TYPE_POINT,

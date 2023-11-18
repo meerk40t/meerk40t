@@ -1,4 +1,5 @@
 import wx
+from kernel import lookup_listener, signal_listener
 from wx import aui
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
@@ -24,7 +25,6 @@ from meerk40t.gui.wxutils import (
     dip_size,
     disable_window,
 )
-from meerk40t.kernel import lookup_listener, signal_listener
 
 _ = wx.GetTranslation
 

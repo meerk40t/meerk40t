@@ -4,8 +4,9 @@ Ruida Device
 Ruida device interfacing. We do not send or interpret ruida code, but we can emulate ruidacode into cutcode and read
 ruida files (*.rd) and turn them likewise into cutcode.
 """
+from kernel import Service
+
 from meerk40t.core.view import View
-from meerk40t.kernel import Service
 
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_NM, Length

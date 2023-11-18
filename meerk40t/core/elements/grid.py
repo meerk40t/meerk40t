@@ -5,10 +5,11 @@ This is a giant list of console commands that deal with and often implement the 
 from copy import copy
 from math import cos, gcd, pi, sin, tau
 
+from kernel import CommandSyntaxError
+from svgelements import Matrix
+
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import Angle, Length
-from meerk40t.kernel import CommandSyntaxError
-from meerk40t.svgelements import Matrix
 
 
 def plugin(kernel, lifecycle=None):

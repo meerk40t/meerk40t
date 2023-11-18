@@ -4,9 +4,7 @@ This adds console commands that deal with the creation of an offset
 from copy import copy
 from math import atan2, tau
 
-from meerk40t.core.node.node import Linejoin
-from meerk40t.core.units import UNITS_PER_PIXEL, Length
-from meerk40t.svgelements import (
+from svgelements import (
     Arc,
     Close,
     CubicBezier,
@@ -16,6 +14,9 @@ from meerk40t.svgelements import (
     Point,
     QuadraticBezier,
 )
+
+from meerk40t.core.node.node import Linejoin
+from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.tools.geomstr import Geomstr
 
 """

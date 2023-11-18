@@ -13,9 +13,10 @@ import math
 import struct
 from io import BytesIO
 
+from svgelements import Color, Matrix, Path, Polygon
+
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM
-from meerk40t.svgelements import Color, Matrix, Path, Polygon
 
 
 def plugin(kernel, lifecycle):

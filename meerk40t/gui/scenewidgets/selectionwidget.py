@@ -17,6 +17,7 @@ LockWidget: Widget to lock and unlock the given object.
 import math
 
 import wx
+from svgelements import Point
 
 from meerk40t.core.elements.element_types import *
 from meerk40t.core.units import Length
@@ -30,7 +31,6 @@ from meerk40t.gui.scene.scene import (
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import StaticBoxSizer, create_menu_for_node
-from meerk40t.svgelements import Point
 
 NEARLY_ZERO = 1.0e-6
 

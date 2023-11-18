@@ -1,7 +1,7 @@
 # from copy import copy
 # from typing import Any, Optional
 #
-# from meerk40t.svgelements import Point
+# from svgelements import Point
 #
 # TYPE_POINT = 0b00000000_00000000_00000000_00000000
 # TYPE_SEGMENT = 0b11000000_00000000_00000000_00000000

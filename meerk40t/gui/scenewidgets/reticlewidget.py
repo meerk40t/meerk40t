@@ -3,10 +3,10 @@ Somewhat related to laserpath widget, this draws the colored reticle circles for
 """
 
 import wx
+from svgelements import Color
 
 from meerk40t.gui.laserrender import DRAW_MODE_RETICLE
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.svgelements import Color
 
 
 class ReticleWidget(Widget):

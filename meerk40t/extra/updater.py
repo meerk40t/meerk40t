@@ -441,7 +441,7 @@ def plugin(kernel, lifecycle):
                     verbosity = 1
                 return update_test
 
-            from meerk40t.kernel.kernel import Job
+            from kernel.kernel import Job
 
             _job = Job(
                 process=update_check(verbosity, beta),

@@ -1,6 +1,6 @@
 from copy import copy
 
-from meerk40t.kernel import Service
+from kernel import Service
 
 from ..core.cutcode.cutcode import CutCode
 from .cutplan import CutPlan, CutPlanningFailedError

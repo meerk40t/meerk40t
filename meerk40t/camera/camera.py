@@ -3,8 +3,7 @@ import time
 
 import cv2
 import numpy as np
-
-from meerk40t.kernel import Service
+from kernel import Service
 
 CORNER_SIZE = 25
 

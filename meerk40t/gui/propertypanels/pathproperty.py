@@ -1,6 +1,7 @@
 from copy import copy
 
 import wx
+from svgelements import Color
 
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH, Length
@@ -16,7 +17,6 @@ from meerk40t.gui.propertypanels.attributes import (
     StrokeWidthPanel,
 )
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
-from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
 
@@ -206,14 +206,7 @@ class PathPropertyPanel(ScrolledPanel):
             return p1 == p2
 
         def calc_points(node):
-            from meerk40t.svgelements import (
-                Arc,
-                Close,
-                CubicBezier,
-                Line,
-                Move,
-                QuadraticBezier,
-            )
+            from svgelements import Arc, Close, CubicBezier, Line, Move, QuadraticBezier
 
             result = 0
             result_segments = 0

@@ -1,4 +1,4 @@
-from meerk40t.kernel import Service, Settings
+from kernel import Service, Settings
 
 """
 Logging is used by the spooler and could be used by other services. It provides a service for log information.

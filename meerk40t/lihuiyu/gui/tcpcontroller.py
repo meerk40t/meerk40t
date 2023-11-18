@@ -1,4 +1,5 @@
 import wx
+from kernel import signal_listener
 
 from meerk40t.gui.icons import (
     get_default_icon_size,
@@ -7,7 +8,6 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import TextCtrl, dip_size
-from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 

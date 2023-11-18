@@ -5,8 +5,9 @@ This is a giant list of console commands that deal with and often implement the 
 from math import cos, isinf, sin, sqrt, tau
 from random import randint, shuffle
 
+from svgelements import Circle, Path, Point, Polyline
+
 from meerk40t.core.units import Length
-from meerk40t.svgelements import Circle, Path, Point, Polyline
 
 
 def plugin(kernel, lifecycle=None):

@@ -1,12 +1,12 @@
 import platform
 
 import wx
+from svgelements import Color
 
 from meerk40t.gui.fonts import wxfont_to_svg
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
 
-from ...svgelements import Color
 from ..icons import STD_ICON_SIZE, icons8_choose_font, icons8_text
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow

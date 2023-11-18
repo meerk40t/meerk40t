@@ -1,4 +1,6 @@
 import wx
+from kernel import signal_listener
+from svgelements import Color
 
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
@@ -8,8 +10,6 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
-from meerk40t.kernel import signal_listener
-from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
 

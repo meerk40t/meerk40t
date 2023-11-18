@@ -1,6 +1,5 @@
 import wx
-
-from meerk40t.kernel import signal_listener
+from kernel import signal_listener
 
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import get_default_icon_size, icons8_laser_beam

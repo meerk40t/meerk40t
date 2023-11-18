@@ -10,10 +10,7 @@ from base64 import b64encode
 from io import BytesIO
 from xml.etree.ElementTree import Element, ElementTree, ParseError, SubElement
 
-from meerk40t.core.exceptions import BadFileError
-from meerk40t.core.node.node import Fillrule, Linecap, Linejoin
-
-from ..svgelements import (
+from svgelements import (
     SVG,
     SVG_ATTR_CENTER_X,
     SVG_ATTR_CENTER_Y,
@@ -83,6 +80,10 @@ from ..svgelements import (
     SVGText,
     Use,
 )
+
+from meerk40t.core.exceptions import BadFileError
+from meerk40t.core.node.node import Fillrule, Linecap, Linejoin
+
 from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, Length
 
 SVG_ATTR_STROKE_JOIN = "stroke-linejoin"

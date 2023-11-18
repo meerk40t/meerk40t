@@ -1,4 +1,4 @@
-from meerk40t.svgelements import Color, Path, Polygon
+from svgelements import Color, Path, Polygon
 
 
 def plugin(kernel, lifecycle):

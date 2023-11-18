@@ -2,10 +2,11 @@ import threading
 from copy import copy
 from math import ceil, floor
 
+from svgelements import Matrix, Path, Polygon
+
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.image.imagetools import RasterScripts
-from meerk40t.svgelements import Matrix, Path, Polygon
 
 
 class ImageProcessedNode(Node):

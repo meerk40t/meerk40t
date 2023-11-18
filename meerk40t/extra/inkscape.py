@@ -4,8 +4,9 @@ import platform
 from subprocess import PIPE, TimeoutExpired, run
 from time import time
 
+from kernel.kernel import get_safe_path
+
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.kernel.kernel import get_safe_path
 
 
 def get_inkscape(context, manual_candidate=None):

@@ -2,11 +2,11 @@ import os
 import subprocess
 from copy import copy
 
-from meerk40t.kernel import CommandSyntaxError
+from kernel import CommandSyntaxError
+from svgelements import Color, Matrix, Path
 
 from ..core.exceptions import BadFileError
 from ..core.units import DEFAULT_PPI, UNITS_PER_PIXEL, Angle
-from ..svgelements import Color, Matrix, Path
 from ..tools.geomstr import Geomstr
 
 

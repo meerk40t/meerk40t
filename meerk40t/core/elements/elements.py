@@ -10,6 +10,9 @@ import os.path
 from copy import copy
 from time import time
 
+from kernel import ConsoleFunction, Service, Settings
+from svgelements import Color, Path, Point, SVGElement
+
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.core.node.node import Node
 from meerk40t.core.node.op_cut import CutOpNode
@@ -21,8 +24,6 @@ from meerk40t.core.node.rootnode import RootNode
 from meerk40t.core.undos import Undo
 from meerk40t.core.units import Length
 from meerk40t.core.wordlist import Wordlist
-from meerk40t.kernel import ConsoleFunction, Service, Settings
-from meerk40t.svgelements import Color, Path, Point, SVGElement
 
 from . import offset_clpr, offset_mk
 from .element_types import *

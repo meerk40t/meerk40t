@@ -4,6 +4,8 @@ was converted to a driverlike emulator, this functionality was spun off.
 """
 from math import isnan
 
+from svgelements import Arc, Color, Move, Path
+
 from meerk40t.core.cutcode.cubiccut import CubicCut
 from meerk40t.core.cutcode.dwellcut import DwellCut
 from meerk40t.core.cutcode.gotocut import GotoCut
@@ -17,7 +19,6 @@ from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.node.node import Linecap, Linejoin
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
-from meerk40t.svgelements import Arc, Color, Move, Path
 
 
 class PlotterDriver:

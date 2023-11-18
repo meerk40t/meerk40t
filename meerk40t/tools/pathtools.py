@@ -1,6 +1,6 @@
 from math import isinf, isnan
 
-from meerk40t.svgelements import Point
+from svgelements import Point
 
 
 class GraphNode(Point):

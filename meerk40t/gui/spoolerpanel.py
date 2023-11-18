@@ -5,6 +5,7 @@ from pathlib import Path
 
 import wx
 import wx.lib.mixins.listctrl as listmix
+from kernel import Job, get_safe_path, signal_listener
 from wx import aui
 
 from meerk40t.gui.icons import (
@@ -16,7 +17,6 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import HoverButton
-from meerk40t.kernel import Job, get_safe_path, signal_listener
 
 _ = wx.GetTranslation
 

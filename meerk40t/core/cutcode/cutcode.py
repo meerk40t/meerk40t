@@ -1,4 +1,5 @@
-from ...svgelements import Color, Path, Point
+from svgelements import Color, Path, Point
+
 from .cubiccut import CubicCut
 from .cutgroup import CutGroup
 from .dwellcut import DwellCut

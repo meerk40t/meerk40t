@@ -4,6 +4,8 @@ to establish the correct kerf size of your laser
 """
 
 import wx
+from kernel import lookup_listener, signal_listener
+from svgelements import Color, Matrix, Polyline
 
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
@@ -12,8 +14,6 @@ from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import STD_ICON_SIZE, icon_kerf, icons8_detective
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
-from meerk40t.kernel import lookup_listener, signal_listener
-from meerk40t.svgelements import Color, Matrix, Polyline
 
 _ = wx.GetTranslation
 

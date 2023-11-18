@@ -2,6 +2,7 @@ import random
 import unittest
 
 from PIL import Image, ImageDraw
+from svgelements import Matrix, Path, Point, SVGImage
 
 from meerk40t.core.cutcode.cutcode import CutCode
 from meerk40t.core.cutcode.linecut import LineCut
@@ -13,7 +14,6 @@ from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
-from meerk40t.svgelements import Matrix, Path, Point, SVGImage
 
 
 class TestCutcode(unittest.TestCase):

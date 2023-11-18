@@ -1,7 +1,7 @@
 import wx
+from kernel import signal_listener
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
-from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 

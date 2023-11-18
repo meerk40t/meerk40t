@@ -5,6 +5,9 @@ This is a giant list of console commands that deal with and often implement the 
 import re
 from copy import copy
 
+from kernel import CommandSyntaxError
+from svgelements import Color, Matrix
+
 from meerk40t.core.node.effect_hatch import HatchEffectNode
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
@@ -15,8 +18,6 @@ from meerk40t.core.node.util_input import InputOperation
 from meerk40t.core.node.util_output import OutputOperation
 from meerk40t.core.node.util_wait import WaitOperation
 from meerk40t.core.units import Angle, Length
-from meerk40t.kernel import CommandSyntaxError
-from meerk40t.svgelements import Color, Matrix
 
 
 def plugin(kernel, lifecycle=None):
@@ -995,9 +996,7 @@ def init_commands(kernel):
             op.updated()
         return "ops", data
 
-    @self.console_argument(
-        "angle", type=Angle, help=_("Set hatch-angle of operations")
-    )
+    @self.console_argument("angle", type=Angle, help=_("Set hatch-angle of operations"))
     @self.console_option(
         "difference",
         "d",

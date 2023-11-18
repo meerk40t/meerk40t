@@ -1,4 +1,4 @@
-from meerk40t.kernel import CommandMatchRejected, Service
+from kernel import CommandMatchRejected, Service
 
 """
 This core class defines two main services: bind and alias. This is a set defined keybinds and alias commands.

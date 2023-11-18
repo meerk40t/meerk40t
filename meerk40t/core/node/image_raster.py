@@ -1,7 +1,8 @@
 from copy import copy
 
+from svgelements import Matrix
+
 from meerk40t.core.node.node import Node
-from meerk40t.svgelements import Matrix
 
 
 class ImageRasterNode(Node):

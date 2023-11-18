@@ -1,6 +1,8 @@
 from math import sin, sqrt, tan, tau
 
 import wx
+from kernel.kernel import Job
+from svgelements import Point, Polygon
 
 from meerk40t.core.units import Angle, Length
 from meerk40t.gui.icons import (
@@ -17,8 +19,6 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CONSUME,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.kernel.kernel import Job
-from meerk40t.svgelements import Point, Polygon
 
 _ = wx.GetTranslation
 

@@ -1,10 +1,11 @@
+from svgelements import Matrix, Viewbox
+
 from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_DELEGATE_AND_HIT,
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
 )
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.svgelements import Matrix, Viewbox
 
 
 class SceneSpaceWidget(Widget):

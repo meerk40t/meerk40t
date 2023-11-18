@@ -1,6 +1,7 @@
 import math
 
 import wx
+from svgelements import Path
 
 from meerk40t.gui import icons
 from meerk40t.gui.scene.sceneconst import (
@@ -12,7 +13,6 @@ from meerk40t.gui.scene.sceneconst import (
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.scenewidgets.relocatewidget import RelocateWidget
 from meerk40t.gui.utilitywidgets.buttonwidget import ButtonWidget
-from meerk40t.svgelements import Path
 
 
 class CyclocycloidWidget(Widget):

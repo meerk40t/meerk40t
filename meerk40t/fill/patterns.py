@@ -1,6 +1,7 @@
 from copy import copy
 
-from meerk40t.svgelements import Path, Polyline
+from svgelements import Path, Polyline
+
 from meerk40t.tools.geomstr import Geomstr
 
 _FACTOR = 1000

@@ -1,7 +1,7 @@
 import ast
 from typing import Dict
 
-from meerk40t.svgelements import Color
+from svgelements import Color
 
 INT_PARAMETERS = (
     "power",

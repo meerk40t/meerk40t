@@ -1,7 +1,8 @@
 import unittest
 from math import ceil
 
-from meerk40t.svgelements import Arc
+from svgelements import Arc
+
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 

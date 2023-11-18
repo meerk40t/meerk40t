@@ -6,6 +6,8 @@ Governs the generic commands issued by laserjob and spooler and converts that in
 
 import time
 
+from kernel import signal_listener
+
 from meerk40t.core.cutcode.cubiccut import CubicCut
 from meerk40t.core.cutcode.dwellcut import DwellCut
 from meerk40t.core.cutcode.gotocut import GotoCut
@@ -21,7 +23,6 @@ from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM
 from ..device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
-from ..kernel import signal_listener
 
 
 class GRBLDriver(Parameters):

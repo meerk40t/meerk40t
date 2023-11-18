@@ -2,6 +2,8 @@ from setuptools import setup
 
 setup(
     install_requires=[
+        "mkernel",
+        "svgelements",
         "pyusb>=1.0.0",
         "pyserial",
         "numpy",

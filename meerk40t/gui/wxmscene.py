@@ -4,6 +4,8 @@ import random
 import time
 
 import wx
+from kernel import CommandSyntaxError, signal_listener
+from svgelements import Color
 from wx import aui
 
 from meerk40t.core.elements.element_types import elem_nodes
@@ -56,8 +58,6 @@ from meerk40t.gui.utilitywidgets.harmonograph import HarmonographWidget
 from meerk40t.gui.utilitywidgets.seekbarwidget import SeekbarWidget
 from meerk40t.gui.utilitywidgets.togglewidget import ToggleWidget
 from meerk40t.gui.wxutils import get_key_name, is_navigation_key
-from meerk40t.kernel import CommandSyntaxError, signal_listener
-from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
 
@@ -121,7 +121,7 @@ class MeerK40tScenePanel(wx.Panel):
         # Save / Load the content of magnets
         from os.path import join, realpath
 
-        from meerk40t.kernel.functions import get_safe_path
+        from kernel.functions import get_safe_path
 
         self._magnet_file = join(
             realpath(get_safe_path(self.context.kernel.name)), "magnets.cfg"

@@ -91,7 +91,7 @@ def plugin(kernel, lifecycle=None):
             """
             Display device info.
             """
-            from ..kernel.exceptions import CommandSyntaxError
+            from kernel.exceptions import CommandSyntaxError
 
             try:
                 entry = kernel.lookup("dev_info", name)

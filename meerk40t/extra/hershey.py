@@ -1,10 +1,11 @@
 from glob import glob
 from os.path import basename, exists, join, realpath, splitext
 
+from kernel import get_safe_path
+from svgelements import Arc, Color, Path
+
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
-from meerk40t.kernel import get_safe_path
-from meerk40t.svgelements import Arc, Color, Path
 from meerk40t.tools.jhfparser import JhfFont
 from meerk40t.tools.shxparser import ShxFont, ShxFontParseError
 from meerk40t.tools.ttfparser import TrueTypeFont

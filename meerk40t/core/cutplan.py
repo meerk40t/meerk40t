@@ -21,8 +21,8 @@ from time import perf_counter, time
 from typing import Optional
 
 import numpy as np
+from svgelements import Group, Polygon
 
-from ..svgelements import Group, Polygon
 from ..tools.pathtools import VectorMontonizer
 from .cutcode.cutcode import CutCode
 from .cutcode.cutgroup import CutGroup

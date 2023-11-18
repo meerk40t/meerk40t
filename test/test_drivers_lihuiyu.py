@@ -3,10 +3,10 @@ import unittest
 from test import bootstrap
 
 from PIL import Image, ImageDraw
+from svgelements import Matrix
 
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.units import UNITS_PER_MM
-from meerk40t.svgelements import Matrix
 
 egv_rect = """Document type : LHYMICRO-GL file
 File version: 1.0.01

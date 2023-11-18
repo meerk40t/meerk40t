@@ -10,9 +10,8 @@ All color aspects exist, if they don't actually exist a base color will be provi
 import random
 
 import wx
-
-from meerk40t.kernel import Service
-from meerk40t.svgelements import Color
+from kernel import Service
+from svgelements import Color
 
 
 def random_color():

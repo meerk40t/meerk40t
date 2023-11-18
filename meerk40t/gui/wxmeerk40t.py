@@ -5,6 +5,8 @@ import traceback
 from datetime import datetime
 
 import wx
+from kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
+from kernel.kernel import Job
 from wx import aui
 
 # try:
@@ -19,8 +21,6 @@ from meerk40t.gui.consolepanel import Console
 from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
-from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
-from meerk40t.kernel.kernel import Job
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from ..tools.kerftest import KerfTool

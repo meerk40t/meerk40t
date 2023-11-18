@@ -3,6 +3,7 @@ import random
 
 import numpy as np
 import wx
+from svgelements import Matrix, Path
 
 from meerk40t.gui import icons
 from meerk40t.gui.scene.widget import Widget
@@ -13,7 +14,6 @@ from meerk40t.gui.utilitywidgets.rotationwidget import RotationWidget
 from meerk40t.gui.utilitywidgets.scalewidget import ScaleWidget
 from meerk40t.gui.utilitywidgets.toolbarwidget import ToolbarWidget
 from meerk40t.gui.zmatrix import ZMatrix
-from meerk40t.svgelements import Matrix, Path
 
 
 class HShape:

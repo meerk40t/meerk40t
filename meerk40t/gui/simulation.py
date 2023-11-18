@@ -2,8 +2,8 @@ import math
 import platform
 
 import wx
-
-from meerk40t.kernel import Job, signal_listener
+from kernel import Job, signal_listener
+from svgelements import Matrix
 
 from ..core.cutcode.cubiccut import CubicCut
 from ..core.cutcode.cutcode import CutCode
@@ -22,7 +22,6 @@ from ..core.node.util_goto import GotoOperation
 from ..core.node.util_home import HomeOperation
 from ..core.node.util_wait import WaitOperation
 from ..core.units import Length
-from ..svgelements import Matrix
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import (
     STD_ICON_SIZE,

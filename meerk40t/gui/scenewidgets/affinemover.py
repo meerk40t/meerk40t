@@ -5,6 +5,7 @@ affine transformations on selected objects by moving three points either locked,
 """
 
 import wx
+from svgelements import Matrix
 
 from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_DELEGATE,
@@ -14,7 +15,6 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_DROP,
 )
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.svgelements import Matrix
 
 
 class AffineMover(Widget):

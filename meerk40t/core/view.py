@@ -1,5 +1,6 @@
+from svgelements import Matrix
+
 from meerk40t.core.units import MM_PER_INCH, UNITS_PER_INCH, Length
-from meerk40t.svgelements import Matrix
 
 
 class View:

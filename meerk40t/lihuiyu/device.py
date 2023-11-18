@@ -7,10 +7,11 @@ the given device type.
 
 from hashlib import md5
 
+from kernel import CommandSyntaxError, Service, signal_listener
+
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.view import View
-from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.units import UNITS_PER_MIL, Length
 from ..device.mixins import Status

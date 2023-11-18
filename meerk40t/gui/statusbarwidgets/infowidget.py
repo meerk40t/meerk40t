@@ -3,6 +3,7 @@ from copy import copy
 from math import isinf
 
 import wx
+from svgelements import Color
 
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.laserjob import LaserJob
@@ -10,7 +11,6 @@ from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.gui.icons import icons8_up
 from meerk40t.gui.statusbarwidgets.statusbarwidget import StatusBarWidget
-from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
 

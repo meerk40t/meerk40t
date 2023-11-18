@@ -1,6 +1,6 @@
 from math import ceil, cos, floor, sin, sqrt, tan, tau
 
-from meerk40t.svgelements import Point
+from svgelements import Point
 
 """
 The Zingl-Bresenham plotting algorithms are from Alois Zingl's "The Beauty of Bresenham's Algorithm"

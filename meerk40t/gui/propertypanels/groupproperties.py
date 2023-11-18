@@ -5,7 +5,7 @@ import wx
 
 from meerk40t.gui.wxutils import ScrolledPanel
 
-# from ...svgelements import SVG_ATTR_ID
+# from svgelements import SVG_ATTR_ID
 from ..icons import icons8_group_objects
 from ..mwindow import MWindow
 from ..wxutils import StaticBoxSizer

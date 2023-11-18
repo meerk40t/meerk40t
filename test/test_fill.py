@@ -2,9 +2,10 @@ import unittest
 from copy import copy
 from test import bootstrap
 
+from svgelements import Matrix, Rect
+
 from meerk40t.core.cutplan import CutPlan
 from meerk40t.fill.fills import eulerian_fill, scanline_fill
-from meerk40t.svgelements import Matrix, Rect
 
 
 def draw(fill, w, h, filename="test.png"):

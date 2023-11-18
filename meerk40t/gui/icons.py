@@ -650,8 +650,9 @@ class VectorIcon:
             scale_x = min(scale_x, scale_y)
             scale_y = scale_x
 
+        from svgelements import Matrix
+
         from meerk40t.gui.zmatrix import ZMatrix
-        from meerk40t.svgelements import Matrix
 
         matrix = Matrix()
         matrix.post_translate(

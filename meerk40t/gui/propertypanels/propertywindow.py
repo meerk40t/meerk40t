@@ -1,7 +1,7 @@
 import wx
+from kernel import signal_listener
 from wx import aui
 
-from ...kernel import signal_listener
 from ..icons import icons8_computer_support
 from ..mwindow import MWindow
 

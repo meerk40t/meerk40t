@@ -1,4 +1,4 @@
-from meerk40t.kernel import signal_listener
+from kernel import signal_listener
 
 
 def plugin(service, lifecycle):

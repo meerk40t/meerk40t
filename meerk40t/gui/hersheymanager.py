@@ -4,6 +4,7 @@ from glob import glob
 from math import isinf
 
 import wx
+from kernel import get_safe_path
 
 from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.extra.hershey import (
@@ -15,7 +16,6 @@ from meerk40t.extra.hershey import (
 from meerk40t.gui.icons import STD_ICON_SIZE, get_default_icon_size, icons8_choose_font
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
-from meerk40t.kernel import get_safe_path
 
 _ = wx.GetTranslation
 

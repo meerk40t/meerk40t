@@ -1,6 +1,7 @@
 from math import isinf, isnan
 
 import wx
+from svgelements import Matrix
 
 from meerk40t.gui.scene.sceneconst import (
     BUFFER,
@@ -17,7 +18,6 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
 )
 from meerk40t.gui.zmatrix import ZMatrix
-from meerk40t.svgelements import Matrix
 
 
 class Widget(list):

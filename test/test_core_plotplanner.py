@@ -2,6 +2,7 @@ import random
 import unittest
 
 from PIL import Image, ImageDraw
+from svgelements import Circle, Matrix, Path, Point
 
 from meerk40t.core.cutcode.cutcode import CutCode
 from meerk40t.core.cutcode.linecut import LineCut
@@ -11,7 +12,6 @@ from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.device.basedevice import PLOT_AXIS, PLOT_SETTING
-from meerk40t.svgelements import Circle, Matrix, Path, Point
 
 
 class TestPlotplanner(unittest.TestCase):

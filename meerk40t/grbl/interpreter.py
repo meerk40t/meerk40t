@@ -5,8 +5,9 @@ The Interpreter listens to the local GRBL code being sent to the Controller and 
 position based on the data sent, and debug the device. This listens to the current device and thus must be attached
 to a GRBL device.
 """
+from kernel import Module
+
 from meerk40t.grbl.emulator import GRBLEmulator
-from meerk40t.kernel import Module
 
 
 class GRBLInterpreter(Module):

@@ -2,10 +2,11 @@ import re
 import threading
 import time
 
+from svgelements import Arc
+
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM
-from meerk40t.svgelements import Arc
 
 CODE_RE = re.compile(r"([A-Za-z])")
 FLOAT_RE = re.compile(r"[-+]?[0-9]*\.?[0-9]*")

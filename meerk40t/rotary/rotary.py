@@ -1,5 +1,5 @@
-from meerk40t.kernel import Service
-from meerk40t.svgelements import Matrix
+from kernel import Service
+from svgelements import Matrix
 
 
 def plugin(kernel, lifecycle=None):

@@ -1,6 +1,7 @@
+from kernel import Service, signal_listener
+
 from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.core.view import View
-from meerk40t.kernel import Service, signal_listener
 
 
 def plugin(kernel, lifecycle=None):

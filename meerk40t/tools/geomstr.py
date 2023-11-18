@@ -58,8 +58,7 @@ from copy import copy
 
 import numpy
 import numpy as np
-
-from meerk40t.svgelements import (
+from svgelements import (
     Arc,
     Close,
     CubicBezier,
@@ -69,6 +68,7 @@ from meerk40t.svgelements import (
     Path,
     QuadraticBezier,
 )
+
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 # Note lower nibble is which indexes are positions (except info index)

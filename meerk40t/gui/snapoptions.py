@@ -1,7 +1,6 @@
 import wx
+from kernel import signal_listener
 from wx import aui
-
-from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
