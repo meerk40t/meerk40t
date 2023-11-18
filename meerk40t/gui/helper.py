@@ -6,12 +6,11 @@
     The purpose of this helper window is to allow better
     readability of the otherwise quickly disappearing tooltips
 """
-import time
 
 import wx
 from wx import aui
 
-import meerk40t.gui.icons as mkicons
+from meerk40t.gui.icons import icons8_info, get_default_icon_size
 from meerk40t.gui.wxutils import StaticBoxSizer
 
 _ = wx.GetTranslation
@@ -46,6 +45,7 @@ class HelperPanel(wx.Panel):
         self.context = context
         self.text_info = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_READONLY)
         self.button_webhelp = wx.Button(self, wx.ID_ANY, _("Online-Help"))
+        self.button_webhelp.SetBitmap(icons8_info.GetBitmap(resize = 0.5 * get_default_icon_size()))
         self.active = False
         self.info = None
         self.section = None
