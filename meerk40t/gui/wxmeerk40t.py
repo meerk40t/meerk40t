@@ -430,7 +430,8 @@ class wxMeerK40t(wx.App, Module):
         self.Bind(wx.EVT_END_PROCESS, self.on_app_close)
         # This catches events when the app is asked to activate by some other process
         self.Bind(wx.EVT_ACTIVATE_APP, self.OnActivate)
-
+        provider = wx.SimpleHelpProvider()
+        wx.HelpProvider.Set(provider)
         # App started add the except hook
         sys.excepthook = handleGUIException
 
@@ -854,6 +855,9 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/SimpleUI", SimpleUI)
         # Hershey Manager stuff
         register_hershey_stuff(kernel)
+
+        from meerk40t.gui.helper import register_panel_helper
+        kernel.register("wxpane/helper", register_panel_helper)
 
         from meerk40t.gui.wxmribbon import register_panel_ribbon
 
