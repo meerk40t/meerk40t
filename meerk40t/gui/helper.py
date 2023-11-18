@@ -89,7 +89,12 @@ class HelperPanel(wx.Panel):
                     self.text_info.SetValue(info)
                     section = "GUI"
                     if hasattr(control, "GetHelpText"):
-                        section = control.GetHelpText()
+                        win = control
+                        while win is not None:
+                            section = win.GetHelpText()
+                            if section:
+                                break
+                            win = win.GetParent()
                         if section is None or section == "":
                             section = "GUI"
                     self.section = section
