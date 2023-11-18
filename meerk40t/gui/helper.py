@@ -98,6 +98,7 @@ class HelperPanel(wx.Panel):
                         if section is None or section == "":
                             section = "GUI"
                     self.section = section
+                    self.button_webhelp.SetToolTip(_("Call online help-page") + f" ({self.section})")
                     # print (f"Info/Help: '{self.info}' / '{self.section}'")
 
     def mouse_query(self, event):
