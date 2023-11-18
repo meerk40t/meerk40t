@@ -4,7 +4,7 @@ from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
 from meerk40t.kernel import lookup_listener, signal_listener
 
 from ...core.units import UNITS_PER_MM, Length
-from ...svgelements import Angle, Color, Matrix
+from ...svgelements import Color
 from ..laserrender import swizzlecolor
 from ..wxutils import TextCtrl, set_ctrl_value
 from .attributes import IdPanel

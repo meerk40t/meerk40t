@@ -38,6 +38,8 @@ class TestElements(unittest.TestCase):
             kernel.console("rect 2cm 2cm 1cm 1cm grid 3 3\n")
             kernel.console("ellipse 2cm 2cm 1cm 1cm grid 3 3\n")
             kernel.console("line 2cm 2cm 1cm 1cm grid 3 3\n")
+            kernel.console("element* circ_copy 4 10mm 5deg 0.5turn -d 25deg")
+            kernel.console("element* radial 2 5mm 20deg 200deg")
         finally:
             kernel.shutdown()
 

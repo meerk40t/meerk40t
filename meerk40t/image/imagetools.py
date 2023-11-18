@@ -5,8 +5,8 @@ from copy import copy
 from meerk40t.kernel import CommandSyntaxError
 
 from ..core.exceptions import BadFileError
-from ..core.units import DEFAULT_PPI, UNITS_PER_PIXEL
-from ..svgelements import Angle, Color, Matrix, Path
+from ..core.units import DEFAULT_PPI, UNITS_PER_PIXEL, Angle
+from ..svgelements import Color, Matrix, Path
 from ..tools.geomstr import Geomstr
 
 
@@ -1301,7 +1301,7 @@ def plugin(kernel, lifecycle=None):
         "sample", type=int, help=_("pixel sample size"), default=10
     )
     @context.console_argument(
-        "angle", type=Angle.parse, help=_("half-tone angle"), default=Angle.degrees(22)
+        "angle", type=Angle, help=_("half-tone angle"), default="22deg"
     )
     @context.console_command(
         "halftone",
@@ -1317,7 +1317,7 @@ def plugin(kernel, lifecycle=None):
         oversample,
         sample=10,
         scale=1,
-        angle=Angle.degrees(22),
+        angle=None,
         **kwargs,
     ):
         """
@@ -1330,7 +1330,7 @@ def plugin(kernel, lifecycle=None):
             raise CommandSyntaxError
         from PIL import Image, ImageDraw, ImageStat
 
-        angle = angle.as_degrees
+        angle_degrees = angle.degrees
 
         for inode in data:
             if inode.lock:
@@ -1341,7 +1341,7 @@ def plugin(kernel, lifecycle=None):
             im = inode.image
             img = inode.opaque_image
             image = img.convert("L")
-            image = image.rotate(angle, expand=1)
+            image = image.rotate(angle_degrees, expand=1)
             size = image.size[0] * scale, image.size[1] * scale
             half_tone = Image.new("L", size)
             draw = ImageDraw.Draw(half_tone)
