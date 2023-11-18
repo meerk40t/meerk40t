@@ -2478,6 +2478,8 @@ class MeerK40t(MWindow):
                 idx = result.find("_", 1)
                 if idx >= 0:
                     result = result[idx + 1 :]
+            elif result == "~":
+                result = ""
             return result
 
         self.panes_menu = wx.Menu()
@@ -2509,6 +2511,8 @@ class MeerK40t(MWindow):
             try:
                 submenu_name = pane.submenu
                 submenu_name = unsorted_label(submenu_name)
+                if submenu_name == "":
+                    submenu_name = None
                 if submenu_name in submenus:
                     submenu = submenus[submenu_name]
                 elif submenu_name is not None:
@@ -2519,9 +2523,9 @@ class MeerK40t(MWindow):
                 pass
             menu_context = submenu if submenu is not None else self.panes_menu
             try:
-                pane_name = unsorted_label(pane.name)
+                pane_name = pane.name
             except AttributeError:
-                pane_name = unsorted_label(suffix_path)
+                pane_name = suffix_path
 
             pane_caption = pane_name[0].upper() + pane_name[1:] + "."
             try:

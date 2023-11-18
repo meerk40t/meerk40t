@@ -22,6 +22,7 @@ def register_panel_helper(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Left()
+        .Float()
         .MinSize(225, 110)
         .FloatingSize(225, 110)
         .Caption(_("Help"))
@@ -31,6 +32,8 @@ def register_panel_helper(window, context):
     )
     pane.dock_proportion = 225
     pane.control = HelperPanel(window, wx.ID_ANY, context=context)
+    pane.submenu = "~"
+
     window.on_pane_create(pane)
     context.register("pane/helper", pane)
 
