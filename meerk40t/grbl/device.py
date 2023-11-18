@@ -10,22 +10,25 @@ from meerk40t.kernel import CommandSyntaxError, Service
 
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
-from ..core.units import UNITS_PER_MIL, Length
+from ..core.units import MM_PER_INCH, Length
 from ..core.view import View
+from ..device.mixins import Status
 from .controller import GrblController
 from .driver import GRBLDriver
 
 
-class GRBLDevice(Service):
+class GRBLDevice(Service, Status):
     """
     GRBLDevice is driver for the Gcode Controllers
     """
 
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
+        self.hardware_config = {}
         self.permit_tcp = True
         self.permit_serial = True
 
         Service.__init__(self, kernel, path)
+        Status.__init__(self)
         self.name = "GRBLDevice"
         self.extension = "gcode"
         if choices is not None:
@@ -231,6 +234,12 @@ class GRBLDevice(Service):
             self.bedheight,
             dpi_x=1000.0,
             dpi_y=1000.0,
+        )
+        self.view_mm = View(
+            self.bedwidth,
+            self.bedheight,
+            dpi_x=MM_PER_INCH,
+            dpi_y=MM_PER_INCH,
         )
         self.realize()
         self.settings = dict()
@@ -452,17 +461,6 @@ class GRBLDevice(Service):
                 "section": "_10_Red Dot",
             },
             {
-                "attr": "requires_validation",
-                "object": self,
-                "default": True,
-                "type": bool,
-                "label": _("Require validation for device"),
-                "tip": _(
-                    "Ensure device is completely initialized before sending data. This is usually known to be valid at the 'Grbl xx.x' version message."
-                ),
-                "section": "_40_Validation",
-            },
-            {
                 "attr": "welcome",
                 "object": self,
                 "default": "Grbl",
@@ -471,7 +469,6 @@ class GRBLDevice(Service):
                 "tip": _(
                     "If for some reason the device needs a different welcome validator than 'Grbl' (default), for example, somewhat custom grbl-like firmware"
                 ),
-                "conditional": (self, "requires_validation"),
                 "section": "_40_Validation",
             },
         ]
@@ -523,7 +520,7 @@ class GRBLDevice(Service):
         )
         def soft_reset(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.reset()
-            self.signal("pipe;running", False)
+            self.laser_status = "idle"
 
         @self.console_command(
             "estop",
@@ -532,8 +529,7 @@ class GRBLDevice(Service):
         )
         def estop(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.reset()
-            self.signal("pipe;running", False)
-            self.signal("pause")
+            self.laser_status = "idle"
 
         @self.console_command(
             "clear_alarm",
@@ -542,7 +538,7 @@ class GRBLDevice(Service):
         )
         def clear_alarm(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.clear_alarm()
-            self.signal("pipe;running", False)
+            self.laser_status = "idle"
 
         @self.console_command(
             "pause",
@@ -755,6 +751,15 @@ class GRBLDevice(Service):
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
         )
+        self.view_mm.set_dims(self.bedwidth, self.bedheight)
+        self.view_mm.transform(
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
+        )
+
         # rotary_active=self.rotary_active,
         # rotary_scale_x=self.rotary_scale_x,
         # rotary_scale_y=self.rotary_scale_y,

@@ -5,17 +5,18 @@ import wx
 
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
-    node_add,
-    node_append,
-    node_break,
-    node_close,
-    node_curve,
-    node_delete,
-    node_join,
-    node_line,
-    node_smooth,
-    node_smooth_all,
-    node_symmetric,
+    icon_node_add,
+    icon_node_append,
+    icon_node_break,
+    icon_node_close,
+    icon_node_curve,
+    icon_node_delete,
+    icon_node_join,
+    icon_node_line,
+    icon_node_line_all,
+    icon_node_smooth,
+    icon_node_smooth_all,
+    icon_node_symmetric,
 )
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.mwindow import MWindow
@@ -156,7 +157,7 @@ class EditTool(ToolWidget):
             #           active_for_path, active_for_poly,
             #           "tooltiptext", button],
             "i": [
-                node_add,
+                icon_node_add,
                 True,
                 True,
                 True,
@@ -164,7 +165,7 @@ class EditTool(ToolWidget):
                 _("Insert"),
             ],
             "a": [
-                node_append,
+                icon_node_append,
                 False,
                 True,
                 True,
@@ -172,7 +173,7 @@ class EditTool(ToolWidget):
                 _("Append"),
             ],
             "d": [
-                node_delete,
+                icon_node_delete,
                 True,
                 True,
                 True,
@@ -180,7 +181,7 @@ class EditTool(ToolWidget):
                 _("Delete"),
             ],
             "l": [
-                node_line,
+                icon_node_line,
                 True,
                 True,
                 False,
@@ -188,7 +189,7 @@ class EditTool(ToolWidget):
                 _("> Line"),
             ],
             "c": [
-                node_curve,
+                icon_node_curve,
                 True,
                 True,
                 False,
@@ -196,7 +197,7 @@ class EditTool(ToolWidget):
                 _("> Curve"),
             ],
             "s": [
-                node_symmetric,
+                icon_node_symmetric,
                 True,
                 True,
                 False,
@@ -204,7 +205,7 @@ class EditTool(ToolWidget):
                 _("Symmetric"),
             ],
             "j": [
-                node_join,
+                icon_node_join,
                 True,
                 True,
                 False,
@@ -212,7 +213,7 @@ class EditTool(ToolWidget):
                 _("Join"),
             ],
             "b": [
-                node_break,
+                icon_node_break,
                 True,
                 True,
                 False,
@@ -220,7 +221,7 @@ class EditTool(ToolWidget):
                 _("Break"),
             ],
             "o": [
-                node_smooth,
+                icon_node_smooth,
                 True,
                 True,
                 False,
@@ -228,15 +229,23 @@ class EditTool(ToolWidget):
                 _("Smooth"),
             ],
             "v": [
-                node_smooth_all,
+                icon_node_smooth_all,
                 False,
                 True,
                 False,
                 _("Convert all lines into smooth curves"),
                 _("Very smooth"),
             ],
+            "w": [
+                icon_node_line_all,
+                False,
+                True,
+                False,
+                _("Convert all segments into lines"),
+                _("Line all"),
+            ],
             "z": [
-                node_close,
+                icon_node_close,
                 False,
                 True,
                 True,
@@ -244,7 +253,7 @@ class EditTool(ToolWidget):
                 _("Close"),
             ],
             "p": [
-                node_smooth_all,
+                icon_node_smooth_all,
                 False,
                 False,
                 True,

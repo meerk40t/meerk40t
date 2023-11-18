@@ -4,9 +4,9 @@ import wx
 
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import (
-    instruction_circle,
-    instruction_frame,
-    instruction_rectangle,
+    icon_instruct_circle,
+    icon_instruct_rect,
+    icon_instruct_square,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import dip_size
@@ -98,7 +98,7 @@ class LaserToolPanel(wx.Panel):
         img_instruction_1 = wx.StaticBitmap(
             self.nb_circle,
             wx.ID_ANY,
-            self.fitted_bitmap(instruction_circle, desired_height),
+            self.fitted_bitmap(icon_instruct_circle, desired_height),
         )
         instructions = _(
             "Instruction: place the laser on three points on the circumference of the circle on the bed and confirm the position by clicking on the buttons below.\nMK will find the center for you and place the laser above it or will recreate the circle for further processing."
@@ -174,7 +174,7 @@ class LaserToolPanel(wx.Panel):
         self.img_instruction_2 = wx.StaticBitmap(
             self.nb_rectangle,
             wx.ID_ANY,
-            self.fitted_bitmap(instruction_frame, desired_height),
+            self.fitted_bitmap(icon_instruct_rect, desired_height),
         )
         instructions = _(
             "Instruction: place the laser on one corner of the encompassing rectangle and confirm the position by clicking on the buttons below. Then choose the opposing corner.\nMK will create a rectangle for you for further processing."
@@ -272,7 +272,7 @@ class LaserToolPanel(wx.Panel):
         self.img_instruction_3 = wx.StaticBitmap(
             self.nb_square,
             wx.ID_ANY,
-            self.fitted_bitmap(instruction_rectangle, desired_height),
+            self.fitted_bitmap(icon_instruct_square, desired_height),
         )
         instructions = _(
             "Instruction: place the laser on two points of one side of a square on the bed and confirm the position by clicking on the buttons below. Then choose one point on the other side of the corner.\nMK will create a square for you for further processing."
@@ -765,6 +765,7 @@ class LaserToolPanel(wx.Panel):
 
     @signal_listener("driver;position")
     @signal_listener("emulator;position")
+    @signal_listener("status;position")
     def on_update_laser(self, origin, pos):
         self.laserposition = (pos[2], pos[3])
 

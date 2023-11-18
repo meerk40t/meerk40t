@@ -15,12 +15,13 @@ from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length
 from meerk40t.core.view import View
+from meerk40t.device.mixins import Status
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.svgelements import Path, Point
 from meerk40t.tools.geomstr import Geomstr
 
 
-class BalorDevice(Service):
+class BalorDevice(Service, Status):
     """
     The BalorDevice is a MeerK40t service for the device type. It should be the main method of interacting with
     the rest of meerk40t. It defines how the scene should look and contains a spooler which meerk40t will give jobs
@@ -29,6 +30,7 @@ class BalorDevice(Service):
 
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
+        Status.__init__(self)
         self.name = "balor"
         self.extension = "lmc"
         self.job = None

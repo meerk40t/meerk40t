@@ -530,6 +530,7 @@ class BalorDriver:
             return
         self.paused = True
         self.connection.pause()
+        self.service.signal("pause")
 
     def resume(self):
         """
@@ -542,6 +543,7 @@ class BalorDriver:
         """
         self.paused = False
         self.connection.resume()
+        self.service.signal("pause")
 
     def reset(self):
         """
@@ -551,6 +553,7 @@ class BalorDriver:
         """
         self.paused = False
         self.connection.abort()
+        self.service.signal("pause")
 
     def dwell(self, time_in_ms):
         """

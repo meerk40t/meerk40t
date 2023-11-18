@@ -295,6 +295,7 @@ class LihuiyuDriver(Parameters):
         """
         self(b"~PN!\n~")
         self.paused = True
+        self.service.signal("pause")
 
     def resume(self, *values):
         """
@@ -308,6 +309,7 @@ class LihuiyuDriver(Parameters):
         """
         self(b"~PN&\n~")
         self.paused = False
+        self.service.signal("pause")
 
     def reset(self):
         """
@@ -328,6 +330,7 @@ class LihuiyuDriver(Parameters):
         self._reset_modes()
         self.state = DRIVER_STATE_RAPID
         self.paused = False
+        self.service.signal("pause")
 
     def abort(self):
         self(b"I\n")

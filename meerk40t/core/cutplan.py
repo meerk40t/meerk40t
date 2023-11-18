@@ -17,7 +17,7 @@ CutPlan handles the various complicated algorithms to optimising the sequence of
 from copy import copy
 from math import isinf
 from os import times
-from time import time
+from time import perf_counter, time
 from typing import Optional
 
 import numpy as np
@@ -175,6 +175,14 @@ class CutPlan:
         #     axis = rotary.axis
 
         original_ops = copy(self.plan)
+        if self.context.opt_raster_optimisation and self.context.do_optimization:
+            try:
+                margin = float(Length(self.context.opt_raster_opt_margin, "0"))
+            except (AttributeError, ValueError):
+                margin = 0
+            self.optimize_rasters(original_ops, "op raster", margin)
+            # We could do this as well, but images are burnt separately anyway...
+            # self.optimize_rasters(original_ops, "op image", margin)
         self.plan.clear()
 
         idx = 0
@@ -638,6 +646,122 @@ class CutPlan:
         self._previous_bounds = None
         self.plan.clear()
         self.commands.clear()
+
+    def optimize_rasters(self, operation_list, op_type, margin):
+        def generate_clusters(operation):
+            def overlapping(bounds1, bounds2, margin):
+                # The rectangles don't overlap if
+                # one rectangle's minimum in some dimension
+                # is greater than the other's maximum in
+                # that dimension.
+                flagx = (bounds1[0] > bounds2[2] + margin) or (
+                    bounds2[0] > bounds1[2] + margin
+                )
+                flagy = (bounds1[1] > bounds2[3] + margin) or (
+                    bounds2[1] > bounds1[3] + margin
+                )
+                return bool(not (flagx or flagy))
+
+            clusters = list()
+            cluster_bounds = list()
+            for node in operation.children:
+                try:
+                    if node.type == "reference":
+                        node = node.node
+                    bb = node.paint_bounds
+                except AttributeError:
+                    # Either no element node or does not have bounds
+                    continue
+                clusters.append([node])
+                cluster_bounds.append(
+                    (
+                        bb[0],
+                        bb[1],
+                        bb[2],
+                        bb[3],
+                    )
+                )
+
+            def detail_overlap(index1, index2):
+                # But is there a real overlap, or just one with the union bounds?
+                for outer_node in clusters[index1]:
+                    try:
+                        bb_outer = outer_node.paint_bounds
+                    except AttributeError:
+                        continue
+                    for inner_node in clusters[index2]:
+                        try:
+                            bb_inner = inner_node.paint_bounds
+                        except AttributeError:
+                            continue
+                        if overlapping(bb_outer, bb_inner, margin):
+                            return True
+                # We did not find anything...
+                return False
+
+            needs_repeat = True
+            while needs_repeat:
+                needs_repeat = False
+                for outer_idx in range(len(clusters) - 1, -1, -1):
+                    # Loop downwards as we are manipulating the arrays
+                    bb = cluster_bounds[outer_idx]
+                    for inner_idx in range(outer_idx - 1, -1, -1):
+                        cc = cluster_bounds[inner_idx]
+                        if not overlapping(bb, cc, margin):
+                            continue
+                        # Overlap!
+                        # print (f"Reuse cluster {inner_idx} for {outer_idx}")
+                        real_overlap = detail_overlap(outer_idx, inner_idx)
+                        if real_overlap:
+                            needs_repeat = True
+                            # We need to extend the inner cluster by the outer
+                            clusters[inner_idx].extend(clusters[outer_idx])
+                            cluster_bounds[inner_idx] = (
+                                min(bb[0], cc[0]),
+                                min(bb[1], cc[1]),
+                                max(bb[2], cc[2]),
+                                max(bb[3], cc[3]),
+                            )
+                            clusters.pop(outer_idx)
+                            cluster_bounds.pop(outer_idx)
+                            # We are done with the inner loop, as we effectively
+                            # destroyed the cluster element we compared
+                            break
+
+            return clusters
+
+        stime = perf_counter()
+        scount = 0
+        ecount = 0
+        for idx in range(len(operation_list) - 1, -1, -1):
+            op = operation_list[idx]
+            if (
+                not hasattr(op, "type")
+                or not hasattr(op, "children")
+                or op.type != op_type
+            ):
+                # That's not what we are looking for
+                continue
+            scount += 1
+            clusters = generate_clusters(op)
+            ecount += len(clusters)
+            if len(clusters) > 0:
+                # Create cluster copies of the raster op
+                for entry in clusters:
+                    newop = copy(op)
+                    newop._references.clear()
+                    for node in entry:
+                        newop.add_reference(node)
+                    newop.set_dirty_bounds()
+                    operation_list.insert(idx + 1, newop)
+
+                # And remove the original one...
+                operation_list.pop(idx)
+        etime = perf_counter()
+        if self.channel:
+            self.channel(
+                f"Optimise {op_type} finished after {etime-stime:.2f} seconds, inflated {scount} operations to {ecount}"
+            )
 
 
 def is_inside(inner, outer, tolerance=0):

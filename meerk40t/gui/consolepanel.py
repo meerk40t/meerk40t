@@ -8,11 +8,10 @@ from meerk40t.gui.icons import STD_ICON_SIZE, icons8_console
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.kernel import get_safe_path, signal_listener
 
-#
-# try:
-#     from wx import richtext
-# except ImportError:
-#     print("import of wx.richtext for console failed, using default console window")
+try:
+    from wx import richtext
+except ImportError:
+    print("import of wx.richtext for console failed, using default console window")
 
 
 _ = wx.GetTranslation
@@ -223,8 +222,7 @@ class ConsolePanel(wx.ScrolledWindow):
         #     res = wx.SystemSettings().GetAppearance().IsDark()
         # except AttributeError:
         #     res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        return res
+        return self.context.themes.dark
 
     def __set_properties(self):
         # begin wxGlade: ConsolePanel.__set_properties

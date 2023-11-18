@@ -1,3 +1,4 @@
+import threading
 import time
 from math import isinf, isnan
 from pathlib import Path
@@ -8,13 +9,14 @@ from wx import aui
 
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
+    get_default_icon_size,
     icons8_emergency_stop_button,
     icons8_pause,
     icons8_route,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import HoverButton
-from meerk40t.kernel import get_safe_path, signal_listener
+from meerk40t.kernel import Job, get_safe_path, signal_listener
 
 _ = wx.GetTranslation
 
@@ -105,20 +107,24 @@ class SpoolerPanel(wx.Panel):
         self.combo_device.SetSelection(0)  # All by default...
         self.button_pause = wx.Button(self.win_top, wx.ID_ANY, _("Pause"))
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
-        self.button_pause.SetBitmap(icons8_pause.GetBitmap(resize=STD_ICON_SIZE / 2))
+        self.button_pause.SetBitmap(
+            icons8_pause.GetBitmap(resize=0.5 * get_default_icon_size())
+        )
         self.button_stop = HoverButton(self.win_top, wx.ID_ANY, _("Abort"))
         self.button_stop.SetToolTip(_("Stop the laser"))
         self.button_stop.SetBitmap(
             icons8_emergency_stop_button.GetBitmap(
-                resize=STD_ICON_SIZE / 2, color=wx.WHITE, keepalpha=True
+                resize=0.5 * get_default_icon_size(),
+                color=self.context.themes.get("stop_fg"),
+                keepalpha=True,
             )
         )
         self.button_stop.SetBitmapFocus(
-            icons8_emergency_stop_button.GetBitmap(resize=STD_ICON_SIZE / 2)
+            icons8_emergency_stop_button.GetBitmap(resize=0.5 * get_default_icon_size())
         )
-        self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
-        self.button_stop.SetForegroundColour(wx.WHITE)
-        self.button_stop.SetFocusColour(wx.BLACK)
+        self.button_stop.SetBackgroundColour(self.context.themes.get("stop_bg"))
+        self.button_stop.SetForegroundColour(self.context.themes.get("stop_fg"))
+        self.button_stop.SetFocusColour(self.context.themes.get("stop_fg_focus"))
 
         self.list_job_spool = wx.ListCtrl(
             self.win_top,
@@ -180,12 +186,24 @@ class SpoolerPanel(wx.Panel):
         self.set_pause_color()
         if self.context.spool_history_clear_on_start:
             self.clear_history()
+        # We set a timer job that will periodically check the spooler queue
+        # in case no signal was received
+        self.shown = False
+        self.update_lock = threading.Lock()
+        self.timerjob = Job(
+            process=self.update_queue,
+            job_name="spooler-update",
+            interval=5,
+            run_main=True,
+        )
 
     def __set_properties(self):
         # begin wxGlade: SpoolerPanel.__set_properties
         self.combo_device.SetToolTip(_("Select the device"))
         self.list_job_spool.SetToolTip(_("List and modify the queued operations"))
-        self.button_clear_history.SetToolTip(_("Clear spooler history (right click for more options)"))
+        self.button_clear_history.SetToolTip(
+            _("Clear spooler history (right click for more options)")
+        )
         self.list_job_spool.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=58)
         self.list_job_spool.AppendColumn(
             _("Device"),
@@ -636,10 +654,13 @@ class SpoolerPanel(wx.Panel):
         return routine
 
     def pane_show(self, *args):
+        self.shown = True
+        self.context.schedule(self.timerjob)
         self.refresh_spooler_list()
 
     def pane_hide(self, *args):
-        pass
+        self.context.unschedule(self.timerjob)
+        self.shown = False
 
     @staticmethod
     def _name_str(named_obj):
@@ -971,15 +992,18 @@ class SpoolerPanel(wx.Panel):
             self.list_job_history.SetItem(list_id, col_id, new_data)
 
     def set_pause_color(self):
-        new_color = None
+        new_bg_color = None
+        new_fg_color = None
         new_caption = _("Pause")
         try:
             if self.context.device.driver.paused:
-                new_color = wx.YELLOW
+                new_bg_color = self.context.themes.get("pause_bg")
+                new_fg_color = self.context.themes.get("pause_fg")
                 new_caption = _("Resume")
         except AttributeError:
             pass
-        self.button_pause.SetBackgroundColour(new_color)
+        self.button_pause.SetBackgroundColour(new_bg_color)
+        self.button_pause.SetForegroundColour(new_fg_color)
         self.button_pause.SetLabelText(new_caption)
 
     @signal_listener("pause")
@@ -1023,10 +1047,17 @@ class SpoolerPanel(wx.Panel):
     @signal_listener("emulator;position")
     @signal_listener("pipe;usb_status")
     def on_device_update(self, origin, *args):
-        # Only update every 2 seconds or so
-        dtime = time.time()
-        if dtime - self._last_invokation < 2:
+        doit = True
+        with self.update_lock:
+            # Only update every 2 seconds or so
+            dtime = time.time()
+            if dtime - self._last_invokation < 2:
+                doit = False
+            else:
+                self._last_invokation = dtime
+        if not doit:
             return
+
         # Two things (at least) could go wrong:
         # 1) You are in the wrong queue, ie there's a job running in the background a
         #    that provides an update but the user has changed the device so a different
@@ -1039,7 +1070,6 @@ class SpoolerPanel(wx.Panel):
             listctrl = self.list_job_spool
         except RuntimeError:
             return
-        self._last_invokation = dtime
         for list_id, entry in enumerate(self.queue_entries):
             spooler = entry[0]
             qindex = entry[1]
@@ -1103,6 +1133,10 @@ class SpoolerPanel(wx.Panel):
         if refresh_needed:
             self.refresh_spooler_list()
             self.refresh_history()
+
+    def update_queue(self):
+        if self.shown:
+            self.on_device_update(None)
 
 
 class JobSpooler(MWindow):

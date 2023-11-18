@@ -78,6 +78,10 @@ and a wxpython version <= 4.1.1."""
 
         kernel.register("module/Scene", Scene)
 
+        from meerk40t.gui.themes import Themes
+
+        kernel.add_service("themes", Themes(kernel))
+
     elif lifecycle == "boot":
         kernel_root = kernel.root
         choices = [
@@ -171,6 +175,7 @@ and a wxpython version <= 4.1.1."""
                 ),
                 "page": "Gui",
                 "section": "General",
+                "signals": "restart",
             },
             {
                 "attr": "disable_tree_tool_tips",

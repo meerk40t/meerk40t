@@ -26,20 +26,21 @@ from ..svgelements import Matrix
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import (
     STD_ICON_SIZE,
-    icons8_bell_20,
-    icons8_close_window_20,
+    get_default_icon_size,
+    icon_bell,
+    icon_close_window,
+    icon_console,
+    icon_external,
+    icon_internal,
+    icon_return,
+    icon_round_stop,
+    icon_timer,
+    icons8_circled_play,
     icons8_home_filled,
     icons8_image,
-    icons8_input_20,
     icons8_laser_beam_hazard,
-    icons8_output_20,
     icons8_pause,
-    icons8_circled_play,
-    icons8_return_20,
     icons8_route,
-    icons8_stop_gesture_20,
-    icons8_system_task_20,
-    icons8_timer_20,
 )
 from .laserrender import DRAW_MODE_BACKGROUND, LaserRender
 from .mwindow import MWindow
@@ -107,18 +108,18 @@ class OperationsPanel(wx.Panel):
     def setup_state_images(self):
         iconsize = 20
         self.default_images = [
-            ["beep", icons8_bell_20],
-            ["interrupt", icons8_stop_gesture_20],
-            ["quit", icons8_close_window_20],
-            ["wait", icons8_timer_20],
+            ["beep", icon_bell],
+            ["interrupt", icon_round_stop],
+            ["quit", icon_close_window],
+            ["wait", icon_timer],
             ["home", icons8_home_filled],
-            ["goto", icons8_return_20],
-            ["origin", icons8_return_20],
-            ["output", icons8_output_20],
-            ["input", icons8_input_20],
+            ["goto", icon_return],
+            ["origin", icon_return],
+            ["output", icon_external],
+            ["input", icon_internal],
             ["cutcode", icons8_laser_beam_hazard],
             # Intentionally the last...
-            ["console", icons8_system_task_20],
+            ["console", icon_console],
         ]
         self.options_images = wx.ImageList()
         self.options_images.Create(width=iconsize, height=iconsize)
@@ -832,10 +833,7 @@ class SimulationPanel(wx.Panel, Job):
         self.panel_optimize.AddPage(self.subpanel_cutcode, _("Cutcode"))
         self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
-        if optimise_at_start:
-            self.checkbox_optimize.SetValue(1)
-        else:
-            self.checkbox_optimize.SetValue(0)
+        self.checkbox_optimize.SetValue(self.context.planner.do_optimization)
         self.btn_redo_it = wx.Button(self, wx.ID_ANY, _("Recalculate"))
         self.btn_redo_it.Bind(wx.EVT_BUTTON, self.on_redo_it)
 
@@ -977,7 +975,9 @@ class SimulationPanel(wx.Panel, Job):
             _("Time Estimate: Extra Time (ie to swing around)")
         )
         self.text_time_total.SetToolTip(_("Time Estimate: Total Time"))
-        self.button_play.SetBitmap(icons8_circled_play.GetBitmap())
+        self.button_play.SetBitmap(
+            icons8_circled_play.GetBitmap(resize=get_default_icon_size())
+        )
         self.text_playback_speed.SetMinSize(dip_size(self, 55, 23))
         # self.combo_device.SetToolTip(_("Select the device"))
         self.button_spool.SetFont(
@@ -991,7 +991,7 @@ class SimulationPanel(wx.Panel, Job):
             )
         )
         self.button_spool.SetBitmap(
-            icons8_route.GetBitmap(resize=1.5 * STD_ICON_SIZE)
+            icons8_route.GetBitmap(resize=1.5 * get_default_icon_size())
         )
         # end wxGlade
 
@@ -1549,8 +1549,10 @@ class SimulationPanel(wx.Panel, Job):
         plan = self.plan_name
         if self.checkbox_optimize.GetValue():
             opt = " optimize"
+            self.context.planner.do_optimization = True
         else:
             opt = ""
+            self.context.planner.do_optimization = False
         self.context(
             f"plan{plan} clear\nplan{plan} copy preprocess validate blob preopt{opt}\n"
         )
@@ -1601,12 +1603,16 @@ class SimulationPanel(wx.Panel, Job):
         self.context.signal("refresh_scene", self.widget_scene.name)
 
     def _start(self):
-        self.button_play.SetBitmap(icons8_pause.GetBitmap())
+        self.button_play.SetBitmap(
+            icons8_pause.GetBitmap(resize=get_default_icon_size())
+        )
         self.context.schedule(self)
         self.running = True
 
     def _stop(self):
-        self.button_play.SetBitmap(icons8_circled_play.GetBitmap())
+        self.button_play.SetBitmap(
+            icons8_circled_play.GetBitmap(resize=get_default_icon_size())
+        )
         self.context.unschedule(self)
         self.running = False
 

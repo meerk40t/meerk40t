@@ -341,7 +341,7 @@ class MoshiController:
                     self.open()
                 # Stage 0: New Program send.
                 if len(self._buffer) == 0:
-                    self.context.signal("pipe;running", True)
+                    self.context.laser_status = "active"
                     self.pipe_channel("New Program")
                     self.wait_until_accepting_packets()
                     MoshiBuilder.prologue(self.connection.write_addr, self.pipe_channel)
@@ -351,7 +351,7 @@ class MoshiController:
                         continue
 
                 # Stage 1: Send Program.
-                self.context.signal("pipe;running", True)
+                self.context.laser_status = "active"
                 self.pipe_channel(f"Sending Data... {len(self._buffer)} bytes")
                 self._send_buffer()
                 self.update_status()
@@ -363,7 +363,7 @@ class MoshiController:
                 self.pipe_channel("Waiting for finish processing.")
                 if len(self._buffer) == 0:
                     self.wait_finished()
-                self.context.signal("pipe;running", False)
+                self.context.laser_status = "idle"
 
             except ConnectionRefusedError:
                 if self.is_shutdown:
@@ -374,7 +374,7 @@ class MoshiController:
                 if self.refuse_counts >= 5:
                     self.context.signal("pipe;state", "STATE_FAILED_RETRYING")
                 self.context.signal("pipe;failing", self.refuse_counts)
-                self.context.signal("pipe;running", False)
+                self.context.laser_status = "idle"
                 time.sleep(3)  # 3-second sleep on failed connection attempt.
                 continue
             except ConnectionError:
@@ -388,7 +388,7 @@ class MoshiController:
                 except ConnectionError:
                     pass
                 continue
-        self.context.signal("pipe;running", False)
+        self.context.laser_status = "idle"
         self._thread = None
         self.is_shutdown = False
         self.update_state("end")

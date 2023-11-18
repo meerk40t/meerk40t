@@ -34,6 +34,8 @@ from meerk40t.gui.toolwidgets.toolcircle import CircleTool
 from meerk40t.gui.toolwidgets.toolcontainer import ToolContainer
 from meerk40t.gui.toolwidgets.tooldraw import DrawTool
 from meerk40t.gui.toolwidgets.toolellipse import EllipseTool
+from meerk40t.gui.toolwidgets.toolimagecut import ImageCutTool
+from meerk40t.gui.toolwidgets.toolline import LineTool
 from meerk40t.gui.toolwidgets.toollinetext import LineTextTool
 from meerk40t.gui.toolwidgets.toolmeasure import MeasureTool
 from meerk40t.gui.toolwidgets.toolnodeedit import EditTool
@@ -207,6 +209,7 @@ class MeerK40tScenePanel(wx.Panel):
 
         context.register("tool/draw", DrawTool)
         context.register("tool/rect", RectTool)
+        context.register("tool/line", LineTool)
         context.register("tool/polyline", PolylineTool)
         context.register("tool/polygon", PolygonTool)
         context.register("tool/point", PointTool)
@@ -222,6 +225,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/placement", PlacementTool)
         context.register("tool/nodemove", NodeMoveTool)
         context.register("tool/parameter", ParameterTool)
+        context.register("tool/imagecut", ImageCutTool)
 
         bsize_normal = STD_ICON_SIZE
 
@@ -422,8 +426,8 @@ class MeerK40tScenePanel(wx.Panel):
                             )
                             select_values = (
                                 (
-                                    context.lookup("button/tools/Scene"),
-                                    "button/tools/Scene",
+                                    context.lookup("button/select/Scene"),
+                                    "button/select/Scene",
                                     "Select",
                                 ),
                             )
@@ -1290,17 +1294,18 @@ class MeerK40tScenePanel(wx.Panel):
     def on_close(self, event):
         self.save_magnets()
 
+    @signal_listener("pause")
     @signal_listener("pipe;running")
-    def on_driver_mode(self, origin, state):
+    def on_driver_mode(self, origin, *args):
+        # pipe running has (state) as args
         new_color = None
-        if state:
-            new_color = wx.RED
-        else:
-            try:
-                if self.context.device.driver.paused:
-                    new_color = wx.YELLOW
-            except AttributeError:
-                pass
+        try:
+            if self.context.device.driver.paused:
+                new_color = self.context.themes.get("pause_bg")
+            elif self.context.device.laser_status == "active":
+                new_color = self.context.themes.get("stop_bg")
+        except AttributeError:
+            pass
         self.widget_scene.overrule_background = new_color
         self.widget_scene.request_refresh_for_animation()
 

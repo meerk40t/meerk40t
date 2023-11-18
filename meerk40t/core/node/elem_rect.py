@@ -251,12 +251,14 @@ class RectNode(Node, Stroked, FunctionalParameter):
     @property
     def functional_parameter(self):
         dimens = 0.5 * min(self.width, self.height)
+        try:
+            k = min(1.0, self.rx / dimens)
+        except ZeroDivisionError:
+            k = 0.0
         return (
             "rect",
             2,
-            min(1.0, self.rx / dimens),
-            # 2,
-            # min(1.0, self.ry / self.height),
+            k,
         )
 
     @functional_parameter.setter

@@ -11,7 +11,7 @@ import wx
 from wx import aui
 
 from ..core.exceptions import BadFileError
-from .icons import icons8_computer_support, icons8_opened_folder
+from .icons import get_default_icon_size, icons8_computer_support, icons8_opened_folder
 from .mwindow import MWindow
 from .navigationpanels import Drag, Jog
 from .wxutils import StaticBoxSizer
@@ -25,19 +25,22 @@ class JogMovePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        if icon_size is None:
-            iconsize = 50
-        else:
-            iconsize = icon_size
-        jog_panel = Jog(self, wx.ID_ANY, context=context, icon_size=iconsize)
-        drag_panel = Drag(self, wx.ID_ANY, context=context, icon_size=iconsize)
-        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        main_sizer.AddStretchSpacer()
-        main_sizer.Add(jog_panel, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        main_sizer.AddSpacer(25)
-        main_sizer.Add(drag_panel, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        main_sizer.AddStretchSpacer()
-        self.SetSizer(main_sizer)
+        jog_panel = Jog(self, wx.ID_ANY, context=context)
+        drag_panel = Drag(self, wx.ID_ANY, context=context)
+        self.panels = [jog_panel, drag_panel]
+        self.main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.main_sizer.Add(jog_panel, 1, wx.EXPAND, 0)
+        self.main_sizer.Add(drag_panel, 1, wx.EXPAND, 0)
+        self.SetSizer(self.main_sizer)
+        self.Layout()
+        self.Bind(wx.EVT_SIZE, self.on_resize)
+
+    def on_resize(self, event):
+        wb_size = event.GetSize()
+        panel_size = (wb_size[0] / 2, wb_size[1])
+        for p in self.panels:
+            if hasattr(p, "set_icons"):
+                p.set_icons(dimension=panel_size)
         self.Layout()
 
 
@@ -59,7 +62,9 @@ class ProjectPanel(wx.Panel):
 
         self.button_load = wx.Button(self, wx.ID_ANY, _("Load Project"))
 
-        self.button_load.SetBitmap(icons8_opened_folder.GetBitmap())
+        self.button_load.SetBitmap(
+            icons8_opened_folder.GetBitmap(resize=get_default_icon_size())
+        )
         info_panel = StaticBoxSizer(self, wx.ID_ANY, "Project-Information", wx.VERTICAL)
         line1 = wx.BoxSizer(wx.HORIZONTAL)
         lbl = wx.StaticText(self, wx.ID_ANY, "File:")

@@ -14,14 +14,15 @@ def plugin(service, lifecycle):
     if lifecycle == "added":
         from meerk40t.grbl.gui.grblconfiguration import GRBLConfiguration
         from meerk40t.grbl.gui.grblcontroller import GRBLController
+        from meerk40t.grbl.gui.grblhardwareconfig import GRBLHardwareConfig
         from meerk40t.gui.icons import (
             icons8_computer_support,
             icons8_connected,
             icons8_emergency_stop_button,
             icons8_flash_off,
+            icons8_flash_on,
             icons8_info,
             icons8_pause,
-            icons8_flash_on,
         )
 
         service.register("window/GRBLController", GRBLController)
@@ -29,6 +30,8 @@ def plugin(service, lifecycle):
 
         service.register("window/Configuration", GRBLConfiguration)
         service.register("winpath/Configuration", service)
+
+        service.register("window/GrblHardwareConfig", GRBLHardwareConfig)
 
         _ = service._
 

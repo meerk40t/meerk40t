@@ -4,11 +4,11 @@ from wx import aui
 from meerk40t.core.elements.element_types import op_nodes
 from meerk40t.gui.icons import (
     icon_effect_hatch,
+    icon_points,
     icons8_direction,
     icons8_image,
     icons8_laser_beam,
-    icons8_scatter_plot_20,
-    icons8_small_beam_20,
+    icons8_laserbeam_weak,
 )
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.wxutils import dip_size
@@ -181,7 +181,7 @@ class OperationAssignPanel(wx.Panel):
                 )
             elif node.type == "op engrave":
                 c, d = get_color()
-                result = icons8_small_beam_20.GetBitmap(
+                result = icons8_laserbeam_weak.GetBitmap(
                     color=c,
                     resize=(iconsize, iconsize),
                     noadjustment=True,
@@ -197,7 +197,7 @@ class OperationAssignPanel(wx.Panel):
                 )
             elif node.type == "op dots":
                 c, d = get_color()
-                result = icons8_scatter_plot_20.GetBitmap(
+                result = icon_points.GetBitmap(
                     color=c,
                     resize=(iconsize, iconsize),
                     noadjustment=True,

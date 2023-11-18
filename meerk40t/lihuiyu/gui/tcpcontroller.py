@@ -1,6 +1,10 @@
 import wx
 
-from meerk40t.gui.icons import icons8_connected, icons8_disconnected
+from meerk40t.gui.icons import (
+    get_default_icon_size,
+    icons8_connected,
+    icons8_disconnected,
+)
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import TextCtrl, dip_size
 from meerk40t.kernel import signal_listener
@@ -67,7 +71,9 @@ class TCPController(MWindow):
             _("Force connection/disconnection from the device.")
         )
         self.button_device_connect.SetBitmap(
-            icons8_disconnected.GetBitmap(use_theme=False)
+            icons8_disconnected.GetBitmap(
+                use_theme=False, resize=get_default_icon_size()
+            )
         )
         self.text_status.SetToolTip(_("Connection status"))
         self.text_ip_host.SetToolTip(_("IP/Host if the server computer"))
@@ -129,10 +135,13 @@ class TCPController(MWindow):
 
     @signal_listener("network_update")
     def on_network_update(self, origin=None, *args):
-        if not self.service.networked:
-            self.button_device_connect.Enable(False)
-        else:
-            self.button_device_connect.Enable(True)
+        try:
+            if not self.service.networked:
+                self.button_device_connect.Enable(False)
+            else:
+                self.button_device_connect.Enable(True)
+        except AttributeError:
+            pass
 
     @signal_listener("tcp;status")
     def on_tcp_status(self, origin, state):
@@ -142,14 +151,18 @@ class TCPController(MWindow):
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connect"))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected.GetBitmap(use_theme=False)
+                icons8_disconnected.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
             )
             self.button_device_connect.Enable()
         elif state == "connected":
             self.button_device_connect.SetBackgroundColour("#00ff00")
             self.button_device_connect.SetLabel(_("Disconnect"))
             self.button_device_connect.SetBitmap(
-                icons8_connected.GetBitmap(use_theme=False)
+                icons8_connected.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
             )
             self.button_device_connect.Enable()
 

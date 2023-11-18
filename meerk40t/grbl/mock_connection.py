@@ -5,6 +5,7 @@ Mock Connection for GRBL
 The mock connection is used for debug and research purposes. And simply prints the data sent to it rather than engaging
 any hardware.
 """
+from meerk40t.grbl.emulator import GRBLEmulator
 
 
 class MockConnection:
@@ -13,48 +14,29 @@ class MockConnection:
         self.controller = controller
         self.laser = None
         self.read_buffer = bytearray()
-        self.just_connected = False
+        self.emulator = GRBLEmulator(
+            device=None, units_to_device_matrix=service.view.matrix, reply=self.add_read
+        )
 
     @property
     def connected(self):
         return self.laser is not None
 
-    @property
-    def _index_of_read_line(self):
-        try:
-            r = self.read_buffer.index(b"\r")
-        except ValueError:
-            r = -1
-        try:
-            n = self.read_buffer.index(b"\n")
-        except ValueError:
-            n = -1
-
-        if n != -1:
-            return min(n, r) if r != -1 else n
-        else:
-            return r
-
-    def read_buffer_command(self):
-        q = self._index_of_read_line
-        if q == -1:
-            raise ValueError("No forward command exists.")
-        cmd_issued = self.read_buffer[: q + 1]
-        self.read_buffer = self.read_buffer[q + 1 :]
-        return cmd_issued
+    def add_read(self, code):
+        self.read_buffer += bytes(code, encoding="raw_unicode_escape")
 
     def read(self):
-        if self.just_connected:
-            self.just_connected = False
-            return "Grbl 1.1f ['$' for help]\r\n" "[MSG:’$H’|’$X’ to unlock]\r\n"
-        try:
-            cmd = self.read_buffer_command()
-            return "ok"
-        except ValueError:
-            return ""
+        f = self.read_buffer.find(b"\n")
+        if f == -1:
+            return None
+        response = self.read_buffer[:f]
+        self.read_buffer = self.read_buffer[f + 1 :]
+        str_response = str(response, "raw_unicode_escape")
+        str_response = str_response.strip()
+        return str_response
 
     def write(self, line: str):
-        self.read_buffer += line.encode(encoding="latin-1")
+        self.emulator.write(line)
 
     def connect(self):
         if self.laser:
@@ -63,7 +45,6 @@ class MockConnection:
         try:
             self.controller.log("Attempting to Connect...", type="connection")
             self.laser = True
-            self.just_connected = True
             self.controller.log("Connected", type="connection")
             self.service.signal("grbl;status", "connected")
         except ConnectionError:

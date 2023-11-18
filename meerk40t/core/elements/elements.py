@@ -498,7 +498,7 @@ class Elemental(Service):
         self.points = list()
         self.segments = list()
 
-        self.undo = Undo(self._tree)
+        self.undo = Undo(self, self._tree)
         self.do_undo = True
         self.suppress_updates = False
 
@@ -526,14 +526,15 @@ class Elemental(Service):
 
         direct = os.path.dirname(self.op_data._config_file)
         self.mywordlist = Wordlist(self.kernel.version, direct)
-        self.load_persistent_operations("previous")
+        with self.undofree():
+            self.load_persistent_operations("previous")
 
-        ops = list(self.ops())
-        if len(ops) == 0 and not self.operation_default_empty:
-            self.load_default(performclassify=False)
-        if list(self.ops()):
-            # Something was loaded for default ops. Mark that.
-            self.undo.mark("op-loaded")  # Mark defaulted
+            ops = list(self.ops())
+            if len(ops) == 0 and not self.operation_default_empty:
+                self.load_default(performclassify=False)
+            if list(self.ops()):
+                # Something was loaded for default ops. Mark that.
+                self.undo.mark("op-loaded")  # Mark defaulted
 
         self._default_stroke = None
         self._default_strokewidth = None
@@ -722,17 +723,23 @@ class Elemental(Service):
         return float(Length(v))
 
     def length_x(self, v):
-        return float(Length(v, relative_length=self.device.view.width))
+        try:
+            return float(Length(v, relative_length=self.device.view.width))
+        except AttributeError:
+            return 0.0
 
     def length_y(self, v):
-        return float(Length(v, relative_length=self.device.view.height))
+        try:
+            return float(Length(v, relative_length=self.device.view.height))
+        except AttributeError:
+            return 0.0
 
     def bounds(self, x0, y0, x1, y1):
         return (
-            float(Length(x0, relative_length=self.device.view.width)),
-            float(Length(y0, relative_length=self.device.view.height)),
-            float(Length(x1, relative_length=self.device.view.width)),
-            float(Length(y1, relative_length=self.device.view.height)),
+            self.length_x(x0),
+            self.length_y(y0),
+            self.length_x(x1),
+            self.length_y(y1),
         )
 
     def area(self, v):
@@ -3488,6 +3495,7 @@ class Elemental(Service):
                             # self.unlisten_tree(self)
                             elemcount_then = self.count_elems()
                             opcount_then = self.count_op()
+                            self._loading_cleared = False
                             results = loader.load(
                                 self, self, filename_to_process, **kwargs
                             )
@@ -3504,11 +3512,12 @@ class Elemental(Service):
                             ):
                                 return True
                             elif results:
-                                self.signal(
-                                    "warning",
-                                    _("File is Empty"),
-                                    _("File is Malformed"),
-                                )
+                                if not self._loading_cleared:
+                                    self.signal(
+                                        "warning",
+                                        _("File is Empty"),
+                                        _("File is Malformed"),
+                                    )
                                 return True
 
                         except FileNotFoundError:

@@ -2,7 +2,11 @@ import threading
 
 import wx
 
-from meerk40t.gui.icons import icons8_connected, icons8_disconnected
+from meerk40t.gui.icons import (
+    get_default_icon_size,
+    icons8_connected,
+    icons8_disconnected,
+)
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import dip_size
 from meerk40t.kernel import signal_listener
@@ -58,7 +62,9 @@ class BalorControllerPanel(wx.ScrolledWindow):
             _("Force connection/disconnection from the device.")
         )
         self.button_device_connect.SetBitmap(
-            icons8_disconnected.GetBitmap(use_theme=False)
+            icons8_disconnected.GetBitmap(
+                use_theme=False, resize=get_default_icon_size()
+            )
         )
         # end wxGlade
 
@@ -89,14 +95,16 @@ class BalorControllerPanel(wx.ScrolledWindow):
     def set_button_connected(self):
         self.button_device_connect.SetBackgroundColour("#00ff00")
         self.button_device_connect.SetBitmap(
-            icons8_connected.GetBitmap(use_theme=False)
+            icons8_connected.GetBitmap(use_theme=False, resize=get_default_icon_size())
         )
         self.button_device_connect.Enable()
 
     def set_button_disconnected(self):
         self.button_device_connect.SetBackgroundColour("#dfdf00")
         self.button_device_connect.SetBitmap(
-            icons8_disconnected.GetBitmap(use_theme=False)
+            icons8_disconnected.GetBitmap(
+                use_theme=False, resize=get_default_icon_size()
+            )
         )
         self.button_device_connect.Enable()
 

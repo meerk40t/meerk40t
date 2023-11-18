@@ -21,7 +21,7 @@ from meerk40t.svgelements import (
 from ..core.units import Length
 from ..gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
 from ..kernel import signal_listener
-from .icons import STD_ICON_SIZE, icons8_arrange
+from .icons import STD_ICON_SIZE, get_default_icon_size, icons8_arrange
 from .mwindow import MWindow
 
 _ = wx.GetTranslation
@@ -248,7 +248,9 @@ class AlignmentPanel(wx.Panel):
         )
         self.rbox_treatment.SetSelection(0)
         self.btn_align = wx.Button(self, wx.ID_ANY, "Align")
-        self.btn_align.SetBitmap(icons8_arrange.GetBitmap(resize=STD_ICON_SIZE / 2))
+        self.btn_align.SetBitmap(
+            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
+        )
 
         sizer_main.Add(self.rbox_align_x, 0, wx.EXPAND, 0)
         sizer_main.Add(self.rbox_align_y, 0, wx.EXPAND, 0)
@@ -495,7 +497,9 @@ class DistributionPanel(wx.Panel):
         )
 
         self.btn_dist = wx.Button(self, wx.ID_ANY, "Distribute")
-        self.btn_dist.SetBitmap(icons8_arrange.GetBitmap(resize=STD_ICON_SIZE / 2))
+        self.btn_dist.SetBitmap(
+            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
+        )
 
         sizer_check = StaticBoxSizer(
             self,
@@ -1166,7 +1170,7 @@ class ArrangementPanel(wx.Panel):
 
         self.btn_arrange = wx.Button(self, wx.ID_ANY, _("Arrange"))
         self.btn_arrange.SetBitmap(
-            icons8_arrange.GetBitmap(resize=STD_ICON_SIZE / 2)
+            icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
         )
 
         sizer_dimensions = wx.BoxSizer(wx.HORIZONTAL)
@@ -1558,7 +1562,7 @@ class Alignment(MWindow):
         self.Layout()
 
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_arrange.GetBitmap(resize=STD_ICON_SIZE / 2))
+        _icon.CopyFromBitmap(icons8_arrange.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Alignment"))
 

@@ -498,6 +498,7 @@ class MoshiDriver(Parameters):
         @return:
         """
         self.paused = True
+        self.service.signal("pause")
 
     def resume(self, *args):
         """
@@ -509,6 +510,7 @@ class MoshiDriver(Parameters):
         @return:
         """
         self.paused = False
+        self.service.signal("pause")
 
     def reset(self, *args):
         """
@@ -524,6 +526,8 @@ class MoshiDriver(Parameters):
         self.pipe_channel("Realtime: Stop")
         MoshiBuilder.stop(self.out_real)
         self.pipe_channel("Control Request: Stop")
+        self.paused = False
+        self.service.signal("pause")
 
     ####################
     # Protected Driver Functions

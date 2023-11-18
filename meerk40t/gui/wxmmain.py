@@ -30,9 +30,10 @@ from meerk40t.kernel import lookup_listener, signal_listener
 
 from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from ..svgelements import Color, Matrix, Path
-from .icons import (
+from .icons import (  # icon_duplicate,
     STD_ICON_SIZE,
     PyEmbeddedImage,
+    icon_bmap_text,
     icon_cag_common,
     icon_cag_subtract,
     icon_cag_union,
@@ -51,6 +52,7 @@ from .icons import (
     icon_mk_rectangular,
     icon_mk_redo,
     icon_mk_undo,
+    icon_power_button,
     icons8_centerh,
     icons8_centerv,
     icons8_circled_left,
@@ -69,12 +71,10 @@ from .icons import (
     icons8_paste,
     icons8_pencil_drawing,
     icons8_place_marker,
-    # icon_duplicate,
     icons8_rotate_left,
     icons8_rotate_right,
     icons8_save,
     icons8_scissors,
-    icon_bmap_text,
     icons8_ungroup_objects,
     icons8_user_location,
     icons8_vector,
@@ -167,6 +167,7 @@ class MeerK40t(MWindow):
 
         self.edit_menu_choice = None
         self._setup_edit_menu_choice()
+        self.view_menu_choice = None
 
         # Menu Bar
         self.main_menubar = wx.MenuBar()
@@ -391,6 +392,7 @@ class MeerK40t(MWindow):
                 "help": _("Undo last action"),
                 "action": on_click_undo,
                 "id": wx.ID_UNDO,
+                "enabled": self.context.elements.undo.has_undo,
                 "level": 1,
                 "segment": "",
             },
@@ -399,6 +401,7 @@ class MeerK40t(MWindow):
                 "help": _("Revert last undo"),
                 "action": on_click_redo,
                 "id": wx.ID_REDO,
+                "enabled": self.context.elements.undo.has_redo,
                 "level": 1,
                 "segment": "",
             },
@@ -606,7 +609,8 @@ class MeerK40t(MWindow):
     @signal_listener("emphasized")
     def on_update_statusbar(self, origin, *args):
         value = self.context.elements.has_emphasis()
-        self._update_status_edit_menu()(None)
+        self._update_status_menu(self.edit_menu, self.edit_menu_choice)
+        self._update_status_menu(self.view_menu, self.view_menu_choice)
         if not self.widgets_created:
             return
 
@@ -673,6 +677,7 @@ class MeerK40t(MWindow):
                 ),
                 "page": "Gui",
                 "section": "Appearance",
+                "signals": "restart",
             },
             {
                 "attr": "mini_icon",
@@ -1076,7 +1081,7 @@ class MeerK40t(MWindow):
         buttonsize = STD_ICON_SIZE
 
         kernel.register(
-            "button/tools/Scene",
+            "button/select/Scene",
             {
                 "label": _("Select"),
                 "icon": icons8_cursor,
@@ -1100,7 +1105,7 @@ class MeerK40t(MWindow):
         #     },
         # )
         kernel.register(
-            "button/tools/Parameter",
+            "button/select/Parameter",
             {
                 "label": _("Parametric Edit"),
                 "icon": icons8_finger,
@@ -1113,7 +1118,7 @@ class MeerK40t(MWindow):
             },
         )
         kernel.register(
-            "button/tools/Nodeeditor",
+            "button/select/Nodeeditor",
             {
                 "label": _("Node Edit"),
                 "icon": icons8_node_edit,
@@ -1126,7 +1131,7 @@ class MeerK40t(MWindow):
             },
         )
         kernel.register(
-            "button/tools/Hatch",
+            "button/select/Hatch",
             {
                 "label": _("Hatch"),
                 "icon": icon_hatch,
@@ -1139,7 +1144,7 @@ class MeerK40t(MWindow):
             },
         )
         kernel.register(
-            "button/tools/Relocate",
+            "button/lasercontrol/Relocate",
             {
                 "label": _("Set Position"),
                 "icon": icons8_place_marker,
@@ -1152,7 +1157,7 @@ class MeerK40t(MWindow):
         )
 
         kernel.register(
-            "button/tools/Placement",
+            "button/lasercontrol/Placement",
             {
                 "label": _("Job Start"),
                 "icon": icons8_user_location,
@@ -1165,15 +1170,15 @@ class MeerK40t(MWindow):
         )
 
         kernel.register(
-            "button/tools/Draw",
+            "button/tools/circle",
             {
-                "label": _("Draw"),
-                "icon": icons8_pencil_drawing,
-                "tip": _("Add a free-drawing element"),
-                "action": lambda v: kernel.elements("tool draw\n"),
+                "label": _("Circle"),
+                "icon": icon_mk_circle,
+                "tip": _("Add a circle element"),
+                "action": lambda v: kernel.elements("tool circle\n"),
                 "group": "tool",
                 "size": bsize_normal,
-                "identifier": "draw",
+                "identifier": "circle",
             },
         )
 
@@ -1191,15 +1196,15 @@ class MeerK40t(MWindow):
         )
 
         kernel.register(
-            "button/tools/circle",
+            "button/tools/Rectangle",
             {
-                "label": _("Circle"),
-                "icon": icon_mk_circle,
-                "tip": _("Add a circle element"),
-                "action": lambda v: kernel.elements("tool circle\n"),
+                "label": _("Rectangle"),
+                "icon": icon_mk_rectangular,
+                "tip": _("Add a rectangular element"),
+                "action": lambda v: kernel.elements("tool rect\n"),
                 "group": "tool",
                 "size": bsize_normal,
-                "identifier": "circle",
+                "identifier": "rect",
             },
         )
 
@@ -1234,19 +1239,6 @@ class MeerK40t(MWindow):
         )
 
         kernel.register(
-            "button/tools/Rectangle",
-            {
-                "label": _("Rectangle"),
-                "icon": icon_mk_rectangular,
-                "tip": _("Add a rectangular element"),
-                "action": lambda v: kernel.elements("tool rect\n"),
-                "group": "tool",
-                "size": bsize_normal,
-                "identifier": "rect",
-            },
-        )
-
-        kernel.register(
             "button/tools/Point",
             {
                 "label": _("Point"),
@@ -1273,6 +1265,20 @@ class MeerK40t(MWindow):
                 "identifier": "vector",
             },
         )
+
+        kernel.register(
+            "button/tools/Draw",
+            {
+                "label": _("Draw"),
+                "icon": icons8_pencil_drawing,
+                "tip": _("Add a free-drawing element"),
+                "action": lambda v: kernel.elements("tool draw\n"),
+                "group": "tool",
+                "size": bsize_normal,
+                "identifier": "draw",
+            },
+        )
+
         kernel.register(
             "button/tools/Text",
             {
@@ -1376,7 +1382,7 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements("undo\n"),
                 "size": bsize_small,
                 "identifier": "editundo",
-                # "rule_enabled": lambda cond: kernel.elements.undo.has_undo,
+                "rule_enabled": lambda cond: kernel.elements.undo.has_undo(),
             },
         )
         kernel.register(
@@ -1388,7 +1394,7 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements("redo\n"),
                 "size": bsize_small,
                 "identifier": "editredo",
-                # "rule_enabled": lambda cond: kernel.elements.undo.has_undo,
+                "rule_enabled": lambda cond: kernel.elements.undo.has_redo(),
             },
         )
 
@@ -2837,9 +2843,9 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_MENU, self.on_click_exit, id=menu_item.GetId())
         self.main_menubar.Append(self.file_menu, _("File"))
 
-    def _update_status_edit_menu(self, *args):
+    def _update_status_menu(self, menu, choices, *args):
         def handler(event):
-            for entry in self.edit_menu_choice:
+            for entry in local_choices:
                 if "label" in entry and "enabled" in entry:
                     flag = True
                     label = entry["label"]
@@ -2848,13 +2854,15 @@ class MeerK40t(MWindow):
                     except AttributeError:
                         flag = True
                     if label:
-                        menu_id = self.edit_menu.FindItem(label)
+                        menu_id = local_menu.FindItem(label)
                         if menu_id != wx.NOT_FOUND:
-                            menu_item = self.edit_menu.FindItemById(menu_id)
+                            menu_item = local_menu.FindItemById(menu_id)
                             menu_item.Enable(flag)
             if event:
                 event.Skip()
 
+        local_menu = menu
+        local_choices = choices
         return handler
 
     def __set_edit_menu(self):
@@ -2870,7 +2878,10 @@ class MeerK40t(MWindow):
         else:
             self.main_menubar.Append(self.edit_menu, label)
 
-        self.edit_menu.Bind(wx.EVT_MENU_OPEN, self._update_status_edit_menu())
+        self.edit_menu.Bind(
+            wx.EVT_MENU_OPEN,
+            self._update_status_menu(self.edit_menu, self.edit_menu_choice),
+        )
 
     def __set_view_menu(self):
         def toggle_draw_mode(bits):
@@ -2911,6 +2922,7 @@ class MeerK40t(MWindow):
                 "action": self.on_click_zoom_selected,
                 "id": wx.ID_ZOOM_100,
                 "level": 1,
+                "enabled": self.context.elements.has_emphasis,
                 "segment": "",
             },
             {
@@ -3175,8 +3187,13 @@ class MeerK40t(MWindow):
         ]
 
         self.view_menu = wx.Menu()
+        self.view_menu_choice = choices
         self._create_menu_from_choices(self.view_menu, choices)
         self.main_menubar.Append(self.view_menu, _("View"))
+        self.view_menu.Bind(
+            wx.EVT_MENU_OPEN,
+            self._update_status_menu(self.view_menu, self.view_menu_choice),
+        )
 
     def __set_pane_menu(self):
         # ==========
@@ -3391,6 +3408,7 @@ class MeerK40t(MWindow):
                             message="This requires a program restart before the language change will kick in!",
                             caption="Language changed",
                         )
+                        self.context.signal("restart")
 
                     return check
 
@@ -3399,6 +3417,19 @@ class MeerK40t(MWindow):
                     m.Enable(False)
                 i += 1
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
+
+    @signal_listener("restart")
+    def on_restart_required(self, *args):
+        self.context.kernel.register(
+            "button/project/Restart",
+            {
+                "label": _("Restart"),
+                "icon": icon_power_button,
+                "tip": _("Restart needed to apply new parameters"),
+                "action": lambda v: self.context("restart\n"),
+                "size": STD_ICON_SIZE,
+            },
+        )
 
     @signal_listener("file;loaded")
     @signal_listener("file;saved")
@@ -3673,9 +3704,15 @@ class MeerK40t(MWindow):
         else:
             label = " - " + label
 
+        try:
+            dev_label = self.context.device.label
+        except AttributeError:
+            # Label cannot be found because device does not exist.
+            dev_label = ""
+
         title = (
             f"{str(self.context.kernel.name)} v{self.context.kernel.version} - "
-            f"{self.context.device.label}{label}"
+            f"{dev_label}{label}"
         )
         self.SetTitle(title)
 
@@ -3814,7 +3851,8 @@ class MeerK40t(MWindow):
         self.context(".laserpath_clear\n")
         self.validate_save()
         kernel.busyinfo.end()
-        self.context("tool none\n")
+        self.context(".tool none\n")
+        context.elements.undo.mark("blank")
 
     def clear_and_open(self, pathname, preferred_loader=None):
         self.clear_project(ops_too=False)
@@ -3915,9 +3953,11 @@ class MeerK40t(MWindow):
 
     def on_click_open(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         self.context(".dialog_load\n")
+        self.context(".tool none\n")
 
     def on_click_import(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         self.context(".dialog_import\n")
+        self.context(".tool none\n")
 
     def on_click_stop(self, event=None):
         self.context("estop\n")
@@ -3927,9 +3967,11 @@ class MeerK40t(MWindow):
 
     def on_click_save(self, event):
         self.context(".dialog_save\n")
+        self.context(".tool none\n")
 
     def on_click_save_as(self, event=None):
         self.context(".dialog_save_as\n")
+        self.context(".tool none\n")
 
     def on_click_close(self, event=None):
         try:

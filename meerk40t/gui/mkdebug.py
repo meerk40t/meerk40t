@@ -1,9 +1,15 @@
+"""
+    This module contains panels that display internal developer information.
+    They will become visible if you type 'set debug_mode True' in the
+    console and restart the program.
+"""
 import time
 
 import wx
 from wx import aui
 
-from meerk40t.gui.wxutils import StaticBoxSizer
+import meerk40t.gui.icons as mkicons
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 
 _ = wx.GetTranslation
 
@@ -44,7 +50,29 @@ def register_panel_color(window, context):
     context.register("pane/debug_color", pane)
 
 
+def register_panel_icon(window, context):
+    pane = (
+        aui.AuiPaneInfo()
+        .Left()
+        .MinSize(225, 110)
+        .FloatingSize(225, 110)
+        .Caption(_("Icons"))
+        .CaptionVisible(not context.pane_lock)
+        .Name("debug_icons")
+        .Hide()
+    )
+    pane.dock_proportion = 225
+    pane.control = DebugIconPanel(window, wx.ID_ANY, context=context)
+    pane.submenu = "_ZZ_" + _("Debug")
+    window.on_pane_create(pane)
+    context.register("pane/debug_icons", pane)
+
+
 class DebugTreePanel(wx.Panel):
+    """
+    Displays information about selected elements
+    """
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -124,11 +152,15 @@ class DebugTreePanel(wx.Panel):
         self.txt_first.SetValue(txt3)
 
 
-class DebugColorPanel(wx.Panel):
+class DebugColorPanel(ScrolledPanel):
+    """
+    Displays system defined (OS and wxpython) colors to simplify identifying / choosing them
+    """
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
+        ScrolledPanel.__init__(self, *args, **kwds)
         from copy import copy
 
         self.context = context
@@ -162,9 +194,163 @@ class DebugColorPanel(wx.Panel):
                 infosizer.Add(lbl, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
 
                 sizer_line.Add(infosizer, 1, wx.EXPAND, 0)
+        count = 1000  # New line
+        coldb = (
+            "AQUAMARINE",
+            "FIREBRICK",
+            "MEDIUM FOREST GREEN",
+            "RED",
+            "BLACK",
+            "FOREST GREEN",
+            "MEDIUM GOLDENROD",
+            "SALMON",
+            "BLUE",
+            "GOLD",
+            "MEDIUM ORCHID",
+            "SEA GREEN",
+            "BLUE VIOLET",
+            "GOLDENROD",
+            "MEDIUM SEA GREEN",
+            "SIENNA",
+            "BROWN",
+            "GREY",
+            "MEDIUM SLATE BLUE",
+            "SKY BLUE",
+            "CADET BLUE",
+            "GREEN",
+            "MEDIUM SPRING GREEN",
+            "SLATE BLUE",
+            "CORAL",
+            "GREEN YELLOW",
+            "MEDIUM TURQUOISE",
+            "SPRING GREEN",
+            "CORNFLOWER BLUE",
+            "INDIAN RED",
+            "MEDIUM VIOLET RED",
+            "STEEL BLUE",
+            "CYAN",
+            "KHAKI",
+            "MIDNIGHT BLUE",
+            "TAN",
+            "DARK GREY",
+            "LIGHT BLUE",
+            "NAVY",
+            "THISTLE",
+            "DARK GREEN",
+            "LIGHT GREY",
+            "ORANGE",
+            "TURQUOISE",
+            "DARK OLIVE GREEN",
+            "LIGHT STEEL BLUE",
+            "ORANGE RED",
+            "VIOLET",
+            "DARK ORCHID",
+            "LIME GREEN",
+            "ORCHID",
+            "VIOLET RED",
+            "DARK SLATE BLUE",
+            "MAGENTA",
+            "PALE GREEN",
+            "WHEAT",
+            "DARK SLATE GREY",
+            "MAROON",
+            "PINK",
+            "WHITE",
+            "DARK TURQUOISE",
+            "MEDIUM AQUAMARINE",
+            "PLUM",
+            "YELLOW",
+            "DIM GREY",
+            "MEDIUM BLUE",
+            "PURPLE",
+            "YELLOW GREEN",
+        )
+        for entry in coldb:
+            count += 1
+            if count >= 5:
+                sizer_line = wx.BoxSizer(wx.HORIZONTAL)
+                sizer_main.Add(sizer_line, 0, wx.EXPAND, 0)
+                count = 0
+
+            col = wx.Colour(entry)
+            infosizer = wx.BoxSizer(wx.VERTICAL)
+            box = wx.StaticBitmap(
+                self, wx.ID_ANY, size=wx.Size(32, 32), style=wx.SB_RAISED
+            )
+            box.SetBackgroundColour(col)
+            box.SetToolTip(entry)
+            lbl = wx.StaticText(self, wx.ID_ANY, entry)
+            lbl.SetFont(font)
+            lbl.SetMinSize(wx.Size(75, -1))
+            infosizer.Add(box, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+            infosizer.Add(lbl, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+
+            sizer_line.Add(infosizer, 1, wx.EXPAND, 0)
+
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
         self.Layout()
+        self.SetupScrolling()
+
+    def pane_show(self, *args):
+        return
+
+    def pane_hide(self, *args):
+        return
+
+
+class DebugIconPanel(wx.Panel):
+    """
+    Displays defined icons in a bigger size to facilitate debugging / changing them
+    """
+
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: PositionPanel.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+
+        self.context = context
+        self.icon = None
+
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        choose_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        lbl = wx.StaticText(self, wx.ID_ANY, "Pick icon")
+
+        self.icon_list = list()
+        for entry in dir(mkicons):
+            # print (entry)
+            if entry.startswith("icon"):
+                self.icon_list.append(entry)
+        self.combo_icons = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=self.icon_list,
+            style=wx.CB_SORT | wx.CB_READONLY | wx.CB_DROPDOWN,
+        )
+        choose_sizer.Add(lbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        choose_sizer.Add(self.combo_icons, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_main.Add(choose_sizer, 0, wx.EXPAND, 0)
+        self.SetSizer(sizer_main)
+        self.icon_show = wx.StaticBitmap(self, wx.ID_ANY)
+        sizer_main.Add(self.icon_show, 1, wx.EXPAND, 0)
+        sizer_main.Fit(self)
+        self.combo_icons.Bind(wx.EVT_COMBOBOX, self.on_combo)
+        self.Layout()
+
+    def on_combo(self, event):
+        idx = self.combo_icons.GetSelection()
+        if idx < 0:
+            return
+        s = self.combo_icons.GetString(idx)
+        if s:
+            obj = getattr(mkicons, s, None)
+            if obj is not None:
+                if isinstance(obj, (mkicons.VectorIcon, mkicons.PyEmbeddedImage)):
+                    imgs = self.icon_show.Size
+                    ms = min(imgs[0], imgs[1])
+                    bmp = obj.GetBitmap(resize=ms)
+                    self.icon_show.SetBitmap(bmp)
 
     def pane_show(self, *args):
         return

@@ -53,9 +53,6 @@ from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
 
-SMALL_RESIZE_FACTOR = 2 / 3
-TINY_RESIZE_FACTOR = 0.5
-
 COLOR_MODE_DEFAULT = 0
 COLOR_MODE_COLOR = 1
 COLOR_MODE_DARK = 2
@@ -105,20 +102,22 @@ class Button:
         self._aspects = {}
         self.key = "original"
         self.object = None
-        self.bitmapsize = "large"
 
         self.position = None
         self.toggle = False
 
         self.label = None
+        self.icon = None
+
         self.bitmap = None
         self.bitmap_disabled = None
-        self.bitmap_tiny_disabled = None
-        self.bitmap_small_disabled = None
-        self.bitmap_large_disabled = None
-        self.bitmap_tiny = None
-        self.bitmap_small = None
-        self.bitmap_large = None
+
+        self.min_size = 15
+        self.max_size = 150
+
+        self.available_bitmaps = {}
+        self.available_bitmaps_disabled = {}
+
         self.tip = None
         self.client_data = None
         self.state = 0
@@ -136,35 +135,11 @@ class Button:
         self.rule_visible = None
         self.min_width = 0
         self.min_height = 0
-        self.default_width = 50
+        self.default_width = int(self.max_size / 2)
+        self.icon_size = self.default_width
+
         self.set_aspect(**description)
         self.apply_enable_rules()
-        self.sizes = {
-            "large_label": (0, 0),
-            "small_label": (0, 0),
-            "tiny_label": (0, 0),
-            "large": (0, 0),
-            "small": (0, 0),
-            "tiny": (0, 0),
-        }
-
-    # def calc_sizes(self, dc):
-    #     def calc(bmap, uselabel):
-    #         w = 0
-    #         h = 0
-    #         return w, h
-    #     bw, bh = calc(self.bitmap_large, True)
-    #     self.sizes["large_label"] = (bw, bh)
-    #     bw, bh = calc(self.bitmap_large, False)
-    #     self.sizes["large"] = (bw, bh)
-    #     bw, bh = calc(self.bitmap_small, True)
-    #     self.sizes["small_label"] = (bw, bh)
-    #     bw, bh = calc(self.bitmap_small, False)
-    #     self.sizes["small"] = (bw, bh)
-    #     bw, bh = calc(self.bitmap_tiny, True)
-    #     self.sizes["tiny_label"] = (bw, bh)
-    #     bw, bh = calc(self.bitmap_tiny, False)
-    #     self.sizes["tiny"] = (bw, bh)
 
     def set_aspect(
         self,
@@ -199,32 +174,12 @@ class Button:
         @return:
         """
         self.label = label
-        self.icon = icon
         resize_param = kwargs.get("size")
         if resize_param is None:
-            resize_param = STD_ICON_SIZE
-        if resize_param is None:
-            # We can get the real icon width, that means though
-            # all buttons will have slightly different dimensions
-            # so we set the minimum size
-            siz = icon.GetBitmap().GetSize()
-            wd = max(self.default_width, siz[0])
-            small_resize = int(SMALL_RESIZE_FACTOR * wd)
-            tiny_resize = int(TINY_RESIZE_FACTOR * wd)
-            # print (f"No size parameter given for: {label}")
-
+            self.default_width = int(self.max_size / 2)
         else:
             self.default_width = resize_param
-            small_resize = int(SMALL_RESIZE_FACTOR * resize_param)
-            tiny_resize = int(TINY_RESIZE_FACTOR * resize_param)
 
-        top = self.parent.parent.parent
-        if top.art.color_mode == COLOR_MODE_DARK:
-            targetcolor = Color("white")
-            darkm = True
-        else:
-            targetcolor = None
-            darkm = False
         # We need to cast the icon explicitly to PyEmbeddedImage
         # as otherwise a strange type error is thrown:
         # TypeError: GetBitmap() got an unexpected keyword argument 'force_darkmode'
@@ -233,39 +188,11 @@ class Button:
 
         if not isinstance(icon, VectorIcon):
             icon = PyEmbeddedImage(icon.data)
-        self.bitmap_large = icon.GetBitmap(
-            resize=resize_param,
-            noadjustment=True,
-            force_darkmode=darkm,
-            buffer=5,
-        )
-        self.bitmap_large_disabled = icon.GetBitmap(
-            resize=resize_param,
-            color=Color("grey"),
-            noadjustment=True,
-            force_darkmode=darkm,
-            buffer=5,
-        )
-        self.bitmap_small = icon.GetBitmap(
-            resize=small_resize,
-            noadjustment=True,
-            force_darkmode=darkm,
-            buffer=2,
-        )
-        self.bitmap_small_disabled = icon.GetBitmap(
-            resize=small_resize, color=Color("grey"), noadjustment=True, buffer=2,
-        )
-        self.bitmap_tiny = icon.GetBitmap(
-            resize=tiny_resize,
-            noadjustment=True,
-            force_darkmode=darkm,
-            buffer=1,
-        )
-        self.bitmap_tiny_disabled = icon.GetBitmap(
-            resize=tiny_resize, color=Color("grey"), noadjustment=True, buffer=1,
-        )
-        self.bitmap = self.bitmap_large
-        self.bitmap_disabled = self.bitmap_large_disabled
+        self.icon = icon
+
+        self.available_bitmaps.clear()
+        self.available_bitmaps_disabled.clear()
+        self.get_bitmaps(self.default_width)
 
         self.tip = tip
         self.group = group
@@ -282,6 +209,32 @@ class Button:
         if self.kind == "hybrid":
             self.dropdown = DropDown()
         self.modified()
+
+    def get_bitmaps(self, point_size):
+        top = self.parent.parent.parent
+        darkm = bool(top.art.color_mode == COLOR_MODE_DARK)
+        if point_size < self.min_size:
+            point_size = self.min_size
+        if point_size > self.max_size:
+            point_size = self.max_size
+        self.icon_size = int(point_size)
+        edge = int(point_size / 25.0) + 1
+        key = str(self.icon_size)
+        if key not in self.available_bitmaps:
+            self.available_bitmaps[key] = self.icon.GetBitmap(
+                resize=self.icon_size,
+                noadjustment=True,
+                force_darkmode=darkm,
+                buffer=edge,
+            )
+            self.available_bitmaps_disabled[key] = self.icon.GetBitmap(
+                resize=self.icon_size,
+                color=Color("grey"),
+                noadjustment=True,
+                buffer=edge,
+            )
+        self.bitmap = self.available_bitmaps[key]
+        self.bitmap_disabled = self.available_bitmaps_disabled[key]
 
     def _restore_button_aspect(self, key):
         """
@@ -603,6 +556,7 @@ class RibbonPanel:
 
         self.buttons = []
         self.position = None
+        self.available_position = None
         self._overflow = list()
         self._overflow_position = None
 
@@ -1103,6 +1057,17 @@ class RibbonBarPanel(wx.Control):
             item.Check(bool(c_mode == COLOR_MODE_DARK))
             top.Bind(wx.EVT_MENU, lambda v: set_color(COLOR_MODE_DARK), id=item.GetId())
             item = menu.AppendSeparator()
+            haslabel = self.art.show_labels
+            item = menu.Append(wx.ID_ANY, _("Show Labels"), "", wx.ITEM_CHECK)
+            if not getattr(self, "allow_labels", True):
+                item.Enable(False)
+            item.Check(haslabel)
+            top.Bind(
+                wx.EVT_MENU,
+                lambda v: self.toggle_show_labels(not haslabel),
+                id=item.GetId(),
+            )
+            item = menu.AppendSeparator()
             item = menu.Append(wx.ID_ANY, _("Customize Toolbars"))
 
             def show_pref():
@@ -1345,14 +1310,20 @@ class Art:
             self.button_face_hover = wx.Colour("gold").ChangeLightness(150)
             self.highlight = wx.Colour("gold")
 
+        # Let's adjust the fontsize for the page headers
+        screen_wd, screen_ht = wx.GetDisplaySize()
+        ptdefault = 10
+        if screen_wd <= 800 or screen_ht <= 600:
+            ptdefault = 8
+            self.tab_height = 16
+        try:
+            wxsize = wx.Size(ptdefault, ptdefault)
+            dipsize = self.parent.FromDIP(wxsize)
+            ptsize = int(dipsize[0])
+        except AttributeError:
+            ptsize = ptdefault
         self.default_font = wx.Font(
-            10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
-        )
-        self.small_font = wx.Font(
-            8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
-        )
-        self.tiny_font = wx.Font(
-            6, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+            ptsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
 
     def paint_main(self, dc, ribbon):
@@ -1384,7 +1355,8 @@ class Art:
                 int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius
             )
             for panel in page.panels:
-                if panel is None:
+                # We suppress empty panels
+                if panel is None or panel.visible_button_count == 0:
                     continue
                 self._paint_panel(dc, panel)
                 for button in panel.visible_buttons():
@@ -1543,15 +1515,6 @@ class Art:
         """
         if button.overflow or not button.visible or button.position is None:
             return
-        bitmap = button.bitmap_large
-        bitmap_small = button.bitmap_small
-        bitmap_tiny = button.bitmap_tiny
-
-        button.bitmapsize = "large"
-        if not button.enabled:
-            bitmap = button.bitmap_large_disabled
-            bitmap_small = button.bitmap_small_disabled
-            bitmap_tiny = button.bitmap_tiny_disabled
 
         dc.SetBrush(wx.Brush(self.button_face))
         dc.SetPen(wx.TRANSPARENT_PEN)
@@ -1570,33 +1533,36 @@ class Art:
         x, y, x1, y1 = button.position
         w = int(round(x1 - x, 2))
         h = int(round(y1 - y, 2))
+        img_h = h
+        # do we have text? if yes let's reduce the available space in y
+        if self.show_labels:  # Regardless whether we have a label or not...
+            img_h -= self.bitmap_text_buffer
+            ptsize = min(18, int(round(min(w, img_h) / 5.0, 2)) * 2)
+            img_h -= int(ptsize * 1.35)
 
-        # Lets clip the output
+        button.get_bitmaps(min(w, img_h))
+        if button.enabled:
+            bitmap = button.bitmap
+        else:
+            bitmap = button.bitmap_disabled
+
+        # Let's clip the output
         dc.SetClippingRegion(int(x), int(y), int(w), int(h))
 
         dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), self.rounded_radius)
         bitmap_width, bitmap_height = bitmap.Size
-        font = self.default_font
         # if button.label in  ("Circle", "Ellipse", "Wordlist", "Property Window"):
         #     print (f"N - {button.label}: {bitmap_width}x{bitmap_height} in {w}x{h}")
-        if bitmap_height > h or bitmap_width > w:
-            button.bitmapsize = "small"
-            bitmap = bitmap_small
-            font = self.small_font
-            bitmap_width, bitmap_height = bitmap.Size
-            # if button.label in  ("Circle", "Ellipse", "Wordlist", "Property Window"):
-            #     print (f"S - {button.label}: {bitmap_width}x{bitmap_height} in {w}x{h}")
-            if bitmap_height > h or bitmap_width > w:
-                button.bitmapsize = "tiny"
-                bitmap = bitmap_tiny
-                font = self.tiny_font
-                bitmap_width, bitmap_height = bitmap.Size
-                # if button.label in  ("Circle", "Ellipse", "Wordlist", "Property Window"):
-                #     print (f"T - {button.label}: {bitmap_width}x{bitmap_height} in {w}x{h}")
+        bs = min(bitmap_width, bitmap_height)
+        ptsize = self.get_font_size(bs)
+        font = wx.Font(
+            ptsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
 
-        bitmap_width, bitmap_height = bitmap.Size
         dc.DrawBitmap(bitmap, int(x + (w - bitmap_width) / 2), int(y))
         y += bitmap_height
+
+        text_edge = self.bitmap_text_buffer
 
         if button.label and self.show_labels:
             show_text = True
@@ -1604,70 +1570,61 @@ class Art:
             # We try to establish whether this would fit properly.
             # We allow a small oversize of 25% to the button,
             # before we try to reduce the fontsize
-            font_candidates = [
-                self.default_font,
-                self.small_font,
-                self.tiny_font,
-            ]
-            if button.bitmapsize == "tiny":
-                font_candidates = font_candidates[2:]
-            elif button.bitmapsize == "small":
-                font_candidates = font_candidates[1:]
             wouldfit = False
-            for testfont in font_candidates:
-                test_y = y + self.bitmap_text_buffer
+            while not wouldfit:
+                testfont = wx.Font(
+                    ptsize,
+                    wx.FONTFAMILY_SWISS,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+                test_y = y + text_edge
                 dc.SetFont(testfont)
                 wouldfit = True
-                for word in label_text:
+                i = 0
+                while i < len(label_text):
+                    # We know by definition that all single words
+                    # are okay for drawing, now we check whether
+                    # we can draw multiple in one line
+                    word = label_text[i]
+                    cont = True
+                    while cont:
+                        cont = False
+                        if i < len(label_text) - 1:
+                            nextword = label_text[i + 1]
+                            test = word + " " + nextword
+                            tw, th = dc.GetTextExtent(test)
+                            if tw < w:
+                                word = test
+                                i += 1
+                                cont = True
+
                     text_width, text_height = dc.GetTextExtent(word)
                     if text_width > w:
                         wouldfit = False
                         break
+                    test_y += text_height
+                    if test_y > y1:
+                        wouldfit = False
+                        text_edge = 0
+                        break
+                    i += 1
+
                 if wouldfit:
                     font = testfont
+                    break
+
+                ptsize -= 2
+                if ptsize < 6:  # too small
                     break
             if not wouldfit:
                 show_text = False
                 label_text = list()
-
-            # Previous algorithm with abbreviated text
-            # test_y = y + self.bitmap_text_buffer
-            # dc.SetFont(font)
-            # for idx, word in enumerate(label_text):
-            #     test_word = word
-            #     while True:
-            #         text_width, text_height = dc.GetTextExtent(test_word)
-            #         if text_width <= w:
-            #             break
-            #         if test_word.endswith("..."):
-            #             test_word = test_word[:-4]
-            #         else:
-            #             test_word = word[:-2]
-            #         if len(test_word) > 0:
-            #             test_word += "..."
-            #         else:
-            #             show_text = False
-            #             break
-            #     if len(test_word) > 0:
-            #         if test_word.endswith("..."):
-            #             label_text[idx] = test_word
-            #             label_text = label_text[: idx + 1]
-            #             break
-            #     else:
-            #         if idx == 0:
-            #             show_text = False
-            #         else:
-            #             label_text = label_text[:idx]
-
-            #         break
-
-            #     test_y += text_height
-
         else:
             show_text = False
             label_text = list()
         if show_text:
-            y += self.bitmap_text_buffer
+            y += text_edge
             dc.SetFont(font)
             i = 0
             while i < len(label_text):
@@ -1713,6 +1670,7 @@ class Art:
         xpos = 0
         ypos = 0
         has_page_header = ribbon.visible_pages() > 1
+        dc.SetFont(self.default_font)
         for pn, page in enumerate(ribbon.pages):
             if not page.visible:
                 continue
@@ -1721,6 +1679,16 @@ class Art:
             # if bigger than default then extend width
             if has_page_header:
                 line_width, line_height = dc.GetTextExtent(page.label)
+                if line_height + 4 > self.tab_height:
+                    self.tab_height = line_height + 4
+                    for former in range(0, pn):
+                        former_page = ribbon.pages[former]
+                        t_x, t_y, t_x1, t_y1 = former_page.tab_position
+                        if horizontal:
+                            t_y1 = t_y + self.tab_height * 2
+                        else:
+                            t_x1 = t_x + self.tab_height * 2
+                        former_page.tab_position = (t_x, t_y, t_x1, t_y1)
 
                 tabwidth = max(line_width + 2 * self.tab_tab_buffer, self.tab_width)
                 if horizontal:
@@ -1790,22 +1758,6 @@ class Art:
             # if self.parent.visible_pages() == 1:
             #     print(f"page: {page.position}")
             self.page_layout(dc, page)
-
-    # def preferred_button_size_for_panel(self, dc, panel):
-    #     # Provides
-    #     x, y, max_x, max_y = panel.position
-    #     panel_width = max_x - x
-    #     panel_height = max_y - y
-    #     button_sizes = []
-    #     for button in panel.buttons:
-    #         this_button_sizes = []
-    #         # We calculate the space requirement for regular,
-    #         # small and tiny buttons, both with and without
-    #         # labels
-    #         button_sizes.append(this_button_sizes)
-    #     button_width = 0
-    #     button_height = 0
-    #     return button_width, button_height
 
     def preferred_button_size_for_page(self, dc, page):
         x, y, max_x, max_y = page.position
@@ -1925,6 +1877,7 @@ class Art:
 
         # Now that we have gathered all information we can assign
         # the space...
+        available_space = 0
         for p, panel in enumerate(page.panels):
             if p != 0:
                 # Non-first move between panel gap.
@@ -1950,12 +1903,35 @@ class Art:
                 + (single_panel_vertical - 1) * self.between_button_buffer
                 + 2 * self.panel_button_buffer
             )
-
+            if is_horizontal:
+                sx = available_space
+                sy = 0
+            else:
+                sx = 0
+                sy = available_space
+            panel_width += sx
+            panel_height += sy
             panel.position = x, y, x + panel_width, y + panel_height
-            # if self.parent.visible_pages() == 1:
-            #     print(f"panel: {panel.position}")
-
-            self.panel_layout(dc, panel)
+            panel_max_x, panel_max_y = self.panel_layout(dc, panel)
+            # Do we have more space than needed?
+            available_space = 0
+            if panel._overflow_position is None:
+                # print (f"({x}, {y}) - ({x + panel_width},  {y+panel_height}), sx={sx}, sy={sy}")
+                if is_horizontal:
+                    available_space = max(
+                        0, x + panel_width - panel_max_x - self.panel_button_buffer
+                    )
+                    # print (f"x={x + panel_width}, {panel_max_x} will become: {panel_max_x + self.panel_button_buffer}, available={available_space}")
+                    if available_space != 0:
+                        panel_width = panel_max_x + self.panel_button_buffer - x
+                else:
+                    available_space = max(
+                        0, y + panel_height - panel_max_y - self.panel_button_buffer
+                    )
+                    # print (f"y={y + panel_height}, {panel_max_y} will become: {panel_max_y + self.panel_button_buffer}, available={available_space}")
+                    if available_space != 0:
+                        panel_height = panel_max_y + self.panel_button_buffer - y
+                panel.position = x, y, x + panel_width, y + panel_height
 
             if is_horizontal:
                 x += panel_width
@@ -1997,7 +1973,7 @@ class Art:
         button_width = all_button_width / button_horizontal
         button_height = all_button_height / button_vertical
         # 'tiny'-size of a default 50x50 icon
-        minim_size = int(TINY_RESIZE_FACTOR * 50)
+        minim_size = 15
         button_width = max(minim_size, button_width)
         button_height = max(minim_size, button_height)
 
@@ -2007,13 +1983,13 @@ class Art:
         panel._overflow_position = None
         lastbutton = None
         for b, button in enumerate(list(panel.visible_buttons())):
-            button.bitmapsize = "large"
-            bitmap_width, bitmap_height = button.bitmap_large.Size
-            if bitmap_height > button_height or bitmap_width > button_width:
-                button.bitmapsize = "small"
-                bitmap_width, bitmap_height = button.bitmap_small.Size
-                if bitmap_height > button_height or bitmap_width > button_width:
-                    button.bitmapsize = "tiny"
+            found = False
+            bitmapsize = button.max_size
+            while bitmapsize > button.min_size:
+                if bitmapsize <= button_height and bitmapsize <= button_width:
+                    break
+                bitmapsize -= 5
+            button.get_bitmaps(bitmapsize)
             self.button_calc(dc, button)
             if b == 0:
                 max_width = button.min_width
@@ -2024,8 +2000,7 @@ class Art:
 
         target_height = button_height
         target_width = button_width
-        # if self.parent.visible_pages() == 1:
-        #     print(f"Target: {target_width}x{target_height}")
+        # print(f"Target: {panel.label} - {target_width}x{target_height}")
         for b, button in enumerate(list(panel.visible_buttons())):
             button.overflow = False
             this_width = target_width
@@ -2033,9 +2008,9 @@ class Art:
             local_width = 1.25 * button.min_width
             local_height = 1.25 * button.min_height
             if not distribute_evenly:
-                if button_horizontal > 1:
+                if button_horizontal > 1 or is_horizontal:
                     this_width = min(this_width, local_width)
-                if button_vertical > 1:
+                if button_vertical > 1 or not is_horizontal:
                     this_height = min(this_height, local_height)
             if b != 0:
                 # Move across button gap if not first button.
@@ -2132,33 +2107,46 @@ class Art:
             else:
                 y += this_height
             lastbutton = button
+        return min(x, panel.position[2]), min(y, panel.position[3])
 
     def button_calc(self, dc: wx.DC, button):
-        default_w = button.default_width
-        if button.bitmapsize == "small":
-            default_w = int(SMALL_RESIZE_FACTOR * button.default_width)
-            bitmap = button.bitmap_small
-            dc.SetFont(self.small_font)
-        elif button.bitmapsize == "tiny":
-            default_w = int(TINY_RESIZE_FACTOR * button.default_width)
-            bitmap = button.bitmap_tiny
-            dc.SetFont(self.tiny_font)
-        else:
-            default_w = button.default_width
-            bitmap = button.bitmap_large
-            dc.SetFont(self.default_font)
+        bitmap = button.bitmap
+        ptsize = self.get_font_size(button.icon_size)
+        font = wx.Font(
+            ptsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
+
+        dc.SetFont(font)
         bitmap_width, bitmap_height = bitmap.Size
-        bitmap_height = max(bitmap_height, default_w)
-        bitmap_width = max(bitmap_width, default_w)
+        bitmap_height = max(bitmap_height, button.icon_size)
+        bitmap_width = max(bitmap_width, button.icon_size)
 
         # Calculate text height/width
         text_width = 0
         text_height = 0
         if button.label and self.show_labels:
-            for word in button.label.split(" "):
+            label_text = list(button.label.split(" "))
+            i = 0
+            while i < len(label_text):
+                # We know by definition that all single words
+                # are okay for drawing, now we check whether
+                # we can draw multiple in one line
+                word = label_text[i]
+                cont = True
+                while cont:
+                    cont = False
+                    if i < len(label_text) - 1:
+                        nextword = label_text[i + 1]
+                        test = word + " " + nextword
+                        tw, th = dc.GetTextExtent(test)
+                        if tw < bitmap_width:
+                            word = test
+                            i += 1
+                            cont = True
                 line_width, line_height = dc.GetTextExtent(word)
                 text_width = max(text_width, line_width)
                 text_height += line_height
+                i += 1
 
         # Calculate button_width/button_height
         button_width = max(bitmap_width, text_width)
@@ -2175,12 +2163,7 @@ class Art:
 
     def button_layout(self, dc: wx.DC, button):
         x, y, max_x, max_y = button.position
-        if button.bitmapsize == "small":
-            bitmap = button.bitmap_small
-        elif button.bitmapsize == "tiny":
-            bitmap = button.bitmap_tiny
-        else:
-            bitmap = button.bitmap_large
+        bitmap = button.bitmap
         bitmap_width, bitmap_height = bitmap.Size
         if button.kind == "hybrid" and button.key != "toggle":
             # Calculate text height/width
@@ -2210,3 +2193,18 @@ class Art:
             #     f"Required for {button.label}: button: {x},{y} to {max_x},{max_y}," +
             #     f"dropd: {extx-sizx},{exty-sizy} to {extx},{exty}"
             # )
+
+    def get_font_size(self, imgsize):
+        if imgsize <= 20:
+            ptsize = 6
+        elif imgsize <= 30:
+            ptsize = 8
+        elif imgsize <= 40:
+            ptsize = 10
+        elif imgsize <= 60:
+            ptsize = 12
+        elif imgsize <= 80:
+            ptsize = 14
+        else:
+            ptsize = 16
+        return ptsize

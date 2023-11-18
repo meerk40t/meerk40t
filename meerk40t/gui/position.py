@@ -3,7 +3,7 @@ from wx import aui
 
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
-from meerk40t.gui.icons import icons8_compress
+from meerk40t.gui.icons import get_default_icon_size, icons8_compress
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.kernel import signal_listener
 
@@ -67,20 +67,10 @@ class PositionPanel(wx.Panel):
         self.text_h.SetMinSize(dip_size(self, 70, 23))
         self.chk_individually = wx.CheckBox(self, wx.ID_ANY, _("Individ."))
         self.chk_lock = wx.CheckBox(self, wx.ID_ANY, _("Keep ratio"))
-        if self.small:
-            resize_param = 32
-        else:
-            resize_param = None
+        resize_param = 0.5 * get_default_icon_size()
 
-        self.button_execute = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_compress.GetBitmap(resize=resize_param)
-        )
-        w, h = self.button_execute.GetBitmap().Size
-        icon_size = w
-        self.pos_bitmaps = self.calculate_icons(icon_size)
-        self.button_param = wx.BitmapButton(
-            self, wx.ID_ANY, self.pos_bitmaps[self.offset_index]
-        )
+        self.button_execute = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_param = wx.BitmapButton(self, wx.ID_ANY)
         self.choices = ["mm", "cm", "inch", "mil", "%"]
         self.combo_box_units = wx.ComboBox(
             self,
@@ -92,6 +82,12 @@ class PositionPanel(wx.Panel):
 
         self.__set_properties()
         self.__do_layout()
+
+        self.button_execute.SetBitmap(icons8_compress.GetBitmap(resize=resize_param))
+        w, h = self.button_execute.GetBitmap().Size
+        icon_size = w
+        self.pos_bitmaps = self.calculate_icons(icon_size)
+        self.button_param.SetBitmap(self.pos_bitmaps[self.offset_index])
 
         self.text_x.SetActionRoutine(self.on_text_x_enter)
         self.text_y.SetActionRoutine(self.on_text_y_enter)
@@ -222,6 +218,12 @@ class PositionPanel(wx.Panel):
         )
         self.chk_lock.SetToolTip(
             _("If checked then the aspect ratio (width / height) will be maintained")
+        )
+        self.button_param.SetToolTip(
+            _(
+                "Set the point of reference for the element,\n"
+                + "which edge/corner should be put on the given location"
+            )
         )
         self.button_execute.SetSize(self.button_execute.GetBestSize())
         self.combo_box_units.SetSelection(0)

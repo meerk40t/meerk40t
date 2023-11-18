@@ -13,9 +13,15 @@ from meerk40t.core.units import ACCEPTED_UNITS, Angle, Length
 _ = wx.GetTranslation
 
 
+##############
+# DYNAMIC CHOICE
+# NODE MENU
+##############
+
+
 def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
     """
-    Creates a menu for a given choices table
+    Creates a menu for a given choices table.
 
     Processes submenus, references, radio_state as needed.
     """
@@ -92,6 +98,13 @@ def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
 
 
 def create_choices_for_node(node, elements) -> List[dict]:
+    """
+    Converts a node tree operation menu to a choices dictionary to display the menu items in a choice panel.
+
+    @param node:
+    @param elements:
+    @return:
+    """
     choices = []
     from meerk40t.core.treeop import get_tree_operation_for_node
 
@@ -121,6 +134,9 @@ def create_menu_for_node_TEST(gui, node, elements) -> wx.Menu:
     """
     Test code towards unifying choices and tree nodes into choices that parse to menus.
 
+    This is unused experimental code. Testing the potential inter-relationships between choices for the choice panels
+    and dynamic node menus.
+
     @param gui:
     @param node:
     @param elements:
@@ -128,6 +144,11 @@ def create_menu_for_node_TEST(gui, node, elements) -> wx.Menu:
     """
     choices = create_choices_for_node(node, elements)
     return create_menu_for_choices(gui, choices)
+
+
+##############
+# DYNAMIC NODE MENU
+##############
 
 
 def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu:
@@ -329,9 +350,18 @@ def create_menu(gui, node, elements):
         menu.Destroy()
 
 
+##############
+# GUI CONTROL OVERRIDES
+##############
+
+
 class TextCtrl(wx.TextCtrl):
-    # Just to add someof the more common things we need, i.e. smaller default size...
-    #
+    """
+    Just to add some of the more common things we need, i.e. smaller default size...
+
+    Allow text boxes of specific types so that we can have consistent options for dealing with them.
+    """
+
     def __init__(
         self,
         parent,
@@ -427,6 +457,21 @@ class TextCtrl(wx.TextCtrl):
         maxw = 100
         minpattern = "0000"
         maxpattern = "999999999.99mm"
+        if self._check == "length":
+            minpattern = "0000"
+            maxpattern = "999999999.99mm"
+        elif self._check == "percent":
+            minpattern = "0000"
+            maxpattern = "99.99%"
+        elif self._check == "float":
+            minpattern = "0000"
+            maxpattern = "99999.99"
+        elif self._check == "angle":
+            minpattern = "0000"
+            maxpattern = "9999.99deg"
+        elif self._check == "int":
+            minpattern = "0000"
+            maxpattern = "-999999"
         # Let's be a bit more specific: what is the minimum size of the textcontrol fonts
         # to hold these patterns
         tfont = self.GetFont()
@@ -634,7 +679,7 @@ class TextCtrl(wx.TextCtrl):
 
     def on_char(self, event):
         proceed = True
-        # The French awerty keyboard generates numbers by pressing Shift + some key
+        # The French azerty keyboard generates numbers by pressing Shift + some key
         # Under Linux this is not properly translated by GetUnicodeKey and
         # is hence leading to a 'wrong' character being recognised (the original key).
         # So we can't rely on a proper representation if the Shift-Key
@@ -723,6 +768,11 @@ class TextCtrl(wx.TextCtrl):
 
 
 class CheckBox(wx.CheckBox):
+    """
+    This checkbox replaces wx.Checkbox and creates a series of mouse over tool tips to permit Linux tooltips that
+    otherwise do not show.
+    """
+
     def __init__(
         self,
         *args,
@@ -796,6 +846,10 @@ class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
 
 
 class HoverButton(wx.Button):
+    """
+    Provide a button with Hover-Color changing ability.
+    """
+
     def __init__(self, parent, ID, label):
         super().__init__(parent, ID, label)
         self._focus_color = None
@@ -856,6 +910,10 @@ class HoverButton(wx.Button):
     #         self.on_leave(event)
     #     event.Skip()
 
+
+##############
+# GUI KEYSTROKE FUNCTIONS
+##############
 
 WX_METAKEYS = [
     wx.WXK_START,

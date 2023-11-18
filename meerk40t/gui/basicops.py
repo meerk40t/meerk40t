@@ -12,11 +12,11 @@ from meerk40t.gui.laserrender import swizzlecolor
 from ..kernel import Job, lookup_listener, signal_listener
 from ..svgelements import Color
 from .icons import (
+    icon_points,
     icons8_direction,
     icons8_image,
     icons8_laser_beam,
-    icons8_scatter_plot_20,
-    icons8_small_beam_20,
+    icons8_laserbeam_weak,
 )
 from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, create_menu, dip_size
 
@@ -121,10 +121,13 @@ class BasicOpPanel(wx.Panel):
         self.std_color_fore = None
 
     def set_display(self):
-        self.context.device.setting(bool, "use_percent_for_power_display", False)
-        self.use_percent = self.context.device.use_percent_for_power_display
-        self.context.device.setting(bool, "use_mm_min_for_speed_display", False)
-        self.use_mm_min = self.context.device.use_mm_min_for_speed_display
+        dev = self.context.device
+        if dev is None:
+            dev = self.context.root
+        dev.setting(bool, "use_percent_for_power_display", False)
+        self.use_percent = dev.use_percent_for_power_display
+        dev.setting(bool, "use_mm_min_for_speed_display", False)
+        self.use_mm_min = dev.use_mm_min_for_speed_display
 
     def on_combo_color(self, event):
         value = self.combo_apply_color.GetCurrentSelection()
@@ -355,7 +358,7 @@ class BasicOpPanel(wx.Panel):
                 )
             elif node.type == "op engrave":
                 c, d = get_color()
-                result = icons8_small_beam_20.GetBitmap(
+                result = icons8_laserbeam_weak.GetBitmap(
                     color=c,
                     resize=(iconsize, iconsize),
                     noadjustment=True,
@@ -371,7 +374,7 @@ class BasicOpPanel(wx.Panel):
                 )
             elif node.type == "op dots":
                 c, d = get_color()
-                result = icons8_scatter_plot_20.GetBitmap(
+                result = icon_points.GetBitmap(
                     color=c,
                     resize=(iconsize, iconsize),
                     noadjustment=True,
@@ -382,7 +385,10 @@ class BasicOpPanel(wx.Panel):
         if self.operation_sizer:
             self.operation_sizer.Clear()
             self.op_panel.DestroyChildren()
-        self.op_panel.Freeze()
+        try:
+            self.op_panel.Freeze()
+        except RuntimeError:
+            return
         self.operation_sizer = StaticBoxSizer(
             self.op_panel, wx.ID_ANY, _("Operations"), wx.VERTICAL
         )

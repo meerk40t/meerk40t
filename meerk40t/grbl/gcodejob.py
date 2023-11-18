@@ -180,6 +180,16 @@ class GcodeJob:
             else:
                 return "Disabled"
 
+    def get_feed_rate(self):
+        if self.speed is None:
+            return 0
+        return self.feed_invert(self.speed)
+
+    def get_power_rate(self):
+        if self.power is None:
+            return 0
+        return self.power
+
     def inform(self, last_command):
         if not hasattr(self._driver, "signal"):
             return

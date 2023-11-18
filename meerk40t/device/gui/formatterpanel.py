@@ -3,30 +3,29 @@ import wx
 from meerk40t.core.elements.element_types import elem_group_nodes, op_nodes
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
+    EmptyIcon,
+    icon_console,
+    icon_effect_hatch,
+    icon_effect_wobble,
+    icon_external,
+    icon_internal,
     icon_mk_ellipse,
     icon_mk_polyline,
     icon_mk_rectangular,
-    icon_effect_hatch,
-    icon_effect_wobble,
+    icon_points,
+    icon_return,
+    icon_timer,
     icons8_direction,
     icons8_file,
     icons8_group_objects,
     icons8_home_filled,
-    icons8_home_filled,
     icons8_image,
-    icons8_image,
-    icons8_input_20,
     icons8_laser_beam,
-    icons8_output_20,
-    icons8_return_20,
-    icons8_scatter_plot_20,
-    icons8_small_beam_20,
-    icons8_system_task_20,
+    icons8_laserbeam_weak,
     icons8_text,
-    icons8_timer_20,
     icons8_vector,
-    EmptyIcon,
 )
+from meerk40t.gui.wxutils import dip_size
 
 _ = wx.GetTranslation
 
@@ -45,22 +44,22 @@ class FormatterPanel(wx.Panel):
         self.context = context
         self.data = {}
         images = {
-            "util wait": icons8_timer_20,
+            "util wait": icon_timer,
             "util home": icons8_home_filled,
-            "util goto": icons8_return_20,
-            "util output": icons8_output_20,
-            "util input": icons8_input_20,
-            "util console": icons8_system_task_20,
-            "op engrave": icons8_small_beam_20,
+            "util goto": icon_return,
+            "util output": icon_external,
+            "util input": icon_internal,
+            "util console": icon_console,
+            "op engrave": icons8_laserbeam_weak,
             "op cut": icons8_laser_beam,
             "op image": icons8_image,
             "op raster": icons8_direction,
-            "op dots": icons8_scatter_plot_20,
+            "op dots": icon_points,
             "effect hatch": icon_effect_hatch,
             "effect wobble": icon_effect_wobble,
             "file": icons8_file,
             "group": icons8_group_objects,
-            "elem point": icons8_scatter_plot_20,
+            "elem point": icon_points,
             "elem ellipse": icon_mk_ellipse,
             "elem image": icons8_image,
             "elem path": icons8_vector,
@@ -112,10 +111,13 @@ class FormatterPanel(wx.Panel):
                 "signals": ("rebuild_tree", "speed_min"),
             },
         ]
+        testsize = dip_size(self, 20, 20)
+        imgsize = testsize[1]
         for node in self.node_list:
-            imgsize = 20
             if node in images:
-                image = images[node].GetBitmap(resize=imgsize, noadjustment=True)
+                image = images[node].GetBitmap(
+                    resize=imgsize, buffer=2, noadjustment=True
+                )
             else:
                 # print (f"Did not find {node}")
                 continue

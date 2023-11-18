@@ -1,5 +1,5 @@
 """
-This is a large number of flagged tree operations. The details of how these are registered is availible in the treeop.py
+This is a large number of flagged tree operations. The details of how these are registered is available in the treeop.py
 file. These define the right-click node menu operations. That menu is dynamically created based on various context
 cues.
 """
@@ -61,6 +61,10 @@ def init_tree(kernel):
             pass
         return result
 
+    def is_developer_mode():
+        flag = getattr(self.kernel.root, "developer_mode", False)
+        return flag
+
     @tree_separator_after()
     @tree_conditional(lambda node: len(list(self.ops(selected=True))) == 1)
     @tree_operation(_("Operation properties"), node_type=op_nodes, help="")
@@ -114,6 +118,17 @@ def init_tree(kernel):
         activate = self.kernel.lookup("function/open_property_window_for_node")
         if activate is not None:
             activate(node)
+
+    # @tree_operation(_("Debug group"), node_type=("group", "file"), help="")
+    # def debug_group(node, **kwargs):
+    #     if node is None:
+    #         return
+    #     info = ""
+    #     for idx, e in enumerate(list(node.children)):
+    #         if info:
+    #             info += "\n"
+    #         info += f"{idx}#: {e.type}, identical to parent: {e is node}"
+    #     print (info)
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(_("Ungroup elements"), node_type=("group", "file"), help="")
@@ -184,8 +199,31 @@ def init_tree(kernel):
     @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
     @tree_operation(_("Group elements"), node_type=elem_nodes, help="")
     def group_elements(node, **kwargs):
-        group_node = node.parent.add(type="group", label="Group")
-        for e in list(self.elems(emphasized=True)):
+        def minimal_parent(data):
+            result = None
+            root = self.elem_branch
+            curr_level = None
+            for node in data:
+                plevel = 0
+                candidate = node.parent
+                while candidate is not None and candidate.parent is not root:
+                    candidate = candidate.parent
+                    plevel += 1
+                if curr_level is None or plevel < curr_level:
+                    curr_level = plevel
+                    result = node.parent
+                if plevel == 0:
+                    # No need to continue
+                    break
+            if result is None:
+                result = root
+            return result
+
+        raw_data = list(self.elems(emphasized=True))
+        data = self.condense_elements(raw_data, expand_at_end=False)
+        parent_node = minimal_parent(data)
+        group_node = parent_node.add(type="group", label="Group")
+        for e in data:
             group_node.append_child(e)
 
     @tree_conditional(
@@ -976,24 +1014,24 @@ def init_tree(kernel):
     # REMOVE SINGLE (Tree Selected - ELEMENT)
     # ==========
 
-    @tree_conditional(lambda node: node.can_remove)
-    @tree_conditional(
-        lambda cond: len(
-            list(self.flat(selected=True, cascade=False, types=elem_nodes))
-        )
-        == 1
-    )
-    @tree_operation(
-        _("Delete element '{name}' fully"),
-        node_type=elem_nodes,
-        help="",
-    )
-    def remove_type_elem(node, **kwargs):
-        if hasattr(node, "can_remove") and not node.can_remove:
-            pass
-        else:
-            self.set_emphasis(None)
-            node.remove_node()
+    # @tree_conditional(lambda node: node.can_remove)
+    # @tree_conditional(
+    #     lambda cond: len(
+    #         list(self.flat(selected=True, cascade=False, types=elem_nodes))
+    #     )
+    #     == 1
+    # )
+    # @tree_operation(
+    #     _("Delete element '{name}' fully"),
+    #     node_type=elem_nodes,
+    #     help="",
+    # )
+    # def remove_type_elem(node, **kwargs):
+    #     if hasattr(node, "can_remove") and not node.can_remove:
+    #         pass
+    #     else:
+    #         self.set_emphasis(None)
+    #         node.remove_node()
 
     @tree_conditional(
         lambda cond: len(list(self.flat(selected=True, cascade=False, types=op_nodes)))
@@ -1178,7 +1216,7 @@ def init_tree(kernel):
     # REMOVE ELEMENTS
     # ==========
     # More than one, special case == 1 already dealt with
-    @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
+    @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) >= 1)
     @tree_calc("ecount", lambda i: len(list(self.elems(emphasized=True))))
     @tree_operation(
         _("Delete {ecount} elements, as selected in scene"),
@@ -1683,11 +1721,17 @@ def init_tree(kernel):
                     ref.remove_node()
         self.signal("refresh_tree")
 
+    hatchable_elems = (
+        "elem path",
+        "elem rect",
+        "elem circle",
+        "elem ellipse",
+        "elem polyline",
+    )
+
     @tree_submenu(_("Apply special effect"))
-    @tree_operation(_("Append Line-fill 0.1mm"), node_type=elem_nodes, help="")
-    def append_element_effect_eulerian(
-        node, node_type="branch elems", pos=None, **kwargs
-    ):
+    @tree_operation(_("Append Line-fill 0.1mm"), node_type=hatchable_elems, help="")
+    def append_element_effect_eulerian(node, pos=None, **kwargs):
         group_node = node.parent.add(
             type="effect hatch",
             hatch_type="scanline",
@@ -1697,14 +1741,16 @@ def init_tree(kernel):
         )
         for e in list(self.elems(emphasized=True)):
             group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
 
         self.signal("updateelem_tree")
 
     @tree_submenu(_("Apply special effect"))
-    @tree_operation(_("Append diagonal Line-fill 0.1mm"), node_type=elem_nodes, help="")
-    def append_element_effect_eulerian_45(
-        node, node_type="branch elems", pos=None, **kwargs
-    ):
+    @tree_operation(
+        _("Append diagonal Line-fill 0.1mm"), node_type=hatchable_elems, help=""
+    )
+    def append_element_effect_eulerian_45(node, pos=None, **kwargs):
         group_node = node.parent.add(
             type="effect hatch",
             hatch_type="scanline",  # scanline / eulerian
@@ -1714,12 +1760,14 @@ def init_tree(kernel):
         )
         for e in list(self.elems(emphasized=True)):
             group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
 
         self.signal("updateelem_tree")
 
     @tree_submenu(_("Apply special effect"))
-    @tree_operation(_("Append Line-Fill 1mm"), node_type=elem_nodes, help="")
-    def append_element_effect_line(node, node_type="branch elems", pos=None, **kwargs):
+    @tree_operation(_("Append Line-Fill 1mm"), node_type=hatchable_elems, help="")
+    def append_element_effect_line(node, pos=None, **kwargs):
         group_node = node.parent.add(
             type="effect hatch",
             hatch_type="scanline",
@@ -1729,14 +1777,16 @@ def init_tree(kernel):
         )
         for e in list(self.elems(emphasized=True)):
             group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
 
         self.signal("updateelem_tree")
 
     @tree_submenu(_("Apply special effect"))
-    @tree_operation(_("Append diagonal Line-Fill 1mm"), node_type=elem_nodes, help="")
-    def append_element_effect_line_45(
-        node, node_type="branch elems", pos=None, **kwargs
-    ):
+    @tree_operation(
+        _("Append diagonal Line-Fill 1mm"), node_type=hatchable_elems, help=""
+    )
+    def append_element_effect_line_45(node, pos=None, **kwargs):
         group_node = node.parent.add(
             type="effect hatch",
             hatch_type="scanline",
@@ -1746,6 +1796,8 @@ def init_tree(kernel):
         )
         for e in list(self.elems(emphasized=True)):
             group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
 
         self.signal("updateelem_tree")
 
@@ -1754,12 +1806,10 @@ def init_tree(kernel):
         _("Append wobble {type} {radius} @{interval}").format(
             type="Circle", radius="0.5mm", interval="0.05mm"
         ),
-        node_type=elem_nodes,
+        node_type=hatchable_elems,
         help="",
     )
-    def append_element_effect_wobble_c05(
-        node, node_type="branch elems", pos=None, **kwargs
-    ):
+    def append_element_effect_wobble_c05(node, pos=None, **kwargs):
         group_node = node.parent.add(
             type="effect wobble",
             wobble_type="circle",
@@ -1769,6 +1819,8 @@ def init_tree(kernel):
         )
         for e in list(self.elems(emphasized=True)):
             group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
 
         self.signal("updateelem_tree")
 
@@ -1777,12 +1829,10 @@ def init_tree(kernel):
         _("Append wobble {type} {radius} @{interval}").format(
             type="Circle", radius="1mm", interval="0.1mm"
         ),
-        node_type=elem_nodes,
+        node_type=hatchable_elems,
         help="",
     )
-    def append_element_effect_wobble_c1(
-        node, node_type="branch elems", pos=None, **kwargs
-    ):
+    def append_element_effect_wobble_c1(node, pos=None, **kwargs):
         group_node = node.parent.add(
             type="effect wobble",
             wobble_type="circle",
@@ -1792,6 +1842,8 @@ def init_tree(kernel):
         )
         for e in list(self.elems(emphasized=True)):
             group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
 
         self.signal("updateelem_tree")
 
@@ -1800,12 +1852,10 @@ def init_tree(kernel):
         _("Append wobble {type} {radius} @{interval}").format(
             type="Circle", radius="3mm", interval="0.1mm"
         ),
-        node_type=elem_nodes,
+        node_type=hatchable_elems,
         help="",
     )
-    def append_element_effect_wobble_c3(
-        node, node_type="branch elems", pos=None, **kwargs
-    ):
+    def append_element_effect_wobble_c3(node, pos=None, **kwargs):
         group_node = node.parent.add(
             type="effect wobble",
             wobble_type="circle_right",
@@ -1815,6 +1865,8 @@ def init_tree(kernel):
         )
         for e in list(self.elems(emphasized=True)):
             group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
 
         self.signal("updateelem_tree")
 
@@ -2603,8 +2655,6 @@ def init_tree(kernel):
     @tree_separator_before()
     @tree_operation(_("Create placement"), node_type=elem_nodes, help="")
     def regmark_as_placement(node, **kwargs):
-        if node is None:
-            return
         if hasattr(node, "path"):
             bb = node.path.bbox(transformed=False)
         elif hasattr(node, "shape"):
@@ -2632,8 +2682,6 @@ def init_tree(kernel):
     @tree_submenu(_("Toggle Magnet-Lines"))
     @tree_operation(_("Around border"), node_type=elem_group_nodes, help="")
     def regmark_to_magnet_1(node, **kwargs):
-        if node is None:
-            return
         if not hasattr(node, "bounds"):
             return
         self.signal("magnet_gen", ("outer", node))
@@ -2642,8 +2690,6 @@ def init_tree(kernel):
     @tree_submenu(_("Toggle Magnet-Lines"))
     @tree_operation(_("At center"), node_type=elem_group_nodes, help="")
     def regmark_to_magnet_2(node, **kwargs):
-        if node is None:
-            return
         if not hasattr(node, "bounds"):
             return
         self.signal("magnet_gen", ("center", node))
@@ -2709,7 +2755,21 @@ def init_tree(kernel):
     def image_ccw(node, **kwargs):
         self("image ccw\n")
 
+    @tree_conditional(lambda node: not node.lock)
+    @tree_separator_before()
     @tree_submenu(_("Image"))
+    @tree_operation(_("Identify inner white areas"), node_type="elem image", help="")
+    def image_white_area(node, **kwargs):
+        self("image innerwhite -l -o -m 2\n")
+
+    @tree_conditional(lambda node: not node.lock)
+    @tree_submenu(_("Image"))
+    @tree_operation(_("Split image along white areas"), node_type="elem image", help="")
+    def image_white_area_split(node, **kwargs):
+        self("image innerwhite -w -o -m 2\n")
+
+    @tree_submenu(_("Image"))
+    @tree_separator_before()
     @tree_operation(
         _("Save original image to output.png"), node_type="elem image", help=""
     )
@@ -2723,7 +2783,7 @@ def init_tree(kernel):
     def image_save_processed(node, **kwargs):
         self("image save output.png --processed\n")
 
-    @tree_conditional(lambda node: not node.lock)
+    @tree_conditional(lambda node: not node.lock and is_developer_mode())
     @tree_submenu(_("Convert"))
     @tree_operation(_("Raw Image"), node_type="elem image", help="")
     def image_convert_raw(node, **kwargs):

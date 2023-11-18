@@ -152,10 +152,11 @@ class DXFProcessor:
             node.stroke = color
 
     def parse(self, entity, context_node, e_list):
-        try:
-            entity.transform_to_wcs(entity.ocs())
-        except AttributeError:
-            pass
+        if hasattr(entity, "transform_to_wcs"):
+            try:
+                entity.transform_to_wcs(entity.ocs())
+            except AttributeError as e:
+                pass
         if entity.dxftype() == "CIRCLE":
             m = Matrix()
             m.post_scale(self.scale, -self.scale)
@@ -192,7 +193,7 @@ class DXFProcessor:
             if len(path) != 0:
                 if not isinstance(path[0], Move):
                     path = Move(path.first_point) + path
-
+                path.approximate_arcs_with_cubics()
             node = context_node.add(path=path, type="elem path")
             self.check_for_attributes(node, entity)
             e_list.append(node)
@@ -296,6 +297,7 @@ class DXFProcessor:
                     if len(path) != 0:
                         if not isinstance(path[0], Move):
                             path = Move(path.first_point) + path
+                        path.approximate_arcs_with_cubics()
                     node = context_node.add(path=path, type="elem path")
                     self.check_for_attributes(node, entity)
                     e_list.append(node)
@@ -346,6 +348,7 @@ class DXFProcessor:
                 if len(path) != 0:
                     if not isinstance(path[0], Move):
                         path = Move(path.first_point) + path
+                    path.approximate_arcs_with_cubics()
                 node = context_node.add(path=path, type="elem path")
                 self.check_for_attributes(node, entity)
                 e_list.append(node)
@@ -407,6 +410,7 @@ class DXFProcessor:
             if len(path) != 0:
                 if not isinstance(path[0], Move):
                     path = Move(path.first_point) + path
+                path.approximate_arcs_with_cubics()
             node = context_node.add(path=path, type="elem path")
             self.check_for_attributes(node, entity)
             e_list.append(node)

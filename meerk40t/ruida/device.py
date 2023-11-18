@@ -9,6 +9,7 @@ from meerk40t.kernel import Service
 
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_NM, Length
+from ..device.mixins import Status
 from .driver import RuidaDriver
 
 
@@ -19,7 +20,9 @@ class RuidaDevice(Service):
 
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
+        Status.__init__(self)
         self.name = "RuidaDevice"
+
         if choices is not None:
             for c in choices:
                 attr = c.get("attr")

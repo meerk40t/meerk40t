@@ -190,7 +190,7 @@ class HarmonographWidget(Widget):
             size * -2,
             size * 0.5,
             size * -1,
-            icons.icons8_next_page_20.GetBitmap(use_theme=False, resize=50),
+            icons.icons8_circled_right.GetBitmap(use_theme=False, resize=50),
             self.set_random_harmonograph,
         )
         random_widget.background_brush = wx.WHITE_BRUSH
@@ -241,7 +241,7 @@ class HarmonographWidget(Widget):
             size * 1,
             size * 1,
             size * 2,
-            icons.icons8_fantasy_50.GetBitmap(use_theme=False),
+            icons.icon_magic_wand.GetBitmap(use_theme=False),
             delta_step,
         )
         step_handle.background_brush = wx.WHITE_BRUSH
@@ -258,7 +258,7 @@ class HarmonographWidget(Widget):
             size * 2,
             size * 0,
             size * 3,
-            icons.icons8_roll_50.GetBitmap(use_theme=False),
+            icons.icon_rotary.GetBitmap(use_theme=False),
             delta_rotations,
         )
         rotate_widget.background_brush = wx.WHITE_BRUSH

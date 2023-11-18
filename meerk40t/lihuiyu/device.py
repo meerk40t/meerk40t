@@ -13,18 +13,20 @@ from meerk40t.core.view import View
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.units import UNITS_PER_MIL, Length
+from ..device.mixins import Status
 from .controller import LihuiyuController
 from .driver import LihuiyuDriver
 from .tcp_connection import TCPOutput
 
 
-class LihuiyuDevice(Service):
+class LihuiyuDevice(Service, Status):
     """
     LihuiyuDevice is driver for the M2 Nano and other classes of Lihuiyu boards.
     """
 
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
+        Status.__init__(self)
         self.name = "LihuiyuDevice"
         _ = kernel.translation
         self.extension = "egv"

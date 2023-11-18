@@ -7,13 +7,14 @@ from wx import aui
 from ..kernel import signal_listener
 from .icons import (
     STD_ICON_SIZE,
-    icons8_add_new_25,
+    get_default_icon_size,
+    icon_add_new,
+    icon_edit,
+    icon_trash,
     icons8_circled_left,
     icons8_circled_right,
     icons8_curly_brackets,
-    icons8_edit_25,
-    icons8_paste_25,
-    icons8_remove_25,
+    icons8_paste,
 )
 from .mwindow import MWindow
 from .wxutils import StaticBoxSizer, dip_size
@@ -47,13 +48,13 @@ class WordlistMiniPanel(wx.Panel):
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.button_edit = wx.Button(self, wx.ID_ANY, _("Edit"))
         self.button_edit.SetBitmap(
-            icons8_curly_brackets.GetBitmap(resize=STD_ICON_SIZE / 2)
+            icons8_curly_brackets.GetBitmap(resize=0.5 * get_default_icon_size())
         )
         self.button_edit.SetToolTip(_("Manages Wordlist-Entries"))
 
         self.button_next = wx.Button(self, wx.ID_ANY, _("Next"))
         self.button_next.SetBitmap(
-            icons8_circled_right.GetBitmap(resize=STD_ICON_SIZE / 2)
+            icons8_circled_right.GetBitmap(resize=0.5 * get_default_icon_size())
         )
         self.button_next.SetToolTip(
             _("Wordlist: go to next page (right-click to next entry)")
@@ -61,7 +62,7 @@ class WordlistMiniPanel(wx.Panel):
 
         self.button_prev = wx.Button(self, wx.ID_ANY, _("Prev"))
         self.button_prev.SetBitmap(
-            icons8_circled_left.GetBitmap(resize=STD_ICON_SIZE / 2)
+            icons8_circled_left.GetBitmap(resize=0.5 * get_default_icon_size())
         )
         self.button_prev.SetToolTip(
             _("Wordlist: go to previous page (right-click to previous entry)")
@@ -196,6 +197,8 @@ class WordlistPanel(wx.Panel):
         sizer_index_left.Add(
             sizer_edit_wordlist_buttons, 0, wx.ALIGN_CENTER_VERTICAL, 0
         )
+        testsize = dip_size(self, 22, 22)
+        icon_size = testsize[0]
 
         self.btn_edit_wordlist_del = wx.StaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 25, 25)
@@ -215,12 +218,24 @@ class WordlistPanel(wx.Panel):
         self.btn_edit_content_paste = wx.StaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
-        self.btn_edit_wordlist_del.SetBitmap(icons8_remove_25.GetBitmap())
-        self.btn_edit_wordlist_edit.SetBitmap(icons8_edit_25.GetBitmap())
-        self.btn_edit_content_add.SetBitmap(icons8_add_new_25.GetBitmap())
-        self.btn_edit_content_del.SetBitmap(icons8_remove_25.GetBitmap())
-        self.btn_edit_content_edit.SetBitmap(icons8_edit_25.GetBitmap())
-        self.btn_edit_content_paste.SetBitmap(icons8_paste_25.GetBitmap())
+        self.btn_edit_wordlist_del.SetBitmap(
+            icon_trash.GetBitmap(resize=icon_size, buffer=1)
+        )
+        self.btn_edit_wordlist_edit.SetBitmap(
+            icon_edit.GetBitmap(resize=icon_size, buffer=1)
+        )
+        self.btn_edit_content_add.SetBitmap(
+            icon_add_new.GetBitmap(resize=icon_size, buffer=1)
+        )
+        self.btn_edit_content_del.SetBitmap(
+            icon_trash.GetBitmap(resize=icon_size, buffer=1)
+        )
+        self.btn_edit_content_edit.SetBitmap(
+            icon_edit.GetBitmap(resize=icon_size, buffer=1)
+        )
+        self.btn_edit_content_paste.SetBitmap(
+            icons8_paste.GetBitmap(resize=icon_size, buffer=1)
+        )
 
         self.btn_edit_wordlist_del.SetToolTip(_("Delete the current variable"))
         self.btn_edit_wordlist_edit.SetToolTip(
