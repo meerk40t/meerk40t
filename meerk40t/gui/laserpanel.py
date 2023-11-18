@@ -696,7 +696,7 @@ class JobPanel(wx.Panel):
         except ValueError:
             # You never know
             return
-        if newval != self.context.planner.do_optimization:
+        if newvalue != self.context.planner.do_optimization:
             self.context.planner.do_optimization = newvalue
 
     def on_button_save(self, event):  # wxGlade: LaserPanel.<event_handler>
