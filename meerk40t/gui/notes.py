@@ -33,6 +33,7 @@ class NotePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("notes")
         self.pane = pane
         if not self.pane:
             self.check_auto_open_notes = wx.CheckBox(

@@ -1478,6 +1478,7 @@ class MeerK40t(MWindow):
                 "label": _("Union"),
                 "icon": icon_cag_union,
                 "tip": _("Create a union of the selected elements"),
+                "help": "cag",
                 "action": lambda v: kernel.elements("element union\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
@@ -1492,6 +1493,7 @@ class MeerK40t(MWindow):
                 "label": _("Difference"),
                 "icon": icon_cag_subtract,
                 "tip": _("Create a difference of the selected elements"),
+                "help": "cag",
                 "action": lambda v: kernel.elements("element difference\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
@@ -1506,6 +1508,7 @@ class MeerK40t(MWindow):
                 "label": _("Xor"),
                 "icon": icon_cag_xor,
                 "tip": _("Create a xor of the selected elements"),
+                "help": "cag",
                 "action": lambda v: kernel.elements("element xor\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
@@ -1520,6 +1523,7 @@ class MeerK40t(MWindow):
                 "label": _("Intersection"),
                 "icon": icon_cag_common,
                 "tip": _("Create a intersection of the selected elements"),
+                "help": "cag",
                 "action": lambda v: kernel.elements("element intersection\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
@@ -2515,9 +2519,9 @@ class MeerK40t(MWindow):
                 pass
             menu_context = submenu if submenu is not None else self.panes_menu
             try:
-                pane_name = pane.name
+                pane_name = unsorted_label(pane.name)
             except AttributeError:
-                pane_name = suffix_path
+                pane_name = unsorted_label(suffix_path)
 
             pane_caption = pane_name[0].upper() + pane_name[1:] + "."
             try:

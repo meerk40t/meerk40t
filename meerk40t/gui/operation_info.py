@@ -21,6 +21,7 @@ class OpInfoPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("operationinfo")
 
         self.list_operations = wx.ListCtrl(
             self,

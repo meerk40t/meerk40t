@@ -307,7 +307,7 @@ class PreferencesMain(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = None
-
+        self.SetHelpText("preferences")
         sizer_main = wx.BoxSizer(wx.VERTICAL)
 
         self.panel_units = PreferencesUnitsPanel(self, wx.ID_ANY, context=context)

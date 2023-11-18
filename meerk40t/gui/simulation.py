@@ -760,6 +760,8 @@ class SimulationPanel(wx.Panel, Job):
         wx.Panel.__init__(self, *args, **kwds)
         self.parent = args[0]
         self.context = context
+        self.SetHelpText("wordlist")
+
         self.plan_name = plan_name
         self.auto_clear = auto_clear
 

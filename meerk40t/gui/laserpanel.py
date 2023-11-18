@@ -111,6 +111,7 @@ class LaserPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("laserpanel")
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.icon_size = 0.5 * get_default_icon_size()
