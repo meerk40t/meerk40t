@@ -1,16 +1,19 @@
 """
-    This module contains a panel that plugs into the main window
-    to listen to mouse enter / mouse leave events.
+    This module contains a panel that periodically (every 0.5 seconds) to
+    look at the window ie control under the mouse cursor.
     It will examine the window if it contains a tooltip text and
     will display this in a textbox in this panel.
     The purpose of this helper window is to allow better
-    readability of the otherwise quickly disappearing tooltips
+    readability of the otherwise quickly disappearing tooltips.
+    Additionally, it will read the associated HelpText of the control
+    (or its parent if the control does not have any) to construct a
+    Wiki page on GitHub to open an associated online help page.
 """
 
 import wx
 from wx import aui
 
-from meerk40t.gui.icons import icons8_info, get_default_icon_size
+from meerk40t.gui.icons import get_default_icon_size, icons8_info
 from meerk40t.gui.wxutils import StaticBoxSizer
 
 _ = wx.GetTranslation
