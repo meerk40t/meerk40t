@@ -1,3 +1,5 @@
+mkernel
+svgelements
 wheel
 Pillow
 pyusb
