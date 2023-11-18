@@ -49,8 +49,6 @@ class HelperPanel(wx.Panel):
         self.active = False
         self.info = None
         self.section = None
-        self.default_webhelp = "https://github.com/meerk40t/meerk40t/wiki/Online-Help:-{section}"
-
         self.__set_properties()
         self.__do_layout()
 
