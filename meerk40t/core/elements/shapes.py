@@ -340,7 +340,7 @@ def init_commands(kernel):
         wtype = wtype.lower()
         allowed = ("circle", "circle_right", "circle_left", "sinewave", "sawtooth", "jigsaw", "gear", "slowtooth",)
         if wtype not in allowed:
-            channel (f"Invalid wobble type, allowed: {",".join(allowed)}")
+            channel (f"Invalid wobble type, allowed: {','.join(allowed)}")
             return
         if radius is None:
             radius = "0.5mm"
