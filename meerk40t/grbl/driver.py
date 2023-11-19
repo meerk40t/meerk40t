@@ -261,6 +261,7 @@ class GRBLDriver(Parameters):
             self(f"M3{self.line_end}")
         else:
             self(f"M4{self.line_end}")
+        first = True
         for q in self.queue:
             while self.hold_work(0):
                 if self.service.kernel.is_shutdown:
@@ -269,10 +270,11 @@ class GRBLDriver(Parameters):
             x = self.native_x
             y = self.native_y
             start_x, start_y = q.start
-            if x != start_x or y != start_y:
+            if x != start_x or y != start_y or first:
                 self.on_value = 0
                 self.power_dirty = True
                 self.move_mode = 0
+                first = False
                 self._move(start_x, start_y)
             if self.on_value != 1.0:
                 self.power_dirty = True
