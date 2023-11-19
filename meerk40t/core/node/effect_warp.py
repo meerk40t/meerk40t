@@ -237,7 +237,28 @@ class WarpEffectNode(Node, FunctionalParameter):
             except AttributeError:
                 # If direct children lack as_geometry(), do nothing.
                 pass
-        self.perspective_matrix = PMatrix.perspective((0.1,0.2), (0.01,1.1), (2.3,1.04), (1.3,0.02))
+        b = self.bounds
+        if b is None:
+            return
+        nx, ny, mx, my = b
+        self.x1 = nx
+        self.y1 = ny
+        self.x2 = mx
+        self.y2 = ny
+        self.x3 = mx
+        self.y3 = my
+        self.x4 = nx
+        self.y4 = my
+        self.perspective_matrix = PMatrix.map(
+            (self.x1, self.y1),
+            (self.x2, self.y2),
+            (self.x3, self.y3),
+            (self.x4, self.y4),
+            (self.x1, self.y1),
+            (self.x2, self.y2),
+            (self.x3 / 2, self.y3 / 2),
+            (self.x4 / 2, self.y4 / 2),
+        )
         outlines.transform3x3(self.perspective_matrix.mx)
         return outlines
 
