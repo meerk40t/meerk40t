@@ -20,9 +20,9 @@ from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
-_simple_width = 500
+_simple_width = 565
 _advanced_width = 952
-_default_height = 584
+_default_height = 570
 
 
 class LihuiyuControllerPanel(ScrolledPanel):
@@ -46,7 +46,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.rejected_packet_count_text = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.packet_text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_packet_info = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_byte_0 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_byte_1 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_desc = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
@@ -96,7 +96,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.button_device_connect.SetForegroundColour(wx.BLACK)
         self.button_device_connect.SetFont(
             wx.Font(
-                12,
+                11,
                 wx.FONTFAMILY_DEFAULT,
                 wx.FONTSTYLE_NORMAL,
                 wx.FONTWEIGHT_NORMAL,
@@ -113,7 +113,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.button_controller_control.SetForegroundColour(wx.BLACK)
         self.button_controller_control.SetFont(
             wx.Font(
-                12,
+                11,
                 wx.FONTFAMILY_DEFAULT,
                 wx.FONTSTYLE_NORMAL,
                 wx.FONTWEIGHT_NORMAL,
@@ -127,30 +127,30 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.text_controller_status.SetToolTip(
             _("Displays the controller's current process.")
         )
-        self.packet_count_text.SetMinSize(dip_size(self, 77, 23))
+        self.packet_count_text.SetMinSize(dip_size(self, 35, -1))
         self.packet_count_text.SetToolTip(_("Total number of packets sent"))
-        self.rejected_packet_count_text.SetMinSize(dip_size(self, 77, 23))
+        self.rejected_packet_count_text.SetMinSize(dip_size(self, 35, -1))
         self.rejected_packet_count_text.SetToolTip(
             _("Total number of packets rejected")
         )
-        self.packet_text_text.SetToolTip(_("Last packet information sent"))
-        self.text_byte_0.SetMinSize(dip_size(self, 77, 23))
-        self.text_byte_1.SetMinSize(dip_size(self, 77, 23))
-        self.text_desc.SetMinSize(dip_size(self, 75, 23))
+        self.text_packet_info.SetToolTip(_("Last packet information sent"))
+        self.text_byte_0.SetMinSize(dip_size(self, 35, -1))
+        self.text_byte_1.SetMinSize(dip_size(self, 35, -1))
+        self.text_desc.SetMinSize(dip_size(self, 35, -1))
         self.text_desc.SetToolTip(_("The meaning of Byte 1"))
-        self.text_byte_2.SetMinSize(dip_size(self, 77, 23))
-        self.text_byte_3.SetMinSize(dip_size(self, 77, 23))
-        self.text_byte_4.SetMinSize(dip_size(self, 77, 23))
-        self.text_byte_5.SetMinSize(dip_size(self, 77, 23))
+        self.text_byte_2.SetMinSize(dip_size(self, 35, -1))
+        self.text_byte_3.SetMinSize(dip_size(self, 35, -1))
+        self.text_byte_4.SetMinSize(dip_size(self, 35, -1))
+        self.text_byte_5.SetMinSize(dip_size(self, 35, -1))
         self.checkbox_show_usb_log.SetValue(1)
         self.button_device_connect.SetBitmap(
             icons8_disconnected.GetBitmap(
-                use_theme=False, resize=get_default_icon_size()
+                use_theme=False, resize=0.75 * get_default_icon_size()
             )
         )
         self.button_controller_control.SetBitmap(
             icons8_circled_play.GetBitmap(
-                use_theme=False, resize=get_default_icon_size()
+                use_theme=False, resize=0.75 * get_default_icon_size()
             )
         )
         # end wxGlade
@@ -186,22 +186,27 @@ class LihuiyuControllerPanel(ScrolledPanel):
         sizer_11 = StaticBoxSizer(self, wx.ID_ANY, _("Device Bus:"), wx.HORIZONTAL)
         sizer_10 = StaticBoxSizer(self, wx.ID_ANY, _("Device Address:"), wx.HORIZONTAL)
         sizer_3 = StaticBoxSizer(self, wx.ID_ANY, _("Device Index:"), wx.HORIZONTAL)
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer_usb_connect = StaticBoxSizer(
             self, wx.ID_ANY, _("USB Connection"), wx.VERTICAL
         )
         sizer_usb_connect.Add(self.button_device_connect, 0, wx.EXPAND, 0)
         sizer_usb_connect.Add(self.text_connection_status, 0, wx.EXPAND, 0)
-        sizer_main_vertical.Add(sizer_usb_connect, 0, wx.EXPAND, 0)
+        button_sizer.Add(sizer_usb_connect, 1, wx.EXPAND, 0)
+
         sizer_controller.Add(self.button_controller_control, 0, wx.EXPAND, 0)
         sizer_controller.Add(self.text_controller_status, 0, wx.EXPAND, 0)
-        sizer_main_vertical.Add(sizer_controller, 0, wx.EXPAND, 0)
+        button_sizer.Add(sizer_controller, 1, wx.EXPAND, 0)
+
+        sizer_main_vertical.Add(button_sizer, 0, wx.EXPAND, 0)
+
         sizer_count_packets.Add(self.packet_count_text, 0, wx.EXPAND, 0)
         sizer_statistics.Add(sizer_count_packets, 1, wx.EXPAND, 0)
         sizer_count_rejected.Add(self.rejected_packet_count_text, 0, wx.EXPAND, 0)
         sizer_statistics.Add(sizer_count_rejected, 1, wx.EXPAND, 0)
         sizer_statistics.Add(self.button_clear_stats, 0, wx.EXPAND, 0)
         packet_count.Add(sizer_statistics, 1, wx.EXPAND, 0)
-        packet_info.Add(self.packet_text_text, 11, wx.EXPAND, 0)
+        packet_info.Add(self.text_packet_info, 11, wx.EXPAND, 0)
         packet_count.Add(packet_info, 0, wx.EXPAND, 0)
         byte0sizer.Add(self.text_byte_0, 0, 0, 0)
         label_1 = wx.StaticText(self, wx.ID_ANY, _("Byte 0"))
@@ -235,7 +240,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
         sizer_show_usb_log.Add(self.checkbox_show_usb_log, 0, 0, 0)
         sizer_main_vertical.Add(sizer_show_usb_log, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_main_vertical, 1, 0, 0)
-        sizer_main.Add(self.text_usb_log, 2, wx.EXPAND, 0)
+        sizer_main.Add(self.text_usb_log, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_main)
         self.Layout()
         # end wxGlade
@@ -335,7 +340,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
         if origin != self.context._path:
             return
         if string_data is not None and len(string_data) != 0:
-            self.packet_text_text.SetValue(str(string_data))
+            self.text_packet_info.SetValue(str(string_data))
 
     @signal_listener("pipe;usb_status")
     def on_connection_status_change(self, origin, status):
@@ -356,7 +361,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             self.button_device_connect.SetLabel(_("Connect failed"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size()
                 )
             )
             self.button_device_connect.Enable()
@@ -366,7 +371,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             self.button_device_connect.SetLabel(_("Retrying..."))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size()
                 )
             )
             self.button_device_connect.Enable()
@@ -376,7 +381,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             self.button_device_connect.SetLabel(_("Suspended Retrying"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size()
                 )
             )
             self.button_device_connect.Enable()
@@ -386,7 +391,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             self.button_device_connect.SetLabel(_("No Backend"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size()
                 )
             )
             self.button_device_connect.Enable()
@@ -395,7 +400,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             self.button_device_connect.SetLabel(_("Connect"))
             self.button_device_connect.SetBitmap(
                 icons8_connected.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size()
                 )
             )
             self.button_device_connect.Enable()
@@ -404,7 +409,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             self.button_device_connect.SetLabel(_("Disconnecting..."))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size()
                 )
             )
             self.button_device_connect.Disable()
@@ -413,7 +418,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             self.button_device_connect.SetLabel(_("Disconnect"))
             self.button_device_connect.SetBitmap(
                 icons8_connected.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size()
                 )
             )
             self.button_device_connect.Enable()
@@ -422,7 +427,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             self.button_device_connect.SetLabel(_("Connecting..."))
             self.button_device_connect.SetBitmap(
                 icons8_connected.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size()
                 )
             )
             self.button_device_connect.Disable()
@@ -482,7 +487,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             button.SetLabel(_("Hold Controller"))
             button.SetBitmap(
                 icons8_circled_play.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size()
                 )
             )
             button.Enable(True)
@@ -491,7 +496,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             button.SetLabel(_("LOCKED"))
             button.SetBitmap(
                 icons8_circled_play.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size()
                 )
             )
             button.Enable(False)
@@ -505,7 +510,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             button.SetLabel(_("Force Continue"))
             button.SetBitmap(
                 icons8_laser_beam_hazard.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size()
                 )
             )
             button.Enable(True)
@@ -519,7 +524,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             button.SetLabel(_("Resume Controller"))
             button.SetBitmap(
                 icons8_circled_play.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size()
                 )
             )
             button.Enable(True)
@@ -532,7 +537,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             button.SetBackgroundColour("#00ff00")
             button.SetLabel(_("Pause Controller"))
             button.SetBitmap(
-                icons8_pause.GetBitmap(use_theme=False, resize=get_default_icon_size())
+                icons8_pause.GetBitmap(use_theme=False, resize=0.75 * get_default_icon_size())
             )
             button.Enable(True)
         elif state == "terminate":
@@ -545,7 +550,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             button.SetLabel(_("Manual Reset"))
             button.SetBitmap(
                 icons8_emergency_stop_button.GetBitmap(
-                    use_theme=False, resize=get_default_icon_size()
+                    use_theme=False, resize=0.75 * get_default_icon_size()
                 )
             )
             button.Enable(True)
@@ -584,13 +589,16 @@ class LihuiyuControllerGui(MWindow):
         # ==========
         # MENUBAR END
         # ==========
-
         self.panel = LihuiyuControllerPanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Lihuiyu-Controller"))
+        mainsizer = wx.BoxSizer(wx.VERTICAL)
+        mainsizer.Add(self.panel, 1, wx.EXPAND, 0)
+        self.SetSizer(mainsizer)
+        self.Layout()
 
     def create_menu(self, append):
         wxglade_tmp_menu = wx.Menu()
