@@ -91,14 +91,14 @@ class TestPmatrix(unittest.TestCase):
             (101, 102),
             (101, 100),
         )
-        self.assertEqual(m1, PMatrix.scale_y(2) @ PMatrix.translate(100, 100))
+        self.assertEqual(m1,  PMatrix.translate(100, 100) @ PMatrix.scale_y(2))
 
     def test_matrix_perspective_ccw_unit_square(self):
         """
         This is the unit square ccw. So we mirror it across the x-axis and rotate it back into position.
         """
         m1 = PMatrix.perspective((0, 0), (1, 0), (1, 1), (0, 1))
-        m2 = PMatrix.scale(-1, 1) @ PMatrix.rotate(Angle("-90deg"))
+        m2 = PMatrix.rotate(Angle("-90deg")) @ PMatrix.scale(-1, 1)
         self.assertEqual(m1, m2)
 
     def test_matrix_perspective_unit_square(self):

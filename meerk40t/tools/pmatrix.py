@@ -56,10 +56,13 @@ class PMatrix:
         return True
 
     def __rmatmul__(self, other):
-        return PMatrix(other.mx @ self.mx)
+        return PMatrix(self.mx.__rmatmul__(other.mx))
 
     def __matmul__(self, other):
-        return PMatrix(self.mx @ other.mx)
+        return PMatrix(self.mx.__matmul__(other.mx))
+
+    def __imatmul__(self, other):
+        self.mx.__imatmul__(other)
 
     @classmethod
     def scale(cls, sx=1.0, sy=None):
@@ -88,7 +91,7 @@ class PMatrix:
         if rx != 0 or ry != 0:
             m0 = cls.translate(-rx, -ry)
             m1 = cls.translate(rx, ry)
-            r = m0.mx @ r.mx @ m1.mx
+            r = m1.mx @ r.mx @ m0.mx
         return cls(r)
 
     @classmethod
