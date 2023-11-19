@@ -575,7 +575,9 @@ class GRBLDevice(Service, Status):
             hidden=True,
         )
         def plus_x(data, **kwgs):
-            self(".timerright 0 0.25 .gcode $J=G91G21X30F5000")
+            feed = 5000
+            step = feed / 600
+            self(f".timerright 0 0.1 .gcode $J=G91G21X{step}F{feed}")
 
         @kernel.console_command(
             "-xforward",
@@ -583,14 +585,16 @@ class GRBLDevice(Service, Status):
         )
         def minus_x(data, **kwgs):
             self(".timerright -oq")
-            self.controller.realtime("\x85")
+            # self.controller.realtime("\x85")
 
         @kernel.console_command(
             "+xbackward",
             hidden=True,
         )
         def plus_x(data, **kwgs):
-            self(".timerleft 0 0.25 .gcode $J=G91G21X-30F5000")
+            feed = 5000
+            step = feed / 600
+            self(f".timerleft 0 0.1 .gcode $J=G91G21X-{step}F{feed}")
 
         @kernel.console_command(
             "-xbackward",
@@ -598,14 +602,15 @@ class GRBLDevice(Service, Status):
         )
         def plus_x(data, **kwgs):
             self(".timerleft -oq")
-            self.controller.realtime("\x85")
 
         @kernel.console_command(
             "+yforward",
             hidden=True,
         )
         def plus_x(data, **kwgs):
-            self(".timertop 0 0.25 .gcode $J=G91G21Y30F5000")
+            feed = 5000
+            step = feed / 600
+            self(f".timertop 0 0.1 .gcode $J=G91G21Y{step}F{feed}")
 
         @kernel.console_command(
             "-yforward",
@@ -613,14 +618,16 @@ class GRBLDevice(Service, Status):
         )
         def plus_x(data, **kwgs):
             self(".timertop -oq")
-            self.controller.realtime("\x85")
+            # self.controller.realtime("\x85")
 
         @kernel.console_command(
             "+ybackward",
             hidden=True,
         )
         def plus_x(data, **kwgs):
-            self(".timerbottom 0 0.25 .gcode $J=G91G21Y-30F5000")
+            feed = 5000
+            step = feed / 600
+            self(f".timerbottom 0 0.1 .gcode $J=G91G21Y-{step}F{feed}")
 
         @kernel.console_command(
             "-ybackward",
@@ -628,7 +635,7 @@ class GRBLDevice(Service, Status):
         )
         def plus_x(data, **kwgs):
             self(".timerbottom -oq")
-            self.controller.realtime("\x85")
+            # self.controller.realtime("\x85")
 
         @kernel.console_command(
             "grbl_binds",
