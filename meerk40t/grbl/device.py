@@ -123,26 +123,6 @@ class GRBLDevice(Service, Status):
                 "subsection": "_20_Axis corrections",
                 "signals": "bedsize",
             },
-            {
-                "attr": "home_bottom",
-                "object": self,
-                "default": True,
-                "type": bool,
-                "label": _("Home Bottom"),
-                "tip": _("Indicates the device Home is on the bottom"),
-                "subsection": "_30_Home position",
-                "signals": "bedsize",
-            },
-            {
-                "attr": "home_right",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Home Right"),
-                "tip": _("Indicates the device Home is at the right side"),
-                "subsection": "_30_Home position",
-                "signals": "bedsize",
-            },
         ]
         self.register_choices("bed_dim", choices)
         choices = [
