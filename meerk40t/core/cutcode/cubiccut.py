@@ -1,6 +1,6 @@
 from svgelements import Point
+from zinglplotter import plot_cubic_bezier
 
-from ...tools.zinglplotter import ZinglPlotter
 from .cutobject import CutObject
 
 
@@ -52,7 +52,7 @@ class CubicCut(CutObject):
         c1 = self.c1()
         c2 = self.c2()
         end = self.end
-        return ZinglPlotter.plot_cubic_bezier(
+        return plot_cubic_bezier(
             start[0],
             start[1],
             c1[0],

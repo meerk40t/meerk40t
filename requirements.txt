@@ -1,5 +1,6 @@
 mkernel
 svgelements
+zinglplotter
 shxparser
 numpy
 wheel

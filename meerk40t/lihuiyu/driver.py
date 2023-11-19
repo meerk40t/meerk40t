@@ -10,7 +10,7 @@ selected output.
 import math
 import time
 
-from meerk40t.tools.zinglplotter import ZinglPlotter
+from zinglplotter import plot_line
 
 from ..core.cutcode.dwellcut import DwellCut
 from ..core.cutcode.gotocut import GotoCut
@@ -1142,7 +1142,7 @@ class LihuiyuDriver(Parameters):
         elif self.state == DRIVER_STATE_PROGRAM:
             mx = 0
             my = 0
-            line = list(grouped(ZinglPlotter.plot_line(0, 0, dx, dy)))
+            line = list(grouped(plot_line(0, 0, dx, dy)))
             for x, y in line:
                 self._goto_octent(x - mx, y - my, cut)
                 mx = x

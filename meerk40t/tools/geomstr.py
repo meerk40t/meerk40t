@@ -68,8 +68,8 @@ from svgelements import (
     Path,
     QuadraticBezier,
 )
+from zinglplotter import plot_line, plot_quad_bezier, plot_cubic_bezier
 
-from meerk40t.tools.zinglplotter import ZinglPlotter
 
 # Note lower nibble is which indexes are positions (except info index)
 TYPE_NOP = 0 | 0b000
@@ -4645,17 +4645,15 @@ class Geomstr:
             segment_type = segpow.real
             settings_index = segpow.imag
             if segment_type == TYPE_LINE:
-                for x, y in ZinglPlotter.plot_line(
-                    start.real, start.imag, end.real, end.imag
-                ):
+                for x, y in plot_line(start.real, start.imag, end.real, end.imag):
                     yield x, y, settings_index
             elif segment_type == TYPE_QUAD:
-                for x, y in ZinglPlotter.plot_quad_bezier(
+                for x, y in plot_quad_bezier(
                     start.real, start.imag, c0.real, c0.imag, end.real, end.imag
                 ):
                     yield x, y, settings_index
             elif segment_type == TYPE_CUBIC:
-                for x, y in ZinglPlotter.plot_cubic_bezier(
+                for x, y in plot_cubic_bezier(
                     start.real,
                     start.imag,
                     c0.real,

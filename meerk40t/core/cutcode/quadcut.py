@@ -1,6 +1,6 @@
 from svgelements import Point
+from zinglplotter import plot_quad_bezier
 
-from ...tools.zinglplotter import ZinglPlotter
 from .cutobject import CutObject
 
 
@@ -43,7 +43,7 @@ class QuadCut(CutObject):
         start = self.start
         c = self.c()
         end = self.end
-        return ZinglPlotter.plot_quad_bezier(
+        return plot_quad_bezier(
             start[0],
             start[1],
             c[0],

@@ -1,6 +1,6 @@
 import random
 
-from meerk40t.tools.zinglplotter import ZinglPlotter
+from zinglplotter import plot_line
 
 from ..device.basedevice import (
     PLOT_AXIS,
@@ -147,7 +147,7 @@ class PlotPlanner(Parameters):
                     ) or not self.jog_enable:
                         # Jog distance smaller than threshold. Or jog isn't allowed
                         def walk():
-                            for event in ZinglPlotter.plot_line(
+                            for event in plot_line(
                                 self.pos_x, self.pos_y, new_start_x, new_start_y
                             ):
                                 yield event[0], event[1], 0
@@ -250,7 +250,7 @@ class PlotPlanner(Parameters):
         """
         Step move walks a line from a point to another point.
         """
-        for event in ZinglPlotter.plot_line(x0, y0, x1, y1):
+        for event in plot_line(x0, y0, x1, y1):
             yield event[0], event[1], 0
         self.pos_x = x1
         self.pos_y = y1

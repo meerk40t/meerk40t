@@ -1,4 +1,5 @@
-from ...tools.zinglplotter import ZinglPlotter
+from zinglplotter import plot_line
+
 from .cutobject import CutObject
 
 
@@ -23,7 +24,7 @@ class LineCut(CutObject):
         # pylint: disable=unsubscriptable-object
         start = self.start
         end = self.end
-        return ZinglPlotter.plot_line(start[0], start[1], end[0], end[1])
+        return plot_line(start[0], start[1], end[0], end[1])
 
     def point(self, t):
         x0, y0 = self.start
