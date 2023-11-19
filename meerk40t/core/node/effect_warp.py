@@ -181,10 +181,10 @@ class WarpEffectNode(Node, FunctionalParameter):
             (self.x4, self.y4),
             (self.x1, self.y1),
             (self.x2, self.y2),
-            (self.x3 / 2, self.y3 / 2),
-            (self.x4 / 2, self.y4 / 2),
+            (self.x3, self.y3),
+            (self.x4, self.y4 * 1.2),
         )
-        outlines.transform3x3(self.perspective_matrix.mx)
+        outlines.transform3x3(self.perspective_matrix)
         return outlines
 
     def modified(self):

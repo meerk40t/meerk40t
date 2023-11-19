@@ -3431,31 +3431,36 @@ class Geomstr:
         @return:
         """
 
+        # def value(x, y):
+        #     m = mx.mx
+        #     count = len(x)
+        #     pts = np.vstack((x, y, [1] * count))
+        #     result = np.dot(m, pts)
+        #     return result[0] + 1j * result[1]
+
+        def value(x, y):
+            xs = x * (mx.a * x + mx.b * y + mx.c) / (mx.g * x + mx.h * y + mx.i)
+            ys = y * (mx.d * x + mx.e * y + mx.f) / (mx.g * x + mx.h * y + mx.i)
+            return xs + 1j * ys
+
+
         segments = self.segments
         index = self.index
+
         starts = segments[:index, 0]
-        pts = np.vstack((starts.real, starts.imag, [0] * index))
-        result = np.dot(mx, pts)
+        segments[:index, 0] = value(starts.real, starts.imag)
 
-        segments[:index, 0] = result[0] + 1j * result[1]
         ends = segments[:index, 4]
-        pts = np.vstack((ends.real, ends.imag, [0] * index))
-        result = np.dot(mx, pts)
-
-        segments[:index, 4] = result[0] + 1j * result[1]
+        segments[:index, 4] = value(ends.real, ends.imag)
 
         infos = segments[:index, 2]
-        q = np.where(np.real(infos).astype(int) & 0b0110)
+        q = np.where(np.real(infos).astype(int) & 0b0110)[0]
 
         c0s = segments[q, 1]
-        pts = np.vstack((c0s.real, c0s.imag, [0] * len(q[0])))
-        result = np.dot(mx, pts)
-        segments[q, 1] = result[0] + 1j * result[1]
+        segments[q, 1] = value(c0s.real, c0s.imag)
 
         c1s = segments[q, 3]
-        pts = np.vstack((c1s.real, c1s.imag, [0] * len(q[0])))
-        result = np.dot(mx, pts)
-        segments[q, 3] = result[0] + 1j * result[1]
+        segments[q, 3] = value(c1s.real, c1s.imag)
 
     def translate(self, dx, dy, e=None):
         """

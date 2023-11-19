@@ -98,8 +98,7 @@ class PMatrix:
     def map(cls, p1, p2, p3, p4, r1, r2, r3, r4):
         p = PMatrix.perspective(p1, p2, p3, p4)
         r = PMatrix.perspective(r1, r2, r3, r4)
-        mx = np.dot(np.linalg.inv(p.mx), r.mx)
-        mx = np.swapaxes(mx, 0, 1)
+        mx = np.dot(np.linalg.inv(r.mx), p.mx)
         return cls(mx)
 
     @classmethod
@@ -143,15 +142,15 @@ class PMatrix:
 
         m = cls()
         m.mx[0, 0] = a
-        m.mx[0, 1] = d
-        m.mx[0, 2] = g
+        m.mx[0, 1] = b
+        m.mx[0, 2] = c
 
-        m.mx[1, 0] = b
+        m.mx[1, 0] = d
         m.mx[1, 1] = e
-        m.mx[1, 2] = h
+        m.mx[1, 2] = f
 
-        m.mx[2, 0] = c
-        m.mx[2, 1] = f
+        m.mx[2, 0] = g
+        m.mx[2, 1] = h
         m.mx[2, 2] = i
         return m
 
