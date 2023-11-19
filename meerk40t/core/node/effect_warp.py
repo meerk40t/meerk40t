@@ -8,11 +8,25 @@ from meerk40t.tools.geomstr import Geomstr
 
 
 class PMatrix:
-    def __init__(self):
-        self.mx = np.zeros((3, 3), dtype=float)
-        self.mx[0, 0] = 1.0
-        self.mx[1, 1] = 1.0
-        self.mx[2, 2] = 1.0
+    def __init__(self, a=1.0, b=0.0, c=0.0, d=0.0, e=1.0, f=0, g=0.0, h=0.0, i=1.0):
+        if isinstance(a, PMatrix):
+            self.mx = copy(a.mx)
+            return
+        if isinstance(a, np.ndarray):
+            self.mx = a
+            return
+        self.mx = np.array([[a, b, c], [d, e, f], [g, h, i]])
+
+    def __invert__(self):
+        self.mx = np.linalg.inv(self.mx)
+        return self
+
+    @classmethod
+    def map(cls, p1, p2, p3, p4, r1, r2, r3, r4):
+        p = PMatrix.perspective(p1, p2, p3, p4)
+        r = PMatrix.perspective(r1, r2, r3, r4)
+        mx = np.dot(p.mx, np.linalg.inv(r.mx))
+        return cls(mx)
 
     @classmethod
     def perspective(cls, p1, p2, p3, p4):
