@@ -35,6 +35,14 @@ class WarpEffectNode(Node, FunctionalParameter):
         self.stroke_scale = False
         self._stroke_zero = None
         self.output = True
+        self.x1 = 0
+        self.y1 = 0
+        self.x2 = 0
+        self.y2 = 0
+        self.x3 = 0
+        self.y3 = 0
+        self.x4 = 0
+        self.y4 = 0
 
         Node.__init__(self, type="effect warp", id=id, label=label, lock=lock, **kwargs)
         self._formatter = "{element_type} - {type} {radius} ({children})"
@@ -46,9 +54,12 @@ class WarpEffectNode(Node, FunctionalParameter):
 
         self.recalculate()
         self.perspective_matrix = PMatrix()
+        self.set_bounds_parameters()
+
+    def set_bounds_parameters(self):
         b = self.bounds
         if b is None:
-            b = 0, 0, 0, 0
+            return
         nx, ny, mx, my = b
         self.x1 = nx
         self.y1 = ny
@@ -96,36 +107,42 @@ class WarpEffectNode(Node, FunctionalParameter):
         if node is self:
             return
         self.altered()
+        self.set_bounds_parameters()
 
     def notify_detached(self, node=None, **kwargs):
         Node.notify_detached(self, node=node, **kwargs)
         if node is self:
             return
         self.altered()
+        self.set_bounds_parameters()
 
     def notify_modified(self, node=None, **kwargs):
         Node.notify_modified(self, node=node, **kwargs)
         if node is self:
             return
         self.altered()
+        self.set_bounds_parameters()
 
     def notify_altered(self, node=None, **kwargs):
         Node.notify_altered(self, node=node, **kwargs)
         if node is self:
             return
         self.altered()
+        self.set_bounds_parameters()
 
     def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, **kwargs):
         Node.notify_scaled(self, node, sx, sy, ox, oy, **kwargs)
         if node is self:
             return
         self.altered()
+        self.set_bounds_parameters()
 
     def notify_translated(self, node=None, dx=0, dy=0, **kwargs):
         Node.notify_translated(self, node, dx, dy, **kwargs)
         if node is self:
             return
         self.altered()
+        self.set_bounds_parameters()
 
     def recalculate(self):
         """
