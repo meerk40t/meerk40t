@@ -570,6 +570,76 @@ class GRBLDevice(Service, Status):
             self.driver.resume()
             self.signal("pause")
 
+        @kernel.console_command(
+            "+xforward",
+            hidden=True,
+        )
+        def plus_x(data, **kwgs):
+            self(".timerright 0 0.25 .gcode $J=G91G21X10F2000")
+
+        @kernel.console_command(
+            "-xforward",
+            hidden=True,
+        )
+        def minus_x(data, **kwgs):
+            self(".timerright -oq")
+            self.controller.realtime("\x85")
+
+        @kernel.console_command(
+            "+xbackward",
+            hidden=True,
+        )
+        def plus_x(data, **kwgs):
+            self(".timerleft 0 0.25 .gcode $J=G91G21X-10F2000")
+
+        @kernel.console_command(
+            "-xbackward",
+            hidden=True,
+        )
+        def plus_x(data, **kwgs):
+            self(".timerleft -oq")
+            self.controller.realtime("\x85")
+
+        @kernel.console_command(
+            "+yforward",
+            hidden=True,
+        )
+        def plus_x(data, **kwgs):
+            self(".timertop 0 0.25 .gcode $J=G91G21Y10F2000")
+
+        @kernel.console_command(
+            "-yforward",
+            hidden=True,
+        )
+        def plus_x(data, **kwgs):
+            self(".timertop -oq")
+            self.controller.realtime("\x85")
+
+        @kernel.console_command(
+            "+ybackward",
+            hidden=True,
+        )
+        def plus_x(data, **kwgs):
+            self(".timerbottom 0 0.25 .gcode $J=G91G21Y-10F2000")
+
+        @kernel.console_command(
+            "-ybackward",
+            hidden=True,
+        )
+        def plus_x(data, **kwgs):
+            self(".timerbottom -oq")
+            self.controller.realtime("\x85")
+
+        @kernel.console_command(
+            "grbl_binds",
+            hidden=True,
+        )
+        def plus_x(data, **kwgs):
+            self("bind a +xbackward")
+            self("bind d +xforward")
+            self("bind s +ybackward")
+            self("bind w +yforward")
+
         @self.console_command(
             "viewport_update",
             hidden=True,
