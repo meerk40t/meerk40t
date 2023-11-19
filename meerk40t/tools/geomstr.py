@@ -3423,6 +3423,50 @@ class Geomstr:
         imags = c1s.real * mx.b + c1s.imag * mx.d + 1 * mx.f
         segments[q, 3] = reals + 1j * imags
 
+    def transform3x3(self, mx, e=None):
+        """
+        Affine Transformation by an arbitrary 3x3 matrix.
+        @param mx: Matrix to transform by (3x3)
+        @param e: index, line values
+        @return:
+        """
+        if e is not None:
+            geoms = self.segments[e]
+
+            geoms[0] = geoms[0] * mx[0, 0] + geoms[0] * mx[0, 1] + 1 * mx[0, 2] + (geoms[0] * mx[1, 0] + geoms[0] * mx[1, 1] + 1 * mx[1, 2]) * 1j
+            geoms[4] = geoms[4] * mx[0, 0] + geoms[4] * mx[0, 1] + 1 * mx[0, 2] + (geoms[4] * mx[1, 0] + geoms[4] * mx[1, 1] + 1 * mx[1, 2]) * 1j
+
+            infos = geoms[2]
+            q = np.where(infos.astype(int) & 0b0110)
+            geoms = self.segments[q]
+
+            geoms[1] = geoms[1] * mx[0, 0] + geoms[1] * mx[0, 1] + 1 * mx[0, 2] + (geoms[1] * mx[1, 0] + geoms[1] * mx[1, 1] + 1 * mx[1, 2]) * 1j
+            geoms[3] = geoms[3] * mx[0, 0] + geoms[3] * mx[0, 1] + 1 * mx[0, 2] + (geoms[3] * mx[1, 0] + geoms[3] * mx[1, 1] + 1 * mx[1, 2]) * 1j
+            return
+
+        segments = self.segments
+        index = self.index
+        starts = segments[:index, 0]
+        reals = starts.real * mx[0, 0] + starts.imag * mx[0, 1] + 1 * mx[0, 2]
+        imags = starts.real * mx[1, 0] + starts.imag * mx[1, 1] + 1 * mx[1, 2]
+        segments[:index, 0] = reals + 1j * imags
+        ends = segments[:index, 4]
+        reals = ends.real * mx[0, 0] + ends.imag * mx[0, 1] + 1 * mx[0, 2]
+        imags = ends.real * mx[1, 0] + ends.imag * mx[1, 1] + 1 * mx[1, 2]
+        segments[:index, 4] = reals + 1j * imags
+
+        infos = segments[:index, 2]
+        q = np.where(np.real(infos).astype(int) & 0b0110)
+
+        c0s = segments[q, 1]
+        reals = c0s.real * mx[0, 0] + c0s.imag * mx[0, 1] + 1 * mx[0, 2]
+        imags = c0s.real * mx[1, 0] + c0s.imag * mx[1, 1] + 1 * mx[1, 2]
+        segments[q, 1] = reals + 1j * imags
+        c1s = segments[q, 3]
+        reals = c1s.real * mx[0, 0] + c1s.imag * mx[0, 1] + 1 * mx[0, 2]
+        imags = c1s.real * mx[1, 0] + c1s.imag * mx[1, 1] + 1 * mx[1, 2]
+        segments[q, 3] = reals + 1j * imags
+
     def translate(self, dx, dy, e=None):
         """
         Translate the location within the path.
