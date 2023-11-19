@@ -3,7 +3,7 @@ from copy import copy
 
 
 class PMatrix:
-    def __init__(self, a=1.0, b=0.0, c=0.0, d=0.0, e=1.0, f=0, g=0.0, h=0.0, i=1.0):
+    def __init__(self, a=1.0, b=0.0, c=0.0, d=0.0, e=1.0, f=0.0, g=0.0, h=0.0, i=1.0):
         if isinstance(a, PMatrix):
             self.mx = copy(a.mx)
             return
@@ -11,16 +11,92 @@ class PMatrix:
             self.mx = a
             return
         self.mx = np.array([[a, b, c], [d, e, f], [g, h, i]])
+        # self.mx = np.array([[a, d, g], [b, e, h], [c, f, i]])
 
     def __invert__(self):
         self.mx = np.linalg.inv(self.mx)
         return self
+
+    def __str__(self):
+        """
+        :returns string representation of matrix.
+        """
+        return f"PMatrix([{self.a}, {self.b}, {self.c}\n{self.d}, {self.e}, {self.f}\n{self.g}, {self.h}, {self.i}\n)"
+
+    def __repr__(self):
+        return f"PMatrix({self.a}, {self.b}, {self.c}, {self.d}, {self.e}, {self.f}, {self.g}, {self.h}, {self.i})"
+
+    def __eq__(self, other):
+        if other is None:
+            return False
+        try:
+            if abs(self.a - other.a) > 1e-12:
+                return False
+            if abs(self.b - other.b) > 1e-12:
+                return False
+            if abs(self.c - other.c) > 1e-12:
+                return False
+            if abs(self.d - other.d) > 1e-12:
+                return False
+            if abs(self.e - other.e) > 1e-12:
+                return False
+            if abs(self.f - other.f) > 1e-12:
+                return False
+        except AttributeError:
+            return False
+        try:
+            if abs(self.g - other.g) > 1e-12:
+                return False
+            if abs(self.h - other.h) > 1e-12:
+                return False
+            if abs(self.i - other.i) > 1e-12:
+                return False
+        except AttributeError:
+            pass
+        return True
+
+    def __rmatmul__(self, other):
+        return PMatrix(other.mx @ self.mx)
+
+    def __matmul__(self, other):
+        return PMatrix(self.mx @ other.mx)
+
+    @classmethod
+    def scale(cls, sx=1.0, sy=None):
+        if sy is None:
+            sy = sx
+        return cls(sx, 0, 0, 0, sy, 0)
+
+    @classmethod
+    def scale_x(cls, sx=1.0):
+        return cls.scale(sx, 1.0)
+
+    @classmethod
+    def scale_y(cls, sy=1.0):
+        return cls.scale(1.0, sy)
+
+    @classmethod
+    def translate(cls, tx=0.0, ty=0.0):
+        return cls(1.0, 0.0, tx, 0.0, 1.0, ty)
+
+    @classmethod
+    def rotate(cls, angle=0.0, rx=0, ry=0):
+        cos_theta = np.cos(float(angle))
+        sin_theta = np.sin(float(angle))
+
+        r = cls(cos_theta, -sin_theta, 0,sin_theta, cos_theta, 0,0, 0, 1)
+        if rx != 0 or ry != 0:
+            m0 = cls.translate(-rx, -ry)
+            m1 = cls.translate(rx, ry)
+            r = m0.mx @ r.mx @ m1.mx
+        return cls(r)
 
     @classmethod
     def map(cls, p1, p2, p3, p4, r1, r2, r3, r4):
         p = PMatrix.perspective(p1, p2, p3, p4)
         r = PMatrix.perspective(r1, r2, r3, r4)
         mx = np.dot(np.linalg.inv(p.mx), r.mx)
+        mx = np.swapaxes(mx, 0, 1)
         return cls(mx)
 
     @classmethod
@@ -75,3 +151,52 @@ class PMatrix:
         m.mx[2, 1] = f
         m.mx[2, 2] = i
         return m
+
+    @property
+    def a(self):
+        return self.mx[0, 0]
+
+    @property
+    def b(self):
+        return self.mx[0, 1]
+
+    @property
+    def c(self):
+        return self.mx[0, 2]
+
+    @property
+    def d(self):
+        return self.mx[1, 0]
+
+    @property
+    def e(self):
+        return self.mx[1, 1]
+
+    @property
+    def f(self):
+        return self.mx[1, 2]
+
+    @property
+    def g(self):
+        return self.mx[2, 0]
+
+    @property
+    def h(self):
+        return self.mx[2, 1]
+
+    @property
+    def i(self):
+        return self.mx[2, 2]
+
+    def is_identity(self):
+        return (
+            self.a == 1
+            and self.b == 0
+            and self.c == 0
+            and self.d == 0
+            and self.e == 1
+            and self.f == 0
+            and self.g == 0
+            and self.h == 0
+            and self.i == 1
+        )
