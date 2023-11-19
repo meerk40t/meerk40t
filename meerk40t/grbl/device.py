@@ -123,6 +123,26 @@ class GRBLDevice(Service, Status):
                 "subsection": "_20_Axis corrections",
                 "signals": "bedsize",
             },
+            {
+                "attr": "home_dx",
+                "object": self,
+                "default": 0.0,
+                "type": float,
+                "label": _("Home Shift dx"),
+                "tip": _("Offset for the home position [0,1]"),
+                "subsection": "_30_Home position",
+                "signals": "bedsize",
+            },
+            {
+                "attr": "home_dy",
+                "object": self,
+                "default": 0.0,
+                "type": float,
+                "label": _("Home Shift Dy"),
+                "tip": _("Offset for the home position [0,1]"),
+                "subsection": "_30_Home position",
+                "signals": "bedsize",
+            },
         ]
         self.register_choices("bed_dim", choices)
         choices = [
@@ -737,7 +757,10 @@ class GRBLDevice(Service, Status):
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
+            origin_x=self.home_dx,
+            origin_y=self.home_dy,
         )
+
         self.view_mm.set_dims(self.bedwidth, self.bedheight)
         self.view_mm.transform(
             user_scale_x=self.scale_x,
@@ -745,6 +768,8 @@ class GRBLDevice(Service, Status):
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
+            origin_x=self.home_dx,
+            origin_y=self.home_dy,
         )
 
         # rotary_active=self.rotary_active,
