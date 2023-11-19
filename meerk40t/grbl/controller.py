@@ -368,7 +368,7 @@ class GrblController:
             return
         self.log("Connecting to GRBL...", type="event")
         self._validation_stage = 1
-        self.realtime("$\r\n")
+        self.validate_start("$")
 
     def close(self):
         """
@@ -380,6 +380,7 @@ class GrblController:
             return
         self.connection.disconnect()
         self.log("Disconnecting from GRBL...", type="event")
+        self.validate_stop("*")
         self._validation_stage = 0
 
     def write(self, data):
@@ -453,6 +454,16 @@ class GrblController:
     def shutdown(self):
         self.is_shutdown = True
         self._forward_buffer.clear()
+
+    def validate_start(self, cmd):
+        self.realtime(f"{cmd}\r\n")
+        self.service(f".timer-{self.service.label}{cmd} 0 1 gcode_realtime {cmd}")
+
+    def validate_stop(self, cmd):
+        if cmd == "*":
+            self.service(f".timer-{self.service.label}* -q --off")
+            return
+        self.service(f".timer-{self.service.label}{cmd} -q --off")
 
     def _rstop(self, *args):
         self._recving_thread = None
@@ -670,6 +681,7 @@ class GrblController:
             elif response.startswith("$"):
                 if self._validation_stage == 2:
                     self.log("Stage 3: $$ was successfully parsed.", type="event")
+                    self.validate_stop("$$")
                     self._validation_stage = 3
                 self._process_settings_message(response)
                 continue
@@ -689,7 +701,7 @@ class GrblController:
                 self.log("Device Reset, revalidation required", type="event")
                 if self.fully_validated():
                     self._validation_stage = 1
-                    self.realtime("$\r\n")
+                    self.validate_start("$")
             else:
                 self._assembled_response.append(response)
 
@@ -698,6 +710,7 @@ class GrblController:
 
     def force_validate(self):
         self._validation_stage = 5
+        self.validate_stop("*")
 
     def _process_status_message(self, response):
         message = response[1:-1]
@@ -762,6 +775,7 @@ class GrblController:
         if self._validation_stage in (2, 3, 4):
             self.log("Connection Confirmed.", type="event")
             self._validation_stage = 5
+            self.validate_stop("*")
 
     def _process_feedback_message(self, response):
         if response.startswith("[MSG:"):
@@ -776,7 +790,8 @@ class GrblController:
                 self.log("Stage 4: $G was successfully parsed.", type="event")
                 self.driver.declare_modals(states)
                 self._validation_stage = 4
-                self.realtime("?\r\n")
+                self.validate_stop("$G")
+                self.validate_start("?")
             self.log(message, type="event")
             self.service.signal("grbl:states", states)
         elif response.startswith("[HLP:"):
@@ -785,13 +800,14 @@ class GrblController:
             if self._validation_stage == 1:
                 self.log("Stage 2: $ was successfully parsed.", type="event")
                 self._validation_stage = 2
+                self.validate_stop("$")
                 if "$$" in message:
-                    self.realtime("$$\r\n")
+                    self.validate_start("$$")
                 if "$G" in message:
-                    self.realtime("$G\r\n")
+                    self.validate_start("$G")
                 elif "?" in message:
                     # No $G just request status.
-                    self.realtime("?\r\n")
+                    self.validate_start("?")
             self.log(message, type="event")
         elif response.startswith("[G54:"):
             message = response[5:-1]
