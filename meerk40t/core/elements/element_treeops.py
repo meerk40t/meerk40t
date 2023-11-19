@@ -1803,6 +1803,24 @@ def init_tree(kernel):
 
     @tree_submenu(_("Apply special effect"))
     @tree_operation(
+        _("Append Warp").format(),
+        node_type=hatchable_elems,
+        help="",
+    )
+    def append_element_effect_warp(node, pos=None, **kwargs):
+        group_node = node.parent.add(
+            type="effect warp",
+            pos=pos,
+        )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
+
+        self.signal("updateelem_tree")
+
+    @tree_submenu(_("Apply special effect"))
+    @tree_operation(
         _("Append wobble {type} {radius} @{interval}").format(
             type="Circle", radius="0.5mm", interval="0.05mm"
         ),
