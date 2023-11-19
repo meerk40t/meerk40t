@@ -513,7 +513,6 @@ class GRBLDevice(Service, Status):
                 channel(remainder)
                 self.driver(remainder + self.driver.line_end, real=True)
 
-
         @self.console_command(
             "grbl_validate",
             help=_("Force grbl validation for the connection"),
@@ -577,8 +576,6 @@ class GRBLDevice(Service, Status):
             help=_("Update grbl codes for movement"),
         )
         def codes_update(**kwargs):
-            self.origin_x = 1.0 if self.home_right else 0.0
-            self.origin_y = 1.0 if self.home_bottom else 0.0
             self.realize()
 
         @self.console_option(
