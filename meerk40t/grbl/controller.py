@@ -464,6 +464,8 @@ class GrblController:
             self.service(f".timer-{self.service.label}* -q --off")
             return
         self.service(f".timer-{self.service.label}{cmd} -q --off")
+        with self._forward_lock:
+            self._forward_buffer.clear()
 
     def _rstop(self, *args):
         self._recving_thread = None
