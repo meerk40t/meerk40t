@@ -575,7 +575,7 @@ class GRBLDevice(Service, Status):
             hidden=True,
         )
         def plus_x(data, **kwgs):
-            self(".timerright 0 0.25 .gcode $J=G91G21X10F2000")
+            self(".timerright 0 0.25 .gcode $J=G91G21X30F5000")
 
         @kernel.console_command(
             "-xforward",
@@ -590,7 +590,7 @@ class GRBLDevice(Service, Status):
             hidden=True,
         )
         def plus_x(data, **kwgs):
-            self(".timerleft 0 0.25 .gcode $J=G91G21X-10F2000")
+            self(".timerleft 0 0.25 .gcode $J=G91G21X-30F5000")
 
         @kernel.console_command(
             "-xbackward",
@@ -605,7 +605,7 @@ class GRBLDevice(Service, Status):
             hidden=True,
         )
         def plus_x(data, **kwgs):
-            self(".timertop 0 0.25 .gcode $J=G91G21Y10F2000")
+            self(".timertop 0 0.25 .gcode $J=G91G21Y30F5000")
 
         @kernel.console_command(
             "-yforward",
@@ -620,7 +620,7 @@ class GRBLDevice(Service, Status):
             hidden=True,
         )
         def plus_x(data, **kwgs):
-            self(".timerbottom 0 0.25 .gcode $J=G91G21Y-10F2000")
+            self(".timerbottom 0 0.25 .gcode $J=G91G21Y-30F5000")
 
         @kernel.console_command(
             "-ybackward",
