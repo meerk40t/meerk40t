@@ -513,6 +513,16 @@ class GRBLDevice(Service, Status):
                 channel(remainder)
                 self.driver(remainder + self.driver.line_end, real=True)
 
+
+        @self.console_command(
+            "grbl_validate",
+            help=_("Force grbl validation for the connection"),
+            input_type=None,
+        )
+        def grbl_validate(command, channel, _, data=None, remainder=None, **kwgs):
+            channel(_("Forced grbl validation."))
+            self.controller.force_validate()
+
         @self.console_command(
             "soft_reset",
             help=_("Send realtime soft reset gcode to the device"),

@@ -696,6 +696,9 @@ class GrblController:
     def fully_validated(self):
         return self._validation_stage == 5
 
+    def force_validate(self):
+        self._validation_stage = 5
+
     def _process_status_message(self, response):
         message = response[1:-1]
         data = list(message.split("|"))
