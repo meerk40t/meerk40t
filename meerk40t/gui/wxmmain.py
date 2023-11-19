@@ -39,6 +39,10 @@ from .icons import (  # icon_duplicate,
     icon_cag_union,
     icon_cag_xor,
     icon_hatch,
+    icon_hatch_diag,
+    icon_hatch_bidir,
+    icon_hatch_diag_bidir,
+    # icon_nohatch,
     icon_meerk40t,
     icon_mk_align_bottom,
     icon_mk_align_left,
@@ -1026,9 +1030,75 @@ class MeerK40t(MWindow):
 
     @staticmethod
     def sub_register(kernel):
+        def register_effects():
+            # Cmd, tip, icon, label, category
+            # Hatches
+            eff = (
+                "effect-hatch -e scanline",
+                "Wrap the current node in a hatch",
+                icon_hatch,
+                "Simple line hatch",
+                "Fill (unidirectional)",
+            )
+            kernel.register("registered_effects/SimpleLine", eff)
+            eff = (
+                "effect-hatch -e scanline -a 45",
+                "Wrap the current node in a hatch",
+                icon_hatch_diag,
+                "Diagonal line hatch",
+                "Fill (unidirectional)",
+            )
+            kernel.register("registered_effects/DiagonalLine", eff)
+
+            eff = (
+                "effect-hatch -e eulerian",
+                "Wrap the current node in a hatch (bidirectional)",
+                icon_hatch_bidir,
+                "Simple line hatch (bidirectional)",
+                "Fill bidirectional",
+            )
+            kernel.register("registered_effects/SimpleLineBD", eff)
+            eff = (
+                "effect-hatch -e eulerian -a 45",
+                "Wrap the current node in a diagonal hatch (bidirectional)",
+                icon_hatch_diag_bidir,
+                "Diagonal line hatch (bidirectional)",
+                "Fill bidirectional",
+            )
+            kernel.register("registered_effects/DiagonalLineBD", eff)
+
+            # Wobbles
+            eff = (
+                "effect-wobble -w circle",
+                "Apply a wobble movement along the path (circular on top of the line)",
+                icon_hatch_diag_bidir,
+                "Wobble circular (centered)",
+                "Path",
+            )
+            kernel.register("registered_effects/WobbleCircle", eff)
+
+            eff = (
+                "effect-wobble -w circle-right",
+                "Apply a wobble movement along the path (circular, at the right side of the line)",
+                icon_hatch_diag_bidir,
+                "Wobble circular (right)",
+                "Path",
+            )
+
+            kernel.register("registered_effects/WobbleCircleL", eff)
+            eff = (
+                "effect-wobble -w circle-left",
+                "Apply a wobble movement along the path (circular, at the left side of the line)",
+                icon_hatch_diag_bidir,
+                "Wobble circular (left)",
+                "Path",
+            )
+            kernel.register("registered_effects/WobbleCircleR", eff)
+
         bsize_normal = STD_ICON_SIZE
         # bsize_small = STD_ICON_SIZE / 2
         bsize_small = STD_ICON_SIZE
+        register_effects()
 
         def contains_a_param():
             result = False
@@ -1130,19 +1200,103 @@ class MeerK40t(MWindow):
                 "rule_enabled": lambda cond: contains_a_path(),
             },
         )
-        kernel.register(
-            "button/select/Hatch",
-            {
-                "label": _("Hatch"),
-                "icon": icon_hatch,
-                "tip": _("Wrap the current node in a hatch"),
-                "action": lambda v: kernel.elements("effect-hatch\n"),
-                # "group": "tool",
-                "size": bsize_normal,
-                # "identifier": "edit",
+        rightmsg = "\n" + _("(Right click removes the hatch)")
+        effects = list(kernel.lookup_all("registered_effects"))
+        # Sort according to categories....
+        effects.sort(key=lambda v: v[4])
+        sub_effects = list()
+        for idx, hatch in enumerate(effects):
+            if len(hatch) < 4:
+                continue
+            if not hatch[4].lower().startswith("fill"):
+                continue
+
+            cmd = hatch[0]
+            tip = hatch[1] + rightmsg
+            icon = hatch[2]
+            if icon is None:
+                icon = icon_hatch
+            label = hatch[3]
+            hdict = {
+                "identifier": f"hatch_{idx}",
+                "label": _(label),
+                "icon": icon,
+                "tip": _(tip),
+                "action": lambda v: kernel.elements(f"{cmd}\n"),
+                "action_right": lambda v: kernel.elements("effect-remove\n"),
                 "rule_enabled": lambda cond: contains_an_element(),
-            },
-        )
+            }
+            sub_effects.append(hdict)
+
+        # hdict = {
+        #     "identifier": "hatch_none",
+        #     "label": _("Remove hatch"),
+        #     "icon": icon_nohatch,
+        #     "tip": _("Remove the effect"),
+        #     "action": lambda v: kernel.elements("effect-remove\n"),
+        #     "rule_enabled": lambda cond: contains_an_element(),
+        # }
+        # sub_effects.append(hdict)
+
+        hatch_button = {
+            "identifier": "hatchbutton",
+            "label": _("Hatch"),
+            "icon": sub_effects[0]["icon"],
+            "tip":  sub_effects[0]["tip"],
+            "action":  sub_effects[0]["action"],
+            "action_right": lambda v: kernel.elements("effect-remove\n"),
+            "size": bsize_normal,
+            "rule_enabled": lambda cond: contains_an_element(),
+        }
+
+        if len(sub_effects) > 1:
+            hatch_button["multi"] = sub_effects
+        # "multi": [
+        #     {
+        #         "identifier": "live-full",
+        #         "label": _("Live Full"),
+        #         "icon": icons8_computer_support,
+        #         "action": lambda e: service("full-light\n"),
+        #     },
+        #     {
+        #         "identifier": "live-regmark",
+        #         "label": _("Regmarks"),
+        #         "icon": icons8_computer_support,
+        #         "action": lambda e: service("regmark-light\n"),
+        #     },
+        #     {
+        #         "identifier": "live",
+        #         "label": _("Live Bounds"),
+        #         "action": lambda e: service("select-light\n"),
+        #     },
+        #     {
+        #         "identifier": "live-hull",
+        #         "label": _("Live Hull"),
+        #         "icon": icons8_computer_support,
+        #         "action": lambda e: service("hull-light\n"),
+        #     },
+        #     {
+        #         "identifier": "hull",
+        #         "label": _("Trace Hull"),
+        #         "action": lambda e: service("element* geometry hull light\n"),
+        #     },
+        #     {
+        #         "identifier": "box",
+        #         "label": _("Trace Bounds"),
+        #         "action": lambda e: service("box light\n"),
+        #     },
+        #     # {
+        #     #     "identifier": "ants",
+        #     #     "label": _("Trace Ants"),
+        #     #     "action": lambda e: service("element* ants light\n"),
+        #     # },
+        #     {
+        #         "identifier": "full",
+        #         "label": _("Trace Full"),
+        #         "action": lambda e: service("element* geometry light\n"),
+        #     },
+        # ],
+        kernel.register("button/select/Hatch", hatch_button,)
         kernel.register(
             "button/lasercontrol/Relocate",
             {
