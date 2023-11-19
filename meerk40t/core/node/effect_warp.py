@@ -2,6 +2,7 @@ import math
 from copy import copy
 from math import sqrt
 
+from meerk40t.core.node.mixins import FunctionalParameter
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import Angle, Length
 from meerk40t.svgelements import Color, Matrix
@@ -21,7 +22,7 @@ class PMatrix:
         self.i = 1
 
 
-class WarpEffectNode(Node):
+class WarpEffectNode(Node, FunctionalParameter):
     """
     Effect node performing a warp. Effects are themselves a sort of geometry node that contains other geometry and
     the required data to produce additional geometry.
@@ -35,9 +36,7 @@ class WarpEffectNode(Node):
         self._stroke_zero = None
         self.output = True
 
-        Node.__init__(
-            self, type="effect warp", id=id, label=label, lock=lock, **kwargs
-        )
+        Node.__init__(self, type="effect warp", id=id, label=label, lock=lock, **kwargs)
         self._formatter = "{element_type} - {type} {radius} ({children})"
 
         if label is None:
@@ -47,10 +46,34 @@ class WarpEffectNode(Node):
 
         self.recalculate()
         self.perspective_matrix = PMatrix()
-        self.p1 = complex(0,0)
-        self.p2 = complex(0,1)
-        self.p3 = complex(1,1)
-        self.p4 = complex(0,1)
+        b = self.bounds
+        if b is None:
+            b = 0, 0, 0, 0
+        nx, ny, mx, my = b
+        self.x1 = nx
+        self.y1 = ny
+        self.x2 = mx
+        self.y2 = ny
+        self.x3 = mx
+        self.y3 = my
+        self.x4 = nx
+        self.y4 = my
+
+        self.functional_parameter = (
+            "warp",
+            0,
+            self.x1,
+            self.y1,
+            0,
+            self.x2,
+            self.y2,
+            0,
+            self.x3,
+            self.y3,
+            0,
+            self.x4,
+            self.y4,
+        )
 
     @property
     def implied_stroke_width(self):
@@ -175,3 +198,38 @@ class WarpEffectNode(Node):
             # then we will reverse the game
             return drag_node.drop(self, modify=modify)
         return False
+
+    @property
+    def functional_parameter(self):
+        return self.mkparam
+
+    @functional_parameter.setter
+    def functional_parameter(self, value):
+        def getit(data, idx, default):
+            if idx < len(data):
+                return data[idx]
+            else:
+                return default
+
+        if isinstance(value, (list, tuple)):
+            self.mkparam = value
+            if self.mkparam:
+                method = self.mkparam[0]
+
+                if self.x1 != self.mkparam[2] or self.y1 != self.mkparam[3]:
+                    # P1 changed.
+                    self.x1 = getit(self.mkparam, 2, self.x1)
+                    self.y1 = getit(self.mkparam, 3, self.y1)
+                elif self.x2 != self.mkparam[5] or self.y2 != self.mkparam[6]:
+                    # P2 changed
+                    self.x2 = getit(self.mkparam, 5, self.x2)
+                    self.y2 = getit(self.mkparam, 6, self.y2)
+                elif self.x3 != self.mkparam[8] or self.y3 != self.mkparam[9]:
+                    # P3 changed
+                    self.x3 = getit(self.mkparam, 8, self.x2)
+                    self.y3 = getit(self.mkparam, 9, self.y2)
+                elif self.x4 != self.mkparam[11] or self.y4 != self.mkparam[12]:
+                    # P3 changed
+                    self.x4 = getit(self.mkparam, 11, self.x2)
+                    self.y4 = getit(self.mkparam, 12, self.y2)
+                self.altered()
