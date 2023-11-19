@@ -77,7 +77,7 @@ def plugin(kernel, lifecycle):
         )
         @context.console_option(
             "verbosity",
-            "vs",
+            "v",
             type=int,
             help="Show Info: 0 never, 1 console only, 2 if version found, 3 always",
         )
