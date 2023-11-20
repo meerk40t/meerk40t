@@ -3425,24 +3425,18 @@ class Geomstr:
 
     def transform3x3(self, mx, e=None):
         """
-        Affine Transformation by an arbitrary 3x3 matrix.
+        Perspective Transformation by an arbitrary 3x3 matrix.
         @param mx: Matrix to transform by (3x3)
         @param e: index, line values
         @return:
         """
 
-        # def value(x, y):
-        #     m = mx.mx
-        #     count = len(x)
-        #     pts = np.vstack((x, y, [1] * count))
-        #     result = np.dot(m, pts)
-        #     return result[0] + 1j * result[1]
-
         def value(x, y):
-            xs = x * (mx.a * x + mx.b * y + mx.c) / (mx.g * x + mx.h * y + mx.i)
-            ys = y * (mx.d * x + mx.e * y + mx.f) / (mx.g * x + mx.h * y + mx.i)
-            return xs + 1j * ys
-
+            m = mx.mx
+            count = len(x)
+            pts = np.vstack((x, y, np.ones(count)))
+            result = np.dot(m, pts)
+            return (result[0] / result[2] + 1j * result[1] / result[2])
 
         segments = self.segments
         index = self.index
