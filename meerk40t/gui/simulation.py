@@ -760,7 +760,7 @@ class SimulationPanel(wx.Panel, Job):
         wx.Panel.__init__(self, *args, **kwds)
         self.parent = args[0]
         self.context = context
-        self.SetHelpText("wordlist")
+        self.SetHelpText("simulate")
 
         self.plan_name = plan_name
         self.auto_clear = auto_clear
@@ -838,6 +838,7 @@ class SimulationPanel(wx.Panel, Job):
         self.checkbox_optimize.SetValue(self.context.planner.do_optimization)
         self.btn_redo_it = wx.Button(self, wx.ID_ANY, _("Recalculate"))
         self.btn_redo_it.Bind(wx.EVT_BUTTON, self.on_redo_it)
+        self.btn_redo_it.SetToolTip(_("Apply the settings and recalculate the cutplan"))
 
         self.slider_progress = wx.Slider(self, wx.ID_ANY, self.max, 0, self.max)
         self.slider_progress.SetFocus()
@@ -876,7 +877,9 @@ class SimulationPanel(wx.Panel, Job):
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.button_play = wx.Button(self, wx.ID_ANY, "")
+        self.button_play.SetToolTip(_("Start the simulation replay"))
         self.slider_playbackspeed = wx.Slider(self, wx.ID_ANY, 180, 0, 310)
+        self.slider_playbackspeed.SetToolTip(_("Set the speed for the simulation"))
         self.text_playback_speed = wx.TextCtrl(
             self, wx.ID_ANY, "100%", style=wx.TE_READONLY
         )
@@ -896,6 +899,7 @@ class SimulationPanel(wx.Panel, Job):
         )
 
         self.button_spool = wx.Button(self, wx.ID_ANY, _("Send to Laser"))
+        self.button_spool.SetToolTip(_("Send the current cutplan to the laser."))
         self._slided_in = None
 
         self.__set_properties()

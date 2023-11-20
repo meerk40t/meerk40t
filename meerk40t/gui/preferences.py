@@ -401,6 +401,7 @@ class Preferences(MWindow):
                 "style": "button",
                 "label": _("Automatic"),
                 "tip": _("Set options for a good automatic experience"),
+                "help": "classification",
                 "page": "Classification",
                 "section": "_AA_Presets",
                 "subsection": "_0_",
@@ -413,6 +414,7 @@ class Preferences(MWindow):
                 "style": "button",
                 "label": _("Manual"),
                 "tip": _("Set options for complete manual control"),
+                "help": "classification",
                 "page": "Classification",
                 "section": "_AA_Presets",
                 "subsection": "_0_",
@@ -428,6 +430,7 @@ class Preferences(MWindow):
                 )
                 + "\n"
                 + _("That link between element and operation is called an assignment."),
+                "help": "classification",
                 "page": "Classification",
                 # "section": "_000_Information",
             },
