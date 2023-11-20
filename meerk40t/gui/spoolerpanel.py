@@ -1165,6 +1165,7 @@ class JobSpooler(MWindow):
                 "label": _("Spooler"),
                 "icon": icons8_route,
                 "tip": _("Opens Spooler Window"),
+                "help": "spooler",
                 "action": lambda v: kernel.console("window toggle JobSpooler\n"),
                 "priority": -1,
             },

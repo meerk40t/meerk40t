@@ -911,6 +911,7 @@ class WordlistEditor(MWindow):
                 "label": _("Wordlist Editor"),
                 "icon": icons8_curly_brackets,
                 "tip": _("Manages Wordlist-Entries"),
+                "help": "wordlist",
                 "action": lambda v: kernel.console("window toggle Wordlist\n"),
             },
         )

@@ -969,6 +969,8 @@ class MeerK40t(MWindow):
                 "subsection": "Magnetlines",
             },
         ]
+        for c in choices:
+            c["help"] = "snap"
         context.kernel.register_choices("preferences", choices)
         choices = [
             # {
@@ -1099,6 +1101,7 @@ class MeerK40t(MWindow):
                 "label": _("Open"),
                 "icon": icons8_opened_folder,
                 "tip": _("Opens new project"),
+                "help": "loadsave",
                 "action": lambda e: kernel.console(".dialog_load\n"),
                 "priority": -200,
                 "size": bsize_normal,
@@ -1110,6 +1113,7 @@ class MeerK40t(MWindow):
                 "label": _("Save"),
                 "icon": icons8_save,
                 "tip": _("Saves a project to disk"),
+                "help": "loadsave",
                 "action": lambda e: kernel.console(".dialog_save\n"),
                 "priority": -100,
                 "size": bsize_normal,
@@ -1125,6 +1129,7 @@ class MeerK40t(MWindow):
                 "label": _("Select"),
                 "icon": icons8_cursor,
                 "tip": _("Regular selection tool"),
+                "help": "select",
                 "action": lambda v: kernel.elements("tool none\n"),
                 "group": "tool",
                 "size": bsize_normal,
@@ -1350,7 +1355,7 @@ class MeerK40t(MWindow):
                 "label": _("Delete"),
                 "icon": icons8_delete,
                 "tip": _("Delete selected items"),
-                "help": "basicshapes",
+                "help": "basicediting",
                 "action": lambda v: kernel.elements("tree selected delete\n"),
                 "size": bsize_normal,
                 "rule_enabled": lambda cond: bool(kernel.elements.has_emphasis()),
@@ -1362,6 +1367,7 @@ class MeerK40t(MWindow):
                 "label": _("Cut"),
                 "icon": icons8_scissors,
                 "tip": _("Cut selected elements"),
+                "help": "basicediting",
                 "action": lambda v: kernel.elements("clipboard cut\n"),
                 "size": bsize_small,
                 "identifier": "editcut",
@@ -1377,6 +1383,7 @@ class MeerK40t(MWindow):
                 "label": _("Copy"),
                 "icon": icons8_copy,
                 "tip": _("Copy selected elements to clipboard"),
+                "help": "basicediting",
                 "action": lambda v: kernel.elements("clipboard copy\n"),
                 "size": bsize_small,
                 "identifier": "editcopy",
@@ -1403,6 +1410,7 @@ class MeerK40t(MWindow):
                 "label": _("Paste"),
                 "icon": icons8_paste,
                 "tip": _("Paste elements from clipboard"),
+                "help": "basicediting",
                 "action": lambda v: kernel.elements(
                     "clipboard paste -dx 3mm -dy 3mm\n"
                 ),
@@ -1432,6 +1440,7 @@ class MeerK40t(MWindow):
                 "label": _("Undo"),
                 "icon": icon_mk_undo,
                 "tip": _("Undo last operation"),
+                "help": "basicediting",
                 "action": lambda v: kernel.elements("undo\n"),
                 "size": bsize_small,
                 "identifier": "editundo",
@@ -1444,6 +1453,7 @@ class MeerK40t(MWindow):
                 "label": _("Redo"),
                 "icon": icon_mk_redo,
                 "tip": _("Redo last operation"),
+                "help": "basicediting",
                 "action": lambda v: kernel.elements("redo\n"),
                 "size": bsize_small,
                 "identifier": "editredo",
@@ -3352,7 +3362,6 @@ class MeerK40t(MWindow):
             )
 
         def online_help(event):
-            print (f"online help: {self._last_help_section}")
             sect = self._last_help_section
             if sect is None or sect == "":
                 sect = "GUI"
