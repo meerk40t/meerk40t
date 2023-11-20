@@ -140,19 +140,7 @@ class PMatrix:
         d = y4 * (g + i) - y1 * i
         e = y2 * (h + i) - y1 * i
 
-        m = cls()
-        m.mx[0, 0] = a
-        m.mx[0, 1] = b
-        m.mx[0, 2] = c
-
-        m.mx[1, 0] = d
-        m.mx[1, 1] = e
-        m.mx[1, 2] = f
-
-        m.mx[2, 0] = g
-        m.mx[2, 1] = h
-        m.mx[2, 2] = i
-        return m
+        return cls(a, b, c, d, e, f, g, h, i)
 
     @property
     def a(self):
