@@ -28,7 +28,7 @@ class KerfPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-
+        self.SetHelpText("kerf")
         self.text_speed = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_speed.set_range(0, 1000)
         self.label_speed = wx.StaticText(self, wx.ID_ANY, "")

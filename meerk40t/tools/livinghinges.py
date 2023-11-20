@@ -35,6 +35,7 @@ class HingePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("hinges")
         self.hinge_generator = LivingHinges(
             0, 0, float(Length("5cm")), float(Length("5cm"))
         )
@@ -1023,6 +1024,7 @@ class LivingHingeTool(MWindow):
                 "label": _("Hinge"),
                 "icon": icon_hinges,
                 "tip": _("Fill area with a living hinge pattern"),
+                "help": "hinges",
                 "action": lambda v: kernel.console("window open Hingetool\n"),
                 "size": STD_ICON_SIZE,
                 "rule_enabled": lambda cond: len(
