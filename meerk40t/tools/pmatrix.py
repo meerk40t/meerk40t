@@ -178,6 +178,17 @@ class PMatrix:
     def i(self):
         return self.mx[2, 2]
 
+    def point_in_matrix(self, x, y):
+        if isinstance(x, float):
+            count = 1
+            pts = np.vstack((x, y, np.ones(count)))
+            result = np.dot(self.mx, pts)
+            return (result[0] / result[2] + 1j * result[1] / result[2])[0]
+        count = len(x)
+        pts = np.vstack((x, y, np.ones(count)))
+        result = np.dot(self.mx, pts)
+        return result[0] / result[2] + 1j * result[1] / result[2]
+
     def is_identity(self):
         return (
             self.a == 1
