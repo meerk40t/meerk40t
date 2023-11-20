@@ -10,7 +10,7 @@ class TestPmatrix(unittest.TestCase):
     """These tests ensure the basic functions of the Geomstr elements."""
 
     def test_pmatrix_map(self):
-        p = PMatrix(0,0,0,0,0,0,0,0,0)
+        p = PMatrix(0, 0, 0, 0, 0, 0, 0, 0, 0)
 
     def test_matrix_map_identity(self):
         """
@@ -79,6 +79,19 @@ class TestPmatrix(unittest.TestCase):
         )
         m2 = PMatrix.rotate(Angle("-90deg"), 0.5, 0.5)
         self.assertEqual(m1, m2)
+
+    def test_matrix_rotate_non_origin(self):
+        rx = 203.2
+        ry = 102.2
+        m1 = (
+            PMatrix.translate(rx, ry)
+            @ PMatrix.rotate(Angle("-90deg"))
+            @ PMatrix.translate(-rx, -ry)
+        )
+        m2 = PMatrix.rotate(Angle("-90deg"), rx, ry)
+        self.assertEqual(m1, m2)
+        pt = m1.point_in_matrix(rx, ry)
+        self.assertAlmostEqual(pt, complex(rx,ry))
 
     def test_matrix_map_translate_scale_y(self):
         m1 = PMatrix.map(
