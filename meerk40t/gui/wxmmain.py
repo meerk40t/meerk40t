@@ -220,6 +220,45 @@ class MeerK40t(MWindow):
         self.update_check_at_startup()
         self.parametric_info = None
 
+        # Look at window elements we are hovering over
+        # to establish the online help functionality
+        self.timer = wx.Timer(self, id=wx.ID_ANY)
+        self.Bind(wx.EVT_TIMER, self.mouse_query, self.timer)
+        self.timer.Start(500, wx.TIMER_CONTINUOUS)
+        self._last_help_info = ""
+        self._last_help_section = ""
+
+    def mouse_query(self, event):
+        """
+            This routine looks periodically (every 0.5 seconds)
+            at the window ie control under the mouse cursor.
+            It will examine the window if it contains a tooltip text and
+            will display this in a textbox in this panel.
+            Additionally, it will read the associated HelpText of the control
+            (or its parent if the control does not have any) to construct a
+            Wiki page on GitHub to open an associated online help page.
+        """
+        wind, pos = wx.FindWindowAtPointer()
+        if wind is not None:
+            info = ""
+            if hasattr(wind, "GetToolTipText"):
+                info = wind.GetToolTipText()
+            section = ""
+            if hasattr(wind, "GetHelpText"):
+                win = wind
+                while win is not None:
+                    section = win.GetHelpText()
+                    if section:
+                        break
+                    win = win.GetParent()
+                if section is None or section == "":
+                    section = "GUI"
+            if info != self._last_help_info or section != self._last_help_section:
+                self._last_help_info = info
+                self._last_help_section = section
+                # Inform HelperWindow about a new content
+                self.context.signal("helpinfo", info, section)
+
     def update_check_at_startup(self):
         if self.context.update_check == 0:
             return
@@ -1420,6 +1459,7 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Measure distance / perimeter / area\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
                 ),
+                "help": "measure",
                 "action": lambda v: kernel.elements("tool measure\n"),
                 "group": "tool",
                 "size": bsize_normal,
@@ -3311,6 +3351,16 @@ class MeerK40t(MWindow):
                 id=menuitem.GetId(),
             )
 
+        def online_help(event):
+            print (f"online help: {self._last_help_section}")
+            sect = self._last_help_section
+            if sect is None or sect == "":
+                sect = "GUI"
+            sect = sect.upper()
+            url = f"https://github.com/meerk40t/meerk40t/wiki/Online-Help:-{sect}"
+            import webbrowser
+            webbrowser.open(url, new=0, autoraise=True)
+
         menuitem = self.help_menu.Append(
             wx.ID_ANY,
             _("Online Reference\tF11"),
@@ -3318,9 +3368,10 @@ class MeerK40t(MWindow):
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda e: self.context.signal("contexthelp"),
+            online_help,
             id=menuitem.GetId(),
         )
+
         menuitem = self.help_menu.Append(
             wx.ID_ANY,
             _("&Beginners' Help"),
