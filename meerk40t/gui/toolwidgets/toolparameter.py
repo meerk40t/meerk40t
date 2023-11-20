@@ -626,38 +626,31 @@ class ParameterTool(ToolWidget):
         self.is_moving = False
         self.scene.context("tool none\n")
 
+    def _tool_change(self):
+        selected_node = None
+        for node in self.scene.context.elements.elems(emphasized=True):
+            if node.functional_parameter is not None:
+                selected_node = node
+                break
+        if selected_node is None:
+            self.scene.pane.suppress_selection = False
+        else:
+            self.scene.pane.suppress_selection = True
+        self.establish_parameters(selected_node)
+        self.scene.request_refresh()
+
     def signal(self, signal, *args, **kwargs):
         """
         Signal routine for stuff that's passed along within a scene,
         does not receive global signals
         """
-        selected_node = None
         if signal == "tool_changed":
             if len(args[0]) > 1 and args[0][1] == "parameter":
-                for node in self.scene.context.elements.elems(emphasized=True):
-                    if node.functional_parameter is not None:
-                        selected_node = node
-                        break
-                if selected_node is None:
-                    self.scene.pane.suppress_selection = False
-                else:
-                    self.scene.pane.suppress_selection = True
-                self.establish_parameters(selected_node)
-                self.scene.request_refresh()
+                self._tool_change()
             else:
                 self.reset()
-            return
         elif signal == "emphasized":
-            for node in self.scene.context.elements.elems(emphasized=True):
-                if node.functional_parameter is not None:
-                    selected_node = node
-                    break
-            if selected_node is None:
-                self.scene.pane.suppress_selection = False
-            else:
-                self.scene.pane.suppress_selection = True
-            self.establish_parameters(selected_node)
-            self.scene.request_refresh()
+            self._tool_change()
 
     def init(self, context):
         return
