@@ -632,10 +632,7 @@ class ParameterTool(ToolWidget):
             if node.functional_parameter is not None:
                 selected_node = node
                 break
-        if selected_node is None:
-            self.scene.pane.suppress_selection = False
-        else:
-            self.scene.pane.suppress_selection = True
+        self.scene.pane.suppress_selection = selected_node is not None
         self.establish_parameters(selected_node)
         self.scene.request_refresh()
 
