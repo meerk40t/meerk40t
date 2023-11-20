@@ -30,7 +30,7 @@ class WarpEffectNode(Node, FunctionalParameter):
         self.y4 = 0
 
         Node.__init__(self, type="effect warp", id=id, label=label, lock=lock, **kwargs)
-        self._formatter = "{element_type} - {type} {radius} ({children})"
+        self._formatter = "{element_type} - ({children})"
 
         if label is None:
             self.label = "Warp"
