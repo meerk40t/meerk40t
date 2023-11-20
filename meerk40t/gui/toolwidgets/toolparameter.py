@@ -2,6 +2,7 @@ import math
 
 import wx
 
+from meerk40t.core.node.mixins import FunctionalParameter
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 
@@ -628,8 +629,9 @@ class ParameterTool(ToolWidget):
 
     def _tool_change(self):
         selected_node = None
-        for node in self.scene.context.elements.elems(emphasized=True):
-            if node.functional_parameter is not None:
+        elements = self.scene.context.elements.elem_branch
+        for node in elements.flat(emphasized=True):
+            if hasattr(node, "functional_parameter") and node.functional_parameter is not None:
                 selected_node = node
                 break
         self.scene.pane.suppress_selection = selected_node is not None
