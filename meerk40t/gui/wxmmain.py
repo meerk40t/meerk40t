@@ -1110,6 +1110,7 @@ class MeerK40t(MWindow):
                 "label": _("Parametric Edit"),
                 "icon": icons8_finger,
                 "tip": _("Parametric edit of a shape"),
+                "help": "parametric",
                 "action": lambda v: kernel.elements("tool parameter\n"),
                 "group": "tool",
                 "size": bsize_normal,
@@ -1123,6 +1124,7 @@ class MeerK40t(MWindow):
                 "label": _("Node Edit"),
                 "icon": icons8_node_edit,
                 "tip": _("Edit nodes of a polyline/path-object"),
+                "help": "nodeedit",
                 "action": lambda v: kernel.elements("tool edit\n"),
                 "group": "tool",
                 "size": bsize_normal,
@@ -1136,6 +1138,7 @@ class MeerK40t(MWindow):
                 "label": _("Hatch"),
                 "icon": icon_hatch,
                 "tip": _("Wrap the current node in a hatch"),
+                "help": "hatches",
                 "action": lambda v: kernel.elements("effect-hatch\n"),
                 # "group": "tool",
                 "size": bsize_normal,
@@ -1162,6 +1165,7 @@ class MeerK40t(MWindow):
                 "label": _("Job Start"),
                 "icon": icons8_user_location,
                 "tip": _("Add a job starting point to the scene"),
+                "help": "placement",
                 "action": lambda v: kernel.elements("tool placement\n"),
                 "group": "tool",
                 "size": bsize_normal,
@@ -1175,6 +1179,7 @@ class MeerK40t(MWindow):
                 "label": _("Circle"),
                 "icon": icon_mk_circle,
                 "tip": _("Add a circle element"),
+                "help": "basicshapes",
                 "action": lambda v: kernel.elements("tool circle\n"),
                 "group": "tool",
                 "size": bsize_normal,
@@ -1188,6 +1193,7 @@ class MeerK40t(MWindow):
                 "label": _("Ellipse"),
                 "icon": icon_mk_ellipse,
                 "tip": _("Add an ellipse element"),
+                "help": "basicshapes",
                 "action": lambda v: kernel.elements("tool ellipse\n"),
                 "group": "tool",
                 "size": bsize_normal,
@@ -1201,6 +1207,7 @@ class MeerK40t(MWindow):
                 "label": _("Rectangle"),
                 "icon": icon_mk_rectangular,
                 "tip": _("Add a rectangular element"),
+                "help": "basicshapes",
                 "action": lambda v: kernel.elements("tool rect\n"),
                 "group": "tool",
                 "size": bsize_normal,
@@ -1216,6 +1223,7 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Add a polygon element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
                 ),
+                "help": "basicshapes",
                 "action": lambda v: kernel.elements("tool polygon\n"),
                 "group": "tool",
                 "size": bsize_normal,
@@ -1231,6 +1239,7 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Add a polyline element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
                 ),
+                "help": "basicshapes",
                 "action": lambda v: kernel.elements("tool polyline\n"),
                 "group": "tool",
                 "size": bsize_normal,
@@ -1244,6 +1253,7 @@ class MeerK40t(MWindow):
                 "label": _("Point"),
                 "icon": icon_mk_point,
                 "tip": _("Add point to the scene"),
+                "help": "basicshapes",
                 "action": lambda v: kernel.elements("tool point\n"),
                 "group": "tool",
                 "size": bsize_normal,
@@ -1259,6 +1269,7 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Add a shape\nLeft click: point/line\nClick and hold: curve\nDouble click: complete\nRight click: end"
                 ),
+                "help": "basicshapes",
                 "action": lambda v: kernel.elements("tool vector\n"),
                 "group": "tool",
                 "size": bsize_normal,
@@ -1272,6 +1283,7 @@ class MeerK40t(MWindow):
                 "label": _("Draw"),
                 "icon": icons8_pencil_drawing,
                 "tip": _("Add a free-drawing element"),
+                "help": "basicshapes",
                 "action": lambda v: kernel.elements("tool draw\n"),
                 "group": "tool",
                 "size": bsize_normal,
@@ -1285,6 +1297,7 @@ class MeerK40t(MWindow):
                 "label": _("Text"),
                 "icon": icon_bmap_text,
                 "tip": _("Add a text element"),
+                "help": "basicshapes",
                 "action": lambda v: kernel.elements("tool text\n"),
                 "group": "tool",
                 "size": bsize_normal,
@@ -1298,6 +1311,7 @@ class MeerK40t(MWindow):
                 "label": _("Delete"),
                 "icon": icons8_delete,
                 "tip": _("Delete selected items"),
+                "help": "basicshapes",
                 "action": lambda v: kernel.elements("tree selected delete\n"),
                 "size": bsize_normal,
                 "rule_enabled": lambda cond: bool(kernel.elements.has_emphasis()),
@@ -1422,6 +1436,7 @@ class MeerK40t(MWindow):
                 "label": _("Flip Vertical"),
                 "icon": icons8_flip_vertical,
                 "tip": _("Flip the selected element vertically"),
+                "help": "flip",
                 "action": lambda v: kernel.elements("scale 1 -1\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
@@ -1436,6 +1451,7 @@ class MeerK40t(MWindow):
                 "label": _("Mirror Horizontal"),
                 "icon": icons8_flip_horizontal,
                 "tip": _("Mirror the selected element horizontally"),
+                "help": "flip",
                 "action": lambda v: kernel.elements("scale -1 1\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
@@ -1450,6 +1466,7 @@ class MeerK40t(MWindow):
                 "label": _("Rotate CW"),
                 "icon": icons8_rotate_right,
                 "tip": _("Rotate the selected element clockwise by 90 deg"),
+                "help": "flip",
                 "action": lambda v: kernel.elements("rotate 90deg\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
@@ -1464,6 +1481,7 @@ class MeerK40t(MWindow):
                 "label": _("Rotate CCW"),
                 "icon": icons8_rotate_left,
                 "tip": _("Rotate the selected element counterclockwise by 90 deg"),
+                "help": "flip",
                 "action": lambda v: kernel.elements("rotate -90deg\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
@@ -1640,6 +1658,7 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Align selected elements at the leftmost position (right click: of the bed)"
                 ),
+                "help": "alignment",
                 "action": lambda v: kernel.elements(
                     "align push first individual left pop\n"
                 ),
@@ -1691,6 +1710,7 @@ class MeerK40t(MWindow):
                         "icon": icons8_circled_left,
                         "tip": _("Wordlist: go to prev entry")
                         + _(" (right go to next entry)"),
+                        "help": "wordlist",
                         "action": lambda v: kernel.elements.wordlist_advance(-1),
                         "action_right": lambda v: kernel.elements.wordlist_advance(1),
                     },
@@ -1709,6 +1729,7 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Align selected elements at the rightmost position (right click: of the bed)"
                 ),
+                "help": "alignment",
                 "action": lambda v: kernel.elements("align first right\n"),
                 "action_right": lambda v: kernel.elements("align bed group right\n"),
                 "size": bsize_small,
@@ -1726,6 +1747,7 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Align selected elements at the topmost position (right click: of the bed)"
                 ),
+                "help": "alignment",
                 "action": lambda v: kernel.elements("align first top\n"),
                 "action_right": lambda v: kernel.elements("align bed group top\n"),
                 "size": bsize_small,
@@ -1743,6 +1765,7 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Align selected elements at the lowest position (right click: of the bed)"
                 ),
+                "help": "alignment",
                 "action": lambda v: kernel.elements("align first bottom\n"),
                 "action_right": lambda v: kernel.elements("align bed group bottom\n"),
                 "size": bsize_small,
@@ -1760,6 +1783,7 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Align selected elements at their center horizontally (right click: of the bed)"
                 ),
+                "help": "alignment",
                 "action": lambda v: kernel.elements("align first centerh\n"),
                 "action_right": lambda v: kernel.elements("align bed group centerh\n"),
                 "size": bsize_small,
@@ -1777,6 +1801,7 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Align selected elements at their center vertically (right click: of the bed)"
                 ),
+                "help": "alignment",
                 "action": lambda v: kernel.elements("align first centerv\n"),
                 "action_right": lambda v: kernel.elements("align bed group centerv\n"),
                 "size": bsize_small,
@@ -1796,6 +1821,7 @@ class MeerK40t(MWindow):
                 + _("Left click: Equal distances")
                 + "\n"
                 + _("Right click: Equal centers"),
+                "help": "alignment",
                 "action": lambda v: kernel.elements("align spaceh\n"),
                 "action_right": lambda v: kernel.elements("align spaceh2\n"),
                 "size": bsize_small,
@@ -1815,6 +1841,7 @@ class MeerK40t(MWindow):
                 + _("Left click: Equal distances")
                 + "\n"
                 + _("Right click: Equal centers"),
+                "help": "alignment",
                 "action": lambda v: kernel.elements("align spacev\n"),
                 "action_right": lambda v: kernel.elements("align spacev2\n"),
                 "size": bsize_small,
@@ -3284,6 +3311,16 @@ class MeerK40t(MWindow):
                 id=menuitem.GetId(),
             )
 
+        menuitem = self.help_menu.Append(
+            wx.ID_ANY,
+            _("Online Reference\tF11"),
+            _("Display online reference"),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context.signal("contexthelp"),
+            id=menuitem.GetId(),
+        )
         menuitem = self.help_menu.Append(
             wx.ID_ANY,
             _("&Beginners' Help"),

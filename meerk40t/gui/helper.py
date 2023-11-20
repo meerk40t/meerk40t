@@ -15,6 +15,7 @@ from wx import aui
 
 from meerk40t.gui.icons import get_default_icon_size, icons8_info
 from meerk40t.gui.wxutils import StaticBoxSizer
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -36,8 +37,6 @@ def register_panel_helper(window, context):
 
     window.on_pane_create(pane)
     context.register("pane/helper", pane)
-
-
 
 class HelperPanel(wx.Panel):
     """
@@ -117,3 +116,9 @@ class HelperPanel(wx.Panel):
 
         import webbrowser
         webbrowser.open(url, new=0, autoraise=True)
+
+    @signal_listener("contexthelp")
+    def on_contexthelp(self, origin, section=None, *args):
+        if section is not None:
+            self.section = section
+        self.on_button_help(None)
