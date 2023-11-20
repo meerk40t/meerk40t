@@ -174,15 +174,16 @@ class WarpEffectNode(Node, FunctionalParameter):
         self.y3 = my
         self.x4 = nx
         self.y4 = my
+        width = mx - nx
         self.perspective_matrix = PMatrix.map(
+            (self.x1, self.y1),
+            (self.x2, self.y2),
+            (self.x3 - width / 5, self.y3),
+            (self.x4 + width / 5, self.y4),
             (self.x1, self.y1),
             (self.x2, self.y2),
             (self.x3, self.y3),
             (self.x4, self.y4),
-            (self.x1, self.y1),
-            (self.x2, self.y2),
-            (self.x3, self.y3),
-            (self.x4, self.y4 * 1.2),
         )
         outlines.transform3x3(self.perspective_matrix)
         return outlines
