@@ -109,7 +109,7 @@ class ConsolePanel(wx.ScrolledWindow):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.ScrolledWindow.__init__(self, *args, **kwargs)
         self.context = context
-
+        self.SetHelpText("notes")
         font = wx.Font(
             10,
             wx.FONTFAMILY_TELETYPE,
@@ -529,6 +529,7 @@ class Console(MWindow):
                 "label": _("Console"),
                 "icon": icons8_console,
                 "tip": _("Open Console Window"),
+                "help": "console",
                 "action": lambda v: kernel.console("window toggle Console\n"),
                 "size": STD_ICON_SIZE,
                 "priority": 4,

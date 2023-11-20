@@ -1538,6 +1538,7 @@ class ParameterPanel(ScrolledPanel):
         self.context = context
         self.operation = node
         self.panels = []
+        self.SetHelpText("operationproperty")
 
         param_sizer = wx.BoxSizer(wx.VERTICAL)
 

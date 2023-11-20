@@ -173,6 +173,7 @@ class TextPropertyPanel(ScrolledPanel):
         super().__init__(parent, *args, **kwds)
         self.context = context
         self.renderer = LaserRender(self.context)
+        self.SetHelpText("textproperty")
 
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.node = node

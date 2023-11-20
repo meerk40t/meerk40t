@@ -130,6 +130,7 @@ class Notes(MWindow):
                 "label": _("Notes"),
                 "icon": icons8_comments,
                 "tip": _("Open Notes Window"),
+                "help": "notes",
                 "action": lambda v: kernel.console("window toggle Notes\n"),
                 "size": STD_ICON_SIZE,
             },
