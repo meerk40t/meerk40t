@@ -87,7 +87,7 @@ class PMatrix:
         cos_theta = np.cos(float(angle))
         sin_theta = np.sin(float(angle))
 
-        r = cls(cos_theta, -sin_theta, 0,sin_theta, cos_theta, 0,0, 0, 1)
+        r = cls(cos_theta, -sin_theta, 0, sin_theta, cos_theta, 0, 0, 0, 1)
         if rx != 0 or ry != 0:
             m0 = cls.translate(-rx, -ry)
             m1 = cls.translate(rx, ry)
@@ -98,7 +98,7 @@ class PMatrix:
     def map(cls, p1, p2, p3, p4, r1, r2, r3, r4):
         p = PMatrix.perspective(p1, p2, p3, p4)
         r = PMatrix.perspective(r1, r2, r3, r4)
-        mx = np.dot(np.linalg.inv(r.mx), p.mx)
+        mx = p.mx @ np.linalg.inv(r.mx)
         return cls(mx)
 
     @classmethod
