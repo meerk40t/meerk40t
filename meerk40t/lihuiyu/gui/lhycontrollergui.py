@@ -32,8 +32,14 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.context = context.device
 
         self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
+        if self.context.mock:
+            connectivity = "Mock-Device"
+        elif self.context.networked:
+            connectivity = f"Network: {self.context.address}:{self.context.port}"
+        else:
+            connectivity = "USB"
         self.text_connection_status = wx.TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY
+            self, wx.ID_ANY, connectivity, style=wx.TE_READONLY
         )
         self.button_controller_control = wx.Button(
             self, wx.ID_ANY, _("Start Controller")
@@ -616,6 +622,10 @@ class LihuiyuControllerGui(MWindow):
         self.Bind(wx.EVT_MENU, self.on_menu_pause, id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Stop"), "")
         self.Bind(wx.EVT_MENU, self.on_menu_stop, id=item.GetId())
+        wxglade_tmp_menu.AppendSeparator()
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Configuration"), "")
+        self.Bind(wx.EVT_MENU, self.on_menu_config, id=item.GetId())
+
         append(wxglade_tmp_menu, _("Commands"))
         wxglade_tmp_menu = wx.Menu()
         item = wxglade_tmp_menu.Append(
@@ -626,6 +636,9 @@ class LihuiyuControllerGui(MWindow):
 
     def window_preserve(self):
         return False
+
+    def on_menu_config(self, event):
+        self.context("window open Configuration\n")
 
     def on_menu_usb_reset(self, event):
         try:
