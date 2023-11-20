@@ -104,7 +104,7 @@ class TestPmatrix(unittest.TestCase):
             (101, 102),
             (101, 100),
         )
-        self.assertEqual(m1,  PMatrix.translate(100, 100) @ PMatrix.scale_y(2))
+        self.assertEqual(m1, PMatrix.translate(100, 100) @ PMatrix.scale_y(2))
 
     def test_matrix_perspective_ccw_unit_square(self):
         """
