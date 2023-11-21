@@ -22,6 +22,7 @@ from ..core.plotplanner import PlotPlanner
 from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM
 from ..device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from ..kernel import signal_listener
+from ..tools.geomstr import Geomstr
 
 
 class GRBLDriver(Parameters):
@@ -308,13 +309,15 @@ class GRBLDriver(Parameters):
             elif isinstance(q, (QuadCut, CubicCut)):
                 self.move_mode = 1
                 interp = self.service.interpolate
-                step_size = 1.0 / float(interp)
-                t = step_size
-                for p in range(int(interp)):
+                g = Geomstr()
+                if isinstance(q, CubicCut):
+                    g.cubic(complex(*q.start), complex(*q.c1()), complex(*q.c2()), complex(*q.end))
+                else:
+                    g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
+                for p in g.as_equal_interpolated_points(distance=interp):
                     while self.paused:
                         time.sleep(0.05)
-                    self._move(*q.point(t))
-                    t += step_size
+                    self._move(p.real, p.imag)
                 last_x, last_y = q.end
                 self._move(last_x, last_y)
             elif isinstance(q, WaitCut):
