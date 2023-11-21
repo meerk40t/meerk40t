@@ -101,7 +101,7 @@ class PMatrix:
         p = PMatrix.perspective(p1, p2, p3, p4)
         r = PMatrix.perspective(r1, r2, r3, r4)
         try:
-            mx = p.mx @ np.linalg.inv(r.mx)
+            mx = r.mx @ np.linalg.inv(p.mx)
         except numpy.linalg.LinAlgError:
             return cls()
         return cls(mx)
