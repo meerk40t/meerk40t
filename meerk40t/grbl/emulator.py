@@ -151,6 +151,9 @@ class GRBLEmulator:
         return "GRBLInterpreter()"
 
     def reply_code(self, cmd):
+        if cmd == -1:
+            # Do not reply.
+            return
         if cmd == 0:  # Execute GCode.
             if self.reply:
                 self.reply("ok\r\n")
