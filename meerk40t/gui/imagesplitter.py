@@ -137,6 +137,7 @@ class SplitterPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("imagesplit")
         self.scene = scene
         # Amount of currently selected
         self.count = 0
@@ -281,6 +282,7 @@ class KeyholePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("keyhole")
         self.scene = scene
         # Amount of currently selected
         self.count = 0

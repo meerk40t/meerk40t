@@ -130,16 +130,24 @@ class ChoicePropertyPanel(ScrolledPanel):
         new_choices = []
         # we need to create an independent copy of the lookup, otherwise
         # any amendments to choices like injector will affect the original
-
+        standardhelp = ""
         for choice in choices:
             if isinstance(choice, dict):
+                if "help" not in choice:
+                    choice["help"] = standardhelp
                 new_choices.append(choice)
             elif isinstance(choice, str):
                 lookup_choice = self.context.lookup("choices", choice)
                 if lookup_choice is None:
                     continue
+                for c in lookup_choice:
+                    if "help" not in c:
+                        c["help"] = choice
                 new_choices.extend(lookup_choice)
             else:
+                for c in choice:
+                    if "help" not in c:
+                        c["help"] = standardhelp
                 new_choices.extend(choice)
         choices = new_choices
         if injector is not None:
@@ -1436,6 +1444,9 @@ class ChoicePropertyPanel(ScrolledPanel):
             if tip and not context.root.disable_tool_tips:
                 # Set the tool tip if 'tip' is available
                 control.SetToolTip(tip)
+            help = c.get("help")
+            if help:
+                control.SetHelpText(help)
             last_page = this_page
             last_section = this_section
             last_subsection = this_subsection

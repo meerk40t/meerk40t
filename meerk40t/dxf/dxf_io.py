@@ -79,6 +79,8 @@ class DXFProcessor:
         self.reverse = False
         self.requires_classification = True
         self.pathname = None
+        # Path stroke width
+        self.std_stroke = 1000
 
     def process(self, entities, pathname):
         self.pathname = pathname
@@ -173,6 +175,7 @@ class DXFProcessor:
                 ry=entity.dxf.radius,
                 matrix=m,
                 stroke_scale=False,
+                stroke_width=self.std_stroke,
                 type="elem ellipse",
             )
             self.check_for_attributes(node, entity)
@@ -194,7 +197,12 @@ class DXFProcessor:
                 if not isinstance(path[0], Move):
                     path = Move(path.first_point) + path
                 path.approximate_arcs_with_cubics()
-            node = context_node.add(path=path, type="elem path")
+            node = context_node.add(
+                path=path,
+                type="elem path",
+                stroke_scale=False,
+                stroke_width=self.std_stroke,
+            )
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
@@ -212,7 +220,12 @@ class DXFProcessor:
             element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
             element.transform.post_scale(self.scale, -self.scale)
             element.transform.post_translate_y(self.elements.device.view.unit_height)
-            node = context_node.add(shape=element, type="elem ellipse")
+            node = context_node.add(
+                shape=element,
+                type="elem ellipse",
+                stroke_scale=False,
+                stroke_width=self.std_stroke,
+            )
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
@@ -227,6 +240,7 @@ class DXFProcessor:
                 x2=entity.dxf.end[0],
                 y2=entity.dxf.end[1],
                 stroke_scale=False,
+                stroke_width=self.std_stroke,
                 matrix=m,
                 type="elem line",
             )
@@ -258,7 +272,12 @@ class DXFProcessor:
                     element.transform.post_translate_y(
                         self.elements.device.view.unit_height
                     )
-                    node = context_node.add(shape=element, type="elem polyline")
+                    node = context_node.add(
+                        shape=element,
+                        type="elem polyline",
+                        stroke_scale=False,
+                        stroke_width=self.std_stroke,
+                    )
                     self.check_for_attributes(node, entity)
                     e_list.append(node)
                     return
@@ -298,7 +317,12 @@ class DXFProcessor:
                         if not isinstance(path[0], Move):
                             path = Move(path.first_point) + path
                         path.approximate_arcs_with_cubics()
-                    node = context_node.add(path=path, type="elem path")
+                    node = context_node.add(
+                        path=path,
+                        type="elem path",
+                        stroke_scale=False,
+                        stroke_width=self.std_stroke,
+                    )
                     self.check_for_attributes(node, entity)
                     e_list.append(node)
                     return
@@ -314,7 +338,12 @@ class DXFProcessor:
                 element.transform.post_translate_y(
                     self.elements.device.view.unit_height
                 )
-                node = context_node.add(shape=element, type="elem polyline")
+                node = context_node.add(
+                    shape=element,
+                    type="elem polyline",
+                    stroke_scale=False,
+                    stroke_width=self.std_stroke,
+                )
                 self.check_for_attributes(node, entity)
                 e_list.append(node)
                 return
@@ -349,7 +378,12 @@ class DXFProcessor:
                     if not isinstance(path[0], Move):
                         path = Move(path.first_point) + path
                     path.approximate_arcs_with_cubics()
-                node = context_node.add(path=path, type="elem path")
+                node = context_node.add(
+                    path=path,
+                    type="elem path",
+                    stroke_scale=False,
+                    stroke_width=self.std_stroke,
+                )
                 self.check_for_attributes(node, entity)
                 e_list.append(node)
                 return
@@ -411,7 +445,12 @@ class DXFProcessor:
                 if not isinstance(path[0], Move):
                     path = Move(path.first_point) + path
                 path.approximate_arcs_with_cubics()
-            node = context_node.add(path=path, type="elem path")
+            node = context_node.add(
+                path=path,
+                type="elem path",
+                stroke_scale=False,
+                stroke_width=self.std_stroke,
+            )
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
@@ -486,7 +525,12 @@ class DXFProcessor:
             element.transform.post_translate_y(self.elements.device.view.unit_height)
 
             path = abs(Path(element))
-            node = context_node.add(path=path, type="elem path")
+            node = context_node.add(
+                path=path,
+                type="elem path",
+                stroke_scale=False,
+                stroke_width=self.std_stroke,
+            )
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
@@ -537,7 +581,12 @@ class DXFProcessor:
             if len(path) != 0:
                 if not isinstance(path[0], Move):
                     path = Move(path.first_point) + path
-            node = context_node.add(path=path, type="elem path")
+            node = context_node.add(
+                path=path,
+                type="elem path",
+                stroke_scale=False,
+                stroke_width=self.std_stroke,
+            )
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return

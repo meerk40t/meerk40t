@@ -326,6 +326,7 @@ class IdPanel(wx.Panel):
             "op dots": mkicons.icon_points,
             "effect hatch": mkicons.icon_effect_hatch,
             "effect wobble": mkicons.icon_effect_wobble,
+            "effect warp": mkicons.icon_effect_wobble,
             "place current": mkicons.icons8_home_filled,
             "place point": mkicons.icons8_home_filled,
             "elem point": mkicons.icon_points,

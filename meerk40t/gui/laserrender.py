@@ -216,6 +216,7 @@ class LaserRender:
                     "elem line",
                     "effect hatch",
                     "effect wobble",
+                    "effect warp",
                 )
                 nodes = [e for e in nodes if e.type not in path_elements]
             if draw_mode & DRAW_MODE_IMAGE:  # Do not draw images.
@@ -272,6 +273,7 @@ class LaserRender:
                 "elem polyline",
                 "effect hatch",
                 "effect wobble",
+                "effect warp",
             ):
                 node.draw = self.draw_vector
                 node._make_cache = self.cache_geomstr
@@ -679,9 +681,9 @@ class LaserRender:
             cache_matrix = None
 
         stroke_factor = 1
-        if matrix != cache_matrix:
+        if matrix != cache_matrix and cache_matrix is not None:
             # Calculate the relative change matrix and apply it to this shape.
-            q = ~node._cache_matrix * matrix
+            q = ~cache_matrix * matrix
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(q)))
             # Applying the matrix will scale our stroke, so we scale the stroke back down.
             if q.determinant == 0:
