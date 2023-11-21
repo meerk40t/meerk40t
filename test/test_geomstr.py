@@ -562,12 +562,16 @@ class TestGeomstr(unittest.TestCase):
         @return:
         """
         path = Geomstr()
-        path.cubic((77.46150486344618+8.372252124023593j), (99.5707686371264+1.7675099427501895j), (48.146907914727855+48.97717310792103j), (26.350415653100136+77.5272640600043j))
+        path.cubic(
+            (77.46150486344618 + 8.372252124023593j),
+            (99.5707686371264 + 1.7675099427501895j),
+            (48.146907914727855 + 48.97717310792103j),
+            (26.350415653100136 + 77.5272640600043j),
+        )
         p = np.array(list(path.as_equal_interpolated_points(5)))
         distances = np.abs(p[:-1] - p[1:])
         for d in distances:
             self.assertAlmostEqual(d, 5, delta=1)
-
 
     # def test_geomstr_cubic_equal_distances(self):
     #     for i in range(5):

@@ -1504,7 +1504,9 @@ class Geomstr:
                 distances = np.abs(pts[:-1] - pts[1:])
                 distances = np.cumsum(distances)
                 max_distance = distances[-1]
-                dist_values = np.linspace(0, max_distance, int(np.ceil(max_distance / distance)))[1:]
+                dist_values = np.linspace(
+                    0, max_distance, int(np.ceil(max_distance / distance))
+                )[1:]
                 near_t = np.searchsorted(distances, dist_values, side="right")
                 pts = pts[near_t]
                 yield from pts
@@ -1514,7 +1516,9 @@ class Geomstr:
                 distances = np.abs(pts[:-1] - pts[1:])
                 distances = np.cumsum(distances)
                 max_distance = distances[-1]
-                dist_values = np.linspace(0, max_distance, int(np.ceil(max_distance / distance)))[1:]
+                dist_values = np.linspace(
+                    0, max_distance, int(np.ceil(max_distance / distance))
+                )[1:]
                 near_t = np.searchsorted(distances, dist_values, side="right")
                 pts = pts[near_t]
                 yield from pts
@@ -1524,7 +1528,9 @@ class Geomstr:
                 distances = np.abs(pts[:-1] - pts[1:])
                 distances = np.cumsum(distances)
                 max_distance = distances[-1]
-                dist_values = np.linspace(0, max_distance, int(np.ceil(max_distance / distance)))[1:]
+                dist_values = np.linspace(
+                    0, max_distance, int(np.ceil(max_distance / distance))
+                )[1:]
                 near_t = np.searchsorted(distances, dist_values, side="right")
                 pts = pts[near_t]
                 yield from pts
