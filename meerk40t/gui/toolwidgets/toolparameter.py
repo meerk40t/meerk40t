@@ -317,7 +317,10 @@ class ParameterTool(ToolWidget):
             if parameters[idx] == 0:
                 # point, needs to be translated into scene coordinates
                 pt = (parameters[idx + 1], parameters[idx + 2])
-                new_pt = self.element.matrix.point_in_matrix_space(pt)
+                try:
+                    new_pt = self.element.matrix.point_in_matrix_space(pt)
+                except AttributeError:
+                    new_pt = pt
                 self.params.append(new_pt)
                 idx += 1
             elif parameters[idx] == 1:
@@ -384,7 +387,10 @@ class ParameterTool(ToolWidget):
             if d_type == 0:
                 # The point coordinates need to be brought back
                 # to the original coordinate system
-                newpt = self.element.matrix.point_in_inverse_space(d_data)
+                try:
+                    newpt = self.element.matrix.point_in_inverse_space(d_data)
+                except AttributeError:
+                    newpt = d_data
                 parameter.append(newpt[0])
                 parameter.append(newpt[1])
             else:
@@ -412,7 +418,10 @@ class ParameterTool(ToolWidget):
             # self.paramtype[p_idx] = param[idx]
             if param[idx] == 0:
                 pt = (param[idx + 1], param[idx + 2])
-                new_pt = self.element.matrix.point_in_matrix_space(pt)
+                try:
+                    new_pt = self.element.matrix.point_in_matrix_space(pt)
+                except AttributeError:
+                    new_pt = pt
                 # print(f"sync {p_idx}: {self.params[p_idx]} - {new_pt}")
                 self.params[p_idx] = new_pt
                 idx += 1
