@@ -28,73 +28,73 @@ def hardware_settings(code):
     @return: parameter, units
     """
     if code == 0:
-        return 10, "step pulse time", "microseconds"
+        return 10, "step pulse time", "microseconds", float
     if code == 1:
-        return 25, "step idle delay", "milliseconds"
+        return 25, "step idle delay", "milliseconds", float
     if code == 2:
-        return 0, "step pulse invert", "bitmask"
+        return 0, "step pulse invert", "bitmask", int
     if code == 3:
-        return 0, "step direction invert", "bitmask"
+        return 0, "step direction invert", "bitmask", int
     if code == 4:
-        return 0, "invert step enable pin", "boolean"
+        return 0, "invert step enable pin", "boolean", int
     if code == 5:
-        return 0, "invert limit pins", "boolean"
+        return 0, "invert limit pins", "boolean", int
     if code == 6:
-        return 0, "invert probe pin", "boolean"
+        return 0, "invert probe pin", "boolean", int
     if code == 10:
-        return 255, "status report options", "bitmask"
+        return 255, "status report options", "bitmask", int
     if code == 11:
-        return 0.010, "Junction deviation", "mm"
+        return 0.010, "Junction deviation", "mm", float
     if code == 12:
-        return 0.002, "arc tolerance", "mm"
+        return 0.002, "arc tolerance", "mm", float
     if code == 13:
-        return 0, "Report in inches", "boolean"
+        return 0, "Report in inches", "boolean", int
     if code == 20:
-        return 0, "Soft limits enabled", "boolean"
+        return 0, "Soft limits enabled", "boolean", int
     if code == 21:
-        return 0, "hard limits enabled", "boolean"
+        return 0, "hard limits enabled", "boolean", int
     if code == 22:
-        return 0, "Homing cycle enable", "boolean"
+        return 0, "Homing cycle enable", "boolean", int
     if code == 23:
-        return 0, "Homing direction invert", "bitmask"
+        return 0, "Homing direction invert", "bitmask", int
     if code == 24:
-        return 25.000, "Homing locate feed rate", "mm/min"
+        return 25.000, "Homing locate feed rate", "mm/min", float
     if code == 25:
-        return 500.000, "Homing search seek rate", "mm/min"
+        return 500.000, "Homing search seek rate", "mm/min", float
     if code == 26:
-        return 250, "Homing switch debounce delay", "ms"
+        return 250, "Homing switch debounce delay", "ms", float
     if code == 27:
-        return 1.000, "Homing switch pull-off distance", "mm"
+        return 1.000, "Homing switch pull-off distance", "mm", float
     if code == 30:
-        return 1000, "Maximum spindle speed", "RPM"
+        return 1000, "Maximum spindle speed", "RPM", float
     if code == 31:
-        return 0, "Minimum spindle speed", "RPM"
+        return 0, "Minimum spindle speed", "RPM", float
     if code == 32:
-        return 1, "Laser mode enable", "boolean"
+        return 1, "Laser mode enable", "boolean", int
     if code == 100:
-        return 250.000, "X-axis steps per millimeter", "steps"
+        return 250.000, "X-axis steps per millimeter", "steps", float
     if code == 101:
-        return 250.000, "Y-axis steps per millimeter", "steps"
+        return 250.000, "Y-axis steps per millimeter", "steps", float
     if code == 102:
-        return 250.000, "Z-axis steps per millimeter", "steps"
+        return 250.000, "Z-axis steps per millimeter", "steps", float
     if code == 110:
-        return 500.000, "X-axis max rate", "mm/min"
+        return 500.000, "X-axis max rate", "mm/min", float
     if code == 111:
-        return 500.000, "Y-axis max rate", "mm/min"
+        return 500.000, "Y-axis max rate", "mm/min", float
     if code == 112:
-        return 500.000, "Z-axis max rate", "mm/min"
+        return 500.000, "Z-axis max rate", "mm/min", float
     if code == 120:
-        return 10.000, "X-axis acceleration", "mm/s^2"
+        return 10.000, "X-axis acceleration", "mm/s^2", float
     if code == 121:
-        return 10.000, "Y-axis acceleration", "mm/s^2"
+        return 10.000, "Y-axis acceleration", "mm/s^2", float
     if code == 122:
-        return 10.000, "Z-axis acceleration", "mm/s^2"
+        return 10.000, "Z-axis acceleration", "mm/s^2", float
     if code == 130:
-        return 200.000, "X-axis max travel", "mm"
+        return 200.000, "X-axis max travel", "mm", float
     if code == 131:
-        return 200.000, "Y-axis max travel", "mm"
+        return 200.000, "Y-axis max travel", "mm", float
     if code == 132:
-        return 200.000, "Z-axis max travel", "mm"
+        return 200.000, "Z-axis max travel", "mm", float
 
 
 def grbl_error_code(code):

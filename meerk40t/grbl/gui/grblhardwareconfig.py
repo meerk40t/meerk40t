@@ -119,11 +119,11 @@ class GrblHardwareProperties(ScrolledPanel):
             d = settings(i)
             if d is None:
                 continue
+            ignore, parameter, units, data_type = d
             if i in self.service.hardware_config:
-                value = str(self.service.hardware_config[i])
+                value = str(data_type(self.service.hardware_config[i]))
             else:
                 value = ""
-            ignore, parameter, units = d
 
             row_id = chart.InsertItem(chart.GetItemCount(), f"${i}")
             chart.SetItem(row_id, 1, str(parameter))
