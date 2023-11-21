@@ -195,6 +195,14 @@ class GRBLEmulator:
         @param data:
         @return:
         """
+        # import time
+        # if not hasattr(self, "ignore"):
+        #     self.ignore = time.time()
+        #     return
+        # else:
+        #     if self.ignore + 5 > time.time():
+        #         return
+
         if isinstance(data, str):
             data = data.encode()
         for c in data:
