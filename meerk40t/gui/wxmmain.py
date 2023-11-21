@@ -215,7 +215,7 @@ class MeerK40t(MWindow):
         self.__kernel_initialize()
 
         self.Bind(wx.EVT_SIZE, self.on_size)
-
+        self.context.signal("bedsize")
         self.CenterOnScreen()
         self.update_check_at_startup()
         self.parametric_info = None
