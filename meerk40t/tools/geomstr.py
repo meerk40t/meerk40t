@@ -3423,6 +3423,39 @@ class Geomstr:
         imags = c1s.real * mx.b + c1s.imag * mx.d + 1 * mx.f
         segments[q, 3] = reals + 1j * imags
 
+    def transform3x3(self, mx, e=None):
+        """
+        Perspective Transformation by an arbitrary 3x3 matrix.
+        @param mx: Matrix to transform by (3x3)
+        @param e: index, line values
+        @return:
+        """
+
+        def value(x, y):
+            m = mx.mx
+            count = len(x)
+            pts = np.vstack((x, y, np.ones(count)))
+            result = np.dot(m, pts)
+            return (result[0] / result[2] + 1j * result[1] / result[2])
+
+        segments = self.segments
+        index = self.index
+
+        starts = segments[:index, 0]
+        segments[:index, 0] = value(starts.real, starts.imag)
+
+        ends = segments[:index, 4]
+        segments[:index, 4] = value(ends.real, ends.imag)
+
+        infos = segments[:index, 2]
+        q = np.where(np.real(infos).astype(int) & 0b0110)[0]
+
+        c0s = segments[q, 1]
+        segments[q, 1] = value(c0s.real, c0s.imag)
+
+        c1s = segments[q, 3]
+        segments[q, 3] = value(c1s.real, c1s.imag)
+
     def translate(self, dx, dy, e=None):
         """
         Translate the location within the path.
