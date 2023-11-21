@@ -2130,6 +2130,36 @@ def init_tree(kernel):
         self.load(filepath)
 
     @tree_operation(
+        _("Open containing folder: '{name}'"),
+        node_type="file",
+        help=_(
+            "Open this file working directory in the system's file manager"
+        ),
+    )
+    def open_file_in_explorer(node, **kwargs):
+        file_path = node.filepath
+
+        import platform
+        import subprocess
+
+        system_platform = platform.system()
+
+        if system_platform == "Windows":
+            # Use the "start" command to open the file explorer in Windows
+            # subprocess.run(["start", "explorer", "/select,", os.path.normpath(file_path)], shell=True)
+            subprocess.run(["explorer", "/select,", os.path.normpath(file_path)])
+
+        elif system_platform == "Darwin":
+            # Use the "open" command to open Finder on macOS
+            subprocess.run(["open", "-R", os.path.normpath(file_path)])
+
+        elif system_platform == "Linux":
+            # Use the "xdg-open" command to open the file explorer on Linux
+            normalized = os.path.normpath(file_path)
+            directory = os.path.dirname(normalized)
+            subprocess.run(["xdg-open", directory])
+
+    @tree_operation(
         _("Open in System: '{name}'"),
         node_type="file",
         help=_(
