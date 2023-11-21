@@ -20,14 +20,14 @@ class WarpEffectNode(Node, FunctionalParameter):
         self.stroke_scale = False
         self._stroke_zero = None
         self.output = True
-        self.x1 = 0
-        self.y1 = 0
-        self.x2 = 0
-        self.y2 = 0
-        self.x3 = 0
-        self.y3 = 0
-        self.x4 = 0
-        self.y4 = 0
+        self.p1 = complex(0, 0)
+        self.p2 = complex(0, 0)
+        self.p3 = complex(0, 0)
+        self.p4 = complex(0, 0)
+        self.d1 = complex(0, 0)
+        self.d2 = complex(0, 0)
+        self.d3 = complex(0, 0)
+        self.d4 = complex(0, 0)
 
         Node.__init__(self, type="effect warp", id=id, label=label, lock=lock, **kwargs)
         self._formatter = "{element_type} - ({children})"
@@ -46,29 +46,30 @@ class WarpEffectNode(Node, FunctionalParameter):
         if b is None:
             return
         nx, ny, mx, my = b
-        self.x1 = nx
-        self.y1 = ny
-        self.x2 = mx
-        self.y2 = ny
-        self.x3 = mx
-        self.y3 = my
-        self.x4 = nx
-        self.y4 = my
+        self.p1 = complex(nx, ny)
+        self.p2 = complex(mx, ny)
+        self.p3 = complex(mx, my)
+        self.p4 = complex(nx, my)
+
+        n1 = self.p1 + self.d1
+        n2 = self.p2 + self.d2
+        n3 = self.p3 + self.d3
+        n4 = self.p4 + self.d4
 
         self.functional_parameter = (
             "warp",
             0,
-            self.x1,
-            self.y1,
+            n1.real,
+            n1.imag,
             0,
-            self.x2,
-            self.y2,
+            n2.real,
+            n2.imag,
             0,
-            self.x3,
-            self.y3,
+            n3.real,
+            n3.imag,
             0,
-            self.x4,
-            self.y4,
+            n4.real,
+            n4.imag,
         )
 
     @property
@@ -162,28 +163,17 @@ class WarpEffectNode(Node, FunctionalParameter):
             except AttributeError:
                 # If direct children lack as_geometry(), do nothing.
                 pass
-        b = self.bounds
-        if b is None:
-            return
-        nx, ny, mx, my = b
-        self.x1 = nx
-        self.y1 = ny
-        self.x2 = mx
-        self.y2 = ny
-        self.x3 = mx
-        self.y3 = my
-        self.x4 = nx
-        self.y4 = my
-        width = mx - nx
+        self.set_bounds_parameters()
+
         self.perspective_matrix = PMatrix.map(
-            (self.x1, self.y1),
-            (self.x2, self.y2),
-            (self.x3 - width / 5, self.y3),
-            (self.x4 + width / 5, self.y4),
-            (self.x1, self.y1),
-            (self.x2, self.y2),
-            (self.x3, self.y3),
-            (self.x4, self.y4),
+            self.p1,
+            self.p2,
+            self.p3,
+            self.p4,
+            self.p1 + self.d1,
+            self.p2 + self.d2,
+            self.p3 + self.d3,
+            self.p4 + self.d4,
         )
         outlines.transform3x3(self.perspective_matrix)
         return outlines
@@ -236,25 +226,34 @@ class WarpEffectNode(Node, FunctionalParameter):
             else:
                 return default
 
-        if isinstance(value, (list, tuple)):
-            self.mkparam = value
-            if self.mkparam:
-                method = self.mkparam[0]
+        if not isinstance(value, (list, tuple)):
+            return
+        self.mkparam = value
+        if self.mkparam:
+            method = self.mkparam[0]
 
-                if self.x1 != self.mkparam[2] or self.y1 != self.mkparam[3]:
-                    # P1 changed.
-                    self.x1 = getit(self.mkparam, 2, self.x1)
-                    self.y1 = getit(self.mkparam, 3, self.y1)
-                elif self.x2 != self.mkparam[5] or self.y2 != self.mkparam[6]:
-                    # P2 changed
-                    self.x2 = getit(self.mkparam, 5, self.x2)
-                    self.y2 = getit(self.mkparam, 6, self.y2)
-                elif self.x3 != self.mkparam[8] or self.y3 != self.mkparam[9]:
-                    # P3 changed
-                    self.x3 = getit(self.mkparam, 8, self.x2)
-                    self.y3 = getit(self.mkparam, 9, self.y2)
-                elif self.x4 != self.mkparam[11] or self.y4 != self.mkparam[12]:
-                    # P3 changed
-                    self.x4 = getit(self.mkparam, 11, self.x2)
-                    self.y4 = getit(self.mkparam, 12, self.y2)
-                self.altered()
+            n1 = self.p1 + self.d1
+            n2 = self.p2 + self.d2
+            n3 = self.p3 + self.d3
+            n4 = self.p4 + self.d4
+            if n1.real != self.mkparam[2] or n1.imag != self.mkparam[3]:
+                dn1 = complex(
+                    getit(self.mkparam, 2, n1.real), getit(self.mkparam, 3, n1.imag)
+                )
+                self.d1 = dn1 - self.p1
+            elif n2.real != self.mkparam[5] or n2.imag != self.mkparam[6]:
+                dn2 = complex(
+                    getit(self.mkparam, 5, n2.real), getit(self.mkparam, 6, n2.imag)
+                )
+                self.d2 = dn2 - self.p2
+            elif n3.real != self.mkparam[8] or n3.imag != self.mkparam[9]:
+                dn3 = complex(
+                    getit(self.mkparam, 8, n3.real), getit(self.mkparam, 9, n3.imag)
+                )
+                self.d3 = dn3 - self.p3
+            elif n4.real != self.mkparam[11] or n4.imag != self.mkparam[12]:
+                dn4 = complex(
+                    getit(self.mkparam, 11, n4.real), getit(self.mkparam, 12, n4.imag)
+                )
+                self.d4 = dn4 - self.p4
+            self.altered()
