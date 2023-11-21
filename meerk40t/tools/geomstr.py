@@ -1499,29 +1499,35 @@ class Geomstr:
                 yield end
                 continue
             if seg_type == TYPE_QUAD:
-                quads = self._quad_position(e, np.linspace(0, 1, 1000))
-                last = quads[0]
-                for d in quads[1:-1]:
-                    if abs(last - d) > distance:
-                        yield d
-                        last = d
-                yield quads[-1]
+                ts = np.linspace(0, 1, 1000)
+                pts = self._quad_position(e, ts)
+                distances = np.abs(pts[:-1] - pts[1:])
+                distances = np.cumsum(distances)
+                max_distance = distances[-1]
+                dist_values = np.linspace(0, max_distance, int(np.ceil(max_distance / distance)))[1:]
+                near_t = np.searchsorted(distances, dist_values, side="right")
+                pts = pts[near_t]
+                yield from pts
             elif seg_type == TYPE_CUBIC:
-                cubics = self._cubic_position(e, np.linspace(0, 1, 1000))
-                last = cubics[0]
-                for d in cubics[1:-1]:
-                    if abs(last - d) > distance:
-                        yield d
-                        last = d
-                yield cubics[-1]
+                ts = np.linspace(0, 1, 1000)
+                pts = self._cubic_position(e, ts)
+                distances = np.abs(pts[:-1] - pts[1:])
+                distances = np.cumsum(distances)
+                max_distance = distances[-1]
+                dist_values = np.linspace(0, max_distance, int(np.ceil(max_distance / distance)))[1:]
+                near_t = np.searchsorted(distances, dist_values, side="right")
+                pts = pts[near_t]
+                yield from pts
             elif seg_type == TYPE_ARC:
-                arcs = self._arc_position(e, np.linspace(0, 1, 1000))
-                last = arcs[0]
-                for d in arcs[1:-1]:
-                    if abs(last - d) > distance:
-                        yield d
-                        last = d
-                yield arcs[-1]
+                ts = np.linspace(0, 1, 1000)
+                pts = self._arc_position(e, ts)
+                distances = np.abs(pts[:-1] - pts[1:])
+                distances = np.cumsum(distances)
+                max_distance = distances[-1]
+                dist_values = np.linspace(0, max_distance, int(np.ceil(max_distance / distance)))[1:]
+                near_t = np.searchsorted(distances, dist_values, side="right")
+                pts = pts[near_t]
+                yield from pts
             elif seg_type == TYPE_END:
                 at_start = True
 
