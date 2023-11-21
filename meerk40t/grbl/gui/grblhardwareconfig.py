@@ -60,13 +60,14 @@ class GrblIoButtons(wx.Panel):
             if not pathname.lower().endswith(".nc"):
                 pathname += ".nc"
         chart = self.chart.chart
-        if isinstance(chart, EditableListCtrl):
-            with open(pathname, "w") as f:
-                count = chart.GetItemCount()
-                for i in range(count):
-                    # item = chart.GetItem(i)
-                    label = chart.GetItemText(i)
-                    f.write(f"{label}\n")
+        with open(pathname, "w") as f:
+            count = chart.GetItemCount()
+            for i in range(count):
+                setting = chart.GetItemText(i)
+                value = chart.GetItemText(i,2)
+                if chart.GetItemText(i, 3) in ("bitmask", "boolean"):
+                    value = int(float(value))
+                f.write(f"{setting}={value}\n")
 
 
 class GrblHardwareProperties(ScrolledPanel):
