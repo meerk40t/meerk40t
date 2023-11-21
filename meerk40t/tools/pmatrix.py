@@ -5,6 +5,11 @@ import numpy.linalg
 
 
 class PMatrix:
+    """
+    PMatrix is a perspective matrix class. Primarily this is needed to perform Transform3x3 for geomstr classes.
+    Unlike svgelements. Matrix used elsewhere this is a numpy based class and uses native @ commands for concat.
+    """
+
     def __init__(self, a=1.0, b=0.0, c=0.0, d=0.0, e=1.0, f=0.0, g=0.0, h=0.0, i=1.0):
         if isinstance(a, PMatrix):
             self.mx = copy(a.mx)
@@ -13,16 +18,12 @@ class PMatrix:
             self.mx = a
             return
         self.mx = np.array([[a, b, c], [d, e, f], [g, h, i]])
-        # self.mx = np.array([[a, d, g], [b, e, h], [c, f, i]])
 
     def __invert__(self):
         self.mx = np.linalg.inv(self.mx)
         return self
 
     def __str__(self):
-        """
-        :returns string representation of matrix.
-        """
         return f"PMatrix([{self.a}, {self.b}, {self.c}\n{self.d}, {self.e}, {self.f}\n{self.g}, {self.h}, {self.i}\n)"
 
     def __repr__(self):
@@ -98,6 +99,18 @@ class PMatrix:
 
     @classmethod
     def map(cls, p1, p2, p3, p4, r1, r2, r3, r4):
+        """
+        Provides a matrix which maps points p1, p2, p3, p4 to points r1, r2, r3 r4 respectively.
+        @param p1:
+        @param p2:
+        @param p3:
+        @param p4:
+        @param r1:
+        @param r2:
+        @param r3:
+        @param r4:
+        @return:
+        """
         p = PMatrix.perspective(p1, p2, p3, p4)
         r = PMatrix.perspective(r1, r2, r3, r4)
         try:
