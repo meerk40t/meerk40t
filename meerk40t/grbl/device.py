@@ -124,22 +124,21 @@ class GRBLDevice(Service, Status):
                 "signals": "bedsize",
             },
             {
-                "attr": "home_dx",
+                "attr": "home_corner",
                 "object": self,
-                "default": 0.0,
-                "type": float,
-                "label": _("Home Shift dx"),
-                "tip": _("Offset for the home position [0,1]"),
-                "subsection": "_30_Home position",
-                "signals": "bedsize",
-            },
-            {
-                "attr": "home_dy",
-                "object": self,
-                "default": 0.0,
-                "type": float,
-                "label": _("Home Shift Dy"),
-                "tip": _("Offset for the home position [0,1]"),
+                "default": "auto",
+                "type": str,
+                "style": "combo",
+                "choices": [
+                    "auto",
+                    "top-left",
+                    "top-right",
+                    "bottom-left",
+                    "bottom-right",
+                    "center",
+                ],
+                "label": _("Force Declared Home"),
+                "tip": _("Override native home location"),
                 "subsection": "_30_Home position",
                 "signals": "bedsize",
             },
@@ -827,6 +826,25 @@ class GRBLDevice(Service, Status):
         return self.driver.native_x, self.driver.native_y
 
     def realize(self, origin=None):
+        corner = self.setting(str, "home_corner")
+        if corner == "auto":
+            home_dx = 0
+            home_dy = 0
+        elif corner == "top-left":
+            home_dx = 1 if self.flip_x else 0
+            home_dy = 1 if self.flip_y else 0
+        elif corner == "top-right":
+            home_dx = 0 if self.flip_x else 1
+            home_dy = 1 if self.flip_y else 0
+        elif corner == "bottom-left":
+            home_dx = 1 if self.flip_x else 0
+            home_dy = 0 if self.flip_y else 1
+        elif corner == "bottom-right":
+            home_dx = 0 if self.flip_x else 1
+            home_dy = 0 if self.flip_y else 1
+        elif corner == "center":
+            home_dx = 0.5
+            home_dy = 0.5
         self.view.set_dims(self.bedwidth, self.bedheight)
         self.view.transform(
             user_scale_x=self.scale_x,
@@ -834,8 +852,8 @@ class GRBLDevice(Service, Status):
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
-            origin_x=self.home_dx,
-            origin_y=self.home_dy,
+            origin_x=home_dx,
+            origin_y=home_dy,
         )
 
         self.view_mm.set_dims(self.bedwidth, self.bedheight)
@@ -845,8 +863,8 @@ class GRBLDevice(Service, Status):
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
-            origin_x=self.home_dx,
-            origin_y=self.home_dy,
+            origin_x=home_dx,
+            origin_y=home_dy,
         )
 
         # rotary_active=self.rotary_active,
