@@ -44,7 +44,37 @@ class GrblIoButtons(wx.Panel):
         self.service("gcode $$\n")
 
     def on_button_write(self, event):
-        pass
+        chart = self.chart.chart
+        count = chart.GetItemCount()
+        eeprom_writes = []
+        for i in range(count):
+            setting = chart.GetItemText(i)
+            if len(setting) < 2:
+                continue
+            hardware_index = int(setting[1:])
+            d = hardware_settings(hardware_index)
+
+            value = float(chart.GetItemText(i, 2))
+            if d[-1] == int:
+                value = int(value)
+            if value != self.service.hardware_config[hardware_index]:
+                eeprom_writes.append(f"${i}={value}")
+        if eeprom_writes:
+            dlg = wx.MessageDialog(
+                self,
+                _("This will write settings to hardware.")
+                + "\n"
+                + "\n".join(eeprom_writes),
+                _("Are you sure?"),
+                wx.YES_NO | wx.ICON_WARNING,
+            )
+            dlgresult = dlg.ShowModal()
+            dlg.Destroy()
+            if dlgresult != wx.ID_YES:
+                return
+            for ew in eeprom_writes:
+                print(ew)
+            self.service(".gcode $$")
 
     def on_button_export(self, event):
         filetype = "*.nc"
@@ -64,7 +94,7 @@ class GrblIoButtons(wx.Panel):
             count = chart.GetItemCount()
             for i in range(count):
                 setting = chart.GetItemText(i)
-                value = chart.GetItemText(i,2)
+                value = chart.GetItemText(i, 2)
                 if chart.GetItemText(i, 3) in ("bitmask", "boolean"):
                     value = int(float(value))
                 f.write(f"{setting}={value}\n")
