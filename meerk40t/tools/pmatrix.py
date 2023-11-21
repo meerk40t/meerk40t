@@ -1,6 +1,8 @@
 import numpy as np
 from copy import copy
 
+import numpy.linalg
+
 
 class PMatrix:
     def __init__(self, a=1.0, b=0.0, c=0.0, d=0.0, e=1.0, f=0.0, g=0.0, h=0.0, i=1.0):
@@ -98,7 +100,10 @@ class PMatrix:
     def map(cls, p1, p2, p3, p4, r1, r2, r3, r4):
         p = PMatrix.perspective(p1, p2, p3, p4)
         r = PMatrix.perspective(r1, r2, r3, r4)
-        mx = p.mx @ np.linalg.inv(r.mx)
+        try:
+            mx = p.mx @ np.linalg.inv(r.mx)
+        except numpy.linalg.LinAlgError:
+            return cls()
         return cls(mx)
 
     @classmethod
@@ -115,6 +120,14 @@ class PMatrix:
         @param p4:
         @return:
         """
+        if isinstance(p1, complex):
+            p1 = p1.real, p1.imag
+        if isinstance(p2, complex):
+            p2 = p2.real, p2.imag
+        if isinstance(p3, complex):
+            p3 = p3.real, p3.imag
+        if isinstance(p4, complex):
+            p4 = p4.real, p4.imag
         x1, y1 = p1
         x2, y2 = p2
         x3, y3 = p3
