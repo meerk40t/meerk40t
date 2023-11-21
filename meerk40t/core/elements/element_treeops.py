@@ -2137,7 +2137,9 @@ def init_tree(kernel):
 
         elif system_platform == "Linux":
             # Use the "xdg-open" command to open the file explorer on Linux
-            subprocess.run(["xdg-open", os.path.normpath(file_path)])
+            normalized = os.path.normpath(file_path)
+            directory = os.path.dirname(normalized)
+            subprocess.run(["xdg-open", directory])
 
     @tree_operation(
         _("Open in System: '{name}'"),
