@@ -2,7 +2,6 @@ import math
 
 import wx
 
-from meerk40t.core.node.mixins import FunctionalParameter
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 
