@@ -2128,7 +2128,8 @@ def init_tree(kernel):
 
         if system_platform == "Windows":
             # Use the "start" command to open the file explorer in Windows
-            subprocess.run(["start", "explorer", "/select,", os.path.normpath(file_path)], shell=True)
+            # subprocess.run(["start", "explorer", "/select,", os.path.normpath(file_path)], shell=True)
+            subprocess.run(["explorer", "/select,", os.path.normpath(file_path)])
 
         elif system_platform == "Darwin":
             # Use the "open" command to open Finder on macOS
