@@ -1073,7 +1073,9 @@ class RibbonBarPanel(wx.Control):
                 item.Enable(False)
             item.Check(haslabel)
             top.Bind(
-                wx.EVT_MENU, lambda v: self.toggle_show_labels(not haslabel), id=item.GetId()
+                wx.EVT_MENU,
+                lambda v: self.toggle_show_labels(not haslabel),
+                id=item.GetId(),
             )
             item = menu.AppendSeparator()
             item = menu.Append(wx.ID_ANY, _("Customize Toolbars"))

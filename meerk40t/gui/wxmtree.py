@@ -537,6 +537,7 @@ class ShadowTree:
             "op dots": icon_points,
             "effect hatch": icon_effect_hatch,
             "effect wobble": icon_effect_wobble,
+            "effect warp": icon_effect_wobble,
             "place current": icons8_home_filled,
             "place point": icons8_home_filled,
             "elem point": icon_points,

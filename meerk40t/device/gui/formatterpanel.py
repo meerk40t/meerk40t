@@ -59,6 +59,7 @@ class FormatterPanel(wx.Panel):
             "op dots": icon_points,
             "effect hatch": icon_effect_hatch,
             "effect wobble": icon_effect_wobble,
+            "effect warp": icon_effect_wobble,
             "file": icons8_file,
             "group": icons8_group_objects,
             "elem point": icon_points,

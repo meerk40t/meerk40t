@@ -223,7 +223,7 @@ class ConfigurationTcp(wx.Panel):
 
         self.text_address = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_address.SetMinSize(dip_size(self, 75, -1))
-        self.text_address.SetToolTip(_("IP/Host if the server computer"))
+        self.text_address.SetToolTip(_("IP/hostname of the server computer"))
         h_sizer_y1.Add(self.text_address, 1, wx.EXPAND, 0)
 
         sizer_port = StaticBoxSizer(self, wx.ID_ANY, _("Port"), wx.VERTICAL)

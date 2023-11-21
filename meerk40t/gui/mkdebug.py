@@ -17,9 +17,9 @@ _ = wx.GetTranslation
 def register_panel_debugger(window, context):
     pane = (
         aui.AuiPaneInfo()
-        .Left()
+        .Float()
         .MinSize(225, 110)
-        .FloatingSize(225, 110)
+        .FloatingSize(400, 400)
         .Caption(_("Position"))
         .CaptionVisible(not context.pane_lock)
         .Name("debug_tree")
@@ -35,9 +35,9 @@ def register_panel_debugger(window, context):
 def register_panel_color(window, context):
     pane = (
         aui.AuiPaneInfo()
-        .Left()
+        .Float()
         .MinSize(225, 110)
-        .FloatingSize(225, 110)
+        .FloatingSize(400, 400)
         .Caption(_("System-Colors"))
         .CaptionVisible(not context.pane_lock)
         .Name("debug_color")
@@ -53,9 +53,9 @@ def register_panel_color(window, context):
 def register_panel_icon(window, context):
     pane = (
         aui.AuiPaneInfo()
-        .Left()
+        .Float()
         .MinSize(225, 110)
-        .FloatingSize(225, 110)
+        .FloatingSize(400, 400)
         .Caption(_("Icons"))
         .CaptionVisible(not context.pane_lock)
         .Name("debug_icons")

@@ -10388,7 +10388,7 @@ msgstr "Verbindungsstatus"
 #: meerk40t/grbl/gui/tcpcontroller.py:70
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:237
 #: meerk40t/lihuiyu/gui/tcpcontroller.py:73
-msgid "IP/Host if the server computer"
+msgid "IP/hostname of the server computer"
 msgstr "IP/Hostname des Servers"
 
 #: meerk40t/grbl/gui/tcpcontroller.py:71

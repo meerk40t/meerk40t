@@ -35,6 +35,7 @@ class EngraveOpNode(Node, Parameters):
             "elem line",
             "effect hatch",
             "effect wobble",
+            "effect warp",
         )
         # Which elements do we consider for automatic classification?
         self._allowed_elements = (
@@ -45,6 +46,7 @@ class EngraveOpNode(Node, Parameters):
             "elem line",
             "effect hatch",
             "effect wobble",
+            "effect warp",
         )
 
         # To which attributes does the classification color check respond

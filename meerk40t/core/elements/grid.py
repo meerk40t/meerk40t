@@ -6,9 +6,9 @@ from copy import copy
 from math import cos, gcd, pi, sin, tau
 
 from meerk40t.core.node.node import Node
-from meerk40t.core.units import Length
+from meerk40t.core.units import Angle, Length
 from meerk40t.kernel import CommandSyntaxError
-from meerk40t.svgelements import Angle, Matrix, Polygon
+from meerk40t.svgelements import Matrix
 
 
 def plugin(kernel, lifecycle=None):
@@ -109,8 +109,8 @@ def init_commands(kernel):
 
     @self.console_argument("repeats", type=int, help=_("Number of repeats"))
     @self.console_argument("radius", type=self.length, help=_("Radius"))
-    @self.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
-    @self.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
+    @self.console_argument("startangle", type=Angle, help=_("Start-Angle"))
+    @self.console_argument("endangle", type=Angle, help=_("End-Angle"))
     @self.console_option(
         "rotate",
         "r",
@@ -121,7 +121,7 @@ def init_commands(kernel):
     @self.console_option(
         "deltaangle",
         "d",
-        type=Angle.parse,
+        type=Angle,
         help=_("Delta-Angle (if omitted will take (end-start)/repeats )"),
     )
     @self.console_command(
@@ -158,9 +158,9 @@ def init_commands(kernel):
             radius = 0
 
         if startangle is None:
-            startangle = Angle.parse("0deg")
+            startangle = Angle("0deg")
         if endangle is None:
-            endangle = Angle.parse("360deg")
+            endangle = Angle("360deg")
         if rotate is None:
             rotate = False
 
@@ -172,12 +172,12 @@ def init_commands(kernel):
 
         data_out = list(data)
         if deltaangle is None:
-            segment_len = (endangle.as_radians - startangle.as_radians) / repeats
+            segment_len = (endangle - startangle) / repeats
         else:
-            segment_len = deltaangle.as_radians
+            segment_len = deltaangle
         # Notabene: we are following the cartesian system here, but as the Y-Axis is top screen to bottom screen,
         # the perceived angle travel is CCW (which is counter-intuitive)
-        currentangle = startangle.as_radians
+        currentangle = startangle
         # bounds = self._emphasized_bounds
         center_x = (bounds[2] + bounds[0]) / 2.0 - radius
         center_y = (bounds[3] + bounds[1]) / 2.0
@@ -195,7 +195,7 @@ def init_commands(kernel):
                     x_pos = -1 * radius
                     y_pos = 0
                     # e *= "translate(%f, %f)" % (x_pos, y_pos)
-                    e.matrix *= f"rotate({currentangle}rad, {center_x}, {center_y})"
+                    e.matrix *= f"rotate({currentangle.angle_preferred}, {center_x}, {center_y})"
                 else:
                     x_pos = -1 * radius + radius * cos(currentangle)
                     y_pos = radius * sin(currentangle)
@@ -213,8 +213,8 @@ def init_commands(kernel):
 
     @self.console_argument("copies", type=int, help=_("Number of copies"))
     @self.console_argument("radius", type=self.length, help=_("Radius"))
-    @self.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
-    @self.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
+    @self.console_argument("startangle", type=Angle, help=_("Start-Angle"))
+    @self.console_argument("endangle", type=Angle, help=_("End-Angle"))
     @self.console_option(
         "rotate",
         "r",
@@ -225,7 +225,7 @@ def init_commands(kernel):
     @self.console_option(
         "deltaangle",
         "d",
-        type=Angle.parse,
+        type=Angle,
         help=_("Delta-Angle (if omitted will take (end-start)/copies )"),
     )
     @self.console_command(
@@ -262,9 +262,9 @@ def init_commands(kernel):
             radius = 0
 
         if startangle is None:
-            startangle = Angle.parse("0deg")
+            startangle = Angle("0deg")
         if endangle is None:
-            endangle = Angle.parse("360deg")
+            endangle = Angle("360deg")
         if rotate is None:
             rotate = False
 
@@ -276,12 +276,12 @@ def init_commands(kernel):
 
         data_out = list(data)
         if deltaangle is None:
-            segment_len = (endangle.as_radians - startangle.as_radians) / copies
+            segment_len = (endangle - startangle) / copies
         else:
-            segment_len = deltaangle.as_radians
+            segment_len = deltaangle
         # Notabene: we are following the cartesian system here, but as the Y-Axis is top screen to bottom screen,
         # the perceived angle travel is CCW (which is counter-intuitive)
-        currentangle = startangle.as_radians
+        currentangle = startangle
         # bounds = self._emphasized_bounds
         center_x = (bounds[2] + bounds[0]) / 2.0
         center_y = (bounds[3] + bounds[1]) / 2.0
@@ -294,7 +294,7 @@ def init_commands(kernel):
                     x_pos = radius
                     y_pos = 0
                     e.matrix *= f"translate({x_pos}, {y_pos})"
-                    e.matrix *= f"rotate({currentangle}rad, {center_x}, {center_y})"
+                    e.matrix *= f"rotate({currentangle.angle_preferred}, {center_x}, {center_y})"
                     e.modified()
                     if hasattr(e, "update"):
                         images.append(e)

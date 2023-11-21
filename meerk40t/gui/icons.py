@@ -2226,7 +2226,36 @@ icon_circled_1 = VectorIcon(
     ),
 )
 
+icon_nohatch = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 10 10 h 80 v 80 h -80 v -80",
+    ),
+)
+
 icon_hatch = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 10 10 h 80 v 80 h -80 v -80",
+        "M 10 26 h 80",
+        "M 10 42 h 80",
+        "M 10 58 h 80",
+        "M 10 74 h 80",
+    ),
+)
+
+icon_hatch_bidir = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 10 10 h 80 v 80 h -80 v -80",
+        "M 10 26 h 80 l -5 5 m 5 -5 l -5 -5",
+        "M 10 42 l 5 5 m -5 -5 l 5 -5 m -5 5 h 80",
+        "M 10 58 h 80 l -5 5 m 5 -5 l -5 -5",
+        "M 10 74 l 5 5 m -5 -5 l 5 -5 m -5 5 h 80",
+    ),
+)
+
+icon_hatch_diag = VectorIcon(
     fill=(),
     stroke=(
         "M 10 10 h 80 v 80 h -80 v -80",
@@ -2237,6 +2266,17 @@ icon_hatch = VectorIcon(
         "M 30 90 L 90 30",
         "M 50 90 L 90 50",
         "M 70 90 L 90 70",
+    ),
+)
+
+icon_hatch_diag_bidir = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 10 10 h 80 v 80 h -80 v -80",
+        "M 10 30 L 30 10 l -10 5 m 10 -5 l -5 10",
+        "M 10 70 l 5 -10 m -5 10 l 10 -5 m -10 5 L 70 10",
+        "M 30 90 L 90 30 l -10 5 m 10 -5 l -5 10",
+        "M 70 90 l 5 -10 m -5 10 l 10 -5 m -10 5 L 90 70",
     ),
 )
 
