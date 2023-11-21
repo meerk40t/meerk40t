@@ -119,6 +119,7 @@ class Button:
         self.available_bitmaps_disabled = {}
 
         self.tip = None
+        self.help = None
         self.client_data = None
         self.state = 0
         self.dropdown = None
@@ -146,6 +147,7 @@ class Button:
         label=None,
         icon=None,
         tip=None,
+        help=None,
         group=None,
         toggle_attr=None,
         identifier=None,
@@ -195,6 +197,7 @@ class Button:
         self.get_bitmaps(self.default_width)
 
         self.tip = tip
+        self.help = help
         self.group = group
         self.toggle_attr = toggle_attr
         self.identifier = identifier
@@ -266,6 +269,7 @@ class Button:
             "action_right": self.action_right,
             "label": self.label,
             "tip": self.tip,
+            "help": self.help,
             "icon": self.icon,
             "client_data": self.client_data,
         }
@@ -852,6 +856,7 @@ class RibbonBarPanel(wx.Control):
         hover = self._overflow_at_position(pos)
         if hover is not None:
             self.SetToolTip(_("There is more to see - click to display"))
+            self.SetHelpText("")
             return
         hover = self._button_at_position(pos)
         if hover is not None:
@@ -863,8 +868,13 @@ class RibbonBarPanel(wx.Control):
             hover = self._button_at_position(pos, use_all=True)
         if hover is not None:
             self.SetToolTip(hover.tip)
+            hhelp = hover.help
+            if hhelp is None:
+                hhelp = ""
+            self.SetHelpText(hhelp)
         else:
             self.SetToolTip("")
+            self.SetHelpText("")
 
         self.redrawn()
 

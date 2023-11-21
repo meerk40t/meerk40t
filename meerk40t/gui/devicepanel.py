@@ -160,6 +160,7 @@ class DevicePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("devices")
 
         sizer_1 = StaticBoxSizer(self, wx.ID_ANY, _("Your Devices"), wx.VERTICAL)
 

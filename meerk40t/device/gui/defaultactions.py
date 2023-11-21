@@ -32,6 +32,7 @@ class DefaultActionPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
 
         self.context = context
+        self.SetHelpText("defaultactions")
 
         self.standards = (
             ("Home", "util home", ""),

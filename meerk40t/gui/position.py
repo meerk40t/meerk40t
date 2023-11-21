@@ -34,6 +34,7 @@ class PositionPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("position")
         self.small = small
 
         self.offset_index = 0  # 0 to 8 tl tc tr cl cc cr bl bc br

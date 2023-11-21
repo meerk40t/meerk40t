@@ -125,6 +125,7 @@ class TreePanel(wx.Panel):
         #     res = wx.SystemSettings().GetAppearance().IsDark()
         # except AttributeError:
         #     res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        self.SetHelpText("tree") # That will be used for all controls in this window, unless stated differently
         res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         if res:
             self.wxtree.SetBackgroundColour(wx.Colour(50, 50, 50))

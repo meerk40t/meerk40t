@@ -21,7 +21,7 @@ class WobblePropertyPanel(ScrolledPanel):
         self.node = node
 
         self.operation = node
-
+        self.SetHelpText("wobbles")
         self.choices = [
             {
                 "attr": "loop_continuous",

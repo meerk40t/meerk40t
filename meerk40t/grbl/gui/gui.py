@@ -41,6 +41,7 @@ def plugin(service, lifecycle):
                 "label": _("Controller"),
                 "icon": icons8_connected,
                 "tip": _("Opens Controller Window"),
+                "help": "devicegrbl",
                 "action": lambda v: service("window toggle GRBLController\n"),
             },
         )
@@ -50,6 +51,7 @@ def plugin(service, lifecycle):
                 "label": _("Config"),
                 "icon": icons8_computer_support,
                 "tip": _("Opens device-specific configuration window"),
+                "help": "devicegrbl",
                 "action": lambda v: service("window toggle Configuration\n"),
             },
         )
