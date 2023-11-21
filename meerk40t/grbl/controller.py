@@ -464,8 +464,11 @@ class GrblController:
             self.service(f".timer-{self.service.label}* -q --off")
             return
         self.service(f".timer-{self.service.label}{cmd} -q --off")
-        with self._forward_lock:
-            self._forward_buffer.clear()
+        if cmd == "$":
+            if len(self._forward_buffer) > 3:
+                # If the forward planning buffer is longer than 3 it must have filled with failed attempts.
+                with self._forward_lock:
+                    self._forward_buffer.clear()
 
     def _rstop(self, *args):
         self._recving_thread = None
