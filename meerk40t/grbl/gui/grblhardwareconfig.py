@@ -18,27 +18,55 @@ _ = wx.GetTranslation
 
 
 class GrblIoButtons(wx.Panel):
-    def __init__(self, *args, context=None, **kwds):
+    def __init__(self, *args, context=None, chart=None, **kwds):
         self.service = context
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
+        self.chart = chart
 
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.button_refresh = wx.Button(self, wx.ID_ANY, "Refresh")
+        self.button_refresh = wx.Button(self, wx.ID_ANY, _("Refresh"))
         sizer_2.Add(self.button_refresh, 1, 0, 0)
         self.Bind(wx.EVT_BUTTON, self.on_button_refresh, self.button_refresh)
 
-        # self.button_write = wx.Button(self, wx.ID_ANY, "Write")
-        # sizer_2.Add(self.button_write, 1, 0, 0)
-        #
-        # self.button_export = wx.Button(self, wx.ID_ANY, "Export")
-        # sizer_2.Add(self.button_export, 1, 0, 0)
+        self.button_write = wx.Button(self, wx.ID_ANY, _("Write"))
+        sizer_2.Add(self.button_write, 1, 0, 0)
+        self.Bind(wx.EVT_BUTTON, self.on_button_write, self.button_write)
+
+        self.button_export = wx.Button(self, wx.ID_ANY, _("Export"))
+        sizer_2.Add(self.button_export, 1, 0, 0)
+        self.Bind(wx.EVT_BUTTON, self.on_button_export, self.button_export)
 
         self.SetSizer(sizer_2)
 
     def on_button_refresh(self, event):
         self.service("gcode $$\n")
+
+    def on_button_write(self, event):
+        pass
+
+    def on_button_export(self, event):
+        filetype = "*.nc"
+        with wx.FileDialog(
+            self.service.root.gui,
+            _("Export Settings"),
+            wildcard=filetype,
+            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+        ) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return
+            pathname = fileDialog.GetPath()
+            if not pathname.lower().endswith(".nc"):
+                pathname += ".nc"
+        chart = self.chart.chart
+        if isinstance(chart, EditableListCtrl):
+            with open(pathname, "w") as f:
+                count = chart.GetItemCount()
+                for i in range(count):
+                    # item = chart.GetItem(i)
+                    label = chart.GetItemText(i)
+                    f.write(f"{label}\n")
 
 
 class GrblHardwareProperties(ScrolledPanel):
@@ -63,7 +91,7 @@ class GrblHardwareProperties(ScrolledPanel):
 
         sizer_1.Add(self.chart, 8, wx.EXPAND, 0)
 
-        self.io_panel = GrblIoButtons(self, wx.ID_ANY, context=self.service)
+        self.io_panel = GrblIoButtons(self, wx.ID_ANY, context=self.service, chart=self)
         sizer_1.Add(self.io_panel, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
 
