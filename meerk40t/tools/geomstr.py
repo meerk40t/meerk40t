@@ -1459,6 +1459,72 @@ class Geomstr:
             yield end
             at_start = False
 
+    def as_equal_interpolated_segments(self, distance=100):
+        """
+        Interpolated segments gives interpolated points as a generator of lists.
+
+        At points of disjoint, the list is yielded.
+        @param distance:
+        @return:
+        """
+        segments = list()
+        for point in self.as_equal_interpolated_points(distance=distance):
+            if point is None:
+                if segments:
+                    yield segments
+                    segments = list()
+            else:
+                segments.append(point)
+        if segments:
+            yield segments
+
+    def as_equal_interpolated_points(self, distance=100):
+        at_start = True
+        end = None
+        for e in self.segments[: self.index]:
+            seg_type = int(e[2].real)
+            start = e[0]
+            if end != start and not at_start:
+                # Start point does not equal previous end point.
+                yield None
+                at_start = True
+                if seg_type == TYPE_END:
+                    # End segments, flag new start but should not be returned.
+                    continue
+            end = e[4]
+            if at_start:
+                yield start
+            at_start = False
+            if seg_type == TYPE_LINE:
+                yield end
+                continue
+            if seg_type == TYPE_QUAD:
+                quads = self._quad_position(e, np.linspace(0, 1, 1000))
+                last = quads[0]
+                for d in quads[1:-1]:
+                    if abs(last - d) > distance:
+                        yield d
+                        last = d
+                yield quads[-1]
+            elif seg_type == TYPE_CUBIC:
+                cubics = self._cubic_position(e, np.linspace(0, 1, 1000))
+                last = cubics[0]
+                for d in cubics[1:-1]:
+                    if abs(last - d) > distance:
+                        yield d
+                        last = d
+                yield cubics[-1]
+            elif seg_type == TYPE_ARC:
+                arcs = self._arc_position(e, np.linspace(0, 1, 1000))
+                last = arcs[0]
+                for d in arcs[1:-1]:
+                    if abs(last - d) > distance:
+                        yield d
+                        last = d
+                yield arcs[-1]
+            elif seg_type == TYPE_END:
+                at_start = True
+
     def as_interpolated_segments(self, interpolate=100):
         """
         Interpolated segments gives interpolated points as a generator of lists.
