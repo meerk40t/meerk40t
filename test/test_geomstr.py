@@ -538,6 +538,58 @@ class TestGeomstr(unittest.TestCase):
             t = random.random()
             self.assertEqual(c.point(t), path.position(0, t))
 
+    def test_geomstr_quad_equal_distances(self):
+        """
+        Ballpark estimate that the lines are 5 units apart. Really due to speed and curvature they could be less.
+        Also with distribution of the remaining length it could be more.
+        @return:
+        """
+        path = Geomstr()
+        path.quad(
+            (2.4597240004342713 + 51.217173195366975j),
+            (58.07775791133034 + 9.86075895321774j),
+            (58.09621943136784 + 98.90335897241886j),
+        )
+        p = np.array(list(path.as_equal_interpolated_points(5)))
+        distances = np.abs(p[:-1] - p[1:])
+        for d in distances:
+            self.assertAlmostEqual(d, 5, delta=1)
+
+    def test_geomstr_cubic_equal_distances(self):
+        """
+        Ballpark estimate that the lines are 5 units apart. Really due to speed and curvature they could be less.
+        Also with distribution of the remaining length it could be more.
+        @return:
+        """
+        path = Geomstr()
+        path.cubic(
+            (77.46150486344618 + 8.372252124023593j),
+            (99.5707686371264 + 1.7675099427501895j),
+            (48.146907914727855 + 48.97717310792103j),
+            (26.350415653100136 + 77.5272640600043j),
+        )
+        p = np.array(list(path.as_equal_interpolated_points(5)))
+        distances = np.abs(p[:-1] - p[1:])
+        for d in distances:
+            self.assertAlmostEqual(d, 5, delta=1)
+
+    # def test_geomstr_cubic_equal_distances(self):
+    #     for i in range(5):
+    #         start = random_point()
+    #         c1 = random_point()
+    #         c2 = random_point()
+    #         end = random_point()
+    #         path = Geomstr()
+    #         path.cubic(start, c1, c2, end)
+    #         print(f"curve: {start}, {c1}, {c2}, {end}")
+    #         p = np.array(list(path.as_equal_interpolated_points(5)))
+    #         distances = np.abs(p[:-1] - p[1:])
+    #         print(p)
+    #         print(distances)
+    #         for d in distances:
+    #             self.assertAlmostEqual(d, 5, delta=1)
+    #         print("\n")
+
     def test_geomstr_cubic_length(self):
         """
         This test is too time-consuming without scipy installed
