@@ -641,7 +641,7 @@ class GRBLDevice(Service, Status):
             "grbl_binds",
             hidden=True,
         )
-        def plus_x(data, **kwgs):
+        def grbl_binds(data, **kwgs):
             self("bind a +xbackward")
             self("bind d +xforward")
             self("bind s +ybackward")
