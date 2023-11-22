@@ -676,9 +676,9 @@ class Scanbeam:
         idx = np.searchsorted(self._nb_events, np.imag(e))
         actives = self._nb_scan[idx]
         line = self._geom.segments[actives]
-        a = line[:, :, 0]
+        a = line[..., 0]
         a = np.where(actives == -1, np.nan + np.nan * 1j, a)
-        b = line[:, :, -1]
+        b = line[..., -1]
         b = np.where(actives == -1, np.nan + np.nan * 1j, b)
 
         old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
