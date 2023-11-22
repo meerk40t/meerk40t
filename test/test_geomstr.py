@@ -1127,17 +1127,53 @@ class TestGeomstr(unittest.TestCase):
         except ZeroDivisionError:
             pass
 
-        # q = BeamTable(poly.geomstr)
-        # q.compute_beam_brute()
-        # t = time.time()
-        # r = q.points_in_polygon(points)
-        # t2 = time.time() - t
-        # i = 0
-        # for p1, p2 in zip(r, mask):
-        #     i += 1
-        #     if bool(p1) != bool(p2):
-        #         print(f"{i} {points[i]}")
-        # self.assertEqual(bool(p1), bool(p2))
+    def test_point_in_polygon_beamtable_beat(self):
+        """
+        Test point in poly for Scanbeam against BeamTable.
+        @return:
+        """
+
+        N = 5000
+        lenpoly = 1000
+        polygon = [
+            [np.sin(x) + 0.5, np.cos(x) + 0.5]
+            for x in np.linspace(0, 2 * np.pi, lenpoly)
+        ]
+        polygon = np.array(polygon, dtype="float32")
+
+        points = np.random.uniform(-1.5, 1.5, size=(N, 2)).astype("float32")
+        points = points[:, 0] + points[:, 1] * 1j
+        pg = polygon[:, 0] + polygon[:, 1] * 1j
+
+        # Convert to correct format.
+        poly = Polygon(*pg)
+
+        # Scanbeam Timing
+        q = Scanbeam(poly.geomstr)
+        q.compute_beam()
+
+        # ScanBeam PiP
+        t = time.time()
+        r1 = q.points_in_polygon(points)
+        t1 = time.time() - t
+
+        # Beam Table calculation.
+        q = BeamTable(poly.geomstr)
+        q.compute_beam_brute()
+
+        #BeamTable Pip
+        t = time.time()
+        r2 = q.points_in_polygon(points)
+        t2 = time.time() - t
+
+        for p1, p2 in zip(r1, r2):
+            self.assertEqual(bool(p1), bool(p2))
+        try:
+            print(
+                f"ScanBeam PiP took {t1} seconds. Beamtable {t2} seconds. Speedup Ratio: {t1 / t2}x"
+            )
+        except ZeroDivisionError:
+            pass
 
     def test_render(self):
         rect = Geomstr.rect(x=300, y=200, width=500, height=500, rx=50, ry=50)
