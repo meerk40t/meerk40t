@@ -18,27 +18,86 @@ _ = wx.GetTranslation
 
 
 class GrblIoButtons(wx.Panel):
-    def __init__(self, *args, context=None, **kwds):
+    def __init__(self, *args, context=None, chart=None, **kwds):
         self.service = context
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
+        self.chart = chart
 
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.button_refresh = wx.Button(self, wx.ID_ANY, "Refresh")
+        self.button_refresh = wx.Button(self, wx.ID_ANY, _("Refresh"))
         sizer_2.Add(self.button_refresh, 1, 0, 0)
         self.Bind(wx.EVT_BUTTON, self.on_button_refresh, self.button_refresh)
 
-        # self.button_write = wx.Button(self, wx.ID_ANY, "Write")
-        # sizer_2.Add(self.button_write, 1, 0, 0)
-        #
-        # self.button_export = wx.Button(self, wx.ID_ANY, "Export")
-        # sizer_2.Add(self.button_export, 1, 0, 0)
+        self.button_write = wx.Button(self, wx.ID_ANY, _("Write"))
+        sizer_2.Add(self.button_write, 1, 0, 0)
+        self.Bind(wx.EVT_BUTTON, self.on_button_write, self.button_write)
+
+        self.button_export = wx.Button(self, wx.ID_ANY, _("Export"))
+        sizer_2.Add(self.button_export, 1, 0, 0)
+        self.Bind(wx.EVT_BUTTON, self.on_button_export, self.button_export)
 
         self.SetSizer(sizer_2)
 
     def on_button_refresh(self, event):
         self.service("gcode $$\n")
+
+    def on_button_write(self, event):
+        chart = self.chart.chart
+        count = chart.GetItemCount()
+        eeprom_writes = []
+        for i in range(count):
+            setting = chart.GetItemText(i)
+            if len(setting) < 2:
+                continue
+            hardware_index = int(setting[1:])
+            d = hardware_settings(hardware_index)
+
+            value = float(chart.GetItemText(i, 2))
+            if d[-1] == int:
+                value = int(value)
+            if value != self.service.hardware_config[hardware_index]:
+                eeprom_writes.append(f"${hardware_index}={value}")
+        if eeprom_writes:
+            dlg = wx.MessageDialog(
+                self,
+                _("This will write settings to hardware.")
+                + "\n"
+                + "\n".join(eeprom_writes),
+                _("Are you sure?"),
+                wx.YES_NO | wx.ICON_WARNING,
+            )
+            dlgresult = dlg.ShowModal()
+            dlg.Destroy()
+            if dlgresult != wx.ID_YES:
+                return
+            for ew in eeprom_writes:
+                self.service(f".gcode {ew}")
+            self.service(".gcode $$")
+
+    def on_button_export(self, event):
+        filetype = "*.nc"
+        with wx.FileDialog(
+            self.service.root.gui,
+            _("Export Settings"),
+            wildcard=filetype,
+            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+        ) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return
+            pathname = fileDialog.GetPath()
+            if not pathname.lower().endswith(".nc"):
+                pathname += ".nc"
+        chart = self.chart.chart
+        with open(pathname, "w") as f:
+            count = chart.GetItemCount()
+            for i in range(count):
+                setting = chart.GetItemText(i)
+                value = chart.GetItemText(i, 2)
+                if chart.GetItemText(i, 3) in ("bitmask", "boolean"):
+                    value = int(float(value))
+                f.write(f"{setting}={value}\n")
 
 
 class GrblHardwareProperties(ScrolledPanel):
@@ -63,7 +122,7 @@ class GrblHardwareProperties(ScrolledPanel):
 
         sizer_1.Add(self.chart, 8, wx.EXPAND, 0)
 
-        self.io_panel = GrblIoButtons(self, wx.ID_ANY, context=self.service)
+        self.io_panel = GrblIoButtons(self, wx.ID_ANY, context=self.service, chart=self)
         sizer_1.Add(self.io_panel, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
 
@@ -90,11 +149,11 @@ class GrblHardwareProperties(ScrolledPanel):
             d = settings(i)
             if d is None:
                 continue
+            ignore, parameter, units, data_type = d
             if i in self.service.hardware_config:
-                value = str(self.service.hardware_config[i])
+                value = str(data_type(self.service.hardware_config[i]))
             else:
                 value = ""
-            ignore, parameter, units = d
 
             row_id = chart.InsertItem(chart.GetItemCount(), f"${i}")
             chart.SetItem(row_id, 1, str(parameter))

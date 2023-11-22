@@ -476,6 +476,11 @@ class DXFProcessor:
                 )
             except FileNotFoundError:
                 return
+            try:
+                from PIL import ImageOps
+                ImageOps.exif_transpose(node.image, in_place=True)
+            except ImportError:
+                pass
             # Node.matrix is primary transformation.
             node.matrix.post_scale(self.scale, -self.scale)
             node.matrix.post_translate_y(self.elements.device.view.unit_height)

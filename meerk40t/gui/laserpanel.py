@@ -70,9 +70,9 @@ def register_panel_laser(window, context):
     pane.control = notebook
     pane.dock_proportion = 270
     notebook.AddPage(laser_panel, _("Laser"))
+    notebook.AddPage(jog_drag, _("Jog"))
     notebook.AddPage(plan_panel, _("Plan"))
     notebook.AddPage(optimize_panel, _("Optimize"))
-    notebook.AddPage(jog_drag, _("Jog"))
     notebook.AddPage(move_panel, _("Move"))
 
     window.on_pane_create(pane)
