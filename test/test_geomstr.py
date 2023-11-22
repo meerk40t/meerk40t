@@ -1133,7 +1133,7 @@ class TestGeomstr(unittest.TestCase):
         @return:
         """
 
-        N = 5000
+        N = 100000
         lenpoly = 1000
         polygon = [
             [np.sin(x) + 0.5, np.cos(x) + 0.5]
@@ -1149,28 +1149,30 @@ class TestGeomstr(unittest.TestCase):
         poly = Polygon(*pg)
 
         # Scanbeam Timing
+        sb1 = time.time()
         q = Scanbeam(poly.geomstr)
         q.compute_beam()
 
         # ScanBeam PiP
-        t = time.time()
+        sb2 = time.time()
         r1 = q.points_in_polygon(points)
-        t1 = time.time() - t
+        sb3 = time.time()
 
         # Beam Table calculation.
+        bt1 = time.time()
         q = BeamTable(poly.geomstr)
         q.compute_beam_brute()
 
         #BeamTable Pip
-        t = time.time()
+        bt2 = time.time()
         r2 = q.points_in_polygon(points)
-        t2 = time.time() - t
+        bt3 = time.time()
 
         for p1, p2 in zip(r1, r2):
             self.assertEqual(bool(p1), bool(p2))
         try:
             print(
-                f"ScanBeam PiP took {t1} seconds. Beamtable {t2} seconds. Speedup Ratio: {t1 / t2}x"
+                f"ScanBeam PiP: {sb3-sb2} seconds, {sb3-sb1} total. Beamtable PiP {bt3-bt2} seconds, {bt3-bt1} total."
             )
         except ZeroDivisionError:
             pass
