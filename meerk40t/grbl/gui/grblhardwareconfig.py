@@ -73,7 +73,7 @@ class GrblIoButtons(wx.Panel):
             if dlgresult != wx.ID_YES:
                 return
             for ew in eeprom_writes:
-                print(ew)
+                self.service(f".gcode {ew}")
             self.service(".gcode $$")
 
     def on_button_export(self, event):
