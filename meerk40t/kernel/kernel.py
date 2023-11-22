@@ -2579,6 +2579,9 @@ class Kernel(Settings):
         @self.console_option(
             "gui", "g", action="store_true", help=_("Run this timer in the gui-thread")
         )
+        @self.console_option(
+            "quiet", "q", action="store_true", help=_("Quiet timer notifications")
+        )
         @self.console_argument(
             "times", help=_("Number of times this timer should execute.")
         )
@@ -2602,6 +2605,7 @@ class Kernel(Settings):
             duration=None,
             off=False,
             gui=False,
+            quiet=False,
             remainder=None,
             **kwargs,
         ):
@@ -2642,21 +2646,38 @@ class Kernel(Settings):
                 channel(_("----------"))
                 return
             if off:
-                if name == "*":
-                    for job_name in [j for j in self.jobs if j.startswith("timer")]:
-                        # removing jobs, must create current list
+                if "*" in name or "?" in name:
+                    # Multi cancel.
+                    name = name.replace("?", ".")
+                    name = name.replace("*", ".*")
+                    skipped = False
+                    canceled = False
+                    for job_name in list(self.jobs):
+                        if not job_name.startswith("timer"):
+                            continue
+                        timer_name = job_name[5:]
+                        if not re.match(name, timer_name):
+                            skipped = True
+                            continue
+                        canceled = True
                         job = self.jobs[job_name]
                         job.cancel()
                         self.unschedule(job)
-                    channel(_("All timers canceled."))
+                    if not quiet and not skipped and canceled:
+                        channel(_("All timers canceled."))
+                    if not quiet and skipped and not canceled:
+                        channel(_("No timers canceled."))
+
                     return
                 try:
                     obj = self.jobs[command]
                     obj.cancel()
                     self.unschedule(obj)
-                    channel(_("Timer '{name}' canceled.").format(name=name))
+                    if not quiet:
+                        channel(_("Timer '{name}' canceled.").format(name=name))
                 except KeyError:
-                    channel(_("Timer '{name}' does not exist.").format(name=name))
+                    if not quiet:
+                        channel(_("Timer '{name}' does not exist.").format(name=name))
                 return
             try:
                 times = int(times)

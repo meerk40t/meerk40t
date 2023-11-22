@@ -124,22 +124,21 @@ class GRBLDevice(Service, Status):
                 "signals": "bedsize",
             },
             {
-                "attr": "home_bottom",
+                "attr": "home_corner",
                 "object": self,
-                "default": True,
-                "type": bool,
-                "label": _("Home Bottom"),
-                "tip": _("Indicates the device Home is on the bottom"),
-                "subsection": "_30_Home position",
-                "signals": "bedsize",
-            },
-            {
-                "attr": "home_right",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Home Right"),
-                "tip": _("Indicates the device Home is at the right side"),
+                "default": "auto",
+                "type": str,
+                "style": "combo",
+                "choices": [
+                    "auto",
+                    "top-left",
+                    "top-right",
+                    "bottom-left",
+                    "bottom-right",
+                    "center",
+                ],
+                "label": _("Force Declared Home"),
+                "tip": _("Override native home location"),
                 "subsection": "_30_Home position",
                 "signals": "bedsize",
             },
@@ -514,6 +513,15 @@ class GRBLDevice(Service, Status):
                 self.driver(remainder + self.driver.line_end, real=True)
 
         @self.console_command(
+            "grbl_validate",
+            help=_("Force grbl validation for the connection"),
+            input_type=None,
+        )
+        def grbl_validate(command, channel, _, data=None, remainder=None, **kwgs):
+            channel(_("Forced grbl validation."))
+            self.controller.force_validate()
+
+        @self.console_command(
             "soft_reset",
             help=_("Send realtime soft reset gcode to the device"),
             input_type=None,
@@ -561,14 +569,89 @@ class GRBLDevice(Service, Status):
             self.driver.resume()
             self.signal("pause")
 
+        @kernel.console_command(
+            "+xforward",
+            hidden=True,
+        )
+        def plus_x_forward(data, **kwgs):
+            feed = 2000
+            step = feed / 600
+            self(f".timerright 0 0.1 .gcode $J=G91G21X{step}F{feed}")
+
+        @kernel.console_command(
+            "-xforward",
+            hidden=True,
+        )
+        def minus_x_forward(data, **kwgs):
+            self(".timerright -oq")
+            # self.controller.realtime("\x85")
+
+        @kernel.console_command(
+            "+xbackward",
+            hidden=True,
+        )
+        def plus_x_backward(data, **kwgs):
+            feed = 2000
+            step = feed / 600
+            self(f".timerleft 0 0.1 .gcode $J=G91G21X-{step}F{feed}")
+
+        @kernel.console_command(
+            "-xbackward",
+            hidden=True,
+        )
+        def minus_x_backward(data, **kwgs):
+            self(".timerleft -oq")
+
+        @kernel.console_command(
+            "+yforward",
+            hidden=True,
+        )
+        def plus_y_forward(data, **kwgs):
+            feed = 2000
+            step = feed / 600
+            self(f".timertop 0 0.1 .gcode $J=G91G21Y{step}F{feed}")
+
+        @kernel.console_command(
+            "-yforward",
+            hidden=True,
+        )
+        def minus_y_forward(data, **kwgs):
+            self(".timertop -oq")
+            # self.controller.realtime("\x85")
+
+        @kernel.console_command(
+            "+ybackward",
+            hidden=True,
+        )
+        def plus_y_backward(data, **kwgs):
+            feed = 2000
+            step = feed / 600
+            self(f".timerbottom 0 0.1 .gcode $J=G91G21Y-{step}F{feed}")
+
+        @kernel.console_command(
+            "-ybackward",
+            hidden=True,
+        )
+        def minus_y_backward(data, **kwgs):
+            self(".timerbottom -oq")
+            # self.controller.realtime("\x85")
+
+        @kernel.console_command(
+            "grbl_binds",
+            hidden=True,
+        )
+        def grbl_binds(data, **kwgs):
+            self("bind a +xbackward")
+            self("bind d +xforward")
+            self("bind s +ybackward")
+            self("bind w +yforward")
+
         @self.console_command(
             "viewport_update",
             hidden=True,
             help=_("Update grbl codes for movement"),
         )
         def codes_update(**kwargs):
-            self.origin_x = 1.0 if self.home_right else 0.0
-            self.origin_y = 1.0 if self.home_bottom else 0.0
             self.realize()
 
         @self.console_option(
@@ -743,6 +826,25 @@ class GRBLDevice(Service, Status):
         return self.driver.native_x, self.driver.native_y
 
     def realize(self, origin=None):
+        corner = self.setting(str, "home_corner")
+        if corner == "auto":
+            home_dx = 0
+            home_dy = 0
+        elif corner == "top-left":
+            home_dx = 1 if self.flip_x else 0
+            home_dy = 1 if self.flip_y else 0
+        elif corner == "top-right":
+            home_dx = 0 if self.flip_x else 1
+            home_dy = 1 if self.flip_y else 0
+        elif corner == "bottom-left":
+            home_dx = 1 if self.flip_x else 0
+            home_dy = 0 if self.flip_y else 1
+        elif corner == "bottom-right":
+            home_dx = 0 if self.flip_x else 1
+            home_dy = 0 if self.flip_y else 1
+        elif corner == "center":
+            home_dx = 0.5
+            home_dy = 0.5
         self.view.set_dims(self.bedwidth, self.bedheight)
         self.view.transform(
             user_scale_x=self.scale_x,
@@ -750,7 +852,10 @@ class GRBLDevice(Service, Status):
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
+            origin_x=home_dx,
+            origin_y=home_dy,
         )
+
         self.view_mm.set_dims(self.bedwidth, self.bedheight)
         self.view_mm.transform(
             user_scale_x=self.scale_x,
@@ -758,6 +863,8 @@ class GRBLDevice(Service, Status):
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
+            origin_x=home_dx,
+            origin_y=home_dy,
         )
 
         # rotary_active=self.rotary_active,

@@ -22,6 +22,7 @@ from ..core.plotplanner import PlotPlanner
 from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM
 from ..device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from ..kernel import signal_listener
+from ..tools.geomstr import Geomstr
 
 
 class GRBLDriver(Parameters):
@@ -175,6 +176,15 @@ class GRBLDriver(Parameters):
         @param dy:
         @return:
         """
+        # self._g90_absolute()
+        # self._clean()
+        # old_current = self.service.current
+        # x, y = old_current
+        # x += dx
+        # y += dy
+        # x, y = self.service.view.position(x, y)
+        # self._move(x, y)
+
         self._g91_relative()
         self._clean()
         old_current = self.service.current
@@ -261,6 +271,7 @@ class GRBLDriver(Parameters):
             self(f"M3{self.line_end}")
         else:
             self(f"M4{self.line_end}")
+        first = True
         for q in self.queue:
             while self.hold_work(0):
                 if self.service.kernel.is_shutdown:
@@ -269,10 +280,11 @@ class GRBLDriver(Parameters):
             x = self.native_x
             y = self.native_y
             start_x, start_y = q.start
-            if x != start_x or y != start_y:
+            if x != start_x or y != start_y or first:
                 self.on_value = 0
                 self.power_dirty = True
                 self.move_mode = 0
+                first = False
                 self._move(start_x, start_y)
             if self.on_value != 1.0:
                 self.power_dirty = True
@@ -297,13 +309,15 @@ class GRBLDriver(Parameters):
             elif isinstance(q, (QuadCut, CubicCut)):
                 self.move_mode = 1
                 interp = self.service.interpolate
-                step_size = 1.0 / float(interp)
-                t = step_size
-                for p in range(int(interp)):
+                g = Geomstr()
+                if isinstance(q, CubicCut):
+                    g.cubic(complex(*q.start), complex(*q.c1()), complex(*q.c2()), complex(*q.end))
+                else:
+                    g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
+                for p in g.as_equal_interpolated_points(distance=interp):
                     while self.paused:
                         time.sleep(0.05)
-                    self._move(*q.point(t))
-                    t += step_size
+                    self._move(p.real, p.imag)
                 last_x, last_y = q.end
                 self._move(last_x, last_y)
             elif isinstance(q, WaitCut):

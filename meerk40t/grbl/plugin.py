@@ -159,14 +159,6 @@ def plugin(kernel, lifecycle=None):
                     },
                     {"attr": "bedheight", "default": "430mm"},
                     {"attr": "bedwidth", "default": "400mm"},
-                    {
-                        "attr": "home_bottom",
-                        "default": True,
-                    },
-                    {
-                        "attr": "home_right",
-                        "default": False,
-                    },
                 ],
             },
         )
