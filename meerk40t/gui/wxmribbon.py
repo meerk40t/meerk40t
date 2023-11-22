@@ -586,6 +586,7 @@ class RibbonEditor(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
 
         self.context = context
+        self.SetHelpText("ribboneditor")
         self.ribbon_identifier = "primary"
 
         self.available_options = []

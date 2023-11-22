@@ -256,6 +256,8 @@ def plugin(kernel, lifecycle=None):
                 "hidden": True,
             },
         ]
+        for c in choices:
+            c["help"] = "optimisation"
         kernel.register_choices("optimize", choices)
         context.setting(bool, "opt_2opt", False)
         context.setting(bool, "opt_nearest_neighbor", True)

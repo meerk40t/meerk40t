@@ -366,6 +366,8 @@ def plugin(kernel, lifecycle=None):
                 "section": "Operation",
             },
         ]
+        for c in choices:
+            c["help"] = "classification"
         kernel.register_choices("preferences", choices)
         choices = [
             {

@@ -13,6 +13,7 @@ class OpBranchPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("opbranchproperty")
 
         self.operation = node
         self.choices = [

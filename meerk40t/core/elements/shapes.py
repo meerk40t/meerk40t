@@ -234,17 +234,50 @@ def init_commands(kernel):
         post.append(classify_new(data))
         return "elements", data
 
+
+    @self.console_command(
+        "effect-remove",
+        help=_("remove effects from element"),
+        input_type=(None, "elements"),
+    )
+    def effect_remove(
+        command, channel, _, data=None,        post=None,
+        **kwargs,
+    ):
+        if data is None:
+            data = list(self.elems(emphasized=True))
+
+        if len(data) == 0:
+            return
+        for node in data:
+            nparent = node.parent
+            if nparent.type.startswith("effect"):
+                was_emphasized = node.emphasized
+                node._parent = None # Otherwise add_node will fail below
+                try:
+                    idx = nparent._children.index(node)
+                    if idx >= 0:
+                        nparent._children.pop(idx)
+                except IndexError:
+                    pass
+                nparent.parent.add_node(node)
+                if len(nparent.children) == 0:
+                    nparent.remove_node()
+                node.emphasized = was_emphasized
+        self.signal("refresh_scene", "Scene")
+
+
+    @self.console_option("etype", "e", type=str, default="scanline")
     @self.console_option("distance", "d", type=Length, default="1mm")
     @self.console_option("angle", "a", type=Angle, default="0deg")
-    @self.console_option("angle_delta", "a", type=Angle, default="0deg")
+    @self.console_option("angle_delta", "b", type=Angle, default="0deg")
     @self.console_command(
         "effect-hatch",
         help=_("adds hatch-effect to scene"),
         input_type=(None, "elements"),
     )
     def effect_hatch(
-        command,
-        data=None,
+        command, channel, _, data=None,        etype=None,
         angle=None,
         angle_delta=None,
         distance=None,
@@ -258,11 +291,14 @@ def init_commands(kernel):
             data = list(self.elems(emphasized=True))
         if len(data) == 0:
             return
+        if etype is None:
+            etype = "scanline"
         first_node = data[0]
 
         node = first_node.parent.add(
             type="effect hatch",
             label="Hatch Effect",
+            hatch_type=etype,
             hatch_angle=angle.radians,
             hatch_angle_delta=angle_delta.radians,
             hatch_distance=distance,
@@ -275,6 +311,68 @@ def init_commands(kernel):
 
         self.set_emphasis([node])
         node.focus()
+
+    @self.console_option("wtype", "w", type=str, default="circle")
+    @self.console_option("radius", "r", type=Length, default="0.5mm")
+    @self.console_option("interval", "i", type=Length, default="0.05mm")
+    @self.console_command(
+        "effect-wobble",
+        help=_("adds wobble-effect to selected elements"),
+        input_type=(None, "elements"),
+    )
+    def effect_wobble(
+            command, channel, _, data=None,
+            wtype=None,
+            radius=None,
+            interval=None,
+            post=None,
+            **kwargs,
+    ):
+        """
+        Add an effect hatch object
+        """
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            return
+        if wtype is None:
+            wtype = "circle"
+        wtype = wtype.lower()
+        allowed = ("circle", "circle_right", "circle_left", "sinewave", "sawtooth", "jigsaw", "gear", "slowtooth",)
+        if wtype not in allowed:
+            channel (f"Invalid wobble type, allowed: {','.join(allowed)}")
+            return
+        if radius is None:
+            radius = "0.5mm"
+        if interval is None:
+            interval = "0.05mm"
+        try:
+            rlen = Length(radius)
+        except ValueError:
+            channel ("Invalid value for radius")
+            return
+        try:
+            ilen = Length(interval)
+        except ValueError:
+            channel ("Invalid value for interval")
+            return
+        first_node = data[0]
+        node = first_node.parent.add(
+            type="effect wobble",
+            label="Wobble Effect",
+            wobble_type=wtype,
+            wobble_radius=rlen.length_mm,
+            wobble_interval=ilen.length_mm,
+        )
+        for n in data:
+            node.append_child(n)
+
+        # Newly created! Classification needed?
+        post.append(classify_new([node]))
+
+        self.set_emphasis([node])
+        node.focus()
+
 
     @self.console_option(
         "size", "s", type=float, default=16, help=_("font size to for object")

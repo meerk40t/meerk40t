@@ -33,6 +33,7 @@ class NotePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("notes")
         self.pane = pane
         if not self.pane:
             self.check_auto_open_notes = wx.CheckBox(
@@ -129,6 +130,7 @@ class Notes(MWindow):
                 "label": _("Notes"),
                 "icon": icons8_comments,
                 "tip": _("Open Notes Window"),
+                "help": "notes",
                 "action": lambda v: kernel.console("window toggle Notes\n"),
                 "size": STD_ICON_SIZE,
             },

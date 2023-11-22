@@ -70,9 +70,9 @@ def register_panel_laser(window, context):
     pane.control = notebook
     pane.dock_proportion = 270
     notebook.AddPage(laser_panel, _("Laser"))
+    notebook.AddPage(jog_drag, _("Jog"))
     notebook.AddPage(plan_panel, _("Plan"))
     notebook.AddPage(optimize_panel, _("Optimize"))
-    notebook.AddPage(jog_drag, _("Jog"))
     notebook.AddPage(move_panel, _("Move"))
 
     window.on_pane_create(pane)
@@ -111,6 +111,7 @@ class LaserPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("laserpanel")
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.icon_size = 0.5 * get_default_icon_size()

@@ -390,6 +390,7 @@ class Drag(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.context.setting(bool, "confined", True)
+        self.SetHelpText("drag")
         self.icon_size = None
         self.resolution = 5
         self.button_align_corner_top_left = wx.BitmapButton(self, wx.ID_ANY)
@@ -893,6 +894,7 @@ class Jog(wx.Panel):
 
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("jog")
         context.setting(float, "button_repeat", 0.5)
         context.setting(bool, "button_accelerate", True)
         context.setting(str, "jog_amount", "10mm")
@@ -1222,6 +1224,7 @@ class MovePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("move")
         iconsize = 0.5 * get_default_icon_size()
         self.button_navigate_move_to = wx.BitmapButton(
             self, wx.ID_ANY, icons8_center_of_gravity.GetBitmap(resize=iconsize)
@@ -1477,6 +1480,7 @@ class PulsePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("pulse")
         iconsize = 0.5 * get_default_icon_size()
         self.button_navigate_pulse = wx.BitmapButton(
             self, wx.ID_ANY, icons8_laser_beam.GetBitmap(resize=iconsize)
@@ -1780,6 +1784,7 @@ class Transform(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("transform")
         self.icon_size = None
         self.resolution = 5
         self.button_scale_down = wx.BitmapButton(self, wx.ID_ANY)
@@ -2311,6 +2316,7 @@ class JogDistancePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("jog")
         self.text_jog_amount = TextCtrl(
             self,
             wx.ID_ANY,

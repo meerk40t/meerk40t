@@ -24,6 +24,7 @@ class PlacementPanel(wx.Panel):
         self.context = context
         self.operation = node
         main_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.SetHelpText("placement")
 
         prop_sizer = wx.BoxSizer(wx.HORIZONTAL)
         first_sizer = StaticBoxSizer(self, wx.ID_ANY, "", wx.HORIZONTAL)
