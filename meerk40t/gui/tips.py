@@ -266,12 +266,11 @@ class TipPanel(wx.Panel):
                     cline = line.strip()
                     if cline.startswith("#") or len(cline) == 0:
                         continue
-                    if cline.startswith("["):
+                    if cline.startswith("tip="):
                         add_tip(tip, cmd, ver, myversion)
                         ver = ""
                         tip = ""
                         cmd = ""
-                    elif cline.startswith("tip="):
                         tip = cline[len("tip=") :]
                     elif cline.startswith("version="):
                         ver = cline[len("version=") :]
