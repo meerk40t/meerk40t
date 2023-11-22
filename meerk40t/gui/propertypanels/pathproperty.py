@@ -29,6 +29,7 @@ class PathPropertyPanel(ScrolledPanel):
         self.context.setting(
             bool, "_auto_classify", self.context.elements.classify_on_color
         )
+        self.SetHelpText("pathproperty")
         self.node = node
         self.panels = []
         # `Id` at top in all cases...

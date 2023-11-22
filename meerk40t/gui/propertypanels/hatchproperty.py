@@ -20,6 +20,7 @@ class HatchPropertyPanel(ScrolledPanel):
             bool, "_auto_classify", self.context.elements.classify_on_color
         )
         self.node = node
+        self.SetHelpText("hatches")
 
         self._Buffer = None
 

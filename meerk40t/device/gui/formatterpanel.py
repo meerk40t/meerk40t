@@ -42,6 +42,8 @@ class FormatterPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.parent = args[0]
         self.context = context
+        self.SetHelpText("formatter")
+
         self.data = {}
         images = {
             "util wait": icon_timer,

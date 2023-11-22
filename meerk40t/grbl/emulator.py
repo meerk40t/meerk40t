@@ -151,6 +151,9 @@ class GRBLEmulator:
         return "GRBLInterpreter()"
 
     def reply_code(self, cmd):
+        if cmd == -1:
+            # Do not reply.
+            return
         if cmd == 0:  # Execute GCode.
             if self.reply:
                 self.reply("ok\r\n")
@@ -192,6 +195,14 @@ class GRBLEmulator:
         @param data:
         @return:
         """
+        # import time
+        # if not hasattr(self, "ignore"):
+        #     self.ignore = time.time()
+        #     return
+        # else:
+        #     if self.ignore + 5 > time.time():
+        #         return
+
         if isinstance(data, str):
             data = data.encode()
         for c in data:

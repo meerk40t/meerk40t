@@ -1115,6 +1115,11 @@ class SVGProcessor:
         try:
             element.load(os.path.dirname(self.pathname))
             try:
+                from PIL import ImageOps
+                ImageOps.exif_transpose(element.image, in_place=True)
+            except ImportError:
+                pass
+            try:
                 operations = ast.literal_eval(element.values["operations"])
             except (ValueError, SyntaxError, KeyError):
                 operations = None

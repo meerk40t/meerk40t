@@ -174,8 +174,8 @@ class View:
         self._matrix = None
 
     def origin(self, origin_x, origin_y):
-        width = float(Length(self.width))
-        height = float(Length(self.height))
+        width = float(Length(self.width) / self.native_scale_x)
+        height = float(Length(self.height) / self.native_scale_x)
 
         dx = -width * origin_x
         dy = -height * origin_y
@@ -226,8 +226,12 @@ class View:
         flip_x=False,
         flip_y=False,
         swap_xy=False,
+        origin_x=0.0,
+        origin_y=0.0,
     ):
         self.reset()
+        if origin_x or origin_y:
+            self.origin(origin_x, origin_y)
         self.scale(user_scale_x, user_scale_y)
         if flip_x:
             self.flip_x()

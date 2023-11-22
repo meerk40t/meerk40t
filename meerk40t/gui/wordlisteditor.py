@@ -45,6 +45,7 @@ class WordlistMiniPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("wordlist")
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.button_edit = wx.Button(self, wx.ID_ANY, _("Edit"))
         self.button_edit.SetBitmap(
@@ -140,6 +141,7 @@ class WordlistPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("wordlist")
         self.parent_panel = None
         self.wlist = self.context.elements.mywordlist
         self.current_entry = None
@@ -909,6 +911,7 @@ class WordlistEditor(MWindow):
                 "label": _("Wordlist Editor"),
                 "icon": icons8_curly_brackets,
                 "tip": _("Manages Wordlist-Entries"),
+                "help": "wordlist",
                 "action": lambda v: kernel.console("window toggle Wordlist\n"),
             },
         )

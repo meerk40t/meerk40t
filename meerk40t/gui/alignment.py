@@ -180,6 +180,7 @@ class AlignmentPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("alignment")
         self.scene = scene
         # Amount of currently selected
         self.count = 0
@@ -388,6 +389,7 @@ class DistributionPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("distribute")
         self.scene = scene
         # Amount of currently selected
         self.count = 0
@@ -1091,6 +1093,7 @@ class ArrangementPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("arrangement")
         self.scene = scene
         # Amount of currently selected
         self.count = 0

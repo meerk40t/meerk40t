@@ -83,6 +83,7 @@ class SpoolerPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("spooler")
         self.selected_device = selected_device
         self.available_devices = context.kernel.services("device")
         self.filter_device = None
@@ -1164,6 +1165,7 @@ class JobSpooler(MWindow):
                 "label": _("Spooler"),
                 "icon": icons8_route,
                 "tip": _("Opens Spooler Window"),
+                "help": "spooler",
                 "action": lambda v: kernel.console("window toggle JobSpooler\n"),
                 "priority": -1,
             },

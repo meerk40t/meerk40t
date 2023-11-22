@@ -58,6 +58,12 @@ and a wxpython version <= 4.1.1."""
     if not kernel.has_feature("wx"):
         return
     if lifecycle == "preregister":
+        # lc = kernel_root.setting(str, "i18n", "en")
+        # kernel.set_language(lc)
+        # from ..kernel import _
+        # import wx
+        # wx.GetTranslation = _
+
         from meerk40t.gui.fonts import wxfont_to_svg
         from meerk40t.gui.laserrender import LaserRender
         from meerk40t.gui.wxmeerk40t import wxMeerK40t

@@ -270,6 +270,7 @@ class EditTool(ToolWidget):
                     "label": entry[5],
                     "icon": entry[0],
                     "tip": entry[4],
+                    "help": "nodeedit",
                     "action": do_action(command),
                     "size": icon_size,
                     "rule_enabled": becomes_enabled(entry[1], entry[2], entry[3]),

@@ -1018,6 +1018,7 @@ class ImagePropertyPanel(ScrolledPanel):
         self.panel_id = IdPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
+        self.SetHelpText("imageproperty")
 
         self.text_dpi = TextCtrl(
             self,
