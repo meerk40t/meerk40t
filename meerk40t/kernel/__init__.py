@@ -47,13 +47,13 @@ def set_language(domain, localedir, language):
 
     localedirs.append(None)
 
-    for localedir in localedirs:
+    for ld in localedirs:
         try:
             el = gettext.translation(
                 domain,
-                localedir=localedir,
+                localedir=ld,
                 languages=[language],
-                fallback=localedir is None,
+                fallback=ld is None,
             )
         except FileNotFoundError:
             continue
