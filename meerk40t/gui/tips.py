@@ -185,7 +185,7 @@ class TipPanel(wx.Panel):
         import requests
 
         content = ""
-        url = "https://raw.githubusercontent.com/repo/meerk40t/meerk40t/locale/"
+        url = "https://github.com/meerk40t/meerk40t/raw/main/locale/"
         # Do we have a localized version?
         locale = "en"
         languages = list(self.context.app.supported_languages)
