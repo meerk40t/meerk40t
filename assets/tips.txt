@@ -12,7 +12,7 @@
 
 [tip]
 tip=MeerK40t can create a so called outline around an element.\nJust select the element, right click on top of it to get the context menu and choose from the "Outline elements" menu...
-cmd=text -s 36 "Just a test" outline 2mm -o stroke green
+cmd=rect 2cm 2cm 4cm 4cm fill black outline 2mm --steps 4 --outer stroke red
 [tip]
 tip=MeerK40t has an extensive command set features that allows a lot of scriptable actions.\nJust open the console window and type help
 cmd=pane show console\nhelp
