@@ -234,14 +234,17 @@ def init_commands(kernel):
         post.append(classify_new(data))
         return "elements", data
 
-
     @self.console_command(
         "effect-remove",
         help=_("remove effects from element"),
         input_type=(None, "elements"),
     )
     def effect_remove(
-        command, channel, _, data=None,        post=None,
+        command,
+        channel,
+        _,
+        data=None,
+        post=None,
         **kwargs,
     ):
         if data is None:
@@ -253,7 +256,7 @@ def init_commands(kernel):
             nparent = node.parent
             if nparent.type.startswith("effect"):
                 was_emphasized = node.emphasized
-                node._parent = None # Otherwise add_node will fail below
+                node._parent = None  # Otherwise add_node will fail below
                 try:
                     idx = nparent._children.index(node)
                     if idx >= 0:
@@ -265,7 +268,6 @@ def init_commands(kernel):
                     nparent.remove_node()
                 node.emphasized = was_emphasized
         self.signal("refresh_scene", "Scene")
-
 
     @self.console_option("etype", "e", type=str, default="scanline")
     @self.console_option("distance", "d", type=Length, default="1mm")
@@ -281,7 +283,6 @@ def init_commands(kernel):
         channel,
         _,
         data=None,
-        command, channel, _, data=None,        
         etype=None,
         angle=None,
         angle_delta=None,
@@ -327,12 +328,15 @@ def init_commands(kernel):
         input_type=(None, "elements"),
     )
     def effect_wobble(
-            command, channel, _, data=None,
-            wtype=None,
-            radius=None,
-            interval=None,
-            post=None,
-            **kwargs,
+        command,
+        channel,
+        _,
+        data=None,
+        wtype=None,
+        radius=None,
+        interval=None,
+        post=None,
+        **kwargs,
     ):
         """
         Add an effect hatch object
@@ -344,9 +348,18 @@ def init_commands(kernel):
         if wtype is None:
             wtype = "circle"
         wtype = wtype.lower()
-        allowed = ("circle", "circle_right", "circle_left", "sinewave", "sawtooth", "jigsaw", "gear", "slowtooth",)
+        allowed = (
+            "circle",
+            "circle_right",
+            "circle_left",
+            "sinewave",
+            "sawtooth",
+            "jigsaw",
+            "gear",
+            "slowtooth",
+        )
         if wtype not in allowed:
-            channel (f"Invalid wobble type, allowed: {','.join(allowed)}")
+            channel(f"Invalid wobble type, allowed: {','.join(allowed)}")
             return
         if radius is None:
             radius = "0.5mm"
@@ -355,12 +368,12 @@ def init_commands(kernel):
         try:
             rlen = Length(radius)
         except ValueError:
-            channel ("Invalid value for radius")
+            channel("Invalid value for radius")
             return
         try:
             ilen = Length(interval)
         except ValueError:
-            channel ("Invalid value for interval")
+            channel("Invalid value for interval")
             return
         first_node = data[0]
         node = first_node.parent.add(
@@ -378,7 +391,6 @@ def init_commands(kernel):
 
         self.set_emphasis([node])
         node.focus()
-
 
     @self.console_option(
         "size", "s", type=float, default=16, help=_("font size to for object")
