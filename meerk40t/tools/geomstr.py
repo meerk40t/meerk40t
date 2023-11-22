@@ -4040,12 +4040,8 @@ class Geomstr:
         @return:
         """
         line = self.segments[e]
-        if len(line.shape) == 2:
-            a = line[:, 0]
-            b = line[:, -1]
-        else:
-            a = line[0]
-            b = line[-1]
+        a = line[..., 0]
+        b = line[..., -1]
         old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
         try:
             # If horizontal slope is undefined. But, all x-ints are at x since x0=x1
@@ -4064,12 +4060,8 @@ class Geomstr:
         @return:
         """
         line = self.segments[e]
-        if len(line.shape) == 2:
-            a = line[:, 0]
-            b = line[:, -1]
-        else:
-            a = line[0]
-            b = line[-1]
+        a = line[..., 0]
+        b = line[..., -1]
         old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
         try:
             # If vertical slope is undefined. But, all y-ints are at y since y0=y1
