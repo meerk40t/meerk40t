@@ -1127,17 +1127,55 @@ class TestGeomstr(unittest.TestCase):
         except ZeroDivisionError:
             pass
 
-        # q = BeamTable(poly.geomstr)
-        # q.compute_beam_brute()
-        # t = time.time()
-        # r = q.points_in_polygon(points)
-        # t2 = time.time() - t
-        # i = 0
-        # for p1, p2 in zip(r, mask):
-        #     i += 1
-        #     if bool(p1) != bool(p2):
-        #         print(f"{i} {points[i]}")
-        # self.assertEqual(bool(p1), bool(p2))
+    def test_point_in_polygon_beamtable_beat(self):
+        """
+        Test point in poly for Scanbeam against BeamTable.
+        @return:
+        """
+
+        N = 100000
+        lenpoly = 1000
+        polygon = [
+            [np.sin(x) + 0.5, np.cos(x) + 0.5]
+            for x in np.linspace(0, 2 * np.pi, lenpoly)
+        ]
+        polygon = np.array(polygon, dtype="float32")
+
+        points = np.random.uniform(-1.5, 1.5, size=(N, 2)).astype("float32")
+        points = points[:, 0] + points[:, 1] * 1j
+        pg = polygon[:, 0] + polygon[:, 1] * 1j
+
+        # Convert to correct format.
+        poly = Polygon(*pg)
+
+        # Scanbeam Timing
+        sb1 = time.time()
+        q = Scanbeam(poly.geomstr)
+        q.compute_beam()
+
+        # ScanBeam PiP
+        sb2 = time.time()
+        r1 = q.points_in_polygon(points)
+        sb3 = time.time()
+
+        # Beam Table calculation.
+        bt1 = time.time()
+        q = BeamTable(poly.geomstr)
+        q.compute_beam_brute()
+
+        #BeamTable Pip
+        bt2 = time.time()
+        r2 = q.points_in_polygon(points)
+        bt3 = time.time()
+
+        for p1, p2 in zip(r1, r2):
+            self.assertEqual(bool(p1), bool(p2))
+        try:
+            print(
+                f"ScanBeam PiP: {sb3-sb2} seconds, {sb3-sb1} total. Beamtable PiP {bt3-bt2} seconds, {bt3-bt1} total."
+            )
+        except ZeroDivisionError:
+            pass
 
     def test_render(self):
         rect = Geomstr.rect(x=300, y=200, width=500, height=500, rx=50, ry=50)
@@ -1554,6 +1592,54 @@ class TestGeomstr(unittest.TestCase):
                 draw_geom(g, *g.bbox(), filename="scantable.png")
             except PermissionError:
                 pass
+
+    def test_scan_table_actives_monotonic(self):
+        """
+        Tests a random set of lines find the intercepts at all active positions and ensures that they are monotonic.
+
+        @return:
+        """
+        for c in range(10):
+            g = Geomstr()
+            for i in range(25):
+                random_segment(
+                    g, i=1000, arc=False, point=False, quad=False, cubic=False
+                )
+            sb = BeamTable(g)
+            b = g.bbox()
+            for x in range(int(b[0]), int(b[2])):
+                actives = sb.actives_at(x)
+                pos = g.y_intercept(actives, x)
+                for q in range(1, len(pos)):
+                    self.assertLessEqual(pos[q-1], pos[q])
+
+    def test_scan_table_fill_random(self):
+        for c in range(1):
+            print("\n\n\n\n\n")
+            g = Geomstr()
+            for i in range(25):
+                random_segment(
+                    g, i=1000, arc=False, point=False, quad=False, cubic=False
+                )
+            t = time.time()
+            sb = BeamTable(g)
+            sb.compute_beam_brute()
+            intersections = sb.intersections
+            print(f"Time: {time.time() - t}")
+
+            b = g.bbox()
+            for x in range(int(b[0]), int(b[2])):
+                actives = sb.actives_at(x)
+                pos = g.y_intercept(actives, x)
+                for q in range(1, len(pos), 2):
+                    g.line(complex(x, pos[q-1]), complex(x, pos[q]))
+
+            g.append(intersections)
+            try:
+                draw_geom(g, *b, filename="scantable-fill.png")
+            except PermissionError:
+                pass
+
 
     # def test_geomstr_hatch(self):
     #     gs = Geomstr.svg(
