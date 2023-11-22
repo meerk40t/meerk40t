@@ -574,7 +574,7 @@ class GRBLDevice(Service, Status):
             hidden=True,
         )
         def plus_x_forward(data, **kwgs):
-            feed = 5000
+            feed = 2000
             step = feed / 600
             self(f".timerright 0 0.1 .gcode $J=G91G21X{step}F{feed}")
 
@@ -591,7 +591,7 @@ class GRBLDevice(Service, Status):
             hidden=True,
         )
         def plus_x_backward(data, **kwgs):
-            feed = 5000
+            feed = 2000
             step = feed / 600
             self(f".timerleft 0 0.1 .gcode $J=G91G21X-{step}F{feed}")
 
@@ -607,7 +607,7 @@ class GRBLDevice(Service, Status):
             hidden=True,
         )
         def plus_y_forward(data, **kwgs):
-            feed = 5000
+            feed = 2000
             step = feed / 600
             self(f".timertop 0 0.1 .gcode $J=G91G21Y{step}F{feed}")
 
@@ -624,7 +624,7 @@ class GRBLDevice(Service, Status):
             hidden=True,
         )
         def plus_y_backward(data, **kwgs):
-            feed = 5000
+            feed = 2000
             step = feed / 600
             self(f".timerbottom 0 0.1 .gcode $J=G91G21Y-{step}F{feed}")
 
