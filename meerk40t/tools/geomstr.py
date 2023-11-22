@@ -389,7 +389,7 @@ class BeamTable:
     def sort_key(self, e):
         return e[0].real, e[0].imag, ~e[1]
 
-    def compute_beam(self):
+    def _compute_beam(self):
         g = self.geometry
         gs = g.segments
         events = []
@@ -531,8 +531,8 @@ class BeamTable:
 
         scanline = None
 
-        def x_ints(e):
-            return g.x_intercept(e, np.real(scanline))
+        def y_ints(e):
+            return g.y_intercept(e, np.real(scanline))
 
         # Store previously active segments
         active_lists = []
@@ -562,7 +562,7 @@ class BeamTable:
             if pt != next:
                 if len(actives) > largest_actives:
                     largest_actives = len(actives)
-                actives.sort(key=x_ints)
+                actives.sort(key=y_ints)
                 real_events.append(pt)
                 active_lists.append(list(actives))
 
@@ -583,8 +583,8 @@ class BeamTable:
         b = line[:, :, -1]
         b = np.where(actives == -1, np.nan + np.nan * 1j, b)
 
-        q = self.geometry.y_intercept(actives, np.real(e))
-        # print(q)
+        # q = self.geometry.y_intercept(actives, np.real(e))
+        # # print(q)
 
         old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
         try:
@@ -601,12 +601,9 @@ class BeamTable:
         return results
 
     def actives_at(self, value):
-        from bisect import bisect
-
-        if not self._nb_scan:
+        if self._nb_scan is None:
             self.compute_beam_brute()
         idx = np.searchsorted(self._nb_events, value)
-        # idx = bisect(self._nb_events, (value.imag, value.real))
         actives = self._nb_scan[idx - 1]
         aw = np.argwhere(actives != -1)[:, 0]
         return actives[aw]
@@ -3955,7 +3952,7 @@ class Geomstr:
 
     def y_at_axis(self, e):
         """
-        y_intercept value between start and end points.
+        y_intercept of the lines (e) at at x-axis (x=0)
 
         @param e:
         @return:
