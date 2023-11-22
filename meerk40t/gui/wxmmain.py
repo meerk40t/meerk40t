@@ -267,7 +267,7 @@ class MeerK40t(MWindow):
     def tips_at_startup(self):
         self.context.setting(bool, "show_tips", True)
         if self.context.show_tips:
-            self.context("pane show tips\n")
+            self.context("pane float tips\npane show tips\n")
         else:
             self.context("pane hide tips\n")
 
