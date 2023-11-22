@@ -6,15 +6,12 @@
 """
 import datetime
 import os
+
 import wx
 from wx import aui
 
 from ..kernel import get_safe_path
-from .icons import (
-    icons8_circled_left,
-    icons8_circled_right,
-    icons8_detective,
-)
+from .icons import icons8_circled_left, icons8_circled_right, icons8_detective
 from .wxutils import dip_size
 
 _ = wx.GetTranslation
@@ -54,18 +51,16 @@ class TipPanel(wx.Panel):
         icon_size = dip_size(self, 25, 25)
         # Main Sizer
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        self.text_tip = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY|wx.TE_MULTILINE)
+        self.text_tip = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE
+        )
         sizer_main.Add(self.text_tip, 1, wx.EXPAND, 0)
 
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.button_prev = wx.Button(self, wx.ID_ANY, _("Previous tip"))
-        self.button_prev.SetBitmap(
-            icons8_circled_left.GetBitmap(resize=icon_size[0])
-        )
+        self.button_prev.SetBitmap(icons8_circled_left.GetBitmap(resize=icon_size[0]))
         self.button_next = wx.Button(self, wx.ID_ANY, _("Next tip"))
-        self.button_next.SetBitmap(
-            icons8_circled_right.GetBitmap(resize=icon_size[0])
-        )
+        self.button_next.SetBitmap(icons8_circled_right.GetBitmap(resize=icon_size[0]))
         button_sizer.Add(self.button_prev, 0, wx.ALIGN_CENTER_VERTICAL)
         button_sizer.AddStretchSpacer()
         button_sizer.Add(self.button_next, 0, wx.ALIGN_CENTER_VERTICAL)
@@ -77,9 +72,7 @@ class TipPanel(wx.Panel):
 
         option_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.button_try = wx.Button(self, wx.ID_ANY, _("Try it out"))
-        self.button_try.SetBitmap(
-            icons8_detective.GetBitmap(resize=icon_size[0])
-        )
+        self.button_try.SetBitmap(icons8_detective.GetBitmap(resize=icon_size[0]))
         option_sizer.Add(self.button_try, 0, wx.ALIGN_CENTER_VERTICAL)
         option_sizer.AddStretchSpacer()
         option_sizer.Add(self.check_startup, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -138,7 +131,7 @@ class TipPanel(wx.Panel):
             (
                 _(
                     "Do you want to get extended information about a feature in MeerK40t?\n"
-                    + "Just place your mouse over a window or a an UI-element and press F11."
+                    + "Just place your mouse over a window or an UI-element and press F11."
                 ),
                 "",
             )
@@ -149,7 +142,7 @@ class TipPanel(wx.Panel):
                     "MeerK40t supports more than 'just' a K40 laser.\n"
                     + "You can add more devices in the Device-Manager.\n"
                     + "And you can even add multiple instances for the same physical device,\n"
-                    + "where you can different configuration settings (eg regular and rotary)."
+                    + "where you can have different configuration settings (eg regular and rotary)."
                 ),
                 "window open DeviceManager",
             ),
@@ -190,16 +183,34 @@ class TipPanel(wx.Panel):
     def load_tips_from_github(self):
         successful = False
         import requests
-        content = ""
-        url = 'https://raw.githubusercontent.com/repo/meerk40t/meerk40t/assets/tip.txt'
-        try:
-            page = requests.get(url)
-            if page.status_code == 200: # okay
-                content = page.text
-                successful = True
-        except (requests.ConnectionError, requests.Timeout, requests.HTTPError):
-            pass
 
+        content = ""
+        url = "https://raw.githubusercontent.com/repo/meerk40t/meerk40t/locale/"
+        # Do we have a localized version?
+        locale = "en"
+        languages = list(self.context.app.supported_languages)
+        try:
+            locale = languages[self.context.language][0]
+        except IndexError:
+            pass
+        # print(self.context.language, locale, languages)
+        if locale and locale != "en":
+            try:
+                page = requests.get(url + locale + "/tips.txt")
+                if page.status_code == 200:  # okay
+                    content = page.text
+                    successful = True
+            except (requests.ConnectionError, requests.Timeout, requests.HTTPError):
+                pass
+        # if we don't have anything localized then let's use the english master
+        if not successful:
+            try:
+                page = requests.get(url + "tips.txt")
+                if page.status_code == 200:  # okay
+                    content = page.text
+                    successful = True
+            except (requests.ConnectionError, requests.Timeout, requests.HTTPError):
+                pass
 
         if successful:
             now = datetime.date.today()
@@ -213,7 +224,6 @@ class TipPanel(wx.Panel):
                     pass
 
     def load_tips_from_local_cache(self):
-
         def comparable_version(version):
             """
             Return a comparable sequence from a version string
@@ -230,9 +240,7 @@ class TipPanel(wx.Panel):
                     result = result[0:2]
             while len(result) < 3:
                 result.append(0)
-            # print (f"Looking at {orgversion}: {result}")
             return result
-
 
         def add_tip(tip, cmd, version, current_version):
             if version:
@@ -242,12 +250,10 @@ class TipPanel(wx.Panel):
                     tip = ""
             if tip:
                 # Replace '\n' with real line breaks
-                tip = tip.replace( r"\n", "\n")
+                tip = tip.replace(r"\n", "\n")
                 if cmd:
-                    cmd = cmd.replace( r"\n", "\n")
-                self.tips.append(
-                    (tip, cmd)
-                )
+                    cmd = cmd.replace(r"\n", "\n")
+                self.tips.append((tip, cmd))
 
         myversion = comparable_version(self.context.kernel.version)
 
@@ -266,18 +272,16 @@ class TipPanel(wx.Panel):
                         tip = ""
                         cmd = ""
                     elif cline.startswith("tip="):
-                        tip = cline[len("tip="):]
+                        tip = cline[len("tip=") :]
                     elif cline.startswith("version="):
-                        ver = cline[len("version="):]
+                        ver = cline[len("version=") :]
                     elif cline.startswith("cmd="):
-                        cmd = cline[len("cmd="):]
+                        cmd = cline[len("cmd=") :]
                 # Something pending?
                 add_tip(tip, cmd, ver, myversion)
 
-
         except (OSError, RuntimeError, PermissionError, FileNotFoundError):
             return
-
 
     def pane_show(self, *args):
         pass
