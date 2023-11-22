@@ -575,28 +575,26 @@ class BeamTable:
     def points_in_polygon(self, e):
         if self._nb_scan is None:
             self.compute_beam_brute()
-        idx = np.searchsorted(self._nb_events, e)
-        actives = self._nb_scan[idx]
-        line = self.geometry.segments[actives]
-        a = line[:, :, 0]
-        a = np.where(actives == -1, np.nan + np.nan * 1j, a)
-        b = line[:, :, -1]
-        b = np.where(actives == -1, np.nan + np.nan * 1j, b)
 
-        # q = self.geometry.y_intercept(actives, np.real(e))
-        # # print(q)
+        idx = np.searchsorted(self._nb_events, e)
+        actives = self._nb_scan[idx - 1]
+        line = self.geometry.segments[actives]
+        a = line[..., 0]
+        b = line[..., -1]
+        a = np.where(actives == -1, np.nan + np.nan * 1j, a)
+        b = np.where(actives == -1, np.nan + np.nan * 1j, b)
 
         old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
         try:
-            # If horizontal slope is undefined. But, all x-ints are at x since x0=x1
+            # If vertical slope is undefined. All y-ints are at y since y0=y1
             m = (b.real - a.real) / (b.imag - a.imag)
-            y0 = a.real - (m * a.imag)
-            ys = np.reshape(np.repeat(np.real(e), y0.shape[1]), y0.shape)
-            y_intercepts = np.where(~np.isinf(m), (ys - y0) / m, a.imag)
+            x0 = a.real - (m * a.imag)
+            xs = np.reshape(np.repeat(np.real(e), x0.shape[1]), x0.shape)
+            y_intercepts = np.where(~np.isinf(m), (xs - x0) / m, a.imag)
         finally:
             np.seterr(**old_np_seterr)
-        xs = np.reshape(np.repeat(np.imag(e), y0.shape[1]), y0.shape)
-        results = np.sum(y_intercepts <= xs, axis=1)
+        ys = np.reshape(np.repeat(np.imag(e), x0.shape[1]), x0.shape)
+        results = np.sum(y_intercepts <= ys, axis=1)
         results %= 2
         return results
 
