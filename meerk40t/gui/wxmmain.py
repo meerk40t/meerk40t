@@ -3634,6 +3634,44 @@ class MeerK40t(MWindow):
                 i += 1
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
+    def add_language_menu_kernel(self):
+        """
+        Unused kernel language menu update see issue #2103
+
+        @return:
+        """
+        from ..kernel import _gettext_language
+
+        trans = _gettext_language
+        if not trans:
+            trans = "en"
+
+        wxglade_tmp_menu = wx.Menu()
+        for lang in self.context.app.supported_languages:
+            language_code, language_name, language_index = lang
+            m = wxglade_tmp_menu.Append(
+                wx.ID_ANY, language_name, language_name, wx.ITEM_RADIO
+            )
+            if trans == language_code:
+                m.Check(True)
+
+            def language_update(q):
+                def check(event):
+                    self.context.app.update_language(q)
+                    # Intentionally no translation...
+                    wx.MessageBox(
+                        message="This requires a program restart before the language change will kick in!",
+                        caption="Language changed",
+                    )
+
+                return check
+
+            self.Bind(wx.EVT_MENU, language_update(language_code), id=m.GetId())
+            # if language_code not in trans and i != 0:
+            #     m.Enable(False)
+        self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
+
+
     @signal_listener("restart")
     def on_restart_required(self, *args):
         self.context.kernel.register(
