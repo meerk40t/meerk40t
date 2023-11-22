@@ -244,6 +244,8 @@ def init_commands(kernel):
     )
     def effect_hatch(
         command,
+        channel,
+        _,
         data=None,
         angle=None,
         angle_delta=None,
@@ -257,6 +259,7 @@ def init_commands(kernel):
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0:
+            channel(_("No selected elements."))
             return
         first_node = data[0]
 
@@ -603,6 +606,7 @@ def init_commands(kernel):
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0:
+            channel(_("No selected elements."))
             return
         for e in data:
             e.set_dirty_bounds()
@@ -760,7 +764,7 @@ def init_commands(kernel):
         try:
             path = Path(path_d)
             path *= f"Scale({UNITS_PER_PIXEL})"
-        except ValueError:
+        except (ValueError, AttributeError):
             raise CommandSyntaxError(_("Not a valid path_d string (try quotes)"))
 
         node = self.elem_branch.add(path=path, type="elem path")
