@@ -11,6 +11,7 @@ Validation Stages.
         Stage 4, we successfully parsed $G, send ?
         Stage 5, we successfully parsed ?
 """
+import ast
 import re
 import threading
 import time
@@ -920,7 +921,7 @@ class GrblController:
         if match:
             try:
                 key = int(match.group(1))
-                value = float(match.group(2))
+                value = ast.literal_eval(match.group(2))
                 self.service.hardware_config[key] = value
                 self.service.signal(f"grbl:hwsettings", key, value)
             except ValueError:
