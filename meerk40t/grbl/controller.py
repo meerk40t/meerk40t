@@ -457,7 +457,7 @@ class GrblController:
         self._forward_buffer.clear()
 
     def validate_start(self, cmd):
-        self.realtime(f"{cmd}\r\n")
+        self.service(f".gcode_realtime {cmd}")
         self.service(f".timer-{self.service.label}{cmd} 0 1 gcode_realtime {cmd}")
 
     def validate_stop(self, cmd):
