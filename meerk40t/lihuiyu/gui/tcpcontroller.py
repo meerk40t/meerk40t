@@ -15,6 +15,8 @@ _ = wx.GetTranslation
 class TCPController(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(500, 200, *args, **kwds)
+        self.SetHelpText("k40tcp")
+
         self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         self.service = self.context.device
         self.text_status = wx.TextCtrl(self, wx.ID_ANY, "",  style=wx.TE_PROCESS_ENTER)

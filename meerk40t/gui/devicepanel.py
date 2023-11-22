@@ -566,6 +566,7 @@ class DeviceManager(MWindow):
                 "label": _("Devices"),
                 "icon": icons8_manager,
                 "tip": _("Opens Devices Window"),
+                "help": "devices",
                 "priority": -100,
                 "action": lambda v: kernel.console("window toggle DeviceManager\n"),
             },

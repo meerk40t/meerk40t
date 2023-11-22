@@ -57,6 +57,7 @@ class CameraPanel(wx.Panel, Job):
         wx.Panel.__init__(self, *args, **kwds)
         self.gui = gui
         self.context = context
+        self.SetHelpText("camera")
         self.index = index
         self.pane = pane
 

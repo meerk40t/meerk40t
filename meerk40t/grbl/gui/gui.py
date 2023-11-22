@@ -61,6 +61,7 @@ def plugin(service, lifecycle):
                 "label": _("Pause"),
                 "icon": icons8_pause,
                 "tip": _("Pause the laser"),
+                "help": "devicegrbl",
                 "action": lambda v: service("pause\n"),
             },
         )
@@ -71,6 +72,7 @@ def plugin(service, lifecycle):
                 "label": _("Stop"),
                 "icon": icons8_emergency_stop_button,
                 "tip": _("Emergency stop the laser"),
+                "help": "devicegrbl",
                 "action": lambda v: service("estop\n"),
             },
         )
@@ -89,9 +91,11 @@ def plugin(service, lifecycle):
                 "label": _("Red Dot On"),
                 "icon": icons8_flash_on,
                 "tip": _("Turn Redlight On"),
+                "help": "devicegrbl",
                 "action": lambda v: service("red on\n"),
                 "toggle": {
                     "label": _("Red Dot Off"),
+                    "help": "devicegrbl",
                     "action": lambda v: service("red off\n"),
                     "icon": icons8_flash_off,
                     "signal": "grbl_red_dot",
@@ -106,6 +110,7 @@ def plugin(service, lifecycle):
                 "label": _("Clear Alarm"),
                 "icon": icons8_info,
                 "tip": _("Send a GRBL Clear Alarm command"),
+                "help": "devicegrbl",
                 "action": lambda v: service("clear_alarm\n"),
             },
         )

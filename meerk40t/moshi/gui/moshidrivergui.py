@@ -14,6 +14,7 @@ class MoshiDriverGui(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(330, 630, *args, **kwds)
         self.context = self.context.device
+        self.SetHelpText("moshiconfig")
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools.GetBitmap())
         self.SetIcon(_icon)

@@ -28,6 +28,7 @@ def plugin(service, lifecycle):
                 "label": _("Controller"),
                 "icon": icons8_connected,
                 "tip": _("Opens Controller Window"),
+                "help": "devicenewly",
                 "action": lambda e: service("window toggle Controller\n"),
             },
         )
@@ -37,6 +38,7 @@ def plugin(service, lifecycle):
                 "label": _("Config"),
                 "icon": icons8_computer_support,
                 "tip": _("Opens device-specific configuration window"),
+                "help": "devicenewly",
                 "action": lambda v: service("window toggle Configuration\n"),
             },
         )
@@ -61,6 +63,7 @@ def plugin(service, lifecycle):
                 "label": _("File {index}").format(index=selected),
                 "icon": icons8_file,
                 "tip": _("Select active file to use for machine."),
+                "help": "devicenewly",
                 "identifier": "file_index",
                 "object": service,
                 "priority": 1,
@@ -69,54 +72,63 @@ def plugin(service, lifecycle):
                         "identifier": 1,
                         "label": _("File {index}").format(index=1),
                         "tip": _("File {index}").format(index=1),
+                        "help": "devicenewly",
                         "action": lambda v: service("select_file 1\n"),
                     },
                     {
                         "identifier": 2,
                         "label": _("File {index}").format(index=2),
                         "tip": _("File {index}").format(index=2),
+                        "help": "devicenewly",
                         "action": lambda v: service("select_file 2\n"),
                     },
                     {
                         "identifier": 3,
                         "label": _("File {index}").format(index=3),
                         "tip": _("File {index}").format(index=3),
+                        "help": "devicenewly",
                         "action": lambda v: service("select_file 3\n"),
                     },
                     {
                         "identifier": 4,
                         "label": _("File {index}").format(index=4),
                         "tip": _("File {index}").format(index=4),
+                        "help": "devicenewly",
                         "action": lambda v: service("select_file 4\n"),
                     },
                     {
                         "identifier": 5,
                         "label": _("File {index}").format(index=5),
                         "tip": _("File {index}").format(index=5),
+                        "help": "devicenewly",
                         "action": lambda v: service("select_file 5\n"),
                     },
                     {
                         "identifier": 6,
                         "label": _("File {index}").format(index=6),
                         "tip": _("File {index}").format(index=6),
+                        "help": "devicenewly",
                         "action": lambda v: service("select_file 6\n"),
                     },
                     {
                         "identifier": 7,
                         "label": _("File {index}").format(index=7),
                         "tip": _("File {index}").format(index=7),
+                        "help": "devicenewly",
                         "action": lambda v: service("select_file 7\n"),
                     },
                     {
                         "identifier": 8,
                         "label": _("File {index}").format(index=8),
                         "tip": _("File {index}").format(index=8),
+                        "help": "devicenewly",
                         "action": lambda v: service("select_file 8\n"),
                     },
                     {
                         "identifier": 9,
                         "label": _("File {index}").format(index=9),
                         "tip": _("File {index}").format(index=9),
+                        "help": "devicenewly",
                         "action": lambda v: service("select_file 9\n"),
                     },
                 ],
@@ -128,12 +140,14 @@ def plugin(service, lifecycle):
                 "label": _("Send Only"),
                 "icon": icons8_circled_stop,
                 "tip": _("Send the file but do not start the file"),
+                "help": "devicenewly",
                 "toggle_attr": "autoplay",
                 "object": service,
                 "priority": 1,
                 "toggle": {
                     "label": _("Send & Start"),
                     "tip": _("Automatically start the device after send"),
+                    "help": "devicenewly",
                     "icon": icons8_circled_play,
                     "signal": "autoplay",
                 },
@@ -147,6 +161,7 @@ def plugin(service, lifecycle):
                 "tip": _(
                     "Draw a bounding rectangle of the object saved in the machine"
                 ),
+                "help": "devicenewly",
                 "action": lambda v: service(
                     "draw_frame {index}\n".format(index=service.file_index)
                 ),
@@ -161,6 +176,7 @@ def plugin(service, lifecycle):
                 "tip": _(
                     "Move the bounding rectangle of the object saved in the machine"
                 ),
+                "help": "devicenewly",
                 "action": lambda v: service(
                     "move_frame {index}\n".format(index=service.file_index)
                 ),
@@ -173,6 +189,7 @@ def plugin(service, lifecycle):
                 "label": _("Replay"),
                 "icon": icons8_circled_play,
                 "tip": _("Replay the file saved in the machine"),
+                "help": "devicenewly",
                 "action": lambda v: service(
                     "replay {index}\n".format(index=service.file_index)
                 ),

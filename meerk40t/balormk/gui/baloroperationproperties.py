@@ -16,6 +16,7 @@ class BalorOperationPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("baloroperation")
         self.parent = args[0]
         self.operation = node
         params = Parameters(self.operation.settings)
