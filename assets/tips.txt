@@ -1,0 +1,18 @@
+# This file contains tips to be displayed at program start. Every entry has 3 lines:
+#   version=x.x.x (optional) Minimum version to apply, you can just omit that line to allow it for any version
+#   tip=xxxx Tip to be displayed
+#   cmd=xxxx Command to execute for the try it out button
+# [tip]
+# version=0.9.3
+# tip=Did you know, these tips can be maintained and extended online.\nWow, that's great.
+# cmd=
+# [tip]
+# version=1.0
+# tip=That won't be visible for a while
+
+[tip]
+tip=MeerK40t can create a so called outline around an element.\nJust select the element, right click on top of it to get the context menu and choose from the "Outline elements" menu...
+cmd=text -s 36 "Just a test" outline 2mm -o stroke green
+[tip]
+tip=MeerK40t has an extensive command set features that allows a lot of scriptable actions.\nJust open the console window and type help
+cmd=pane show console\nhelp
