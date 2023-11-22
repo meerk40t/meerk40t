@@ -1177,6 +1177,13 @@ class TestGeomstr(unittest.TestCase):
         except ZeroDivisionError:
             pass
 
+    def test_cag_union(self):
+        g = Geomstr.rect(0, 0, 100, 100, settings=0)
+        g.append(Geomstr.rect(50, 50, 100, 100, settings=1))
+        bt = BeamTable(g)
+        bt.compute_beam_brute()
+        q = bt.union(0, 1)
+
     def test_render(self):
         rect = Geomstr.rect(x=300, y=200, width=500, height=500, rx=50, ry=50)
         image = rect.segmented().render()

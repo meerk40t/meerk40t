@@ -606,6 +606,19 @@ class BeamTable:
         aw = np.argwhere(actives != -1)[:, 0]
         return actives[aw]
 
+    def union(self, subject, clip):
+        results = Geomstr()
+        actives = self._nb_scan
+
+        for i in range(1, len(self._nb_events)):
+            beam_start = self._nb_events[i-1]
+            beam_end = self._nb_events[i]
+            actives = self._nb_scan[i-1]
+            line_actives = self.geometry.segments[actives]
+            print(f"\n. {beam_start} {beam_end} {actives}")
+            print(line_actives)
+
+
 
 class Scanbeam:
     """
