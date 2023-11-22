@@ -778,6 +778,12 @@ class wxMeerK40t(wx.App, Module):
 
         context.setting(int, "language", None)
         language = context.language
+
+        # See issue #2103
+        # context.setting(str, "i18n", "en")
+        # language = context.i18n
+        # self.update_language_kernel(language)
+
         from meerk40t.gui.help_assets.help_assets import asset
 
         def get_asset(asset_name):
@@ -857,6 +863,7 @@ class wxMeerK40t(wx.App, Module):
         register_hershey_stuff(kernel)
 
         from meerk40t.gui.helper import register_panel_helper
+
         kernel.register("wxpane/helper", register_panel_helper)
 
         from meerk40t.gui.tips import register_panel_tips
@@ -955,6 +962,27 @@ class wxMeerK40t(wx.App, Module):
         else:
             self.locale = None
         context.signal("language", (lang, language_code, language_name, language_index))
+
+    def update_language_kernel(self, lang_code):
+        context = self.context
+        for i, suplang in enumerate(supported_languages):
+            language_code, language_name, language_index = suplang
+            if language_code != lang_code:
+                continue
+            context.i18n = language_code
+            self.context.kernel.set_language(language_code)
+            if self.locale:
+                assert sys.getrefcount(self.locale) <= 2
+                del self.locale
+            self.locale = wx.Locale(language_index)
+            # wxWidgets is broken. IsOk()==false and pops up error dialog, but it translates fine!
+            if self.locale.IsOk() or platform.system() == "Linux":
+                self.locale.AddCatalog("meerk40t")
+            else:
+                self.locale = None
+            context.signal(
+                "language", (i, language_code, language_name, language_index)
+            )
 
 
 # end of class MeerK40tGui

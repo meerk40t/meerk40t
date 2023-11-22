@@ -2224,6 +2224,11 @@ class ImageLoader:
             raise BadFileError(
                 "Cannot load an .eps file without GhostScript installed"
             ) from e
+        try:
+            from PIL import ImageOps
+            ImageOps.exif_transpose(image, in_place=True)
+        except ImportError:
+            pass
         _dpi = DEFAULT_PPI
         matrix = Matrix(f"scale({UNITS_PER_PIXEL})")
         try:
