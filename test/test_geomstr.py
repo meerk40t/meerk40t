@@ -1573,11 +1573,7 @@ class TestGeomstr(unittest.TestCase):
                 actives = sb.actives_at(x)
                 pos = g.y_intercept(actives, x)
                 for q in range(1, len(pos)):
-                    if pos[q-1] < pos[q]:
-                        actives2 = sb.actives_at(x)
-                        pos2 = g.y_intercept(actives2, x)
-                    self.assertGreaterEqual(pos[q-1], pos[q])
-
+                    self.assertLessEqual(pos[q-1], pos[q])
 
     # def test_geomstr_hatch(self):
     #     gs = Geomstr.svg(
