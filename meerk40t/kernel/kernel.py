@@ -74,6 +74,7 @@ class Kernel(Settings):
         ansi: bool = True,
         ignore_settings: bool = False,
         delay: float = 0.05,  # 20 ticks per second
+        language: str = None,
     ):
         """
         Initialize the Kernel. This sets core attributes of the ecosystem that are accessible to all modules.
@@ -128,7 +129,11 @@ class Kernel(Settings):
         self._lookup_lock = threading.Lock()
 
         # The translation object to be overridden by any valid translation functions
-        self.translation = lambda e: e
+        from . import _
+
+        self.translation = _
+        if language is not None:
+            self.set_language(language)
 
         # The function used to process the signals. This is useful if signals should be kept to a single thread.
         self.scheduler_handles_main_thread_jobs = True
@@ -169,7 +174,11 @@ class Kernel(Settings):
         self.args = None
 
     def __str__(self):
-        return "Kernel()"
+        return f"Kernel({self.name}, {self.profile}, {self.version})"
+
+    def set_language(self, language, localedir="locale"):
+        from . import set_language
+        set_language(self.name, localedir=localedir, language=language)
 
     def open_safe(self, filename, *args):
         """

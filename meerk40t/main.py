@@ -112,6 +112,13 @@ parser.add_argument(
     default=False,
     help="Don't load config file at startup",
 )
+parser.add_argument(
+    "-L",
+    "--language",
+    type=str,
+    default=None,
+    help="force default language",
+)
 
 
 def run():
@@ -157,6 +164,7 @@ def _exe(args):
         APPLICATION_NAME,
         ansi=not args.disable_ansi,
         ignore_settings=args.nuke_settings,
+        language=args.language,
     )
     kernel.args = args
     kernel.add_plugin(internal_plugins)
