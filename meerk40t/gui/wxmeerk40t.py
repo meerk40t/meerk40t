@@ -859,6 +859,9 @@ class wxMeerK40t(wx.App, Module):
         from meerk40t.gui.helper import register_panel_helper
         kernel.register("wxpane/helper", register_panel_helper)
 
+        from meerk40t.gui.tips import register_panel_tips
+        kernel.register("wxpane/tips", register_panel_tips)
+
         from meerk40t.gui.wxmribbon import register_panel_ribbon
 
         kernel.register("wxpane/Ribbon", register_panel_ribbon)
