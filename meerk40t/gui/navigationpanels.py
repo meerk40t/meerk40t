@@ -568,7 +568,6 @@ class Drag(wx.Panel):
         # end wxGlade
 
     def set_icons(self, iconsize=None, dimension=None):
-        print (f"Drag: {dimension} vs {self.Size}")
         if iconsize is None and dimension is not None:
             dim_x = int(dimension[0] / 3) - 8
             dim_y = int(dimension[1] / 4) - 8
@@ -1011,7 +1010,6 @@ class Jog(wx.Panel):
         self.Layout()
 
     def set_icons(self, iconsize=None, dimension=None):
-        print (f"Jog: {dimension} vs {self.Size}")
         if iconsize is None and dimension is not None:
             dim_x = int(dimension[0] / 3) - 8
             dim_y = int(dimension[1] / 4) - 8
@@ -2011,7 +2009,6 @@ class Transform(wx.Panel):
         # end wxGlade
 
     def set_icons(self, iconsize=None, dimension=None):
-        print (f"Trafo: {dimension} vs {self.Size}")
         if iconsize is None and dimension is not None:
             dim_x = int(dimension[0] / 3) - 8
             dim_y = int(dimension[1] / 4) - 8
@@ -2410,7 +2407,11 @@ class NavigationPanel(wx.Panel):
 
     def on_resize(self, event):
         wb_size = event.GetSize()
-        panel_size = (wb_size[0] / 3, wb_size[1])
+        if platform.system()=="Linux":
+            # They don't resize well
+            panel_size = (max(20, wb_size[0] / 3 - 60), wb_size[1])
+        else:
+            panel_size = (wb_size[0] / 3, wb_size[1])
         for panel in self.panels:
             if hasattr(panel, "set_icons"):
                 panel.set_icons(dimension=panel_size)
