@@ -149,26 +149,6 @@ class BalorDevice(Service, Status):
                 # intentionally not bed_size
             },
             {
-                "attr": "offset_x",
-                "object": self,
-                "default": "0mm",
-                "type": Length,
-                "label": _("X-Axis"),
-                "tip": _("Offset in the X axis"),
-                "section": "_10_Parameters",
-                "subsection": "_25_Offset",
-            },
-            {
-                "attr": "offset_y",
-                "object": self,
-                "default": "0mm",
-                "type": Length,
-                "label": _("Y-Axis"),
-                "tip": _("Offset in the Y axis"),
-                "section": "_10_Parameters",
-                "subsection": "_25_Offset",
-            },
-            {
                 "attr": "flip_x",
                 "object": self,
                 "default": False,
