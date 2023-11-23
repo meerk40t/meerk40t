@@ -14,36 +14,33 @@ from meerk40t.tools.geomstr import Geomstr
 def plugin(service, lifecycle):
     if lifecycle == "service":
         return "provider/device/balor"
-
-    print(lifecycle)
     if lifecycle != "added":
         return
 
-    self = service
     _ = service._
 
-    @self.console_option("travel_speed", "t", type=float, help="Set the travel speed.")
-    @self.console_option(
+    @service.console_option("travel_speed", "t", type=float, help="Set the travel speed.")
+    @service.console_option(
         "jump_delay",
         "d",
         type=float,
         default=200.0,
         help="Sets the jump delay for light travel moves",
     )
-    @self.console_option(
+    @service.console_option(
         "simulation_speed",
         "m",
         type=float,
         help="sets the simulation speed for this operation",
     )
-    @self.console_option(
+    @service.console_option(
         "quantization",
         "Q",
         type=int,
         default=500,
         help="Number of line segments to break this path into",
     )
-    @self.console_command(
+    @service.console_command(
         ("light", "light-simulate"),
         input_type="geometry",
         help=_("runs light on events."),
@@ -65,8 +62,8 @@ def plugin(service, lifecycle):
         if data is None:
             channel("Nothing sent")
             return
-        self.job = ElementLightJob(
-            self,
+        service.job = ElementLightJob(
+            service,
             data,
             travel_speed=travel_speed,
             jump_delay=jump_delay,
@@ -74,106 +71,106 @@ def plugin(service, lifecycle):
             quantization=quantization,
             simulate=bool(command != "light"),
         )
-        self.spooler.send(self.job)
+        service.spooler.send(service.job)
 
-    @self.console_command("select-light", help=_("Execute selection light idle job"))
+    @service.console_command("select-light", help=_("Execute selection light idle job"))
     def select_light(**kwargs):
         """
         Start a live bounds job.
         """
         # Live Bounds Job.
-        if self.job is not None:
-            self.job.stop()
-        self.job = LiveLightJob(self, mode="bounds")
-        self.spooler.send(self.job)
+        if service.job is not None:
+            service.job.stop()
+        service.job = LiveLightJob(service, mode="bounds")
+        service.spooler.send(service.job)
 
-    @self.console_command("full-light", help=_("Execute full light idle job"))
+    @service.console_command("full-light", help=_("Execute full light idle job"))
     def full_light(**kwargs):
-        if self.job is not None:
-            self.job.stop()
-        self.job = LiveLightJob(self)
-        self.spooler.send(self.job)
+        if service.job is not None:
+            service.job.stop()
+        service.job = LiveLightJob(service)
+        service.spooler.send(service.job)
 
-    @self.console_command(
+    @service.console_command(
         "regmark-light", help=_("Execute regmark live light idle job")
     )
     def reg_light(**kwargs):
-        if self.job is not None:
-            self.job.stop()
-        self.job = LiveLightJob(self, mode="regmarks")
-        self.spooler.send(self.job)
+        if service.job is not None:
+            service.job.stop()
+        service.job = LiveLightJob(service, mode="regmarks")
+        service.spooler.send(service.job)
 
-    @self.console_command("hull-light", help=_("Execute convex hull light idle job"))
+    @service.console_command("hull-light", help=_("Execute convex hull light idle job"))
     def hull_light(**kwargs):
-        if self.job is not None:
-            self.job.stop()
-        self.job = LiveLightJob(self, mode="hull")
-        self.spooler.send(self.job)
+        if service.job is not None:
+            service.job.stop()
+        service.job = LiveLightJob(service, mode="hull")
+        service.spooler.send(service.job)
 
-    @self.console_command(
+    @service.console_command(
         "stop",
         help=_("stops the idle running job"),
     )
     def stoplight(command, channel, _, data=None, remainder=None, **kwgs):
-        if self.job is None:
+        if service.job is None:
             channel("No job is currently set")
             return
         channel("Stopping idle job")
-        self.job.stop()
+        service.job.stop()
 
-    @self.console_command(
+    @service.console_command(
         "estop",
         help=_("stops the current job, deletes the spooler"),
         input_type=None,
     )
     def estop(command, channel, _, data=None, remainder=None, **kwgs):
         channel("Stopping Job")
-        if self.job is not None:
-            self.job.stop()
-        self.spooler.clear_queue()
-        self.driver.set_abort()
+        if service.job is not None:
+            service.job.stop()
+        service.spooler.clear_queue()
+        service.driver.set_abort()
         try:
             channel("Resetting controller.")
-            self.driver.reset()
-            self.signal("pause")
+            service.driver.reset()
+            service.signal("pause")
         except ConnectionRefusedError:
             pass
 
-    @self.console_command(
+    @service.console_command(
         "pause",
         help=_("Pauses the currently running job"),
     )
     def pause(command, channel, _, data=None, remainder=None, **kwgs):
-        if self.driver.paused:
+        if service.driver.paused:
             channel("Resuming current job")
         else:
             channel("Pausing current job")
         try:
-            self.driver.pause()
+            service.driver.pause()
         except ConnectionRefusedError:
             channel(_("Could not contact Galvo laser."))
-        self.signal("pause")
+        service.signal("pause")
 
-    @self.console_command(
+    @service.console_command(
         "resume",
         help=_("Resume the currently running job"),
     )
     def resume(command, channel, _, data=None, remainder=None, **kwgs):
         channel("Resume the current job")
         try:
-            self.driver.resume()
+            service.driver.resume()
         except ConnectionRefusedError:
             channel(_("Could not contact Galvo laser."))
-        self.signal("pause")
+        service.signal("pause")
 
-    @self.console_option(
+    @service.console_option(
         "idonotlovemyhouse",
         type=bool,
         action="store_true",
         help=_("override one second laser fire pulse duration"),
     )
-    @self.console_argument("time", type=float, help=_("laser fire pulse duration"))
-    @self.console_command(
+    @service.console_argument("time", type=float, help=_("laser fire pulse duration"))
+    @service.console_command(
         "pulse",
         help=_("pulse <time>: Pulse the laser in place."),
     )
@@ -192,39 +189,39 @@ def plugin(service, lifecycle):
                     return
             except IndexError:
                 return
-        if self.spooler.is_idle:
-            self.spooler.command("pulse", time)
+        if service.spooler.is_idle:
+            service.spooler.command("pulse", time)
             channel(_("Pulse laser for {time} milliseconds").format(time=time))
         else:
             channel(_("Pulse laser failed: Busy"))
         return
 
-    @self.console_command(
+    @service.console_command(
         "usb_connect",
         help=_("connect usb"),
     )
     def usb_connect(command, channel, _, data=None, remainder=None, **kwgs):
-        self.spooler.command("connect", priority=1)
+        service.spooler.command("connect", priority=1)
 
-    @self.console_command(
+    @service.console_command(
         "usb_disconnect",
         help=_("connect usb"),
     )
     def usb_disconnect(command, channel, _, data=None, remainder=None, **kwgs):
-        self.spooler.command("disconnect", priority=1)
+        service.spooler.command("disconnect", priority=1)
 
-    @self.console_command("usb_abort", help=_("Stops USB retries"))
+    @service.console_command("usb_abort", help=_("Stops USB retries"))
     def usb_abort(command, channel, _, **kwargs):
-        self.spooler.command("abort_retry", priority=1)
+        service.spooler.command("abort_retry", priority=1)
 
-    @self.console_argument("filename", type=str)
-    @self.console_command("save_job", help=_("save job export"), input_type="plan")
+    @service.console_argument("filename", type=str)
+    @service.console_command("save_job", help=_("save job export"), input_type="plan")
     def galvo_save(channel, _, filename, data=None, **kwargs):
         if filename is None:
             raise CommandSyntaxError
         try:
             with open(filename, "w") as f:
-                driver = BalorDriver(self, force_mock=True)
+                driver = BalorDriver(service, force_mock=True)
                 job = LaserJob(filename, list(data.plan), driver=driver)
                 from meerk40t.balormk.controller import list_command_lookup
 
@@ -249,61 +246,61 @@ def plugin(service, lifecycle):
         except (PermissionError, OSError):
             channel(_("Could not save: {filename}").format(filename=filename))
 
-    @self.console_option(
+    @service.console_option(
         "default",
         "d",
         help=_("Allow default list commands to persist within the raw command"),
         type=bool,
         action="store_true",
     )
-    @self.console_option(
+    @service.console_option(
         "raw",
         "r",
         help=_("Data is explicitly little-ended hex from a data capture"),
         type=bool,
         action="store_true",
     )
-    @self.console_option(
+    @service.console_option(
         "binary_in",
         "b",
         help=_("Read data is explicitly in binary"),
         type=bool,
         action="store_true",
     )
-    @self.console_option(
+    @service.console_option(
         "binary_out",
         "B",
         help=_("Write data should be explicitly in binary"),
         type=bool,
         action="store_true",
     )
-    @self.console_option(
+    @service.console_option(
         "short",
         "s",
         help=_("Export data is assumed short command only"),
         type=bool,
         action="store_true",
     )
-    @self.console_option(
+    @service.console_option(
         "hard",
         "h",
         help=_("Do not send regular list protocol commands"),
         type=bool,
         action="store_true",
     )
-    @self.console_option(
+    @service.console_option(
         "trim",
         "t",
         help=_("Trim the first number of characters"),
         type=int,
     )
-    @self.console_option(
+    @service.console_option(
         "input", "i", type=str, default=None, help="input data for given file"
     )
-    @self.console_option(
+    @service.console_option(
         "output", "o", type=str, default=None, help="output data to given file"
     )
-    @self.console_command(
+    @service.console_command(
         "raw",
         help=_("sends raw galvo list command exactly as composed"),
     )
@@ -457,42 +454,42 @@ def plugin(service, lifecycle):
         # OUTPUT TO DEVICE
         if hard:
             # Hard raw mode, disable any control values being sent.
-            self.driver.connection.raw_mode()
+            service.driver.connection.raw_mode()
             if not default:
-                self.driver.connection.raw_clear()
+                service.driver.connection.raw_clear()
             for v in raw_commands:
                 command = v[0]
                 if command >= 0x8000:
-                    self.driver.connection._list_write(*v)
+                    service.driver.connection._list_write(*v)
                 else:
-                    self.driver.connection._list_end()
-                    self.driver.connection._command(*v)
+                    service.driver.connection._list_end()
+                    service.driver.connection._command(*v)
             return
 
         if short:
             # Short mode only sending pure shorts.
             for v in raw_commands:
-                self.driver.connection.raw_write(*v)
+                service.driver.connection.raw_write(*v)
             return
 
         # Hybrid mode. Sending list and short commands using the right mode changes.
-        self.driver.connection.rapid_mode()
-        self.driver.connection.program_mode()
+        service.driver.connection.rapid_mode()
+        service.driver.connection.program_mode()
         if not default:
-            self.driver.connection.raw_clear()
+            service.driver.connection.raw_clear()
         for v in raw_commands:
             command = v[0]
             if command >= 0x8000:
-                self.driver.connection.program_mode()
-                self.driver.connection._list_write(*v)
+                service.driver.connection.program_mode()
+                service.driver.connection._list_write(*v)
             else:
-                self.driver.connection.rapid_mode()
-                self.driver.connection._command(*v)
-        self.driver.connection.rapid_mode()
+                service.driver.connection.rapid_mode()
+                service.driver.connection._command(*v)
+        service.driver.connection.rapid_mode()
 
-    @self.console_argument("x", type=float, default=0.0)
-    @self.console_argument("y", type=float, default=0.0)
-    @self.console_command(
+    @service.console_argument("x", type=float, default=0.0)
+    @service.console_argument("y", type=float, default=0.0)
+    @service.console_command(
         "goto",
         help=_("send laser a goto command"),
     )
@@ -500,13 +497,13 @@ def plugin(service, lifecycle):
         if x is not None and y is not None:
             rx = int(0x8000 + x) & 0xFFFF
             ry = int(0x8000 + y) & 0xFFFF
-            self.driver.connection.set_xy(rx, ry)
+            service.driver.connection.set_xy(rx, ry)
 
-    @self.console_option("minspeed", "n", type=int, default=100)
-    @self.console_option("maxspeed", "x", type=int, default=5000)
-    @self.console_option("acc_time", "a", type=int, default=100)
-    @self.console_argument("position", type=int, default=0)
-    @self.console_command(
+    @service.console_option("minspeed", "n", type=int, default=100)
+    @service.console_option("maxspeed", "x", type=int, default=5000)
+    @service.console_option("acc_time", "a", type=int, default=100)
+    @service.console_argument("position", type=int, default=0)
+    @service.console_command(
         "rotary_to",
         help=_("Send laser rotary command info."),
         all_arguments_required=True,
@@ -514,21 +511,21 @@ def plugin(service, lifecycle):
     def galvo_rotary(
         command, channel, _, position, minspeed, maxspeed, acc_time, **kwgs
     ):
-        self.driver.connection.set_axis_motion_param(
+        service.driver.connection.set_axis_motion_param(
             minspeed & 0xFFFF, maxspeed & 0xFFFF
         )
-        self.driver.connection.set_axis_origin_param(acc_time)  # Unsure why 100.
+        service.driver.connection.set_axis_origin_param(acc_time)  # Unsure why 100.
         pos = position if position >= 0 else -position + 0x80000000
         p1 = (pos >> 16) & 0xFFFF
         p0 = pos & 0xFFFF
-        self.driver.connection.move_axis_to(p0, p1)
-        self.driver.connection.wait_axis()
+        service.driver.connection.move_axis_to(p0, p1)
+        service.driver.connection.wait_axis()
 
-    @self.console_option("minspeed", "n", type=int, default=100)
-    @self.console_option("maxspeed", "x", type=int, default=5000)
-    @self.console_option("acc_time", "a", type=int, default=100)
-    @self.console_argument("delta_rotary", type=int, default=0, help="relative amount")
-    @self.console_command(
+    @service.console_option("minspeed", "n", type=int, default=100)
+    @service.console_option("maxspeed", "x", type=int, default=5000)
+    @service.console_option("acc_time", "a", type=int, default=100)
+    @service.console_argument("delta_rotary", type=int, default=0, help="relative amount")
+    @service.console_command(
         "rotary_relative",
         help=_("Advance the rotary by the given amount"),
         all_arguments_required=True,
@@ -536,29 +533,29 @@ def plugin(service, lifecycle):
     def galvo_rotary_advance(
         command, channel, _, delta_rotary, minspeed, maxspeed, acc_time, **kwgs
     ):
-        pos_args = self.driver.connection.get_axis_pos()
+        pos_args = service.driver.connection.get_axis_pos()
         current = pos_args[1] | pos_args[2] << 16
         if current > 0x80000000:
             current = -current + 0x80000000
         position = current + delta_rotary
 
-        self.driver.connection.set_axis_motion_param(
+        service.driver.connection.set_axis_motion_param(
             minspeed & 0xFFFF, maxspeed & 0xFFFF
         )
-        self.driver.connection.set_axis_origin_param(acc_time)  # Unsure why 100.
+        service.driver.connection.set_axis_origin_param(acc_time)  # Unsure why 100.
         pos = position if position >= 0 else -position + 0x80000000
         p1 = (pos >> 16) & 0xFFFF
         p0 = pos & 0xFFFF
-        self.driver.connection.move_axis_to(p0, p1)
-        self.driver.connection.wait_axis()
+        service.driver.connection.move_axis_to(p0, p1)
+        service.driver.connection.wait_axis()
 
-    @self.console_option("axis_index", "i", type=int, default=0)
-    @self.console_command(
+    @service.console_option("axis_index", "i", type=int, default=0)
+    @service.console_command(
         "rotary_pos",
         help=_("Check the rotary position"),
     )
     def galvo_rotary_pos(command, channel, _, axis_index=0, **kwgs):
-        pos_args = self.driver.connection.get_axis_pos(axis_index)
+        pos_args = service.driver.connection.get_axis_pos(axis_index)
         if pos_args is None:
             channel("Not connected, cannot get axis pos.")
             return
@@ -567,36 +564,36 @@ def plugin(service, lifecycle):
             current = -current + 0x80000000
         channel(f"Rotary Position: {current}")
 
-    @self.console_argument("off", type=str)
-    @self.console_command(
+    @service.console_argument("off", type=str)
+    @service.console_command(
         "red",
         help=_("Turns redlight on/off"),
     )
     def galvo_on(command, channel, _, off=None, remainder=None, **kwgs):
         try:
             if off == "off":
-                reply = self.driver.connection.light_off()
-                self.driver.connection.write_port()
-                self.redlight_preferred = False
+                reply = service.driver.connection.light_off()
+                service.driver.connection.write_port()
+                service.redlight_preferred = False
                 channel("Turning off redlight.")
             else:
-                reply = self.driver.connection.light_on()
-                self.driver.connection.write_port()
+                reply = service.driver.connection.light_on()
+                service.driver.connection.write_port()
                 channel("Turning on redlight.")
-                self.redlight_preferred = True
+                service.redlight_preferred = True
         except ConnectionRefusedError:
-            self.signal(
+            service.signal(
                 "warning",
                 _("Connection was aborted. Manual connection required."),
                 _("Not Connected"),
             )
             channel("Could not alter redlight. Connection is aborted.")
 
-    @self.console_argument("filename", type=str, default=None, help="filename or none")
-    @self.console_option(
+    @service.console_argument("filename", type=str, default=None, help="filename or none")
+    @service.console_option(
         "default", "d", type=bool, action="store_true", help="restore to default"
     )
-    @self.console_command(
+    @service.console_command(
         "force_correction",
         help=_("Resets the galvo laser"),
     )
@@ -604,34 +601,34 @@ def plugin(service, lifecycle):
         command, channel, _, filename=None, default=False, remainder=None, **kwgs
     ):
         if default:
-            filename = self.corfile
+            filename = service.corfile
             channel(f"Using default corfile: {filename}")
         if filename is None:
-            self.driver.connection.write_correction_file(None)
+            service.driver.connection.write_correction_file(None)
             channel(f"Force set corrections to blank.")
         else:
             from os.path import exists
 
             if exists(filename):
                 channel(f"Force set corrections: {filename}")
-                self.driver.connection.write_correction_file(filename)
+                service.driver.connection.write_correction_file(filename)
             else:
                 channel(f"The file at {os.path.realpath(filename)} does not exist.")
 
-    @self.console_command(
+    @service.console_command(
         "softreboot",
         help=_("Resets the galvo laser"),
     )
     def galvo_reset(command, channel, _, remainder=None, **kwgs):
-        self.driver.connection.init_laser()
-        channel(f"Soft reboot: {self.label}")
+        service.driver.connection.init_laser()
+        channel(f"Soft reboot: {service.label}")
 
-    @self.console_option(
+    @service.console_option(
         "duration", "d", type=float, help=_("time to set/unset the port")
     )
-    @self.console_argument("off", type=str)
-    @self.console_argument("bit", type=int)
-    @self.console_command(
+    @service.console_argument("off", type=str)
+    @service.console_argument("bit", type=int)
+    @service.console_command(
         "port",
         help=_("Turns port on or off, eg. port off 8"),
         all_arguments_required=True,
@@ -639,25 +636,25 @@ def plugin(service, lifecycle):
     def galvo_port(command, channel, _, off, bit=None, duration=None, **kwgs):
         off = off == "off"
         if off:
-            self.driver.connection.port_off(bit)
-            self.driver.connection.write_port()
+            service.driver.connection.port_off(bit)
+            service.driver.connection.write_port()
             channel(f"Turning off bit {bit}")
         else:
-            self.driver.connection.port_on(bit)
-            self.driver.connection.write_port()
+            service.driver.connection.port_on(bit)
+            service.driver.connection.write_port()
             channel(f"Turning on bit {bit}")
         if duration is not None:
             if off:
-                self(f".timer 1 {duration} port on {bit}")
+                service(f".timer 1 {duration} port on {bit}")
             else:
-                self(f".timer 1 {duration} port off {bit}")
+                service(f".timer 1 {duration} port off {bit}")
 
-    @self.console_command(
+    @service.console_command(
         "status",
         help=_("Sends status check"),
     )
     def galvo_status(command, channel, _, remainder=None, **kwgs):
-        reply = self.driver.connection.get_version()
+        reply = service.driver.connection.get_version()
         if reply is None:
             channel("Not connected, cannot get serial number.")
             return
@@ -665,12 +662,12 @@ def plugin(service, lifecycle):
         for index, b in enumerate(reply):
             channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
-    @self.console_command(
+    @service.console_command(
         "lstatus",
         help=_("Checks the list status."),
     )
     def galvo_liststatus(command, channel, _, remainder=None, **kwgs):
-        reply = self.driver.connection.get_list_status()
+        reply = service.driver.connection.get_list_status()
         if reply is None:
             channel("Not connected, cannot get serial number.")
             return
@@ -678,12 +675,12 @@ def plugin(service, lifecycle):
         for index, b in enumerate(reply):
             channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
-    @self.console_command(
+    @service.console_command(
         "mark_time",
         help=_("Checks the Mark Time."),
     )
     def galvo_mark_time(command, channel, _, remainder=None, **kwgs):
-        reply = self.driver.connection.get_mark_time()
+        reply = service.driver.connection.get_mark_time()
         if reply is None:
             channel("Not connected, cannot get mark time.")
             return
@@ -691,12 +688,12 @@ def plugin(service, lifecycle):
         for index, b in enumerate(reply):
             channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
-    @self.console_command(
+    @service.console_command(
         "mark_count",
         help=_("Checks the Mark Count."),
     )
     def galvo_mark_count(command, channel, _, remainder=None, **kwgs):
-        reply = self.driver.connection.get_mark_count()
+        reply = service.driver.connection.get_mark_count()
         if reply is None:
             channel("Not connected, cannot get mark count.")
             return
@@ -704,12 +701,12 @@ def plugin(service, lifecycle):
         for index, b in enumerate(reply):
             channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
-    @self.console_command(
+    @service.console_command(
         "axis_pos",
         help=_("Checks the Axis Position."),
     )
     def galvo_axis_pos(command, channel, _, remainder=None, **kwgs):
-        reply = self.driver.connection.get_axis_pos()
+        reply = service.driver.connection.get_axis_pos()
         if reply is None:
             channel("Not connected, cannot get axis position.")
             return
@@ -717,12 +714,12 @@ def plugin(service, lifecycle):
         for index, b in enumerate(reply):
             channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
-    @self.console_command(
+    @service.console_command(
         "user_data",
         help=_("Checks the User Data."),
     )
     def galvo_user_data(command, channel, _, remainder=None, **kwgs):
-        reply = self.driver.connection.get_user_data()
+        reply = service.driver.connection.get_user_data()
         if reply is None:
             channel("Not connected, cannot get user data.")
             return
@@ -730,12 +727,12 @@ def plugin(service, lifecycle):
         for index, b in enumerate(reply):
             channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
-    @self.console_command(
+    @service.console_command(
         "position_xy",
         help=_("Checks the Position XY"),
     )
     def galvo_position_xy(command, channel, _, remainder=None, **kwgs):
-        reply = self.driver.connection.get_position_xy()
+        reply = service.driver.connection.get_position_xy()
         if reply is None:
             channel("Not connected, cannot get position xy.")
             return
@@ -743,12 +740,12 @@ def plugin(service, lifecycle):
         for index, b in enumerate(reply):
             channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
-    @self.console_command(
+    @service.console_command(
         "fly_speed",
         help=_("Checks the Fly Speed."),
     )
     def galvo_fly_speed(command, channel, _, remainder=None, **kwgs):
-        reply = self.driver.connection.get_fly_speed()
+        reply = service.driver.connection.get_fly_speed()
         if reply is None:
             channel("Not connected, cannot get fly speed.")
             return
@@ -756,12 +753,12 @@ def plugin(service, lifecycle):
         for index, b in enumerate(reply):
             channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
-    @self.console_command(
+    @service.console_command(
         "fly_wait_count",
         help=_("Checks the fiber config extend"),
     )
     def galvo_fly_wait_count(command, channel, _, remainder=None, **kwgs):
-        reply = self.driver.connection.get_fly_wait_count()
+        reply = service.driver.connection.get_fly_wait_count()
         if reply is None:
             channel("Not connected, cannot get fly weight count.")
             return
@@ -769,12 +766,12 @@ def plugin(service, lifecycle):
         for index, b in enumerate(reply):
             channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
-    @self.console_command(
+    @service.console_command(
         "fiber_st_mo_ap",
         help=_("Checks the fiber st mo ap"),
     )
     def galvo_fiber_st_mo_ap(command, channel, _, remainder=None, **kwgs):
-        reply = self.driver.connection.get_fiber_st_mo_ap()
+        reply = service.driver.connection.get_fiber_st_mo_ap()
         if reply is None:
             channel("Not connected, cannot get fiber_st_mo_ap.")
             return
@@ -790,16 +787,16 @@ def plugin(service, lifecycle):
                 raise ValueError("Not valid binary")
         return p.lower()
 
-    @self.console_argument(
+    @service.console_argument(
         "input",
         help=_("input binary to wait for. Use 'x' for any bit."),
         type=from_binary,
         nargs="*",
     )
-    @self.console_option(
+    @service.console_option(
         "debug", "d", action="store_true", type=bool, help="debug output"
     )
-    @self.console_command("wait_for_input", all_arguments_required=True, hidden=True)
+    @service.console_command("wait_for_input", all_arguments_required=True, hidden=True)
     def wait_for_input(channel, input, debug=False, **kwargs):
         """
         Wait for input is intended as a spooler command. It will halt the calling thread (spooler thread) until the
@@ -810,7 +807,7 @@ def plugin(service, lifecycle):
         """
         input_unmatched = True
         while input_unmatched:
-            reply = self.driver.connection.read_port()
+            reply = service.driver.connection.read_port()
             input_unmatched = False
             word = 0
             for a, b in zip(reply, input):
@@ -840,12 +837,12 @@ def plugin(service, lifecycle):
                     channel("Input matched.")
                 return  # We exited
 
-    @self.console_command(
+    @service.console_command(
         "read_port",
         help=_("Checks the read_port"),
     )
     def galvo_read_port(command, channel, _, remainder=None, **kwgs):
-        reply = self.driver.connection.read_port()
+        reply = service.driver.connection.read_port()
         if reply is None:
             channel("Not connected, cannot get read port.")
             return
@@ -853,12 +850,12 @@ def plugin(service, lifecycle):
         for index, b in enumerate(reply):
             channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
-    @self.console_command(
+    @service.console_command(
         "input_port",
         help=_("Checks the input_port"),
     )
     def galvo_input_port(command, channel, _, remainder=None, **kwgs):
-        reply = self.driver.connection.get_input_port()
+        reply = service.driver.connection.get_input_port()
         if reply is None:
             channel("Not connected, cannot get input port.")
             return
@@ -866,12 +863,12 @@ def plugin(service, lifecycle):
         for index, b in enumerate(reply):
             channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
-    @self.console_command(
+    @service.console_command(
         "clear_lock_input_port",
         help=_("clear the input_port"),
     )
     def galvo_clear_input_port(command, channel, _, remainder=None, **kwgs):
-        reply = self.driver.connection.clear_lock_input_port()
+        reply = service.driver.connection.clear_lock_input_port()
         if reply is None:
             channel("Not connected, cannot get input port.")
             return
@@ -879,12 +876,12 @@ def plugin(service, lifecycle):
         for index, b in enumerate(reply):
             channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
-    @self.console_command(
+    @service.console_command(
         "enable_lock_input_port",
         help=_("clear the input_port"),
     )
     def galvo_enable_lock_input_port(command, channel, _, remainder=None, **kwgs):
-        reply = self.driver.connection.enable_lock_input_port()
+        reply = service.driver.connection.enable_lock_input_port()
         if reply is None:
             channel("Not connected, cannot get input port.")
             return
@@ -892,12 +889,12 @@ def plugin(service, lifecycle):
         for index, b in enumerate(reply):
             channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
-    @self.console_command(
+    @service.console_command(
         "disable_lock_input_port",
         help=_("clear the input_port"),
     )
     def galvo_disable_lock_input_port(command, channel, _, remainder=None, **kwgs):
-        reply = self.driver.connection.disable_lock_input_port()
+        reply = service.driver.connection.disable_lock_input_port()
         if reply is None:
             channel("Not connected, cannot get input port.")
             return
@@ -905,12 +902,12 @@ def plugin(service, lifecycle):
         for index, b in enumerate(reply):
             channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
-    @self.console_command(
+    @service.console_command(
         "fiber_config_extend",
         help=_("Checks the fiber config extend"),
     )
     def galvo_fiber_config_extend(command, channel, _, remainder=None, **kwgs):
-        reply = self.driver.connection.get_fiber_config_extend()
+        reply = service.driver.connection.get_fiber_config_extend()
         if reply is None:
             channel("Not connected, cannot get fiber config extend.")
             return
@@ -918,12 +915,12 @@ def plugin(service, lifecycle):
         for index, b in enumerate(reply):
             channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
-    @self.console_command(
+    @service.console_command(
         "serial_number",
         help=_("Checks the serial number."),
     )
     def galvo_serial(command, channel, _, remainder=None, **kwgs):
-        reply = self.driver.connection.get_serial_number()
+        reply = service.driver.connection.get_serial_number()
         if reply is None:
             channel("Not connected, cannot get serial number.")
             return
@@ -932,18 +929,18 @@ def plugin(service, lifecycle):
         for index, b in enumerate(reply):
             channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
-    @self.console_argument("filename", type=str, default=None)
-    @self.console_command(
+    @service.console_argument("filename", type=str, default=None)
+    @service.console_command(
         "correction",
         help=_("set the correction file"),
     )
     def set_corfile(command, channel, _, filename=None, remainder=None, **kwgs):
         if filename is None:
-            file = self.corfile
+            file = service.corfile
             if file is None:
                 channel("No correction file set.")
             else:
-                channel(f"Correction file is set to: {self.corfile}")
+                channel(f"Correction file is set to: {service.corfile}")
                 from os.path import exists
 
                 if exists(file):
@@ -954,13 +951,13 @@ def plugin(service, lifecycle):
             from os.path import exists
 
             if exists(filename):
-                self.corfile = filename
-                self.signal("corfile", filename)
+                service.corfile = filename
+                service.signal("corfile", filename)
             else:
                 channel(f"The file at {os.path.realpath(filename)} does not exist.")
                 channel("Correction file was not set.")
 
-    @self.console_command(
+    @service.console_command(
         "position",
         help=_("give the position of the selection box in galvos"),
     )
@@ -968,18 +965,18 @@ def plugin(service, lifecycle):
         """
         Draws an outline of the current shape.
         """
-        bounds = self.elements.selected_area()
+        bounds = service.elements.selected_area()
         if bounds is None:
             channel(_("Nothing Selected"))
             return
-        x0, y0 = self.view.position(bounds[0], bounds[1])
-        x1, y1 = self.view.position(bounds[2], bounds[3])
+        x0, y0 = service.view.position(bounds[0], bounds[1])
+        x1, y1 = service.view.position(bounds[2], bounds[3])
         channel(
             f"Top,Right: ({x0:.02f}, {y0:.02f}). Lower, Left: ({x1:.02f},{y1:.02f})"
         )
 
-    @self.console_argument("lens_size", type=str, default=None)
-    @self.console_command(
+    @service.console_argument("lens_size", type=str, default=None)
+    @service.console_command(
         "lens",
         help=_("set the lens size"),
     )
@@ -991,20 +988,20 @@ def plugin(service, lifecycle):
         """
         if lens_size is None:
             raise SyntaxError
-        self.lens_size = lens_size
-        self.width = lens_size
-        self.height = lens_size
-        self.signal("bedsize", (self.lens_size, self.lens_size))
-        channel(f"Set Bed Size : ({self.lens_size}, {self.lens_size}).")
+        service.lens_size = lens_size
+        service.width = lens_size
+        service.height = lens_size
+        service.signal("bedsize", (service.lens_size, service.lens_size))
+        channel(f"Set Bed Size : ({service.lens_size}, {service.lens_size}).")
 
-    @self.console_option(
+    @service.console_option(
         "count",
         "c",
         default=256,
         type=int,
         help="Number of instances of boxes to draw.",
     )
-    @self.console_command(
+    @service.console_command(
         "box",
         help=_("outline the current selected elements"),
         output_type="geometry",
@@ -1015,7 +1012,7 @@ def plugin(service, lifecycle):
         """
         Draws an outline of the current shape.
         """
-        bounds = self.elements.selected_area()
+        bounds = service.elements.selected_area()
         if bounds is None:
             channel(_("Nothing Selected"))
             return
@@ -1026,7 +1023,7 @@ def plugin(service, lifecycle):
             geometry.copies(count)
         return "geometry", geometry
 
-    @self.console_command(
+    @service.console_command(
         "hull",
         help=_("convex hull of the current selected elements"),
         input_type=(None, "elements"),
@@ -1037,7 +1034,7 @@ def plugin(service, lifecycle):
         Draws an outline of the current shape.
         """
         if data is None:
-            data = list(self.elements.elems(emphasized=True))
+            data = list(service.elements.elems(emphasized=True))
         g = Geomstr()
         for e in data:
             if hasattr(e, "as_image"):
@@ -1079,14 +1076,14 @@ def plugin(service, lifecycle):
                 yield point
             pos -= steps
 
-    @self.console_option(
+    @service.console_option(
         "quantization",
         "q",
         default=50,
         type=int,
         help="Number of segments to break each path into.",
     )
-    @self.console_command(
+    @service.console_command(
         "ants",
         help=_("Marching ants of the given element path."),
         input_type=(None, "elements"),
@@ -1097,7 +1094,7 @@ def plugin(service, lifecycle):
         Draws an outline of the current shape.
         """
         if data is None:
-            data = list(self.elements.elems(emphasized=True))
+            data = list(service.elements.elems(emphasized=True))
         geom = Geomstr()
         for e in data:
             try:
@@ -1114,8 +1111,8 @@ def plugin(service, lifecycle):
             geom.end()
         return "geometry", geom
 
-    @self.console_argument("filename", type=str)
-    @self.console_command(
+    @service.console_argument("filename", type=str)
+    @service.console_command(
         "clone_init",
         help=_("Initializes a galvo clone board from specified file."),
     )
@@ -1124,26 +1121,26 @@ def plugin(service, lifecycle):
 
         from meerk40t.balormk.clone_loader import load_sys
         from meerk40t.kernel import get_safe_path
-        kernel = self.kernel
+        kernel = service.kernel
 
-        self.setting(str, "clone_sys", "chunks")
+        service.setting(str, "clone_sys", "chunks")
         if filename is not None:
-            self.clone_sys = filename
-        if self.clone_sys == "chunks":
+            service.clone_sys = filename
+        if service.clone_sys == "chunks":
             from meerk40t.balormk.clone_loader import load_chunks
 
             load_chunks(channel=channel)
             return
 
         # Check for file in local directory
-        p = self.clone_sys
+        p = service.clone_sys
         if os.path.exists(p):
             load_sys(p, channel=channel)
             return
 
         # Check for file in the meerk40t directory (safe_path)
         directory = get_safe_path(kernel.name, create=True)
-        p = os.path.join(directory, self.clone_sys)
+        p = os.path.join(directory, service.clone_sys)
         if os.path.exists(p):
             load_sys(p, channel=channel)
             return
@@ -1156,9 +1153,9 @@ def plugin(service, lifecycle):
             os.environ["SystemRoot"],
             "SysNative" if platform.architecture()[0] == "32bit" else "System32",
         )
-        p = os.path.join(system32, "drivers", self.clone_sys)
+        p = os.path.join(system32, "drivers", service.clone_sys)
         if os.path.exists(p):
             load_sys(p, channel=channel)
             return
 
-        channel(f"{self.clone_sys} file was not found.")
+        channel(f"{service.clone_sys} file was not found.")
