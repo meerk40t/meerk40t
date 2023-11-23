@@ -1,8 +1,9 @@
 """
     A simple module to display some startup tips.
-    You can add more tips, every tip has two elements:
+    You can add more tips, every tip has three elements:
         a) the info-text to display in the panel
         b) an (optional) command to be executed in the 'Try it out' button
+        c) an (optional) image (url) to be shown
 """
 import datetime
 import os
@@ -139,23 +140,29 @@ class TipPanel(wx.Panel):
             self.button_try.Show(False)
             self.tip_command = ""
         if my_tip[2]:
-            self.image_tip.Show(True)
-            self.set_tip_image(my_tip[2])
+            self.set_tip_image(my_tip[2], newvalue)
         else:
-            self.set_tip_image("")
+            self.set_tip_image("", newvalue)
         self.Layout()
 
-    def set_tip_image(self, path):
+    def set_tip_image(self, path, counter, display=True):
+        """
+        path: URL of the image to be loaded
+        counter: an additional naming element to
+        avoid ending up with the same name for equally called images
+        display: apply and display the image
+        """
         self.tip_image = path
         if isinstance(path, wx.Bitmap):
-            self.image_tip.SetBitmap(path)
-            self.image_tip.Show(True)
+            if display:
+                self.image_tip.SetBitmap(path)
+                self.image_tip.Show(True)
         else:
             found = False
             if path and self.cache_dir:
                 parts = path.split("/")
                 if len(parts) > 0:
-                    basename = parts[-1]
+                    basename = f"_{counter}_" + parts[-1]
                     local_path = os.path.join(self.cache_dir, basename)
                     # Is this file already on the disk? If not load it...
                     if not os.path.exists(local_path):
@@ -180,7 +187,7 @@ class TipPanel(wx.Panel):
 
                         found = loaded
 
-                    if local_path and os.path.exists(local_path):
+                    if display and local_path and os.path.exists(local_path):
                         bmp = wx.Bitmap()
                         res = bmp.LoadFile(local_path)
                         if res:
@@ -206,11 +213,11 @@ class TipPanel(wx.Panel):
                                 pass
                             self.image_tip.SetBitmap(bmp)
                             found = True
-
-            if found:
-                self.image_tip.Show(True)
-            else:
-                self.image_tip.Show(False)
+            if display:
+                if found:
+                    self.image_tip.Show(True)
+                else:
+                    self.image_tip.Show(False)
 
     def on_button_try(self, event):
         if self.tip_command:
@@ -292,6 +299,10 @@ class TipPanel(wx.Panel):
         prev_count = len(self.tips)
         self.load_tips_from_github()
         self.setup_tips()
+        # Load all images...
+        for idx, tip in enumerate(self.tips):
+            if tip[2]:
+                self.set_tip_image(tip[2], idx, display=False)
         new_count = len(self.tips)
         res = wx.MessageBox(
             message=_("Tips have been updated, {info} new entries found.").format(info=str(new_count - prev_count)),
