@@ -19,7 +19,13 @@ def plugin(service, lifecycle):
 
     _ = service._
 
-    @service.console_option("travel_speed", "t", type=float, help="Set the travel speed.")
+    ########################
+    # LIGHT JOBS COMMANDS
+    ########################
+
+    @service.console_option(
+        "travel_speed", "t", type=float, help="Set the travel speed."
+    )
     @service.console_option(
         "jump_delay",
         "d",
@@ -118,6 +124,127 @@ def plugin(service, lifecycle):
         channel("Stopping idle job")
         service.job.stop()
 
+    @service.console_option(
+        "count",
+        "c",
+        default=256,
+        type=int,
+        help="Number of instances of boxes to draw.",
+    )
+    @service.console_command(
+        "box",
+        help=_("outline the current selected elements"),
+        output_type="geometry",
+    )
+    def shapes_selected(
+        command, channel, _, count=256, data=None, args=tuple(), **kwargs
+    ):
+        """
+        Draws an outline of the current shape.
+        """
+        bounds = service.elements.selected_area()
+        if bounds is None:
+            channel(_("Nothing Selected"))
+            return
+        xmin, ymin, xmax, ymax = bounds
+        channel(_("Element bounds: {bounds}").format(bounds=str(bounds)))
+        geometry = Geomstr.rect(xmin, ymin, xmax - xmin, ymin - ymax)
+        if count > 1:
+            geometry.copies(count)
+        return "geometry", geometry
+
+    @service.console_command(
+        "hull",
+        help=_("convex hull of the current selected elements"),
+        input_type=(None, "elements"),
+        output_type="geometry",
+    )
+    def shapes_hull(channel, _, data=None, **kwargs):
+        """
+        Draws an outline of the current shape.
+        """
+        if data is None:
+            data = list(service.elements.elems(emphasized=True))
+        g = Geomstr()
+        for e in data:
+            if hasattr(e, "as_image"):
+                bounds = e.bounds
+                g.append(
+                    Geomstr.rect(
+                        bounds[0],
+                        bounds[1],
+                        bounds[2] - bounds[0],
+                        bounds[3] - bounds[1],
+                    )
+                )
+            elif e.type == "elem text":
+                continue  # We can't outline text.
+            else:
+                g.append(e.as_geometry())
+        hull = Geomstr.hull(g)
+        if len(hull) == 0:
+            channel(_("No elements bounds to trace."))
+            return
+        return "geometry", hull
+
+    def ant_points(points, steps):
+        points = list(points)
+        movement = 1 + int(steps / 10)
+        forward_steps = steps + movement
+        pos = 0
+        size = len(points)
+        cycles = int(size / movement) + 1
+        for cycle in range(cycles):
+            for f in range(pos, pos + forward_steps, 1):
+                index = f % size
+                point = points[index]
+                yield point
+            pos += forward_steps
+            for f in range(pos, pos - steps, -1):
+                index = f % size
+                point = points[index]
+                yield point
+            pos -= steps
+
+    @service.console_option(
+        "quantization",
+        "q",
+        default=50,
+        type=int,
+        help="Number of segments to break each path into.",
+    )
+    @service.console_command(
+        "ants",
+        help=_("Marching ants of the given element path."),
+        input_type=(None, "elements"),
+        output_type="geometry",
+    )
+    def element_ants(command, channel, _, data=None, quantization=50, **kwargs):
+        """
+        Draws an outline of the current shape.
+        """
+        if data is None:
+            data = list(service.elements.elems(emphasized=True))
+        geom = Geomstr()
+        for e in data:
+            try:
+                path = e.as_geometry()
+            except AttributeError:
+                continue
+            ants = list(
+                ant_points(
+                    path.as_equal_interpolated_points(distance=quantization),
+                    int(quantization / 2),
+                )
+            )
+            geom.polyline(ants)
+            geom.end()
+        return "geometry", geom
+
+    ########################
+    # LASER CONTROL COMMANDS
+    ########################
+
     @service.console_command(
         "estop",
         help=_("stops the current job, deletes the spooler"),
@@ -196,6 +323,10 @@ def plugin(service, lifecycle):
             channel(_("Pulse laser failed: Busy"))
         return
 
+    ########################
+    # USB COMMANDS
+    ########################
+
     @service.console_command(
         "usb_connect",
         help=_("connect usb"),
@@ -213,6 +344,10 @@ def plugin(service, lifecycle):
     @service.console_command("usb_abort", help=_("Stops USB retries"))
     def usb_abort(command, channel, _, **kwargs):
         service.spooler.command("abort_retry", priority=1)
+
+    ########################
+    # PROJECT IO COMMANDS
+    ########################
 
     @service.console_argument("filename", type=str)
     @service.console_command("save_job", help=_("save job export"), input_type="plan")
@@ -487,6 +622,10 @@ def plugin(service, lifecycle):
                 service.driver.connection._command(*v)
         service.driver.connection.rapid_mode()
 
+    ########################
+    # CONTROLLER COMMANDS
+    ########################
+
     @service.console_argument("x", type=float, default=0.0)
     @service.console_argument("y", type=float, default=0.0)
     @service.console_command(
@@ -524,7 +663,9 @@ def plugin(service, lifecycle):
     @service.console_option("minspeed", "n", type=int, default=100)
     @service.console_option("maxspeed", "x", type=int, default=5000)
     @service.console_option("acc_time", "a", type=int, default=100)
-    @service.console_argument("delta_rotary", type=int, default=0, help="relative amount")
+    @service.console_argument(
+        "delta_rotary", type=int, default=0, help="relative amount"
+    )
     @service.console_command(
         "rotary_relative",
         help=_("Advance the rotary by the given amount"),
@@ -589,7 +730,9 @@ def plugin(service, lifecycle):
             )
             channel("Could not alter redlight. Connection is aborted.")
 
-    @service.console_argument("filename", type=str, default=None, help="filename or none")
+    @service.console_argument(
+        "filename", type=str, default=None, help="filename or none"
+    )
     @service.console_option(
         "default", "d", type=bool, action="store_true", help="restore to default"
     )
@@ -994,123 +1137,6 @@ def plugin(service, lifecycle):
         service.signal("bedsize", (service.lens_size, service.lens_size))
         channel(f"Set Bed Size : ({service.lens_size}, {service.lens_size}).")
 
-    @service.console_option(
-        "count",
-        "c",
-        default=256,
-        type=int,
-        help="Number of instances of boxes to draw.",
-    )
-    @service.console_command(
-        "box",
-        help=_("outline the current selected elements"),
-        output_type="geometry",
-    )
-    def shapes_selected(
-        command, channel, _, count=256, data=None, args=tuple(), **kwargs
-    ):
-        """
-        Draws an outline of the current shape.
-        """
-        bounds = service.elements.selected_area()
-        if bounds is None:
-            channel(_("Nothing Selected"))
-            return
-        xmin, ymin, xmax, ymax = bounds
-        channel(_("Element bounds: {bounds}").format(bounds=str(bounds)))
-        geometry = Geomstr.rect(xmin, ymin, xmax - xmin, ymin - ymax)
-        if count > 1:
-            geometry.copies(count)
-        return "geometry", geometry
-
-    @service.console_command(
-        "hull",
-        help=_("convex hull of the current selected elements"),
-        input_type=(None, "elements"),
-        output_type="geometry",
-    )
-    def shapes_hull(channel, _, data=None, **kwargs):
-        """
-        Draws an outline of the current shape.
-        """
-        if data is None:
-            data = list(service.elements.elems(emphasized=True))
-        g = Geomstr()
-        for e in data:
-            if hasattr(e, "as_image"):
-                bounds = e.bounds
-                g.append(
-                    Geomstr.rect(
-                        bounds[0],
-                        bounds[1],
-                        bounds[2] - bounds[0],
-                        bounds[3] - bounds[1],
-                    )
-                )
-            elif e.type == "elem text":
-                continue  # We can't outline text.
-            else:
-                g.append(e.as_geometry())
-        hull = Geomstr.hull(g)
-        if len(hull) == 0:
-            channel(_("No elements bounds to trace."))
-            return
-        return "geometry", hull
-
-    def ant_points(points, steps):
-        points = list(points)
-        movement = 1 + int(steps / 10)
-        forward_steps = steps + movement
-        pos = 0
-        size = len(points)
-        cycles = int(size / movement) + 1
-        for cycle in range(cycles):
-            for f in range(pos, pos + forward_steps, 1):
-                index = f % size
-                point = points[index]
-                yield point
-            pos += forward_steps
-            for f in range(pos, pos - steps, -1):
-                index = f % size
-                point = points[index]
-                yield point
-            pos -= steps
-
-    @service.console_option(
-        "quantization",
-        "q",
-        default=50,
-        type=int,
-        help="Number of segments to break each path into.",
-    )
-    @service.console_command(
-        "ants",
-        help=_("Marching ants of the given element path."),
-        input_type=(None, "elements"),
-        output_type="geometry",
-    )
-    def element_ants(command, channel, _, data=None, quantization=50, **kwargs):
-        """
-        Draws an outline of the current shape.
-        """
-        if data is None:
-            data = list(service.elements.elems(emphasized=True))
-        geom = Geomstr()
-        for e in data:
-            try:
-                path = e.as_geometry()
-            except AttributeError:
-                continue
-            ants = list(
-                ant_points(
-                    path.as_equal_interpolated_points(distance=quantization),
-                    int(quantization / 2),
-                )
-            )
-            geom.polyline(ants)
-            geom.end()
-        return "geometry", geom
-
     @service.console_argument("filename", type=str)
     @service.console_command(
         "clone_init",
@@ -1121,6 +1147,7 @@ def plugin(service, lifecycle):
 
         from meerk40t.balormk.clone_loader import load_sys
         from meerk40t.kernel import get_safe_path
+
         kernel = service.kernel
 
         service.setting(str, "clone_sys", "chunks")
