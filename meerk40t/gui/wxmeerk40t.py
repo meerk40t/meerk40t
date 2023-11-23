@@ -81,6 +81,7 @@ from .propertypanels.wobbleproperty import WobblePropertyPanel
 from .simpleui import SimpleUI
 from .simulation import Simulation
 from .wordlisteditor import WordlistEditor
+from .tips import Tips
 from .wxmmain import MeerK40t
 
 """
@@ -845,6 +846,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Notes", Notes)
         kernel.register("window/JobSpooler", JobSpooler)
         kernel.register("window/Simulation", Simulation)
+        kernel.register("window/Tips", Tips)
         kernel.register("window/ExecuteJob", ExecuteJob)
         kernel.register("window/BufferView", BufferView)
         kernel.register("window/Scene", SceneWindow)
@@ -865,9 +867,6 @@ class wxMeerK40t(wx.App, Module):
         from meerk40t.gui.helper import register_panel_helper
 
         kernel.register("wxpane/helper", register_panel_helper)
-
-        from meerk40t.gui.tips import register_panel_tips
-        kernel.register("wxpane/tips", register_panel_tips)
 
         from meerk40t.gui.wxmribbon import register_panel_ribbon
 

@@ -267,9 +267,9 @@ class MeerK40t(MWindow):
     def tips_at_startup(self):
         self.context.setting(bool, "show_tips", True)
         if self.context.show_tips:
-            self.context("pane float tips\npane show tips\n")
+            self.context("window open Tips\n")
         else:
-            self.context("pane hide tips\n")
+            self.context("window close Tips\n")
 
 
     def update_check_at_startup(self):
@@ -3593,6 +3593,21 @@ class MeerK40t(MWindow):
             lambda v: update_check_from_menu(),
             id=menuitem.GetId(),
         )
+
+        menuitem = self.help_menu.Append(
+            wx.ID_ANY,
+            _("Tips && Tricks"),
+            _(
+                "Show some Tips & Tricke"
+            ),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window open Tips\n"),
+            id=menuitem.GetId(),
+        )
+
+
         menuitem = self.help_menu.Append(
             wx.ID_ABOUT,
             _("&About MeerK40t"),

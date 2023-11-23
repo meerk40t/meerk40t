@@ -6,43 +6,25 @@
 """
 import datetime
 import os
-import requests
 import webbrowser
 
+import requests
 import wx
 from wx import aui
 
 from ..kernel import get_safe_path
 from .icons import icons8_circled_left, icons8_circled_right, icons8_detective
+from .mwindow import MWindow
 from .wxutils import dip_size
 
 _ = wx.GetTranslation
-
-
-def register_panel_tips(window, context):
-    panel = TipPanel(window, wx.ID_ANY, context=context)
-    pane = (
-        aui.AuiPaneInfo()
-        .Float()
-        .MinSize(80, 125)
-        .FloatingSize(120, 145)
-        .Hide()
-        .Caption(_("Tips"))
-        .CaptionVisible(not context.pane_lock)
-        .Name("tips")
-    )
-    pane.dock_proportion = 150
-    pane.control = panel
-    pane.submenu = "~" + _("Help")
-
-    window.on_pane_create(pane)
-    context.register("pane/tips", pane)
 
 
 class TipPanel(wx.Panel):
     """
     Display MeerK40t usage tips
     """
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -162,7 +144,11 @@ class TipPanel(wx.Panel):
                                 # print (f"url could not be found: {path}")
                                 pass
 
-                        except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as e:
+                        except (
+                            requests.ConnectionError,
+                            requests.Timeout,
+                            requests.HTTPError,
+                        ) as e:
                             # print (f"Error happened during urlretrieve: {e}")
                             pass
 
@@ -419,3 +405,26 @@ class TipPanel(wx.Panel):
 
     def pane_hide(self, *args):
         pass
+
+class Tips(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(400, 350, *args, **kwds)
+        self.panel = TipPanel(self, wx.ID_ANY, context=self.context,)
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_detective.GetBitmap())
+        self.SetIcon(_icon)
+        self.SetTitle(_("Tips"))
+
+    def window_open(self):
+        self.panel.pane_show()
+
+    def window_close(self):
+        self.panel.pane_hide()
+
+    def delegates(self):
+        yield self.panel
+
+    @staticmethod
+    def submenu():
+        # Suppress...
+        return "Tips", "Tips", True
