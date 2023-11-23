@@ -759,6 +759,7 @@ class BalorDevice(Service, Status):
         self.add_service_delegate(self.spooler)
 
         self.viewbuffer = ""
+        self._simulate = False
 
         @self.console_option(
             "travel_speed", "t", type=float, help="Set the travel speed."
@@ -1965,3 +1966,15 @@ class BalorDevice(Service, Status):
     @property
     def calibration_file(self):
         return None
+
+    @signal_listener("light_simulate")
+    def simulate_state(self, origin, v=True):
+        self._simulate = False
+
+    def outline(self):
+        if not self._simulate:
+            self._simulate = True
+            self("full-light\n")
+        else:
+            self._simulate = False
+            self("stop\n")
