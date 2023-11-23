@@ -406,9 +406,6 @@ class wxMeerK40t(wx.App, Module):
             except OSError:
                 # Potential access denied.
                 pass
-        if platform.system() == "Linux":
-            import warnings
-            warnings.filterwarnings("ignore")
         self.supported_languages = supported_languages
         import meerk40t.gui.icons as icons
 
