@@ -268,7 +268,7 @@ class TipPanel(wx.Panel):
                     + "just set the 'Unsupported feature' option in the preference section to 'Ask at load time'"
                 ),
                 "window open Preferences\n",
-                "",
+                "https://github.com/meerk40t/meerk40t/assets/2670784/741b4d31-2169-4dc7-93cc-818ed55e3eba",
             ),
         )
         self.tips.append(

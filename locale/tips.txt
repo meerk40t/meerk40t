@@ -17,3 +17,20 @@ cmd=rect 2cm 2cm 4cm 4cm fill black outline 2mm --steps 4 --outer stroke red
 
 tip=MeerK40t has an extensive set of commands that allow a lot of scriptable actions.\nJust open the console window and type help
 cmd=pane show console\nhelp
+
+tip=While you are moving your mouse when having selected a element-creation tool, you will see neighbouring points of interest being displayed and highlighted if they would be become a snapping target.\nNB: the snapping behaviour will be ignored if you press the shift-key, in this case the current mouse-position will be considered
+cmd=pane show snapoptions
+img=https://user-images.githubusercontent.com/2670784/162396185-0008ab2e-a432-46c7-af59-ea1e1c3fee95.png
+
+tip=The simulation window will not only allow you to preview the behaviour of your laser, but will allow you as well to play with the different optimisation options and see how they influence the outcome.\n Just click on the '<' symbol at the right side and press calculate.
+img=https://user-images.githubusercontent.com/2670784/284278551-3324df5a-3910-4f94-a54f-2aaae9e82881.png
+cmd=window open Simulation z 0
+
+tip=MeerK40t has multiple grid types that you can choose from, including a circular one...
+img=https://user-images.githubusercontent.com/2670784/285282132-62a39254-bfe3-4000-87dc-328c75bdc78d.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Grids
+
+
+tip=Tired of aligning objects? Use the magnet feature, just doubleclick on the X- or Y-axis and establish a magnetline.\nMove an element close to that line and see what happens...\nRight click on the axis to set more options.
+img=https://user-images.githubusercontent.com/2670784/161030963-fb73907c-bdb0-47dc-b0da-b9b207025dbe.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Magnets
