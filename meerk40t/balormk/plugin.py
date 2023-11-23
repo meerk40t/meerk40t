@@ -8,8 +8,9 @@ This registers the relevant files for using an LMC Galvo Device.
 def plugin(kernel, lifecycle):
     if lifecycle == "plugins":
         from meerk40t.balormk.gui import gui
+        from meerk40t.balormk import galvo_commands
 
-        return [gui.plugin]
+        return [gui.plugin, galvo_commands.plugin]
     elif lifecycle == "invalidate":
         try:
             import usb.core  # pylint: disable=unused-import
