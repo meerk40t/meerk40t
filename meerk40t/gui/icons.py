@@ -702,6 +702,7 @@ class VectorIcon:
             else:
                 spen = wx.Pen()
                 spen.SetColour(entry[1])
+            spen.SetWidth(self.strokewidth)
 
             spen.SetCap(wx.CAP_ROUND)
             if "cap_butt" in attrib:
