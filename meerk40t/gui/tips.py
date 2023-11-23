@@ -13,7 +13,7 @@ import wx
 from wx import aui
 
 from ..kernel import get_safe_path
-from .icons import icons8_circled_left, icons8_circled_right, icons8_detective
+from .icons import icons8_circled_left, icons8_circled_right, icons8_detective, icon_youtube
 from .mwindow import MWindow
 from .wxutils import dip_size
 
@@ -33,6 +33,10 @@ class TipPanel(wx.Panel):
         self.tip_command = ""
         self.tip_image = ""
         self.tips = list()
+
+        safe_dir = os.path.realpath(get_safe_path(self.context.kernel.name))
+        self.local_file = os.path.join(safe_dir, "tips.txt")
+
         self.setup_tips()
         self.context.setting(bool, "show_tips", True)
         self.SetHelpText("tips")
@@ -54,22 +58,49 @@ class TipPanel(wx.Panel):
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.button_prev = wx.Button(self, wx.ID_ANY, _("Previous tip"))
         self.button_prev.SetBitmap(icons8_circled_left.GetBitmap(resize=icon_size[0]))
+        self.button_prev.SetToolTip(_("Jump back to the previously displayed tip"))
+
         self.button_next = wx.Button(self, wx.ID_ANY, _("Next tip"))
         self.button_next.SetBitmap(icons8_circled_right.GetBitmap(resize=icon_size[0]))
+        self.button_next.SetToolTip(_("Jump to the previously displayed tip"))
+
         button_sizer.Add(self.button_prev, 0, wx.ALIGN_CENTER_VERTICAL)
         button_sizer.AddStretchSpacer()
         button_sizer.Add(self.button_next, 0, wx.ALIGN_CENTER_VERTICAL)
         sizer_main.Add(button_sizer, 0, wx.EXPAND, 0)
 
         self.check_startup = wx.CheckBox(self, wx.ID_ANY, _("Show tips at startup"))
-        self.check_startup.SetToolTip(_("Show tips at program start"))
+        self.check_startup.SetToolTip(
+            _(
+                "Show tips at program start.\n" +
+                "Even if disabled, 'Tips & Tricks' are always available in the Help-menu."
+            )
+        )
         self.check_startup.SetValue(self.context.show_tips)
 
         option_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.button_try = wx.Button(self, wx.ID_ANY, _("Try it out"))
+        self.button_try.SetToolTip(_(
+            "Launch an example, please be aware that this might change your design,\n" +
+            "as new elements could be created to show the functionality"
+            )
+        )
         self.button_try.SetBitmap(icons8_detective.GetBitmap(resize=icon_size[0]))
+        self.button_update = wx.Button(self, wx.ID_ANY, _("Update"))
+        self.button_update.SetFont(wx.Font(
+                8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+            )
+        )
+        self.button_update.SetToolTip(
+            _(
+                "Look for new tips on MeerK40ts website.\n" +
+                "The list of tips is constantly expanded, so please update it\n" +
+                "every now and then to learn about new or hidden features."
+            )
+        )
         option_sizer.Add(self.button_try, 0, wx.ALIGN_CENTER_VERTICAL)
         option_sizer.AddStretchSpacer()
+        option_sizer.Add(self.button_update, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         option_sizer.Add(self.check_startup, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_main.Add(option_sizer, 0, wx.EXPAND, 0)
 
@@ -80,6 +111,7 @@ class TipPanel(wx.Panel):
         self.button_prev.Bind(wx.EVT_BUTTON, self.on_tip_prev)
         self.button_next.Bind(wx.EVT_BUTTON, self.on_tip_next)
         self.button_try.Bind(wx.EVT_BUTTON, self.on_button_try)
+        self.button_update.Bind(wx.EVT_BUTTON, self.on_button_update)
 
         self.cache_dir = self.establish_picture_cache()
         self.context.setting(int, "next_tip", 0)
@@ -204,6 +236,7 @@ class TipPanel(wx.Panel):
         self.current_tip += 1
 
     def setup_tips(self):
+        self.tips.clear()
         self.tips.append(
             (
                 _(
@@ -245,7 +278,7 @@ class TipPanel(wx.Panel):
                     + "https://www.youtube.com/channel/UCsAUV23O2FyKxC0HN7nkAQQ"
                 ),
                 "https://www.youtube.com/channel/UCsAUV23O2FyKxC0HN7nkAQQ",
-                icons8_detective.GetBitmap(resize=50),
+                icon_youtube.GetBitmap(resize=200),
             )
         )
         self.tips.append(
@@ -255,31 +288,42 @@ class TipPanel(wx.Panel):
                     + "https://www.youtube.com/channel/UCMN9gGvpacxZINPZCSOecaQ"
                 ),
                 "https://www.youtube.com/channel/UCMN9gGvpacxZINPZCSOecaQ",
-                "https://user-images.githubusercontent.com/2670784/284025481-7c3f06a2-d0fb-46ce-9adc-320566eef310.png",
+                icon_youtube.GetBitmap(resize=200),
             )
         )
 
-        lastdate = None
-        lastcall = self.context.setting(int, "last_tip_check", None)
-        doit = True
-        if lastcall is not None:
-            try:
-                lastdate = datetime.date.fromordinal(lastcall)
-            except ValueError:
-                pass
+        # lastdate = None
+        # lastcall = self.context.setting(int, "last_tip_check", None)
+        # doit = True
+        # if lastcall is not None:
+        #     try:
+        #         lastdate = datetime.date.fromordinal(lastcall)
+        #     except ValueError:
+        #         pass
+        # if os.path.exists(self.local_file):
+        #     now = datetime.date.today()
+        #     if lastdate is not None:
+        #         delta = now - lastdate
+        #         if delta.days < 6:
+        #             # Once per week is enough
+        #             doit = False
+        # if doit:
+        #     self.load_tips_from_github()
 
-        safe_dir = os.path.realpath(get_safe_path(self.context.kernel.name))
-        self.local_file = os.path.join(safe_dir, "tips.txt")
-        if os.path.exists(self.local_file):
-            now = datetime.date.today()
-            if lastdate is not None:
-                delta = now - lastdate
-                if delta.days < 6:
-                    # Once per week is enough
-                    doit = False
-        if doit:
-            self.load_tips_from_github()
         self.load_tips_from_local_cache()
+
+    def on_button_update(self, event):
+        prev_count = len(self.tips)
+        self.load_tips_from_github()
+        self.setup_tips()
+        new_count = len(self.tips)
+        res = wx.MessageBox(
+            message=_("Tips have been updated, {info} new entries found.").format(info=str(new_count - prev_count)),
+            caption=_("Tips")
+        )
+        # Force update...
+        self.current_tip = self.current_tip
+
 
     def load_tips_from_github(self):
         successful = False
