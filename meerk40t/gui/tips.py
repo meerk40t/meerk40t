@@ -165,7 +165,8 @@ class TipPanel(wx.Panel):
                             with urllib.request.urlopen(path) as file:
                                 content = file.read()
                                 opened = True
-                        except (urllib.error.URLError, urllib.error.HTTPError):
+                        except (urllib.error.URLError, urllib.error.HTTPError) as e:
+                            # print (f"Error: {e}")
                             pass
                         # If the file object is successfully opened, read its content as a string
                         if opened:
@@ -174,7 +175,7 @@ class TipPanel(wx.Panel):
                                     f.write(content)
                                     loaded = True
                             except (OSError, PermissionError, RuntimeError) as e:
-                                # print (f"Error happened during image write: {e}")
+                                # print (f"Error @ image write to {local_path}: {e}")
                                 pass
 
                         found = loaded
@@ -327,7 +328,8 @@ class TipPanel(wx.Panel):
                 with urllib.request.urlopen(url + "tips.txt") as file:
                     content = file.read().decode("utf-8")
                     successful = True
-            except (urllib.error.URLError, urllib.error.HTTPError):
+            except (urllib.error.URLError, urllib.error.HTTPError) as e:
+                # print (f"Error: {e}")
                 pass
 
         if successful:
@@ -396,6 +398,8 @@ class TipPanel(wx.Panel):
                         cmd = cline[len("cmd=") :]
                     elif cline.startswith("image="):
                         img = cline[len("image=") :]
+                    elif cline.startswith("img="):
+                        img = cline[len("img="):]
                 # Something pending?
                 add_tip(tip, cmd, img, ver, myversion)
 
