@@ -76,7 +76,6 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = 3 * iconsize + dx
     pane.control = dragpanel
-
     def on_drag_resize(event):
         panelsize = event.GetSize()
         dragpanel.set_icons(dimension=panelsize)
@@ -569,6 +568,7 @@ class Drag(wx.Panel):
         # end wxGlade
 
     def set_icons(self, iconsize=None, dimension=None):
+        print (f"Drag: {dimension} vs {self.Size}")
         if iconsize is None and dimension is not None:
             dim_x = int(dimension[0] / 3) - 8
             dim_y = int(dimension[1] / 4) - 8
@@ -1011,6 +1011,7 @@ class Jog(wx.Panel):
         self.Layout()
 
     def set_icons(self, iconsize=None, dimension=None):
+        print (f"Jog: {dimension} vs {self.Size}")
         if iconsize is None and dimension is not None:
             dim_x = int(dimension[0] / 3) - 8
             dim_y = int(dimension[1] / 4) - 8
@@ -2010,6 +2011,7 @@ class Transform(wx.Panel):
         # end wxGlade
 
     def set_icons(self, iconsize=None, dimension=None):
+        print (f"Trafo: {dimension} vs {self.Size}")
         if iconsize is None and dimension is not None:
             dim_x = int(dimension[0] / 3) - 8
             dim_y = int(dimension[1] / 4) - 8
