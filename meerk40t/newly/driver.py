@@ -168,7 +168,8 @@ class NewlyDriver:
                     )
                 else:
                     g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
-                for p in g.as_equal_interpolated_points(distance=interp):
+
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     # LOOP CHECKS
                     if self._aborting:
                         con.abort()
