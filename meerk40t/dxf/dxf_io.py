@@ -478,7 +478,7 @@ class DXFProcessor:
                 return
             try:
                 from PIL import ImageOps
-                ImageOps.exif_transpose(node.image, in_place=True)
+                node.image = ImageOps.exif_transpose(node.image)
             except ImportError:
                 pass
             # Node.matrix is primary transformation.
