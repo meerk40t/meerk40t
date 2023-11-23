@@ -921,7 +921,13 @@ class GrblController:
         if match:
             try:
                 key = int(match.group(1))
-                value = ast.literal_eval(match.group(2))
+                value = match.group(2)
+                try:
+                    value = ast.literal_eval(value)
+                except SyntaxError:
+                    # GRBLHal can have things like "", and "Grbl" and "192.168.1.39" in the settings.
+                    pass
+
                 self.service.hardware_config[key] = value
                 self.service.signal(f"grbl:hwsettings", key, value)
             except ValueError:
