@@ -15,6 +15,10 @@ def plugin(service, lifecycle):
             icons8_flash_on,
             icons8_light_off,
             icons8_light_on,
+            icon_balor_full,
+            icon_balor_hull,
+            icon_balor_bounds,
+            icon_balor_regmarks
         )
 
         from .balorconfig import BalorConfiguration
@@ -67,39 +71,42 @@ def plugin(service, lifecycle):
                     {
                         "identifier": "live-full",
                         "label": _("Live Full"),
-                        "icon": icons8_computer_support,
+                        "icon": icon_balor_full,
                         "help": "devicebalor",
                         "action": lambda e: service("full-light\n"),
                     },
                     {
                         "identifier": "live-regmark",
                         "label": _("Regmarks"),
-                        "icon": icons8_computer_support,
+                        "icon": icon_balor_regmarks,
                         "help": "devicebalor",
                         "action": lambda e: service("regmark-light\n"),
                     },
                     {
                         "identifier": "live",
                         "label": _("Live Bounds"),
+                        "icon": icon_balor_bounds,
                         "help": "devicebalor",
                         "action": lambda e: service("select-light\n"),
                     },
                     {
                         "identifier": "live-hull",
                         "label": _("Live Hull"),
-                        "icon": icons8_computer_support,
+                        "icon": icon_balor_hull,
                         "help": "devicebalor",
                         "action": lambda e: service("hull-light\n"),
                     },
                     {
                         "identifier": "hull",
                         "label": _("Trace Hull"),
+                        "icon": icon_balor_hull,
                         "help": "devicebalor",
                         "action": lambda e: service("element* geometry hull light\n"),
                     },
                     {
                         "identifier": "box",
                         "label": _("Trace Bounds"),
+                        "icon": icon_balor_bounds,
                         "help": "devicebalor",
                         "action": lambda e: service("box light\n"),
                     },
@@ -111,6 +118,7 @@ def plugin(service, lifecycle):
                     {
                         "identifier": "full",
                         "label": _("Trace Full"),
+                        "icon": icon_balor_full,
                         "help": "devicebalor",
                         "action": lambda e: service("element* geometry light\n"),
                     },
