@@ -16,6 +16,7 @@ from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.newly.controller import NewlyController
+from meerk40t.tools.geomstr import Geomstr
 
 
 class NewlyDriver:
@@ -157,9 +158,17 @@ class NewlyDriver:
                 if last_x != x or last_y != y:
                     con.goto(x, y)
                 interp = self.service.interpolate
-                step_size = 1.0 / float(interp)
-                t = step_size
-                for p in range(int(interp)):
+                g = Geomstr()
+                if isinstance(q, CubicCut):
+                    g.cubic(
+                        complex(*q.start),
+                        complex(*q.c1()),
+                        complex(*q.c2()),
+                        complex(*q.end),
+                    )
+                else:
+                    g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
+                for p in g.as_equal_interpolated_points(distance=interp):
                     # LOOP CHECKS
                     if self._aborting:
                         con.abort()
@@ -167,10 +176,7 @@ class NewlyDriver:
                         return
                     while self.paused:
                         time.sleep(0.05)
-
-                    p = q.point(t)
-                    con.mark(*p, settings=q.settings)
-                    t += step_size
+                    con.mark(p.real, p.imag, settings=q.settings)
                 con.update()
             elif isinstance(q, PlotCut):
                 con.sync()
