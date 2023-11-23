@@ -306,20 +306,24 @@ class GRBLDriver(Parameters):
             if isinstance(q, LineCut):
                 self.move_mode = 1
                 self._move(*q.end)
-            elif isinstance(q, (QuadCut, CubicCut)):
+            elif isinstance(q, QuadCut):
                 self.move_mode = 1
                 interp = self.service.interpolate
                 g = Geomstr()
-                if isinstance(q, CubicCut):
-                    g.cubic(complex(*q.start), complex(*q.c1()), complex(*q.c2()), complex(*q.end))
-                else:
-                    g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
-                for p in g.as_equal_interpolated_points(distance=interp):
+                g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     while self.paused:
                         time.sleep(0.05)
                     self._move(p.real, p.imag)
-                last_x, last_y = q.end
-                self._move(last_x, last_y)
+            elif isinstance(q, CubicCut):
+                self.move_mode = 1
+                interp = self.service.interpolate
+                g = Geomstr()
+                g.cubic(complex(*q.start), complex(*q.c1()), complex(*q.c2()), complex(*q.end))
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    while self.paused:
+                        time.sleep(0.05)
+                    self._move(p.real, p.imag)
             elif isinstance(q, WaitCut):
                 self.wait(q.dwell_time)
             elif isinstance(q, HomeCut):

@@ -1474,6 +1474,15 @@ class Geomstr:
             yield segments
 
     def as_equal_interpolated_points(self, distance=100):
+        """
+        Regardless of specified distance this will always give the start and end points of each node within the
+        geometry. It will not duplicate the nodes if the start of one is the end of another. If the start and end
+        values do not line up, it will yield a None value to denote there is a broken path.
+
+        @param distance:
+        @return:
+        """
+
         at_start = True
         end = None
         for e in self.segments[: self.index]:
@@ -1489,18 +1498,24 @@ class Geomstr:
             end = e[4]
             if at_start:
                 yield start
-            at_start = False
-            if seg_type == TYPE_LINE:
-                yield end
+                at_start = False
+
+            if seg_type == TYPE_END:
+                at_start = True
                 continue
-            if seg_type == TYPE_QUAD:
+            elif seg_type == TYPE_LINE:
+                pass
+            elif seg_type == TYPE_QUAD:
                 ts = np.linspace(0, 1, 1000)
                 pts = self._quad_position(e, ts)
                 distances = np.abs(pts[:-1] - pts[1:])
                 distances = np.cumsum(distances)
                 max_distance = distances[-1]
                 dist_values = np.linspace(
-                    0, max_distance, int(np.ceil(max_distance / distance))
+                    0,
+                    max_distance,
+                    int(np.ceil(max_distance / distance)),
+                    endpoint=False,
                 )[1:]
                 near_t = np.searchsorted(distances, dist_values, side="right")
                 pts = pts[near_t]
@@ -1512,7 +1527,10 @@ class Geomstr:
                 distances = np.cumsum(distances)
                 max_distance = distances[-1]
                 dist_values = np.linspace(
-                    0, max_distance, int(np.ceil(max_distance / distance))
+                    0,
+                    max_distance,
+                    int(np.ceil(max_distance / distance)),
+                    endpoint=False,
                 )[1:]
                 near_t = np.searchsorted(distances, dist_values, side="right")
                 pts = pts[near_t]
@@ -1524,13 +1542,15 @@ class Geomstr:
                 distances = np.cumsum(distances)
                 max_distance = distances[-1]
                 dist_values = np.linspace(
-                    0, max_distance, int(np.ceil(max_distance / distance))
+                    0,
+                    max_distance,
+                    int(np.ceil(max_distance / distance)),
+                    endpoint=False,
                 )[1:]
                 near_t = np.searchsorted(distances, dist_values, side="right")
                 pts = pts[near_t]
                 yield from pts
-            elif seg_type == TYPE_END:
-                at_start = True
+            yield end
 
     def as_interpolated_segments(self, interpolate=100):
         """
@@ -3509,7 +3529,7 @@ class Geomstr:
             count = len(x)
             pts = np.vstack((x, y, np.ones(count)))
             result = np.dot(m, pts)
-            return (result[0] / result[2] + 1j * result[1] / result[2])
+            return result[0] / result[2] + 1j * result[1] / result[2]
 
         segments = self.segments
         index = self.index

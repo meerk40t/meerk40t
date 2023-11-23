@@ -853,7 +853,10 @@ class GrblController:
             self.service.signal("grbl:ver", message)
         elif response.startswith("[OPT:"):
             message = response[5:-1]
-            codes, block_buffer_size, rx_buffer_size = message.split(",")
+            opts = list(message.split(","))
+            codes = opts[0]
+            block_buffer_size = opts[1]
+            rx_buffer_size = opts[2]
             self.log(f"codes: {codes}", type="event")
             if "V" in codes:
                 # Variable spindle enabled
@@ -921,7 +924,13 @@ class GrblController:
         if match:
             try:
                 key = int(match.group(1))
-                value = ast.literal_eval(match.group(2))
+                value = match.group(2)
+                try:
+                    value = ast.literal_eval(value)
+                except SyntaxError:
+                    # GRBLHal can have things like "", and "Grbl" and "192.168.1.39" in the settings.
+                    pass
+
                 self.service.hardware_config[key] = value
                 self.service.signal(f"grbl:hwsettings", key, value)
             except ValueError:
