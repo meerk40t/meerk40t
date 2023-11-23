@@ -32,6 +32,7 @@ from ..device.basedevice import (
     PLOT_START,
 )
 from .builder import MoshiBuilder
+from ..tools.geomstr import Geomstr
 
 
 class MoshiDriver(Parameters):
@@ -200,17 +201,27 @@ class MoshiDriver(Parameters):
             self.settings.update(q.settings)
             if isinstance(q, LineCut):
                 self._goto_absolute(*q.end, 1)
-            elif isinstance(q, (QuadCut, CubicCut)):
+            elif isinstance(q, QuadCut):
                 interp = self.service.interpolate
-                step_size = 1.0 / float(interp)
-                t = step_size
-                for p in range(int(interp)):
+                g = Geomstr()
+                g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     while self.hold_work(0):
                         time.sleep(0.05)
-                    self._goto_absolute(*q.point(t), 1)
-                    t += step_size
-                last_x, last_y = q.end
-                self._goto_absolute(last_x, last_y, 1)
+                    self._goto_absolute(p.real, p.imag, 1)
+            elif isinstance(q, CubicCut):
+                interp = self.service.interpolate
+                g = Geomstr()
+                g.cubic(
+                    complex(*q.start),
+                    complex(*q.c1()),
+                    complex(*q.c2()),
+                    complex(*q.end),
+                )
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    while self.hold_work(0):
+                        time.sleep(0.05)
+                    self._goto_absolute(p.real, p.imag, 1)
             elif isinstance(q, HomeCut):
                 self.home()
             elif isinstance(q, GotoCut):
