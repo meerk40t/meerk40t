@@ -1614,7 +1614,7 @@ class Geomstr:
                 at_start = True
 
     def segmented(self, distance=50):
-        return Geomstr.lines(*self.as_equal_interpolated_points(interpolate=interpolate))
+        return Geomstr.lines(*self.as_equal_interpolated_points(distance=distance))
 
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:
