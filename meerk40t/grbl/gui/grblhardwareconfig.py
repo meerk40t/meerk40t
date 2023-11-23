@@ -192,6 +192,7 @@ class GRBLHardwareConfig(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_curly_brackets.GetBitmap())
         self.SetIcon(_icon)
+        self.SetHelpText("grblhwconfig")
 
         self.hw_panel = GrblHardwareProperties(self, wx.ID_ANY, context=self.service)
         self.Layout()

@@ -490,6 +490,7 @@ class RenderSplit(MWindow):
                 "label": _("Image ops"),
                 "icon": icon_split_image,
                 "tip": _("Open create split image dialog / keyhole generation"),
+                "help": "imagesplit",
                 "action": lambda v: kernel.console("window toggle SplitImage\n"),
                 "size": bsize_normal,
                 "rule_enabled": lambda cond: len(

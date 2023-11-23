@@ -53,6 +53,7 @@ def plugin(service, lifecycle):
                 "label": _("Controller"),
                 "icon": icons8_connected,
                 "tip": _("Opens Controller Window"),
+                "help": "devicek40",
                 "action": controller_click,
                 "alt-action": (
                     (
@@ -72,6 +73,7 @@ def plugin(service, lifecycle):
                 "label": _("Config"),
                 "icon": icons8_computer_support,
                 "tip": _("Opens device-specific configuration window"),
+                "help": "devicek40",
                 "action": lambda v: service("window toggle Configuration\n"),
             },
         )
@@ -81,6 +83,7 @@ def plugin(service, lifecycle):
                 "label": _("Pause"),
                 "icon": icons8_pause,
                 "tip": _("Pause the laser"),
+                "help": "devicek40",
                 "action": lambda v: service("pause\n"),
             },
         )
@@ -91,6 +94,7 @@ def plugin(service, lifecycle):
                 "label": _("Stop"),
                 "icon": icons8_emergency_stop_button,
                 "tip": _("Emergency stop the laser"),
+                "help": "devicek40",
                 "action": lambda v: service("estop\n"),
             },
         )

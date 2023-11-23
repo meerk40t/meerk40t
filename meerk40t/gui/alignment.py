@@ -1591,6 +1591,7 @@ class Alignment(MWindow):
                 "label": _("Expert Mode"),
                 "icon": icons8_arrange,
                 "tip": _("Open alignment dialog with advanced options"),
+                "help": "alignment",
                 "action": lambda v: kernel.console("window toggle Alignment\n"),
                 "size": buttonsize,
                 "rule_enabled": lambda cond: len(
