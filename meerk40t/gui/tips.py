@@ -8,9 +8,9 @@ import datetime
 import os
 import webbrowser
 
-import requests
+from urllib.error import HTTPError, URLError
+import urllib
 import wx
-from wx import aui
 
 from ..kernel import get_safe_path
 from .icons import icons8_circled_left, icons8_circled_right, icons8_detective, icon_youtube
@@ -45,14 +45,14 @@ class TipPanel(wx.Panel):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.image_tip = wx.StaticBitmap(self, wx.ID_ANY, style=wx.SB_FLAT)
         self.image_tip.SetMinSize(wx.Size(250, -1))
-        self.image_tip.SetMaxSize(wx.Size(250, -1))
-        self.image_tip.SetSize(wx.Size(250, -1))
+        # self.image_tip.SetMaxSize(wx.Size(250, -1))
+        # self.image_tip.SetSize(wx.Size(250, -1))
         self.text_tip = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         tip_area = wx.BoxSizer(wx.HORIZONTAL)
-        tip_area.Add(self.image_tip, 0, wx.EXPAND, 0)
-        tip_area.Add(self.text_tip, 1, wx.EXPAND, 0)
+        tip_area.Add(self.image_tip, 1, wx.EXPAND, 0)
+        tip_area.Add(self.text_tip, 3, wx.EXPAND, 0)
 
         sizer_main.Add(tip_area, 1, wx.EXPAND, 0)
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -160,29 +160,22 @@ class TipPanel(wx.Panel):
                     # Is this file already on the disk? If not load it...
                     if not os.path.exists(local_path):
                         loaded = False
+                        opened = False
                         try:
-                            # We need verify=False, otherwise a lot of certificate
-                            # errors will occur...
-                            page = requests.get(path, verify=False)
-                            if page.status_code == 200:  # okay
-                                try:
-                                    with open(local_path, "wb") as f:
-                                        f.write(page.content)
-                                        loaded = True
-                                except (OSError, PermissionError, RuntimeError) as e:
-                                    # print (f"Error happened during image write: {e}")
-                                    pass
-                            else:
-                                # print (f"url could not be found: {path}")
-                                pass
-
-                        except (
-                            requests.ConnectionError,
-                            requests.Timeout,
-                            requests.HTTPError,
-                        ) as e:
-                            # print (f"Error happened during urlretrieve: {e}")
+                            with urllib.request.urlopen(path) as file:
+                                content = file.read()
+                                opened = True
+                        except (urllib.error.URLError, urllib.error.HTTPError):
                             pass
+                        # If the file object is successfully opened, read its content as a string
+                        if opened:
+                            try:
+                                with open(local_path, "wb") as f:
+                                    f.write(content)
+                                    loaded = True
+                            except (OSError, PermissionError, RuntimeError) as e:
+                                # print (f"Error happened during image write: {e}")
+                                pass
 
                         found = loaded
 
@@ -292,24 +285,6 @@ class TipPanel(wx.Panel):
             )
         )
 
-        # lastdate = None
-        # lastcall = self.context.setting(int, "last_tip_check", None)
-        # doit = True
-        # if lastcall is not None:
-        #     try:
-        #         lastdate = datetime.date.fromordinal(lastcall)
-        #     except ValueError:
-        #         pass
-        # if os.path.exists(self.local_file):
-        #     now = datetime.date.today()
-        #     if lastdate is not None:
-        #         delta = now - lastdate
-        #         if delta.days < 6:
-        #             # Once per week is enough
-        #             doit = False
-        # if doit:
-        #     self.load_tips_from_github()
-
         self.load_tips_from_local_cache()
 
     def on_button_update(self, event):
@@ -340,25 +315,22 @@ class TipPanel(wx.Panel):
         # print(self.context.language, locale, languages)
         if locale and locale != "en":
             try:
-                page = requests.get(url + locale + "/tips.txt", verify=False)
-                if page.status_code == 200:  # okay
-                    content = page.text
+                with urllib.request.urlopen(url + locale + "/tips.txt") as file:
+                    content = file.read().decode("utf-8")
                     successful = True
-            except (requests.ConnectionError, requests.Timeout, requests.HTTPError):
+            except (urllib.error.URLError, urllib.error.HTTPError):
                 pass
+
         # if we don't have anything localized then let's use the english master
         if not successful:
             try:
-                page = requests.get(url + "tips.txt")
-                if page.status_code == 200:  # okay
-                    content = page.text
+                with urllib.request.urlopen(url + "tips.txt") as file:
+                    content = file.read().decode("utf-8")
                     successful = True
-            except (requests.ConnectionError, requests.Timeout, requests.HTTPError):
+            except (urllib.error.URLError, urllib.error.HTTPError):
                 pass
 
         if successful:
-            now = datetime.date.today()
-            self.context.last_tip_check = now.toordinal()
             # Store the result to the local cache file
             if len(content):
                 try:
