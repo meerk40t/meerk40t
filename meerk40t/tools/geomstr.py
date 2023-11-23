@@ -3529,7 +3529,7 @@ class Geomstr:
             count = len(x)
             pts = np.vstack((x, y, np.ones(count)))
             result = np.dot(m, pts)
-            return (result[0] / result[2] + 1j * result[1] / result[2])
+            return result[0] / result[2] + 1j * result[1] / result[2]
 
         segments = self.segments
         index = self.index
