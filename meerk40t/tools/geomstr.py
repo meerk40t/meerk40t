@@ -1263,7 +1263,7 @@ class Geomstr:
 
     @classmethod
     def hull(cls, geom):
-        ipts = list(geom.as_interpolated_points(interpolate=50))
+        ipts = list(geom.as_equal_interpolated_points(distance=50))
         pts = list(Geomstr.convex_hull(None, ipts))
         if pts:
             pts.append(pts[0])
@@ -1613,8 +1613,8 @@ class Geomstr:
             elif seg_type == TYPE_END:
                 at_start = True
 
-    def segmented(self, interpolate=100):
-        return Geomstr.lines(*self.as_interpolated_points(interpolate=interpolate))
+    def segmented(self, distance=50):
+        return Geomstr.lines(*self.as_equal_interpolated_points(distance=distance))
 
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:

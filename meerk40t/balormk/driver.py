@@ -19,6 +19,7 @@ from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
+from meerk40t.tools.geomstr import Geomstr
 
 
 class BalorDriver:
@@ -208,15 +209,16 @@ class BalorDriver:
                 if last_x != x or last_y != y:
                     con.goto(x, y)
                 con.mark(*q.end)
-            elif isinstance(q, (QuadCut, CubicCut)):
+            elif isinstance(q, QuadCut):
                 last_x, last_y = con.get_last_xy()
                 x, y = q.start
                 if last_x != x or last_y != y:
                     con.goto(x, y)
                 interp = self.service.interpolate
-                step_size = 1.0 / float(interp)
-                t = step_size
-                for p in range(int(interp)):
+
+                g = Geomstr()
+                g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     # LOOP CHECKS
                     if self._aborting:
                         con.abort()
@@ -224,10 +226,25 @@ class BalorDriver:
                         return
                     while self.paused:
                         time.sleep(0.05)
+                    con.mark(p.real, p.imag)
+            elif isinstance(q, CubicCut):
+                last_x, last_y = con.get_last_xy()
+                x, y = q.start
+                if last_x != x or last_y != y:
+                    con.goto(x, y)
+                interp = self.service.interpolate
 
-                    p = q.point(t)
-                    con.mark(*p)
-                    t += step_size
+                g = Geomstr()
+                g.cubic(complex(*q.start), complex(*q.c1()), complex(*q.c2()), complex(*q.end))
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    # LOOP CHECKS
+                    if self._aborting:
+                        con.abort()
+                        self._aborting = False
+                        return
+                    while self.paused:
+                        time.sleep(0.05)
+                    con.mark(p.real, p.imag)
             elif isinstance(q, PlotCut):
                 last_x, last_y = con.get_last_xy()
                 x, y = q.start

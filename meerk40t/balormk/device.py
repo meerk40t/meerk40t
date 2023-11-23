@@ -1861,7 +1861,7 @@ class BalorDevice(Service, Status):
                     continue
                 ants = list(
                     ant_points(
-                        path.as_interpolated_points(interpolate=quantization),
+                        path.as_equal_interpolated_points(distance=quantization),
                         int(quantization / 2),
                     )
                 )
