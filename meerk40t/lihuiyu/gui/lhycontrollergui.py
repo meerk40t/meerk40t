@@ -30,6 +30,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context.device
+        self.SetHelpText("k40controller")
 
         self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         if self.context.mock:

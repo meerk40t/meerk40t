@@ -22,6 +22,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0)
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("grblconfig")
 
         sizer_page_1 = wx.BoxSizer(wx.VERTICAL)
 

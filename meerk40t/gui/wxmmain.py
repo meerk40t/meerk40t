@@ -1769,6 +1769,7 @@ class MeerK40t(MWindow):
                 "label": _("Group"),
                 "icon": icons8_group_objects,
                 "tip": _("Group elements together"),
+                "help": "group",
                 "action": lambda v: group_selection(),
                 "size": bsize_normal,
                 "rule_enabled": lambda cond: len(
@@ -1814,6 +1815,7 @@ class MeerK40t(MWindow):
                 "label": _("Ungroup"),
                 "icon": icons8_ungroup_objects,
                 "tip": _("Ungroup elements"),
+                "help": "group",
                 "action": lambda v: ungroup_selection(),
                 "size": bsize_normal,
                 "rule_enabled": lambda cond: part_of_group(),
@@ -1851,6 +1853,7 @@ class MeerK40t(MWindow):
                 "tip": _("Manages Wordlist-Entries")
                 + "\n"
                 + _(" (right go to next entry)"),
+                "help": "wordlist",
                 "action": lambda v: kernel.console("window toggle Wordlist\n"),
                 "identifier": "prep_wordlist",
                 "priority": 99,
@@ -1862,6 +1865,7 @@ class MeerK40t(MWindow):
                         "tip": _("Manages Wordlist-Entries")
                         + _(" (right go to next entry)"),
                         "label": _("Wordlist Editor"),
+                        "help": "wordlist",
                         "action": lambda v: kernel.console("window toggle Wordlist\n"),
                         "action_right": lambda v: kernel.elements.wordlist_advance(1),
                     },
@@ -1870,6 +1874,7 @@ class MeerK40t(MWindow):
                         "icon": icons8_circled_right,
                         "tip": _("Wordlist: go to next entry")
                         + _(" (right go to prev entry)"),
+                        "help": "wordlist",
                         "label": _("Next"),
                         "action": lambda v: kernel.elements.wordlist_advance(1),
                         "action_right": lambda v: kernel.elements.wordlist_advance(-1),

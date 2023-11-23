@@ -286,7 +286,7 @@ class LiveLightJob:
         delay_dark = self.service.delay_jump_long
         delay_between = self.service.delay_jump_short
 
-        points = list(geometry.as_interpolated_points(interpolate=self.quantization))
+        points = list(geometry.as_equal_interpolated_points(distance=self.quantization))
         move = True
         for i, e in enumerate(points):
             if self.stopped:

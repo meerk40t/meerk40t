@@ -438,6 +438,7 @@ class PanelFontManager(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("vectortext")
 
         mainsizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -840,6 +841,7 @@ def register_hershey_stuff(kernel):
             "label": _("Font-Manager"),
             "icon": icons8_choose_font,
             "tip": _("Open the vector-font management window."),
+            "help": "vectortext",
             "action": lambda v: kernel.console("window toggle HersheyFontManager\n"),
             "size": buttonsize,
         },

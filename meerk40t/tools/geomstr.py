@@ -389,7 +389,7 @@ class BeamTable:
     def sort_key(self, e):
         return e[0].real, e[0].imag, ~e[1]
 
-    def compute_beam(self):
+    def _compute_beam(self):
         g = self.geometry
         gs = g.segments
         events = []
@@ -531,8 +531,8 @@ class BeamTable:
 
         scanline = None
 
-        def x_ints(e):
-            return g.x_intercept(e, np.real(scanline))
+        def y_ints(e):
+            return g.y_intercept(e, np.real(scanline))
 
         # Store previously active segments
         active_lists = []
@@ -562,7 +562,7 @@ class BeamTable:
             if pt != next:
                 if len(actives) > largest_actives:
                     largest_actives = len(actives)
-                actives.sort(key=x_ints)
+                actives.sort(key=y_ints)
                 real_events.append(pt)
                 active_lists.append(list(actives))
 
@@ -575,38 +575,33 @@ class BeamTable:
     def points_in_polygon(self, e):
         if self._nb_scan is None:
             self.compute_beam_brute()
-        idx = np.searchsorted(self._nb_events, e)
-        actives = self._nb_scan[idx]
-        line = self.geometry.segments[actives]
-        a = line[:, :, 0]
-        a = np.where(actives == -1, np.nan + np.nan * 1j, a)
-        b = line[:, :, -1]
-        b = np.where(actives == -1, np.nan + np.nan * 1j, b)
 
-        q = self.geometry.y_intercept(actives, np.real(e))
-        # print(q)
+        idx = np.searchsorted(self._nb_events, e)
+        actives = self._nb_scan[idx - 1]
+        line = self.geometry.segments[actives]
+        a = line[..., 0]
+        b = line[..., -1]
+        a = np.where(actives == -1, np.nan + np.nan * 1j, a)
+        b = np.where(actives == -1, np.nan + np.nan * 1j, b)
 
         old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
         try:
-            # If horizontal slope is undefined. But, all x-ints are at x since x0=x1
+            # If vertical slope is undefined. All y-ints are at y since y0=y1
             m = (b.real - a.real) / (b.imag - a.imag)
-            y0 = a.real - (m * a.imag)
-            ys = np.reshape(np.repeat(np.real(e), y0.shape[1]), y0.shape)
-            y_intercepts = np.where(~np.isinf(m), (ys - y0) / m, a.imag)
+            x0 = a.real - (m * a.imag)
+            xs = np.reshape(np.repeat(np.real(e), x0.shape[1]), x0.shape)
+            y_intercepts = np.where(~np.isinf(m), (xs - x0) / m, a.imag)
         finally:
             np.seterr(**old_np_seterr)
-        xs = np.reshape(np.repeat(np.imag(e), y0.shape[1]), y0.shape)
-        results = np.sum(y_intercepts <= xs, axis=1)
+        ys = np.reshape(np.repeat(np.imag(e), x0.shape[1]), x0.shape)
+        results = np.sum(y_intercepts <= ys, axis=1)
         results %= 2
         return results
 
     def actives_at(self, value):
-        from bisect import bisect
-
-        if not self._nb_scan:
+        if self._nb_scan is None:
             self.compute_beam_brute()
         idx = np.searchsorted(self._nb_events, value)
-        # idx = bisect(self._nb_events, (value.imag, value.real))
         actives = self._nb_scan[idx - 1]
         aw = np.argwhere(actives != -1)[:, 0]
         return actives[aw]
@@ -681,9 +676,9 @@ class Scanbeam:
         idx = np.searchsorted(self._nb_events, np.imag(e))
         actives = self._nb_scan[idx]
         line = self._geom.segments[actives]
-        a = line[:, :, 0]
+        a = line[..., 0]
         a = np.where(actives == -1, np.nan + np.nan * 1j, a)
-        b = line[:, :, -1]
+        b = line[..., -1]
         b = np.where(actives == -1, np.nan + np.nan * 1j, b)
 
         old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
@@ -1268,7 +1263,7 @@ class Geomstr:
 
     @classmethod
     def hull(cls, geom):
-        ipts = list(geom.as_interpolated_points(interpolate=50))
+        ipts = list(geom.as_equal_interpolated_points(distance=50))
         pts = list(Geomstr.convex_hull(None, ipts))
         if pts:
             pts.append(pts[0])
@@ -1479,6 +1474,15 @@ class Geomstr:
             yield segments
 
     def as_equal_interpolated_points(self, distance=100):
+        """
+        Regardless of specified distance this will always give the start and end points of each node within the
+        geometry. It will not duplicate the nodes if the start of one is the end of another. If the start and end
+        values do not line up, it will yield a None value to denote there is a broken path.
+
+        @param distance:
+        @return:
+        """
+
         at_start = True
         end = None
         for e in self.segments[: self.index]:
@@ -1494,18 +1498,24 @@ class Geomstr:
             end = e[4]
             if at_start:
                 yield start
-            at_start = False
-            if seg_type == TYPE_LINE:
-                yield end
+                at_start = False
+
+            if seg_type == TYPE_END:
+                at_start = True
                 continue
-            if seg_type == TYPE_QUAD:
+            elif seg_type == TYPE_LINE:
+                pass
+            elif seg_type == TYPE_QUAD:
                 ts = np.linspace(0, 1, 1000)
                 pts = self._quad_position(e, ts)
                 distances = np.abs(pts[:-1] - pts[1:])
                 distances = np.cumsum(distances)
                 max_distance = distances[-1]
                 dist_values = np.linspace(
-                    0, max_distance, int(np.ceil(max_distance / distance))
+                    0,
+                    max_distance,
+                    int(np.ceil(max_distance / distance)),
+                    endpoint=False,
                 )[1:]
                 near_t = np.searchsorted(distances, dist_values, side="right")
                 pts = pts[near_t]
@@ -1517,7 +1527,10 @@ class Geomstr:
                 distances = np.cumsum(distances)
                 max_distance = distances[-1]
                 dist_values = np.linspace(
-                    0, max_distance, int(np.ceil(max_distance / distance))
+                    0,
+                    max_distance,
+                    int(np.ceil(max_distance / distance)),
+                    endpoint=False,
                 )[1:]
                 near_t = np.searchsorted(distances, dist_values, side="right")
                 pts = pts[near_t]
@@ -1529,13 +1542,15 @@ class Geomstr:
                 distances = np.cumsum(distances)
                 max_distance = distances[-1]
                 dist_values = np.linspace(
-                    0, max_distance, int(np.ceil(max_distance / distance))
+                    0,
+                    max_distance,
+                    int(np.ceil(max_distance / distance)),
+                    endpoint=False,
                 )[1:]
                 near_t = np.searchsorted(distances, dist_values, side="right")
                 pts = pts[near_t]
                 yield from pts
-            elif seg_type == TYPE_END:
-                at_start = True
+            yield end
 
     def as_interpolated_segments(self, interpolate=100):
         """
@@ -1598,8 +1613,8 @@ class Geomstr:
             elif seg_type == TYPE_END:
                 at_start = True
 
-    def segmented(self, interpolate=100):
-        return Geomstr.lines(*self.as_interpolated_points(interpolate=interpolate))
+    def segmented(self, distance=50):
+        return Geomstr.lines(*self.as_equal_interpolated_points(distance=distance))
 
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:
@@ -3514,7 +3529,7 @@ class Geomstr:
             count = len(x)
             pts = np.vstack((x, y, np.ones(count)))
             result = np.dot(m, pts)
-            return (result[0] / result[2] + 1j * result[1] / result[2])
+            return result[0] / result[2] + 1j * result[1] / result[2]
 
         segments = self.segments
         index = self.index
@@ -3955,7 +3970,7 @@ class Geomstr:
 
     def y_at_axis(self, e):
         """
-        y_intercept value between start and end points.
+        y_intercept of the lines (e) at at x-axis (x=0)
 
         @param e:
         @return:
@@ -4043,12 +4058,8 @@ class Geomstr:
         @return:
         """
         line = self.segments[e]
-        if len(line.shape) == 2:
-            a = line[:, 0]
-            b = line[:, -1]
-        else:
-            a = line[0]
-            b = line[-1]
+        a = line[..., 0]
+        b = line[..., -1]
         old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
         try:
             # If horizontal slope is undefined. But, all x-ints are at x since x0=x1
@@ -4067,12 +4078,8 @@ class Geomstr:
         @return:
         """
         line = self.segments[e]
-        if len(line.shape) == 2:
-            a = line[:, 0]
-            b = line[:, -1]
-        else:
-            a = line[0]
-            b = line[-1]
+        a = line[..., 0]
+        b = line[..., -1]
         old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
         try:
             # If vertical slope is undefined. But, all y-ints are at y since y0=y1

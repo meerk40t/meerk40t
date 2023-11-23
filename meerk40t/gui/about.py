@@ -232,10 +232,10 @@ class InformationPanel(ScrolledPanel):
     def check_for_updates(self, event):
         self.context.setting(str, "last_update_check", None)
         now = datetime.date.today()
-        if self.context.update_check == 1:
-            command = "check_for_updates --verbosity 3\n"
-        elif self.context.update_check == 2:
+        if self.context.update_check == 2:
             command = "check_for_updates --beta --verbosity 3\n"
+        else:
+            command = "check_for_updates --verbosity 3\n"
         self.context(command)
         self.context.last_update_check = now.toordinal()
 

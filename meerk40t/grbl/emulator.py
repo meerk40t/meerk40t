@@ -373,6 +373,9 @@ class GRBLEmulator:
                 elif isinstance(v, float):
                     if self.reply:
                         self.reply("$%d=%.3f\r\n" % (s, v))
+            # if self.reply:
+            #     self.reply("$298=donut\r\n")
+            #     self.reply("$299=\r\n")
             return 0
         if GRBL_SET_RE.match(data):
             settings = list(GRBL_SET_RE.findall(data))[0]

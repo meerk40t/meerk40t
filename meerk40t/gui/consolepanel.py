@@ -246,6 +246,7 @@ class ConsolePanel(wx.ScrolledWindow):
         self.context.channel("console").unwatch(self.update_text)
 
     def clear(self):
+        self.text_main.SetValue("")
         self.text_main.Clear()
 
     def update_text(self, text):

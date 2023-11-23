@@ -1116,7 +1116,7 @@ class SVGProcessor:
             element.load(os.path.dirname(self.pathname))
             try:
                 from PIL import ImageOps
-                ImageOps.exif_transpose(element.image, in_place=True)
+                element.image = ImageOps.exif_transpose(element.image)
             except ImportError:
                 pass
             try:
