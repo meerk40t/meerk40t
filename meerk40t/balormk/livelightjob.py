@@ -77,6 +77,8 @@ class LiveLightJob:
         self.service.listen("flip_x", self.on_emphasis_changed)
         self.service.listen("flip_y", self.on_emphasis_changed)
         self.service.listen("swap_xy", self.on_emphasis_changed)
+        self.service.listen("rotate", self.on_emphasis_changed)
+        self.service.listen("bedsize", self.on_emphasis_changed)
         self.time_started = time.time()
         self.started = True
         connection = driver.connection
@@ -93,6 +95,8 @@ class LiveLightJob:
         self.service.unlisten("flip_x", self.on_emphasis_changed)
         self.service.unlisten("flip_y", self.on_emphasis_changed)
         self.service.unlisten("swap_xy", self.on_emphasis_changed)
+        self.service.unlisten("rotate", self.on_emphasis_changed)
+        self.service.unlisten("bedsize", self.on_emphasis_changed)
         self.service.signal("light_simulate", False)
         if self.service.redlight_preferred:
             connection.light_on()

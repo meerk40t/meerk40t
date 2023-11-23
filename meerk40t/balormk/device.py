@@ -181,6 +181,24 @@ class BalorDevice(Service, Status):
                 "subsection": "_10_Axis corrections",
             },
             {
+                "attr": "rotate",
+                "object": self,
+                "default": 0,
+                "type": int,
+                "style": "combo",
+                "trailer": "°",
+                "choices": [
+                    0,
+                    90,
+                    180,
+                    270,
+                ],
+                "label": _("Rotate View"),
+                "tip": _("Rotate the device field"),
+                "section": "_10_Parameters",
+                "subsection": "_10_Axis corrections",
+            },
+            {
                 "attr": "interpolate",
                 "object": self,
                 "default": 50,
@@ -732,11 +750,8 @@ class BalorDevice(Service, Status):
             native_scale_x=units_per_galvo,
             native_scale_y=units_per_galvo,
         )
-        self.view.transform(
-            flip_x=self.flip_x,
-            flip_y=self.flip_y,
-            swap_xy=self.swap_xy,
-        )
+        self.realize()
+
         self.spooler = Spooler(self)
         self.driver = BalorDriver(self)
         self.spooler.driver = self.driver
@@ -1908,16 +1923,29 @@ class BalorDevice(Service, Status):
     def service_attach(self, *args, **kwargs):
         self.realize()
 
+    @signal_listener("lens_size")
+    @signal_listener("rotate")
     @signal_listener("flip_x")
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
     def realize(self, origin=None, *args):
+        unit_size = float(Length(self.lens_size))
+        galvo_range = 0xFFFF
+        units_per_galvo = unit_size / galvo_range
+
         self.view.set_dims(self.lens_size, self.lens_size)
+        self.view.set_native_scale(units_per_galvo, units_per_galvo)
         self.view.transform(
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
         )
+        if self.rotate >= 90:
+            self.view.rotate_cw()
+        if self.rotate >= 180:
+            self.view.rotate_cw()
+        if self.rotate >= 270:
+            self.view.rotate_cw()
         self.space.update_bounds(0, 0, self.lens_size, self.lens_size)
 
     @property
