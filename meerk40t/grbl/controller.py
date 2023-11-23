@@ -853,7 +853,10 @@ class GrblController:
             self.service.signal("grbl:ver", message)
         elif response.startswith("[OPT:"):
             message = response[5:-1]
-            codes, block_buffer_size, rx_buffer_size = message.split(",")
+            opts = list(message.split(","))
+            codes = opts[0]
+            block_buffer_size = opts[1]
+            rx_buffer_size = opts[2]
             self.log(f"codes: {codes}", type="event")
             if "V" in codes:
                 # Variable spindle enabled
