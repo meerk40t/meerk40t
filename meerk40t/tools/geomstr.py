@@ -2551,13 +2551,19 @@ class Geomstr:
         ).all(axis=2)
         yield from candidates[q[0]]
 
-    def length(self, e):
+    def length(self, e=None):
         """
         Returns the length of geom e.
 
         @param e:
         @return:
         """
+        if e is None:
+            total = 0
+            for i in range(self.index):
+                total += self.length(i)
+            return total
+
         line = self.segments[e]
         start, control1, info, control2, end = line
         if info.real == TYPE_LINE:
@@ -4649,7 +4655,7 @@ class Geomstr:
     def raw_length(self):
         """
         Determines the raw length of the geoms. Where length is taken as the distance
-        from start to end (ignoring any curving), real length would be greater than this
+        from start to end (ignoring any curving), real length could be greater than this
         but never less.
 
         @return:

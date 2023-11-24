@@ -189,6 +189,20 @@ class EllipseNode(Node, Stroked, FunctionalParameter):
             )
         return xmin, ymin, xmax, ymax
 
+    def length(self):
+        """
+        The calculation of the length of an ellipse using the Ramanujan approximation
+        @return:
+        """
+        a = abs(complex(*self.matrix.transform_vector([self.rx, 0])))
+        b = abs(complex(*self.matrix.transform_vector([0,self.ry])))
+        if a == b:
+            return tau * self.rx
+        if b > a:
+            a, b = b, a
+        h = ((a - b) * (a - b)) / ((a + b) * (a + b))
+        return tau / 2 * (a + b) * (1 + (3 * h / (10 + sqrt(4 - 3 * h))))
+
     def preprocess(self, context, matrix, plan):
         self.stroke_scaled = False
         self.stroke_scaled = True
