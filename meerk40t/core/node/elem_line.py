@@ -96,6 +96,14 @@ class LineNode(Node, Stroked, FunctionalParameter):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
     @property
+    def p1(self):
+        return complex(*self.matrix.point_in_matrix_space((self.x1, self.y1)))
+
+    @property
+    def p2(self):
+        return complex(*self.matrix.point_in_matrix_space((self.x2, self.y2)))
+
+    @property
     def shape(self):
         return SimpleLine(
             x1=self.x1,
