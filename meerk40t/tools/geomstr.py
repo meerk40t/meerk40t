@@ -2551,13 +2551,19 @@ class Geomstr:
         ).all(axis=2)
         yield from candidates[q[0]]
 
-    def length(self, e):
+    def length(self, e=None):
         """
         Returns the length of geom e.
 
         @param e:
         @return:
         """
+        if e is None:
+            total = 0
+            for i in range(self.index):
+                total += self.length(i)
+            return total
+
         line = self.segments[e]
         start, control1, info, control2, end = line
         if info.real == TYPE_LINE:
