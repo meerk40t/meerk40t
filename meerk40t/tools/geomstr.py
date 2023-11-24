@@ -1155,6 +1155,31 @@ class Geomstr:
         return obj
 
     @classmethod
+    def image(cls, pil_image, z=0):
+        g = cls()
+        if pil_image.mode != "1":
+            pil_image = pil_image.convert("1")
+        pil_image = pil_image.point(list(range(255, -1, -1)))
+
+        im = np.array(pil_image)
+        pr = ((0, 0), (0, 1))
+        pl = ((0, 0), (1, 0))
+        t = np.pad(im, pr, mode="constant", constant_values=z)
+        b = np.pad(im, pl, mode="constant", constant_values=z)
+        starts = t & ~b
+        ends = ~t & b
+        sy, sx = np.nonzero(starts)
+        ey, ex = np.nonzero(ends)
+        starts = sx + sy * 1j
+        ends = ex + ey * 1j
+        count = len(ex)
+        segments = np.dstack(
+            (starts, [0] * count, [TYPE_LINE] * count, [0] * count, ends)
+        )[0]
+        g.append_lines(segments)
+        return g
+
+    @classmethod
     def lines(cls, *points):
         path = cls()
         if not points:

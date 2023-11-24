@@ -27,7 +27,7 @@ from meerk40t.core.treeop import (
 )
 from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.kernel import CommandSyntaxError
-from meerk40t.svgelements import Matrix, Point, Polygon
+from meerk40t.svgelements import Matrix, Point, Color
 from meerk40t.tools.geomstr import Geomstr
 
 from .element_types import *
@@ -390,6 +390,13 @@ def init_tree(kernel):
         if activate is not None:
             activate(node)
             self.signal("propupdate", node)
+
+    @tree_operation(_("Convert to Path"), node_type="elem image", help="")
+    def image_convert_to_path(node, **kwargs):
+        image, box = node.as_image()
+        node.replace_node(
+            type="elem path", geometry=Geomstr.image(image), stroke=Color("black"), matrix=Matrix(node.matrix)
+        )
 
     def radio_match_speed(node, speed=0, **kwargs):
         return node.speed == float(speed)
