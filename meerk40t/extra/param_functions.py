@@ -1503,7 +1503,7 @@ def plugin(kernel, lifecycle):
         )
         kernel.register("element_update/cycloid", info)
 
-        max_corner_gui = 50
+        max_corner_gui = 32
         info = (
             update_node_star_shape,
             {
