@@ -176,6 +176,9 @@ class RectNode(Node, Stroked, FunctionalParameter):
             )
         return xmin, ymin, xmax, ymax
 
+    def length(self):
+        return self.width + self.width + self.height + self.height
+
     def preprocess(self, context, matrix, plan):
         self.stroke_scaled = False
         self.stroke_scaled = True
