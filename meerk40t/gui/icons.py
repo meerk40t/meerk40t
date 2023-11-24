@@ -2464,6 +2464,14 @@ icon_polygon = VectorIcon(
     ),
 )
 
+icon_growing = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 50,50 h 10 v 15 h -20 v -25 h 30 v 35 h -40 v -45 h 50 v 55 h -60 v -65 h 70 v 75",
+    ),
+    edge=5,
+)
+
 icons8_menu = VectorIcon(
     fill=(
         "M 0 0 h 50 v2 h -50 z",
