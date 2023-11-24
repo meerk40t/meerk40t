@@ -1155,17 +1155,16 @@ class Geomstr:
         return obj
 
     @classmethod
-    def image(cls, pil_image, z=0):
+    def image(cls, pil_image, invert=False):
         g = cls()
         if pil_image.mode != "1":
             pil_image = pil_image.convert("1")
-        pil_image = pil_image.point(list(range(255, -1, -1)))
-
+        if not invert:
+            # Invert is default, Black == 0 (False), White == 255 (True)
+            pil_image = pil_image.point(list(range(255, -1, -1)))
         im = np.array(pil_image)
-        pr = ((0, 0), (0, 1))
-        pl = ((0, 0), (1, 0))
-        t = np.pad(im, pr, mode="constant", constant_values=z)
-        b = np.pad(im, pl, mode="constant", constant_values=z)
+        t = np.pad(im, ((0, 0), (0, 1)), constant_values=0)
+        b = np.pad(im, ((0, 0), (1, 0)), constant_values=0)
         starts = t & ~b
         ends = ~t & b
         sy, sx = np.nonzero(starts)
