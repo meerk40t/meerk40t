@@ -6,13 +6,21 @@
         c) an (optional) image (url) to be shown
 """
 import os
+import urllib
 import webbrowser
 
-import urllib
 import wx
 
 from ..kernel import get_safe_path
-from .icons import icons8_circled_left, icons8_circled_right, icons8_detective, icon_youtube, icons8_light_on, icon_outline, icons8_console
+from .icons import (
+    icon_outline,
+    icon_youtube,
+    icons8_circled_left,
+    icons8_circled_right,
+    icons8_console,
+    icons8_detective,
+    icons8_light_on,
+)
 from .mwindow import MWindow
 from .wxutils import dip_size
 
@@ -50,8 +58,14 @@ class TipPanel(wx.Panel):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.image_tip = wx.StaticBitmap(self, wx.ID_ANY, style=wx.SB_FLAT)
         self.image_tip.SetMinSize(wx.Size(250, -1))
-        self.check_consent = wx.CheckBox(self, wx.ID_ANY, _("Image missing!\nRetrieve automatically?"))
-        self.check_consent.SetToolTip(_("Couldn't find the cached image for this tip!\nShall MeerK40t try to download such missing images from the internet?"))
+        self.check_consent = wx.CheckBox(
+            self, wx.ID_ANY, _("Image missing!\nRetrieve automatically?")
+        )
+        self.check_consent.SetToolTip(
+            _(
+                "Couldn't find the cached image for this tip!\nShall MeerK40t try to download such missing images from the internet?"
+            )
+        )
         self.check_consent.SetValue(self.context.tip_access_consent)
         self.check_consent.Show(False)
         # self.image_tip.SetMaxSize(wx.Size(250, -1))
@@ -82,30 +96,30 @@ class TipPanel(wx.Panel):
         self.check_startup = wx.CheckBox(self, wx.ID_ANY, _("Show tips at startup"))
         self.check_startup.SetToolTip(
             _(
-                "Show tips at program start.\n" +
-                "Even if disabled, 'Tips & Tricks' are always available in the Help-menu."
+                "Show tips at program start.\n"
+                + "Even if disabled, 'Tips & Tricks' are always available in the Help-menu."
             )
         )
         self.check_startup.SetValue(self.context.show_tips)
 
         option_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.button_try = wx.Button(self, wx.ID_ANY, _("Try it out"))
-        self.button_try.SetToolTip(_(
-            "Launch an example, please be aware that this might change your design,\n" +
-            "as new elements could be created to show the functionality"
+        self.button_try.SetToolTip(
+            _(
+                "Launch an example, please be aware that this might change your design,\n"
+                + "as new elements could be created to show the functionality"
             )
         )
         self.button_try.SetBitmap(icons8_detective.GetBitmap(resize=icon_size[0]))
         self.button_update = wx.Button(self, wx.ID_ANY, _("Update"))
-        self.button_update.SetFont(wx.Font(
-                8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
-            )
+        self.button_update.SetFont(
+            wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         )
         self.button_update.SetToolTip(
             _(
-                "Look for new tips on MeerK40ts website.\n" +
-                "The list of tips is constantly expanded, so please update it\n" +
-                "every now and then to learn about new or hidden features."
+                "Look for new tips on MeerK40ts website.\n"
+                + "The list of tips is constantly expanded, so please update it\n"
+                + "every now and then to learn about new or hidden features."
             )
         )
         option_sizer.Add(self.button_try, 0, wx.ALIGN_CENTER_VERTICAL)
@@ -307,14 +321,18 @@ class TipPanel(wx.Panel):
         )
         self.tips.append(
             (
-                _("MeerK40t can create a so called outline around an element.\nJust select the element, right click on top of it to get the context menu and choose from the 'Outline elements' menu..."),
+                _(
+                    "MeerK40t can create a so called outline around an element.\nJust select the element, right click on top of it to get the context menu and choose from the 'Outline elements' menu..."
+                ),
                 "rect 2cm 2cm 4cm 4cm fill black outline 2mm --steps 4 --outer stroke red",
                 icon_outline.GetBitmap(resize=200),
             ),
         )
         self.tips.append(
             (
-                _("MeerK40t has an extensive set of commands that allow a lot of scriptable actions.\nJust open the console window and type 'help'"),
+                _(
+                    "MeerK40t has an extensive set of commands that allow a lot of scriptable actions.\nJust open the console window and type 'help'"
+                ),
                 "pane show console\nhelp",
                 icons8_console.GetBitmap(resize=200),
             ),
@@ -322,15 +340,14 @@ class TipPanel(wx.Panel):
         self.tips.append(
             (
                 _(
-                    "Do you want to see more Tips & Tricks?\n" +
-                    "Just click on the 'Update'-button to load additional hints from MeerK40ts website.\n" +
-                    "The list of tips is constantly expanded, so please update it every now and then to learn about new or hidden features."
+                    "Do you want to see more Tips & Tricks?\n"
+                    + "Just click on the 'Update'-button to load additional hints from MeerK40ts website.\n"
+                    + "The list of tips is constantly expanded, so please update it every now and then to learn about new or hidden features."
                 ),
                 "",
                 icons8_light_on.GetBitmap(resize=200),
             ),
         )
-
 
         self.load_tips_from_local_cache()
 
@@ -345,12 +362,13 @@ class TipPanel(wx.Panel):
                 self.set_tip_image(tip[2], idx, True, display=False)
         new_count = len(self.tips)
         res = wx.MessageBox(
-            message=_("Tips have been updated, {info} new entries found.").format(info=str(new_count - prev_count)),
-            caption=_("Tips")
+            message=_("Tips have been updated, {info} new entries found.").format(
+                info=str(new_count - prev_count)
+            ),
+            caption=_("Tips"),
         )
         # Force update...
         self.current_tip = self.current_tip
-
 
     def load_tips_from_github(self):
         successful = False
@@ -457,7 +475,7 @@ class TipPanel(wx.Panel):
                         img = cline[len("image=") :]
                     elif cline.startswith("img="):
                         lastline_was_tip = False
-                        img = cline[len("img="):]
+                        img = cline[len("img=") :]
                     else:
                         if lastline_was_tip:
                             tip += "\n" + cline
@@ -488,10 +506,15 @@ class TipPanel(wx.Panel):
     def pane_hide(self, *args):
         pass
 
+
 class Tips(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(400, 350, *args, **kwds)
-        self.panel = TipPanel(self, wx.ID_ANY, context=self.context,)
+        self.panel = TipPanel(
+            self,
+            wx.ID_ANY,
+            context=self.context,
+        )
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_detective.GetBitmap())
         self.SetIcon(_icon)
