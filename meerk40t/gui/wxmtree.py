@@ -1949,7 +1949,7 @@ class ShadowTree:
                             hh = Length(amount=bb[3] - bb[1], digits=1)
                             ll = Length(amount=node.length(), digits=1)
                             ttip = f"{ww.length_mm} x {hh.length_mm}, L={ll.length_mm}"
-                            ttip += f"\n{len(node.shape.points)} pts"
+                            ttip += f"\n{len(node)} pts"
                     elif node.type == "elem ellipse":
                         bb = node.bounds
                         if bb is not None:
