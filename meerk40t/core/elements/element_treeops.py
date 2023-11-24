@@ -27,7 +27,7 @@ from meerk40t.core.treeop import (
 )
 from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.kernel import CommandSyntaxError
-from meerk40t.svgelements import Matrix, Point, Polygon
+from meerk40t.svgelements import Matrix, Point
 from meerk40t.tools.geomstr import Geomstr
 
 from .element_types import *
@@ -390,6 +390,34 @@ def init_tree(kernel):
         if activate is not None:
             activate(node)
             self.signal("propupdate", node)
+
+    @tree_submenu(_("Convert to Path"))
+    @tree_operation(_("Horizontal"), node_type="elem image", help="")
+    def image_convert_to_path_horizontal(node, **kwargs):
+        image, box = node.as_image()
+        m = Matrix(node.active_matrix)
+        n = node.replace_node(
+            type="elem path",
+            geometry=Geomstr.image(image, vertical=False),
+            stroke=self.default_stroke,
+            stroke_width=self.default_strokewidth,
+            matrix=m,
+        )
+        self.classify([n])
+
+    @tree_submenu(_("Convert to Path"))
+    @tree_operation(_("Vertical"), node_type="elem image", help="")
+    def image_convert_to_path_vertical(node, **kwargs):
+        image, box = node.as_image()
+        m = Matrix(node.active_matrix)
+        n = node.replace_node(
+            type="elem path",
+            geometry=Geomstr.image(image, vertical=True),
+            stroke=self.default_stroke,
+            stroke_width=self.default_strokewidth,
+            matrix=m,
+        )
+        self.classify([n])
 
     def radio_match_speed(node, speed=0, **kwargs):
         return node.speed == float(speed)
@@ -2132,9 +2160,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Open containing folder: '{name}'"),
         node_type="file",
-        help=_(
-            "Open this file working directory in the system's file manager"
-        ),
+        help=_("Open this file working directory in the system's file manager"),
     )
     def open_file_in_explorer(node, **kwargs):
         file_path = node.filepath

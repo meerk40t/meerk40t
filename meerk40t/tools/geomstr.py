@@ -1024,6 +1024,9 @@ class Geomstr:
     def __iter__(self):
         return self.segments
 
+    def __bool__(self):
+        return self.index != 0
+
     def debug_me(self):
         # Provides information about the Geometry.
         def cplx_info(num):
@@ -1153,6 +1156,37 @@ class Geomstr:
                         obj.quad(complex(q.start), complex(q.control), complex(q.end))
             last_point = seg.end
         return obj
+
+    @classmethod
+    def image(cls, pil_image, invert=False, vertical=False):
+        g = cls()
+        if pil_image.mode != "1":
+            pil_image = pil_image.convert("1")
+        if not invert:
+            # Invert is default, Black == 0 (False), White == 255 (True)
+            pil_image = pil_image.point(list(range(255, -1, -1)))
+        im = np.array(pil_image)
+        if vertical:
+            im = np.swapaxes(im, 0, 1)
+
+        a = np.pad(im, ((0, 0), (0, 1)), constant_values=0)
+        b = np.pad(im, ((0, 0), (1, 0)), constant_values=0)
+        starts = a & ~b
+        ends = ~a & b
+        sx, sy = np.nonzero(starts)
+        ex, ey = np.nonzero(ends)
+        if vertical:
+            starts = sx + sy * 1j
+            ends = ex + ey * 1j
+        else:
+            starts = sy + sx * 1j
+            ends = ey + ex * 1j
+        count = len(ex)
+        segments = np.dstack(
+            (starts, [0] * count, [TYPE_LINE] * count, [0] * count, ends)
+        )[0]
+        g.append_lines(segments)
+        return g
 
     @classmethod
     def lines(cls, *points):
@@ -2551,13 +2585,19 @@ class Geomstr:
         ).all(axis=2)
         yield from candidates[q[0]]
 
-    def length(self, e):
+    def length(self, e=None):
         """
         Returns the length of geom e.
 
         @param e:
         @return:
         """
+        if e is None:
+            total = 0
+            for i in range(self.index):
+                total += self.length(i)
+            return total
+
         line = self.segments[e]
         start, control1, info, control2, end = line
         if info.real == TYPE_LINE:
@@ -4649,7 +4689,7 @@ class Geomstr:
     def raw_length(self):
         """
         Determines the raw length of the geoms. Where length is taken as the distance
-        from start to end (ignoring any curving), real length would be greater than this
+        from start to end (ignoring any curving), real length could be greater than this
         but never less.
 
         @return:

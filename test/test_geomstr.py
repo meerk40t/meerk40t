@@ -1163,7 +1163,7 @@ class TestGeomstr(unittest.TestCase):
         q = BeamTable(poly.geomstr)
         q.compute_beam_brute()
 
-        #BeamTable Pip
+        # BeamTable Pip
         bt2 = time.time()
         r2 = q.points_in_polygon(points)
         bt3 = time.time()
@@ -1611,7 +1611,7 @@ class TestGeomstr(unittest.TestCase):
                 actives = sb.actives_at(x)
                 pos = g.y_intercept(actives, x)
                 for q in range(1, len(pos)):
-                    self.assertLessEqual(pos[q-1], pos[q])
+                    self.assertLessEqual(pos[q - 1], pos[q])
 
     def test_scan_table_fill_random(self):
         for c in range(1):
@@ -1632,7 +1632,7 @@ class TestGeomstr(unittest.TestCase):
                 actives = sb.actives_at(x)
                 pos = g.y_intercept(actives, x)
                 for q in range(1, len(pos), 2):
-                    g.line(complex(x, pos[q-1]), complex(x, pos[q]))
+                    g.line(complex(x, pos[q - 1]), complex(x, pos[q]))
 
             g.append(intersections)
             try:
@@ -1640,6 +1640,17 @@ class TestGeomstr(unittest.TestCase):
             except PermissionError:
                 pass
 
+    def test_geomstr_image(self):
+        from PIL import Image, ImageDraw
+
+        image = Image.new("RGBA", (256, 256), "white")
+        draw = ImageDraw.Draw(image)
+        draw.ellipse((100, 100, 130, 130), "black")
+        image = image.convert(mode="1")
+        image.save("geom.png")
+        g = Geomstr.image(image)
+        draw_geom(g, *g.bbox(), filename="geom2.png")
+        self.assertEqual(g.index, 31)
 
     # def test_geomstr_hatch(self):
     #     gs = Geomstr.svg(

@@ -584,7 +584,10 @@ class LaserPanel(wx.Panel):
         self.context("estop\n")
 
     def on_button_outline(self, event):  # wxGlade: LaserPanel.<event_handler>
-        self.context("element* trace hull\n")
+        try:
+            self.context.device.outline()
+        except AttributeError:
+            self.context("element* trace hull\n")
 
     def on_button_outline_right(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("element* trace complex\n")

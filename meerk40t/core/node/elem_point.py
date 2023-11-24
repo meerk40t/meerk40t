@@ -63,6 +63,9 @@ class PointNode(Node, FunctionalParameter):
         p = self.matrix.point_in_matrix_space((x, y))
         return p[0], p[1], p[0], p[1]
 
+    def length(self):
+        return 0
+
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Point"
