@@ -31,7 +31,7 @@ def register_panel_helper(window, context):
     )
     pane.dock_proportion = 225
     pane.control = HelperPanel(window, wx.ID_ANY, context=context)
-    pane.submenu = "~"
+    pane.submenu = "~" + _("Help")
 
     window.on_pane_create(pane)
     context.register("pane/helper", pane)

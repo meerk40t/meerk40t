@@ -222,6 +222,7 @@ class MeerK40t(MWindow):
         self.context.signal("bedsize")
         self.CenterOnScreen()
         self.update_check_at_startup()
+        self.tips_at_startup()
         self.parametric_info = None
 
         # Look at window elements we are hovering over
@@ -262,6 +263,14 @@ class MeerK40t(MWindow):
                 self._last_help_section = section
                 # Inform HelperWindow about a new content
                 self.context.signal("helpinfo", info, section)
+
+    def tips_at_startup(self):
+        self.context.setting(bool, "show_tips", True)
+        if self.context.show_tips:
+            self.context("window open Tips\n")
+        else:
+            self.context("window close Tips\n")
+
 
     def update_check_at_startup(self):
         if self.context.update_check == 0:
@@ -1299,7 +1308,7 @@ class MeerK40t(MWindow):
 
         if len(sub_effects) > 1:
             hatch_button["multi"] = sub_effects
-        
+
         kernel.register("button/select/Hatch", hatch_button,)
         kernel.register(
             "button/lasercontrol/Relocate",
@@ -2671,8 +2680,8 @@ class MeerK40t(MWindow):
                 idx = result.find("_", 1)
                 if idx >= 0:
                     result = result[idx + 1 :]
-            elif result == "~":
-                result = ""
+            elif result.startswith("~"):
+                result = result[1:]
             return result
 
         self.panes_menu = wx.Menu()
@@ -3589,6 +3598,21 @@ class MeerK40t(MWindow):
             lambda v: update_check_from_menu(),
             id=menuitem.GetId(),
         )
+
+        menuitem = self.help_menu.Append(
+            wx.ID_ANY,
+            _("Tips && Tricks"),
+            _(
+                "Show some Tips & Tricke"
+            ),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window open Tips\n"),
+            id=menuitem.GetId(),
+        )
+
+
         menuitem = self.help_menu.Append(
             wx.ID_ABOUT,
             _("&About MeerK40t"),
