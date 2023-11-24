@@ -396,26 +396,28 @@ def init_tree(kernel):
     def image_convert_to_path_horizontal(node, **kwargs):
         image, box = node.as_image()
         m = Matrix(node.active_matrix)
-        node.replace_node(
+        n = node.replace_node(
             type="elem path",
             geometry=Geomstr.image(image, vertical=False),
             stroke=self.default_stroke,
-            stroke_width=float(Length("1spx")),
+            stroke_width=self.default_strokewidth,
             matrix=m,
         )
+        self.classify([n])
 
     @tree_submenu(_("Convert to Path"))
     @tree_operation(_("Vertical"), node_type="elem image", help="")
     def image_convert_to_path_vertical(node, **kwargs):
         image, box = node.as_image()
         m = Matrix(node.active_matrix)
-        node.replace_node(
+        n = node.replace_node(
             type="elem path",
             geometry=Geomstr.image(image, vertical=True),
             stroke=self.default_stroke,
-            stroke_width=float(Length("1spx")),
+            stroke_width=self.default_strokewidth,
             matrix=m,
         )
+        self.classify([n])
 
     def radio_match_speed(node, speed=0, **kwargs):
         return node.speed == float(speed)
