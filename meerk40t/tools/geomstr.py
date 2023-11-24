@@ -4649,7 +4649,7 @@ class Geomstr:
     def raw_length(self):
         """
         Determines the raw length of the geoms. Where length is taken as the distance
-        from start to end (ignoring any curving), real length would be greater than this
+        from start to end (ignoring any curving), real length could be greater than this
         but never less.
 
         @return:
