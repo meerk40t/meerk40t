@@ -1,4 +1,4 @@
-from math import sin, sqrt, tan, tau
+from math import sin, cos, sqrt, tan, tau
 
 import wx
 
@@ -18,7 +18,7 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.kernel.kernel import Job
-from meerk40t.svgelements import Point, Polygon
+from meerk40t.svgelements import Point, Polygon, Polyline
 
 _ = wx.GetTranslation
 
@@ -186,23 +186,49 @@ class PolygonTool(ToolWidget):
         if self.design_mode == 0:
             pass
         elif self.design_mode == 1:
+            # regular polygon
             number_points = tc
             if number_points > 2:
                 # We have now enough information to create a regular polygon
                 # The first point is the center, the second point defines
                 # the start point, we just assume it's a regular triangle
                 # and hand over to another tool to let the user refine it
+                corners = 3
                 pt1 = Point(points[0])
                 pt2 = Point(points[1])
+                points = points[0:1]
+                # plus 60 degrees
+                angle = pt2.angle_to(pt1)
+                distance = pt1.distance_to(pt2)
+                tangle = angle - tau / 6
+                p3x = pt2.x + cos(tangle) * distance
+                p3y = pt2.y + sin(tangle) * distance
+                # points.append((p3x, p3y))
+                pt3 = Point(p3x, p3y)
+                cx = (pt1.x + pt2.x + pt3.x) / 3
+                cy = (pt1.y + pt2.y + pt3.y) / 3
+                center = Point(cx, cy)
+                # points.append((cx, cy))
+
+                # print (f"1: {pt1.x:.0f},{pt1.y:.0f}, 2: {pt2.x:.0f},{pt2.y:.0f}, 3: {pt3.x:.0f},{pt3.y:.0f}")
+                # print (f"Distances: 1-2: {pt1.distance_to(pt2):.0f}, 2-3: {pt2.distance_to(pt3):.0f}, 3-1: {pt3.distance_to(pt1):.0f}")
+                # print (f"Distances: 1-c: {pt1.distance_to(center):.0f}, 2-c: {pt2.distance_to(center):.0f}, 3-c: {pt3.distance_to(center):.0f}")
+                # polyline = Polygon(*points)
+                # elements = self.scene.context.elements
+                # node = elements.elem_branch.add(
+                #     shape=polyline,
+                #     type="elem polyline",
+                #     stroke_width=elements.default_strokewidth,
+                #     stroke=elements.default_stroke,
+                #     fill=elements.default_fill,
+                # )
                 # print(
                 #     f"p1=({Length(pt1.x).length_mm}, {Length(pt1.y).length_mm}), p2=({Length(pt2.x).length_mm}, {Length(pt2.y).length_mm})"
                 # )
-                radius = pt1.distance_to(pt2)
-                startangle = pt1.angle_to(pt2)
-                corners = 3
-                command = f"shape {corners} {Length(pt1.x).length_mm} {Length(pt1.y).length_mm}"
-                command += f" {Length(radius).length_mm} -s {Angle(startangle, digits=2).angle_degrees}\n"
-                # print(command)
+                radius = center.distance_to(pt1)
+                startangle = center.angle_to(pt1)
+                command = f"shape {corners} {Length(center.x, digits=3).length_mm} {Length(center.y, digits=3).length_mm}"
+                command += f" {Length(radius, digits=3).length_mm} -s {Angle(startangle, digits=2).angle_degrees}\n"
                 self.scene.context(command)
                 selected_node = self.scene.context.elements.first_element(
                     emphasized=True
