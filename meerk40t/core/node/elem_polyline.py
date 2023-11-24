@@ -91,6 +91,9 @@ class PolylineNode(Node, Stroked, FunctionalParameter):
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
+    def __len__(self):
+        return len(self.geometry)
+
     @property
     def shape(self):
         if self.closed:
