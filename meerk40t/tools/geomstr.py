@@ -1155,7 +1155,7 @@ class Geomstr:
         return obj
 
     @classmethod
-    def image(cls, pil_image, invert=False):
+    def image(cls, pil_image, invert=False, vertical=False):
         g = cls()
         if pil_image.mode != "1":
             pil_image = pil_image.convert("1")
@@ -1163,14 +1163,21 @@ class Geomstr:
             # Invert is default, Black == 0 (False), White == 255 (True)
             pil_image = pil_image.point(list(range(255, -1, -1)))
         im = np.array(pil_image)
-        t = np.pad(im, ((0, 0), (0, 1)), constant_values=0)
+        if vertical:
+            im = np.swapaxes(im, 0, 1)
+
+        a = np.pad(im, ((0, 0), (0, 1)), constant_values=0)
         b = np.pad(im, ((0, 0), (1, 0)), constant_values=0)
-        starts = t & ~b
-        ends = ~t & b
-        sy, sx = np.nonzero(starts)
-        ey, ex = np.nonzero(ends)
-        starts = sx + sy * 1j
-        ends = ex + ey * 1j
+        starts = a & ~b
+        ends = ~a & b
+        sx, sy = np.nonzero(starts)
+        ex, ey = np.nonzero(ends)
+        if vertical:
+            starts = sx + sy * 1j
+            ends = ex + ey * 1j
+        else:
+            starts = sy + sx * 1j
+            ends = ey + ex * 1j
         count = len(ex)
         segments = np.dstack(
             (starts, [0] * count, [TYPE_LINE] * count, [0] * count, ends)

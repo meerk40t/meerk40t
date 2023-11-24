@@ -391,12 +391,30 @@ def init_tree(kernel):
             activate(node)
             self.signal("propupdate", node)
 
-    @tree_operation(_("Convert to Path"), node_type="elem image", help="")
-    def image_convert_to_path(node, **kwargs):
+    @tree_submenu(_("Convert to Path"))
+    @tree_operation(_("Horizontal"), node_type="elem image", help="")
+    def image_convert_to_path_horizontal(node, **kwargs):
         image, box = node.as_image()
         m = Matrix(node.active_matrix)
         node.replace_node(
-            type="elem path", geometry=Geomstr.image(image), stroke=Color("black"), matrix=m
+            type="elem path",
+            geometry=Geomstr.image(image, vertical=False),
+            stroke=self.default_stroke,
+            stroke_width=float(Length("1spx")),
+            matrix=m,
+        )
+
+    @tree_submenu(_("Convert to Path"))
+    @tree_operation(_("Vertical"), node_type="elem image", help="")
+    def image_convert_to_path_vertical(node, **kwargs):
+        image, box = node.as_image()
+        m = Matrix(node.active_matrix)
+        node.replace_node(
+            type="elem path",
+            geometry=Geomstr.image(image, vertical=True),
+            stroke=self.default_stroke,
+            stroke_width=float(Length("1spx")),
+            matrix=m,
         )
 
     def radio_match_speed(node, speed=0, **kwargs):
@@ -2140,9 +2158,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Open containing folder: '{name}'"),
         node_type="file",
-        help=_(
-            "Open this file working directory in the system's file manager"
-        ),
+        help=_("Open this file working directory in the system's file manager"),
     )
     def open_file_in_explorer(node, **kwargs):
         file_path = node.filepath
