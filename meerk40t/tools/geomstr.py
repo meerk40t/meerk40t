@@ -1024,6 +1024,9 @@ class Geomstr:
     def __iter__(self):
         return self.segments
 
+    def __bool__(self):
+        return self.index != 0
+
     def debug_me(self):
         # Provides information about the Geometry.
         def cplx_info(num):

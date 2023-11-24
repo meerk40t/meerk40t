@@ -59,6 +59,23 @@ class View:
     def mm(self):
         return self.dpi * MM_PER_INCH
 
+    def set_native_scale(self, native_scale_x, native_scale_y):
+        """
+        Sets the native scaling for this view.
+
+        @param native_scale_x:
+        @param native_scale_y:
+        @return:
+        """
+        if native_scale_x is not None:
+            dpi_x = UNITS_PER_INCH / native_scale_x
+        if native_scale_y is not None:
+            dpi_y = UNITS_PER_INCH / native_scale_y
+        self.dpi_x = dpi_x
+        self.dpi_y = dpi_y
+        self.dpi = (dpi_x + dpi_y) / 2.0
+        self.reset()
+
     def set_dims(self, width, height):
         self.width = width
         self.height = height
