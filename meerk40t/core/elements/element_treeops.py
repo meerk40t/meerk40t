@@ -394,8 +394,9 @@ def init_tree(kernel):
     @tree_operation(_("Convert to Path"), node_type="elem image", help="")
     def image_convert_to_path(node, **kwargs):
         image, box = node.as_image()
+        m = Matrix(node.active_matrix)
         node.replace_node(
-            type="elem path", geometry=Geomstr.image(image), stroke=Color("black"), matrix=Matrix(node.matrix)
+            type="elem path", geometry=Geomstr.image(image), stroke=Color("black"), matrix=m
         )
 
     def radio_match_speed(node, speed=0, **kwargs):
