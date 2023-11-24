@@ -180,6 +180,9 @@ class LineNode(Node, Stroked, FunctionalParameter):
             )
         return xmin, ymin, xmax, ymax
 
+    def length(self):
+        return abs(self.p1 - self.p2)
+
     def preprocess(self, context, matrix, plan):
         self.stroke_scaled = False
         self.stroke_scaled = True
