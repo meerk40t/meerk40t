@@ -5,16 +5,14 @@
         b) an (optional) command to be executed in the 'Try it out' button
         c) an (optional) image (url) to be shown
 """
-import datetime
 import os
 import webbrowser
 
-from urllib.error import HTTPError, URLError
 import urllib
 import wx
 
 from ..kernel import get_safe_path
-from .icons import icons8_circled_left, icons8_circled_right, icons8_detective, icon_youtube
+from .icons import icons8_circled_left, icons8_circled_right, icons8_detective, icon_youtube, icons8_light_on, icon_outline, icons8_console
 from .mwindow import MWindow
 from .wxutils import dip_size
 
@@ -40,18 +38,29 @@ class TipPanel(wx.Panel):
 
         self.setup_tips()
         self.context.setting(bool, "show_tips", True)
+        # Has the user already agreed to download an image automatically
+        # if it can't be found? Defaults to False - please note that the
+        # consent will be set to False by default
+        self.context.setting(bool, "tip_access_consent", False)
+        # Reset for debug purposes
+        # self.context.tip_access_consent = False
         self.SetHelpText("tips")
         icon_size = dip_size(self, 25, 25)
         # Main Sizer
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.image_tip = wx.StaticBitmap(self, wx.ID_ANY, style=wx.SB_FLAT)
         self.image_tip.SetMinSize(wx.Size(250, -1))
+        self.check_consent = wx.CheckBox(self, wx.ID_ANY, _("Image missing!\nRetrieve automatically?"))
+        self.check_consent.SetToolTip(_("Couldn't find the cached image for this tip!\nShall MeerK40t try to download such missing images from the internet?"))
+        self.check_consent.SetValue(self.context.tip_access_consent)
+        self.check_consent.Show(False)
         # self.image_tip.SetMaxSize(wx.Size(250, -1))
         # self.image_tip.SetSize(wx.Size(250, -1))
         self.text_tip = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         tip_area = wx.BoxSizer(wx.HORIZONTAL)
+        tip_area.Add(self.check_consent, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         tip_area.Add(self.image_tip, 1, wx.EXPAND, 0)
         tip_area.Add(self.text_tip, 3, wx.EXPAND, 0)
 
@@ -108,6 +117,7 @@ class TipPanel(wx.Panel):
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
 
+        self.check_consent.Bind(wx.EVT_CHECKBOX, self.on_check_consent)
         self.check_startup.Bind(wx.EVT_CHECKBOX, self.on_check_startup)
         self.button_prev.Bind(wx.EVT_BUTTON, self.on_tip_prev)
         self.button_next.Bind(wx.EVT_BUTTON, self.on_tip_next)
@@ -140,12 +150,12 @@ class TipPanel(wx.Panel):
             self.button_try.Show(False)
             self.tip_command = ""
         if my_tip[2]:
-            self.set_tip_image(my_tip[2], newvalue)
+            self.set_tip_image(my_tip[2], newvalue, self.context.tip_access_consent)
         else:
-            self.set_tip_image("", newvalue)
+            self.set_tip_image("", newvalue, self.context.tip_access_consent)
         self.Layout()
 
-    def set_tip_image(self, path, counter, display=True):
+    def set_tip_image(self, path, counter, automatic_download, display=True):
         """
         path: URL of the image to be loaded
         counter: an additional naming element to
@@ -166,26 +176,29 @@ class TipPanel(wx.Panel):
                     local_path = os.path.join(self.cache_dir, basename)
                     # Is this file already on the disk? If not load it...
                     if not os.path.exists(local_path):
-                        loaded = False
-                        opened = False
-                        try:
-                            with urllib.request.urlopen(path) as file:
-                                content = file.read()
-                                opened = True
-                        except (urllib.error.URLError, urllib.error.HTTPError) as e:
-                            # print (f"Error: {e}")
-                            pass
-                        # If the file object is successfully opened, read its content as a string
-                        if opened:
+                        if automatic_download:
+                            loaded = False
+                            opened = False
                             try:
-                                with open(local_path, "wb") as f:
-                                    f.write(content)
-                                    loaded = True
-                            except (OSError, PermissionError, RuntimeError) as e:
-                                # print (f"Error @ image write to {local_path}: {e}")
+                                with urllib.request.urlopen(path) as file:
+                                    content = file.read()
+                                    opened = True
+                            except (urllib.error.URLError, urllib.error.HTTPError) as e:
+                                # print (f"Error: {e}")
                                 pass
+                            # If the file object is successfully opened, read its content as a string
+                            if opened:
+                                try:
+                                    with open(local_path, "wb") as f:
+                                        f.write(content)
+                                        loaded = True
+                                except (OSError, PermissionError, RuntimeError) as e:
+                                    # print (f"Error @ image write to {local_path}: {e}")
+                                    pass
 
-                        found = loaded
+                            found = loaded
+                        else:
+                            self.check_consent.Show(True)
 
                     if display and local_path and os.path.exists(local_path):
                         bmp = wx.Bitmap()
@@ -226,6 +239,14 @@ class TipPanel(wx.Panel):
             else:
                 self.context(f"{self.tip_command}\n")
 
+    def on_check_consent(self, event):
+        state = self.check_consent.GetValue()
+        self.context.tip_access_consent = state
+        # Hide me again...
+        self.check_consent.Show(False)
+        # Force refresh
+        self.current_tip = self.current_tip
+
     def on_check_startup(self, event):
         state = self.check_startup.GetValue()
         self.context.show_tips = state
@@ -238,6 +259,10 @@ class TipPanel(wx.Panel):
 
     def setup_tips(self):
         self.tips.clear()
+        # This initial list of tips does contain only very basic and very limited tips
+        # and very intentional does not have any image resources from the web.
+        # The user has the opportunity to download more and more sophisticated tips
+        # by clicking the update button.
         self.tips.append(
             (
                 _(
@@ -263,18 +288,6 @@ class TipPanel(wx.Panel):
         self.tips.append(
             (
                 _(
-                    "MeerK40ts standard to load / save data is the svg-Format (supported by many tools like inkscape).\n"
-                    + "While it is supporting most of SVG functionalities, there are still some unsupported features (most notably advanced text effect, clips and gradients).\n"
-                    + "To overcome that limitation MeerK40t can automatically convert these features with the help of inkscape:\n"
-                    + "just set the 'Unsupported feature' option in the preference section to 'Ask at load time'"
-                ),
-                "window open Preferences\n",
-                "https://github.com/meerk40t/meerk40t/assets/2670784/741b4d31-2169-4dc7-93cc-818ed55e3eba",
-            ),
-        )
-        self.tips.append(
-            (
-                _(
                     "There are a couple of YouTube-videos that deal with some specific functionalities and explain their usage:\n"
                     + "https://www.youtube.com/channel/UCsAUV23O2FyKxC0HN7nkAQQ"
                 ),
@@ -292,6 +305,32 @@ class TipPanel(wx.Panel):
                 icon_youtube.GetBitmap(resize=200),
             )
         )
+        self.tips.append(
+            (
+                _("MeerK40t can create a so called outline around an element.\nJust select the element, right click on top of it to get the context menu and choose from the 'Outline elements' menu..."),
+                "rect 2cm 2cm 4cm 4cm fill black outline 2mm --steps 4 --outer stroke red",
+                icon_outline.GetBitmap(resize=200),
+            ),
+        )
+        self.tips.append(
+            (
+                _("MeerK40t has an extensive set of commands that allow a lot of scriptable actions.\nJust open the console window and type 'help'"),
+                "pane show console\nhelp",
+                icons8_console.GetBitmap(resize=200),
+            ),
+        )
+        self.tips.append(
+            (
+                _(
+                    "Do you want to see more Tips & Tricks?\n" +
+                    "Just click on the 'Update'-button to load additional hints from MeerK40ts website.\n" +
+                    "The list of tips is constantly expanded, so please update it every now and then to learn about new or hidden features."
+                ),
+                "",
+                icons8_light_on.GetBitmap(resize=200),
+            ),
+        )
+
 
         self.load_tips_from_local_cache()
 
@@ -302,7 +341,8 @@ class TipPanel(wx.Panel):
         # Load all images...
         for idx, tip in enumerate(self.tips):
             if tip[2]:
-                self.set_tip_image(tip[2], idx, display=False)
+                # As we are accessing the internet deliberately, we will download the pictures too
+                self.set_tip_image(tip[2], idx, True, display=False)
         new_count = len(self.tips)
         res = wx.MessageBox(
             message=_("Tips have been updated, {info} new entries found.").format(info=str(new_count - prev_count)),
@@ -392,11 +432,14 @@ class TipPanel(wx.Panel):
                 tip = ""
                 cmd = ""
                 img = ""
+                lastline_was_tip = False
                 for line in f:
                     cline = line.strip()
                     if cline.startswith("#") or len(cline) == 0:
                         continue
                     if cline.startswith("tip="):
+                        lastline_was_tip = True
+                        # Store previous
                         add_tip(tip, cmd, img, ver, myversion)
                         ver = ""
                         tip = ""
@@ -404,13 +447,21 @@ class TipPanel(wx.Panel):
                         img = ""
                         tip = cline[len("tip=") :]
                     elif cline.startswith("version="):
+                        lastline_was_tip = False
                         ver = cline[len("version=") :]
                     elif cline.startswith("cmd="):
+                        lastline_was_tip = False
                         cmd = cline[len("cmd=") :]
                     elif cline.startswith("image="):
+                        lastline_was_tip = False
                         img = cline[len("image=") :]
                     elif cline.startswith("img="):
+                        lastline_was_tip = False
                         img = cline[len("img="):]
+                    else:
+                        if lastline_was_tip:
+                            tip += "\n" + cline
+
                 # Something pending?
                 add_tip(tip, cmd, img, ver, myversion)
 

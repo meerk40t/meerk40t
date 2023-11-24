@@ -12,11 +12,9 @@
 # tip=That won't be visible for a while
 # version=1.0
 
-tip=MeerK40t can create a so called outline around an element.\nJust select the element, right click on top of it to get the context menu and choose from the "Outline elements" menu...
-cmd=rect 2cm 2cm 4cm 4cm fill black outline 2mm --steps 4 --outer stroke red
-
-tip=MeerK40t has an extensive set of commands that allow a lot of scriptable actions.\nJust open the console window and type help
-cmd=pane show console\nhelp
+tip=MeerK40ts standard to load / save data is the svg-Format (supported by many tools like inkscape).\nWhile it is supporting most of SVG functionalities, there are still some unsupported features (most notably advanced text effect, clips and gradients).\nTo overcome that limitation MeerK40t can automatically convert these features with the help of inkscape:\njust set the 'Unsupported feature' option in the preference section to 'Ask at load time'
+cmd=window open Preferences
+img=https://github.com/meerk40t/meerk40t/assets/2670784/741b4d31-2169-4dc7-93cc-818ed55e3eba
 
 tip=While you are moving your mouse when having selected a element-creation tool, you will see neighbouring points of interest being displayed and highlighted if they would be become a snapping target.\nNB: the snapping behaviour will be ignored if you press the shift-key, in this case the current mouse-position will be considered
 cmd=pane show snapoptions
