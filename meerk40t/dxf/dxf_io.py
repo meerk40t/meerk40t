@@ -462,7 +462,9 @@ class DXFProcessor:
             size = (size_img[0] * w_scale, size_img[1] * h_scale)
             imagedef = entity.image_def
             fname1 = imagedef.dxf.filename
-            fname2 = os.path.normpath(os.path.join(os.path.dirname(self.pathname), fname1))
+            fname2 = os.path.normpath(
+                os.path.join(os.path.dirname(self.pathname), fname1)
+            )
             candidates = [
                 fname1,
                 fname2,
@@ -471,7 +473,9 @@ class DXFProcessor:
             # So let's add another option
             if fname1.startswith("../"):
                 fname1 = "../" + fname1
-                fname2 = os.path.normpath(os.path.join(os.path.dirname(self.pathname), fname1))
+                fname2 = os.path.normpath(
+                    os.path.join(os.path.dirname(self.pathname), fname1)
+                )
                 candidates.append(fname1)
                 candidates.append(fname2)
 
@@ -494,14 +498,14 @@ class DXFProcessor:
 
             # Node.matrix is primary transformation.
             matrix = Matrix()
+            matrix.post_translate_x(x_pos)
+            matrix.post_translate_x(y_pos)
             matrix.post_scale(1, -1, x_pos, y_pos)
             matrix.post_scale(self.scale, -self.scale)
             matrix.post_translate_y(self.elements.device.view.unit_height)
             try:
                 node = context_node.add(
                     href=filename,
-                    x=x_pos,
-                    y=y_pos,
                     width=size[0],
                     height=size[1],
                     dpi=dpix,
