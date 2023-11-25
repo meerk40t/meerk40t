@@ -12,6 +12,7 @@ from meerk40t.gui.scene.sceneconst import (
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Point
 
+
 class PointListTool(ToolWidget):
     """
     This tool is a basic widget just compiling a list of points.
@@ -68,7 +69,6 @@ class PointListTool(ToolWidget):
             self.draw_points(gc, points)
             self.status_message(points)
 
-
     def draw_points(self, gc, points):
         # can be overloaded if needed
         gc.StrokeLines(points)
@@ -98,6 +98,7 @@ class PointListTool(ToolWidget):
         event_type=None,
         nearest_snap=None,
         modifiers=None,
+        keycode=None,
         **kwargs,
     ):
         response = RESPONSE_CHAIN
@@ -188,15 +189,23 @@ class PointListTool(ToolWidget):
             self.mouse_position = None
             self.scene.context.signal("statusmsg", "")
             self.aborted()
+        elif event_type == "key_up":
+            if not self.scene.pane.tool_active:
+                return RESPONSE_CHAIN
+            if self.key_up(keycode, modifiers):
+                response = RESPONSE_CONSUME
         elif update_required:
             self.scene.request_refresh()
             response = RESPONSE_CONSUME
         return response
 
-
     def aborted(self):
         # Can be overloaded
         return
+
+    def key_up(self, keycode, modifiers):
+        # No action, so pass along the code...
+        return False
 
     def point_added(self):
         # Can be overloaded
@@ -204,14 +213,16 @@ class PointListTool(ToolWidget):
         return
 
     def end_tool(self):
-        self.create_node()
+        followup = self.create_node()
         self.scene.pane.tool_active = False
         self.point_series = []
         self.mouse_position = None
         self.scene.request_refresh()
+        if followup:
+            self.scene.context(f"{followup}\n")
 
     def create_node(self):
-        print ("Needs to be overloaded!")
+        print("Needs to be overloaded!")
         # if len(self.point_series) > 1:
         #     polyline = Polyline(*self.point_series)
         #     elements = self.scene.context.elements
