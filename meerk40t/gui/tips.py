@@ -184,62 +184,61 @@ class TipPanel(wx.Panel):
         else:
             found = False
             if path and self.cache_dir:
-                parts = path.split("/")
-                if len(parts) > 0:
-                    basename = f"_{counter}_" + parts[-1]
-                    local_path = os.path.join(self.cache_dir, basename)
-                    # Is this file already on the disk? If not load it...
-                    if not os.path.exists(local_path):
-                        if automatic_download:
-                            loaded = False
-                            opened = False
+                # Hex-string of path-hash
+                basename = f"{hash(path):#x}"
+                local_path = os.path.join(self.cache_dir, basename)
+                # Is this file already on the disk? If not load it...
+                if not os.path.exists(local_path):
+                    if automatic_download:
+                        loaded = False
+                        opened = False
+                        try:
+                            with urllib.request.urlopen(path) as file:
+                                content = file.read()
+                                opened = True
+                        except (urllib.error.URLError, urllib.error.HTTPError) as e:
+                            # print (f"Error: {e}")
+                            pass
+                        # If the file object is successfully opened, read its content as a string
+                        if opened:
                             try:
-                                with urllib.request.urlopen(path) as file:
-                                    content = file.read()
-                                    opened = True
-                            except (urllib.error.URLError, urllib.error.HTTPError) as e:
-                                # print (f"Error: {e}")
+                                with open(local_path, "wb") as f:
+                                    f.write(content)
+                                    loaded = True
+                            except (OSError, PermissionError, RuntimeError) as e:
+                                # print (f"Error @ image write to {local_path}: {e}")
                                 pass
-                            # If the file object is successfully opened, read its content as a string
-                            if opened:
-                                try:
-                                    with open(local_path, "wb") as f:
-                                        f.write(content)
-                                        loaded = True
-                                except (OSError, PermissionError, RuntimeError) as e:
-                                    # print (f"Error @ image write to {local_path}: {e}")
-                                    pass
 
-                            found = loaded
-                        else:
-                            self.check_consent.Show(True)
+                        found = loaded
+                    else:
+                        self.check_consent.Show(True)
 
-                    if display and local_path and os.path.exists(local_path):
-                        bmp = wx.Bitmap()
-                        res = bmp.LoadFile(local_path)
-                        if res:
-                            new_x, new_y = bmp.Size
-                            img_size = self.image_tip.GetSize()
-                            if new_x > img_size[0] or new_y > img_size[1]:
-                                if new_x > img_size[0]:
-                                    fact = img_size[0] / new_x
-                                    new_y *= fact
-                                    new_x *= fact
-                                if new_y > img_size[1]:
-                                    fact = img_size[1] / new_y
-                                    new_y *= fact
-                                    new_x *= fact
-                                image = bmp.ConvertToImage()
-                                image.Rescale(int(new_x), int(new_y))
-                                bmp = wx.Bitmap(image)
+                if display and local_path and os.path.exists(local_path):
+                    bmp = wx.Bitmap()
+                    res = bmp.LoadFile(local_path)
+                    if res:
+                        new_x, new_y = bmp.Size
+                        img_size = self.image_tip.GetSize()
+                        if new_x > img_size[0] or new_y > img_size[1]:
+                            if new_x > img_size[0]:
+                                fact = img_size[0] / new_x
+                                new_y *= fact
+                                new_x *= fact
+                            if new_y > img_size[1]:
+                                fact = img_size[1] / new_y
+                                new_y *= fact
+                                new_x *= fact
+                            image = bmp.ConvertToImage()
+                            image.Rescale(int(new_x), int(new_y))
+                            bmp = wx.Bitmap(image)
 
-                            try:
-                                self.image_tip.SetScaleMode(wx.StaticBitmap.Scale_None)
-                            except AttributeError:
-                                # Old version of wxpython
-                                pass
-                            self.image_tip.SetBitmap(bmp)
-                            found = True
+                        try:
+                            self.image_tip.SetScaleMode(wx.StaticBitmap.Scale_None)
+                        except AttributeError:
+                            # Old version of wxpython
+                            pass
+                        self.image_tip.SetBitmap(bmp)
+                        found = True
             if display:
                 if found:
                     self.image_tip.Show(True)
