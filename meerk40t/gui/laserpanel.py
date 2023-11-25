@@ -1,3 +1,4 @@
+import platform
 import wx
 from wx import aui
 
@@ -93,7 +94,11 @@ def register_panel_laser(window, context):
 
     def on_resize(event):
         wb_size = jog_drag.ClientSize
-        panel_size = (wb_size[0] / 2, wb_size[1])
+        if platform.system()=="Linux":
+            # They don't resize well
+            panel_size = (max(20, wb_size[0] / 2 - 40), wb_size[1])
+        else:
+            panel_size = (wb_size[0] / 2, wb_size[1])
 
         jog_panel.set_icons(dimension=panel_size)
         drag_panel.set_icons(dimension=panel_size)
@@ -584,7 +589,10 @@ class LaserPanel(wx.Panel):
         self.context("estop\n")
 
     def on_button_outline(self, event):  # wxGlade: LaserPanel.<event_handler>
-        self.context("element* trace hull\n")
+        try:
+            self.context.device.outline()
+        except AttributeError:
+            self.context("element* trace hull\n")
 
     def on_button_outline_right(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("element* trace complex\n")

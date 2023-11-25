@@ -76,7 +76,6 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = 3 * iconsize + dx
     pane.control = dragpanel
-
     def on_drag_resize(event):
         panelsize = event.GetSize()
         dragpanel.set_icons(dimension=panelsize)
@@ -212,10 +211,10 @@ def register_panel_navigation(window, context):
     context.register("pane/jogdist", pane)
 
 
-_confined = True
+def get_movement(context, dx, dy):
+    device = context.device
+    _confined = context.confined
 
-
-def get_movement(device, dx, dy):
     try:
         current_x, current_y = device.current
     except AttributeError:
@@ -389,6 +388,7 @@ class Drag(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.context.setting(bool, "confined", True)
         self.SetHelpText("drag")
         self.icon_size = None
         self.resolution = 5
@@ -729,7 +729,7 @@ class Drag(wx.Panel):
                 return
         else:
             return
-        if _confined:
+        if self.context.confined:
             min_x = 0
             max_x = float(Length(self.context.device.view.width))
             min_y = 0
@@ -770,7 +770,7 @@ class Drag(wx.Panel):
         self.align_per_pos(4)
 
     def drag_relative(self, dx, dy):
-        nx, ny = get_movement(self.context.device, dx, dy)
+        nx, ny = get_movement(self.context, dx, dy)
         self.context(f"move_relative {nx} {ny}\ntranslate {nx} {ny}\n")
 
     def on_button_align_first_position(self, event=None):
@@ -897,6 +897,7 @@ class Jog(wx.Panel):
         context.setting(float, "button_repeat", 0.5)
         context.setting(bool, "button_accelerate", True)
         context.setting(str, "jog_amount", "10mm")
+        context.setting(bool, "confined", True)
         self.icon_size = None
         self.resolution = 5
         self.button_navigate_up_left = wx.BitmapButton(self, wx.ID_ANY)
@@ -1102,20 +1103,18 @@ class Jog(wx.Panel):
         self.move_rel(p1, p2)
 
     @property
-    def confined(self):
-        global _confined
-        return _confined
+    def is_confined(self):
+        return self.context.confined
 
-    @confined.setter
-    def confined(self, value):
-        global _confined
+    @is_confined.setter
+    def is_confined(self, value):
         # Let's see whether the device has a current option...
         try:
-            dummyx, dummy = self.context.device.current
+            dummy_x, dummy_y = self.context.device.current
         except AttributeError:
             value = False
 
-        _confined = value
+        self.context.confined = value
         if value == 0:
             self.button_confine.SetBitmap(
                 icon_fence_open.GetBitmap(
@@ -1136,12 +1135,12 @@ class Jog(wx.Panel):
             # self.context("confine 1")
 
     def on_button_confinement(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.confined = not self.confined
+        self.is_confined = not self.is_confined
         try:
             current_x, current_y = self.context.device.current
         except AttributeError:
-            self.confined = False
-        if self.confined:
+            self.is_confined = False
+        if self.is_confined:
             min_x = 0
             max_x = float(Length(self.context.device.view.width))
             min_y = 0
@@ -1155,7 +1154,7 @@ class Jog(wx.Panel):
                 )
 
     def move_rel(self, dx, dy):
-        nx, ny = get_movement(self.context.device, dx, dy)
+        nx, ny = get_movement(self.context, dx, dy)
         self.context(f".move_relative {nx} {ny}\n")
 
     def on_button_navigate_home(
@@ -2408,7 +2407,11 @@ class NavigationPanel(wx.Panel):
 
     def on_resize(self, event):
         wb_size = event.GetSize()
-        panel_size = (wb_size[0] / 3, wb_size[1])
+        if platform.system()=="Linux":
+            # They don't resize well
+            panel_size = (max(20, wb_size[0] / 3 - 60), wb_size[1])
+        else:
+            panel_size = (wb_size[0] / 3, wb_size[1])
         for panel in self.panels:
             if hasattr(panel, "set_icons"):
                 panel.set_icons(dimension=panel_size)

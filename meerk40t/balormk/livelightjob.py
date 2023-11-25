@@ -74,6 +74,11 @@ class LiveLightJob:
         if self.stopped:
             return True
         self.service.listen("emphasized", self.on_emphasis_changed)
+        self.service.listen("flip_x", self.on_emphasis_changed)
+        self.service.listen("flip_y", self.on_emphasis_changed)
+        self.service.listen("swap_xy", self.on_emphasis_changed)
+        self.service.listen("rotate", self.on_emphasis_changed)
+        self.service.listen("bedsize", self.on_emphasis_changed)
         self.time_started = time.time()
         self.started = True
         connection = driver.connection
@@ -87,6 +92,11 @@ class LiveLightJob:
         self.stopped = True
         self.runtime += time.time() - self.time_started
         self.service.unlisten("emphasized", self.on_emphasis_changed)
+        self.service.unlisten("flip_x", self.on_emphasis_changed)
+        self.service.unlisten("flip_y", self.on_emphasis_changed)
+        self.service.unlisten("swap_xy", self.on_emphasis_changed)
+        self.service.unlisten("rotate", self.on_emphasis_changed)
+        self.service.unlisten("bedsize", self.on_emphasis_changed)
         self.service.signal("light_simulate", False)
         if self.service.redlight_preferred:
             connection.light_on()
@@ -286,7 +296,7 @@ class LiveLightJob:
         delay_dark = self.service.delay_jump_long
         delay_between = self.service.delay_jump_short
 
-        points = list(geometry.as_interpolated_points(interpolate=self.quantization))
+        points = list(geometry.as_equal_interpolated_points(distance=self.quantization))
         move = True
         for i, e in enumerate(points):
             if self.stopped:
@@ -327,26 +337,31 @@ class LiveLightJob:
         @param elements:
         @return:
         """
-        elems = [n for n in elements if hasattr(n, "as_geometry")]
-        if not elems:
+        geometry = Geomstr()
+        for n in elements:
+            if hasattr(n, "as_geometry"):
+                geometry.append(n.as_geometry())
+            if hasattr(n, "as_image"):
+                nx, ny, mx, my = n.bounds
+                geometry.append(Geomstr.rect(nx, ny, mx - nx, my - ny))
+        if not geometry:
             # There are no elements, return a default crosshair.
             return self._crosshairs(con)
 
-        rotate = self._redlight_adjust_matrix()
-        for node in elems:
-            if self.stopped:
-                return False
-            if self.changed:
-                return True
-            geometry = Geomstr(node.as_geometry())
+        redlight_matrix = self._redlight_adjust_matrix()
+        if self.stopped:
+            return False
 
-            # Move to device space.
-            geometry.transform(self.service.view.matrix)
+        if self.changed:
+            return True
 
-            # Add redlight adjustments within device space.
-            geometry.transform(rotate)
+        # Move to device space.
+        geometry.transform(self.service.view.matrix)
 
-            self._light_geometry(con, geometry)
+        # Add redlight adjustments within device space.
+        geometry.transform(redlight_matrix)
+
+        self._light_geometry(con, geometry)
         if con.light_off():
             con.list_write_port()
         return True

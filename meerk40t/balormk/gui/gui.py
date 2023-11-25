@@ -15,6 +15,10 @@ def plugin(service, lifecycle):
             icons8_flash_on,
             icons8_light_off,
             icons8_light_on,
+            icon_balor_full,
+            icon_balor_hull,
+            icon_balor_bounds,
+            icon_balor_regmarks
         )
 
         from .balorconfig import BalorConfiguration
@@ -35,6 +39,7 @@ def plugin(service, lifecycle):
                 "label": _("Controller"),
                 "icon": icons8_connected,
                 "tip": _("Opens Controller Window"),
+                "help": "devicebalor",
                 "action": lambda e: service("window toggle Controller\n"),
             },
         )
@@ -44,6 +49,7 @@ def plugin(service, lifecycle):
                 "label": _("Config"),
                 "icon": icons8_computer_support,
                 "tip": _("Opens device-specific configuration window"),
+                "help": "devicebalor",
                 "action": lambda v: service("window toggle Configuration\n"),
             },
         )
@@ -59,39 +65,49 @@ def plugin(service, lifecycle):
                 "label": _("Galvo Light"),
                 "icon": icons8_light_on,
                 "tip": _("Runs outline on selection"),
+                "help": "devicebalor",
                 "identifier": "light_default",
                 "multi": [
                     {
                         "identifier": "live-full",
                         "label": _("Live Full"),
-                        "icon": icons8_computer_support,
+                        "icon": icon_balor_full,
+                        "help": "devicebalor",
                         "action": lambda e: service("full-light\n"),
                     },
                     {
                         "identifier": "live-regmark",
                         "label": _("Regmarks"),
-                        "icon": icons8_computer_support,
+                        "icon": icon_balor_regmarks,
+                        "help": "devicebalor",
                         "action": lambda e: service("regmark-light\n"),
                     },
                     {
                         "identifier": "live",
                         "label": _("Live Bounds"),
+                        "icon": icon_balor_bounds,
+                        "help": "devicebalor",
                         "action": lambda e: service("select-light\n"),
                     },
                     {
                         "identifier": "live-hull",
                         "label": _("Live Hull"),
-                        "icon": icons8_computer_support,
+                        "icon": icon_balor_hull,
+                        "help": "devicebalor",
                         "action": lambda e: service("hull-light\n"),
                     },
                     {
                         "identifier": "hull",
                         "label": _("Trace Hull"),
+                        "icon": icon_balor_hull,
+                        "help": "devicebalor",
                         "action": lambda e: service("element* geometry hull light\n"),
                     },
                     {
                         "identifier": "box",
                         "label": _("Trace Bounds"),
+                        "icon": icon_balor_bounds,
+                        "help": "devicebalor",
                         "action": lambda e: service("box light\n"),
                     },
                     # {
@@ -102,6 +118,8 @@ def plugin(service, lifecycle):
                     {
                         "identifier": "full",
                         "label": _("Trace Full"),
+                        "icon": icon_balor_full,
+                        "help": "devicebalor",
                         "action": lambda e: service("element* geometry light\n"),
                     },
                 ],
@@ -109,6 +127,7 @@ def plugin(service, lifecycle):
                     "label": _("Stop Tracing..."),
                     "icon": icons8_light_off,
                     "tip": _("Turn light off"),
+                    "help": "devicebalor",
                     "action": lambda v: service("stop\n"),
                     "signal": "light_simulate",
                 },
@@ -120,6 +139,7 @@ def plugin(service, lifecycle):
                 "label": _("Red Dot On"),
                 "icon": icons8_flash_on,
                 "tip": _("Turn Redlight On"),
+                "help": "devicebalor",
                 "action": lambda v: service("red on\n"),
                 "toggle": {
                     "label": _("Red Dot Off"),
@@ -134,6 +154,7 @@ def plugin(service, lifecycle):
                 "label": _("Center"),
                 "icon": icons8_center_of_gravity,
                 "tip": _("Center selection on laserbed"),
+                "help": "devicebalor",
                 "action": lambda v: service("align bed group xy center center\n"),
             },
         )

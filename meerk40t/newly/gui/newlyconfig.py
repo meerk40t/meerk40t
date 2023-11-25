@@ -14,6 +14,7 @@ class NewlyConfiguration(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(420, 570, *args, **kwds)
         self.context = self.context.device
+        self.SetHelpText("newlyconfig")
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools.GetBitmap())
         self.SetIcon(_icon)

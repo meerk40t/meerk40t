@@ -1037,6 +1037,9 @@ class Geomstr:
     def __iter__(self):
         return self.segments
 
+    def __bool__(self):
+        return self.index != 0
+
     def debug_me(self):
         # Provides information about the Geometry.
         def cplx_info(num):
@@ -1168,6 +1171,37 @@ class Geomstr:
         return obj
 
     @classmethod
+    def image(cls, pil_image, invert=False, vertical=False):
+        g = cls()
+        if pil_image.mode != "1":
+            pil_image = pil_image.convert("1")
+        if not invert:
+            # Invert is default, Black == 0 (False), White == 255 (True)
+            pil_image = pil_image.point(list(range(255, -1, -1)))
+        im = np.array(pil_image)
+        if vertical:
+            im = np.swapaxes(im, 0, 1)
+
+        a = np.pad(im, ((0, 0), (0, 1)), constant_values=0)
+        b = np.pad(im, ((0, 0), (1, 0)), constant_values=0)
+        starts = a & ~b
+        ends = ~a & b
+        sx, sy = np.nonzero(starts)
+        ex, ey = np.nonzero(ends)
+        if vertical:
+            starts = sx + sy * 1j
+            ends = ex + ey * 1j
+        else:
+            starts = sy + sx * 1j
+            ends = ey + ex * 1j
+        count = len(ex)
+        segments = np.dstack(
+            (starts, [0] * count, [TYPE_LINE] * count, [0] * count, ends)
+        )[0]
+        g.append_lines(segments)
+        return g
+
+    @classmethod
     def lines(cls, *points):
         path = cls()
         if not points:
@@ -1278,7 +1312,7 @@ class Geomstr:
 
     @classmethod
     def hull(cls, geom):
-        ipts = list(geom.as_interpolated_points(interpolate=50))
+        ipts = list(geom.as_equal_interpolated_points(distance=50))
         pts = list(Geomstr.convex_hull(None, ipts))
         if pts:
             pts.append(pts[0])
@@ -1489,6 +1523,15 @@ class Geomstr:
             yield segments
 
     def as_equal_interpolated_points(self, distance=100):
+        """
+        Regardless of specified distance this will always give the start and end points of each node within the
+        geometry. It will not duplicate the nodes if the start of one is the end of another. If the start and end
+        values do not line up, it will yield a None value to denote there is a broken path.
+
+        @param distance:
+        @return:
+        """
+
         at_start = True
         end = None
         for e in self.segments[: self.index]:
@@ -1504,18 +1547,24 @@ class Geomstr:
             end = e[4]
             if at_start:
                 yield start
-            at_start = False
-            if seg_type == TYPE_LINE:
-                yield end
+                at_start = False
+
+            if seg_type == TYPE_END:
+                at_start = True
                 continue
-            if seg_type == TYPE_QUAD:
+            elif seg_type == TYPE_LINE:
+                pass
+            elif seg_type == TYPE_QUAD:
                 ts = np.linspace(0, 1, 1000)
                 pts = self._quad_position(e, ts)
                 distances = np.abs(pts[:-1] - pts[1:])
                 distances = np.cumsum(distances)
                 max_distance = distances[-1]
                 dist_values = np.linspace(
-                    0, max_distance, int(np.ceil(max_distance / distance))
+                    0,
+                    max_distance,
+                    int(np.ceil(max_distance / distance)),
+                    endpoint=False,
                 )[1:]
                 near_t = np.searchsorted(distances, dist_values, side="right")
                 pts = pts[near_t]
@@ -1527,7 +1576,10 @@ class Geomstr:
                 distances = np.cumsum(distances)
                 max_distance = distances[-1]
                 dist_values = np.linspace(
-                    0, max_distance, int(np.ceil(max_distance / distance))
+                    0,
+                    max_distance,
+                    int(np.ceil(max_distance / distance)),
+                    endpoint=False,
                 )[1:]
                 near_t = np.searchsorted(distances, dist_values, side="right")
                 pts = pts[near_t]
@@ -1539,13 +1591,15 @@ class Geomstr:
                 distances = np.cumsum(distances)
                 max_distance = distances[-1]
                 dist_values = np.linspace(
-                    0, max_distance, int(np.ceil(max_distance / distance))
+                    0,
+                    max_distance,
+                    int(np.ceil(max_distance / distance)),
+                    endpoint=False,
                 )[1:]
                 near_t = np.searchsorted(distances, dist_values, side="right")
                 pts = pts[near_t]
                 yield from pts
-            elif seg_type == TYPE_END:
-                at_start = True
+            yield end
 
     def as_interpolated_segments(self, interpolate=100):
         """
@@ -1608,8 +1662,8 @@ class Geomstr:
             elif seg_type == TYPE_END:
                 at_start = True
 
-    def segmented(self, interpolate=100):
-        return Geomstr.lines(*self.as_interpolated_points(interpolate=interpolate))
+    def segmented(self, distance=50):
+        return Geomstr.lines(*self.as_equal_interpolated_points(distance=distance))
 
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:
@@ -2546,13 +2600,19 @@ class Geomstr:
         ).all(axis=2)
         yield from candidates[q[0]]
 
-    def length(self, e):
+    def length(self, e=None):
         """
         Returns the length of geom e.
 
         @param e:
         @return:
         """
+        if e is None:
+            total = 0
+            for i in range(self.index):
+                total += self.length(i)
+            return total
+
         line = self.segments[e]
         start, control1, info, control2, end = line
         if info.real == TYPE_LINE:
@@ -3524,7 +3584,7 @@ class Geomstr:
             count = len(x)
             pts = np.vstack((x, y, np.ones(count)))
             result = np.dot(m, pts)
-            return (result[0] / result[2] + 1j * result[1] / result[2])
+            return result[0] / result[2] + 1j * result[1] / result[2]
 
         segments = self.segments
         index = self.index
@@ -4644,7 +4704,7 @@ class Geomstr:
     def raw_length(self):
         """
         Determines the raw length of the geoms. Where length is taken as the distance
-        from start to end (ignoring any curving), real length would be greater than this
+        from start to end (ignoring any curving), real length could be greater than this
         but never less.
 
         @return:

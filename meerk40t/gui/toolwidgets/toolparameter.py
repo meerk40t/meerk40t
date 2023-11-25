@@ -253,6 +253,8 @@ class ParameterTool(ToolWidget):
         self.pin_box = SimpleCheckbox(-1, self.scene, 0, 0, _("Pin"))
         self.pinned = False
         self.is_moving = False
+        self.slider_size = 200
+
 
     def read_functions(self):
         self._functions.clear()
@@ -279,7 +281,7 @@ class ParameterTool(ToolWidget):
             return
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset = self.pt_offset / s
-        width = 100 / s
+        width = self.slider_size / s
         if self.pinned:
             x = offset
             y = offset + 3 * offset * (len(self.sliders) + 1)
@@ -339,7 +341,7 @@ class ParameterTool(ToolWidget):
                         if len(gui_info) > 2:
                             maxval = gui_info[2]
                 slider = SimpleSlider(
-                    p_idx, self.scene, minval, maxval, 0, 0, 100, info
+                    p_idx, self.scene, minval, maxval, 0, 0, self.slider_size, info
                 )
                 self.sliders.append(slider)
                 slider.value = parameters[idx + 1]
@@ -361,7 +363,7 @@ class ParameterTool(ToolWidget):
                             maxval = gui_info[2]
                 info = "% " + info
                 slider = SimpleSlider(
-                    p_idx, self.scene, minval, maxval, 0, 0, 100, info
+                    p_idx, self.scene, minval, maxval, 0, 0, self.slider_size, info
                 )
                 self.sliders.append(slider)
                 slider.value = int(100.0 * parameters[idx + 1])

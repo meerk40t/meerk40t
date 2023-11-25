@@ -135,7 +135,7 @@ class ElementLightJob:
         # Add redlight adjustments within device space.
         geometry.transform(rotate)
 
-        points = list(geometry.as_interpolated_points(interpolate=quantization))
+        points = list(geometry.as_equal_interpolated_points(distance=quantization))
         move = True
         for i, e in enumerate(points):
             if self.stopped:

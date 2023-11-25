@@ -23,6 +23,7 @@ class MoshiControllerPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context.device
+        self.SetHelpText("moshicontroller")
 
         self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         self.text_connection_status = wx.TextCtrl(

@@ -2226,7 +2226,7 @@ class ImageLoader:
             ) from e
         try:
             from PIL import ImageOps
-            ImageOps.exif_transpose(image, in_place=True)
+            image = ImageOps.exif_transpose(image)
         except ImportError:
             pass
         _dpi = DEFAULT_PPI

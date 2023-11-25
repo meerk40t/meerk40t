@@ -1,4 +1,4 @@
-from math import sin, sqrt, tan, tau
+from math import cos, sin, sqrt, tau
 
 import wx
 
@@ -6,24 +6,19 @@ from meerk40t.core.units import Angle, Length
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
     icon_crossing_star,
+    icon_growing,
     icon_mk_polygon,
     icon_polygon,
     icon_regular_star,
 )
-from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.scene.sceneconst import (
-    RESPONSE_ABORT,
-    RESPONSE_CHAIN,
-    RESPONSE_CONSUME,
-)
-from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
+from meerk40t.gui.toolwidgets.toolpointlistbuilder import PointListTool
 from meerk40t.kernel.kernel import Job
 from meerk40t.svgelements import Point, Polygon
 
 _ = wx.GetTranslation
 
 
-class PolygonTool(ToolWidget):
+class PolygonTool(PointListTool):
     """
     Polygon Drawing Tool.
 
@@ -31,18 +26,14 @@ class PolygonTool(ToolWidget):
     """
 
     def __init__(self, scene):
-        ToolWidget.__init__(self, scene)
-        self.start_position = None
-        self.point_series = []
-        self.mouse_position = None
-        # angle_snap indicates whether a line should be angle snapping
-        # False anything goes, True snaps to next 45° angle
-        self.angle_snap = False
+        PointListTool.__init__(self, scene)
+
         # design_mode
         # 0 - freehand polygon
         # 1 - regular polygon
         # 2 - star polygon
         # 3 - crossing star polygon
+        # 4 - growing polygon
         self.design_mode = 0
         self.define_buttons()
         # We need to wait a bit until all things have
@@ -60,7 +51,7 @@ class PolygonTool(ToolWidget):
         self.set_designmode(self.design_mode)
 
     def set_designmode(self, mode):
-        if mode < 0 or mode > 3:
+        if mode < 0 or mode > 4:
             mode = 0
         if mode != self.design_mode:
             self.design_mode = mode
@@ -91,7 +82,6 @@ class PolygonTool(ToolWidget):
                 "label": _("Regular"),
                 "icon": icon_polygon,
                 "tip": _("Draw a regular polygon (r)"),
-                "help": "polygon",
                 "action": lambda v: self.set_designmode(1),
                 "size": icon_size,
                 "group": "polygon",
@@ -126,281 +116,171 @@ class PolygonTool(ToolWidget):
             },
         )
 
-    def angled(self, pos):
-        points = list(self.point_series)
-        if self.angle_snap and len(points):
-            # What is the angle between mouse_pos and the last_position?
-            p1 = Point(points[-1][0], points[-1][1])
-            p2 = Point(pos[0], pos[1])
-            oldangle = p1.angle_to(p2)
-            dist = p1.distance_to(p2)
-            newangle = round(oldangle / tau * 8, 0) / 8 * tau
-            p3 = p1.polar(p1, newangle, dist)
-            pos = [p3.x, p3.y]
-        return pos
+        self.scene.context.kernel.register(
+            "button/secondarytool_polygon/tool_growingpoly",
+            {
+                "label": _("Grow"),
+                "icon": icon_growing,
+                "tip": _("Draw a growing polygon"),
+                "help": "polygon",
+                "action": lambda v: self.set_designmode(4),
+                "size": icon_size,
+                "group": "polygon",
+                "identifier": "polygon5",
+            },
+        )
 
-    def process_draw(self, gc: wx.GraphicsContext):
-        if self.point_series:
-            elements = self.scene.context.elements
-            if elements.default_stroke is None:
-                self.pen.SetColour(wx.BLUE)
-            else:
-                self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
-            gc.SetPen(self.pen)
-            if elements.default_fill is None:
-                gc.SetBrush(wx.TRANSPARENT_BRUSH)
-            else:
-                gc.SetBrush(
-                    wx.Brush(
-                        wx.Colour(swizzlecolor(elements.default_fill)),
-                        wx.BRUSHSTYLE_SOLID,
-                    )
-                )
-            s = ""
-            points = self.calculated_points(True)
-            gc.StrokeLines(points)
-            if self.design_mode == 0:
-                total_len = 0
-                for idx in range(1, len(points)):
-                    x0 = points[idx][0]
-                    y0 = points[idx][1]
-                    x1 = points[idx - 1][0]
-                    y1 = points[idx - 1][1]
-                    total_len += sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0))
-                    units = self.scene.context.units_name
-                    s = "Pts: {pts}, Len={a}".format(
-                        pts=len(points) - 1,
-                        a=Length(amount=total_len, digits=2, preferred_units=units),
-                    )
-            else:
-                s = _("Click on the first corner")
+    def draw_points(self, gc, points):
+        if len(points) > 2:
+            points.append((points[0][0], points[0][1]))
+        gc.StrokeLines(points)
 
-            self.scene.context.signal("statusmsg", s)
-
-    def calculated_points(self, closeit):
-        points = list(self.point_series)
-        if self.mouse_position is not None:
-            pos = self.angled(self.mouse_position)
-            points.append(pos)
-        tc = len(points)
-        if self.design_mode == 0:
-            pass
-        elif self.design_mode == 1:
-            number_points = tc
-            if number_points > 2:
-                # We have now enough information to create a regular polygon
-                # The first point is the center, the second point defines
-                # the start point, we just assume it's a regular triangle
-                # and hand over to another tool to let the user refine it
-                pt1 = Point(points[0])
-                pt2 = Point(points[1])
-                # print(
-                #     f"p1=({Length(pt1.x).length_mm}, {Length(pt1.y).length_mm}), p2=({Length(pt2.x).length_mm}, {Length(pt2.y).length_mm})"
-                # )
-                radius = pt1.distance_to(pt2)
-                startangle = pt1.angle_to(pt2)
-                corners = 3
-                command = f"shape {corners} {Length(pt1.x).length_mm} {Length(pt1.y).length_mm}"
-                command += f" {Length(radius).length_mm} -s {Angle(startangle, digits=2).angle_degrees}\n"
-                # print(command)
-                self.scene.context(command)
-                selected_node = self.scene.context.elements.first_element(
-                    emphasized=True
-                )
-                if selected_node is not None:
-                    self.end_tool()
-                    self.scene.context("tool parameter\n")
-        elif self.design_mode == 2:
-            number_points = tc
-            if number_points > 2:
-                # We have now enough information to create a star shape
-                # The first point is the center, the second point defines
-                # the start point, we just provide a good looking example
-                # and hand over to another tool
-                pt1 = Point(points[0])
-                pt2 = Point(points[1])
-                radius = pt1.distance_to(pt2)
-                startangle = pt1.angle_to(pt2)
-                corners = 16
-                inner = radius * 0.5
-                command = (
-                    f"shape {corners} {Length(pt1.x).length_mm} {Length(pt1.y).length_mm}"
-                    + f" {Length(radius).length_mm} -s {Angle(startangle, digits=2).angle_degrees}"
-                    + f" -r {Length(inner).length_mm}\n"
-                )
-                self.scene.context(command)
-                selected_node = self.scene.context.elements.first_element(
-                    emphasized=True
-                )
-                if selected_node is not None:
-                    self.end_tool()
-                    self.scene.context("tool parameter\n")
-        elif self.design_mode == 3:
-            number_points = tc
-            if number_points > 2:
-                # We have now enough information to create a star shape
-                # The first point is the center, the second point defines
-                # the start point, we just provide a good looking example
-                # and hand over to another tool
-                pt1 = Point(points[0])
-                pt2 = Point(points[1])
-                radius = pt1.distance_to(pt2)
-                startangle = pt1.angle_to(pt2)
-                corners = 8
-                density = 5
-                command = (
-                    f"shape {corners} {Length(pt1.x).length_mm} {Length(pt1.y).length_mm}"
-                    + f" {Length(radius).length_mm} -s {Angle(startangle, digits=2).angle_degrees}"
-                    + f" -d {density}\n"
-                )
-                self.scene.context(command)
-                selected_node = self.scene.context.elements.first_element(
-                    emphasized=True
-                )
-                if selected_node is not None:
-                    self.end_tool()
-                    self.scene.context("tool parameter\n")
-        # Close the polygon
-        if closeit:
-            points.append(points[0])
-        return points
-
-    def event(
-        self,
-        window_pos=None,
-        space_pos=None,
-        event_type=None,
-        nearest_snap=None,
-        modifiers=None,
-        keycode=None,
-        **kwargs,
-    ):
-        response = RESPONSE_CHAIN
-        update_required = False
-        if (
-            modifiers is None
-            or (event_type == "key_up" and "alt" in modifiers)
-            or ("alt" not in modifiers)
-        ):
-            if self.angle_snap:
-                self.angle_snap = False
-                update_required = True
-        else:
-            if not self.angle_snap:
-                self.angle_snap = True
-                update_required = True
-        if event_type == "leftclick":
-            if nearest_snap is None:
-                sx, sy = self.scene.get_snap_point(
-                    space_pos[0], space_pos[1], modifiers
-                )
-                pos = [sx, sy]
-            else:
-                pos = [nearest_snap[0], nearest_snap[1]]
-            pos = self.angled(pos)
-            self.point_series.append((pos[0], pos[1]))
-            response = RESPONSE_CONSUME
-            if (
-                len(self.point_series) > 2
-                and abs(
-                    complex(*self.point_series[0]) - complex(*self.point_series[-1])
-                )
-                < 5000
-            ):
-                self.end_tool()
-                response = RESPONSE_ABORT
-            if (
-                len(self.point_series) > 2
-                and abs(
-                    complex(*self.point_series[-2]) - complex(*self.point_series[-1])
-                )
-                < 5000
-                and self.design_mode == 0
-            ):
-                self.end_tool()
-                response = RESPONSE_ABORT
-            self.scene.pane.tool_active = True
-            response = RESPONSE_CONSUME
-        elif event_type == "rightdown":
-            was_already_empty = len(self.point_series) == 0
+    def point_added(self):
+        tc = len(self.point_series)
+        if tc >= 2 and self.design_mode == 1:
             self.end_tool()
-            if was_already_empty:
-                self.scene.context("tool none\n")
-            response = RESPONSE_ABORT
-        elif event_type == "leftdown":
-            self.scene.pane.tool_active = True
-            if nearest_snap is None:
-                self.mouse_position = space_pos[0], space_pos[1]
-            else:
-                self.mouse_position = nearest_snap[0], nearest_snap[1]
-            if self.point_series:
-                self.scene.request_refresh()
-            response = RESPONSE_CONSUME
-        elif event_type in ("leftup", "move", "hover"):
-            if nearest_snap is None:
-                self.mouse_position = space_pos[0], space_pos[1]
-            else:
-                self.mouse_position = nearest_snap[0], nearest_snap[1]
-            if self.point_series:
-                self.scene.request_refresh()
-                response = RESPONSE_CONSUME
-        elif event_type == "doubleclick":
+        elif tc >= 2 and self.design_mode == 2:
             self.end_tool()
-            response = RESPONSE_ABORT
-        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
-            if self.scene.pane.tool_active:
-                self.scene.pane.tool_active = False
-                self.scene.request_refresh()
-                response = RESPONSE_CONSUME
-            else:
-                response = RESPONSE_CHAIN
-            self.point_series = []
-            self.mouse_position = None
-        elif event_type == "key_up" and modifiers == "return":
+        elif tc >= 2 and self.design_mode == 3:
             self.end_tool()
-            response = RESPONSE_ABORT
-        elif event_type == "key_up":
-            if not self.scene.pane.tool_active:
-                return RESPONSE_CHAIN
-            # print(
-            #     f"key-up: {event_type}, modifiers: '{modifiers}', keycode: '{keycode}'"
-            # )
-            if keycode == "f":
-                # Freehand
-                self.set_designmode(0)
-            elif keycode == "r":
-                # Regular
-                self.set_designmode(1)
-            elif keycode in ("1", "s"):
-                # Star 1
-                self.set_designmode(2)
-            elif keycode in ("2", "p"):
-                # Star 2 / Pentagram
-                self.set_designmode(3)
+        elif tc >= 2 and self.design_mode == 4:
+            self.end_tool()
 
-            return RESPONSE_CONSUME
-        elif update_required:
-            self.scene.request_refresh()
-            response = RESPONSE_CONSUME
-        return response
+    def key_up(self, keycode, modifier):
+        result = False
+        if keycode == "f":
+            # Freehand
+            self.set_designmode(0)
+            result = True
+        elif keycode == "r":
+            # Regular
+            self.set_designmode(1)
+            result = True
+        elif keycode in ("1", "s"):
+            # Star 1
+            self.set_designmode(2)
+            result = True
+        elif keycode in ("2", "p"):
+            # Star 2 / Pentagram
+            self.set_designmode(3)
+            result = True
+        elif keycode == "g":
+            # Growing polygon
+            self.set_designmode(4)
+            result = True
+        return result
 
-    def end_tool(self):
-        if len(self.point_series) > 2:
-            lines = self.calculated_points(False)
-            polyline = Polygon(*lines)
-            elements = self.scene.context.elements
-            node = elements.elem_branch.add(
-                shape=polyline,
-                type="elem polyline",
-                stroke_width=elements.default_strokewidth,
-                stroke=elements.default_stroke,
-                fill=elements.default_fill,
+    def add_regular_node(self):
+        # We have now enough information to create a regular polygon
+        # The first point and the second point define an edge,
+        # we just assume it's a regular triangle
+        # and hand over to another tool to let the user refine it
+        corners = 3
+        pt1 = Point(self.point_series[0])
+        pt2 = Point(self.point_series[1])
+        # plus 60 degrees
+        angle = pt2.angle_to(pt1)
+        distance = pt1.distance_to(pt2)
+        tangle = angle - tau / 6
+        p3x = pt2.x + cos(tangle) * distance
+        p3y = pt2.y + sin(tangle) * distance
+        # points.append((p3x, p3y))
+        pt3 = Point(p3x, p3y)
+        cx = (pt1.x + pt2.x + pt3.x) / 3
+        cy = (pt1.y + pt2.y + pt3.y) / 3
+        center = Point(cx, cy)
+
+        radius = center.distance_to(pt1)
+        startangle = center.angle_to(pt1)
+        command = f"shape {corners} {Length(center.x, digits=3).length_mm} {Length(center.y, digits=3).length_mm}"
+        command += f" {Length(radius, digits=3).length_mm} -s {Angle(startangle, digits=2).angle_degrees}\n"
+        self.scene.context(command)
+        selected_node = self.scene.context.elements.first_element(emphasized=True)
+        if selected_node is not None:
+            return "tool parameter"
+
+    def add_star_node(self, mode):
+        # We have now enough information to create a regular polygon
+        # The first point is the center, the second point defines
+        # the start point, we just assume it's a regular triangle
+        # and hand over to another tool to let the user refine it
+        # We have now enough information to create a star shape
+        # The first point is the center, the second point defines
+        # the start point, we just provide a good looking example
+        # and hand over to another tool
+        pt1 = Point(self.point_series[0])
+        pt2 = Point(self.point_series[1])
+        radius = pt1.distance_to(pt2)
+        startangle = pt1.angle_to(pt2)
+        if mode == 1:
+            corners = 16
+            inner = radius * 0.5
+            command = (
+                f"shape {corners} {Length(pt1.x).length_mm} {Length(pt1.y).length_mm}"
+                + f" {Length(radius).length_mm} -s {Angle(startangle, digits=2).angle_degrees}"
+                + f" -r {Length(inner).length_mm}\n"
             )
-            if elements.classify_new:
-                elements.classify([node])
-            self.notify_created(node)
-        self.scene.pane.tool_active = False
-        self.point_series = []
-        self.mouse_position = None
+        else:
+            corners = 8
+            density = 5
+            command = (
+                f"shape {corners} {Length(pt1.x).length_mm} {Length(pt1.y).length_mm}"
+                + f" {Length(radius).length_mm} -s {Angle(startangle, digits=2).angle_degrees}"
+                + f" -d {density}\n"
+            )
+        self.scene.context(command)
+        selected_node = self.scene.context.elements.first_element(emphasized=True)
+        if selected_node is not None:
+            return "tool parameter"
 
-        self.scene.request_refresh()
+    def add_growing_node(self):
+        # We have now enough information to create a regular polygon
+        # The first point is the center, the second point defines
+        # the start point, we just assume it's a regular triangle
+        # and hand over to another tool to let the user refine it
+        corners = 3
+        iterations = 10
+        gap = 4
+        pt1 = Point(self.point_series[0])
+        pt2 = Point(self.point_series[1])
+        side = pt1.distance_to(pt2)
+        angle = pt1.angle_to(pt2)
+        command = f"growingshape {Length(pt1.x, digits=3).length_mm} {Length(pt1.y, digits=3).length_mm}"
+        command += f" {corners} {iterations} {Length(side, digits=3).length_mm}"
+        command += f" -a {Angle(angle, digits=2).angle_degrees}"
+        command += f" -g {gap}\n"
+        self.scene.context(command)
+        selected_node = self.scene.context.elements.first_element(emphasized=True)
+        if selected_node is not None:
+            return "tool parameter"
+
+    def add_freehand_node(self):
+        lines = list(self.point_series)
+        polyline = Polygon(*lines)
+        elements = self.scene.context.elements
+        node = elements.elem_branch.add(
+            shape=polyline,
+            type="elem polyline",
+            stroke_width=elements.default_strokewidth,
+            stroke=elements.default_stroke,
+            fill=elements.default_fill,
+        )
+        if elements.classify_new:
+            elements.classify([node])
+        self.notify_created(node)
+
+    def create_node(self):
+        if len(self.point_series) < 2:
+            return None
+        followup = None
+        if self.design_mode == 0:
+            followup = self.add_freehand_node()
+        elif self.design_mode == 1:
+            followup = self.add_regular_node()
+        elif self.design_mode == 2:
+            followup = self.add_star_node(1)
+        elif self.design_mode == 3:
+            followup = self.add_star_node(2)
+        elif self.design_mode == 4:
+            followup = self.add_growing_node()
+        return followup

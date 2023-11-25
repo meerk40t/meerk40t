@@ -91,6 +91,9 @@ class PolylineNode(Node, Stroked, FunctionalParameter):
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
+    def __len__(self):
+        return len(self.geometry)
+
     @property
     def shape(self):
         if self.closed:
@@ -171,6 +174,11 @@ class PolylineNode(Node, Stroked, FunctionalParameter):
                 ymax + delta,
             )
         return xmin, ymin, xmax, ymax
+
+    def length(self):
+        geometry = self.as_geometry()
+        # Polylines have length === raw_length
+        return geometry.raw_length()
 
     def preprocess(self, context, matrix, plan):
         self.stroke_scaled = False

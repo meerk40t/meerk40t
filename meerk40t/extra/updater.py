@@ -77,15 +77,18 @@ def plugin(kernel, lifecycle):
         )
         @context.console_option(
             "verbosity",
-            "p",
+            "v",
             type=int,
             help="Show Info: 0 never, 1 console only, 2 if version found, 3 always",
+        )
+        @context.console_option(
+            "force", "f", type=bool, action="store_true", help=_("Force a found message")
         )
         @kernel.console_command(
             "check_for_updates",
             help=_("Check whether a newer version of Meerk40t is available"),
         )
-        def check_for_updates(channel, _, beta=None, verbosity=None, **kwargs):
+        def check_for_updates(channel, _, beta=None, verbosity=None, force=None, **kwargs):
             """
             This command checks for updates and outputs the results to the console.
 
@@ -171,11 +174,11 @@ def plugin(kernel, lifecycle):
                 if candidate_version is not None and isinstance(
                     candidate_version, (list, tuple)
                 ):
-                    sub_cand = candidate_version[0:3]
+                    sub_cand = list(candidate_version[0:3])
                 if reference_version is not None and isinstance(
                     reference_version, (list, tuple)
                 ):
-                    sub_ref = reference_version[0:3]
+                    sub_ref = list(reference_version[0:3])
                 # print (sub_cand, sub_ref, bool(sub_cand > sub_ref))
                 try:
                     if sub_cand > sub_ref:
@@ -186,10 +189,12 @@ def plugin(kernel, lifecycle):
                 # print (f"Comparing {candidate_version} vs {reference_version}: {is_newer}")
                 return is_newer
 
-            def update_check(verbosity=None, beta=None):
+            def update_check(verbosity=None, beta=None, force=None):
                 def update_test(*args):
                     version_current = comparable_version(kernel.version)
                     # print (f"Current version: {version_current}")
+                    if force:
+                        version_current = (0, 0, 0, 0)
                     is_a_beta = version_current[3]
                     if beta:
                         url = GITHUB_RELEASES
@@ -338,6 +343,7 @@ def plugin(kernel, lifecycle):
                             channel(message_header + "\n" + message_body)
                         newest_message_header = message_header
                         newest_message_body = message_body
+                    # print (f"Something: {something}, verbosity={verbosity}")
                     has_wx = False
                     try:
                         import wx
@@ -439,12 +445,14 @@ def plugin(kernel, lifecycle):
                     beta = False
                 if verbosity is None:
                     verbosity = 1
+                if force is None:
+                    force = False
                 return update_test
 
             from meerk40t.kernel.kernel import Job
 
             _job = Job(
-                process=update_check(verbosity, beta),
+                process=update_check(verbosity, beta, force),
                 job_name="update_check_job",
                 interval=0.01,
                 times=1,
