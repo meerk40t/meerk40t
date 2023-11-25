@@ -43,6 +43,7 @@ from .icons import (  # icon_duplicate,
     icon_hatch_bidir,
     icon_hatch_diag_bidir,
     # icon_nohatch,
+    icon_line,
     icon_meerk40t,
     icon_mk_align_bottom,
     icon_mk_align_left,
@@ -1158,6 +1159,14 @@ class MeerK40t(MWindow):
                     break
             return result
 
+        def contains_moveable_nodes():
+            result = False
+            for e in kernel.elements.elems(emphasized=True):
+                if hasattr(e, "as_geometry"):
+                    result = True
+                    break
+            return result
+
         def contains_a_path():
             result = False
             for e in kernel.elements.elems(emphasized=True):
@@ -1227,6 +1236,12 @@ class MeerK40t(MWindow):
         #         "identifier": "nodemove",
         #     },
         # )
+        def finger_tool():
+            if contains_a_param():
+                kernel.elements("tool parameter\n")
+            elif contains_moveable_nodes():
+                kernel.elements("tool pointmove\n")
+
         kernel.register(
             "button/select/Parameter",
             {
@@ -1234,11 +1249,11 @@ class MeerK40t(MWindow):
                 "icon": icons8_finger,
                 "tip": _("Parametric edit of a shape"),
                 "help": "parametric",
-                "action": lambda v: kernel.elements("tool parameter\n"),
+                "action": lambda v: finger_tool(),
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "parameter",
-                "rule_enabled": lambda cond: contains_a_param(),
+                "rule_enabled": lambda cond: contains_a_param() or contains_moveable_nodes(),
             },
         )
         kernel.register(
@@ -1334,6 +1349,20 @@ class MeerK40t(MWindow):
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "placement",
+            },
+        )
+
+        kernel.register(
+            "button/tools/line",
+            {
+                "label": _("Line"),
+                "icon": icon_line,
+                "tip": _("Add a simple line element"),
+                "help": "basicshapes",
+                "action": lambda v: kernel.elements("tool line\n"),
+                "group": "tool",
+                "size": bsize_normal,
+                "identifier": "line",
             },
         )
 

@@ -40,6 +40,7 @@ from meerk40t.gui.toolwidgets.toollinetext import LineTextTool
 from meerk40t.gui.toolwidgets.toolmeasure import MeasureTool
 from meerk40t.gui.toolwidgets.toolnodeedit import EditTool
 from meerk40t.gui.toolwidgets.toolnodemove import NodeMoveTool
+from meerk40t.gui.toolwidgets.toolpointmove import PointMoveTool
 from meerk40t.gui.toolwidgets.toolparameter import ParameterTool
 from meerk40t.gui.toolwidgets.toolplacement import PlacementTool
 from meerk40t.gui.toolwidgets.toolpoint import PointTool
@@ -224,6 +225,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/edit", EditTool)
         context.register("tool/placement", PlacementTool)
         context.register("tool/nodemove", NodeMoveTool)
+        context.register("tool/pointmove", PointMoveTool)
         context.register("tool/parameter", ParameterTool)
         context.register("tool/imagecut", ImageCutTool)
 
