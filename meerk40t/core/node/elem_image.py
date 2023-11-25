@@ -64,14 +64,19 @@ class ImageNode(Node):
                 self.image = PILImage.open(self.href)
                 if hasattr(self, "x"):
                     self.matrix.post_translate_x(self.x)
+                    delattr(self, "x")
                 if hasattr(self, "y"):
                     self.matrix.post_translate_x(self.y)
+                    delattr(self, "y")
                 real_width, real_height = self.image.size
                 declared_width, declared_height = real_width, real_height
                 if hasattr(self, "width"):
                     declared_width = self.width
+                    delattr(self, "width")
+
                 if hasattr(self, "height"):
                     declared_height = self.height
+                    delattr(self, "height")
                 try:
                     sx = declared_width / real_width
                     sy = declared_height / real_height
@@ -79,10 +84,7 @@ class ImageNode(Node):
                 except ZeroDivisionError:
                     pass
                 delattr(self, "href")
-                delattr(self, "x")
-                delattr(self, "y")
-                delattr(self, "height")
-                delattr(self, "width")
+
             except ImportError:
                 self.image = None
 
