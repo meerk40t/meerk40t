@@ -19,7 +19,13 @@ class PointListTool(ToolWidget):
     It aims to centralise the usual logic around adding points
     It even has a minimal display logic that draws the polyline
     of the given points. Any inherited class should just
-    overload the draw routine.
+    overload the draw routine and fill the create_node routine.
+    The following caller routines are available:
+    point_added(self): just a note that another point was added (self.point_series)
+    create_node(self): a call that should pickup the points and create an element
+    aborted(self): a note that the creation was aborted, in case you need to tidy up something
+    status_message(points): this routine should give back a string that will be displayed in the status bar
+
     """
 
     def __init__(self, scene):
@@ -67,29 +73,9 @@ class PointListTool(ToolWidget):
                 points.append(pos)
 
             self.draw_points(gc, points)
-            self.status_message(points)
-
-    def draw_points(self, gc, points):
-        # can be overloaded if needed
-        gc.StrokeLines(points)
-
-    def status_message(self, points):
-        x0 = points[-2][0]
-        y0 = points[-2][1]
-        x1 = points[-1][0]
-        y1 = points[-1][1]
-        units = self.scene.context.units_name
-        s = "Pts: {pts}, to last point: O=({cx}, {cy}), d={a}".format(
-            pts=len(points),
-            cx=Length(amount=x0, digits=2, preferred_units=units),
-            cy=Length(amount=y0, digits=2, preferred_units=units),
-            a=Length(
-                amount=sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0)),
-                digits=2,
-                preferred_units=units,
-            ),
-        )
-        self.scene.context.signal("statusmsg", s)
+            msg = self.status_message(points)
+            if msg is not None:
+                self.scene.context.signal("statusmsg", msg)
 
     def event(
         self,
@@ -199,19 +185,6 @@ class PointListTool(ToolWidget):
             response = RESPONSE_CONSUME
         return response
 
-    def aborted(self):
-        # Can be overloaded
-        return
-
-    def key_up(self, keycode, modifiers):
-        # No action, so pass along the code...
-        return False
-
-    def point_added(self):
-        # Can be overloaded
-        # self.point_series does contain the list of valid points
-        return
-
     def end_tool(self):
         followup = self.create_node()
         self.scene.pane.tool_active = False
@@ -221,18 +194,96 @@ class PointListTool(ToolWidget):
         if followup:
             self.scene.context(f"{followup}\n")
 
+    # Routines that can be overloaded -------------------
+
+    def draw_points(self, gc, points):
+        """
+        Can be overloaded if needed.
+        Draws the shape on a given GraphicContexts,
+        points do contain the already gathered points,
+        including the mouse_position as last point
+        """
+        gc.StrokeLines(points)
+
+    def status_message(self, points):
+        """
+        Can be overloaded if needed.
+        Returns the to be displayed
+        string for the statusbar.
+        """
+        x0 = points[-2][0]
+        y0 = points[-2][1]
+        x1 = points[-1][0]
+        y1 = points[-1][1]
+        units = self.scene.context.units_name
+        msg = "Pts: {pts}, to last point: O=({cx}, {cy}), d={a}".format(
+            pts=len(points),
+            cx=Length(amount=x0, digits=2, preferred_units=units),
+            cy=Length(amount=y0, digits=2, preferred_units=units),
+            a=Length(
+                amount=sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0)),
+                digits=2,
+                preferred_units=units,
+            ),
+        )
+        return msg
+
+    def aborted(self):
+        """
+        Can be overloaded if needed.
+        Will be called if the user aborts the creation.
+        """
+        return
+
+    def key_up(self, keycode, modifiers):
+        """
+        Can be overloaded if needed.
+        Contains keycode and modifiers of the Widget event
+        in case you want to do something with that information.
+        Needs to return True if you consumed the keystroke
+        """
+        return False
+
+    def point_added(self):
+        """
+        Can be overloaded if needed.
+        Called whenever a new point was added:
+        self.point_series does contain the list of valid points.
+        If e.g. you just need two points then the code should look
+        like this:
+            def point_added(self):
+                if len(self.point_series) > 1: # two points (or more)
+                    # That's enough for my purpose
+                    self.end_tool()
+        """
+        return
+
+
     def create_node(self):
-        print("Needs to be overloaded!")
-        # if len(self.point_series) > 1:
-        #     polyline = Polyline(*self.point_series)
-        #     elements = self.scene.context.elements
-        #     node = elements.elem_branch.add(
-        #         shape=polyline,
-        #         type="elem polyline",
-        #         stroke_width=elements.default_strokewidth,
-        #         stroke=elements.default_stroke,
-        #         fill=elements.default_fill,
-        #     )
-        #     if elements.classify_new:
-        #         elements.classify([node])
-        #     self.notify_created(node)
+        """
+        This routine needs to be overloaded - this is the only
+        mandatory one. To make sure you really notice it we
+        will raise an error!
+        The routine should pickup the points in self.point_series
+        and create a new element. If you want a followup action
+        to be executed at the end (e.g. you immediately want to
+        fall back to the selection tool), then provide a command
+        string to be done as a function result.
+        Example code:
+            def create_node(self):
+                if len(self.point_series) > 1:
+                    polyline = Polyline(*self.point_series)
+                    elements = self.scene.context.elements
+                    node = elements.elem_branch.add(
+                        shape=polyline,
+                        type="elem polyline",
+                        stroke_width=elements.default_strokewidth,
+                        stroke=elements.default_stroke,
+                        fill=elements.default_fill,
+                    )
+                    if elements.classify_new:
+                        elements.classify([node])
+                    self.notify_created(node)
+                return "tool none"
+        """
+        raise NotImplementedError
