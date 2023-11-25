@@ -456,10 +456,10 @@ class DXFProcessor:
             return
         elif entity.dxftype() == "IMAGE":
             bottom_left_position = entity.dxf.insert
-            size = entity.dxf.image_size
+            size_img = entity.dxf.image_size
             w_scale = entity.dxf.u_pixel[0]
             h_scale = entity.dxf.v_pixel[1]
-            size = (size[0] * w_scale, size[1] * h_scale)
+            size = (size_img[0] * w_scale, size_img[1] * h_scale)
             imagedef = entity.image_def
             fname1 = imagedef.dxf.filename
             fname2 = os.path.normpath(os.path.join(os.path.dirname(self.pathname), fname1))
@@ -484,25 +484,38 @@ class DXFProcessor:
             if not was_found:
                 return
 
+            x_pos = bottom_left_position[0]
+            y_pos = bottom_left_position[1]
+            dxf_units_per_inch = self.scale / UNITS_PER_INCH
+            width_in_inches = size[0] * dxf_units_per_inch
+            height_in_inches = size[1] * dxf_units_per_inch
+            dpix = size_img[0] / width_in_inches
+            dpiy = size_img[1] / height_in_inches
+
+            # Node.matrix is primary transformation.
+            matrix = Matrix()
+            matrix.post_scale(1, -1, x_pos, y_pos)
+            matrix.post_scale(self.scale, -self.scale)
+            matrix.post_translate_y(self.elements.device.view.unit_height)
             try:
                 node = context_node.add(
                     href=filename,
-                    x=bottom_left_position[0],
-                    y=bottom_left_position[1] - size[1],
+                    x=x_pos,
+                    y=y_pos,
                     width=size[0],
                     height=size[1],
+                    dpi=dpix,
+                    matrix=matrix,
                     type="elem image",
                 )
             except FileNotFoundError:
                 return
             try:
                 from PIL import ImageOps
+
                 node.image = ImageOps.exif_transpose(node.image)
             except ImportError:
                 pass
-            # Node.matrix is primary transformation.
-            node.matrix.post_scale(self.scale, -self.scale)
-            node.matrix.post_translate_y(self.elements.device.view.unit_height)
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
