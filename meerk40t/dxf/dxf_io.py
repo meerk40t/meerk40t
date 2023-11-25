@@ -458,11 +458,27 @@ class DXFProcessor:
             bottom_left_position = entity.dxf.insert
             size = entity.dxf.image_size
             imagedef = entity.image_def
-            filename = imagedef.dxf.filename
-            if not os.path.exists(filename) or os.path.isdir(filename):
-                filename = os.path.join(os.path.dirname(self.pathname), filename)
-            if not os.path.exists(filename) or os.path.isdir(filename):
-                # Image def refers to a path that does not exist.
+            fname1 = imagedef.dxf.filename
+            fname2 = os.path.normpath(os.path.join(os.path.dirname(self.pathname), fname1))
+            candidates = [
+                fname1,
+                fname2,
+            ]
+            # LibreCad 2 has a bug - it stores the relative path with a '../' too few
+            # So let's add another option
+            if fname1.startswith("../"):
+                fname1 = "../" + fname1
+                fname2 = os.path.normpath(os.path.join(os.path.dirname(self.pathname), fname1))
+                candidates.append(fname1)
+                candidates.append(fname2)
+
+            was_found = False
+            for filename in candidates:
+                if not os.path.exists(filename) or os.path.isdir(filename):
+                    continue
+                was_found = True
+                break
+            if not was_found:
                 return
 
             try:
@@ -496,6 +512,7 @@ class DXFProcessor:
                 stroke_scaled=False,
                 type="elem text",
             )
+            node.matrix.post_scale(1, -1, insert[0], insert[1])
             node.matrix.post_scale(self.scale, -self.scale)
             node.matrix.post_translate_y(self.elements.device.view.unit_height)
 
@@ -511,6 +528,7 @@ class DXFProcessor:
                 stroke_scaled=False,
                 type="elem text",
             )
+            node.matrix.post_scale(1, -1, insert[0], insert[1])
             node.matrix.post_scale(self.scale, -self.scale)
             node.matrix.post_translate_y(self.elements.device.view.unit_height)
             self.check_for_attributes(node, entity)
