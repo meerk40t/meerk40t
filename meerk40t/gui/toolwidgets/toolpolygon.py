@@ -87,19 +87,6 @@ class PolygonTool(ToolWidget):
             },
         )
 
-        self.scene.context.kernel.register(
-            "button/secondarytool_polygon/tool_polygon",
-            {
-                "label": _("Regular"),
-                "icon": icon_polygon,
-                "tip": _("Draw a regular polygon (r)"),
-                "help": "polygon",
-                "action": lambda v: self.set_designmode(1),
-                "size": icon_size,
-                "group": "polygon",
-                "identifier": "polygon2",
-            },
-        )
 
         self.scene.context.kernel.register(
             "button/secondarytool_polygon/tool_star1",
