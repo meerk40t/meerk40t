@@ -1178,8 +1178,14 @@ class TestGeomstr(unittest.TestCase):
             pass
 
     def test_cag_union(self):
-        g = Geomstr.rect(0, 0, 100, 100, settings=0)
-        g.append(Geomstr.rect(50, 50, 100, 100, settings=1))
+        # g = Geomstr.rect(0, 0, 100, 100, settings=0)
+        # g.transform(Matrix.skew(0.002))
+        # g.append(Geomstr.rect(50, 50, 100, 100, settings=1))
+        g = Geomstr()
+        g.line(complex(0,0), complex(100,0), 0)
+        # g.line(complex(0,-50), complex(50,-1), 1)
+        g.line(complex(50,-1), complex(50,1), 1)
+        # g.line(complex(50,1), complex(100,50), 1)
         bt = BeamTable(g)
         bt.compute_beam_brute()
         q = bt.union(0, 1)
