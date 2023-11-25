@@ -76,7 +76,6 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = 3 * iconsize + dx
     pane.control = dragpanel
-
     def on_drag_resize(event):
         panelsize = event.GetSize()
         dragpanel.set_icons(dimension=panelsize)
@@ -2408,7 +2407,11 @@ class NavigationPanel(wx.Panel):
 
     def on_resize(self, event):
         wb_size = event.GetSize()
-        panel_size = (wb_size[0] / 3, wb_size[1])
+        if platform.system()=="Linux":
+            # They don't resize well
+            panel_size = (max(20, wb_size[0] / 3 - 60), wb_size[1])
+        else:
+            panel_size = (wb_size[0] / 3, wb_size[1])
         for panel in self.panels:
             if hasattr(panel, "set_icons"):
                 panel.set_icons(dimension=panel_size)
