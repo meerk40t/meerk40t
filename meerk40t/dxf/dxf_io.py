@@ -457,6 +457,9 @@ class DXFProcessor:
         elif entity.dxftype() == "IMAGE":
             bottom_left_position = entity.dxf.insert
             size = entity.dxf.image_size
+            w_scale = entity.dxf.u_pixel[0]
+            h_scale = entity.dxf.v_pixel[1]
+            size = (size[0] * w_scale, size[1] * h_scale)
             imagedef = entity.image_def
             fname1 = imagedef.dxf.filename
             fname2 = os.path.normpath(os.path.join(os.path.dirname(self.pathname), fname1))
