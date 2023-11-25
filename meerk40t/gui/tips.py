@@ -46,10 +46,11 @@ class TipPanel(wx.Panel):
 
         self.setup_tips()
         self.context.setting(bool, "show_tips", True)
-        # Has the user already agreed to download an image automatically
+        # Has the user already agreed to download automatically
         # if it can't be found? Defaults to False - please note that the
         # consent will be set to False by default
-        self.context.setting(bool, "tip_access_consent", False)
+        consent = self.context.setting(bool, "tip_access_consent", False)
+
         # Reset for debug purposes
         # self.context.tip_access_consent = False
         self.SetHelpText("tips")
@@ -58,23 +59,22 @@ class TipPanel(wx.Panel):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.image_tip = wx.StaticBitmap(self, wx.ID_ANY, style=wx.SB_FLAT)
         self.image_tip.SetMinSize(wx.Size(250, -1))
-        self.check_consent = wx.CheckBox(
-            self, wx.ID_ANY, _("Image missing!\nRetrieve automatically?")
+        self.no_image_message = wx.TextCtrl(
+            self, wx.ID_ANY, _("Image missing!")
         )
-        self.check_consent.SetToolTip(
+        self.no_image_message.SetToolTip(
             _(
-                "Couldn't find the cached image for this tip!\nShall MeerK40t try to download such missing images from the internet?"
+                "Couldn't find the cached image for this tip!\nNo permissions to download from the internet."
             )
         )
-        self.check_consent.SetValue(self.context.tip_access_consent)
-        self.check_consent.Show(False)
+        self.no_image_message.Show(False)
         # self.image_tip.SetMaxSize(wx.Size(250, -1))
         # self.image_tip.SetSize(wx.Size(250, -1))
         self.text_tip = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         tip_area = wx.BoxSizer(wx.HORIZONTAL)
-        tip_area.Add(self.check_consent, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        tip_area.Add(self.no_image_message, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         tip_area.Add(self.image_tip, 1, wx.EXPAND, 0)
         tip_area.Add(self.text_tip, 3, wx.EXPAND, 0)
 
@@ -84,13 +84,15 @@ class TipPanel(wx.Panel):
         self.button_prev.SetBitmap(icons8_circled_left.GetBitmap(resize=icon_size[0]))
         self.button_prev.SetToolTip(_("Jump back to the previously displayed tip"))
 
+        self.label_position = wx.StaticText(self, wx.ID_ANY, "", style=wx.ALIGN_CENTRE_HORIZONTAL)
+
         self.button_next = wx.Button(self, wx.ID_ANY, _("Next tip"))
         self.button_next.SetBitmap(icons8_circled_right.GetBitmap(resize=icon_size[0]))
         self.button_next.SetToolTip(_("Jump to the previously displayed tip"))
 
-        button_sizer.Add(self.button_prev, 0, wx.ALIGN_CENTER_VERTICAL)
-        button_sizer.AddStretchSpacer()
-        button_sizer.Add(self.button_next, 0, wx.ALIGN_CENTER_VERTICAL)
+        button_sizer.Add(self.button_prev, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        button_sizer.Add(self.label_position, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        button_sizer.Add(self.button_next, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_main.Add(button_sizer, 0, wx.EXPAND, 0)
 
         self.check_startup = wx.CheckBox(self, wx.ID_ANY, _("Show tips at startup"))
@@ -111,36 +113,36 @@ class TipPanel(wx.Panel):
             )
         )
         self.button_try.SetBitmap(icons8_detective.GetBitmap(resize=icon_size[0]))
-        self.button_update = wx.Button(self, wx.ID_ANY, _("Update"))
-        self.button_update.SetFont(
+        self.checkbox_update = wx.CheckBox(self, wx.ID_ANY, _("Automatically Update"))
+        self.checkbox_update.SetFont(
             wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         )
-        self.button_update.SetToolTip(
+        self.checkbox_update.SetToolTip(
             _(
                 "Look for new tips on MeerK40ts website.\n"
-                + "The list of tips is constantly expanded, so please update it\n"
-                + "every now and then to learn about new or hidden features."
+                + "The list of tips is constantly expanded.\n"
             )
         )
         option_sizer.Add(self.button_try, 0, wx.ALIGN_CENTER_VERTICAL)
         option_sizer.AddStretchSpacer()
-        option_sizer.Add(self.button_update, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        option_sizer.Add(self.checkbox_update, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         option_sizer.Add(self.check_startup, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_main.Add(option_sizer, 0, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
 
-        self.check_consent.Bind(wx.EVT_CHECKBOX, self.on_check_consent)
         self.check_startup.Bind(wx.EVT_CHECKBOX, self.on_check_startup)
         self.button_prev.Bind(wx.EVT_BUTTON, self.on_tip_prev)
         self.button_next.Bind(wx.EVT_BUTTON, self.on_tip_next)
         self.button_try.Bind(wx.EVT_BUTTON, self.on_button_try)
-        self.button_update.Bind(wx.EVT_BUTTON, self.on_button_update)
+        self.checkbox_update.Bind(wx.EVT_BUTTON, self.on_check_consent)
 
         self.cache_dir = self.establish_picture_cache()
         self.context.setting(int, "next_tip", 0)
         self.current_tip = self.context.next_tip
+        if consent:
+            self.update_tips()
 
     @property
     def current_tip(self):
@@ -167,83 +169,103 @@ class TipPanel(wx.Panel):
             self.set_tip_image(my_tip[2], newvalue, self.context.tip_access_consent)
         else:
             self.set_tip_image("", newvalue, self.context.tip_access_consent)
+        self.label_position.SetLabel(_("Tip {idx}/{maxidx}").format(idx=newvalue + 1, maxidx=len(self.tips)))
         self.Layout()
 
-    def set_tip_image(self, path, counter, automatic_download, display=True):
+    def _download_image(self, uri, local_file):
+        """
+        Download image from given URI to local_file.
+        @param uri:
+        @param local_file:
+        @return:
+        """
+        if not self.context.tip_access_consent:
+            raise PermissionError("We do not have consent to download.")
+        try:
+            with urllib.request.urlopen(uri) as file:
+                content = file.read()
+        except (urllib.error.URLError, urllib.error.HTTPError) as e:
+            # print (f"Error: {e}")
+            return False
+        # If the file object is successfully opened, read its content as a string
+        try:
+            with open(local_file, "wb") as f:
+                f.write(content)
+            return True
+        except (OSError, PermissionError, RuntimeError) as e:
+            # print (f"Error @ image write to {local_path}: {e}")
+            return False
+
+    def set_tip_image(self, path, counter, automatic_download):
         """
         path: URL of the image to be loaded
         counter: an additional naming element to
         avoid ending up with the same name for equally called images
         display: apply and display the image
         """
-        self.tip_image = path
+        self.no_image_message.Show(False)
         if isinstance(path, wx.Bitmap):
-            if display:
-                self.image_tip.SetBitmap(path)
-                self.image_tip.Show(True)
-        else:
-            found = False
-            if path and self.cache_dir:
-                # Hex-string of path-hash
-                basename = f"{hash(path):#x}"
-                local_path = os.path.join(self.cache_dir, basename)
-                # Is this file already on the disk? If not load it...
-                if not os.path.exists(local_path):
-                    if automatic_download:
-                        loaded = False
-                        opened = False
-                        try:
-                            with urllib.request.urlopen(path) as file:
-                                content = file.read()
-                                opened = True
-                        except (urllib.error.URLError, urllib.error.HTTPError) as e:
-                            # print (f"Error: {e}")
-                            pass
-                        # If the file object is successfully opened, read its content as a string
-                        if opened:
-                            try:
-                                with open(local_path, "wb") as f:
-                                    f.write(content)
-                                    loaded = True
-                            except (OSError, PermissionError, RuntimeError) as e:
-                                # print (f"Error @ image write to {local_path}: {e}")
-                                pass
+            self.image_tip.SetBitmap(path)
+            self.image_tip.Show(True)
+            return
 
-                        found = loaded
-                    else:
-                        self.check_consent.Show(True)
+        # self.image_tip.SetBitmap(wx.NullBitmap)
+        self.image_tip.Show(False)
+        self.tip_image = path
+        if not path or not self.cache_dir:
+            # Path was not established
+            return
 
-                if display and local_path and os.path.exists(local_path):
-                    bmp = wx.Bitmap()
-                    res = bmp.LoadFile(local_path)
-                    if res:
-                        new_x, new_y = bmp.Size
-                        img_size = self.image_tip.GetSize()
-                        if new_x > img_size[0] or new_y > img_size[1]:
-                            if new_x > img_size[0]:
-                                fact = img_size[0] / new_x
-                                new_y *= fact
-                                new_x *= fact
-                            if new_y > img_size[1]:
-                                fact = img_size[1] / new_y
-                                new_y *= fact
-                                new_x *= fact
-                            image = bmp.ConvertToImage()
-                            image.Rescale(int(new_x), int(new_y))
-                            bmp = wx.Bitmap(image)
+        parts = path.split("/")
+        if len(parts) <= 0:
+            # Malformed path.
+            return
 
-                        try:
-                            self.image_tip.SetScaleMode(wx.StaticBitmap.Scale_None)
-                        except AttributeError:
-                            # Old version of wxpython
-                            pass
-                        self.image_tip.SetBitmap(bmp)
-                        found = True
-            if display:
-                if found:
-                    self.image_tip.Show(True)
-                else:
-                    self.image_tip.Show(False)
+        basename = hex(hash(path))
+        local_path = os.path.join(self.cache_dir, basename)
+        if not local_path:
+            return
+        # Is this file already on the disk? If not load it...
+        if not os.path.exists(local_path):
+            if automatic_download:
+                found = self._download_image(path, local_path)
+                self.image_tip.Show(found)
+                return
+            else:
+                self.no_image_message.Show(True)
+        if not os.path.exists(local_path):
+            # File still does not exist.
+            return
+
+        bmp = wx.Bitmap()
+        res = bmp.LoadFile(local_path)
+        if not res:
+            # Bitmap failed to load.
+            return
+        new_x, new_y = bmp.Size
+        img_size = self.image_tip.GetSize()
+        # print(f"bmp: {int(new_x)}x{int(new_y)}, space: {img_size[0]}x{img_size[1]}")
+        if new_x > img_size[0] or new_y > img_size[1]:
+            if new_x > img_size[0]:
+                fact = img_size[0] / new_x
+                new_y *= fact
+                new_x *= fact
+            if new_y > img_size[1]:
+                fact = img_size[1] / new_y
+                new_y *= fact
+                new_x *= fact
+            image = bmp.ConvertToImage()
+            # print(f"Will be rescaled to {int(new_x)}x{int(new_y)}")
+            image.Rescale(int(new_x), int(new_y))
+            bmp = wx.Bitmap(image)
+
+        try:
+            self.image_tip.SetScaleMode(wx.StaticBitmap.Scale_None)
+        except AttributeError:
+            # Old version of wxpython
+            pass
+        self.image_tip.SetBitmap(bmp)
+        self.image_tip.Show(True)
 
     def on_button_try(self, event):
         if self.tip_command:
@@ -253,12 +275,11 @@ class TipPanel(wx.Panel):
                 self.context(f"{self.tip_command}\n")
 
     def on_check_consent(self, event):
-        state = self.check_consent.GetValue()
+        state = self.checkbox_update.GetValue()
         self.context.tip_access_consent = state
-        # Hide me again...
-        self.check_consent.Show(False)
-        # Force refresh
         self.current_tip = self.current_tip
+        if state:
+            self.update_tips()
 
     def on_check_startup(self, event):
         state = self.check_startup.GetValue()
@@ -350,23 +371,13 @@ class TipPanel(wx.Panel):
 
         self.load_tips_from_local_cache()
 
-    def on_button_update(self, event):
-        prev_count = len(self.tips)
+    def update_tips(self):
+        """
+        Called on startup if permission is given. And called when checkbox is checked.
+        @return:
+        """
         self.load_tips_from_github()
         self.setup_tips()
-        # Load all images...
-        for idx, tip in enumerate(self.tips):
-            if tip[2]:
-                # As we are accessing the internet deliberately, we will download the pictures too
-                self.set_tip_image(tip[2], idx, True, display=False)
-        new_count = len(self.tips)
-        res = wx.MessageBox(
-            message=_("Tips have been updated, {info} new entries found.").format(
-                info=str(new_count - prev_count)
-            ),
-            caption=_("Tips"),
-        )
-        # Force update...
         self.current_tip = self.current_tip
 
     def load_tips_from_github(self):
