@@ -84,13 +84,15 @@ class TipPanel(wx.Panel):
         self.button_prev.SetBitmap(icons8_circled_left.GetBitmap(resize=icon_size[0]))
         self.button_prev.SetToolTip(_("Jump back to the previously displayed tip"))
 
+        self.label_position = wx.StaticText(self, wx.ID_ANY, "", style=wx.ALIGN_CENTRE_HORIZONTAL)
+
         self.button_next = wx.Button(self, wx.ID_ANY, _("Next tip"))
         self.button_next.SetBitmap(icons8_circled_right.GetBitmap(resize=icon_size[0]))
         self.button_next.SetToolTip(_("Jump to the previously displayed tip"))
 
-        button_sizer.Add(self.button_prev, 0, wx.ALIGN_CENTER_VERTICAL)
-        button_sizer.AddStretchSpacer()
-        button_sizer.Add(self.button_next, 0, wx.ALIGN_CENTER_VERTICAL)
+        button_sizer.Add(self.button_prev, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        button_sizer.Add(self.label_position, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        button_sizer.Add(self.button_next, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_main.Add(button_sizer, 0, wx.EXPAND, 0)
 
         self.check_startup = wx.CheckBox(self, wx.ID_ANY, _("Show tips at startup"))
@@ -167,6 +169,7 @@ class TipPanel(wx.Panel):
             self.set_tip_image(my_tip[2], newvalue, self.context.tip_access_consent)
         else:
             self.set_tip_image("", newvalue, self.context.tip_access_consent)
+        self.label_position.SetLabel(_("Tip {idx}/{maxidx}").format(idx=newvalue + 1, maxidx=len(self.tips)))
         self.Layout()
 
     def _download_image(self, uri, local_file):
@@ -206,6 +209,8 @@ class TipPanel(wx.Panel):
             self.image_tip.Show(True)
             return
 
+        # self.image_tip.SetBitmap(wx.NullBitmap)
+        self.image_tip.Show(False)
         self.tip_image = path
         if not path or not self.cache_dir:
             # Path was not established
@@ -236,10 +241,10 @@ class TipPanel(wx.Panel):
         res = bmp.LoadFile(local_path)
         if not res:
             # Bitmap failed to load.
-            self.image_tip.Show(False)
             return
         new_x, new_y = bmp.Size
         img_size = self.image_tip.GetSize()
+        # print(f"bmp: {int(new_x)}x{int(new_y)}, space: {img_size[0]}x{img_size[1]}")
         if new_x > img_size[0] or new_y > img_size[1]:
             if new_x > img_size[0]:
                 fact = img_size[0] / new_x
@@ -250,6 +255,7 @@ class TipPanel(wx.Panel):
                 new_y *= fact
                 new_x *= fact
             image = bmp.ConvertToImage()
+            # print(f"Will be rescaled to {int(new_x)}x{int(new_y)}")
             image.Rescale(int(new_x), int(new_y))
             bmp = wx.Bitmap(image)
 
