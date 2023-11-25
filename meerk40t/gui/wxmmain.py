@@ -1240,7 +1240,7 @@ class MeerK40t(MWindow):
             if contains_a_param():
                 kernel.elements("tool parameter\n")
             elif contains_moveable_nodes():
-                kernel.elements("tool nodemove\n")
+                kernel.elements("tool pointmove\n")
 
         kernel.register(
             "button/select/Parameter",
