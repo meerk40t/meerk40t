@@ -606,17 +606,42 @@ class BeamTable:
         aw = np.argwhere(actives != -1)[:, 0]
         return actives[aw]
 
-    def union(self, subject, clip):
-        results = Geomstr()
+    def get_sliced_lines(self):
+        """
+        Returns all lines sliced at the events and merged.
+        @return:
+        """
         actives = self._nb_scan
+        line = self.geometry.segments[actives]
+        a = line[..., 0]
+        b = line[..., -1]
+        a = np.where(actives == -1, np.nan + np.nan * 1j, a)
+        b = np.where(actives == -1, np.nan + np.nan * 1j, b)
+        # Get all lines listed as active at any points. Find start and end points.
+        old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
+        try:
+            # If vertical slope is undefined. All y-ints are at y since y0=y1
+            m = (b.real - a.real) / (b.imag - a.imag)
+            x0 = a.real - (m * a.imag)
+            xs = np.reshape(np.repeat(np.real(self._nb_events), x0.shape[1]), x0.shape)
+            y_intercepts = np.where(np.isinf(m) | np.isnan(m), a.imag, (xs - x0) / m)
+        finally:
+            np.seterr(**old_np_seterr)
+        ys = np.reshape(np.repeat(np.imag(self._nb_events), x0.shape[1]), x0.shape)
+        print("end")
 
-        for i in range(1, len(self._nb_events)):
-            beam_start = self._nb_events[i-1]
-            beam_end = self._nb_events[i]
-            actives = self._nb_scan[i-1]
-            line_actives = self.geometry.segments[actives]
-            print(f"\n. {beam_start} {beam_end} {actives}")
-            print(line_actives)
+    def union(self, subject, clip):
+        c = self.get_sliced_lines()
+        # results = Geomstr()
+        # actives = self._nb_scan
+        #
+        # for i in range(1, len(self._nb_events)):
+        #     beam_start = self._nb_events[i-1]
+        #     beam_end = self._nb_events[i]
+        #     actives = self._nb_scan[i-1]
+        #     line_actives = self.geometry.segments[actives]
+        #     print(f"\n. {beam_start} {beam_end} {actives}")
+        #     print(line_actives)
 
 
 
