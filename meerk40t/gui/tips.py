@@ -221,7 +221,8 @@ class TipPanel(wx.Panel):
             # Malformed path.
             return
 
-        basename = f"_{counter}_{parts[-1]}"
+        # basename = f"_{counter}_{parts[-1]}"
+        basename = hex(hash(path))
         local_path = os.path.join(self.cache_dir, basename)
         if not local_path:
             return
