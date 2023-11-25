@@ -1,4 +1,4 @@
-from math import sin, sqrt, tan, tau
+from math import sin, cos, sqrt, tan, tau
 
 import wx
 
@@ -9,6 +9,7 @@ from meerk40t.gui.icons import (
     icon_mk_polygon,
     icon_polygon,
     icon_regular_star,
+    icon_growing,
 )
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
@@ -43,6 +44,7 @@ class PolygonTool(ToolWidget):
         # 1 - regular polygon
         # 2 - star polygon
         # 3 - crossing star polygon
+        # 4 - growing polygon
         self.design_mode = 0
         self.define_buttons()
         # We need to wait a bit until all things have
@@ -60,7 +62,7 @@ class PolygonTool(ToolWidget):
         self.set_designmode(self.design_mode)
 
     def set_designmode(self, mode):
-        if mode < 0 or mode > 3:
+        if mode < 0 or mode > 4:
             mode = 0
         if mode != self.design_mode:
             self.design_mode = mode
@@ -120,6 +122,20 @@ class PolygonTool(ToolWidget):
                 "tip": _("Draw a crossing star (2)"),
                 "help": "polygon",
                 "action": lambda v: self.set_designmode(3),
+                "size": icon_size,
+                "group": "polygon",
+                "identifier": "polygon4",
+            },
+        )
+
+        self.scene.context.kernel.register(
+            "button/secondarytool_polygon/tool_growingpoly",
+            {
+                "label": _("Grow"),
+                "icon": icon_growing,
+                "tip": _("Draw a growing polygon"),
+                "help": "polygon",
+                "action": lambda v: self.set_designmode(4),
                 "size": icon_size,
                 "group": "polygon",
                 "identifier": "polygon4",
@@ -186,29 +202,55 @@ class PolygonTool(ToolWidget):
         if self.design_mode == 0:
             pass
         elif self.design_mode == 1:
+            # regular polygon
             number_points = tc
             if number_points > 2:
                 # We have now enough information to create a regular polygon
                 # The first point is the center, the second point defines
                 # the start point, we just assume it's a regular triangle
                 # and hand over to another tool to let the user refine it
+                corners = 3
                 pt1 = Point(points[0])
                 pt2 = Point(points[1])
+                points = points[0:1]
+                # plus 60 degrees
+                angle = pt2.angle_to(pt1)
+                distance = pt1.distance_to(pt2)
+                tangle = angle - tau / 6
+                p3x = pt2.x + cos(tangle) * distance
+                p3y = pt2.y + sin(tangle) * distance
+                # points.append((p3x, p3y))
+                pt3 = Point(p3x, p3y)
+                cx = (pt1.x + pt2.x + pt3.x) / 3
+                cy = (pt1.y + pt2.y + pt3.y) / 3
+                center = Point(cx, cy)
+                # points.append((cx, cy))
+
+                # print (f"1: {pt1.x:.0f},{pt1.y:.0f}, 2: {pt2.x:.0f},{pt2.y:.0f}, 3: {pt3.x:.0f},{pt3.y:.0f}")
+                # print (f"Distances: 1-2: {pt1.distance_to(pt2):.0f}, 2-3: {pt2.distance_to(pt3):.0f}, 3-1: {pt3.distance_to(pt1):.0f}")
+                # print (f"Distances: 1-c: {pt1.distance_to(center):.0f}, 2-c: {pt2.distance_to(center):.0f}, 3-c: {pt3.distance_to(center):.0f}")
+                # polyline = Polygon(*points)
+                # elements = self.scene.context.elements
+                # node = elements.elem_branch.add(
+                #     shape=polyline,
+                #     type="elem polyline",
+                #     stroke_width=elements.default_strokewidth,
+                #     stroke=elements.default_stroke,
+                #     fill=elements.default_fill,
+                # )
                 # print(
                 #     f"p1=({Length(pt1.x).length_mm}, {Length(pt1.y).length_mm}), p2=({Length(pt2.x).length_mm}, {Length(pt2.y).length_mm})"
                 # )
-                radius = pt1.distance_to(pt2)
-                startangle = pt1.angle_to(pt2)
-                corners = 3
-                command = f"shape {corners} {Length(pt1.x).length_mm} {Length(pt1.y).length_mm}"
-                command += f" {Length(radius).length_mm} -s {Angle(startangle, digits=2).angle_degrees}\n"
-                # print(command)
+                radius = center.distance_to(pt1)
+                startangle = center.angle_to(pt1)
+                command = f"shape {corners} {Length(center.x, digits=3).length_mm} {Length(center.y, digits=3).length_mm}"
+                command += f" {Length(radius, digits=3).length_mm} -s {Angle(startangle, digits=2).angle_degrees}\n"
                 self.scene.context(command)
                 selected_node = self.scene.context.elements.first_element(
                     emphasized=True
                 )
+                self.end_tool()
                 if selected_node is not None:
-                    self.end_tool()
                     self.scene.context("tool parameter\n")
         elif self.design_mode == 2:
             number_points = tc
@@ -232,8 +274,8 @@ class PolygonTool(ToolWidget):
                 selected_node = self.scene.context.elements.first_element(
                     emphasized=True
                 )
+                self.end_tool()
                 if selected_node is not None:
-                    self.end_tool()
                     self.scene.context("tool parameter\n")
         elif self.design_mode == 3:
             number_points = tc
@@ -257,8 +299,34 @@ class PolygonTool(ToolWidget):
                 selected_node = self.scene.context.elements.first_element(
                     emphasized=True
                 )
+                self.end_tool()
                 if selected_node is not None:
-                    self.end_tool()
+                    self.scene.context("tool parameter\n")
+        elif self.design_mode == 4:
+            # regular polygon, repeating
+            number_points = tc
+            if number_points > 2:
+                # We have now enough information to create a regular polygon
+                # The first point is the center, the second point defines
+                # the start point, we just assume it's a regular triangle
+                # and hand over to another tool to let the user refine it
+                corners = 3
+                iterations = 10
+                gap = 4
+                pt1 = Point(points[0])
+                pt2 = Point(points[1])
+                side = pt1.distance_to(pt2)
+                angle = pt1.angle_to(pt2)
+                command = f"growingshape {Length(pt1.x, digits=3).length_mm} {Length(pt1.y, digits=3).length_mm}"
+                command += f" {corners} {iterations} {Length(side, digits=3).length_mm}"
+                command += f" -a {Angle(angle, digits=2).angle_degrees}\n"
+                command += f" -g {gap}\n"
+                self.scene.context(command)
+                selected_node = self.scene.context.elements.first_element(
+                    emphasized=True
+                )
+                self.end_tool()
+                if selected_node is not None:
                     self.scene.context("tool parameter\n")
         # Close the polygon
         if closeit:

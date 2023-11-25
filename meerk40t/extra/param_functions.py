@@ -149,6 +149,7 @@ def plugin(kernel, lifecycle):
             )
             # Newly created! Classification needed?
             data = [node]
+            node.emphasized = True
             post.append(classify_new(data))
             return "elements", data
 
@@ -519,6 +520,7 @@ def plugin(kernel, lifecycle):
             )
             # Newly created! Classification needed?
             data = [node]
+            node.emphasized = True
             post.append(classify_new(data))
             return "elements", data
 
@@ -797,6 +799,7 @@ def plugin(kernel, lifecycle):
             )
             # Newly created! Classification needed?
             data = [node]
+            node.emphasized = True
             post.append(classify_new(data))
             return "elements", data
 
@@ -1129,6 +1132,7 @@ def plugin(kernel, lifecycle):
             node.focus()
 
             data = [node]
+            node.emphasized = True
             # Newly created! Classification needed?
             post.append(classify_new(data))
 
@@ -1444,6 +1448,7 @@ def plugin(kernel, lifecycle):
             )
             # Newly created! Classification needed?
             data = [node]
+            node.emphasized = True
             post.append(classify_new(data))
             return "elements", data
 
@@ -1503,7 +1508,7 @@ def plugin(kernel, lifecycle):
         )
         kernel.register("element_update/cycloid", info)
 
-        max_corner_gui = 50
+        max_corner_gui = 32
         info = (
             update_node_star_shape,
             {
