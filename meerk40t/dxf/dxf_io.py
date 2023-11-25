@@ -498,9 +498,9 @@ class DXFProcessor:
 
             # Node.matrix is primary transformation.
             matrix = Matrix()
+            matrix.post_scale(1, -1)
             matrix.post_translate_x(x_pos)
-            matrix.post_translate_x(y_pos)
-            matrix.post_scale(1, -1, x_pos, y_pos)
+            matrix.post_translate_y(y_pos)
             matrix.post_scale(self.scale, -self.scale)
             matrix.post_translate_y(self.elements.device.view.unit_height)
             try:
