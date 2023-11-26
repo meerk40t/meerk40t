@@ -149,15 +149,23 @@ def run():
     ###################
     # END Old Python Code.
     ###################
-    while _exe(args):
-        pass
+    restart = _exe(args)
+    if restart:
+        cmd = sys.argv[0]
+        args = sys.argv
+        if cmd == "meerk40t.py":
+            cmd = sys.executable
+            args = (sys.executable, 'meerk40t.py')
+        try:
+            os.execvp(cmd, args)
+        except (PermissionError, FileNotFoundError) as e:
+            print (f"Sorry, can't restart '{cmd} {args}': {e}")
 
 
 def _exe(args):
     from meerk40t.external_plugins import plugin as external_plugins
     from meerk40t.internal_plugins import plugin as internal_plugins
     from meerk40t.kernel import Kernel
-
     kernel = Kernel(
         APPLICATION_NAME,
         APPLICATION_VERSION,
@@ -170,4 +178,5 @@ def _exe(args):
     kernel.add_plugin(internal_plugins)
     kernel.add_plugin(external_plugins)
     kernel()
-    return hasattr(kernel, "restart") and kernel.restart
+    flag = hasattr(kernel, "restart") and kernel.restart
+    return flag
