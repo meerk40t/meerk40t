@@ -27,6 +27,7 @@ from ..svgelements import (
     Matrix,
     Move,
     Path,
+    Point,
     Polygon,
     Polyline,
     Viewbox,
@@ -456,6 +457,12 @@ class DXFProcessor:
             return
         elif entity.dxftype() == "IMAGE":
             bottom_left_position = entity.dxf.insert
+            targetmatrix = Matrix()
+            targetmatrix.post_scale(self.scale, -self.scale)
+            targetmatrix.post_translate_y(self.elements.device.view.unit_height)
+            # So what's our targetposition then?
+            targetpos = targetmatrix.point_in_matrix_space(Point(bottom_left_position[0], bottom_left_position[1]))
+
             size_img = entity.dxf.image_size
             w_scale = entity.dxf.u_pixel[0]
             h_scale = entity.dxf.v_pixel[1]
@@ -469,7 +476,7 @@ class DXFProcessor:
                 fname1,
                 fname2,
             ]
-            # LibreCad 2 has a bug - it stores the relative path with a '../' too few
+            # LibreCad 2.2 has a bug - it stores the relative path with a '../' too few
             # So let's add another option
             if fname1.startswith("../"):
                 fname1 = "../" + fname1
@@ -521,6 +528,15 @@ class DXFProcessor:
             except ImportError:
                 pass
             self.check_for_attributes(node, entity)
+            # We don't seem to get the position right, so lets' look
+            # at our bottom_left position again and fix the gap
+            bb = node.bounds
+            dx = targetpos.x - bb[0]
+            dy = targetpos.y - bb[3]
+            if dx != 0:
+                node.matrix.post_translate_x(dx)
+            if dy != 0:
+                node.matrix.post_translate_y(dy)
             e_list.append(node)
             return
         elif entity.dxftype() == "MTEXT":
