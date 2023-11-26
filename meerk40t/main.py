@@ -153,12 +153,13 @@ def run():
     if restart:
         cmd = sys.argv[0]
         args = sys.argv
-        if cmd == "meerk40t.py":
+        if cmd.endswith("meerk40t.py"):
+            args = (sys.executable, cmd)
             cmd = sys.executable
-            args = (sys.executable, 'meerk40t.py')
+        # print(f"Trying {cmd}, {args} ({sys.executable})")
         try:
             os.execvp(cmd, args)
-        except (PermissionError, FileNotFoundError) as e:
+        except (PermissionError, FileNotFoundError, OSError) as e:
             print (f"Sorry, can't restart '{cmd} {args}': {e}")
 
 
