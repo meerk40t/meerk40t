@@ -1142,7 +1142,7 @@ class Kernel(Settings):
             name="kernel.signals",
             interval=self.delay,
             run_main=True,
-            conditional=lambda: not self._message_queue and not self._processing,
+            conditional=lambda: not self._processing,
         )
         self._booted = True
 
