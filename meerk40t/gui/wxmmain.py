@@ -228,13 +228,15 @@ class MeerK40t(MWindow):
 
         # Look at window elements we are hovering over
         # to establish the online help functionality
-        self.timer = wx.Timer(self, id=wx.ID_ANY)
-        self.Bind(wx.EVT_TIMER, self.mouse_query, self.timer)
-        self.timer.Start(500, wx.TIMER_CONTINUOUS)
+        self.context.kernel.add_job(run=self.mouse_query, name="helper-check", interval=0.5)
+        # Switched to kernel to avoid 0xC0000005 crash in windows.
+        # self.timer = wx.Timer(self, id=wx.ID_ANY)
+        # self.Bind(wx.EVT_TIMER, self.mouse_query, self.timer)
+        # self.timer.Start(500, wx.TIMER_CONTINUOUS)
         self._last_help_info = ""
         self._last_help_section = ""
 
-    def mouse_query(self, event):
+    def mouse_query(self, event=None):
         """
             This routine looks periodically (every 0.5 seconds)
             at the window ie control under the mouse cursor.
