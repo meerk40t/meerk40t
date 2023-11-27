@@ -209,14 +209,14 @@ class FillruleWidget(StatusBarWidget):
             self.parent, id=wx.ID_ANY, size=wx.Size(30, -1), style=wx.BORDER_RAISED
         )
         self.btn_fill_nonzero.SetMaxSize(wx.Size(50, -1))
-        self.btn_fill_nonzero.SetBitmap(icon_fill_nonzero.GetBitmap(noadjustment=True))
+        self.btn_fill_nonzero.SetBitmap(icon_fill_nonzero.GetBitmap(resize=max(20, self.parent.available_height - 4), buffer=1))
         self.btn_fill_nonzero.SetToolTip(_("Set the fillstyle to non-zero (regular)"))
         self.btn_fill_nonzero.Bind(wx.EVT_LEFT_DOWN, self.on_fill_nonzero)
 
         self.btn_fill_evenodd = wx.StaticBitmap(
             self.parent, id=wx.ID_ANY, size=wx.Size(30, -1), style=wx.BORDER_RAISED
         )
-        self.btn_fill_evenodd.SetBitmap(icon_fill_evenodd.GetBitmap(noadjustment=True))
+        self.btn_fill_evenodd.SetBitmap(icon_fill_evenodd.GetBitmap(resize=max(20, self.parent.available_height - 4), buffer=1))
         self.btn_fill_evenodd.SetMaxSize(wx.Size(50, -1))
         self.btn_fill_evenodd.SetToolTip(
             _("Set the fillstyle to even-odd (alternating areas)")
