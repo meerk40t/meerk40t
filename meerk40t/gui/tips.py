@@ -394,9 +394,12 @@ class TipPanel(wx.Panel):
         url = "https://github.com/meerk40t/meerk40t/raw/main/locale/"
         # Do we have a localized version?
         locale = "en"
+        lang = self.context.language
+        if lang is None:
+            lang = 0
         languages = list(self.context.app.supported_languages)
         try:
-            locale = languages[self.context.language][0]
+            locale = languages[lang][0]
         except IndexError:
             pass
         # print(self.context.language, locale, languages)
