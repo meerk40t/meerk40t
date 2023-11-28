@@ -472,6 +472,17 @@ class GRBLDevice(Service, Status):
                 "section": "_10_Red Dot",
             },
             {
+                "attr": "require_validator",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Require Validator"),
+                "tip": _(
+                    "Do not validate the connection without seeing the welcome message at start."
+                ),
+                "section": "_40_Validation",
+            },
+            {
                 "attr": "welcome",
                 "object": self,
                 "default": "Grbl",
