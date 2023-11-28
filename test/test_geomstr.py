@@ -1610,30 +1610,33 @@ class TestGeomstr(unittest.TestCase):
         """
         We have two small lines [-2,2] on the x and y-axis.
         At the x position 0, both are active, so long as the y position is greater than 2 or less than -2.
+
+        Line 2 is positioned above all lines.
         @return:
         """
         g = Geomstr()
-        g.line(complex(-2,0), complex(2,0), 0)
-        g.line(complex(0,-2), complex(0,2), 1)
+        g.line(complex(-2, 0), complex(2, 0), 0)
+        g.line(complex(0, -2), complex(0, 2), 1)
+        g.line(complex(-5, 5), complex(5, 5), 2)  # Highest line always.
         bt = BeamTable(g)
-        # Segment 1 is not acive.
-        result = bt.actives_at(complex(0,3))
-        for x, y in zip(result, (0,)):
+        # Segment 1 is not active.
+        result = bt.actives_at(complex(0, 3))
+        for x, y in zip(result, (0, 2)):
             self.assertEqual(x, y)
 
         # Segment 1 is active, and above segment 0.
-        result = bt.actives_at(complex(0,1))
-        for x, y in zip(result, (1,0)):
+        result = bt.actives_at(complex(0, 1))
+        for x, y in zip(result, (0, 1, 2)):
             self.assertEqual(x, y)
 
         # Segment 1 is active, and below segment 0.
-        result = bt.actives_at(complex(0,-1))
-        for x, y in zip(result, (0,1)):
+        result = bt.actives_at(complex(0, -1))
+        for x, y in zip(result, (1, 0, 2)):
             self.assertEqual(x, y)
 
         # Segment 1 is no longer active.
-        result = bt.actives_at(complex(0,-3))
-        for x, y in zip(result, (0,)):
+        result = bt.actives_at(complex(0, -3))
+        for x, y in zip(result, (0, 2)):
             self.assertEqual(x, y)
 
     def test_scan_table_random(self):
