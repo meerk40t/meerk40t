@@ -640,13 +640,13 @@ class Angle:
     @property
     def angle_gradians(self):
         digits = 4 if self._digits is None else self._digits
-        angle = f"{self.gradians:.{digits}f}".rstrip('0').rstrip(".")
+        angle = f"{self.gradians:.{digits}f}".rstrip("0").rstrip(".")
         return f"{angle}grad"
 
     @property
     def angle_turns(self):
         digits = 4 if self._digits is None else self._digits
-        angle = f"{self.turns:.{digits}f}".rstrip('0').rstrip(".")
+        angle = f"{self.turns:.{digits}f}".rstrip("0").rstrip(".")
         return f"{angle}turn"
 
     def is_orthogonal(self):

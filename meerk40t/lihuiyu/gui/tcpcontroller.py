@@ -19,7 +19,7 @@ class TCPController(MWindow):
 
         self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         self.service = self.context.device
-        self.text_status = wx.TextCtrl(self, wx.ID_ANY, "",  style=wx.TE_PROCESS_ENTER)
+        self.text_status = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_ip_host = TextCtrl(
             self, wx.ID_ANY, "", limited=True, style=wx.TE_PROCESS_ENTER, check="empty"
         )
@@ -101,11 +101,15 @@ class TCPController(MWindow):
         connection_controller.Add(self.button_device_connect, 0, wx.EXPAND, 0)
 
         sizer_connection = wx.BoxSizer(wx.HORIZONTAL)
-        info_left = StaticBoxSizer(self, wx.ID_ANY, label=_("Status"), orientation=wx.HORIZONTAL)
+        info_left = StaticBoxSizer(
+            self, wx.ID_ANY, label=_("Status"), orientation=wx.HORIZONTAL
+        )
         info_left.Add(self.text_status, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_connection.Add(info_left, 1, wx.EXPAND, 0)
 
-        info_right = StaticBoxSizer(self, wx.ID_ANY, label=_("Connection"), orientation=wx.HORIZONTAL)
+        info_right = StaticBoxSizer(
+            self, wx.ID_ANY, label=_("Connection"), orientation=wx.HORIZONTAL
+        )
         label_8 = wx.StaticText(self, wx.ID_ANY, _("Address"))
         info_right.Add(label_8, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         info_right.Add(self.text_ip_host, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -118,7 +122,9 @@ class TCPController(MWindow):
         connection_controller.Add(sizer_connection, 0, wx.EXPAND, 0)
 
         sizer_main.Add(connection_controller, 0, wx.EXPAND, 0)
-        buffer_sizer = StaticBoxSizer(self, wx.ID_ANY, label=_("Buffer"), orientation=wx.VERTICAL)
+        buffer_sizer = StaticBoxSizer(
+            self, wx.ID_ANY, label=_("Buffer"), orientation=wx.VERTICAL
+        )
         buffer_sizer.Add(self.gauge_buffer, 0, wx.EXPAND, 0)
 
         label_12 = wx.StaticText(self, wx.ID_ANY, _("Buffer Size: "))

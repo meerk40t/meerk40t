@@ -24,7 +24,11 @@ class CutOpNode(Node, Parameters):
         self.dangerous = False
 
         self.label = "Cut"
-        self.kerf = 0
+        # Set this to a float!
+        # A simple  self.kerf = 0 will lead to an interpretation as an int and
+        # will not be loaded properly via read_persistent.
+        # int("2180.534") throws a value error.
+        self.kerf = 0.0
         self._device_factor = 1.0
 
         # Which elements can be added to an operation (manually via DND)?
@@ -282,7 +286,7 @@ class CutOpNode(Node, Parameters):
                 pass
         native_mm = abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
         if self.kerf is None:
-            self.kerf = 0
+            self.kerf = 0.0
         self.settings["native_mm"] = native_mm
         self.settings["native_speed"] = self.speed * native_mm
         self.settings["native_rapid_speed"] = self.rapid_speed * native_mm

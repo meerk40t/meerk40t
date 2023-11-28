@@ -30,7 +30,7 @@ from meerk40t.kernel import lookup_listener, signal_listener
 
 from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from ..svgelements import Color, Matrix, Path
-from .icons import (  # icon_duplicate,
+from .icons import (  # icon_duplicate,; icon_nohatch,
     STD_ICON_SIZE,
     PyEmbeddedImage,
     icon_bmap_text,
@@ -39,10 +39,9 @@ from .icons import (  # icon_duplicate,
     icon_cag_union,
     icon_cag_xor,
     icon_hatch,
-    icon_hatch_diag,
     icon_hatch_bidir,
+    icon_hatch_diag,
     icon_hatch_diag_bidir,
-    # icon_nohatch,
     icon_line,
     icon_meerk40t,
     icon_mk_align_bottom,
@@ -228,7 +227,9 @@ class MeerK40t(MWindow):
 
         # Look at window elements we are hovering over
         # to establish the online help functionality
-        self.context.kernel.add_job(run=self.mouse_query, name="helper-check", interval=0.5)
+        self.context.kernel.add_job(
+            run=self.mouse_query, name="helper-check", interval=0.5, run_main=True
+        )
         # Switched to kernel to avoid 0xC0000005 crash in windows.
         # self.timer = wx.Timer(self, id=wx.ID_ANY)
         # self.Bind(wx.EVT_TIMER, self.mouse_query, self.timer)
@@ -238,13 +239,13 @@ class MeerK40t(MWindow):
 
     def mouse_query(self, event=None):
         """
-            This routine looks periodically (every 0.5 seconds)
-            at the window ie control under the mouse cursor.
-            It will examine the window if it contains a tooltip text and
-            will display this in a textbox in this panel.
-            Additionally, it will read the associated HelpText of the control
-            (or its parent if the control does not have any) to construct a
-            Wiki page on GitHub to open an associated online help page.
+        This routine looks periodically (every 0.5 seconds)
+        at the window ie control under the mouse cursor.
+        It will examine the window if it contains a tooltip text and
+        will display this in a textbox in this panel.
+        Additionally, it will read the associated HelpText of the control
+        (or its parent if the control does not have any) to construct a
+        Wiki page on GitHub to open an associated online help page.
         """
         wind, pos = wx.FindWindowAtPointer()
         if wind is not None:
@@ -273,7 +274,6 @@ class MeerK40t(MWindow):
             self.context("window open Tips\n")
         else:
             self.context("window close Tips\n")
-
 
     def update_check_at_startup(self):
         if self.context.update_check == 0:
@@ -1226,6 +1226,7 @@ class MeerK40t(MWindow):
                 "identifier": "none",
             },
         )
+
         # kernel.register(
         #     "button/tools/Nodeeditor",
         #     {
@@ -1255,7 +1256,8 @@ class MeerK40t(MWindow):
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "parameter",
-                "rule_enabled": lambda cond: contains_a_param() or contains_moveable_nodes(),
+                "rule_enabled": lambda cond: contains_a_param()
+                or contains_moveable_nodes(),
             },
         )
         kernel.register(
@@ -1315,9 +1317,9 @@ class MeerK40t(MWindow):
             "identifier": "hatchbutton",
             "label": _("Hatch"),
             "icon": sub_effects[0]["icon"],
-            "tip":  sub_effects[0]["tip"],
+            "tip": sub_effects[0]["tip"],
             "help": "hatches",
-            "action":  sub_effects[0]["action"],
+            "action": sub_effects[0]["action"],
             "action_right": lambda v: kernel.elements("effect-remove\n"),
             "size": bsize_normal,
             "rule_enabled": lambda cond: contains_an_element(),
@@ -1326,7 +1328,10 @@ class MeerK40t(MWindow):
         if len(sub_effects) > 1:
             hatch_button["multi"] = sub_effects
 
-        kernel.register("button/select/Hatch", hatch_button,)
+        kernel.register(
+            "button/select/Hatch",
+            hatch_button,
+        )
         kernel.register(
             "button/lasercontrol/Relocate",
             {
@@ -3524,6 +3529,7 @@ class MeerK40t(MWindow):
             sect = sect.upper()
             url = f"https://github.com/meerk40t/meerk40t/wiki/Online-Help:-{sect}"
             import webbrowser
+
             webbrowser.open(url, new=0, autoraise=True)
 
         menuitem = self.help_menu.Append(
@@ -3633,16 +3639,13 @@ class MeerK40t(MWindow):
         menuitem = self.help_menu.Append(
             wx.ID_ANY,
             _("Tips && Tricks"),
-            _(
-                "Show some Tips & Tricke"
-            ),
+            _("Show some Tips & Tricke"),
         )
         self.Bind(
             wx.EVT_MENU,
             lambda v: self.context("window open Tips\n"),
             id=menuitem.GetId(),
         )
-
 
         menuitem = self.help_menu.Append(
             wx.ID_ABOUT,
@@ -3730,7 +3733,6 @@ class MeerK40t(MWindow):
             # if language_code not in trans and i != 0:
             #     m.Enable(False)
         self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
-
 
     @signal_listener("restart")
     def on_restart_required(self, *args):

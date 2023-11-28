@@ -76,6 +76,7 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = 3 * iconsize + dx
     pane.control = dragpanel
+
     def on_drag_resize(event):
         panelsize = event.GetSize()
         dragpanel.set_icons(dimension=panelsize)
@@ -1054,10 +1055,12 @@ class Jog(wx.Panel):
         self.button_navigate_lock.SetBitmap(
             icons8_lock.GetBitmap(resize=self.icon_size, resolution=self.resolution)
         )
+        if self.context.confined:
+            btn_icon = icon_fence_closed
+        else:
+            btn_icon = icon_fence_open
         self.button_confine.SetBitmap(
-            icon_fence_closed.GetBitmap(
-                resize=self.icon_size, resolution=self.resolution
-            )
+            btn_icon.GetBitmap(resize=self.icon_size, resolution=self.resolution)
         )
         self.navigation_sizer.Layout()
         self.Layout()
@@ -2407,7 +2410,7 @@ class NavigationPanel(wx.Panel):
 
     def on_resize(self, event):
         wb_size = event.GetSize()
-        if platform.system()=="Linux":
+        if platform.system() == "Linux":
             # They don't resize well
             panel_size = (max(20, wb_size[0] / 3 - 60), wb_size[1])
         else:

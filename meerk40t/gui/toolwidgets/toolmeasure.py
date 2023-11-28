@@ -3,9 +3,11 @@ from math import atan, cos, sin, sqrt, tau
 import wx
 
 from meerk40t.core.units import Length
+
 from .toolpointlistbuilder import PointListTool
 
 _ = wx.GetTranslation
+
 
 class MeasureTool(PointListTool):
     """

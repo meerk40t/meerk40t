@@ -179,6 +179,7 @@ class Kernel(Settings):
 
     def set_language(self, language, localedir="locale"):
         from . import set_language
+
         set_language(self.name, localedir=localedir, language=language)
 
     def open_safe(self, filename, *args):

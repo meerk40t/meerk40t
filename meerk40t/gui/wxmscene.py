@@ -40,10 +40,10 @@ from meerk40t.gui.toolwidgets.toollinetext import LineTextTool
 from meerk40t.gui.toolwidgets.toolmeasure import MeasureTool
 from meerk40t.gui.toolwidgets.toolnodeedit import EditTool
 from meerk40t.gui.toolwidgets.toolnodemove import NodeMoveTool
-from meerk40t.gui.toolwidgets.toolpointmove import PointMoveTool
 from meerk40t.gui.toolwidgets.toolparameter import ParameterTool
 from meerk40t.gui.toolwidgets.toolplacement import PlacementTool
 from meerk40t.gui.toolwidgets.toolpoint import PointTool
+from meerk40t.gui.toolwidgets.toolpointmove import PointMoveTool
 from meerk40t.gui.toolwidgets.toolpolygon import PolygonTool
 from meerk40t.gui.toolwidgets.toolpolyline import PolylineTool
 from meerk40t.gui.toolwidgets.toolrect import RectTool

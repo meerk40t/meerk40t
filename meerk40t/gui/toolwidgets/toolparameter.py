@@ -255,7 +255,6 @@ class ParameterTool(ToolWidget):
         self.is_moving = False
         self.slider_size = 200
 
-
     def read_functions(self):
         self._functions.clear()
         for func, m, sname in self.scene.context.kernel.find("element_update"):
@@ -641,7 +640,10 @@ class ParameterTool(ToolWidget):
         selected_node = None
         elements = self.scene.context.elements.elem_branch
         for node in elements.flat(emphasized=True):
-            if hasattr(node, "functional_parameter") and node.functional_parameter is not None:
+            if (
+                hasattr(node, "functional_parameter")
+                and node.functional_parameter is not None
+            ):
                 selected_node = node
                 break
         self.scene.pane.suppress_selection = selected_node is not None

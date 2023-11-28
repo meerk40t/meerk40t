@@ -8,6 +8,10 @@ def plugin(service, lifecycle):
         import wx  # pylint: disable=unused-import
 
         from meerk40t.gui.icons import (
+            icon_balor_bounds,
+            icon_balor_full,
+            icon_balor_hull,
+            icon_balor_regmarks,
             icons8_center_of_gravity,
             icons8_computer_support,
             icons8_connected,
@@ -15,10 +19,6 @@ def plugin(service, lifecycle):
             icons8_flash_on,
             icons8_light_off,
             icons8_light_on,
-            icon_balor_full,
-            icon_balor_hull,
-            icon_balor_bounds,
-            icon_balor_regmarks
         )
 
         from .balorconfig import BalorConfiguration

@@ -11,7 +11,6 @@ from .module import *
 from .service import *
 from .settings import *
 
-
 _gettext = lambda e: e
 _gettext_language = None
 
@@ -21,8 +20,8 @@ def _(message):
 
 
 def set_language(domain, localedir, language):
-    import sys
     import gettext
+    import sys
 
     localedirs = list()
     try:  # pyinstaller internal location

@@ -1314,8 +1314,14 @@ class Geomstr:
             ry = abs(ry)
         if rx == ry == 0:
             path.line(complex(x, y), complex(x + width, y), settings=settings),
-            path.line(complex(x + width, y), complex(x + width, y + height), settings=settings),
-            path.line(complex(x + width, y + height), complex(x, y + height), settings=settings),
+            path.line(
+                complex(x + width, y), complex(x + width, y + height), settings=settings
+            ),
+            path.line(
+                complex(x + width, y + height),
+                complex(x, y + height),
+                settings=settings,
+            ),
             path.line(complex(x, y + height), complex(x, y), settings=settings),
         else:
             offset = 1 - (1.0 / math.sqrt(2))
@@ -1324,26 +1330,38 @@ class Geomstr:
                 complex(x + width - rx, y),
                 complex(x + width - rx * offset, y + ry * offset),
                 complex(x + width, y + ry),
-                settings=settings
+                settings=settings,
             )
-            path.line(complex(x + width, y + ry), complex(x + width, y + height - ry), settings=settings)
+            path.line(
+                complex(x + width, y + ry),
+                complex(x + width, y + height - ry),
+                settings=settings,
+            )
             path.arc(
                 complex(x + width, y + height - ry),
                 complex(x + width - rx * offset, y + height - ry * offset),
                 complex(x + width - rx, y + height),
-                settings=settings
+                settings=settings,
             )
-            path.line(complex(x + width - rx, y + height), complex(x + rx, y + height), settings=settings)
+            path.line(
+                complex(x + width - rx, y + height),
+                complex(x + rx, y + height),
+                settings=settings,
+            )
             path.arc(
                 complex(x + rx, y + height),
                 complex(x + rx * offset, y + height - ry * offset),
-                complex(x, y + height - ry), settings=settings
+                complex(x, y + height - ry),
+                settings=settings,
             )
-            path.line(complex(x, y + height - ry), complex(x, y + ry), settings=settings)
+            path.line(
+                complex(x, y + height - ry), complex(x, y + ry), settings=settings
+            )
             path.arc(
                 complex(x, y + ry),
                 complex(x + rx * offset, y + ry * offset),
-                complex(x + rx, y), settings=settings
+                complex(x + rx, y),
+                settings=settings,
             )
             path.line(complex(x + rx, y), complex(x + rx, y), settings=settings)
         return path

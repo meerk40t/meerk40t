@@ -45,7 +45,7 @@ class SerialConnection:
                 return
             self.disconnect()
             self.connect()
-            self.write(line, retry+1)
+            self.write(line, retry + 1)
 
     def connect(self):
         if self.laser:

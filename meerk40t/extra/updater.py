@@ -82,13 +82,19 @@ def plugin(kernel, lifecycle):
             help="Show Info: 0 never, 1 console only, 2 if version found, 3 always",
         )
         @context.console_option(
-            "force", "f", type=bool, action="store_true", help=_("Force a found message")
+            "force",
+            "f",
+            type=bool,
+            action="store_true",
+            help=_("Force a found message"),
         )
         @kernel.console_command(
             "check_for_updates",
             help=_("Check whether a newer version of Meerk40t is available"),
         )
-        def check_for_updates(channel, _, beta=None, verbosity=None, force=None, **kwargs):
+        def check_for_updates(
+            channel, _, beta=None, verbosity=None, force=None, **kwargs
+        ):
             """
             This command checks for updates and outputs the results to the console.
 

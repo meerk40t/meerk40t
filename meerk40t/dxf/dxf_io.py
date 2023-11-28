@@ -461,7 +461,9 @@ class DXFProcessor:
             targetmatrix.post_scale(self.scale, -self.scale)
             targetmatrix.post_translate_y(self.elements.device.view.unit_height)
             # So what's our targetposition then?
-            targetpos = targetmatrix.point_in_matrix_space(Point(bottom_left_position[0], bottom_left_position[1]))
+            targetpos = targetmatrix.point_in_matrix_space(
+                Point(bottom_left_position[0], bottom_left_position[1])
+            )
 
             size_img = entity.dxf.image_size
             w_scale = entity.dxf.u_pixel[0]
