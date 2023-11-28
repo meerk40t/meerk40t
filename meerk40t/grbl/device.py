@@ -385,6 +385,18 @@ class GRBLDevice(Service, Status):
                 "section": "_20_Protocol",
             },
             {
+                "attr": "connect_delay",
+                "object": self,
+                "default": 0,
+                "trailer": _("ms"),
+                "type": int,
+                "label": _("Post Connection Delay"),
+                "tip": _(
+                    "Delay the GRBL communications after initial connect. (Some slow boot devices may need this)"
+                ),
+                "section": "_20_Protocol",
+            },
+            {
                 "attr": "limit_buffer",
                 "object": self,
                 "default": True,
