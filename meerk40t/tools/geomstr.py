@@ -4089,12 +4089,13 @@ class Geomstr:
         else:
             return b
 
-    def x_intercept(self, e, y):
+    def x_intercept(self, e, y, default=np.nan):
         """
         Gives the x_intercept of a line at a specific value of y.
 
-        @param e:
-        @param y:
+        @param e: Segment line numbers to solve.
+        @param y: y value at which to find corresponding x value.
+        @param default: default value if answer is otherwise undefined.
         @return:
         """
         line = self.segments[e]
@@ -4105,16 +4106,19 @@ class Geomstr:
             # If horizontal slope is undefined. But, all x-ints are at x since x0=x1
             m = (b.imag - a.imag) / (b.real - a.real)
             y0 = a.imag - (m * a.real)
-            return np.where(~np.isinf(m), (y - y0) / m, a.real)
+            pts = np.where(~np.isinf(m), (y - y0) / m, np.real(a))
+            pts[m == 0] = default
+            return pts
         finally:
             np.seterr(**old_np_seterr)
 
-    def y_intercept(self, e, x):
+    def y_intercept(self, e, x, default=np.nan):
         """
-        Gives the y_intercept of a line at a specific value of x.
+        Gives the y_intercept of a line at a specific value of x, if undefined returns default.
 
-        @param e:
-        @param x:
+        @param e: Segment line numbers to solve.
+        @param x: x value at which to find corresponding y values.
+        @param default: default value if answer is otherwise undefined.
         @return:
         """
         line = self.segments[e]
@@ -4125,8 +4129,8 @@ class Geomstr:
             # If vertical slope is undefined. But, all y-ints are at y since y0=y1
             m = (b.real - a.real) / (b.imag - a.imag)
             x0 = a.real - (m * a.imag)
-            pts = np.where(~np.isinf(m), (np.real(x) - x0) / m, np.imag(x))
-            pts[m == 0] = np.real(x)
+            pts = np.where(~np.isinf(m), (x - x0) / m, np.imag(a))
+            pts[m == 0] = default
             return pts
         finally:
             np.seterr(**old_np_seterr)
