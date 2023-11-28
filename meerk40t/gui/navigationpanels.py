@@ -1054,8 +1054,12 @@ class Jog(wx.Panel):
         self.button_navigate_lock.SetBitmap(
             icons8_lock.GetBitmap(resize=self.icon_size, resolution=self.resolution)
         )
+        if self.context.confined:
+            btn_icon = icon_fence_closed
+        else:
+            btn_icon = icon_fence_open
         self.button_confine.SetBitmap(
-            icon_fence_closed.GetBitmap(
+            btn_icon.GetBitmap(
                 resize=self.icon_size, resolution=self.resolution
             )
         )
