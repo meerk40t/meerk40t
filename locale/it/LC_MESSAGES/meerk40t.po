@@ -18061,7 +18061,7 @@ msgstr ""
 msgid "Cut-Operation"
 msgstr ""
 
-msgid "If you want to produce cut out shapes with *exact* dimensions after the burn, then you need to take half the width of the laserbeam into consideration (aka Kerf compensation).\nThis routine will create a couple of testshapes for you to establish this value.\nAfter you cut these shapes out you need to try to fit the shapes with the same label together. Choose the pair that has a perfect fit and use the label as your kerf-compensation value."
+msgid "If you want to produce cut out shapes with *exact* dimensions after the burn, then you need to take half the width of the laserbeam into consideration (aka Kerf compensation).\nThis routine will create a couple of test shapes for you to establish this value.\nAfter you cut these shapes out you need to try to fit the shapes with the same label together. Choose the pair that has a perfect fit and use the label as your kerf-compensation value."
 msgstr "Se si desidera ottenere forme ritagliate con dimensioni *esatte* (ad esempio forme che vanno incastrate tra loro) è necessario considerare il materiale asportato dal laser per effetto della bruciatura: la metà di questa misura rappresenta il valore di compensazione KERF.\nLa routine creerà delle forme di prova per stabilire questo valore. \nDopo aver eseguito il taglio, provare a far combaciare le forme con la stessa etichetta. Scegliere la coppia che si adatta perfettamente e utilizzare l'etichetta come valore di compensazione."
 
 msgid "Minimum value for Kerf"
