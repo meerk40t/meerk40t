@@ -379,39 +379,71 @@ class TestGeomstr(unittest.TestCase):
 
     def test_geomstr_y_intercepts(self):
         """
-        Draws, 5 perfectly horizontal lines. Queries the y_intercepts
+        Draws, 6 perfectly horizontal lines. Queries the y_intercepts
         @return:
         """
         g = Geomstr()
+        g.line(complex(0, 0), complex(100, 0))
         g.line(complex(0, 20), complex(100, 20))
         g.line(complex(0, 40), complex(100, 40))
         g.line(complex(0, 80), complex(100, 80))
         g.line(complex(0, 60), complex(100, 60))
         g.line(complex(0, 100), complex(100, 100))
-        q = g.y_intercept([0, 1, 2, 3, 4], 10)
-        self.assertEqual(q[0], 20.0)
-        self.assertEqual(q[1], 40.0)
-        self.assertEqual(q[2], 80.0)
-        self.assertEqual(q[3], 60.0)
-        self.assertEqual(q[4], 100.0)
+        q = g.y_intercept([0, 1, 2, 3, 4, 5], 10, 1)
+        self.assertEqual(q[0], 0)
+        self.assertEqual(q[1], 20.0)
+        self.assertEqual(q[2], 40.0)
+        self.assertEqual(q[3], 80.0)
+        self.assertEqual(q[4], 60.0)
+        self.assertEqual(q[5], 100.0)
 
-    def test_geomstr_x_intercepts(self):
+    def test_geomstr_y_intercepts_vertical(self):
         """
-        Draws, 5 perfectly vertical lines. Queries the x_intercepts
+        Draws 2 lines along the y-axis queries the intercept points.
+
+        Since there is no solution, default is returned.
         @return:
         """
         g = Geomstr()
+        g.line(complex(0, 0), complex(0, 100))
+        g.line(complex(20, 0), complex(20, 100))
+        q = g.y_intercept([0, 1], 10, 1)
+        self.assertEqual(q[0], 1)
+        self.assertEqual(q[1], 1)
+
+    def test_geomstr_x_intercepts(self):
+        """
+        Draws, 6 perfectly vertical lines, including y-axis.
+        @return:
+        """
+        g = Geomstr()
+        g.line(complex(0, 0), complex(0, 100))
         g.line(complex(20, 0), complex(20, 100))
         g.line(complex(40, 0), complex(40, 100))
         g.line(complex(80, 0), complex(80, 100))
         g.line(complex(60, 0), complex(60, 100))
         g.line(complex(100, 0), complex(100, 100))
-        q = g.x_intercept([0, 1, 2, 3, 4], 10)
-        self.assertEqual(q[0], 20.0)
-        self.assertEqual(q[1], 40.0)
-        self.assertEqual(q[2], 80.0)
-        self.assertEqual(q[3], 60.0)
-        self.assertEqual(q[4], 100.0)
+        q = g.x_intercept([0, 1, 2, 3, 4, 5], 10, 1)
+        self.assertEqual(q[0], 0)
+        self.assertEqual(q[1], 20.0)
+        self.assertEqual(q[2], 40.0)
+        self.assertEqual(q[3], 80.0)
+        self.assertEqual(q[4], 60.0)
+        self.assertEqual(q[5], 100.0)
+
+    def test_geomstr_x_intercepts_horizontal(self):
+        """
+        Draws 2 lines along the x-axis queries the intercept points.
+
+        Since there is no solution, default is returned.
+        @return:
+        """
+        g = Geomstr()
+        g.line(complex(0, 0), complex(100, 0))
+        g.line(complex(0, 20), complex(100, 20))
+        q = g.x_intercept([0, 1, 2, 3, 4, 5], 10, 1)
+        self.assertEqual(q[0], 1)
+        self.assertEqual(q[1], 1)
 
     def test_geomstr_classmethods(self):
         """
