@@ -44,6 +44,16 @@ class GRBLDevice(Service, Status):
         _ = self._
         choices = [
             {
+                "attr": "label",
+                "object": self,
+                "default": "grbl",
+                "type": str,
+                "label": _("Label"),
+                "tip": _("What is this device called."),
+                "width": 250,
+                "signals": "device;renamed",
+            },
+            {
                 "attr": "bedwidth",
                 "object": self,
                 "default": "235mm",
@@ -330,38 +340,15 @@ class GRBLDevice(Service, Status):
 
         choices = [
             {
-                "attr": "label",
+                "attr": "use_m3",
                 "object": self,
-                "default": "grbl",
-                "type": str,
-                "label": _("Label"),
-                "tip": _("What is this device called."),
-                "width": 250,
-                "signals": "device;renamed",
-            },
-            {
-                "attr": "buffer_mode",
-                "object": self,
-                "default": "buffered",
-                "type": str,
-                "style": "combo",
-                "choices": ["buffered", "sync"],
-                "label": _("Sending Protocol"),
+                "default": False,
+                "type": bool,
+                "label": _("Use M3"),
+                "section": "_5_Config",
                 "tip": _(
-                    "Buffered sends data as long as the planning buffer permits it being sent. Sync requires an 'ok' between each line sent."
+                    "Uses M3 rather than M4 for laser start (see GRBL docs for additional info)"
                 ),
-                "section": "_20_Protocol",
-                "subsection": "_00_",
-            },
-            {
-                "attr": "planning_buffer_size",
-                "object": self,
-                "default": 128,
-                "type": int,
-                "label": _("Planning Buffer Size"),
-                "tip": _("Size of Planning Buffer"),
-                "section": "_20_Protocol",
-                "subsection": "_00_",
             },
             {
                 "attr": "interpolate",
@@ -369,56 +356,8 @@ class GRBLDevice(Service, Status):
                 "default": 50,
                 "type": int,
                 "label": _("Curve Interpolation"),
+                "section": "_5_Config",
                 "tip": _("Distance of the curve interpolation in mils"),
-            },
-            {
-                "attr": "line_end",
-                "object": self,
-                "default": "CR",
-                "type": str,
-                "style": "combosmall",
-                "choices": ["CR", "LF", "CRLF"],
-                "label": _("Line Ending"),
-                "tip": _(
-                    "CR for carriage return (\\r), LF for line feed(\\n), CRLF for both"
-                ),
-                "section": "_20_Protocol",
-            },
-            {
-                "attr": "limit_buffer",
-                "object": self,
-                "default": True,
-                "type": bool,
-                "label": _("Limit the controller buffer size"),
-                "tip": _("Enables the controller buffer limit."),
-                "section": "_30_Controller Buffer",
-            },
-            {
-                "attr": "max_buffer",
-                "object": self,
-                "default": 200,
-                "trailer": _("lines"),
-                "type": int,
-                "label": _("Controller Buffer"),
-                "tip": _(
-                    "This is the limit of the controller buffer size. Prevents full writing to the controller."
-                ),
-                "conditional": (self, "limit_buffer"),
-                "section": "_30_Controller Buffer",
-            },
-        ]
-        self.register_choices("grbl-connection", choices)
-
-        choices = [
-            {
-                "attr": "use_m3",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Use M3"),
-                "tip": _(
-                    "Uses M3 rather than M4 for laser start (see GRBL docs for additional info)"
-                ),
             },
             {
                 "attr": "has_endstops",
@@ -426,6 +365,7 @@ class GRBLDevice(Service, Status):
                 "default": False,
                 "type": bool,
                 "label": _("Device has endstops"),
+                "section": "_5_Config",
                 "tip": _(
                     "If the device has endstops, then the laser can home itself to this position = physical home ($H)"
                 ),
@@ -460,6 +400,43 @@ class GRBLDevice(Service, Status):
                 "section": "_10_Red Dot",
             },
             {
+                "attr": "limit_buffer",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Limit the controller buffer size"),
+                "tip": _("Enables the controller buffer limit."),
+                "section": "_30_Controller Buffer",
+            },
+            {
+                "attr": "max_buffer",
+                "object": self,
+                "default": 200,
+                "trailer": _("lines"),
+                "type": int,
+                "label": _("Controller Buffer"),
+                "tip": _(
+                    "This is the limit of the controller buffer size. Prevents full writing to the controller."
+                ),
+                "conditional": (self, "limit_buffer"),
+                "section": "_30_Controller Buffer",
+            },
+        ]
+        self.register_choices("grbl-advanced", choices)
+
+        choices = [
+            {
+                "attr": "require_validator",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Require Validator"),
+                "tip": _(
+                    "Do not validate the connection without seeing the welcome message at start."
+                ),
+                "section": "_40_Validation",
+            },
+            {
                 "attr": "welcome",
                 "object": self,
                 "default": "Grbl",
@@ -470,8 +447,57 @@ class GRBLDevice(Service, Status):
                 ),
                 "section": "_40_Validation",
             },
+            {
+                "attr": "buffer_mode",
+                "object": self,
+                "default": "buffered",
+                "type": str,
+                "style": "combo",
+                "choices": ["buffered", "sync"],
+                "label": _("Sending Protocol"),
+                "tip": _(
+                    "Buffered sends data as long as the planning buffer permits it being sent. Sync requires an 'ok' between each line sent."
+                ),
+                "section": "_20_Protocol",
+                "subsection": "_00_",
+            },
+            {
+                "attr": "planning_buffer_size",
+                "object": self,
+                "default": 128,
+                "type": int,
+                "label": _("Planning Buffer Size"),
+                "tip": _("Size of Planning Buffer"),
+                "section": "_20_Protocol",
+                "subsection": "_00_",
+            },
+            {
+                "attr": "line_end",
+                "object": self,
+                "default": "CR",
+                "type": str,
+                "style": "combosmall",
+                "choices": ["CR", "LF", "CRLF"],
+                "label": _("Line Ending"),
+                "tip": _(
+                    "CR for carriage return (\\r), LF for line feed(\\n), CRLF for both"
+                ),
+                "section": "_20_Protocol",
+            },
+            {
+                "attr": "connect_delay",
+                "object": self,
+                "default": 0,
+                "trailer": _("ms"),
+                "type": int,
+                "label": _("Post Connection Delay"),
+                "tip": _(
+                    "Delay the GRBL communications after initial connect. (Some slow boot devices may need this)"
+                ),
+                "section": "_40_Validation",
+            },
         ]
-        self.register_choices("grbl-advanced", choices)
+        self.register_choices("protocol", choices)
 
         self.driver = GRBLDriver(self)
         self.controller = GrblController(self)

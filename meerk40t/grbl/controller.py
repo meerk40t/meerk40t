@@ -248,9 +248,6 @@ class GrblController:
 
         self.driver = self.service.driver
 
-        # Welcome message into, indicates the device is initialized.
-        self.welcome = self.service.setting(str, "welcome", "Grbl")
-
         # Sending variables.
         self._sending_thread = None
         self._recving_thread = None
@@ -368,8 +365,10 @@ class GrblController:
             self.log("Could not connect.", type="event")
             return
         self.log("Connecting to GRBL...", type="event")
-        self._validation_stage = 1
-        self.validate_start("$")
+        if not self.service.require_validator:
+            # We are required to wait for the validation.
+            self._validation_stage = 1
+            self.validate_start("$")
 
     def close(self):
         """
@@ -457,8 +456,18 @@ class GrblController:
         self._forward_buffer.clear()
 
     def validate_start(self, cmd):
-        self.service(f".gcode_realtime {cmd}")
-        self.service(f".timer-{self.service.label}{cmd} 0 1 gcode_realtime {cmd}")
+        if cmd == "$":
+            delay = self.service.connect_delay / 1000
+        else:
+            delay = 0
+        if delay:
+            self.service(f".timer 1 {delay} .gcode_realtime {cmd}")
+            self.service(
+                f".timer-{self.service.label}{cmd} 1 {delay} .timer-{self.service.label}{cmd} 0 1 gcode_realtime {cmd}"
+            )
+        else:
+            self.service(f".gcode_realtime {cmd}")
+            self.service(f".timer-{self.service.label}{cmd} 0 1 gcode_realtime {cmd}")
 
     def validate_stop(self, cmd):
         if cmd == "*":
@@ -703,9 +712,15 @@ class GrblController:
                 self._assembled_response = []
             elif response.startswith(">"):
                 self.log(f"STARTUP: {response}", type="event")
-            elif response.startswith(self.welcome):
-                self.log("Device Reset, revalidation required", type="event")
-                if self.fully_validated():
+            elif response.startswith(self.service.welcome):
+                if not self.service.require_validator:
+                    # Validation is not required, we reboot.
+                    self.log("Device Reset, revalidation required", type="event")
+                    if self.fully_validated():
+                        self._validation_stage = 1
+                        self.validate_start("$")
+                else:
+                    # Validation is required. This was stage 0.
                     self._validation_stage = 1
                     self.validate_start("$")
             else:

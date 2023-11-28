@@ -148,7 +148,7 @@ class GRBLConfiguration(MWindow):
 
         inject_choices = [
             {
-                "attr": "aquire_properties",
+                "attr": "acquire_properties",
                 "object": self,
                 "default": False,
                 "type": bool,
@@ -161,13 +161,6 @@ class GRBLConfiguration(MWindow):
             },
         ]
 
-        panel_main = ChoicePropertyPanel(
-            self,
-            wx.ID_ANY,
-            context=self.context,
-            choices="grbl-connection",
-            injector=inject_choices,
-        )
         panel_global = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="grbl-advanced"
         )
@@ -175,7 +168,10 @@ class GRBLConfiguration(MWindow):
             self.notebook_main, wx.ID_ANY, context=self.context
         )
         panel_dim = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="bed_dim"
+            self, wx.ID_ANY, context=self.context, choices="bed_dim", injector=inject_choices,
+        )
+        panel_protocol = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context, choices="protocol"
         )
         panel_rotary = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="rotary"
@@ -184,7 +180,6 @@ class GRBLConfiguration(MWindow):
         panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
         panel_formatter = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
 
-        self.panels.append(panel_main)
         self.panels.append(panel_interface)
         self.panels.append(panel_global)
         self.panels.append(panel_dim)
@@ -193,9 +188,9 @@ class GRBLConfiguration(MWindow):
         self.panels.append(panel_actions)
         self.panels.append(panel_formatter)
 
-        self.notebook_main.AddPage(panel_main, _("Connection"))
+        self.notebook_main.AddPage(panel_dim, _("Device"))
         self.notebook_main.AddPage(panel_interface, _("Interface"))
-        self.notebook_main.AddPage(panel_dim, _("Dimensions"))
+        self.notebook_main.AddPage(panel_protocol, _("Protocol"))
         self.notebook_main.AddPage(panel_global, _("Advanced"))
         self.notebook_main.AddPage(panel_rotary, _("Rotary"))
         self.notebook_main.AddPage(panel_warn, _("Warning"))
@@ -221,12 +216,12 @@ class GRBLConfiguration(MWindow):
         return "Device-Settings", "GRBL-Configuration"
 
     @property
-    def aquire_properties(self):
+    def acquire_properties(self):
         # Not relevant
         return False
 
-    @aquire_properties.setter
-    def aquire_properties(self, value):
+    @acquire_properties.setter
+    def acquire_properties(self, value):
         if not value:
             return
         try:
