@@ -509,7 +509,7 @@ class BeamTable:
         events = []
         # Add start and end events.
         for i in range(g.index):
-            if gs[i][2] != TYPE_LINE:
+            if np.real(gs[i][2]) != TYPE_LINE:
                 continue
             if (gs[i][0].real, gs[i][0].imag) < (gs[i][-1].real, gs[i][-1].imag):
                 events.append((g.segments[i][0], i, None))
