@@ -1554,13 +1554,14 @@ class SimulationPanel(wx.Panel, Job):
 
         plan = self.plan_name
         if self.checkbox_optimize.GetValue():
-            opt = " optimize"
+            opt = " preopt optimize"
             self.context.planner.do_optimization = True
         else:
             opt = ""
             self.context.planner.do_optimization = False
+        self.context.signal("optimize", self.context.planner.do_optimization)
         self.context(
-            f"plan{plan} clear\nplan{plan} copy preprocess validate blob preopt{opt}\n"
+            f"plan{plan} clear\nplan{plan} copy preprocess validate blob{opt}\n"
         )
         busy.end()
         self._refresh_simulated_plan()
@@ -2056,12 +2057,15 @@ class Simulation(MWindow):
     @staticmethod
     def sub_register(kernel):
         def open_simulator(v=None):
+            opt = kernel.planner.do_optimization
+            optpart = " preopt optimize" if opt else ""
+
             busy = kernel.busyinfo
             busy.change(msg=_("Preparing simulation..."))
             busy.start()
 
             kernel.console(
-                "planz copy preprocess validate blob preopt optimize\nwindow toggle Simulation z\n"
+                f"planz copy preprocess validate blob{optpart}\nwindow toggle Simulation z\n"
             )
             busy.end()
 
