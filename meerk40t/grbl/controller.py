@@ -463,7 +463,14 @@ class GrblController:
             delay = 0
         if delay:
             self.service(f".timer 1 {delay} .gcode_realtime {cmd}")
-            self.service(f".timer 1 {delay} .timer-{self.service.label}{cmd} 0 1 gcode_realtime {cmd}")
+            self.service(
+                f".timer-{self.service.label}{cmd} 1 {delay} .timer-{self.service.label}{cmd} 0 1 gcode_realtime {cmd}"
+            )
+        else:
+            self.service(f".gcode_realtime {cmd}")
+            self.service(
+                f".timer-{self.service.label}{cmd} 0 1 gcode_realtime {cmd}"
+            )
 
     def validate_stop(self, cmd):
         if cmd == "*":
