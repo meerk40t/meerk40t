@@ -617,17 +617,30 @@ class BeamTable:
         b = line[..., -1]
         a = np.where(actives == -1, np.nan + np.nan * 1j, a)
         b = np.where(actives == -1, np.nan + np.nan * 1j, b)
-        # Get all lines listed as active at any points. Find start and end points.
-        old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
-        try:
-            # If vertical slope is undefined. All y-ints are at y since y0=y1
-            m = (b.real - a.real) / (b.imag - a.imag)
-            x0 = a.real - (m * a.imag)
-            xs = np.reshape(np.repeat(np.real(self._nb_events), x0.shape[1]), x0.shape)
-            y_intercepts = np.where(np.isinf(m) | np.isnan(m), a.imag, (xs - x0) / m)
-        finally:
-            np.seterr(**old_np_seterr)
-        ys = np.reshape(np.repeat(np.imag(self._nb_events), x0.shape[1]), x0.shape)
+        yints = self.geometry.y_intercept(actives, np.real(self._nb_events), np.imag(self._nb_events))
+
+        # # Get all lines listed as active at any points. Find start and end points.
+        # old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
+        # try:
+        #     # If vertical slope is undefined. But, all y-ints are at y since y0=y1
+        #     m = (b.real - a.real) / (b.imag - a.imag)
+        #     x0 = a.real - (m * a.imag)
+        #     pts = np.where(~np.isinf(m), (x - x0) / m, np.imag(a))
+        #     pts[m == 0] = default
+        #     return pts
+        # finally:
+        #     np.seterr(**old_np_seterr)
+
+        # old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
+        # try:
+        #     # If vertical slope is undefined. All y-ints are at y since y0=y1
+        #     m = (b.real - a.real) / (b.imag - a.imag)
+        #     x0 = a.real - (m * a.imag)
+        #     xs = np.reshape(np.repeat(np.real(self._nb_events), x0.shape[1]), x0.shape)
+        #     y_intercepts = np.where(np.isinf(m) | np.isnan(m), a.imag, (xs - x0) / m)
+        # finally:
+        #     np.seterr(**old_np_seterr)
+        # ys = np.reshape(np.repeat(np.imag(self._nb_events), x0.shape[1]), x0.shape)
         print("end")
 
     def union(self, subject, clip):
@@ -4169,6 +4182,9 @@ class Geomstr:
             # If vertical slope is undefined. But, all y-ints are at y since y0=y1
             m = (b.real - a.real) / (b.imag - a.imag)
             x0 = a.real - (m * a.imag)
+            # if len(x0.shape) >= 2:
+            #     x = np.reshape(np.repeat(x, x0.shape[1]), x0.shape)
+            #     default = np.reshape(np.repeat(default, x0.shape[1]), x0.shape)
             pts = np.where(~np.isinf(m), (x - x0) / m, np.imag(a))
             pts[m == 0] = default
             return pts
