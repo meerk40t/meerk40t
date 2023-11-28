@@ -168,7 +168,11 @@ class GRBLConfiguration(MWindow):
             self.notebook_main, wx.ID_ANY, context=self.context
         )
         panel_dim = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="bed_dim", injector=inject_choices,
+            self,
+            wx.ID_ANY,
+            context=self.context,
+            choices="bed_dim",
+            injector=inject_choices,
         )
         panel_protocol = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="protocol"

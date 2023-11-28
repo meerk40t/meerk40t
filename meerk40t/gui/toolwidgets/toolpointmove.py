@@ -1,4 +1,5 @@
 import math
+
 import wx
 
 from meerk40t.gui.scene.sceneconst import (
@@ -148,7 +149,6 @@ class PointMoveTool(ToolWidget):
         self.scene.pane.suppress_selection = False
         self.reset()
         self.scene.context("tool none\n")
-
 
     def tool_change(self):
         offset = 5000

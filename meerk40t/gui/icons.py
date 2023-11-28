@@ -2229,9 +2229,7 @@ icon_circled_1 = VectorIcon(
 
 icon_nohatch = VectorIcon(
     fill=(),
-    stroke=(
-        "M 10 10 h 80 v 80 h -80 v -80",
-    ),
+    stroke=("M 10 10 h 80 v 80 h -80 v -80",),
 )
 
 icon_hatch = VectorIcon(
@@ -2811,7 +2809,7 @@ icon_youtube = VectorIcon(
 )
 
 icon_balor_regmarks = VectorIcon(
-    fill = (),
+    fill=(),
     stroke=(
         "[150%]M 10 70 L 70 10 L 120 60 L 60 120 L 10 70",
         "[150%]M 10 70 L 120 60 M 70 10 L 60 120",
@@ -2827,7 +2825,7 @@ icon_balor_regmarks = VectorIcon(
 )
 
 icon_balor_full = VectorIcon(
-    fill = (),
+    fill=(),
     stroke=(
         "[150%]M 10 70 L 70 10 L 120 60 L 60 120 L 10 70",
         "[150%]M 10 70 L 120 60 M 70 10 L 60 120",
@@ -2842,7 +2840,7 @@ icon_balor_full = VectorIcon(
 )
 
 icon_balor_hull = VectorIcon(
-    fill = (),
+    fill=(),
     stroke=(
         "[150%]M 10 70 L 70 10 L 120 60 L 60 120 L 10 70",
         "[150%]M 10 70 L 120 60 M 70 10 L 60 120",
@@ -2851,11 +2849,11 @@ icon_balor_hull = VectorIcon(
         "[red,125%]M 60 120 l 10 -10 m 10 -10 l 10 -10 m 10 -10 l 10 -10 m 10 -10",
         "[red,125%]M 10 70 l 10 10 m 10 10 l 10 10 m 10 10 l 10 10",
     ),
-    edge = 5,
+    edge=5,
 )
 
 icon_balor_bounds = VectorIcon(
-    fill = (),
+    fill=(),
     stroke=(
         "[150%]M 10 70 L 70 10 L 120 60 L 60 120 L 10 70",
         "[150%]M 10 70 L 120 60 M 70 10 L 60 120",
@@ -2879,5 +2877,5 @@ icon_outline = VectorIcon(
         "C 338936,175714 340096,176785 340827,178439 L 341157,179185 L 341121,206469 L 341084,233752"
         "L 340790,234473 C 340181,235967 338996,237116 337519,237644 C 336763,237914 336647,237916 314936,237945 C 302933,237962 290606,237939 287542,237895 L 287542,237895",
     ),
-    edge = 5000,
+    edge=5000,
 )

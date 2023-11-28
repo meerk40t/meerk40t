@@ -80,8 +80,8 @@ from .propertypanels.waitproperty import WaitPropertyPanel
 from .propertypanels.wobbleproperty import WobblePropertyPanel
 from .simpleui import SimpleUI
 from .simulation import Simulation
-from .wordlisteditor import WordlistEditor
 from .tips import Tips
+from .wordlisteditor import WordlistEditor
 from .wxmmain import MeerK40t
 
 """

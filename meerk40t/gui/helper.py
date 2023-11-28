@@ -17,6 +17,7 @@ from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
+
 def register_panel_helper(window, context):
     pane = (
         aui.AuiPaneInfo()
@@ -36,6 +37,7 @@ def register_panel_helper(window, context):
     window.on_pane_create(pane)
     context.register("pane/helper", pane)
 
+
 class HelperPanel(wx.Panel):
     """
     Displays information about the GUI element the mouse is currently hovering over
@@ -46,7 +48,9 @@ class HelperPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.text_info = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        self.text_info = wx.TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_READONLY
+        )
         # self.button_webhelp = wx.Button(self, wx.ID_ANY, _("Online-Help"))
         # self.button_webhelp.SetBitmap(icons8_info.GetBitmap(resize = 0.5 * get_default_icon_size()))
         self.active = False
@@ -64,7 +68,9 @@ class HelperPanel(wx.Panel):
         pass
 
     def __set_properties(self):
-        self.text_info.SetToolTip(_("Information about the control the mouse is hovering over"))
+        self.text_info.SetToolTip(
+            _("Information about the control the mouse is hovering over")
+        )
         # self.button_webhelp.SetToolTip(_("Call online help-page"))
 
     def __do_layout(self):

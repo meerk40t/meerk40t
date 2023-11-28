@@ -59,9 +59,7 @@ class TipPanel(wx.Panel):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.image_tip = wx.StaticBitmap(self, wx.ID_ANY, style=wx.SB_FLAT)
         self.image_tip.SetMinSize(wx.Size(250, -1))
-        self.no_image_message = wx.TextCtrl(
-            self, wx.ID_ANY, _("Image missing!")
-        )
+        self.no_image_message = wx.TextCtrl(self, wx.ID_ANY, _("Image missing!"))
         self.no_image_message.SetToolTip(
             _(
                 "Couldn't find the cached image for this tip!\nNo permissions to download from the internet."
@@ -84,7 +82,9 @@ class TipPanel(wx.Panel):
         self.button_prev.SetBitmap(icons8_circled_left.GetBitmap(resize=icon_size[0]))
         self.button_prev.SetToolTip(_("Jump back to the previously displayed tip"))
 
-        self.label_position = wx.StaticText(self, wx.ID_ANY, "", style=wx.ALIGN_CENTRE_HORIZONTAL)
+        self.label_position = wx.StaticText(
+            self, wx.ID_ANY, "", style=wx.ALIGN_CENTRE_HORIZONTAL
+        )
 
         self.button_next = wx.Button(self, wx.ID_ANY, _("Next tip"))
         self.button_next.SetBitmap(icons8_circled_right.GetBitmap(resize=icon_size[0]))
@@ -170,10 +170,16 @@ class TipPanel(wx.Panel):
             self.button_try.Show(False)
             self.tip_command = ""
         if my_tip[2]:
-            self.set_tip_image(my_tip[2], self._current_tip, self.context.tip_access_consent)
+            self.set_tip_image(
+                my_tip[2], self._current_tip, self.context.tip_access_consent
+            )
         else:
             self.set_tip_image("", self._current_tip, self.context.tip_access_consent)
-        self.label_position.SetLabel(_("Tip {idx}/{maxidx}").format(idx=self._current_tip + 1, maxidx=len(self.tips)))
+        self.label_position.SetLabel(
+            _("Tip {idx}/{maxidx}").format(
+                idx=self._current_tip + 1, maxidx=len(self.tips)
+            )
+        )
         self.Layout()
 
     def _download_image(self, uri, local_file):

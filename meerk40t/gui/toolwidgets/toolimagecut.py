@@ -1,5 +1,6 @@
 from .toolpointlistbuilder import PointListTool
 
+
 class ImageCutTool(PointListTool):
     """
     ImageCut Tool.
@@ -21,5 +22,4 @@ class ImageCutTool(PointListTool):
 
     def point_added(self):
         if len(self.point_series) > 1:
-            self.end_tool() # That will call everything
-
+            self.end_tool()  # That will call everything

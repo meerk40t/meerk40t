@@ -235,7 +235,12 @@ class BalorDriver:
                 interp = self.service.interpolate
 
                 g = Geomstr()
-                g.cubic(complex(*q.start), complex(*q.c1()), complex(*q.c2()), complex(*q.end))
+                g.cubic(
+                    complex(*q.start),
+                    complex(*q.c1()),
+                    complex(*q.c2()),
+                    complex(*q.end),
+                )
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     # LOOP CHECKS
                     if self._aborting:

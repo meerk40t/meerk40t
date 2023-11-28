@@ -2226,6 +2226,7 @@ class ImageLoader:
             ) from e
         try:
             from PIL import ImageOps
+
             image = ImageOps.exif_transpose(image)
         except ImportError:
             pass
