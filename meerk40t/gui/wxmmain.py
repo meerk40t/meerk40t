@@ -228,7 +228,7 @@ class MeerK40t(MWindow):
 
         # Look at window elements we are hovering over
         # to establish the online help functionality
-        self.context.kernel.add_job(run=self.mouse_query, name="helper-check", interval=0.5)
+        self.context.kernel.add_job(run=self.mouse_query, name="helper-check", interval=0.5, run_main=True)
         # Switched to kernel to avoid 0xC0000005 crash in windows.
         # self.timer = wx.Timer(self, id=wx.ID_ANY)
         # self.Bind(wx.EVT_TIMER, self.mouse_query, self.timer)
