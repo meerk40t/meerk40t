@@ -34,3 +34,22 @@ cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Grids
 tip=Tired of aligning objects? Use the magnet feature, just doubleclick on the X- or Y-axis and establish a magnetline.\nMove an element close to that line and see what happens...\nRight click on the axis to set more options.
 img=https://user-images.githubusercontent.com/2670784/161030963-fb73907c-bdb0-47dc-b0da-b9b207025dbe.png
 cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Magnets
+
+tip=You need a quick copy of an element? There are some options:
+a) Select an object, hold the Alt-key and move the object: and you have your copy
+b) Right click: Choose duplicate elements from teh context-menu
+c) Use the copy and paste buttons in the toolbar
+
+tip=MeerK40t has a lot of frequently needed windows called panes (eg like the lasercontrol or the operations & element tree).
+You can move these panels freely around on the screen, but you can as well dock them to the sides: Move a panel to the side of your Meerk40t window and it will indicate with a shaded area that window can dock to the userinterface.
+img=https://github.com/meerk40t/meerk40t/assets/2670784/3b01d8c8-5239-4696-8967-724f41285132
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-GUI#Panels
+
+tip=Right click on the top operations node - the top node of operations has a special context menu, that does allow to access/set generic properties of operations
+img=https://user-images.githubusercontent.com/2670784/285616467-75cf67db-d329-4fcc-9a5a-e9635d9aa4e1.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Operations
+
+tip=MeerK40t has regmarks, a special category of elements, that will not be burned but will act as kind of visual guideline for object placement.
+You can move elements in out of the regmark zone by dragging them into or out tof the regmark area in the tree.
+Elements in the regmark area are acting as a background, you can no longer directly interact with them on the Scene.
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Regmarks

@@ -123,6 +123,7 @@ class TipPanel(wx.Panel):
                 + "The list of tips is constantly expanded.\n"
             )
         )
+        self.checkbox_update.SetValue(consent)
         option_sizer.Add(self.button_try, 0, wx.ALIGN_CENTER_VERTICAL)
         option_sizer.AddStretchSpacer()
         option_sizer.Add(self.checkbox_update, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -136,7 +137,7 @@ class TipPanel(wx.Panel):
         self.button_prev.Bind(wx.EVT_BUTTON, self.on_tip_prev)
         self.button_next.Bind(wx.EVT_BUTTON, self.on_tip_next)
         self.button_try.Bind(wx.EVT_BUTTON, self.on_button_try)
-        self.checkbox_update.Bind(wx.EVT_BUTTON, self.on_check_consent)
+        self.checkbox_update.Bind(wx.EVT_CHECKBOX, self.on_check_consent)
 
         self.cache_dir = self.establish_picture_cache()
         self.context.setting(int, "next_tip", 0)
@@ -157,6 +158,9 @@ class TipPanel(wx.Panel):
         self._current_tip = newvalue
         # Store it for the next session
         self.context.next_tip = newvalue + 1
+        self.load_tip()
+
+    def load_tip(self):
         my_tip = self.tips[self._current_tip]
         self.text_tip.SetValue(my_tip[0])
         if my_tip[1]:
@@ -166,10 +170,10 @@ class TipPanel(wx.Panel):
             self.button_try.Show(False)
             self.tip_command = ""
         if my_tip[2]:
-            self.set_tip_image(my_tip[2], newvalue, self.context.tip_access_consent)
+            self.set_tip_image(my_tip[2], self._current_tip, self.context.tip_access_consent)
         else:
-            self.set_tip_image("", newvalue, self.context.tip_access_consent)
-        self.label_position.SetLabel(_("Tip {idx}/{maxidx}").format(idx=newvalue + 1, maxidx=len(self.tips)))
+            self.set_tip_image("", self._current_tip, self.context.tip_access_consent)
+        self.label_position.SetLabel(_("Tip {idx}/{maxidx}").format(idx=self._current_tip + 1, maxidx=len(self.tips)))
         self.Layout()
 
     def _download_image(self, uri, local_file):
@@ -203,6 +207,7 @@ class TipPanel(wx.Panel):
         avoid ending up with the same name for equally called images
         display: apply and display the image
         """
+        # print (f"Image request: flag={automatic_download}, consent={self.context.tip_access_consent}, {path}\n")
         self.no_image_message.Show(False)
         if isinstance(path, wx.Bitmap):
             self.image_tip.SetBitmap(path)
@@ -221,7 +226,8 @@ class TipPanel(wx.Panel):
             # Malformed path.
             return
 
-        basename = f"_{counter}_{parts[-1]}"
+        # basename = f"_{counter}_{parts[-1]}"
+        basename = hex(hash(path))
         local_path = os.path.join(self.cache_dir, basename)
         if not local_path:
             return
@@ -229,18 +235,19 @@ class TipPanel(wx.Panel):
         if not os.path.exists(local_path):
             if automatic_download:
                 found = self._download_image(path, local_path)
-                self.image_tip.Show(found)
-                return
+                # We still need to scale and display it
             else:
                 self.no_image_message.Show(True)
         if not os.path.exists(local_path):
             # File still does not exist.
+            self.no_image_message.Show(True)
             return
 
         bmp = wx.Bitmap()
         res = bmp.LoadFile(local_path)
         if not res:
             # Bitmap failed to load.
+            self.no_image_message.Show(True)
             return
         new_x, new_y = bmp.Size
         img_size = self.image_tip.GetSize()
@@ -277,7 +284,7 @@ class TipPanel(wx.Panel):
     def on_check_consent(self, event):
         state = self.checkbox_update.GetValue()
         self.context.tip_access_consent = state
-        self.current_tip = self.current_tip
+        self.load_tip()
         if state:
             self.update_tips()
 
@@ -378,7 +385,7 @@ class TipPanel(wx.Panel):
         """
         self.load_tips_from_github()
         self.setup_tips()
-        self.current_tip = self.current_tip
+        self.load_tip()
 
     def load_tips_from_github(self):
         successful = False
@@ -387,9 +394,12 @@ class TipPanel(wx.Panel):
         url = "https://github.com/meerk40t/meerk40t/raw/main/locale/"
         # Do we have a localized version?
         locale = "en"
+        lang = self.context.language
+        if lang is None:
+            lang = 0
         languages = list(self.context.app.supported_languages)
         try:
-            locale = languages[self.context.language][0]
+            locale = languages[lang][0]
         except IndexError:
             pass
         # print(self.context.language, locale, languages)
@@ -511,7 +521,7 @@ class TipPanel(wx.Panel):
         return cache_dir
 
     def pane_show(self, *args):
-        pass
+        self.load_tip()
 
     def pane_hide(self, *args):
         pass

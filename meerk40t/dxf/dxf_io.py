@@ -27,6 +27,7 @@ from ..svgelements import (
     Matrix,
     Move,
     Path,
+    Point,
     Polygon,
     Polyline,
     Viewbox,
@@ -456,35 +457,86 @@ class DXFProcessor:
             return
         elif entity.dxftype() == "IMAGE":
             bottom_left_position = entity.dxf.insert
-            size = entity.dxf.image_size
+            targetmatrix = Matrix()
+            targetmatrix.post_scale(self.scale, -self.scale)
+            targetmatrix.post_translate_y(self.elements.device.view.unit_height)
+            # So what's our targetposition then?
+            targetpos = targetmatrix.point_in_matrix_space(Point(bottom_left_position[0], bottom_left_position[1]))
+
+            size_img = entity.dxf.image_size
+            w_scale = entity.dxf.u_pixel[0]
+            h_scale = entity.dxf.v_pixel[1]
+            size = (size_img[0] * w_scale, size_img[1] * h_scale)
             imagedef = entity.image_def
-            filename = imagedef.dxf.filename
-            if not os.path.exists(filename) or os.path.isdir(filename):
-                filename = os.path.join(os.path.dirname(self.pathname), filename)
-            if not os.path.exists(filename) or os.path.isdir(filename):
-                # Image def refers to a path that does not exist.
+            fname1 = imagedef.dxf.filename
+            fname2 = os.path.normpath(
+                os.path.join(os.path.dirname(self.pathname), fname1)
+            )
+            candidates = [
+                fname1,
+                fname2,
+            ]
+            # LibreCad 2.2 has a bug - it stores the relative path with a '../' too few
+            # So let's add another option
+            if fname1.startswith("../"):
+                fname1 = "../" + fname1
+                fname2 = os.path.normpath(
+                    os.path.join(os.path.dirname(self.pathname), fname1)
+                )
+                candidates.append(fname1)
+                candidates.append(fname2)
+
+            was_found = False
+            for filename in candidates:
+                if not os.path.exists(filename) or os.path.isdir(filename):
+                    continue
+                was_found = True
+                break
+            if not was_found:
                 return
 
+            x_pos = bottom_left_position[0]
+            y_pos = bottom_left_position[1]
+            dxf_units_per_inch = self.scale / UNITS_PER_INCH
+            width_in_inches = size[0] * dxf_units_per_inch
+            height_in_inches = size[1] * dxf_units_per_inch
+            dpix = size_img[0] / width_in_inches
+            dpiy = size_img[1] / height_in_inches
+
+            # Node.matrix is primary transformation.
+            matrix = Matrix()
+            matrix.post_scale(1, -1)
+            matrix.post_translate_x(x_pos)
+            matrix.post_translate_y(y_pos)
+            matrix.post_scale(self.scale, -self.scale)
+            matrix.post_translate_y(self.elements.device.view.unit_height)
             try:
                 node = context_node.add(
                     href=filename,
-                    x=bottom_left_position[0],
-                    y=bottom_left_position[1] - size[1],
                     width=size[0],
                     height=size[1],
+                    dpi=dpix,
+                    matrix=matrix,
                     type="elem image",
                 )
             except FileNotFoundError:
                 return
             try:
                 from PIL import ImageOps
+
                 node.image = ImageOps.exif_transpose(node.image)
             except ImportError:
                 pass
-            # Node.matrix is primary transformation.
-            node.matrix.post_scale(self.scale, -self.scale)
-            node.matrix.post_translate_y(self.elements.device.view.unit_height)
             self.check_for_attributes(node, entity)
+            # We don't seem to get the position right, so lets' look
+            # at our bottom_left position again and fix the gap
+            bb = node.bounds
+            dx = targetpos.x - bb[0]
+            dy = targetpos.y - bb[3]
+            if dx != 0:
+                node.matrix.post_translate_x(dx)
+            if dy != 0:
+                node.matrix.post_translate_y(dy)
             e_list.append(node)
             return
         elif entity.dxftype() == "MTEXT":
@@ -496,6 +548,7 @@ class DXFProcessor:
                 stroke_scaled=False,
                 type="elem text",
             )
+            node.matrix.post_scale(1, -1, insert[0], insert[1])
             node.matrix.post_scale(self.scale, -self.scale)
             node.matrix.post_translate_y(self.elements.device.view.unit_height)
 
@@ -511,6 +564,7 @@ class DXFProcessor:
                 stroke_scaled=False,
                 type="elem text",
             )
+            node.matrix.post_scale(1, -1, insert[0], insert[1])
             node.matrix.post_scale(self.scale, -self.scale)
             node.matrix.post_translate_y(self.elements.device.view.unit_height)
             self.check_for_attributes(node, entity)
