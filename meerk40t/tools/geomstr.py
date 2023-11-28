@@ -532,8 +532,7 @@ class BeamTable:
         scanline = None
 
         def y_ints(e):
-            # Our sorting requires that if x is the same, then y is used. Find the y-int at scanline.y else scanline.x is used.
-            return g.y_intercept(e, scanline.imag, scanline.imag)
+            return g.y_intercept(e, scanline.real, scanline.imag)
 
         # Store previously active segments
         active_lists = []
