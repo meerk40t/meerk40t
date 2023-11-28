@@ -532,7 +532,7 @@ class BeamTable:
         scanline = None
 
         def y_ints(e):
-            return g.y_intercept(e, np.real(scanline))
+            return g.y_intercept(e, scanline)
 
         # Store previously active segments
         active_lists = []
@@ -4125,7 +4125,9 @@ class Geomstr:
             # If vertical slope is undefined. But, all y-ints are at y since y0=y1
             m = (b.real - a.real) / (b.imag - a.imag)
             x0 = a.real - (m * a.imag)
-            return np.where(~np.isinf(m), (x - x0) / m, a.imag)
+            pts = np.where(~np.isinf(m), (np.real(x) - x0) / m, np.imag(x))
+            pts[m == 0] = np.real(x)
+            return pts
         finally:
             np.seterr(**old_np_seterr)
 
