@@ -13,9 +13,10 @@ from wx import aui
 
 from meerk40t.gui.icons import get_default_icon_size, icons8_info
 from meerk40t.gui.wxutils import StaticBoxSizer
-from meerk40t.kernel import signal_listener
+from meerk40t.kernel import signal_listener, Job
 
 _ = wx.GetTranslation
+
 
 def register_panel_helper(window, context):
     pane = (
@@ -36,6 +37,7 @@ def register_panel_helper(window, context):
     window.on_pane_create(pane)
     context.register("pane/helper", pane)
 
+
 class HelperPanel(wx.Panel):
     """
     Displays information about the GUI element the mouse is currently hovering over
@@ -46,7 +48,9 @@ class HelperPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.text_info = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        self.text_info = wx.TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_READONLY
+        )
         # self.button_webhelp = wx.Button(self, wx.ID_ANY, _("Online-Help"))
         # self.button_webhelp.SetBitmap(icons8_info.GetBitmap(resize = 0.5 * get_default_icon_size()))
         self.active = False
@@ -56,15 +60,59 @@ class HelperPanel(wx.Panel):
         self.__do_layout()
 
         # self.button_webhelp.Bind(wx.EVT_BUTTON, self.on_button_help)
+        # Look at window elements we are hovering over
+        # to establish the online help functionality
+        self.job = Job(
+            process=self.mouse_query, job_name="helper-check", interval=0.2, run_main=True
+        )
+        # Switched to kernel to avoid 0xC0000005 crash in windows.
+        # self.timer = wx.Timer(self, id=wx.ID_ANY)
+        # self.Bind(wx.EVT_TIMER, self.mouse_query, self.timer)
+        # self.timer.Start(500, wx.TIMER_CONTINUOUS)
+        self._last_help_info = ""
+        self._last_help_section = ""
+
+    def mouse_query(self, event=None):
+        """
+        This routine looks periodically (every 0.5 seconds)
+        at the window ie control under the mouse cursor.
+        It will examine the window if it contains a tooltip text and
+        will display this in a textbox in this panel.
+        Additionally, it will read the associated HelpText of the control
+        (or its parent if the control does not have any) to construct a
+        Wiki page on GitHub to open an associated online help page.
+        """
+        wind, pos = wx.FindWindowAtPointer()
+        if wind is not None:
+            info = ""
+            if hasattr(wind, "GetToolTipText"):
+                info = wind.GetToolTipText()
+            section = ""
+            if hasattr(wind, "GetHelpText"):
+                win = wind
+                while win is not None:
+                    section = win.GetHelpText()
+                    if section:
+                        break
+                    win = win.GetParent()
+                if section is None or section == "":
+                    section = "GUI"
+            if info != self._last_help_info or section != self._last_help_section:
+                self._last_help_info = info
+                self._last_help_section = section
+                # Inform HelperWindow about a new content
+                self.context.signal("helpinfo", info, section)
 
     def pane_show(self, *args):
-        pass
+        self.context.kernel.schedule(self.job)
 
     def pane_hide(self, *args):
-        pass
+        self.context.kernel.unschedule(self.job)
 
     def __set_properties(self):
-        self.text_info.SetToolTip(_("Information about the control the mouse is hovering over"))
+        self.text_info.SetToolTip(
+            _("Information about the control the mouse is hovering over")
+        )
         # self.button_webhelp.SetToolTip(_("Call online help-page"))
 
     def __do_layout(self):
