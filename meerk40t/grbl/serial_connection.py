@@ -33,14 +33,19 @@ class SerialConnection:
         str_response = str_response.strip()
         return str_response
 
-    def write(self, line):
+    def write(self, line, retry=0):
         try:
             self.laser.write(bytes(line, "utf-8"))
-        except (SerialException, PermissionError, TypeError) as e:
+        except (SerialException, PermissionError, TypeError, AttributeError) as e:
             # Type error occurs when `pipe_abort_write_r` is none, inside serialpostix.read() (out of sequence close)
             self.controller.log(
                 f"Error when writing '{line}: {str(e)}'", type="connection"
             )
+            if retry > 5:
+                return
+            self.disconnect()
+            self.connect()
+            self.write(line, retry+1)
 
     def connect(self):
         if self.laser:

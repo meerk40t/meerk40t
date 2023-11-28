@@ -72,6 +72,10 @@ def plugin(kernel, lifecycle=None):
                         "attr": "flavor",
                         "default": "fluidnc",
                     },
+                    {
+                        "attr": "require_validator",
+                        "default": False,
+                    },
                 ],
             },
         )
@@ -104,6 +108,10 @@ def plugin(kernel, lifecycle=None):
                     {
                         "attr": "source",
                         "default": "co2",
+                    },
+                    {
+                        "attr": "require_validator",
+                        "default": True,
                     },
                 ],
             },
@@ -156,6 +164,10 @@ def plugin(kernel, lifecycle=None):
                     {
                         "attr": "source",
                         "default": "diode",
+                    },
+                    {
+                        "attr": "require_validator",
+                        "default": False,
                     },
                     {"attr": "bedheight", "default": "430mm"},
                     {"attr": "bedwidth", "default": "400mm"},
