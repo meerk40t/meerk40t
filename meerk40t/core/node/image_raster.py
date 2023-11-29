@@ -58,8 +58,12 @@ class ImageRasterNode(Node):
         default_map = super().default_map(default_map=default_map)
         default_map.update(self.__dict__)
         image = self.image
-        default_map["width"] = image.width
-        default_map["height"] = image.height
+        try:
+            default_map["width"] = image.width
+            default_map["height"] = image.height
+        except:
+            default_map["width"] = 0
+            default_map["height"] = 0
         default_map["element_type"] = "Image"
         return default_map
 
