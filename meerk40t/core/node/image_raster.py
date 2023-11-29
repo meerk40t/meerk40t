@@ -13,7 +13,7 @@ class ImageRasterNode(Node):
         self.image = None
         self.matrix = None
         super().__init__(type="image raster", **kwargs)
-        self.__formatter = "{element_type} {id} {width}x{height}"
+        self._formatter = "{element_type} {id} {width}x{height}"
         if self.matrix is None:
             self.matrix = Matrix()
         self._can_rotate = False
