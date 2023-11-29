@@ -130,7 +130,6 @@ def init_tree(kernel):
     #         info += f"{idx}#: {e.type}, identical to parent: {e is node}"
     #     print (info)
 
-
     @tree_conditional(lambda node: not node.lock)
     @tree_submenu(_("Passthrough"))
     @tree_operation(_("From Original"), node_type="elem image", help="")
