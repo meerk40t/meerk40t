@@ -113,7 +113,7 @@ def init_tree(kernel):
             activate(node)
 
     @tree_separator_after()
-    @tree_operation(_("Image properties"), node_type="elem image", help="")
+    @tree_operation(_("Image properties"), node_type=("elem image", "image raster"), help="")
     def image_property(node, **kwargs):
         activate = self.kernel.lookup("function/open_property_window_for_node")
         if activate is not None:
@@ -129,6 +129,26 @@ def init_tree(kernel):
     #             info += "\n"
     #         info += f"{idx}#: {e.type}, identical to parent: {e is node}"
     #     print (info)
+
+    @tree_conditional(lambda node: not node.lock)
+    @tree_operation(_("Lock Modifications"), node_type="elem image", help="")
+    def image_convert_raw(node, **kwargs):
+        node.replace_node(
+            image=node.image,
+            matrix=node.matrix,
+            type="image raster",
+        )
+
+    @tree_conditional(lambda node: not node.lock)
+    @tree_operation(_("Unlock Modifications"), node_type="image raster", help="")
+    def image_convert_raw(node, **kwargs):
+        node.replace_node(
+            image=node.image,
+            matrix=node.matrix,
+            type="elem image",
+        )
+
+
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(_("Ungroup elements"), node_type=("group", "file"), help="")
@@ -2862,25 +2882,6 @@ def init_tree(kernel):
     )
     def image_save_processed(node, **kwargs):
         self("image save output.png --processed\n")
-
-    @tree_conditional(lambda node: not node.lock)
-    @tree_operation(_("Lock Modifications"), node_type="elem image", help="")
-    def image_convert_raw(node, **kwargs):
-        node.replace_node(
-            image=node.image,
-            matrix=node.matrix,
-            type="image raster",
-        )
-
-    @tree_conditional(lambda node: not node.lock)
-    @tree_operation(_("Unlock Modifications"), node_type="image raster", help="")
-    def image_convert_raw(node, **kwargs):
-        node.replace_node(
-            image=node.image,
-            matrix=node.matrix,
-            type="elem image",
-        )
-
 
     @tree_conditional(lambda node: len(node.children) > 0)
     @tree_separator_before()
