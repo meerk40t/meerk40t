@@ -392,10 +392,13 @@ def init_tree(kernel):
             self.signal("propupdate", node)
 
     @tree_submenu(_("Convert to Path"))
-    @tree_operation(_("Horizontal"), node_type="elem image", help="")
+    @tree_operation(_("Horizontal"), node_type=("elem image", "image raster"), help="")
     def image_convert_to_path_horizontal(node, **kwargs):
         image, box = node.as_image()
-        m = Matrix(node.active_matrix)
+        try:
+            m = Matrix(node.active_matrix)
+        except AttributeError:
+            m = Matrix(node.matrix)
         n = node.replace_node(
             type="elem path",
             geometry=Geomstr.image(image, vertical=False),
@@ -406,10 +409,13 @@ def init_tree(kernel):
         self.classify([n])
 
     @tree_submenu(_("Convert to Path"))
-    @tree_operation(_("Vertical"), node_type="elem image", help="")
+    @tree_operation(_("Vertical"), node_type=("elem image", "image raster"), help="")
     def image_convert_to_path_vertical(node, **kwargs):
         image, box = node.as_image()
-        m = Matrix(node.active_matrix)
+        try:
+            m = Matrix(node.active_matrix)
+        except AttributeError:
+            m = Matrix(node.matrix)
         n = node.replace_node(
             type="elem path",
             geometry=Geomstr.image(image, vertical=True),
