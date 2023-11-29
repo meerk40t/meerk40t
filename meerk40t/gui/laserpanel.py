@@ -1,4 +1,5 @@
 import platform
+
 import wx
 from wx import aui
 
@@ -94,7 +95,7 @@ def register_panel_laser(window, context):
 
     def on_resize(event):
         wb_size = jog_drag.ClientSize
-        if platform.system()=="Linux":
+        if platform.system() == "Linux":
             # They don't resize well
             panel_size = (max(20, wb_size[0] / 2 - 40), wb_size[1])
         else:
@@ -416,6 +417,7 @@ class LaserPanel(wx.Panel):
             return
         if self.context.planner.do_optimization != newvalue:
             self.context.planner.do_optimization = newvalue
+        if self.checkbox_optimize.GetValue() != newvalue:
             self.checkbox_optimize.SetValue(newvalue)
 
     @signal_listener("device;modified")
@@ -698,16 +700,6 @@ class JobPanel(wx.Panel):
             else:
                 self.text_plan.SetValue(f"{str(stage)}: {str(plan)}")
 
-    @signal_listener("optimize")
-    def optimize_update(self, origin, *message):
-        try:
-            newvalue = bool(message[0])
-        except ValueError:
-            # You never know
-            return
-        if newvalue != self.context.planner.do_optimization:
-            self.context.planner.do_optimization = newvalue
-
     def on_button_save(self, event):  # wxGlade: LaserPanel.<event_handler>
         gui = self.context.gui
         extension = "txt"
@@ -726,8 +718,12 @@ class JobPanel(wx.Panel):
 
             if not pathname.lower().endswith(f".{extension}"):
                 pathname += f".{extension}"
+            if self.context.planner.do_optimization:
+                optpart = "preopt optimize "
+            else:
+                optpart = ""
             self.context(
-                f'planz clear copy preprocess validate blob preopt optimize save_job "{pathname}"\n'
+                f'planz clear copy preprocess validate blob {optpart}save_job "{pathname}"\n'
             )
 
     def on_button_load(self, event):  # wxGlade: LaserPanel.<event_handler>
@@ -798,6 +794,7 @@ class OptimizePanel(wx.Panel):
             return
         if self.context.planner.do_optimization != newvalue:
             self.context.planner.do_optimization = newvalue
+        if self.checkbox_optimize.GetValue() != newvalue:
             self.checkbox_optimize.SetValue(newvalue)
             self.optimize_panel.Enable(newvalue)
 

@@ -195,7 +195,7 @@ class EllipseNode(Node, Stroked, FunctionalParameter):
         @return:
         """
         a = abs(complex(*self.matrix.transform_vector([self.rx, 0])))
-        b = abs(complex(*self.matrix.transform_vector([0,self.ry])))
+        b = abs(complex(*self.matrix.transform_vector([0, self.ry])))
         if a == b:
             return tau * self.rx
         if b > a:

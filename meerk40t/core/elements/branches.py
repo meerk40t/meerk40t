@@ -995,9 +995,7 @@ def init_commands(kernel):
             op.updated()
         return "ops", data
 
-    @self.console_argument(
-        "angle", type=Angle, help=_("Set hatch-angle of operations")
-    )
+    @self.console_argument("angle", type=Angle, help=_("Set hatch-angle of operations"))
     @self.console_option(
         "difference",
         "d",

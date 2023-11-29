@@ -1,5 +1,7 @@
-from .toolpointlistbuilder import PointListTool
 from meerk40t.svgelements import Polyline
+
+from .toolpointlistbuilder import PointListTool
+
 
 class PolylineTool(PointListTool):
     """
@@ -25,6 +27,7 @@ class PolylineTool(PointListTool):
             if elements.classify_new:
                 elements.classify([node])
             self.notify_created(node)
+
     def point_added(self):
         # Nothing particular to do here
         return

@@ -1,7 +1,6 @@
 import unittest
 
 from meerk40t.core.units import Angle
-
 from meerk40t.svgelements import Matrix
 from meerk40t.tools.pmatrix import PMatrix
 
@@ -91,7 +90,7 @@ class TestPmatrix(unittest.TestCase):
         m2 = PMatrix.rotate(Angle("-90deg"), rx, ry)
         self.assertEqual(m1, m2)
         pt = m1.point_in_matrix(rx, ry)
-        self.assertAlmostEqual(pt, complex(rx,ry))
+        self.assertAlmostEqual(pt, complex(rx, ry))
 
     def test_matrix_map_translate_scale_y(self):
         m1 = PMatrix.map(

@@ -161,7 +161,7 @@ class KerfPanel(wx.Panel):
             "If you want to produce cut out shapes with *exact* dimensions"
             + " after the burn, then you need to take half the width of the"
             + " laserbeam into consideration (aka Kerf compensation).\n"
-            + "This routine will create a couple of testshapes for you to establish this value.\n"
+            + "This routine will create a couple of test shapes for you to establish this value.\n"
             + "After you cut these shapes out you need to try to fit the shapes with the same"
             + " label together. Choose the pair that has a perfect fit and use the"
             + " label as your kerf-compensation value."

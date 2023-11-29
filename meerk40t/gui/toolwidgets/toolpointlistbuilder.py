@@ -258,7 +258,6 @@ class PointListTool(ToolWidget):
         """
         return
 
-
     def create_node(self):
         """
         This routine needs to be overloaded - this is the only
