@@ -130,9 +130,21 @@ def init_tree(kernel):
     #         info += f"{idx}#: {e.type}, identical to parent: {e is node}"
     #     print (info)
 
+
     @tree_conditional(lambda node: not node.lock)
-    @tree_operation(_("Lock Modifications"), node_type="elem image", help="")
+    @tree_submenu(_("Passthrough"))
+    @tree_operation(_("From Original"), node_type="elem image", help="")
     def image_convert_unmodified(node, **kwargs):
+        node.replace_node(
+            image=node.image,
+            matrix=node.matrix,
+            type="image raster",
+        )
+
+    @tree_conditional(lambda node: not node.lock)
+    @tree_submenu(_("Passthrough"))
+    @tree_operation(_("From Modified"), node_type="elem image", help="")
+    def image_convert_unmodified_2(node, **kwargs):
         node.replace_node(
             image=node.active_image,
             matrix=node.active_matrix,
