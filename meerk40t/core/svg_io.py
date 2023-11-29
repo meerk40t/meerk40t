@@ -273,7 +273,7 @@ class SVGWriter:
                     "transform",
                     f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
                 )
-        elif c.type == "elem image":
+        elif c.type in ("elem image", "image raster"):
             subelement = SubElement(xml_tree, SVG_TAG_IMAGE)
             stream = BytesIO()
             try:
