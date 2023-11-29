@@ -3476,12 +3476,21 @@ class MeerK40t(MWindow):
             )
 
         def online_help(event):
-            origin, message = self.context.last_signal("helpinfo")
-            _, sect = message
-            if sect is None or sect == "":
-                sect = "GUI"
-            sect = sect.upper()
-            url = f"https://github.com/meerk40t/meerk40t/wiki/Online-Help:-{sect}"
+            # let's have a look where we are and what the associated HelpText is
+            section = ""
+            wind, pos = wx.FindWindowAtPointer()
+            if wind is not None:
+                if hasattr(wind, "GetHelpText"):
+                    win = wind
+                    while win is not None:
+                        section = win.GetHelpText()
+                        if section:
+                            break
+                        win = win.GetParent()
+            if section is None or section == "":
+                section = "GUI"
+            section = section.upper()
+            url = f"https://github.com/meerk40t/meerk40t/wiki/Online-Help:-{section}"
             import webbrowser
             webbrowser.open(url, new=0, autoraise=True)
 
