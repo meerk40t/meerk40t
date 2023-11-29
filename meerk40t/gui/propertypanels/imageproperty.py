@@ -27,7 +27,7 @@ class CropPanel(wx.Panel):
 
     @staticmethod
     def accepts(node):
-        if node.type != "elem image":
+        if not hasattr(node, "as_image"):
             return False
         for n in node.operations:
             if n.get("name") == "crop":
@@ -439,7 +439,7 @@ class ImageModificationPanel(ScrolledPanel):
 
     @staticmethod
     def accepts(node):
-        if node.type == "elem image":
+        if hasattr(node, "as_image"):
             return True
         return False
 
@@ -992,7 +992,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         # Changing the staticmethod into a regular method will cause a crash
         # Not the nicest thing in the world, as we need to instantiate the class once to reset the status flag
         global HAS_VECTOR_ENGINE
-        if node.type == "elem image" and HAS_VECTOR_ENGINE:
+        if hasattr(node, "as_image") and HAS_VECTOR_ENGINE:
             return True
         return False
 
@@ -1151,7 +1151,7 @@ class ImagePropertyPanel(ScrolledPanel):
 
     @staticmethod
     def accepts(node):
-        if node.type == "elem image":
+        if hasattr(node, "as_image"):
             return True
         return False
 
