@@ -54,23 +54,13 @@ class HelperPanel(wx.Panel):
         # self.button_webhelp = wx.Button(self, wx.ID_ANY, _("Online-Help"))
         # self.button_webhelp.SetBitmap(icons8_info.GetBitmap(resize = 0.5 * get_default_icon_size()))
         self.active = False
-        self.info = None
-        self.section = None
         self.__set_properties()
         self.__do_layout()
 
-        # self.button_webhelp.Bind(wx.EVT_BUTTON, self.on_button_help)
-        # Look at window elements we are hovering over
-        # to establish the online help functionality
+        self._last_help_info = ""
         self.job = Job(
             process=self.mouse_query, job_name="helper-check", interval=0.2, run_main=True
         )
-        # Switched to kernel to avoid 0xC0000005 crash in windows.
-        # self.timer = wx.Timer(self, id=wx.ID_ANY)
-        # self.Bind(wx.EVT_TIMER, self.mouse_query, self.timer)
-        # self.timer.Start(500, wx.TIMER_CONTINUOUS)
-        self._last_help_info = ""
-        self._last_help_section = ""
 
     def mouse_query(self, event=None):
         """
@@ -83,25 +73,16 @@ class HelperPanel(wx.Panel):
         Wiki page on GitHub to open an associated online help page.
         """
         wind, pos = wx.FindWindowAtPointer()
-        if wind is not None:
-            info = ""
-            if hasattr(wind, "GetToolTipText"):
-                info = wind.GetToolTipText()
-            section = ""
-            if hasattr(wind, "GetHelpText"):
-                win = wind
-                while win is not None:
-                    section = win.GetHelpText()
-                    if section:
-                        break
-                    win = win.GetParent()
-                if section is None or section == "":
-                    section = "GUI"
-            if info != self._last_help_info or section != self._last_help_section:
-                self._last_help_info = info
-                self._last_help_section = section
-                # Inform HelperWindow about a new content
-                self.context.signal("helpinfo", info, section)
+        if wind is None or wind is self:
+            return
+        if wind.GetParent() is self:
+            return
+        if not hasattr(wind, "GetToolTipText"):
+            return
+        info = wind.GetToolTipText()
+        if info != self._last_help_info:
+            self.text_info.SetValue(info)
+            self._last_help_info = info
 
     def pane_show(self, *args):
         self.context.kernel.schedule(self.job)
@@ -124,20 +105,3 @@ class HelperPanel(wx.Panel):
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
         self.Layout()
-
-    # def on_button_help(self, event):
-    #     sect = "GUI"
-    #     if self.section:
-    #         sect = self.section.upper()
-    #     url = f"https://github.com/meerk40t/meerk40t/wiki/Online-Help:-{sect}"
-    #
-    #     import webbrowser
-    #     webbrowser.open(url, new=0, autoraise=True)
-
-    @signal_listener("helpinfo")
-    def on_contexthelp(self, origin, info=None, section=None, *args):
-        if info is not None:
-            self.info = info
-            self.text_info.SetValue(info)
-        if section is not None:
-            self.section = section
