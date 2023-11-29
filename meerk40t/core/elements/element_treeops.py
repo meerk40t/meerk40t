@@ -132,23 +132,21 @@ def init_tree(kernel):
 
     @tree_conditional(lambda node: not node.lock)
     @tree_operation(_("Lock Modifications"), node_type="elem image", help="")
-    def image_convert_raw(node, **kwargs):
+    def image_convert_unmodified(node, **kwargs):
         node.replace_node(
-            image=node.image,
-            matrix=node.matrix,
+            image=node.active_image,
+            matrix=node.active_matrix,
             type="image raster",
         )
 
     @tree_conditional(lambda node: not node.lock)
     @tree_operation(_("Unlock Modifications"), node_type="image raster", help="")
-    def image_convert_raw(node, **kwargs):
+    def image_convert_modifier(node, **kwargs):
         node.replace_node(
             image=node.image,
             matrix=node.matrix,
             type="elem image",
         )
-
-
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(_("Ungroup elements"), node_type=("group", "file"), help="")
