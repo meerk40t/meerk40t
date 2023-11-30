@@ -3454,31 +3454,6 @@ class MeerK40t(MWindow):
                 dlg.ShowModal()
                 dlg.Destroy()
 
-        if platform.system() == "Darwin":
-            menuitem = self.help_menu.Append(
-                wx.ID_HELP, _("&MeerK40t Help"), _("Open the MeerK40t Mac help file")
-            )
-            self.Bind(wx.EVT_MENU, launch_help_osx, id=menuitem.GetId())
-            menuitem = self.help_menu.Append(
-                wx.ID_ANY, _("&Online Help"), _("Open the Meerk40t online wiki")
-            )
-            self.Bind(
-                wx.EVT_MENU,
-                lambda e: self.context("webhelp help\n"),
-                id=menuitem.GetId(),
-            )
-        else:
-            menuitem = self.help_menu.Append(
-                wx.ID_HELP,
-                _("&Help"),
-                _("Open the Meerk40t online wiki Beginners page"),
-            )
-            self.Bind(
-                wx.EVT_MENU,
-                lambda e: self.context("webhelp help\n"),
-                id=menuitem.GetId(),
-            )
-
         def online_help(event):
             # let's have a look where we are and what the associated HelpText is
             section = ""
@@ -3498,6 +3473,33 @@ class MeerK40t(MWindow):
             import webbrowser
 
             webbrowser.open(url, new=0, autoraise=True)
+
+
+        if platform.system() == "Darwin":
+            menuitem = self.help_menu.Append(
+                wx.ID_HELP, _("&MeerK40t Help"), _("Open the MeerK40t Mac help file")
+            )
+            self.Bind(wx.EVT_MENU, launch_help_osx, id=menuitem.GetId())
+            menuitem = self.help_menu.Append(
+                wx.ID_ANY, _("&Online Help"), _("Open the Meerk40t online wiki")
+            )
+            self.Bind(
+                wx.EVT_MENU,
+                lambda e: self.context("webhelp help\n"),
+                id=menuitem.GetId(),
+            )
+        else:
+            menuitem = self.help_menu.Append(
+                wx.ID_HELP,
+                _("&Help\tF1"),
+                _("Open the Meerk40t online wiki Beginners page"),
+            )
+            self.Bind(
+                wx.EVT_MENU,
+                # lambda e: self.context("webhelp help\n"),
+                online_help,
+                id=menuitem.GetId(),
+            )
 
         menuitem = self.help_menu.Append(
             wx.ID_ANY,
@@ -4041,7 +4043,7 @@ class MeerK40t(MWindow):
             preferred_loader = None
             if idx > 0:
                 lidx = 0
-                for loader, loader_name, sname in context.kernel.find("load"):
+                for loader, loader_name, sname in self.context.kernel.find("load"):
                     lidx += 1
                     if lidx == idx:
                         preferred_loader = loader_name
