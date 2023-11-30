@@ -4074,7 +4074,7 @@ class MeerK40t(MWindow):
             preferred_loader = None
             if idx > 0:
                 lidx = 0
-                for loader, loader_name, sname in context.kernel.find("load"):
+                for loader, loader_name, sname in self.context.kernel.find("load"):
                     lidx += 1
                     if lidx == idx:
                         preferred_loader = loader_name
