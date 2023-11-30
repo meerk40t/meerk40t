@@ -28,7 +28,7 @@ from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
 from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
 from meerk40t.kernel import lookup_listener, signal_listener
 
-from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
+from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, DEFAULT_PPI, Length
 from ..svgelements import Color, Matrix, Path
 from .icons import (  # icon_duplicate,
     STD_ICON_SIZE,
@@ -383,6 +383,34 @@ class MeerK40t(MWindow):
         def on_click_paste():
             self.context("clipboard paste\n")
 
+        def on_click_paste_image():
+            # Create an image element from the data in the *system* clipboard
+            def WxBitmapToWxImage(myBitmap):
+                return wx.ImageFromBitmap(myBitmap)
+
+            def imageToPil(myWxImage):
+                myPilImage = Image.new('RGB', (myWxImage.GetWidth(), myWxImage.GetHeight()))
+                myPilImage.frombytes(myWxImage.GetData())
+                return myPilImage
+
+            # Read the image
+            success = False
+            bmap_data = wx.BitmapDataObject()
+            if wx.TheClipboard.Open():
+                success = wx.TheClipboard.GetData(bmap_data)
+                wx.TheClipboard.Close()
+            if success:
+                bmp = bmap_data.GetBitmap()
+                image = imageToPil(WxBitmapToWxImage(bmp))
+                dpi = DEFAULT_PPI
+                matrix = Matrix(f"scale({UNITS_PER_PIXEL})")
+                self.context.elements.elem_branch.add(
+                    image=image,
+                    matrix=matrix,
+                    type="elem image",
+                    dpi=dpi,
+                )
+
         def on_click_sel_all():
             self.context("element* select\n")
 
@@ -428,6 +456,11 @@ class MeerK40t(MWindow):
 
         def on_click_delete():
             self.context("tree selected delete\n")
+
+        def external_filled():
+            # Does the OS clipboard contain something?
+            not_empty = wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_BITMAP))
+            return not_empty
 
         def clipboard_filled():
             res = False
@@ -487,6 +520,15 @@ class MeerK40t(MWindow):
                 "action": on_click_paste,
                 "enabled": clipboard_filled,
                 "id": wx.ID_PASTE,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Paste image"),
+                "help": _("Paste an image from outside MeerK40t"),
+                "action": on_click_paste_image,
+                "enabled": external_filled,
+                "id": wx.ID_ANY,
                 "level": 1,
                 "segment": "",
             },
