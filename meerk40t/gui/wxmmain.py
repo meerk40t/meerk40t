@@ -225,49 +225,6 @@ class MeerK40t(MWindow):
         self.tips_at_startup()
         self.parametric_info = None
 
-        # Look at window elements we are hovering over
-        # to establish the online help functionality
-        self.context.kernel.add_job(
-            run=self.mouse_query, name="helper-check", interval=0.5, run_main=True
-        )
-        # Switched to kernel to avoid 0xC0000005 crash in windows.
-        # self.timer = wx.Timer(self, id=wx.ID_ANY)
-        # self.Bind(wx.EVT_TIMER, self.mouse_query, self.timer)
-        # self.timer.Start(500, wx.TIMER_CONTINUOUS)
-        self._last_help_info = ""
-        self._last_help_section = ""
-
-    def mouse_query(self, event=None):
-        """
-        This routine looks periodically (every 0.5 seconds)
-        at the window ie control under the mouse cursor.
-        It will examine the window if it contains a tooltip text and
-        will display this in a textbox in this panel.
-        Additionally, it will read the associated HelpText of the control
-        (or its parent if the control does not have any) to construct a
-        Wiki page on GitHub to open an associated online help page.
-        """
-        wind, pos = wx.FindWindowAtPointer()
-        if wind is not None:
-            info = ""
-            if hasattr(wind, "GetToolTipText"):
-                info = wind.GetToolTipText()
-            section = ""
-            if hasattr(wind, "GetHelpText"):
-                win = wind
-                while win is not None:
-                    section = win.GetHelpText()
-                    if section:
-                        break
-                    win = win.GetParent()
-                if section is None or section == "":
-                    section = "GUI"
-            if info != self._last_help_info or section != self._last_help_section:
-                self._last_help_info = info
-                self._last_help_section = section
-                # Inform HelperWindow about a new content
-                self.context.signal("helpinfo", info, section)
-
     def tips_at_startup(self):
         self.context.setting(bool, "show_tips", True)
         if self.context.show_tips:
@@ -3497,6 +3454,27 @@ class MeerK40t(MWindow):
                 dlg.ShowModal()
                 dlg.Destroy()
 
+        def online_help(event):
+            # let's have a look where we are and what the associated HelpText is
+            section = ""
+            wind, pos = wx.FindWindowAtPointer()
+            if wind is not None:
+                if hasattr(wind, "GetHelpText"):
+                    win = wind
+                    while win is not None:
+                        section = win.GetHelpText()
+                        if section:
+                            break
+                        win = win.GetParent()
+            if section is None or section == "":
+                section = "GUI"
+            section = section.upper()
+            url = f"https://github.com/meerk40t/meerk40t/wiki/Online-Help:-{section}"
+            import webbrowser
+
+            webbrowser.open(url, new=0, autoraise=True)
+
+
         if platform.system() == "Darwin":
             menuitem = self.help_menu.Append(
                 wx.ID_HELP, _("&MeerK40t Help"), _("Open the MeerK40t Mac help file")
@@ -3513,24 +3491,15 @@ class MeerK40t(MWindow):
         else:
             menuitem = self.help_menu.Append(
                 wx.ID_HELP,
-                _("&Help"),
+                _("&Help\tF1"),
                 _("Open the Meerk40t online wiki Beginners page"),
             )
             self.Bind(
                 wx.EVT_MENU,
-                lambda e: self.context("webhelp help\n"),
+                # lambda e: self.context("webhelp help\n"),
+                online_help,
                 id=menuitem.GetId(),
             )
-
-        def online_help(event):
-            sect = self._last_help_section
-            if sect is None or sect == "":
-                sect = "GUI"
-            sect = sect.upper()
-            url = f"https://github.com/meerk40t/meerk40t/wiki/Online-Help:-{sect}"
-            import webbrowser
-
-            webbrowser.open(url, new=0, autoraise=True)
 
         menuitem = self.help_menu.Append(
             wx.ID_ANY,
