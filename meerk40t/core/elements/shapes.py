@@ -266,6 +266,8 @@ def init_commands(kernel):
                 nparent.parent.add_node(node)
                 if len(nparent.children) == 0:
                     nparent.remove_node()
+                else:
+                    nparent.altered()
                 node.emphasized = was_emphasized
         self.signal("refresh_scene", "Scene")
 
