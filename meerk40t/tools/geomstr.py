@@ -611,50 +611,39 @@ class BeamTable:
         Returns all lines sliced at the events and merged.
         @return:
         """
-        actives = self._nb_scan
-        line = self.geometry.segments[actives]
-        a = line[..., 0]
-        b = line[..., -1]
-        a = np.where(actives == -1, np.nan + np.nan * 1j, a)
-        b = np.where(actives == -1, np.nan + np.nan * 1j, b)
-        yints = self.geometry.y_intercept(actives, np.real(self._nb_events), np.imag(self._nb_events))
+        g = Geomstr()
+        actives = self._nb_scan[:-1]
+        from_vals = self._nb_events[:-1]
+        to_vals = self._nb_events[1:]
+        y_start = self.geometry.y_intercept(actives, np.real(from_vals), np.imag(from_vals))
+        y_end = self.geometry.y_intercept(actives, np.real(to_vals), np.imag(to_vals))
+        q = np.where(np.real(from_vals) == np.real(to_vals))
+        from_vals = np.reshape(np.repeat(from_vals, y_start.shape[1]), y_start.shape)
+        to_vals = np.reshape(np.repeat(to_vals, y_end.shape[1]), y_end.shape)
 
-        # # Get all lines listed as active at any points. Find start and end points.
-        # old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
-        # try:
-        #     # If vertical slope is undefined. But, all y-ints are at y since y0=y1
-        #     m = (b.real - a.real) / (b.imag - a.imag)
-        #     x0 = a.real - (m * a.imag)
-        #     pts = np.where(~np.isinf(m), (x - x0) / m, np.imag(a))
-        #     pts[m == 0] = default
-        #     return pts
-        # finally:
-        #     np.seterr(**old_np_seterr)
+        fv = np.real(from_vals) + y_start * 1j
+        tv = np.real(to_vals) + y_end * 1j
 
-        # old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
-        # try:
-        #     # If vertical slope is undefined. All y-ints are at y since y0=y1
-        #     m = (b.real - a.real) / (b.imag - a.imag)
-        #     x0 = a.real - (m * a.imag)
-        #     xs = np.reshape(np.repeat(np.real(self._nb_events), x0.shape[1]), x0.shape)
-        #     y_intercepts = np.where(np.isinf(m) | np.isnan(m), a.imag, (xs - x0) / m)
-        # finally:
-        #     np.seterr(**old_np_seterr)
-        # ys = np.reshape(np.repeat(np.imag(self._nb_events), x0.shape[1]), x0.shape)
-        print("end")
+        fi = y_start + np.imag(from_vals) * 1j
+        ti = y_end + np.imag(to_vals) * 1j
+
+        ff = np.where(q, fv, fi)
+        tt = np.where(q, tv, ti)
+
+        s = np.ravel(ff)
+        e = np.ravel(tt)
+        hits = np.dstack((s != e, ~np.isnan(s))).all(axis=2)[0]
+        s = s[hits]
+        e = e[hits]
+        count = s.shape[0]
+        segments = np.dstack(
+            (s, [0] * count, [TYPE_LINE] * count, [0] * count, e)
+        )[0]
+        g.append_lines(segments)
+        return g
 
     def union(self, subject, clip):
-        c = self.get_sliced_lines()
-        # results = Geomstr()
-        # actives = self._nb_scan
-        #
-        # for i in range(1, len(self._nb_events)):
-        #     beam_start = self._nb_events[i-1]
-        #     beam_end = self._nb_events[i]
-        #     actives = self._nb_scan[i-1]
-        #     line_actives = self.geometry.segments[actives]
-        #     print(f"\n. {beam_start} {beam_end} {actives}")
-        #     print(line_actives)
+        return self.get_sliced_lines()
 
 
 
