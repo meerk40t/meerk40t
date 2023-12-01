@@ -65,12 +65,15 @@ def init_commands(kernel):
     )
     def geometry_base(data=None, **kwargs):
         path = Geomstr()
+        index = 0
         if data:
             for node in data:
                 try:
                     e = node.as_geometry()
                 except AttributeError:
                     continue
+                e.flag_settings(index)
+                index += 1
                 path.append(e)
         return "geometry", path
 
