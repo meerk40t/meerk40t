@@ -635,6 +635,15 @@ class BeamTable:
         return g
 
     def union(self, subject, clip):
+        return self.cag("union", subject, clip)
+
+    def intersection(self, subject, clip):
+        return self.cag("intersection", subject, clip)
+
+    def xor(self, subject, clip):
+        return self.cag("intersection", subject, clip)
+
+    def cag(self, cag_op, subject, clip):
         if self._nb_scan is None:
             self.compute_beam_brute()
         g = Geomstr()
@@ -652,7 +661,14 @@ class BeamTable:
             actives != -1
         )).all(axis=2)
         rr = np.cumsum(c, axis=1) % 2
-        cc = qq | rr
+        if cag_op == "union":
+            cc = qq | rr
+        elif cag_op == "intersection":
+            cc = qq & rr
+        elif cag_op == "xor":
+            cc = qq ^ rr
+        elif cag_op == "difference":
+            cc = qq ^ rr
         yy = np.pad(cc, ((0, 0), (1, 0)), constant_values=0)
         hh = np.diff(yy, axis=1)
         from_vals = self._nb_events[:-1]
@@ -1574,7 +1590,7 @@ class Geomstr:
         return cls.wobble(algorithm, outer, radius, interval, speed)
 
     def flag_settings(self, flag=None, start=0, end=None):
-        if end == -1:
+        if end is None:
             end = self.index
         for i in range(start, end):
             info = self.segments[i][2]

@@ -248,5 +248,17 @@ def init_commands(kernel):
         data = bt.union(subject, clip)
         return "geometry", data
 
+    @self.console_argument("subject", type=int, help=_("Subject polygon shape"))
+    @self.console_argument("clip", type=int, help=_("Clipping polygon shape"))
+    @self.console_command(
+        "intersection",
+        help=_("cag intersection"),
+        input_type="geometry",
+        output_type="geometry",
+    )
+    def element_translate(subject:int, clip:int, data: Geomstr, **kwargs):
+        bt = BeamTable(data)
+        data = bt.intersection(subject, clip)
+        return "geometry", data
 
     # --------------------------- END COMMANDS ------------------------------
