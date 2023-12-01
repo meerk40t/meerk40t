@@ -635,7 +635,49 @@ class BeamTable:
         return g
 
     def union(self, subject, clip):
-        return self.combine()
+        if self._nb_scan is None:
+            self.compute_beam_brute()
+        g = Geomstr()
+        actives = self._nb_scan[:-1]
+        lines = self.geometry.segments[actives][..., 2]
+
+        s = np.dstack((
+            np.imag(lines) == subject,
+            actives != -1
+        )).all(axis=2)
+        # a = np.pad(s, ((0, 0), (1, 0)), constant_values=False)
+        qq = np.cumsum(s, axis=1) % 2
+        c = np.dstack((
+            np.imag(lines) == clip,
+            actives != -1
+        )).all(axis=2)
+        rr = np.cumsum(c, axis=1) % 2
+        cc = qq | rr
+        yy = np.pad(cc, ((0, 0), (1, 0)), constant_values=0)
+        hh = np.diff(yy, axis=1)
+        from_vals = self._nb_events[:-1]
+        to_vals = self._nb_events[1:]
+        y_start = self.geometry.y_intercept(actives, np.real(from_vals), np.imag(from_vals))
+        y_end = self.geometry.y_intercept(actives, np.real(to_vals), np.imag(to_vals))
+        from_vals = np.reshape(np.repeat(from_vals, y_start.shape[1]), y_start.shape)
+        to_vals = np.reshape(np.repeat(to_vals, y_end.shape[1]), y_end.shape)
+        starts = np.ravel(np.real(from_vals) + y_start * 1j)
+        ends = np.ravel(np.real(to_vals) + y_end * 1j)
+        hravel = np.ravel(hh)
+
+        filter = np.dstack((
+            starts != ends,
+            ~np.isnan(starts),
+            hravel != 0
+        )).all(axis=2)[0]
+        starts = starts[filter]
+        ends = ends[filter]
+        count = starts.shape[0]
+        segments = np.dstack(
+            (starts, [0] * count, [TYPE_LINE] * count, [0] * count, ends)
+        )[0]
+        g.append_lines(segments)
+        return g
 
 
 
