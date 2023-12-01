@@ -367,7 +367,7 @@ class TestGeomstr(unittest.TestCase):
                 path.line(complex(last_x, last_y), complex(x, y))
             last_x, last_y = x, y
         p = copy(path)
-        self.assertNotEqual(path, p)
+        self.assertEqual(path, p)
         #
         # print(path.segments)
         # print("Original segments...")
