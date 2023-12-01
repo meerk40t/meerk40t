@@ -229,7 +229,7 @@ def init_commands(kernel):
     )
     def element_translate(data: Geomstr, **kwargs):
         bt = BeamTable(data)
-        data = bt.get_sliced_lines()
+        data = bt.combine()
         return "geometry", data
 
     # --------------------------- END COMMANDS ------------------------------

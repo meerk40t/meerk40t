@@ -606,11 +606,13 @@ class BeamTable:
         aw = np.argwhere(actives != -1)[:, 0]
         return actives[aw]
 
-    def get_sliced_lines(self):
+    def combine(self):
         """
         Returns all lines sliced at the events and merged.
         @return:
         """
+        if self._nb_scan is None:
+            self.compute_beam_brute()
         g = Geomstr()
         actives = self._nb_scan[:-1]
         from_vals = self._nb_events[:-1]
