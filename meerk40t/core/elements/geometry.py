@@ -235,4 +235,18 @@ def init_commands(kernel):
         data = bt.combine()
         return "geometry", data
 
+    @self.console_argument("subject", type=int, help=_("Subject polygon shape"))
+    @self.console_argument("clip", type=int, help=_("Clipping polygon shape"))
+    @self.console_command(
+        "union",
+        help=_("union"),
+        input_type="geometry",
+        output_type="geometry",
+    )
+    def element_translate(subject:int, clip:int, data: Geomstr, **kwargs):
+        bt = BeamTable(data)
+        data = bt.union(subject, clip)
+        return "geometry", data
+
+
     # --------------------------- END COMMANDS ------------------------------
