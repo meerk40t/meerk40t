@@ -4,7 +4,7 @@ This is a giant list of console commands that deal with and often implement the 
 
 from meerk40t.core.units import Angle, Length
 from meerk40t.svgelements import Matrix
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.tools.geomstr import Geomstr, BeamTable
 
 
 def plugin(kernel, lifecycle=None):
@@ -219,6 +219,17 @@ def init_commands(kernel):
         segments = data.segmented()
         hatch = Geomstr.hatch(segments, angle=angle.radians, distance=float(distance))
         data.append(hatch)
+        return "geometry", data
+
+    @self.console_command(
+        "combine",
+        help=_("split_lines"),
+        input_type="geometry",
+        output_type="geometry",
+    )
+    def element_translate(data: Geomstr, **kwargs):
+        bt = BeamTable(data)
+        data = bt.get_sliced_lines()
         return "geometry", data
 
     # --------------------------- END COMMANDS ------------------------------
