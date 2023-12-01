@@ -4189,11 +4189,12 @@ class Geomstr:
             # If vertical slope is undefined. But, all y-ints are at y since y0=y1
             m = (b.real - a.real) / (b.imag - a.imag)
             x0 = a.real - (m * a.imag)
-            # if len(x0.shape) >= 2:
-            #     x = np.reshape(np.repeat(x, x0.shape[1]), x0.shape)
-            #     default = np.reshape(np.repeat(default, x0.shape[1]), x0.shape)
+            if len(x0.shape) >= 2:
+                x = np.reshape(np.repeat(x, x0.shape[1]), x0.shape)
+                default = np.reshape(np.repeat(default, x0.shape[1]), x0.shape)
             pts = np.where(~np.isinf(m), (x - x0) / m, np.imag(a))
-            pts[m == 0] = default
+            pts = np.where(m == 0, default, pts)
+            # pts[m == 0] = default
             return pts
         finally:
             np.seterr(**old_np_seterr)
