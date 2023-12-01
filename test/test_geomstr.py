@@ -1231,6 +1231,14 @@ class TestGeomstr(unittest.TestCase):
         q = bt.union(0, 1)
         print(q.segments)
 
+    def test_cag_combine(self):
+        g = Geomstr()
+        g.line(complex(0, 1), complex(0, 100), 0)
+        g.line(complex(1, 0), complex(100, 0), 0)
+        bt = BeamTable(g)
+        q = bt.combine()
+        self.assertEqual(q, g)
+
     def test_render(self):
         rect = Geomstr.rect(x=300, y=200, width=500, height=500, rx=50, ry=50)
         image = rect.segmented().render()

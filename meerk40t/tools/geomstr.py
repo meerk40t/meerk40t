@@ -621,25 +621,15 @@ class BeamTable:
         y_end = self.geometry.y_intercept(actives, np.real(to_vals), np.imag(to_vals))
         from_vals = np.reshape(np.repeat(from_vals, y_start.shape[1]), y_start.shape)
         to_vals = np.reshape(np.repeat(to_vals, y_end.shape[1]), y_end.shape)
+        starts = np.ravel(np.real(from_vals) + y_start * 1j)
+        ends = np.ravel(np.real(to_vals) + y_end * 1j)
 
-        fv = np.real(from_vals) + y_start * 1j
-        tv = np.real(to_vals) + y_end * 1j
-
-        fi = y_start + np.imag(from_vals) * 1j
-        ti = y_end + np.imag(to_vals) * 1j
-
-        q = np.real(from_vals) == np.real(to_vals)
-        ff = np.where(q, fv, fi)
-        tt = np.where(q, tv, ti)
-
-        s = np.ravel(ff)
-        e = np.ravel(tt)
-        hits = np.dstack((s != e, ~np.isnan(s))).all(axis=2)[0]
-        s = s[hits]
-        e = e[hits]
-        count = s.shape[0]
+        filter = np.dstack((starts != ends, ~np.isnan(starts))).all(axis=2)[0]
+        starts = starts[filter]
+        ends = ends[filter]
+        count = starts.shape[0]
         segments = np.dstack(
-            (s, [0] * count, [TYPE_LINE] * count, [0] * count, e)
+            (starts, [0] * count, [TYPE_LINE] * count, [0] * count, ends)
         )[0]
         g.append_lines(segments)
         return g
