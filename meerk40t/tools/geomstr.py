@@ -617,7 +617,6 @@ class BeamTable:
         to_vals = self._nb_events[1:]
         y_start = self.geometry.y_intercept(actives, np.real(from_vals), np.imag(from_vals))
         y_end = self.geometry.y_intercept(actives, np.real(to_vals), np.imag(to_vals))
-        q = np.where(np.real(from_vals) == np.real(to_vals))
         from_vals = np.reshape(np.repeat(from_vals, y_start.shape[1]), y_start.shape)
         to_vals = np.reshape(np.repeat(to_vals, y_end.shape[1]), y_end.shape)
 
@@ -627,6 +626,7 @@ class BeamTable:
         fi = y_start + np.imag(from_vals) * 1j
         ti = y_end + np.imag(to_vals) * 1j
 
+        q = np.real(from_vals) == np.real(to_vals)
         ff = np.where(q, fv, fi)
         tt = np.where(q, tv, ti)
 
