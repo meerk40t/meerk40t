@@ -1221,6 +1221,15 @@ class TestGeomstr(unittest.TestCase):
         bt = BeamTable(g)
         bt.compute_beam_brute()
         q = bt.union(0, 1)
+        print(q.segments)
+
+    def test_cag_union2(self):
+        g = Geomstr.rect(0, 0, 100, 100, settings=0)
+        g.append(Geomstr.rect(51, 51, 100, 100, settings=1))
+        bt = BeamTable(g)
+        bt.compute_beam_brute()
+        q = bt.union(0, 1)
+        print(q.segments)
 
     def test_render(self):
         rect = Geomstr.rect(x=300, y=200, width=500, height=500, rx=50, ry=50)
