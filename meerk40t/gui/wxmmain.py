@@ -1349,6 +1349,15 @@ class MeerK40t(MWindow):
         # Sort according to categories....
         effects.sort(key=lambda v: v[4])
         sub_effects = list()
+        first_hatch = None
+
+        def action(command):
+            local_command = command
+            def routine(*args):
+                kernel.elements(f"{local_command}\n")
+
+            return routine
+
         for idx, hatch in enumerate(effects):
             if len(hatch) < 4:
                 continue
@@ -1356,18 +1365,21 @@ class MeerK40t(MWindow):
                 continue
 
             cmd = hatch[0]
+            if first_hatch is None:
+                first_hatch = cmd
             tip = hatch[1] + rightmsg
             icon = hatch[2]
             if icon is None:
                 icon = icon_hatch
             label = hatch[3]
+
             hdict = {
                 "identifier": f"hatch_{idx}",
                 "label": _(label),
                 "icon": icon,
                 "tip": _(tip),
                 "help": "hatches",
-                "action": lambda v: kernel.elements(f"{cmd}\n"),
+                "action": action(cmd),
                 "action_right": lambda v: kernel.elements("effect-remove\n"),
                 "rule_enabled": lambda cond: contains_an_element(),
             }
@@ -1389,7 +1401,7 @@ class MeerK40t(MWindow):
             "icon": sub_effects[0]["icon"],
             "tip": sub_effects[0]["tip"],
             "help": "hatches",
-            "action": sub_effects[0]["action"],
+            "action": action(first_hatch),
             "action_right": lambda v: kernel.elements("effect-remove\n"),
             "size": bsize_normal,
             "rule_enabled": lambda cond: contains_an_element(),
