@@ -645,7 +645,7 @@ class BeamTable:
         return g
 
     def union(self, subject, clip):
-        return self.get_sliced_lines()
+        return self.combine()
 
 
 
@@ -1044,6 +1044,16 @@ class Geomstr:
 
     def __repr__(self):
         return f"Geomstr({repr(self.segments[:self.index])})"
+
+    def __eq__(self, other):
+        if not isinstance(other, Geomstr):
+            return False
+        if other.index != self.index:
+            return False
+
+        m = self.segments[:self.index] == other.segments[:other.index]
+        return m.all()
+
 
     def __copy__(self):
         """
