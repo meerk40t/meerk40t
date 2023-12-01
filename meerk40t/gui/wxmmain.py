@@ -383,33 +383,99 @@ class MeerK40t(MWindow):
         def on_click_paste():
             self.context("clipboard paste\n")
 
-        def on_click_paste_image():
-            # Create an image element from the data in the *system* clipboard
-            def WxBitmapToWxImage(myBitmap):
-                return wx.ImageFromBitmap(myBitmap)
+        def on_click_paste_external():
 
-            def imageToPil(myWxImage):
-                myPilImage = Image.new('RGB', (myWxImage.GetWidth(), myWxImage.GetHeight()))
-                myPilImage.frombytes(myWxImage.GetData())
-                return myPilImage
+            def paste_image(bmp):
+                # Create an image element from the data in the *system* clipboard
+                def WxBitmapToWxImage(myBitmap):
+                    return wx.ImageFromBitmap(myBitmap)
 
-            # Read the image
-            success = False
-            bmap_data = wx.BitmapDataObject()
-            if wx.TheClipboard.Open():
-                success = wx.TheClipboard.GetData(bmap_data)
-                wx.TheClipboard.Close()
-            if success:
-                bmp = bmap_data.GetBitmap()
+                def imageToPil(myWxImage):
+                    myPilImage = Image.new('RGB', (myWxImage.GetWidth(), myWxImage.GetHeight()))
+                    myPilImage.frombytes(myWxImage.GetData())
+                    return myPilImage
+
                 image = imageToPil(WxBitmapToWxImage(bmp))
                 dpi = DEFAULT_PPI
                 matrix = Matrix(f"scale({UNITS_PER_PIXEL})")
-                self.context.elements.elem_branch.add(
+                node = self.context.elements.elem_branch.add(
                     image=image,
                     matrix=matrix,
                     type="elem image",
                     dpi=dpi,
                 )
+                if self.context.elements.classify_new:
+                    self.context.elements.classify([node])
+                self.context.elements.set_emphasis([node])
+
+            def paste_files(filelist):
+                accepted = 0
+                rejected = 0
+                rejected_files = []
+                for pathname in files:
+                    if self.load(pathname):
+                        accepted += 1
+                    else:
+                        rejected += 1
+                        rejected_files.append(pathname)
+                if rejected != 0:
+                    reject = "\n".join(rejected_files)
+                    err_msg = _("Some files were unrecognized:\n{rejected_files}").format(
+                        rejected_files=reject
+                    )
+                    dlg = wx.MessageDialog(
+                        None, err_msg, _("Error encountered"), wx.OK | wx.ICON_ERROR
+                    )
+                    dlg.ShowModal()
+                    dlg.Destroy()
+
+            def paste_text(content):
+                size = 16.0
+                node = self.context.elements.elem_branch.add(
+                    text=content, matrix=Matrix(f"scale({UNITS_PER_PIXEL})"), type="elem text"
+                )
+                node.font_size = size
+                node.stroke = self.context.elements.default_stroke
+                node.stroke_width = self.context.elements.default_strokewidth
+                node.fill = self.context.elements.default_fill
+                node.altered()
+                if self.context.elements.classify_new:
+                    self.context.elements.classify([node])
+                self.context.elements.set_emphasis([node])
+
+            # Read the image
+            success = False
+            if wx.TheClipboard.Open():
+                # Let's see what we have:
+                if wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_BITMAP)):
+                    bmap_data = wx.BitmapDataObject()
+                    success = wx.TheClipboard.GetData(bmap_data)
+                    if success:
+                        bmp = bmap_data.GetBitmap()
+                        paste_image(bmp)
+
+                elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_FILENAME)):
+                    fname_data = wx.FileDataObject()
+                    success = wx.TheClipboard.GetData(fname_data)
+                    if success:
+                        files = fname_data.GetFilenames()
+                        paste_files(files)
+
+                elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_TEXT)):
+                    text_data = wx.TextDataObject()
+                    success = wx.TheClipboard.GetData(text_data)
+                    if success:
+                        txt = text_data.GetText()
+                        paste_text(txt)
+
+                elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_UNICODETEXT)):
+                    text_data = wx.TextDataObject()
+                    success = wx.TheClipboard.GetData(text_data)
+                    if success:
+                        txt = text_data.GetText().decode("utf-8")
+                        paste_text(txt)
+
+                wx.TheClipboard.Close()
 
         def on_click_sel_all():
             self.context("element* select\n")
@@ -459,7 +525,12 @@ class MeerK40t(MWindow):
 
         def external_filled():
             # Does the OS clipboard contain something?
-            not_empty = wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_BITMAP))
+            not_empty = bool(
+                wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_BITMAP)) or
+                wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_TEXT)) or
+                wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_UNICODETEXT)) or
+                wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_FILENAME))
+            )
             return not_empty
 
         def clipboard_filled():
@@ -524,9 +595,9 @@ class MeerK40t(MWindow):
                 "segment": "",
             },
             {
-                "label": _("Paste image"),
-                "help": _("Paste an image from outside MeerK40t"),
-                "action": on_click_paste_image,
+                "label": _("Paste from system\tShift-Ctrl-V"),
+                "help": _("Paste data coming from other applications"),
+                "action": on_click_paste_external,
                 "enabled": external_filled,
                 "id": wx.ID_ANY,
                 "level": 1,
