@@ -72,17 +72,22 @@ class HelperPanel(wx.Panel):
         (or its parent if the control does not have any) to construct a
         Wiki page on GitHub to open an associated online help page.
         """
-        wind, pos = wx.FindWindowAtPointer()
-        if wind is None or wind is self:
+        if self.context.kernel.is_shutdown:
             return
-        if wind.GetParent() is self:
+        try:
+            wind, pos = wx.FindWindowAtPointer()
+            if wind is None or wind is self:
+                return
+            if wind.GetParent() is self:
+                return
+            if not hasattr(wind, "GetToolTipText"):
+                return
+            info = wind.GetToolTipText()
+            if info != self._last_help_info:
+                self.text_info.SetValue(info)
+                self._last_help_info = info
+        except RuntimeError:
             return
-        if not hasattr(wind, "GetToolTipText"):
-            return
-        info = wind.GetToolTipText()
-        if info != self._last_help_info:
-            self.text_info.SetValue(info)
-            self._last_help_info = info
 
     def pane_show(self, *args):
         self.context.kernel.schedule(self.job)

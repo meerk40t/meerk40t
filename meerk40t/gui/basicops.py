@@ -382,6 +382,8 @@ class BasicOpPanel(wx.Panel):
                 )
             return d, result
 
+        if self.context.kernel.is_shutdown:
+            return
         if self.operation_sizer:
             self.operation_sizer.Clear()
             self.op_panel.DestroyChildren()
