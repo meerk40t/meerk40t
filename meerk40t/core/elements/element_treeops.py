@@ -167,6 +167,17 @@ def init_tree(kernel):
             type="elem image",
         )
 
+    @tree_operation(_("Remove effect"), node_type=effect_nodes, help="")
+    def remove_effect(node, **kwargs):
+        childs = [e for e in node._children]
+        for e in childs:
+            e._parent = None  # Otherwise add_node will fail below
+            node.parent.add_node(e)
+        node._children.clear()
+        node.remove_node()
+        self.signal("rebuild_tree")
+
+
     @tree_conditional(lambda node: is_hatched(node))
     @tree_operation(_("Remove hatch"), node_type=elem_nodes, help="")
     def unhatch_elements(node, **kwargs):
@@ -189,7 +200,7 @@ def init_tree(kernel):
                 continue
             e._parent = None  # Otherwise add_node will fail below
             try:
-                idx = eparent._children.index(node)
+                idx = eparent._children.index(e)
                 if idx >= 0:
                     eparent._children.pop(idx)
             except IndexError:
