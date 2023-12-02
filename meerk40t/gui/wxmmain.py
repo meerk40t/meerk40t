@@ -1168,7 +1168,7 @@ class MeerK40t(MWindow):
             )
             kernel.register("registered_effects/SimpleLine", eff)
             eff = (
-                "effect-hatch -e scanline -a 45",
+                "effect-hatch -e scanline -a 45deg",
                 "Wrap the current node in a hatch",
                 icon_hatch_diag,
                 "Diagonal line hatch",
@@ -1185,7 +1185,7 @@ class MeerK40t(MWindow):
             )
             kernel.register("registered_effects/SimpleLineBD", eff)
             eff = (
-                "effect-hatch -e eulerian -a 45",
+                "effect-hatch -e eulerian -a 45deg",
                 "Wrap the current node in a diagonal hatch (bidirectional)",
                 icon_hatch_diag_bidir,
                 "Diagonal line hatch (bidirectional)",
