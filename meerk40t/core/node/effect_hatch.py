@@ -186,11 +186,36 @@ class HatchEffectNode(Node):
         default_map["loop"] = (
             f"{self.loops}X " if self.loops and self.loops != 1 else ""
         )
-        default_map["angle"] = str(self.hatch_angle)
+        if self.hatch_angle is None:
+            ang = 0.0
+        elif isinstance(self.hatch_angle, float):
+            ang = self.hatch_angle
+        else:
+            try:
+                ang = Angle(self.hatch_angle).radians
+            except ValueError:
+                ang = 0.0
+        default_map["angle"] = f"{Angle(ang, digits=1).angle_degrees}"
         default_map["distance"] = str(self.hatch_distance)
 
         default_map["children"] = str(len(self.children))
         return default_map
+
+    def affected_children(self):
+        def right_types(start_node):
+            res = []
+            for e in start_node._children:
+                if e.type.startswith("effect"):
+                    continue
+                if e._children:
+                    subs = right_types(e)
+                    res.extend(subs)
+                elif e.type.startswith("elem"):
+                    res.append(e)
+            return res
+
+        nodes = right_types(self)
+        return nodes
 
     def as_geometry(self, **kws):
         """
@@ -201,7 +226,7 @@ class HatchEffectNode(Node):
         @return:
         """
         outlines = Geomstr()
-        for node in self._children:
+        for node in self.affected_children():
             try:
                 outlines.append(node.as_geometry(**kws))
             except AttributeError:
@@ -254,4 +279,14 @@ class HatchEffectNode(Node):
             # If we drag an operation to this node,
             # then we will reverse the game
             return drag_node.drop(self, modify=modify)
+        elif drag_node.type in ("file", "group"):
+            # If we drag a group or a file to this node,
+            # then we will do it only if this an element effect
+            if modify:
+                if self.has_ancestor("branch ops"):
+                    return False
+                else:
+                    self.append_child(drag_node)
+                self.altered()
+            return True
         return False

@@ -167,24 +167,49 @@ def init_tree(kernel):
             type="elem image",
         )
 
+    @tree_operation(_("Remove effect"), node_type=effect_nodes, help="")
+    def remove_effect(node, **kwargs):
+        childs = [e for e in node._children]
+        for e in childs:
+            e._parent = None  # Otherwise add_node will fail below
+            node.parent.add_node(e)
+        node._children.clear()
+        node.remove_node()
+        self.signal("rebuild_tree")
+
+
     @tree_conditional(lambda node: is_hatched(node))
-    @tree_operation(_("Remove hatch"), node_type=elem_nodes, help="")
+    @tree_operation(_("Remove effect"), node_type=elem_nodes, help="")
     def unhatch_elements(node, **kwargs):
         for e in list(self.elems(emphasized=True)):
-            nparent = e.parent
-            if nparent.type.startswith("effect"):
-                e._parent = None  # Otherwise add_node will fail below
-                try:
-                    idx = nparent._children.index(node)
-                    if idx >= 0:
-                        nparent._children.pop(idx)
-                except IndexError:
-                    pass
-                nparent.parent.add_node(e)
-                if len(nparent.children) == 0:
-                    nparent.remove_node()
-                else:
-                    nparent.altered()
+            # eparent is the nodes immediate parent
+            # nparent is the containing hatch
+            eparent = e.parent
+            nparent = eparent
+            while True:
+                if nparent.type.startswith("effect"):
+                    break
+                if nparent.parent is None:
+                    nparent = None
+                    break
+                if nparent.parent is self.elem_branch:
+                    nparent = None
+                    break
+                nparent = nparent.parent
+            if nparent is None:
+                continue
+            e._parent = None  # Otherwise add_node will fail below
+            try:
+                idx = eparent._children.index(e)
+                if idx >= 0:
+                    eparent._children.pop(idx)
+            except IndexError:
+                pass
+            nparent.parent.add_node(e)
+            if len(nparent.children) == 0:
+                nparent.remove_node()
+            else:
+                nparent.altered()
         self.signal("rebuild_tree")
 
     @tree_conditional(lambda node: not is_regmark(node))

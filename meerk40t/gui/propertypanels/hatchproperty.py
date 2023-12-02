@@ -187,8 +187,28 @@ class HatchPropertyPanel(ScrolledPanel):
         if i == len(self.fills):
             i = 0
         self.combo_fill_style.SetSelection(i)
-        set_ctrl_value(self.text_angle, str(self.node.hatch_angle))
-        set_ctrl_value(self.text_angle_delta, str(self.node.hatch_angle_delta))
+        try:
+            if self.node.hatch_angle is None:
+                ang = 0
+            elif isinstance(self.node.hatch_angle, float):
+                ang = self.node.hatch_angle
+            else:
+                ang = Angle(self.node.hatch_angle).radians
+        except ValueError:
+            ang = 0
+        set_ctrl_value(self.text_angle, f"{Angle(ang, digits=1).angle_degrees}")
+
+        try:
+            if self.node.hatch_angle_delta is None:
+                ang = 0
+            elif isinstance(self.node.hatch_angle_delta, float):
+                ang = self.node.hatch_angle_delta
+            else:
+                ang = Angle(self.node.hatch_angle_delta).radians
+        except ValueError:
+            ang = 0
+        set_ctrl_value(self.text_angle_delta, f"{Angle(ang, digits=1).angle_degrees}")
+
         set_ctrl_value(self.text_distance, str(self.node.hatch_distance))
         try:
             h_angle = float(Angle(self.node.hatch_angle).degrees)
