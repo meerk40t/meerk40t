@@ -4919,6 +4919,10 @@ class Geomstr:
                 break
             current_pass += 1
 
+    #######################
+    # Spooler Functions
+    #######################
+
     def generator(self):
         """
         Generate plotter code. This should generate individual x, y, power levels for each type of segment.
@@ -4970,3 +4974,28 @@ class Geomstr:
             #     for i, p in enumerate(pos):
             #         x, y = p
             #         yield x, y, settings_index[i]
+
+    def generate(self):
+        yield "geometry", self
+
+    def as_lines(self):
+        default_dict = dict()
+        for start, c1, info, c2, end in self.segments[:self.index]:
+            segment_type = info.real
+            if segment_type == TYPE_LINE:
+                segment_type = "line"
+            elif segment_type == TYPE_QUAD:
+                segment_type = "quad"
+            elif segment_type == TYPE_CUBIC:
+                segment_type = "cubic"
+            elif segment_type == TYPE_ARC:
+                segment_type = "arc"
+            elif segment_type == TYPE_POINT:
+                segment_type = "point"
+            elif segment_type == TYPE_END:
+                segment_type = "end"
+            elif segment_type == TYPE_NOP:
+                # Nop should be skipped.
+                continue
+            sets = self._settings.get(info.imag, default_dict)
+            yield segment_type, start, c1, c2, end, sets
