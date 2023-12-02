@@ -2915,16 +2915,6 @@ def init_tree(kernel):
     def image_save_processed(node, **kwargs):
         self("image save output.png --processed\n")
 
-    @tree_conditional(lambda node: not node.lock and is_developer_mode())
-    @tree_submenu(_("Convert"))
-    @tree_operation(_("Raw Image"), node_type="elem image", help="")
-    def image_convert_raw(node, **kwargs):
-        node.replace_node(
-            image=node.image,
-            matrix=node.matrix,
-            type="image raster",
-        )
-
     @tree_conditional(lambda node: len(node.children) > 0)
     @tree_separator_before()
     @tree_operation(
