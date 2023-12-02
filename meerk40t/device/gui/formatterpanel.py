@@ -71,7 +71,7 @@ class FormatterPanel(wx.Panel):
             "elem rect": icon_mk_rectangular,
             "elem line": icon_mk_polyline,
             "elem text": icons8_text,
-            "image raster": icons8_image,
+            # "image raster": icons8_image,
             "place current": icons8_home_filled,
             "place point": icons8_home_filled,
         }
@@ -235,7 +235,7 @@ class FormatterPanel(wx.Panel):
             "elem polyline": PolylineNode,
             "elem image": ImageNode,
             "elem text": TextNode,
-            "image raster": ImageRasterNode,
+            # "image raster": ImageRasterNode,
             "reference": ReferenceNode,
             "file": FileNode,
         }
