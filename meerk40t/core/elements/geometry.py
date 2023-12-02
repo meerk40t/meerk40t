@@ -4,7 +4,7 @@ This is a giant list of console commands that deal with and often implement the 
 
 from meerk40t.core.units import Angle, Length
 from meerk40t.svgelements import Matrix
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.tools.geomstr import Geomstr, BeamTable
 
 
 def plugin(kernel, lifecycle=None):
@@ -65,12 +65,15 @@ def init_commands(kernel):
     )
     def geometry_base(data=None, **kwargs):
         path = Geomstr()
+        index = 0
         if data:
             for node in data:
                 try:
                     e = node.as_geometry()
                 except AttributeError:
                     continue
+                e.flag_settings(index)
+                index += 1
                 path.append(e)
         return "geometry", path
 
@@ -203,7 +206,7 @@ def init_commands(kernel):
         input_type="geometry",
         output_type="geometry",
     )
-    def element_translate(angle: Angle, data: Geomstr, **kwargs):
+    def element_rotate(angle: Angle, data: Geomstr, **kwargs):
         data.rotate(angle.radians)
         return "geometry", data
 
@@ -219,6 +222,69 @@ def init_commands(kernel):
         segments = data.segmented()
         hatch = Geomstr.hatch(segments, angle=angle.radians, distance=float(distance))
         data.append(hatch)
+        return "geometry", data
+
+    @self.console_command(
+        "combine",
+        help=_("Constructive Area Geometry, Combine"),
+        input_type="geometry",
+        output_type="geometry",
+    )
+    def element_cag_combine(data: Geomstr, **kwargs):
+        bt = BeamTable(data)
+        data = bt.combine()
+        return "geometry", data
+
+    @self.console_argument("subject", type=int, help=_("Subject polygon shape"))
+    @self.console_argument("clip", type=int, help=_("Clipping polygon shape"))
+    @self.console_command(
+        "union",
+        help=_("Constructive Area Geometry, Union"),
+        input_type="geometry",
+        output_type="geometry",
+    )
+    def element_cag_union(subject:int, clip:int, data: Geomstr, **kwargs):
+        bt = BeamTable(data)
+        data = bt.union(subject, clip)
+        return "geometry", data
+
+    @self.console_argument("subject", type=int, help=_("Subject polygon shape"))
+    @self.console_argument("clip", type=int, help=_("Clipping polygon shape"))
+    @self.console_command(
+        "intersection",
+        help=_("Constructive Area Geometry, intersection"),
+        input_type="geometry",
+        output_type="geometry",
+    )
+    def element_cag_intersection(subject:int, clip:int, data: Geomstr, **kwargs):
+        bt = BeamTable(data)
+        data = bt.intersection(subject, clip)
+        return "geometry", data
+
+    @self.console_argument("subject", type=int, help=_("Subject polygon shape"))
+    @self.console_argument("clip", type=int, help=_("Clipping polygon shape"))
+    @self.console_command(
+        "xor",
+        help=_("Constructive Area Geometry, xor"),
+        input_type="geometry",
+        output_type="geometry",
+    )
+    def element_cag_xor(subject:int, clip:int, data: Geomstr, **kwargs):
+        bt = BeamTable(data)
+        data = bt.xor(subject, clip)
+        return "geometry", data
+
+    @self.console_argument("subject", type=int, help=_("Subject polygon shape"))
+    @self.console_argument("clip", type=int, help=_("Clipping polygon shape"))
+    @self.console_command(
+        "difference",
+        help=_("Constructive Area Geometry, difference"),
+        input_type="geometry",
+        output_type="geometry",
+    )
+    def element_cag_difference(subject:int, clip:int, data: Geomstr, **kwargs):
+        bt = BeamTable(data)
+        data = bt.difference(subject, clip)
         return "geometry", data
 
     # --------------------------- END COMMANDS ------------------------------

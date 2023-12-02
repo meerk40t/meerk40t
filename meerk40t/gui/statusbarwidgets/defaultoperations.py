@@ -78,7 +78,8 @@ class DefaultOperationWidget(StatusBarWidget):
         op_order = ("op cut", "op engrave", "op raster", "op image", "op dots")
         oplist = []
         for op in self.context.elements.default_operations:
-            oplist.append(op)
+            if hasattr(op, "type") and op.type in op_order:
+                oplist.append(op)
         if display_mode == 0:
             # As in tree, so nothing to do...
             pass

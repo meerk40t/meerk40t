@@ -28,7 +28,7 @@ from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
 from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
 from meerk40t.kernel import lookup_listener, signal_listener
 
-from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
+from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, DEFAULT_PPI, Length
 from ..svgelements import Color, Matrix, Path
 from .icons import (  # icon_duplicate,; icon_nohatch,
     STD_ICON_SIZE,
@@ -225,49 +225,6 @@ class MeerK40t(MWindow):
         self.tips_at_startup()
         self.parametric_info = None
 
-        # Look at window elements we are hovering over
-        # to establish the online help functionality
-        self.context.kernel.add_job(
-            run=self.mouse_query, name="helper-check", interval=0.5, run_main=True
-        )
-        # Switched to kernel to avoid 0xC0000005 crash in windows.
-        # self.timer = wx.Timer(self, id=wx.ID_ANY)
-        # self.Bind(wx.EVT_TIMER, self.mouse_query, self.timer)
-        # self.timer.Start(500, wx.TIMER_CONTINUOUS)
-        self._last_help_info = ""
-        self._last_help_section = ""
-
-    def mouse_query(self, event=None):
-        """
-        This routine looks periodically (every 0.5 seconds)
-        at the window ie control under the mouse cursor.
-        It will examine the window if it contains a tooltip text and
-        will display this in a textbox in this panel.
-        Additionally, it will read the associated HelpText of the control
-        (or its parent if the control does not have any) to construct a
-        Wiki page on GitHub to open an associated online help page.
-        """
-        wind, pos = wx.FindWindowAtPointer()
-        if wind is not None:
-            info = ""
-            if hasattr(wind, "GetToolTipText"):
-                info = wind.GetToolTipText()
-            section = ""
-            if hasattr(wind, "GetHelpText"):
-                win = wind
-                while win is not None:
-                    section = win.GetHelpText()
-                    if section:
-                        break
-                    win = win.GetParent()
-                if section is None or section == "":
-                    section = "GUI"
-            if info != self._last_help_info or section != self._last_help_section:
-                self._last_help_info = info
-                self._last_help_section = section
-                # Inform HelperWindow about a new content
-                self.context.signal("helpinfo", info, section)
-
     def tips_at_startup(self):
         self.context.setting(bool, "show_tips", True)
         if self.context.show_tips:
@@ -385,6 +342,100 @@ class MeerK40t(MWindow):
         def on_click_paste():
             self.context("clipboard paste\n")
 
+        def on_click_paste_external():
+
+            def paste_image(bmp):
+                # Create an image element from the data in the *system* clipboard
+                def WxBitmapToWxImage(myBitmap):
+                    return wx.ImageFromBitmap(myBitmap)
+
+                def imageToPil(myWxImage):
+                    myPilImage = Image.new('RGB', (myWxImage.GetWidth(), myWxImage.GetHeight()))
+                    myPilImage.frombytes(myWxImage.GetData())
+                    return myPilImage
+
+                image = imageToPil(WxBitmapToWxImage(bmp))
+                dpi = DEFAULT_PPI
+                matrix = Matrix(f"scale({UNITS_PER_PIXEL})")
+                node = self.context.elements.elem_branch.add(
+                    image=image,
+                    matrix=matrix,
+                    type="elem image",
+                    dpi=dpi,
+                )
+                if self.context.elements.classify_new:
+                    self.context.elements.classify([node])
+                self.context.elements.set_emphasis([node])
+
+            def paste_files(filelist):
+                accepted = 0
+                rejected = 0
+                rejected_files = []
+                for pathname in files:
+                    if self.load(pathname):
+                        accepted += 1
+                    else:
+                        rejected += 1
+                        rejected_files.append(pathname)
+                if rejected != 0:
+                    reject = "\n".join(rejected_files)
+                    err_msg = _("Some files were unrecognized:\n{rejected_files}").format(
+                        rejected_files=reject
+                    )
+                    dlg = wx.MessageDialog(
+                        None, err_msg, _("Error encountered"), wx.OK | wx.ICON_ERROR
+                    )
+                    dlg.ShowModal()
+                    dlg.Destroy()
+
+            def paste_text(content):
+                size = 16.0
+                node = self.context.elements.elem_branch.add(
+                    text=content, matrix=Matrix(f"scale({UNITS_PER_PIXEL})"), type="elem text"
+                )
+                node.font_size = size
+                node.stroke = self.context.elements.default_stroke
+                node.stroke_width = self.context.elements.default_strokewidth
+                node.fill = self.context.elements.default_fill
+                node.altered()
+                if self.context.elements.classify_new:
+                    self.context.elements.classify([node])
+                self.context.elements.set_emphasis([node])
+
+            # Read the image
+            success = False
+            if wx.TheClipboard.Open():
+                # Let's see what we have:
+                if wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_BITMAP)):
+                    bmap_data = wx.BitmapDataObject()
+                    success = wx.TheClipboard.GetData(bmap_data)
+                    if success:
+                        bmp = bmap_data.GetBitmap()
+                        paste_image(bmp)
+
+                elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_FILENAME)):
+                    fname_data = wx.FileDataObject()
+                    success = wx.TheClipboard.GetData(fname_data)
+                    if success:
+                        files = fname_data.GetFilenames()
+                        paste_files(files)
+
+                elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_TEXT)):
+                    text_data = wx.TextDataObject()
+                    success = wx.TheClipboard.GetData(text_data)
+                    if success:
+                        txt = text_data.GetText()
+                        paste_text(txt)
+
+                elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_UNICODETEXT)):
+                    text_data = wx.TextDataObject()
+                    success = wx.TheClipboard.GetData(text_data)
+                    if success:
+                        txt = text_data.GetText().decode("utf-8")
+                        paste_text(txt)
+
+                wx.TheClipboard.Close()
+
         def on_click_sel_all():
             self.context("element* select\n")
 
@@ -430,6 +481,16 @@ class MeerK40t(MWindow):
 
         def on_click_delete():
             self.context("tree selected delete\n")
+
+        def external_filled():
+            # Does the OS clipboard contain something?
+            not_empty = bool(
+                wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_BITMAP)) or
+                wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_TEXT)) or
+                wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_UNICODETEXT)) or
+                wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_FILENAME))
+            )
+            return not_empty
 
         def clipboard_filled():
             res = False
@@ -489,6 +550,15 @@ class MeerK40t(MWindow):
                 "action": on_click_paste,
                 "enabled": clipboard_filled,
                 "id": wx.ID_PASTE,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Paste from system\tShift-Ctrl-V"),
+                "help": _("Paste data coming from other applications"),
+                "action": on_click_paste_external,
+                "enabled": external_filled,
+                "id": wx.ID_ANY,
                 "level": 1,
                 "segment": "",
             },
@@ -1279,6 +1349,15 @@ class MeerK40t(MWindow):
         # Sort according to categories....
         effects.sort(key=lambda v: v[4])
         sub_effects = list()
+        first_hatch = None
+
+        def action(command):
+            local_command = command
+            def routine(*args):
+                kernel.elements(f"{local_command}\n")
+
+            return routine
+
         for idx, hatch in enumerate(effects):
             if len(hatch) < 4:
                 continue
@@ -1286,18 +1365,21 @@ class MeerK40t(MWindow):
                 continue
 
             cmd = hatch[0]
+            if first_hatch is None:
+                first_hatch = cmd
             tip = hatch[1] + rightmsg
             icon = hatch[2]
             if icon is None:
                 icon = icon_hatch
             label = hatch[3]
+
             hdict = {
                 "identifier": f"hatch_{idx}",
                 "label": _(label),
                 "icon": icon,
                 "tip": _(tip),
                 "help": "hatches",
-                "action": lambda v: kernel.elements(f"{cmd}\n"),
+                "action": action(cmd),
                 "action_right": lambda v: kernel.elements("effect-remove\n"),
                 "rule_enabled": lambda cond: contains_an_element(),
             }
@@ -1319,7 +1401,7 @@ class MeerK40t(MWindow):
             "icon": sub_effects[0]["icon"],
             "tip": sub_effects[0]["tip"],
             "help": "hatches",
-            "action": sub_effects[0]["action"],
+            "action": action(first_hatch),
             "action_right": lambda v: kernel.elements("effect-remove\n"),
             "size": bsize_normal,
             "rule_enabled": lambda cond: contains_an_element(),
@@ -3497,6 +3579,27 @@ class MeerK40t(MWindow):
                 dlg.ShowModal()
                 dlg.Destroy()
 
+        def online_help(event):
+            # let's have a look where we are and what the associated HelpText is
+            section = ""
+            wind, pos = wx.FindWindowAtPointer()
+            if wind is not None:
+                if hasattr(wind, "GetHelpText"):
+                    win = wind
+                    while win is not None:
+                        section = win.GetHelpText()
+                        if section:
+                            break
+                        win = win.GetParent()
+            if section is None or section == "":
+                section = "GUI"
+            section = section.upper()
+            url = f"https://github.com/meerk40t/meerk40t/wiki/Online-Help:-{section}"
+            import webbrowser
+
+            webbrowser.open(url, new=0, autoraise=True)
+
+
         if platform.system() == "Darwin":
             menuitem = self.help_menu.Append(
                 wx.ID_HELP, _("&MeerK40t Help"), _("Open the MeerK40t Mac help file")
@@ -3513,24 +3616,15 @@ class MeerK40t(MWindow):
         else:
             menuitem = self.help_menu.Append(
                 wx.ID_HELP,
-                _("&Help"),
+                _("&Help\tF1"),
                 _("Open the Meerk40t online wiki Beginners page"),
             )
             self.Bind(
                 wx.EVT_MENU,
-                lambda e: self.context("webhelp help\n"),
+                # lambda e: self.context("webhelp help\n"),
+                online_help,
                 id=menuitem.GetId(),
             )
-
-        def online_help(event):
-            sect = self._last_help_section
-            if sect is None or sect == "":
-                sect = "GUI"
-            sect = sect.upper()
-            url = f"https://github.com/meerk40t/meerk40t/wiki/Online-Help:-{sect}"
-            import webbrowser
-
-            webbrowser.open(url, new=0, autoraise=True)
 
         menuitem = self.help_menu.Append(
             wx.ID_ANY,
@@ -4074,7 +4168,7 @@ class MeerK40t(MWindow):
             preferred_loader = None
             if idx > 0:
                 lidx = 0
-                for loader, loader_name, sname in context.kernel.find("load"):
+                for loader, loader_name, sname in self.context.kernel.find("load"):
                     lidx += 1
                     if lidx == idx:
                         preferred_loader = loader_name

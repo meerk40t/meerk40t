@@ -51,6 +51,14 @@ def init_tree(kernel):
     def is_regmark(node):
         return node.has_ancestor("branch reg")
 
+    def is_hatched(node):
+        e = node
+        while e is not None and not e.type.startswith("branch"):
+            if e.type.startswith("effect"):
+                return True
+            e = e.parent
+        return False
+
     def has_changes(node):
         result = False
         try:
@@ -113,7 +121,7 @@ def init_tree(kernel):
             activate(node)
 
     @tree_separator_after()
-    @tree_operation(_("Image properties"), node_type=("elem image", "image raster"), help="")
+    @tree_operation(_("Image properties"), node_type="elem image", help="")
     def image_property(node, **kwargs):
         activate = self.kernel.lookup("function/open_property_window_for_node")
         if activate is not None:
@@ -158,6 +166,26 @@ def init_tree(kernel):
             matrix=node.matrix,
             type="elem image",
         )
+
+    @tree_conditional(lambda node: is_hatched(node))
+    @tree_operation(_("Remove hatch"), node_type=elem_nodes, help="")
+    def unhatch_elements(node, **kwargs):
+        for e in list(self.elems(emphasized=True)):
+            nparent = e.parent
+            if nparent.type.startswith("effect"):
+                e._parent = None  # Otherwise add_node will fail below
+                try:
+                    idx = nparent._children.index(node)
+                    if idx >= 0:
+                        nparent._children.pop(idx)
+                except IndexError:
+                    pass
+                nparent.parent.add_node(e)
+                if len(nparent.children) == 0:
+                    nparent.remove_node()
+                else:
+                    nparent.altered()
+        self.signal("rebuild_tree")
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(_("Ungroup elements"), node_type=("group", "file"), help="")
@@ -421,13 +449,10 @@ def init_tree(kernel):
             self.signal("propupdate", node)
 
     @tree_submenu(_("Convert to Path"))
-    @tree_operation(_("Horizontal"), node_type=("elem image", "image raster"), help="")
+    @tree_operation(_("Horizontal"), node_type="elem image", help="")
     def image_convert_to_path_horizontal(node, **kwargs):
         image, box = node.as_image()
-        try:
-            m = Matrix(node.active_matrix)
-        except AttributeError:
-            m = Matrix(node.matrix)
+        m = Matrix(node.active_matrix)
         n = node.replace_node(
             type="elem path",
             geometry=Geomstr.image(image, vertical=False),
@@ -438,13 +463,10 @@ def init_tree(kernel):
         self.classify([n])
 
     @tree_submenu(_("Convert to Path"))
-    @tree_operation(_("Vertical"), node_type=("elem image", "image raster"), help="")
+    @tree_operation(_("Vertical"), node_type="elem image", help="")
     def image_convert_to_path_vertical(node, **kwargs):
         image, box = node.as_image()
-        try:
-            m = Matrix(node.active_matrix)
-        except AttributeError:
-            m = Matrix(node.matrix)
+        m = Matrix(node.active_matrix)
         n = node.replace_node(
             type="elem path",
             geometry=Geomstr.image(image, vertical=True),
@@ -2891,6 +2913,16 @@ def init_tree(kernel):
     )
     def image_save_processed(node, **kwargs):
         self("image save output.png --processed\n")
+
+    @tree_conditional(lambda node: not node.lock and is_developer_mode())
+    @tree_submenu(_("Convert"))
+    @tree_operation(_("Raw Image"), node_type="elem image", help="")
+    def image_convert_raw(node, **kwargs):
+        node.replace_node(
+            image=node.image,
+            matrix=node.matrix,
+            type="image raster",
+        )
 
     @tree_conditional(lambda node: len(node.children) > 0)
     @tree_separator_before()
