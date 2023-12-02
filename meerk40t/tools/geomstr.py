@@ -641,7 +641,10 @@ class BeamTable:
         return self.cag("intersection", subject, clip)
 
     def xor(self, subject, clip):
-        return self.cag("intersection", subject, clip)
+        return self.cag("xor", subject, clip)
+
+    def difference(self, subject, clip):
+        return self.cag("difference", subject, clip)
 
     def cag(self, cag_op, subject, clip):
         if self._nb_scan is None:

@@ -274,5 +274,17 @@ def init_commands(kernel):
         data = bt.xor(subject, clip)
         return "geometry", data
 
+    @self.console_argument("subject", type=int, help=_("Subject polygon shape"))
+    @self.console_argument("clip", type=int, help=_("Clipping polygon shape"))
+    @self.console_command(
+        "difference",
+        help=_("Constructive Area Geometry, difference"),
+        input_type="geometry",
+        output_type="geometry",
+    )
+    def element_cag_difference(subject:int, clip:int, data: Geomstr, **kwargs):
+        bt = BeamTable(data)
+        data = bt.difference(subject, clip)
+        return "geometry", data
 
     # --------------------------- END COMMANDS ------------------------------
