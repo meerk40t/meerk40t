@@ -71,7 +71,7 @@ class FormatterPanel(wx.Panel):
             "elem rect": icon_mk_rectangular,
             "elem line": icon_mk_polyline,
             "elem text": icons8_text,
-            "image raster": icons8_image,
+            # "image raster": icons8_image,
             "place current": icons8_home_filled,
             "place point": icons8_home_filled,
         }
@@ -235,7 +235,7 @@ class FormatterPanel(wx.Panel):
             "elem polyline": PolylineNode,
             "elem image": ImageNode,
             "elem text": TextNode,
-            "image raster": ImageRasterNode,
+            # "image raster": ImageRasterNode,
             "reference": ReferenceNode,
             "file": FileNode,
         }
@@ -250,7 +250,7 @@ class FormatterPanel(wx.Panel):
                     node = bootstrap[nodetype](cx=0, cy=0, rx=10, ry=10)
                 elif nodetype == "elem path":
                     node = bootstrap[nodetype]()
-                elif nodetype == "elem image":
+                elif nodetype in ("elem image", "image raster"):
                     # Let's use an arbitrary image
                     image = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
                     node = bootstrap[nodetype](image=image)

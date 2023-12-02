@@ -59,16 +59,23 @@ class ImageRasterNode(Node):
         default_map = super().default_map(default_map=default_map)
         default_map.update(self.__dict__)
         image = self.image
+
+        pil_image, bounds = self.image, self.bounds
+
         try:
             default_map["width"] = image.width
             default_map["height"] = image.height
+            default_map["offset_x"] = bounds[0]
+            default_map["offset_y"] = bounds[1]
         except:
             default_map["width"] = 0
             default_map["height"] = 0
-
-        pil_image, bounds = self.image, self.bounds
-        default_map["offset_x"] = bounds[0]
-        default_map["offset_y"] = bounds[1]
+            default_map["offset_x"] = 0
+            default_map["offset_y"] = 0
+            default_map["step_x"] = 1
+            default_map["step_y"] = 1
+            default_map["dpi"] = 1
+            return default_map
 
         # Get steps from individual images
         image_width, image_height = pil_image.size

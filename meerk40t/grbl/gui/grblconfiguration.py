@@ -184,9 +184,10 @@ class GRBLConfiguration(MWindow):
         panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
         panel_formatter = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
 
-        self.panels.append(panel_interface)
-        self.panels.append(panel_global)
         self.panels.append(panel_dim)
+        self.panels.append(panel_interface)
+        self.panels.append(panel_protocol)
+        self.panels.append(panel_global)
         self.panels.append(panel_rotary)
         self.panels.append(panel_warn)
         self.panels.append(panel_actions)
