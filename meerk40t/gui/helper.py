@@ -13,7 +13,7 @@ from wx import aui
 
 from meerk40t.gui.icons import get_default_icon_size, icons8_info
 from meerk40t.gui.wxutils import StaticBoxSizer
-from meerk40t.kernel import signal_listener, Job
+from meerk40t.kernel import Job, signal_listener
 
 _ = wx.GetTranslation
 
@@ -59,7 +59,10 @@ class HelperPanel(wx.Panel):
 
         self._last_help_info = ""
         self.job = Job(
-            process=self.mouse_query, job_name="helper-check", interval=0.2, run_main=True
+            process=self.mouse_query,
+            job_name="helper-check",
+            interval=0.2,
+            run_main=True,
         )
 
     def mouse_query(self, event=None):

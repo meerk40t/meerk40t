@@ -606,6 +606,96 @@ class BeamTable:
         aw = np.argwhere(actives != -1)[:, 0]
         return actives[aw]
 
+    def combine(self):
+        """
+        Returns all lines sliced at the events and merged.
+        @return:
+        """
+        if self._nb_scan is None:
+            self.compute_beam_brute()
+        g = Geomstr()
+        actives = self._nb_scan[:-1]
+        from_vals = self._nb_events[:-1]
+        to_vals = self._nb_events[1:]
+        y_start = self.geometry.y_intercept(
+            actives, np.real(from_vals), np.imag(from_vals)
+        )
+        y_end = self.geometry.y_intercept(actives, np.real(to_vals), np.imag(to_vals))
+        from_vals = np.reshape(np.repeat(from_vals, y_start.shape[1]), y_start.shape)
+        to_vals = np.reshape(np.repeat(to_vals, y_end.shape[1]), y_end.shape)
+        starts = np.ravel(np.real(from_vals) + y_start * 1j)
+        ends = np.ravel(np.real(to_vals) + y_end * 1j)
+
+        filter = np.dstack((starts != ends, ~np.isnan(starts))).all(axis=2)[0]
+        starts = starts[filter]
+        ends = ends[filter]
+        count = starts.shape[0]
+        segments = np.dstack(
+            (starts, [0] * count, [TYPE_LINE] * count, [0] * count, ends)
+        )[0]
+        g.append_lines(segments)
+        return g
+
+    def union(self, subject, clip):
+        return self.cag("union", subject, clip)
+
+    def intersection(self, subject, clip):
+        return self.cag("intersection", subject, clip)
+
+    def xor(self, subject, clip):
+        return self.cag("xor", subject, clip)
+
+    def difference(self, subject, clip):
+        return self.cag("difference", subject, clip)
+
+    def cag(self, cag_op, subject, clip):
+        if self._nb_scan is None:
+            self.compute_beam_brute()
+        g = Geomstr()
+        actives = self._nb_scan[:-1]
+        lines = self.geometry.segments[actives][..., 2]
+
+        s = np.dstack((np.imag(lines) == subject, actives != -1)).all(axis=2)
+        # a = np.pad(s, ((0, 0), (1, 0)), constant_values=False)
+        qq = np.cumsum(s, axis=1) % 2
+        c = np.dstack((np.imag(lines) == clip, actives != -1)).all(axis=2)
+        rr = np.cumsum(c, axis=1) % 2
+        if cag_op == "union":
+            cc = qq | rr
+        elif cag_op == "intersection":
+            cc = qq & rr
+        elif cag_op == "xor":
+            cc = qq ^ rr
+        elif cag_op == "difference":
+            cc = ~qq | rr
+        elif cag_op == "eq":
+            cc = qq == rr
+        yy = np.pad(cc, ((0, 0), (1, 0)), constant_values=0)
+        hh = np.diff(yy, axis=1)
+        from_vals = self._nb_events[:-1]
+        to_vals = self._nb_events[1:]
+        y_start = self.geometry.y_intercept(
+            actives, np.real(from_vals), np.imag(from_vals)
+        )
+        y_end = self.geometry.y_intercept(actives, np.real(to_vals), np.imag(to_vals))
+        from_vals = np.reshape(np.repeat(from_vals, y_start.shape[1]), y_start.shape)
+        to_vals = np.reshape(np.repeat(to_vals, y_end.shape[1]), y_end.shape)
+        starts = np.ravel(np.real(from_vals) + y_start * 1j)
+        ends = np.ravel(np.real(to_vals) + y_end * 1j)
+        hravel = np.ravel(hh)
+
+        filter = np.dstack((starts != ends, ~np.isnan(starts), hravel != 0)).all(
+            axis=2
+        )[0]
+        starts = starts[filter]
+        ends = ends[filter]
+        count = starts.shape[0]
+        segments = np.dstack(
+            (starts, [0] * count, [TYPE_LINE] * count, [0] * count, ends)
+        )[0]
+        g.append_lines(segments)
+        return g
+
 
 class Scanbeam:
     """
@@ -1002,6 +1092,15 @@ class Geomstr:
 
     def __repr__(self):
         return f"Geomstr({repr(self.segments[:self.index])})"
+
+    def __eq__(self, other):
+        if not isinstance(other, Geomstr):
+            return False
+        if other.index != self.index:
+            return False
+
+        m = self.segments[: self.index] == other.segments[: other.index]
+        return m.all()
 
     def __copy__(self):
         """
@@ -1489,10 +1588,15 @@ class Geomstr:
 
         return cls.wobble(algorithm, outer, radius, interval, speed)
 
-    def flag_settings(self):
-        for i in range(self.index):
+    def flag_settings(self, flag=None, start=0, end=None):
+        if end is None:
+            end = self.index
+        for i in range(start, end):
             info = self.segments[i][2]
-            self.segments[i][2] = complex(info.real, i)
+            if flag is None:
+                self.segments[i][2] = complex(info.real, i)
+            else:
+                self.segments[i][2] = complex(info.real, flag)
 
     def copies(self, n):
         segs = self.segments[: self.index]
@@ -4149,8 +4253,12 @@ class Geomstr:
             # If vertical slope is undefined. But, all y-ints are at y since y0=y1
             m = (b.real - a.real) / (b.imag - a.imag)
             x0 = a.real - (m * a.imag)
+            if len(x0.shape) >= 2:
+                x = np.reshape(np.repeat(x, x0.shape[1]), x0.shape)
+                default = np.reshape(np.repeat(default, x0.shape[1]), x0.shape)
             pts = np.where(~np.isinf(m), (x - x0) / m, np.imag(a))
-            pts[m == 0] = default
+            pts = np.where(m == 0, default, pts)
+            # pts[m == 0] = default
             return pts
         finally:
             np.seterr(**old_np_seterr)

@@ -31,6 +31,7 @@ class RasterOpNode(Node, Parameters):
             "elem line",
             "elem text",
             "elem image",
+            "image raster",
         )
         # Which elements do we consider for automatic classification?
         self._allowed_elements = (

@@ -28,7 +28,7 @@ from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
 from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
 from meerk40t.kernel import lookup_listener, signal_listener
 
-from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, DEFAULT_PPI, Length
+from ..core.units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from ..svgelements import Color, Matrix, Path
 from .icons import (  # icon_duplicate,; icon_nohatch,
     STD_ICON_SIZE,
@@ -343,14 +343,15 @@ class MeerK40t(MWindow):
             self.context("clipboard paste\n")
 
         def on_click_paste_external():
-
             def paste_image(bmp):
                 # Create an image element from the data in the *system* clipboard
                 def WxBitmapToWxImage(myBitmap):
                     return wx.ImageFromBitmap(myBitmap)
 
                 def imageToPil(myWxImage):
-                    myPilImage = Image.new('RGB', (myWxImage.GetWidth(), myWxImage.GetHeight()))
+                    myPilImage = Image.new(
+                        "RGB", (myWxImage.GetWidth(), myWxImage.GetHeight())
+                    )
                     myPilImage.frombytes(myWxImage.GetData())
                     return myPilImage
 
@@ -379,9 +380,9 @@ class MeerK40t(MWindow):
                         rejected_files.append(pathname)
                 if rejected != 0:
                     reject = "\n".join(rejected_files)
-                    err_msg = _("Some files were unrecognized:\n{rejected_files}").format(
-                        rejected_files=reject
-                    )
+                    err_msg = _(
+                        "Some files were unrecognized:\n{rejected_files}"
+                    ).format(rejected_files=reject)
                     dlg = wx.MessageDialog(
                         None, err_msg, _("Error encountered"), wx.OK | wx.ICON_ERROR
                     )
@@ -391,7 +392,9 @@ class MeerK40t(MWindow):
             def paste_text(content):
                 size = 16.0
                 node = self.context.elements.elem_branch.add(
-                    text=content, matrix=Matrix(f"scale({UNITS_PER_PIXEL})"), type="elem text"
+                    text=content,
+                    matrix=Matrix(f"scale({UNITS_PER_PIXEL})"),
+                    type="elem text",
                 )
                 node.font_size = size
                 node.stroke = self.context.elements.default_stroke
@@ -485,10 +488,10 @@ class MeerK40t(MWindow):
         def external_filled():
             # Does the OS clipboard contain something?
             not_empty = bool(
-                wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_BITMAP)) or
-                wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_TEXT)) or
-                wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_UNICODETEXT)) or
-                wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_FILENAME))
+                wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_BITMAP))
+                or wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_TEXT))
+                or wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_UNICODETEXT))
+                or wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_FILENAME))
             )
             return not_empty
 
@@ -1349,6 +1352,16 @@ class MeerK40t(MWindow):
         # Sort according to categories....
         effects.sort(key=lambda v: v[4])
         sub_effects = list()
+        first_hatch = None
+
+        def action(command):
+            local_command = command
+
+            def routine(*args):
+                kernel.elements(f"{local_command}\n")
+
+            return routine
+
         for idx, hatch in enumerate(effects):
             if len(hatch) < 4:
                 continue
@@ -1356,18 +1369,21 @@ class MeerK40t(MWindow):
                 continue
 
             cmd = hatch[0]
+            if first_hatch is None:
+                first_hatch = cmd
             tip = hatch[1] + rightmsg
             icon = hatch[2]
             if icon is None:
                 icon = icon_hatch
             label = hatch[3]
+
             hdict = {
                 "identifier": f"hatch_{idx}",
                 "label": _(label),
                 "icon": icon,
                 "tip": _(tip),
                 "help": "hatches",
-                "action": lambda v: kernel.elements(f"{cmd}\n"),
+                "action": action(cmd),
                 "action_right": lambda v: kernel.elements("effect-remove\n"),
                 "rule_enabled": lambda cond: contains_an_element(),
             }
@@ -1389,7 +1405,7 @@ class MeerK40t(MWindow):
             "icon": sub_effects[0]["icon"],
             "tip": sub_effects[0]["tip"],
             "help": "hatches",
-            "action": sub_effects[0]["action"],
+            "action": action(first_hatch),
             "action_right": lambda v: kernel.elements("effect-remove\n"),
             "size": bsize_normal,
             "rule_enabled": lambda cond: contains_an_element(),
@@ -3586,7 +3602,6 @@ class MeerK40t(MWindow):
             import webbrowser
 
             webbrowser.open(url, new=0, autoraise=True)
-
 
         if platform.system() == "Darwin":
             menuitem = self.help_menu.Append(

@@ -339,6 +339,7 @@ class IdPanel(wx.Panel):
             "elem line": mkicons.icon_line,
             "elem polyline": mkicons.icon_mk_polyline,
             "elem text": mkicons.icon_bmap_text,
+            "image raster": mkicons.icons8_image,
             "blob": mkicons.icons8_file,
         }
         if hasattr(self.node, "type"):

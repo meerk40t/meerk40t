@@ -51,6 +51,14 @@ def init_tree(kernel):
     def is_regmark(node):
         return node.has_ancestor("branch reg")
 
+    def is_hatched(node):
+        e = node
+        while e is not None and not e.type.startswith("branch"):
+            if e.type.startswith("effect"):
+                return True
+            e = e.parent
+        return False
+
     def has_changes(node):
         result = False
         try:
@@ -129,6 +137,55 @@ def init_tree(kernel):
     #             info += "\n"
     #         info += f"{idx}#: {e.type}, identical to parent: {e is node}"
     #     print (info)
+
+    @tree_conditional(lambda node: not node.lock and is_developer_mode())
+    @tree_submenu(_("Passthrough"))
+    @tree_operation(_("From Original"), node_type="elem image", help="")
+    def image_convert_unmodified(node, **kwargs):
+        node.replace_node(
+            image=node.image,
+            matrix=node.matrix,
+            type="image raster",
+        )
+
+    @tree_conditional(lambda node: not node.lock and is_developer_mode())
+    @tree_submenu(_("Passthrough"))
+    @tree_operation(_("From Modified"), node_type="elem image", help="")
+    def image_convert_unmodified_2(node, **kwargs):
+        node.replace_node(
+            image=node.active_image,
+            matrix=node.active_matrix,
+            type="image raster",
+        )
+
+    @tree_conditional(lambda node: not node.lock and is_developer_mode())
+    @tree_operation(_("Unlock Modifications"), node_type="image raster", help="")
+    def image_convert_modifier(node, **kwargs):
+        node.replace_node(
+            image=node.image,
+            matrix=node.matrix,
+            type="elem image",
+        )
+
+    @tree_conditional(lambda node: is_hatched(node))
+    @tree_operation(_("Remove hatch"), node_type=elem_nodes, help="")
+    def unhatch_elements(node, **kwargs):
+        for e in list(self.elems(emphasized=True)):
+            nparent = e.parent
+            if nparent.type.startswith("effect"):
+                e._parent = None  # Otherwise add_node will fail below
+                try:
+                    idx = nparent._children.index(node)
+                    if idx >= 0:
+                        nparent._children.pop(idx)
+                except IndexError:
+                    pass
+                nparent.parent.add_node(e)
+                if len(nparent.children) == 0:
+                    nparent.remove_node()
+                else:
+                    nparent.altered()
+        self.signal("rebuild_tree")
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(_("Ungroup elements"), node_type=("group", "file"), help="")
@@ -1829,6 +1886,7 @@ def init_tree(kernel):
 
         self.signal("updateelem_tree")
 
+    @tree_conditional(lambda node: is_developer_mode())
     @tree_submenu(_("Apply special effect"))
     @tree_operation(
         _("Append Warp").format(),
@@ -2856,16 +2914,6 @@ def init_tree(kernel):
     )
     def image_save_processed(node, **kwargs):
         self("image save output.png --processed\n")
-
-    @tree_conditional(lambda node: not node.lock and is_developer_mode())
-    @tree_submenu(_("Convert"))
-    @tree_operation(_("Raw Image"), node_type="elem image", help="")
-    def image_convert_raw(node, **kwargs):
-        node.replace_node(
-            image=node.image,
-            matrix=node.matrix,
-            type="image raster",
-        )
 
     @tree_conditional(lambda node: len(node.children) > 0)
     @tree_separator_before()

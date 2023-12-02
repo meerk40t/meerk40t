@@ -75,6 +75,7 @@ elem_nodes = (
     "elem rect",
     "elem line",
     "elem text",
+    "image raster",
 )
 elem_group_nodes = (
     "elem ellipse",
@@ -101,6 +102,7 @@ elem_ref_nodes = (
     "elem rect",
     "elem line",
     "elem text",
+    "image raster",
     "effect hatch",
     "effect wobble",
     "effect warp",

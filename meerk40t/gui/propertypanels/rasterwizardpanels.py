@@ -14,7 +14,7 @@ class ContrastPanel(wx.Panel):
 
     @staticmethod
     def accepts(node):
-        if node.type != "elem image":
+        if not hasattr(node, "as_image"):
             return False
         for n in node.operations:
             if n.get("name") == "contrast":
@@ -154,7 +154,7 @@ class HalftonePanel(wx.Panel):
 
     @staticmethod
     def accepts(node):
-        if node.type != "elem image":
+        if not hasattr(node, "as_image"):
             return False
         for n in node.operations:
             if n.get("name") == "halftone":
@@ -335,7 +335,7 @@ class ToneCurvePanel(wx.Panel):
 
     @staticmethod
     def accepts(node):
-        if node.type != "elem image":
+        if not hasattr(node, "as_image"):
             return False
         for n in node.operations:
             if n.get("name") == "tone":
@@ -517,7 +517,7 @@ class SharpenPanel(wx.Panel):
 
     @staticmethod
     def accepts(node):
-        if node.type != "elem image":
+        if not hasattr(node, "as_image"):
             return False
         if node.operations is None:
             node.operations = list()
@@ -702,7 +702,7 @@ class GammaPanel(wx.Panel):
 
     @staticmethod
     def accepts(node):
-        if node.type != "elem image":
+        if not hasattr(node, "as_image"):
             return False
         for n in node.operations:
             if n.get("name") == "gamma":
@@ -802,7 +802,7 @@ class EdgePanel(wx.Panel):
 
     @staticmethod
     def accepts(node):
-        if node.type != "elem image":
+        if not hasattr(node, "as_image"):
             return False
         for n in node.operations:
             if n.get("name") == "edge_enhance":
@@ -860,7 +860,7 @@ class AutoContrastPanel(wx.Panel):
 
     @staticmethod
     def accepts(node):
-        if node.type != "elem image":
+        if not hasattr(node, "as_image"):
             return False
         for n in node.operations:
             if n.get("name") == "auto_contrast":

@@ -1,6 +1,7 @@
 from copy import copy
 
 from meerk40t.core.node.node import Node
+from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.svgelements import Matrix
 
 
@@ -13,7 +14,7 @@ class ImageRasterNode(Node):
         self.image = None
         self.matrix = None
         super().__init__(type="image raster", **kwargs)
-        self.__formatter = "{element_type} {id} {width}x{height}"
+        self._formatter = "{element_type} {id} {width}x{height} @{dpi}"
         if self.matrix is None:
             self.matrix = Matrix()
         self._can_rotate = False
@@ -58,8 +59,35 @@ class ImageRasterNode(Node):
         default_map = super().default_map(default_map=default_map)
         default_map.update(self.__dict__)
         image = self.image
-        default_map["width"] = image.width
-        default_map["height"] = image.height
+
+        pil_image, bounds = self.image, self.bounds
+
+        try:
+            default_map["width"] = image.width
+            default_map["height"] = image.height
+            default_map["offset_x"] = bounds[0]
+            default_map["offset_y"] = bounds[1]
+        except:
+            default_map["width"] = 0
+            default_map["height"] = 0
+            default_map["offset_x"] = 0
+            default_map["offset_y"] = 0
+            default_map["step_x"] = 1
+            default_map["step_y"] = 1
+            default_map["dpi"] = 1
+            return default_map
+
+        # Get steps from individual images
+        image_width, image_height = pil_image.size
+        expected_width = bounds[2] - bounds[0]
+        expected_height = bounds[3] - bounds[1]
+        step_x = expected_width / image_width
+        step_y = expected_height / image_height
+        default_map["step_x"] = step_x
+        default_map["step_y"] = step_y
+        dpi_x = float(UNITS_PER_INCH / step_x)
+        dpi_y = float(UNITS_PER_INCH / step_y)
+        default_map["dpi"] = round((dpi_x + dpi_y) / 2)
         default_map["element_type"] = "Image"
         return default_map
 
@@ -74,6 +102,10 @@ class ImageRasterNode(Node):
             # then we will reverse the game
             return drag_node.drop(self, modify=modify)
         return False
+
+    def notify_scaled(self, *args, **kwargs):
+        super().notify_scaled(*args, **kwargs)
+        self.notify_update()
 
     def revalidate_points(self):
         bounds = self.bounds
