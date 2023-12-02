@@ -206,7 +206,7 @@ def init_commands(kernel):
         input_type="geometry",
         output_type="geometry",
     )
-    def element_translate(angle: Angle, data: Geomstr, **kwargs):
+    def element_rotate(angle: Angle, data: Geomstr, **kwargs):
         data.rotate(angle.radians)
         return "geometry", data
 
@@ -226,11 +226,11 @@ def init_commands(kernel):
 
     @self.console_command(
         "combine",
-        help=_("split_lines"),
+        help=_("Constructive Area Geometry, Combine"),
         input_type="geometry",
         output_type="geometry",
     )
-    def element_translate(data: Geomstr, **kwargs):
+    def element_cag_combine(data: Geomstr, **kwargs):
         bt = BeamTable(data)
         data = bt.combine()
         return "geometry", data
@@ -239,11 +239,11 @@ def init_commands(kernel):
     @self.console_argument("clip", type=int, help=_("Clipping polygon shape"))
     @self.console_command(
         "union",
-        help=_("union"),
+        help=_("Constructive Area Geometry, Union"),
         input_type="geometry",
         output_type="geometry",
     )
-    def element_translate(subject:int, clip:int, data: Geomstr, **kwargs):
+    def element_cag_union(subject:int, clip:int, data: Geomstr, **kwargs):
         bt = BeamTable(data)
         data = bt.union(subject, clip)
         return "geometry", data
@@ -252,13 +252,27 @@ def init_commands(kernel):
     @self.console_argument("clip", type=int, help=_("Clipping polygon shape"))
     @self.console_command(
         "intersection",
-        help=_("cag intersection"),
+        help=_("Constructive Area Geometry, intersection"),
         input_type="geometry",
         output_type="geometry",
     )
-    def element_translate(subject:int, clip:int, data: Geomstr, **kwargs):
+    def element_cag_intersection(subject:int, clip:int, data: Geomstr, **kwargs):
         bt = BeamTable(data)
         data = bt.intersection(subject, clip)
         return "geometry", data
+
+    @self.console_argument("subject", type=int, help=_("Subject polygon shape"))
+    @self.console_argument("clip", type=int, help=_("Clipping polygon shape"))
+    @self.console_command(
+        "xor",
+        help=_("Constructive Area Geometry, xor"),
+        input_type="geometry",
+        output_type="geometry",
+    )
+    def element_cag_xor(subject:int, clip:int, data: Geomstr, **kwargs):
+        bt = BeamTable(data)
+        data = bt.xor(subject, clip)
+        return "geometry", data
+
 
     # --------------------------- END COMMANDS ------------------------------
