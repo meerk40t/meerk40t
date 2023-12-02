@@ -624,6 +624,23 @@ class Planner(Service):
             return data_type, data
 
         @self.console_command(
+            "geometry",
+            help=_("plan<?> geometry"),
+            input_type="plan",
+            output_type="plan",
+        )
+        def plan_geometry(data_type=None, data=None, **kwgs):
+            # Update Info-panel if displayed
+            busy = self.kernel.busyinfo
+            if busy.shown:
+                busy.change(msg=_("Converting data"), keep=1)
+                busy.show()
+
+            data.geometry()
+            self.signal("plan", data.name, 4)
+            return data_type, data
+
+        @self.console_command(
             "blob",
             help=_("plan<?> blob"),
             input_type="plan",
