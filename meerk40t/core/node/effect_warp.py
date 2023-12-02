@@ -148,16 +148,31 @@ class WarpEffectNode(Node, FunctionalParameter):
         default_map["children"] = str(len(self.children))
         return default_map
 
+    def affected_children(self):
+        def right_types(start_node):
+            res = []
+            for e in start_node._children:
+                if e.type.startswith("effect"):
+                    continue
+                if e._children:
+                    subs = right_types(e)
+                    res.extend(subs)
+                elif e.type.startswith("elem"):
+                    res.append(e)
+            return res
+
+        nodes = right_types(self)
+        return nodes
+
     def as_geometry(self, **kws):
         """
-        Calculates the hatch effect geometry. The pass index is the number of copies of this geometry whereas the
-        internal loops value is rotated each pass by the angle-delta.
+        Calculates the warp effect geometry.
 
         @param kws:
         @return:
         """
         outlines = Geomstr()
-        for node in self._children:
+        for node in self.affected_children():
             try:
                 outlines.append(node.as_geometry(**kws))
             except AttributeError:
@@ -212,6 +227,16 @@ class WarpEffectNode(Node, FunctionalParameter):
             # If we drag an operation to this node,
             # then we will reverse the game
             return drag_node.drop(self, modify=modify)
+        elif drag_node.type in ("file", "group"):
+            # If we drag a group or a file to this node,
+            # then we will do it only if this an element effect
+            if modify:
+                if self.has_ancestor("branch ops"):
+                    return False
+                else:
+                    self.append_child(drag_node)
+                self.altered()
+            return True
         return False
 
     @property
