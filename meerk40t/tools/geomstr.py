@@ -671,7 +671,9 @@ class BeamTable:
         elif cag_op == "xor":
             cc = qq ^ rr
         elif cag_op == "difference":
-            cc = qq ^ rr
+            cc = ~qq | rr
+        elif cag_op == "eq":
+            cc = qq == rr
         yy = np.pad(cc, ((0, 0), (1, 0)), constant_values=0)
         hh = np.diff(yy, axis=1)
         from_vals = self._nb_events[:-1]
