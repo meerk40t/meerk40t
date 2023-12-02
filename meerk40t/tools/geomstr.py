@@ -617,7 +617,9 @@ class BeamTable:
         actives = self._nb_scan[:-1]
         from_vals = self._nb_events[:-1]
         to_vals = self._nb_events[1:]
-        y_start = self.geometry.y_intercept(actives, np.real(from_vals), np.imag(from_vals))
+        y_start = self.geometry.y_intercept(
+            actives, np.real(from_vals), np.imag(from_vals)
+        )
         y_end = self.geometry.y_intercept(actives, np.real(to_vals), np.imag(to_vals))
         from_vals = np.reshape(np.repeat(from_vals, y_start.shape[1]), y_start.shape)
         to_vals = np.reshape(np.repeat(to_vals, y_end.shape[1]), y_end.shape)
@@ -653,16 +655,10 @@ class BeamTable:
         actives = self._nb_scan[:-1]
         lines = self.geometry.segments[actives][..., 2]
 
-        s = np.dstack((
-            np.imag(lines) == subject,
-            actives != -1
-        )).all(axis=2)
+        s = np.dstack((np.imag(lines) == subject, actives != -1)).all(axis=2)
         # a = np.pad(s, ((0, 0), (1, 0)), constant_values=False)
         qq = np.cumsum(s, axis=1) % 2
-        c = np.dstack((
-            np.imag(lines) == clip,
-            actives != -1
-        )).all(axis=2)
+        c = np.dstack((np.imag(lines) == clip, actives != -1)).all(axis=2)
         rr = np.cumsum(c, axis=1) % 2
         if cag_op == "union":
             cc = qq | rr
@@ -678,7 +674,9 @@ class BeamTable:
         hh = np.diff(yy, axis=1)
         from_vals = self._nb_events[:-1]
         to_vals = self._nb_events[1:]
-        y_start = self.geometry.y_intercept(actives, np.real(from_vals), np.imag(from_vals))
+        y_start = self.geometry.y_intercept(
+            actives, np.real(from_vals), np.imag(from_vals)
+        )
         y_end = self.geometry.y_intercept(actives, np.real(to_vals), np.imag(to_vals))
         from_vals = np.reshape(np.repeat(from_vals, y_start.shape[1]), y_start.shape)
         to_vals = np.reshape(np.repeat(to_vals, y_end.shape[1]), y_end.shape)
@@ -686,11 +684,9 @@ class BeamTable:
         ends = np.ravel(np.real(to_vals) + y_end * 1j)
         hravel = np.ravel(hh)
 
-        filter = np.dstack((
-            starts != ends,
-            ~np.isnan(starts),
-            hravel != 0
-        )).all(axis=2)[0]
+        filter = np.dstack((starts != ends, ~np.isnan(starts), hravel != 0)).all(
+            axis=2
+        )[0]
         starts = starts[filter]
         ends = ends[filter]
         count = starts.shape[0]
@@ -699,7 +695,6 @@ class BeamTable:
         )[0]
         g.append_lines(segments)
         return g
-
 
 
 class Scanbeam:
@@ -1104,9 +1099,8 @@ class Geomstr:
         if other.index != self.index:
             return False
 
-        m = self.segments[:self.index] == other.segments[:other.index]
+        m = self.segments[: self.index] == other.segments[: other.index]
         return m.all()
-
 
     def __copy__(self):
         """

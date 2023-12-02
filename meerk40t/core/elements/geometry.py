@@ -4,7 +4,7 @@ This is a giant list of console commands that deal with and often implement the 
 
 from meerk40t.core.units import Angle, Length
 from meerk40t.svgelements import Matrix
-from meerk40t.tools.geomstr import Geomstr, BeamTable
+from meerk40t.tools.geomstr import BeamTable, Geomstr
 
 
 def plugin(kernel, lifecycle=None):
@@ -243,7 +243,7 @@ def init_commands(kernel):
         input_type="geometry",
         output_type="geometry",
     )
-    def element_cag_union(subject:int, clip:int, data: Geomstr, **kwargs):
+    def element_cag_union(subject: int, clip: int, data: Geomstr, **kwargs):
         bt = BeamTable(data)
         data = bt.union(subject, clip)
         return "geometry", data
@@ -256,7 +256,7 @@ def init_commands(kernel):
         input_type="geometry",
         output_type="geometry",
     )
-    def element_cag_intersection(subject:int, clip:int, data: Geomstr, **kwargs):
+    def element_cag_intersection(subject: int, clip: int, data: Geomstr, **kwargs):
         bt = BeamTable(data)
         data = bt.intersection(subject, clip)
         return "geometry", data
@@ -269,7 +269,7 @@ def init_commands(kernel):
         input_type="geometry",
         output_type="geometry",
     )
-    def element_cag_xor(subject:int, clip:int, data: Geomstr, **kwargs):
+    def element_cag_xor(subject: int, clip: int, data: Geomstr, **kwargs):
         bt = BeamTable(data)
         data = bt.xor(subject, clip)
         return "geometry", data
@@ -282,7 +282,7 @@ def init_commands(kernel):
         input_type="geometry",
         output_type="geometry",
     )
-    def element_cag_difference(subject:int, clip:int, data: Geomstr, **kwargs):
+    def element_cag_difference(subject: int, clip: int, data: Geomstr, **kwargs):
         bt = BeamTable(data)
         data = bt.difference(subject, clip)
         return "geometry", data
