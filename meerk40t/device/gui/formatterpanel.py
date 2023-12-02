@@ -250,7 +250,7 @@ class FormatterPanel(wx.Panel):
                     node = bootstrap[nodetype](cx=0, cy=0, rx=10, ry=10)
                 elif nodetype == "elem path":
                     node = bootstrap[nodetype]()
-                elif nodetype == "elem image":
+                elif nodetype in ("elem image", "image raster"):
                     # Let's use an arbitrary image
                     image = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
                     node = bootstrap[nodetype](image=image)
