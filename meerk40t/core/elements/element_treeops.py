@@ -179,7 +179,7 @@ def init_tree(kernel):
 
 
     @tree_conditional(lambda node: is_hatched(node))
-    @tree_operation(_("Remove hatch"), node_type=elem_nodes, help="")
+    @tree_operation(_("Remove effect"), node_type=elem_nodes, help="")
     def unhatch_elements(node, **kwargs):
         for e in list(self.elems(emphasized=True)):
             # eparent is the nodes immediate parent
