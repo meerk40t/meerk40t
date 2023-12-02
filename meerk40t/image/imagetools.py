@@ -2264,7 +2264,7 @@ class ImageLoader:
         n = file_node.add(
             image=image,
             matrix=matrix,
-            type="elem image",
+            type="image raster",
             dpi=_dpi,
         )
         if context.create_image_group:

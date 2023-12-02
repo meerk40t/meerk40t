@@ -552,6 +552,7 @@ class ShadowTree:
             "elem line": icon_line,
             "elem polyline": icon_mk_polyline,
             "elem text": icon_bmap_text,
+            "image raster": icons8_image,
             "blob": icons8_file,
         }
         self.image_cache = []

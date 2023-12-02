@@ -130,6 +130,7 @@ class OpInfoPanel(ScrolledPanel):
             "elem rect": 0,
             "elem line": 0,
             "elem text": 0,
+            "image raster": 0,
         }
         elems = list(self.context.elements.elems())
         for node in elems:
