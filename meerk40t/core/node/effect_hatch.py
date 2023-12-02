@@ -186,7 +186,16 @@ class HatchEffectNode(Node):
         default_map["loop"] = (
             f"{self.loops}X " if self.loops and self.loops != 1 else ""
         )
-        default_map["angle"] = str(self.hatch_angle)
+        if self.hatch_angle is None:
+            ang = 0.0
+        elif isinstance(self.hatch_angle, float):
+            ang = self.hatch_angle
+        else:
+            try:
+                ang = Angle(self.hatch_angle).radians
+            except ValueError:
+                ang = 0.0
+        default_map["angle"] = f"{Angle(ang, digits=1).angle_degrees}"
         default_map["distance"] = str(self.hatch_distance)
 
         default_map["children"] = str(len(self.children))
