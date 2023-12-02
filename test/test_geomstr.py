@@ -367,7 +367,7 @@ class TestGeomstr(unittest.TestCase):
                 path.line(complex(last_x, last_y), complex(x, y))
             last_x, last_y = x, y
         p = copy(path)
-        self.assertNotEqual(path, p)
+        self.assertEqual(path, p)
         #
         # print(path.segments)
         # print("Original segments...")
@@ -1208,6 +1208,36 @@ class TestGeomstr(unittest.TestCase):
             )
         except ZeroDivisionError:
             pass
+
+    def test_cag_union(self):
+        # g = Geomstr.rect(0, 0, 100, 100, settings=0)
+        # g.transform(Matrix.skew(0.002))
+        # g.append(Geomstr.rect(50, 50, 100, 100, settings=1))
+        g = Geomstr()
+        g.line(complex(0, 0), complex(100, 0), 0)
+        # g.line(complex(0,-50), complex(50,-1), 1)
+        g.line(complex(50, -1), complex(50, 1), 1)
+        # g.line(complex(50,1), complex(100,50), 1)
+        bt = BeamTable(g)
+        bt.compute_beam_brute()
+        q = bt.union(0, 1)
+        print(q.segments)
+
+    def test_cag_union2(self):
+        g = Geomstr.rect(0, 0, 100, 100, settings=0)
+        g.append(Geomstr.rect(51, 51, 100, 100, settings=1))
+        bt = BeamTable(g)
+        bt.compute_beam_brute()
+        q = bt.union(0, 1)
+        print(q.segments)
+
+    def test_cag_combine(self):
+        g = Geomstr()
+        g.line(complex(0, 1), complex(0, 100), 0)
+        g.line(complex(1, 0), complex(100, 0), 0)
+        bt = BeamTable(g)
+        q = bt.combine()
+        self.assertEqual(q, g)
 
     def test_render(self):
         rect = Geomstr.rect(x=300, y=200, width=500, height=500, rx=50, ry=50)
