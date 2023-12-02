@@ -253,21 +253,33 @@ def init_commands(kernel):
         if len(data) == 0:
             return
         for node in data:
-            nparent = node.parent
-            if nparent.type.startswith("effect"):
-                was_emphasized = node.emphasized
-                node._parent = None  # Otherwise add_node will fail below
-                try:
-                    idx = nparent._children.index(node)
-                    if idx >= 0:
-                        nparent._children.pop(idx)
-                except IndexError:
-                    pass
-                nparent.parent.add_node(node)
-                if len(nparent.children) == 0:
-                    nparent.remove_node()
-                else:
-                    nparent.altered()
+            eparent = node.parent
+            nparent = eparent
+            while True:
+                if nparent.type.startswith("effect"):
+                    break
+                if nparent.parent is None:
+                    nparent = None
+                    break
+                if nparent.parent is self.elem_branch:
+                    nparent = None
+                    break
+                nparent = nparent.parent
+            if nparent is None:
+                continue
+            was_emphasized = node.emphasized
+            node._parent = None  # Otherwise add_node will fail below
+            try:
+                idx = eparent._children.index(node)
+                if idx >= 0:
+                    eparent._children.pop(idx)
+            except IndexError:
+                pass
+            nparent.parent.add_node(node)
+            if len(nparent.children) == 0:
+                nparent.remove_node()
+            else:
+                nparent.altered()
                 node.emphasized = was_emphasized
         self.signal("refresh_scene", "Scene")
 
