@@ -1886,6 +1886,7 @@ def init_tree(kernel):
 
         self.signal("updateelem_tree")
 
+    @tree_conditional(lambda node: is_developer_mode())
     @tree_submenu(_("Apply special effect"))
     @tree_operation(
         _("Append Warp").format(),
