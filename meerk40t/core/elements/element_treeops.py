@@ -138,7 +138,7 @@ def init_tree(kernel):
     #         info += f"{idx}#: {e.type}, identical to parent: {e is node}"
     #     print (info)
 
-    @tree_conditional(lambda node: not node.lock)
+    @tree_conditional(lambda node: not node.lock and is_developer_mode())
     @tree_submenu(_("Passthrough"))
     @tree_operation(_("From Original"), node_type="elem image", help="")
     def image_convert_unmodified(node, **kwargs):
@@ -148,7 +148,7 @@ def init_tree(kernel):
             type="image raster",
         )
 
-    @tree_conditional(lambda node: not node.lock)
+    @tree_conditional(lambda node: not node.lock and is_developer_mode())
     @tree_submenu(_("Passthrough"))
     @tree_operation(_("From Modified"), node_type="elem image", help="")
     def image_convert_unmodified_2(node, **kwargs):
@@ -158,7 +158,7 @@ def init_tree(kernel):
             type="image raster",
         )
 
-    @tree_conditional(lambda node: not node.lock)
+    @tree_conditional(lambda node: not node.lock and is_developer_mode())
     @tree_operation(_("Unlock Modifications"), node_type="image raster", help="")
     def image_convert_modifier(node, **kwargs):
         node.replace_node(
