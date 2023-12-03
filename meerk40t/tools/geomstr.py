@@ -1285,8 +1285,30 @@ class Geomstr:
         segments = np.dstack(
             (starts, [0] * count, [TYPE_LINE] * count, [0] * count, ends)
         )[0]
+        Geomstr.bidirectional(segments)
         g.append_lines(segments)
         return g
+
+    @staticmethod
+    def bidirectional(segments):
+        swap_start = 0
+        last_row = -1
+        rows = 0
+        for i in range(len(segments) + 1):
+            try:
+                s, c1, info, c2, e = segments[i]
+                current_row = s.real
+            except IndexError:
+                current_row = -1
+            if current_row == last_row:
+                continue
+            # Start of a new row.
+            last_row = current_row
+            rows += 1
+            if rows % 2 == 0:
+                segments[swap_start:i] = np.flip(segments[swap_start:i], (0,1))
+            swap_start = i
+        return segments
 
     @classmethod
     def lines(cls, *points):
