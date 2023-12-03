@@ -1340,6 +1340,9 @@ class ChoicePropertyPanel(ScrolledPanel):
             # Now we listen to 'ourselves' as well to learn about changes somewhere else...
             def on_update_listener(param, ctrl, dtype, dstyle, choicelist, sourceobj):
                 def listen_to_myself(origin, value, target=None):
+                    if self.context.kernel.is_shutdown:
+                        return
+
                     if target is None or target is not sourceobj:
                         # print (f"Signal for {param}={value}, but no target given or different to source")
                         return
@@ -1357,6 +1360,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                             except KeyError:
                                 pass
                     if data is None:
+                        return
+                    # Let's just access the ctrl to see whether it has been already
+                    # destroyed (as we are in the midst of a shutdown)
+                    try:
+                        dummy = hasattr(ctrl, "GetValue")
+                    except RuntimeError:
                         return
                     if dtype == bool:
                         # Bool type objects get a checkbox.
