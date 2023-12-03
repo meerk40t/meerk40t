@@ -57,3 +57,9 @@ tip=MeerK40t has regmarks, a special category of elements, that will not be burn
 You can move elements in out of the regmark zone by dragging them into or out tof the regmark area in the tree.
 Elements in the regmark area are acting as a background, you can no longer directly interact with them on the Scene.
 cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Regmarks
+
+tip=You want to properly align an object on your laserbed? Why don't you add a camera to your setup.
+MeerK40t can use that camera to display the live picture on the scene background, simplifying alignment enormously.
+Click on the camera button in the toolbar and calibrate your camera picture.
+cmd=camdetect\n
+img=https://github.com/meerk40t/meerk40t/assets/2670784/53207cbb-dfbc-4bce-841d-dedc305118e7
