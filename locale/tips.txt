@@ -12,10 +12,12 @@
 # tip=That won't be visible for a while
 # version=1.0
 
-tip=MeerK40t can create a so called outline around an element.\nJust select the element, right click on top of it to get the context menu and choose from the "Outline elements" menu...
+tip=MeerK40t can create a so called outline around an element.
+Just select the element, right click on top of it to get the context menu and choose from the "Outline elements" menu...
 cmd=rect 2cm 2cm 4cm 4cm fill black outline 2mm --steps 4 --outer stroke red
 
-tip=MeerK40t has an extensive set of commands that allow a lot of scriptable actions.\nJust open the console window and type help
+tip=MeerK40t has an extensive set of commands that allow a lot of scriptable actions.
+Just open the console window and type 'help'.
 cmd=pane show console\nhelp
 
 tip=While you are moving your mouse when having selected a element-creation tool, you will see neighbouring points of interest being displayed and highlighted if they would be become a snapping target.\nNB: the snapping behaviour will be ignored if you press the shift-key, in this case the current mouse-position will be considered
@@ -31,13 +33,15 @@ img=https://user-images.githubusercontent.com/2670784/285282132-62a39254-bfe3-40
 cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Grids
 
 
-tip=Tired of aligning objects? Use the magnet feature, just doubleclick on the X- or Y-axis and establish a magnetline.\nMove an element close to that line and see what happens...\nRight click on the axis to set more options.
+tip=Tired of aligning objects? Use the magnet feature, just doubleclick on the X- or Y-axis and establish a magnetline.
+Move an element close to that line and see what happens...
+Right click on the axis to set more options.
 img=https://user-images.githubusercontent.com/2670784/161030963-fb73907c-bdb0-47dc-b0da-b9b207025dbe.png
 cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Magnets
 
 tip=You need a quick copy of an element? There are some options:
 a) Select an object, hold the Alt-key and move the object: and you have your copy
-b) Right click: Choose duplicate elements from teh context-menu
+b) Right click: Choose duplicate elements from the context-menu
 c) Use the copy and paste buttons in the toolbar
 
 tip=MeerK40t has a lot of frequently needed windows called panes (eg like the lasercontrol or the operations & element tree).
