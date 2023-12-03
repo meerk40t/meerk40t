@@ -1495,22 +1495,12 @@ class Art:
         dc.DrawRoundedRectangle(
             int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius
         )
-        r = min((y1 - y) / 2, (x1 - x) / 2) - 2
-        cx = (x + x1) / 2
-        cy = -r / 2 + (y + y1) / 2
-        # print (f"area: {x},{y}-{x1},{y1} - center={cx},{cy} r={r}")
-        # points = [
-        #     (
-        #         int(cx + r * math.cos(math.radians(angle))),
-        #         int(cy + r * math.sin(math.radians(angle))),
-        #     )
-        #     for angle in (0, 90, 180)
-        # ]
-        lp_x = int(cx - r)
-        lp_y = int(cy)
-        dp_x = int(cx)
-        dp_y = int(cy + r)
-        points = [(lp_x, lp_y), (dp_x, dp_y), (2 * dp_x - lp_x, lp_y)]
+        lx = x + (x1 - x) / 8
+        rx = x1 - (x1 - x) / 8
+        mx = x + (x1 - x) / 2
+        ty = y + (y1 - y) / 8
+        by = y1 - (y1 - y) / 8
+        points = [(lx, ty), (rx, ty), (mx, by)]
         dc.SetPen(wx.Pen(self.black_color))
         dc.SetBrush(wx.Brush(self.inactive_background))
         dc.DrawPolygon(points)
@@ -2181,12 +2171,23 @@ class Art:
             # Same size regardless of bitmap-size
             sizx = 15
             sizy = 15
+            if min(bitmap_width, bitmap_height) > 70:
+                sizx = 20
+                sizy = 20
+            elif min(bitmap_width, bitmap_height) > 100:
+                sizx = 25
+                sizy = 25
+
             # Let's see whether we have enough room
             extx = (x + max_x) / 2 + bitmap_width / 2 + sizx - 1
             exty = y + bitmap_height + sizy - 1
             extx = max(x - sizx, min(extx, max_x - 1))
             exty = max(y + sizy, min(exty, max_y - 1))
             gap = 5
+            if bitmap_height < 30:
+                gap = 1
+
+            # print (f"{bitmap_width}x{bitmap_height} - siz={sizx}, gap={gap}")
             button.dropdown.position = (
                 extx - sizx,
                 exty - sizy - gap,
