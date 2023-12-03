@@ -195,7 +195,6 @@ class WobbleEffectNode(Node):
         nodes = right_types(self)
         return nodes
 
-
     def as_geometry(self, **kws):
         """
         Calculates the hatch effect geometry. The pass index is the number of copies of this geometry whereas the

@@ -177,7 +177,6 @@ def init_tree(kernel):
         node.remove_node()
         self.signal("rebuild_tree")
 
-
     @tree_conditional(lambda node: is_hatched(node))
     @tree_operation(_("Remove effect"), node_type=elem_nodes, help="")
     def unhatch_elements(node, **kwargs):
