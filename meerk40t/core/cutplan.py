@@ -480,8 +480,10 @@ class CutPlan:
                     if hasattr(elem, "as_image"):
                         settings["raster"] = True
                         image, box = elem.as_image()
+                        m = elem.matrix
                         start_index = g.index
                         image_geom = Geomstr.image(image)
+                        image_geom.transform(m)
                         g.append(image_geom)
                         end_index = g.index
                         g.flag_settings(settings_index, start_index, end_index)

@@ -254,6 +254,7 @@ class GRBLDriver(Parameters):
 
         @return:
         """
+        # TODO: estop cannot clear the geom.
         self.signal("grbl_red_dot", False)  # We are not using red-dot if we're cutting.
         self.clear_states()
         self._g90_absolute()
