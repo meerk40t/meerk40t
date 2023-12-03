@@ -1261,10 +1261,11 @@ class Geomstr:
         g = cls()
         if pil_image.mode != "1":
             pil_image = pil_image.convert("1")
+        im = np.array(pil_image)
         if not invert:
             # Invert is default, Black == 0 (False), White == 255 (True)
-            pil_image = pil_image.point(list(range(255, -1, -1)))
-        im = np.array(pil_image)
+            im = ~im
+
         if vertical:
             im = np.swapaxes(im, 0, 1)
 
