@@ -4880,7 +4880,7 @@ class Geomstr:
         pen_downs = valid_segments[indexes1, 0]
         return np.sum(np.abs(pen_ups - pen_downs))
 
-    def two_opt_distance(self, max_passes=None):
+    def two_opt_distance(self, max_passes=None, chunk=0):
         """
         Perform two-opt optimization to minimize travel distances.
         @param max_passes: Max number of passes to attempt
@@ -4888,12 +4888,12 @@ class Geomstr:
         """
         self._trim()
         segments = self.segments
-        original = self.index
+        max_index = self.index
 
         min_value = -1e-10
         current_pass = 0
 
-        indexes0 = np.arange(0, original - 1)
+        indexes0 = np.arange(0, max_index - 1)
         indexes1 = indexes0 + 1
 
         improved = True
@@ -4911,8 +4911,11 @@ class Geomstr:
                     segments[: index + 1], (0, 1)
                 )  # top to bottom, and right to left flips.
                 improved = True
-            for mid in range(1, original - 1):
-                idxs = np.arange(mid, original - 1)
+            for mid in range(1, max_index - 1):
+                mid_max = max_index - 1
+                if chunk:
+                    mid_max = min(mid_max, mid + chunk)
+                idxs = indexes0[mid:mid_max]
 
                 mid_source = segments[mid - 1, -1]
                 mid_dest = segments[mid, 0]
