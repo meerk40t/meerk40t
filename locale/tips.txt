@@ -54,7 +54,7 @@ img=https://user-images.githubusercontent.com/2670784/285616467-75cf67db-d329-4f
 cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Operations
 
 tip=MeerK40t has regmarks, a special category of elements, that will not be burned but will act as kind of visual guideline for object placement.
-You can move elements in out of the regmark zone by dragging them into or out tof the regmark area in the tree.
+You can move elements in out of the regmark zone by dragging them into or out of the regmark area in the tree.
 Elements in the regmark area are acting as a background, you can no longer directly interact with them on the Scene.
 cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Regmarks
 
