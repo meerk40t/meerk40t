@@ -1285,19 +1285,22 @@ class Geomstr:
         segments = np.dstack(
             (starts, [0] * count, [TYPE_LINE] * count, [0] * count, ends)
         )[0]
-        Geomstr.bidirectional(segments)
+        Geomstr.bidirectional(segments, vertical=vertical)
         g.append_lines(segments)
         return g
 
     @staticmethod
-    def bidirectional(segments):
+    def bidirectional(segments, vertical=False):
         swap_start = 0
         last_row = -1
         rows = 0
         for i in range(len(segments) + 1):
             try:
                 s, c1, info, c2, e = segments[i]
-                current_row = s.real
+                if vertical:
+                    current_row = s.imag
+                else:
+                    current_row = s.real
             except IndexError:
                 current_row = -1
             if current_row == last_row:
