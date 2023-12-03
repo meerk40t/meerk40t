@@ -797,6 +797,8 @@ class CameraInterface(MWindow):
                 index = s
                 camera.default = index
                 v = camera.default
+                if v is None:
+                    v = 0
                 camera(f"window toggle -m {v} CameraInterface {v}\n")
 
             return specific
