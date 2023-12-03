@@ -1257,7 +1257,7 @@ class Geomstr:
         return obj
 
     @classmethod
-    def image(cls, pil_image, invert=False, vertical=False):
+    def image(cls, pil_image, invert=False, vertical=False, bidirectional=True):
         g = cls()
         if pil_image.mode != "1":
             pil_image = pil_image.convert("1")
@@ -1285,7 +1285,8 @@ class Geomstr:
         segments = np.dstack(
             (starts, [0] * count, [TYPE_LINE] * count, [0] * count, ends)
         )[0]
-        Geomstr.bidirectional(segments, vertical=vertical)
+        if bidirectional:
+            Geomstr.bidirectional(segments, vertical=vertical)
         g.append_lines(segments)
         return g
 
