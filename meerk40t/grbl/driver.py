@@ -357,8 +357,6 @@ class GRBLDriver(Parameters):
                 elif function == "output":
                     # GRBL has no core GPIO functionality
                     pass
-        self.queue.clear()
-
         self(f"G1 S0{self.line_end}")
         self(f"M5{self.line_end}")
         self.clear_states()

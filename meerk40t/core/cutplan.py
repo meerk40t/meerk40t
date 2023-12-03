@@ -472,7 +472,7 @@ class CutPlan:
                 for elem in c.children:
                     if hasattr(elem, "as_geometry"):
                         start_index = g.index
-                        g.append_lines(elem.as_geometry)
+                        g.append(elem.as_geometry())
                         end_index = g.index
                         g.flag_settings(settings_index, start_index, end_index)
             elif c_type in ("op raster", "op image"):
@@ -482,11 +482,16 @@ class CutPlan:
                         image, box = elem.as_image()
                         start_index = g.index
                         image_geom = Geomstr.image(image)
-                        g.append_lines(image_geom.segments[:image_geom.index])
+                        g.append(image_geom)
                         end_index = g.index
                         g.flag_settings(settings_index, start_index, end_index)
             else:
+                if g:
+                    self.plan.append(g)
+                    g = Geomstr()
                 self.plan.append(c)
+        if g:
+            self.plan.append(g)
 
     def blob(self):
         """
