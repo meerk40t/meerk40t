@@ -3736,7 +3736,7 @@ class MeerK40t(MWindow):
         menuitem = self.help_menu.Append(
             wx.ID_ANY,
             _("Tips && Tricks"),
-            _("Show some Tips & Tricke"),
+            _("Show some Tips & Tricks"),
         )
         self.Bind(
             wx.EVT_MENU,
