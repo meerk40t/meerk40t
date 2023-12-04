@@ -334,21 +334,23 @@ class GrblController:
             w(data, type=type)
 
     def _channel_log(self, data, type=None):
+        name = self.service.label.replace(" ", "-")
+        name = name.replace("/", "-")
         if type == "send":
             if not hasattr(self, "_grbl_send"):
                 self._grbl_send = self.service.channel(
-                    f"send-{self.service.label}", pure=True
+                    f"send-{name}", pure=True
                 )
             self._grbl_send(data)
         elif type == "recv":
             if not hasattr(self, "_grbl_recv"):
                 self._grbl_recv = self.service.channel(
-                    f"recv-{self.service.label}", pure=True
+                    f"recv-{name}", pure=True
                 )
             self._grbl_recv(data)
         elif type == "event":
             if not hasattr(self, "_grbl_events"):
-                self._grbl_events = self.service.channel(f"events-{self.service.label}")
+                self._grbl_events = self.service.channel(f"events-{name}")
             self._grbl_events(data)
 
     def open(self):
@@ -465,22 +467,24 @@ class GrblController:
             delay = self.service.connect_delay / 1000
         else:
             delay = 0
-        label = self.service.label.replace(" ", "-")
+        name = self.service.label.replace(" ", "-")
+        name = name.replace("/", "-")
         if delay:
             self.service(f".timer 1 {delay} .gcode_realtime {cmd}")
             self.service(
-                f".timer-{label}{cmd} 1 {delay} .timer-{label}{cmd} 0 1 gcode_realtime {cmd}"
+                f".timer-{name}{cmd} 1 {delay} .timer-{name}{cmd} 0 1 gcode_realtime {cmd}"
             )
         else:
             self.service(f".gcode_realtime {cmd}")
-            self.service(f".timer-{label}{cmd} 0 1 gcode_realtime {cmd}")
+            self.service(f".timer-{name}{cmd} 0 1 gcode_realtime {cmd}")
 
     def validate_stop(self, cmd):
-        label = self.service.label.replace(" ", "-")
+        name = self.service.label.replace(" ", "-")
+        name = name.replace("/", "-")
         if cmd == "*":
-            self.service(f".timer-{label}* -q --off")
+            self.service(f".timer-{name}* -q --off")
             return
-        self.service(f".timer-{label}{cmd} -q --off")
+        self.service(f".timer-{name}{cmd} -q --off")
         if cmd == "$":
             if len(self._forward_buffer) > 3:
                 # If the forward planning buffer is longer than 3 it must have filled with failed attempts.

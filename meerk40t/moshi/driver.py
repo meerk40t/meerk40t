@@ -64,7 +64,8 @@ class MoshiDriver(Parameters):
         self.preferred_offset_x = 0
         self.preferred_offset_y = 0
 
-        name = self.service.label
+        name = self.service.label.replace(" ", "-")
+        name = name.replace("/", "-")
         self.pipe_channel = service.channel(f"{name}/events")
         self.program.channel = self.pipe_channel
 
