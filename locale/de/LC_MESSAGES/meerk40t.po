@@ -16049,13 +16049,13 @@ msgid "Enable all operations of this type"
 msgstr "Aktiviere alle Arbeitsabläufe des gleichen Typs"
 
 msgid "Disable all operations of this type"
-msgstr "Dektiviere alle Arbeitsabläufe des gleichen Typs"
+msgstr "Deaktiviere alle Arbeitsabläufe des gleichen Typs"
 
 msgid "Check for Updates"
 msgstr "Prüfe auf Updates"
 
-msgid  "A new {type} release is available:"
-msgstr "Es ist eine neue {type}-Version verfügbar:"
+msgid  "A new {type} release is available ({system}):"
+msgstr "Es ist eine neue {type}-Version für {system} verfügbar:"
 
 msgid ""
 "Version: {name} v{version} ({label})\n"
@@ -16064,8 +16064,8 @@ msgstr ""
 "Version: {name} v{version} ({label})\n"
 "Url: {url}"
 
-msgid "You seem to have the latest version."
-msgstr "Dies scheint die aktuelle Version von MeerK40t zu sein."
+msgid "You seem to have the latest {system} version."
+msgstr "Dies scheint die aktuelle {system}-Version von MeerK40t zu sein."
 
 msgid ""
 "Latest version on github: {name} v{version} ({label})\n"
