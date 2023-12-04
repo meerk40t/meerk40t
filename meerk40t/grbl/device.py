@@ -437,6 +437,17 @@ class GRBLDevice(Service, Status):
                 "section": "_40_Validation",
             },
             {
+                "attr": "welcome",
+                "object": self,
+                "default": "Grbl",
+                "type": str,
+                "label": _("Welcome Validator"),
+                "tip": _(
+                    "If for some reason the device needs a different welcome validator than 'Grbl' (default), for example, somewhat custom grbl-like firmware"
+                ),
+                "section": "_40_Validation",
+            },
+            {
                 "attr": "reset_on_connect",
                 "object": self,
                 "default": False,
@@ -455,18 +466,6 @@ class GRBLDevice(Service, Status):
                 "label": _("Check sequence on connect."),
                 "tip": _(
                     "On connection, check the standard GRBL info for the device."
-                ),
-                "section": "_40_Validation",
-            },
-
-            {
-                "attr": "welcome",
-                "object": self,
-                "default": "Grbl",
-                "type": str,
-                "label": _("Welcome Validator"),
-                "tip": _(
-                    "If for some reason the device needs a different welcome validator than 'Grbl' (default), for example, somewhat custom grbl-like firmware"
                 ),
                 "section": "_40_Validation",
             },
