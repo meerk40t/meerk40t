@@ -88,7 +88,7 @@ class TipPanel(wx.Panel):
 
         self.button_next = wx.Button(self, wx.ID_ANY, _("Next tip"))
         self.button_next.SetBitmap(icons8_circled_right.GetBitmap(resize=icon_size[0]))
-        self.button_next.SetToolTip(_("Jump to the previously displayed tip"))
+        self.button_next.SetToolTip(_("Jump to the next tip"))
 
         button_sizer.Add(self.button_prev, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         button_sizer.Add(self.label_position, 1, wx.ALIGN_CENTER_VERTICAL, 0)
