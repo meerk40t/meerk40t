@@ -437,6 +437,29 @@ class GRBLDevice(Service, Status):
                 "section": "_40_Validation",
             },
             {
+                "attr": "reset_on_connect",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Reset on connect"),
+                "tip": _(
+                    "On connection, send the device a softreset message as soon as connection is established."
+                ),
+                "section": "_40_Validation",
+            },
+            {
+                "attr": "boot_connect_sequence",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Check sequence on connect."),
+                "tip": _(
+                    "On connection, check the standard GRBL info for the device."
+                ),
+                "section": "_40_Validation",
+            },
+
+            {
                 "attr": "welcome",
                 "object": self,
                 "default": "Grbl",
