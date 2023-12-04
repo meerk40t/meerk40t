@@ -174,7 +174,7 @@ def grbl_error_code(code):
     elif code == 38:
         long = "Tool number greater than max value."
     else:
-        long = f"Unrecodgnised error code #{code}"
+        long = f"Unrecognised error code #{code}"
     return short, long
 
 
