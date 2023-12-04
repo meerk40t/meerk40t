@@ -279,7 +279,7 @@ class DevicePanel(wx.Panel):
         service = self.get_selected_device()
         if service is not None:
             service.label = label
-            # self.refresh_device_tree()
+            self.context.signal("label", label, service)
             self.context.signal("device;renamed")
         event.Skip()
 
@@ -290,6 +290,7 @@ class DevicePanel(wx.Panel):
             item = self.devices_list.GetItem(idx)
             dev_index = item.GetData()
             service = self.devices[dev_index]
+            service = self.devices[dev_index]
             if self.context.device is service:
                 self.devices_list.SetItemTextColour(idx, wx.RED)
             else:
@@ -298,6 +299,7 @@ class DevicePanel(wx.Panel):
     @signal_listener("pause")
     @signal_listener("pipe;running")
     @signal_listener("activate;device")
+    @signal_listener("device;renamed")
     @lookup_listener("service/device/available")
     def refresh_device_tree(self, *args):
         self.devices = []
@@ -451,9 +453,11 @@ class DevicePanel(wx.Panel):
             ) as dlg:
                 dlg.SetValue(service.label)
                 if dlg.ShowModal() == wx.ID_OK:
-                    service.label = dlg.GetValue()
-            self.refresh_device_tree()
-            self.context.signal("device;renamed")
+                    label = dlg.GetValue()
+                    service.label = label
+                    self.context.signal("label", label, service)
+                    # self.refresh_device_tree()
+                    self.context.signal("device;renamed")
 
         return renameit
 
@@ -533,9 +537,11 @@ class DevicePanel(wx.Panel):
             ) as dlg:
                 dlg.SetValue(service.label)
                 if dlg.ShowModal() == wx.ID_OK:
-                    service.label = dlg.GetValue()
-            self.refresh_device_tree()
-            self.context.signal("device;renamed")
+                    label = dlg.GetValue()
+                    service.label = label
+                    self.context.signal("label", label, service)
+                    self.context.signal("device;renamed")
+            # self.refresh_device_tree()
 
     def get_selected_device(self):
         service = None
