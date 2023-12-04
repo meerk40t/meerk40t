@@ -365,6 +365,8 @@ class GrblController:
             self.log("Could not connect.", type="event")
             return
         self.log("Connecting to GRBL...", type="event")
+        if self.service.reset_on_connect:
+            self.realtime("\x18")
         if not self.service.require_validator:
             # We are required to wait for the validation.
             self._validation_stage = 1
