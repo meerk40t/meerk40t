@@ -13,9 +13,6 @@ from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
-DOLLAR_INFO = re.compile(r"\$([0-9]+)=(.*)")
-
-
 class ConfigurationInterfacePanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: ConfigurationInterfacePanel.__init__
@@ -244,44 +241,32 @@ class GRBLConfiguration(MWindow):
         if responses is None:
             return
         flag = False
-        # Workaround for newly introduced bug, normally we would
-        # have a clear connection between the command and
-        # the result of this command. With 0.8.4 that is broken
-        if cmd_issued == "$$":
-            flag = True
-        elif len(responses) > 0 and responses[0].startswith("$0"):
+        if cmd_issued.startswith("$$"):
             flag = True
         if flag:
             # Right command
-            if self._requested_status:
+            if self._requested_status and hasattr(self.context.device, "hardware_config"):
                 # coming from myself
                 changes = False
-                for resp in responses:
-                    index = -1
-                    value = None
-                    match = DOLLAR_INFO.match(resp)
-                    if match:
-                        # $xx=yy
-                        index = int(match.group(1))
-                        value = match.group(2)
-                    if index >= 0 and value is not None:
-                        self.context.controller.grbl_settings[index] = value
-                    if index == 21:
-                        flag = bool(int(value) == 1)
-                        self.context.has_endstops = flag
-                        self.context.signal("has_endstops", flag, self.context)
-                    elif index == 130:
-                        self.context.bedwidth = f"{value}mm"
-                        self.context.signal(
-                            "bedwidth", self.context.bedwidth, self.context
-                        )
-                        changes = True
-                    elif index == 131:
-                        self.context.bedheight = f"{value}mm"
-                        self.context.signal(
-                            "bedheight", self.context.bedheight, self.context
-                        )
-                        changes = True
+                if 21 in self.context.device.hardware_config:
+                    value = self.context.device.hardware_config[21]
+                    flag = bool(int(value) == 1)
+                    self.context.has_endstops = flag
+                    self.context.signal("has_endstops", flag, self.context)
+                if 130 in self.context.device.hardware_config:
+                    value = self.context.device.hardware_config[130]
+                    self.context.bedwidth = f"{value}mm"
+                    self.context.signal(
+                        "bedwidth", self.context.bedwidth, self.context
+                    )
+                    changes = True
+                if 131 in self.context.device.hardware_config:
+                    value = self.context.device.hardware_config[131]
+                    self.context.bedheight = f"{value}mm"
+                    self.context.signal(
+                        "bedheight", self.context.bedheight, self.context
+                    )
+                    changes = True
                 if changes:
                     self.context("viewport_update\n")
                     self.context.signal("guide")
