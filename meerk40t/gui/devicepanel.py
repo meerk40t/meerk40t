@@ -290,7 +290,6 @@ class DevicePanel(wx.Panel):
             item = self.devices_list.GetItem(idx)
             dev_index = item.GetData()
             service = self.devices[dev_index]
-            service = self.devices[dev_index]
             if self.context.device is service:
                 self.devices_list.SetItemTextColour(idx, wx.RED)
             else:
