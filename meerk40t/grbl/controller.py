@@ -720,10 +720,10 @@ class GrblController:
             elif response.startswith(self.service.welcome):
                 if not self.service.require_validator:
                     # Validation is not required, we reboot.
-                    self.log("Device Reset, revalidation required", type="event")
                     if self.fully_validated():
                         if self.service.boot_connect_sequence:
                             # Boot sequence is required. Restart sequence.
+                            self.log("Device Reset, revalidation required", type="event")
                             self._validation_stage = 1
                             self.validate_start("$")
                 else:
