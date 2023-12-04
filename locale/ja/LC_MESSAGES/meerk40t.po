@@ -2096,7 +2096,7 @@ msgid "return paths around image"
 msgstr "画像周辺のパスを返す"
 
 #: meerk40t/extra/updater.py:21
-msgid  "A new {type} release is available:"
+msgid  "A new {type} release is available ({system}):"
 msgstr ""
 
 msgid ""
@@ -2105,7 +2105,7 @@ msgid ""
 msgstr ""
 
 #: meerk40t/extra/updater.py:26
-msgid "You seem to have the latest version."
+msgid "You seem to have the latest {system} version."
 msgstr ""
 
 msgid ""

@@ -3,6 +3,7 @@ The code inside this module provides routines to look for newer versions of meer
 """
 import http.client
 import json
+import platform
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -57,11 +58,11 @@ def plugin(kernel, lifecycle):
         )
         GITHUB_HEADER = ("Accept", "application/vnd.github.v3+json")
 
-        UPDATE_MESSAGE_HEADER = _("A new {type} release is available:")
+        UPDATE_MESSAGE_HEADER = _("A new {type} release is available ({system}):")
         UPDATE_MESSAGE_BODY = _(
             "Version: {name} v{version} ({label})\n" + "Url: {url}\n" + "Info: {info}"
         )
-        NO_UPDATE_MESSAGE_HEADER = _("You seem to have the latest version.")
+        NO_UPDATE_MESSAGE_HEADER = _("You seem to have the latest {system} version.")
         NO_UPDATE_MESSAGE_BODY = _(
             "Latest version on github: {name} v{version} ({label})\n"
             + "Url: {url}\n"
@@ -82,6 +83,12 @@ def plugin(kernel, lifecycle):
             help="Show Info: 0 never, 1 console only, 2 if version found, 3 always",
         )
         @context.console_option(
+            "sysdefault",
+            "s",
+            type=int,
+            help=_("System: 0=Auto, 1=Source, 2=Windows, 3=Linux, 4=MacOSX, 5=RPI"),
+        )
+        @context.console_option(
             "force",
             "f",
             type=bool,
@@ -93,7 +100,7 @@ def plugin(kernel, lifecycle):
             help=_("Check whether a newer version of Meerk40t is available"),
         )
         def check_for_updates(
-            channel, _, beta=None, verbosity=None, force=None, **kwargs
+            channel, _, beta=None, verbosity=None, sysdefault=None, force=None,  **kwargs
         ):
             """
             This command checks for updates and outputs the results to the console.
@@ -121,9 +128,9 @@ def plugin(kernel, lifecycle):
                         version = version[1:]
                     if " " in version:
                         version, ending = version.split(" ", 1)
-                    if ending == "git":
+                    if "git" in ending:
                         src = True
-                    elif ending == "src":
+                    elif "src" in ending:
                         src = True
 
                     result = list(map(int, version.split(".")))
@@ -165,13 +172,15 @@ def plugin(kernel, lifecycle):
                 rel_info = rel_info.strip()
                 return tag, version, label, url, assets, rel_info
 
-            def newer_version(candidate_version, reference_version):
+            def newer_version(candidate_version, reference_version, candidate_assets, asset_need):
                 """
                 Checks whether the given candidate_version is newer than
                 the provided reference_version
                 Args:
                     candidate_version: tuple (major, minor, release, is_a_beta, is_source)
                     reference_version: tuple (major, minor, release, is_a_beta, is_source)
+                    candidate_assets: list of asset-dictionary
+                    asset_need: list of names that would be needed in candidate_assets
                 """
                 is_newer = False
                 sub_ref = [0, 0, 0]
@@ -185,7 +194,21 @@ def plugin(kernel, lifecycle):
                     reference_version, (list, tuple)
                 ):
                     sub_ref = list(reference_version[0:3])
-                # print (sub_cand, sub_ref, bool(sub_cand > sub_ref))
+
+                if candidate_assets is not None and asset_need is not None:
+                    # Do we have something to look for, if yes then we only
+                    # compare if we have a matching entry
+                    valid = False
+                    for asset in candidate_assets:
+                        # print (f"[{sub_cand[0]}.{sub_cand[1]}.{sub_cand[2]}] {asset['name']}: {asset['browser_download_url']}")
+                        cname = asset["name"].lower()
+                        if cname in asset_need:
+                            valid = True
+                            break
+
+                    if not valid:
+                        return False
+
                 try:
                     if sub_cand > sub_ref:
                         is_newer = True
@@ -195,28 +218,92 @@ def plugin(kernel, lifecycle):
                 # print (f"Comparing {candidate_version} vs {reference_version}: {is_newer}")
                 return is_newer
 
-            def update_check(verbosity=None, beta=None, force=None):
+            def update_check(verbosity_level, look_for_betas, force_feedback, system_to_use):
+
+                if look_for_betas is None:
+                    look_for_betas = False
+                if verbosity_level is None:
+                    verbosity_level = 1
+                if force_feedback is None:
+                    force_feedback = False
+                if system_to_use is None:
+                    system_to_use = 0
+                default_system = system_to_use
+
                 def update_test(*args):
                     version_current = comparable_version(kernel.version)
                     # print (f"Current version: {version_current}")
-                    if force:
+                    # Are we running a compiled version?
+                    # Then we restrict the search just those versions where
+                    # we have a corresponding asset
+                    if force_feedback:
                         version_current = (0, 0, 0, 0)
                     is_a_beta = version_current[3]
-                    if beta:
-                        url = GITHUB_RELEASES
+                    is_source = version_current[4]
+                    default_system = system_to_use
+                    if default_system == 0:
+                        # Let's see...
+                        os_system = platform.system()
+                        os_machine = platform.machine()
+                        if is_source:
+                            default_system = 1
+                        else:
+                            # 2 = Windows, 3 = Linux, 4 = MacOSX, 5 = RPI
+                            if os_system == "Windows":
+                                default_system = 2
+                            elif os_system == "Linux":
+                                if os_machine in ("armv7l", "aarch64"):
+                                    # Arm processor of a rpi
+                                    default_system = 5
+                                else:
+                                    default_system = 3
+                            elif os_system == "Darwin":
+                                default_system = 4
+
+                    if default_system == 2:
+                        # Windows:
+                        asset_requirement = ("meerk40t.exe", "wx-meerk40t.exe", )
+                        system_type = "Windows"
+                        is_source = False
+                    elif default_system == 3:
+                        # Linux:
+                        asset_requirement = ("meerk40t-Linux", )
+                        system_type = "Linux"
+                        is_source = False
+                    elif default_system == 4:
+                        # Darwin:
+                        asset_requirement = ("meerk40t.dmg", "meerk40t-m1.dmg", "MeerK40t_PyInst_11.dmg", "MeerK40t_unsigned.dmg", )
+                        system_type = "Mac-OSX"
+                        is_source = False
+                    elif default_system == 5:
+                        # Raspberry-Pi:
+                        asset_requirement = ("meerk40t_pi.tar", "meerk40t_pi64.tar", "meerk40t_pi_slow.tar")
+                        system_type = "Raspberry Pi"
+                        is_source = False
                     else:
-                        url = GITHUB_LATEST
-                    if verbosity > 0:
-                        channel(
-                            f"Testing against current {'beta' if is_a_beta else 'full'} version: {kernel.version} (include betas: {'yes' if beta else 'no'})"
-                        )
+                        # Source
+                        asset_requirement = None
+                        system_type = "Source"
+                        is_source = True
+                    if asset_requirement is not None:
+                        asset_requirement = list(c.lower() for c in asset_requirement)
+                    # Now that we look at the requirement to have a corresponding asset available
+                    # we need to look at all releases
+                    # if beta:
+                    #     url = GITHUB_RELEASES
+                    # else:
+                    #     url = GITHUB_LATEST
+                    url = GITHUB_RELEASES
+                    if verbosity_level > 0:
+                        channel(f"Testing against current {'beta' if is_a_beta else 'full'} version: {kernel.version}")
+                        channel(f"(include betas: {'yes' if look_for_betas else 'no'}, run from source: {'yes' if is_source else 'no'})")
                     req = Request(url)
                     req.add_header(*GITHUB_HEADER)
                     try:
                         req = urlopen(req)
                         response = json.loads(req.read())
                     except (HTTPError, URLError, http.client.IncompleteRead):
-                        if verbosity > 0:
+                        if verbosity_level > 0:
                             channel(ERROR_MESSAGE)
                         return
 
@@ -227,7 +314,8 @@ def plugin(kernel, lifecycle):
                     assets_full = assets_beta = None
                     info_full = info_beta = ""
                     something = False
-                    if beta:
+
+                    if look_for_betas:
                         for resp in response:
                             if resp["draft"]:
                                 continue
@@ -241,7 +329,7 @@ def plugin(kernel, lifecycle):
                             ) = extract_from_json(resp)
                             # What is the newest beta
                             if resp["prerelease"]:
-                                if newer_version(version, version_beta):
+                                if newer_version(version, version_beta, assets, asset_requirement):
                                     (
                                         tag_beta,
                                         version_beta,
@@ -258,7 +346,7 @@ def plugin(kernel, lifecycle):
                                         rel_info,
                                     )
                             # What is the newest release
-                            elif newer_version(version, version_full):
+                            elif newer_version(version, version_full, assets, asset_requirement):
                                 (
                                     tag_full,
                                     version_full,
@@ -275,7 +363,7 @@ def plugin(kernel, lifecycle):
                                     rel_info,
                                 )
                         # If full version is latest, disregard betas
-                        if newer_version(version_full, version_beta):
+                        if newer_version(version_full, version_beta, None, None):
                             (
                                 tag_beta,
                                 version_beta,
@@ -292,15 +380,35 @@ def plugin(kernel, lifecycle):
                                 "",
                             )
                     else:
-                        resp = response
-                        (
-                            tag_full,
-                            version_full,
-                            label_full,
-                            url_full,
-                            assets_full,
-                            info_full,
-                        ) = extract_from_json(resp)
+                        for resp in response:
+                            if resp["draft"]:
+                                continue
+                            if resp["prerelease"]:
+                                continue
+                            (
+                                tag,
+                                version,
+                                label,
+                                url,
+                                assets,
+                                rel_info,
+                            ) = extract_from_json(resp)
+                            if newer_version(version, version_full, assets, asset_requirement):
+                                (
+                                    tag_full,
+                                    version_full,
+                                    label_full,
+                                    url_full,
+                                    assets_full,
+                                    info_full,
+                                ) = (
+                                    tag,
+                                    version,
+                                    label,
+                                    url,
+                                    assets,
+                                    rel_info,
+                                )
                     # print (f"Newest release: {version_full}, newest beta: {version_beta}, current: {version_current}")
                     version_newest = version_full
                     tag_newest = tag_full
@@ -308,7 +416,7 @@ def plugin(kernel, lifecycle):
                     label_newest = label_full
                     type_newest = ""
                     info_newest = info_full
-                    if newer_version(version_beta, version_full):
+                    if newer_version(version_beta, version_full, None, None):
                         version_newest = version_beta
                         tag_newest = tag_beta
                         label_newest = label_beta
@@ -318,10 +426,11 @@ def plugin(kernel, lifecycle):
                         # print ("Beta is newer than full")
                     newest_message_header = ""
                     newest_message_body = ""
-                    if newer_version(version_full, version_current):
+                    if newer_version(version_full, version_current, None, None):
                         something = True
                         message_header = UPDATE_MESSAGE_HEADER.format(
                             type="full",
+                            system=system_type,
                         )
                         message_body = UPDATE_MESSAGE_BODY.format(
                             name=kernel.name,
@@ -330,14 +439,14 @@ def plugin(kernel, lifecycle):
                             url=url_full,
                             info=info_full,
                         )
-                        if verbosity > 0:
+                        if verbosity_level > 0:
                             channel(message_header + "\n" + message_body)
                         newest_message_header = message_header
                         newest_message_body = message_body
 
-                    if newer_version(version_beta, version_current):
+                    if newer_version(version_beta, version_current, None, None):
                         something = True
-                        message_header = UPDATE_MESSAGE_HEADER.format(type="beta")
+                        message_header = UPDATE_MESSAGE_HEADER.format(type="beta", system=system_type)
                         message_body = UPDATE_MESSAGE_BODY.format(
                             name=kernel.name,
                             version=tag_beta,
@@ -345,7 +454,7 @@ def plugin(kernel, lifecycle):
                             url=url_beta,
                             info=info_beta,
                         )
-                        if verbosity > 0:
+                        if verbosity_level > 0:
                             channel(message_header + "\n" + message_body)
                         newest_message_header = message_header
                         newest_message_body = message_body
@@ -412,7 +521,7 @@ def plugin(kernel, lifecycle):
                     if something:
                         # if we have a hit then we brag about it
                         #
-                        if verbosity > 1:
+                        if verbosity_level > 1:
                             action = get_response(
                                 newest_message_header,
                                 newest_message_body,
@@ -420,7 +529,7 @@ def plugin(kernel, lifecycle):
                             )
                     else:
                         if version_newest is not None:
-                            message_header = NO_UPDATE_MESSAGE_HEADER
+                            message_header = NO_UPDATE_MESSAGE_HEADER.format(system=system_type)
                             message_body = NO_UPDATE_MESSAGE_BODY.format(
                                 name=kernel.name,
                                 version=tag_newest,
@@ -429,17 +538,17 @@ def plugin(kernel, lifecycle):
                                 url=url_newest,
                                 info=info_newest,
                             )
-                            if verbosity > 2:
+                            if verbosity_level > 2:
                                 channel(message_header + "\n" + message_body)
                                 action = get_response(
                                     message_header,
                                     message_body,
                                     _("Do you want to look for yourself?"),
                                 )
-                            elif verbosity > 0:
+                            elif verbosity_level > 0:
                                 channel(message_header + "\n" + message_body)
                         else:
-                            if verbosity > 0:
+                            if verbosity_level > 0:
                                 channel(ERROR_MESSAGE)
                     # Yes, please open a webpage
                     if action:
@@ -447,18 +556,11 @@ def plugin(kernel, lifecycle):
 
                         webbrowser.open(url_newest, new=0, autoraise=True)
 
-                if beta is None:
-                    beta = False
-                if verbosity is None:
-                    verbosity = 1
-                if force is None:
-                    force = False
                 return update_test
 
             from meerk40t.kernel.kernel import Job
-
             _job = Job(
-                process=update_check(verbosity, beta, force),
+                process=update_check(verbosity, beta, force, sysdefault),
                 job_name="update_check_job",
                 interval=0.01,
                 times=1,
