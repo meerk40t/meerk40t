@@ -366,7 +366,7 @@ class GrblController:
             return
         self.log("Connecting to GRBL...", type="event")
         if self.service.reset_on_connect:
-            self.realtime("\x18")
+            self.driver.reset()
         if not self.service.require_validator:
             # We are required to wait for the validation.
             if self.service.boot_connect_sequence:
