@@ -2937,7 +2937,7 @@ msgstr "Konvertiere zu Elementen"
 
 #: meerk40t/core/elements.py:7021
 msgid "Convert to Path"
-msgstr "Wandle in Pafd um"
+msgstr "Wandle in Pfad um"
 
 #: meerk40t/core/elements.py:7037 meerk40t/core/elements.py:7042
 msgid "Clone reference"
@@ -17682,3 +17682,194 @@ msgstr "Neustart"
 #: ./meerk40t\gui\wxmmain.py:3413
 msgid "Restart needed to apply new parameters"
 msgstr "Programm-Neustart erforderlich, um neue Einstellungen anzuwenden"
+
+#: ./meerk40t\gui\wxmmain.py:560
+msgid "Paste from system\tShift-Ctrl-V"
+msgstr "System-Zwischenablage\tShift-Ctrl-V"
+
+#: ./meerk40t\gui\wxmmain.py:561
+msgid "Paste data coming from other applications"
+msgstr "Aus System-Zwischenablage einfügen"
+
+#: ./meerk40t\gui\wxmmain.py:1350
+msgid "(Right click removes the hatch)"
+msgstr "(Rechts-Click entfernt Füllmuster)"
+
+#: ./meerk40t\gui\wxmmain.py:1394
+msgid "Remove hatch"
+msgstr "Füllung entfernen"
+
+#: ./meerk40t\gui\wxmmain.py:1396
+msgid "Remove the effect"
+msgstr "Effekt entfernen"
+
+#: ./meerk40t\gui\wxmmain.py:1453
+msgid "Add a simple line element"
+msgstr "Fügt eine einfache Linie hinzu"
+
+#: ./meerk40t\gui\wxmmain.py:3634
+msgid "Online Reference\tF11"
+msgstr "Online-Hilfeseiten\tF11"
+
+#: ./meerk40t\gui\wxmmain.py:3635
+msgid "Display online reference"
+msgstr "Zeigt die Online-Hilfeseiten an."
+
+#: ./meerk40t\gui\wxmmain.py:3738
+msgid "Tips && Tricks"
+msgstr "Tipps && Tricks"
+
+#: ./meerk40t\gui\wxmmain.py:3739
+msgid "Show some Tips & Tricks"
+msgstr "Zeigt einige 'Tipps & Tricks' an"
+
+#: ./meerk40t\gui\tips.py:62
+msgid "Image missing!"
+msgstr "Bild fehlt!"
+
+#: ./meerk40t\gui\tips.py:66
+msgid "Couldn't find the cached image for this tip!\nNo permissions to download from the internet."
+msgstr ""
+"Kann das zwischengespeicherte Bild zu diesem Tip nicht laden.\n"
+"Und wurde noch keine Erlaubnis erteilt, diese Datei aus dem Internet nachzuladen."
+
+#: ./meerk40t\gui\tips.py:81
+msgid "Previous tip"
+msgstr "Vorheriger Tipp"
+
+#: ./meerk40t\gui\tips.py:83
+msgid "Jump back to the previously displayed tip"
+msgstr "Springt zurück zum vorherigen Tipp"
+
+#: ./meerk40t\gui\tips.py:89
+msgid "Next tip"
+msgstr "Nächster Tipp"
+
+#: ./meerk40t\gui\tips.py:91
+msgid "Jump to the next tip"
+msgstr "Springt zum nächsten Tipp"
+
+#: ./meerk40t\gui\tips.py:98
+msgid "Show tips at startup"
+msgstr "Tipps beim Programmstart anzeigen"
+
+#: ./meerk40t\gui\tips.py:103
+msgid "Show tips at program start.\nEven if disabled, 'Tips & Tricks' are always available in the Help-menu."
+msgstr "Zeigt Tipps zur Nutzung von MeerK40t beim Programmstart an.\nSelbst wenn das nicht aktiv ist, sind 'Tipps & Tricks' jederzeit im Hilfe-Menu verfügbar."
+
+#: ./meerk40t\gui\tips.py:108
+msgid "Try it out"
+msgstr "Ausprobieren"
+
+#: ./meerk40t\gui\tips.py:113
+msgid "Launch an example, please be aware that this might change your design,\nas new elements could be created to show the functionality"
+msgstr ""
+"Zeigt ein Beispiel, bitte beachten: das kann das aktuelle Design verändern,\n"
+"da mit der Demonstration eventuell neue Elemente angelegt werden."
+
+#: ./meerk40t\gui\tips.py:116
+msgid "Automatically Update"
+msgstr "Automatisch laden"
+
+#: ./meerk40t\gui\tips.py:124
+msgid "Look for new tips on MeerK40ts website.\nThe list of tips is constantly expanded.\n"
+msgstr ""
+"Sucht nach neuen Tipps auf der Webseite von MeerK40t.\n"
+"Die Liste der Tipps wird immer wider aktualisiert und erweitert."
+
+#: ./meerk40t\gui\tips.py:179
+msgid "Tip {idx}/{maxidx}"
+msgstr "Tipp {idx}/{maxidx}"
+
+#: ./meerk40t\gui\tips.py:318
+msgid "Do you want to get extended information about a feature in MeerK40t?\nJust place your mouse over a window or an UI-element and press F11."
+msgstr ""
+"Werden mehr Informationen über ein Feature / ein Bedienlement benötigt?\n"
+"Einfach mit der Maus über das relevante Element fahren und die F11-Taste drücken..."
+
+#: ./meerk40t\gui\tips.py:330
+msgid "MeerK40t supports more than 'just' a K40 laser.\nYou can add more devices in the Device-Manager.\nAnd you can even add multiple instances for the same physical device,\nwhere you can have different configuration settings (eg regular and rotary)."
+msgstr ""
+"MeerK40t unterstützt mehr als 'nur' einen K40-Laser.\n"
+"Man kann weitere Geräte im Geräte-Manager hinzufügen.\n"
+"Und man kann auch weitere Instanzen desselben Geräts anlegen,\n"
+"bei denen unterschiedliche Konfigurationen verwendet werden\n"
+ "(etwa für normalen und Drehachsen-Betrieb)."
+
+#: ./meerk40t\gui\tips.py:340
+msgid "There are a couple of YouTube-videos that deal with some specific functionalities and explain their usage:\nhttps://www.youtube.com/channel/UCsAUV23O2FyKxC0HN7nkAQQ"
+msgstr "Hier findet man eine Reihe von YouTube-Videos, die sich mit speziellen Funktionen von Meerk40t und ihrer Anwendung beschäftigen:\nhttps://www.youtube.com/channel/UCsAUV23O2FyKxC0HN7nkAQQ"
+
+#: ./meerk40t\gui\tips.py:350
+msgid "More instructional videos? Sure, here is another channel:\n\nhttps://www.youtube.com/channel/UCMN9gGvpacxZINPZCSOecaQ"
+msgstr "Noch mehr Anleitungsvideos? Klar, hier ist ein weiterer Kanal:\n\nhttps://www.youtube.com/channel/UCMN9gGvpacxZINPZCSOecaQ"
+
+#: ./meerk40t\gui\tips.py:359
+msgid "MeerK40t can create a so called outline around an element.\nJust select the element, right click on top of it to get the context menu and choose from the 'Outline elements' menu..."
+msgstr ""
+"MeerK40t kann einen Umriss um ein Element zeichnen.\n"
+"Das gewünschte Element auswählen, mit der rechten Maustaste das Kontext-Menu öffnen und das 'Umrande Elemente...'-Menu nutzen"
+
+#: ./meerk40t\gui\tips.py:368
+msgid "MeerK40t has an extensive set of commands that allow a lot of scriptable actions.\nJust open the console window and type 'help'"
+msgstr ""
+"MeerK40t hat eine Vielzahl von Kommandos, die es erlauben, per Script Elemente anzulegen, zu verändern und vieles mehr...\n"
+"Einfach die Konsole öffnen und 'help' eingeben."
+
+#: ./meerk40t\gui\tips.py:379
+msgid "Do you want to see more Tips & Tricks?\nJust click on the 'Update'-button to load additional hints from MeerK40ts website.\nThe list of tips is constantly expanded, so please update it every now and then to learn about new or hidden features."
+msgstr ""
+"Noch mehr Tipps & Tricks?\n"
+"Einfach die Option zum automatischen Laden aktivieren: damit werden neue Tipps von der Webseite von MeerK40t geladen.\n"
+"Die Liste der Tipps wird immer wider aktualisiert und erweitert."
+
+#: ./meerk40t\gui\tips.py:547
+msgid "Tips"
+msgstr "Tipps"
+
+#: ./meerk40t\gui\toolwidgets\toolnodeedit.py:244
+msgid "Convert all segments into lines"
+msgstr "Wandle alle Segmente in Linien um"
+
+#: ./meerk40t\gui\toolwidgets\toolpolygon.py:122
+msgid "Grow"
+msgstr "Wachsen"
+
+#: ./meerk40t\gui\toolwidgets\toolpolygon.py:124
+msgid "Draw a growing polygon"
+msgstr "Zeichnet ein wachsendes Polygon"
+
+#: ./meerk40t\grbl\device.py:333
+msgid "Interface Type"
+msgstr "Schnitstelle"
+
+#: ./meerk40t\grbl\device.py:334
+msgid "Select the interface type for the grbl device"
+msgstr "Definiert den Schnittstellen-Typus für den GRBL-Laser"
+
+#: ./meerk40t\grbl\device.py:433
+msgid "Require Validator"
+msgstr "Validierung notwendig"
+
+#: ./meerk40t\grbl\device.py:436
+msgid "Do not validate the connection without seeing the welcome message at start."
+msgstr "Verbindung nur dann nutzen, wenn die Willkommens-Botschaft am Start empfangen wurde"
+
+#: ./meerk40t\grbl\device.py:150
+msgid "Force Declared Home"
+msgstr "Home-Position übersteuern"
+
+#: ./meerk40t\grbl\device.py:151
+msgid "Override native home location"
+msgstr "Lege die Standard-Home-Position fest"
+
+#: ./meerk40t\grbl\device.py:493
+msgid "Post Connection Delay"
+msgstr "Verzögerung nach Verbindungsaufbau"
+
+#: ./meerk40t\grbl\device.py:496
+msgid "Delay the GRBL communications after initial connect. (Some slow boot devices may need this)"
+msgstr "Verzögert die GRBL-Kommunikation nach dem Verbindungsaufbau (einige langsame Geräte mögen dies benötigen)"
+
+msgid "Open the configuration window for the active device"
+msgstr "Öffne das Einstellungsfenster für das aktive Gerät"
