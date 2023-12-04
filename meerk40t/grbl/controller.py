@@ -369,8 +369,11 @@ class GrblController:
             self.realtime("\x18")
         if not self.service.require_validator:
             # We are required to wait for the validation.
-            self._validation_stage = 1
-            self.validate_start("$")
+            if self.service.boot_connect_sequence:
+                self._validation_stage = 1
+                self.validate_start("$")
+            else:
+                self._validation_stage = 5
 
     def close(self):
         """
@@ -719,12 +722,19 @@ class GrblController:
                     # Validation is not required, we reboot.
                     self.log("Device Reset, revalidation required", type="event")
                     if self.fully_validated():
-                        self._validation_stage = 1
-                        self.validate_start("$")
+                        if self.service.boot_connect_sequence:
+                            # Boot sequence is required. Restart sequence.
+                            self._validation_stage = 1
+                            self.validate_start("$")
                 else:
                     # Validation is required. This was stage 0.
-                    self._validation_stage = 1
-                    self.validate_start("$")
+                    if self.service.boot_connect_sequence:
+                        # Boot sequence is required. Restart sequence.
+                        self._validation_stage = 1
+                        self.validate_start("$")
+                    else:
+                        # No boot sequence required. Declare fully connected.
+                        self._validation_stage = 5
             else:
                 self._assembled_response.append(response)
 
