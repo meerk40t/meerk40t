@@ -465,20 +465,22 @@ class GrblController:
             delay = self.service.connect_delay / 1000
         else:
             delay = 0
+        label = self.service.label.replace(" ", "-")
         if delay:
             self.service(f".timer 1 {delay} .gcode_realtime {cmd}")
             self.service(
-                f".timer-{self.service.label}{cmd} 1 {delay} .timer-{self.service.label}{cmd} 0 1 gcode_realtime {cmd}"
+                f".timer-{label}{cmd} 1 {delay} .timer-{label}{cmd} 0 1 gcode_realtime {cmd}"
             )
         else:
             self.service(f".gcode_realtime {cmd}")
-            self.service(f".timer-{self.service.label}{cmd} 0 1 gcode_realtime {cmd}")
+            self.service(f".timer-{label}{cmd} 0 1 gcode_realtime {cmd}")
 
     def validate_stop(self, cmd):
+        label = self.service.label.replace(" ", "-")
         if cmd == "*":
-            self.service(f".timer-{self.service.label}* -q --off")
+            self.service(f".timer-{label}* -q --off")
             return
-        self.service(f".timer-{self.service.label}{cmd} -q --off")
+        self.service(f".timer-{label}{cmd} -q --off")
         if cmd == "$":
             if len(self._forward_buffer) > 3:
                 # If the forward planning buffer is longer than 3 it must have filled with failed attempts.
