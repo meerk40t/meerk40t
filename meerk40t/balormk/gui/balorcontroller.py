@@ -147,7 +147,8 @@ class BalorControllerPanel(wx.ScrolledWindow):
             self.context("usb_connect\n")
 
     def pane_show(self):
-        name = self.service.label
+        name = self.service.label.replace(" ", "-")
+        name = name.replace("/", "-")
         self.context.channel(f"{name}/usb").watch(self.update_text)
         try:
             connected = self.service.driver.connected
@@ -159,7 +160,8 @@ class BalorControllerPanel(wx.ScrolledWindow):
             pass
 
     def pane_hide(self):
-        name = self.service.label
+        name = self.service.label.replace(" ", "-")
+        name = name.replace("/", "-")
         self.context.channel(f"{name}/usb").unwatch(self.update_text)
 
 

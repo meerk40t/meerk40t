@@ -239,7 +239,8 @@ class GalvoController:
         self.force_mock = force_mock
         self.is_shutdown = False  # Shutdown finished.
 
-        name = self.service.label
+        name = self.service.label.replace(" ", "-")
+        name = name.replace("/", "-")
         self.usb_log = service.channel(f"{name}/usb", buffer_size=500)
         self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
 
@@ -348,7 +349,8 @@ class GalvoController:
         if self.connection is None:
             if self.service.setting(bool, "mock", False) or self.force_mock:
                 self.connection = MockConnection(self.usb_log)
-                name = self.service.label
+                name = self.service.label.replace(" ", "-")
+                name = name.replace("/", "-")
                 self.connection.send = self.service.channel(f"{name}/send")
                 self.connection.recv = self.service.channel(f"{name}/recv")
             else:
