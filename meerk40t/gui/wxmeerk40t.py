@@ -82,6 +82,7 @@ from .simpleui import SimpleUI
 from .simulation import Simulation
 from .tips import Tips
 from .wordlisteditor import WordlistEditor
+from .materialmanager import MaterialManager
 from .wxmmain import MeerK40t
 
 """
@@ -842,6 +843,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/About", About)
         kernel.register("window/Keymap", Keymap)
         kernel.register("window/Wordlist", WordlistEditor)
+        kernel.register("window/MatManager", MaterialManager)
         kernel.register("window/Navigation", Navigation)
         kernel.register("window/Notes", Notes)
         kernel.register("window/JobSpooler", JobSpooler)

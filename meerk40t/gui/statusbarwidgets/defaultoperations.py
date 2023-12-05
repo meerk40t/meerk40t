@@ -188,7 +188,7 @@ class DefaultOperationWidget(StatusBarWidget):
 
     def on_button_right(self, event):
         # Allow loading of a different set of operations...
-        # Sae function for all buttons...
+        # See function for all buttons...
         # button = event.GetEventObject()
         menu = wx.Menu()
         item = menu.Append(wx.ID_ANY, _("Load materials/operations"), "")
@@ -223,7 +223,15 @@ class DefaultOperationWidget(StatusBarWidget):
             )
 
         if matcount > 0:
-            self.parent.PopupMenu(menu)
+            menu.AppendSeparator()
+
+        self.parent.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context("window open MatManager\n"),
+            menu.Append(wx.ID_ANY, _("Material Library"), ""),
+        )
+
+        self.parent.PopupMenu(menu)
 
         menu.Destroy()
 
