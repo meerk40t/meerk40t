@@ -764,6 +764,8 @@ class SimulationPanel(wx.Panel, Job):
 
         self.plan_name = plan_name
         self.auto_clear = auto_clear
+        # Display travel paths?
+        self.display_travel = True
 
         Job.__init__(self)
         self._playback_cuts = True
@@ -935,6 +937,7 @@ class SimulationPanel(wx.Panel, Job):
 
         self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene, self))
         self.sim_travel = SimulationTravelWidget(self.widget_scene, self)
+        self.sim_travel.display = self.display_travel
         self.widget_scene.add_scenewidget(self.sim_travel)
 
         self.grid = GridWidget(
@@ -1198,6 +1201,11 @@ class SimulationPanel(wx.Panel, Job):
     def toggle_grid_c(self, event):
         self.toggle_grid("circular")
 
+    def toggle_travel_display(self, event):
+        self.display_travel = not self.display_travel
+        self.sim_travel.display = self.display_travel
+        self.widget_scene.request_refresh()
+
     def remove_background(self, event):
         self.widget_scene._signal_widget(
             self.widget_scene.widget_root, "background", None
@@ -1319,6 +1327,15 @@ class SimulationPanel(wx.Panel, Job):
             id5 = menu.Append(wx.ID_ANY, _("Remove Background"), "")
             self.Bind(wx.EVT_MENU, self.remove_background, id=id5.GetId())
         menu.AppendSeparator()
+        id6 = menu.Append(
+            wx.ID_ANY,
+            _("Show travel path"),
+            _("Displays the laser travel when not burning"),
+            wx.ITEM_CHECK,
+        )
+        self.Bind(wx.EVT_MENU, self.toggle_travel_display, id=id6.GetId())
+        menu.Check(id6.GetId(), self.display_travel)
+
         self.Bind(
             wx.EVT_MENU,
             lambda e: self.fit_scene_to_panel(),
@@ -1846,6 +1863,7 @@ class SimulationTravelWidget(Widget):
         self.sim_matrix = ~scene.context.device.view.matrix
         self.sim = sim
         self.matrix.post_cat(~scene.context.device.view.matrix)
+        self.display = True
         self.initvars()
 
     def initvars(self):
@@ -1896,6 +1914,8 @@ class SimulationTravelWidget(Widget):
             prev = curr
 
     def process_draw(self, gc: wx.GraphicsContext):
+        if not self.display:
+            return
         if len(self.pos):
             residual = 0
             if self.sim.progress < self.sim.max:
