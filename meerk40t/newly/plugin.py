@@ -54,6 +54,7 @@ def plugin(kernel, lifecycle):
 
         _ = kernel.translation
         kernel.register("provider/device/newly", NewlyDevice)
+        kernel.register("provider/friendly/newly", ("Older CO2-Laser (NewlyDraw)", 5))
         kernel.register(
             "dev_info/g3v8-raylaser",
             {

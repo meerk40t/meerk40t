@@ -18,6 +18,8 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         _ = kernel.translation
         kernel.register("provider/device/ruida", RuidaDevice)
+        # We don't want the ruida entry to appear
+        # kernel.register("provider/friendly/ruida", ("CO2-Laser (DSP-Ruida)", 6))
         kernel.register(
             "dev_info/ruida-beta",
             {
