@@ -1310,7 +1310,7 @@ class Geomstr:
             last_row = current_row
             rows += 1
             if rows % 2 == 0:
-                segments[swap_start:i] = np.flip(segments[swap_start:i], (0,1))
+                segments[swap_start:i] = np.flip(segments[swap_start:i], (0, 1))
             swap_start = i
         return segments
 
@@ -4880,6 +4880,48 @@ class Geomstr:
         pen_downs = valid_segments[indexes1, 0]
         return np.sum(np.abs(pen_ups - pen_downs))
 
+    def greedy_distance(self, pt: complex = 0j, flips=True):
+        """
+        Perform greedy optimization to minimize travel distances.
+
+        @return:
+        """
+        infos = self.segments[: self.index, 2]
+        q = np.where(np.real(infos).astype(int) & 0b1001)[0]
+        for mid in range(0, len(q)):
+            idxs = q[mid:]
+            p1 = idxs[0]
+            pen_downs = self.segments[idxs, 0]
+            down_dists = np.abs(pen_downs - pt)
+            down_distance = np.argmin(down_dists)
+            if not flips:
+                # Flipping is not allowed.
+                if down_distance == 0:
+                    continue
+                p2 = idxs[down_distance]
+                c = copy(self.segments[p2])
+                self.segments[p2] = self.segments[p1]
+                self.segments[p1] = c
+                pt = c[-1]
+                continue
+            pen_ups = self.segments[idxs, -1]
+            up_dists = np.abs(pen_ups - pt)
+            up_distance = np.argmin(up_dists)
+            if down_dists[down_distance] <= up_dists[up_distance]:
+                if down_distance == 0:
+                    continue
+                p2 = idxs[down_distance]
+                c = copy(self.segments[p2])
+            else:
+                if up_distance == 0:
+                    self.segments[p1] = self.segments[p1, ::-1]
+                    continue
+                p2 = idxs[up_distance]
+                c = copy(self.segments[p2, ::-1])
+            self.segments[p2] = self.segments[p1]
+            self.segments[p1] = c
+            pt = c[-1]
+
     def two_opt_distance(self, max_passes=None, chunk=0):
         """
         Perform two-opt optimization to minimize travel distances.
@@ -5010,7 +5052,7 @@ class Geomstr:
 
     def as_lines(self):
         default_dict = dict()
-        for start, c1, info, c2, end in self.segments[:self.index]:
+        for start, c1, info, c2, end in self.segments[: self.index]:
             segment_type = info.real
             if segment_type == TYPE_LINE:
                 segment_type = "line"
