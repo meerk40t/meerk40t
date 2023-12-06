@@ -193,6 +193,19 @@ def init_commands(kernel):
         data.two_opt_distance(max_passes=max_passes, chunk=0)
         return "geometry", data
 
+    @self.console_command(
+        "greedy",
+        help=_("Perform greedy optimization on the current geometry"),
+        input_type="geometry",
+        output_type="geometry",
+    )
+    def geometry_two_opt(channel, _, data: Geomstr, **kwargs):
+        """
+        Provides a two-opt optimized version of the current data.
+        """
+        data.greedy_distance(0j)
+        return "geometry", data
+
     @self.console_argument("tx", type=Length, help=_("translate x value"))
     @self.console_argument("ty", type=Length, help=_("translate y value"))
     @self.console_command(
