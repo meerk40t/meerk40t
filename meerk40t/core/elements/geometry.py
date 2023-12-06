@@ -193,17 +193,25 @@ def init_commands(kernel):
         data.two_opt_distance(max_passes=max_passes, chunk=0)
         return "geometry", data
 
+    @self.console_option(
+        "no_flips",
+        "x",
+        type=bool,
+        action="store_true",
+        help=_("Do not allow segment flips"),
+        default=10,
+    )
     @self.console_command(
         "greedy",
         help=_("Perform greedy optimization on the current geometry"),
         input_type="geometry",
         output_type="geometry",
     )
-    def geometry_two_opt(channel, _, data: Geomstr, **kwargs):
+    def geometry_two_opt(channel, _, data: Geomstr, no_flips=False, **kwargs):
         """
         Provides a two-opt optimized version of the current data.
         """
-        data.greedy_distance(0j)
+        data.greedy_distance(0j, flips=not no_flips)
         return "geometry", data
 
     @self.console_argument("tx", type=Length, help=_("translate x value"))
