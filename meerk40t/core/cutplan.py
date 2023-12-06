@@ -520,7 +520,9 @@ class CutPlan:
         channel = self.context.channel("optimize", timestamp=True)
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
-                self.plan[i] = short_travel_cutcode_2opt(self.plan[i], channel=channel)
+                self.plan[i] = short_travel_cutcode_2opt(
+                    self.plan[i], kernel=self.context.kernel, channel=channel
+                )
 
     def optimize_cuts(self):
         """
@@ -560,7 +562,10 @@ class CutPlan:
             if isinstance(c, CutCode):
                 if c.constrained:
                     self.plan[i] = inner_first_ident(
-                        c, channel=channel, tolerance=tolerance
+                        c,
+                        kernel=self.context.kernel,
+                        channel=channel,
+                        tolerance=tolerance,
                     )
                     c = self.plan[i]
                 self.plan[i] = inner_selection_cutcode(
@@ -612,13 +617,17 @@ class CutPlan:
             if isinstance(c, CutCode):
                 if c.constrained:
                     self.plan[i] = inner_first_ident(
-                        c, channel=channel, tolerance=tolerance
+                        c,
+                        kernel=self.context.kernel,
+                        channel=channel,
+                        tolerance=tolerance,
                     )
                     c = self.plan[i]
                 if last is not None:
                     c._start_x, c._start_y = last
                 self.plan[i] = short_travel_cutcode(
                     c,
+                    kernel=self.context.kernel,
                     channel=channel,
                     complete_path=self.context.opt_complete_subpaths,
                     grouped_inner=grouped_inner,
@@ -912,7 +921,7 @@ def correct_empty(context: CutGroup):
             del context[index]
 
 
-def inner_first_ident(context: CutGroup, channel=None, tolerance=0):
+def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0):
     """
     Identifies closed CutGroups and then identifies any other CutGroups which
     are entirely inside.
@@ -930,6 +939,7 @@ def inner_first_ident(context: CutGroup, channel=None, tolerance=0):
 
     groups = [cut for cut in context if isinstance(cut, (CutGroup, RasterCut))]
     closed_groups = [g for g in groups if isinstance(g, CutGroup) and g.closed]
+    total_pass = len(groups) + len(closed_groups)
     context.contains = closed_groups
     if channel:
         channel(
@@ -937,13 +947,26 @@ def inner_first_ident(context: CutGroup, channel=None, tolerance=0):
         )
 
     constrained = False
+    current_pass = 0
+    if kernel:
+        busy = kernel.busyinfo
+        _ = kernel.translation
+    else:
+        busy = None
     for outer in closed_groups:
         for inner in groups:
+            current_pass += 1
             if outer is inner:
                 continue
             # if outer is inside inner, then inner cannot be inside outer
             if inner.contains and outer in inner.contains:
                 continue
+            if current_pass % 50 == 0 and busy and busy.shown:
+                message = _("Pass {cpass}/{tpass}").format(
+                    cpass=current_pass, tpass=total_pass
+                )
+                busy.change(msg=message, keep=2)
+                busy.show()
 
             if is_inside(inner, outer, tolerance):
                 constrained = True
@@ -980,6 +1003,7 @@ def inner_first_ident(context: CutGroup, channel=None, tolerance=0):
 
 def short_travel_cutcode(
     context: CutCode,
+    kernel=None,
     channel=None,
     complete_path: Optional[bool] = False,
     grouped_inner: Optional[bool] = False,
@@ -1008,11 +1032,30 @@ def short_travel_cutcode(
     else:
         curr = complex(curr[0], curr[1])
 
+    cutcode_len = 0
     for c in context.flat():
+        cutcode_len += 1
         c.burns_done = 0
 
     ordered = CutCode()
+    current_pass = 0
+    if kernel:
+        busy = kernel.busyinfo
+        _ = kernel.translation
+    else:
+        busy = None
+    # print (f"Cutcode-Len={cutcode_len}")
     while True:
+        current_pass += 1
+        if current_pass % 50 == 0 and busy and busy.shown:
+            # That may not be a fully correct approximation
+            # in terms of the total passes required, but it
+            # should give an idea...
+            message = _("Pass {cpass}/{tpass}").format(
+                cpass=current_pass, tpass=cutcode_len
+            )
+            busy.change(msg=message, keep=2)
+            busy.show()
         closest = None
         backwards = False
         distance = float("inf")
@@ -1136,7 +1179,9 @@ def short_travel_cutcode(
     return ordered
 
 
-def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
+def short_travel_cutcode_2opt(
+    context: CutCode, kernel=None, passes: int = 50, channel=None
+):
     """
     This implements 2-opt algorithm using numpy.
 
@@ -1194,6 +1239,17 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
         channel(
             f"optimize: laser-off distance is {dist_sum}. {100 * pos / length:.02f}% done with pass {current_pass}/{passes}"
         )
+        if kernel:
+            busy = kernel.busyinfo
+            _ = kernel.translation
+            if busy.shown:
+                busy.change(
+                    msg=_("Pass {cpass}/{tpass").format(
+                        cpass=current_pass, tpass=passes
+                    ),
+                    keep=2,
+                )
+                busy.show()
 
     improved = True
     while improved:
