@@ -18,6 +18,7 @@ from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.ruida.controller import RuidaController
+from meerk40t.tools.geomstr import Geomstr
 
 
 class RuidaDriver:
@@ -130,6 +131,101 @@ class RuidaDriver:
         @return:
         """
         self.laser = True
+
+    def geometry(self, geom):
+        """
+        Called at the end of plot commands to ensure the driver can deal with them all as a group.
+
+        @return:
+        """
+        # preprocess queue to establish steps
+        con = self.connection
+        con.program_mode()
+        g = Geomstr()
+        for segment_type, start, c1, c2, end, sets in geom.as_lines():
+            con.set_settings(sets)
+            # LOOP CHECKS
+            if self._aborting:
+                con.abort()
+                self._aborting = False
+                return
+
+            if segment_type == "line":
+                last_x, last_y = con.get_last_xy()
+                if last_x != start.real or last_y != start.imag:
+                    con.goto(start.real, start.imag)
+                con.mark(end.real, end.imag)
+            elif segment_type == "end":
+                pass
+            elif segment_type == "quad":
+                last_x, last_y = con.get_last_xy()
+                if last_x != start.real or last_y != start.imag:
+                    con.goto(start.real, start.imag)
+                interp = self.service.interpolate
+                g.clear()
+                g.quad(start, c1, end)
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    # LOOP CHECKS
+                    if self._aborting:
+                        con.abort()
+                        self._aborting = False
+                        return
+                    while self.paused:
+                        time.sleep(0.05)
+                    con.mark(p.real, p.imag)
+            elif segment_type == "cubic":
+                last_x, last_y = con.get_last_xy()
+                if last_x != start.real or last_y != start.imag:
+                    con.goto(start.real, start.imag)
+                interp = self.service.interpolate
+                g.clear()
+                g.cubic(start, c1, c2, end)
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    # LOOP CHECKS
+                    if self._aborting:
+                        con.abort()
+                        self._aborting = False
+                        return
+                    while self.paused:
+                        time.sleep(0.05)
+                    con.mark(p.real, p.imag)
+            elif segment_type == "arc":
+                last_x, last_y = con.get_last_xy()
+                if last_x != start.real or last_y != start.imag:
+                    con.goto(start.real, start.imag)
+                interp = self.service.interpolate
+                g.clear()
+                g.arc(start, c1, end)
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    # LOOP CHECKS
+                    if self._aborting:
+                        con.abort()
+                        self._aborting = False
+                        return
+                    while self.paused:
+                        time.sleep(0.05)
+                    con.mark(p.real, p.imag)
+            elif segment_type == "point":
+                function = sets.get("function")
+                if function == "dwell":
+                    con.goto(start.real, start.imag)
+                    dwell_time = sets.get("dwell_time")
+                    # TODO: Unknown accuracy
+                    con.laser_interval(dwell_time)
+                elif function == "wait":
+                    dwell_time = sets.get("dwell_time")
+                    # TODO: Unknown accuracy
+                    con.add_delay(dwell_time)
+                elif function == "home":
+                    con.home_xy()
+                elif function == "goto":
+                    con.goto(0, 0)
+                elif function == "input":
+                    # Moshi has no core GPIO functionality
+                    pass
+                elif function == "output":
+                    # Moshi has no core GPIO functionality
+                    pass
 
     def plot(self, plot):
         """
