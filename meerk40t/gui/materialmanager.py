@@ -38,7 +38,13 @@ class MaterialPanel(wx.Panel):
         label_2 = wx.StaticText(self, wx.ID_ANY, _("Lasertype"))
         filter_box.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.laser_choices = ("<All Lasertypes>", "K40-CO2", "Fibre-Laser", "Diode-Laser", "Newly-Device", "Moshi", "Ruida", )
+        self.laser_choices = [_("<All Lasertypes>"),]
+        dev_infos = list(self.context.find("provider/friendly"))
+        # Gets a list of tuples (description, key, path)
+        dev_infos.sort(key=lambda e: e[0][1])
+        for e in dev_infos:
+            self.laser_choices.append(e[0][0])
+
         self.combo_lasertype = wx.ComboBox(self, wx.ID_ANY, choices=self.laser_choices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
         filter_box.Add(self.combo_lasertype, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -112,6 +118,8 @@ class MaterialPanel(wx.Panel):
         self.btn_delete.SetToolTip(_("Delete the current library entry"))
         self.btn_duplicate = wx.Button(self, wx.ID_ANY, _("Duplicate"))
         self.btn_duplicate.SetToolTip(_("Duplicate the current library entry"))
+        self.btn_import = wx.Button(self, wx.ID_ANY, _("Import"))
+        self.btn_import.SetToolTip(_("Import a material library from ezcad or LightBurn"))
         self.btn_share = wx.Button(self, wx.ID_ANY, _("Share"))
         self.btn_share.SetToolTip(_("Share the current library entry with the MeerK40t community"))
 
@@ -119,6 +127,8 @@ class MaterialPanel(wx.Panel):
         button_box.Add(self.btn_apply, 0, wx.EXPAND, 0)
         button_box.Add(self.btn_delete, 0, wx.EXPAND, 0)
         button_box.Add(self.btn_duplicate, 0, wx.EXPAND, 0)
+        button_box.AddStretchSpacer(1)
+        button_box.Add(self.btn_import, 0, wx.EXPAND, 0)
         button_box.Add(self.btn_share, 0, wx.EXPAND, 0)
         outer_box = wx.BoxSizer(wx.HORIZONTAL)
         outer_box.Add(result_box, 1, wx.EXPAND, 0)
@@ -198,7 +208,13 @@ class ImportPanel(wx.Panel):
         label_2 = wx.StaticText(self, wx.ID_ANY, _("Lasertype"))
         filter_box.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.laser_choices = ("<All Lasertypes>", "K40-CO2", "Fibre-Laser", "Diode-Laser", "Newly-Device", "Moshi", "Ruida", )
+        self.laser_choices = [_("<All Lasertypes>"),]
+        dev_infos = list(self.context.find("provider/friendly"))
+        # Gets a list of tuples (description, key, path)
+        # description is a tuple itself containing description and index
+        dev_infos.sort(key=lambda e: e[0][1])
+        for e in dev_infos:
+            self.laser_choices.append(e[0][0])
         self.combo_lasertype = wx.ComboBox(self, wx.ID_ANY, choices=self.laser_choices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
         filter_box.Add(self.combo_lasertype, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
