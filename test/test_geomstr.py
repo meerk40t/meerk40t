@@ -798,6 +798,33 @@ class TestGeomstr(unittest.TestCase):
         path.two_opt_distance()
         self.assertEqual(path.travel_distance(), 0)
 
+    def test_geomstr_greedy(self):
+        path = Geomstr()
+        path.line(complex(0, 0), complex(50, 0))
+        path.line(complex(50, 50), complex(50, 0))
+        self.assertEqual(path.raw_length(), 100)
+        self.assertEqual(path.travel_distance(), 50)
+        path.greedy_distance()
+        self.assertEqual(path.travel_distance(), 0)
+
+    def test_geomstr_greedy_random(self):
+
+        for trials in range(50):
+            path = Geomstr()
+            for i in range(500):
+                path.line(
+                    random_point(50),
+                    random_point(50),
+                )
+            d1 = path.travel_distance()
+            path.greedy_distance()
+            d2 = path.travel_distance()
+            path.two_opt_distance()
+            d3 = path.travel_distance()
+            self.assertGreaterEqual(d1, d2)
+            self.assertGreaterEqual(d2, d3)
+            print(f"{d1} < {d2} < {d3}")
+
     def test_geomstr_scanbeam_build(self):
         """
         Build the scanbeam. In a correct scanbeam we should be able to iterate
