@@ -110,9 +110,9 @@ class MaterialPanel(wx.Panel):
 
         button_box = wx.BoxSizer(wx.VERTICAL)
 
-        self.btn_use_current = wx.Button(self, wx.ID_ANY, _("Use current"))
+        self.btn_use_current = wx.Button(self, wx.ID_ANY, _("Get current"))
         self.btn_use_current.SetToolTip(_("Use the currently defined operations"))
-        self.btn_apply = wx.Button(self, wx.ID_ANY, _("Apply"))
+        self.btn_apply = wx.Button(self, wx.ID_ANY, _("Set current"))
         self.btn_apply.SetToolTip(_("Apply the current library entry"))
         self.btn_delete = wx.Button(self, wx.ID_ANY, _("Delete"))
         self.btn_delete.SetToolTip(_("Delete the current library entry"))
