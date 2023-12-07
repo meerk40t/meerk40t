@@ -245,9 +245,6 @@ class BalorDriver:
                 elif function == "goto":
                     con.goto(start.real, start.imag)
                 elif function == "input":
-                    con.port_set(sets.get("output_mask"), sets.get("output_value"))
-                    con.list_write_port()
-                elif function == "output":
                     if self.service.input_operation_hardware:
                         con.list_wait_for_input(sets.get("input_mask"), 0)
                     else:
@@ -256,6 +253,9 @@ class BalorDriver:
                             sets.get("input_mask"), sets.get("input_value")
                         )
                         con.program_mode()
+                elif function == "output":
+                    con.port_set(sets.get("output_mask"), sets.get("output_value"))
+                    con.list_write_port()
         con.list_delay_time(int(self.service.delay_end / 10.0))
         self._list_bits = None
         con.rapid_mode()
