@@ -54,6 +54,7 @@ this is effectively a point.
 
 import math
 import re
+from contextlib import contextmanager
 from copy import copy
 
 import numpy
@@ -69,10 +70,11 @@ from meerk40t.svgelements import (
     Path,
     QuadraticBezier,
 )
+from meerk40t.tools.pmatrix import PMatrix
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 # Note lower nibble is which indexes are positions (except info index)
-TYPE_NOP = 0 | 0b000
+TYPE_NOP = 0x00 | 0b0000
 TYPE_POINT = 0x10 | 0b1001
 TYPE_LINE = 0x20 | 0b1001
 TYPE_QUAD = 0x30 | 0b1111
@@ -81,6 +83,13 @@ TYPE_ARC = 0x50 | 0b1111
 
 TYPE_VERTEX = 0x70 | 0b0000
 TYPE_END = 0x80 | 0b0000
+
+# Function and Call denote 4 points being the upper-left, upper-right, lower-right,
+# lower-left corners all shapes are transformed to match these points, including other call points.
+TYPE_FUNCTION = 0x90 | 0b1111  # The two higher level bytes are call label index.
+TYPE_UNTIL = 0xA0 | 0b0000  # The two higher level bytes are the number of times this should be executed before exiting.
+TYPE_CALL = 0xB0 | 0b1111  # The two higher level bytes are call label index.
+# If until is set to 0xFFFF termination only happens on interrupt.
 
 
 class Polygon:
@@ -1257,14 +1266,15 @@ class Geomstr:
         return obj
 
     @classmethod
-    def image(cls, pil_image, invert=False, vertical=False):
+    def image(cls, pil_image, invert=False, vertical=False, bidirectional=True):
         g = cls()
         if pil_image.mode != "1":
             pil_image = pil_image.convert("1")
+        im = np.array(pil_image)
         if not invert:
             # Invert is default, Black == 0 (False), White == 255 (True)
-            pil_image = pil_image.point(list(range(255, -1, -1)))
-        im = np.array(pil_image)
+            im = ~im
+
         if vertical:
             im = np.swapaxes(im, 0, 1)
 
@@ -1284,8 +1294,34 @@ class Geomstr:
         segments = np.dstack(
             (starts, [0] * count, [TYPE_LINE] * count, [0] * count, ends)
         )[0]
+        if bidirectional:
+            Geomstr.bidirectional(segments, vertical=vertical)
         g.append_lines(segments)
         return g
+
+    @staticmethod
+    def bidirectional(segments, vertical=False):
+        swap_start = 0
+        last_row = -1
+        rows = 0
+        for i in range(len(segments) + 1):
+            try:
+                s, c1, info, c2, e = segments[i]
+                if vertical:
+                    current_row = s.imag
+                else:
+                    current_row = s.real
+            except IndexError:
+                current_row = -1
+            if current_row == last_row:
+                continue
+            # Start of a new row.
+            last_row = current_row
+            rows += 1
+            if rows % 2 == 0:
+                segments[swap_start:i] = np.flip(segments[swap_start:i], (0, 1))
+            swap_start = i
+        return segments
 
     @classmethod
     def lines(cls, *points):
@@ -1829,9 +1865,9 @@ class Geomstr:
         self.segments[self.index : self.index + len(lines)] = lines
         self.index += len(lines)
 
-    def append(self, other):
+    def append(self, other, end=True):
         self._ensure_capacity(self.index + other.index + 1)
-        if self.index != 0:
+        if self.index != 0 and end:
             self.end()
         self.segments[self.index : self.index + other.index] = other.segments[
             : other.index
@@ -2025,6 +2061,64 @@ class Geomstr:
         end_segment = self.segments[self.index - 1][-1]
         if start_segment != end_segment:
             self.line(end_segment, start_segment, settings=settings)
+
+    @contextmanager
+    def function(self, function_index=None, placement=None, settings=0, loops=0):
+        if function_index is None:
+            if hasattr(self, "_function"):
+                self._function += 1
+            else:
+                self._function = 1
+            function_index = self._function
+        g = Geomstr()
+        yield g
+        if not g:
+            # Nothing was added to function.
+            return
+
+        self._ensure_capacity(self.index + 2 + len(g))
+        if placement is None:
+            nx, ny, mx, my = g.bbox()
+            placement = complex(nx, ny), complex(mx, ny), complex(mx, my), complex(nx, my)
+
+        self.segments[self.index] = (
+            placement[0],
+            placement[1],
+            complex(TYPE_FUNCTION | (function_index << 8), settings),
+            placement[2],
+            placement[3],
+        )
+        self.index += 1
+        self.append(g, end=False)
+        self.segments[self.index] = (
+            0,
+            0,
+            complex(TYPE_UNTIL | (loops << 8), settings),
+            0,
+            0,
+        )
+        self.index += 1
+
+    def call(self,  function_index, placement=None, settings=0):
+        self._ensure_capacity(self.index + 1)
+        if placement is None:
+            self.segments[self.index] = (
+                np.nan,
+                np.nan,
+                complex(TYPE_CALL | (function_index << 8), settings),
+                np.nan,
+                np.nan,
+            )
+        else:
+            self.segments[self.index] = (
+                placement[0],
+                placement[1],
+                complex(TYPE_CALL | (function_index << 8), settings),
+                placement[2],
+                placement[3],
+            )
+        self.index += 1
+
 
     def is_closed(self):
         if self.index == 0:
@@ -3687,6 +3781,10 @@ class Geomstr:
         @param e: index, line values
         @return:
         """
+        if e is None:
+            i0 = 0
+            i1 = self.index
+            e = self.segments[i0:i1]
 
         def value(x, y):
             m = mx.mx
@@ -3695,23 +3793,20 @@ class Geomstr:
             result = np.dot(m, pts)
             return result[0] / result[2] + 1j * result[1] / result[2]
 
-        segments = self.segments
-        index = self.index
+        starts = e[..., 0]
+        e[..., 0] = value(starts.real, starts.imag)
 
-        starts = segments[:index, 0]
-        segments[:index, 0] = value(starts.real, starts.imag)
+        ends = e[..., 4]
+        e[..., 4] = value(ends.real, ends.imag)
 
-        ends = segments[:index, 4]
-        segments[:index, 4] = value(ends.real, ends.imag)
-
-        infos = segments[:index, 2]
+        infos = e[..., 2]
         q = np.where(np.real(infos).astype(int) & 0b0110)[0]
 
-        c0s = segments[q, 1]
-        segments[q, 1] = value(c0s.real, c0s.imag)
+        c0s = e[q, 1]
+        e[q, 1] = value(c0s.real, c0s.imag)
 
-        c1s = segments[q, 3]
-        segments[q, 3] = value(c1s.real, c1s.imag)
+        c1s = e[q, 3]
+        e[q, 3] = value(c1s.real, c1s.imag)
 
     def translate(self, dx, dy, e=None):
         """
@@ -4853,7 +4948,49 @@ class Geomstr:
         pen_downs = valid_segments[indexes1, 0]
         return np.sum(np.abs(pen_ups - pen_downs))
 
-    def two_opt_distance(self, max_passes=None):
+    def greedy_distance(self, pt: complex = 0j, flips=True):
+        """
+        Perform greedy optimization to minimize travel distances.
+
+        @return:
+        """
+        infos = self.segments[: self.index, 2]
+        q = np.where(np.real(infos).astype(int) & 0b1001)[0]
+        for mid in range(0, len(q)):
+            idxs = q[mid:]
+            p1 = idxs[0]
+            pen_downs = self.segments[idxs, 0]
+            down_dists = np.abs(pen_downs - pt)
+            down_distance = np.argmin(down_dists)
+            if not flips:
+                # Flipping is not allowed.
+                if down_distance == 0:
+                    continue
+                p2 = idxs[down_distance]
+                c = copy(self.segments[p2])
+                self.segments[p2] = self.segments[p1]
+                self.segments[p1] = c
+                pt = c[-1]
+                continue
+            pen_ups = self.segments[idxs, -1]
+            up_dists = np.abs(pen_ups - pt)
+            up_distance = np.argmin(up_dists)
+            if down_dists[down_distance] <= up_dists[up_distance]:
+                if down_distance == 0:
+                    continue
+                p2 = idxs[down_distance]
+                c = copy(self.segments[p2])
+            else:
+                if up_distance == 0:
+                    self.segments[p1] = self.segments[p1, ::-1]
+                    continue
+                p2 = idxs[up_distance]
+                c = copy(self.segments[p2, ::-1])
+            self.segments[p2] = self.segments[p1]
+            self.segments[p1] = c
+            pt = c[-1]
+
+    def two_opt_distance(self, max_passes=None, chunk=0):
         """
         Perform two-opt optimization to minimize travel distances.
         @param max_passes: Max number of passes to attempt
@@ -4861,12 +4998,12 @@ class Geomstr:
         """
         self._trim()
         segments = self.segments
-        original = self.index
+        max_index = self.index
 
         min_value = -1e-10
         current_pass = 0
 
-        indexes0 = np.arange(0, original - 1)
+        indexes0 = np.arange(0, max_index - 1)
         indexes1 = indexes0 + 1
 
         improved = True
@@ -4884,8 +5021,11 @@ class Geomstr:
                     segments[: index + 1], (0, 1)
                 )  # top to bottom, and right to left flips.
                 improved = True
-            for mid in range(1, original - 1):
-                idxs = np.arange(mid, original - 1)
+            for mid in range(1, max_index - 1):
+                mid_max = max_index - 1
+                if chunk:
+                    mid_max = min(mid_max, mid + chunk)
+                idxs = indexes0[mid:mid_max]
 
                 mid_source = segments[mid - 1, -1]
                 mid_dest = segments[mid, 0]
@@ -4918,6 +5058,10 @@ class Geomstr:
             if max_passes and current_pass >= max_passes:
                 break
             current_pass += 1
+
+    #######################
+    # Spooler Functions
+    #######################
 
     def generator(self):
         """
@@ -4970,3 +5114,60 @@ class Geomstr:
             #     for i, p in enumerate(pos):
             #         x, y = p
             #         yield x, y, settings_index[i]
+
+    def generate(self):
+        yield "geometry", self
+
+    def as_lines(self, lines=None, function_dict=None):
+        if lines is None:
+            lines = self.segments[: self.index]
+        if function_dict is None:
+            function_dict = dict()
+        default_dict = dict()
+        defining_function = 0
+        function_start = 0
+        for index, line in enumerate(lines):
+            start, c1, info, c2, end = line
+
+            segment_type = int(info.real)
+            if defining_function > 0:
+                if (segment_type & 0xFF) != TYPE_UNTIL:
+                    continue
+                loop_count = segment_type >> 8
+                function_dict[defining_function] = (function_start, index, loop_count)
+                defining_function = 0
+                continue
+            if segment_type == TYPE_LINE:
+                segment_type = "line"
+            elif segment_type == TYPE_QUAD:
+                segment_type = "quad"
+            elif segment_type == TYPE_CUBIC:
+                segment_type = "cubic"
+            elif segment_type == TYPE_ARC:
+                segment_type = "arc"
+            elif segment_type == TYPE_POINT:
+                segment_type = "point"
+            elif segment_type == TYPE_END:
+                segment_type = "end"
+            elif segment_type == TYPE_NOP:
+                # Nop should be skipped.
+                continue
+            elif (segment_type & 0xFF) == TYPE_FUNCTION:
+                defining_function = segment_type >> 8
+                function_start = index
+                continue
+            elif (segment_type & 0xFF) == TYPE_CALL:
+                executing_function = segment_type >> 8
+                fun_start, fun_end, loops = function_dict[executing_function]
+
+                subroutine = copy(self.segments[fun_start+1 : fun_end])
+                f = self.segments[fun_start]
+                if not np.isnan(start):
+                    mx = PMatrix.map(f[0], f[1], f[3], f[4], start, c1, c2, end)
+                    Geomstr.transform3x3(None, mx, subroutine)
+                for loop in range(loops + 1):
+                    yield from self.as_lines(subroutine, function_dict=function_dict)
+                continue
+
+            sets = self._settings.get(info.imag, default_dict)
+            yield segment_type, start, c1, c2, end, sets

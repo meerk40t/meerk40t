@@ -35,6 +35,7 @@ from ..device.basedevice import (
     PLOT_SETTING,
 )
 from .laserspeed import LaserSpeed
+from ..tools.geomstr import Geomstr
 
 distance_lookup = [
     b"",
@@ -657,6 +658,60 @@ class LihuiyuDriver(Parameters):
 
     def laser_enable(self, *values):
         self.laser_enabled = True
+
+    def geometry(self, geom):
+        """
+        Driver command to deal with `geometry` driver call.
+
+        @return:
+        """
+        for segment_type, start, c1, c2, end, sets in geom.as_lines():
+            if segment_type == "line":
+                self.plot_planner.push(plot)
+            elif segment_type == "end":
+                pass
+            elif segment_type == "quad":
+                self.plot_planner.push(plot)
+            elif segment_type == "cubic":
+                self.plot_planner.push(plot)
+            elif segment_type == "arc":
+                interp = 50
+                g = Geomstr()
+                g.clear()
+                g.arc(start, c1, end)
+                last = start
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    self.plot_planner.push((last, p))
+                    last = p
+            elif segment_type == "point":
+                function = sets.get("function")
+                if function == "dwell":
+                    self.plot_start()
+                    self.rapid_mode()
+                    self.move_abs(start.real, start.imag)
+                    self.wait_finish()
+                    self.dwell(sets.get("dwell_time"))
+                elif function == "wait":
+                    self.plot_start()
+                    self.wait_finish()
+                    self.wait(sets.get("dwell_time"))
+                elif function == "home":
+                    self.plot_start()
+                    self.wait_finish()
+                    self.home()
+                elif function == "goto":
+                    self.plot_start()
+                    self.wait_finish()
+                    self._move_absolute(start.real, start.imag)
+                elif function == "input":
+                    self.plot_start()
+                    self.wait_finish()
+                elif function == "output":
+                    self.plot_start()
+                    self.wait_finish()
+        if self.plot_data is None:
+            self.plot_data = self.plot_planner.gen()
+        self._plotplanner_process()
 
     def plot(self, plot):
         """

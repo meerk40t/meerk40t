@@ -179,6 +179,68 @@ class MoshiDriver(Parameters):
         """
         pass
 
+    def geometry(self, geom):
+        """
+        Called at the end of plot commands to ensure the driver can deal with them all as a group.
+
+        @return:
+        """
+        # TODO: Raster geom strokes need to be run in raster mode for moshi.
+        g = Geomstr()
+        for segment_type, start, c1, c2, end, sets in geom.as_lines():
+            x = self.native_x
+            y = self.native_y
+            if x != start.real or y != start.imag:
+                self._goto_absolute(start.real, start.imag, 0)
+            self.settings.update(sets)
+
+            if segment_type == "line":
+                self._goto_absolute(end.real, end.imag, 1)
+            elif segment_type == "end":
+                pass
+            elif segment_type == "quad":
+                interp = self.service.interpolate
+                g.clear()
+                g.quad(start, c1, end)
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    while self.hold_work(0):
+                        time.sleep(0.05)
+                    self._goto_absolute(p.real, p.imag, 1)
+            elif segment_type == "cubic":
+                interp = self.service.interpolate
+                g.clear()
+                g.cubic( start, c1, c2, end)
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    while self.hold_work(0):
+                        time.sleep(0.05)
+                    self._goto_absolute(p.real, p.imag, 1)
+            elif segment_type == "arc":
+                interp = self.service.interpolate
+                g.clear()
+                g.arc(start, c1, end)
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    while self.hold_work(0):
+                        time.sleep(0.05)
+                    self._goto_absolute(p.real, p.imag, 1)
+            elif segment_type == "point":
+                function = sets.get("function")
+                if function == "dwell":
+                    # Moshi cannot fire in place.
+                    pass
+                elif function == "wait":
+                    # Moshi has no forced wait functionality.
+                    pass
+                elif function == "home":
+                    self.home()
+                elif function == "goto":
+                    self._goto_absolute(start.real, start.imag, 0)
+                elif function == "input":
+                    # Moshi has no core GPIO functionality
+                    pass
+                elif function == "output":
+                    # Moshi has no core GPIO functionality
+                    pass
+
     def plot(self, plot):
         """
         Gives the driver a bit of cutcode that should be plotted.

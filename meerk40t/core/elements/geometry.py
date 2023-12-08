@@ -164,6 +164,56 @@ def init_commands(kernel):
         """
         return "geometry", Geomstr.hull(data)
 
+    @self.console_option(
+        "chunk",
+        "c",
+        type=int,
+        help=_("Maximum forward-search for potential swaps"),
+        default=0,
+    )
+    @self.console_option(
+        "max_passes",
+        "m",
+        type=int,
+        help=_("Maximum number of optimizations passes"),
+        default=10,
+    )
+    @self.console_command(
+        "two-opt",
+        help=_("Perform two-opt on the current geometry"),
+        input_type="geometry",
+        output_type="geometry",
+    )
+    def geometry_two_opt(channel, _, data: Geomstr, max_passes=10, chunk=0, **kwargs):
+        """
+        Provides a two-opt optimized version of the current data.
+        """
+        if max_passes < 0:
+            max_passes = None
+        data.two_opt_distance(max_passes=max_passes, chunk=0)
+        return "geometry", data
+
+    @self.console_option(
+        "no_flips",
+        "x",
+        type=bool,
+        action="store_true",
+        help=_("Do not allow segment flips"),
+        default=10,
+    )
+    @self.console_command(
+        "greedy",
+        help=_("Perform greedy optimization on the current geometry"),
+        input_type="geometry",
+        output_type="geometry",
+    )
+    def geometry_two_opt(channel, _, data: Geomstr, no_flips=False, **kwargs):
+        """
+        Provides a two-opt optimized version of the current data.
+        """
+        data.greedy_distance(0j, flips=not no_flips)
+        return "geometry", data
+
     @self.console_argument("tx", type=Length, help=_("translate x value"))
     @self.console_argument("ty", type=Length, help=_("translate y value"))
     @self.console_command(

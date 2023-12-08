@@ -798,6 +798,33 @@ class TestGeomstr(unittest.TestCase):
         path.two_opt_distance()
         self.assertEqual(path.travel_distance(), 0)
 
+    def test_geomstr_greedy(self):
+        path = Geomstr()
+        path.line(complex(0, 0), complex(50, 0))
+        path.line(complex(50, 50), complex(50, 0))
+        self.assertEqual(path.raw_length(), 100)
+        self.assertEqual(path.travel_distance(), 50)
+        path.greedy_distance()
+        self.assertEqual(path.travel_distance(), 0)
+
+    def test_geomstr_greedy_random(self):
+
+        for trials in range(50):
+            path = Geomstr()
+            for i in range(500):
+                path.line(
+                    random_point(50),
+                    random_point(50),
+                )
+            d1 = path.travel_distance()
+            path.greedy_distance()
+            d2 = path.travel_distance()
+            path.two_opt_distance()
+            d3 = path.travel_distance()
+            self.assertGreaterEqual(d1, d2)
+            self.assertGreaterEqual(d2, d3)
+            print(f"{d1} < {d2} < {d3}")
+
     def test_geomstr_scanbeam_build(self):
         """
         Build the scanbeam. In a correct scanbeam we should be able to iterate
@@ -1746,6 +1773,35 @@ class TestGeomstr(unittest.TestCase):
         g = Geomstr.image(image)
         draw_geom(g, *g.bbox(), filename="geom2.png")
         self.assertEqual(g.index, 31)
+
+    def test_geomstr_image_multi(self):
+        from PIL import Image, ImageDraw
+
+        image = Image.new("RGBA", (256, 256), "white")
+        draw = ImageDraw.Draw(image)
+        draw.ellipse((100, 100, 130, 130), "black")
+        draw.ellipse((100, 20, 136, 50), "black")
+        image = image.convert(mode="1")
+        image.save("geom.png")
+        g = Geomstr.image(image, vertical=True)
+        draw_geom(g, *g.bbox(), filename="geom2.png")
+
+    def test_as_lines_execute(self):
+        g = Geomstr()
+        with g.function() as q:
+            q.line(complex(0,0), complex(0,1))
+            q.line(complex(0,1), complex(1,1))
+            q.line(complex(1,1), complex(1,0))
+            q.line(complex(1,0), complex(0,0))
+        self.assertEqual(len(g), 6)  # function, 4 lines, until.
+        executed = list(g.as_lines())
+        self.assertEqual(len(executed), 0)
+        g.call(1)
+        g.call(1, placement=(0, complex(1000,0), complex(1000,1000), complex(0, 1000)))
+        g.call(1)
+        executed = list(g.as_lines())
+        self.assertEqual(len(executed), 12)
+
 
     # def test_geomstr_hatch(self):
     #     gs = Geomstr.svg(

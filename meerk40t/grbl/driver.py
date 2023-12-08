@@ -248,6 +248,122 @@ class GRBLDriver(Parameters):
             self.speed_dirty = False
         self(f"M3{spower}{self.line_end}{sspeed}")
 
+    def geometry(self, geom):
+        """
+        Called at the end of plot commands to ensure the driver can deal with them all as a group.
+
+        @return:
+        """
+        # TODO: estop cannot clear the geom.
+        self.signal("grbl_red_dot", False)  # We are not using red-dot if we're cutting.
+        self.clear_states()
+        self._g90_absolute()
+        self._g94_feedrate()
+        self._clean()
+        if self.service.use_m3:
+            self(f"M3{self.line_end}")
+        else:
+            self(f"M4{self.line_end}")
+        first = True
+        g = Geomstr()
+        for segment_type, start, c1, c2, end, sets in geom.as_lines():
+            while self.hold_work(0):
+                if self.service.kernel.is_shutdown:
+                    return
+                time.sleep(0.05)
+            x = self.native_x
+            y = self.native_y
+            start_x, start_y = start.real, start.imag
+            if x != start_x or y != start_y or first:
+                self.on_value = 0
+                self.power_dirty = True
+                self.move_mode = 0
+                first = False
+                self._move(start_x, start_y)
+            if self.on_value != 1.0:
+                self.power_dirty = True
+            self.on_value = 1.0
+            # Default-Values?!
+            qpower = sets.get("power", self.power)
+            qspeed = sets.get("speed", self.speed)
+            qraster_step_x = sets.get("raster_step_x")
+            qraster_step_y = sets.get("raster_step_y")
+            if qpower != self.power:
+                self.set("power", qpower)
+            if (
+                qspeed != self.speed
+                or qraster_step_x != self.raster_step_x
+                or qraster_step_y != self.raster_step_y
+            ):
+                self.set("speed", qspeed)
+            self.settings.update(sets)
+            if segment_type == "line":
+                self.move_mode = 1
+                self._move(end.real, end.imag)
+            elif segment_type == "end":
+                self.on_value = 0
+                self.power_dirty = True
+                self.move_mode = 0
+                first = False
+            elif segment_type == "quad":
+                self.move_mode = 1
+                interp = self.service.interpolate
+                g.clear()
+                g.quad(complex(start), complex(c1), complex(end))
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    while self.paused:
+                        time.sleep(0.05)
+                    self._move(p.real, p.imag)
+            elif segment_type == "cubic":
+                self.move_mode = 1
+                interp = self.service.interpolate
+                g.clear()
+                g.cubic(
+                    complex(start),
+                    complex(c1),
+                    complex(c2),
+                    complex(end),
+                )
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    while self.paused:
+                        time.sleep(0.05)
+                    self._move(p.real, p.imag)
+            elif segment_type == "arc":
+                # TODO: Allow arcs to be directly executed by GRBL which can actually use them.
+                self.move_mode = 1
+                interp = self.service.interpolate
+                g.clear()
+                g.arc(
+                    complex(start),
+                    complex(c1),
+                    complex(end),
+                )
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    while self.paused:
+                        time.sleep(0.05)
+                    self._move(p.real, p.imag)
+            elif segment_type == "point":
+                function = sets.get("function")
+                if function == "dwell":
+                    self.dwell(sets.get("dwell_time"))
+                elif function == "wait":
+                    self.wait(sets.get("dwell_time"))
+                elif function == "home":
+                    self.home()
+                elif function == "goto":
+                    self._move(start.real, start.imag)
+                elif function == "input":
+                    # GRBL has no core GPIO functionality
+                    pass
+                elif function == "output":
+                    # GRBL has no core GPIO functionality
+                    pass
+        self(f"G1 S0{self.line_end}")
+        self(f"M5{self.line_end}")
+        self.clear_states()
+        self.wait_finish()
+        return False
+
     def plot(self, plot):
         """
         Gives the driver a bit of cutcode that should be plotted.

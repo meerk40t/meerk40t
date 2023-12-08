@@ -116,6 +116,112 @@ class NewlyDriver:
         """
         self.laser = True
 
+    def geometry(self, geom):
+        """
+        Called at the end of plot commands to ensure the driver can deal with them all as a group.
+
+        @return:
+        """
+        con = self.connection
+        g = Geomstr()
+        for segment_type, start, c1, c2, end, sets in geom.as_lines():
+            con.program_mode()
+            # LOOP CHECKS
+            if self._aborting:
+                con.abort()
+                self._aborting = False
+                return
+
+            if segment_type == "line":
+                con.sync()
+                last_x, last_y = con.get_last_xy()
+                if last_x != start.real or last_y != start.imag:
+                    con.goto(start.real, start.imag)
+                con.mark(end.real, end.imag, settings=sets)
+                con.update()
+            elif segment_type == "end":
+                pass
+            elif segment_type == "quad":
+                con.sync()
+                last_x, last_y = con.get_last_xy()
+                if last_x != start.real or last_y != start.imag:
+                    con.goto(start.real, start.imag)
+                interp = self.service.interpolate
+                g.clear()
+                g.quad(start, c1, end)
+
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    # LOOP CHECKS
+                    if self._aborting:
+                        con.abort()
+                        self._aborting = False
+                        return
+                    while self.paused:
+                        time.sleep(0.05)
+                    con.mark(p.real, p.imag, settings=sets)
+                con.update()
+            elif segment_type == "cubic":
+                con.sync()
+                last_x, last_y = con.get_last_xy()
+                if last_x != start.real or last_y != start.imag:
+                    con.goto(start.real, start.imag)
+                interp = self.service.interpolate
+                g.clear()
+                g.cubic(start, c1, c2, end)
+
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    # LOOP CHECKS
+                    if self._aborting:
+                        con.abort()
+                        self._aborting = False
+                        return
+                    while self.paused:
+                        time.sleep(0.05)
+                    con.mark(p.real, p.imag, settings=sets)
+                con.update()
+            elif segment_type == "arc":
+                con.sync()
+                last_x, last_y = con.get_last_xy()
+                if last_x != start.real or last_y != start.imag:
+                    con.goto(start.real, start.imag)
+                interp = self.service.interpolate
+                g.clear()
+                g.arc(start, c1, end)
+
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    # LOOP CHECKS
+                    if self._aborting:
+                        con.abort()
+                        self._aborting = False
+                        return
+                    while self.paused:
+                        time.sleep(0.05)
+                    con.mark(p.real, p.imag, settings=sets)
+                con.update()
+            elif segment_type == "point":
+                function = sets.get("function")
+                if function == "dwell":
+                    last_x, last_y = con.get_last_xy()
+                    if last_x != start.real or last_y != start.imag:
+                        con.goto(start.real, start.imag)
+                    con.dwell(sets.get("dwell_time"), settings=sets)
+                elif function == "wait":
+                    con.wait(sets.get("dwell_time"))
+                elif function == "home":
+                    con.goto(0, 0)
+                elif function == "goto":
+                    con.goto(start.real, start.imag)
+                elif function == "input":
+                    pass
+                elif function == "output":
+                    # Moshi has no core GPIO functionality
+                    pass
+            # elif segment_type == "raster":
+            #     con.sync()
+            #     con.raster(q)
+            #     con.update()
+        con.rapid_mode()
+
     def plot(self, plot):
         """
         This command is called with bits of cutcode as they are processed through the spooler. This should be optimized

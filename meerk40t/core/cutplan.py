@@ -23,6 +23,7 @@ from typing import Optional
 import numpy as np
 
 from ..svgelements import Group, Polygon
+from ..tools.geomstr import Geomstr
 from ..tools.pathtools import VectorMontonizer
 from .cutcode.cutcode import CutCode
 from .cutcode.cutgroup import CutGroup
@@ -441,6 +442,58 @@ class CutPlan:
             # Do not merge if opt_inner_first is off, and operation was originally a cut.
             return False
         return True  # No reason these should not be merged.
+
+    def geometry(self):
+        """
+        Geometry converts User operations to naked geomstr objects.
+        """
+
+        if not self.plan:
+            return
+
+        plan = list(self.plan)
+        self.plan.clear()
+        g = Geomstr()
+        settings_index = 0
+        for c in plan:
+            c_type = (
+                c.type
+                if hasattr(c, "type") and c.type is not None
+                else type(c).__name__
+            )
+            settings_index += 1
+            if hasattr(c, "settings"):
+                settings = dict(c.settings)
+            else:
+                settings = dict(c.__dict__)
+            g.settings(settings_index, settings)
+
+            if c_type in ("op cut", "op engrave"):
+                for elem in c.children:
+                    if hasattr(elem, "as_geometry"):
+                        start_index = g.index
+                        g.append(elem.as_geometry())
+                        end_index = g.index
+                        g.flag_settings(settings_index, start_index, end_index)
+            elif c_type in ("op raster", "op image"):
+                for elem in c.children:
+                    if hasattr(elem, "as_image"):
+                        settings["raster"] = True
+                        image, box = elem.as_image()
+                        m = elem.matrix
+                        start_index = g.index
+                        image_geom = Geomstr.image(image)
+                        image_geom.transform(m)
+                        g.append(image_geom)
+                        end_index = g.index
+                        g.flag_settings(settings_index, start_index, end_index)
+            else:
+                if g:
+                    self.plan.append(g)
+                    g = Geomstr()
+                self.plan.append(c)
+        if g:
+            self.plan.append(g)
 
     def blob(self):
         """
