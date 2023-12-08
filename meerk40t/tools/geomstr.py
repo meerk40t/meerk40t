@@ -2099,6 +2099,26 @@ class Geomstr:
         )
         self.index += 1
 
+    def call(self,  function_index, placement=None, settings=0):
+        self._ensure_capacity(self.index + 1)
+        if placement is None:
+            self.segments[self.index] = (
+                np.nan,
+                np.nan,
+                complex(TYPE_CALL | (function_index << 8), settings),
+                np.nan,
+                np.nan,
+            )
+        else:
+            self.segments[self.index] = (
+                placement[0],
+                placement[1],
+                complex(TYPE_CALL | (function_index << 8), settings),
+                placement[2],
+                placement[3],
+            )
+        self.index += 1
+
 
     def is_closed(self):
         if self.index == 0:
