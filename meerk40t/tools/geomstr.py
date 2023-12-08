@@ -3721,24 +3721,25 @@ class Geomstr:
             pts = np.vstack((x, y, np.ones(count)))
             result = np.dot(m, pts)
             return result[0] / result[2] + 1j * result[1] / result[2]
+        if e is None:
+            i0 = 0
+            i1 = self.index
+            e = self.segments[i0:i1]
 
-        segments = self.segments
-        index = self.index
+        starts = e[..., 0]
+        e[..., 0] = value(starts.real, starts.imag)
 
-        starts = segments[:index, 0]
-        segments[:index, 0] = value(starts.real, starts.imag)
+        ends = e[..., 4]
+        e[..., 4] = value(ends.real, ends.imag)
 
-        ends = segments[:index, 4]
-        segments[:index, 4] = value(ends.real, ends.imag)
-
-        infos = segments[:index, 2]
+        infos = e[..., 2]
         q = np.where(np.real(infos).astype(int) & 0b0110)[0]
 
-        c0s = segments[q, 1]
-        segments[q, 1] = value(c0s.real, c0s.imag)
+        c0s = e[q, 1]
+        e[q, 1] = value(c0s.real, c0s.imag)
 
-        c1s = segments[q, 3]
-        segments[q, 3] = value(c1s.real, c1s.imag)
+        c1s = e[q, 3]
+        e[q, 3] = value(c1s.real, c1s.imag)
 
     def translate(self, dx, dy, e=None):
         """
