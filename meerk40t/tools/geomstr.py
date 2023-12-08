@@ -3781,6 +3781,10 @@ class Geomstr:
         @param e: index, line values
         @return:
         """
+        if e is None:
+            i0 = 0
+            i1 = self.index
+            e = self.segments[i0:i1]
 
         def value(x, y):
             m = mx.mx
@@ -3788,10 +3792,6 @@ class Geomstr:
             pts = np.vstack((x, y, np.ones(count)))
             result = np.dot(m, pts)
             return result[0] / result[2] + 1j * result[1] / result[2]
-        if e is None:
-            i0 = 0
-            i1 = self.index
-            e = self.segments[i0:i1]
 
         starts = e[..., 0]
         e[..., 0] = value(starts.real, starts.imag)
@@ -5155,15 +5155,19 @@ class Geomstr:
             elif (segment_type & 0xFF) == TYPE_FUNCTION:
                 defining_function = segment_type >> 8
                 function_start = index
+                continue
             elif (segment_type & 0xFF) == TYPE_CALL:
                 executing_function = segment_type >> 8
                 fun_start, fun_end, loops = function_dict[executing_function]
-                subroutine = copy(self.segments[fun_start+1, fun_end-1])
+
+                subroutine = copy(self.segments[fun_start+1 : fun_end])
                 f = self.segments[fun_start]
-                mx = PMatrix.map(f[0], f[1], f[3], f[4], start, c1, c2, end)
-                Geomstr.transform3x3(mx, subroutine)
+                if not np.isnan(start):
+                    mx = PMatrix.map(f[0], f[1], f[3], f[4], start, c1, c2, end)
+                    Geomstr.transform3x3(None, mx, subroutine)
                 for loop in range(loops + 1):
                     yield from self.as_lines(subroutine, function_dict=function_dict)
+                continue
 
             sets = self._settings.get(info.imag, default_dict)
             yield segment_type, start, c1, c2, end, sets
