@@ -1865,9 +1865,9 @@ class Geomstr:
         self.segments[self.index : self.index + len(lines)] = lines
         self.index += len(lines)
 
-    def append(self, other):
+    def append(self, other, end=True):
         self._ensure_capacity(self.index + other.index + 1)
-        if self.index != 0:
+        if self.index != 0 and end:
             self.end()
         self.segments[self.index : self.index + other.index] = other.segments[
             : other.index
