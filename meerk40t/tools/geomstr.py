@@ -54,6 +54,7 @@ this is effectively a point.
 
 import math
 import re
+from contextlib import contextmanager
 from copy import copy
 
 import numpy
@@ -69,10 +70,11 @@ from meerk40t.svgelements import (
     Path,
     QuadraticBezier,
 )
+from meerk40t.tools.pmatrix import PMatrix
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 # Note lower nibble is which indexes are positions (except info index)
-TYPE_NOP = 0 | 0b000
+TYPE_NOP = 0x00 | 0b0000
 TYPE_POINT = 0x10 | 0b1001
 TYPE_LINE = 0x20 | 0b1001
 TYPE_QUAD = 0x30 | 0b1111
@@ -81,6 +83,13 @@ TYPE_ARC = 0x50 | 0b1111
 
 TYPE_VERTEX = 0x70 | 0b0000
 TYPE_END = 0x80 | 0b0000
+
+# Function and Call denote 4 points being the upper-left, upper-right, lower-right,
+# lower-left corners all shapes are transformed to match these points, including other call points.
+TYPE_FUNCTION = 0x90 | 0b1111  # The two higher level bytes are call label index.
+TYPE_UNTIL = 0xA0 | 0b0000  # The two higher level bytes are the number of times this should be executed before exiting.
+TYPE_CALL = 0xB0 | 0b1111  # The two higher level bytes are call label index.
+# If until is set to 0xFFFF termination only happens on interrupt.
 
 
 class Polygon:
@@ -2052,6 +2061,35 @@ class Geomstr:
         end_segment = self.segments[self.index - 1][-1]
         if start_segment != end_segment:
             self.line(end_segment, start_segment, settings=settings)
+
+    @contextmanager
+    def function(self, a, b, c, d, function_index=None, settings=0, loops=0):
+        if function_index is None:
+            if hasattr(self, "_function"):
+                self._function += 1
+            else:
+                self._function = 1
+            function_index = self._function
+        self._ensure_capacity(self.index + 1)
+        self.segments[self.index] = (
+            a,
+            b,
+            complex(TYPE_FUNCTION & (function_index << 8), settings),
+            c,
+            d,
+        )
+        self.index += 1
+        yield self
+        self._ensure_capacity(self.index + 1)
+        self.segments[self.index] = (
+            a,
+            b,
+            complex(TYPE_UNTIL & (loops << 8), settings),
+            c,
+            d,
+        )
+        self.index += 1
+
 
     def is_closed(self):
         if self.index == 0:
@@ -5051,10 +5089,25 @@ class Geomstr:
     def generate(self):
         yield "geometry", self
 
-    def as_lines(self):
+    def as_lines(self, lines=None, function_dict=None):
+        if lines is None:
+            lines = self.segments[: self.index]
+        if function_dict is None:
+            function_dict = dict()
         default_dict = dict()
-        for start, c1, info, c2, end in self.segments[: self.index]:
-            segment_type = info.real
+        defining_function = 0
+        function_start = 0
+        for index, line in enumerate(lines):
+            start, c1, info, c2, end = line
+
+            segment_type = int(info.real)
+            if defining_function > 0:
+                if (segment_type & 0xFF) != TYPE_UNTIL:
+                    continue
+                loop_count = segment_type >> 8
+                function_dict[defining_function] = (function_start, index, loop_count)
+                defining_function = 0
+                continue
             if segment_type == TYPE_LINE:
                 segment_type = "line"
             elif segment_type == TYPE_QUAD:
@@ -5070,5 +5123,18 @@ class Geomstr:
             elif segment_type == TYPE_NOP:
                 # Nop should be skipped.
                 continue
+            elif (segment_type & 0xFF) == TYPE_FUNCTION:
+                defining_function = segment_type >> 8
+                function_start = index
+            elif (segment_type & 0xFF) == TYPE_CALL:
+                executing_function = segment_type >> 8
+                fun_start, fun_end, loops = function_dict[executing_function]
+                subroutine = copy(self.segments[fun_start+1, fun_end-1])
+                f = self.segments[fun_start]
+                mx = PMatrix.map(f[0], f[1], f[3], f[4], start, c1, c2, end)
+                Geomstr.transform3x3(mx, subroutine)
+                for loop in range(loops + 1):
+                    yield from self.as_lines(subroutine, function_dict=function_dict)
+
             sets = self._settings.get(info.imag, default_dict)
             yield segment_type, start, c1, c2, end, sets
