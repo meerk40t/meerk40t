@@ -2063,30 +2063,39 @@ class Geomstr:
             self.line(end_segment, start_segment, settings=settings)
 
     @contextmanager
-    def function(self, a, b, c, d, function_index=None, settings=0, loops=0):
+    def function(self, function_index=None, placement=None, settings=0, loops=0):
         if function_index is None:
             if hasattr(self, "_function"):
                 self._function += 1
             else:
                 self._function = 1
             function_index = self._function
-        self._ensure_capacity(self.index + 1)
+        g = Geomstr()
+        yield g
+        if not g:
+            # Nothing was added to function.
+            return
+
+        self._ensure_capacity(self.index + 2 + len(g))
+        if placement is None:
+            nx, ny, mx, my = g.bbox()
+            placement = complex(nx, ny), complex(mx, ny), complex(mx, my), complex(nx, my)
+
         self.segments[self.index] = (
-            a,
-            b,
-            complex(TYPE_FUNCTION & (function_index << 8), settings),
-            c,
-            d,
+            placement[0],
+            placement[1],
+            complex(TYPE_FUNCTION | (function_index << 8), settings),
+            placement[2],
+            placement[3],
         )
         self.index += 1
-        yield self
-        self._ensure_capacity(self.index + 1)
+        self.append(g, end=False)
         self.segments[self.index] = (
-            a,
-            b,
-            complex(TYPE_UNTIL & (loops << 8), settings),
-            c,
-            d,
+            0,
+            0,
+            complex(TYPE_UNTIL | (loops << 8), settings),
+            0,
+            0,
         )
         self.index += 1
 
