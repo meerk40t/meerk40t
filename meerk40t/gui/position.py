@@ -62,13 +62,16 @@ class PositionPanel(wx.Panel):
             style=wx.TE_PROCESS_ENTER,
             nonzero=True,
         )
-        self.text_x.SetMinSize(dip_size(self, 70, 23))
-        self.text_y.SetMinSize(dip_size(self, 70, 23))
-        self.text_w.SetMinSize(dip_size(self, 70, 23))
-        self.text_h.SetMinSize(dip_size(self, 70, 23))
+        self.text_x.SetMinSize(dip_size(self, 60, 23))
+        self.text_y.SetMinSize(dip_size(self, 60, 23))
+        self.text_w.SetMinSize(dip_size(self, 60, 23))
+        self.text_h.SetMinSize(dip_size(self, 60, 23))
         self.chk_individually = wx.CheckBox(self, wx.ID_ANY, _("Individ."))
         self.chk_lock = wx.CheckBox(self, wx.ID_ANY, _("Keep ratio"))
-        resize_param = 0.5 * get_default_icon_size()
+        if self.small:
+            resize_param = 0.5 * get_default_icon_size()
+        else:
+            resize_param = 0.75 * get_default_icon_size()
 
         self.button_execute = wx.BitmapButton(self, wx.ID_ANY)
         self.button_param = wx.BitmapButton(self, wx.ID_ANY)
@@ -270,13 +273,14 @@ class PositionPanel(wx.Panel):
         sizer_h_all.Add(sizer_buttons, 0, 0, 0)
         sizer_h_all.Add(sizer_v_xywh, 1, wx.EXPAND, 0)
         target.Add(sizer_h_all, 0, wx.EXPAND, 0)
-
         sizer_h_options = wx.BoxSizer(wx.HORIZONTAL)
         sizer_h_options.Add(self.chk_individually, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_h_options.Add(self.chk_lock, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_h_options.Add(self.combo_box_units, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        target.Add(sizer_h_options, 0, wx.EXPAND, 0)
-
+        if self.small:
+            target.Add(sizer_h_options, 0, wx.EXPAND, 0)
+        else:
+            sizer_v_xywh.Add(sizer_h_options, 0, wx.EXPAND, 0)
         # Only show x + y if required.
         show_wh = True
         show_xy = not self.small

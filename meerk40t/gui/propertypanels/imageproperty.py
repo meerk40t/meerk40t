@@ -389,7 +389,7 @@ class ImageModificationPanel(ScrolledPanel):
         self.context = context
         self.node = node
         self.scripts = []
-        choices = [_("Set to None")]
+        choices = []
         for entry in list(self.context.match("raster_script/.*", suffix=True)):
             self.scripts.append(entry)
             choices.append(_("Apply {entry}").format(entry=entry))
@@ -398,6 +398,11 @@ class ImageModificationPanel(ScrolledPanel):
         )
         self.combo_scripts.SetSelection(0)
         self.button_apply = wx.Button(self, wx.ID_ANY, _("Apply Script"))
+        self.button_apply.SetToolTip(
+            _("Apply image modification script\nRight click: append to existing script")
+        )
+        self.button_clear = wx.Button(self, wx.ID_ANY, _("Clear"))
+        self.button_clear.SetToolTip(_("Remove all image operations"))
         self.list_operations = wx.ListCtrl(
             self,
             wx.ID_ANY,
@@ -425,6 +430,7 @@ class ImageModificationPanel(ScrolledPanel):
 
         sizer_script.Add(self.combo_scripts, 1, wx.EXPAND, 0)
         sizer_script.Add(self.button_apply, 0, wx.EXPAND, 0)
+        sizer_script.Add(self.button_clear, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer_script, 0, wx.EXPAND, 0)
         sizer_main.Add(self.list_operations, 1, wx.EXPAND, 0)
 
@@ -435,6 +441,7 @@ class ImageModificationPanel(ScrolledPanel):
     def _do_logic(self):
         self.button_apply.Bind(wx.EVT_BUTTON, self.on_apply_replace)
         self.button_apply.Bind(wx.EVT_RIGHT_DOWN, self.on_apply_append)
+        self.button_clear.Bind(wx.EVT_BUTTON, self.on_clear)
         self.list_operations.Bind(wx.EVT_RIGHT_DOWN, self.on_list_menu)
 
     @staticmethod
@@ -461,20 +468,20 @@ class ImageModificationPanel(ScrolledPanel):
             self.list_operations.SetItem(list_id, 2, "x" if op["enable"] else "-")
             self.list_operations.SetItem(list_id, 3, str(op))
 
+    def on_clear(self, event):
+        self.node.operations = []
+        self.update_node()
+
     def apply_script(self, index, addition):
-        if index == 0:
+        if index < 0 or index >= len(self.scripts):
+            return
+        script = self.scripts[index]
+        raster_script = self.context.lookup(f"raster_script/{script}")
+        if not addition:
             self.node.operations = []
-            self.update_node()
-        else:
-            if index < 1 or index > len(self.scripts):
-                return
-            script = self.scripts[index - 1]
-            raster_script = self.context.lookup(f"raster_script/{script}")
-            if not addition:
-                self.node.operations = []
-            for entry in raster_script:
-                self.node.operations.append(entry)
-            self.update_node()
+        for entry in raster_script:
+            self.node.operations.append(entry)
+        self.update_node()
 
     def update_node(self):
         self.context.elements.emphasized()
