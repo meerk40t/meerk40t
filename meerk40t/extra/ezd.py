@@ -795,7 +795,6 @@ class EZHatch(list, EZObject):
         self.hatch1_type_crosshatch = self.hatch1_type & 0x400
         self.hatch1_angle = args[8]
         self.hatch1_pen = args[2]
-        self.hatch1_count = args[42]
         self.hatch1_line_space = args[5]
         self.hatch1_edge_offset = args[4]
         self.hatch1_start_offset = args[6]
@@ -809,7 +808,6 @@ class EZHatch(list, EZObject):
         self.hatch2_type = args[11]
         self.hatch2_angle = args[16]
         self.hatch2_pen = args[10]
-        self.hatch2_count = args[43]
         self.hatch2_line_space = args[13]
         self.hatch2_edge_offset = args[12]
         self.hatch2_start_offset = args[14]
@@ -823,7 +821,6 @@ class EZHatch(list, EZObject):
         self.hatch3_type = args[22]
         self.hatch3_angle = args[27]
         self.hatch3_pen = args[21]
-        self.hatch3_count = args[44]
         self.hatch3_line_space = args[24]
         self.hatch3_edge_offset = args[23]
         self.hatch3_start_offset = args[25]
@@ -832,6 +829,13 @@ class EZHatch(list, EZObject):
         self.hatch3_number_of_loops = args[34]
         self.hatch3_loop_distance = args[37]
         self.hatch3_angle_inc = args[28]
+        try:
+            self.hatch1_count = args[42]
+            self.hatch2_count = args[43]
+            self.hatch3_count = args[44]
+        except IndexError:
+            # Older Version without count values.
+            pass
         tell = file.tell()
         (check,) = struct.unpack("<i", file.read(4))
         file.seek(tell, 0)
