@@ -8,6 +8,7 @@ def plugin(kernel, lifecycle=None):
         except ImportError:
             return True
     if lifecycle == "register":
+        import serial
 
         @kernel.console_option("port", "c", type=str, default="COM4")
         @kernel.console_option(
@@ -16,15 +17,32 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_option(
             "timeout", "t", type=float, default=30.0, help="timeout in seconds"
         )
+        @kernel.console_option(
+            "delay", "d", type=float, default=0., help="Wait time before sending data info."
+        )
         @kernel.console_argument("send_data", type=str, help="data to send to device")
         @kernel.console_argument("recv_data", type=str, help="match data from device")
-        @kernel.console_command("serial_exchange", help="Talk to a serial port in a blocking manner")
-        def serial_check(channel, _, send_data, recv_data, port="COM4", baud_rate=9600, timeout=30.0, **kwargs):
+        @kernel.console_command(
+            "serial_exchange", help="Talk to a serial port in a blocking manner"
+        )
+        def serial_check(
+            channel,
+            _,
+            send_data,
+            recv_data,
+            delay=1.0,
+            port="COM4",
+            baud_rate=9600,
+            timeout=30.0,
+            **kwargs,
+        ):
             serial_device = None
             try:
                 # Open the serial port
                 serial_device = serial.Serial(port, baud_rate, timeout=2)
 
+                if delay:
+                    time.sleep(delay)
                 # Send the "Start" command
                 serial_device.write(send_data.encode("utf-8"))
 
@@ -38,8 +56,8 @@ def plugin(kernel, lifecycle=None):
                         found = True
                         break
                 if not found:
-                    channel("Timeout reached.")
-            except Exception as e:
+                    channel(_("Timeout reached."))
+            except serial.SerialException as e:
                 channel(f"Error: {e}")
             finally:
                 # Close the serial port, if opened
