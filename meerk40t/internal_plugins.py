@@ -96,9 +96,9 @@ def plugin(kernel, lifecycle):
 
         plugins.append(param_functions.plugin)
 
-        from .extra import serial_wait
+        from .extra import serial_exchange
 
-        plugins.append(serial_wait.plugin)
+        plugins.append(serial_exchange.plugin)
 
         from meerk40t.camera.plugin import plugin as camera_plugin
 
