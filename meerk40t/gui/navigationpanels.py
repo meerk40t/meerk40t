@@ -1252,12 +1252,13 @@ class MovePanel(wx.Panel):
             style=wx.TE_PROCESS_ENTER,
         )
         self.small_buttons = []
-        def_dim = self.text_position_x.Size[1]
+        def_dim = int(2 / 3 * self.text_position_x.Size[1])
+        def_pt = self.text_position_x.GetFont().GetPointSize()
         def_size = wx.Size(def_dim + 5, def_dim + 5)
         for idx in range(9):
             btn = wx.StaticBitmap(self, wx.ID_ANY, size=def_size)
             icon = EmptyIcon(
-                size=def_dim, msg=str(idx + 1), ptsize=12, color=wx.LIGHT_GREY
+                size=def_dim, msg=str(idx + 1), ptsize=def_pt, color=wx.LIGHT_GREY
             )
             btn.SetBitmap(icon.GetBitmap(resize=def_dim))
             self.small_buttons.append(btn)
@@ -1341,9 +1342,20 @@ class MovePanel(wx.Panel):
         h_y_sizer.Add(self.text_position_y, 1, wx.EXPAND, 0)
         v_main_sizer.Add(h_y_sizer, 0, wx.EXPAND, 0)
         main_sizer.Add(v_main_sizer, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.btn_sizer = wx.GridSizer(3, 3, 2, 2)
-        for idx in range(9):
-            self.btn_sizer.Add(self.small_buttons[idx], 0, 0, 0)
+        # self.btn_sizer = wx.GridSizer(3, 3, 2, 2)
+        # for idx in range(9):
+        #     self.btn_sizer.Add(self.small_buttons[idx], 0, 0, 0)
+        self.btn_sizer = wx.BoxSizer(wx.VERTICAL)
+        row1 = wx.BoxSizer(wx.HORIZONTAL)
+        row2 = wx.BoxSizer(wx.HORIZONTAL)
+        row3 = wx.BoxSizer(wx.HORIZONTAL)
+        for idx in range(3):
+            row1.Add(self.small_buttons[idx])
+            row2.Add(self.small_buttons[idx + 3])
+            row3.Add(self.small_buttons[idx + 6])
+        self.btn_sizer.Add(row1, 0, 0, 0)
+        self.btn_sizer.Add(row2, 0, 0, 0)
+        self.btn_sizer.Add(row3, 0, 0, 0)
         main_sizer.Add(self.btn_sizer, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.SetSizer(main_sizer)
         main_sizer.Fit(self)
