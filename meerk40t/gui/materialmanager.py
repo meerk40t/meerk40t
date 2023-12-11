@@ -1,18 +1,27 @@
-import os
+"""
+GUI to manage material library entries.
+In essence a material library setting is a persistent list of operations.
+They are stored in the operations.cfg file in the meerk40t working directory
+"""
+
+# import os
 
 import wx
-import wx.lib.mixins.listctrl as listmix
 from wx import aui
 
-from ..kernel import signal_listener
+# from ..kernel import signal_listener
 from .icons import STD_ICON_SIZE, get_default_icon_size, icon_library
 from .mwindow import MWindow
 from .wxutils import ScrolledPanel, StaticBoxSizer, dip_size
 
 _ = wx.GetTranslation
 
-
 class MaterialPanel(ScrolledPanel):
+    """
+    Panel to modify material library settings.
+    In essence a material library setting is a persistent list of operations.
+    They are stored in the operations.cfg file in the meerk40t working directory
+    """
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
@@ -36,7 +45,7 @@ class MaterialPanel(ScrolledPanel):
         self.txt_material = wx.TextCtrl(self, wx.ID_ANY, "")
         filter_box.Add(self.txt_material, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        label_2 = wx.StaticText(self, wx.ID_ANY, _("Lasertype"))
+        label_2 = wx.StaticText(self, wx.ID_ANY, _("Laser"))
         filter_box.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.laser_choices = [
@@ -76,7 +85,7 @@ class MaterialPanel(ScrolledPanel):
             width=95,
         )
         self.list_library_entries.AppendColumn(
-            _("Lasertype"), format=wx.LIST_FORMAT_LEFT, width=95
+            _("Laser"), format=wx.LIST_FORMAT_LEFT, width=95
         )
         self.list_library_entries.AppendColumn(
             _("Operations"), format=wx.LIST_FORMAT_LEFT, width=65
@@ -102,25 +111,39 @@ class MaterialPanel(ScrolledPanel):
         self.list_preview.AppendColumn(_("Speed"), format=wx.LIST_FORMAT_LEFT, width=65)
         self.list_preview.SetToolTip(_("Click to select / Right click for actions"))
 
-        param_box = StaticBoxSizer(self, wx.ID_ANY, _("Information"), wx.HORIZONTAL)
-        label_1 = wx.StaticText(self, wx.ID_ANY, _("Material"))
-        param_box.Add(label_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        param_box = StaticBoxSizer(self, wx.ID_ANY, _("Information"), wx.VERTICAL)
 
+        box1 = wx.BoxSizer(wx.HORIZONTAL)
+        box2 = wx.BoxSizer(wx.HORIZONTAL)
+
+        label = wx.StaticText(self, wx.ID_ANY, _("Id"))
+        label.SetMinSize(dip_size(self, 50, -1, ))
+        box1.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.txt_entry_section = wx.TextCtrl(self, wx.ID_ANY, "")
+        box1.Add(self.txt_entry_section, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        label = wx.StaticText(self, wx.ID_ANY, _("Name"))
+        label.SetMinSize(dip_size(self, 50, -1, ))
+        box1.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.txt_entry_name = wx.TextCtrl(self, wx.ID_ANY, "")
-        param_box.Add(self.txt_entry_name, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        box1.Add(self.txt_entry_name, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        label_2 = wx.StaticText(self, wx.ID_ANY, _("Lasertype"))
-        param_box.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        label = wx.StaticText(self, wx.ID_ANY, _("Laser"))
+        label.SetMinSize(dip_size(self, 50, -1, ))
+        box2.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         choices = self.laser_choices  # [1:]
         self.combo_entry_type = wx.ComboBox(
             self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
-        param_box.Add(self.combo_entry_type, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        box2.Add(self.combo_entry_type, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_set = wx.Button(self, wx.ID_ANY, _("Set"))
         self.btn_set.SetToolTip(_("Change the name / lasertype of the current entry"))
-        param_box.Add(self.btn_set, 0, wx.EXPAND, 0)
+
+        box2.Add(self.btn_set, 0, wx.EXPAND, 0)
+        param_box.Add(box1, 0, wx.EXPAND, 0)
+        param_box.Add(box2, 0, wx.EXPAND, 0)
 
         result_box.Add(self.list_library_entries, 1, wx.EXPAND, 0)
         result_box.Add(param_box, 0, wx.EXPAND, 0)
@@ -146,6 +169,8 @@ class MaterialPanel(ScrolledPanel):
         self.btn_import.SetToolTip(
             _("Import a material library from ezcad or LightBurn")
         )
+        # Not ready so let's hide it...
+        self.btn_import.Show(False)
         self.btn_share = wx.Button(self, wx.ID_ANY, _("Share"))
         self.btn_share.SetToolTip(
             _("Share the current library entry with the MeerK40t community")
@@ -182,6 +207,9 @@ class MaterialPanel(ScrolledPanel):
         )
         self.list_preview.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_preview_selection)
         self.Bind(
+            wx.EVT_LIST_COL_RIGHT_CLICK, self.on_library_rightclick, self.list_library_entries
+        )
+        self.Bind(
             wx.EVT_LIST_ITEM_RIGHT_CLICK,
             self.on_library_rightclick,
             self.list_library_entries,
@@ -189,6 +217,10 @@ class MaterialPanel(ScrolledPanel):
         self.Bind(
             wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_preview_rightclick, self.list_preview
         )
+        self.Bind(
+            wx.EVT_LIST_COL_RIGHT_CLICK, self.on_preview_rightclick, self.list_preview
+        )
+        self.Bind(wx.EVT_SIZE, self.on_resize)
         self.SetupScrolling()
         # Set buttons
         self.btn_import.Show(False)
@@ -208,6 +240,7 @@ class MaterialPanel(ScrolledPanel):
         self.btn_simple_apply.Enable(active)
         self.btn_delete.Enable(active)
         self.btn_duplicate.Enable(active)
+        self.txt_entry_section.Enable(active)
         self.txt_entry_name.Enable(active)
         self.combo_entry_type.Enable(active)
         self.btn_set.Enable(active)
@@ -445,6 +478,7 @@ class MaterialPanel(ScrolledPanel):
     def update_entry(self, event):
         if self.active_material is None:
             return
+        op_section = self.txt_entry_section.GetValue()
         op_name = self.txt_entry_name.GetValue()
         op_ltype = self.combo_entry_type.GetSelection()
         if op_ltype < 0:
@@ -460,7 +494,10 @@ class MaterialPanel(ScrolledPanel):
         stored_ltype = 0
         if "laser" in op_info:
             stored_ltype = op_info["laser"]
-        if stored_name != op_name or stored_ltype != op_ltype:
+        if stored_name != op_name or stored_ltype != op_ltype or op_section != self.active_material:
+            if self.active_material != op_section:
+                self.context.elements.clear_persistent_operations(self.active_material)
+                self.active_material = op_section
             op_info["laser"] = op_ltype
             op_info["name"] = op_name
             self.context.elements.save_persistent_operations_list(
@@ -526,6 +563,11 @@ class MaterialPanel(ScrolledPanel):
                 self.list_preview.SetItemData(list_id, idx - 1)
                 self.operation_list[subsection] = (optype, opid, oplabel, power, speed)
 
+        if self.active_material is None:
+            actval = ""
+        else:
+            actval = self.active_material
+        self.txt_entry_section.SetValue(actval)
         self.txt_entry_name.SetValue(secdesc)
         self.combo_entry_type.SetSelection(ltype)
 
@@ -533,6 +575,7 @@ class MaterialPanel(ScrolledPanel):
         pass
 
     def on_library_rightclick(self, event):
+        event.Skip()
         menu = wx.Menu()
         item = menu.Append(wx.ID_ANY, _("Get current"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_use_current, item)
@@ -586,6 +629,7 @@ class MaterialPanel(ScrolledPanel):
         menu.Destroy()
 
     def on_preview_rightclick(self, event):
+        event.Skip()
         if self.active_material is None:
             return
         listindex = event.Index
@@ -666,6 +710,27 @@ class MaterialPanel(ScrolledPanel):
 
         self.PopupMenu(menu)
         menu.Destroy()
+
+    def on_resize(self, event):
+        # Resize the columns in the listctrls
+        def size_em(control, small, big):
+            siz = control.Size
+            widths = 0
+            for col in small:
+                widths += control.GetColumnWidth(col)
+            remaining = int((siz[0] - widths) / len(big))
+            if remaining < 50:
+                remaining = 50
+            for col in big:
+                control.SetColumnWidth(col, remaining)
+
+        small = (0, 3)
+        big = (1, 2)
+        size_em(self.list_library_entries, small, big)
+        small = (0, 1, 2, 4, 5)
+        big = (3,)
+        size_em(self.list_preview, small, big)
+
 
     def set_parent(self, par_panel):
         self.parent_panel = par_panel
@@ -814,7 +879,7 @@ class ImportPanel(wx.Panel):
                 use_it = False
             if use_it:
                 try:
-                    ltype = self.laser_choices(entry[1])
+                    ltype = self.laser_choices[entry[1]]
                 except IndexError:
                     # Invalid...
                     continue
@@ -850,6 +915,9 @@ class ImportPanel(wx.Panel):
 
 
 class AboutPanel(wx.Panel):
+    """
+    Displays a how to summary
+    """
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)

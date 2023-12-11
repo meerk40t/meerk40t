@@ -1595,35 +1595,42 @@ def init_tree(kernel):
             self.validate_selected_area()
             self.signal("refresh_scene", "Scene")
 
-    materials = [
-        _("Wood"),
-        _("Acrylic"),
-        _("Foam"),
-        _("Leather"),
-        _("Cardboard"),
-        _("Cork"),
-        _("Textiles"),
-        _("Paper"),
-        _("Save-1"),
-        _("Save-2"),
-        _("Save-3"),
-    ]
+    # materials = [
+    #     _("Wood"),
+    #     _("Acrylic"),
+    #     _("Foam"),
+    #     _("Leather"),
+    #     _("Cardboard"),
+    #     _("Cork"),
+    #     _("Textiles"),
+    #     _("Paper"),
+    #     _("Save-1"),
+    #     _("Save-2"),
+    #     _("Save-3"),
+    # ]
 
-    def union_materials_saved():
-        union = [
-            d
-            for d in self.op_data.section_set()
-            if d not in materials and d != "previous"
-        ]
-        union.extend(materials)
-        return union
+    # def union_materials_saved():
+    #     union = [
+    #         d
+    #         for d in self.op_data.section_set()
+    #         if d not in materials and d != "previous"
+    #     ]
+    #     union.extend(materials)
+    #     return union
 
-    def difference_materials_saved():
-        secs = self.op_data.section_set()
-        difference = [m for m in materials if m not in secs]
-        return difference
+    # def difference_materials_saved():
+    #     secs = self.op_data.section_set()
+    #     difference = [m for m in materials if m not in secs]
+    #     return difference
 
     @tree_separator_before()
+
+    @tree_submenu(_("Load"))
+    @tree_separator_after()
+    @tree_operation(_("Material Manager"), node_type="branch ops", help=_("Open the Material Manager"))
+    def load_matman(node, **kwargs):
+        self("window open MatManager\n")
+
     @tree_submenu(_("Load"))
     @tree_values("opname", values=self.op_data.section_set)
     @tree_operation("{opname}", node_type="branch ops", help="")
@@ -1632,13 +1639,12 @@ def init_tree(kernel):
 
     @tree_separator_before()
     @tree_submenu(_("Load"))
-    @tree_operation(_("Minimal"), node_type="branch ops", help="")
+    @tree_operation(_("Minimal"), node_type="branch ops", help=_("Load a minimal set of operations"))
     def default_classifications(node, **kwargs):
         self.load_default(performclassify=True)
 
     @tree_submenu(_("Load"))
-    @tree_separator_after()
-    @tree_operation(_("Basic"), node_type="branch ops", help="")
+    @tree_operation(_("Basic"), node_type="branch ops", help=_("Load a basic set of operation"))
     def basic_classifications(node, **kwargs):
         self.load_default2(performclassify=True)
 
