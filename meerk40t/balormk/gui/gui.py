@@ -159,6 +159,9 @@ def plugin(service, lifecycle):
             },
         )
 
+        from .corscene import register_scene
+        register_scene(service)
+
         service.add_service_delegate(BalorGui(service))
 
 
