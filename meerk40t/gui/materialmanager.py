@@ -1,17 +1,13 @@
 import os
 
 import wx
-from wx import aui
 import wx.lib.mixins.listctrl as listmix
+from wx import aui
 
 from ..kernel import signal_listener
-from .icons import (
-    STD_ICON_SIZE,
-    get_default_icon_size,
-    icon_library,
-)
+from .icons import STD_ICON_SIZE, get_default_icon_size, icon_library
 from .mwindow import MWindow
-from .wxutils import StaticBoxSizer, dip_size, ScrolledPanel
+from .wxutils import ScrolledPanel, StaticBoxSizer, dip_size
 
 _ = wx.GetTranslation
 
@@ -31,7 +27,9 @@ class MaterialPanel(ScrolledPanel):
         self.material_list = dict()
         self.operation_list = dict()
         main_sizer = wx.BoxSizer(wx.VERTICAL)
-        filter_box = StaticBoxSizer(self, wx.ID_ANY, _("Filter Materials"), wx.HORIZONTAL)
+        filter_box = StaticBoxSizer(
+            self, wx.ID_ANY, _("Filter Materials"), wx.HORIZONTAL
+        )
         label_1 = wx.StaticText(self, wx.ID_ANY, _("Material"))
         filter_box.Add(label_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -41,26 +39,37 @@ class MaterialPanel(ScrolledPanel):
         label_2 = wx.StaticText(self, wx.ID_ANY, _("Lasertype"))
         filter_box.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.laser_choices = [_("<All Lasertypes>"),]
+        self.laser_choices = [
+            _("<All Lasertypes>"),
+        ]
         dev_infos = list(self.context.find("provider/friendly"))
         # Gets a list of tuples (description, key, path)
         dev_infos.sort(key=lambda e: e[0][1])
         for e in dev_infos:
             self.laser_choices.append(e[0][0])
 
-        self.combo_lasertype = wx.ComboBox(self, wx.ID_ANY, choices=self.laser_choices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.combo_lasertype = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=self.laser_choices,
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
         filter_box.Add(self.combo_lasertype, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_reset = wx.Button(self, wx.ID_ANY, _("Reset Filter"))
         filter_box.Add(self.btn_reset, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         main_sizer.Add(filter_box, 0, wx.EXPAND, 0)
-        result_box = StaticBoxSizer(self, wx.ID_ANY, _("Matching library entries"), wx.VERTICAL)
+        result_box = StaticBoxSizer(
+            self, wx.ID_ANY, _("Matching library entries"), wx.VERTICAL
+        )
         self.list_library_entries = wx.ListCtrl(
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
         )
-        self.list_library_entries.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=58)
+        self.list_library_entries.AppendColumn(
+            _("#"), format=wx.LIST_FORMAT_LEFT, width=58
+        )
         self.list_library_entries.AppendColumn(
             _("Material"),
             format=wx.LIST_FORMAT_LEFT,
@@ -72,7 +81,9 @@ class MaterialPanel(ScrolledPanel):
         self.list_library_entries.AppendColumn(
             _("Operations"), format=wx.LIST_FORMAT_LEFT, width=65
         )
-        self.list_library_entries.SetToolTip(_("Click to select / Right click for actions"))
+        self.list_library_entries.SetToolTip(
+            _("Click to select / Right click for actions")
+        )
 
         self.list_preview = wx.ListCtrl(
             self,
@@ -85,18 +96,10 @@ class MaterialPanel(ScrolledPanel):
             format=wx.LIST_FORMAT_LEFT,
             width=95,
         )
-        self.list_preview.AppendColumn(
-            _("Id"), format=wx.LIST_FORMAT_LEFT, width=95
-        )
-        self.list_preview.AppendColumn(
-            _("Label"), format=wx.LIST_FORMAT_LEFT, width=95
-        )
-        self.list_preview.AppendColumn(
-            _("Power"), format=wx.LIST_FORMAT_LEFT, width=65
-        )
-        self.list_preview.AppendColumn(
-            _("Speed"), format=wx.LIST_FORMAT_LEFT, width=65
-        )
+        self.list_preview.AppendColumn(_("Id"), format=wx.LIST_FORMAT_LEFT, width=95)
+        self.list_preview.AppendColumn(_("Label"), format=wx.LIST_FORMAT_LEFT, width=95)
+        self.list_preview.AppendColumn(_("Power"), format=wx.LIST_FORMAT_LEFT, width=65)
+        self.list_preview.AppendColumn(_("Speed"), format=wx.LIST_FORMAT_LEFT, width=65)
         self.list_preview.SetToolTip(_("Click to select / Right click for actions"))
 
         param_box = StaticBoxSizer(self, wx.ID_ANY, _("Information"), wx.HORIZONTAL)
@@ -109,8 +112,10 @@ class MaterialPanel(ScrolledPanel):
         label_2 = wx.StaticText(self, wx.ID_ANY, _("Lasertype"))
         param_box.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        choices = self.laser_choices   # [1:]
-        self.combo_entry_type = wx.ComboBox(self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        choices = self.laser_choices  # [1:]
+        self.combo_entry_type = wx.ComboBox(
+            self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
         param_box.Add(self.combo_entry_type, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_set = wx.Button(self, wx.ID_ANY, _("Set"))
@@ -126,17 +131,25 @@ class MaterialPanel(ScrolledPanel):
         self.btn_use_current = wx.Button(self, wx.ID_ANY, _("Get current"))
         self.btn_use_current.SetToolTip(_("Use the currently defined operations"))
         self.btn_apply = wx.Button(self, wx.ID_ANY, _("Load into Tree"))
-        self.btn_apply.SetToolTip(_("Apply the current library entry to the operations branch"))
+        self.btn_apply.SetToolTip(
+            _("Apply the current library entry to the operations branch")
+        )
         self.btn_simple_apply = wx.Button(self, wx.ID_ANY, _("Use for statusbar"))
-        self.btn_simple_apply.SetToolTip(_("Use the current library entry for the statusbar icons"))
+        self.btn_simple_apply.SetToolTip(
+            _("Use the current library entry for the statusbar icons")
+        )
         self.btn_delete = wx.Button(self, wx.ID_ANY, _("Delete"))
         self.btn_delete.SetToolTip(_("Delete the current library entry"))
         self.btn_duplicate = wx.Button(self, wx.ID_ANY, _("Duplicate"))
         self.btn_duplicate.SetToolTip(_("Duplicate the current library entry"))
         self.btn_import = wx.Button(self, wx.ID_ANY, _("Import"))
-        self.btn_import.SetToolTip(_("Import a material library from ezcad or LightBurn"))
+        self.btn_import.SetToolTip(
+            _("Import a material library from ezcad or LightBurn")
+        )
         self.btn_share = wx.Button(self, wx.ID_ANY, _("Share"))
-        self.btn_share.SetToolTip(_("Share the current library entry with the MeerK40t community"))
+        self.btn_share.SetToolTip(
+            _("Share the current library entry with the MeerK40t community")
+        )
 
         button_box.Add(self.btn_use_current, 0, wx.EXPAND, 0)
         button_box.Add(self.btn_apply, 0, wx.EXPAND, 0)
@@ -164,10 +177,14 @@ class MaterialPanel(ScrolledPanel):
         self.btn_import.Bind(wx.EVT_BUTTON, self.on_import)
         self.btn_share.Bind(wx.EVT_BUTTON, self.on_share)
         self.btn_set.Bind(wx.EVT_BUTTON, self.update_entry)
-        self.list_library_entries.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_list_selection)
+        self.list_library_entries.Bind(
+            wx.EVT_LIST_ITEM_SELECTED, self.on_list_selection
+        )
         self.list_preview.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_preview_selection)
         self.Bind(
-            wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_library_rightclick, self.list_library_entries
+            wx.EVT_LIST_ITEM_RIGHT_CLICK,
+            self.on_library_rightclick,
+            self.list_library_entries,
         )
         self.Bind(
             wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_preview_rightclick, self.list_preview
@@ -199,7 +216,9 @@ class MaterialPanel(ScrolledPanel):
         # self.btn_use_current.Enable(opcount > 0)
         self.fill_preview()
 
-    def retrieve_material_list(self, filtername=None, filterlaser=None, reload=True, setter=None):
+    def retrieve_material_list(
+        self, filtername=None, filterlaser=None, reload=True, setter=None
+    ):
         if reload:
             self.material_list.clear()
             for section in self.context.elements.op_data.section_set():
@@ -208,11 +227,15 @@ class MaterialPanel(ScrolledPanel):
                 count = 0
                 secname = section
                 secdesc = ""
-                ltype = 0 # All lasers
+                ltype = 0  # All lasers
                 for subsection in self.context.elements.op_data.derivable(secname):
                     if subsection.endswith(" info"):
-                        secdesc = self.context.elements.op_data.read_persistent(str, subsection, "name", secname)
-                        ltype = self.context.elements.op_data.read_persistent(int, subsection, "laser", 0)
+                        secdesc = self.context.elements.op_data.read_persistent(
+                            str, subsection, "name", secname
+                        )
+                        ltype = self.context.elements.op_data.read_persistent(
+                            int, subsection, "laser", 0
+                        )
                     else:
                         count += 1
 
@@ -228,7 +251,7 @@ class MaterialPanel(ScrolledPanel):
             if filtername is not None and filtername.lower() not in entry[1].lower():
                 continue
             if filterlaser is not None:
-                if filterlaser == 0 or entry[2] == 0 or filterlaser==entry[2]:
+                if filterlaser == 0 or entry[2] == 0 or filterlaser == entry[2]:
                     pass
                 else:
                     continue
@@ -258,7 +281,7 @@ class MaterialPanel(ScrolledPanel):
         self.list_library_entries.Select(selected)
 
     @staticmethod
-    def get_nth_dict_entry(dictionary:dict, n=0):
+    def get_nth_dict_entry(dictionary: dict, n=0):
         if n < 0:
             n += len(dictionary)
         for i, key in enumerate(dictionary.keys()):
@@ -281,7 +304,9 @@ class MaterialPanel(ScrolledPanel):
     def on_duplicate(self, event):
         if self.active_material is None:
             return
-        op_list, op_info = self.context.elements.load_persistent_op_list(self.active_material)
+        op_list, op_info = self.context.elements.load_persistent_op_list(
+            self.active_material
+        )
         if len(op_list) == 0:
             return
         oldsection = self.active_material
@@ -310,7 +335,9 @@ class MaterialPanel(ScrolledPanel):
                     oldname = oldname[:idx]
         newname = f"{oldname} ({counter})"
         op_info["name"] = newname
-        self.context.elements.save_persistent_operations_list(newsection, oplist=op_list, opinfo=op_info, inform=False)
+        self.context.elements.save_persistent_operations_list(
+            newsection, oplist=op_list, opinfo=op_info, inform=False
+        )
         self.retrieve_material_list(reload=True, setter=newsection)
 
     def on_delete(self, event):
@@ -323,12 +350,14 @@ class MaterialPanel(ScrolledPanel):
             self.retrieve_material_list(reload=True)
 
     def on_import(self, event):
-        print ("Importing")
+        print("Importing")
 
     def on_simple_apply(self, event):
         if self.active_material is None:
             return
-        op_list, op_info = self.context.elements.load_persistent_op_list(self.active_material)
+        op_list, op_info = self.context.elements.load_persistent_op_list(
+            self.active_material
+        )
         if len(op_list) == 0:
             return
         self.context.elements.default_operations = list(op_list)
@@ -337,7 +366,9 @@ class MaterialPanel(ScrolledPanel):
     def on_apply(self, event):
         if self.active_material is None:
             return
-        op_list, op_info = self.context.elements.load_persistent_op_list(self.active_material)
+        op_list, op_info = self.context.elements.load_persistent_op_list(
+            self.active_material
+        )
         if len(op_list) == 0:
             return
         self.context.elements.load_persistent_operations(self.active_material)
@@ -349,10 +380,14 @@ class MaterialPanel(ScrolledPanel):
         op_info = None
         if self.active_material is not None:
             if self.context.kernel.yesno(
-                _("Do you want to use the operations in the tree for the current entry?")
+                _(
+                    "Do you want to use the operations in the tree for the current entry?"
+                )
             ):
                 section = self.active_material
-                op_info = self.context.elements.load_persistent_op_info(self.active_material)
+                op_info = self.context.elements.load_persistent_op_info(
+                    self.active_material
+                )
                 if "name" not in op_info:
                     op_info["name"] = "Operations List"
                 if "laser" not in op_info:
@@ -371,7 +406,7 @@ class MaterialPanel(ScrolledPanel):
                         break
                 entry_txt = pattern
             entry_type = self.combo_entry_type.GetSelection()
-            if entry_type < 0 :
+            if entry_type < 0:
                 entry_type = 0
             # We need to create a new one...
             op_info = dict()
@@ -380,7 +415,9 @@ class MaterialPanel(ScrolledPanel):
             section = entry_txt
 
         # op_list = None save op_branch
-        self.context.elements.save_persistent_operations_list(section, oplist=None, opinfo=op_info, inform=False)
+        self.context.elements.save_persistent_operations_list(
+            section, oplist=None, opinfo=op_info, inform=False
+        )
         self.retrieve_material_list(reload=True, setter=section)
 
     def on_reset(self, event):
@@ -398,7 +435,12 @@ class MaterialPanel(ScrolledPanel):
         reload = False
         if "reload" in kwargs:
             reload = kwargs["reload"]
-        self.retrieve_material_list(filtername=filter_txt, filterlaser=filter_type, reload=reload, setter=self.active_material)
+        self.retrieve_material_list(
+            filtername=filter_txt,
+            filterlaser=filter_type,
+            reload=reload,
+            setter=self.active_material,
+        )
 
     def update_entry(self, event):
         if self.active_material is None:
@@ -407,7 +449,9 @@ class MaterialPanel(ScrolledPanel):
         op_ltype = self.combo_entry_type.GetSelection()
         if op_ltype < 0:
             op_ltype = 0
-        op_list, op_info = self.context.elements.load_persistent_op_list(self.active_material)
+        op_list, op_info = self.context.elements.load_persistent_op_list(
+            self.active_material
+        )
         if len(op_list) == 0:
             return
         stored_name = ""
@@ -419,7 +463,9 @@ class MaterialPanel(ScrolledPanel):
         if stored_name != op_name or stored_ltype != op_ltype:
             op_info["laser"] = op_ltype
             op_info["name"] = op_name
-            self.context.elements.save_persistent_operations_list(self.active_material, oplist=op_list, opinfo=op_info, inform=False)
+            self.context.elements.save_persistent_operations_list(
+                self.active_material, oplist=op_list, opinfo=op_info, inform=False
+            )
             self.retrieve_material_list(reload=True, setter=self.active_material)
 
     def on_list_selection(self, event):
@@ -438,19 +484,35 @@ class MaterialPanel(ScrolledPanel):
         if self.active_material is not None:
             secdesc = self.active_material
             idx = 0
-            for subsection in self.context.elements.op_data.derivable(self.active_material):
+            for subsection in self.context.elements.op_data.derivable(
+                self.active_material
+            ):
                 if subsection.endswith(" info"):
-                    secdesc = self.context.elements.op_data.read_persistent(str, subsection, "name", secdesc)
-                    ltype = self.context.elements.op_data.read_persistent(int, subsection, "laser", 0)
+                    secdesc = self.context.elements.op_data.read_persistent(
+                        str, subsection, "name", secdesc
+                    )
+                    ltype = self.context.elements.op_data.read_persistent(
+                        int, subsection, "laser", 0
+                    )
                     continue
-                optype = self.context.elements.op_data.read_persistent(str, subsection, "type", "")
+                optype = self.context.elements.op_data.read_persistent(
+                    str, subsection, "type", ""
+                )
                 if optype is None or optype == "":
                     continue
                 idx += 1
-                opid = self.context.elements.op_data.read_persistent(str, subsection, "id", "")
-                oplabel = self.context.elements.op_data.read_persistent(str, subsection, "label", "")
-                speed = self.context.elements.op_data.read_persistent(str, subsection, "speed", "")
-                power = self.context.elements.op_data.read_persistent(str, subsection, "power", "")
+                opid = self.context.elements.op_data.read_persistent(
+                    str, subsection, "id", ""
+                )
+                oplabel = self.context.elements.op_data.read_persistent(
+                    str, subsection, "label", ""
+                )
+                speed = self.context.elements.op_data.read_persistent(
+                    str, subsection, "speed", ""
+                )
+                power = self.context.elements.op_data.read_persistent(
+                    str, subsection, "power", ""
+                )
                 if power == "" and optype.startswith("op "):
                     power = "1000"
                 list_id = self.list_preview.InsertItem(
@@ -466,7 +528,6 @@ class MaterialPanel(ScrolledPanel):
 
         self.txt_entry_name.SetValue(secdesc)
         self.combo_entry_type.SetSelection(ltype)
-
 
     def on_preview_selection(self, event):
         pass
@@ -502,15 +563,20 @@ class MaterialPanel(ScrolledPanel):
             section = "minimal"
             oplist = self.context.elements.create_minimal_op_list()
             opinfo = {"name": "Minimal list", "laser": 0}
-            self.context.elements.save_persistent_operations_list(section, oplist, opinfo, False)
+            self.context.elements.save_persistent_operations_list(
+                section, oplist, opinfo, False
+            )
             self.retrieve_material_list(reload=True, setter=section)
 
         def create_basic(event):
             section = "basic"
             oplist = self.context.elements.create_basic_op_list()
             opinfo = {"name": "Basic list", "laser": 0}
-            self.context.elements.save_persistent_operations_list(section, oplist, opinfo, False)
+            self.context.elements.save_persistent_operations_list(
+                section, oplist, opinfo, False
+            )
             self.retrieve_material_list(reload=True, setter=section)
+
         menu.AppendSeparator()
         item = menu.Append(wx.ID_ANY, _("Create minimal"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, create_minimal, item)
@@ -518,7 +584,6 @@ class MaterialPanel(ScrolledPanel):
         self.Bind(wx.EVT_MENU, create_basic, item)
         self.PopupMenu(menu)
         menu.Destroy()
-
 
     def on_preview_rightclick(self, event):
         if self.active_material is None:
@@ -528,6 +593,7 @@ class MaterialPanel(ScrolledPanel):
         key = self.get_nth_operation(index)
 
         menu = wx.Menu()
+
         def on_menu_popup_delete(op_section):
             def remove_handler(*args):
                 settings = self.context.elements.op_data
@@ -546,7 +612,9 @@ class MaterialPanel(ScrolledPanel):
         def on_menu_popup_missing(*args):
             if self.active_material is None:
                 return
-            op_list, op_info = self.context.elements.load_persistent_op_list(self.active_material)
+            op_list, op_info = self.context.elements.load_persistent_op_list(
+                self.active_material
+            )
             if len(op_list) == 0:
                 return
             changes = False
@@ -588,7 +656,9 @@ class MaterialPanel(ScrolledPanel):
                     uid.append(op.id)
 
             if changes:
-                self.context.elements.save_persistent_operations_list(self.active_material, op_list, op_info, False)
+                self.context.elements.save_persistent_operations_list(
+                    self.active_material, op_list, op_info, False
+                )
                 self.on_list_selection(None)
 
         item = menu.Append(wx.ID_ANY, _("Fill missing ids/label"), "", wx.ITEM_NORMAL)
@@ -596,7 +666,6 @@ class MaterialPanel(ScrolledPanel):
 
         self.PopupMenu(menu)
         menu.Destroy()
-
 
     def set_parent(self, par_panel):
         self.parent_panel = par_panel
@@ -617,7 +686,9 @@ class ImportPanel(wx.Panel):
         self.library_entries = []
         self.visible_list = []
         main_sizer = wx.BoxSizer(wx.VERTICAL)
-        filter_box = StaticBoxSizer(self, wx.ID_ANY, _("Import Materials"), wx.HORIZONTAL)
+        filter_box = StaticBoxSizer(
+            self, wx.ID_ANY, _("Import Materials"), wx.HORIZONTAL
+        )
 
         label_1 = wx.StaticText(self, wx.ID_ANY, _("Material"))
         filter_box.Add(label_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -628,14 +699,21 @@ class ImportPanel(wx.Panel):
         label_2 = wx.StaticText(self, wx.ID_ANY, _("Lasertype"))
         filter_box.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.laser_choices = [_("<All Lasertypes>"),]
+        self.laser_choices = [
+            _("<All Lasertypes>"),
+        ]
         dev_infos = list(self.context.find("provider/friendly"))
         # Gets a list of tuples (description, key, path)
         # description is a tuple itself containing description and index
         dev_infos.sort(key=lambda e: e[0][1])
         for e in dev_infos:
             self.laser_choices.append(e[0][0])
-        self.combo_lasertype = wx.ComboBox(self, wx.ID_ANY, choices=self.laser_choices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.combo_lasertype = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=self.laser_choices,
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
         filter_box.Add(self.combo_lasertype, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_reset = wx.Button(self, wx.ID_ANY, _("Reset Filter"))
@@ -644,13 +722,17 @@ class ImportPanel(wx.Panel):
         self.btn_load = wx.Button(self, wx.ID_ANY, _("Load"))
         filter_box.Add(self.btn_load, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         main_sizer.Add(filter_box, 0, wx.EXPAND, 0)
-        result_box = StaticBoxSizer(self, wx.ID_ANY, _("Matching library entries"), wx.VERTICAL)
+        result_box = StaticBoxSizer(
+            self, wx.ID_ANY, _("Matching library entries"), wx.VERTICAL
+        )
         self.list_library_entries = wx.ListCtrl(
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
         )
-        self.list_library_entries.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=58)
+        self.list_library_entries.AppendColumn(
+            _("#"), format=wx.LIST_FORMAT_LEFT, width=58
+        )
         self.list_library_entries.AppendColumn(
             _("Material"),
             format=wx.LIST_FORMAT_LEFT,
@@ -673,18 +755,10 @@ class ImportPanel(wx.Panel):
             format=wx.LIST_FORMAT_LEFT,
             width=95,
         )
-        self.list_preview.AppendColumn(
-            _("Id"), format=wx.LIST_FORMAT_LEFT, width=95
-        )
-        self.list_preview.AppendColumn(
-            _("Label"), format=wx.LIST_FORMAT_LEFT, width=95
-        )
-        self.list_preview.AppendColumn(
-            _("Power"), format=wx.LIST_FORMAT_LEFT, width=65
-        )
-        self.list_preview.AppendColumn(
-            _("Speed"), format=wx.LIST_FORMAT_LEFT, width=65
-        )
+        self.list_preview.AppendColumn(_("Id"), format=wx.LIST_FORMAT_LEFT, width=95)
+        self.list_preview.AppendColumn(_("Label"), format=wx.LIST_FORMAT_LEFT, width=95)
+        self.list_preview.AppendColumn(_("Power"), format=wx.LIST_FORMAT_LEFT, width=65)
+        self.list_preview.AppendColumn(_("Speed"), format=wx.LIST_FORMAT_LEFT, width=65)
 
         result_box.Add(self.list_library_entries, 1, wx.EXPAND, 0)
         result_box.Add(self.list_preview, 1, wx.EXPAND, 0)
