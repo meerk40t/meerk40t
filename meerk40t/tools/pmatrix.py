@@ -68,10 +68,15 @@ class PMatrix:
         self.mx.__imatmul__(other)
 
     @classmethod
-    def scale(cls, sx=1.0, sy=None):
+    def scale(cls, sx=1.0, sy=None, rx=0, ry=0):
         if sy is None:
             sy = sx
-        return cls(sx, 0, 0, 0, sy, 0)
+        r = cls(sx, 0, 0, 0, sy, 0)
+        if rx != 0 or ry != 0:
+            m0 = cls.translate(-rx, -ry)
+            m1 = cls.translate(rx, ry)
+            r = m1.mx @ r.mx @ m0.mx
+        return cls(r)
 
     @classmethod
     def scale_x(cls, sx=1.0):
