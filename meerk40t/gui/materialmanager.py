@@ -4,12 +4,13 @@ In essence a material library setting is a persistent list of operations.
 They are stored in the operations.cfg file in the meerk40t working directory
 """
 
-# import os
+import os
 
 import wx
 from wx import aui
 
-# from ..kernel import signal_listener
+from ..kernel.kernel import get_safe_path
+from ..kernel.settings import Settings
 from .icons import STD_ICON_SIZE, get_default_icon_size, icon_library
 from .mwindow import MWindow
 from .wxutils import ScrolledPanel, StaticBoxSizer, dip_size
@@ -224,7 +225,6 @@ class MaterialPanel(ScrolledPanel):
         self.SetupScrolling()
         # Set buttons
         self.btn_import.Show(False)
-        self.btn_share.Show(False)
         self.active_material = None
         self.on_reset(None)
 
@@ -332,7 +332,144 @@ class MaterialPanel(ScrolledPanel):
         if self.active_material is None:
             return
 
+        last_author = self.context.setting(str, "author", "")
+        dlg = wx.TextEntryDialog(
+            self,
+            _(
+                "Thank you for your willingness to share your material setting with the MeerK40t community.\n" +
+                "Please provide a name to honor your authorship."
+            ), caption=_("Share material setting"),
+            value=last_author,
+        )
+        res = dlg.ShowModal()
+        last_author = dlg.GetValue()
+        dlg.Destroy()
+        if res == wx.ID_CANCEL:
+            return
+        # We will store the relevant section in a separate file
+        oplist, opinfo = self.context.elements.load_persistent_op_list(self.active_material)
+        if len(oplist) == 0:
+            return
+        opinfo["author"] = last_author
+        directory = get_safe_path(self.context.kernel.name)
+        local_file = os.path.join(directory, "op_export.cfg")
+        if os.path.exists(local_file):
+            try:
+                os.remove(local_file)
+            except (OSError, PermissionError):
+                return
+        settings = Settings(
+            self.context.kernel.name,
+            "op_export.cfg",
+            ignore_settings=False
+        )
+        opsection = f"{self.active_material} info"
+        for key, value in opinfo.items():
+            settings.write_persistent(opsection, key, value)
+        def _save_tree(name, op_list):
+            for i, op in enumerate(op_list):
+                if hasattr(op, "allow_save"):
+                    if not op.allow_save():
+                        continue
+                if op.type == "reference":
+                    # We do not save references.
+                    continue
+                section = f"{name} {i:06d}"
+                settings.write_persistent(section, "type", op.type)
+                op.save(settings, section)
+                try:
+                    _save_tree(section, op.children)
+                except AttributeError:
+                    pass
+        _save_tree(opsection, oplist)
+        settings.write_configuration()
         # print ("Sharing")
+        try:
+            with open(local_file, "r") as f:
+                data = f.read()
+        except:
+            return
+        self.send_data_to_developers(local_file, data)
+
+    def send_data_to_developers(self, filename, data):
+        """
+        Sends crash log to a server using rfc1341 7.2 The multipart Content-Type
+        https://www.w3.org/Protocols/rfc1341/7_2_Multipart.html
+
+        @param filename: filename to use when sending file
+        @param data: data to send
+        @return:
+        """
+        import socket
+        MEERK40T_HOST = "dev.meerk40t.com"
+
+        host = MEERK40T_HOST  # Replace with the actual host
+        port = 80  # Replace with the actual port
+
+        # Construct the HTTP request
+        boundary = "----------------meerk40t-material"
+        body = (
+            f"--{boundary}\r\n"
+            f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'
+            f"Content-Type: text/plain\r\n"
+            "\r\n"
+            f"{data}\r\n"
+            f"--{boundary}--\r\n"
+        )
+
+        headers = (
+            f"POST /upload HTTP/1.1\r\n"
+            f"Host: {host}\r\n"
+            "User-Agent: meerk40t/1.0.0\r\n"
+            f"Content-Type: multipart/form-data; boundary={boundary}\r\n"
+            f"Content-Length: {len(body)}\r\n"
+            "\r\n"
+        )
+
+        try:
+            # Create a socket connection
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
+                client_socket.connect((host, port))
+
+                # Send the request
+                request = f"{headers}{body}"
+                client_socket.sendall(request.encode())
+
+                # Receive and print the response
+                response = client_socket.recv(4096)
+                response = response.decode("utf-8")
+        except Exception:
+            response = ""
+
+        response_lines = response.split("\n")
+        http_code = response_lines[0]
+
+        # print(response)
+
+        if http_code.startswith("HTTP/1.1 200 OK"):
+            message = response_lines[-1]
+            dlg = wx.MessageDialog(
+                None,
+                _("We got your file. Thank you for helping\n\n") + message,
+                _("Thanks"),
+                wx.OK,
+            )
+            dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            # print(response)
+            dlg = wx.MessageDialog(
+                None,
+                _(
+                    "We're sorry, that didn't work.\n\n"
+                )
+                + "\n\n"
+                + str(http_code),
+                _("Thanks"),
+                wx.OK,
+            )
+            dlg.ShowModal()
+            dlg.Destroy()
 
     def on_duplicate(self, event):
         if self.active_material is None:
