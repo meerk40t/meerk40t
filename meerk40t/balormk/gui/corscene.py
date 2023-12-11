@@ -1,3 +1,5 @@
+from math import tau
+
 import wx
 
 from meerk40t.gui.laserrender import LaserRender
@@ -10,7 +12,9 @@ from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui import icons
 from meerk40t.gui.icons import icons8_center_of_gravity
 from meerk40t.gui.utilitywidgets.buttonwidget import ButtonWidget
+from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.tools.geomstr import Geomstr
+from meerk40t.tools.pmatrix import PMatrix
 
 
 def cor_file_geometry(width=None):
@@ -36,10 +40,100 @@ def cor_file_geometry(width=None):
     return path
 
 
+def setup_corfile_widget(service):
+    scene = service.root.opened.get("Scene")
+
+    scene.push_stack(SceneSpaceWidget(scene))
+    corfile_widget = CorFileWidget(scene)
+    scene.widget_root.scene_widget.add_widget(-1, corfile_widget)
+
+    def confirm(**kwargs):
+        scene.pop_stack()
+        scene.request_refresh()
+
+    def rotate_left(**kwargs):
+        corfile_widget.rotate_left()
+        scene.request_refresh()
+
+    def rotate_right(**kwargs):
+        corfile_widget.rotate_right()
+        scene.request_refresh()
+
+    def vflip(**kwargs):
+        corfile_widget.vflip()
+        scene.request_refresh()
+
+    def hflip(**kwargs):
+        corfile_widget.hflip()
+        scene.request_refresh()
+
+    size = 100
+    scene.widget_root.interface_widget.add_widget(
+        -1,
+        ButtonWidget(
+            scene,
+            0,
+            0,
+            size,
+            size,
+            icons.icons8_delete.GetBitmap(use_theme=False),
+            confirm,
+        ),
+    )
+    scene.widget_root.interface_widget.add_widget(
+        -1,
+        ButtonWidget(
+            scene,
+            0,
+            size * 2,
+            size,
+            size * 3,
+            icons.icons8_rotate_left.GetBitmap(use_theme=False),
+            rotate_left,
+        ),
+    )
+    scene.widget_root.interface_widget.add_widget(
+        -1,
+        ButtonWidget(
+            scene,
+            0,
+            size * 4,
+            size,
+            size * 5,
+            icons.icons8_rotate_right.GetBitmap(use_theme=False),
+            rotate_right,
+        ),
+    )
+    scene.widget_root.interface_widget.add_widget(
+        -1,
+        ButtonWidget(
+            scene,
+            0,
+            size * 6,
+            size,
+            size * 7,
+            icons.icons8_flip_horizontal.GetBitmap(use_theme=False),
+            hflip,
+        ),
+    )
+    scene.widget_root.interface_widget.add_widget(
+        -1,
+        ButtonWidget(
+            scene,
+            0,
+            size * 8,
+            size,
+            size * 9,
+            icons.icons8_flip_vertical.GetBitmap(use_theme=False),
+            vflip,
+        ),
+    )
+    scene.widget_root.focus_viewport_scene((0, 0, 0xFFFF, 0xFFFF), scene.gui.Size)
+    scene.request_refresh()
+
+
 def register_scene(service):
     _ = service.kernel.translation
-
-    g = Geomstr()
 
     service.register(
         "button/control/cor_file",
@@ -58,31 +152,7 @@ def register_scene(service):
         help=_("Update galvo flips for movement"),
     )
     def scene_corfile(**kwargs):
-        scene = service.root.opened.get("Scene")
-        from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
-
-        scene.push_stack(SceneSpaceWidget(scene))
-        scene.widget_root.scene_widget.add_widget(-1, CorFileWidget(scene))
-
-        def confirm(**kwargs):
-            scene.pop_stack()
-            scene.request_refresh()
-
-        size = 100
-        scene.widget_root.interface_widget.add_widget(
-            -1,
-            ButtonWidget(
-                scene,
-                0,
-                0,
-                size,
-                size,
-                icons.icons8_delete.GetBitmap(use_theme=False),
-                confirm,
-            ),
-        )
-        scene.widget_root.focus_viewport_scene((0, 0, 0xFFFF, 0xFFFF), scene.gui.Size)
-        scene.request_refresh()
+        setup_corfile_widget(service)
 
 
 class CorFileWidget(Widget):
@@ -110,6 +180,22 @@ class CorFileWidget(Widget):
         elif event_type == "doubleclick":
             pass
         return RESPONSE_CHAIN
+
+    def rotate_left(self):
+        matrix = PMatrix.rotate(tau / 4, 0x7FFF, 0x7FFF)
+        self.geometry.transform3x3(matrix)
+
+    def rotate_right(self):
+        matrix = PMatrix.rotate(-tau / 4, 0x7FFF, 0x7FFF)
+        self.geometry.transform3x3(matrix)
+
+    def hflip(self):
+        matrix = PMatrix.scale(-1, 1, 0x7FFF, 0x7FFF)
+        self.geometry.transform3x3(matrix)
+
+    def vflip(self):
+        matrix = PMatrix.scale(1, -1, 0x7FFF, 0x7FFF)
+        self.geometry.transform3x3(matrix)
 
     def process_draw(self, gc: wx.GraphicsContext):
         """
