@@ -1162,12 +1162,13 @@ class Elemental(Service):
         self.listen_tree(self)
 
     def shutdown(self, *args, **kwargs):
+        # No need for an opinfo dict
         self.save_persistent_operations("previous")
         self.op_data.write_configuration()
         for e in self.flat():
             e.unregister()
 
-    def save_persistent_operations_list(self, name, oplist=None, inform=True):
+    def save_persistent_operations_list(self, name, oplist=None, opinfo=None, inform=True):
         """
         Saves a given list of operations to the op_data:Settings
 
@@ -1177,7 +1178,15 @@ class Elemental(Service):
         """
         if oplist is None:
             oplist = self.op_branch.children
+        if opinfo is None:
+            opinfo = dict()
         self.clear_persistent_operations(name, flush=False)
+        if len(opinfo) > 0:
+            settings = self.op_data
+            section = f"{name} info"
+            for key, value in opinfo.items():
+                settings.write_persistent(section, key, value)
+
         self._save_persistent_operation_tree(name, oplist, flush=True, inform=True)
 
     # Operations uniform
@@ -1235,7 +1244,16 @@ class Elemental(Service):
         settings = self.op_data
 
         op_tree = dict()
+        op_info = dict()
         for section in list(settings.derivable(name)):
+            if section.endswith("info"):
+                for key in settings.keylist(section):
+                    content = settings.read_persistent(str, section, key)
+                    op_info[key] = content
+
+                continue
+
+
             op_type = settings.read_persistent(str, section, "type")
             try:
                 op = Node().create(type=op_type)
@@ -1251,7 +1269,7 @@ class Elemental(Service):
                 op_list.append(op_tree[section])
             else:
                 op_tree[parent].add_node(op_tree[section])
-        return op_list
+        return op_list, op_info
 
     def load_persistent_operations(self, name, classify=True):
         """
@@ -1264,7 +1282,8 @@ class Elemental(Service):
         """
         self.clear_operations()
         operation_branch = self._tree.get(type="branch ops")
-        for op in self.load_persistent_op_list(name):
+        oplist, opinfo = self.load_persistent_op_list(name)
+        for op in oplist:
             operation_branch.add_node(op)
         if not classify:
             return
@@ -1376,17 +1395,18 @@ class Elemental(Service):
         std_list = "_default"
         needs_signal = len(self.default_operations) != 0
         oplist = []
+        opinfo = dict()
         if hasattr(self, "device"):
             std_list = f"_default_{self.device.label}"
             # We need to replace all ' ' by an underscore
             for forbidden in (" ",):
                 std_list = std_list.replace(forbidden, "_")
             # print(f"Try to load '{std_list}'")
-            oplist = self.load_persistent_op_list(std_list)
+            oplist, opinfo = self.load_persistent_op_list(std_list)
         if len(oplist) == 0:
             std_list = "_default"
             # print(f"Try to load '{std_list}'")
-            oplist = self.load_persistent_op_list(std_list)
+            oplist, opinfo = self.load_persistent_op_list(std_list)
 
         if len(oplist) == 0:
             # Then let's create something useful
@@ -1394,11 +1414,19 @@ class Elemental(Service):
             create_engrave(oplist)
             create_raster(oplist)
             create_image(oplist)
+            opinfo.clear()
+            opinfo["name"] = "Default"
+            opinfo["author"] = "MeerK40t"
             needs_save = True
         # Ensure we have an id for everything
         needs_save = self.validate_ids(nodelist=oplist, generic=False)
         if needs_save:
-            self.save_persistent_operations_list(std_list, oplist=oplist, inform=False)
+            self.save_persistent_operations_list(
+                std_list,
+                oplist=oplist,
+                opinfo=opinfo,
+                inform=False
+            )
 
         self.default_operations = oplist
         if needs_signal:
