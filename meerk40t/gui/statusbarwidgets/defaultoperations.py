@@ -4,7 +4,7 @@ from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
-from meerk40t.gui.icons import EmptyIcon
+from meerk40t.gui.icons import EmptyIcon, icon_library
 from meerk40t.gui.laserrender import swizzlecolor
 
 from .statusbarwidget import StatusBarWidget
@@ -174,6 +174,23 @@ class DefaultOperationWidget(StatusBarWidget):
         self.SetActive(self.btn_next, False)
         self.btn_next.Bind(wx.EVT_LEFT_DOWN, self.on_next)
 
+        self.btn_matman = wx.StaticBitmap(
+            parent,
+            id=wx.ID_ANY,
+            size=(self.buttonsize_x, self.buttonsize_y),
+            # style=wx.BORDER_RAISED,
+        )
+        icon = icon_library.GetBitmap(resize = self.iconsize)
+        self.btn_matman.SetBitmap(icon)
+        self.btn_matman.SetToolTip(_("Open material manager"))
+        size_it(self.btn_matman, self.buttonsize_x, self.buttonsize_y)
+
+        self.Add(self.btn_matman, 0, wx.EXPAND, 0)
+        self.btn_matman.Bind(wx.EVT_LEFT_DOWN, self.on_matman)
+
+    def on_matman(self, event):
+        self.context("window open MatManager\n")
+
     def on_button_left(self, event):
         button = event.GetEventObject()
         shift_pressed = event.ShiftDown()
@@ -281,12 +298,14 @@ class DefaultOperationWidget(StatusBarWidget):
                                 x += gap + w
                 self.SetActive(btn, btnflag)
             self.SetActive(self.btn_next, residual)
+            self.SetActive(self.btn_matman, not residual)
 
         else:
             self.SetActive(self.btn_prev, False)
             for btn in self.assign_buttons:
                 self.SetActive(btn, False)
             self.SetActive(self.btn_next, False)
+            self.SetActive(self.btn_matman, True)
         self.Layout()
         self.RefreshItems(showit)
 
