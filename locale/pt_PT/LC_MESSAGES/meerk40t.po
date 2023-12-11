@@ -10950,7 +10950,7 @@ msgid "Load"
 msgstr ""
 
 #: meerk40t/core/elements/element_treeops.py:1353
-msgid "Other/Blue/Red"
+msgid "Minimal"
 msgstr "Outros/azul/vermelho"
 
 #: meerk40t/core/elements/element_treeops.py:1359
