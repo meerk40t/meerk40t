@@ -1632,7 +1632,7 @@ def init_tree(kernel):
 
     @tree_separator_before()
     @tree_submenu(_("Load"))
-    @tree_operation(_("Other/Blue/Red"), node_type="branch ops", help="")
+    @tree_operation(_("Minimal"), node_type="branch ops", help="")
     def default_classifications(node, **kwargs):
         self.load_default(performclassify=True)
 

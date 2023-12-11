@@ -1240,6 +1240,18 @@ class Elemental(Service):
             return
         settings.write_configuration()
 
+    def load_persistent_op_info(self, name):
+        settings = self.op_data
+        op_info = dict()
+        for section in list(settings.derivable(name)):
+            if section.endswith("info"):
+                for key in settings.keylist(section):
+                    content = settings.read_persistent(str, section, key)
+                    op_info[key] = content
+
+                break
+        return op_info
+
     def load_persistent_op_list(self, name):
         settings = self.op_data
 
@@ -1570,51 +1582,181 @@ class Elemental(Service):
     def unlisten_tree(self, listener):
         self._tree.unlisten(listener)
 
+    def create_minimal_op_list(self):
+        oplist = []
+        pwr = 1000
+        spd = 140
+        node = Node().create(
+            type="op image",
+            color="black",
+            label=f"Image ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="I1",
+            power=pwr,
+            speed=spd,
+            raster_step=3,
+        )
+        oplist.append(node)
+        pwr = 1000
+        spd = 150
+        node = Node().create(
+            type="op raster",
+            label=f"Raster ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="R1",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["fill"]
+        oplist.append(node)
+        pwr = 1000
+        spd = 35
+        node = Node().create(
+            type="op engrave",
+            label=f"Engrave ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="E1",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["stroke"]
+        oplist.append(node)
+        pwr = 1000
+        spd = 5
+        node = Node().create(
+            type="op cut",
+            label=f"Cut ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="C1",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["stroke"]
+        oplist.append(node)
+        return oplist
+
+    def create_basic_op_list(self):
+        oplist = []
+        pwr = 1000
+        spd = 140
+        node = Node().create(
+            type="op image",
+            color="black",
+            label=f"Image ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="I1",
+            power=pwr,
+            speed=spd,
+            raster_step=3,
+        )
+        oplist.append(node)
+        pwr = 1000
+        spd = 150
+        node = Node().create(
+            type="op raster",
+            label=f"Cut ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="R1",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["fill"]
+        oplist.append(node)
+        pwr = 1000
+        spd = 35
+        node = Node().create(
+            type="op engrave",
+            color="blue",
+            label=f"Engrave ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="E1",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["stroke"]
+        oplist.append(node)
+        pwr = 1000
+        spd = 30
+        node = Node().create(
+            type="op engrave",
+            color="green",
+            label=f"Engrave ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="E2",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["stroke"]
+        oplist.append(node)
+        pwr = 1000
+        spd = 25
+        node = Node().create(
+            type="op engrave",
+            color="magenta",
+            label=f"Engrave ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="E3",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["stroke"]
+        oplist.append(node)
+        pwr = 1000
+        spd = 20
+        node = Node().create(
+            type="op engrave",
+            color="cyan",
+            label=f"Engrave ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="E4",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["stroke"]
+        oplist.append(node)
+        pwr = 1000
+        spd = 15
+        node = Node().create(
+            type="op engrave",
+            color="yellow",
+            label=f"Engrave ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="E5",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["stroke"]
+        oplist.append(node)
+        pwr = 1000
+        spd = 5
+        node = Node().create(
+            type="op cut",
+            label=f"Cut ({pwr/10.0:.0f}%, {spd}mm/s)",
+            color="red",
+            id="C1",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["stroke"]
+        oplist.append(node)
+        pwr = 1000
+        spd = 2
+        node = Node().create(
+            type="op cut",
+            color="darkred",
+            label=f"Cut ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="C2",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["stroke"]
+        oplist.append(node)
+        return oplist
+
     def load_default(self, performclassify=True):
         with self.static("load default"):
             self.clear_operations()
-            self.op_branch.add(
-                type="op image",
-                color="black",
-                speed=140.0,
-                power=1000.0,
-                raster_step=3,
-            )
-            node = self.op_branch.add(type="op raster")
-            node.allowed_attributes = ["fill"]
-            node = self.op_branch.add(type="op engrave")
-            node.allowed_attributes = ["stroke"]
-            node = self.op_branch.add(type="op cut")
-            node.allowed_attributes = ["stroke"]
+            nodes = self.create_minimal_op_list()
+            for node in nodes:
+                self.op_branch.add_node(node)
             if performclassify:
                 self.classify(list(self.elems()))
 
     def load_default2(self, performclassify=True):
-        with self.static("load default 2"):
+        with self.static("load default"):
             self.clear_operations()
-            self.op_branch.add(
-                type="op image",
-                color="black",
-                speed=140.0,
-                power=1000.0,
-                raster_step=3,
-            )
-            node = self.op_branch.add(type="op raster")
-            node.allowed_attributes = ["fill"]
-            node = self.op_branch.add(type="op engrave")
-            node.allowed_attributes = ["stroke"]
-            node = self.op_branch.add(type="op engrave", color="blue")
-            node.allowed_attributes = ["stroke"]
-            node = self.op_branch.add(type="op engrave", color="green")
-            node.allowed_attributes = ["stroke"]
-            node = self.op_branch.add(type="op engrave", color="magenta")
-            node.allowed_attributes = ["stroke"]
-            node = self.op_branch.add(type="op engrave", color="cyan")
-            node.allowed_attributes = ["stroke"]
-            node = self.op_branch.add(type="op engrave", color="yellow")
-            node.allowed_attributes = ["stroke"]
-            node = self.op_branch.add(type="op cut")
-            node.allowed_attributes = ["stroke"]
+            nodes = self.create_basic_op_list()
+            for node in nodes:
+                self.op_branch.add_node(node)
             if performclassify:
                 self.classify(list(self.elems()))
 
