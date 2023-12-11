@@ -14,19 +14,22 @@ from .icons import (
     icon_library,
 )
 from .mwindow import MWindow
-from .wxutils import StaticBoxSizer, dip_size
+from .wxutils import StaticBoxSizer, dip_size, ScrolledPanel
 
 _ = wx.GetTranslation
 
 
-class MaterialPanel(wx.Panel):
+class MaterialPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
+        ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
         self.SetHelpText("materialmanager")
         self.parent_panel = None
-
+        self.current_item = None
+        self._active_material = None
+        # Dictionary with key=Materialname, entry=Description (Name, Lasertype, entries)
+        self.material_list = dict()
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         filter_box = StaticBoxSizer(self, wx.ID_ANY, _("Filter Materials"), wx.HORIZONTAL)
         label_1 = wx.StaticText(self, wx.ID_ANY, _("Material"))
@@ -81,7 +84,10 @@ class MaterialPanel(wx.Panel):
             width=95,
         )
         self.list_preview.AppendColumn(
-            _("Name"), format=wx.LIST_FORMAT_LEFT, width=95
+            _("Id"), format=wx.LIST_FORMAT_LEFT, width=95
+        )
+        self.list_preview.AppendColumn(
+            _("Label"), format=wx.LIST_FORMAT_LEFT, width=95
         )
         self.list_preview.AppendColumn(
             _("Power"), format=wx.LIST_FORMAT_LEFT, width=65
@@ -104,16 +110,22 @@ class MaterialPanel(wx.Panel):
         self.combo_entry_type = wx.ComboBox(self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
         param_box.Add(self.combo_entry_type, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
+        self.btn_set = wx.Button(self, wx.ID_ANY, _("Set"))
+        self.btn_set.SetToolTip(_("Change the name / lasertype of the current entry"))
+        param_box.Add(self.btn_set, 0, wx.EXPAND, 0)
+
         result_box.Add(self.list_library_entries, 1, wx.EXPAND, 0)
-        result_box.Add(param_box, 1, wx.EXPAND, 0)
+        result_box.Add(param_box, 0, wx.EXPAND, 0)
         result_box.Add(self.list_preview, 1, wx.EXPAND, 0)
 
         button_box = wx.BoxSizer(wx.VERTICAL)
 
         self.btn_use_current = wx.Button(self, wx.ID_ANY, _("Get current"))
         self.btn_use_current.SetToolTip(_("Use the currently defined operations"))
-        self.btn_apply = wx.Button(self, wx.ID_ANY, _("Set current"))
-        self.btn_apply.SetToolTip(_("Apply the current library entry"))
+        self.btn_apply = wx.Button(self, wx.ID_ANY, _("Use for Tree"))
+        self.btn_apply.SetToolTip(_("Apply the current library entry to the operations branch"))
+        self.btn_simple_apply = wx.Button(self, wx.ID_ANY, _("Use for statusbar"))
+        self.btn_simple_apply.SetToolTip(_("Use the current library entry for the statusbar icons"))
         self.btn_delete = wx.Button(self, wx.ID_ANY, _("Delete"))
         self.btn_delete.SetToolTip(_("Delete the current library entry"))
         self.btn_duplicate = wx.Button(self, wx.ID_ANY, _("Duplicate"))
@@ -125,9 +137,10 @@ class MaterialPanel(wx.Panel):
 
         button_box.Add(self.btn_use_current, 0, wx.EXPAND, 0)
         button_box.Add(self.btn_apply, 0, wx.EXPAND, 0)
+        button_box.Add(self.btn_simple_apply, 0, wx.EXPAND, 0)
         button_box.Add(self.btn_delete, 0, wx.EXPAND, 0)
         button_box.Add(self.btn_duplicate, 0, wx.EXPAND, 0)
-        button_box.AddStretchSpacer(1)
+        button_box.AddSpacer(self.btn_duplicate.Size[1])
         button_box.Add(self.btn_import, 0, wx.EXPAND, 0)
         button_box.Add(self.btn_share, 0, wx.EXPAND, 0)
         outer_box = wx.BoxSizer(wx.HORIZONTAL)
@@ -142,47 +155,283 @@ class MaterialPanel(wx.Panel):
         self.txt_material.Bind(wx.EVT_TEXT, self.update_list)
         self.btn_use_current.Bind(wx.EVT_BUTTON, self.on_use_current)
         self.btn_apply.Bind(wx.EVT_BUTTON, self.on_apply)
+        self.btn_simple_apply.Bind(wx.EVT_BUTTON, self.on_simple_apply)
         self.btn_delete.Bind(wx.EVT_BUTTON, self.on_delete)
         self.btn_duplicate.Bind(wx.EVT_BUTTON, self.on_duplicate)
+        self.btn_import.Bind(wx.EVT_BUTTON, self.on_import)
         self.btn_share.Bind(wx.EVT_BUTTON, self.on_share)
-        self.txt_entry_name.Bind(wx.EVT_TEXT, self.on_update_entry)
-        self.combo_entry_type.Bind(wx.EVT_COMBOBOX, self.on_update_entry)
+        self.btn_set.Bind(wx.EVT_BUTTON, self.update_entry)
+        self.list_library_entries.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_list_selection)
+        self.list_preview.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_preview_selection)
+        self.SetupScrolling()
+        # Set buttons
+        self.active_material = None
         self.on_reset(None)
 
+    @property
+    def active_material(self):
+        return self._active_material
+
+    @active_material.setter
+    def active_material(self, newvalue):
+        self._active_material = newvalue
+        active = bool(newvalue is not None)
+        self.btn_apply.Enable(active)
+        self.btn_simple_apply.Enable(active)
+        self.btn_delete.Enable(active)
+        self.btn_duplicate.Enable(active)
+        self.txt_entry_name.Enable(active)
+        self.combo_entry_type.Enable(active)
+        self.btn_set.Enable(active)
+        opcount = len(list(self.context.elements.ops()))
+        self.btn_use_current.Enable(opcount > 0)
+
+    def retrieve_material_list(self, filtername=None, filterlaser=None, reload=True):
+        if reload:
+            self.material_list.clear()
+            for section in self.context.elements.op_data.section_set():
+                if section == "previous":
+                    continue
+                count = 0
+                secname = section
+                secdesc = ""
+                ltype = 0 # All lasers
+                for subsection in self.context.elements.op_data.derivable(secname):
+                    if subsection.endswith(" info"):
+                        secdesc = self.context.elements.op_data.read_persistent(str, subsection, "name", secname)
+                        ltype = self.context.elements.op_data.read_persistent(int, subsection, "laser", 0)
+                    else:
+                        count += 1
+
+                entry = [secname, secdesc, count, ltype]
+                self.material_list[secname] = entry
+        self.list_library_entries.DeleteAllItems()
+        idx = 0
+        listidx = -1
+        for key, entry in self.material_list.items():
+            listidx += 1
+            if filtername is not None and filtername.lower() not in entry[1].lower():
+                continue
+            if filterlaser is not None:
+                if filterlaser == 0 or entry[2] == 0 or filterlaser==entry[2]:
+                    pass
+                else:
+                    continue
+            idx += 1
+            list_id = self.list_library_entries.InsertItem(
+                self.list_library_entries.GetItemCount(), f"#{idx+ 1}"
+            )
+
+            self.list_library_entries.SetItem(list_id, 1, entry[1])
+            ltype = entry[3]
+            if ltype is None:
+                ltype = 0
+            if isinstance(ltype, str):
+                ltype = 0
+            if 0 <= ltype < len(self.laser_choices):
+                info = self.laser_choices[ltype]
+            else:
+                info = "???"
+            self.list_library_entries.SetItem(list_id, 2, info)
+            self.list_library_entries.SetItem(list_id, 3, str(entry[2]))
+            self.list_library_entries.SetItemData(list_id, listidx)
+        self.active_material = None
+
+    def get_nth_material(self, n=0):
+        dictionary = self.material_list
+        if n < 0:
+            n += len(dictionary)
+        for i, key in enumerate(dictionary.keys()):
+            if i == n:
+                return key
+        return None
 
     def on_share(self, event):
         print ("Sharing")
 
     def on_duplicate(self, event):
-        print ("Duplicating")
+        if self.active_material is None:
+            return
+        op_list, op_info = self.context.elements.load_persistent_op_list(self.active_material)
+        if len(op_list) == 0:
+            return
+        oldsection = self.active_material
+        if oldsection.endswith(")"):
+            idx = oldsection.rfind("(")
+            if idx >= 0:
+                oldsection = oldsection[:idx]
+                if oldsection.endswith("_"):
+                    oldsection = oldsection[:-1]
+
+        counter = 0
+        while True:
+            counter += 1
+            newsection = f"{oldsection}_({counter})"
+            if newsection not in self.material_list:
+                break
+
+        # print (f"Section={oldsection} -> {newsection}")
+
+        oldname = oldsection
+        if "name" in op_info:
+            oldname = op_info["name"]
+            if oldname.endswith(")"):
+                idx = oldname.rfind("(")
+                if idx >= 0:
+                    oldname = oldname[:idx]
+        newname = f"{oldname} ({counter})"
+        op_info["name"] = newname
+        self.context.elements.save_persistent_operations_list(newsection, oplist=op_list, opinfo=op_info, inform=False)
+        self.retrieve_material_list(reload=True)
 
     def on_delete(self, event):
-        print ("Deleting")
+        if self.active_material is None:
+            return
+        if self.context.kernel.yesno(
+            _("Do you really want to delete this entry? This can't be undone.")
+        ):
+            self.context.elements.clear_persistent_operations(self.active_material)
+            self.retrieve_material_list(reload=True)
+
+    def on_import(self, event):
+        print ("Importing")
+
+    def on_simple_apply(self, event):
+        if self.active_material is None:
+            return
+        op_list, op_info = self.context.elements.load_persistent_op_list(self.active_material)
+        if len(op_list) == 0:
+            return
+        self.context.elements.default_operations = list(op_list)
+        self.context.signal("default_operations")
 
     def on_apply(self, event):
-        print ("Applying")
+        if self.active_material is None:
+            return
+        op_list, op_info = self.context.elements.load_persistent_op_list(self.active_material)
+        if len(op_list) == 0:
+            return
+        self.context.elements.load_persistent_operations(self.active_material)
+        self.context.elements.default_operations = list(op_list)
+        self.context.signal("default_operations")
 
     def on_use_current(self, event):
-        print ("Use current")
+        target_idx = None
+        if self.active_material is not None:
+            if self.context.kernel.yesno(
+                _("Do you want to use the operations in the tree for the current entry?")
+            ):
+                target_idx = self.active_material
+        if target_idx is None:
+            entry_txt = self.txt_entry_name.GetValue()
+            if entry_txt == "":
+                entry_txt = "New material"
+            if entry_txt in self.material_list:
+                idx = 0
+                while True:
+                    idx += 1
+                    entry_txt = f"New material ({idx})"
+                    if entry_txt not in self.material_list:
+                        break
+            entry_type = self.combo_entry_type.GetSelection()
+            if entry_type < 0 :
+                entry_type = 0
+            # We need to create a new one...
+            op_info = dict()
+            op_info["name"] = entry_txt
+            op_info["laser"] = entry_type
+        # TODO APPLY
 
-    def on_update_entry(self, event):
-        entry_txt = self.txt_entry_name.GetValue()
-        entry_type = self.combo_entry_type.GetSelection() + 1
+        self.retrieve_material_list()
 
     def on_reset(self, event):
         self.txt_material.SetValue("")
         self.combo_lasertype.SetSelection(0)
-        self.update_list()
+        self.update_list(reload=True)
 
-    def update_list(self, *args):
+    def update_list(self, *args, **kwargs):
         filter_txt = self.txt_material.GetValue()
         filter_type = self.combo_lasertype.GetSelection()
+        if filter_txt == "":
+            filter_txt = None
+        if filter_type < 0:
+            filter_type = None
+        reload = False
+        if "reload" in kwargs:
+            reload = kwargs["reload"]
+        self.retrieve_material_list(filtername=filter_txt, filterlaser=filter_type, reload=reload)
+
+    def update_entry(self, event):
+        if self.active_material is None:
+            return
+        op_name = self.txt_entry_name.GetValue()
+        op_ltype = self.combo_entry_type.GetSelection()
+        if op_ltype < 0:
+            op_ltype = 0
+        op_list, op_info = self.context.elements.load_persistent_op_list(self.active_material)
+        if len(op_list) == 0:
+            return
+        stored_name = ""
+        if "name" in op_info:
+            stored_name = op_info["name"]
+        stored_ltype = 0
+        if "laser" in op_info:
+            stored_ltype = op_info["laser"]
+        if stored_name != op_name or stored_ltype != op_ltype:
+            op_info["laser"] = op_ltype
+            op_info["name"] = op_name
+            self.context.elements.save_persistent_operations_list(self.active_material, oplist=op_list, opinfo=op_info, inform=False)
+            self.retrieve_material_list(reload=True)
+
+    def on_list_selection(self, event):
+        current_item = self.list_library_entries.GetFirstSelected()
+        if current_item < 0:
+            self.active_material = None
+        else:
+            listidx = self.list_library_entries.GetItemData(current_item)
+            self.active_material = self.get_nth_material(listidx)
+        self.list_preview.DeleteAllItems()
+        secdesc = ""
+        ltype = 0
+        if self.active_material is not None:
+            secdesc = self.active_material
+            idx = 0
+            for subsection in self.context.elements.op_data.derivable(self.active_material):
+                if subsection.endswith(" info"):
+                    secdesc = self.context.elements.op_data.read_persistent(str, subsection, "name", secdesc)
+                    ltype = self.context.elements.op_data.read_persistent(int, subsection, "laser", 0)
+                    continue
+                optype = self.context.elements.op_data.read_persistent(str, subsection, "type", "")
+                if optype is None or optype == "":
+                    continue
+                idx += 1
+                opid = self.context.elements.op_data.read_persistent(str, subsection, "id", "")
+                oplabel = self.context.elements.op_data.read_persistent(str, subsection, "label", "")
+                speed = self.context.elements.op_data.read_persistent(str, subsection, "speed", "")
+                power = self.context.elements.op_data.read_persistent(str, subsection, "power", "")
+                if power == "" and optype.startswith("op "):
+                    power = "1000"
+                list_id = self.list_preview.InsertItem(
+                    self.list_preview.GetItemCount(), f"#{idx}"
+                )
+                self.list_preview.SetItem(list_id, 1, optype)
+                self.list_preview.SetItem(list_id, 2, opid)
+                self.list_preview.SetItem(list_id, 3, oplabel)
+                self.list_preview.SetItem(list_id, 4, power)
+                self.list_preview.SetItem(list_id, 5, speed)
+
+        self.txt_entry_name.SetValue(secdesc)
+        self.combo_entry_type.SetSelection(ltype)
+
+
+    def on_preview_selection(self, event):
+        pass
 
     def set_parent(self, par_panel):
         self.parent_panel = par_panel
 
     def pane_show(self):
-        pass
+        self.update_list(reload=True)
 
     def pane_hide(self):
         pass
@@ -254,7 +503,10 @@ class ImportPanel(wx.Panel):
             width=95,
         )
         self.list_preview.AppendColumn(
-            _("Name"), format=wx.LIST_FORMAT_LEFT, width=95
+            _("Id"), format=wx.LIST_FORMAT_LEFT, width=95
+        )
+        self.list_preview.AppendColumn(
+            _("Label"), format=wx.LIST_FORMAT_LEFT, width=95
         )
         self.list_preview.AppendColumn(
             _("Power"), format=wx.LIST_FORMAT_LEFT, width=65
