@@ -201,6 +201,8 @@ class Scene(Module, Job):
             conditional=lambda: self.screen_refresh_is_requested,
             run_main=True,
         )
+        self.stack = []
+
         # Scene lock is used for widget structure modification and scene drawing.
         self.scene_lock = threading.RLock()
 
@@ -210,7 +212,8 @@ class Scene(Module, Job):
         self.pane = pane
         self.hittable_elements = list()
         self.hit_chain = list()
-        self.widget_root = SceneSpaceWidget(self)
+        self.widget_root = None
+        self.push_stack(SceneSpaceWidget(self))
 
         self.interval = 1.0 / 60.0  # 60fps
         self.last_position = None
@@ -285,6 +288,23 @@ class Scene(Module, Job):
             if w is None:
                 continue
             self._final_widget(w, context)
+
+    def push_stack(self, widget):
+        if self.widget_root is not None:
+            try:
+                widget.init(self.context)
+            except AttributeError:
+                pass
+            self.stack.append(self.widget_root)
+        self.widget_root = widget
+
+    def pop_stack(self):
+        widget = self.stack.pop()
+        try:
+            self.widget_root.final(self.context)
+        except AttributeError:
+            pass
+        self.widget_root = widget
 
     def set_fps(self, fps):
         """
