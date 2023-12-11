@@ -191,13 +191,11 @@ class DefaultOperationWidget(StatusBarWidget):
         # See function for all buttons...
         # button = event.GetEventObject()
         menu = wx.Menu()
-        item = menu.Append(wx.ID_ANY, _("Load materials/operations"), "")
-        item.Enable(False)
         matcount = 0
 
         def on_menu_material(matname):
             def handler(*args):
-                oplist = self.context.elements.load_persistent_op_list(stored_mat)
+                oplist, opinfo = self.context.elements.load_persistent_op_list(stored_mat)
                 if oplist is not None and len(oplist) > 0:
                     self.context.elements.default_operations = oplist
                     self.Signal("default_operations")
@@ -208,7 +206,13 @@ class DefaultOperationWidget(StatusBarWidget):
         for material in self.context.elements.op_data.section_set():
             if material == "previous":
                 continue
-            if material == "_default":
+            if matcount == 0:
+                item = menu.Append(wx.ID_ANY, _("Load materials/operations"), "")
+                item.Enable(False)
+            oplist, opinfo = self.context.elements.load_persistent_op_list(material)
+            if "name" in opinfo:
+                name = opinfo["name"]
+            elif material == "_default":
                 name = "Generic Defaults"
             elif material.startswith("_default_"):
                 name = f"Default for {material[9:]}"
