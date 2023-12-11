@@ -332,7 +332,10 @@ class MaterialPanel(ScrolledPanel):
         if self.active_material is None:
             return
 
-        last_author = self.context.setting(str, "author", "")
+        self.context.setting(str, "author", "")
+        last_author = self.context.author
+        if last_author is None:
+            last_author = ""
         dlg = wx.TextEntryDialog(
             self,
             _(
@@ -341,11 +344,13 @@ class MaterialPanel(ScrolledPanel):
             ), caption=_("Share material setting"),
             value=last_author,
         )
+        dlg.SetValue(last_author)
         res = dlg.ShowModal()
         last_author = dlg.GetValue()
         dlg.Destroy()
         if res == wx.ID_CANCEL:
             return
+        self.context.author = last_author
         # We will store the relevant section in a separate file
         oplist, opinfo = self.context.elements.load_persistent_op_list(self.active_material)
         if len(oplist) == 0:
