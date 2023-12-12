@@ -20,7 +20,7 @@ class BalorConfiguration(MWindow):
         _icon.CopyFromBitmap(icons8_administrative_tools.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_(_("Balor-Configuration")))
-
+        self._test_pin = False
         self.notebook_main = wx.aui.AuiNotebook(
             self,
             -1,
@@ -38,14 +38,31 @@ class BalorConfiguration(MWindow):
             ("balor-extra", "Extras"),
             # ("rotary", "Rotary"),
         )
+        injector = (
+            {
+                "attr": "test_pin",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "style": "button",
+                "label": _("Test"),
+                "tip": _("Turn red dot on for test purposes"),
+                "section": "_10_Parameters",
+                "subsection": "_30_Pin-Index",
+            },
+        )
         self.panels = []
         for item in options:
             section = item[0]
             pagetitle = _(item[1])
             addpanel = self.visible_choices(section)
             if addpanel:
+                if item[0] == "balor":
+                    injection = injector
+                else:
+                    injection = None
                 newpanel = ChoicePropertyPanel(
-                    self, wx.ID_ANY, context=self.context, choices=section
+                    self, wx.ID_ANY, context=self.context, choices=section, injector=injection,
                 )
                 self.panels.append(newpanel)
                 self.notebook_main.AddPage(newpanel, pagetitle)
@@ -64,6 +81,18 @@ class BalorConfiguration(MWindow):
         self.Layout()
         for panel in self.panels:
             self.add_module_delegate(panel)
+
+    @property
+    def test_pin(self):
+        return self._test_pin
+
+    @test_pin.setter
+    def test_pin(self, value):
+        self._test_pin = not self._test_pin
+        if self._test_pin:
+            self.context("red on\n")
+        else:
+            self.context("red off\n")
 
     def window_close(self):
         for panel in self.panels:
