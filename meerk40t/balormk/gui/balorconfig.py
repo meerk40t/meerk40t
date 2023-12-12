@@ -73,6 +73,10 @@ class BalorConfiguration(MWindow):
         for panel in self.panels:
             panel.pane_show()
 
+    @signal_listener("balorpin")
+    def on_pin_change(self, origina, *args):
+        self.context.driver.connection.define_pins()
+
     @signal_listener("corfile")
     def on_corfile_changed(self, origin, *args):
         from meerk40t.balormk.controller import GalvoController

@@ -230,6 +230,7 @@ class BalorDevice(Service, Status):
                 "tip": _("What pin is your foot pedal hooked to on the GPIO"),
                 "section": "_10_Parameters",
                 "subsection": "_30_Pin-Index",
+                "signals": "balorpin",
             },
             {
                 "attr": "light_pin",
@@ -240,6 +241,7 @@ class BalorDevice(Service, Status):
                 "tip": _("What pin is your redlight hooked to on the GPIO"),
                 "section": "_10_Parameters",
                 "subsection": "_30_Pin-Index",
+                "signals": "balorpin",
             },
         ]
         self.register_choices("balor", choices)
