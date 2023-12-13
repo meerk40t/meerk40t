@@ -627,6 +627,9 @@ class BasicOpPanel(wx.Panel):
     @signal_listener("element_property_update")
     @signal_listener("element_property_reload")
     def signal_handler_update(self, origin, *args, **kwargs):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         hadops = False
         if len(args) > 0:
             if isinstance(args[0], (list, tuple)):
@@ -650,6 +653,9 @@ class BasicOpPanel(wx.Panel):
     @signal_listener("operation_removed")
     @signal_listener("add_operation")
     def signal_handler_rebuild(self, origin, *args, **kwargs):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         # print (f"Signal rebuild called {args} / {kwargs} / {len(list(self.context.elements.ops()))}")
         self.ask_for_refill()
 
@@ -664,9 +670,15 @@ class BasicOpPanel(wx.Panel):
     @signal_listener("speed_min")
     @lookup_listener("service/device/active")
     def on_device_update(self, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.set_display()
         self.ask_for_refill()
 
     @signal_listener("emphasized")
     def signal_handler_emphasized(self, origin, *args, **kwargs):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.highlight_operations()

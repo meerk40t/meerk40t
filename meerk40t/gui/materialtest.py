@@ -1518,6 +1518,9 @@ class TemplatePanel(wx.Panel):
 
     @signal_listener("activate;device")
     def on_activate_device(self, origin, device):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.set_param_according_to_op(None)
 
 
@@ -1688,6 +1691,9 @@ class TemplateTool(MWindow):
     @signal_listener("speed_min")
     @lookup_listener("service/device/active")
     def on_device_update(self, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.panel_template.on_device_update()
 
     @staticmethod

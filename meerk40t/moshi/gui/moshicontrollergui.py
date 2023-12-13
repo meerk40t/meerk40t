@@ -273,6 +273,9 @@ class MoshiControllerPanel(wx.Panel):
 
     @signal_listener("moshi_controller_update")
     def update_text_gui(self, origin, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         with self._buffer_lock:
             buffer = self._buffer
             self._buffer = ""

@@ -172,6 +172,9 @@ class GrblHardwareProperties(ScrolledPanel):
 
     @signal_listener("grbl:hwsettings")
     def hardware_settings_changed(self, origin, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.fill_chart()
 
     def pane_show(self):

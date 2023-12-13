@@ -277,6 +277,9 @@ class LihuiyuControllerPanel(ScrolledPanel):
 
     @signal_listener("network_update")
     def on_network_update(self, origin=None, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         try:
             if self.context.networked:
                 self.button_device_connect.Enable(False)
@@ -295,6 +298,9 @@ class LihuiyuControllerPanel(ScrolledPanel):
 
     @signal_listener("lihuiyu_controller_update")
     def update_text_gui(self, origin, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         try:
             with self._buffer_lock:
                 buffer = self._buffer
@@ -320,6 +326,9 @@ class LihuiyuControllerPanel(ScrolledPanel):
 
     @signal_listener("pipe;status")
     def update_status(self, origin, status_data, code_string):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         if origin != self.context.path:
             return
         try:
@@ -344,6 +353,9 @@ class LihuiyuControllerPanel(ScrolledPanel):
 
     @signal_listener("pipe;packet_text")
     def update_packet_text(self, origin, string_data):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         if origin != self.context._path:
             return
         if string_data is not None and len(string_data) != 0:
@@ -351,6 +363,9 @@ class LihuiyuControllerPanel(ScrolledPanel):
 
     @signal_listener("pipe;usb_status")
     def on_connection_status_change(self, origin, status):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         if origin != self.context._path:
             return
         try:
@@ -360,6 +375,9 @@ class LihuiyuControllerPanel(ScrolledPanel):
 
     @signal_listener("pipe;state")
     def on_connection_state_change(self, origin, state):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         if origin != self.context._path:
             return
         if state == "STATE_CONNECTION_FAILED":

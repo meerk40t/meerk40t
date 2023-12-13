@@ -285,6 +285,9 @@ class OperationAssignPanel(wx.Panel):
 
     @signal_listener("emphasized")
     def on_emphasize_signal(self, origin, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         has_emph = self.context.elements.has_emphasis()
         self.show_stuff(has_emph)
 
@@ -298,6 +301,9 @@ class OperationAssignPanel(wx.Panel):
         @param args:
         @return:
         """
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         if len(args) > 0:
             # Need to do all?!
             element = args[0]

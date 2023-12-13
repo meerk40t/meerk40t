@@ -1415,11 +1415,17 @@ class SimulationPanel(wx.Panel, Job):
 
     @signal_listener("plan")
     def on_plan_change(self, origin, plan_name, status):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         if plan_name == self.plan_name:
             self._refresh_simulated_plan()
 
     @signal_listener("refresh_simulation")
     def on_request_refresh(self, origin, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.widget_scene.request_refresh()
 
     def on_radio_playback_mode(self, event):
@@ -1615,6 +1621,9 @@ class SimulationPanel(wx.Panel, Job):
         @param args:
         @return:
         """
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         if scene_name == "SimScene":
             self.request_refresh()
 
@@ -2112,6 +2121,9 @@ class Simulation(MWindow):
 
     @signal_listener("background")
     def on_background_signal(self, origin, background):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         if background is not None:
             background = wx.Bitmap.FromBuffer(*background)
         self.panel.widget_scene._signal_widget(

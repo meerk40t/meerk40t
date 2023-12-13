@@ -171,6 +171,9 @@ class OpInfoPanel(ScrolledPanel):
     @signal_listener("rebuild_tree")
     @signal_listener("tree_changed")
     def on_tree_refresh(self, origin, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.refresh_data()
 
     def pane_show(self):

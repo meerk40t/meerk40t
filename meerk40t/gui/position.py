@@ -173,11 +173,17 @@ class PositionPanel(wx.Panel):
     # Option 2: attach yourself to the refresh_scene and the tool_modified signals
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, scene_name=None, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         if scene_name == "Scene":
             self.update_position(True)
 
     @signal_listener("tool_modified")
     def on_modified(self, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.update_position(True)
 
     # This the foolproofest way of getting informed

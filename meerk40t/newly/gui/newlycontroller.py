@@ -88,6 +88,9 @@ class NewlyControllerPanel(wx.ScrolledWindow):
 
     @signal_listener("newly_controller_update")
     def update_text_gui(self, origin):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         with self._buffer_lock:
             buffer = "".join(self._buffer)
             self._buffer.clear()

@@ -172,16 +172,25 @@ class ConfigurationUsb(wx.Panel):
 
     @signal_listener("pipe;buffer")
     def on_buffer_update(self, origin, value, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.text_buffer_length.SetValue(str(value))
 
     @signal_listener("pipe;index")
     def on_update_pipe_index(self, origin, value):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         if origin != self.context.path:
             return
         self.text_device_index.SetValue(str(value))
 
     @signal_listener("pipe;chipv")
     def on_update_pipe_chipv(self, origin, value):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         if origin != self.context.path:
             return
         self.text_device_version.SetValue(str(value))

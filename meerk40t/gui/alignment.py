@@ -1577,6 +1577,9 @@ class Alignment(MWindow):
     @signal_listener("reference")
     @signal_listener("emphasized")
     def on_emphasize_signal(self, origin, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         has_emph = self.context.elements.has_emphasis()
         self.panel_align.show_stuff(has_emph)
         self.panel_distribution.show_stuff(has_emph)

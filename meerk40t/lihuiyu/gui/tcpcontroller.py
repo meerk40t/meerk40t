@@ -155,6 +155,9 @@ class TCPController(MWindow):
 
     @signal_listener("network_update")
     def on_network_update(self, origin=None, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         try:
             if not self.service.networked:
                 self.button_device_connect.Enable(False)
@@ -165,6 +168,9 @@ class TCPController(MWindow):
 
     @signal_listener("tcp;status")
     def on_tcp_status(self, origin, state):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.text_status.SetValue(str(state))
         self.state = state
         if state == "uninitialized" or state == "disconnected":
@@ -188,6 +194,9 @@ class TCPController(MWindow):
 
     @signal_listener("tcp;buffer")
     def on_tcp_buffer(self, origin, status):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.text_buffer_length.SetValue(str(status))
         if self.max < status:
             self.max = status

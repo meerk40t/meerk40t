@@ -87,6 +87,9 @@ class RuidaControllerPanel(wx.ScrolledWindow):
 
     @signal_listener("ruida_controller_update")
     def update_text_gui(self, origin):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         with self._buffer_lock:
             buffer = self._buffer
             self._buffer = ""

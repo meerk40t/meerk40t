@@ -301,6 +301,9 @@ class DevicePanel(wx.Panel):
     @signal_listener("device;renamed")
     @lookup_listener("service/device/available")
     def refresh_device_tree(self, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.devices = []
         names = []
         for obj, name, sname in self.context.find("dev_info"):

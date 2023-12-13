@@ -2077,11 +2077,17 @@ class Transform(wx.Panel):
     # we need to attach to some signals...
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, scene_name=None, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         if scene_name == "Scene":
             self.update_matrix_text()
 
     @signal_listener("tool_modified")
     def on_modified(self, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.update_matrix_text()
 
     def set_timer_options(self):

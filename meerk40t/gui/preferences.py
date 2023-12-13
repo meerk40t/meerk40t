@@ -566,6 +566,9 @@ class Preferences(MWindow):
 
     @signal_listener("preferences")
     def on_pref_signal(self, origin, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         if not args:
             return
         panel = args[0]

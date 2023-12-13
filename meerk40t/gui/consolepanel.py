@@ -258,6 +258,9 @@ class ConsolePanel(wx.ScrolledWindow):
 
     @signal_listener("console_update")
     def update_console_main(self, origin, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         with self._buffer_lock:
             buffer = self._buffer
             self._buffer = ""

@@ -768,6 +768,9 @@ class LaserToolPanel(wx.Panel):
     @signal_listener("emulator;position")
     @signal_listener("status;position")
     def on_update_laser(self, origin, pos):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.laserposition = (pos[2], pos[3])
 
 

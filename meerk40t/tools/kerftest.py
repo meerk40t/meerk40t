@@ -882,6 +882,9 @@ class KerfTool(MWindow):
     @signal_listener("speed_min")
     @lookup_listener("service/device/active")
     def on_device_update(self, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.panel_template.set_power_info()
         self.panel_template.set_speed_info()
 

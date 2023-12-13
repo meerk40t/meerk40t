@@ -320,20 +320,32 @@ class TreePanel(wx.Panel):
 
     @signal_listener("warn_state_update")
     def on_warn_state_update(self, origin, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         # Updates the warning state, using signal to avoid unnecessary calls
         self.shadow_tree.update_warn_sign()
         self.check_for_issues()
 
     @signal_listener("select_emphasized_tree")
     def on_shadow_select_emphasized_tree(self, origin, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.shadow_tree.select_in_tree_by_emphasis(origin, *args)
 
     @signal_listener("activate_selected_nodes")
     def on_shadow_select_activate_tree(self, origin, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.shadow_tree.activate_selected_node(origin, *args)
 
     @signal_listener("activate_single_node")
     def on_shadow_select_activate_single_tree(self, origin, node=None, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         if node is not None:
             node.selected = True
         # self.shadow_tree.activate_selected_node(origin, *args)
@@ -347,6 +359,9 @@ class TreePanel(wx.Panel):
         @param args:
         @return:
         """
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         if self.shadow_tree is not None:
             self.shadow_tree.on_element_update(*args)
 
@@ -359,6 +374,9 @@ class TreePanel(wx.Panel):
         @param args:
         @return:
         """
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         if self.shadow_tree is not None:
             self.shadow_tree.on_force_element_update(*args)
 
@@ -404,6 +422,9 @@ class TreePanel(wx.Panel):
         @param args:
         @return:
         """
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.shadow_tree.cache_hits = 0
         self.shadow_tree.cache_requests = 0
         self.shadow_tree.refresh_tree(source=f"signal_{origin}")
@@ -445,10 +466,16 @@ class TreePanel(wx.Panel):
         @param args:
         @return:
         """
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.shadow_tree.freeze_tree(status)
 
     @signal_listener("updateop_tree")
     def on_update_op_labels_tree(self, origin, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.shadow_tree.update_op_labels()
         opitem = self.context.elements.get(type="branch ops")._item
         if opitem is None:
@@ -458,6 +485,9 @@ class TreePanel(wx.Panel):
 
     @signal_listener("updateelem_tree")
     def on_update_elem_tree(self, origin, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         elitem = self.context.elements.get(type="branch elems")._item
         if elitem is None:
             return

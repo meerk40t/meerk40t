@@ -1010,6 +1010,9 @@ class LivingHingeTool(MWindow):
 
     @signal_listener("emphasized")
     def on_emphasized_elements_changed(self, origin, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.panel_template.pane_show()
 
     @staticmethod

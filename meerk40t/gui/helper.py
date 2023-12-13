@@ -13,7 +13,7 @@ from wx import aui
 
 from meerk40t.gui.icons import get_default_icon_size, icons8_info
 from meerk40t.gui.wxutils import StaticBoxSizer
-from meerk40t.kernel import Job, signal_listener
+from meerk40t.kernel import Job
 
 _ = wx.GetTranslation
 

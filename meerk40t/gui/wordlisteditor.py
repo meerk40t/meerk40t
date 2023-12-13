@@ -693,6 +693,9 @@ class WordlistPanel(wx.Panel):
 
     @signal_listener("wordlist")
     def signal_wordlist(self, origin, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.autosave()
         self.refresh_grid_wordlist()
 

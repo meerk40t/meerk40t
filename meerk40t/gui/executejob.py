@@ -196,6 +196,9 @@ class PlannerPanel(wx.Panel):
 
     @signal_listener("plan")
     def plan_update(self, origin, *message):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         plan_name, stage = message[0], message[1]
         if stage is not None:
             self.stage = stage
@@ -204,6 +207,9 @@ class PlannerPanel(wx.Panel):
 
     @signal_listener("element_property_reload")
     def on_element_property_update(self, origin, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.update_gui()
 
     def update_gui(self):

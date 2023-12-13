@@ -410,6 +410,9 @@ class LaserPanel(wx.Panel):
 
     @signal_listener("optimize")
     def optimize_update(self, origin, *message):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         try:
             newvalue = bool(message[0])
         except ValueError:
@@ -425,6 +428,9 @@ class LaserPanel(wx.Panel):
     @lookup_listener("service/device/active")
     @lookup_listener("service/device/available")
     def on_device_changes(self, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         # Devices Initialize.
         self.available_devices = self.context.kernel.services("device")
         self.selected_device = self.context.device
@@ -445,6 +451,9 @@ class LaserPanel(wx.Panel):
 
     @signal_listener("device;connected")
     def on_connectivity(self, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         # There's no signal yet, but there should be one...
         self.update_override_controls()
 
@@ -465,10 +474,16 @@ class LaserPanel(wx.Panel):
 
     @signal_listener("pause")
     def on_device_pause_toggle(self, origin, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.set_pause_color()
 
     @signal_listener("laserpane_arm")
     def check_laser_arm(self, *args):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         self.context.setting(bool, "laserpane_arm", True)
         if self.context.laserpane_arm:
             if not self.arm_toggle.Shown:
@@ -692,6 +707,9 @@ class JobPanel(wx.Panel):
 
     @signal_listener("plan")
     def plan_update(self, origin, *message):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         plan_name, stage = message[0], message[1]
         if plan_name == "z":
             plan = self.context.planner.get_or_make_plan("z")
@@ -787,6 +805,9 @@ class OptimizePanel(wx.Panel):
 
     @signal_listener("optimize")
     def optimize_update(self, origin, *message):
+        if self.IsBeingDeleted() or self.context.kernel.is_shutdown:
+            # Not during shutdown
+            return
         try:
             newvalue = bool(message[0])
         except ValueError:
