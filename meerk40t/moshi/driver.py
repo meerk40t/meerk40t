@@ -385,7 +385,7 @@ class MoshiDriver(Parameters):
         Send a home command to the device. In the case of Moshiboards this is merely a move to
         0,0 in absolute position.
         """
-        if self.service.rotary.rotary_active and self.service.rotary.rotary_supress_home:
+        if self.service.rotary.active and self.service.rotary.supress_home:
             return
         self.rapid_mode()
         self.speed = 40

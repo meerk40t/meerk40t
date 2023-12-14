@@ -8,7 +8,6 @@ import wx
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icon_rotary
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size
 
 _ = wx.GetTranslation
 
@@ -216,12 +215,10 @@ class RotarySettings(MWindow):
         self.panel = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="rotary"
         )
-        # self.panel = RotarySettingsPanel(self, wx.ID_ANY, context=self.context.rotary)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_rotary.GetBitmap())
         self.SetIcon(_icon)
-        # begin wxGlade: RotarySettings.__set_properties
         self.SetTitle(_("Rotary-Settings"))
 
     def window_open(self):

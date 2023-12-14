@@ -23,7 +23,7 @@ class Rotary(Service):
         _ = kernel.translation
         choices = [
             {
-                "attr": "rotary_active",
+                "attr": "active",
                 "object": self,
                 "default": False,
                 "type": bool,
@@ -39,52 +39,52 @@ class Rotary(Service):
             #     "tip": _("Which axis does the rotary use?"),
             # },
             {
-                "attr": "rotary_scale_x",
+                "attr": "scale_x",
                 "object": self,
                 "default": 1.0,
                 "type": float,
                 "label": _("X-Scale"),
                 "tip": _("Scale that needs to be applied to the X-Axis"),
-                "conditional": (self, "rotary_active"),
+                "conditional": (self, "active"),
                 "subsection": _("Scale"),
             },
             {
-                "attr": "rotary_scale_y",
+                "attr": "scale_y",
                 "object": self,
                 "default": 1.0,
                 "type": float,
                 "label": _("Y-Scale"),
                 "tip": _("Scale that needs to be applied to the Y-Axis"),
-                "conditional": (self, "rotary_active"),
+                "conditional": (self, "active"),
                 "subsection": _("Scale"),
             },
             {
-                "attr": "rotary_supress_home",
+                "attr": "supress_home",
                 "object": self,
                 "default": False,
                 "type": bool,
                 "label": _("Ignore Home"),
                 "tip": _("Ignore Home-Command"),
-                "conditional": (self, "rotary_active"),
+                "conditional": (self, "active"),
             },
             {
-                "attr": "rotary_flip_x",
+                "attr": "flip_x",
                 "object": self,
                 "default": False,
                 "type": bool,
                 "label": _("Mirror X"),
                 "tip": _("Mirror the elements on the X-Axis"),
-                "conditional": (self, "rotary_active"),
+                "conditional": (self, "active"),
                 "subsection": _("Mirror Output"),
             },
             {
-                "attr": "rotary_flip_y",
+                "attr": "flip_y",
                 "object": self,
                 "default": False,
                 "type": bool,
                 "label": _("Mirror Y"),
                 "tip": _("Mirror the elements on the Y-Axis"),
-                "conditional": (self, "rotary_active"),
+                "conditional": (self, "active"),
                 "subsection": _("Mirror Output"),
             },
         ]
@@ -119,11 +119,11 @@ class Rotary(Service):
                     pass
 
     @lookup_listener("service/device/active")
-    @signal_listener("rotary_scale_x")
-    @signal_listener("rotary_scale_y")
-    @signal_listener("rotary_active")
-    @signal_listener("rotary_flip_x")
-    @signal_listener("rotary_flip_y")
+    @signal_listener("scale_x")
+    @signal_listener("scale_y")
+    @signal_listener("active")
+    @signal_listener("flip_x")
+    @signal_listener("flip_y")
     def rotary_settings_changed(self, origin=None, *args):
         """
         We force the current device to realize
@@ -131,18 +131,20 @@ class Rotary(Service):
         @param args:
         @return:
         """
+        if origin != self.path:
+            return
         device = self.device
         device.realize()
 
     @signal_listener("view;realized")
     def realize(self, origin=None, *args):
         device = self.device
-        if not self.rotary_active:
+        if not self.active:
             return
-        device.view.scale(self.rotary_scale_x, self.rotary_scale_y)
-        if self.rotary_flip_x:
+        device.view.scale(self.scale_x, self.scale_y)
+        if self.flip_x:
             device.view.flip_x()
-        if self.rotary_flip_y:
+        if self.flip_y:
             device.view.flip_y()
 
     def service_detach(self, *args, **kwargs):
