@@ -1233,14 +1233,7 @@ class MeerK40tScenePanel(wx.Panel):
             self.request_refresh()
 
     @signal_listener("view;realized")
-    def on_bedsize_simple(self, origin, nocmd=None, *args):
-        # The next two are more or less the same, so we remove the direct invocation...
-        # self.context.device.realize()
-        issue_command = True
-        if nocmd is not None and nocmd:
-            issue_command = False
-        if issue_command:
-            self.context("viewport_update\n")
+    def on_bedsize_simple(self, origin=None, nocmd=None, *args):
         self.scene.signal("guide")
         self.scene.signal("grid")
         self.request_refresh(origin)
