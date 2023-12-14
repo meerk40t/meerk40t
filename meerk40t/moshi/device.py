@@ -69,7 +69,6 @@ class MoshiDevice(Service, Status):
                 "tip": _("Width of the laser bed."),
                 "section": "_10_Dimensions",
                 "subsection": "Bed",
-                "signals": "bedsize",
                 "nonzero": True,
             },
             {
@@ -81,7 +80,6 @@ class MoshiDevice(Service, Status):
                 "tip": _("Height of the laser bed."),
                 "section": "_10_Dimensions",
                 "subsection": "Bed",
-                "signals": "bedsize",
                 "nonzero": True,
             },
             {
@@ -119,7 +117,6 @@ class MoshiDevice(Service, Status):
                 ),
                 "section": "_40_Laser Parameters",
                 "subsection": "_10_Flip Axis",
-                "signals": "bedsize",
             },
             {
                 "attr": "flip_y",
@@ -132,7 +129,6 @@ class MoshiDevice(Service, Status):
                 ),
                 "section": "_40_Laser Parameters",
                 "subsection": "_10_Flip Axis",
-                "signals": "bedsize",
             },
             {
                 "attr": "swap_xy",
@@ -145,7 +141,6 @@ class MoshiDevice(Service, Status):
                 ),
                 "section": "_40_Laser Parameters",
                 "subsection": "_10_Flip Axis",
-                "signals": "bedsize",
             },
             {
                 "attr": "home_bottom",
@@ -156,7 +151,6 @@ class MoshiDevice(Service, Status):
                 "tip": _("Indicates the device Home is on the bottom"),
                 "section": "_40_Laser Parameters",
                 "subsection": "_30_Home position",
-                "signals": "bedsize",
             },
             {
                 "attr": "home_right",
@@ -167,7 +161,6 @@ class MoshiDevice(Service, Status):
                 "tip": _("Indicates the device Home is at the right side"),
                 "section": "_40_Laser Parameters",
                 "subsection": "_30_Home position",
-                "signals": "bedsize",
             },
             {
                 "attr": "interpolate",
@@ -359,7 +352,8 @@ class MoshiDevice(Service, Status):
         """
         return self.driver.native_x, self.driver.native_y
 
-    @signal_listener("bedsize")
+    @signal_listener("home_bottom")
+    @signal_listener("home_right")
     def realize(self, origin=None):
         if origin is not None and origin != self.path:
             return

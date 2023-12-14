@@ -61,7 +61,6 @@ class GRBLDevice(Service, Status):
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
                 "subsection": "Dimensions",
-                "signals": "bedsize",
                 "nonzero": True,
             },
             {
@@ -72,7 +71,6 @@ class GRBLDevice(Service, Status):
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
                 "subsection": "Dimensions",
-                "signals": "bedsize",
                 "nonzero": True,
             },
             {
@@ -107,7 +105,6 @@ class GRBLDevice(Service, Status):
                     "+X is standard for grbl but sometimes settings can flip that."
                 ),
                 "subsection": "_10_Flip Axis",
-                "signals": "bedsize",
             },
             {
                 "attr": "flip_y",
@@ -119,7 +116,6 @@ class GRBLDevice(Service, Status):
                     "-Y is standard for grbl but sometimes settings can flip that."
                 ),
                 "subsection": "_10_Flip Axis",
-                "signals": "bedsize",
             },
             {
                 "attr": "swap_xy",
@@ -131,7 +127,6 @@ class GRBLDevice(Service, Status):
                     "Swaps the X and Y axis. This happens before the FlipX and FlipY."
                 ),
                 "subsection": "_20_Axis corrections",
-                "signals": "bedsize",
             },
             {
                 "attr": "home_corner",
@@ -150,7 +145,6 @@ class GRBLDevice(Service, Status):
                 "label": _("Force Declared Home"),
                 "tip": _("Override native home location"),
                 "subsection": "_30_Home position",
-                "signals": "bedsize",
             },
         ]
         self.register_choices("bed_dim", choices)

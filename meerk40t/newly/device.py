@@ -146,7 +146,6 @@ class NewlyDevice(Service, Status):
                 "label": _("Home Bottom"),
                 "tip": _("Indicates the device Home is on the bottom"),
                 "subsection": "_50_Home position",
-                "signals": "bedsize",
             },
             {
                 "attr": "home_right",
@@ -156,7 +155,6 @@ class NewlyDevice(Service, Status):
                 "label": _("Home Right"),
                 "tip": _("Indicates the device Home is at the right side"),
                 "subsection": "_50_Home position",
-                "signals": "bedsize",
             },
             {
                 "attr": "flip_x",
@@ -167,7 +165,6 @@ class NewlyDevice(Service, Status):
                 "tip": _("Flip the X axis for the device"),
                 "section": "_10_Parameters",
                 "subsection": "_10_Axis corrections",
-                "signals": "bedsize",
             },
             {
                 "attr": "flip_y",
@@ -178,7 +175,6 @@ class NewlyDevice(Service, Status):
                 "tip": _("Flip the Y axis for the device"),
                 "section": "_10_Parameters",
                 "subsection": "_10_Axis corrections",
-                "signals": "bedsize",
             },
             {
                 "attr": "swap_xy",

@@ -1232,7 +1232,7 @@ class MeerK40tScenePanel(wx.Panel):
         if scene_name == "Scene":
             self.request_refresh()
 
-    @signal_listener("bedsize")
+    @signal_listener("view;realized")
     def on_bedsize_simple(self, origin, nocmd=None, *args):
         # The next two are more or less the same, so we remove the direct invocation...
         # self.context.device.realize()

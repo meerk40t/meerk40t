@@ -135,7 +135,6 @@ class BalorDevice(Service, Status):
                 "tip": _("Lens Size"),
                 "section": "_00_General",
                 "priority": "20",
-                "signals": "bedsize",
                 "nonzero": True,
                 # intentionally not bed_size
             },
@@ -148,7 +147,6 @@ class BalorDevice(Service, Status):
                 "tip": _("Flip the X axis for the Balor device"),
                 "section": "_10_Parameters",
                 "subsection": "_10_Axis corrections",
-                "signals": "bedsize",
             },
             {
                 "attr": "flip_y",
@@ -159,7 +157,6 @@ class BalorDevice(Service, Status):
                 "tip": _("Flip the Y axis for the Balor device"),
                 "section": "_10_Parameters",
                 "subsection": "_10_Axis corrections",
-                "signals": "bedsize",
             },
             {
                 "attr": "swap_xy",

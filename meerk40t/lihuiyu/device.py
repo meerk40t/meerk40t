@@ -47,7 +47,6 @@ class LihuiyuDevice(Service, Status):
                 "section": "_30_" + _("Laser Parameters"),
                 "nonzero": True,
                 "subsection": _("Bed Dimensions"),
-                "signals": "bedsize",
             },
             {
                 "attr": "bedheight",
@@ -59,7 +58,6 @@ class LihuiyuDevice(Service, Status):
                 "section": "_30_" + _("Laser Parameters"),
                 "nonzero": True,
                 "subsection": _("Bed Dimensions"),
-                "signals": "bedsize",
             },
             {
                 "attr": "user_scale_x",
@@ -115,7 +113,6 @@ class LihuiyuDevice(Service, Status):
                 ),
                 "section": "_10_" + _("Configuration"),
                 "subsection": _("Board Setup"),
-                "signals": "bedsize",
             },
             {
                 "attr": "flip_x",
@@ -126,7 +123,6 @@ class LihuiyuDevice(Service, Status):
                 "tip": _("Flip the Right and Left commands sent to the controller"),
                 "section": "_10_" + _("Configuration"),
                 "subsection": _("X Axis"),
-                "signals": "bedsize",
             },
             {
                 "attr": "home_right",
@@ -137,7 +133,6 @@ class LihuiyuDevice(Service, Status):
                 "tip": _("Indicates the device Home is on the right"),
                 "section": "_10_" + _("Configuration"),
                 "subsection": _("X Axis"),
-                "signals": "bedsize",
             },
             {
                 "attr": "flip_y",
@@ -148,7 +143,6 @@ class LihuiyuDevice(Service, Status):
                 "tip": _("Flip the Y axis for the Balor device"),
                 "section": "_10_" + _("Configuration"),
                 "subsection": _("Y Axis"),
-                "signals": "bedsize",
             },
             {
                 "attr": "home_bottom",
@@ -159,7 +153,6 @@ class LihuiyuDevice(Service, Status):
                 "tip": _("Indicates the device Home is on the bottom"),
                 "section": "_10_" + _("Configuration"),
                 "subsection": _("Y Axis"),
-                "signals": "bedsize",
             },
             {
                 "attr": "swap_xy",
@@ -172,7 +165,6 @@ class LihuiyuDevice(Service, Status):
                 ),
                 "section": "_10_" + _("Configuration"),
                 "subsection": "_10_" + _("Axis corrections"),
-                "signals": "bedsize",
             },
         ]
         self.register_choices("bed_orientation", choices)
@@ -919,7 +911,8 @@ class LihuiyuDevice(Service, Status):
 
     @signal_listener("user_scale_x")
     @signal_listener("user_scale_y")
-    @signal_listener("bedsize")
+    @signal_listener("bedwidth")
+    @signal_listener("bedheight")
     @signal_listener("flip_x")
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
