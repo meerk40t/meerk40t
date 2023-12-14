@@ -703,7 +703,7 @@ class BalorDevice(Service, Status):
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
     def realize(self, origin=None, *args):
-        if origin != self.path:
+        if origin is not None and origin != self.path:
             return
         unit_size = float(Length(self.lens_size))
         galvo_range = 0xFFFF

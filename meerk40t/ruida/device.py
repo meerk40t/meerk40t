@@ -147,7 +147,7 @@ class RuidaDevice(Service):
     @signal_listener("scale_x")
     @signal_listener("scale_y")
     def realize(self, origin=None, *args):
-        if origin != self.path:
+        if origin is not None and origin != self.path:
             return
         self.view.set_dims(self.bedwidth, self.bedheight)
         self.view.transform(

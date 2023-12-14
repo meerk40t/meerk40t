@@ -361,7 +361,7 @@ class MoshiDevice(Service, Status):
 
     @signal_listener("bedsize")
     def realize(self, origin=None):
-        if origin != self.path:
+        if origin is not None and origin != self.path:
             return
         # self.origin_x = 1.0 if self.home_right else 0.0
         # self.origin_y = 1.0 if self.home_bottom else 0.0
