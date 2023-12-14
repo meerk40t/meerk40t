@@ -36,6 +36,16 @@ Creator-Software: MeerK40t v0.0.0-testing
 %0%0%0%0%
 """
 
+egv_rect_y2_rotary = """Document type : LHYMICRO-GL file
+File version: 1.0.01
+Copyright: Unknown
+Creator-Software: MeerK40t v0.0.0-testing
+
+%0%0%0%0%
+IBzzzvRzzzzzz|tS1P
+ICV2490731016000027CNLBS1EDz139RzzzvTz139LzzzvFNSE-
+"""
+
 egv_override_speed_1_rect = """Document type : LHYMICRO-GL file
 File version: 1.0.01
 Copyright: Unknown
@@ -198,6 +208,8 @@ class TestDriverLihuiyuRotary(unittest.TestCase):
             path = kernel.device.path
             device(f"set -p {path} rotary_active True")
             device(f"set -p {path} rotary_scale_y 2.0")
+            device.signal("rotary_active", True)
+            device.realize()  # In case signal doesn't update the device settings quickly enough.
             kernel.console(
                 f"rect 2cm 2cm 1cm 1cm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
@@ -205,8 +217,7 @@ class TestDriverLihuiyuRotary(unittest.TestCase):
             kernel.shutdown()
         with open(file1) as f:
             data = f.read()
-        print(data)
-        # self.assertEqual(egv_rect_y2_rotary, data)
+        self.assertEqual(egv_rect_y2_rotary, data)
 
 
 class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
