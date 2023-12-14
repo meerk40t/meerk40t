@@ -181,6 +181,34 @@ class TestDriverLihuiyu(unittest.TestCase):
         self.assertEqual(data, egv_image)
 
 
+class TestDriverLihuiyuRotary(unittest.TestCase):
+    def test_driver_rotary_engrave(self):
+        """
+        This test creates a lihuiyu device, with a rotary.
+        @return:
+        """
+        file1 = "test_rotary.egv"
+        self.addCleanup(os.remove, file1)
+
+        kernel = bootstrap.bootstrap(profile="MeerK40t_TEST_rotary")
+        try:
+            kernel.console("service device start -i lhystudios 0\n")
+            kernel.console("operation* delete\n")
+            device = kernel.device
+            path = kernel.device.path
+            device(f"set -p {path} rotary_active True")
+            device(f"set -p {path} rotary_scale_y 2.0")
+            kernel.console(
+                f"rect 2cm 2cm 1cm 1cm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
+            )
+        finally:
+            kernel.shutdown()
+        with open(file1) as f:
+            data = f.read()
+        print(data)
+        # self.assertEqual(egv_rect_y2_rotary, data)
+
+
 class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
     def test_driver_override_speed_engrave(self):
         """
