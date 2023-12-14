@@ -50,6 +50,10 @@ def bootstrap(profile="MeerK40t_TEST", ignore_settings=True):
 
     kernel.add_plugin(newlydevice.plugin)
 
+    from meerk40t.balormk import plugin as balormkdevice
+
+    kernel.add_plugin(balormkdevice.plugin)
+
     from meerk40t.core import svg_io
 
     kernel.add_plugin(svg_io.plugin)
