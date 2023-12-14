@@ -10,7 +10,7 @@ from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
-from ..core.units import UNITS_PER_MIL, Length
+from ..core.units import Length
 from ..device.mixins import Status
 from .controller import MoshiController
 from .driver import MoshiDriver
@@ -69,7 +69,6 @@ class MoshiDevice(Service, Status):
                 "tip": _("Width of the laser bed."),
                 "section": "_10_Dimensions",
                 "subsection": "Bed",
-                "signals": "bedsize",
                 "nonzero": True,
             },
             {
@@ -81,7 +80,6 @@ class MoshiDevice(Service, Status):
                 "tip": _("Height of the laser bed."),
                 "section": "_10_Dimensions",
                 "subsection": "Bed",
-                "signals": "bedsize",
                 "nonzero": True,
             },
             {
@@ -114,25 +112,19 @@ class MoshiDevice(Service, Status):
                 "default": False,
                 "type": bool,
                 "label": _("Flip X"),
-                "tip": _(
-                    "+X is standard for grbl but sometimes settings can flip that."
-                ),
+                "tip": _("Flip the X axis for the device"),
                 "section": "_40_Laser Parameters",
                 "subsection": "_10_Flip Axis",
-                "signals": "bedsize",
             },
             {
                 "attr": "flip_y",
                 "object": self,
-                "default": True,
+                "default": False,
                 "type": bool,
                 "label": _("Flip Y"),
-                "tip": _(
-                    "-Y is standard for grbl but sometimes settings can flip that."
-                ),
+                "tip": _("Flip the Y axis for the device"),
                 "section": "_40_Laser Parameters",
                 "subsection": "_10_Flip Axis",
-                "signals": "bedsize",
             },
             {
                 "attr": "swap_xy",
@@ -145,29 +137,25 @@ class MoshiDevice(Service, Status):
                 ),
                 "section": "_40_Laser Parameters",
                 "subsection": "_10_Flip Axis",
-                "signals": "bedsize",
             },
             {
-                "attr": "home_bottom",
+                "attr": "home_corner",
                 "object": self,
-                "default": True,
-                "type": bool,
-                "label": _("Home Bottom"),
-                "tip": _("Indicates the device Home is on the bottom"),
+                "default": "auto",
+                "type": str,
+                "style": "combo",
+                "choices": [
+                    "auto",
+                    "top-left",
+                    "top-right",
+                    "bottom-left",
+                    "bottom-right",
+                    "center",
+                ],
+                "label": _("Force Declared Home"),
+                "tip": _("Override native home location"),
                 "section": "_40_Laser Parameters",
-                "subsection": "_30_Home position",
-                "signals": "bedsize",
-            },
-            {
-                "attr": "home_right",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Home Right"),
-                "tip": _("Indicates the device Home is at the right side"),
-                "section": "_40_Laser Parameters",
-                "subsection": "_30_Home position",
-                "signals": "bedsize",
+                "subsection": "_30_" + _("Home position"),
             },
             {
                 "attr": "interpolate",
@@ -191,66 +179,6 @@ class MoshiDevice(Service, Status):
             },
         ]
         self.register_choices("bed_dim", choices)
-        choices = [
-            {
-                "attr": "rotary_active",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Rotary-Mode active"),
-                "tip": _("Is the rotary mode active for this device"),
-            },
-            {
-                "attr": "rotary_scale_x",
-                "object": self,
-                "default": 1.0,
-                "type": float,
-                "label": _("X-Scale"),
-                "tip": _("Scale that needs to be applied to the X-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Scale"),
-            },
-            {
-                "attr": "rotary_scale_y",
-                "object": self,
-                "default": 1.0,
-                "type": float,
-                "label": _("Y-Scale"),
-                "tip": _("Scale that needs to be applied to the Y-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Scale"),
-            },
-            {
-                "attr": "rotary_supress_home",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Ignore Home"),
-                "tip": _("Ignore Home-Command"),
-                "conditional": (self, "rotary_active"),
-            },
-            {
-                "attr": "rotary_flip_x",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror X"),
-                "tip": _("Mirror the elements on the X-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Mirror Output"),
-            },
-            {
-                "attr": "rotary_flip_y",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror Y"),
-                "tip": _("Mirror the elements on the Y-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Mirror Output"),
-            },
-        ]
-        self.register_choices("rotary", choices)
 
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
@@ -272,18 +200,7 @@ class MoshiDevice(Service, Status):
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
         self.view = View(self.bedwidth, self.bedheight, dpi=1000.0)
-        self.view.transform(
-            user_scale_x=self.scale_x,
-            user_scale_y=self.scale_y,
-            flip_x=self.flip_x,
-            flip_y=self.flip_y,
-            swap_xy=self.swap_xy,
-        )
-        # rotary_active = self.rotary_active,
-        # rotary_scale_x = self.rotary_scale_x,
-        # rotary_scale_y = self.rotary_scale_y,
-        # rotary_flip_x = self.rotary_flip_x,
-        # rotary_flip_y = self.rotary_flip_y,
+        self.realize()
         self.state = 0
 
         self.driver = MoshiDriver(self)
@@ -401,16 +318,6 @@ class MoshiDevice(Service, Status):
             except (PermissionError, OSError):
                 channel(_("Could not save: {filename}").format(filename=filename))
 
-        @self.console_command(
-            "viewport_update",
-            hidden=True,
-            help=_("Update moshi dimension parameters"),
-        )
-        def codes_update(**kwargs):
-            self.origin_x = 1.0 if self.home_right else 0.0
-            self.origin_y = 1.0 if self.home_bottom else 0.0
-            self.realize()
-
     def service_attach(self, *args, **kwargs):
         self.realize()
 
@@ -432,11 +339,45 @@ class MoshiDevice(Service, Status):
         """
         return self.driver.native_x, self.driver.native_y
 
-    @signal_listener("bedsize")
-    def realize(self, origin=None):
-        self.view.origin(
-            1.0 if self.home_right else 0.0, 1.0 if self.home_bottom else 0.0
+    @signal_listener("bedwidth")
+    @signal_listener("bedheight")
+    @signal_listener("scale_x")
+    @signal_listener("scale_y")
+    @signal_listener("flip_x")
+    @signal_listener("flip_y")
+    @signal_listener("swap_xy")
+    @signal_listener("home_corner")
+    def realize(self, origin=None, *args):
+        if origin is not None and origin != self.path:
+            return
+        corner = self.setting(str, "home_corner")
+        if corner == "auto":
+            home_dx = 0
+            home_dy = 0
+        elif corner == "top-left":
+            home_dx = 1 if self.flip_x else 0
+            home_dy = 1 if self.flip_y else 0
+        elif corner == "top-right":
+            home_dx = 0 if self.flip_x else 1
+            home_dy = 1 if self.flip_y else 0
+        elif corner == "bottom-left":
+            home_dx = 1 if self.flip_x else 0
+            home_dy = 0 if self.flip_y else 1
+        elif corner == "bottom-right":
+            home_dx = 0 if self.flip_x else 1
+            home_dy = 0 if self.flip_y else 1
+        elif corner == "center":
+            home_dx = 0.5
+            home_dy = 0.5
+        self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.transform(
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
+            origin_x=home_dx,
+            origin_y=home_dy,
         )
         self.view.realize()
-        # self.space.update_bounds(0, 0, self.width, self.height)
-        self.space.update_bounds(0, 0, self.view.width, self.view.height)
+        self.signal("view;realized")

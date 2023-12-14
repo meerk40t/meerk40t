@@ -36,7 +36,6 @@ class BalorConfiguration(MWindow):
             ("balor-global", "Global"),
             ("balor-global-timing", "Timings"),
             ("balor-extra", "Extras"),
-            # ("rotary", "Rotary"),
         )
         injector = (
             {
@@ -116,7 +115,6 @@ class BalorConfiguration(MWindow):
             return
         self.context.lens_size = f"{65536.0 / scale:.03f}mm"
         self.context.signal("lens_size", self.context.lens_size, self.context)
-        self.context.signal("bedsize", False)
 
     def window_preserve(self):
         return False

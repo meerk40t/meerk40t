@@ -6,7 +6,7 @@ Registers relevant commands and options.
 """
 from time import sleep
 
-from meerk40t.kernel import CommandSyntaxError, Service
+from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
@@ -61,7 +61,6 @@ class GRBLDevice(Service, Status):
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
                 "subsection": "Dimensions",
-                "signals": "bedsize",
                 "nonzero": True,
             },
             {
@@ -72,7 +71,6 @@ class GRBLDevice(Service, Status):
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
                 "subsection": "Dimensions",
-                "signals": "bedsize",
                 "nonzero": True,
             },
             {
@@ -107,7 +105,6 @@ class GRBLDevice(Service, Status):
                     "+X is standard for grbl but sometimes settings can flip that."
                 ),
                 "subsection": "_10_Flip Axis",
-                "signals": "bedsize",
             },
             {
                 "attr": "flip_y",
@@ -119,7 +116,6 @@ class GRBLDevice(Service, Status):
                     "-Y is standard for grbl but sometimes settings can flip that."
                 ),
                 "subsection": "_10_Flip Axis",
-                "signals": "bedsize",
             },
             {
                 "attr": "swap_xy",
@@ -131,7 +127,6 @@ class GRBLDevice(Service, Status):
                     "Swaps the X and Y axis. This happens before the FlipX and FlipY."
                 ),
                 "subsection": "_20_Axis corrections",
-                "signals": "bedsize",
             },
             {
                 "attr": "home_corner",
@@ -149,71 +144,10 @@ class GRBLDevice(Service, Status):
                 ],
                 "label": _("Force Declared Home"),
                 "tip": _("Override native home location"),
-                "subsection": "_30_Home position",
-                "signals": "bedsize",
+                "subsection": "_30_" + _("Home position"),
             },
         ]
         self.register_choices("bed_dim", choices)
-        choices = [
-            {
-                "attr": "rotary_active",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Rotary-Mode active"),
-                "tip": _("Is the rotary mode active for this device"),
-            },
-            {
-                "attr": "rotary_scale_x",
-                "object": self,
-                "default": 1.0,
-                "type": float,
-                "label": _("X-Scale"),
-                "tip": _("Scale that needs to be applied to the X-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Scale"),
-            },
-            {
-                "attr": "rotary_scale_y",
-                "object": self,
-                "default": 1.0,
-                "type": float,
-                "label": _("Y-Scale"),
-                "tip": _("Scale that needs to be applied to the Y-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Scale"),
-            },
-            {
-                "attr": "rotary_supress_home",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Ignore Home"),
-                "tip": _("Ignore Home-Command"),
-                "conditional": (self, "rotary_active"),
-            },
-            {
-                "attr": "rotary_flip_x",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror X"),
-                "tip": _("Mirror the elements on the X-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Mirror Output"),
-            },
-            {
-                "attr": "rotary_flip_y",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror Y"),
-                "tip": _("Mirror the elements on the Y-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Mirror Output"),
-            },
-        ]
-        self.register_choices("rotary", choices)
         # This device prefers to display power level in percent
         self.setting(bool, "use_percent_for_power_display", True)
         # This device prefers to display speed in mm/min
@@ -464,9 +398,7 @@ class GRBLDevice(Service, Status):
                 "default": True,
                 "type": bool,
                 "label": _("Check sequence on connect."),
-                "tip": _(
-                    "On connection, check the standard GRBL info for the device."
-                ),
+                "tip": _("On connection, check the standard GRBL info for the device."),
                 "section": "_40_Validation",
             },
             {
@@ -694,14 +626,6 @@ class GRBLDevice(Service, Status):
             self("bind s +ybackward")
             self("bind w +yforward")
 
-        @self.console_command(
-            "viewport_update",
-            hidden=True,
-            help=_("Update grbl codes for movement"),
-        )
-        def codes_update(**kwargs):
-            self.realize()
-
         @self.console_option(
             "strength", "s", type=int, help="Set the dot laser strength."
         )
@@ -873,7 +797,17 @@ class GRBLDevice(Service, Status):
         """
         return self.driver.native_x, self.driver.native_y
 
+    @signal_listener("scale_x")
+    @signal_listener("scale_y")
+    @signal_listener("bedwidth")
+    @signal_listener("bedheight")
+    @signal_listener("home_corner")
+    @signal_listener("flip_x")
+    @signal_listener("flip_y")
+    @signal_listener("swap_xy")
     def realize(self, origin=None):
+        if origin is not None and origin != self.path:
+            return
         corner = self.setting(str, "home_corner")
         if corner == "auto":
             home_dx = 0
@@ -914,10 +848,4 @@ class GRBLDevice(Service, Status):
             origin_x=home_dx,
             origin_y=home_dy,
         )
-
-        # rotary_active=self.rotary_active,
-        # rotary_scale_x=self.rotary_scale_x,
-        # rotary_scale_y=self.rotary_scale_y,
-        # rotary_flip_x=self.rotary_flip_x,
-        # rotary_flip_y=self.rotary_flip_y,
-        self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)
+        self.signal("view;realized")

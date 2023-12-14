@@ -135,7 +135,6 @@ class BalorDevice(Service, Status):
                 "tip": _("Lens Size"),
                 "section": "_00_General",
                 "priority": "20",
-                "signals": "bedsize",
                 "nonzero": True,
                 # intentionally not bed_size
             },
@@ -145,10 +144,9 @@ class BalorDevice(Service, Status):
                 "default": False,
                 "type": bool,
                 "label": _("Flip X"),
-                "tip": _("Flip the X axis for the Balor device"),
+                "tip": _("Flip the X axis for the device"),
                 "section": "_10_Parameters",
                 "subsection": "_10_Axis corrections",
-                "signals": "bedsize",
             },
             {
                 "attr": "flip_y",
@@ -156,10 +154,9 @@ class BalorDevice(Service, Status):
                 "default": True,
                 "type": bool,
                 "label": _("Flip Y"),
-                "tip": _("Flip the Y axis for the Balor device"),
+                "tip": _("Flip the Y axis for the device"),
                 "section": "_10_Parameters",
                 "subsection": "_10_Axis corrections",
-                "signals": "bedsize",
             },
             {
                 "attr": "swap_xy",
@@ -671,66 +668,6 @@ class BalorDevice(Service, Status):
             },
         ]
         self.register_choices("balor-extra", choices)
-        choices = [
-            {
-                "attr": "rotary_active",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Rotary-Mode active"),
-                "tip": _("Is the rotary mode active for this device"),
-            },
-            {
-                "attr": "rotary_scale_x",
-                "object": self,
-                "default": 1.0,
-                "type": float,
-                "label": _("X-Scale"),
-                "tip": _("Scale that needs to be applied to the X-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Scale"),
-            },
-            {
-                "attr": "rotary_scale_y",
-                "object": self,
-                "default": 1.0,
-                "type": float,
-                "label": _("Y-Scale"),
-                "tip": _("Scale that needs to be applied to the Y-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Scale"),
-            },
-            {
-                "attr": "rotary_supress_home",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Ignore Home"),
-                "tip": _("Ignore Home-Command"),
-                "conditional": (self, "rotary_active"),
-            },
-            {
-                "attr": "rotary_mirror_x",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror X"),
-                "tip": _("Mirror the elements on the X-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Mirror Output"),
-            },
-            {
-                "attr": "rotary_mirror_y",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror Y"),
-                "tip": _("Mirror the elements on the Y-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Mirror Output"),
-            },
-        ]
-        self.register_choices("rotary", choices)
 
         self.state = 0
 
@@ -754,14 +691,6 @@ class BalorDevice(Service, Status):
         self.viewbuffer = ""
         self._simulate = False
 
-        @self.console_command(
-            "viewport_update",
-            hidden=True,
-            help=_("Update galvo flips for movement"),
-        )
-        def codes_update(**kwargs):
-            self.realize()
-
     def service_attach(self, *args, **kwargs):
         self.realize()
 
@@ -771,6 +700,8 @@ class BalorDevice(Service, Status):
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
     def realize(self, origin=None, *args):
+        if origin is not None and origin != self.path:
+            return
         unit_size = float(Length(self.lens_size))
         galvo_range = 0xFFFF
         units_per_galvo = unit_size / galvo_range
@@ -788,7 +719,7 @@ class BalorDevice(Service, Status):
             self.view.rotate_cw()
         if self.rotate >= 270:
             self.view.rotate_cw()
-        self.space.update_bounds(0, 0, self.lens_size, self.lens_size)
+        self.signal("view;realized")
 
     @property
     def current(self):

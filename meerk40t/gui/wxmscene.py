@@ -771,7 +771,7 @@ class MeerK40tScenePanel(wx.Panel):
                             )
                         if scalex is None:
                             rot = self.scene.context.rotary
-                            if rot.rotary_enabled:
+                            if rot.active:
                                 scalex = rot.scale_x
                                 scaley = rot.scale_y
                             else:
@@ -1232,15 +1232,8 @@ class MeerK40tScenePanel(wx.Panel):
         if scene_name == "Scene":
             self.request_refresh()
 
-    @signal_listener("bedsize")
-    def on_bedsize_simple(self, origin, nocmd=None, *args):
-        # The next two are more or less the same, so we remove the direct invocation...
-        # self.context.device.realize()
-        issue_command = True
-        if nocmd is not None and nocmd:
-            issue_command = False
-        if issue_command:
-            self.context("viewport_update\n")
+    @signal_listener("view;realized")
+    def on_bedsize_simple(self, origin=None, nocmd=None, *args):
         self.scene.signal("guide")
         self.scene.signal("grid")
         self.request_refresh(origin)

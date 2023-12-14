@@ -11,10 +11,6 @@ def plugin(kernel, lifecycle):
         from meerk40t.rotary.gui.rotarysettings import RotarySettings
 
         _ = kernel.translation
-        # Disable Rotary for the time being as it is not yet fully working...
-        enable_rotary = False
-        if not enable_rotary:
-            return
 
         kernel.register("window/Rotary", RotarySettings)
         kernel.register(

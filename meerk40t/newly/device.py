@@ -139,24 +139,23 @@ class NewlyDevice(Service, Status):
                 "nonzero": True,
             },
             {
-                "attr": "home_bottom",
+                "attr": "home_corner",
                 "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Home Bottom"),
-                "tip": _("Indicates the device Home is on the bottom"),
-                "subsection": "_50_Home position",
-                "signals": "bedsize",
-            },
-            {
-                "attr": "home_right",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Home Right"),
-                "tip": _("Indicates the device Home is at the right side"),
-                "subsection": "_50_Home position",
-                "signals": "bedsize",
+                "default": "auto",
+                "type": str,
+                "style": "combo",
+                "choices": [
+                    "auto",
+                    "top-left",
+                    "top-right",
+                    "bottom-left",
+                    "bottom-right",
+                    "center",
+                ],
+                "label": _("Force Declared Home"),
+                "tip": _("Override native home location"),
+                "section": "_10_Parameters",
+                "subsection": "_50_" + _("Home position"),
             },
             {
                 "attr": "flip_x",
@@ -167,7 +166,6 @@ class NewlyDevice(Service, Status):
                 "tip": _("Flip the X axis for the device"),
                 "section": "_10_Parameters",
                 "subsection": "_10_Axis corrections",
-                "signals": "bedsize",
             },
             {
                 "attr": "flip_y",
@@ -178,7 +176,6 @@ class NewlyDevice(Service, Status):
                 "tip": _("Flip the Y axis for the device"),
                 "section": "_10_Parameters",
                 "subsection": "_10_Axis corrections",
-                "signals": "bedsize",
             },
             {
                 "attr": "swap_xy",
@@ -500,9 +497,7 @@ class NewlyDevice(Service, Status):
             dpi_x=self.h_dpi,
             dpi_y=self.v_dpi,
         )
-        self.view.transform(
-            flip_x=self.flip_x, flip_y=self.flip_y, swap_xy=self.swap_xy
-        )
+        self.realize()
         self.spooler = Spooler(self)
         self.driver = NewlyDriver(self)
         self.spooler.driver = self.driver
@@ -692,14 +687,6 @@ class NewlyDevice(Service, Status):
                     _("Not Connected"),
                 )
 
-        @self.console_command(
-            "viewport_update",
-            hidden=True,
-            help=_("Update newly flips for movement"),
-        )
-        def codes_update(**kwargs):
-            self.realize()
-
     def service_attach(self, *args, **kwargs):
         self.realize()
 
@@ -708,14 +695,40 @@ class NewlyDevice(Service, Status):
     @signal_listener("swap_xy")
     @signal_listener("v_dpi")
     @signal_listener("h_dpi")
+    @signal_listener("home_corner")
     def realize(self, origin=None, *args):
+        if origin is not None and origin != self.path:
+            return
+        corner = self.setting(str, "home_corner")
+        if corner == "auto":
+            home_dx = 0
+            home_dy = 0
+        elif corner == "top-left":
+            home_dx = 1 if self.flip_x else 0
+            home_dy = 1 if self.flip_y else 0
+        elif corner == "top-right":
+            home_dx = 0 if self.flip_x else 1
+            home_dy = 1 if self.flip_y else 0
+        elif corner == "bottom-left":
+            home_dx = 1 if self.flip_x else 0
+            home_dy = 0 if self.flip_y else 1
+        elif corner == "bottom-right":
+            home_dx = 0 if self.flip_x else 1
+            home_dy = 0 if self.flip_y else 1
+        elif corner == "center":
+            home_dx = 0.5
+            home_dy = 0.5
         self.view.set_dims(self.bedwidth, self.bedheight)
         self.view.dpi_x = self.h_dpi
         self.view.dpi_y = self.v_dpi
         self.view.transform(
-            flip_x=self.flip_x, flip_y=self.flip_y, swap_xy=self.swap_xy
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
+            origin_x=home_dx,
+            origin_y=home_dy,
         )
-        self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)
+        self.signal("view;realized")
 
     @property
     def current(self):
