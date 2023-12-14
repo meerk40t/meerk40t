@@ -581,7 +581,7 @@ class BalorDriver:
 
         @return:
         """
-        if self.service.rotary_active and self.service.rotary_supress_home:
+        if self.service.rotary.rotary_active and self.service.rotary.rotary_supress_home:
             return
         self.move_abs("50%", "50%")
 

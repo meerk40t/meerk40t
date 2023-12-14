@@ -500,9 +500,7 @@ class NewlyDevice(Service, Status):
             dpi_x=self.h_dpi,
             dpi_y=self.v_dpi,
         )
-        self.view.transform(
-            flip_x=self.flip_x, flip_y=self.flip_y, swap_xy=self.swap_xy
-        )
+        self.realize()
         self.spooler = Spooler(self)
         self.driver = NewlyDriver(self)
         self.spooler.driver = self.driver
@@ -715,7 +713,7 @@ class NewlyDevice(Service, Status):
         self.view.transform(
             flip_x=self.flip_x, flip_y=self.flip_y, swap_xy=self.swap_xy
         )
-        self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)
+        self.signal("view;realized")
 
     @property
     def current(self):
