@@ -174,9 +174,6 @@ class GRBLConfiguration(MWindow):
         panel_protocol = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="protocol"
         )
-        panel_rotary = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="rotary"
-        )
         panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
         panel_formatter = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
@@ -185,7 +182,6 @@ class GRBLConfiguration(MWindow):
         self.panels.append(panel_interface)
         self.panels.append(panel_protocol)
         self.panels.append(panel_global)
-        self.panels.append(panel_rotary)
         self.panels.append(panel_warn)
         self.panels.append(panel_actions)
         self.panels.append(panel_formatter)
@@ -194,7 +190,6 @@ class GRBLConfiguration(MWindow):
         self.notebook_main.AddPage(panel_interface, _("Interface"))
         self.notebook_main.AddPage(panel_protocol, _("Protocol"))
         self.notebook_main.AddPage(panel_global, _("Advanced"))
-        self.notebook_main.AddPage(panel_rotary, _("Rotary"))
         self.notebook_main.AddPage(panel_warn, _("Warning"))
         self.notebook_main.AddPage(panel_actions, _("Default Actions"))
         self.notebook_main.AddPage(panel_formatter, _("Display Options"))

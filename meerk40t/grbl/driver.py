@@ -557,7 +557,7 @@ class GRBLDriver(Parameters):
         """
         self.native_x = 0
         self.native_y = 0
-        if self.service.rotary_active and self.service.rotary_supress_home:
+        if self.service.rotary.rotary_active and self.service.rotary.rotary_supress_home:
             return
         self(f"G28{self.line_end}")
 

@@ -154,66 +154,6 @@ class GRBLDevice(Service, Status):
             },
         ]
         self.register_choices("bed_dim", choices)
-        choices = [
-            {
-                "attr": "rotary_active",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Rotary-Mode active"),
-                "tip": _("Is the rotary mode active for this device"),
-            },
-            {
-                "attr": "rotary_scale_x",
-                "object": self,
-                "default": 1.0,
-                "type": float,
-                "label": _("X-Scale"),
-                "tip": _("Scale that needs to be applied to the X-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Scale"),
-            },
-            {
-                "attr": "rotary_scale_y",
-                "object": self,
-                "default": 1.0,
-                "type": float,
-                "label": _("Y-Scale"),
-                "tip": _("Scale that needs to be applied to the Y-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Scale"),
-            },
-            {
-                "attr": "rotary_supress_home",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Ignore Home"),
-                "tip": _("Ignore Home-Command"),
-                "conditional": (self, "rotary_active"),
-            },
-            {
-                "attr": "rotary_flip_x",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror X"),
-                "tip": _("Mirror the elements on the X-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Mirror Output"),
-            },
-            {
-                "attr": "rotary_flip_y",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror Y"),
-                "tip": _("Mirror the elements on the Y-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Mirror Output"),
-            },
-        ]
-        self.register_choices("rotary", choices)
         # This device prefers to display power level in percent
         self.setting(bool, "use_percent_for_power_display", True)
         # This device prefers to display speed in mm/min
@@ -464,9 +404,7 @@ class GRBLDevice(Service, Status):
                 "default": True,
                 "type": bool,
                 "label": _("Check sequence on connect."),
-                "tip": _(
-                    "On connection, check the standard GRBL info for the device."
-                ),
+                "tip": _("On connection, check the standard GRBL info for the device."),
                 "section": "_40_Validation",
             },
             {
@@ -914,10 +852,4 @@ class GRBLDevice(Service, Status):
             origin_x=home_dx,
             origin_y=home_dy,
         )
-
-        # rotary_active=self.rotary_active,
-        # rotary_scale_x=self.rotary_scale_x,
-        # rotary_scale_y=self.rotary_scale_y,
-        # rotary_flip_x=self.rotary_flip_x,
-        # rotary_flip_y=self.rotary_flip_y,
-        self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)
+        self.signal("view;realized")
