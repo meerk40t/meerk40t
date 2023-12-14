@@ -144,7 +144,7 @@ class GRBLDevice(Service, Status):
                 ],
                 "label": _("Force Declared Home"),
                 "tip": _("Override native home location"),
-                "subsection": "_30_Home position",
+                "subsection": "_30_" + _("Home position"),
             },
         ]
         self.register_choices("bed_dim", choices)

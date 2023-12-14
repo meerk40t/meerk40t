@@ -155,7 +155,7 @@ class NewlyDevice(Service, Status):
                 "label": _("Force Declared Home"),
                 "tip": _("Override native home location"),
                 "section": "_10_Parameters",
-                "subsection": "_50_Home position",
+                "subsection": "_50_" + _("Home position"),
             },
             {
                 "attr": "flip_x",

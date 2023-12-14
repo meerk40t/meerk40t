@@ -122,17 +122,7 @@ class LihuiyuDevice(Service, Status):
                 "label": _("Flip X"),
                 "tip": _("Flip the X axis for the device"),
                 "section": "_10_" + _("Configuration"),
-                "subsection": _("X Axis"),
-            },
-            {
-                "attr": "home_right",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Home Right"),
-                "tip": _("Indicates the device Home is on the right"),
-                "section": "_10_" + _("Configuration"),
-                "subsection": _("X Axis"),
+                "subsection": "_10_Axis corrections",
             },
             {
                 "attr": "flip_y",
@@ -142,17 +132,7 @@ class LihuiyuDevice(Service, Status):
                 "label": _("Flip Y"),
                 "tip": _("Flip the Y axis for the device"),
                 "section": "_10_" + _("Configuration"),
-                "subsection": _("Y Axis"),
-            },
-            {
-                "attr": "home_bottom",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Home Bottom"),
-                "tip": _("Indicates the device Home is on the bottom"),
-                "section": "_10_" + _("Configuration"),
-                "subsection": _("Y Axis"),
+                "subsection": "_10_Axis corrections",
             },
             {
                 "attr": "swap_xy",
@@ -165,6 +145,25 @@ class LihuiyuDevice(Service, Status):
                 ),
                 "section": "_10_" + _("Configuration"),
                 "subsection": "_10_" + _("Axis corrections"),
+            },
+            {
+                "attr": "home_corner",
+                "object": self,
+                "default": "auto",
+                "type": str,
+                "style": "combo",
+                "choices": [
+                    "auto",
+                    "top-left",
+                    "top-right",
+                    "bottom-left",
+                    "bottom-right",
+                    "center",
+                ],
+                "label": _("Force Declared Home"),
+                "tip": _("Override native home location"),
+                "section": "_10_" + _("Configuration"),
+                "subsection": "_50_" + _("Home position"),
             },
         ]
         self.register_choices("bed_orientation", choices)
@@ -915,10 +914,30 @@ class LihuiyuDevice(Service, Status):
     @signal_listener("bedheight")
     @signal_listener("flip_x")
     @signal_listener("flip_y")
+    @signal_listener("home_corner")
     @signal_listener("swap_xy")
     def realize(self, origin=None, *args):
         if origin is not None and origin != self.path:
             return
+        corner = self.setting(str, "home_corner")
+        if corner == "auto":
+            home_dx = 0
+            home_dy = 0
+        elif corner == "top-left":
+            home_dx = 1 if self.flip_x else 0
+            home_dy = 1 if self.flip_y else 0
+        elif corner == "top-right":
+            home_dx = 0 if self.flip_x else 1
+            home_dy = 1 if self.flip_y else 0
+        elif corner == "bottom-left":
+            home_dx = 1 if self.flip_x else 0
+            home_dy = 0 if self.flip_y else 1
+        elif corner == "bottom-right":
+            home_dx = 0 if self.flip_x else 1
+            home_dy = 0 if self.flip_y else 1
+        elif corner == "center":
+            home_dx = 0.5
+            home_dy = 0.5
         self.view.set_dims(self.bedwidth, self.bedheight)
         self.view.transform(
             user_scale_x=self.user_scale_x,
@@ -926,6 +945,8 @@ class LihuiyuDevice(Service, Status):
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
+            origin_x=home_dx,
+            origin_y=home_dy,
         )
         self.signal("view;realized")
 
