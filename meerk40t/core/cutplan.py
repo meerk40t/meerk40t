@@ -170,11 +170,6 @@ class CutPlan:
             # Absolute coordinates.
             placements.append(scene_to_device_matrix)
 
-        # TODO: Correct rotary.
-        # rotary = self.context.rotary
-        # if rotary.rotary_enabled:
-        #     axis = rotary.axis
-
         original_ops = copy(self.plan)
         if self.context.opt_raster_optimisation and self.context.do_optimization:
             try:
