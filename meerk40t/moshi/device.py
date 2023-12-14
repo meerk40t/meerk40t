@@ -10,7 +10,7 @@ from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
-from ..core.units import UNITS_PER_MIL, Length
+from ..core.units import Length
 from ..device.mixins import Status
 from .controller import MoshiController
 from .driver import MoshiDriver
@@ -112,21 +112,17 @@ class MoshiDevice(Service, Status):
                 "default": False,
                 "type": bool,
                 "label": _("Flip X"),
-                "tip": _(
-                    "+X is standard for grbl but sometimes settings can flip that."
-                ),
+                "tip": _("Flip the X axis for the device"),
                 "section": "_40_Laser Parameters",
                 "subsection": "_10_Flip Axis",
             },
             {
                 "attr": "flip_y",
                 "object": self,
-                "default": True,
+                "default": False,
                 "type": bool,
                 "label": _("Flip Y"),
-                "tip": _(
-                    "-Y is standard for grbl but sometimes settings can flip that."
-                ),
+                "tip": _("Flip the Y axis for the device"),
                 "section": "_40_Laser Parameters",
                 "subsection": "_10_Flip Axis",
             },
@@ -143,23 +139,21 @@ class MoshiDevice(Service, Status):
                 "subsection": "_10_Flip Axis",
             },
             {
-                "attr": "home_bottom",
+                "attr": "home_corner",
                 "object": self,
-                "default": True,
-                "type": bool,
-                "label": _("Home Bottom"),
-                "tip": _("Indicates the device Home is on the bottom"),
-                "section": "_40_Laser Parameters",
-                "subsection": "_30_Home position",
-            },
-            {
-                "attr": "home_right",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Home Right"),
-                "tip": _("Indicates the device Home is at the right side"),
-                "section": "_40_Laser Parameters",
+                "default": "auto",
+                "type": str,
+                "style": "combo",
+                "choices": [
+                    "auto",
+                    "top-left",
+                    "top-right",
+                    "bottom-left",
+                    "bottom-right",
+                    "center",
+                ],
+                "label": _("Force Declared Home"),
+                "tip": _("Override native home location"),
                 "subsection": "_30_Home position",
             },
             {
@@ -205,13 +199,6 @@ class MoshiDevice(Service, Status):
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
         self.view = View(self.bedwidth, self.bedheight, dpi=1000.0)
-        self.view.transform(
-            user_scale_x=self.scale_x,
-            user_scale_y=self.scale_y,
-            flip_x=self.flip_x,
-            flip_y=self.flip_y,
-            swap_xy=self.swap_xy,
-        )
         self.realize()
         self.state = 0
 
@@ -330,7 +317,6 @@ class MoshiDevice(Service, Status):
             except (PermissionError, OSError):
                 channel(_("Could not save: {filename}").format(filename=filename))
 
-
     def service_attach(self, *args, **kwargs):
         self.realize()
 
@@ -352,16 +338,45 @@ class MoshiDevice(Service, Status):
         """
         return self.driver.native_x, self.driver.native_y
 
-    @signal_listener("home_bottom")
-    @signal_listener("home_right")
+    @signal_listener("bedwidth")
+    @signal_listener("bedheight")
+    @signal_listener("scale_x")
+    @signal_listener("scale_y")
+    @signal_listener("flip_x")
+    @signal_listener("flip_y")
+    @signal_listener("swap_xy")
+    @signal_listener("home_corner")
     def realize(self, origin=None):
         if origin is not None and origin != self.path:
             return
-        # self.origin_x = 1.0 if self.home_right else 0.0
-        # self.origin_y = 1.0 if self.home_bottom else 0.0
-        self.view.origin(
-            1.0 if self.home_right else 0.0, 1.0 if self.home_bottom else 0.0
+        corner = self.setting(str, "home_corner")
+        if corner == "auto":
+            home_dx = 0
+            home_dy = 0
+        elif corner == "top-left":
+            home_dx = 1 if self.flip_x else 0
+            home_dy = 1 if self.flip_y else 0
+        elif corner == "top-right":
+            home_dx = 0 if self.flip_x else 1
+            home_dy = 1 if self.flip_y else 0
+        elif corner == "bottom-left":
+            home_dx = 1 if self.flip_x else 0
+            home_dy = 0 if self.flip_y else 1
+        elif corner == "bottom-right":
+            home_dx = 0 if self.flip_x else 1
+            home_dy = 0 if self.flip_y else 1
+        elif corner == "center":
+            home_dx = 0.5
+            home_dy = 0.5
+        self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.transform(
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
+            origin_x=home_dx,
+            origin_y=home_dy,
         )
-        # TODO: This is likely wrong.
         self.view.realize()
         self.signal("view;realized")
