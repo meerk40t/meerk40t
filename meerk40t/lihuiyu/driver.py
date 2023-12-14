@@ -34,8 +34,8 @@ from ..device.basedevice import (
     PLOT_RAPID,
     PLOT_SETTING,
 )
-from .laserspeed import LaserSpeed
 from ..tools.geomstr import Geomstr
+from .laserspeed import LaserSpeed
 
 distance_lookup = [
     b"",

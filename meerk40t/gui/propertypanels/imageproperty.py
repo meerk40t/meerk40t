@@ -1201,7 +1201,9 @@ class ImagePropertyPanel(ScrolledPanel):
         self.text_grayscale_blue.SetToolTip(_("Blue Factor"))
         self.slider_grayscale_lightness.SetToolTip(_("Lightness control"))
         self.text_grayscale_lightness.SetToolTip(_("Lightness"))
-        self.btn_reset_grayscale.SetToolTip(_("Reset the grayscale modifiers to standard values"))
+        self.btn_reset_grayscale.SetToolTip(
+            _("Reset the grayscale modifiers to standard values")
+        )
         # end wxGlade
 
     def __do_layout(self):
@@ -1236,9 +1238,13 @@ class ImagePropertyPanel(ScrolledPanel):
         sizer_bl = wx.BoxSizer(wx.HORIZONTAL)
         sizer_grayscale = StaticBoxSizer(self, wx.ID_ANY, _("Grayscale"), wx.VERTICAL)
         sizer_inversion_reset = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_inversion_reset.Add(self.check_invert_grayscale, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_inversion_reset.Add(
+            self.check_invert_grayscale, 0, wx.ALIGN_CENTER_VERTICAL, 0
+        )
         sizer_inversion_reset.AddStretchSpacer(1)
-        sizer_inversion_reset.Add(self.btn_reset_grayscale, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_inversion_reset.Add(
+            self.btn_reset_grayscale, 0, wx.ALIGN_CENTER_VERTICAL, 0
+        )
 
         sizer_grayscale_lightness = StaticBoxSizer(
             self, wx.ID_ANY, _("Lightness"), wx.HORIZONTAL

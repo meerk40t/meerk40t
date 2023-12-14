@@ -61,7 +61,11 @@ class BalorConfiguration(MWindow):
                 else:
                     injection = None
                 newpanel = ChoicePropertyPanel(
-                    self, wx.ID_ANY, context=self.context, choices=section, injector=injection,
+                    self,
+                    wx.ID_ANY,
+                    context=self.context,
+                    choices=section,
+                    injector=injection,
                 )
                 self.panels.append(newpanel)
                 self.notebook_main.AddPage(newpanel, pagetitle)

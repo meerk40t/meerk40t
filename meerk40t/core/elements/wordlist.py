@@ -5,6 +5,7 @@ This is a giant list of console commands that deal with and often implement the 
 import os.path
 import re
 
+
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "postboot":
@@ -196,7 +197,6 @@ def init_commands(kernel):
         for name in names:
             channel("  " + name)
         return "wordlist", names
-
 
     @self.console_command(
         "advance",

@@ -209,7 +209,7 @@ class MoshiDriver(Parameters):
             elif segment_type == "cubic":
                 interp = self.service.interpolate
                 g.clear()
-                g.cubic( start, c1, c2, end)
+                g.cubic(start, c1, c2, end)
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     while self.hold_work(0):
                         time.sleep(0.05)

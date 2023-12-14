@@ -100,7 +100,7 @@ def plugin(kernel, lifecycle):
             help=_("Check whether a newer version of Meerk40t is available"),
         )
         def check_for_updates(
-            channel, _, beta=None, verbosity=None, sysdefault=None, force=None,  **kwargs
+            channel, _, beta=None, verbosity=None, sysdefault=None, force=None, **kwargs
         ):
             """
             This command checks for updates and outputs the results to the console.
@@ -172,7 +172,9 @@ def plugin(kernel, lifecycle):
                 rel_info = rel_info.strip()
                 return tag, version, label, url, assets, rel_info
 
-            def newer_version(candidate_version, reference_version, candidate_assets, asset_need):
+            def newer_version(
+                candidate_version, reference_version, candidate_assets, asset_need
+            ):
                 """
                 Checks whether the given candidate_version is newer than
                 the provided reference_version
@@ -218,8 +220,9 @@ def plugin(kernel, lifecycle):
                 # print (f"Comparing {candidate_version} vs {reference_version}: {is_newer}")
                 return is_newer
 
-            def update_check(verbosity_level, look_for_betas, force_feedback, system_to_use):
-
+            def update_check(
+                verbosity_level, look_for_betas, force_feedback, system_to_use
+            ):
                 if look_for_betas is None:
                     look_for_betas = False
                 if verbosity_level is None:
@@ -262,22 +265,34 @@ def plugin(kernel, lifecycle):
 
                     if default_system == 2:
                         # Windows:
-                        asset_requirement = ("meerk40t.exe", "wx-meerk40t.exe", )
+                        asset_requirement = (
+                            "meerk40t.exe",
+                            "wx-meerk40t.exe",
+                        )
                         system_type = "Windows"
                         is_source = False
                     elif default_system == 3:
                         # Linux:
-                        asset_requirement = ("meerk40t-Linux", )
+                        asset_requirement = ("meerk40t-Linux",)
                         system_type = "Linux"
                         is_source = False
                     elif default_system == 4:
                         # Darwin:
-                        asset_requirement = ("meerk40t.dmg", "meerk40t-m1.dmg", "MeerK40t_PyInst_11.dmg", "MeerK40t_unsigned.dmg", )
+                        asset_requirement = (
+                            "meerk40t.dmg",
+                            "meerk40t-m1.dmg",
+                            "MeerK40t_PyInst_11.dmg",
+                            "MeerK40t_unsigned.dmg",
+                        )
                         system_type = "Mac-OSX"
                         is_source = False
                     elif default_system == 5:
                         # Raspberry-Pi:
-                        asset_requirement = ("meerk40t_pi.tar", "meerk40t_pi64.tar", "meerk40t_pi_slow.tar")
+                        asset_requirement = (
+                            "meerk40t_pi.tar",
+                            "meerk40t_pi64.tar",
+                            "meerk40t_pi_slow.tar",
+                        )
                         system_type = "Raspberry Pi"
                         is_source = False
                     else:
@@ -295,8 +310,12 @@ def plugin(kernel, lifecycle):
                     #     url = GITHUB_LATEST
                     url = GITHUB_RELEASES
                     if verbosity_level > 0:
-                        channel(f"Testing against current {'beta' if is_a_beta else 'full'} version: {kernel.version}")
-                        channel(f"(include betas: {'yes' if look_for_betas else 'no'}, run from source: {'yes' if is_source else 'no'})")
+                        channel(
+                            f"Testing against current {'beta' if is_a_beta else 'full'} version: {kernel.version}"
+                        )
+                        channel(
+                            f"(include betas: {'yes' if look_for_betas else 'no'}, run from source: {'yes' if is_source else 'no'})"
+                        )
                     req = Request(url)
                     req.add_header(*GITHUB_HEADER)
                     try:
@@ -329,7 +348,9 @@ def plugin(kernel, lifecycle):
                             ) = extract_from_json(resp)
                             # What is the newest beta
                             if resp["prerelease"]:
-                                if newer_version(version, version_beta, assets, asset_requirement):
+                                if newer_version(
+                                    version, version_beta, assets, asset_requirement
+                                ):
                                     (
                                         tag_beta,
                                         version_beta,
@@ -346,7 +367,9 @@ def plugin(kernel, lifecycle):
                                         rel_info,
                                     )
                             # What is the newest release
-                            elif newer_version(version, version_full, assets, asset_requirement):
+                            elif newer_version(
+                                version, version_full, assets, asset_requirement
+                            ):
                                 (
                                     tag_full,
                                     version_full,
@@ -393,7 +416,9 @@ def plugin(kernel, lifecycle):
                                 assets,
                                 rel_info,
                             ) = extract_from_json(resp)
-                            if newer_version(version, version_full, assets, asset_requirement):
+                            if newer_version(
+                                version, version_full, assets, asset_requirement
+                            ):
                                 (
                                     tag_full,
                                     version_full,
@@ -446,7 +471,9 @@ def plugin(kernel, lifecycle):
 
                     if newer_version(version_beta, version_current, None, None):
                         something = True
-                        message_header = UPDATE_MESSAGE_HEADER.format(type="beta", system=system_type)
+                        message_header = UPDATE_MESSAGE_HEADER.format(
+                            type="beta", system=system_type
+                        )
                         message_body = UPDATE_MESSAGE_BODY.format(
                             name=kernel.name,
                             version=tag_beta,
@@ -529,7 +556,9 @@ def plugin(kernel, lifecycle):
                             )
                     else:
                         if version_newest is not None:
-                            message_header = NO_UPDATE_MESSAGE_HEADER.format(system=system_type)
+                            message_header = NO_UPDATE_MESSAGE_HEADER.format(
+                                system=system_type
+                            )
                             message_body = NO_UPDATE_MESSAGE_BODY.format(
                                 name=kernel.name,
                                 version=tag_newest,
@@ -559,6 +588,7 @@ def plugin(kernel, lifecycle):
                 return update_test
 
             from meerk40t.kernel.kernel import Job
+
             _job = Job(
                 process=update_check(verbosity, beta, force, sysdefault),
                 job_name="update_check_job",

@@ -176,10 +176,16 @@ class ActionPanel(wx.Panel):
         if abs(1 - scalex) > 1e-2 or abs(1 - scaley) > 1e-2:
             # print(f"Scale factors: {scalex:.2f}, {scaley:.2f}")
             # This is a bug within wxPython! It seems to appear only here at very high scale factors under windows
-            bmp = self.icon.GetBitmap(color=self.fgcolor, resize=(best_size*scalex, best_size*scaley), buffer=border)
+            bmp = self.icon.GetBitmap(
+                color=self.fgcolor,
+                resize=(best_size * scalex, best_size * scaley),
+                buffer=border,
+            )
             s = bmp.Size
             self.button_go.SetBitmap(bmp)
-            bmp = self.icon.GetBitmap(resize=(best_size*scalex, best_size*scaley), buffer=border)
+            bmp = self.icon.GetBitmap(
+                resize=(best_size * scalex, best_size * scaley), buffer=border
+            )
             self.button_go.SetBitmapFocus(bmp)
 
     def on_button_resize(self, event):

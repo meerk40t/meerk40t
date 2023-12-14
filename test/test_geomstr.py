@@ -808,7 +808,6 @@ class TestGeomstr(unittest.TestCase):
         self.assertEqual(path.travel_distance(), 0)
 
     def test_geomstr_greedy_random(self):
-
         for trials in range(50):
             path = Geomstr()
             for i in range(500):
@@ -1789,19 +1788,20 @@ class TestGeomstr(unittest.TestCase):
     def test_as_lines_execute(self):
         g = Geomstr()
         with g.function() as q:
-            q.line(complex(0,0), complex(0,1))
-            q.line(complex(0,1), complex(1,1))
-            q.line(complex(1,1), complex(1,0))
-            q.line(complex(1,0), complex(0,0))
+            q.line(complex(0, 0), complex(0, 1))
+            q.line(complex(0, 1), complex(1, 1))
+            q.line(complex(1, 1), complex(1, 0))
+            q.line(complex(1, 0), complex(0, 0))
         self.assertEqual(len(g), 6)  # function, 4 lines, until.
         executed = list(g.as_lines())
         self.assertEqual(len(executed), 0)
         g.call(1)
-        g.call(1, placement=(0, complex(1000,0), complex(1000,1000), complex(0, 1000)))
+        g.call(
+            1, placement=(0, complex(1000, 0), complex(1000, 1000), complex(0, 1000))
+        )
         g.call(1)
         executed = list(g.as_lines())
         self.assertEqual(len(executed), 12)
-
 
     # def test_geomstr_hatch(self):
     #     gs = Geomstr.svg(

@@ -87,7 +87,9 @@ TYPE_END = 0x80 | 0b0000
 # Function and Call denote 4 points being the upper-left, upper-right, lower-right,
 # lower-left corners all shapes are transformed to match these points, including other call points.
 TYPE_FUNCTION = 0x90 | 0b1111  # The two higher level bytes are call label index.
-TYPE_UNTIL = 0xA0 | 0b0000  # The two higher level bytes are the number of times this should be executed before exiting.
+TYPE_UNTIL = (
+    0xA0 | 0b0000
+)  # The two higher level bytes are the number of times this should be executed before exiting.
 TYPE_CALL = 0xB0 | 0b1111  # The two higher level bytes are call label index.
 # If until is set to 0xFFFF termination only happens on interrupt.
 
@@ -2079,7 +2081,12 @@ class Geomstr:
         self._ensure_capacity(self.index + 2 + len(g))
         if placement is None:
             nx, ny, mx, my = g.bbox()
-            placement = complex(nx, ny), complex(mx, ny), complex(mx, my), complex(nx, my)
+            placement = (
+                complex(nx, ny),
+                complex(mx, ny),
+                complex(mx, my),
+                complex(nx, my),
+            )
 
         self.segments[self.index] = (
             placement[0],
@@ -2099,7 +2106,7 @@ class Geomstr:
         )
         self.index += 1
 
-    def call(self,  function_index, placement=None, settings=0):
+    def call(self, function_index, placement=None, settings=0):
         self._ensure_capacity(self.index + 1)
         if placement is None:
             self.segments[self.index] = (
@@ -2118,7 +2125,6 @@ class Geomstr:
                 placement[3],
             )
         self.index += 1
-
 
     def is_closed(self):
         if self.index == 0:
@@ -5160,7 +5166,7 @@ class Geomstr:
                 executing_function = segment_type >> 8
                 fun_start, fun_end, loops = function_dict[executing_function]
 
-                subroutine = copy(self.segments[fun_start+1 : fun_end])
+                subroutine = copy(self.segments[fun_start + 1 : fun_end])
                 f = self.segments[fun_start]
                 if not np.isnan(start):
                     mx = PMatrix.map(f[0], f[1], f[3], f[4], start, c1, c2, end)
