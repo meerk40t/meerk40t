@@ -1,8 +1,8 @@
 from meerk40t.kernel import Kernel
 
 
-def bootstrap(profile="MeerK40t_TEST"):
-    kernel = Kernel("MeerK40t", "0.0.0-testing", profile, ansi=False)
+def bootstrap(profile="MeerK40t_TEST", ignore_settings=True):
+    kernel = Kernel("MeerK40t", "0.0.0-testing", profile, ansi=False, ignore_settings=ignore_settings)
 
     from meerk40t.network import kernelserver
 
