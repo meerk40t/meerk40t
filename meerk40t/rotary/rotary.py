@@ -7,7 +7,8 @@ def plugin(kernel, lifecycle=None):
         from .gui import gui
 
         return [gui.plugin]
-    if lifecycle == "register":
+    if lifecycle == "configure":
+        # Must occur after devices are registered.
         kernel.add_service("rotary", Rotary(kernel, 0))
 
 

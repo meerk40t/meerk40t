@@ -147,6 +147,5 @@ class TestDriverGRBLRotary(unittest.TestCase):
             kernel.shutdown()
         with open(file1) as f:
             data = f.read()
-        print(data)
         self.assertNotEqual(gcode_rect, data)
         self.assertEqual(gcode_rect_rotary, data)
