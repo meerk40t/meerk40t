@@ -126,21 +126,28 @@ class Rotary(Service):
     @signal_listener("flip_y")
     def rotary_settings_changed(self, origin=None, *args):
         """
-        We force the current device to realize
+        Rotary settings were changed. We force the current device to realize
+
         @param origin:
         @param args:
         @return:
         """
-        if origin != self.path:
+        if origin is not None and origin != self.path:
             return
         device = self.device
         device.realize()
 
     @signal_listener("view;realized")
     def realize(self, origin=None, *args):
-        device = self.device
+        """
+        Realization of current device requires that device to be additionally updated with rotary
+        @param origin:
+        @param args:
+        @return:
+        """
         if not self.active:
             return
+        device = self.device
         device.view.scale(self.scale_x, self.scale_y)
         if self.flip_x:
             device.view.flip_x()
