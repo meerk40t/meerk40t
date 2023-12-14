@@ -707,6 +707,8 @@ class NewlyDevice(Service, Status):
     @signal_listener("v_dpi")
     @signal_listener("h_dpi")
     def realize(self, origin=None, *args):
+        if origin != self.path:
+            return
         self.view.set_dims(self.bedwidth, self.bedheight)
         self.view.dpi_x = self.h_dpi
         self.view.dpi_y = self.v_dpi
