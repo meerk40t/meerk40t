@@ -3,7 +3,7 @@ This is a giant list of console commands that deal with and often implement the 
 """
 
 import os.path
-
+import re
 
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
@@ -196,5 +196,37 @@ def init_commands(kernel):
         for name in names:
             channel("  " + name)
         return "wordlist", names
+
+
+    @self.console_command(
+        "advance",
+        help=_("advances all indices in wordlist (if wordlist was used)"),
+        input_type="wordlist",
+        output_type="wordlist",
+    )
+    def wordlist_advance(command, channel, _, **kwargs):
+        usage = False
+        brackets = re.compile(r"\{[^}]+\}")
+        for node in self.elems():
+            if hasattr(node, "text"):
+                if node.text:
+                    bracketed_key = list(brackets.findall(node.text))
+                    if len(bracketed_key) > 0:
+                        usage = True
+                        break
+            elif hasattr(node, "mktext"):
+                if node.mktext:
+                    bracketed_key = list(brackets.findall(node.mktext))
+                    if len(bracketed_key) > 0:
+                        usage = True
+                        break
+
+        if usage:
+            channel("Advancing wordlist indices")
+            self.mywordlist.move_all_indices(1)
+            self.signal("refresh_scene", "Scene")
+        else:
+            channel("Leaving wordlist indices untouched as no usage detected")
+        return "wordlist", ""
 
     # --------------------------- END COMMANDS ------------------------------
