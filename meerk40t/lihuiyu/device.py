@@ -947,7 +947,6 @@ class LihuiyuDevice(Service, Status):
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
         )
-        self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)
         self.signal("view;realized")
 
     def outline_move_relative(self, dx, dy):

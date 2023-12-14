@@ -94,6 +94,10 @@ class CoordinateSystem(Service):
     def update(self, origin, *args):
         self.update_bounds(self.x, self.y, self.width, self.height)
 
+    @signal_listener("view;realized")
+    def update_realize(self, origin, *args):
+        self.update_bounds(0, 0, self.device.view.width, self.device.view.height)
+
     def origin_zero(self):
         return self.origin_x * self.width, self.origin_y * self.height
 
