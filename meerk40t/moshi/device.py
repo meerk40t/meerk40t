@@ -154,6 +154,7 @@ class MoshiDevice(Service, Status):
                 ],
                 "label": _("Force Declared Home"),
                 "tip": _("Override native home location"),
+                "section": "_40_Laser Parameters",
                 "subsection": "_30_Home position",
             },
             {
