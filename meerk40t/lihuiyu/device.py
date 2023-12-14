@@ -391,14 +391,7 @@ class LihuiyuDevice(Service, Status):
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
         self.view = View(self.bedwidth, self.bedheight, dpi=1000.0)
-        self.view.transform(
-            user_scale_x=self.user_scale_x,
-            user_scale_y=self.user_scale_y,
-            flip_x=self.flip_x,
-            flip_y=self.flip_y,
-            swap_xy=self.swap_xy,
-        )
-        self.signal("view;realized")
+        self.realize()
         self.setting(int, "buffer_max", 900)
         self.setting(bool, "buffer_limit", True)
 

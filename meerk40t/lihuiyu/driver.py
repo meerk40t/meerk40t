@@ -613,7 +613,7 @@ class LihuiyuDriver(Parameters):
         @param values:
         @return:
         """
-        if self.service.rotary_active and self.service.rotary_supress_home:
+        if self.service.rotary.rotary_active and self.service.rotary.rotary_supress_home:
             return
         self.rapid_mode()
         self(b"IPP\n")
