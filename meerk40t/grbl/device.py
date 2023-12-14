@@ -6,7 +6,7 @@ Registers relevant commands and options.
 """
 from time import sleep
 
-from meerk40t.kernel import CommandSyntaxError, Service
+from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
@@ -632,14 +632,6 @@ class GRBLDevice(Service, Status):
             self("bind s +ybackward")
             self("bind w +yforward")
 
-        @self.console_command(
-            "viewport_update",
-            hidden=True,
-            help=_("Update grbl codes for movement"),
-        )
-        def codes_update(**kwargs):
-            self.realize()
-
         @self.console_option(
             "strength", "s", type=int, help="Set the dot laser strength."
         )
@@ -811,7 +803,17 @@ class GRBLDevice(Service, Status):
         """
         return self.driver.native_x, self.driver.native_y
 
+    @signal_listener("scale_x")
+    @signal_listener("scale_y")
+    @signal_listener("bedwidth")
+    @signal_listener("bedheight")
+    @signal_listener("home_corner")
+    @signal_listener("flip_x")
+    @signal_listener("flip_y")
+    @signal_listener("swap_xy")
     def realize(self, origin=None):
+        if origin is not None and origin != self.path:
+            return
         corner = self.setting(str, "home_corner")
         if corner == "auto":
             home_dx = 0

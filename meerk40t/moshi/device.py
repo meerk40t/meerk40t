@@ -337,15 +337,6 @@ class MoshiDevice(Service, Status):
             except (PermissionError, OSError):
                 channel(_("Could not save: {filename}").format(filename=filename))
 
-        @self.console_command(
-            "viewport_update",
-            hidden=True,
-            help=_("Update moshi dimension parameters"),
-        )
-        def codes_update(**kwargs):
-            self.origin_x = 1.0 if self.home_right else 0.0
-            self.origin_y = 1.0 if self.home_bottom else 0.0
-            self.realize()
 
     def service_attach(self, *args, **kwargs):
         self.realize()
@@ -372,6 +363,8 @@ class MoshiDevice(Service, Status):
     def realize(self, origin=None):
         if origin != self.path:
             return
+        # self.origin_x = 1.0 if self.home_right else 0.0
+        # self.origin_y = 1.0 if self.home_bottom else 0.0
         self.view.origin(
             1.0 if self.home_right else 0.0, 1.0 if self.home_bottom else 0.0
         )

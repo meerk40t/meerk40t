@@ -690,14 +690,6 @@ class NewlyDevice(Service, Status):
                     _("Not Connected"),
                 )
 
-        @self.console_command(
-            "viewport_update",
-            hidden=True,
-            help=_("Update newly flips for movement"),
-        )
-        def codes_update(**kwargs):
-            self.realize()
-
     def service_attach(self, *args, **kwargs):
         self.realize()
 

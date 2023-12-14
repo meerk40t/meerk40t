@@ -694,14 +694,6 @@ class BalorDevice(Service, Status):
         self.viewbuffer = ""
         self._simulate = False
 
-        @self.console_command(
-            "viewport_update",
-            hidden=True,
-            help=_("Update galvo flips for movement"),
-        )
-        def codes_update(**kwargs):
-            self.realize()
-
     def service_attach(self, *args, **kwargs):
         self.realize()
 

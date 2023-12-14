@@ -597,14 +597,6 @@ class LihuiyuDevice(Service, Status):
                     return
 
         @self.console_command(
-            "viewport_update",
-            hidden=True,
-            help=_("Update m2nano codes for movement"),
-        )
-        def codes_update(**kwargs):
-            self.realize()
-
-        @self.console_command(
             "network_update",
             hidden=True,
             help=_("Updates network state for m2nano networked."),
