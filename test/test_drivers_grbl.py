@@ -38,7 +38,7 @@ class TestDriverGRBL(unittest.TestCase):
         finally:
             kernel.shutdown()
 
-        kernel = bootstrap.bootstrap(profile="MeerK40t_GRBL")
+        kernel = bootstrap.bootstrap(profile="MeerK40t_GRBL", ignore_settings=False)
         try:
             devs = [name for name in kernel.contexts if name.startswith("grbl")]
             self.assertGreater(len(devs), 1)

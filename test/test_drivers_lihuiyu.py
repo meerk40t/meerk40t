@@ -89,7 +89,7 @@ class TestDriverLihuiyu(unittest.TestCase):
         finally:
             kernel.shutdown()
 
-        kernel = bootstrap.bootstrap(profile="MeerK40t_LHY")
+        kernel = bootstrap.bootstrap(profile="MeerK40t_LHY", ignore_settings=False)
         try:
             devs = [name for name in kernel.contexts if name.startswith("lhystudios")]
             self.assertGreater(len(devs), 1)
