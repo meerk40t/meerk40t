@@ -459,11 +459,7 @@ class LihuiyuDevice(Service, Status):
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
         )
-        # rotary_active = self.rotary_active,
-        # rotary_scale_x = self.rotary_scale_x,
-        # rotary_scale_y = self.rotary_scale_y,
-        # rotary_flip_x = self.rotary_flip_x,
-        # rotary_flip_y = self.rotary_flip_y,
+        self.realize_rotary()
         self.setting(int, "buffer_max", 900)
         self.setting(bool, "buffer_limit", True)
 
@@ -1000,6 +996,8 @@ class LihuiyuDevice(Service, Status):
     @signal_listener("rotary_scale_x")
     @signal_listener("rotary_scale_y")
     @signal_listener("rotary_active")
+    @signal_listener("rotary_flip_x")
+    @signal_listener("rotary_flip_y")
     @signal_listener("user_scale_x")
     @signal_listener("user_scale_y")
     @signal_listener("bedsize")
@@ -1015,7 +1013,17 @@ class LihuiyuDevice(Service, Status):
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
         )
+        self.realize_rotary(origin, *args)
         self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)
+
+    def realize_rotary(self, origin=None, *args):
+        if not self.rotary_active:
+            return
+        self.view.scale(self.rotary_scale_x, self.rotary_scale_y)
+        if self.rotary_flip_x:
+            self.view.flip_x()
+        if self.rotary_flip_y:
+            self.view.flip_y()
 
     def outline_move_relative(self, dx, dy):
         x, y = self.native
