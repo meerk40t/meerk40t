@@ -136,8 +136,8 @@ class TestDriverGRBLRotary(unittest.TestCase):
             kernel.console("operation* delete\n")
             device = kernel.device
             rotary_path = kernel.rotary.path
-            device(f"set -p {rotary_path} rotary_active True")
-            device(f"set -p {rotary_path} rotary_scale_y 2.0")
+            device(f"set -p {rotary_path} active True")
+            device(f"set -p {rotary_path} scale_y 2.0")
             device.signal("rotary_active", True)
             kernel.rotary.realize()  # In case signal doesn't update the device settings quickly enough.
             kernel.console(
