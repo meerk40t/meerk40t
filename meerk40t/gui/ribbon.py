@@ -1475,7 +1475,7 @@ class Art:
         points = [(lp_x, lp_y), (dp_x, dp_y), (2 * dp_x - lp_x, lp_y)]
         dc.SetPen(wx.Pen(self.black_color))
         dc.SetBrush(wx.Brush(self.inactive_background))
-        dc.DrawPolygon(points)
+        dc.DrawRectangle(points)
 
     def _paint_dropdown(self, dc: wx.DC, dropdown: DropDown):
         """
@@ -1498,9 +1498,14 @@ class Art:
         lx = x + (x1 - x) / 8
         rx = x1 - (x1 - x) / 8
         mx = x + (x1 - x) / 2
-        ty = y + (y1 - y) / 8
-        by = y1 - (y1 - y) / 8
-        points = [(lx, ty), (rx, ty), (mx, by)]
+        ty = y + (y1 - y) * 2 / 8
+        by = y1 - (y1 - y) * 2 / 8
+        points = [
+            (int(lx), int(ty)),
+            (int(rx), int(ty)),
+            (int(mx), int(by)),
+            (int(lx), int(ty)),
+        ]
         dc.SetPen(wx.Pen(self.black_color))
         dc.SetBrush(wx.Brush(self.inactive_background))
         dc.DrawPolygon(points)
