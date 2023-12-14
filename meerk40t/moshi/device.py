@@ -191,66 +191,6 @@ class MoshiDevice(Service, Status):
             },
         ]
         self.register_choices("bed_dim", choices)
-        choices = [
-            {
-                "attr": "rotary_active",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Rotary-Mode active"),
-                "tip": _("Is the rotary mode active for this device"),
-            },
-            {
-                "attr": "rotary_scale_x",
-                "object": self,
-                "default": 1.0,
-                "type": float,
-                "label": _("X-Scale"),
-                "tip": _("Scale that needs to be applied to the X-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Scale"),
-            },
-            {
-                "attr": "rotary_scale_y",
-                "object": self,
-                "default": 1.0,
-                "type": float,
-                "label": _("Y-Scale"),
-                "tip": _("Scale that needs to be applied to the Y-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Scale"),
-            },
-            {
-                "attr": "rotary_supress_home",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Ignore Home"),
-                "tip": _("Ignore Home-Command"),
-                "conditional": (self, "rotary_active"),
-            },
-            {
-                "attr": "rotary_flip_x",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror X"),
-                "tip": _("Mirror the elements on the X-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Mirror Output"),
-            },
-            {
-                "attr": "rotary_flip_y",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror Y"),
-                "tip": _("Mirror the elements on the Y-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Mirror Output"),
-            },
-        ]
-        self.register_choices("rotary", choices)
 
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
@@ -279,11 +219,7 @@ class MoshiDevice(Service, Status):
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
         )
-        # rotary_active = self.rotary_active,
-        # rotary_scale_x = self.rotary_scale_x,
-        # rotary_scale_y = self.rotary_scale_y,
-        # rotary_flip_x = self.rotary_flip_x,
-        # rotary_flip_y = self.rotary_flip_y,
+        self.realize()
         self.state = 0
 
         self.driver = MoshiDriver(self)
@@ -437,6 +373,6 @@ class MoshiDevice(Service, Status):
         self.view.origin(
             1.0 if self.home_right else 0.0, 1.0 if self.home_bottom else 0.0
         )
+        # TODO: This is likely wrong.
         self.view.realize()
-        # self.space.update_bounds(0, 0, self.width, self.height)
-        self.space.update_bounds(0, 0, self.view.width, self.view.height)
+        self.signal("view;realized")
