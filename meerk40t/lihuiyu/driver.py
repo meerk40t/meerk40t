@@ -688,7 +688,7 @@ class LihuiyuDriver(Parameters):
                 if function == "dwell":
                     self.plot_start()
                     self.rapid_mode()
-                    self.move_abs(start.real, start.imag)
+                    self._move_absolute(start.real, start.imag)
                     self.wait_finish()
                     self.dwell(sets.get("dwell_time"))
                 elif function == "wait":
