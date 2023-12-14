@@ -368,67 +368,6 @@ class LihuiyuDevice(Service, Status):
         ]
         self.register_choices("lhy-speed", choices)
 
-        choices = [
-            {
-                "attr": "rotary_active",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Rotary-Mode active"),
-                "tip": _("Is the rotary mode active for this device"),
-            },
-            {
-                "attr": "rotary_scale_x",
-                "object": self,
-                "default": 1.0,
-                "type": float,
-                "label": _("X-Scale"),
-                "tip": _("Scale that needs to be applied to the X-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Scale"),
-            },
-            {
-                "attr": "rotary_scale_y",
-                "object": self,
-                "default": 1.0,
-                "type": float,
-                "label": _("Y-Scale"),
-                "tip": _("Scale that needs to be applied to the Y-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Scale"),
-            },
-            {
-                "attr": "rotary_supress_home",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Ignore Home"),
-                "tip": _("Ignore Home-Command"),
-                "conditional": (self, "rotary_active"),
-            },
-            {
-                "attr": "rotary_flip_x",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror X"),
-                "tip": _("Mirror the elements on the X-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Mirror Output"),
-            },
-            {
-                "attr": "rotary_flip_y",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror Y"),
-                "tip": _("Mirror the elements on the Y-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Mirror Output"),
-            },
-        ]
-        self.register_choices("rotary", choices)
-
         # This device prefers to display power level in ppi
         self.setting(bool, "use_percent_for_power_display", False)
 
@@ -459,7 +398,7 @@ class LihuiyuDevice(Service, Status):
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
         )
-        self.realize_rotary()
+        self.signal("view;realized")
         self.setting(int, "buffer_max", 900)
         self.setting(bool, "buffer_limit", True)
 
@@ -993,11 +932,6 @@ class LihuiyuDevice(Service, Status):
     def plot_attributes_update(self, origin=None, *args):
         self.driver.plot_attribute_update()
 
-    @signal_listener("rotary_scale_x")
-    @signal_listener("rotary_scale_y")
-    @signal_listener("rotary_active")
-    @signal_listener("rotary_flip_x")
-    @signal_listener("rotary_flip_y")
     @signal_listener("user_scale_x")
     @signal_listener("user_scale_y")
     @signal_listener("bedsize")
@@ -1013,17 +947,8 @@ class LihuiyuDevice(Service, Status):
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
         )
-        self.realize_rotary(origin, *args)
         self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)
-
-    def realize_rotary(self, origin=None, *args):
-        if not self.rotary_active:
-            return
-        self.view.scale(self.rotary_scale_x, self.rotary_scale_y)
-        if self.rotary_flip_x:
-            self.view.flip_x()
-        if self.rotary_flip_y:
-            self.view.flip_y()
+        self.signal("view;realized")
 
     def outline_move_relative(self, dx, dy):
         x, y = self.native

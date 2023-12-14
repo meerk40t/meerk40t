@@ -1,4 +1,4 @@
-from meerk40t.kernel import Service
+from meerk40t.kernel import Service, signal_listener, lookup_listener
 from meerk40t.svgelements import Matrix
 
 
@@ -9,45 +9,6 @@ def plugin(kernel, lifecycle=None):
         return [gui.plugin]
     if lifecycle == "register":
         kernel.add_service("rotary", Rotary(kernel, 0))
-    elif lifecycle == "boot":
-        _ = kernel.root._
-        rotary = kernel.rotary
-        # TODO: Flesh out implementation into proper device info.
-        choices = [
-            {
-                "attr": "rotary_enabled",
-                "object": rotary,
-                "default": False,
-                "type": bool,
-                "label": _("Rotary Enabled"),
-                "tip": _("Turn on rotary"),
-            },
-            {
-                "attr": "axis",
-                "object": rotary,
-                "default": 1,
-                "type": int,
-                "label": _("Rotary Axis:"),
-                "tip": _("Which axis does the rotary use?"),
-            },
-            {
-                "attr": "scale_x",
-                "object": rotary,
-                "default": 1.0,
-                "type": float,
-                "label": _("Rotary X Scale Factor"),
-                "tip": _("Scale Rotary X"),
-            },
-            {
-                "attr": "scale_y",
-                "object": rotary,
-                "default": 1.0,
-                "type": float,
-                "label": _("Rotary Y Scale Factor"),
-                "tip": _("Scale Rotary X"),
-            },
-        ]
-        kernel.register_choices("rotary", choices)
 
 
 class Rotary(Service):
@@ -59,6 +20,74 @@ class Rotary(Service):
         Service.__init__(self, kernel, f"rotary/{index}")
         self.index = index
         _ = kernel.translation
+        choices = [
+            {
+                "attr": "rotary_active",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Rotary-Mode active"),
+                "tip": _("Is the rotary mode active for this device"),
+            },
+            # {
+            #     "attr": "axis",
+            #     "object": rotary,
+            #     "default": 1,
+            #     "type": int,
+            #     "label": _("Rotary Axis:"),
+            #     "tip": _("Which axis does the rotary use?"),
+            # },
+            {
+                "attr": "rotary_scale_x",
+                "object": self,
+                "default": 1.0,
+                "type": float,
+                "label": _("X-Scale"),
+                "tip": _("Scale that needs to be applied to the X-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Scale"),
+            },
+            {
+                "attr": "rotary_scale_y",
+                "object": self,
+                "default": 1.0,
+                "type": float,
+                "label": _("Y-Scale"),
+                "tip": _("Scale that needs to be applied to the Y-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Scale"),
+            },
+            {
+                "attr": "rotary_supress_home",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Ignore Home"),
+                "tip": _("Ignore Home-Command"),
+                "conditional": (self, "rotary_active"),
+            },
+            {
+                "attr": "rotary_flip_x",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Mirror X"),
+                "tip": _("Mirror the elements on the X-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Mirror Output"),
+            },
+            {
+                "attr": "rotary_flip_y",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Mirror Y"),
+                "tip": _("Mirror the elements on the Y-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Mirror Output"),
+            },
+        ]
+        self.register_choices("rotary", choices)
 
         @self.console_command(
             "rotary",
@@ -87,6 +116,33 @@ class Rotary(Service):
                     node.modified()
                 except AttributeError:
                     pass
+
+    @lookup_listener("service/device/active")
+    @signal_listener("rotary_scale_x")
+    @signal_listener("rotary_scale_y")
+    @signal_listener("rotary_active")
+    @signal_listener("rotary_flip_x")
+    @signal_listener("rotary_flip_y")
+    def rotary_settings_changed(self, origin=None, *args):
+        """
+        We force the current device to realize
+        @param origin:
+        @param args:
+        @return:
+        """
+        device = self.device
+        device.realize()
+
+    @signal_listener("view;realized")
+    def realize(self, origin=None, *args):
+        device = self.device
+        if not self.rotary_active:
+            return
+        device.view.scale(self.rotary_scale_x, self.rotary_scale_y)
+        if self.rotary_flip_x:
+            device.view.flip_x()
+        if self.rotary_flip_y:
+            device.view.flip_y()
 
     def service_detach(self, *args, **kwargs):
         pass
