@@ -1,6 +1,6 @@
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.view import View
-from meerk40t.kernel import Service
+from meerk40t.kernel import Service, signal_listener
 
 from .mixins import Status
 
@@ -112,6 +112,26 @@ class DummyDevice(Service, Status):
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
         self.view = View(self.bedwidth, self.bedheight)
+
+    @signal_listener("bedwidth")
+    @signal_listener("bedheight")
+    @signal_listener("scale_x")
+    @signal_listener("scale_y")
+    def realize(self, origin=None, *args):
+        """
+        We implement realize which always calls `view;realized` signal.
+        @param origin:
+        @param args:
+        @return:
+        """
+        if origin is not None and origin != self.path:
+            return
+        self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.transform(
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
+        )
+        self.signal("view;realized")
 
     @property
     def current(self):

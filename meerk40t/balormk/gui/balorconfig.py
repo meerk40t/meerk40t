@@ -20,7 +20,7 @@ class BalorConfiguration(MWindow):
         _icon.CopyFromBitmap(icons8_administrative_tools.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_(_("Balor-Configuration")))
-
+        self._test_pin = False
         self.notebook_main = wx.aui.AuiNotebook(
             self,
             -1,
@@ -36,7 +36,19 @@ class BalorConfiguration(MWindow):
             ("balor-global", "Global"),
             ("balor-global-timing", "Timings"),
             ("balor-extra", "Extras"),
-            # ("rotary", "Rotary"),
+        )
+        injector = (
+            {
+                "attr": "test_pin",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "style": "button",
+                "label": _("Test"),
+                "tip": _("Turn red dot on for test purposes"),
+                "section": "_10_Parameters",
+                "subsection": "_30_Pin-Index",
+            },
         )
         self.panels = []
         for item in options:
@@ -44,8 +56,16 @@ class BalorConfiguration(MWindow):
             pagetitle = _(item[1])
             addpanel = self.visible_choices(section)
             if addpanel:
+                if item[0] == "balor":
+                    injection = injector
+                else:
+                    injection = None
                 newpanel = ChoicePropertyPanel(
-                    self, wx.ID_ANY, context=self.context, choices=section
+                    self,
+                    wx.ID_ANY,
+                    context=self.context,
+                    choices=section,
+                    injector=injection,
                 )
                 self.panels.append(newpanel)
                 self.notebook_main.AddPage(newpanel, pagetitle)
@@ -65,6 +85,18 @@ class BalorConfiguration(MWindow):
         for panel in self.panels:
             self.add_module_delegate(panel)
 
+    @property
+    def test_pin(self):
+        return self._test_pin
+
+    @test_pin.setter
+    def test_pin(self, value):
+        self._test_pin = not self._test_pin
+        if self._test_pin:
+            self.context("red on\n")
+        else:
+            self.context("red off\n")
+
     def window_close(self):
         for panel in self.panels:
             panel.pane_hide()
@@ -72,6 +104,10 @@ class BalorConfiguration(MWindow):
     def window_open(self):
         for panel in self.panels:
             panel.pane_show()
+
+    @signal_listener("balorpin")
+    def on_pin_change(self, origina, *args):
+        self.context.driver.connection.define_pins()
 
     @signal_listener("corfile")
     def on_corfile_changed(self, origin, *args):
@@ -83,7 +119,6 @@ class BalorConfiguration(MWindow):
             return
         self.context.lens_size = f"{65536.0 / scale:.03f}mm"
         self.context.signal("lens_size", self.context.lens_size, self.context)
-        self.context.signal("bedsize", False)
 
     def window_preserve(self):
         return False

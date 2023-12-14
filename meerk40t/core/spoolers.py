@@ -38,6 +38,7 @@ def plugin(kernel, lifecycle):
                 data.final()
                 loops = 1
                 elements = kernel.elements
+                elements("wordlist advance\n")
                 e = elements.op_branch
 
                 if e.loop_continuous:

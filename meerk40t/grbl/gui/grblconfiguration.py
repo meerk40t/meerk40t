@@ -13,6 +13,7 @@ from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
+
 class ConfigurationInterfacePanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: ConfigurationInterfacePanel.__init__
@@ -174,9 +175,6 @@ class GRBLConfiguration(MWindow):
         panel_protocol = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="protocol"
         )
-        panel_rotary = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="rotary"
-        )
         panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
         panel_formatter = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
@@ -185,7 +183,6 @@ class GRBLConfiguration(MWindow):
         self.panels.append(panel_interface)
         self.panels.append(panel_protocol)
         self.panels.append(panel_global)
-        self.panels.append(panel_rotary)
         self.panels.append(panel_warn)
         self.panels.append(panel_actions)
         self.panels.append(panel_formatter)
@@ -194,7 +191,6 @@ class GRBLConfiguration(MWindow):
         self.notebook_main.AddPage(panel_interface, _("Interface"))
         self.notebook_main.AddPage(panel_protocol, _("Protocol"))
         self.notebook_main.AddPage(panel_global, _("Advanced"))
-        self.notebook_main.AddPage(panel_rotary, _("Rotary"))
         self.notebook_main.AddPage(panel_warn, _("Warning"))
         self.notebook_main.AddPage(panel_actions, _("Default Actions"))
         self.notebook_main.AddPage(panel_formatter, _("Display Options"))
@@ -245,7 +241,9 @@ class GRBLConfiguration(MWindow):
             flag = True
         if flag:
             # Right command
-            if self._requested_status and hasattr(self.context.device, "hardware_config"):
+            if self._requested_status and hasattr(
+                self.context.device, "hardware_config"
+            ):
                 # coming from myself
                 changes = False
                 if 21 in self.context.device.hardware_config:
@@ -256,9 +254,7 @@ class GRBLConfiguration(MWindow):
                 if 130 in self.context.device.hardware_config:
                     value = self.context.device.hardware_config[130]
                     self.context.bedwidth = f"{value}mm"
-                    self.context.signal(
-                        "bedwidth", self.context.bedwidth, self.context
-                    )
+                    self.context.signal("bedwidth", self.context.bedwidth, self.context)
                     changes = True
                 if 131 in self.context.device.hardware_config:
                     value = self.context.device.hardware_config[131]

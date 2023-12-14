@@ -47,7 +47,6 @@ class LihuiyuDevice(Service, Status):
                 "section": "_30_" + _("Laser Parameters"),
                 "nonzero": True,
                 "subsection": _("Bed Dimensions"),
-                "signals": "bedsize",
             },
             {
                 "attr": "bedheight",
@@ -59,7 +58,6 @@ class LihuiyuDevice(Service, Status):
                 "section": "_30_" + _("Laser Parameters"),
                 "nonzero": True,
                 "subsection": _("Bed Dimensions"),
-                "signals": "bedsize",
             },
             {
                 "attr": "user_scale_x",
@@ -115,7 +113,6 @@ class LihuiyuDevice(Service, Status):
                 ),
                 "section": "_10_" + _("Configuration"),
                 "subsection": _("Board Setup"),
-                "signals": "bedsize",
             },
             {
                 "attr": "flip_x",
@@ -123,21 +120,9 @@ class LihuiyuDevice(Service, Status):
                 "default": False,
                 "type": bool,
                 "label": _("Flip X"),
-                "tip": _("Flip the Right and Left commands sent to the controller"),
+                "tip": _("Flip the X axis for the device"),
                 "section": "_10_" + _("Configuration"),
-                "subsection": _("X Axis"),
-                "signals": "bedsize",
-            },
-            {
-                "attr": "home_right",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Home Right"),
-                "tip": _("Indicates the device Home is on the right"),
-                "section": "_10_" + _("Configuration"),
-                "subsection": _("X Axis"),
-                "signals": "bedsize",
+                "subsection": "_10_Axis corrections",
             },
             {
                 "attr": "flip_y",
@@ -145,21 +130,9 @@ class LihuiyuDevice(Service, Status):
                 "default": False,
                 "type": bool,
                 "label": _("Flip Y"),
-                "tip": _("Flip the Y axis for the Balor device"),
+                "tip": _("Flip the Y axis for the device"),
                 "section": "_10_" + _("Configuration"),
-                "subsection": _("Y Axis"),
-                "signals": "bedsize",
-            },
-            {
-                "attr": "home_bottom",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Home Bottom"),
-                "tip": _("Indicates the device Home is on the bottom"),
-                "section": "_10_" + _("Configuration"),
-                "subsection": _("Y Axis"),
-                "signals": "bedsize",
+                "subsection": "_10_Axis corrections",
             },
             {
                 "attr": "swap_xy",
@@ -172,7 +145,25 @@ class LihuiyuDevice(Service, Status):
                 ),
                 "section": "_10_" + _("Configuration"),
                 "subsection": "_10_" + _("Axis corrections"),
-                "signals": "bedsize",
+            },
+            {
+                "attr": "home_corner",
+                "object": self,
+                "default": "auto",
+                "type": str,
+                "style": "combo",
+                "choices": [
+                    "auto",
+                    "top-left",
+                    "top-right",
+                    "bottom-left",
+                    "bottom-right",
+                    "center",
+                ],
+                "label": _("Force Declared Home"),
+                "tip": _("Override native home location"),
+                "section": "_10_" + _("Configuration"),
+                "subsection": "_50_" + _("Home position"),
             },
         ]
         self.register_choices("bed_orientation", choices)
@@ -368,67 +359,6 @@ class LihuiyuDevice(Service, Status):
         ]
         self.register_choices("lhy-speed", choices)
 
-        choices = [
-            {
-                "attr": "rotary_active",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Rotary-Mode active"),
-                "tip": _("Is the rotary mode active for this device"),
-            },
-            {
-                "attr": "rotary_scale_x",
-                "object": self,
-                "default": 1.0,
-                "type": float,
-                "label": _("X-Scale"),
-                "tip": _("Scale that needs to be applied to the X-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Scale"),
-            },
-            {
-                "attr": "rotary_scale_y",
-                "object": self,
-                "default": 1.0,
-                "type": float,
-                "label": _("Y-Scale"),
-                "tip": _("Scale that needs to be applied to the Y-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Scale"),
-            },
-            {
-                "attr": "rotary_supress_home",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Ignore Home"),
-                "tip": _("Ignore Home-Command"),
-                "conditional": (self, "rotary_active"),
-            },
-            {
-                "attr": "rotary_flip_x",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror X"),
-                "tip": _("Mirror the elements on the X-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Mirror Output"),
-            },
-            {
-                "attr": "rotary_flip_y",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror Y"),
-                "tip": _("Mirror the elements on the Y-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Mirror Output"),
-            },
-        ]
-        self.register_choices("rotary", choices)
-
         # This device prefers to display power level in ppi
         self.setting(bool, "use_percent_for_power_display", False)
 
@@ -452,18 +382,7 @@ class LihuiyuDevice(Service, Status):
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
         self.view = View(self.bedwidth, self.bedheight, dpi=1000.0)
-        self.view.transform(
-            user_scale_x=self.user_scale_x,
-            user_scale_y=self.user_scale_y,
-            flip_x=self.flip_x,
-            flip_y=self.flip_y,
-            swap_xy=self.swap_xy,
-        )
-        # rotary_active = self.rotary_active,
-        # rotary_scale_x = self.rotary_scale_x,
-        # rotary_scale_y = self.rotary_scale_y,
-        # rotary_flip_x = self.rotary_flip_x,
-        # rotary_flip_y = self.rotary_flip_y,
+        self.realize()
         self.setting(int, "buffer_max", 900)
         self.setting(bool, "buffer_limit", True)
 
@@ -667,14 +586,6 @@ class LihuiyuDevice(Service, Status):
                 except ValueError:
                     channel(_("Invalid Acceleration [1-4]."))
                     return
-
-        @self.console_command(
-            "viewport_update",
-            hidden=True,
-            help=_("Update m2nano codes for movement"),
-        )
-        def codes_update(**kwargs):
-            self.realize()
 
         @self.console_command(
             "network_update",
@@ -997,16 +908,36 @@ class LihuiyuDevice(Service, Status):
     def plot_attributes_update(self, origin=None, *args):
         self.driver.plot_attribute_update()
 
-    @signal_listener("rotary_scale_x")
-    @signal_listener("rotary_scale_y")
-    @signal_listener("rotary_active")
     @signal_listener("user_scale_x")
     @signal_listener("user_scale_y")
-    @signal_listener("bedsize")
+    @signal_listener("bedwidth")
+    @signal_listener("bedheight")
     @signal_listener("flip_x")
     @signal_listener("flip_y")
+    @signal_listener("home_corner")
     @signal_listener("swap_xy")
     def realize(self, origin=None, *args):
+        if origin is not None and origin != self.path:
+            return
+        corner = self.setting(str, "home_corner")
+        if corner == "auto":
+            home_dx = 0
+            home_dy = 0
+        elif corner == "top-left":
+            home_dx = 1 if self.flip_x else 0
+            home_dy = 1 if self.flip_y else 0
+        elif corner == "top-right":
+            home_dx = 0 if self.flip_x else 1
+            home_dy = 1 if self.flip_y else 0
+        elif corner == "bottom-left":
+            home_dx = 1 if self.flip_x else 0
+            home_dy = 0 if self.flip_y else 1
+        elif corner == "bottom-right":
+            home_dx = 0 if self.flip_x else 1
+            home_dy = 0 if self.flip_y else 1
+        elif corner == "center":
+            home_dx = 0.5
+            home_dy = 0.5
         self.view.set_dims(self.bedwidth, self.bedheight)
         self.view.transform(
             user_scale_x=self.user_scale_x,
@@ -1014,8 +945,10 @@ class LihuiyuDevice(Service, Status):
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
+            origin_x=home_dx,
+            origin_y=home_dy,
         )
-        self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)
+        self.signal("view;realized")
 
     def outline_move_relative(self, dx, dy):
         x, y = self.native

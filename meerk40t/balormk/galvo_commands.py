@@ -1134,7 +1134,7 @@ def plugin(service, lifecycle):
         service.lens_size = lens_size
         service.width = lens_size
         service.height = lens_size
-        service.signal("bedsize", (service.lens_size, service.lens_size))
+        service.signal("lens_size", (service.lens_size, service.lens_size))
         channel(f"Set Bed Size : ({service.lens_size}, {service.lens_size}).")
 
     @service.console_argument("filename", type=str)

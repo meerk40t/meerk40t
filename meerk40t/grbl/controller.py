@@ -338,15 +338,11 @@ class GrblController:
         name = name.replace("/", "-")
         if type == "send":
             if not hasattr(self, "_grbl_send"):
-                self._grbl_send = self.service.channel(
-                    f"send-{name}", pure=True
-                )
+                self._grbl_send = self.service.channel(f"send-{name}", pure=True)
             self._grbl_send(data)
         elif type == "recv":
             if not hasattr(self, "_grbl_recv"):
-                self._grbl_recv = self.service.channel(
-                    f"recv-{name}", pure=True
-                )
+                self._grbl_recv = self.service.channel(f"recv-{name}", pure=True)
             self._grbl_recv(data)
         elif type == "event":
             if not hasattr(self, "_grbl_events"):
@@ -729,7 +725,9 @@ class GrblController:
                     if self.fully_validated():
                         if self.service.boot_connect_sequence:
                             # Boot sequence is required. Restart sequence.
-                            self.log("Device Reset, revalidation required", type="event")
+                            self.log(
+                                "Device Reset, revalidation required", type="event"
+                            )
                             self._validation_stage = 1
                             self.validate_start("$")
                 else:

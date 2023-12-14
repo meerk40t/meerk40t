@@ -119,6 +119,13 @@ class ActionPanel(wx.Panel):
         self.button_go = wx.Button(self, wx.ID_ANY)
         self.icon = icon
         self.fgcolor = fgcolor
+        self.resize_job = Job(
+            process=self.resize_button,
+            job_name=f"_resize_actionpanel_{self.Id}",
+            interval=0.1,
+            times=1,
+            run_main=True,
+        )
         if bgcolor is not None:
             self.button_go.SetBackgroundColour(bgcolor)
         self.button_go.SetToolTip(tooltip)
@@ -137,13 +144,6 @@ class ActionPanel(wx.Panel):
         self.button_go.Bind(wx.EVT_SIZE, self.on_button_resize)
         # Initial resize
         self.resize_button()
-        self.resize_job = Job(
-            process=self.resize_button,
-            job_name=f"_resize_actionpanel_{self.Id}",
-            interval=0.1,
-            times=1,
-            run_main=True,
-        )
 
     def on_button_go_click(self, event):
         if self.action is not None:
@@ -164,15 +164,33 @@ class ActionPanel(wx.Panel):
         best_size = max(best_size, 20)
         border = 2
         bmp = self.icon.GetBitmap(color=self.fgcolor, resize=best_size, buffer=border)
-        # s = bmp.Size
-        # print(f"Was asking for {best_size}x{best_size}, got {s[0]}x{s[1]}")
+        s = bmp.Size
         self.button_go.SetBitmap(bmp)
         bmp = self.icon.GetBitmap(resize=best_size, buffer=border)
         self.button_go.SetBitmapFocus(bmp)
 
+        t = self.button_go.GetBitmap().Size
+        # print(f"Was asking for {best_size}x{best_size}, got {s[0]}x{s[1]}, button has {t[0]}x{t[1]}")
+        scalex = s[0] / t[0]
+        scaley = s[1] / t[1]
+        if abs(1 - scalex) > 1e-2 or abs(1 - scaley) > 1e-2:
+            # print(f"Scale factors: {scalex:.2f}, {scaley:.2f}")
+            # This is a bug within wxPython! It seems to appear only here at very high scale factors under windows
+            bmp = self.icon.GetBitmap(
+                color=self.fgcolor,
+                resize=(best_size * scalex, best_size * scaley),
+                buffer=border,
+            )
+            s = bmp.Size
+            self.button_go.SetBitmap(bmp)
+            bmp = self.icon.GetBitmap(
+                resize=(best_size * scalex, best_size * scaley), buffer=border
+            )
+            self.button_go.SetBitmapFocus(bmp)
+
     def on_button_resize(self, event):
-        self.context.schedule(self.resize_job)
         event.Skip()
+        self.context.schedule(self.resize_job)
 
 
 class GoPanel(ActionPanel):

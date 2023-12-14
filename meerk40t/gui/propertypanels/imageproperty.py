@@ -1081,6 +1081,8 @@ class ImagePropertyPanel(ScrolledPanel):
         # )
 
         self.check_invert_grayscale = wx.CheckBox(self, wx.ID_ANY, _("Invert"))
+        self.btn_reset_grayscale = wx.Button(self, wx.ID_ANY, _("Reset"))
+
         self.slider_grayscale_red = wx.Slider(
             self, wx.ID_ANY, 0, -1000, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
@@ -1118,6 +1120,7 @@ class ImagePropertyPanel(ScrolledPanel):
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_invert_grayscale, self.check_invert_grayscale
         )
+        self.Bind(wx.EVT_BUTTON, self.on_reset_grayscale, self.btn_reset_grayscale)
         self.Bind(
             wx.EVT_SLIDER,
             self.on_slider_grayscale_component,
@@ -1141,19 +1144,7 @@ class ImagePropertyPanel(ScrolledPanel):
         # self.check_enable_grayscale.SetValue(op["enable"])
         if node.invert is None:
             node.invert = False
-        self.check_invert_grayscale.SetValue(node.invert)
-
-        self.slider_grayscale_red.SetValue(int(node.red * 500.0))
-        self.text_grayscale_red.SetValue(str(node.red))
-
-        self.slider_grayscale_green.SetValue(int(node.green * 500.0))
-        self.text_grayscale_green.SetValue(str(node.green))
-
-        self.slider_grayscale_blue.SetValue(int(node.blue * 500.0))
-        self.text_grayscale_blue.SetValue(str(node.blue))
-
-        self.slider_grayscale_lightness.SetValue(int(node.lightness * 500.0))
-        self.text_grayscale_lightness.SetValue(str(node.lightness))
+        self.set_grayscale_values()
         self.set_widgets()
 
     @staticmethod
@@ -1161,6 +1152,21 @@ class ImagePropertyPanel(ScrolledPanel):
         if hasattr(node, "as_image"):
             return True
         return False
+
+    def set_grayscale_values(self):
+        self.check_invert_grayscale.SetValue(self.node.invert)
+
+        self.slider_grayscale_red.SetValue(int(self.node.red * 500.0))
+        self.text_grayscale_red.SetValue(str(self.node.red))
+
+        self.slider_grayscale_green.SetValue(int(self.node.green * 500.0))
+        self.text_grayscale_green.SetValue(str(self.node.green))
+
+        self.slider_grayscale_blue.SetValue(int(self.node.blue * 500.0))
+        self.text_grayscale_blue.SetValue(str(self.node.blue))
+
+        self.slider_grayscale_lightness.SetValue(int(self.node.lightness * 500.0))
+        self.text_grayscale_lightness.SetValue(str(self.node.lightness))
 
     def set_widgets(self, node=None):
         if node is None:
@@ -1195,6 +1201,9 @@ class ImagePropertyPanel(ScrolledPanel):
         self.text_grayscale_blue.SetToolTip(_("Blue Factor"))
         self.slider_grayscale_lightness.SetToolTip(_("Lightness control"))
         self.text_grayscale_lightness.SetToolTip(_("Lightness"))
+        self.btn_reset_grayscale.SetToolTip(
+            _("Reset the grayscale modifiers to standard values")
+        )
         # end wxGlade
 
     def __do_layout(self):
@@ -1228,6 +1237,15 @@ class ImagePropertyPanel(ScrolledPanel):
         sizer_rg = wx.BoxSizer(wx.HORIZONTAL)
         sizer_bl = wx.BoxSizer(wx.HORIZONTAL)
         sizer_grayscale = StaticBoxSizer(self, wx.ID_ANY, _("Grayscale"), wx.VERTICAL)
+        sizer_inversion_reset = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_inversion_reset.Add(
+            self.check_invert_grayscale, 0, wx.ALIGN_CENTER_VERTICAL, 0
+        )
+        sizer_inversion_reset.AddStretchSpacer(1)
+        sizer_inversion_reset.Add(
+            self.btn_reset_grayscale, 0, wx.ALIGN_CENTER_VERTICAL, 0
+        )
+
         sizer_grayscale_lightness = StaticBoxSizer(
             self, wx.ID_ANY, _("Lightness"), wx.HORIZONTAL
         )
@@ -1236,7 +1254,7 @@ class ImagePropertyPanel(ScrolledPanel):
             self, wx.ID_ANY, _("Green"), wx.HORIZONTAL
         )
         sizer_grayscale_red = StaticBoxSizer(self, wx.ID_ANY, _("Red"), wx.HORIZONTAL)
-        sizer_grayscale.Add(self.check_invert_grayscale, 0, 0, 0)
+        sizer_grayscale.Add(sizer_inversion_reset, 0, wx.EXPAND, 0)
         sizer_grayscale_red.Add(self.slider_grayscale_red, 1, wx.EXPAND, 0)
         sizer_grayscale_red.Add(self.text_grayscale_red, 1, 0, 0)
         sizer_rg.Add(sizer_grayscale_red, 1, wx.EXPAND, 0)
@@ -1299,6 +1317,15 @@ class ImagePropertyPanel(ScrolledPanel):
         self.node.dither = dither_flag
         self.node.dither_type = dither_type
         self.node_update()
+
+    def on_reset_grayscale(self, event):
+        self.node.invert = False
+        self.node.red = 1.0
+        self.node.green = 1.0
+        self.node.blue = 1.0
+        self.node.lightness = 1.0
+        self.node_update()
+        self.set_grayscale_values()
 
     def on_check_invert_grayscale(
         self, event=None

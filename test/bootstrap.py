@@ -1,8 +1,14 @@
 from meerk40t.kernel import Kernel
 
 
-def bootstrap(profile="MeerK40t_TEST"):
-    kernel = Kernel("MeerK40t", "0.0.0-testing", profile, ansi=False)
+def bootstrap(profile="MeerK40t_TEST", ignore_settings=True):
+    kernel = Kernel(
+        "MeerK40t",
+        "0.0.0-testing",
+        profile,
+        ansi=False,
+        ignore_settings=ignore_settings,
+    )
 
     from meerk40t.network import kernelserver
 
@@ -44,6 +50,10 @@ def bootstrap(profile="MeerK40t_TEST"):
 
     kernel.add_plugin(newlydevice.plugin)
 
+    from meerk40t.balormk import plugin as balormkdevice
+
+    kernel.add_plugin(balormkdevice.plugin)
+
     from meerk40t.core import svg_io
 
     kernel.add_plugin(svg_io.plugin)
@@ -51,6 +61,10 @@ def bootstrap(profile="MeerK40t_TEST"):
     from meerk40t.dxf.plugin import plugin as dxf_io_plugin
 
     kernel.add_plugin(dxf_io_plugin)
+
+    from meerk40t.rotary import rotary
+
+    kernel.add_plugin(rotary.plugin)
 
     kernel()
     kernel.console("channel print console\n")

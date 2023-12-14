@@ -36,6 +36,16 @@ Creator-Software: MeerK40t v0.0.0-testing
 %0%0%0%0%
 """
 
+egv_rect_y2_rotary = """Document type : LHYMICRO-GL file
+File version: 1.0.01
+Copyright: Unknown
+Creator-Software: MeerK40t v0.0.0-testing
+
+%0%0%0%0%
+IBzzzvRzzzzzz|tS1P
+ICV2490731016000027CNLBS1EDz139RzzzvTz139LzzzvFNSE-
+"""
+
 egv_override_speed_1_rect = """Document type : LHYMICRO-GL file
 File version: 1.0.01
 Copyright: Unknown
@@ -79,7 +89,7 @@ class TestDriverLihuiyu(unittest.TestCase):
         finally:
             kernel.shutdown()
 
-        kernel = bootstrap.bootstrap(profile="MeerK40t_LHY")
+        kernel = bootstrap.bootstrap(profile="MeerK40t_LHY", ignore_settings=False)
         try:
             devs = [name for name in kernel.contexts if name.startswith("lhystudios")]
             self.assertGreater(len(devs), 1)
@@ -179,6 +189,35 @@ class TestDriverLihuiyu(unittest.TestCase):
         with open(file1) as f:
             data = f.read()
         self.assertEqual(data, egv_image)
+
+
+class TestDriverLihuiyuRotary(unittest.TestCase):
+    def test_driver_rotary_engrave(self):
+        """
+        This test creates a lihuiyu device, with a rotary.
+        @return:
+        """
+        file1 = "test_rotary.egv"
+        self.addCleanup(os.remove, file1)
+
+        kernel = bootstrap.bootstrap(profile="MeerK40t_TEST_rotary")
+        try:
+            kernel.console("service device start -i lhystudios 0\n")
+            kernel.console("operation* delete\n")
+            device = kernel.device
+            rotary_path = kernel.rotary.path
+            device(f"set -p {rotary_path} active True")
+            device(f"set -p {rotary_path} scale_y 2.0")
+            device.signal("rotary_active", True)
+            kernel.rotary.realize()  # In case signal doesn't update the device settings quickly enough.
+            kernel.console(
+                f"rect 2cm 2cm 1cm 1cm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
+            )
+        finally:
+            kernel.shutdown()
+        with open(file1) as f:
+            data = f.read()
+        self.assertEqual(egv_rect_y2_rotary, data)
 
 
 class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):

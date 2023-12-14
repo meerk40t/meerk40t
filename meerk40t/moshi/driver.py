@@ -209,7 +209,7 @@ class MoshiDriver(Parameters):
             elif segment_type == "cubic":
                 interp = self.service.interpolate
                 g.clear()
-                g.cubic( start, c1, c2, end)
+                g.cubic(start, c1, c2, end)
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     while self.hold_work(0):
                         time.sleep(0.05)
@@ -385,7 +385,7 @@ class MoshiDriver(Parameters):
         Send a home command to the device. In the case of Moshiboards this is merely a move to
         0,0 in absolute position.
         """
-        if self.service.rotary_active and self.service.rotary_supress_home:
+        if self.service.rotary.active and self.service.rotary.supress_home:
             return
         self.rapid_mode()
         self.speed = 40

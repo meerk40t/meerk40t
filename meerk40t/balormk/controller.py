@@ -249,8 +249,9 @@ class GalvoController:
         self._abort_open = False
         self._disable_connect = False
 
-        self._light_bit = service.setting(int, "light_pin", 8)
-        self._foot_bit = service.setting(int, "footpedal_pin", 15)
+        self._light_bit = 8
+        self._foot_bit = 15
+        self.define_pins()
 
         self._last_x = x
         self._last_y = y
@@ -283,6 +284,10 @@ class GalvoController:
         self._list_executing = False
         self._number_of_list_packets = 0
         self.paused = False
+
+    def define_pins(self):
+        self._light_bit = self.service.setting(int, "light_pin", 8)
+        self._foot_bit = self.service.setting(int, "footpedal_pin", 15)
 
     @property
     def source(self):

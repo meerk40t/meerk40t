@@ -34,8 +34,8 @@ from ..device.basedevice import (
     PLOT_RAPID,
     PLOT_SETTING,
 )
-from .laserspeed import LaserSpeed
 from ..tools.geomstr import Geomstr
+from .laserspeed import LaserSpeed
 
 distance_lookup = [
     b"",
@@ -613,7 +613,7 @@ class LihuiyuDriver(Parameters):
         @param values:
         @return:
         """
-        if self.service.rotary_active and self.service.rotary_supress_home:
+        if self.service.rotary.active and self.service.rotary.supress_home:
             return
         self.rapid_mode()
         self(b"IPP\n")

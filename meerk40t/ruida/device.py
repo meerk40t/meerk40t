@@ -5,7 +5,7 @@ Ruida device interfacing. We do not send or interpret ruida code, but we can emu
 ruida files (*.rd) and turn them likewise into cutcode.
 """
 from meerk40t.core.view import View
-from meerk40t.kernel import Service
+from meerk40t.kernel import Service, signal_listener
 
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_NM, Length
@@ -41,7 +41,6 @@ class RuidaDevice(Service):
                 "type": Length,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
-                "signals": "bedsize",
                 "nonzero": True,
             },
             {
@@ -51,7 +50,6 @@ class RuidaDevice(Service):
                 "type": Length,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
-                "signals": "bedsize",
                 "nonzero": True,
             },
             {
@@ -85,67 +83,6 @@ class RuidaDevice(Service):
             },
         ]
         self.register_choices("bed_dim", choices)
-        choices = [
-            {
-                "attr": "rotary_active",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Rotary-Mode active"),
-                "tip": _("Is the rotary mode active for this device"),
-            },
-            {
-                "attr": "rotary_scale_x",
-                "object": self,
-                "default": 1.0,
-                "type": float,
-                "label": _("X-Scale"),
-                "tip": _("Scale that needs to be applied to the X-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Scale"),
-            },
-            {
-                "attr": "rotary_scale_y",
-                "object": self,
-                "default": 1.0,
-                "type": float,
-                "label": _("Y-Scale"),
-                "tip": _("Scale that needs to be applied to the Y-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Scale"),
-            },
-            {
-                "attr": "rotary_supress_home",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Ignore Home"),
-                "tip": _("Ignore Home-Command"),
-                "conditional": (self, "rotary_active"),
-            },
-            {
-                "attr": "rotary_flip_x",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror X"),
-                "tip": _("Mirror the elements on the X-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Mirror Output"),
-            },
-            {
-                "attr": "rotary_flip_y",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror Y"),
-                "tip": _("Mirror the elements on the Y-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Mirror Output"),
-            },
-        ]
-        self.register_choices("rotary", choices)
-
         choices = [
             {
                 "attr": "default_power",
@@ -193,15 +130,7 @@ class RuidaDevice(Service):
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
         self.view = View(self.bedwidth, self.bedheight, dpi=UNITS_PER_NM)
-        self.view.transform(
-            user_scale_x=self.scale_x,
-            user_scale_y=self.scale_y,
-        )
-        # rotary_active = self.rotary_active,
-        # rotary_scale_x = self.rotary_scale_x,
-        # rotary_scale_y = self.rotary_scale_y,
-        # rotary_flip_x = self.rotary_flip_x,
-        # rotary_flip_y = self.rotary_flip_y,
+        self.realize()
         self.state = 0
 
         self.viewbuffer = ""
@@ -211,10 +140,19 @@ class RuidaDevice(Service):
     def service_attach(self, *args, **kwargs):
         self.realize()
 
-    def realize(self, origin=None):
+    @signal_listener("bedwidth")
+    @signal_listener("bedheight")
+    @signal_listener("scale_x")
+    @signal_listener("scale_y")
+    def realize(self, origin=None, *args):
+        if origin is not None and origin != self.path:
+            return
         self.view.set_dims(self.bedwidth, self.bedheight)
-        self.view.realize()
-        self.space.update_bounds(0, 0, self.bedwidth, self.bedheight)
+        self.view.transform(
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
+        )
+        self.signal("view;realized")
 
     @property
     def current(self):
