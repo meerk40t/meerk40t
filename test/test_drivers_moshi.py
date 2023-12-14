@@ -14,7 +14,7 @@ mos_rect = (
     b"\x00\x00\x00\x00\x80\x80\x80\x80\x80\x80\x80"
 )
 
-egv_image = (
+mos_image = (
     b"\n\t\t\x00\x00\x00C\x00[\x00\x8a\x00\x00\x00\x00\x8a\x00\x00\x00\x00"
     b"\x8a\x00\x00\x00\x00\xd5\xf2\xff\x00\x00\x8a\xc6\xff\x00\x00\x8a"
     b"\xc6\xff\xfe\xff\x8a\xee\xff\xfe\xff\xd5\x08\x00\xfe\xff\x8a2"
@@ -54,13 +54,7 @@ egv_image = (
     b"\xc4\xff\x80\x80\x80\x80\x80\x80\x80"
 )
 
-egv_blank = """Document type : LHYMICRO-GL file
-File version: 1.0.01
-Copyright: Unknown
-Creator-Software: MeerK40t v0.0.0-testing
-
-%0%0%0%0%
-"""
+mos_blank = b''
 
 mos_rect_rotary = (
     b"\n\t\t\x00\x00\x00\x13\x03'\x06\x8a\x00\x00\x00\x00\x8a\x00\x00\x00\x00"
@@ -156,7 +150,7 @@ class TestDriverMoshi(unittest.TestCase):
             kernel.shutdown()
         with open(file1, "rb") as f:
             data = f.read()
-        self.assertEqual(data, b'')
+        self.assertEqual(data, mos_blank)
 
     def test_driver_basic_ellipse_image(self):
         """
@@ -188,13 +182,13 @@ class TestDriverMoshi(unittest.TestCase):
             kernel.shutdown()
         with open(file1, "rb") as f:
             data = f.read()
-        self.assertEqual(data, egv_image)
+        self.assertEqual(data, mos_image)
 
 
-class TestDriverLihuiyuRotary(unittest.TestCase):
+class TestDriverMoshiRotary(unittest.TestCase):
     def test_driver_rotary_engrave(self):
         """
-        This test creates a lihuiyu device, with a rotary.
+        This test creates a moshi device, with a rotary.
         @return:
         """
         file1 = "test_rotary.mos"
