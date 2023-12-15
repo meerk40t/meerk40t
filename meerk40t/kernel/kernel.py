@@ -1069,7 +1069,10 @@ class Kernel(Settings):
                 if channel:
                     channel(f"module-module_closed: {str(m)}")
                 if hasattr(m, "module_close"):
-                    m.module_close(*args, **kwargs)
+                    try:
+                        m.module_close(*args, **kwargs)
+                    except RuntimeError:
+                        pass
                 self._signal_detach(m)
                 self._lookup_detach(m)
 
