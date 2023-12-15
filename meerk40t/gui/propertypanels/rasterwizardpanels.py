@@ -416,17 +416,11 @@ class ToneCurvePanel(wx.Panel):
 
     def update_in_gui_thread(self):
         self.on_update_tone()
-        try:
-            self.Refresh(True)
-            self.Update()
-        except RuntimeError:
-            pass
+        self.Refresh(True)
+        self.Update()
 
     def on_tone_panel_paint(self, event=None):
-        try:
-            wx.BufferedPaintDC(self.curve_panel, self._tone_panel_buffer)
-        except RuntimeError:
-            pass
+        wx.BufferedPaintDC(self.curve_panel, self._tone_panel_buffer)
 
     def on_curve_mouse_move(self, event):
         if self.curve_panel.HasCapture():

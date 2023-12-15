@@ -4399,14 +4399,11 @@ class MeerK40t(MWindow):
             if window is self or window is None:
                 return
             window.Close(False)
-        except (RuntimeError, AttributeError):
+        except AttributeError:
             pass
 
     def on_click_exit(self, event=None):  # wxGlade: MeerK40t.<event_handler>
-        try:
-            self.Close()
-        except RuntimeError:
-            pass
+        self.Close()
 
     def on_click_zoom_out(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -4500,26 +4497,23 @@ class MeerK40t(MWindow):
         self.status_update()
 
     def on_menu_highlight(self, event):
-        try:
-            menuid = event.GetId()
-            menu = event.GetMenu()
-            if menuid == wx.ID_SEPARATOR:
-                self.update_statusbar("...")
-                return
-            if not self.top_menu and not menu:
-                self.status_update()
-                return
-            if menu and not self.top_menu:
-                self.top_menu = menu
-            if self.top_menu and not menu:
-                menu = self.top_menu
-            menuitem, submenu = menu.FindItem(menuid)
-            if not menuitem:
-                self.update_statusbar("...")
-                return
-            helptext = menuitem.GetHelp()
-            if not helptext:
-                helptext = f'{menuitem.GetItemLabelText()} ({_("No help text")})'
-            self.update_statusbar(helptext)
-        except RuntimeError:
-            pass
+        menuid = event.GetId()
+        menu = event.GetMenu()
+        if menuid == wx.ID_SEPARATOR:
+            self.update_statusbar("...")
+            return
+        if not self.top_menu and not menu:
+            self.status_update()
+            return
+        if menu and not self.top_menu:
+            self.top_menu = menu
+        if self.top_menu and not menu:
+            menu = self.top_menu
+        menuitem, submenu = menu.FindItem(menuid)
+        if not menuitem:
+            self.update_statusbar("...")
+            return
+        helptext = menuitem.GetHelp()
+        if not helptext:
+            helptext = f'{menuitem.GetItemLabelText()} ({_("No help text")})'
+        self.update_statusbar(helptext)

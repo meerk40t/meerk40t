@@ -81,11 +81,8 @@ class MWindow(wx.Frame, Module):
 
     def on_change_window(self, event):
         if self.IsShown():
-            try:
-                self.window_context.width, self.window_context.height = self.Size
-                self.window_context.x, self.window_context.y = self.GetPosition()
-            except RuntimeError:
-                pass
+            self.window_context.width, self.window_context.height = self.Size
+            self.window_context.x, self.window_context.y = self.GetPosition()
         event.Skip()
 
     def create_menu(self, append):
@@ -136,5 +133,5 @@ class MWindow(wx.Frame, Module):
                 self.window_context.setting(bool, "open_on_start", False)
                 self.window_context.open_on_start = shutdown and self.window_preserve()
             self.Close()
-        except (AttributeError, RuntimeError):
+        except AttributeError:
             pass

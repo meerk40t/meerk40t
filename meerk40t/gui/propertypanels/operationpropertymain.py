@@ -224,12 +224,9 @@ class LayerSettingPanel(wx.Panel):
             rgb = color.GetRGB()
             color = swizzlecolor(rgb)
             self.operation.color = Color(color, 1.0)
-            try:
-                self.button_layer_color.SetBackgroundColour(
-                    wx.Colour(swizzlecolor(self.operation.color))
-                )
-            except RuntimeError:
-                return
+            self.button_layer_color.SetBackgroundColour(
+                wx.Colour(swizzlecolor(self.operation.color))
+            )
             # Ask the user if she/he wants to assign the color of the contained objects
             try:
                 candidate_stroke = bool(self.checkbox_stroke.GetValue())
@@ -432,11 +429,7 @@ class SpeedPpiPanel(wx.Panel):
         self.update_power_speed_properties()
 
     def on_device_update(self):
-        try:
-            self.update_power_speed_properties()
-        except RuntimeError:
-            # Pane was already destroyed
-            pass
+        self.update_power_speed_properties()
         self.set_widgets(self.operation)
 
     def update_power_speed_properties(self):
@@ -992,10 +985,7 @@ class PanelStartPreference(wx.Panel):
         self.Show()
 
     def on_display_paint(self, event=None):
-        try:
-            wx.BufferedPaintDC(self.display_panel, self._Buffer)
-        except RuntimeError:
-            pass
+        wx.BufferedPaintDC(self.display_panel, self._Buffer)
 
     def on_display_erase(self, event=None):
         pass
@@ -1139,11 +1129,7 @@ class PanelStartPreference(wx.Panel):
 
     def refresh_in_ui(self):
         """Performs redrawing of the data in the UI thread."""
-        try:
-            visible = self.Shown
-        except RuntimeError:
-            # May have already been deleted....
-            return
+        visible = self.Shown
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
         dc.SetBackground(wx.WHITE_BRUSH)

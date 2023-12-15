@@ -332,3 +332,4 @@ and a wxpython version <= 4.1.1."""
                         kernel.console(f"window open {window_name[7:]}\n")
 
             meerk40tgui.MainLoop()
+            print("Mainloop Exited")

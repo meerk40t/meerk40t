@@ -328,7 +328,7 @@ class ScenePanel(wx.Panel):
                 self.scene.request_refresh()
                 return
             wx.BufferedPaintDC(self.scene_panel, self.scene_buffer)
-        except (RuntimeError, AssertionError, TypeError):
+        except (AssertionError, TypeError):
             pass
 
     def on_erase(self, event):

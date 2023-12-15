@@ -404,10 +404,7 @@ class HingePanel(wx.Panel):
         self.refresh_display()
 
     def on_display_paint(self, event=None):
-        try:
-            wx.BufferedPaintDC(self.panel_preview, self._Buffer)
-        except RuntimeError:
-            pass
+        wx.BufferedPaintDC(self.panel_preview, self._Buffer)
 
     def set_buffer(self):
         width, height = self.panel_preview.Size

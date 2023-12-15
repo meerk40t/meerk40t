@@ -117,14 +117,11 @@ class BalorControllerPanel(wx.ScrolledWindow):
             connected = self.service.driver.connected
         except AttributeError:
             return
-        try:
-            self.button_device_connect.SetLabel(status)
-            if connected:
-                self.set_button_connected()
-            else:
-                self.set_button_disconnected()
-        except RuntimeError:
-            pass
+        self.button_device_connect.SetLabel(status)
+        if connected:
+            self.set_button_connected()
+        else:
+            self.set_button_disconnected()
 
     def on_button_start_connection(self, event):  # wxGlade: Controller.<event_handler>
         try:
@@ -150,14 +147,11 @@ class BalorControllerPanel(wx.ScrolledWindow):
         name = self.service.label.replace(" ", "-")
         name = name.replace("/", "-")
         self.context.channel(f"{name}/usb").watch(self.update_text)
-        try:
-            connected = self.service.driver.connected
-            if connected:
-                self.set_button_connected()
-            else:
-                self.set_button_disconnected()
-        except RuntimeError:
-            pass
+        connected = self.service.driver.connected
+        if connected:
+            self.set_button_connected()
+        else:
+            self.set_button_disconnected()
 
     def pane_hide(self):
         name = self.service.label.replace(" ", "-")

@@ -276,11 +276,8 @@ class ConsolePanel(wx.ScrolledWindow):
         text = ""
         ansi_text = ""
         ansi = False
-        try:
-            if not self.text_main.IsEmpty():
-                self.text_main.AppendText("\n")
-        except RuntimeError:
-            return
+        if not self.text_main.IsEmpty():
+            self.text_main.AppendText("\n")
         for c in lines:
             b = ord(c)
             if c == "\n":
@@ -309,11 +306,7 @@ class ConsolePanel(wx.ScrolledWindow):
         @param lines:
         @return:
         """
-        try:
-            self.text_main.SetInsertionPointEnd()
-        except RuntimeError:
-            # Console is shutdown.
-            return
+        self.text_main.SetInsertionPointEnd()
         ansi = False
         ansi_text = ""
         text = ""

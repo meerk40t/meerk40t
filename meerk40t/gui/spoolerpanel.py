@@ -673,10 +673,7 @@ class SpoolerPanel(wx.Panel):
     def refresh_spooler_list(self):
         if not self.update_spooler:
             return
-        try:
-            self.list_job_spool.DeleteAllItems()
-        except RuntimeError:
-            return
+        self.list_job_spool.DeleteAllItems()
         self.queue_entries = []
         queue_idx = -1
         for device in self.available_devices:
@@ -1067,10 +1064,7 @@ class SpoolerPanel(wx.Panel):
         #
         # The checks here are rather basic and need to be revisited
         refresh_needed = False
-        try:
-            listctrl = self.list_job_spool
-        except RuntimeError:
-            return
+        listctrl = self.list_job_spool
         for list_id, entry in enumerate(self.queue_entries):
             spooler = entry[0]
             qindex = entry[1]

@@ -65,7 +65,7 @@ def create_preview_image(context, fontfile):
         return False
     try:
         bitmap.SaveFile(bmpfile, wx.BITMAP_TYPE_PNG)
-    except (OSError, RuntimeError, PermissionError, FileNotFoundError):
+    except (OSError, PermissionError, FileNotFoundError):
         return False
     return True
 
@@ -98,7 +98,7 @@ def remove_fontfile(fontfile):
             bmpfile = base + ".png"
             if os.path.exists(bmpfile):
                 os.remove(bmpfile)
-        except (OSError, RuntimeError, PermissionError, FileNotFoundError):
+        except (OSError,  PermissionError, FileNotFoundError):
             pass
 
 
@@ -683,7 +683,7 @@ class PanelFontManager(wx.Panel):
                 )
                 if progress.WasCancelled():
                     break
-            except (OSError, RuntimeError, PermissionError, FileNotFoundError):
+            except (OSError, PermissionError, FileNotFoundError):
                 stats[1] += 1
         progress.Destroy()
         wx.MessageBox(
@@ -786,7 +786,7 @@ class PanelFontManager(wx.Panel):
                 )
                 if progress.WasCancelled():
                     break
-            except (OSError, RuntimeError, PermissionError, FileNotFoundError):
+            except (OSError, PermissionError, FileNotFoundError):
                 stats[1] += 1
         progress.Destroy()
         wx.MessageBox(

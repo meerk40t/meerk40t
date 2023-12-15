@@ -1273,10 +1273,7 @@ class Kernel(Settings):
 
         _ = self.translation
 
-        try:
-            self.process_queue()  # Notify listeners of state.
-        except RuntimeError:
-            pass  # Runtime error for gui objects in the process of being killed.
+        self.process_queue()  # Notify listeners of state.
         # Suspend Signals
 
         def signal(code, path, *message):

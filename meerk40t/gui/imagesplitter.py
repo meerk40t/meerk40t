@@ -265,7 +265,7 @@ class SplitterPanel(wx.Panel):
             self.split_x.SetValue(self.context.split_x)
             self.split_y.SetValue(self.context.split_y)
             self.text_dpi.SetValue(self.context.split_dpi)
-        except (ValueError, AttributeError, RuntimeError):
+        except (ValueError, AttributeError):
             pass
 
     def show_stuff(self, has_emph):
@@ -417,7 +417,7 @@ class KeyholePanel(wx.Panel):
             self.check_invert.SetValue(bool(self.context.keyhole_invert))
             self.check_outline.SetValue(bool(self.context.keyhole_outline))
             self.text_dpi.SetValue(self.context.keyhole_dpi)
-        except (ValueError, AttributeError, RuntimeError):
+        except (ValueError, AttributeError):
             pass
 
     def show_stuff(self, has_emph):

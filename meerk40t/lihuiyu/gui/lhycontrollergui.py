@@ -295,14 +295,11 @@ class LihuiyuControllerPanel(ScrolledPanel):
 
     @signal_listener("lihuiyu_controller_update")
     def update_text_gui(self, origin, *args):
-        try:
-            with self._buffer_lock:
-                buffer = self._buffer
-                self._buffer = ""
-            if self.text_usb_log.IsShown():
-                self.text_usb_log.AppendText(buffer)
-        except RuntimeError:
-            pass
+        with self._buffer_lock:
+            buffer = self._buffer
+            self._buffer = ""
+        if self.text_usb_log.IsShown():
+            self.text_usb_log.AppendText(buffer)
 
     def set_widgets(self):
         try:
@@ -322,25 +319,21 @@ class LihuiyuControllerPanel(ScrolledPanel):
     def update_status(self, origin, status_data, code_string):
         if origin != self.context.path:
             return
-        try:
-            if status_data is not None:
-                if isinstance(status_data, int):
-                    self.text_desc.SetValue(str(status_data))
+        if status_data is not None:
+            if isinstance(status_data, int):
+                self.text_desc.SetValue(str(status_data))
+                self.text_desc.SetValue(code_string)
+            else:
+                if len(status_data) == 6:
+                    self.text_byte_0.SetValue(str(status_data[0]))
+                    self.text_byte_1.SetValue(str(status_data[1]))
+                    self.text_byte_2.SetValue(str(status_data[2]))
+                    self.text_byte_3.SetValue(str(status_data[3]))
+                    self.text_byte_4.SetValue(str(status_data[4]))
+                    self.text_byte_5.SetValue(str(status_data[5]))
                     self.text_desc.SetValue(code_string)
-                else:
-                    if len(status_data) == 6:
-                        self.text_byte_0.SetValue(str(status_data[0]))
-                        self.text_byte_1.SetValue(str(status_data[1]))
-                        self.text_byte_2.SetValue(str(status_data[2]))
-                        self.text_byte_3.SetValue(str(status_data[3]))
-                        self.text_byte_4.SetValue(str(status_data[4]))
-                        self.text_byte_5.SetValue(str(status_data[5]))
-                        self.text_desc.SetValue(code_string)
-            self.packet_count_text.SetValue(str(self.context.packet_count))
-            self.rejected_packet_count_text.SetValue(str(self.context.rejected_count))
-        except RuntimeError:
-            # This should be handled when the controller window is closed.
-            pass
+        self.packet_count_text.SetValue(str(self.context.packet_count))
+        self.rejected_packet_count_text.SetValue(str(self.context.rejected_count))
 
     @signal_listener("pipe;packet_text")
     def update_packet_text(self, origin, string_data):
@@ -353,10 +346,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
     def on_connection_status_change(self, origin, status):
         if origin != self.context._path:
             return
-        try:
-            self.text_connection_status.SetValue(str(status))
-        except RuntimeError:
-            pass
+        self.text_connection_status.SetValue(str(status))
 
     @signal_listener("pipe;state")
     def on_connection_state_change(self, origin, state):

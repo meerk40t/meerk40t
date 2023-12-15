@@ -655,11 +655,7 @@ class ShadowTree:
             return
         item = node._item
         self.check_validity(item)
-        try:
-            self.update_decorations(node, force=True)
-        except RuntimeError:
-            # A timer can update after the tree closes.
-            return
+        self.update_decorations(node, force=True)
 
     def check_validity(self, item):
         if item is None or not item.IsOk():
@@ -763,11 +759,7 @@ class ShadowTree:
         # print (f"Modified: {node}\nItem: {item}, Status={okay}")
         if not okay:
             return
-        try:
-            self.update_decorations(node, force=True)
-        except RuntimeError:
-            # A timer can update after the tree closes.
-            return
+        self.update_decorations(node, force=True)
         try:
             c = node.color
             self.set_color(node, c)
@@ -786,11 +778,7 @@ class ShadowTree:
             return
         item = node._item
         self.check_validity(item)
-        try:
-            self.update_decorations(node, force=True)
-        except RuntimeError:
-            # A timer can update after the tree closes.
-            return
+        self.update_decorations(node, force=True)
         try:
             c = node.color
             self.set_color(node, c)
@@ -916,21 +904,13 @@ class ShadowTree:
             for node in element:
                 if hasattr(node, "node"):
                     node = node.node
-                try:
-                    self.update_decorations(node, force=True)
-                    for refnode in node.references:
-                        self.update_decorations(refnode, force=True)
-                except RuntimeError:
-                    # A timer can update after the tree closes.
-                    return
-        else:
-            try:
-                self.update_decorations(element, force=True)
-                for refnode in element.references:
+                self.update_decorations(node, force=True)
+                for refnode in node.references:
                     self.update_decorations(refnode, force=True)
-            except RuntimeError:
-                # A timer can update after the tree closes.
-                return
+        else:
+            self.update_decorations(element, force=True)
+            for refnode in element.references:
+                self.update_decorations(refnode, force=True)
 
     def on_element_update(self, *args):
         """
@@ -943,17 +923,9 @@ class ShadowTree:
             for node in element:
                 if hasattr(node, "node"):
                     node = node.node
-                try:
-                    self.update_decorations(node, force=True)
-                except RuntimeError:
-                    # A timer can update after the tree closes.
-                    return
+                self.update_decorations(node, force=True)
         else:
-            try:
-                self.update_decorations(element, force=True)
-            except RuntimeError:
-                # A timer can update after the tree closes.
-                return
+            self.update_decorations(element, force=True)
 
     def refresh_tree(self, node=None, level=0, source=""):
         """
@@ -976,17 +948,9 @@ class ShadowTree:
                 for enode in node:
                     if hasattr(enode, "node"):
                         enode = enode.node
-                    try:
-                        self.update_decorations(enode, force=True)
-                    except RuntimeError:
-                        # A timer can update after the tree closes.
-                        return
+                    self.update_decorations(enode, force=True)
             else:
-                try:
-                    self.update_decorations(node, force=True)
-                except RuntimeError:
-                    # A timer can update after the tree closes.
-                    return
+                self.update_decorations(node, force=True)
 
         self.wxtree._freeze = False
         branch_elems_item = self.elements.get(type="branch elems")._item

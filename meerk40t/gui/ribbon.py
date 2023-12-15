@@ -905,12 +905,8 @@ class RibbonBarPanel(wx.Control):
     def _paint_main_on_buffer(self):
         """Performs redrawing of the data in the UI thread."""
         # print (f"Redraw job started for RibbonBar with {self.visible_pages()} pages")
-        try:
-            buf = self._set_buffer()
-            dc = wx.MemoryDC()
-        except RuntimeError:
-            # Shutdown error
-            return
+        buf = self._set_buffer()
+        dc = wx.MemoryDC()
         dc.SelectObject(buf)
         if self._redraw_lock.acquire(timeout=0.2):
             if self._layout_dirty:
@@ -927,27 +923,23 @@ class RibbonBarPanel(wx.Control):
     def prefer_horizontal(self):
         result = None
         if self.pane is not None:
-            try:
-                pane = self.pane.manager.GetPane(self.pane.name)
-                if pane.IsDocked():
-                    # if self.pane.name == "tools":
-                    #     print (
-                    #         f"Pane: {pane.name}: {pane.dock_direction}, State: {pane.IsOk()}/{pane.IsDocked()}/{pane.IsFloating()}"
-                    #     )
-                    if pane.dock_direction in (1, 3):
-                        # Horizontal
-                        result = True
-                    elif pane.dock_direction in (2, 4):
-                        # Vertical
-                        result = False
+            pane = self.pane.manager.GetPane(self.pane.name)
+            if pane.IsDocked():
+                # if self.pane.name == "tools":
+                #     print (
+                #         f"Pane: {pane.name}: {pane.dock_direction}, State: {pane.IsOk()}/{pane.IsDocked()}/{pane.IsFloating()}"
+                #     )
+                if pane.dock_direction in (1, 3):
+                    # Horizontal
+                    result = True
+                elif pane.dock_direction in (2, 4):
+                    # Vertical
+                    result = False
                 # else:
                 #     if self.pane.name == "tools":
                 #         print (
                 #             f"Pane: {pane.name}: {pane.IsFloating()}"
                 #         )
-            except (AttributeError, RuntimeError):
-                # Unknown error occurred
-                pass
 
         if result is None:
             # Floating...

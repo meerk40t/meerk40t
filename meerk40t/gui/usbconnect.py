@@ -43,10 +43,7 @@ class UsbConnectPanel(wx.Panel):
             self.update_text_gui(text + "\n")
 
     def update_text_gui(self, text):
-        try:
-            self.text_main.AppendText(text)
-        except RuntimeError:
-            pass
+        self.text_main.AppendText(text)
 
     def __set_properties(self):
         self.text_entry.SetFocus()

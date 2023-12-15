@@ -1601,10 +1601,7 @@ class SimulationPanel(wx.Panel, Job):
         self.context.unschedule(self)
         self.running = False
         # self.panel_optimize.pane_hide()
-        try:
-            self.panel_optimize.Hide()
-        except RuntimeError:
-            pass
+        self.panel_optimize.Hide()
 
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, scene_name=None, *args):
@@ -1744,7 +1741,7 @@ class SimulationWidget(Widget):
                             cut._cache = self.renderer.make_thumbnail(
                                 image, maximum=5000
                             )
-                        except (MemoryError, RuntimeError):
+                        except MemoryError:
                             cut._cache = None
                         cut._cache_id = id(image)
                     # Set draw - constraint

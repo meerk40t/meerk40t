@@ -348,10 +348,7 @@ class HatchPropertyPanel(ScrolledPanel):
     def on_display_paint(self, event=None):
         if self._Buffer is None:
             return
-        try:
-            wx.BufferedPaintDC(self.display_panel, self._Buffer)
-        except RuntimeError:
-            pass
+        wx.BufferedPaintDC(self.display_panel, self._Buffer)
 
     def on_display_erase(self, event=None):
         pass

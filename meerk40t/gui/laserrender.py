@@ -588,7 +588,7 @@ class LaserRender:
                     cut._cache_width, cut._cache_height = image.size
                     try:
                         cut._cache = self.make_thumbnail(image, maximum=5000)
-                    except (MemoryError, RuntimeError):
+                    except MemoryError:
                         cut._cache = None
                     cut._cache_id = id(image)
                 if cut._cache is not None:

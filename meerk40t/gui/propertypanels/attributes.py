@@ -292,24 +292,16 @@ class IdPanel(wx.Panel):
         # print(f"set_widget for {self.attribute} to {str(node)}")
         vis1 = False
         vis2 = False
-        try:
-            if hasattr(self.node, "id") and self.showid:
-                vis1 = True
-                self.text_id.SetValue(mklabel(node.id))
-            self.text_id.Show(vis1)
-            self.sizer_id.Show(vis1)
-        except RuntimeError:
-            # Could happen if the propertypanel has been destroyed
-            pass
-        try:
-            if hasattr(self.node, "label") and self.showlabel:
-                vis2 = True
-                self.text_label.SetValue(mklabel(node.label))
-            self.text_label.Show(vis2)
-            self.sizer_label.Show(vis2)
-        except RuntimeError:
-            # Could happen if the propertypanel has been destroyed
-            pass
+        if hasattr(self.node, "id") and self.showid:
+            vis1 = True
+            self.text_id.SetValue(mklabel(node.id))
+        self.text_id.Show(vis1)
+        self.sizer_id.Show(vis1)
+        if hasattr(self.node, "label") and self.showlabel:
+            vis2 = True
+            self.text_label.SetValue(mklabel(node.label))
+        self.text_label.Show(vis2)
+        self.sizer_label.Show(vis2)
 
         bmp = None
         type_patterns = {
@@ -349,11 +341,8 @@ class IdPanel(wx.Panel):
         if bmp is None:
             self.icon_display.Show(False)
         else:
-            try:
-                self.icon_display.SetBitmap(bmp)
-                self.icon_display.Show(True)
-            except RuntimeError:
-                pass
+            self.icon_display.SetBitmap(bmp)
+            self.icon_display.Show(True)
 
         if vis1 or vis2:
             self.Show()

@@ -368,7 +368,7 @@ class AlignmentPanel(wx.Panel):
             self.rbox_align_x.SetSelection(self.context.align_x)
             self.rbox_align_y.SetSelection(self.context.align_y)
             self.rbox_relation.SetSelection(self.context.align_relation)
-        except (RuntimeError, AttributeError, ValueError):
+        except (AttributeError, ValueError):
             pass
 
     def show_stuff(self, has_emph):
@@ -1064,7 +1064,7 @@ class DistributionPanel(wx.Panel):
             self.rbox_sort.SetSelection(self.context.distribute_sort)
             self.check_inside_xy.SetValue(bool(self.context.distribute_inside))
             self.check_rotate.SetValue(bool(self.context.distribute_rotate))
-        except (ValueError, AttributeError, RuntimeError):
+        except (ValueError, AttributeError):
             pass
 
     def show_stuff(self, has_emph):
@@ -1507,7 +1507,7 @@ class ArrangementPanel(wx.Panel):
             self.check_same_y.SetValue(bool(self.context.arrange_check))
             self.txt_gap_x.SetValue(self.context.arrange_gapx)
             self.txt_gap_y.SetValue(self.context.arrange_gapy)
-        except (ValueError, AttributeError, RuntimeError):
+        except (ValueError, AttributeError):
             pass
 
     def show_stuff(self, has_emph):

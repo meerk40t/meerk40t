@@ -202,7 +202,7 @@ class TipPanel(wx.Panel):
             with open(local_file, "wb") as f:
                 f.write(content)
             return True
-        except (OSError, PermissionError, RuntimeError) as e:
+        except (OSError, PermissionError) as e:
             # print (f"Error @ image write to {local_path}: {e}")
             return False
 
@@ -433,7 +433,7 @@ class TipPanel(wx.Panel):
                 try:
                     with open(self.local_file, mode="w") as f:
                         f.write(content)
-                except (OSError, RuntimeError, PermissionError, FileNotFoundError):
+                except (OSError, PermissionError, FileNotFoundError):
                     pass
 
     def load_tips_from_local_cache(self):
@@ -509,7 +509,7 @@ class TipPanel(wx.Panel):
                 # Something pending?
                 add_tip(tip, cmd, img, ver, myversion)
 
-        except (OSError, RuntimeError, PermissionError, FileNotFoundError):
+        except (OSError, PermissionError, FileNotFoundError):
             return
 
     def establish_picture_cache(self):
@@ -522,7 +522,7 @@ class TipPanel(wx.Panel):
         if not os.path.exists(cache_dir):
             try:
                 os.mkdir(cache_dir)
-            except (OSError, PermissionError, RuntimeError):
+            except (OSError, PermissionError):
                 cache_dir = ""
         return cache_dir
 
