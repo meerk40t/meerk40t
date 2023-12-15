@@ -99,10 +99,10 @@ class ShutdownPanel(wx.Panel):
         info = wx.StaticText(
             self,
             wx.ID_ANY,
-            ("Please be carful, if you click on one of the buttons below, " +
+            ("Please be careful, if you click on one of the buttons below, " +
             "we will try to create a scenario that hopefully will help us " +
             "identify an edge case crash.\n" +
-            "So please save your work first, as this will be compromised!"
+            "So please save your work first, as it will be compromised!"
             ),
         )
         self.btn_scenario_kernel_first = wx.Button(self, wx.ID_ANY, "Kill kernel first")
@@ -146,7 +146,7 @@ class ShutdownPanel(wx.Panel):
                 hatch_type="scanline",
                 hatch_angle=hatchangle.radians,
                 hatch_angle_delta=0,
-                hatch_distance=cm / 50,
+                hatch_distance="0.2mm", # cm / 50,
                 stroke=Color("green"),
                 stroke_width=100,
             )
