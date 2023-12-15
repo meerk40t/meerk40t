@@ -173,7 +173,7 @@ class ShutdownPanel(wx.Panel):
 
     def die_gui_die(self, event):
         self.prepare_scenario()
-        self.context.gui.Destroy()
+        self.context.gui.Close()
 
     def create_scenario(self, event):
         self.prepare_scenario()
