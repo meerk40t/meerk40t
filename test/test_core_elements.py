@@ -24,7 +24,7 @@ class TestElements(unittest.TestCase):
                     "element* " + command.split("/")[-1] + " validate_type\n"
                 )
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_elements_specific(self):
         """
@@ -41,7 +41,7 @@ class TestElements(unittest.TestCase):
             kernel.console("element* circ_copy 4 10mm 5deg 0.5turn -d 25deg")
             kernel.console("element* radial 2 5mm 20deg 200deg")
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_elements_frame(self):
         """
@@ -59,7 +59,7 @@ class TestElements(unittest.TestCase):
             self.assertAlmostEqual(f[0].rx, f[1].rx)
             self.assertAlmostEqual(f[0].ry, f[1].ry)
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_elements_circle(self):
         """
@@ -78,7 +78,7 @@ class TestElements(unittest.TestCase):
                 self.assertEqual(node.ry, 1000 * UNITS_PER_MIL)
                 self.assertEqual(node.stroke, "blue")
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_elements_rect(self):
         """
@@ -98,7 +98,7 @@ class TestElements(unittest.TestCase):
                 self.assertEqual(node.stroke, "red")
                 self.assertEqual(node.fill, "blue")
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_elements_clipboard(self):
         """
@@ -114,7 +114,7 @@ class TestElements(unittest.TestCase):
             kernel_root("clipboard paste -xy 2in 2in\n")
             kernel_root("grid 2 4\n")
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_elements_shapes(self):
         """
@@ -129,7 +129,7 @@ class TestElements(unittest.TestCase):
             # kernel_root("polygon 1in 1in 2in 2in 0in 4cm\n")
 
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_elements_bad_grid(self):
         """
@@ -143,4 +143,4 @@ class TestElements(unittest.TestCase):
             kernel_root("shape 5 2in 2in 1in\n")
             kernel_root("grid 2 2 1in 1foo\n")
         finally:
-            kernel.shutdown()
+            kernel()

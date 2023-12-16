@@ -19,4 +19,4 @@ class TestSpooler(unittest.TestCase):
             kernel.device.spooler.send(j)
             kernel.device.spooler.remove(j)
         finally:
-            kernel.shutdown()
+            kernel()

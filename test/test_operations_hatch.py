@@ -35,7 +35,7 @@ class TestHatch(unittest.TestCase):
             path = list(cutcode.as_elements())
             self.assertEqual(len(path), 1)
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_operation_hatch_empty(self):
         """
@@ -54,4 +54,4 @@ class TestHatch(unittest.TestCase):
             g = laserop.as_geometry()
             self.assertEqual(len(g), 0)
         finally:
-            kernel.shutdown()
+            kernel()

@@ -92,7 +92,7 @@ class TestFill(unittest.TestCase):
             self.assertEqual(len(shape), 50)
             print(shape)
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_fill_hatch_2rect(self):
         """
@@ -120,7 +120,7 @@ class TestFill(unittest.TestCase):
             shape0 = hatch_effect.as_geometry()
             self.assertEqual(len(shape0), 100)
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_fill_scanline(self):
         w = 10000
@@ -152,4 +152,4 @@ class TestFill(unittest.TestCase):
             eulerian_fill_k = kernel.lookup("hatch/eulerian")
             self.assertIs(eulerian_fill_k, eulerian_fill)
         finally:
-            kernel.shutdown()
+            kernel()

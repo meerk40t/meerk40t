@@ -33,7 +33,7 @@ class TestDriverNewly(unittest.TestCase):
                 f"rect 2cm 2cm 1cm 1cm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
         finally:
-            kernel.shutdown()
+            kernel()
         with open(file1) as f:
             data = f.read()
         self.assertEqual(hpgl_rect, data)
@@ -53,7 +53,7 @@ class TestDriverNewly(unittest.TestCase):
                 f"rect 2cm 2cm 1cm 1cm cut -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
         finally:
-            kernel.shutdown()
+            kernel()
         with open(file1) as f:
             data = f.read()
         self.assertEqual(hpgl_rect, data)
@@ -75,7 +75,7 @@ class TestDriverNewly(unittest.TestCase):
                 f"rect 2cm 2cm 1cm 1cm raster -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
         finally:
-            kernel.shutdown()
+            kernel()
         with open(file1) as f:
             data = f.read()
         self.assertEqual(data, hpgl_blank)
@@ -107,7 +107,7 @@ class TestDriverNewly(unittest.TestCase):
                 f"element0 imageop -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
         finally:
-            kernel.shutdown()
+            kernel()
         with open(file1, "rb") as f:
             data = f.read()
             data = data.decode(encoding="latin-1")
@@ -137,7 +137,7 @@ class TestDriverNewlyRotary(unittest.TestCase):
                 f"rect 2cm 2cm 1cm 1cm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
         finally:
-            kernel.shutdown()
+            kernel()
         with open(file1) as f:
             data = f.read()
         self.assertNotEqual(hpgl_rect, data)
