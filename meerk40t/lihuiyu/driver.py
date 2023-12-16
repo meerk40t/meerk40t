@@ -789,7 +789,9 @@ class LihuiyuDriver(Parameters):
 
         def temp_hold():
             try:
-                return len(self.out_pipe) != 0
+                return (
+                    len(self.out_pipe) != 0 or self.service.controller.state == "wait"
+                )
             except TypeError:
                 return False
 
