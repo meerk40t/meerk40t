@@ -9,8 +9,8 @@ import wx
 from wx import aui
 
 import meerk40t.gui.icons as mkicons
+from meerk40t.core.units import Angle, Length
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
-from meerk40t.core.units import Length, Angle
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -69,6 +69,7 @@ def register_panel_icon(window, context):
     window.on_pane_create(pane)
     context.register("pane/debug_icons", pane)
 
+
 def register_panel_crash(window, context):
     pane = (
         aui.AuiPaneInfo()
@@ -86,6 +87,7 @@ def register_panel_crash(window, context):
     window.on_pane_create(pane)
     context.register("pane/debug_shutdown", pane)
 
+
 class ShutdownPanel(wx.Panel):
     """
     Tries to create a scenario that has led to multipl runtime errors durign shutdown
@@ -99,10 +101,11 @@ class ShutdownPanel(wx.Panel):
         info = wx.StaticText(
             self,
             wx.ID_ANY,
-            ("Please be careful, if you click on one of the buttons below, " +
-            "we will try to create a scenario that hopefully will help us " +
-            "identify an edge case crash.\n" +
-            "So please save your work first, as it will be compromised!"
+            (
+                "Please be careful, if you click on one of the buttons below, "
+                + "we will try to create a scenario that hopefully will help us "
+                + "identify an edge case crash.\n"
+                + "So please save your work first, as it will be compromised!"
             ),
         )
         self.btn_scenario_kernel_first = wx.Button(self, wx.ID_ANY, "Kill kernel first")
@@ -131,11 +134,11 @@ class ShutdownPanel(wx.Panel):
         elem_nodes = []
         for idx in range(150):
             cnode = rootnode.add(
-                type = "elem ellipse",
-                cx = x,
-                cy = y,
-                rx = cm,
-                ry = cm,
+                type="elem ellipse",
+                cx=x,
+                cy=y,
+                rx=cm,
+                ry=cm,
                 stroke=Color("blue"),
                 stroke_width=100,
                 fill=None,
@@ -146,7 +149,7 @@ class ShutdownPanel(wx.Panel):
                 hatch_type="scanline",
                 hatch_angle=hatchangle.radians,
                 hatch_angle_delta=0,
-                hatch_distance="0.2mm", # cm / 50,
+                hatch_distance="0.2mm",  # cm / 50,
                 stroke=Color("green"),
                 stroke_width=100,
             )
@@ -183,7 +186,6 @@ class ShutdownPanel(wx.Panel):
 
     def pane_hide(self, *args):
         return
-
 
 
 class DebugTreePanel(wx.Panel):
