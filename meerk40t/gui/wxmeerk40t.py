@@ -938,6 +938,7 @@ class wxMeerK40t(wx.App, Module):
         if context.debug_mode:
             from meerk40t.gui.mkdebug import (
                 register_panel_color,
+                register_panel_crash,
                 register_panel_debugger,
                 register_panel_icon,
             )
@@ -945,6 +946,7 @@ class wxMeerK40t(wx.App, Module):
             kernel.register("wxpane/debug_tree", register_panel_debugger)
             kernel.register("wxpane/debug_color", register_panel_color)
             kernel.register("wxpane/debug_icons", register_panel_icon)
+            kernel.register("wxpane/debug_shutdown", register_panel_crash)
 
         @context.console_argument("sure", type=str, help="Are you sure? 'yes'?")
         @context.console_command("nuke_settings", hidden=True)

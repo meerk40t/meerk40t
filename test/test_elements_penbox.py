@@ -17,6 +17,7 @@ class TestPenbox(unittest.TestCase):
             self.assertEqual(
                 kernel_root.elements.penbox.pens["testpasses"][-1]["hatch_angle"], 90
             )
+            kernel_root("penbox testpasses del 999\n")
 
         finally:
-            kernel.shutdown()
+            kernel()

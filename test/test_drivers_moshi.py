@@ -81,14 +81,14 @@ class TestDriverMoshi(unittest.TestCase):
             kernel.console("contexts\n")
             kernel.console("plugins\n")
         finally:
-            kernel.shutdown()
+            kernel()
 
         kernel = bootstrap.bootstrap(profile="MeerK40t_MOSHI", ignore_settings=False)
         try:
             devs = [name for name in kernel.contexts if name.startswith("moshi")]
             self.assertGreater(len(devs), 1)
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_driver_basic_rect_engrave(self):
         """
@@ -105,7 +105,7 @@ class TestDriverMoshi(unittest.TestCase):
                 f"rect 2cm 2cm 1cm 1cm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
         finally:
-            kernel.shutdown()
+            kernel()
         with open(file1, "rb") as f:
             data = f.read()
         self.assertEqual(data, mos_rect)
@@ -125,7 +125,7 @@ class TestDriverMoshi(unittest.TestCase):
                 f"rect 2cm 2cm 1cm 1cm cut -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
         finally:
-            kernel.shutdown()
+            kernel()
         with open(file1, "rb") as f:
             data = f.read()
         self.assertEqual(data, mos_rect)
@@ -147,7 +147,7 @@ class TestDriverMoshi(unittest.TestCase):
                 f"rect 2cm 2cm 1cm 1cm raster -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
         finally:
-            kernel.shutdown()
+            kernel()
         with open(file1, "rb") as f:
             data = f.read()
         self.assertEqual(data, mos_blank)
@@ -179,7 +179,7 @@ class TestDriverMoshi(unittest.TestCase):
                 f"element0 imageop -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
         finally:
-            kernel.shutdown()
+            kernel()
         with open(file1, "rb") as f:
             data = f.read()
         self.assertEqual(data, mos_image)
@@ -208,7 +208,7 @@ class TestDriverMoshiRotary(unittest.TestCase):
                 f"rect 2cm 2cm 1cm 1cm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
         finally:
-            kernel.shutdown()
+            kernel()
         with open(file1, "rb") as f:
             data = f.read()
         self.assertNotEqual(mos_rect, data)

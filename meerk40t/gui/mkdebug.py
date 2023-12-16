@@ -9,7 +9,9 @@ import wx
 from wx import aui
 
 import meerk40t.gui.icons as mkicons
+from meerk40t.core.units import Angle, Length
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
+from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
 
@@ -66,6 +68,124 @@ def register_panel_icon(window, context):
     pane.submenu = "_ZZ_" + _("Debug")
     window.on_pane_create(pane)
     context.register("pane/debug_icons", pane)
+
+
+def register_panel_crash(window, context):
+    pane = (
+        aui.AuiPaneInfo()
+        .Float()
+        .MinSize(225, 110)
+        .FloatingSize(400, 400)
+        .Caption(_("Shutdown Test"))
+        .CaptionVisible(not context.pane_lock)
+        .Name("debug_shutdown")
+        .Hide()
+    )
+    pane.dock_proportion = 225
+    pane.control = ShutdownPanel(window, wx.ID_ANY, context=context)
+    pane.submenu = "_ZZ_" + _("Debug")
+    window.on_pane_create(pane)
+    context.register("pane/debug_shutdown", pane)
+
+
+class ShutdownPanel(wx.Panel):
+    """
+    Tries to create a scenario that has led to multipl runtime errors durign shutdown
+    """
+
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: PositionPanel.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        info = wx.StaticText(
+            self,
+            wx.ID_ANY,
+            (
+                "Please be careful, if you click on one of the buttons below, "
+                + "we will try to create a scenario that hopefully will help us "
+                + "identify an edge case crash.\n"
+                + "So please save your work first, as it will be compromised!"
+            ),
+        )
+        self.btn_scenario_kernel_first = wx.Button(self, wx.ID_ANY, "Kill kernel first")
+        self.btn_scenario_gui_first = wx.Button(self, wx.ID_ANY, "Kill GUI first")
+        self.btn_scenario_only = wx.Button(self, wx.ID_ANY, "Just create the scenario")
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer.Add(info, 0, wx.EXPAND, 0)
+        main_sizer.Add(self.btn_scenario_kernel_first, 0, wx.EXPAND, 0)
+        main_sizer.Add(self.btn_scenario_gui_first, 0, wx.EXPAND, 0)
+        main_sizer.Add(self.btn_scenario_only, 0, wx.EXPAND, 0)
+        self.Bind(wx.EVT_BUTTON, self.die_kernel_die, self.btn_scenario_kernel_first)
+        self.Bind(wx.EVT_BUTTON, self.die_gui_die, self.btn_scenario_gui_first)
+        self.Bind(wx.EVT_BUTTON, self.create_scenario, self.btn_scenario_only)
+        self.SetSizer(main_sizer)
+        main_sizer.Fit(self)
+        self.Layout()
+
+    def prepare_scenario(self):
+        self.context.elements.clear_all()
+        cm = float(Length("1cm"))
+        hatchangle = Angle("45deg")
+        rootnode = self.context.elements.elem_branch
+        x = cm
+        y = cm
+        nodes = []
+        elem_nodes = []
+        for idx in range(150):
+            cnode = rootnode.add(
+                type="elem ellipse",
+                cx=x,
+                cy=y,
+                rx=cm,
+                ry=cm,
+                stroke=Color("blue"),
+                stroke_width=100,
+                fill=None,
+            )
+            enode = rootnode.add(
+                type="effect hatch",
+                label="Hatch Effect",
+                hatch_type="scanline",
+                hatch_angle=hatchangle.radians,
+                hatch_angle_delta=0,
+                hatch_distance="0.2mm",  # cm / 50,
+                stroke=Color("green"),
+                stroke_width=100,
+            )
+            enode.append_child(cnode)
+            elem_nodes.append(cnode)
+            nodes.append(cnode)
+            nodes.append(enode)
+
+            if idx % 15 == 0:
+                x = cm
+                y += cm
+            else:
+                x += cm
+        self.context.elements.classify(nodes)
+        self.context.elements.set_emphasis(elem_nodes)
+        self.context.signal("refresh_scene")
+        self.context.signal("refresh_tree")
+        self.context.signal("emphasized")
+        self.context.signal("element_property_reload", nodes)
+
+    def die_kernel_die(self, event):
+        self.prepare_scenario()
+        self.context("quit\n")
+
+    def die_gui_die(self, event):
+        self.prepare_scenario()
+        self.context.gui.Close()
+
+    def create_scenario(self, event):
+        self.prepare_scenario()
+
+    def pane_show(self, *args):
+        return
+
+    def pane_hide(self, *args):
+        return
 
 
 class DebugTreePanel(wx.Panel):

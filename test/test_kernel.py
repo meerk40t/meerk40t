@@ -44,7 +44,7 @@ class TestKernel(unittest.TestCase):
                     # changing yet
                     kernel.console(command.split("/")[-1] + "\n")
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_tree_menu(self):
         """
@@ -94,7 +94,7 @@ class TestKernel(unittest.TestCase):
                         kernel.elements.elem_branch.add_node(n)
         finally:
             kernel.console("elements\n")
-            kernel.shutdown()
+            kernel()
 
     def test_external_plugins(self):
         """
@@ -115,7 +115,7 @@ class TestKernel(unittest.TestCase):
             q = plugin(kernel=kernel, lifecycle="plugins")
             print(q)
         finally:
-            kernel.shutdown()
+            kernel()
 
 
 class TestGetSafePath(unittest.TestCase):
@@ -197,4 +197,4 @@ class TestEchoCommand(unittest.TestCase):
                 print(f"Testing echo command: {echo}")
                 kernel.console(echo + "\n")
         finally:
-            kernel.shutdown()
+            kernel()

@@ -58,7 +58,7 @@ class TestFileSVG(unittest.TestCase):
             print(f)
 
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_load_save_svg_int_id(self):
         """
@@ -85,7 +85,7 @@ class TestFileSVG(unittest.TestCase):
             self.assertEqual(node_copy.speed, node.speed)
             self.assertIsInstance(node_copy.speed, float)
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_load_092_operations(self):
         """
@@ -114,7 +114,7 @@ class TestFileSVG(unittest.TestCase):
             self.assertEqual(len(list(ob.flat(types="op engrave"))), 1)
             self.assertEqual(len(list(ob.flat(types="op cut"))), 1)
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_load_hatch_op(self):
         """
@@ -141,7 +141,7 @@ class TestFileSVG(unittest.TestCase):
             self.assertEqual(len(list(ob.flat(types="op cut"))), 0)
             self.assertEqual(len(list(ob.flat(types="effect hatch"))), 1)
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_load_wobble(self):
         """
@@ -173,4 +173,4 @@ class TestFileSVG(unittest.TestCase):
             self.assertEqual(len(list(ob.flat(types="effect wobble"))), 1)
             self.assertEqual(len(list(engrave[0].flat(types="effect wobble"))), 1)
         finally:
-            kernel.shutdown()
+            kernel()

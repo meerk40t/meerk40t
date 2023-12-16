@@ -313,6 +313,16 @@ and a wxpython version <= 4.1.1."""
 
         if kernel._gui:
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
+
+            @kernel.console_command(
+                ("quit", "shutdown"), help=_("shuts down the gui and exits")
+            )
+            def shutdown(**kwargs):
+                try:
+                    meerk40tgui.TopWindow.Close()
+                except AttributeError:
+                    pass
+
             if kernel.args.simpleui:
                 kernel.console("window open SimpleUI\n")
                 meerk40tgui.MainLoop()
