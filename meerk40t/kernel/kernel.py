@@ -1119,7 +1119,8 @@ class Kernel(Settings):
             print(*args, **kwargs)
 
     def __call__(self):
-        self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_POSTMAIN)
+        self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_SHUTDOWN)
+        self._shutdown = True
 
     def precli(self):
         pass
@@ -1200,6 +1201,8 @@ class Kernel(Settings):
                     line = line.strip()
                     if line in ("quit", "shutdown", "restart"):
                         self._quit = True
+                        if line == "restart":
+                            self._restart = True
                         break
                     self.console(f".{line}\n")
                     if line == "gui":
@@ -1213,9 +1216,7 @@ class Kernel(Settings):
             self.channel("console").unwatch(self.__print_delegate)
 
     def postmain(self):
-        if self._quit:
-            self._shutdown = True
-            self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_SHUTDOWN)
+        pass
 
     def preshutdown(self):
         channel = self.channel("shutdown")
@@ -3372,23 +3373,13 @@ class Kernel(Settings):
         # ==========
 
         @self.console_command(
-            ("quit", "shutdown"), help=_("shuts down all processes and exits")
-        )
-        def shutdown(**kwargs):
-            if self._shutdown:
-                return
-            self._shutdown = True
-            self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_SHUTDOWN)
-
-        @self.console_command(
             "restart", help=_("shuts down all processes, exits and restarts meerk40t")
         )
         def restart(**kwargs):
+            self.restart = True
             if self._shutdown:
                 return
-            self._shutdown = True
-            self.restart = True
-            self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_SHUTDOWN)
+            self.console("quit\n")
 
         # ==========
         # FILE MANAGER
