@@ -169,5 +169,10 @@ def _exe(args):
     kernel.args = args
     kernel.add_plugin(internal_plugins)
     kernel.add_plugin(external_plugins)
-    kernel()
+    auto = hasattr(kernel.args, "auto") and kernel.args.auto
+    console = hasattr(kernel.args, "console") and kernel.args.console
+    if auto and not console:
+        kernel(partial=True)
+    else:
+        kernel()
     return hasattr(kernel, "restart") and kernel.restart
