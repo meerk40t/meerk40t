@@ -8,7 +8,7 @@ state = 0
 class TestLifeCycle(unittest.TestCase):
     def test_kernel_lifecycle_partial(self):
         def lifecycle_test(obj=None, lifecycle=None):
-            global state
+            state = 0
             if lifecycle == "preregister":
                 self.assertEqual(state, 0)
                 state = 1
@@ -67,7 +67,7 @@ class TestLifeCycle(unittest.TestCase):
 
     def test_kernel_lifecycle(self):
         def lifecycle_test(obj=None, lifecycle=None):
-            global state
+            state = 0
             if lifecycle == "preregister":
                 self.assertEqual(state, 0)
                 state = 1
