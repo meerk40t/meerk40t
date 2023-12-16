@@ -76,6 +76,9 @@ parser.add_argument(
 parser.add_argument(
     "-v", "--verbose", action="store_true", help="display verbose debugging"
 )
+parser.add_argument(
+    "-q", "--quit", action="store_true", help="quit on spooler complete"
+)
 parser.add_argument("-a", "--auto", action="store_true", help="start running laser")
 parser.add_argument(
     "-s",
