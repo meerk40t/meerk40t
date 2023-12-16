@@ -174,6 +174,8 @@ class Kernel(Settings):
         # Arguments Objects
         self.args = None
 
+        self._lifecycle_stable = True
+
     def __str__(self):
         return f"Kernel({self.name}, {self.profile}, {self.version})"
 
@@ -1118,9 +1120,13 @@ class Kernel(Settings):
         if print not in self._console_channel.watchers:
             print(*args, **kwargs)
 
-    def __call__(self):
-        self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_SHUTDOWN)
-        self._shutdown = True
+    def __call__(self, partial=False):
+        self._lifecycle_stable = False
+        if partial:
+            self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_POSTMAIN)
+        else:
+            self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_SHUTDOWN)
+        self._lifecycle_stable = True
 
     def precli(self):
         pass
@@ -3371,6 +3377,20 @@ class Kernel(Settings):
         # ==========
         # LIFECYCLE
         # ==========
+
+        @self.console_command(
+            ("quit", "shutdown"), help=_("shuts down all processes and exits")
+        )
+        def shutdown(**kwargs):
+            """
+            Must be called in the main thread, with a stable lifecycle.
+            @param kwargs:
+            @return:
+            """
+            if threading.current_thread() is threading.main_thread() and self._lifecycle_stable:
+                self()
+            else:
+                raise CommandMatchRejected
 
         @self.console_command(
             "restart", help=_("shuts down all processes, exits and restarts meerk40t")
