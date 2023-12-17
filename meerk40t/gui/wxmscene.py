@@ -64,25 +64,25 @@ _ = wx.GetTranslation
 
 
 def register_panel_scene(window, context):
-    # control = wx.aui.AuiNotebook(window, -1, size=(200, 150))
-    # panel1 = MeerK40tScenePanel(window, wx.ID_ANY, context=context, index=1)
-    # control.AddPage(panel1, "scene1")
-    # panel2 = MeerK40tScenePanel(window, wx.ID_ANY, context=context, index=2)
-    # control.AddPage(panel2, "scene2")
+    control = wx.aui.AuiNotebook(window, -1, size=(200, 150))
+    panel1 = MeerK40tScenePanel(window, wx.ID_ANY, context=context, index=1)
+    control.AddPage(panel1, "scene1")
+    panel2 = MeerK40tScenePanel(window, wx.ID_ANY, context=context, index=2)
+    control.AddPage(panel2, "scene2")
 
-    control = MeerK40tScenePanel(window, wx.ID_ANY, context=context)
+    # control = MeerK40tScenePanel(window, wx.ID_ANY, context=context)
     pane = aui.AuiPaneInfo().CenterPane().MinSize(200, 200).Name("scene")
     pane.dock_proportion = 600
     pane.control = control
     pane.hide_menu = True
 
-    # def on_note_page_change(event=None):
-    #     if control.GetPageText(control.GetSelection()) == "scene1":
-    #         context.kernel.activate_service_path('elements', 'elements')
-    #     else:
-    #         context.kernel.activate_service_path('elements', "elements1")
-    #     context("refresh\n")
-    # control.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, on_note_page_change, control)
+    def on_note_page_change(event=None):
+        if control.GetPageText(control.GetSelection()) == "scene1":
+            context.kernel.activate_service_path('elements', 'elements')
+        else:
+            context.kernel.activate_service_path('elements', "elements1")
+        context("refresh\n")
+    control.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, on_note_page_change, control)
 
     window.on_pane_create(pane)
     context.register("pane/scene", pane)

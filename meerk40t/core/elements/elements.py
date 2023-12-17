@@ -144,7 +144,7 @@ def plugin(kernel, lifecycle=None):
         )
     elif lifecycle == "register":
         kernel.add_service("elements", Elemental(kernel))
-        # kernel.add_service("elements", Elemental(kernel,1))
+        kernel.add_service("elements", Elemental(kernel,1))
     elif lifecycle == "postboot":
         elements = kernel.elements
         choices = [
