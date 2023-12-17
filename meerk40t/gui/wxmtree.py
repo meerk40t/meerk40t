@@ -71,24 +71,23 @@ def register_panel_tree(window, context):
         mycontext = context
         return handler
 
-    notetab = wx.aui.AuiNotebook(
-        window,
-        wx.ID_ANY,
-        style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
-        | wx.aui.AUI_NB_SCROLL_BUTTONS
-        | wx.aui.AUI_NB_TAB_SPLIT
-        | wx.aui.AUI_NB_TAB_MOVE,
-    )
+    # notetab = wx.aui.AuiNotebook(
+    #     window,
+    #     wx.ID_ANY,
+    #     style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
+    #     | wx.aui.AUI_NB_SCROLL_BUTTONS
+    #     | wx.aui.AUI_NB_TAB_SPLIT
+    #     | wx.aui.AUI_NB_TAB_MOVE,
+    # )
 
     basic_op = BasicOpPanel(window, wx.ID_ANY, context=context)
-    wxtree = TreePanel(window, wx.ID_ANY, context=context)
-    pane = (
+    pane1 = (
         aui.AuiPaneInfo()
         .Name("tree")
         .Right()
         .MinSize(200, 180)
         .BestSize(300, 270)
-        .FloatingSize(300, 270)
+        .FloatingSize((300, 270))
         .LeftDockable()
         .RightDockable()
         .BottomDockable(False)
@@ -96,15 +95,29 @@ def register_panel_tree(window, context):
         .CaptionVisible(not context.pane_lock)
         .TopDockable(False)
     )
+    pane1.dock_proportion = 500
+    pane1.control = basic_op
+    window.on_pane_create(pane1)
 
-    notetab.AddPage(basic_op, _("Burn-Operation"))
-    notetab.AddPage(wxtree, _("Details"))
-    notetab.SetSelection(lastpage)
-    notetab.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, on_panel_change(context))
-    pane.dock_proportion = 500
-    pane.control = notetab
-    window.on_pane_create(pane)
-    context.register("pane/tree", pane)
+    wxtree = TreePanel(window, wx.ID_ANY, context=context)
+    pane2 = (
+        aui.AuiPaneInfo()
+        .Name("tree")
+        .Right()
+        .MinSize(200, 180)
+        .BestSize(300, 270)
+        .FloatingSize((300, 270))
+        .LeftDockable()
+        .RightDockable()
+        .BottomDockable(False)
+        .Caption(_("Tree"))
+        .CaptionVisible(not context.pane_lock)
+        .TopDockable(False)
+    )
+    pane2.dock_proportion = 500
+    pane2.control = wxtree
+    window.on_pane_create(pane2, target=pane1)
+    context.register("pane/tree", pane2)
 
 
 class TreePanel(wx.Panel):

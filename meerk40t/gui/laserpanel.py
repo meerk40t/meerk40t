@@ -49,36 +49,40 @@ def register_panel_laser(window, context):
     jog_drag.SetSizer(main_sizer)
     jog_drag.Layout()
     move_panel = MovePanel(window, wx.ID_ANY, context=context)
-    notebook = wx.aui.AuiNotebook(
-        window,
-        -1,
-        style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
-        | wx.aui.AUI_NB_SCROLL_BUTTONS
-        | wx.aui.AUI_NB_TAB_SPLIT
-        | wx.aui.AUI_NB_TAB_MOVE
-        | wx.aui.AUI_NB_BOTTOM,
-    )
-    pane = (
-        aui.AuiPaneInfo()
-        .Right()
-        .MinSize(200, 180)
-        .BestSize(300, 270)
-        .FloatingSize(300, 270)
-        .Caption(_("Laser-Control"))
-        .CaptionVisible(not context.pane_lock)
-        .Name("laser")
-    )
-    pane.submenu = "_10_" + _("Laser")
-    pane.control = notebook
-    pane.dock_proportion = 270
-    notebook.AddPage(laser_panel, _("Laser"))
-    notebook.AddPage(jog_drag, _("Jog"))
-    notebook.AddPage(plan_panel, _("Plan"))
-    notebook.AddPage(optimize_panel, _("Optimize"))
-    notebook.AddPage(move_panel, _("Move"))
 
-    window.on_pane_create(pane)
-    window.context.register("pane/laser", pane)
+    # notebook = wx.aui.AuiNotebook(
+    #     window,
+    #     -1,
+    #     style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
+    #     | wx.aui.AUI_NB_SCROLL_BUTTONS
+    #     | wx.aui.AUI_NB_TAB_SPLIT
+    #     | wx.aui.AUI_NB_TAB_MOVE
+    #     | wx.aui.AUI_NB_BOTTOM,
+    # )
+    def add_pane(control, name, subvalue, target=None):
+        pane = (
+            aui.AuiPaneInfo()
+            .Right()
+            .MinSize(200, 180)
+            .BestSize(300, 270)
+            .FloatingSize((300, 270))
+            .Caption(name)
+            .CaptionVisible(not context.pane_lock)
+            .Name("laser")
+        )
+        pane.submenu = "_10_" + _("Laser")
+        pane.control = control
+        pane.dock_proportion = 270
+        window.on_pane_create(pane, target=target)
+        window.context.register(f"pane/{subvalue}", pane)
+        return pane
+
+    p = add_pane(laser_panel, _("Laser"), "laser")
+    add_pane(jog_drag, _("Jog"), "laserjog", target=p)
+    add_pane(plan_panel, _("Plan"), "laserplan", target=p)
+    add_pane(optimize_panel, _("Optimize"), "laseropt", target=p)
+    add_pane(move_panel, _("Move"), "lasermove", target=p)
+
     choices = [
         {
             "attr": "laserpane_arm",

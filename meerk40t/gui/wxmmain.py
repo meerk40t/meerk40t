@@ -156,10 +156,21 @@ class MeerK40t(MWindow):
         self.is_paused = False
 
         self._mgr = aui.AuiManager()
-        self._mgr.SetFlags(self._mgr.GetFlags() | aui.AUI_MGR_LIVE_RESIZE)
+
+        # self._mgr.SetFlags(self._mgr.GetFlags() | aui.AUI_MGR_LIVE_RESIZE)
         self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.on_pane_closed)
         self._mgr.Bind(aui.EVT_AUI_PANE_ACTIVATED, self.on_pane_active)
 
+        def DrawIcon(dc, rect, pane):
+            if pane.icon.IsOk():
+                if pane.HasCaptionLeft():
+                    bmp = wx.Bitmap(pane.icon).ConvertToImage().Rotate90(clockwise=False)
+                    dc.DrawBitmap(bmp.ConvertToBitmap(), rect.x+(rect.width-pane.icon.GetWidth())//2, rect.y+rect.height-2-pane.icon.GetHeight(), True)
+                else:
+                    if pane.icon is not wx.NullIcon:
+                        dc.DrawBitmap(pane.icon, rect.x+2, rect.y+(rect.height-pane.icon.GetHeight())//2, True)
+
+        self._mgr.GetArtProvider().DrawIcon = DrawIcon
         self.ui_visible = True
         self.hidden_panes = []
 
@@ -2643,11 +2654,11 @@ class MeerK40t(MWindow):
                 window = pane.window
                 if hasattr(window, "pane_hide"):
                     window.pane_hide()
-                if isinstance(window, wx.aui.AuiNotebook):
-                    for i in range(window.GetPageCount()):
-                        page = window.GetPage(i)
-                        if hasattr(page, "pane_hide"):
-                            page.pane_hide()
+                # if isinstance(window, wx.aui.AuiNotebook):
+                #     for i in range(window.GetPageCount()):
+                #         page = window.GetPage(i)
+                #         if hasattr(page, "pane_hide"):
+                #             page.pane_hide()
 
     def on_panes_opened(self):
         for pane in self._mgr.GetAllPanes():
@@ -2655,19 +2666,19 @@ class MeerK40t(MWindow):
             if pane.IsShown():
                 if hasattr(window, "pane_show"):
                     window.pane_show()
-                if isinstance(window, wx.aui.AuiNotebook):
-                    for i in range(window.GetPageCount()):
-                        page = window.GetPage(i)
-                        if hasattr(page, "pane_show"):
-                            page.pane_show()
+                # if isinstance(window, wx.aui.AuiNotebook):
+                #     for i in range(window.GetPageCount()):
+                #         page = window.GetPage(i)
+                #         if hasattr(page, "pane_show"):
+                #             page.pane_show()
             else:
                 if hasattr(window, "pane_noshow"):
                     window.pane_noshow()
-                if isinstance(window, wx.aui.AuiNotebook):
-                    for i in range(window.GetPageCount()):
-                        page = window.GetPage(i)
-                        if hasattr(page, "pane_noshow"):
-                            page.pane_noshow()
+                # if isinstance(window, wx.aui.AuiNotebook):
+                #     for i in range(window.GetPageCount()):
+                #         page = window.GetPage(i)
+                #         if hasattr(page, "pane_noshow"):
+                #             page.pane_noshow()
 
     def on_config_panes(self):
         self.on_panes_opened()
@@ -2686,18 +2697,19 @@ class MeerK40t(MWindow):
                     pane.window.lock()
         self._mgr.Update()
 
-    def on_pane_create(self, paneinfo: aui.AuiPaneInfo):
+    def on_pane_create(self, paneinfo: aui.AuiPaneInfo, target=None):
+        paneinfo.icon = icon_meerk40t.GetBitmap()
         control = paneinfo.control
-        if isinstance(control, wx.aui.AuiNotebook):
-            for i in range(control.GetPageCount()):
-                page = control.GetPage(i)
-                self.add_module_delegate(page)
-        else:
-            self.add_module_delegate(control)
+        # if isinstance(control, wx.aui.AuiNotebook):
+        #     for i in range(control.GetPageCount()):
+        #         page = control.GetPage(i)
+        #         self.add_module_delegate(page)
+        # else:
+        self.add_module_delegate(control)
         paneinfo.manager = self._mgr
-        self.on_pane_show(paneinfo)
+        self.on_pane_show(paneinfo, target=target)
 
-    def on_pane_show(self, paneinfo: aui.AuiPaneInfo):
+    def on_pane_show(self, paneinfo: aui.AuiPaneInfo, target=None):
         pane = self._mgr.GetPane(paneinfo.name)
         if len(pane.name):
             if not pane.IsShown():
@@ -2712,6 +2724,7 @@ class MeerK40t(MWindow):
         self._mgr.AddPane(
             control,
             paneinfo,
+            target=target,
         )
 
     def on_pane_active(self, event):
