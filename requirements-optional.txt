@@ -2,3 +2,4 @@ potracer
 pypotrace-windows
 pyclipr
 meerk40t-barcodes
+numba

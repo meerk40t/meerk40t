@@ -569,7 +569,8 @@ class ImageNode(Node):
         if self.dither and self.dither_type is not None:
             if self.dither_type != "Floyd-Steinberg":
                 image = dither(image, self.dither_type)
-            image = image.convert("1")
+            if image.mode != "1":
+                image = image.convert("1")
         return image
 
     def _process_image(self, step_x, step_y, crop=True):
