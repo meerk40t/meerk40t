@@ -55,9 +55,8 @@ from meerk40t.gui.utilitywidgets.checkboxwidget import CheckboxWidget
 from meerk40t.gui.utilitywidgets.cyclocycloidwidget import CyclocycloidWidget
 from meerk40t.gui.utilitywidgets.harmonograph import HarmonographWidget
 from meerk40t.gui.utilitywidgets.seekbarwidget import SeekbarWidget
-from meerk40t.gui.utilitywidgets.togglewidget import ToggleWidget
 from meerk40t.gui.wxutils import get_key_name, is_navigation_key
-from meerk40t.kernel import CommandSyntaxError, signal_listener
+from meerk40t.kernel import CommandSyntaxError, signal_listener, Service
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -65,15 +64,14 @@ _ = wx.GetTranslation
 
 def register_panel_scene(window, context):
     control = wx.aui.AuiNotebook(window, -1, size=(200, 150))
+
     panel1 = MeerK40tScenePanel(window, wx.ID_ANY, context=context, index=1)
+    context.kernel.add_service("scene", panel1)
     control.AddPage(panel1, "scene1")
-    e1 = context.get_context("elements")
-    e1.scene = panel1
 
     panel2 = MeerK40tScenePanel(window, wx.ID_ANY, context=context, index=2)
+    context.kernel.add_service("scene", panel2)
     control.AddPage(panel2, "scene2")
-    e2 = context.get_context("elements1")
-    e2.scene = panel2
 
     # control = MeerK40tScenePanel(window, wx.ID_ANY, context=context)
     pane = aui.AuiPaneInfo().CenterPane().MinSize(200, 200).Name("scene")
@@ -83,24 +81,30 @@ def register_panel_scene(window, context):
 
     def on_note_page_change(event=None):
         if control.GetPageText(control.GetSelection()) == "scene1":
-            context.kernel.activate_service_path('elements', 'elements')
+            context.kernel.activate_service_path("elements", "elements")
+            context.kernel.activate_service_path("scene", "scene1")
         else:
-            context.kernel.activate_service_path('elements', "elements1")
+            context.kernel.activate_service_path("elements", "elements1")
+            context.kernel.activate_service_path("scene", "scene2")
         context("refresh\n")
+
     control.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, on_note_page_change, control)
 
     window.on_pane_create(pane)
     context.register("pane/scene", pane)
 
 
-class MeerK40tScenePanel(wx.Panel):
+class MeerK40tScenePanel(wx.Panel, Service):
     def __init__(self, *args, context=None, index=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
+        Service.__init__(
+            self, context.kernel, "scene" if index is None else f"scene{index}"
+        )
         wx.Panel.__init__(self, *args, **kwargs)
-        self.context = context
+
         self.scene = ScenePanel(
-            self.context,
+            self,
             self,
             scene_name="Scene" if index is None else f"Scene{index}",
             style=wx.EXPAND | wx.WANTS_CHARS,
@@ -122,7 +126,7 @@ class MeerK40tScenePanel(wx.Panel):
         self.magnet_attract_y = True  # Shall the Y-Axis be affected
         self.magnet_attract_c = True  # Shall the center be affected
 
-        self.context.setting(bool, "clear_magnets", True)
+        self.setting(bool, "clear_magnets", True)
 
         # Save / Load the content of magnets
         from os.path import join, realpath
@@ -130,7 +134,7 @@ class MeerK40tScenePanel(wx.Panel):
         from meerk40t.kernel.functions import get_safe_path
 
         self._magnet_file = join(
-            realpath(get_safe_path(self.context.kernel.name)), "magnets.cfg"
+            realpath(get_safe_path(self.kernel.name)), "magnets.cfg"
         )
         self.load_magnets()
         # Add a plugin routine to be called at the time of a full new start
@@ -143,7 +147,7 @@ class MeerK40tScenePanel(wx.Panel):
         self._last_snap_position = None
         self._last_snap_ts = 0
 
-        context = self.context
+
         # Add in snap-to-grid functionality.
         self.widget_scene.add_scenewidget(AttractionWidget(self.widget_scene))
 
@@ -187,7 +191,7 @@ class MeerK40tScenePanel(wx.Panel):
 
         # Allow Scene update from now on (are suppressed by default during startup phase)
         self.widget_scene.suppress_changes = False
-        self._keybind_channel = self.context.channel("keybinds")
+        self._keybind_channel = self.channel("keybinds")
 
         if platform.system() == "Windows":
 
@@ -274,9 +278,9 @@ class MeerK40tScenePanel(wx.Panel):
         )
 
         # Provide a reference to current scene in root context
-        setattr(self.context.root, "mainscene", self.widget_scene)
+        setattr(self.root, "mainscene", self.widget_scene)
 
-        @context.console_command("dialog_fps", hidden=True)
+        @self.console_command("dialog_fps", hidden=True)
         def dialog_fps(**kwgs):
             dlg = wx.TextEntryDialog(
                 None, _("Enter FPS Limit"), _("FPS Limit Entry"), ""
@@ -291,12 +295,12 @@ class MeerK40tScenePanel(wx.Panel):
                     pass
             dlg.Destroy()
 
-        # @context.console_command("tool_menu", hidden=True)
+        # @self.console_command("tool_menu", hidden=True)
         # def tool_menu(channel, _, **kwgs):
         #     orgx = 5
         #     orgy = 5
         #     # Are guides drawn?
-        #     if self.context.draw_mode & DRAW_MODE_GUIDES == 0:
+        #     if self.draw_mode & DRAW_MODE_GUIDES == 0:
         #         orgx += 25
         #         orgy += 25
         #     if self._tool_widget is not None:
@@ -320,7 +324,7 @@ class MeerK40tScenePanel(wx.Panel):
         #         )
         #     channel(_("Added tool widget to interface"))
 
-        @context.console_command("seek_bar", hidden=True)
+        @self.console_command("seek_bar", hidden=True)
         def seek_bar(channel, _, **kwgs):
             def changed(values, seeker):
                 print(values)
@@ -341,7 +345,7 @@ class MeerK40tScenePanel(wx.Panel):
             channel(_("Added example_seekbar to interface"))
             self.widget_scene.request_refresh()
 
-        @context.console_command("checkbox", hidden=True)
+        @self.console_command("checkbox", hidden=True)
         def checkbox(channel, _, **kwgs):
             def checked(value):
                 print(value)
@@ -358,14 +362,14 @@ class MeerK40tScenePanel(wx.Panel):
             channel(_("Added example_checkbox to interface"))
             self.widget_scene.request_refresh()
 
-        @context.console_command("cyclocycloid", hidden=True)
+        @self.console_command("cyclocycloid", hidden=True)
         def cyclocycloid(channel, _, **kwgs):
             self.widget_scene.widget_root.scene_widget.add_widget(
                 0, CyclocycloidWidget(self.widget_scene)
             )
             channel(_("Added cyclocycloid widget to scene."))
 
-        @context.console_command("harmonograph", hidden=True)
+        @self.console_command("harmonograph", hidden=True)
         def harmonograph(channel, _, **kwgs):
             self.widget_scene.widget_root.scene_widget.add_widget(
                 0, HarmonographWidget(self.widget_scene)
@@ -373,12 +377,12 @@ class MeerK40tScenePanel(wx.Panel):
             self.widget_scene.request_refresh()
             channel(_("Added harmonograph widget to scene."))
 
-        @context.console_command("toast", hidden=True)
+        @self.console_command("toast", hidden=True)
         def toast_scene(remainder, **kwgs):
             self.widget_scene.toast(remainder)
 
-        @context.console_argument("tool", help=_("tool to use."))
-        @context.console_command("tool", help=_("sets a particular tool for the scene"))
+        @self.console_argument("tool", help=_("tool to use."))
+        @self.console_command("tool", help=_("sets a particular tool for the scene"))
         def tool_base(command, channel, _, tool=None, **kwgs):
             if tool is None:
                 channel(_("Tools:"))
@@ -457,13 +461,13 @@ class MeerK40tScenePanel(wx.Panel):
             except (KeyError, AttributeError):
                 raise CommandSyntaxError
 
-        @context.console_argument("page", help=_("page to use."))
-        @context.console_command(
+        @self.console_argument("page", help=_("page to use."))
+        @self.console_command(
             "page", help=_("Switches to a particular page in the ribbonbar")
         )
         def page_base(command, channel, _, page=None, **kwgs):
             # No need to store it beyond
-            context = self.context.root
+            context = self.root
             context.setting(str, "_active_page", "")
             if page is None:
                 channel(_("Active Page: {page}").format(page=context._active_page))
@@ -473,25 +477,25 @@ class MeerK40tScenePanel(wx.Panel):
                 if page == "none":
                     page = "home"
                 context._active_page = page
-                self.context.signal("page", page)
+                self.signal("page", page)
 
-        @context.console_command("laserpath_clear", hidden=True)
+        @self.console_command("laserpath_clear", hidden=True)
         def clear_laser_path(**kwgs):
             self.laserpath_widget.clear_laserpath()
             self.request_refresh()
 
-        @self.context.console_command("scene", output_type="scene")
+        @self.console_command("scene", output_type="scene")
         def scene(command, _, channel, **kwgs):
             channel(f"scene: {str(self.widget_scene)}")
-            return "scene", self.context.elements.scene.widget_scene
+            return "scene", self.elements.scene.widget_scene
 
-        @self.context.console_argument(
+        @self.console_argument(
             "aspect", type=str, help="aspect of the scene to color"
         )
-        @self.context.console_argument(
+        @self.console_argument(
             "color", type=str, help="color to apply to scene"
         )
-        @self.context.console_command("color", input_type="scene")
+        @self.console_command("color", input_type="scene")
         def scene_color(command, _, channel, data, aspect=None, color=None, **kwgs):
             """
             Sets the scene colors. This is usually done with `scene color <aspect> <color>` which
@@ -506,15 +510,15 @@ class MeerK40tScenePanel(wx.Panel):
                 color_key = f"color_{aspect}"
                 if aspect == "unset":  # reset all
                     self.widget_scene.colors.set_default_colors()
-                    self.context.signal("theme", True)
+                    self.signal("theme", True)
                     return "scene", data
                 if aspect == "random":  # reset all
                     self.widget_scene.colors.set_random_colors()
-                    self.context.signal("theme", True)
+                    self.signal("theme", True)
                     return "scene", data
                 if color == "unset":  # reset one
                     setattr(self.context, color_key, "default")
-                    self.context.signal("theme", True)
+                    self.signal("theme", True)
                     return "scene", data
                 if color == "random":  # randomize one
                     random_color = (
@@ -524,7 +528,7 @@ class MeerK40tScenePanel(wx.Panel):
                         f"{random.randint(0, 255):02X}"
                     )
                     setattr(self.context, color_key, random_color)
-                    self.context.signal("theme", True)
+                    self.signal("theme", True)
                     return "scene", data
 
                 if color is None:
@@ -538,7 +542,7 @@ class MeerK40tScenePanel(wx.Panel):
                 if hasattr(self.context, color_key):
                     setattr(self.context, color_key, color.hexa)
                     channel(_("Scene aspect color is set."))
-                    self.context.signal("theme", False)
+                    self.signal("theme", False)
                 else:
                     channel(
                         _("{name} is not a known scene color command").format(
@@ -548,13 +552,13 @@ class MeerK40tScenePanel(wx.Panel):
 
             return "scene", data
 
-        @self.context.console_argument(
+        @self.console_argument(
             "zoom_x", type=float, help="zoom amount from current"
         )
-        @self.context.console_argument(
+        @self.console_argument(
             "zoom_y", type=float, help="zoom amount from current"
         )
-        @self.context.console_command("aspect", input_type="scene")
+        @self.console_command("aspect", input_type="scene")
         def scene_aspect(command, _, channel, data, zoom_x=1.0, zoom_y=1.0, **kwgs):
             if zoom_x is None or zoom_y is None:
                 raise CommandSyntaxError
@@ -564,10 +568,10 @@ class MeerK40tScenePanel(wx.Panel):
             channel(str(matrix))
             return "scene", data
 
-        @self.context.console_argument(
+        @self.console_argument(
             "zoomfactor", type=float, help="zoom amount from current"
         )
-        @self.context.console_command("zoom", input_type="scene")
+        @self.console_command("zoom", input_type="scene")
         def scene_zoomfactor(command, _, channel, data, zoomfactor=1.0, **kwgs):
             matrix = data.widget_root.scene_widget.matrix
             if zoomfactor is None:
@@ -577,13 +581,13 @@ class MeerK40tScenePanel(wx.Panel):
             channel(str(matrix))
             return "scene", data
 
-        @self.context.console_argument(
+        @self.console_argument(
             "pan_x", type=float, default=0, help="pan from current position x"
         )
-        @self.context.console_argument(
+        @self.console_argument(
             "pan_y", type=float, default=0, help="pan from current position y"
         )
-        @self.context.console_command("pan", input_type="scene")
+        @self.console_command("pan", input_type="scene")
         def scene_pan(command, _, channel, data, pan_x, pan_y, **kwgs):
             matrix = data.widget_root.scene_widget.matrix
             if pan_x is None or pan_y is None:
@@ -593,10 +597,10 @@ class MeerK40tScenePanel(wx.Panel):
             channel(str(matrix))
             return "scene", data
 
-        @self.context.console_argument(
+        @self.console_argument(
             "angle", type=Angle, default=0, help="Rotate scene"
         )
-        @self.context.console_command("rotate", input_type="scene")
+        @self.console_command("rotate", input_type="scene")
         def scene_rotate(command, _, channel, data, angle, **kwgs):
             matrix = data.widget_root.scene_widget.matrix
             if angle is not None:
@@ -605,7 +609,7 @@ class MeerK40tScenePanel(wx.Panel):
             channel(str(matrix))
             return "scene", data
 
-        @self.context.console_command("reset", input_type="scene")
+        @self.console_command("reset", input_type="scene")
         def scene_reset(command, _, channel, data, **kwgs):
             matrix = data.widget_root.scene_widget.matrix
             matrix.reset()
@@ -613,18 +617,18 @@ class MeerK40tScenePanel(wx.Panel):
             channel(str(matrix))
             return "scene", data
 
-        @self.context.console_argument("x", type=str, help="x position")
-        @self.context.console_argument("y", type=str, help="y position")
-        @self.context.console_argument("width", type=str, help="width of view")
-        @self.context.console_argument("height", type=str, help="height of view")
-        @self.context.console_option(
+        @self.console_argument("x", type=str, help="x position")
+        @self.console_argument("y", type=str, help="y position")
+        @self.console_argument("width", type=str, help="width of view")
+        @self.console_argument("height", type=str, help="height of view")
+        @self.console_option(
             "animate",
             "a",
             type=bool,
             action="store_true",
             help="perform focus with animation",
         )
-        @self.context.console_command("focus", input_type="scene")
+        @self.console_command("focus", input_type="scene")
         def scene_focus(
             command, _, channel, data, x, y, width, height, animate=False, **kwgs
         ):
@@ -633,22 +637,22 @@ class MeerK40tScenePanel(wx.Panel):
             try:
                 x = Length(
                     x,
-                    relative_length=self.context.device.view.width,
+                    relative_length=self.device.view.width,
                     unitless=UNITS_PER_PIXEL,
                 )
                 y = Length(
                     y,
-                    relative_length=self.context.device.view.height,
+                    relative_length=self.device.view.height,
                     unitless=UNITS_PER_PIXEL,
                 )
                 width = Length(
                     width,
-                    relative_length=self.context.device.view.width,
+                    relative_length=self.device.view.width,
                     unitless=UNITS_PER_PIXEL,
                 )
                 height = Length(
                     height,
-                    relative_length=self.context.device.view.height,
+                    relative_length=self.device.view.height,
                     unitless=UNITS_PER_PIXEL,
                 )
             except ValueError:
@@ -660,39 +664,39 @@ class MeerK40tScenePanel(wx.Panel):
             channel(str(matrix))
             return "scene", data
 
-        @context.console_command("feature_request")
+        @self.console_command("feature_request")
         def send_developer_feature(remainder="", **kwgs):
             from .wxmeerk40t import send_data_to_developers
 
             send_data_to_developers("feature_request.txt", remainder)
 
-        @context.console_command("bug")
+        @self.console_command("bug")
         def send_developer_bug(remainder="", **kwgs):
             from .wxmeerk40t import send_data_to_developers
 
             send_data_to_developers("bug.txt", remainder)
 
-        @context.console_command("reference")
+        @self.console_command("reference")
         def make_reference(**kwgs):
             # Take first emphasized element
-            for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+            for e in self.elements.flat(types=elem_nodes, emphasized=True):
                 self.reference_object = e
                 break
-            self.context.signal("reference")
+            self.signal("reference")
 
         # Establishes commands
-        @context.console_argument(
+        @self.console_argument(
             "target", type=str, help=_("Target (one of primary, secondary, circular")
         )
-        @context.console_argument("ox", type=str, help=_("X-Position of origin"))
-        @context.console_argument("oy", type=str, help=_("Y-Position of origin"))
-        @context.console_argument(
+        @self.console_argument("ox", type=str, help=_("X-Position of origin"))
+        @self.console_argument("oy", type=str, help=_("Y-Position of origin"))
+        @self.console_argument(
             "scalex", type=str, help=_("Scaling of X-Axis for secondary")
         )
-        @context.console_argument(
+        @self.console_argument(
             "scaley", type=str, help=_("Scaling of Y-Axis for secondary")
         )
-        @context.console_command(
+        @self.console_command(
             "grid",
             help=_("grid <target> <rows> <x_distance> <y_distance> <origin>"),
             input_type="scene",
@@ -766,12 +770,12 @@ class MeerK40tScenePanel(wx.Panel):
                                 oy = ox
                             self.grid.grid_secondary_cx = float(
                                 Length(
-                                    ox, relative_length=self.context.device.view.width
+                                    ox, relative_length=self.device.view.width
                                 )
                             )
                             self.grid.grid_secondary_cy = float(
                                 Length(
-                                    oy, relative_length=self.context.device.view.height
+                                    oy, relative_length=self.device.view.height
                                 )
                             )
                         if scalex is None:
@@ -811,12 +815,12 @@ class MeerK40tScenePanel(wx.Panel):
                                 oy = ox
                             self.grid.grid_circular_cx = float(
                                 Length(
-                                    ox, relative_length=self.context.device.view.width
+                                    ox, relative_length=self.device.view.width
                                 )
                             )
                             self.grid.grid_circular_cy = float(
                                 Length(
-                                    oy, relative_length=self.context.device.view.height
+                                    oy, relative_length=self.device.view.height
                                 )
                             )
                     channel(
@@ -839,7 +843,7 @@ class MeerK40tScenePanel(wx.Panel):
             else:
                 self.reference_object = e
             break
-        self.context.signal("reference")
+        self.signal("reference")
         self.request_refresh()
 
     def validate_reference(self):
@@ -848,7 +852,7 @@ class MeerK40tScenePanel(wx.Panel):
         """
         found = False
         if self._reference:
-            for e in self.context.elements.flat(types=elem_nodes):
+            for e in self.elements.flat(types=elem_nodes):
                 # Here we ignore the lock-status of an element
                 if e is self._reference:
                     found = True
@@ -871,7 +875,7 @@ class MeerK40tScenePanel(wx.Panel):
         if self._reference is not None:
             dlist.append(self._reference)
         if len(dlist) > 0:
-            self.context.signal("element_property_update", dlist)
+            self.signal("element_property_update", dlist)
 
     ##########
     # MAGNETS
@@ -939,7 +943,7 @@ class MeerK40tScenePanel(wx.Panel):
 
     def clear_magnets_conditionally(self):
         # Depending on setting
-        if self.context.clear_magnets:
+        if self.clear_magnets:
             self.clear_magnets()
 
     def toggle_x_magnet(self, x_value):
@@ -979,7 +983,7 @@ class MeerK40tScenePanel(wx.Panel):
         dy = 0
         if self.has_magnets() and self._magnet_attraction > 0:
             if self.grid.tick_distance > 0:
-                s = f"{self.grid.tick_distance}{self.context.units_name}"
+                s = f"{self.grid.tick_distance}{self.units_name}"
                 len_tick = float(Length(s))
                 # Attraction length is 1/3, 4/3, 9/3 of a grid-unit
                 # fmt: off
@@ -1060,7 +1064,7 @@ class MeerK40tScenePanel(wx.Panel):
     def listen_make_ref(self, origin, *args):
         node = args[0]
         self.reference_object = node
-        self.context.signal("reference")
+        self.signal("reference")
 
     @signal_listener("draw_mode")
     def on_draw_mode(self, origin, *args):
@@ -1068,7 +1072,7 @@ class MeerK40tScenePanel(wx.Panel):
             orgx = 5
             orgy = 5
             # Are guides drawn?
-            if self.context.draw_mode & DRAW_MODE_GUIDES == 0:
+            if self.draw_mode & DRAW_MODE_GUIDES == 0:
                 orgx += 25
                 orgy += 25
             self._tool_widget.set_position(orgx, orgy)
@@ -1076,33 +1080,33 @@ class MeerK40tScenePanel(wx.Panel):
     @signal_listener("scene_right_click")
     def on_scene_right(self, origin, *args):
         def zoom_to_bed(event=None):
-            zoom = self.context.zoom_margin
+            zoom = self.zoom_margin
             self.context(f"scene focus -a {-zoom}% {-zoom}% {zoom+100}% {zoom+100}%\n")
 
         def zoom_to_selected(event=None):
-            bbox = self.context.elements.selected_area()
+            bbox = self.elements.selected_area()
             if bbox is None:
                 zoom_to_bed(event=event)
             else:
-                zfact = self.context.zoom_margin / 100.0
+                zfact = self.zoom_margin / 100.0
 
                 x_delta = (bbox[2] - bbox[0]) * zfact
                 y_delta = (bbox[3] - bbox[1]) * zfact
                 x0 = Length(
                     amount=bbox[0] - x_delta,
-                    relative_length=self.context.device.view.width,
+                    relative_length=self.device.view.width,
                 ).length_mm
                 y0 = Length(
                     amount=bbox[1] - y_delta,
-                    relative_length=self.context.device.view.height,
+                    relative_length=self.device.view.height,
                 ).length_mm
                 x1 = Length(
                     amount=bbox[2] + x_delta,
-                    relative_length=self.context.device.view.width,
+                    relative_length=self.device.view.width,
                 ).length_mm
                 y1 = Length(
                     amount=bbox[3] + y_delta,
-                    relative_length=self.context.device.view.height,
+                    relative_length=self.device.view.height,
                 ).length_mm
                 self.context(f"scene focus -a {x0} {y0} {x1} {y1}\n")
 
@@ -1184,7 +1188,7 @@ class MeerK40tScenePanel(wx.Panel):
         # Do we have a timer called .updatebg?
         we_have_a_job = False
         try:
-            obj = self.context.kernel.jobs["timer.updatebg"]
+            obj = self.kernel.jobs["timer.updatebg"]
             if obj is not None:
                 we_have_a_job = True
         except KeyError:
@@ -1209,7 +1213,7 @@ class MeerK40tScenePanel(wx.Panel):
                 _("View the whole laser bed"),
             ),
         )
-        if self.context.elements.has_emphasis():
+        if self.elements.has_emphasis():
             self.Bind(
                 wx.EVT_MENU,
                 lambda e: zoom_to_selected(),
@@ -1272,8 +1276,8 @@ class MeerK40tScenePanel(wx.Panel):
         self.request_refresh()
 
     def pane_show(self, *args):
-        zl = self.context.zoom_margin
-        self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
+        zl = self.root.zoom_margin
+        self(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
 
     def pane_hide(self, *args):
         pass
@@ -1284,8 +1288,6 @@ class MeerK40tScenePanel(wx.Panel):
         self.request_refresh()
 
     def on_size(self, event):
-        if self.context is None:
-            return
         self.Layout()
         # Refresh not needed as scenepanel already does it...
         # self.scene.signal("guide")
@@ -1300,10 +1302,10 @@ class MeerK40tScenePanel(wx.Panel):
         # pipe running has (state) as args
         new_color = None
         try:
-            if self.context.device.driver.paused:
-                new_color = self.context.themes.get("pause_bg")
-            elif self.context.device.laser_status == "active":
-                new_color = self.context.themes.get("stop_bg")
+            if self.device.driver.paused:
+                new_color = self.themes.get("pause_bg")
+            elif self.device.laser_status == "active":
+                new_color = self.themes.get("stop_bg")
         except AttributeError:
             pass
         self.widget_scene.overrule_background = new_color
@@ -1365,8 +1367,8 @@ class MeerK40tScenePanel(wx.Panel):
     def on_elements_added(self, origin, nodes=None, *args):
         self.scene.signal("element_added", nodes)
         # There may be a smarter way to eliminate unnecessary rebuilds, but it's doing the job...
-        # self.context.signal("rebuild_tree")
-        self.context.signal("refresh_tree", nodes)
+        # self.signal("rebuild_tree")
+        self.signal("refresh_tree", nodes)
         self.widget_scene.request_refresh()
 
     @signal_listener("rebuild_tree")
@@ -1403,7 +1405,7 @@ class MeerK40tScenePanel(wx.Panel):
         ignore = self.tool_active
         if self._keybind_channel:
             self._keybind_channel(f"Scene key_down: {keyvalue}.")
-        if not ignore and self.context.bind.trigger(keyvalue):
+        if not ignore and self.bind.trigger(keyvalue):
             if self._keybind_channel:
                 self._keybind_channel(f"Scene key_down: {keyvalue} executed.")
         else:
@@ -1421,7 +1423,7 @@ class MeerK40tScenePanel(wx.Panel):
         ignore = self.tool_active
         if self._keybind_channel:
             self._keybind_channel(f"Scene key_up: {keyvalue}.")
-        if not ignore and self.context.bind.untrigger(keyvalue):
+        if not ignore and self.bind.untrigger(keyvalue):
             if self._keybind_channel:
                 self._keybind_channel(f"Scene key_up: {keyvalue} executed.")
         else:

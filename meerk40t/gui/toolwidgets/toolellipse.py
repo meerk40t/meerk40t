@@ -80,7 +80,7 @@ class EllipseTool(ToolWidget):
                     ccx + 4 * pixel,
                     ccy - 4 * pixel,
                 )
-            units = self.scene.context.units_name
+            units = self.scene.context.root.units_name
             s = "C=({cx}, {cy}), a={a}, b={b}".format(
                 cx=Length(amount=(x1 + x0) / 2, digits=2, preferred_units=units),
                 cy=Length(amount=(y1 + y0) / 2, digits=2, preferred_units=units),

@@ -98,7 +98,7 @@ class MeasureTool(PointListTool):
         first_point = None
 
         context = self.scene.context
-        units = context.units_name
+        units = context.root.units_name
 
         pt_count = 0
         perimeter = 0

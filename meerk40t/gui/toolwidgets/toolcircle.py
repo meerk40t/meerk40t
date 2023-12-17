@@ -89,7 +89,7 @@ class CircleTool(ToolWidget):
                         ccx + 4 * pixel,
                         ccy - 4 * pixel,
                     )
-                units = self.scene.context.units_name
+                units = self.scene.context.root.units_name
                 s = "C=({cx}, {cy}), R={radius}".format(
                     cx=Length(
                         amount=(bbox[0] + bbox[2]) / 2, digits=2, preferred_units=units

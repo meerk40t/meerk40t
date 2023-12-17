@@ -208,7 +208,7 @@ class GridWidget(Widget):
 
     @property
     def scaled_conversion(self):
-        return float(Length(f"1{self.scene.context.units_name}")) * self.scene_scale
+        return float(Length(f"1{self.scene.context.root.units_name}")) * self.scene_scale
 
     def calculate_tickdistance(self, w, h):
         # Establish the delta for about 15 ticks
@@ -295,7 +295,7 @@ class GridWidget(Widget):
 
     def calculate_tick_length(self):
         tick_length = float(
-            Length(f"{self.tick_distance}{self.scene.context.units_name}")
+            Length(f"{self.tick_distance}{self.scene.context.root.units_name}")
         )
         if tick_length == 0:
             tick_length = float(Length("10mm"))

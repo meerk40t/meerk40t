@@ -156,7 +156,7 @@ class GuideWidget(Widget):
             dlg = wx.TextEntryDialog(
                 self.scene.context.gui,
                 message=_("Please provide the grid-size in {units}").format(
-                    units=self.scene.context.units_name
+                    units=self.scene.context.root.units_name
                 ),
                 caption=_("User-defined grid-size"),
                 value=str(self.scene.pane.grid.tick_distance),
@@ -189,7 +189,7 @@ class GuideWidget(Widget):
             id=item.GetId(),
         )
         menu.AppendSeparator()
-        units = self.scene.context.units_name
+        units = self.scene.context.root.units_name
         if units == "mm":
             self.options = [0.1, 0.5, 1, 5, 10, 25]
         elif units == "cm":
@@ -522,7 +522,7 @@ class GuideWidget(Widget):
         return self.scene.convert_scene_to_window([x, y])
 
     def _set_scaled_conversion(self):
-        p = self.scene.context
+        p = self.scene.context.root
         f = float(Length(f"1{p.units_name}"))
         m = self.scene.widget_root.scene_widget.matrix
         self.scaled_conversion_x = f * m.value_scale_x()
@@ -726,7 +726,7 @@ class GuideWidget(Widget):
             gc.StrokeLineSegments(starts_hi, ends_hi)
 
     def _draw_units(self, gc):
-        p = self.scene.context
+        p = self.scene.context.root
         self.units = p.units_name
         gc.SetFont(self.font, self.color_units)
         gc.DrawText(self.units, self.edge_gap, self.edge_gap)

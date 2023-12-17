@@ -215,7 +215,7 @@ class PointListTool(ToolWidget):
         y0 = points[-2][1]
         x1 = points[-1][0]
         y1 = points[-1][1]
-        units = self.scene.context.units_name
+        units = self.scene.context.root.units_name
         msg = "Pts: {pts}, to last point: O=({cx}, {cy}), d={a}".format(
             pts=len(points),
             cx=Length(amount=x0, digits=2, preferred_units=units),

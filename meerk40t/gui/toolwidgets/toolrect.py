@@ -77,7 +77,7 @@ class RectTool(ToolWidget):
                     ccx + 4 * pixel,
                     ccy - 4 * pixel,
                 )
-            units = self.scene.context.units_name
+            units = self.scene.context.root.units_name
             s = "O=({cx}, {cy}), a={a}, b={b}".format(
                 cx=Length(amount=x0, digits=2, preferred_units=units),
                 cy=Length(amount=y0, digits=2, preferred_units=units),

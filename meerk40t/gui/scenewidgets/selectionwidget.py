@@ -223,7 +223,7 @@ class BorderWidget(Widget):
             gc.StrokeLine(self.left, self.bottom, self.left, self.top)
             # print ("Inner Drawmode=%d (logic=%s)" % ( draw_mode ,(draw_mode & DRAW_MODE_SELECTION) ))
             # if draw_mode & DRAW_MODE_SELECTION == 0:
-            units = context.units_name
+            units = context.root.units_name
             try:
                 font = wx.Font(
                     self.master.font_size,
@@ -2249,7 +2249,7 @@ class SelectionWidget(Widget):
 
     @property
     def handle_outside(self):
-        return self.scene.context.outer_handles
+        return self.scene.context.root.outer_handles
 
     def hit(self):
         elements = self.scene.context.elements
