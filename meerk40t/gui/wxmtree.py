@@ -1,5 +1,5 @@
 import wx
-import wx.lib.agw.aui as aui
+from meerk40t.gui import aui
 
 from meerk40t.core.elements.element_types import op_nodes
 
@@ -56,20 +56,20 @@ _ = wx.GetTranslation
 
 
 def register_panel_tree(window, context):
-    context.root.setting(int, "tree_panel_page", 0)
-    lastpage = getattr(context.root, "tree_panel_page", 0)
-    if lastpage is None or lastpage < 0 or lastpage > 2:
-        lastpage = 0
+    # context.root.setting(int, "tree_panel_page", 0)
+    # lastpage = getattr(context.root, "tree_panel_page", 0)
+    # if lastpage is None or lastpage < 0 or lastpage > 2:
+    #     lastpage = 0
 
-    def on_panel_change(context):
-        def handler(event):
-            mycontext.root.setting(int, "tree_panel_page", 0)
-            pagenum = notetab.GetSelection()
-            setattr(mycontext.root, "tree_panel_page", pagenum)
-            return
-
-        mycontext = context
-        return handler
+    # def on_panel_change(context):
+    #     def handler(event):
+    #         mycontext.root.setting(int, "tree_panel_page", 0)
+    #         pagenum = notetab.GetSelection()
+    #         setattr(mycontext.root, "tree_panel_page", pagenum)
+    #         return
+    #
+    #     mycontext = context
+    #     return handler
 
     # notetab = wx.aui.AuiNotebook(
     #     window,
@@ -94,6 +94,7 @@ def register_panel_tree(window, context):
         .Caption(_("Tree"))
         .CaptionVisible(not context.pane_lock)
         .TopDockable(False)
+        .MinimizeButton(True)
     )
     pane1.dock_proportion = 500
     pane1.control = basic_op
@@ -102,7 +103,7 @@ def register_panel_tree(window, context):
     wxtree = TreePanel(window, wx.ID_ANY, context=context)
     pane2 = (
         aui.AuiPaneInfo()
-        .Name("tree")
+        .Name("tree2")
         .Right()
         .MinSize(200, 180)
         .BestSize(300, 270)
@@ -110,9 +111,10 @@ def register_panel_tree(window, context):
         .LeftDockable()
         .RightDockable()
         .BottomDockable(False)
-        .Caption(_("Tree"))
+        .Caption(_("Tree2"))
         .CaptionVisible(not context.pane_lock)
         .TopDockable(False)
+        .MinimizeButton(True)
     )
     pane2.dock_proportion = 500
     pane2.control = wxtree

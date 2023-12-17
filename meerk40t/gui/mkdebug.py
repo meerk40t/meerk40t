@@ -6,7 +6,7 @@
 import time
 
 import wx
-import wx.lib.agw.aui as aui
+from meerk40t.gui import aui
 
 import meerk40t.gui.icons as mkicons
 from meerk40t.core.units import Angle, Length

@@ -6,7 +6,7 @@ from functools import partial
 
 import wx
 from PIL import Image
-import wx.lib.agw.aui as aui
+from meerk40t.gui import aui
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.gui.statusbarwidgets.defaultoperations import DefaultOperationWidget
@@ -156,6 +156,10 @@ class MeerK40t(MWindow):
         self.is_paused = False
 
         self._mgr = aui.AuiManager()
+        art = self._mgr.GetArtProvider()
+        art.SetDefaultPaneBitmaps(False)
+        note_art = self._mgr.GetAutoNotebookTabArt()
+
 
         # self._mgr.SetFlags(self._mgr.GetFlags() | aui.AUI_MGR_LIVE_RESIZE)
         self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.on_pane_closed)
@@ -171,6 +175,8 @@ class MeerK40t(MWindow):
                         dc.DrawBitmap(pane.icon, rect.x+2, rect.y+(rect.height-pane.icon.GetHeight())//2, True)
 
         self._mgr.GetArtProvider().DrawIcon = DrawIcon
+        self._notebook_style = aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_TAB_EXTERNAL_MOVE | wx.NO_BORDER
+
         self.ui_visible = True
         self.hidden_panes = []
 
@@ -2698,7 +2704,7 @@ class MeerK40t(MWindow):
         self._mgr.Update()
 
     def on_pane_create(self, paneinfo: aui.AuiPaneInfo, target=None):
-        paneinfo.icon = icon_meerk40t.GetBitmap()
+        paneinfo.icon = icons8_copy.GetBitmap(resize=20)
         control = paneinfo.control
         # if isinstance(control, wx.aui.AuiNotebook):
         #     for i in range(control.GetPageCount()):

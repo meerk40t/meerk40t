@@ -1,5 +1,5 @@
 import wx
-import wx.lib.agw.aui as aui
+from meerk40t.gui import aui
 
 from meerk40t.gui.icons import icons8_manager
 from meerk40t.gui.mwindow import MWindow

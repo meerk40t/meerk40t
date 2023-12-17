@@ -2,7 +2,7 @@ import os
 import re
 
 import wx
-import wx.lib.agw.aui as aui
+from meerk40t.gui import aui
 
 from ..kernel import signal_listener
 from .icons import (

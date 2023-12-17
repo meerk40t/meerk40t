@@ -1,5 +1,5 @@
 import wx
-import wx.lib.agw.aui as aui
+from meerk40t.gui import aui
 
 from meerk40t.core.elements.element_types import op_nodes
 from meerk40t.gui.icons import (

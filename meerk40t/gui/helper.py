@@ -9,7 +9,7 @@
 """
 
 import wx
-import wx.lib.agw.aui as aui
+from meerk40t.gui import aui
 
 from meerk40t.gui.icons import get_default_icon_size, icons8_info
 from meerk40t.gui.wxutils import StaticBoxSizer

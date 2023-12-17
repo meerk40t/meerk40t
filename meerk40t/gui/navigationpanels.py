@@ -3,7 +3,7 @@ from math import isinf
 from time import time
 
 import wx
-import wx.lib.agw.aui as aui
+from meerk40t.gui import aui
 
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length

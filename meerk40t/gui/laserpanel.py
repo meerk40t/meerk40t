@@ -1,8 +1,9 @@
 import platform
 
 import wx
-import wx.lib.agw.aui as aui
+from meerk40t.gui import aui
 
+from meerk40t.gui import aui
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
     DARKMODE,
@@ -62,13 +63,14 @@ def register_panel_laser(window, context):
     def add_pane(control, name, subvalue, target=None):
         pane = (
             aui.AuiPaneInfo()
+            .Icon(wx.ICON_EXCLAMATION)
             .Right()
             .MinSize(200, 180)
             .BestSize(300, 270)
             .FloatingSize((300, 270))
             .Caption(name)
             .CaptionVisible(not context.pane_lock)
-            .Name("laser")
+            .Name(subvalue)
         )
         pane.submenu = "_10_" + _("Laser")
         pane.control = control

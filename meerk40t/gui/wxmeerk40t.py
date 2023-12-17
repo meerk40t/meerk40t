@@ -5,7 +5,7 @@ import traceback
 from datetime import datetime
 
 import wx
-import wx.lib.agw.aui as aui
+from meerk40t.gui import aui
 
 # try:
 #     # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
