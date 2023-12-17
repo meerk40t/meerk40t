@@ -8,7 +8,7 @@ https://github.com/meerk40t/meerk40t/discussions/1944
 """
 
 import wx
-from wx import aui
+import wx.lib.agw.aui as aui
 
 from ..core.exceptions import BadFileError
 from .icons import get_default_icon_size, icons8_computer_support, icons8_opened_folder

@@ -1,5 +1,5 @@
 import wx
-from wx import aui
+import wx.lib.agw.aui as aui
 
 from meerk40t.kernel import signal_listener
 
@@ -12,7 +12,7 @@ def register_panel_snapoptions(window, context):
         aui.AuiPaneInfo()
         .Right()
         .MinSize(80, 125)
-        .FloatingSize(120, 145)
+        .FloatingSize((120, 145))
         .Hide()
         .Caption(_("Snap-Options"))
         .CaptionVisible(not context.pane_lock)

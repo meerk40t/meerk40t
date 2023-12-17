@@ -3,7 +3,7 @@ from math import isinf
 from time import time
 
 import wx
-from wx import aui
+import wx.lib.agw.aui as aui
 
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
@@ -67,7 +67,7 @@ def register_panel_navigation(window, context):
         .Right()
         .MinSize(3 * iconsize + dx, 3 * iconsize + dy)
         .BestSize(3 * iconsize + dx, 3 * iconsize + dy)
-        .FloatingSize(3 * iconsize + dx, 3 * iconsize + dy)
+        .FloatingSize((3 * iconsize + dx, 3 * iconsize + dy))
         .MaxSize(300, 300)
         .Caption(_("Drag"))
         .Name("drag")
@@ -92,7 +92,7 @@ def register_panel_navigation(window, context):
         .Right()
         .MinSize(3 * iconsize + dx, 3 * iconsize + dy)
         .BestSize(3 * iconsize + dx, 3 * iconsize + dy)
-        .FloatingSize(3 * iconsize + dx, 3 * iconsize + dy)
+        .FloatingSize((3 * iconsize + dx, 3 * iconsize + dy))
         .MaxSize(300, 300)
         .Caption(_("Jog"))
         .Name("jog")
@@ -118,7 +118,7 @@ def register_panel_navigation(window, context):
         .Right()
         .MinSize(iconsize + 100, iconsize + 25)
         .BestSize(iconsize + 100, iconsize + 25)
-        .FloatingSize(iconsize + 100, iconsize + 25)
+        .FloatingSize((iconsize + 100, iconsize + 25))
         .MaxSize(200, 100)
         .Caption(_("Move"))
         .CaptionVisible(not context.pane_lock)
@@ -137,7 +137,7 @@ def register_panel_navigation(window, context):
         aui.AuiPaneInfo()
         .Right()
         .MinSize(iconsize + 25, iconsize + 25)
-        .FloatingSize(iconsize + 60, iconsize + 25)
+        .FloatingSize((iconsize + 60, iconsize + 25))
         .Hide()
         .Caption(_("Pulse"))
         .CaptionVisible(not context.pane_lock)
@@ -155,7 +155,7 @@ def register_panel_navigation(window, context):
     #     aui.AuiPaneInfo()
     #     .Right()
     #     .MinSize(75, 50)
-    #     .FloatingSize(150, 75)
+    #     .FloatingSize((150, 75))
     #     .Hide()
     #     .Caption(_("Element-Size"))
     #     .CaptionVisible(not context.pane_lock)
@@ -179,7 +179,7 @@ def register_panel_navigation(window, context):
         aui.AuiPaneInfo()
         .Right()
         .MinSize(max(3 * iconsize, 3 * 57), 3 * iconsize + dy)
-        .FloatingSize(max(3 * iconsize, 3 * 57), 3 * iconsize + dy)
+        .FloatingSize((max(3 * iconsize, 3 * 57), 3 * iconsize + dy))
         .MaxSize(300, 300)
         .Caption(_("Transform"))
         .Name("transform")
@@ -198,7 +198,7 @@ def register_panel_navigation(window, context):
         aui.AuiPaneInfo()
         .Float()
         .MinSize(190, 110)
-        .FloatingSize(190, 110)
+        .FloatingSize((190, 110))
         .Hide()
         .Caption(_("Distances"))
         .CaptionVisible(not context.pane_lock)

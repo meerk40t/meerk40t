@@ -6,7 +6,7 @@ from functools import partial
 
 import wx
 from PIL import Image
-from wx import aui
+import wx.lib.agw.aui as aui
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.gui.statusbarwidgets.defaultoperations import DefaultOperationWidget
@@ -2620,7 +2620,7 @@ class MeerK40t(MWindow):
                 .Dockable(False)
                 .Float()
                 .Caption(caption)
-                .FloatingSize(width, height)
+                .FloatingSize((width, height))
                 .Name(pane)
                 .CaptionVisible(True)
             )

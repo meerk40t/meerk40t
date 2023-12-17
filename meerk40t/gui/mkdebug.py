@@ -6,7 +6,7 @@
 import time
 
 import wx
-from wx import aui
+import wx.lib.agw.aui as aui
 
 import meerk40t.gui.icons as mkicons
 from meerk40t.core.units import Angle, Length
@@ -21,7 +21,7 @@ def register_panel_debugger(window, context):
         aui.AuiPaneInfo()
         .Float()
         .MinSize(225, 110)
-        .FloatingSize(400, 400)
+        .FloatingSize((400, 400))
         .Caption(_("Position"))
         .CaptionVisible(not context.pane_lock)
         .Name("debug_tree")
@@ -39,7 +39,7 @@ def register_panel_color(window, context):
         aui.AuiPaneInfo()
         .Float()
         .MinSize(225, 110)
-        .FloatingSize(400, 400)
+        .FloatingSize((400, 400))
         .Caption(_("System-Colors"))
         .CaptionVisible(not context.pane_lock)
         .Name("debug_color")
@@ -57,7 +57,7 @@ def register_panel_icon(window, context):
         aui.AuiPaneInfo()
         .Float()
         .MinSize(225, 110)
-        .FloatingSize(400, 400)
+        .FloatingSize((400, 400))
         .Caption(_("Icons"))
         .CaptionVisible(not context.pane_lock)
         .Name("debug_icons")
@@ -75,7 +75,7 @@ def register_panel_crash(window, context):
         aui.AuiPaneInfo()
         .Float()
         .MinSize(225, 110)
-        .FloatingSize(400, 400)
+        .FloatingSize((400, 400))
         .Caption(_("Shutdown Test"))
         .CaptionVisible(not context.pane_lock)
         .Name("debug_shutdown")

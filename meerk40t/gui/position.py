@@ -1,5 +1,5 @@
 import wx
-from wx import aui
+import wx.lib.agw.aui as aui
 
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
@@ -15,7 +15,7 @@ def register_panel_position(window, context):
         aui.AuiPaneInfo()
         .Left()
         .MinSize(225, 110)
-        .FloatingSize(225, 110)
+        .FloatingSize((225, 110))
         .Caption(_("Position"))
         .CaptionVisible(not context.pane_lock)
         .Name("position")

@@ -2,7 +2,7 @@ import os
 import threading
 
 import wx
-from wx import aui
+import wx.lib.agw.aui as aui
 
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_console
 from meerk40t.gui.mwindow import MWindow
@@ -78,7 +78,7 @@ def register_panel_console(window, context):
         .Bottom()
         .Layer(2)
         .MinSize(600, 100)
-        .FloatingSize(600, 230)
+        .FloatingSize((600, 230))
         .Caption(_("Console"))
         .Name("console")
         .CaptionVisible(not context.pane_lock)

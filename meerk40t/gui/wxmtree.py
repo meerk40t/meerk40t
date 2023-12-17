@@ -1,5 +1,5 @@
 import wx
-from wx import aui
+import wx.lib.agw.aui as aui
 
 from meerk40t.core.elements.element_types import op_nodes
 

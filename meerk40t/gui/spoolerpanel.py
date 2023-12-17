@@ -5,7 +5,7 @@ from pathlib import Path
 
 import wx
 import wx.lib.mixins.listctrl as listmix
-from wx import aui
+import wx.lib.agw.aui as aui
 
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
@@ -52,7 +52,7 @@ def register_panel_spooler(window, context):
         .Bottom()
         .Layer(1)
         .MinSize(600, 100)
-        .FloatingSize(600, 230)
+        .FloatingSize((600, 230))
         .Caption(_("Spooler"))
         .Name("spooler")
         .CaptionVisible(not context.pane_lock)

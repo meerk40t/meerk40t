@@ -1,5 +1,5 @@
 import wx
-from wx import aui
+import wx.lib.agw.aui as aui
 
 from .icons import STD_ICON_SIZE, icons8_comments
 from .mwindow import MWindow
@@ -13,7 +13,7 @@ def register_panel(window, context):
         aui.AuiPaneInfo()
         .Float()
         .MinSize(100, 100)
-        .FloatingSize(170, 230)
+        .FloatingSize((170, 230))
         .MaxSize(500, 500)
         .Caption(_("Notes"))
         .CaptionVisible(not context.pane_lock)

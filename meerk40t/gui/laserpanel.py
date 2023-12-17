@@ -1,7 +1,7 @@
 import platform
 
 import wx
-from wx import aui
+import wx.lib.agw.aui as aui
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (

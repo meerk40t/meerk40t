@@ -1,5 +1,5 @@
 import wx
-from wx import aui
+import wx.lib.agw.aui as aui
 
 from ...kernel import signal_listener
 from ..icons import icons8_computer_support

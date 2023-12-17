@@ -1,5 +1,5 @@
 import wx
-from wx import aui
+import wx.lib.agw.aui as aui
 
 from meerk40t.core.elements.element_types import op_nodes
 from meerk40t.gui.icons import (
@@ -24,7 +24,7 @@ def register_panel_operation_assign(window, context):
         aui.AuiPaneInfo()
         .Left()
         .MinSize(80, 60)
-        .FloatingSize(80, 85)
+        .FloatingSize((80, 85))
         .Caption(_("Operations"))
         .CaptionVisible(not context.pane_lock)
         .Name("opassign")

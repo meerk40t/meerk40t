@@ -2,7 +2,7 @@ import os
 import re
 
 import wx
-from wx import aui
+import wx.lib.agw.aui as aui
 
 from ..kernel import signal_listener
 from .icons import (
@@ -27,7 +27,7 @@ def register_panel_wordlist(window, context):
         aui.AuiPaneInfo()
         .Left()
         .MinSize(150, 25)
-        .FloatingSize(150, 35)
+        .FloatingSize((150, 35))
         .Caption(_("Wordlist"))
         .CaptionVisible(not context.pane_lock)
         .Name("wordlist")

@@ -24,7 +24,7 @@ import platform
 import threading
 
 import wx
-from wx import aui
+import wx.lib.agw.aui as aui
 
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
@@ -50,7 +50,7 @@ def register_panel_ribbon(window, context):
         .Name("ribbon")
         .Top()
         .BestSize(300, minh)
-        .FloatingSize(640, minh)
+        .FloatingSize((640, minh))
         .Caption(_("Ribbon"))
         .CaptionVisible(not context.pane_lock)
     )
@@ -59,7 +59,6 @@ def register_panel_ribbon(window, context):
         window, wx.ID_ANY, context=context, pane=pane_ribbon, identifier="primary"
     )
     pane_ribbon.control = ribbon
-
     window.on_pane_create(pane_ribbon)
     context.register("pane/ribbon", pane_ribbon)
     context.register("ribbonbar/primary", ribbon)
@@ -70,7 +69,7 @@ def register_panel_ribbon(window, context):
         .Name("tools")
         .Left()
         .BestSize(minh, 300)
-        .FloatingSize(minh, 640)
+        .FloatingSize((minh, 640))
         .Caption(_("Tools"))
         .CaptionVisible(not context.pane_lock)
     )

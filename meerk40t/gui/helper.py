@@ -9,7 +9,7 @@
 """
 
 import wx
-from wx import aui
+import wx.lib.agw.aui as aui
 
 from meerk40t.gui.icons import get_default_icon_size, icons8_info
 from meerk40t.gui.wxutils import StaticBoxSizer
@@ -24,7 +24,7 @@ def register_panel_helper(window, context):
         .Left()
         .Float()
         .MinSize(225, 110)
-        .FloatingSize(225, 110)
+        .FloatingSize((225, 110))
         .Caption(_("Help"))
         .CaptionVisible(not context.pane_lock)
         .Name("helper")

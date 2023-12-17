@@ -1,7 +1,7 @@
 import platform
 
 import wx
-from wx import aui
+import wx.lib.agw.aui as aui
 
 from meerk40t.gui.icons import (
     get_default_icon_size,
@@ -36,7 +36,7 @@ def register_panel_camera(window, context):
             aui.AuiPaneInfo()
             .Left()
             .MinSize(200, 150)
-            .FloatingSize(640, 480)
+            .FloatingSize((640, 480))
             .Caption(_("Camera {index}").format(index=index))
             .Name(f"camera{index}")
             .CaptionVisible(not context.pane_lock)

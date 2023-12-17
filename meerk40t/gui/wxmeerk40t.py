@@ -5,7 +5,7 @@ import traceback
 from datetime import datetime
 
 import wx
-from wx import aui
+import wx.lib.agw.aui as aui
 
 # try:
 #     # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
@@ -256,7 +256,7 @@ def register_panel_go(window, context):
         .Bottom()
         .Caption(_("Go"))
         .MinSize(40, 40)
-        .FloatingSize(98, 98)
+        .FloatingSize((98, 98))
         .Name("go")
         .CaptionVisible(not context.pane_lock)
         .Hide()
@@ -280,7 +280,7 @@ def register_panel_stop(window, context):
         .Bottom()
         .Caption(_("Stop"))
         .MinSize(40, 40)
-        .FloatingSize(98, 98)
+        .FloatingSize((98, 98))
         .Name("stop")
         .Hide()
         .CaptionVisible(not context.pane_lock)
@@ -317,7 +317,7 @@ def register_panel_home(window, context):
         .Bottom()
         .Caption(_("Home"))
         .MinSize(40, 40)
-        .FloatingSize(98, 98)
+        .FloatingSize((98, 98))
         .Name("home")
         .Hide()
         .CaptionVisible(not context.pane_lock)
@@ -353,11 +353,12 @@ def register_panel_pause(window, context):
         .Caption(_("Pause"))
         .Bottom()
         .MinSize(40, 40)
-        .FloatingSize(98, 98)
+        .FloatingSize((98, 98))
         .Name("pause")
         .Hide()
         .CaptionVisible(not context.pane_lock)
     )
+
     pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
 
