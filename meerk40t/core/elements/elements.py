@@ -146,7 +146,89 @@ def plugin(kernel, lifecycle=None):
         kernel.add_service("elements", Elemental(kernel))
         kernel.add_service("elements", Elemental(kernel,1))
     elif lifecycle == "postboot":
-        elements = kernel.elements
+        pass
+
+    elif lifecycle == "prestart":
+        if hasattr(kernel.args, "input") and kernel.args.input is not None:
+            # Load any input file
+            elements = kernel.elements
+
+            try:
+                elements.load(os.path.realpath(kernel.args.input.name))
+            except BadFileError as e:
+                kernel._console_channel(_("File is Malformed") + ": " + str(e))
+    elif lifecycle == "poststart":
+        if hasattr(kernel.args, "output") and kernel.args.output is not None:
+            # output the file you have at this point.
+            elements = kernel.elements
+
+            elements.save(os.path.realpath(kernel.args.output.name))
+
+
+def reversed_enumerate(collection: list):
+    for i in range(len(collection) - 1, -1, -1):
+        yield i, collection[i]
+
+
+OP_PRIORITIES = ["op dots", "op image", "op raster", "op engrave", "op cut"]
+
+
+# def is_dot(element):
+#     if not isinstance(element, Shape):
+#         return False
+#     if isinstance(element, Path):
+#         path = element
+#     else:
+#         path = element.segments()
+#
+#     if len(path) == 2 and isinstance(path[0], Move):
+#         if isinstance(path[1], Close):
+#             return True
+#         if isinstance(path[1], Line) and path[1].length() == 0:
+#             return True
+#     return False
+
+
+# def is_straight_line(element):
+#     if not isinstance(element, Shape):
+#         return False
+#     if isinstance(element, Path):
+#         path = element
+#     else:
+#         path = element.segments()
+#
+#     if len(path) == 2 and isinstance(path[0], Move):
+#         if isinstance(path[1], Line) and path[1].length() > 0:
+#             return True
+#     return False
+
+
+class Elemental(Service):
+    def __init__(self, kernel, index=None, *args, **kwargs):
+        Service.__init__(
+            self, kernel, "elements" if index is None else f"elements{index}"
+        )
+        self._clipboard = {}
+        self._clipboard_default = "0"
+
+        self.note = None
+        self._filename = None
+        self._emphasized_bounds = None
+        self._emphasized_bounds_painted = None
+        self._emphasized_bounds_dirty = True
+        self._tree = RootNode(self)
+        self._save_restore_job = ConsoleFunction(self, ".save_restore_point\n", times=1)
+
+        # Point / Segments selected.
+        # points in format: points.append((g, idx, 0, node, geom))
+        self.points = list()
+        self.segments = list()
+
+        self.undo = Undo(self, self._tree)
+        self.do_undo = True
+        self.suppress_updates = False
+        _ = self._
+        elements = self
         choices = [
             {
                 "attr": "operation_default_empty",
@@ -427,86 +509,6 @@ def plugin(kernel, lifecycle=None):
             },
         ]
         kernel.register_choices("preferences", choices)
-
-    elif lifecycle == "prestart":
-        if hasattr(kernel.args, "input") and kernel.args.input is not None:
-            # Load any input file
-            elements = kernel.elements
-
-            try:
-                elements.load(os.path.realpath(kernel.args.input.name))
-            except BadFileError as e:
-                kernel._console_channel(_("File is Malformed") + ": " + str(e))
-    elif lifecycle == "poststart":
-        if hasattr(kernel.args, "output") and kernel.args.output is not None:
-            # output the file you have at this point.
-            elements = kernel.elements
-
-            elements.save(os.path.realpath(kernel.args.output.name))
-
-
-def reversed_enumerate(collection: list):
-    for i in range(len(collection) - 1, -1, -1):
-        yield i, collection[i]
-
-
-OP_PRIORITIES = ["op dots", "op image", "op raster", "op engrave", "op cut"]
-
-
-# def is_dot(element):
-#     if not isinstance(element, Shape):
-#         return False
-#     if isinstance(element, Path):
-#         path = element
-#     else:
-#         path = element.segments()
-#
-#     if len(path) == 2 and isinstance(path[0], Move):
-#         if isinstance(path[1], Close):
-#             return True
-#         if isinstance(path[1], Line) and path[1].length() == 0:
-#             return True
-#     return False
-
-
-# def is_straight_line(element):
-#     if not isinstance(element, Shape):
-#         return False
-#     if isinstance(element, Path):
-#         path = element
-#     else:
-#         path = element.segments()
-#
-#     if len(path) == 2 and isinstance(path[0], Move):
-#         if isinstance(path[1], Line) and path[1].length() > 0:
-#             return True
-#     return False
-
-
-class Elemental(Service):
-    def __init__(self, kernel, index=None, *args, **kwargs):
-        Service.__init__(
-            self, kernel, "elements" if index is None else f"elements{index}"
-        )
-        self._clipboard = {}
-        self._clipboard_default = "0"
-
-        self.note = None
-        self._filename = None
-        self._emphasized_bounds = None
-        self._emphasized_bounds_painted = None
-        self._emphasized_bounds_dirty = True
-        self._tree = RootNode(self)
-        self._save_restore_job = ConsoleFunction(self, ".save_restore_point\n", times=1)
-
-        # Point / Segments selected.
-        # points in format: points.append((g, idx, 0, node, geom))
-        self.points = list()
-        self.segments = list()
-
-        self.undo = Undo(self, self._tree)
-        self.do_undo = True
-        self.suppress_updates = False
 
         self.setting(bool, "classify_reverse", False)
         self.setting(bool, "legacy_classification", False)
