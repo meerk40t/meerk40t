@@ -527,7 +527,7 @@ class AuiPaneInfo(object):
         self.caption = ""
         self.buttons = []
         self.name = ""
-        self.icon = wx.NullIcon
+        self.icon = wx.NullBitmap
         self.rect = wx.Rect()
         self.notebook_id = -1
         self.transparent = 255
