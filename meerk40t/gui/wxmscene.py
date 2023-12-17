@@ -67,8 +67,13 @@ def register_panel_scene(window, context):
     control = wx.aui.AuiNotebook(window, -1, size=(200, 150))
     panel1 = MeerK40tScenePanel(window, wx.ID_ANY, context=context, index=1)
     control.AddPage(panel1, "scene1")
+    e1 = context.get_context("elements")
+    e1.scene = panel1
+
     panel2 = MeerK40tScenePanel(window, wx.ID_ANY, context=context, index=2)
     control.AddPage(panel2, "scene2")
+    e2 = context.get_context("elements1")
+    e2.scene = panel2
 
     # control = MeerK40tScenePanel(window, wx.ID_ANY, context=context)
     pane = aui.AuiPaneInfo().CenterPane().MinSize(200, 200).Name("scene")
@@ -478,7 +483,7 @@ class MeerK40tScenePanel(wx.Panel):
         @self.context.console_command("scene", output_type="scene")
         def scene(command, _, channel, **kwgs):
             channel(f"scene: {str(self.widget_scene)}")
-            return "scene", self.widget_scene
+            return "scene", self.context.elements.scene.widget_scene
 
         @self.context.console_argument(
             "aspect", type=str, help="aspect of the scene to color"
