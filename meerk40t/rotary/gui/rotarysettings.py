@@ -213,7 +213,7 @@ class RotarySettings(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(500, 400, *args, **kwds)
         self.panel = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="rotary"
+            self, wx.ID_ANY, context=self.context.rotary, choices="rotary"
         )
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
