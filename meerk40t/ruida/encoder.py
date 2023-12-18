@@ -195,12 +195,12 @@ ELEMENT_ARRAY_MIRROR = b"\xF2\x07"  # mirror(1)
 
 def encode_part(part):
     assert 0 <= part <= 255
-    return part
+    return bytes([part])
 
 
 def encode_index(index):
     assert 0 <= index <= 255
-    return index
+    return bytes([index])
 
 
 def encode14(v):
@@ -648,9 +648,8 @@ class RuidaEncoder:
         self(LAYER_NUMBER_PART)
         self(encode_part(part))
 
-    def en_laser_tube_start(self, part):
+    def en_laser_tube_start(self):
         self(EN_LASER_TUBE_START)
-        self(encode_part(part))
 
     def x_sign_map(self, value):
         self(X_SIGN_MAP)
