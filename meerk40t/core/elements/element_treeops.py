@@ -1408,7 +1408,7 @@ def init_tree(kernel):
                         for dentry in entry["display"]:
                             newdisplay.append(_(dentry))
                         entry["display"] = newdisplay
-                dialog = dialog_class(self.kernel, choices=choices)
+                dialog = dialog_class(self.kernel.root, choices=choices)
                 res = dialog.dialog_options(
                     title=_("Blob-Conversion"),
                     intro=_(
