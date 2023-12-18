@@ -16,23 +16,32 @@ from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
+from meerk40t.core.parameters import Parameters
 from meerk40t.core.plotplanner import PlotPlanner
-from meerk40t.ruida.controller import RuidaController
+from meerk40t.ruida.encoder import RuidaEncoder
+from meerk40t.ruida.mock_connection import MockConnection
 from meerk40t.tools.geomstr import Geomstr
 
 
-class RuidaDriver:
-    def __init__(self, service, force_mock=False):
+class RuidaDriver(Parameters):
+    def __init__(self, service, **kwargs):
+        super().__init__(**kwargs)
         self.service = service
         self.native_x = 0x8000
         self.native_y = 0x8000
         self.name = str(self.service)
 
-        self.connection = RuidaController(service, force_mock=force_mock)
+        self.connection = MockConnection(service.channel("ruida_driver"))
+        self.encoder = RuidaEncoder(self.connection.write, self.connection.write_real)
 
         self.service.add_service_delegate(self.connection)
-        self.paused = False
 
+        self.on_value = 0
+        self.power_dirty = True
+        self.speed_dirty = True
+        self.absolute_dirty = True
+        self._absolute = True
+        self.paused = False
         self.is_relative = False
         self.laser = False
 
@@ -72,6 +81,12 @@ class RuidaDriver:
     # DRIVER COMMANDS
     #############
 
+    def job_start(self, job):
+        pass
+
+    def job_finish(self, job):
+        self.rapid_mode()
+
     def hold_work(self, priority):
         """
         This is checked by the spooler to see if we should hold any work from being processed from the work queue.
@@ -110,8 +125,8 @@ class RuidaDriver:
         Wants a status report of what the driver is doing.
         @return:
         """
-        x, y = self.connection.get_last_xy()
-        state_major, state_minor = self.connection.state
+        x, y = self.encoder.get_last_xy()
+        state_major, state_minor = self.encoder.state
         return (x, y), state_major, state_minor
 
     def laser_off(self, *values):
@@ -132,101 +147,6 @@ class RuidaDriver:
         """
         self.laser = True
 
-    def geometry(self, geom):
-        """
-        Called at the end of plot commands to ensure the driver can deal with them all as a group.
-
-        @return:
-        """
-        # preprocess queue to establish steps
-        con = self.connection
-        con.program_mode()
-        g = Geomstr()
-        for segment_type, start, c1, c2, end, sets in geom.as_lines():
-            con.set_settings(sets)
-            # LOOP CHECKS
-            if self._aborting:
-                con.abort()
-                self._aborting = False
-                return
-
-            if segment_type == "line":
-                last_x, last_y = con.get_last_xy()
-                if last_x != start.real or last_y != start.imag:
-                    con.goto(start.real, start.imag)
-                con.mark(end.real, end.imag)
-            elif segment_type == "end":
-                pass
-            elif segment_type == "quad":
-                last_x, last_y = con.get_last_xy()
-                if last_x != start.real or last_y != start.imag:
-                    con.goto(start.real, start.imag)
-                interp = self.service.interpolate
-                g.clear()
-                g.quad(start, c1, end)
-                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
-                    # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
-                        return
-                    while self.paused:
-                        time.sleep(0.05)
-                    con.mark(p.real, p.imag)
-            elif segment_type == "cubic":
-                last_x, last_y = con.get_last_xy()
-                if last_x != start.real or last_y != start.imag:
-                    con.goto(start.real, start.imag)
-                interp = self.service.interpolate
-                g.clear()
-                g.cubic(start, c1, c2, end)
-                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
-                    # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
-                        return
-                    while self.paused:
-                        time.sleep(0.05)
-                    con.mark(p.real, p.imag)
-            elif segment_type == "arc":
-                last_x, last_y = con.get_last_xy()
-                if last_x != start.real or last_y != start.imag:
-                    con.goto(start.real, start.imag)
-                interp = self.service.interpolate
-                g.clear()
-                g.arc(start, c1, end)
-                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
-                    # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
-                        return
-                    while self.paused:
-                        time.sleep(0.05)
-                    con.mark(p.real, p.imag)
-            elif segment_type == "point":
-                function = sets.get("function")
-                if function == "dwell":
-                    con.goto(start.real, start.imag)
-                    dwell_time = sets.get("dwell_time")
-                    # TODO: Unknown accuracy
-                    con.laser_interval(dwell_time)
-                elif function == "wait":
-                    dwell_time = sets.get("dwell_time")
-                    # TODO: Unknown accuracy
-                    con.add_delay(dwell_time)
-                elif function == "home":
-                    con.home_xy()
-                elif function == "goto":
-                    con.goto(0, 0)
-                elif function == "input":
-                    # Moshi has no core GPIO functionality
-                    pass
-                elif function == "output":
-                    # Moshi has no core GPIO functionality
-                    pass
-
     def plot(self, plot):
         """
         This command is called with bits of cutcode as they are processed through the spooler. This should be optimized
@@ -239,134 +159,123 @@ class RuidaDriver:
 
     def plot_start(self):
         """
-        This is called after all the cutcode objects are sent. This says it shouldn't expect more cutcode for a bit.
+        Called at the end of plot commands to ensure the driver can deal with them all as a group.
 
         @return:
         """
-        # preprocess queue to establish steps
-        con = self.connection
-        con.program_mode()
-        last_on = None
-        queue = self.queue
-        self.queue = list()
-        for q in queue:
-            settings = q.settings
-            con.set_settings(settings)
-            # LOOP CHECKS
-            if self._aborting:
-                con.abort()
-                self._aborting = False
-                return
+        # Intro Ruida write data.
+        first = True
+        for q in self.queue:
+            while self.hold_work(0):
+                if self.service.kernel.is_shutdown:
+                    return
+                time.sleep(0.05)
+            x = self.native_x
+            y = self.native_y
+            start_x, start_y = q.start
+            if x != start_x or y != start_y or first:
+                self.on_value = 0
+                self.power_dirty = True
+
+                first = False
+                self._move(start_x, start_y)
+            if self.on_value != 1.0:
+                self.power_dirty = True
+            self.on_value = 1.0
+            # Default-Values?!
+            qpower = q.settings.get("power", self.power)
+            qspeed = q.settings.get("speed", self.speed)
+            qraster_step_x = q.settings.get("raster_step_x")
+            qraster_step_y = q.settings.get("raster_step_y")
+            if qpower != self.power:
+                self.set("power", qpower)
+            if (
+                qspeed != self.speed
+                or qraster_step_x != self.raster_step_x
+                or qraster_step_y != self.raster_step_y
+            ):
+                self.set("speed", qspeed)
+            self.settings.update(q.settings)
             if isinstance(q, LineCut):
-                last_x, last_y = con.get_last_xy()
-                x, y = q.start
-                if last_x != x or last_y != y:
-                    con.goto(x, y)
-                con.mark(*q.end)
-            elif isinstance(q, (QuadCut, CubicCut)):
-                last_x, last_y = con.get_last_xy()
-                x, y = q.start
-                if last_x != x or last_y != y:
-                    con.goto(x, y)
+                self._move(*q.end)
+            elif isinstance(q, QuadCut):
                 interp = self.service.interpolate
-                step_size = 1.0 / float(interp)
-                t = step_size
-                for p in range(int(interp)):
-                    # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
-                        return
+                g = Geomstr()
+                g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     while self.paused:
                         time.sleep(0.05)
-
-                    p = q.point(t)
-                    con.mark(*p)
-                    t += step_size
-            elif isinstance(q, PlotCut):
-                last_x, last_y = con.get_last_xy()
-                x, y = q.start
-                if last_x != x or last_y != y:
-                    con.goto(x, y)
-                for ox, oy, on, x, y in q.plot:
-                    # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
-                        return
+                    self._move(p.real, p.imag)
+            elif isinstance(q, CubicCut):
+                interp = self.service.interpolate
+                g = Geomstr()
+                g.cubic(
+                    complex(*q.start),
+                    complex(*q.c1()),
+                    complex(*q.c2()),
+                    complex(*q.end),
+                )
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     while self.paused:
                         time.sleep(0.05)
-
-                    # q.plot can have different on values, these are parsed
-                    if last_on is None or on != last_on:
-                        # No power change.
-                        last_on = on
-
-                        # We are using traditional power-scaling
-                        max_power = float(
-                            q.settings.get("power", self.service.default_power)
-                        )
-                        percent_power = max_power / 10.0
-                        con.max_power_1(percent_power)
-                        con.min_power_1(percent_power)
-                    con.mark(x, y)
-            elif isinstance(q, DwellCut):
-                start = q.start
-                con.goto(start[0], start[1])
-                dwell_time = q.dwell_time
-                # TODO: Unknown accuracy
-                con.laser_interval(dwell_time)
+                    self._move(p.real, p.imag)
             elif isinstance(q, WaitCut):
-                dwell_time = q.dwell_time
-                # TODO: Unknown accuracy
-                con.add_delay(dwell_time)
+                self.wait(q.dwell_time)
             elif isinstance(q, HomeCut):
-                con.home_xy()
+                self.home()
             elif isinstance(q, GotoCut):
-                con.goto(0, 0)
-            elif isinstance(q, OutputCut):
+                start = q.start
+                self._move(start[0], start[1])
+            elif isinstance(q, DwellCut):
+                self.dwell(q.dwell_time)
+            elif isinstance(q, (InputCut, OutputCut)):
+                # Ruida has no core GPIO functionality
                 pass
-            elif isinstance(q, InputCut):
-                pass
+            elif isinstance(q, PlotCut):
+                self.set("power", 1000)
+                for ox, oy, on, x, y in q.plot:
+                    while self.hold_work(0):
+                        time.sleep(0.05)
+                    # q.plot can have different on values, these are parsed
+                    if self.on_value != on:
+                        self.power_dirty = True
+                    self.on_value = on
+                    self._move(x, y)
             else:
-                # Rastercut
+                #  Rastercut
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
-                    # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
-                        return
-                    while self.paused:
+                    while self.hold_work(0):
                         time.sleep(0.05)
-
                     if on > 1:
                         # Special Command.
+                        if isinstance(on, float):
+                            on = int(on)
                         if on & PLOT_FINISH:  # Plot planner is ending.
                             break
                         elif on & PLOT_SETTING:  # Plot planner settings have changed.
-                            settings = self.plot_planner.settings
-                            con.set_settings(settings)
+                            p_set = Parameters(self.plot_planner.settings)
+                            if p_set.power != self.power:
+                                self.set("power", p_set.power)
+                            if (
+                                p_set.speed != self.speed
+                                or p_set.raster_step_x != self.raster_step_x
+                                or p_set.raster_step_y != self.raster_step_y
+                            ):
+                                self.set("speed", p_set.speed)
+                            self.settings.update(p_set.settings)
                         elif on & (
                             PLOT_RAPID | PLOT_JOG
                         ):  # Plot planner requests position change.
-                            con.goto(x, y)
+                            self._move(x, y)
                         continue
-                    if on == 0:
-                        con.goto(x, y)
-                    else:
-                        # on is in range 0 exclusive and 1 inclusive.
-                        if last_on is None or on != last_on:
-                            last_on = on
-                            # We are using traditional power-scaling
-                            settings = self.plot_planner.settings
-                            percent_power = float(
-                                settings.get("power", self.service.default_power)
-                            )
-                            con.max_power_1(percent_power)
-                            con.min_power_1(percent_power)
-                        con.mark(x, y)
-        con.rapid_mode()
+                    if self.on_value != on:
+                        self.power_dirty = True
+                    self.on_value = on
+                    self._move(x, y)
+        self.queue.clear()
+        # Ruida end data.
+        return False
 
     def move_abs(self, x, y):
         """
@@ -377,17 +286,7 @@ class RuidaDriver:
         @return:
         """
         old_current = self.service.current
-        self.native_x, self.native_y = self.service.view.position(x, y)
-        if self.native_x > 0xFFFF:
-            self.native_x = 0xFFFF
-        if self.native_x < 0:
-            self.native_x = 0
 
-        if self.native_y > 0xFFFF:
-            self.native_y = 0xFFFF
-        if self.native_y < 0:
-            self.native_y = 0
-        self.connection.set_xy(self.native_x, self.native_y)
         new_current = self.service.current
         self.service.signal(
             "driver;position",
@@ -403,20 +302,7 @@ class RuidaDriver:
         @return:
         """
         old_current = self.service.current
-        unit_dx, unit_dy = self.service.view.position(dx, dy, vector=True)
-        self.native_x += unit_dx
-        self.native_y += unit_dy
 
-        if self.native_x > 0xFFFF:
-            self.native_x = 0xFFFF
-        if self.native_x < 0:
-            self.native_x = 0
-
-        if self.native_y > 0xFFFF:
-            self.native_y = 0xFFFF
-        if self.native_y < 0:
-            self.native_y = 0
-        self.connection.set_xy(self.native_x, self.native_y)
         new_current = self.service.current
         self.service.signal(
             "driver;position",
@@ -442,14 +328,14 @@ class RuidaDriver:
         Expects to be in rapid jogging mode.
         @return:
         """
-        self.connection.rapid_mode()
+        self.encoder.rapid_mode()
 
     def program_mode(self):
         """
         Expects to run jobs at a speed in a programmed mode.
         @return:
         """
-        self.connection.program_mode()
+        self.encoder.program_mode()
 
     def raster_mode(self, *args):
         """
@@ -466,7 +352,7 @@ class RuidaDriver:
 
         @return:
         """
-        self.connection.wait_finished()
+        self.encoder.wait_finished()
 
     def function(self, function):
         """
@@ -526,7 +412,7 @@ class RuidaDriver:
             self.resume()
             return
         self.paused = True
-        self.connection.pause()
+        self.encoder.pause()
         self.service.signal("pause")
 
     def resume(self):
@@ -539,7 +425,7 @@ class RuidaDriver:
         @return:
         """
         self.paused = False
-        self.connection.resume()
+        self.encoder.resume()
         self.service.signal("pause")
 
     def reset(self):
@@ -548,7 +434,7 @@ class RuidaDriver:
 
         @return:
         """
-        self.connection.abort()
+        self.encoder.abort()
         self.paused = False
         self.service.signal("pause")
 
@@ -561,8 +447,34 @@ class RuidaDriver:
         @param time_in_ms:
         @return:
         """
-
-        self.connection.laser_interval(time_in_ms)
+        self.encoder.laser_interval(time_in_ms)
 
     def set_abort(self):
         self._aborting = True
+
+    ####################
+    # PROTECTED DRIVER CODE
+    ####################
+
+    def _move(self, x, y, absolute=False):
+        old_current = self.service.current
+        if self._absolute:
+            self.native_x = x
+            self.native_y = y
+        else:
+            self.native_x += x
+            self.native_y += y
+
+        if self.power_dirty:
+            if self.power is not None:
+                self.encoder.max_power_1(self.power * self.on_value)
+                self.encoder.min_power_1(self.power * self.on_value)
+            self.power_dirty = False
+        if self.speed_dirty:
+            self.encoder.speed_laser_1(self.speed)
+            self.speed_dirty = False
+        new_current = self.service.current
+        self.service.signal(
+            "driver;position",
+            (old_current[0], old_current[1], new_current[0], new_current[1]),
+        )
