@@ -1,15 +1,8 @@
 """
-Ruida Controller
+Ruida Encoder
 
-The balor controller takes low level ruida commands and converts them into hardware control signals for
-the hardware controller.
+The Ruida Encoder is responsible for turning function calls into binary ruida data.
 """
-
-import struct
-import time
-
-from meerk40t.ruida.mock_connection import MockConnection
-from meerk40t.ruida.rdjob import encode14, encode32
 
 INTERFACE_FRAME = b"\xA5\x53\x00"
 INTERFACE_PLUS_X_DOWN = b"\xA5\x50\x02"
@@ -204,6 +197,22 @@ def encode_index(index):
     assert 0 <= index <= 255
     return index
 
+def encode14(v):
+    v = int(v)
+    return bytes([
+        (v >> 7) & 0x7F,
+        v & 0x7F,
+    ])
+
+def encode32(v):
+    v = int(v)
+    return bytes([
+        (v >> 28) & 0x7F,
+        (v >> 21) & 0x7F,
+        (v >> 14) & 0x7F,
+        (v >> 7) & 0x7F,
+        v & 0x7F,
+    ])
 
 def encode_coord(coord):
     return encode32(coord)
@@ -233,148 +242,37 @@ def encode_speed(speed):
     return encode32(speed)
 
 
-class RuidaController:
+class RuidaEncoder:
     """
-    Ruida controller is tasked with sending queued data to the controller board and ensuring that the connection to the
-    controller board is established to perform these actions.
-
-    This also hides the underlying methods for ruida file types.
+    Convert function calls into Ruida Encode data.
     """
 
-    def __init__(
-        self,
-        service,
-        force_mock=False,
-    ):
-        self.service = service
+    def __init__(self,pipe,real):
         self.is_shutdown = False  # Shutdown finished.
-        self.force_mock = force_mock
 
-        name = self.service.label.replace(" ", "-")
-        name = name.replace("/", "-")
-        self.usb_log = service.channel(f"{name}/usb", buffer_size=500)
-        self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
-
-        self.connection = None
         self.mode = "init"
         self.paused = False
-        self._is_opening = False
-        self._abort_open = False
-        self._disable_connect = False
-        self._machine_index = 0
         self._last_x = 0
         self._last_y = 0
 
-    def __call__(self, *args, **kwargs):
-        pass
+        self.out_pipe = pipe
+        self.out_real = real
+
+    def __call__(self, e, real=False):
+        if real:
+            self.out_real(e)
+        else:
+            self.out_pipe(e)
 
     @property
     def state(self):
         return "idle", "idle"
-
-    def set_disable_connect(self, status):
-        self._disable_connect = status
 
     def added(self):
         pass
 
     def service_detach(self):
         pass
-
-    def shutdown(self, *args, **kwargs):
-        self.is_shutdown = True
-
-    @property
-    def connected(self):
-        if self.connection is None:
-            return False
-        return self.connection.is_open(self._machine_index)
-
-    @property
-    def is_connecting(self):
-        if self.connection is None:
-            return False
-        return self._is_opening
-
-    def abort_connect(self):
-        self._abort_open = True
-        self.usb_log("Connect Attempts Aborted")
-
-    def disconnect(self):
-        try:
-            self.connection.close(self._machine_index)
-        except (ConnectionError, ConnectionRefusedError, AttributeError):
-            pass
-        self.connection = None
-        # Reset error to allow another attempt
-        self.set_disable_connect(False)
-
-    def connect_if_needed(self):
-        if self._disable_connect:
-            # After many failures automatic connects are disabled. We require a manual connection.
-            self.abort_connect()
-            self.connection = None
-            raise ConnectionRefusedError(
-                "Ruida device was unreachable. Explicit connect required."
-            )
-        if self.connection is None:
-            self.connection = MockConnection(self.usb_log)
-            name = self.service.label.replace(" ", "-")
-            name = name.replace("/", "-")
-            self.connection.send = self.service.channel(f"{name}/send")
-            self.connection.recv = self.service.channel(f"{name}/recv")
-            # TODO: Needs usbconnection and udp connection.
-            # self.connection = USBConnection(self.usb_log)
-        self._is_opening = True
-        self._abort_open = False
-        count = 0
-        while not self.connection.is_open(self._machine_index):
-            try:
-                if self.connection.open(self._machine_index) < 0:
-                    raise ConnectionError
-                self.init_laser()
-            except (ConnectionError, ConnectionRefusedError):
-                time.sleep(0.3)
-                count += 1
-                # self.usb_log(f"Error-Routine pass #{count}")
-                if self.is_shutdown or self._abort_open:
-                    self._is_opening = False
-                    self._abort_open = False
-                    return
-                if self.connection.is_open(self._machine_index):
-                    self.connection.close(self._machine_index)
-                if count >= 10:
-                    # We have failed too many times.
-                    self._is_opening = False
-                    self.set_disable_connect(True)
-                    self.usb_log("Could not connect to the Ruida controller.")
-                    self.usb_log("Automatic connections disabled.")
-                    raise ConnectionRefusedError(
-                        "Could not connect to the Ruida controller."
-                    )
-                time.sleep(0.3)
-                continue
-        self._is_opening = False
-        self._abort_open = False
-
-    def send(self, data, read=True):
-        if self.is_shutdown:
-            return -1, -1, -1, -1
-        self.connect_if_needed()
-        try:
-            self.connection.write(self._machine_index, data)
-        except ConnectionError:
-            return -1, -1, -1, -1
-        if read:
-            try:
-                r = self.connection.read(self._machine_index)
-                return struct.unpack("<4H", r)
-            except ConnectionError:
-                return -1, -1, -1, -1
-
-    def status(self):
-        b0, b1, b2, b3 = self.get_version()
-        return b3
 
     #######################
     # MODE SHIFTS
@@ -447,9 +345,6 @@ class RuidaController:
 
     def resume(self):
         self.paused = False
-
-    def init_laser(self):
-        self.usb_log("Ready")
 
     #######################
     # Specific Commands
