@@ -16,6 +16,7 @@ from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
+from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.ruida.encoder import RuidaEncoder
@@ -81,11 +82,41 @@ class RuidaDriver(Parameters):
     # DRIVER COMMANDS
     #############
 
+    def _calculate_layer_bounds(self, layer):
+        max_x = float("-inf")
+        max_y = float("-inf")
+        min_x = float("inf")
+        min_y = float("inf")
+        for item in layer:
+            try:
+                ny = item.upper()
+                nx = item.left()
+
+                my = item.lower()
+                mx = item.right()
+            except AttributeError:
+                continue
+
+            if mx > max_x:
+                max_x = mx
+            if my > max_y:
+                max_y = my
+            if nx < min_x:
+                min_x = nx
+            if ny < min_y:
+                min_y = ny
+        return min_x, min_y, max_x, max_y
+
     def job_start(self, job):
         pass
 
     def job_finish(self, job):
-        self.rapid_mode()
+        # End layer and cut information.
+        self.encoder.array_end()
+        self.encoder.block_end()
+        # self.encoder.set_setting(0x320, 142, 142)
+        self.encoder.set_file_sum(self.encoder.calculate_filesum())
+        self.encoder.end_of_file()
 
     def hold_work(self, priority):
         """
@@ -178,7 +209,7 @@ class RuidaDriver(Parameters):
                 self.power_dirty = True
 
                 first = False
-                self._move(start_x, start_y)
+                self._move(start_x, start_y, cut=False)
             if self.on_value != 1.0:
                 self.power_dirty = True
             self.on_value = 1.0
@@ -197,7 +228,7 @@ class RuidaDriver(Parameters):
                 self.set("speed", qspeed)
             self.settings.update(q.settings)
             if isinstance(q, LineCut):
-                self._move(*q.end)
+                self._move(*q.end, cut=True)
             elif isinstance(q, QuadCut):
                 interp = self.service.interpolate
                 g = Geomstr()
@@ -205,7 +236,7 @@ class RuidaDriver(Parameters):
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     while self.paused:
                         time.sleep(0.05)
-                    self._move(p.real, p.imag)
+                    self._move(p.real, p.imag, cut=True)
             elif isinstance(q, CubicCut):
                 interp = self.service.interpolate
                 g = Geomstr()
@@ -218,14 +249,14 @@ class RuidaDriver(Parameters):
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     while self.paused:
                         time.sleep(0.05)
-                    self._move(p.real, p.imag)
+                    self._move(p.real, p.imag, cut=True)
             elif isinstance(q, WaitCut):
                 self.wait(q.dwell_time)
             elif isinstance(q, HomeCut):
                 self.home()
             elif isinstance(q, GotoCut):
                 start = q.start
-                self._move(start[0], start[1])
+                self._move(start[0], start[1], cut=True)
             elif isinstance(q, DwellCut):
                 self.dwell(q.dwell_time)
             elif isinstance(q, (InputCut, OutputCut)):
@@ -240,7 +271,7 @@ class RuidaDriver(Parameters):
                     if self.on_value != on:
                         self.power_dirty = True
                     self.on_value = on
-                    self._move(x, y)
+                    self._move(x, y, cut=True)
             else:
                 #  Rastercut
                 self.plot_planner.push(q)
@@ -267,12 +298,12 @@ class RuidaDriver(Parameters):
                         elif on & (
                             PLOT_RAPID | PLOT_JOG
                         ):  # Plot planner requests position change.
-                            self._move(x, y)
+                            self._move(x, y, cut=False)
                         continue
                     if self.on_value != on:
                         self.power_dirty = True
                     self.on_value = on
-                    self._move(x, y)
+                    self._move(x, y, cut=True)
         self.queue.clear()
         # Ruida end data.
         return False
