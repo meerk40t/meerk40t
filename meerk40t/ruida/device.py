@@ -191,8 +191,9 @@ class RuidaDevice(Service):
         _ = self.kernel.translation
 
         @self.console_argument("filename", type=str)
+        @self.console_option("magic", "m", type=int, default=0x88, help=_("magic number used to encode the file"))
         @self.console_command("save_job", help=_("save job export"), input_type="plan")
-        def ruida_save(channel, _, filename, data=None, **kwargs):
+        def ruida_save(channel, _, filename, magic, data=None, **kwargs):
             if filename is None:
                 raise CommandSyntaxError
             try:
@@ -202,6 +203,7 @@ class RuidaDevice(Service):
 
                     driver.encoder.out_pipe = f.write
                     driver.encoder.out_real = f.write
+                    driver.encoder.set_magic(magic)
 
                     driver.job_start(job)
                     job.execute()
