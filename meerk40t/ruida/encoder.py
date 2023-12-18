@@ -269,12 +269,17 @@ class RuidaEncoder:
 
         self.out_pipe = pipe
         self.out_real = real
+        self.file_data = bytearray()
 
     def __call__(self, e, real=False):
         if real:
             self.out_real(e)
         else:
+            self.file_data += e
             self.out_pipe(e)
+
+    def clear_file_data(self):
+        self.file_data = bytearray()
 
     @property
     def state(self):
