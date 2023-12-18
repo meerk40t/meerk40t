@@ -5,7 +5,8 @@ Ruida device interfacing. We do not send or interpret ruida code, but we can emu
 ruida files (*.rd) and turn them likewise into cutcode.
 """
 from meerk40t.core.view import View
-from meerk40t.kernel import Service, signal_listener
+from meerk40t.kernel import Service, signal_listener, CommandSyntaxError
+from ..core.laserjob import LaserJob
 
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_NM, Length
@@ -22,6 +23,7 @@ class RuidaDevice(Service):
         Service.__init__(self, kernel, path)
         Status.__init__(self)
         self.name = "RuidaDevice"
+        self.extension = "rd"
 
         if choices is not None:
             for c in choices:
@@ -136,6 +138,26 @@ class RuidaDevice(Service):
         self.viewbuffer = ""
 
         _ = self.kernel.translation
+
+        @self.console_argument("filename", type=str)
+        @self.console_command("save_job", help=_("save job export"), input_type="plan")
+        def ruida_save(channel, _, filename, data=None, **kwargs):
+            if filename is None:
+                raise CommandSyntaxError
+            try:
+                with open(filename, "wb") as f:
+                    driver = RuidaDriver(self)
+                    job = LaserJob(filename, list(data.plan), driver=driver)
+
+                    driver.encoder.out_pipe = f.write
+                    driver.encoder.out_real = f.write
+
+                    driver.job_start(job)
+                    job.execute()
+                    driver.job_finish(job)
+
+            except (PermissionError, OSError):
+                channel(_("Could not save: {filename}").format(filename=filename))
 
     def service_attach(self, *args, **kwargs):
         self.realize()
