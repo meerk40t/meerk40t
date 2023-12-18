@@ -252,7 +252,8 @@ def encode_power(power):
 
 
 def encode_speed(speed):
-    return encode32(speed)
+    # uM/sec
+    return encode32(speed * 1000)
 
 
 def encode_time(time):
