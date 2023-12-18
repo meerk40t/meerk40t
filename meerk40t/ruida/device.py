@@ -9,7 +9,7 @@ from meerk40t.kernel import Service, signal_listener, CommandSyntaxError
 from ..core.laserjob import LaserJob
 
 from ..core.spoolers import Spooler
-from ..core.units import UNITS_PER_NM, Length
+from ..core.units import Length, NM_PER_INCH
 from ..device.mixins import Status
 from .driver import RuidaDriver
 
@@ -182,7 +182,7 @@ class RuidaDevice(Service):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        self.view = View(self.bedwidth, self.bedheight, dpi=UNITS_PER_NM)
+        self.view = View(self.bedwidth, self.bedheight, dpi=NM_PER_INCH)
         self.realize()
         self.state = 0
 
@@ -245,8 +245,8 @@ class RuidaDevice(Service):
             home_dy = 0.5
         self.view.set_dims(self.bedwidth, self.bedheight)
         self.view.transform(
-            user_scale_x=self.user_scale_x,
-            user_scale_y=self.user_scale_y,
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
