@@ -27,8 +27,8 @@ class RuidaDriver(Parameters):
     def __init__(self, service, **kwargs):
         super().__init__(**kwargs)
         self.service = service
-        self.native_x = 0x8000
-        self.native_y = 0x8000
+        self.native_x = 0
+        self.native_y = 0
         self.name = str(self.service)
 
         self.connection = MockConnection(service.channel("ruida_driver"))
@@ -458,13 +458,6 @@ class RuidaDriver(Parameters):
 
     def _move(self, x, y, absolute=False):
         old_current = self.service.current
-        if self._absolute:
-            self.native_x = x
-            self.native_y = y
-        else:
-            self.native_x += x
-            self.native_y += y
-
         if self.power_dirty:
             if self.power is not None:
                 self.encoder.max_power_1(self.power * self.on_value)
@@ -473,6 +466,20 @@ class RuidaDriver(Parameters):
         if self.speed_dirty:
             self.encoder.speed_laser_1(self.speed)
             self.speed_dirty = False
+        if absolute:
+            self.encoder.move_abs_xy(x, y)
+        else:
+            dx = x - self.native_x
+            dy = y - self.native_y
+            if dx != 0 and dy != 0:
+                if dx == 0:
+                    self.encoder.move_rel_y(dy)
+                elif dy == 0:
+                    self.encoder.move_rel_x(dx)
+                else:
+                    self.encoder.move_rel_xy(dx, dy)
+        self.native_x = x
+        self.native_y = y
         new_current = self.service.current
         self.service.signal(
             "driver;position",
