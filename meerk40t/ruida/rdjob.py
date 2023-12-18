@@ -189,7 +189,12 @@ def magic_keys():
 
 class RDJob:
     def __init__(
-        self, driver=None, units_to_device_matrix=None, priority=0, channel=None
+        self,
+        driver=None,
+        units_to_device_matrix=None,
+        priority=0,
+        channel=None,
+        magic=0x11,
     ):
         self.units_to_device_matrix = units_to_device_matrix
         self._driver = driver
@@ -219,8 +224,8 @@ class RDJob:
         self.power2_min = None
 
         self.color = None
-        self.magic = 0x11  # 0x11 for the 634XG
-        # self.magic = 0x88
+        # 0x11 for the 634XG
+        self.magic = magic
         self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
 
         self.x = 0.0
@@ -251,6 +256,17 @@ class RDJob:
             else:
                 return "Disabled"
 
+    def set_magic(self, magic):
+        """
+        Sets the magic number for blob decoding.
+
+        @param magic: magic number to unswizzling.
+        @return:
+        """
+        if magic is not None and magic != self.magic:
+            self.magic = magic
+            self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
+
     def write_blob(self, data, magic=None):
         """
         Procedural commands sent in large data chunks. This can be through USB or UDP or a loaded file. These are
@@ -263,9 +279,7 @@ class RDJob:
         """
         if magic is None:
             magic = determine_magic_via_histogram(data)
-        if magic is not None and magic != self.magic:
-            self.magic = magic
-            self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
+        self.set_magic(magic)
         packet = self.unswizzle(data)
         with self.lock:
             self.buffer.extend(parse_commands(packet))
