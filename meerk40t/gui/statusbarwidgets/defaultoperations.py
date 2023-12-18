@@ -235,6 +235,9 @@ class DefaultOperationWidget(StatusBarWidget):
                 name = f"Default for {material[9:]}"
             else:
                 name = material.replace("_", " ")
+            if "thickness" in opinfo:
+                if opinfo["thickness"]:
+                    name += ", " + opinfo["thickness"]
             matcount += 1
 
             self.parent.Bind(
