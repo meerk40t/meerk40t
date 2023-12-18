@@ -9,6 +9,7 @@ from .exceptions import RuidaCommandError
 
 
 def signed35(v):
+    v = int(v)
     v &= 0x7FFFFFFFF
     if v > 0x3FFFFFFFF:
         return -0x800000000 + v
@@ -17,6 +18,7 @@ def signed35(v):
 
 
 def signed32(v):
+    v = int(v)
     v &= 0xFFFFFFFF
     if v > 0x7FFFFFFF:
         return -0x100000000 + v
@@ -25,6 +27,7 @@ def signed32(v):
 
 
 def signed14(v):
+    v = int(v)
     v &= 0x7FFF
     if v > 0x1FFF:
         return -0x4000 + v
@@ -41,6 +44,7 @@ def decodeu14(data):
 
 
 def encode14(v):
+    v = int(v)
     return [
         (v >> 7) & 0x7F,
         v & 0x7F,
@@ -66,6 +70,7 @@ def decodeu35(data):
 
 
 def encode32(v):
+    v = int(v)
     return [
         (v >> 28) & 0x7F,
         (v >> 21) & 0x7F,
