@@ -142,6 +142,9 @@ def unswizzle_byte(b, magic):
 
 
 def swizzles_lut(magic):
+    if magic == -1:
+        lut = [s for s in range(256)]
+        return lut, lut
     lut_swizzle = [swizzle_byte(s, magic) for s in range(256)]
     lut_unswizzle = [unswizzle_byte(s, magic) for s in range(256)]
     return lut_swizzle, lut_unswizzle
@@ -285,9 +288,9 @@ class RDJob:
         if magic is None:
             magic = determine_magic_via_histogram(data)
         self.set_magic(magic)
-        packet = self.unswizzle(data)
+        data = self.unswizzle(data)
         with self.lock:
-            self.buffer.extend(parse_commands(packet))
+            self.buffer.extend(parse_commands(data))
 
     def write_command(self, command):
         with self.lock:
