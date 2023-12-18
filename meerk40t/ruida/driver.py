@@ -460,8 +460,8 @@ class RuidaDriver(Parameters):
         old_current = self.service.current
         if self.power_dirty:
             if self.power is not None:
-                self.encoder.max_power_1(self.power * self.on_value)
-                self.encoder.min_power_1(self.power * self.on_value)
+                self.encoder.max_power_1(self.power / 10.0 * self.on_value)
+                self.encoder.min_power_1(self.power / 10.0 * self.on_value)
             self.power_dirty = False
         if self.speed_dirty:
             self.encoder.speed_laser_1(self.speed)
@@ -471,7 +471,7 @@ class RuidaDriver(Parameters):
         else:
             dx = x - self.native_x
             dy = y - self.native_y
-            if dx != 0 and dy != 0:
+            if dx != 0 or dy != 0:
                 if dx == 0:
                     self.encoder.move_rel_y(dy)
                 elif dy == 0:
