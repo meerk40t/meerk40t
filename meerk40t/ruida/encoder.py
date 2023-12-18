@@ -197,12 +197,14 @@ def encode_index(index):
     assert 0 <= index <= 255
     return index
 
+
 def encode14(v):
     v = int(v)
     return bytes([
         (v >> 7) & 0x7F,
         v & 0x7F,
     ])
+
 
 def encode32(v):
     v = int(v)
@@ -213,6 +215,7 @@ def encode32(v):
         (v >> 7) & 0x7F,
         v & 0x7F,
     ])
+
 
 def encode_coord(coord):
     return encode32(coord)
@@ -235,11 +238,20 @@ def encode_value(value):
 
 
 def encode_power(power):
-    return encode32(power)
+    # 16384 / 100%
+    return encode32(power * 163.84)
 
 
 def encode_speed(speed):
     return encode32(speed)
+
+
+def encode_time(time):
+    return encode32(time * 1000)
+
+
+def encode_frequency(frequency):
+    return encode32(frequency)
 
 
 class RuidaEncoder:
@@ -404,174 +416,174 @@ class RuidaEncoder:
 
     def imd_power_1(self, power):
         self(IMD_POWER_1)
-        self(encode14(power))
+        self(encode_power(power))
 
     def imd_power_2(self, power):
         self(IMD_POWER_2)
-        self(encode14(power))
+        self(encode_power(power))
 
     def imd_power_3(self, power):
         self(IMD_POWER_3)
-        self(encode14(power))
+        self(encode_power(power))
 
     def imd_power_4(self, power):
         self(IMD_POWER_4)
-        self(encode14(power))
+        self(encode_power(power))
 
     def end_power_1(self, power):
         self(END_POWER_1)
-        self(encode14(power))
+        self(encode_power(power))
 
     def end_power_2(self, power):
         self(END_POWER_2)
-        self(encode14(power))
+        self(encode_power(power))
 
     def end_power_3(self, power):
         self(END_POWER_3)
-        self(encode14(power))
+        self(encode_power(power))
 
     def end_power_4(self, power):
         self(END_POWER_4)
-        self(encode14(power))
+        self(encode_power(power))
 
     def min_power_1(self, power):
         self(MIN_POWER_1)
-        self(encode14(power))
+        self(encode_power(power))
 
     def max_power_1(self, power):
         self(MAX_POWER_1)
-        self(encode14(power))
+        self(encode_power(power))
 
     def min_power_2(self, power):
         self(MIN_POWER_2)
-        self(encode14(power))
+        self(encode_power(power))
 
     def max_power_2(self, power):
         self(MAX_POWER_2)
-        self(encode14(power))
+        self(encode_power(power))
 
     def min_power_3(self, power):
         self(MIN_POWER_3)
-        self(encode14(power))
+        self(encode_power(power))
 
     def max_power_3(self, power):
         self(MAX_POWER_3)
-        self(encode14(power))
+        self(encode_power(power))
 
     def min_power_4(self, power):
         self(MIN_POWER_4)
-        self(encode14(power))
+        self(encode_power(power))
 
     def max_power_4(self, power):
         self(MAX_POWER_4)
-        self(encode14(power))
+        self(encode_power(power))
 
     def laser_interval(self, time):
         self(LASER_INTERVAL)
-        self(encode32(time))
+        self(encode_time(time))
 
     def add_delay(self, time):
         self(ADD_DELAY)
-        self(encode32(time))
+        self(encode_time(time))
 
     def laser_on_delay(self, time):
         self(LASER_ON_DELAY)
-        self(encode32(time))
+        self(encode_time(time))
 
     def laser_off_delay(self, time):
         self(LASER_OFF_DELAY)
-        self(encode32(time))
+        self(encode_time(time))
 
     def laser_on_delay_2(self, time):
         self(LASER_ON_DELAY2)
-        self(encode32(time))
+        self(encode_time(time))
 
     def laser_off_delay_2(self, time):
         self(LASER_OFF_DELAY2)
-        self(encode32(time))
+        self(encode_time(time))
 
     def min_power_1_part(self, part, power):
         self(MIN_POWER_1_PART)
         self(encode_part(part))
-        self(encode14(power))
+        self(encode_power(power))
 
     def max_power_1_part(self, part, power):
         self(MAX_POWER_1_PART)
         self(encode_part(part))
-        self(encode14(power))
+        self(encode_power(power))
 
     def min_power_2_part(self, part, power):
         self(MIN_POWER_2_PART)
         self(encode_part(part))
-        self(encode14(power))
+        self(encode_power(power))
 
     def max_power_2_part(self, part, power):
         self(MAX_POWER_2_PART)
         self(encode_part(part))
-        self(encode14(power))
+        self(encode_power(power))
 
     def min_power_3_part(self, part, power):
         self(MIN_POWER_3_PART)
         self(encode_part(part))
-        self(encode14(power))
+        self(encode_power(power))
 
     def max_power_3_part(self, part, power):
         self(MAX_POWER_3_PART)
         self(encode_part(part))
-        self(encode14(power))
+        self(encode_power(power))
 
     def min_power_4_part(self, part, power):
         self(MIN_POWER_4_PART)
         self(encode_part(part))
-        self(encode14(power))
+        self(encode_power(power))
 
     def max_power_4_part(self, part, power):
         self(MAX_POWER_4_PART)
         self(encode_part(part))
-        self(encode14(power))
+        self(encode_power(power))
 
     def through_power_1(self, power):
         self(THROUGH_POWER_1)
-        self(encode14(power))
+        self(encode_power(power))
 
     def through_power_2(self, power):
         self(THROUGH_POWER_2)
-        self(encode14(power))
+        self(encode_power(power))
 
     def through_power_3(self, power):
         self(THROUGH_POWER_3)
-        self(encode14(power))
+        self(encode_power(power))
 
     def through_power_4(self, power):
         self(THROUGH_POWER_4)
-        self(encode14(power))
+        self(encode_power(power))
 
     def frequency_part(self, laser, part, frequency):
         self(FREQUENCY_PART)
         self(encode_index(laser))
         self(encode_part(part))
-        self(encode32(frequency))
+        self(encode_frequency(frequency))
 
     def speed_laser_1(self, speed):
         self(SPEED_LASER_1)
-        self(encode32(speed))
+        self(encode_speed(speed))
 
     def speed_axis(self, speed):
         self(SPEED_AXIS)
-        self(encode32(speed))
+        self(encode_speed(speed))
 
     def speed_laser_1_part(self, part, speed):
         self(SPEED_LASER_1_PART)
         self(encode_part(part))
-        self(encode32(speed))
+        self(encode_speed(speed))
 
     def force_eng_speed(self, speed):
         self(FORCE_ENG_SPEED)
-        self(encode32(speed))
+        self(encode_speed(speed))
 
     def speed_axis_move(self, speed):
         self(SPEED_AXIS_MOVE)
-        self(encode32(speed))
+        self(encode_speed(speed))
 
     def layer_end(self):
         self(LAYER_END)
