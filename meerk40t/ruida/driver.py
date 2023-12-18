@@ -82,6 +82,33 @@ class RuidaDriver(Parameters):
     # DRIVER COMMANDS
     #############
 
+
+    def _calculate_job_bounds(self, items):
+        max_x = float("-inf")
+        max_y = float("-inf")
+        min_x = float("inf")
+        min_y = float("inf")
+        for cluster in items:
+            for item in cluster:
+                try:
+                    ny = item.upper()
+                    nx = item.left()
+
+                    my = item.lower()
+                    mx = item.right()
+                except AttributeError:
+                    continue
+
+                if mx > max_x:
+                    max_x = mx
+                if my > max_y:
+                    max_y = my
+                if nx < min_x:
+                    min_x = nx
+                if ny < min_y:
+                    min_y = ny
+        return min_x, min_y, max_x, max_y
+
     def _calculate_layer_bounds(self, layer):
         max_x = float("-inf")
         max_y = float("-inf")
@@ -118,7 +145,10 @@ class RuidaDriver(Parameters):
         self.encoder.start_process()
         self.encoder.feed_repeat(0, 0)
         self.encoder.set_feed_auto_pause(0)
-        min_x, min_y, max_x, max_y = job.bounds()
+        b = job.bounds()
+        if b is None:
+            b = self._calculate_job_bounds(job.items)
+        min_x, min_y, max_x, max_y = b
         self.encoder.process_top_left(min_x, min_y)
         self.encoder.process_bottom_right(max_x, max_y)
         self.encoder.document_min_point(0, 0)  # Unknown
@@ -131,15 +161,16 @@ class RuidaDriver(Parameters):
             return
 
         # Sort out data by layers.
-        for item in job.items:
-            if not hasattr(item, "settings"):
-                continue
-            current_settings = item.settings
-            if last_settings is not current_settings:
-                if "part" not in current_settings:
-                    current_settings["part"] = len(layers)
-                    layers.append(list())
-            layers[current_settings["part"]].append(item)
+        for cluster in job.items:
+            for item in cluster:
+                if not hasattr(item, "settings"):
+                    continue
+                current_settings = item.settings
+                if last_settings is not current_settings:
+                    if "part" not in current_settings:
+                        current_settings["part"] = len(layers)
+                        layers.append(list())
+                layers[current_settings["part"]].append(item)
 
         part = 0
         # Write layer Information
@@ -159,10 +190,10 @@ class RuidaDriver(Parameters):
             color = current_settings.get("line_color", 0)
 
             self.encoder.speed_laser_1_part(part, speed)
-            self.encoder.min_power_1(part, power)
-            self.encoder.max_power_1(part, power)
-            self.encoder.min_power_2(part, power)
-            self.encoder.max_power_2(part, power)
+            self.encoder.min_power_1_part(part, power)
+            self.encoder.max_power_1_part(part, power)
+            self.encoder.min_power_2_part(part, power)
+            self.encoder.max_power_2_part(part, power)
             self.encoder.layer_color_part(part, color)
             self.encoder.work_mode_part(part, 0)
             self.encoder.part_min_point(part, layer_min_x, layer_min_y)
@@ -287,13 +318,34 @@ class RuidaDriver(Parameters):
 
         @return:
         """
-        # Intro Ruida write data.
+        # Write layer header information.
         first = True
+        last_settings = None
         for q in self.queue:
-            while self.hold_work(0):
-                if self.service.kernel.is_shutdown:
-                    return
-                time.sleep(0.05)
+            if hasattr(q, "settings"):
+                current_settings = q.settings
+                if current_settings is not last_settings:
+                    part = current_settings.get("part", 0)
+                    speed = current_settings.get("speed", 0)
+                    power = current_settings.get("power", 0)
+                    air = current_settings.get("air", True)
+                    self.encoder.layer_end()
+                    self.encoder.layer_number_part(part)
+                    self.encoder.laser_device_0()
+                    if air:
+                        self.encoder.air_assist_on()
+                    else:
+                        self.encoder.air_assist_off()
+                    self.encoder.speed_laser_1_part(part, speed)
+                    self.encoder.laser_on_delay(0)
+                    self.encoder.laser_off_delay(0)
+                    self.encoder.min_power_1(power)
+                    self.encoder.max_power_1(power)
+                    self.encoder.min_power_2(power)
+                    self.encoder.max_power_2(power)
+                    self.encoder.en_laser_tube_start()
+                    self.encoder.en_ex_io(0)
+
             x = self.native_x
             y = self.native_y
             start_x, start_y = q.start
