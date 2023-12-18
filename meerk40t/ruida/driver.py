@@ -332,7 +332,7 @@ class RuidaDriver(Parameters):
                 if current_settings is not last_settings:
                     part = current_settings.get("part", 0)
                     speed = current_settings.get("speed", 0)
-                    power = current_settings.get("power", 0)
+                    power = current_settings.get("power", 0) / 10.0
                     air = current_settings.get("air", True)
                     self.encoder.layer_end()
                     self.encoder.layer_number_part(part)
