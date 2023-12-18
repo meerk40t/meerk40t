@@ -82,31 +82,33 @@ class RuidaDriver(Parameters):
     # DRIVER COMMANDS
     #############
 
-
     def _calculate_job_bounds(self, items):
         max_x = float("-inf")
         max_y = float("-inf")
         min_x = float("inf")
         min_y = float("inf")
         for cluster in items:
-            for item in cluster:
-                try:
-                    ny = item.upper()
-                    nx = item.left()
+            try:
+                for item in cluster:
+                    try:
+                        ny = item.upper()
+                        nx = item.left()
 
-                    my = item.lower()
-                    mx = item.right()
-                except AttributeError:
-                    continue
+                        my = item.lower()
+                        mx = item.right()
+                    except AttributeError:
+                        continue
 
-                if mx > max_x:
-                    max_x = mx
-                if my > max_y:
-                    max_y = my
-                if nx < min_x:
-                    min_x = nx
-                if ny < min_y:
-                    min_y = ny
+                    if mx > max_x:
+                        max_x = mx
+                    if my > max_y:
+                        max_y = my
+                    if nx < min_x:
+                        min_x = nx
+                    if ny < min_y:
+                        min_y = ny
+            except TypeError:
+                pass
         return min_x, min_y, max_x, max_y
 
     def _calculate_layer_bounds(self, layer):
@@ -162,15 +164,18 @@ class RuidaDriver(Parameters):
 
         # Sort out data by layers.
         for cluster in job.items:
-            for item in cluster:
-                if not hasattr(item, "settings"):
-                    continue
-                current_settings = item.settings
-                if last_settings is not current_settings:
-                    if "part" not in current_settings:
-                        current_settings["part"] = len(layers)
-                        layers.append(list())
-                layers[current_settings["part"]].append(item)
+            try:
+                for item in cluster:
+                    if not hasattr(item, "settings"):
+                        continue
+                    current_settings = item.settings
+                    if last_settings is not current_settings:
+                        if "part" not in current_settings:
+                            current_settings["part"] = len(layers)
+                            layers.append(list())
+                    layers[current_settings["part"]].append(item)
+            except TypeError:
+                pass
 
         part = 0
         # Write layer Information
