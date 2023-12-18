@@ -456,7 +456,7 @@ class RuidaDriver(Parameters):
     # PROTECTED DRIVER CODE
     ####################
 
-    def _move(self, x, y, absolute=False):
+    def _move(self, x, y, absolute=False, cut=True):
         old_current = self.service.current
         if self.power_dirty:
             if self.power is not None:
@@ -467,17 +467,29 @@ class RuidaDriver(Parameters):
             self.encoder.speed_laser_1(self.speed)
             self.speed_dirty = False
         if absolute:
-            self.encoder.move_abs_xy(x, y)
+            if cut:
+                self.encoder.cut_abs_xy(x, y)
+            else:
+                self.encoder.move_abs_xy(x, y)
         else:
             dx = x - self.native_x
             dy = y - self.native_y
             if dx != 0 or dy != 0:
                 if dx == 0:
-                    self.encoder.move_rel_y(dy)
+                    if cut:
+                        self.encoder.cut_rel_y(dy)
+                    else:
+                        self.encoder.move_rel_y(dy)
                 elif dy == 0:
-                    self.encoder.move_rel_x(dx)
+                    if cut:
+                        self.encoder.cut_rel_x(dx)
+                    else:
+                        self.encoder.move_rel_x(dx)
                 else:
-                    self.encoder.move_rel_xy(dx, dy)
+                    if cut:
+                        self.encoder.cut_rel_xy(dx, dy)
+                    else:
+                        self.encoder.move_rel_xy(dx, dy)
         self.native_x = x
         self.native_y = y
         new_current = self.service.current
