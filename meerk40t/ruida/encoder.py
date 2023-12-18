@@ -248,7 +248,7 @@ def encode_value(value):
 
 def encode_power(power):
     # 16384 / 100%
-    return encode32(power * 163.84)
+    return encode14(power * 16383 / 100.0)
 
 
 def encode_speed(speed):
