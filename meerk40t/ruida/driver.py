@@ -341,7 +341,7 @@ class RuidaDriver(Parameters):
                         self.encoder.air_assist_on()
                     else:
                         self.encoder.air_assist_off()
-                    self.encoder.speed_laser_1_part(part, speed)
+                    self.encoder.speed_laser_1(speed)
                     self.encoder.laser_on_delay(0)
                     self.encoder.laser_off_delay(0)
                     self.encoder.min_power_1(power)
