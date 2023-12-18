@@ -3,6 +3,7 @@ Ruida Encoder
 
 The Ruida Encoder is responsible for turning function calls into binary ruida data.
 """
+from meerk40t.ruida.rdjob import swizzles_lut
 
 INTERFACE_FRAME = b"\xA5\x53\x00"
 INTERFACE_PLUS_X_DOWN = b"\xA5\x50\x02"
@@ -269,9 +270,7 @@ class RuidaEncoder:
     Convert function calls into Ruida Encode data.
     """
 
-    def __init__(self, pipe, real):
-        self.is_shutdown = False  # Shutdown finished.
-
+    def __init__(self, pipe, real, magic=-1):
         self.mode = "init"
         self.paused = False
         self._last_x = 0
@@ -280,13 +279,20 @@ class RuidaEncoder:
         self.out_pipe = pipe
         self.out_real = real
         self.file_data = bytearray()
+        self.magic = magic
+        self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
 
     def __call__(self, e, real=False):
+        e = bytes([self.lut_swizzle[b] for b in e])
         if real:
             self.out_real(e)
         else:
             self.file_data += e
             self.out_pipe(e)
+
+    def set_magic(self, magic):
+        self.magic = magic
+        self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
 
     def clear_file_data(self):
         self.file_data = bytearray()
@@ -879,7 +885,6 @@ class RuidaEncoder:
     def array_en_mirror_cut(self, index):
         self(ARRAY_EN_MIRROR_CUT)
         self(encode_index(index))
-
 
     def array_min_point(self, min_x, min_y):
         self(ARRAY_MIN_POINT)
