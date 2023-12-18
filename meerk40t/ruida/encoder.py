@@ -854,7 +854,7 @@ class RuidaEncoder:
         self(encode32(value1))
 
     def process_bottom_right(self, bottom, right):
-        self(PROCESS_TOP_LEFT)
+        self(PROCESS_BOTTOM_RIGHT)
         self(encode_coord(bottom))
         self(encode_coord(right))
 
