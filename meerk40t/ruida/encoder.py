@@ -145,6 +145,7 @@ GET_SETTING = b"\xDA\x00"  # memory(2)
 SET_SETTING = b"\xDA\x01"  # memory(2), v0(5), v1(5)
 DOCUMENT_FILE_UPLOAD = b"\xE5\x00"  # file_number(2), v0(5), v1(5)
 DOCUMENT_FILE_END = b"\xE5\x02"
+SET_FILE_SUM = b"\xE5\x05"
 SET_ABSOLUTE = b"\xE6\x01"
 BLOCK_END = b"\xE7\x00"
 SET_FILENAME = b"\xE7\x01"  # filename (null terminated).
@@ -155,13 +156,17 @@ FEED_REPEAT = b"\xE7\x06"  # v0(5), v1(5)
 PROCESS_BOTTOM_RIGHT = b"\xE7\x07"  # abscoord(5), abscoord(5)
 ARRAY_REPEAT = b"\xE7\x08"  # v0(2), v1(2), v2(2), v3(2), v4(2), v5(2), v6(2)
 FEED_LENGTH = b"\xE7\x09"  # value(5)
-UNKNOWN_1 = b"\xE7\x0B"  # value(5)
+FEED_INFO = b"\xE7\x0A"
+ARRAY_EN_MIRROR_CUT = b"\xE7\x0B"  # value(1)
 ARRAY_MIN_POINT = b"\xE7\x13"  # abscoord(5), abscoord(5)
 ARRAY_MAX_POINT = b"\xE7\x17"  # abscoord(5), abscoord(5)
 ARRAY_ADD = b"\xE7\x23"  # abscoord(5), abscoord(5)
 ARRAY_MIRROR = b"\xE7\x24"  # mirror(1)
 BLOCK_X_SIZE = b"\xE7\x35"  # abscoord(5), abscoord(5)
 BY_TEST = b"\xE7\x35"  # 0x11227766
+ARRAY_EVEN_DISTANCE = b"\xE7\x37"
+SET_FEED_AUTO_PAUSE = b"\xE7\x38"
+UNION_BLOCK_PROPERTY = b"\xE7\x3A"
 DOCUMENT_MIN_POINT = b"\xE7\x50"  # abscoord(5), abscoord(5)
 DOCUMENT_MAX_POINT = b"\xE7\x51"  # abscoord(5), abscoord(5)
 PART_MIN_POINT = b"\xE7\x52"  # part(1), abscoord(5), abscoord(5)
@@ -200,21 +205,25 @@ def encode_index(index):
 
 def encode14(v):
     v = int(v)
-    return bytes([
-        (v >> 7) & 0x7F,
-        v & 0x7F,
-    ])
+    return bytes(
+        [
+            (v >> 7) & 0x7F,
+            v & 0x7F,
+        ]
+    )
 
 
 def encode32(v):
     v = int(v)
-    return bytes([
-        (v >> 28) & 0x7F,
-        (v >> 21) & 0x7F,
-        (v >> 14) & 0x7F,
-        (v >> 7) & 0x7F,
-        v & 0x7F,
-    ])
+    return bytes(
+        [
+            (v >> 28) & 0x7F,
+            (v >> 21) & 0x7F,
+            (v >> 14) & 0x7F,
+            (v >> 7) & 0x7F,
+            v & 0x7F,
+        ]
+    )
 
 
 def encode_coord(coord):
@@ -259,7 +268,7 @@ class RuidaEncoder:
     Convert function calls into Ruida Encode data.
     """
 
-    def __init__(self,pipe,real):
+    def __init__(self, pipe, real):
         self.is_shutdown = False  # Shutdown finished.
 
         self.mode = "init"
@@ -280,6 +289,9 @@ class RuidaEncoder:
 
     def clear_file_data(self):
         self.file_data = bytearray()
+
+    def calculate_filesum(self):
+        return sum(self.file_data)
 
     @property
     def state(self):
@@ -802,6 +814,10 @@ class RuidaEncoder:
     def document_file_end(self):
         self(DOCUMENT_FILE_END)
 
+    def set_file_sum(self, value):
+        self(SET_FILE_SUM)
+        self(encode_value(value))
+
     def set_absolute(self):
         self(SET_ABSOLUTE)
 
@@ -856,6 +872,15 @@ class RuidaEncoder:
         self(FEED_LENGTH)
         self(encode32(length))
 
+    def feed_info(self, value):
+        self(FEED_INFO)
+        self(encode_value(value))
+
+    def array_en_mirror_cut(self, index):
+        self(ARRAY_EN_MIRROR_CUT)
+        self(encode_index(index))
+
+
     def array_min_point(self, min_x, min_y):
         self(ARRAY_MIN_POINT)
         self(encode_coord(min_x))
@@ -883,6 +908,17 @@ class RuidaEncoder:
     def by_test(self):
         self(BY_TEST)
         self(encode32(0x11227766))
+
+    def array_even_distance(self, value):
+        self(ARRAY_EVEN_DISTANCE)
+        self(encode_value(value))
+
+    def set_feed_auto_pause(self, index):
+        self(SET_FEED_AUTO_PAUSE)
+        self(encode_index(index))
+
+    def union_block_property(self):
+        self(UNION_BLOCK_PROPERTY)
 
     def document_min_point(self, min_x, min_y):
         self(DOCUMENT_MIN_POINT)
