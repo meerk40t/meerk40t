@@ -350,6 +350,7 @@ class RuidaDriver(Parameters):
                     self.encoder.max_power_2(power)
                     self.encoder.en_laser_tube_start()
                     self.encoder.en_ex_io(0)
+                    last_settings = current_settings
 
             x = self.native_x
             y = self.native_y
