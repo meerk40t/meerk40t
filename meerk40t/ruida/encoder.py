@@ -315,7 +315,7 @@ class RuidaEncoder:
 
     def stop_record(self):
         self.recording = False
-        self(self.file_data)
+        self(self.file_data, swizzle=False)
 
     def calculate_filesum(self):
         return sum(self.file_data)
