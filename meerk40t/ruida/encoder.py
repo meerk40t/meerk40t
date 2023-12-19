@@ -302,7 +302,8 @@ class RuidaEncoder:
                 self.out_pipe(e)
 
     def recv(self, reply):
-        print(reply)
+        e = bytes([self.lut_unswizzle[b] for b in reply])
+        print(e)
 
     def set_magic(self, magic):
         self.magic = magic
