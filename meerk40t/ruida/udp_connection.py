@@ -11,16 +11,15 @@ class UDPConnection:
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.settimeout(2)
-        self.update_address()
 
     def shutdown(self, *args, **kwargs):
         self.is_shutdown = True
 
     def update_address(self):
-        self.socket.bind((self.service.address, 50200))
+        pass
 
     def write(self, data):
-        self.socket.sendto(data)
+        self.socket.sendto(data, (self.service.address, 50200))
 
     def write_real(self, data):
-        self.socket.sendto(data)
+        self.socket.sendto(data, (self.service.address, 50200))
