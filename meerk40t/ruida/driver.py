@@ -424,7 +424,23 @@ class RuidaDriver(Parameters):
         @return:
         """
         old_current = self.service.current
+        self.encoder.speed_laser_1(100.0)
+        self.encoder.min_power_1(0)
+        self.encoder.min_power_2(0)
 
+        x, y = self.service.view.position(x, y)
+
+        dx = x - self.native_x
+        dy = y - self.native_y
+        if dx == 0:
+            if dy != 0:
+                self.encoder.rapid_move_y(dy)
+        elif dy == 0:
+            self.encoder.rapid_move_x(dx)
+        else:
+            self.encoder.rapid_move_xy(dx, dy)
+        self.native_x = x
+        self.native_y = y
         new_current = self.service.current
         self.service.signal(
             "driver;position",
@@ -440,7 +456,16 @@ class RuidaDriver(Parameters):
         @return:
         """
         old_current = self.service.current
-
+        dx, dy = self.service.view.position(dx, dy, vector=True)
+        if dx == 0:
+            if dy != 0:
+                self.encoder.rapid_move_y(dy)
+        elif dy == 0:
+            self.encoder.rapid_move_x(dx)
+        else:
+            self.encoder.rapid_move_xy(dx, dy)
+        self.native_x += dx
+        self.native_y += dy
         new_current = self.service.current
         self.service.signal(
             "driver;position",
