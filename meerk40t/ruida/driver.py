@@ -35,7 +35,10 @@ class RuidaDriver(Parameters):
         name = name.replace("/", "-")
         send = service.channel(f"{name}/send")
         self.encoder = RuidaEncoder(send, send)
+
         self.encoder.set_magic(service.magic)
+        self.recv = service.channel(f"{name}/recv", pure=True)
+        self.recv.watch(self.encoder.recv)
 
         self.on_value = 0
         self.power_dirty = True

@@ -301,6 +301,9 @@ class RuidaEncoder:
             else:
                 self.out_pipe(e)
 
+    def recv(self, reply):
+        print(reply)
+
     def set_magic(self, magic):
         self.magic = magic
         self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
