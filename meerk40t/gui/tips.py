@@ -548,6 +548,7 @@ class Tips(MWindow):
 
     def window_open(self):
         self.panel.pane_show()
+        self.CenterOnParent()
 
     def window_close(self):
         self.panel.pane_hide()
