@@ -1,3 +1,7 @@
+"""
+UDP Connection handles Ruida UDP data sending and receiving and the Ruida protocols therein.
+"""
+
 import socket
 import struct
 
@@ -9,31 +13,46 @@ class UDPConnection:
         name = name.replace("/", "-")
         self.recv = service.channel(f"{name}/recv", pure=True)
         self.is_shutdown = False
-
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.socket.settimeout(4)
-        self.socket.bind(("", 40200))
-        self.service.threaded(
-            self.run_udp_listener, thread_name=f"thread-{name}", daemon=True
-        )
         self.recv_address = None
+        self.socket = None
 
     def shutdown(self, *args, **kwargs):
         self.is_shutdown = True
 
+    def connect_if_necessary(self):
+        if not self.connected:
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.socket.settimeout(4)
+            self.socket.bind(("", 40200))
+
+            name = self.service.label.replace(" ", "-")
+            name = name.replace("/", "-")
+            self.service.threaded(
+                self._run_udp_listener, thread_name=f"thread-{name}", daemon=True
+            )
+
+    @property
+    def is_connecting(self):
+        return False
+
     @property
     def connected(self):
-        return not self.is_shutdown
+        return not self.is_shutdown and self.socket is not None
+
+    def abort_connect(self):
+        pass
 
     def write(self, data):
+        self.connect_if_necessary()
         data = struct.pack(">H", sum(data) & 0xFFFF) + data
         self.socket.sendto(data, (self.service.address, 50200))
 
     def write_real(self, data):
+        self.connect_if_necessary()
         data = struct.pack(">H", sum(data) & 0xFFFF) + data
         self.socket.sendto(data, (self.service.address, 50200))
 
-    def run_udp_listener(self):
+    def _run_udp_listener(self):
         try:
             while not self.is_shutdown:
                 try:

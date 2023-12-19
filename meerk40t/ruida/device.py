@@ -267,6 +267,24 @@ class RuidaDevice(Service):
             except (PermissionError, OSError):
                 channel(_("Could not save: {filename}").format(filename=filename))
 
+    @property
+    def connected(self):
+        if self.active_interface:
+            return self.active_interface.connected
+        return False
+
+    def is_connecting(self):
+        if self.active_interface:
+            return self.active_interface.is_connecting
+        return False
+
+    def abort_connect(self):
+        if self.active_interface:
+            self.active_interface.abort_connect()
+
+    def set_disable_connect(self, should_disable):
+        pass
+
     def service_attach(self, *args, **kwargs):
         self.realize()
         self(".interface_update\n")  # Need to establish initial interface pipes.
