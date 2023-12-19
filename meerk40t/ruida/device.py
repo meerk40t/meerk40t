@@ -262,18 +262,13 @@ class RuidaDevice(Service):
             except (PermissionError, OSError):
                 channel(_("Could not save: {filename}").format(filename=filename))
 
-        self("interface_update\n")  # Need to establish initial interface pipes.
-
     def service_attach(self, *args, **kwargs):
         self.realize()
+        self(".interface_update\n")  # Need to establish initial interface pipes.
 
     @signal_listener("magic")
     def update_magic(self, origin, *args):
         self.driver.encoder.set_magic(self.magic)
-
-    @signal_listener("address")
-    def update_address(self, origin, *args):
-        self.interface_udp.update_address()
 
     @signal_listener("scale_x")
     @signal_listener("scale_y")
