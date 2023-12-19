@@ -168,8 +168,10 @@ def determine_magic_via_histogram(data):
     @return:
     """
     histogram = [0] * 256
+    prev = -1
     for d in data:
-        histogram[d] += 1
+        histogram[d] += 5 if prev == d else 1
+        prev = d
     m = 0
     magic = None
     for i in range(len(histogram)):

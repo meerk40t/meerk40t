@@ -1,5 +1,5 @@
 """
-Moshi Device Plugin
+Ruida Device Plugin
 
 Registers the needed classes for ruida device (or would if the ruida device could be controlled).
 """
