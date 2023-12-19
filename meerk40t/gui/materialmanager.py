@@ -7,14 +7,11 @@ They are stored in the operations.cfg file in the meerk40t working directory
 import os
 
 import wx
-from wx import aui
 
 from ..kernel.kernel import get_safe_path
 from ..kernel.settings import Settings
 from ..core.node.node import Node
 from .icons import (
-    STD_ICON_SIZE,
-    get_default_icon_size,
     icon_library,
     icon_points,
     icons8_direction,
@@ -52,7 +49,25 @@ class MaterialPanel(ScrolledPanel):
         # Categorisation
         # 0 = Material (thickness), 1 = Lasertype (Material), 2 = Thickness (Material)
         self.categorisation = 0
-
+        # Intentionally not translated, to allow data exchange
+        materials = [
+            "Plywood",
+            "Solid wood",
+            "Acrylic",
+            "Foam",
+            "Leather",
+            "Cardboard",
+            "Cork",
+            "Textiles",
+            "Slate",
+            "Paper",
+            "Aluminium",
+            "Steel",
+            "Copper",
+            "Silver",
+            "Gold",
+            "Metal",
+        ]
         # Dictionary with key=Materialname, entry=Description (Name, Lasertype, entries)
         self.material_list = dict()
         self.operation_list = dict()
@@ -63,7 +78,9 @@ class MaterialPanel(ScrolledPanel):
         label_1 = wx.StaticText(self, wx.ID_ANY, _("Material"))
         filter_box.Add(label_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.txt_material = TextCtrl(self, wx.ID_ANY, "", limited=True)
+        self.txt_material = wx.ComboBox(self, wx.ID_ANY, choices=materials, style=wx.CB_SORT)
+        # self.txt_material = TextCtrl(self, wx.ID_ANY, "", limited=True)
+
         filter_box.Add(self.txt_material, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         label_2 = wx.StaticText(self, wx.ID_ANY, _("Thickness"))
@@ -182,7 +199,9 @@ class MaterialPanel(ScrolledPanel):
             )
         )
         box1.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.txt_entry_name = wx.TextCtrl(self, wx.ID_ANY, "")
+        # self.txt_entry_name = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.txt_entry_name = wx.ComboBox(self, wx.ID_ANY, choices=materials, style=wx.CB_SORT)
+
         box1.Add(self.txt_entry_name, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         label = wx.StaticText(self, wx.ID_ANY, _("Thickness"))
@@ -415,11 +434,13 @@ class MaterialPanel(ScrolledPanel):
         idx_secondary = 0
         newvalue = None
         selected = None
+        first_item = None
         selected_parent = None
         last_category_primary = None
         last_category_secondary = None
         tree_primary = tree_root
         tree_secondary = tree_root
+        visible_count = [0, 0] # All, subsections
         for entry in display:
             ltype = entry[3]
             if ltype is None:
@@ -449,6 +470,7 @@ class MaterialPanel(ScrolledPanel):
                     pass
                 else:
                     continue
+            visible_count[0] += 1
             if last_category_primary != this_category_primary:
                 # New item
                 last_category_secondary = ""
@@ -461,11 +483,14 @@ class MaterialPanel(ScrolledPanel):
                 # new subitem
                 tree_secondary = tree.AppendItem(tree_primary, this_category_secondary)
                 tree.SetItemData(tree_secondary, -1)
+                visible_count[1] += 1
             idx_secondary += 1
 
             description = f"#{idx_primary}.{idx_secondary} - {entry[1]}, {entry[4]} ({info}, {entry[2]} ops)"
             tree_id = tree.AppendItem(tree_secondary, description)
             tree.SetItemData(tree_id, listidx)
+            if first_item is None:
+                first_item = tree_id
             if key == setter:
                 newvalue = key
                 selected = tree_id
@@ -476,7 +501,20 @@ class MaterialPanel(ScrolledPanel):
 
         self.active_material = newvalue
         tree.Expand(tree_root)
-        if selected is not None:
+        # if visible_count[0] <= 10:
+        #     tree.ExpandAllChildren(tree_root)
+        if visible_count[1] == 1:
+            tree.ExpandAllChildren(tree_root)
+        elif visible_count[1] <= 10:
+            child, cookie = tree.GetFirstChild(tree_root)
+            while child.IsOk():
+                tree.Expand(child)
+                child, cookie = tree.GetNextChild(tree_root, cookie)
+
+        if selected is None:
+            if visible_count[0] == 1: # Just one, why don't we select it
+                self.tree_library.SelectItem(first_item)
+        else:
             tree.ExpandAllChildren(selected_parent)
             self.tree_library.SelectItem(selected)
 
@@ -1205,21 +1243,24 @@ class MaterialPanel(ScrolledPanel):
         menu.Destroy()
 
     def on_resize(self, event):
-        # Resize the columns in the listctrls
-        def size_em(control, small, big):
-            siz = control.Size
-            widths = 0
-            for col in small:
-                widths += control.GetColumnWidth(col)
-            remaining = int((siz[0] - widths) / len(big))
-            if remaining < 50:
-                remaining = 50
-            for col in big:
-                control.SetColumnWidth(col, remaining)
+        # Resize the columns in the listctrl
+        size = self.list_preview.GetSize()
+        if size[0] == 0 or size[1] == 0:
+            return
+        remaining = size[0]
+        # 0 "#"
+        # 1 "Operation"
+        # 2 "Id"
+        # 3 "Label"
+        # 4 "Power"
+        # 5 "Speed"
 
-        small = (0, 1, 2, 4, 5)
-        big = (3,)
-        size_em(self.list_preview, small, big)
+        self.list_preview.SetColumnWidth(0, int(0.10 * remaining))
+        self.list_preview.SetColumnWidth(1, int(0.15 * remaining))
+        self.list_preview.SetColumnWidth(2, int(0.15 * remaining))
+        self.list_preview.SetColumnWidth(3, int(0.40 * remaining))
+        self.list_preview.SetColumnWidth(4, int(0.10 * remaining))
+        self.list_preview.SetColumnWidth(5, int(0.10 * remaining))
 
     def set_parent(self, par_panel):
         self.parent_panel = par_panel
@@ -1449,7 +1490,7 @@ class AboutPanel(wx.Panel):
 
 class MaterialManager(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(500, 530, *args, **kwds)
+        super().__init__(860, 800, *args, **kwds)
 
         self.panel_library = MaterialPanel(self, wx.ID_ANY, context=self.context)
         # self.panel_import = ImportPanel(self, wx.ID_ANY, context=self.context)
