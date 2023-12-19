@@ -172,7 +172,7 @@ class RuidaDevice(Service):
         ]
         self.register_choices("ruida-magic", choices)
 
-        self.setting(bool, "interface", "usb")
+        self.setting(str, "interface", "usb")
         self.setting(int, "packet_count", 0)
         self.setting(str, "serial", None)
         self.setting(str, "address", "localhost")
@@ -261,6 +261,8 @@ class RuidaDevice(Service):
 
             except (PermissionError, OSError):
                 channel(_("Could not save: {filename}").format(filename=filename))
+
+        self("interface_update\n")  # Need to establish initial interface pipes.
 
     def service_attach(self, *args, **kwargs):
         self.realize()
