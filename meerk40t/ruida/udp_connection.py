@@ -1,8 +1,6 @@
 import socket
 import struct
 
-from meerk40t.ruida.rdjob import magic_keys
-
 
 class UDPConnection:
     def __init__(self, service):
@@ -18,13 +16,10 @@ class UDPConnection:
     def shutdown(self, *args, **kwargs):
         self.is_shutdown = True
 
-    def update_address(self):
-        pass
-
     def write(self, data):
-        data = struct.pack('>H', sum(data)) + data
+        data = struct.pack('>H', sum(data) & 0xFFFF) + data
         self.socket.sendto(data, (self.service.address, 50200))
 
     def write_real(self, data):
-        data = struct.pack('>H', sum(data)) + data
+        data = struct.pack('>H', sum(data) & 0xFFFF) + data
         self.socket.sendto(data, (self.service.address, 50200))
