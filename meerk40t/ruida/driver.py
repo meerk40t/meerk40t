@@ -20,7 +20,6 @@ from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.ruida.encoder import RuidaEncoder
-from meerk40t.ruida.mock_connection import MockConnection
 from meerk40t.tools.geomstr import Geomstr
 
 
@@ -32,10 +31,11 @@ class RuidaDriver(Parameters):
         self.native_y = 0
         self.name = str(self.service)
 
-        self.connection = MockConnection(service.channel("ruida_driver"))
-        self.encoder = RuidaEncoder(self.connection.write, self.connection.write_real)
-
-        self.service.add_service_delegate(self.connection)
+        name = self.service.label.replace(" ", "-")
+        name = name.replace("/", "-")
+        send = service.channel(f"{name}/send")
+        self.encoder = RuidaEncoder(send, send)
+        self.encoder.set_magic(service.magic)
 
         self.on_value = 0
         self.power_dirty = True
@@ -56,27 +56,6 @@ class RuidaDriver(Parameters):
 
     def __repr__(self):
         return f"RuidaDriver({self.name})"
-
-    @property
-    def connected(self):
-        if self.connection is None:
-            return False
-        return self.connection.connected
-
-    def service_attach(self):
-        self._shutdown = False
-
-    def service_detach(self):
-        self._shutdown = True
-
-    def connect(self):
-        self.connection.connect_if_needed()
-
-    def disconnect(self):
-        self.connection.disconnect()
-
-    def abort_retry(self):
-        self.connection.abort_connect()
 
     #############
     # DRIVER COMMANDS

@@ -6,6 +6,8 @@ ruida files (*.rd) and turn them likewise into cutcode.
 """
 from meerk40t.core.view import View
 from meerk40t.kernel import Service, signal_listener, CommandSyntaxError
+from .mock_connection import MockConnection
+from .udp_connection import UDPConnection
 from ..core.laserjob import LaserJob
 
 from ..core.spoolers import Spooler
@@ -158,6 +160,23 @@ class RuidaDevice(Service):
         ]
         self.register_choices("ruida-global", choices)
 
+        choices = [
+            {
+                "attr": "magic",
+                "object": self,
+                "default": 0x88,
+                "type": int,
+                "label": _("Swizzle Magic Number"),
+                "tip": _("Swizzle value to communicate with laser."),
+            },
+        ]
+        self.register_choices("ruida-magic", choices)
+
+        self.setting(bool, "interface", "usb")
+        self.setting(int, "packet_count", 0)
+        self.setting(str, "serial", None)
+        self.setting(str, "address", "localhost")
+
         self.driver = RuidaDriver(self)
 
         self.spooler = Spooler(self, driver=self.driver)
@@ -190,8 +209,39 @@ class RuidaDevice(Service):
 
         _ = self.kernel.translation
 
+        self.interface_mock = MockConnection(self)
+        self.interface_udp = UDPConnection(self)
+        self.interface_tcp = MockConnection(self)
+        self.interface_usb = MockConnection(self)
+
+        @self.console_command(
+            "interface_update",
+            hidden=True,
+            help=_("Updates interface state for the device."),
+        )
+        def interface_update(**kwargs):
+            if self.interface == "mock":
+                self.driver.encoder.out_pipe = self.interface_mock.write
+                self.driver.encoder.out_real = self.interface_mock.write_real
+            elif self.interface == "udp":
+                self.driver.encoder.out_pipe = self.interface_udp.write
+                self.driver.encoder.out_real = self.interface_udp.write_real
+            elif self.interface == "tcp":
+                # Special tcp out to lightburn bridge et al.
+                self.driver.encoder.out_pipe = self.interface_tcp.write
+                self.driver.encoder.out_real = self.interface_tcp.write_real
+            elif self.interface == "usb":
+                self.driver.encoder.out_pipe = self.interface_usb.write
+                self.driver.encoder.out_real = self.interface_usb.write_real
+
         @self.console_argument("filename", type=str)
-        @self.console_option("magic", "m", type=int, default=0x88, help=_("magic number used to encode the file"))
+        @self.console_option(
+            "magic",
+            "m",
+            type=int,
+            default=0x88,
+            help=_("magic number used to encode the file"),
+        )
         @self.console_command("save_job", help=_("save job export"), input_type="plan")
         def ruida_save(channel, _, filename, magic, data=None, **kwargs):
             if filename is None:
@@ -214,6 +264,10 @@ class RuidaDevice(Service):
 
     def service_attach(self, *args, **kwargs):
         self.realize()
+
+    @signal_listener("magic")
+    def update_magic(self, origin, *args):
+        self.driver.encoder.set_magic(self.magic)
 
     @signal_listener("scale_x")
     @signal_listener("scale_y")

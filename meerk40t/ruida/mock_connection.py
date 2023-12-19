@@ -10,10 +10,13 @@ import struct
 
 
 class MockConnection:
-    def __init__(self, channel):
-        self.channel = channel
-        self.send = None
-        self.recv = None
+    def __init__(self, service):
+        self.service = service
+        name = self.service.label.replace(" ", "-")
+        name = name.replace("/", "-")
+        self.channel = service.channel(f"{name}/mock")
+        self.send = service.channel(f"{name}/send")
+        self.recv = service.channel(f"{name}/recv")
         self.devices = {}
         self.interface = {}
         self.backend_error_code = None
@@ -47,7 +50,9 @@ class MockConnection:
             del self.devices[index]
 
     def write_real(self, data):
-        pass
+        if self.send:
+            self.send(data)
 
     def write(self, data):
-        pass
+        if self.send:
+            self.send(data)
