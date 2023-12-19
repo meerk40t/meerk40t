@@ -117,6 +117,8 @@ class RuidaDriver(Parameters):
 
     def job_start(self, job):
         self.encoder.clear_file_data()
+        if not job.items:
+            return
         # Optional: Set Tick count.
         self.encoder.ref_point_2()  # abs_pos
         self.encoder.set_absolute()

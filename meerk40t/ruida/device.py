@@ -269,6 +269,10 @@ class RuidaDevice(Service):
     def update_magic(self, origin, *args):
         self.driver.encoder.set_magic(self.magic)
 
+    @signal_listener("address")
+    def update_address(self, origin, *args):
+        self.interface_udp.update_address()
+
     @signal_listener("scale_x")
     @signal_listener("scale_y")
     @signal_listener("bedwidth")
