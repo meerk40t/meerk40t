@@ -26,6 +26,10 @@ class MockConnection:
     def connected(self):
         return self.is_open()
 
+    @property
+    def is_connecting(self):
+        return False
+
     def is_open(self, index=0):
         try:
             dev = self.devices[index]
