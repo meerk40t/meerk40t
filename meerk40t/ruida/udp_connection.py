@@ -1,4 +1,7 @@
 import socket
+import struct
+
+from meerk40t.ruida.rdjob import magic_keys
 
 
 class UDPConnection:
@@ -19,7 +22,9 @@ class UDPConnection:
         pass
 
     def write(self, data):
+        data = struct.pack('>H', sum(data)) + data
         self.socket.sendto(data, (self.service.address, 50200))
 
     def write_real(self, data):
+        data = struct.pack('>H', sum(data)) + data
         self.socket.sendto(data, (self.service.address, 50200))
