@@ -620,7 +620,51 @@ class RuidaDriver(Parameters):
     # PROTECTED DRIVER CODE
     ####################
 
-    def _move(self, x, y, absolute=False, cut=True):
+    def _encode_move(self, x, y):
+        dx = x - self.native_x
+        dy = y - self.native_y
+        if dx == 0 and dy == 0:
+            # We are not moving.
+            return
+
+        if abs(dx) > 8192 or abs(dy) > 8192:
+            # Exceeds encoding limit, use abs.
+            self.encoder.move_abs_xy(x, y)
+            return
+
+        if dx == 0:
+            # Y-relative.
+            self.encoder.move_rel_y(dy)
+            return
+        if dy == 0:
+            # X-relative.
+            self.encoder.move_rel_x(dx)
+            return
+        self.encoder.move_rel_xy(dx, dy)
+
+    def _encode_cut(self, x, y):
+        dx = x - self.native_x
+        dy = y - self.native_y
+        if dx == 0 and dy == 0:
+            # We are not moving.
+            return
+
+        if abs(dx) > 8192 or abs(dy) > 8192:
+            # Exceeds encoding limit, use abs.
+            self.encoder.cut_abs_xy(x, y)
+            return
+
+        if dx == 0:
+            # Y-relative.
+            self.encoder.cut_rel_y(dy)
+            return
+        if dy == 0:
+            # X-relative.
+            self.encoder.cut_rel_x(dx)
+            return
+        self.encoder.cut_rel_xy(dx, dy)
+
+    def _move(self, x, y, cut=True):
         old_current = self.service.current
         if self.power_dirty:
             if self.power is not None:
@@ -630,30 +674,10 @@ class RuidaDriver(Parameters):
         if self.speed_dirty:
             self.encoder.speed_laser_1(self.speed)
             self.speed_dirty = False
-        if absolute:
-            if cut:
-                self.encoder.cut_abs_xy(x, y)
-            else:
-                self.encoder.move_abs_xy(x, y)
+        if cut:
+            self._encode_cut(x, y)
         else:
-            dx = x - self.native_x
-            dy = y - self.native_y
-            if dx != 0 or dy != 0:
-                if dx == 0:
-                    if cut:
-                        self.encoder.cut_rel_y(dy)
-                    else:
-                        self.encoder.move_rel_y(dy)
-                elif dy == 0:
-                    if cut:
-                        self.encoder.cut_rel_x(dx)
-                    else:
-                        self.encoder.move_rel_x(dx)
-                else:
-                    if cut:
-                        self.encoder.cut_rel_xy(dx, dy)
-                    else:
-                        self.encoder.move_rel_xy(dx, dy)
+            self._encode_move(x, y)
         self.native_x = x
         self.native_y = y
         new_current = self.service.current
