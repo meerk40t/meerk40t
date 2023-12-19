@@ -12,6 +12,9 @@ class UDPConnection:
         name = self.service.label.replace(" ", "-")
         name = name.replace("/", "-")
         self.recv = service.channel(f"{name}/recv", pure=True)
+        self.send = service.channel(f"{name}/send", pure=True)
+        self.send_realtime = service.channel(f"{name}/real", pure=True)
+        self.events = service.channel(f"{name}/events", pure=True)
         self.is_shutdown = False
         self.recv_address = None
         self.socket = None
@@ -19,7 +22,7 @@ class UDPConnection:
     def shutdown(self, *args, **kwargs):
         self.is_shutdown = True
 
-    def connect_if_necessary(self):
+    def open(self):
         if not self.connected:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.socket.settimeout(4)
@@ -30,6 +33,15 @@ class UDPConnection:
             self.service.threaded(
                 self._run_udp_listener, thread_name=f"thread-{name}", daemon=True
             )
+            self.service.signal("pipe;usb_status", "connected")
+            self.events("Connected")
+
+    def close(self):
+        if self.connected:
+            self.socket.close()
+            self.socket = None
+            self.service.signal("pipe;usb_status", "disconnected")
+            self.events("Disconnected")
 
     @property
     def is_connecting(self):
@@ -43,18 +55,20 @@ class UDPConnection:
         pass
 
     def write(self, data):
-        self.connect_if_necessary()
+        self.open()
         data = struct.pack(">H", sum(data) & 0xFFFF) + data
         self.socket.sendto(data, (self.service.address, 50200))
+        self.send(data)
 
     def write_real(self, data):
-        self.connect_if_necessary()
+        self.open()
         data = struct.pack(">H", sum(data) & 0xFFFF) + data
         self.socket.sendto(data, (self.service.address, 50200))
+        self.send_realtime(data)
 
     def _run_udp_listener(self):
         try:
-            while not self.is_shutdown:
+            while self.connected:
                 try:
                     message, address = self.socket.recvfrom(1024)
                 except (socket.timeout, AttributeError):

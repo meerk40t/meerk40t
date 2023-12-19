@@ -115,7 +115,10 @@ class RuidaControllerPanel(wx.ScrolledWindow):
         if status is None:
             status = "Unknown"
         connected = self.service.connected
-        self.button_device_connect.SetLabel(status)
+        if status == "connected":
+            self.button_device_connect.SetLabel(_("Connected"))
+        if status == "disconnected":
+            self.button_device_connect.SetLabel(_("Disconnected"))
         if connected:
             self.set_button_connected()
         else:
@@ -129,16 +132,20 @@ class RuidaControllerPanel(wx.ScrolledWindow):
             return
 
         if connected:
-            self.context("usb_disconnect\n")
+            self.context("ruida_disconnect\n")
             self.service.set_disable_connect(False)
         else:
             self.service.set_disable_connect(False)
-            self.context("usb_connect\n")
+            self.context("ruida_connect\n")
 
     def pane_show(self):
         name = self.service.label.replace(" ", "-")
         name = name.replace("/", "-")
         self.context.channel(f"{name}/recv", pure=True).watch(self.update_text)
+        self.context.channel(f"{name}/send", pure=True).watch(self.update_text)
+        self.context.channel(f"{name}/real", pure=True).watch(self.update_text)
+        self.context.channel(f"{name}/events").watch(self.update_text)
+
         connected = self.service.connected
         if connected:
             self.set_button_connected()
@@ -149,6 +156,9 @@ class RuidaControllerPanel(wx.ScrolledWindow):
         name = self.service.label.replace(" ", "-")
         name = name.replace("/", "-")
         self.context.channel(f"{name}/recv").unwatch(self.update_text)
+        self.context.channel(f"{name}/send").unwatch(self.update_text)
+        self.context.channel(f"{name}/real").unwatch(self.update_text)
+        self.context.channel(f"{name}/events").unwatch(self.update_text)
 
 
 class RuidaController(MWindow):

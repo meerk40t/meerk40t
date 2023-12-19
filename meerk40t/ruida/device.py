@@ -239,6 +239,24 @@ class RuidaDevice(Service):
                 self.driver.encoder.out_pipe = self.interface_usb.write
                 self.driver.encoder.out_real = self.interface_usb.write_real
 
+        @self.console_command(
+            "ruida_connect",
+            hidden=True,
+            help=_("Connects to the device."),
+        )
+        def interface_update(**kwargs):
+            if not self.connected:
+                self.active_interface.open()
+
+        @self.console_command(
+            "ruida_disconnect",
+            hidden=True,
+            help=_("Disconnects from the device."),
+        )
+        def interface_update(**kwargs):
+            if self.connected:
+                self.active_interface.close()
+
         @self.console_argument("filename", type=str)
         @self.console_option(
             "magic",
@@ -273,6 +291,7 @@ class RuidaDevice(Service):
             return self.active_interface.connected
         return False
 
+    @property
     def is_connecting(self):
         if self.active_interface:
             return self.active_interface.is_connecting
