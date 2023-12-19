@@ -116,7 +116,7 @@ class RuidaDriver(Parameters):
         return min_x, min_y, max_x, max_y
 
     def job_start(self, job):
-        self.encoder.clear_file_data()
+        self.encoder.start_record()
         if not job.items:
             return
         # Optional: Set Tick count.
@@ -227,6 +227,7 @@ class RuidaDriver(Parameters):
         # self.encoder.set_setting(0x320, 142, 142)
         self.encoder.set_file_sum(self.encoder.calculate_filesum())
         self.encoder.end_of_file()
+        self.encoder.stop_record()
 
     def hold_work(self, priority):
         """

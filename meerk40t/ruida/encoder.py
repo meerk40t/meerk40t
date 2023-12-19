@@ -281,21 +281,29 @@ class RuidaEncoder:
         self.file_data = bytearray()
         self.magic = magic
         self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
+        self.recording = False
 
     def __call__(self, e, real=False):
         e = bytes([self.lut_swizzle[b] for b in e])
         if real:
             self.out_real(e)
         else:
-            self.file_data += e
-            self.out_pipe(e)
+            if self.recording:
+                self.file_data += e
+            else:
+                self.out_pipe(e)
 
     def set_magic(self, magic):
         self.magic = magic
         self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
 
-    def clear_file_data(self):
+    def start_record(self):
+        self.recording = True
         self.file_data = bytearray()
+
+    def stop_record(self):
+        self.recording = False
+        self(self.file_data)
 
     def calculate_filesum(self):
         return sum(self.file_data)
