@@ -16,12 +16,15 @@ class MockConnection:
         name = name.replace("/", "-")
         self.channel = service.channel(f"{name}/mock")
         self.send = service.channel(f"{name}/send")
-        self.recv = service.channel(f"{name}/recv")
+        self.recv = service.channel(f"{name}/recv", pure=True)
         self.devices = {}
         self.interface = {}
         self.backend_error_code = None
         self.timeout = 500
-        self.connected = False
+
+    @property
+    def connected(self):
+        return self.is_open()
 
     def is_open(self, index=0):
         try:

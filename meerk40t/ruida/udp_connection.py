@@ -21,6 +21,10 @@ class UDPConnection:
     def shutdown(self, *args, **kwargs):
         self.is_shutdown = True
 
+    @property
+    def connected(self):
+        return not self.is_shutdown
+
     def write(self, data):
         data = struct.pack(">H", sum(data) & 0xFFFF) + data
         self.socket.sendto(data, (self.service.address, 50200))

@@ -60,6 +60,12 @@ class RuidaDriver(Parameters):
     def __repr__(self):
         return f"RuidaDriver({self.name})"
 
+    @property
+    def connected(self):
+        if self.service.active_interface:
+            return self.service.active_interface.connected
+        return False
+
     #############
     # DRIVER COMMANDS
     #############

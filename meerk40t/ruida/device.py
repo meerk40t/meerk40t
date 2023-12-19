@@ -213,6 +213,7 @@ class RuidaDevice(Service):
         self.interface_udp = UDPConnection(self)
         self.interface_tcp = MockConnection(self)
         self.interface_usb = MockConnection(self)
+        self.active_interface = None
 
         @self.console_command(
             "interface_update",
@@ -221,16 +222,20 @@ class RuidaDevice(Service):
         )
         def interface_update(**kwargs):
             if self.interface == "mock":
+                self.active_interface = self.interface_mock
                 self.driver.encoder.out_pipe = self.interface_mock.write
                 self.driver.encoder.out_real = self.interface_mock.write_real
             elif self.interface == "udp":
+                self.active_interface = self.interface_udp
                 self.driver.encoder.out_pipe = self.interface_udp.write
                 self.driver.encoder.out_real = self.interface_udp.write_real
             elif self.interface == "tcp":
                 # Special tcp out to lightburn bridge et al.
+                self.active_interface = self.interface_tcp
                 self.driver.encoder.out_pipe = self.interface_tcp.write
                 self.driver.encoder.out_real = self.interface_tcp.write_real
             elif self.interface == "usb":
+                self.active_interface = self.interface_usb
                 self.driver.encoder.out_pipe = self.interface_usb.write
                 self.driver.encoder.out_real = self.interface_usb.write_real
 
