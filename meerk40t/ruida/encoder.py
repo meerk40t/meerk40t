@@ -233,6 +233,10 @@ def encode_coord(coord):
     return encode32(coord)
 
 
+def encode_relcoord(coord):
+    return encode14(coord)
+
+
 def encode_color(color):
     return encode32(int(color))
 
@@ -425,16 +429,16 @@ class RuidaEncoder:
 
     def move_rel_xy(self, dx, dy):
         self(MOVE_REL_XY)
-        self(encode14(dx))
-        self(encode14(dy))
+        self(encode_relcoord(dx))
+        self(encode_relcoord(dy))
 
     def move_rel_x(self, dx):
         self(MOVE_REL_X)
-        self(encode14(dx))
+        self(encode_relcoord(dx))
 
     def move_rel_y(self, dy):
         self(MOVE_REL_Y)
-        self(encode14(dy))
+        self(encode_relcoord(dy))
 
     def cut_abs_xy(self, x, y):
         self(CUT_ABS_XY)
@@ -443,16 +447,16 @@ class RuidaEncoder:
 
     def cut_rel_xy(self, dx, dy):
         self(CUT_REL_XY)
-        self(encode14(dx))
-        self(encode14(dy))
+        self(encode_relcoord(dx))
+        self(encode_relcoord(dy))
 
     def cut_rel_x(self, dx):
         self(CUT_REL_X)
-        self(encode14(dx))
+        self(encode_relcoord(dx))
 
     def cut_rel_y(self, dy):
         self(CUT_REL_Y)
-        self(encode14(dy))
+        self(encode_relcoord(dy))
 
     def imd_power_1(self, power):
         self(IMD_POWER_1)
