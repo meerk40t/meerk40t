@@ -60,39 +60,9 @@ class RuidaDriver(Parameters):
     def __repr__(self):
         return f"RuidaDriver({self.name})"
 
-
     #############
     # DRIVER COMMANDS
     #############
-
-    def _calculate_job_bounds(self, items):
-        max_x = float("-inf")
-        max_y = float("-inf")
-        min_x = float("inf")
-        min_y = float("inf")
-        for cluster in items:
-            try:
-                for item in cluster:
-                    try:
-                        ny = item.upper()
-                        nx = item.left()
-
-                        my = item.lower()
-                        mx = item.right()
-                    except AttributeError:
-                        continue
-
-                    if mx > max_x:
-                        max_x = mx
-                    if my > max_y:
-                        max_y = my
-                    if nx < min_x:
-                        min_x = nx
-                    if ny < min_y:
-                        min_y = ny
-            except TypeError:
-                pass
-        return min_x, min_y, max_x, max_y
 
     def _calculate_layer_bounds(self, layer):
         max_x = float("-inf")
@@ -120,118 +90,10 @@ class RuidaDriver(Parameters):
         return min_x, min_y, max_x, max_y
 
     def job_start(self, job):
-        self.encoder.start_record()
-        if not job.items:
-            return
-        # Optional: Set Tick count.
-        self.encoder.ref_point_2()  # abs_pos
-        self.encoder.set_absolute()
-        self.encoder.ref_point_set()
-        self.encoder.enable_block_cutting(0)
-        # Optional: Set File Property 1
-        self.encoder.start_process()
-        self.encoder.feed_repeat(0, 0)
-        self.encoder.set_feed_auto_pause(0)
-        b = job.bounds()
-        if b is None:
-            b = self._calculate_job_bounds(job.items)
-        min_x, min_y, max_x, max_y = b
-        self.encoder.process_top_left(min_x, min_y)
-        self.encoder.process_bottom_right(max_x, max_y)
-        self.encoder.document_min_point(0, 0)  # Unknown
-        self.encoder.document_max_point(max_x, max_y)
-        self.encoder.process_repeat(1, 1, 0, 0, 0, 0, 0)
-        self.encoder.array_direction(0)
-        last_settings = None
-        layers = list()
-        if not isinstance(job, LaserJob):
-            return
-
-        # Sort out data by layers.
-        for cluster in job.items:
-            try:
-                for item in cluster:
-                    if not hasattr(item, "settings"):
-                        continue
-                    current_settings = item.settings
-                    if last_settings is not current_settings:
-                        if "part" not in current_settings:
-                            current_settings["part"] = len(layers)
-                            layers.append(list())
-                    layers[current_settings["part"]].append(item)
-            except TypeError:
-                pass
-
-        part = 0
-        # Write layer Information
-        for layer in layers:
-            (
-                layer_min_x,
-                layer_min_y,
-                layer_max_x,
-                layer_max_y,
-            ) = self._calculate_layer_bounds(layer)
-            current_settings = layer[0].settings
-
-            # Current Settings is New.
-            part = current_settings.get("part", 0)
-            speed = current_settings.get("speed", 10)
-            power = current_settings.get("power", 1000) / 10.0
-            color = current_settings.get("line_color", 0)
-
-            self.encoder.speed_laser_1_part(part, speed)
-            self.encoder.min_power_1_part(part, power)
-            self.encoder.max_power_1_part(part, power)
-            self.encoder.min_power_2_part(part, power)
-            self.encoder.max_power_2_part(part, power)
-            self.encoder.layer_color_part(part, color)
-            self.encoder.work_mode_part(part, 0)
-            self.encoder.part_min_point(part, layer_min_x, layer_min_y)
-            self.encoder.part_max_point(part, layer_max_x, layer_max_y)
-            self.encoder.part_min_point_ex(part, layer_min_x, layer_min_y)
-            self.encoder.part_max_point_ex(part, layer_max_x, layer_max_y)
-        self.encoder.max_layer_part(part)
-        self.encoder.pen_offset(0, 0)
-        self.encoder.pen_offset(1, 0)
-        self.encoder.layer_offset(0, 0)
-        self.encoder.layer_offset(1, 0)
-        self.encoder.display_offset(0, 0)
-
-        # Element Info
-        # self.encoder.element_max_index(0)
-        # self.encoder.element_name_max_index(0)
-        # self.encoder.element_index(0)
-        # self.encoder.element_name_max_index(0)
-        # self.encoder.element_name('\x05*9\x1cA\x04j\x15\x08 ')
-        # self.encoder.element_array_min_point(min_x, min_y)
-        # self.encoder.element_array_max_point(max_x, max_y)
-        # self.encoder.element_array(1, 1, 0, 257, -3072, 2, 5232)
-        # self.encoder.element_array_add(0,0)
-        # self.encoder.element_array_mirror(0)
-
-        self.encoder.feed_info(0)
-
-        # Array Info
-        array_index = 0
-        self.encoder.array_start(array_index)
-        self.encoder.set_current_element_index(array_index)
-        self.encoder.array_en_mirror_cut(array_index)
-        self.encoder.array_min_point(min_x, min_y)
-        self.encoder.array_max_point(max_x, max_y)
-        self.encoder.array_add(0, 0)
-        self.encoder.array_mirror(0)
-        # self.encoder.array_even_distance(0)  # Unknown.
-        self.encoder.array_repeat(1, 1, 0, 1123, -3328, 4, 3480)  # Unknown.
-        # Layer and cut information.
+        pass
 
     def job_finish(self, job):
-        # End layer and cut information.
-        self.encoder.array_end()
-        self.encoder.block_end()
-        # self.encoder.set_setting(0x320, 142, 142)
-        self.encoder.set_file_sum(self.encoder.calculate_filesum())
-        self.encoder.end_of_file()
-        self.encoder.stop_record()
+        pass
 
     def hold_work(self, priority):
         """
@@ -303,6 +165,112 @@ class RuidaDriver(Parameters):
         """
         self.queue.append(plot)
 
+    def _write_header(self):
+        self.encoder.start_record()
+        if not self.queue:
+            return
+        # Optional: Set Tick count.
+        self.encoder.ref_point_2()  # abs_pos
+        self.encoder.set_absolute()
+        self.encoder.ref_point_set()
+        self.encoder.enable_block_cutting(0)
+        # Optional: Set File Property 1
+        self.encoder.start_process()
+        self.encoder.feed_repeat(0, 0)
+        self.encoder.set_feed_auto_pause(0)
+        b = self._calculate_layer_bounds(self.queue)
+        min_x, min_y, max_x, max_y = b
+        self.encoder.process_top_left(min_x, min_y)
+        self.encoder.process_bottom_right(max_x, max_y)
+        self.encoder.document_min_point(0, 0)  # Unknown
+        self.encoder.document_max_point(max_x, max_y)
+        self.encoder.process_repeat(1, 1, 0, 0, 0, 0, 0)
+        self.encoder.array_direction(0)
+        last_settings = None
+        layers = list()
+
+        # Sort out data by layers.
+        for item in self.queue:
+            if not hasattr(item, "settings"):
+                continue
+            current_settings = item.settings
+            if last_settings is not current_settings:
+                if "part" not in current_settings:
+                    current_settings["part"] = len(layers)
+                    layers.append(list())
+            layers[current_settings["part"]].append(item)
+
+        part = 0
+        # Write layer Information
+        for layer in layers:
+            (
+                layer_min_x,
+                layer_min_y,
+                layer_max_x,
+                layer_max_y,
+            ) = self._calculate_layer_bounds(layer)
+            current_settings = layer[0].settings
+
+            # Current Settings is New.
+            part = current_settings.get("part", 0)
+            speed = current_settings.get("speed", 10)
+            power = current_settings.get("power", 1000) / 10.0
+            color = current_settings.get("line_color", 0)
+
+            self.encoder.speed_laser_1_part(part, speed)
+            self.encoder.min_power_1_part(part, power)
+            self.encoder.max_power_1_part(part, power)
+            self.encoder.min_power_2_part(part, power)
+            self.encoder.max_power_2_part(part, power)
+            self.encoder.layer_color_part(part, color)
+            self.encoder.work_mode_part(part, 0)
+            self.encoder.part_min_point(part, layer_min_x, layer_min_y)
+            self.encoder.part_max_point(part, layer_max_x, layer_max_y)
+            self.encoder.part_min_point_ex(part, layer_min_x, layer_min_y)
+            self.encoder.part_max_point_ex(part, layer_max_x, layer_max_y)
+        self.encoder.max_layer_part(part)
+        self.encoder.pen_offset(0, 0)
+        self.encoder.pen_offset(1, 0)
+        self.encoder.layer_offset(0, 0)
+        self.encoder.layer_offset(1, 0)
+        self.encoder.display_offset(0, 0)
+
+        # Element Info
+        # self.encoder.element_max_index(0)
+        # self.encoder.element_name_max_index(0)
+        # self.encoder.element_index(0)
+        # self.encoder.element_name_max_index(0)
+        # self.encoder.element_name('\x05*9\x1cA\x04j\x15\x08 ')
+        # self.encoder.element_array_min_point(min_x, min_y)
+        # self.encoder.element_array_max_point(max_x, max_y)
+        # self.encoder.element_array(1, 1, 0, 257, -3072, 2, 5232)
+        # self.encoder.element_array_add(0,0)
+        # self.encoder.element_array_mirror(0)
+
+        self.encoder.feed_info(0)
+
+        # Array Info
+        array_index = 0
+        self.encoder.array_start(array_index)
+        self.encoder.set_current_element_index(array_index)
+        self.encoder.array_en_mirror_cut(array_index)
+        self.encoder.array_min_point(min_x, min_y)
+        self.encoder.array_max_point(max_x, max_y)
+        self.encoder.array_add(0, 0)
+        self.encoder.array_mirror(0)
+        # self.encoder.array_even_distance(0)  # Unknown.
+        self.encoder.array_repeat(1, 1, 0, 1123, -3328, 4, 3480)  # Unknown.
+        # Layer and cut information.
+
+    def _write_tail(self):
+        # End layer and cut information.
+        self.encoder.array_end()
+        self.encoder.block_end()
+        # self.encoder.set_setting(0x320, 142, 142)
+        self.encoder.set_file_sum(self.encoder.calculate_filesum())
+        self.encoder.end_of_file()
+        self.encoder.stop_record()
+
     def plot_start(self):
         """
         Called at the end of plot commands to ensure the driver can deal with them all as a group.
@@ -310,6 +278,7 @@ class RuidaDriver(Parameters):
         @return:
         """
         # Write layer header information.
+        self._write_header()
         first = True
         last_settings = None
         for q in self.queue:
@@ -443,6 +412,7 @@ class RuidaDriver(Parameters):
                     self._move(x, y, cut=True)
         self.queue.clear()
         # Ruida end data.
+        self._write_tail()
         return False
 
     def move_abs(self, x, y):

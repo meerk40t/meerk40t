@@ -257,7 +257,7 @@ class RuidaDevice(Service):
                     job = LaserJob(filename, list(data.plan), driver=driver)
 
                     driver.encoder.out_pipe = f.write
-                    driver.encoder.out_real = f.write
+                    driver.encoder.out_real = lambda e: e
                     driver.encoder.set_magic(magic)
 
                     driver.job_start(job)
