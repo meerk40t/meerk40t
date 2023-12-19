@@ -193,6 +193,8 @@ ELEMENT_ARRAY = b"\xF2\x05"  # v0(2), v1(2), v2(2), v3(2), v4(2), v5(2), v6(2)
 ELEMENT_ARRAY_ADD = b"\xF2\x06"  # abscoord(5), abscoord(5)
 ELEMENT_ARRAY_MIRROR = b"\xF2\x07"  # mirror(1)
 
+MEM_CARD_ID = 0x02FE
+
 
 def encode_part(part):
     assert 0 <= part <= 255
@@ -283,8 +285,10 @@ class RuidaEncoder:
         self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
         self.recording = False
 
-    def __call__(self, e, real=False):
-        e = bytes([self.lut_swizzle[b] for b in e])
+    def __call__(self, *args, real=False, swizzle=True):
+        e = b"".join(args)
+        if swizzle:
+            e = bytes([self.lut_swizzle[b] for b in e])
         if real:
             self.out_real(e)
         else:
@@ -297,7 +301,11 @@ class RuidaEncoder:
         self.magic = magic
         self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
 
+    def _check_card_id(self):
+        self.get_setting(MEM_CARD_ID)
+
     def start_record(self):
+        self._check_card_id()
         self.recording = True
         self.file_data = bytearray()
 
@@ -811,8 +819,7 @@ class RuidaEncoder:
         self(self._rapid_options(light=light, origin=origin))
 
     def get_setting(self, mem):
-        self(GET_SETTING)
-        self(encode_mem(mem))
+        self(GET_SETTING, encode_mem(mem), real=True)
 
     def set_setting(self, mem, value):
         self(SET_SETTING)
