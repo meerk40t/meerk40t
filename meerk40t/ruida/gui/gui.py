@@ -14,25 +14,6 @@ def plugin(service, lifecycle):
 
         _ = service._
 
-        def popup_info(event):
-            dlg = wx.MessageDialog(
-                None,
-                _("Ruida Driver is not yet completed."),
-                _("Non Implemented Device"),
-                wx.OK | wx.ICON_WARNING,
-            )
-            dlg.ShowModal()
-            dlg.Destroy()
-
-        service.register(
-            "button/control/Info",
-            {
-                "label": _("Ruida Info"),
-                "icon": icons8_info,
-                "tip": _("Provide information about the Ruida Driver"),
-                "action": popup_info,
-            },
-        )
         service.register(
             "button/control/Controller",
             {
