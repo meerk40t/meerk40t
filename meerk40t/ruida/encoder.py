@@ -775,7 +775,7 @@ class RuidaEncoder:
         self(HOME_U)
 
     def home_xy(self):
-        self(HOME_XY)
+        self(HOME_XY, real=True)
 
     def focus_z(self):
         self(FOCUS_Z, real=True)

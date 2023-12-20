@@ -491,7 +491,7 @@ class RuidaDriver(Parameters):
         """ "
         This would be the command to go to a real physical home position (ie hitting endstops)
         """
-        self.home()
+        self.encoder.home_xy()
 
     def rapid_mode(self):
         """
