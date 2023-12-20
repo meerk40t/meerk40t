@@ -729,12 +729,6 @@ class RDJob:
             dy = relcoord(array[1:3]) * self.scale
             self.plot_location(self.x, self.y + dy, 0)
             desc = f"Move Vertical Relative ({dy} units)"
-        elif array[0] == 0x97:
-            desc = "Lightburn Swizzle Modulation 97"
-        elif array[0] == 0x9B:
-            desc = "Lightburn Swizzle Modulation 9b"
-        elif array[0] == 0x9E:
-            desc = "Lightburn Swizzle Modulation 9e"
         elif array[0] == 0xA0:
             value = abscoord(array[2:7])
             if array[1] == 0x00:
@@ -1017,20 +1011,17 @@ class RDJob:
                 v1 = decodeu35(value1)
                 desc = f"Set {array[2]:02x} {array[3]:02x} (mem: {mem:04x})= {v0} (0x{v0:08x}) {v1} (0x{v1:08x})"
         elif array[0] == 0xE5:  # 0xE502
-            if len(array) == 1:
-                desc = "Lightburn Swizzle Modulation E5"
-            else:
-                if array[1] == 0x00:
-                    # RDWorks File Upload
-                    filenumber = array[2]
-                    desc = f"Document Page Number {filenumber}"
-                    # TODO: Requires Response.
-                if array[1] == 0x02:
-                    # len 3
-                    desc = "Document Data End"
-                elif array[1] == 0x05:
-                    sum = decodeu35(array[2:7])
-                    desc = f"Set File Sum {sum}"
+            if array[1] == 0x00:
+                # RDWorks File Upload
+                filenumber = array[2]
+                desc = f"Document Page Number {filenumber}"
+                # TODO: Requires Response.
+            if array[1] == 0x02:
+                # len 3
+                desc = "Document Data End"
+            elif array[1] == 0x05:
+                sum = decodeu35(array[2:7])
+                desc = f"Set File Sum {sum}"
 
         elif array[0] == 0xE6:
             if array[1] == 0x01:
