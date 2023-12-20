@@ -5,15 +5,15 @@ Ruida device interfacing. We do not send or interpret ruida code, but we can emu
 ruida files (*.rd) and turn them likewise into cutcode.
 """
 from meerk40t.core.view import View
-from meerk40t.kernel import Service, signal_listener, CommandSyntaxError
-from .mock_connection import MockConnection
-from .udp_connection import UDPConnection
-from ..core.laserjob import LaserJob
+from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
+from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
 from ..core.units import Length, uM_PER_INCH
 from ..device.mixins import Status
 from .driver import RuidaDriver
+from .mock_connection import MockConnection
+from .udp_connection import UDPConnection
 
 
 class RuidaDevice(Service):

@@ -496,7 +496,6 @@ class RuidaDriver(Parameters):
         job = self.controller.job
         if self.power_dirty:
             if self.power is not None:
-
                 job.max_power_1(self.power / 10.0 * self.on_value)
                 job.min_power_1(self.power / 10.0 * self.on_value)
             self.power_dirty = False

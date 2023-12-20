@@ -7,7 +7,6 @@ from meerk40t.svgelements import Color
 
 from .exceptions import RuidaCommandError
 
-
 INTERFACE_FRAME = b"\xA5\x53\x00"
 INTERFACE_PLUS_X_DOWN = b"\xA5\x50\x02"
 INTERFACE_PLUS_X_UP = b"\xA5\x51\x02"
@@ -1241,7 +1240,6 @@ class RDJob:
     def swizzle(self, data):
         return bytes([self.lut_swizzle[b] for b in data])
 
-
     def _calculate_layer_bounds(self, layer):
         max_x = float("-inf")
         max_y = float("-inf")
@@ -1433,7 +1431,6 @@ class RDJob:
             return
         self.cut_rel_xy(dx, dy)
 
-
     #######################
     # Specific Commands
     #######################
@@ -1577,7 +1574,13 @@ class RDJob:
         self(THROUGH_POWER_4, encode_power(power), output=output)
 
     def frequency_part(self, laser, part, frequency, output=None):
-        self(FREQUENCY_PART, encode_index(laser), encode_part(part), encode_frequency(frequency), output=output)
+        self(
+            FREQUENCY_PART,
+            encode_index(laser),
+            encode_part(part),
+            encode_frequency(frequency),
+            output=output,
+        )
 
     def speed_laser_1(self, speed, output=None):
         self(SPEED_LASER_1, encode_speed(speed), output=output)
@@ -1740,34 +1743,82 @@ class RDJob:
         return RAPID_OPTION_NONE
 
     def rapid_move_x(self, x, light=False, origin=False, output=None):
-        self(RAPID_MOVE_X, self._rapid_options(light=light, origin=origin), encode_coord(x), output=output)
+        self(
+            RAPID_MOVE_X,
+            self._rapid_options(light=light, origin=origin),
+            encode_coord(x),
+            output=output,
+        )
 
     def rapid_move_y(self, y, light=False, origin=False, output=None):
-        self(RAPID_MOVE_Y, self._rapid_options(light=light, origin=origin), encode_coord(y), output=output)
+        self(
+            RAPID_MOVE_Y,
+            self._rapid_options(light=light, origin=origin),
+            encode_coord(y),
+            output=output,
+        )
 
     def rapid_move_z(self, z, light=False, origin=False, output=None):
-        self(RAPID_MOVE_Z, self._rapid_options(light=light, origin=origin), encode_coord(z), output=output)
+        self(
+            RAPID_MOVE_Z,
+            self._rapid_options(light=light, origin=origin),
+            encode_coord(z),
+            output=output,
+        )
 
     def rapid_move_u(self, u, light=False, origin=False, output=None):
-        self(RAPID_MOVE_U, self._rapid_options(light=light, origin=origin), encode_coord(u), output=output)
+        self(
+            RAPID_MOVE_U,
+            self._rapid_options(light=light, origin=origin),
+            encode_coord(u),
+            output=output,
+        )
 
     def rapid_move_xy(self, x, y, light=False, origin=False, output=None):
-        self(RAPID_MOVE_XY, self._rapid_options(light=light, origin=origin), encode_coord(x), encode_coord(y), output=output)
+        self(
+            RAPID_MOVE_XY,
+            self._rapid_options(light=light, origin=origin),
+            encode_coord(x),
+            encode_coord(y),
+            output=output,
+        )
 
     def rapid_move_xyu(self, x, y, u, light=False, origin=False, output=None):
-        self(RAPID_MOVE_XYU, self._rapid_options(light=light, origin=origin), encode_coord(x), encode_coord(y), encode_coord(u), output=output)
+        self(
+            RAPID_MOVE_XYU,
+            self._rapid_options(light=light, origin=origin),
+            encode_coord(x),
+            encode_coord(y),
+            encode_coord(u),
+            output=output,
+        )
 
     def rapid_feed_axis(self, light=False, origin=False, output=None):
-        self(RAPID_FEED_AXIS_MOVE, self._rapid_options(light=light, origin=origin), output=output)
+        self(
+            RAPID_FEED_AXIS_MOVE,
+            self._rapid_options(light=light, origin=origin),
+            output=output,
+        )
 
     def get_setting(self, mem, output=None):
         self(GET_SETTING, encode_mem(mem), output=output)
 
     def set_setting(self, mem, value, output=None):
-        self(SET_SETTING, encode_mem(mem), encode_value(value), encode_value(value), output=output)
+        self(
+            SET_SETTING,
+            encode_mem(mem),
+            encode_value(value),
+            encode_value(value),
+            output=output,
+        )
 
     def document_file_upload(self, file_number, value, value1, output=None):
-        self(DOCUMENT_FILE_UPLOAD, encode_value(value), encode_value(value1), output=output)
+        self(
+            DOCUMENT_FILE_UPLOAD,
+            encode_value(value),
+            encode_value(value1),
+            output=output,
+        )
 
     def document_file_end(self, output=None):
         self(DOCUMENT_FILE_END, output=output)
@@ -1782,13 +1833,25 @@ class RDJob:
         self(BLOCK_END, output=output)
 
     def set_filename(self, filename, output=None):
-        self(SET_FILENAME, bytes(filename[:9], encoding="utf-8"), b"\x00", output=output)
+        self(
+            SET_FILENAME, bytes(filename[:9], encoding="utf-8"), b"\x00", output=output
+        )
 
     def process_top_left(self, top, left, output=None):
         self(PROCESS_TOP_LEFT, encode_coord(top), encode_coord(left), output=output)
 
     def process_repeat(self, v0, v1, v2, v3, v4, v5, v6, output=None):
-        self(PROCESS_REPEAT, encode14(v0), encode14(v1), encode14(v2), encode14(v3), encode14(v4), encode14(v5), encode14(v6), output=output)
+        self(
+            PROCESS_REPEAT,
+            encode14(v0),
+            encode14(v1),
+            encode14(v2),
+            encode14(v3),
+            encode14(v4),
+            encode14(v5),
+            encode14(v6),
+            output=output,
+        )
 
     def array_direction(self, direction, output=None):
         self(ARRAY_DIRECTION, encode_index(direction), output=output)
@@ -1797,10 +1860,25 @@ class RDJob:
         self(FEED_REPEAT, encode32(value), encode32(value1), output=output)
 
     def process_bottom_right(self, bottom, right, output=None):
-        self(PROCESS_BOTTOM_RIGHT, encode_coord(bottom), encode_coord(right), output=output)
+        self(
+            PROCESS_BOTTOM_RIGHT,
+            encode_coord(bottom),
+            encode_coord(right),
+            output=output,
+        )
 
     def array_repeat(self, v0, v1, v2, v3, v4, v5, v6, output=None):
-        self(ARRAY_REPEAT, encode14(v0), encode14(v1), encode14(v2), encode14(v3), encode14(v4), encode14(v5), encode14(v6), output=output)
+        self(
+            ARRAY_REPEAT,
+            encode14(v0),
+            encode14(v1),
+            encode14(v2),
+            encode14(v3),
+            encode14(v4),
+            encode14(v5),
+            encode14(v6),
+            output=output,
+        )
 
     def feed_length(self, length, output=None):
         self(FEED_LENGTH, encode32(length), output=output)
@@ -1839,16 +1917,32 @@ class RDJob:
         self(UNION_BLOCK_PROPERTY, output=output)
 
     def document_min_point(self, min_x, min_y, output=None):
-        self(DOCUMENT_MIN_POINT, encode_coord(min_x), encode_coord(min_y), output=output)
+        self(
+            DOCUMENT_MIN_POINT, encode_coord(min_x), encode_coord(min_y), output=output
+        )
 
     def document_max_point(self, max_x, max_y, output=None):
-        self(DOCUMENT_MAX_POINT, encode_coord(max_x), encode_coord(max_y), output=output)
+        self(
+            DOCUMENT_MAX_POINT, encode_coord(max_x), encode_coord(max_y), output=output
+        )
 
     def part_min_point(self, part, min_x, min_y, output=None):
-        self(PART_MIN_POINT, encode_part(part), encode_coord(min_x), encode_coord(min_y), output=output)
+        self(
+            PART_MIN_POINT,
+            encode_part(part),
+            encode_coord(min_x),
+            encode_coord(min_y),
+            output=output,
+        )
 
     def part_max_point(self, part, max_x, max_y, output=None):
-        self(PART_MAX_POINT, encode_part(part), encode_coord(max_x), encode_coord(max_y), output=output)
+        self(
+            PART_MAX_POINT,
+            encode_part(part),
+            encode_coord(max_x),
+            encode_coord(max_y),
+            output=output,
+        )
 
     def pen_offset(self, axis, coord, output=None):
         self(PEN_OFFSET, encode_index(axis), encode_coord(coord), output=output)
@@ -1860,10 +1954,22 @@ class RDJob:
         self(SET_CURRENT_ELEMENT_INDEX, encode_index(index), output=output)
 
     def part_min_point_ex(self, part, min_x, min_y, output=None):
-        self(PART_MIN_POINT_EX, encode_part(part), encode_coord(min_x), encode_coord(min_y), output=output)
+        self(
+            PART_MIN_POINT_EX,
+            encode_part(part),
+            encode_coord(min_x),
+            encode_coord(min_y),
+            output=output,
+        )
 
     def part_max_point_ex(self, part, max_x, max_y, output=None):
-        self(PART_MAX_POINT_EX, encode_part(part), encode_coord(max_x), encode_coord(max_y), output=output)
+        self(
+            PART_MAX_POINT_EX,
+            encode_part(part),
+            encode_coord(max_x),
+            encode_coord(max_y),
+            output=output,
+        )
 
     def array_start(self, index, output=None):
         self(ARRAY_START, encode_index(index), output=output)
@@ -1902,7 +2008,17 @@ class RDJob:
         self(ELEMENT_ARRAY_MAX_POINT, encode_coord(x), encode_coord(y), output=output)
 
     def element_array(self, v0, v1, v2, v3, v4, v5, v6, output=None):
-        self(ELEMENT_ARRAY, encode14(v0), encode14(v1), encode14(v2), encode14(v3), encode14(v4), encode14(v5), encode14(v6), output=output)
+        self(
+            ELEMENT_ARRAY,
+            encode14(v0),
+            encode14(v1),
+            encode14(v2),
+            encode14(v3),
+            encode14(v4),
+            encode14(v5),
+            encode14(v6),
+            output=output,
+        )
 
     def element_array_add(self, x, y, output=None):
         self(ELEMENT_ARRAY_ADD, encode_coord(x), encode_coord(y), output=output)

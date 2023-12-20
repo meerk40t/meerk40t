@@ -5,7 +5,7 @@ The Ruida Encoder is responsible for turning function calls into binary ruida da
 """
 import threading
 
-from meerk40t.ruida.rdjob import RDJob, ACK, MEM_CARD_ID
+from meerk40t.ruida.rdjob import ACK, MEM_CARD_ID, RDJob
 
 
 class RuidaController:
