@@ -103,29 +103,6 @@ def plugin(kernel, lifecycle=None):
                 ruidacontrol.quit()
                 root.device.unregister("ruidacontrol")
 
-        @kernel.console_argument(
-            "destination",
-            type=str,
-            help=_("bounce all traffic to the designation"),
-        )
-        @kernel.console_command(
-            "ruida_man_in_middle",
-            hidden=True,
-        )
-        def ruidaserver(command, channel, **kwargs):
-            """
-            The ruidaserver emulation methods provide a simulation of a ruida device.
-            this interprets ruida devices in order to be compatible with software that
-            controls that type of device. This would then be sent to the device in a
-            somewhat agnostic fashion.
-            """
-            root = kernel.root
-            ruidacontrol = root.device.lookup("ruidacontrol")
-            if ruidacontrol is None:
-                ruidacontrol = RuidaControl(root)
-                root.device.register("ruidacontrol", ruidacontrol)
-                ruidacontrol.start(verbose=True)
-
     if lifecycle == "preboot":
         prefix = "ruida"
         for d in kernel.section_startswith(prefix):
