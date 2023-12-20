@@ -1907,8 +1907,8 @@ class RDJob:
     def by_test(self, output=None):
         self(BY_TEST, encode32(0x11227766), output=output)
 
-    def array_even_distance(self, value, output=None):
-        self(ARRAY_EVEN_DISTANCE, encode_value(value), output=output)
+    def array_even_distance(self, max_x, max_y, output=None):
+        self(ARRAY_EVEN_DISTANCE, encode_coord(max_x), encode_coord(max_y), output=output)
 
     def set_feed_auto_pause(self, index, output=None):
         self(SET_FEED_AUTO_PAUSE, encode_index(index), output=output)
