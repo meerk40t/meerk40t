@@ -3,6 +3,8 @@ Ruida Encoder
 
 The Ruida Encoder is responsible for turning function calls into binary ruida data.
 """
+import threading
+
 from meerk40t.ruida.rdjob import swizzles_lut, RDJob
 
 INTERFACE_FRAME = b"\xA5\x53\x00"
@@ -276,7 +278,8 @@ class RuidaEncoder:
     Convert function calls into Ruida Encode data.
     """
 
-    def __init__(self, pipe, real, magic=-1):
+    def __init__(self, service, pipe, real, magic=-1):
+        self.service = service
         self.mode = "init"
         self.paused = False
         self._last_x = 0
@@ -288,6 +291,9 @@ class RuidaEncoder:
         self.magic = magic
         self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
         self.job_mode = False
+        self._send_queue = []
+        self._send_lock = threading.Condition()
+        self._send_thread = None
 
     def __call__(self, *args, real=False, swizzle=True):
         e = b"".join(args)
@@ -305,8 +311,43 @@ class RuidaEncoder:
                 else:
                     self.out_pipe(e)
 
+    def start_sending(self):
+        self._send_thread = threading.Thread(target=self._data_sender, daemon=True)
+        self.divide_data_into_queue()
+        print(self._send_queue)
+        self._send_thread.start()
+
+    def divide_data_into_queue(self):
+        last = 0
+        total = 0
+        data = self.job.buffer
+        for i, command in enumerate(data):
+            total += len(command)
+            if total > 1000:
+                self._send_queue.append(b"".join(data[last:i]))
+                last = i
+                total = 0
+        if last != len(data):
+            self._send_queue.append(b"".join(data[last:]))
+
+    def _data_sender(self):
+        while self._send_queue:
+            data = self._send_queue.pop(0)
+            print(f"Sending Data: {data}")
+            self(data, real=True)
+            with self._send_lock:
+                if not self._send_lock.wait(5):
+                    self.service.signal("warning", "Connection Problem.",  "Timeout")
+                    return
+        self._send_queue.clear()
+        self._send_thread = None
+
+
     def recv(self, reply):
         e = bytes([self.lut_unswizzle[b] for b in reply])
+        if e == ACK:
+            with self._send_lock:
+                self._send_lock.notify()
         print(e)
 
     def set_magic(self, magic):
@@ -324,8 +365,7 @@ class RuidaEncoder:
 
     def stop_record(self):
         self.job_mode = False
-        print(self.job.buffer)
-        # self(self.file_data, swizzle=False)
+        self.start_sending()
 
     def calculate_filesum(self):
         return self.job.file_sum()
