@@ -357,13 +357,13 @@ class RuidaDevice(Service):
     @property
     def current(self):
         """
-        @return: the location in scene units for the current known x value.
+        @return: the location in units for the current known position.
         """
-        return 0, 0
+        return self.view.iposition(self.driver.native_x, self.driver.native_y)
 
     @property
     def native(self):
         """
         @return: the location in device native units for the current known position.
         """
-        return 0, 0
+        return self.driver.native_x, self.driver.native_y
