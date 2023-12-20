@@ -10,8 +10,8 @@ def plugin(service, lifecycle=None):
     if lifecycle == "service":
         # Responding to "service" makes this a service plugin for the specific services created via the provider
         # We are only a provider of lhystudios devices for now.
-        return "provider/device/lhystudios"
-    elif lifecycle == 'added':
+        return "provider/device/lhystudios", "provider/device/grbl"
+    elif lifecycle == "added":
         service.add_service_delegate(Rotary(service, 0))
 
 
@@ -106,7 +106,9 @@ class Rotary:
             )
             return "rotary", None
 
-        @service.console_command("rotaryscale", help=_("Rotary Scale selected elements"))
+        @service.console_command(
+            "rotaryscale", help=_("Rotary Scale selected elements")
+        )
         def apply_rotary_scale(*args, **kwargs):
             sx = service.rotary_scale_x
             sy = service.rotary_scale_y
