@@ -37,6 +37,7 @@ class BalorConfiguration(MWindow):
             ("balor-global-timing", "Timings"),
             ("balor-extra", "Extras"),
         )
+        self.test_bits = ""
         injector = (
             {
                 "attr": "test_pin",
@@ -46,6 +47,16 @@ class BalorConfiguration(MWindow):
                 "style": "button",
                 "label": _("Test"),
                 "tip": _("Turn red dot on for test purposes"),
+                "section": "_10_Parameters",
+                "subsection": "_30_Pin-Index",
+            },
+            {
+                "attr": "test_bits",
+                "object": self,
+                "default": "",
+                "type": str,
+                "enabled": False,
+                "label": _("Bits"),
                 "section": "_10_Parameters",
                 "subsection": "_30_Pin-Index",
             },
@@ -84,6 +95,9 @@ class BalorConfiguration(MWindow):
         self.Layout()
         for panel in self.panels:
             self.add_module_delegate(panel)
+        self.timer = wx.Timer(self, wx.ID_ANY)
+        self.Bind(wx.EVT_TIMER, self.update_bit_info)
+        # self.update_bit_info()
 
     @property
     def test_pin(self):
@@ -97,13 +111,37 @@ class BalorConfiguration(MWindow):
         else:
             self.context("red off\n")
 
+    def update_bit_info(self, *args):
+        if not self.context.driver.connected:
+            status = "busy"
+        else:
+            port_list = self.context.driver.connection.read_port()
+            ports = port_list[1]
+            status = ""
+            line1 = ""
+            line2 = ""
+            for bit in range(16):
+                line1 += f"{bit // 10}"
+                line2 += f"{bit % 10}"
+                if bool((1 << bit) & ports):
+                    status += "x"
+                else:
+                    status += "-"
+            # print (line1)
+            # print (line2)
+            # print (status)
+        self.test_bits = status
+        self.context.root.signal("test_bits", status, self)
+
     def window_close(self):
         for panel in self.panels:
             panel.pane_hide()
+        self.timer.Stop()
 
     def window_open(self):
         for panel in self.panels:
             panel.pane_show()
+        self.timer.Start(1000)
 
     @signal_listener("balorpin")
     def on_pin_change(self, origina, *args):
