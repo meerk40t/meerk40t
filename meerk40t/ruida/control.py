@@ -61,7 +61,7 @@ class RuidaControl:
         self.mk_to_laser = None
         self.mk_to_laser_jog = None
 
-    def open_udp_to_mk(self):
+    def open_udp_to_mk(self, jog=True):
         """
         Opens up UDP servers for ports 50200 and 50207. Called `rd2mk` and `rd2mk-jog`.
 
@@ -77,14 +77,16 @@ class RuidaControl:
         self.udp_program_to_mk = root.open_as("module/UDPServer", "rd2mk", port=50200)
         if self.udp_program_to_mk:
             channel(_("Ruida Data Server opened on port {port}.").format(port=50200))
-
+        if not jog:
+            return
         self.udp_program_to_mk_jog = root.open_as(
             "module/UDPServer", "rd2mk-jog", port=50207
         )
         if self.udp_program_to_mk_jog:
             channel(_("Ruida Jog Server opened on port {port}.").format(port=50207))
 
-    def connect_emulator_to_udp(self):
+
+    def connect_emulator_to_udp(self, jog=True):
         """
         Any data from the program gets fed into the emulator write (delayed)
         Any data from the emulator reply/realtime gets sent as a reply.
@@ -92,8 +94,10 @@ class RuidaControl:
         """
 
         self.root.channel("rd2mk/recv").watch(self.delay_emulator_checksum_write)
-        self.root.channel("rd2mk-jog/recv").watch(self.emulator.realtime_write)
         self.emulator.reply.watch(self.root.channel("rd2mk/send"))
+        if not jog:
+            return
+        self.root.channel("rd2mk-jog/recv").watch(self.emulator.realtime_write)
         self.emulator.realtime.watch(self.root.channel("rd2mk-jog/send"))
 
     def open_emulator(self):
@@ -147,12 +151,13 @@ class RuidaControl:
             ansi=True,
         )
 
-    def start(self, verbose=False, man_in_the_middle=None):
+    def start(self, verbose=False, man_in_the_middle=None, jog=True):
         """
         Start Ruidacontrol server.
 
         @param verbose:
         @param man_in_the_middle:
+        @param jog: Should open jog udp ports too.
         @return:
         """
         self.verbose = verbose
@@ -175,8 +180,8 @@ class RuidaControl:
             self.issue_mitm_warnings(channel)
 
         try:
-            self.open_udp_to_mk()
-            self.connect_emulator_to_udp()
+            self.open_udp_to_mk(jog=jog)
+            self.connect_emulator_to_udp(jog=jog)
 
             if verbose:
                 self.open_verbose()

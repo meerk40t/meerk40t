@@ -58,6 +58,14 @@ def plugin(kernel, lifecycle=None):
             help=_("shutdown current ruidaserver"),
         )
         @kernel.console_option(
+            "jogless",
+            "j",
+            type=bool,
+            default=False,
+            action="store_true",
+            help=_("do not open jog ports"),
+        )
+        @kernel.console_option(
             "man_in_the_middle",
             "m",
             type=str,
@@ -67,7 +75,16 @@ def plugin(kernel, lifecycle=None):
             "ruidacontrol",
             help=_("activate the ruidaserver."),
         )
-        def ruidaserver(command, channel, _, verbose=False, quit=False, man_in_the_middle=None, **kwargs):
+        def ruidaserver(
+            command,
+            channel,
+            _,
+            verbose=False,
+            quit=False,
+            jogless=False,
+            man_in_the_middle=None,
+            **kwargs,
+        ):
             """
             The ruidaserver emulation methods provide a simulation of a ruida device.
             this interprets ruida devices in order to be compatible with software that
@@ -81,7 +98,7 @@ def plugin(kernel, lifecycle=None):
                     return
                 ruidacontrol = RuidaControl(root)
                 root.device.register("ruidacontrol", ruidacontrol)
-                ruidacontrol.start(verbose=verbose, man_in_the_middle=man_in_the_middle)
+                ruidacontrol.start(verbose=verbose, man_in_the_middle=man_in_the_middle, jog=not jogless)
             if quit:
                 ruidacontrol.quit()
                 root.device.unregister("ruidacontrol")
