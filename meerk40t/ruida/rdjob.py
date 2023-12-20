@@ -305,6 +305,9 @@ class RDJob:
         with self.lock:
             self.buffer.append(command)
 
+    def file_sum(self):
+        return sum([sum(list(g)) for g in self.buffer])
+
     def execute(self, driver=None):
         """
         Execute calls each item in the list of items in order. This is intended to be called by the spooler thread. And
