@@ -314,7 +314,6 @@ class RuidaEncoder:
     def start_sending(self):
         self._send_thread = threading.Thread(target=self._data_sender, daemon=True)
         self.divide_data_into_queue()
-        print(self._send_queue)
         self._send_thread.start()
 
     def divide_data_into_queue(self):
@@ -333,7 +332,6 @@ class RuidaEncoder:
     def _data_sender(self):
         while self._send_queue:
             data = self._send_queue.pop(0)
-            print(f"Sending Data: {data}")
             self(data, real=True)
             with self._send_lock:
                 if not self._send_lock.wait(5):
@@ -342,13 +340,11 @@ class RuidaEncoder:
         self._send_queue.clear()
         self._send_thread = None
 
-
     def recv(self, reply):
         e = bytes([self.lut_unswizzle[b] for b in reply])
         if e == ACK:
             with self._send_lock:
                 self._send_lock.notify()
-        print(e)
 
     def set_magic(self, magic):
         self.magic = magic
