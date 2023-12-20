@@ -119,7 +119,7 @@ class Channel:
         **kwargs,
     ):
         if self.threaded and execute_threaded:
-            self._threaded_call(message, *args, indent, ansi, **kwargs)
+            self._threaded_call(message, *args, indent=indent, ansi=ansi, **kwargs)
             return
         if isinstance(message, (bytes, bytearray)) or self.pure:
             self._call_raw(message)
@@ -234,6 +234,7 @@ class Channel:
             queue.append((message, args, kwargs))
             with lock:
                 lock.notify()
+
         self._threaded_call = threaded_call
 
         def run():
