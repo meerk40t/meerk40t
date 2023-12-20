@@ -16,7 +16,6 @@ from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
-from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.ruida.controller import RuidaController
@@ -34,9 +33,9 @@ class RuidaDriver(Parameters):
         name = self.service.label.replace(" ", "-")
         name = name.replace("/", "-")
         send = service.channel(f"{name}/send")
-        self.controller = RuidaController(self, send, send)
+        self.controller = RuidaController(self.service, send)
+        self.controller.job.set_magic(service.magic)
 
-        self.controller.set_magic(service.magic)
         self.recv = service.channel(f"{name}/recv", pure=True)
         self.recv.watch(self.controller.recv)
 
@@ -63,31 +62,6 @@ class RuidaDriver(Parameters):
     #############
     # DRIVER COMMANDS
     #############
-
-    def _calculate_layer_bounds(self, layer):
-        max_x = float("-inf")
-        max_y = float("-inf")
-        min_x = float("inf")
-        min_y = float("inf")
-        for item in layer:
-            try:
-                ny = item.upper()
-                nx = item.left()
-
-                my = item.lower()
-                mx = item.right()
-            except AttributeError:
-                continue
-
-            if mx > max_x:
-                max_x = mx
-            if my > max_y:
-                max_y = my
-            if nx < min_x:
-                min_x = nx
-            if ny < min_y:
-                min_y = ny
-        return min_x, min_y, max_x, max_y
 
     def job_start(self, job):
         pass
@@ -165,112 +139,6 @@ class RuidaDriver(Parameters):
         """
         self.queue.append(plot)
 
-    def _write_header(self):
-        self.controller.start_record()
-        if not self.queue:
-            return
-        # Optional: Set Tick count.
-        self.controller.ref_point_2()  # abs_pos
-        self.controller.set_absolute()
-        self.controller.ref_point_set()
-        self.controller.enable_block_cutting(0)
-        # Optional: Set File Property 1
-        self.controller.start_process()
-        self.controller.feed_repeat(0, 0)
-        self.controller.set_feed_auto_pause(0)
-        b = self._calculate_layer_bounds(self.queue)
-        min_x, min_y, max_x, max_y = b
-        self.controller.process_top_left(min_x, min_y)
-        self.controller.process_bottom_right(max_x, max_y)
-        self.controller.document_min_point(0, 0)  # Unknown
-        self.controller.document_max_point(max_x, max_y)
-        self.controller.process_repeat(1, 1, 0, 0, 0, 0, 0)
-        self.controller.array_direction(0)
-        last_settings = None
-        layers = list()
-
-        # Sort out data by layers.
-        for item in self.queue:
-            if not hasattr(item, "settings"):
-                continue
-            current_settings = item.settings
-            if last_settings is not current_settings:
-                if "part" not in current_settings:
-                    current_settings["part"] = len(layers)
-                    layers.append(list())
-            layers[current_settings["part"]].append(item)
-
-        part = 0
-        # Write layer Information
-        for layer in layers:
-            (
-                layer_min_x,
-                layer_min_y,
-                layer_max_x,
-                layer_max_y,
-            ) = self._calculate_layer_bounds(layer)
-            current_settings = layer[0].settings
-
-            # Current Settings is New.
-            part = current_settings.get("part", 0)
-            speed = current_settings.get("speed", 10)
-            power = current_settings.get("power", 1000) / 10.0
-            color = current_settings.get("line_color", 0)
-
-            self.controller.speed_laser_1_part(part, speed)
-            self.controller.min_power_1_part(part, power)
-            self.controller.max_power_1_part(part, power)
-            self.controller.min_power_2_part(part, power)
-            self.controller.max_power_2_part(part, power)
-            self.controller.layer_color_part(part, color)
-            self.controller.work_mode_part(part, 0)
-            self.controller.part_min_point(part, layer_min_x, layer_min_y)
-            self.controller.part_max_point(part, layer_max_x, layer_max_y)
-            self.controller.part_min_point_ex(part, layer_min_x, layer_min_y)
-            self.controller.part_max_point_ex(part, layer_max_x, layer_max_y)
-        self.controller.max_layer_part(part)
-        self.controller.pen_offset(0, 0)
-        self.controller.pen_offset(1, 0)
-        self.controller.layer_offset(0, 0)
-        self.controller.layer_offset(1, 0)
-        self.controller.display_offset(0, 0)
-
-        # Element Info
-        # self.encoder.element_max_index(0)
-        # self.encoder.element_name_max_index(0)
-        # self.encoder.element_index(0)
-        # self.encoder.element_name_max_index(0)
-        # self.encoder.element_name('\x05*9\x1cA\x04j\x15\x08 ')
-        # self.encoder.element_array_min_point(min_x, min_y)
-        # self.encoder.element_array_max_point(max_x, max_y)
-        # self.encoder.element_array(1, 1, 0, 257, -3072, 2, 5232)
-        # self.encoder.element_array_add(0,0)
-        # self.encoder.element_array_mirror(0)
-
-        self.controller.feed_info(0)
-
-        # Array Info
-        array_index = 0
-        self.controller.array_start(array_index)
-        self.controller.set_current_element_index(array_index)
-        self.controller.array_en_mirror_cut(array_index)
-        self.controller.array_min_point(min_x, min_y)
-        self.controller.array_max_point(max_x, max_y)
-        self.controller.array_add(0, 0)
-        self.controller.array_mirror(0)
-        # self.encoder.array_even_distance(0)  # Unknown.
-        self.controller.array_repeat(1, 1, 0, 1123, -3328, 4, 3480)  # Unknown.
-        # Layer and cut information.
-
-    def _write_tail(self):
-        # End layer and cut information.
-        self.controller.array_end()
-        self.controller.block_end()
-        # self.encoder.set_setting(0x320, 142, 142)
-        self.controller.set_file_sum(self.controller.calculate_filesum())
-        self.controller.end_of_file()
-        self.controller.stop_record()
-
     def plot_start(self):
         """
         Called at the end of plot commands to ensure the driver can deal with them all as a group.
@@ -278,33 +146,15 @@ class RuidaDriver(Parameters):
         @return:
         """
         # Write layer header information.
-        self._write_header()
+        self.controller.start_record()
+        self.controller.job.write_header(self.queue)
         first = True
         last_settings = None
         for q in self.queue:
             if hasattr(q, "settings"):
                 current_settings = q.settings
                 if current_settings is not last_settings:
-                    part = current_settings.get("part", 0)
-                    speed = current_settings.get("speed", 0)
-                    power = current_settings.get("power", 0) / 10.0
-                    air = current_settings.get("air_assist", True)
-                    self.controller.layer_end()
-                    self.controller.layer_number_part(part)
-                    self.controller.laser_device_0()
-                    if air:
-                        self.controller.air_assist_on()
-                    else:
-                        self.controller.air_assist_off()
-                    self.controller.speed_laser_1(speed)
-                    self.controller.laser_on_delay(0)
-                    self.controller.laser_off_delay(0)
-                    self.controller.min_power_1(power)
-                    self.controller.max_power_1(power)
-                    self.controller.min_power_2(power)
-                    self.controller.max_power_2(power)
-                    self.controller.en_laser_tube_start()
-                    self.controller.en_ex_io(0)
+                    self.controller.job.write_settings(current_settings)
                     last_settings = current_settings
 
             x = self.native_x
@@ -412,7 +262,8 @@ class RuidaDriver(Parameters):
                     self._move(x, y, cut=True)
         self.queue.clear()
         # Ruida end data.
-        self._write_tail()
+        self.controller.job.write_tail()
+        self.controller.stop_record()
         return False
 
     def move_abs(self, x, y):
@@ -424,9 +275,11 @@ class RuidaDriver(Parameters):
         @return:
         """
         old_current = self.service.current
-        self.controller.speed_laser_1(100.0)
-        self.controller.min_power_1(0)
-        self.controller.min_power_2(0)
+        job = self.controller.job
+        out = self.controller.out_pipe
+        job.speed_laser_1(100.0, output=out)
+        job.min_power_1(0, output=out)
+        job.min_power_2(0, output=out)
 
         x, y = self.service.view.position(x, y)
 
@@ -434,11 +287,11 @@ class RuidaDriver(Parameters):
         dy = y - self.native_y
         if dx == 0:
             if dy != 0:
-                self.controller.rapid_move_y(dy)
+                job.rapid_move_y(dy, output=out)
         elif dy == 0:
-            self.controller.rapid_move_x(dx)
+            job.rapid_move_x(dx, output=out)
         else:
-            self.controller.rapid_move_xy(x, y, origin=True)  # Not relative
+            job.rapid_move_xy(x, y, origin=True, output=out)  # Not relative
         self.native_x = x
         self.native_y = y
         new_current = self.service.current
@@ -456,14 +309,21 @@ class RuidaDriver(Parameters):
         @return:
         """
         old_current = self.service.current
+        job = self.controller.job
+        out = self.controller.out_pipe
         dx, dy = self.service.view.position(dx, dy, vector=True)
         if dx == 0:
             if dy != 0:
-                self.controller.rapid_move_y(dy)
+                job.rapid_move_y(dy, output=out)
         elif dy == 0:
-            self.controller.rapid_move_x(dx)
+            job.rapid_move_x(dx, output=out)
         else:
-            self.controller.rapid_move_xy(self.native_x + dx, self.native_y + dy, origin=True)
+            job.rapid_move_xy(
+                self.native_x + dx,
+                self.native_y + dy,
+                origin=True,
+                output=out,
+            )
         self.native_x += dx
         self.native_y += dy
         new_current = self.service.current
@@ -477,7 +337,9 @@ class RuidaDriver(Parameters):
         This is a FocusZ routine on the Ruida Device.
         @return:
         """
-        self.controller.focus_z()
+        job = self.controller.job
+        out = self.controller.out_pipe
+        job.focus_z(output=out)
 
     def home(self):
         """
@@ -491,7 +353,9 @@ class RuidaDriver(Parameters):
         """ "
         This would be the command to go to a real physical home position (ie hitting endstops)
         """
-        self.controller.home_xy()
+        job = self.controller.job
+        out = self.controller.out_pipe
+        job.home_xy(output=out)
 
     def rapid_mode(self):
         """
@@ -617,7 +481,9 @@ class RuidaDriver(Parameters):
         @param time_in_ms:
         @return:
         """
-        self.controller.laser_interval(time_in_ms)
+        job = self.controller.job
+        out = self.controller.out_pipe
+        job.laser_interval(time_in_ms, output=out)
 
     def set_abort(self):
         self._aborting = True
@@ -626,64 +492,24 @@ class RuidaDriver(Parameters):
     # PROTECTED DRIVER CODE
     ####################
 
-    def _encode_move(self, x, y):
-        dx = x - self.native_x
-        dy = y - self.native_y
-        if dx == 0 and dy == 0:
-            # We are not moving.
-            return
-
-        if abs(dx) > 8192 or abs(dy) > 8192:
-            # Exceeds encoding limit, use abs.
-            self.controller.move_abs_xy(x, y)
-            return
-
-        if dx == 0:
-            # Y-relative.
-            self.controller.move_rel_y(dy)
-            return
-        if dy == 0:
-            # X-relative.
-            self.controller.move_rel_x(dx)
-            return
-        self.controller.move_rel_xy(dx, dy)
-
-    def _encode_cut(self, x, y):
-        dx = x - self.native_x
-        dy = y - self.native_y
-        if dx == 0 and dy == 0:
-            # We are not moving.
-            return
-
-        if abs(dx) > 8192 or abs(dy) > 8192:
-            # Exceeds encoding limit, use abs.
-            self.controller.cut_abs_xy(x, y)
-            return
-
-        if dx == 0:
-            # Y-relative.
-            self.controller.cut_rel_y(dy)
-            return
-        if dy == 0:
-            # X-relative.
-            self.controller.cut_rel_x(dx)
-            return
-        self.controller.cut_rel_xy(dx, dy)
-
     def _move(self, x, y, cut=True):
         old_current = self.service.current
+        job = self.controller.job
         if self.power_dirty:
             if self.power is not None:
-                self.controller.max_power_1(self.power / 10.0 * self.on_value)
-                self.controller.min_power_1(self.power / 10.0 * self.on_value)
+
+                job.max_power_1(self.power / 10.0 * self.on_value)
+                job.min_power_1(self.power / 10.0 * self.on_value)
             self.power_dirty = False
         if self.speed_dirty:
-            self.controller.speed_laser_1(self.speed)
+            job.speed_laser_1(self.speed)
             self.speed_dirty = False
+        dx = x - self.native_x
+        dy = y - self.native_y
         if cut:
-            self._encode_cut(x, y)
+            job.mark(x, y, dx, dy)
         else:
-            self._encode_move(x, y)
+            job.jump(x, y, dx, dy)
         self.native_x = x
         self.native_y = y
         new_current = self.service.current

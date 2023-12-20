@@ -224,20 +224,16 @@ class RuidaDevice(Service):
             if self.interface == "mock":
                 self.active_interface = self.interface_mock
                 self.driver.controller.out_pipe = self.interface_mock.write
-                self.driver.controller.out_real = self.interface_mock.write_real
             elif self.interface == "udp":
                 self.active_interface = self.interface_udp
                 self.driver.controller.out_pipe = self.interface_udp.write
-                self.driver.controller.out_real = self.interface_udp.write_real
             elif self.interface == "tcp":
                 # Special tcp out to lightburn bridge et al.
                 self.active_interface = self.interface_tcp
                 self.driver.controller.out_pipe = self.interface_tcp.write
-                self.driver.controller.out_real = self.interface_tcp.write_real
             elif self.interface == "usb":
                 self.active_interface = self.interface_usb
                 self.driver.controller.out_pipe = self.interface_usb.write
-                self.driver.controller.out_real = self.interface_usb.write_real
 
         @self.console_command(("estop", "abort"), help=_("Abort Job"))
         def pipe_abort(channel, _, **kwargs):
@@ -287,7 +283,7 @@ class RuidaDevice(Service):
             "magic",
             "m",
             type=int,
-            default=0x88,
+            default=-1,
             help=_("magic number used to encode the file"),
         )
         @self.console_command("save_job", help=_("save job export"), input_type="plan")
@@ -296,12 +292,13 @@ class RuidaDevice(Service):
                 raise CommandSyntaxError
             try:
                 with open(filename, "wb") as f:
+                    if magic == -1:
+                        magic = self.magic
                     driver = RuidaDriver(self)
                     job = LaserJob(filename, list(data.plan), driver=driver)
 
                     driver.controller.out_pipe = f.write
-                    driver.controller.out_real = lambda e: e
-                    driver.controller.set_magic(magic)
+                    driver.controller.job.set_magic(magic)
 
                     driver.job_start(job)
                     job.execute()

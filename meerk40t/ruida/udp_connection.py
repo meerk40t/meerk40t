@@ -60,12 +60,6 @@ class UDPConnection:
         self.socket.sendto(data, (self.service.address, 50200))
         self.send(data)
 
-    def write_real(self, data):
-        self.open()
-        data = struct.pack(">H", sum(data) & 0xFFFF) + data
-        self.socket.sendto(data, (self.service.address, 50200))
-        self.send_realtime(data)
-
     def _run_udp_listener(self):
         try:
             while self.connected:

@@ -56,10 +56,6 @@ class MockConnection:
             self.channel(_("Mock Disconnection Successful.\n"))
             del self.devices[index]
 
-    def write_real(self, data):
-        if self.send:
-            self.send(data)
-
     def write(self, data):
         if self.send:
             self.send(data)
