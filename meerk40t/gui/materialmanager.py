@@ -4,10 +4,11 @@ In essence a material library setting is a persistent list of operations.
 They are stored in the operations.cfg file in the meerk40t working directory
 """
 
-import xml.etree.ElementTree as ET
 import os
+import xml.etree.ElementTree as ET
 
 import wx
+import wx.lib.mixins.listctrl as listmix
 
 from ..core.node.node import Node
 from ..kernel.kernel import get_safe_path
@@ -24,6 +25,18 @@ from .mwindow import MWindow
 from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size
 
 _ = wx.GetTranslation
+
+
+class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
+    """TextEditMixin allows any column to be edited."""
+
+    # ----------------------------------------------------------------------
+    def __init__(
+        self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0
+    ):
+        """Constructor"""
+        wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
+        listmix.TextEditMixin.__init__(self)
 
 
 class MaterialPanel(ScrolledPanel):
@@ -132,7 +145,7 @@ class MaterialPanel(ScrolledPanel):
         )
         self.tree_library.SetToolTip(_("Click to select / Right click for actions"))
 
-        self.list_preview = wx.ListCtrl(
+        self.list_preview = EditableListCtrl(
             self,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
@@ -239,7 +252,11 @@ class MaterialPanel(ScrolledPanel):
         box2.Add(self.combo_entry_type, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_set = wx.Button(self, wx.ID_ANY, _("Set"))
-        self.btn_set.SetToolTip(_("Change the name / lasertype of the current entry\nRight-Click: assign lasertype to all visible entries"))
+        self.btn_set.SetToolTip(
+            _(
+                "Change the name / lasertype of the current entry\nRight-Click: assign lasertype to all visible entries"
+            )
+        )
 
         box2.Add(self.btn_set, 0, wx.EXPAND, 0)
         param_box.Add(box1, 0, wx.EXPAND, 0)
@@ -321,15 +338,14 @@ class MaterialPanel(ScrolledPanel):
         self.btn_import.Bind(wx.EVT_BUTTON, self.on_import)
         self.btn_share.Bind(wx.EVT_BUTTON, self.on_share)
         self.btn_set.Bind(wx.EVT_BUTTON, self.update_entry)
-        # self.Bind(wx.EVT_RIGHT_DOWN, self.update_lasertype_for_all, self.btn_set)
         self.btn_set.Bind(wx.EVT_RIGHT_DOWN, self.update_lasertype_for_all)
         self.tree_library.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_list_selection)
         self.list_preview.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_preview_selection)
-        # self.Bind(
-        #     wx.EVT_RIGHT_DOWN,
-        #     self.on_library_rightclick,
-        #     self.tree_library,
-        # )
+        self.list_preview.Bind(
+            wx.EVT_LIST_BEGIN_LABEL_EDIT, self.before_operation_update
+        )
+        self.list_preview.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_operation_update)
+
         self.tree_library.Bind(
             wx.EVT_RIGHT_DOWN,
             self.on_library_rightclick,
@@ -769,7 +785,6 @@ class MaterialPanel(ScrolledPanel):
         dlg.ShowModal()
         dlg.Destroy()
 
-
     def import_lightburn(self, filename):
         if not os.path.exists(filename):
             return False
@@ -830,15 +845,17 @@ class MaterialPanel(ScrolledPanel):
                 for cutsetting_node in entry_node:
                     sect_num += 1
                     section_name = f"{sect} {sect_num:0>6}"
-                    cut_type= cutsetting_node.attrib.get("type", "Scan")
+                    cut_type = cutsetting_node.attrib.get("type", "Scan")
                     if cut_type.lower() == "cut":
                         op_type = "op engrave"
                     elif cut_type.lower() == "scan":
                         op_type = "op raster"
                     else:
-                        op_type ="op engrave"
-                    self.op_data.write_persistent( section_name, "type", op_type)
-                    self.op_data.write_persistent( section_name, "label", f"{desc} - {title}")
+                        op_type = "op engrave"
+                    self.op_data.write_persistent(section_name, "type", op_type)
+                    self.op_data.write_persistent(
+                        section_name, "label", f"{desc} - {title}"
+                    )
 
                     for param_node in cutsetting_node:
                         param = param_node.tag.lower()
@@ -1085,8 +1102,10 @@ class MaterialPanel(ScrolledPanel):
         )
         if len(op_list) == 0:
             return
-        response= self.context.kernel.yesno(
-            _("Do you want to remove all existing operations before loaading this set?"),
+        response = self.context.kernel.yesno(
+            _(
+                "Do you want to remove all existing operations before loaading this set?"
+            ),
             caption=_("Clear Operation-List"),
         )
         self.context.elements.load_persistent_operations(
@@ -1656,6 +1675,37 @@ class MaterialPanel(ScrolledPanel):
         self.list_preview.SetColumnWidth(3, int(0.40 * remaining))
         self.list_preview.SetColumnWidth(4, int(0.10 * remaining))
         self.list_preview.SetColumnWidth(5, int(0.10 * remaining))
+
+    def before_operation_update(self, event):
+        list_id = event.GetIndex()  # Get the current row
+        col_id = event.GetColumn()  # Get the current column
+        if col_id in (2, 3, 4, 5):
+            event.Allow()
+        else:
+            event.Veto()
+
+    def on_operation_update(self, event):
+        list_id = event.GetIndex()  # Get the current row
+        col_id = event.GetColumn()  # Get the current column
+        new_data = event.GetLabel()  # Get the changed data
+        index = self.list_preview.GetItemData(list_id)
+        key = self.get_nth_operation(index)
+
+        if list_id >= 0 and col_id in (2, 3, 4, 5):
+            if col_id == 2:
+                # id
+                self.op_data.write_persistent(key, "id", new_data)
+            elif col_id == 3:
+                # label
+                self.op_data.write_persistent(key, "label", new_data)
+            elif col_id == 4:
+                # power
+                self.op_data.write_persistent(key, "power", new_data)
+            elif col_id == 5:
+                # speed
+                self.op_data.write_persistent(key, "speed", new_data)
+            # Set the new data in the listctrl
+            self.list_preview.SetItem(list_id, col_id, new_data)
 
     def set_parent(self, par_panel):
         self.parent_panel = par_panel
