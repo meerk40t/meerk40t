@@ -4,13 +4,14 @@ In essence a material library setting is a persistent list of operations.
 They are stored in the operations.cfg file in the meerk40t working directory
 """
 
+import xml.etree.ElementTree as ET
 import os
 
 import wx
 
+from ..core.node.node import Node
 from ..kernel.kernel import get_safe_path
 from ..kernel.settings import Settings
-from ..core.node.node import Node
 from .icons import (
     icon_library,
     icon_points,
@@ -81,7 +82,9 @@ class MaterialPanel(ScrolledPanel):
         label_1 = wx.StaticText(self, wx.ID_ANY, _("Material"))
         filter_box.Add(label_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.txt_material = wx.ComboBox(self, wx.ID_ANY, choices=materials, style=wx.CB_SORT)
+        self.txt_material = wx.ComboBox(
+            self, wx.ID_ANY, choices=materials, style=wx.CB_SORT
+        )
         # self.txt_material = TextCtrl(self, wx.ID_ANY, "", limited=True)
 
         filter_box.Add(self.txt_material, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -123,15 +126,11 @@ class MaterialPanel(ScrolledPanel):
         self.tree_library = wx.TreeCtrl(
             self,
             wx.ID_ANY,
-            style=wx.BORDER_SUNKEN
-            | wx.TR_HAS_BUTTONS
+            style=wx.BORDER_SUNKEN | wx.TR_HAS_BUTTONS
             # | wx.TR_HIDE_ROOT
-            | wx.TR_ROW_LINES
-            | wx.TR_SINGLE,
+            | wx.TR_ROW_LINES | wx.TR_SINGLE,
         )
-        self.tree_library.SetToolTip(
-            _("Click to select / Right click for actions")
-        )
+        self.tree_library.SetToolTip(_("Click to select / Right click for actions"))
 
         self.list_preview = wx.ListCtrl(
             self,
@@ -203,7 +202,9 @@ class MaterialPanel(ScrolledPanel):
         )
         box1.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         # self.txt_entry_name = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.txt_entry_name = wx.ComboBox(self, wx.ID_ANY, choices=materials, style=wx.CB_SORT)
+        self.txt_entry_name = wx.ComboBox(
+            self, wx.ID_ANY, choices=materials, style=wx.CB_SORT
+        )
 
         box1.Add(self.txt_entry_name, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -238,26 +239,30 @@ class MaterialPanel(ScrolledPanel):
         box2.Add(self.combo_entry_type, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_set = wx.Button(self, wx.ID_ANY, _("Set"))
-        self.btn_set.SetToolTip(_("Change the name / lasertype of the current entry"))
+        self.btn_set.SetToolTip(_("Change the name / lasertype of the current entry\nRight-Click: assign lasertype to all visible entries"))
 
         box2.Add(self.btn_set, 0, wx.EXPAND, 0)
         param_box.Add(box1, 0, wx.EXPAND, 0)
         param_box.Add(box2, 0, wx.EXPAND, 0)
         self.txt_entry_note = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE)
-        self.txt_entry_note.SetMinSize(dip_size(self, -1, 2*23))
+        self.txt_entry_note.SetMinSize(dip_size(self, -1, 2 * 23))
         param_box.Add(self.txt_entry_note, 0, wx.EXPAND, 0)
         result_box.Add(self.tree_library, 1, wx.EXPAND, 0)
         result_box.Add(param_box, 0, wx.EXPAND, 0)
         result_box.Add(self.list_preview, 1, wx.EXPAND, 0)
 
         self.txt_material.SetToolTip(_("Filter entries with a certain title."))
-        self.txt_thickness.SetToolTip(_("Filter entries with a certain material thickness."))
+        self.txt_thickness.SetToolTip(
+            _("Filter entries with a certain material thickness.")
+        )
         self.combo_lasertype.SetToolTip(_("Filter entries of a certain laser type"))
 
         self.txt_entry_section.SetToolTip(_("Internal name of the library entry."))
         self.txt_entry_name.SetToolTip(_("Name of the library entry."))
         self.txt_entry_thickness.SetToolTip(_("Thickness of the material."))
-        self.combo_entry_type.SetToolTip(_("Is this entry specific for a certain laser?"))
+        self.combo_entry_type.SetToolTip(
+            _("Is this entry specific for a certain laser?")
+        )
         self.txt_entry_note.SetToolTip(_("You can add additional information here."))
 
         button_box = wx.BoxSizer(wx.VERTICAL)
@@ -309,16 +314,16 @@ class MaterialPanel(ScrolledPanel):
         self.txt_thickness.Bind(wx.EVT_TEXT, self.update_list)
         self.btn_new.Bind(wx.EVT_BUTTON, self.on_new)
         self.btn_use_current.Bind(wx.EVT_BUTTON, self.on_use_current)
-        self.btn_apply.Bind(wx.EVT_BUTTON, self.on_apply)
-        self.btn_simple_apply.Bind(wx.EVT_BUTTON, self.on_simple_apply)
+        self.btn_apply.Bind(wx.EVT_BUTTON, self.on_apply_tree)
+        self.btn_simple_apply.Bind(wx.EVT_BUTTON, self.on_apply_statusbar)
         self.btn_delete.Bind(wx.EVT_BUTTON, self.on_delete)
         self.btn_duplicate.Bind(wx.EVT_BUTTON, self.on_duplicate)
         self.btn_import.Bind(wx.EVT_BUTTON, self.on_import)
         self.btn_share.Bind(wx.EVT_BUTTON, self.on_share)
         self.btn_set.Bind(wx.EVT_BUTTON, self.update_entry)
-        self.tree_library.Bind(
-            wx.EVT_TREE_SEL_CHANGED, self.on_list_selection
-        )
+        # self.Bind(wx.EVT_RIGHT_DOWN, self.update_lasertype_for_all, self.btn_set)
+        self.btn_set.Bind(wx.EVT_RIGHT_DOWN, self.update_lasertype_for_all)
+        self.tree_library.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_list_selection)
         self.list_preview.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_preview_selection)
         # self.Bind(
         #     wx.EVT_RIGHT_DOWN,
@@ -393,9 +398,7 @@ class MaterialPanel(ScrolledPanel):
                         ltype = self.op_data.read_persistent(
                             int, subsection, "laser", 0
                         )
-                        note = self.op_data.read_persistent(
-                            str, subsection, "note", ""
-                        )
+                        note = self.op_data.read_persistent(str, subsection, "note", "")
                     else:
                         count += 1
 
@@ -423,7 +426,13 @@ class MaterialPanel(ScrolledPanel):
         for key, entry in self.material_list.items():
             listidx += 1
             display.append((entry[0], entry[1], entry[2], entry[3], entry[4], listidx))
-        display.sort(key=lambda e: (e[sort_key_primary], e[sort_key_secondary], e[sort_key_tertiary]))
+        display.sort(
+            key=lambda e: (
+                e[sort_key_primary],
+                e[sort_key_secondary],
+                e[sort_key_tertiary],
+            )
+        )
 
         tree = self.tree_library
         tree.DeleteAllItems()
@@ -439,7 +448,7 @@ class MaterialPanel(ScrolledPanel):
         last_category_secondary = None
         tree_primary = tree_root
         tree_secondary = tree_root
-        visible_count = [0, 0] # All, subsections
+        visible_count = [0, 0]  # All, subsections
         for entry in display:
             ltype = entry[3]
             if ltype is None:
@@ -448,11 +457,11 @@ class MaterialPanel(ScrolledPanel):
                 info = self.laser_choices[ltype]
             else:
                 info = "???"
-            if sort_key_primary==3: # laser
+            if sort_key_primary == 3:  # laser
                 this_category_primary = info
             else:
                 this_category_primary = entry[sort_key_primary]
-            if sort_key_secondary==3: # laser
+            if sort_key_secondary == 3:  # laser
                 this_category_secondary = info
             else:
                 this_category_secondary = entry[sort_key_secondary]
@@ -512,7 +521,7 @@ class MaterialPanel(ScrolledPanel):
                 child, cookie = tree.GetNextChild(tree_root, cookie)
 
         if selected is None:
-            if visible_count[0] == 1: # Just one, why don't we select it
+            if visible_count[0] == 1:  # Just one, why don't we select it
                 self.tree_library.SelectItem(first_item)
         else:
             tree.ExpandAllChildren(selected_parent)
@@ -559,7 +568,8 @@ class MaterialPanel(ScrolledPanel):
         self.context.author = last_author
         # We will store the relevant section in a separate file
         oplist, opinfo = self.context.elements.load_persistent_op_list(
-            self.active_material, use_settings=self.op_data,
+            self.active_material,
+            use_settings=self.op_data,
         )
         if len(oplist) == 0:
             return
@@ -685,7 +695,8 @@ class MaterialPanel(ScrolledPanel):
         if self.active_material is None:
             return
         op_list, op_info = self.context.elements.load_persistent_op_list(
-            self.active_material, use_settings=self.op_data,
+            self.active_material,
+            use_settings=self.op_data,
         )
         if len(op_list) == 0:
             return
@@ -716,7 +727,11 @@ class MaterialPanel(ScrolledPanel):
         newname = f"{oldname} ({counter})"
         op_info["name"] = newname
         self.context.elements.save_persistent_operations_list(
-            newsection, oplist=op_list, opinfo=op_info, inform=False, use_settings=self.op_data,
+            newsection,
+            oplist=op_list,
+            opinfo=op_info,
+            inform=False,
+            use_settings=self.op_data,
         )
         self.retrieve_material_list(reload=True, setter=newsection)
 
@@ -726,7 +741,10 @@ class MaterialPanel(ScrolledPanel):
         if self.context.kernel.yesno(
             _("Do you really want to delete this entry? This can't be undone.")
         ):
-            self.context.elements.clear_persistent_operations(self.active_material, use_settings=self.op_data,)
+            self.context.elements.clear_persistent_operations(
+                self.active_material,
+                use_settings=self.op_data,
+            )
             self.retrieve_material_list(reload=True)
 
     def on_delete_all(self, event):
@@ -735,22 +753,136 @@ class MaterialPanel(ScrolledPanel):
         ):
             for entry in self.display_list:
                 material = entry[0]
-                self.context.elements.clear_persistent_operations(material, use_settings=self.op_data,)
+                self.context.elements.clear_persistent_operations(
+                    material,
+                    use_settings=self.op_data,
+                )
             self.on_reset(None)
+
+    def invalid_file(self, filename):
+        dlg = wx.MessageDialog(
+            self,
+            _("Unrecognized format in file {info}".format(info=filename)),
+            _("Invalid file"),
+            wx.OK | wx.ICON_WARNING,
+        )
+        dlg.ShowModal()
+        dlg.Destroy()
+
 
     def import_lightburn(self, filename):
         if not os.path.exists(filename):
             return False
         added = False
         try:
-            with open(filename, "r") as f:
-                while True:
-                    line = f.readline()
-                    if not line:
-                        break
-                    line = line.strip()
-        except (OSError, RuntimeError, PermissionError, FileNotFoundError):
+            tree = ET.parse(filename)
+        except ET.ParseError:
+            self.invalid_file(filename)
             return False
+
+        root = tree.getroot()
+        if root.tag.lower() != "lightburnlibrary":
+            self.invalid_file(filename)
+            return False
+
+        # We need to have a new id...
+        new_import_id = 0
+        pattern = "import_"
+        for section in self.op_data.section_set():
+            if section.startswith(pattern):
+                s = section[len(pattern) :]
+                try:
+                    number = int(s)
+                except ValueError:
+                    number = 0
+                if number > new_import_id:
+                    new_import_id = number
+
+        # def traverse(node):
+        #     print(f"Node: {node.tag}")
+        #     for attr in node.attrib:
+        #         print(f"Attribute: {attr} = {node.attrib[attr]}")
+        #     for child in node:
+        #         traverse(child)
+        # traverse(root)
+
+        for material_node in root:
+            material = material_node.attrib["name"]
+            for entry_node in material_node:
+                thickness = entry_node.attrib.get("Thickness", "-1")
+                try:
+                    thickness_value = float(thickness)
+                except ValueError:
+                    thickness_value = -1
+                if thickness_value < 0:
+                    thickness = ""
+                desc = entry_node.attrib.get("Desc", "")
+                title = entry_node.attrib.get("NoThickTitle", "")
+                new_import_id += 1
+                sect_num = -1
+                sect = f"{pattern}{new_import_id:0>4}"
+                info_section_name = f"{sect} info"
+                self.op_data.write_persistent(info_section_name, "name", material)
+                self.op_data.write_persistent(info_section_name, "laser", 0)
+                self.op_data.write_persistent(info_section_name, "thickness", thickness)
+                note = f"{desc} - {title}"
+                added = True
+                for cutsetting_node in entry_node:
+                    sect_num += 1
+                    section_name = f"{sect} {sect_num:0>6}"
+                    cut_type= cutsetting_node.attrib.get("type", "Scan")
+                    if cut_type.lower() == "cut":
+                        op_type = "op engrave"
+                    elif cut_type.lower() == "scan":
+                        op_type = "op raster"
+                    else:
+                        op_type ="op engrave"
+                    self.op_data.write_persistent( section_name, "type", op_type)
+                    self.op_data.write_persistent( section_name, "label", f"{desc} - {title}")
+
+                    for param_node in cutsetting_node:
+                        param = param_node.tag.lower()
+                        value = param_node.attrib.get("Value", "")
+                        if not value:
+                            continue
+                        try:
+                            numeric_value = float(value)
+                        except ValueError:
+                            continue
+
+                        if param == "numpasses":
+                            if numeric_value != 0:
+                                self.op_data.write_persistent(
+                                    section_name, "passes", numeric_value
+                                )
+                        elif param == "speed":
+                            if numeric_value != 0:
+                                self.op_data.write_persistent(
+                                    section_name, "speed", numeric_value
+                                )
+                        elif param == "maxpower":
+                            if numeric_value != 0:
+                                self.op_data.write_persistent(
+                                    section_name, "power", numeric_value * 10
+                                )
+                        elif param == "frequency":
+                            # khz
+                            if numeric_value != 0:
+                                self.op_data.write_persistent(
+                                    section_name, "frequency", numeric_value / 1000.0
+                                )
+                        elif param == "jumpspeed":
+                            if numeric_value != 0:
+                                self.op_data.write_persistent(
+                                    section_name, "rapid_enabled", True
+                                )
+                                self.op_data.write_persistent(
+                                    section_name, "rapid_speed", numeric_value
+                                )
+                        else:
+                            note += f"\\n{param} = {numeric_value}"
+                self.op_data.write_persistent(info_section_name, "note", note)
+
         return added
 
     def import_ezcad(self, filename):
@@ -770,7 +902,7 @@ class MaterialPanel(ScrolledPanel):
                 pattern = "import_"
                 for section in self.op_data.section_set():
                     if section.startswith(pattern):
-                        s = section[len(pattern):]
+                        s = section[len(pattern) :]
                         try:
                             number = int(s)
                         except ValueError:
@@ -787,20 +919,30 @@ class MaterialPanel(ScrolledPanel):
                     line = line.strip()
                     if line.startswith("[F "):
                         if info_box and info_section_name:
-                            self.op_data.write_persistent(info_section_name, "note", info_box)
+                            self.op_data.write_persistent(
+                                info_section_name, "note", info_box
+                            )
                         info_box = ""
                         new_import_id += 1
                         sect = f"{pattern}{new_import_id:0>4}"
                         info_section_name = f"{sect} info"
                         section_name = f"{sect} {0:0>6}"
                         matname = line[3:-1]
-                        self.op_data.write_persistent(info_section_name, "name", matname)
-                        self.op_data.write_persistent(info_section_name, "laser", laser_type)
-                        self.op_data.write_persistent(section_name, "type", "op engrave")
+                        self.op_data.write_persistent(
+                            info_section_name, "name", matname
+                        )
+                        self.op_data.write_persistent(
+                            info_section_name, "laser", laser_type
+                        )
+                        self.op_data.write_persistent(
+                            section_name, "type", "op engrave"
+                        )
                         added = True
                     elif line.startswith("["):
                         if info_box and info_section_name:
-                            self.op_data.write_persistent(info_section_name, "note", info_box)
+                            self.op_data.write_persistent(
+                                info_section_name, "note", info_box
+                            )
                         # Anything else...
                         section_name = ""
                         info_section_name = ""
@@ -812,44 +954,72 @@ class MaterialPanel(ScrolledPanel):
                         if idx <= 0:
                             continue
                         param = line[:idx].lower()
-                        value = line[idx + 1:]
+                        value = line[idx + 1 :]
                         try:
                             numeric_value = float(value)
                         except ValueError:
                             numeric_value = 0
-                        if param=="loop":
+                        if param == "loop":
                             if numeric_value != 0:
-                                self.op_data.write_persistent(section_name, "passes", numeric_value)
-                        elif param=="markspeed":
+                                self.op_data.write_persistent(
+                                    section_name, "passes", numeric_value
+                                )
+                        elif param == "markspeed":
                             if numeric_value != 0:
-                                self.op_data.write_persistent(section_name, "speed", numeric_value)
-                        elif param=="powerratio":
+                                self.op_data.write_persistent(
+                                    section_name, "speed", numeric_value
+                                )
+                        elif param == "powerratio":
                             if numeric_value != 0:
-                                self.op_data.write_persistent(section_name, "power", numeric_value * 10)
-                        elif param=="freq":
+                                self.op_data.write_persistent(
+                                    section_name, "power", numeric_value * 10
+                                )
+                        elif param == "freq":
                             # khz
                             if numeric_value != 0:
-                                self.op_data.write_persistent(section_name, "frequency", numeric_value/1000.0)
-                        elif param=="jumpspeed":
+                                self.op_data.write_persistent(
+                                    section_name, "frequency", numeric_value / 1000.0
+                                )
+                        elif param == "jumpspeed":
                             if numeric_value != 0:
-                                self.op_data.write_persistent(section_name, "rapid_enabled", True)
-                                self.op_data.write_persistent(section_name, "rapid_speed", numeric_value)
-                        elif param=="starttc":
+                                self.op_data.write_persistent(
+                                    section_name, "rapid_enabled", True
+                                )
+                                self.op_data.write_persistent(
+                                    section_name, "rapid_speed", numeric_value
+                                )
+                        elif param == "starttc":
                             if numeric_value != 0:
-                                self.op_data.write_persistent(section_name, "timing_enabled", True)
-                                self.op_data.write_persistent(section_name, "delay_laser_on", numeric_value)
-                        elif param=="laserofftc":
+                                self.op_data.write_persistent(
+                                    section_name, "timing_enabled", True
+                                )
+                                self.op_data.write_persistent(
+                                    section_name, "delay_laser_on", numeric_value
+                                )
+                        elif param == "laserofftc":
                             if numeric_value != 0:
-                                self.op_data.write_persistent(section_name, "timing_enabled", True)
-                                self.op_data.write_persistent(section_name, "delay_laser_off", numeric_value)
-                        elif param=="polytc":
+                                self.op_data.write_persistent(
+                                    section_name, "timing_enabled", True
+                                )
+                                self.op_data.write_persistent(
+                                    section_name, "delay_laser_off", numeric_value
+                                )
+                        elif param == "polytc":
                             if numeric_value != 0:
-                                self.op_data.write_persistent(section_name, "timing_enabled", True)
-                                self.op_data.write_persistent(section_name, "delay_polygon", numeric_value)
-                        elif param=="qpulsewidth":
+                                self.op_data.write_persistent(
+                                    section_name, "timing_enabled", True
+                                )
+                                self.op_data.write_persistent(
+                                    section_name, "delay_polygon", numeric_value
+                                )
+                        elif param == "qpulsewidth":
                             if numeric_value != 0:
-                                self.op_data.write_persistent(section_name, "pulse_width_enabled", True)
-                                self.op_data.write_persistent(section_name, "pulse_width", numeric_value)
+                                self.op_data.write_persistent(
+                                    section_name, "pulse_width_enabled", True
+                                )
+                                self.op_data.write_persistent(
+                                    section_name, "pulse_width", numeric_value
+                                )
                         else:
                             # Unknown / unsupported - a significant amount of the parameters
                             # would require the addition of different things like hatches,
@@ -869,7 +1039,7 @@ class MaterialPanel(ScrolledPanel):
         return added
 
     def on_import(self, event):
-       #
+        #
         myfile = ""
         mydlg = wx.FileDialog(
             self,
@@ -888,31 +1058,41 @@ class MaterialPanel(ScrolledPanel):
             added = self.import_lightburn(myfile)
         elif myfile.endswith(".lib"):
             added = self.import_ezcad(myfile)
+        else:
+            self.invalid_file(myfile)
+
         if added:
             self.on_reset(None)
 
-    def on_simple_apply(self, event):
+    def on_apply_statusbar(self, event):
         if self.active_material is None:
             return
         op_list, op_info = self.context.elements.load_persistent_op_list(
-            self.active_material, use_settings=self.op_data,
+            self.active_material,
+            use_settings=self.op_data,
         )
         if len(op_list) == 0:
             return
         self.context.elements.default_operations = list(op_list)
         self.context.signal("default_operations")
 
-    def on_apply(self, event):
+    def on_apply_tree(self, event):
         if self.active_material is None:
             return
         op_list, op_info = self.context.elements.load_persistent_op_list(
-            self.active_material, use_settings=self.op_data,
+            self.active_material,
+            use_settings=self.op_data,
         )
         if len(op_list) == 0:
             return
-        self.context.elements.load_persistent_operations(self.active_material, use_settings=self.op_data,)
-        self.context.elements.default_operations = list(op_list)
-        self.context.signal("default_operations")
+        response= self.context.kernel.yesno(
+            _("Do you want to remove all existing operations before loaading this set?"),
+            caption=_("Clear Operation-List"),
+        )
+        self.context.elements.load_persistent_operations(
+            self.active_material, clear=response
+        )
+        self.context.signal("rebuild_tree")
 
     def on_new(self, event):
         section = None
@@ -945,12 +1125,20 @@ class MaterialPanel(ScrolledPanel):
                 return
             # op_list = None save op_branch
             self.context.elements.save_persistent_operations_list(
-                section, oplist=op_list, opinfo=op_info, inform=False, use_settings=self.op_data,
+                section,
+                oplist=op_list,
+                opinfo=op_info,
+                inform=False,
+                use_settings=self.op_data,
             )
         else:
             # op_list = None save op_branch
             self.context.elements.save_persistent_operations_list(
-                section, oplist=None, opinfo=op_info, inform=False, use_settings=self.op_data,
+                section,
+                oplist=None,
+                opinfo=op_info,
+                inform=False,
+                use_settings=self.op_data,
             )
         self.retrieve_material_list(reload=True, setter=section)
 
@@ -965,7 +1153,8 @@ class MaterialPanel(ScrolledPanel):
             ):
                 section = self.active_material
                 op_info = self.context.elements.load_persistent_op_info(
-                    self.active_material, use_settings=self.op_data,
+                    self.active_material,
+                    use_settings=self.op_data,
                 )
                 if "name" not in op_info:
                     op_info["name"] = "Operations List"
@@ -995,7 +1184,11 @@ class MaterialPanel(ScrolledPanel):
 
         # op_list = None save op_branch
         self.context.elements.save_persistent_operations_list(
-            section, oplist=None, opinfo=op_info, inform=False, use_settings=self.op_data,
+            section,
+            oplist=None,
+            opinfo=op_info,
+            inform=False,
+            use_settings=self.op_data,
         )
         self.retrieve_material_list(reload=True, setter=section)
 
@@ -1030,6 +1223,16 @@ class MaterialPanel(ScrolledPanel):
             setter=self.active_material,
         )
 
+    def update_lasertype_for_all(self, event):
+        op_ltype = self.combo_entry_type.GetSelection()
+        if op_ltype < 0:
+            return
+        for entry in self.display_list:
+            material = entry[0]
+            section = f"{material} info"
+            self.op_data.write_persistent(section, "laser", op_ltype)
+        self.on_reset(None)
+
     def update_entry(self, event):
         if self.active_material is None:
             return
@@ -1043,7 +1246,8 @@ class MaterialPanel(ScrolledPanel):
         if op_ltype < 0:
             op_ltype = 0
         op_list, op_info = self.context.elements.load_persistent_op_list(
-            self.active_material, use_settings=self.op_data,
+            self.active_material,
+            use_settings=self.op_data,
         )
         if len(op_list) == 0:
             return
@@ -1067,14 +1271,21 @@ class MaterialPanel(ScrolledPanel):
             or op_section != self.active_material
         ):
             if self.active_material != op_section:
-                self.context.elements.clear_persistent_operations(self.active_material, use_settings=self.op_data,)
+                self.context.elements.clear_persistent_operations(
+                    self.active_material,
+                    use_settings=self.op_data,
+                )
                 self.active_material = op_section
             op_info["laser"] = op_ltype
             op_info["name"] = op_name
             op_info["thickness"] = op_thickness
             op_info["note"] = op_note
             self.context.elements.save_persistent_operations_list(
-                self.active_material, oplist=op_list, opinfo=op_info, inform=False, use_settings=self.op_data,
+                self.active_material,
+                oplist=op_list,
+                opinfo=op_info,
+                inform=False,
+                use_settings=self.op_data,
             )
             self.retrieve_material_list(reload=True, setter=self.active_material)
 
@@ -1098,9 +1309,7 @@ class MaterialPanel(ScrolledPanel):
         if self.active_material is not None:
             secdesc = self.active_material
             idx = 0
-            for subsection in self.op_data.derivable(
-                self.active_material
-            ):
+            for subsection in self.op_data.derivable(self.active_material):
                 if subsection.endswith(" info"):
                     secdesc = self.op_data.read_persistent(
                         str, subsection, "name", secdesc
@@ -1108,33 +1317,19 @@ class MaterialPanel(ScrolledPanel):
                     thickness = self.op_data.read_persistent(
                         str, subsection, "thickness", ""
                     )
-                    ltype = self.op_data.read_persistent(
-                        int, subsection, "laser", 0
-                    )
-                    note = self.op_data.read_persistent(
-                        str, subsection, "note", ""
-                    )
+                    ltype = self.op_data.read_persistent(int, subsection, "laser", 0)
+                    note = self.op_data.read_persistent(str, subsection, "note", "")
                     # We need to replace stored linebreaks with real linebreaks
                     note = note.replace("\\n", "\n")
                     continue
-                optype = self.op_data.read_persistent(
-                    str, subsection, "type", ""
-                )
+                optype = self.op_data.read_persistent(str, subsection, "type", "")
                 if optype is None or optype == "":
                     continue
                 idx += 1
-                opid = self.op_data.read_persistent(
-                    str, subsection, "id", ""
-                )
-                oplabel = self.op_data.read_persistent(
-                    str, subsection, "label", ""
-                )
-                speed = self.op_data.read_persistent(
-                    str, subsection, "speed", ""
-                )
-                power = self.op_data.read_persistent(
-                    str, subsection, "power", ""
-                )
+                opid = self.op_data.read_persistent(str, subsection, "id", "")
+                oplabel = self.op_data.read_persistent(str, subsection, "label", "")
+                speed = self.op_data.read_persistent(str, subsection, "speed", "")
+                power = self.op_data.read_persistent(str, subsection, "power", "")
                 if power == "" and optype.startswith("op "):
                     power = "1000"
                 list_id = self.list_preview.InsertItem(
@@ -1178,11 +1373,11 @@ class MaterialPanel(ScrolledPanel):
 
         item = menu.Append(wx.ID_ANY, _("Load into Tree"), "", wx.ITEM_NORMAL)
         menu.Enable(item.GetId(), bool(self.active_material is not None))
-        self.Bind(wx.EVT_MENU, self.on_apply, item)
+        self.Bind(wx.EVT_MENU, self.on_apply_tree, item)
 
         item = menu.Append(wx.ID_ANY, _("Use for statusbar"), "", wx.ITEM_NORMAL)
         menu.Enable(item.GetId(), bool(self.active_material is not None))
-        self.Bind(wx.EVT_MENU, self.on_simple_apply, item)
+        self.Bind(wx.EVT_MENU, self.on_apply_statusbar, item)
 
         item = menu.Append(wx.ID_ANY, _("Duplicate"), "", wx.ITEM_NORMAL)
         menu.Enable(item.GetId(), bool(self.active_material is not None))
@@ -1203,7 +1398,11 @@ class MaterialPanel(ScrolledPanel):
             oplist = self.context.elements.create_minimal_op_list()
             opinfo = {"name": "Minimal list", "laser": 0}
             self.context.elements.save_persistent_operations_list(
-                section, oplist, opinfo, False, use_settings=self.op_data,
+                section,
+                oplist,
+                opinfo,
+                False,
+                use_settings=self.op_data,
             )
             self.retrieve_material_list(reload=True, setter=section)
 
@@ -1212,7 +1411,11 @@ class MaterialPanel(ScrolledPanel):
             oplist = self.context.elements.create_basic_op_list()
             opinfo = {"name": "Basic list", "laser": 0}
             self.context.elements.save_persistent_operations_list(
-                section, oplist, opinfo, False, use_settings=self.op_data,
+                section,
+                oplist,
+                opinfo,
+                False,
+                use_settings=self.op_data,
             )
             self.retrieve_material_list(reload=True, setter=section)
 
@@ -1230,6 +1433,7 @@ class MaterialPanel(ScrolledPanel):
 
         def set_sort_key(sortvalue):
             local_value = sortvalue
+
             def sort_handler(event):
                 self.categorisation = local_value
                 self.retrieve_material_list(reload=False, setter=self.active_material)
@@ -1374,7 +1578,8 @@ class MaterialPanel(ScrolledPanel):
             if self.active_material is None:
                 return
             op_list, op_info = self.context.elements.load_persistent_op_list(
-                self.active_material, use_settings=self.op_data,
+                self.active_material,
+                use_settings=self.op_data,
             )
             if len(op_list) == 0:
                 return
@@ -1418,7 +1623,11 @@ class MaterialPanel(ScrolledPanel):
 
             if changes:
                 self.context.elements.save_persistent_operations_list(
-                    self.active_material, op_list, op_info, flush=False, use_settings=self.op_data,
+                    self.active_material,
+                    op_list,
+                    op_info,
+                    flush=False,
+                    use_settings=self.op_data,
                 )
                 self.fill_preview()
 
@@ -1518,9 +1727,7 @@ class ImportPanel(wx.Panel):
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
         )
-        self.tree_library.AppendColumn(
-            _("#"), format=wx.LIST_FORMAT_LEFT, width=58
-        )
+        self.tree_library.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=58)
         self.tree_library.AppendColumn(
             _("Material"),
             format=wx.LIST_FORMAT_LEFT,
