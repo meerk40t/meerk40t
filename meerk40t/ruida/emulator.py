@@ -151,10 +151,11 @@ class RuidaEmulator:
         @return:
         """
         packet = self.unswizzle(data) if unswizzle else data
-        for array in parse_commands(packet):
+        for command in parse_commands(packet):
+            array = list(command)
             try:
                 if not self._process_realtime(array):
-                    self.job.write_command(array)
+                    self.job.write_command(command)
                     self.device.spooler.send(self.job, prevent_duplicate=True)
             except (RuidaCommandError, IndexError):
                 if self.channel:

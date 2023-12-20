@@ -113,14 +113,18 @@ def parse_time(data):
 
 
 def parse_commands(data):
-    array = list()
-    for b in data:
-        if b >= 0x80 and len(array) > 0:
-            yield list(array)
-            array.clear()
-        array.append(b)
-    if len(array) > 0:
-        yield array
+    """
+    Parses data blob into command chunk sized pieces.
+    @param data:
+    @return:
+    """
+    mark = 0
+    for i, b in enumerate(data):
+        if b >= 0x80 and mark != i:
+            yield data[mark:i]
+            mark = i
+    if mark != len(data):
+        yield data[mark:]
 
 
 def swizzle_byte(b, magic):
@@ -266,6 +270,9 @@ class RDJob:
             else:
                 return "Disabled"
 
+    def clear(self):
+        self.buffer.clear()
+
     def set_magic(self, magic):
         """
         Sets the magic number for blob decoding.
@@ -308,8 +315,9 @@ class RDJob:
         if self.time_started is None:
             self.time_started = time.time()
         with self.lock:
-            array = self.buffer.pop(0)
+            command = self.buffer.pop(0)
         try:
+            array = list(command)
             self.process(array)
         except IndexError as e:
             raise RuidaCommandError(

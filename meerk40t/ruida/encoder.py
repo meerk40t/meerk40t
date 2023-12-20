@@ -3,7 +3,7 @@ Ruida Encoder
 
 The Ruida Encoder is responsible for turning function calls into binary ruida data.
 """
-from meerk40t.ruida.rdjob import swizzles_lut
+from meerk40t.ruida.rdjob import swizzles_lut, RDJob
 
 INTERFACE_FRAME = b"\xA5\x53\x00"
 INTERFACE_PLUS_X_DOWN = b"\xA5\x50\x02"
@@ -284,22 +284,26 @@ class RuidaEncoder:
 
         self.out_pipe = pipe
         self.out_real = real
-        self.file_data = bytearray()
+        self.job = RDJob()
         self.magic = magic
         self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
-        self.recording = False
+        self.job_mode = False
 
     def __call__(self, *args, real=False, swizzle=True):
         e = b"".join(args)
-        if swizzle:
-            e = bytes([self.lut_swizzle[b] for b in e])
         if real:
-            self.out_real(e)
-        else:
-            if self.recording:
-                self.file_data += e
+            if swizzle:
+                self.out_real(bytes([self.lut_swizzle[b] for b in e]))
             else:
-                self.out_pipe(e)
+                self.out_real(e)
+        else:
+            if self.job_mode:
+                self.job.write_command(e)
+            else:
+                if swizzle:
+                    self.out_pipe(bytes([self.lut_swizzle[b] for b in e]))
+                else:
+                    self.out_pipe(e)
 
     def recv(self, reply):
         e = bytes([self.lut_unswizzle[b] for b in reply])
@@ -307,6 +311,7 @@ class RuidaEncoder:
 
     def set_magic(self, magic):
         self.magic = magic
+        self.job.set_magic(magic)
         self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
 
     def _check_card_id(self):
@@ -314,11 +319,11 @@ class RuidaEncoder:
 
     def start_record(self):
         self._check_card_id()
-        self.recording = True
-        self.file_data = bytearray()
+        self.job_mode = True
+        self.job.clear()
 
     def stop_record(self):
-        self.recording = False
+        self.job_mode = False
         self(self.file_data, swizzle=False)
 
     def calculate_filesum(self):
@@ -726,12 +731,12 @@ class RuidaEncoder:
         self(encode_index(mode))
 
     def ack(self):
-        self(ACK)
+        self(ACK, real=True)
 
     def err(self):
-        self(ERR)
+        self(ERR, real=True)
 
-    def keep_alive(self):
+    def keep_alive(self, real=True):
         self(KEEP_ALIVE)
 
     def end_of_file(self):
