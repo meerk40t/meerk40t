@@ -10,7 +10,13 @@ def plugin(service, lifecycle=None):
     if lifecycle == "service":
         # Responding to "service" makes this a service plugin for the specific services created via the provider
         # We are only a provider of lhystudios devices for now.
-        return "provider/device/lhystudios", "provider/device/grbl"
+        return (
+            "provider/device/lhystudios",
+            "provider/device/grbl",
+            "provider/device/balor",
+            "provider/device/newly",
+            "provider/device/moshi",
+        )
     elif lifecycle == "added":
         service.add_service_delegate(Rotary(service, 0))
 

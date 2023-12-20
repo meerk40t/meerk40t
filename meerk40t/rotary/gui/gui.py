@@ -9,8 +9,14 @@ def plugin(service, lifecycle):
     if lifecycle == "service":
         # Responding to "service" makes this a service plugin for the specific services created via the provider
         # We are only a provider of lhystudios devices for now.
-        return "provider/device/lhystudios", "provider/device/grbl"
-    elif lifecycle == 'added':
+        return (
+            "provider/device/lhystudios",
+            "provider/device/grbl",
+            "provider/device/balor",
+            "provider/device/newly",
+            "provider/device/moshi",
+        )
+    elif lifecycle == "added":
         from meerk40t.gui.icons import icon_rotary
         from meerk40t.rotary.gui.rotarysettings import RotarySettings
 
