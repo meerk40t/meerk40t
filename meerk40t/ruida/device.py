@@ -336,7 +336,7 @@ class RuidaDevice(Service):
 
     @signal_listener("magic")
     def update_magic(self, origin, *args):
-        self.driver.controller.set_magic(self.magic)
+        self.driver.controller.job.set_magic(self.magic)
 
     @signal_listener("scale_x")
     @signal_listener("scale_y")
