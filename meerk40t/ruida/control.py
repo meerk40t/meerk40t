@@ -85,6 +85,47 @@ class RuidaControl:
         if self.udp_program_to_mk_jog:
             channel(_("Ruida Jog Server opened on port {port}.").format(port=50207))
 
+    def open_udp_to_laser(self, jog=True):
+        """
+        Opens up UDP servers for ports 40200 and 40207. Called `mk2lz` and `mk2lz-jog`.
+
+        UDP servers open channels {name}/send and {name}/recv.
+
+        Replies go to the last address to send data to the server.
+
+        @return:
+        """
+        root = self.root
+        channel = root.channel("console")
+        _ = channel._
+        self.mk_to_laser = root.open_as("module/UDPServer", "mk2lz", port=40200)
+        self.mk_to_laser.udp_address = (self.man_in_the_middle, 50200)
+        if self.mk_to_laser:
+            channel(_("Ruida Data Server opened on port {port}.").format(port=40200))
+        if not jog:
+            return
+        self.mk_to_laser_jog = root.open_as("module/UDPServer", "mk2lz-jog", port=40207)
+        self.mk_to_laser_jog.udp_address = (self.man_in_the_middle, 50207)
+        if self.mk_to_laser_jog:
+            channel(_("Ruida Jog Server opened on port {port}.").format(port=40207))
+
+    def connect_man_in_the_middle(self, jog=True):
+        """
+        Connects the rd2mk to mk2lz and vice versa.
+
+        @param jog:
+        @return:
+        """
+        self.root.channel("rd2mk/recv").watch(self.root.channel("mk2lz/send"))
+        self.root.channel("rd2mk/send").watch(self.root.channel("mk2lz/recv"))
+        self.root.channel("mk2lz/recv").watch(self.root.channel("rd2mk/send"))
+        self.root.channel("mk2lz/send").watch(self.root.channel("rd2mk/recv"))
+        if not jog:
+            return
+        self.root.channel("rd2mk-jog/recv").watch(self.root.channel("mk2lz-jog/send"))
+        self.root.channel("rd2mk-jog/send").watch(self.root.channel("mk2lz-jog/recv"))
+        self.root.channel("mk2lz-jog/recv").watch(self.root.channel("rd2mk-jog/send"))
+        self.root.channel("mk2lz-jog/send").watch(self.root.channel("rd2mk-jog/recv"))
 
     def connect_emulator_to_udp(self, jog=True):
         """
@@ -111,8 +152,9 @@ class RuidaControl:
         root = self.root
         emulator = RuidaEmulator(root.device, root.device.view.matrix)
         self.emulator = emulator
-        self.emulator.reply = root.channel("ruida_reply")
-        self.emulator.realtime = root.channel("ruida_reply_realtime")
+        if not self.man_in_the_middle:
+            self.emulator.reply = root.channel("ruida_reply")
+            self.emulator.realtime = root.channel("ruida_reply_realtime")
         self.emulator.channel = root.channel("ruida")
 
     def open_verbose(self):
@@ -182,7 +224,9 @@ class RuidaControl:
         try:
             self.open_udp_to_mk(jog=jog)
             self.connect_emulator_to_udp(jog=jog)
-
+            if man_in_the_middle:
+                self.open_udp_to_laser(jog=jog)
+                self.connect_man_in_the_middle(jog=jog)
             if verbose:
                 self.open_verbose()
         except OSError as e:
