@@ -223,21 +223,21 @@ class RuidaDevice(Service):
         def interface_update(**kwargs):
             if self.interface == "mock":
                 self.active_interface = self.interface_mock
-                self.driver.encoder.out_pipe = self.interface_mock.write
-                self.driver.encoder.out_real = self.interface_mock.write_real
+                self.driver.controller.out_pipe = self.interface_mock.write
+                self.driver.controller.out_real = self.interface_mock.write_real
             elif self.interface == "udp":
                 self.active_interface = self.interface_udp
-                self.driver.encoder.out_pipe = self.interface_udp.write
-                self.driver.encoder.out_real = self.interface_udp.write_real
+                self.driver.controller.out_pipe = self.interface_udp.write
+                self.driver.controller.out_real = self.interface_udp.write_real
             elif self.interface == "tcp":
                 # Special tcp out to lightburn bridge et al.
                 self.active_interface = self.interface_tcp
-                self.driver.encoder.out_pipe = self.interface_tcp.write
-                self.driver.encoder.out_real = self.interface_tcp.write_real
+                self.driver.controller.out_pipe = self.interface_tcp.write
+                self.driver.controller.out_real = self.interface_tcp.write_real
             elif self.interface == "usb":
                 self.active_interface = self.interface_usb
-                self.driver.encoder.out_pipe = self.interface_usb.write
-                self.driver.encoder.out_real = self.interface_usb.write_real
+                self.driver.controller.out_pipe = self.interface_usb.write
+                self.driver.controller.out_real = self.interface_usb.write_real
 
         @self.console_command(("estop", "abort"), help=_("Abort Job"))
         def pipe_abort(channel, _, **kwargs):
@@ -299,9 +299,9 @@ class RuidaDevice(Service):
                     driver = RuidaDriver(self)
                     job = LaserJob(filename, list(data.plan), driver=driver)
 
-                    driver.encoder.out_pipe = f.write
-                    driver.encoder.out_real = lambda e: e
-                    driver.encoder.set_magic(magic)
+                    driver.controller.out_pipe = f.write
+                    driver.controller.out_real = lambda e: e
+                    driver.controller.set_magic(magic)
 
                     driver.job_start(job)
                     job.execute()
@@ -339,7 +339,7 @@ class RuidaDevice(Service):
 
     @signal_listener("magic")
     def update_magic(self, origin, *args):
-        self.driver.encoder.set_magic(self.magic)
+        self.driver.controller.set_magic(self.magic)
 
     @signal_listener("scale_x")
     @signal_listener("scale_y")
