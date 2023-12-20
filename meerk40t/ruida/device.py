@@ -294,6 +294,10 @@ class RuidaDevice(Service):
                 channel(_("Could not save: {filename}").format(filename=filename))
 
     @property
+    def has_endstops(self):
+        return True
+
+    @property
     def connected(self):
         if self.active_interface:
             return self.active_interface.connected
