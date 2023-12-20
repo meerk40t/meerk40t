@@ -107,7 +107,7 @@ class RuidaDriver(Parameters):
         Wants a status report of what the driver is doing.
         @return:
         """
-        x, y = self.controller.get_last_xy()
+        x, y = self.service.native()
         state_major, state_minor = self.controller.state
         return (x, y), state_major, state_minor
 

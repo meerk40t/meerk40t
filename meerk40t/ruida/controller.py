@@ -116,26 +116,6 @@ class RuidaController:
         pass
 
     #######################
-    # PLOTLIKE SHORTCUTS
-    #######################
-
-    def mark(self, x, y):
-        if x == self._last_x and y == self._last_y:
-            return
-        self._last_x, self._last_y = x, y
-
-    def goto(self, x, y, long=None, short=None, distance_limit=None):
-        if x == self._last_x and y == self._last_y:
-            return
-        self._last_x, self._last_y = x, y
-
-    def set_xy(self, x, y):
-        pass
-
-    def get_last_xy(self):
-        return self._last_x, self._last_y
-
-    #######################
     # Command Shortcuts
     #######################
 
