@@ -107,9 +107,8 @@ class RuidaDriver(Parameters):
         Wants a status report of what the driver is doing.
         @return:
         """
-        x, y = self.service.native()
         state_major, state_minor = self.controller.state
-        return (x, y), state_major, state_minor
+        return (self.native_x, self.native_y), state_major, state_minor
 
     def laser_off(self, *values):
         """
