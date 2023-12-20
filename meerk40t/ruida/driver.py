@@ -438,7 +438,7 @@ class RuidaDriver(Parameters):
         elif dy == 0:
             self.encoder.rapid_move_x(dx)
         else:
-            self.encoder.rapid_move_xy(dx, dy)
+            self.encoder.rapid_move_xy(x, y, origin=True)  # Not relative
         self.native_x = x
         self.native_y = y
         new_current = self.service.current
@@ -463,7 +463,7 @@ class RuidaDriver(Parameters):
         elif dy == 0:
             self.encoder.rapid_move_x(dx)
         else:
-            self.encoder.rapid_move_xy(dx, dy)
+            self.encoder.rapid_move_xy(self.native_x + dx, self.native_y + dy, origin=True)
         self.native_x += dx
         self.native_y += dy
         new_current = self.service.current
