@@ -1299,7 +1299,7 @@ class Elemental(Service):
                 op_tree[parent].add_node(op_tree[section])
         return op_list, op_info
 
-    def load_persistent_operations(self, name, classify=True):
+    def load_persistent_operations(self, name, classify=True, clear=True):
         """
         Load oplist section to replace current op_branch data.
 
@@ -1309,7 +1309,8 @@ class Elemental(Service):
         @return:
         """
         settings=self.op_data
-        self.clear_operations()
+        if clear:
+            self.clear_operations()
         operation_branch = self._tree.get(type="branch ops")
         oplist, opinfo = self.load_persistent_op_list(name, use_settings=settings)
         for op in oplist:
