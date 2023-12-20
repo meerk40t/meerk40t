@@ -162,7 +162,7 @@ Per un insieme completo delle istruzioni di formattazione, vedere: https://docs.
 
 english_material_howto = """
 The Material Library Manager allows to create, maintain, use and manage operations that are customized to provide a desired effect with a given material (hence the name Material Library).
-The parameters you want to use e.g. for acrylic are very different from the ones you want to use to engrave a picture on slate.
+The parameters you want to use e.g. for cutting acrylic are very different from the ones you want to use to engrave a picture on slate.
 You can share such a material setting with the MeerK40t community and you can benefit from the contributions of others by loading and using their settings.
 """
 
