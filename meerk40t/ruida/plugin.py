@@ -57,12 +57,17 @@ def plugin(kernel, lifecycle=None):
             action="store_true",
             help=_("shutdown current ruidaserver"),
         )
+        @kernel.console_option(
+            "man_in_the_middle",
+            "m",
+            type=str,
+            help=_("Redirect traffic to a real laser"),
+        )
         @kernel.console_command(
             "ruidacontrol",
             help=_("activate the ruidaserver."),
-            hidden=True,
         )
-        def ruidaserver(command, channel, _, verbose=False, quit=False, **kwargs):
+        def ruidaserver(command, channel, _, verbose=False, quit=False, man_in_the_middle=None, **kwargs):
             """
             The ruidaserver emulation methods provide a simulation of a ruida device.
             this interprets ruida devices in order to be compatible with software that
@@ -76,10 +81,33 @@ def plugin(kernel, lifecycle=None):
                     return
                 ruidacontrol = RuidaControl(root)
                 root.device.register("ruidacontrol", ruidacontrol)
-                ruidacontrol.start(verbose=verbose)
+                ruidacontrol.start(verbose=verbose, man_in_the_middle=man_in_the_middle)
             if quit:
                 ruidacontrol.quit()
                 root.device.unregister("ruidacontrol")
+
+        @kernel.console_argument(
+            "destination",
+            type=str,
+            help=_("bounce all traffic to the designation"),
+        )
+        @kernel.console_command(
+            "ruida_man_in_middle",
+            hidden=True,
+        )
+        def ruidaserver(command, channel, **kwargs):
+            """
+            The ruidaserver emulation methods provide a simulation of a ruida device.
+            this interprets ruida devices in order to be compatible with software that
+            controls that type of device. This would then be sent to the device in a
+            somewhat agnostic fashion.
+            """
+            root = kernel.root
+            ruidacontrol = root.device.lookup("ruidacontrol")
+            if ruidacontrol is None:
+                ruidacontrol = RuidaControl(root)
+                root.device.register("ruidacontrol", ruidacontrol)
+                ruidacontrol.start(verbose=True)
 
     if lifecycle == "preboot":
         prefix = "ruida"
