@@ -130,7 +130,7 @@ class RuidaDevice(Service):
             {
                 "attr": "interpolate",
                 "object": self,
-                "default": 5000,
+                "default": 500,
                 "type": int,
                 "trailer": "μm",
                 "label": _("Curve Interpolation"),
