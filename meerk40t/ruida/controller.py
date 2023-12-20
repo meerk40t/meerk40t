@@ -17,8 +17,6 @@ class RuidaController:
         self.service = service
         self.mode = "init"
         self.paused = False
-        self._last_x = 0
-        self._last_y = 0
 
         self.out_pipe = pipe
         self.job = RDJob()
