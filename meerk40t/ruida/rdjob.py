@@ -699,7 +699,7 @@ class RDJob:
         if array[0] < 0x80:
             if self.channel:
                 self.channel(f"NOT A COMMAND: {array[0]}")
-            raise RuidaCommandError
+            raise RuidaCommandError("Not a command.")
         elif array[0] == 0x80:
             value = abscoord(array[2:7])
             if array[1] == 0x00:
@@ -709,26 +709,26 @@ class RDJob:
                 desc = f"Axis Z Move {value}"
                 self.z += value
         elif array[0] == 0x88:  # 0b10001000 11 characters.
-            x = abscoord(array[1:6]) * self.scale
-            y = abscoord(array[6:11]) * self.scale
-            self.plot_location(x, y, 0)
-            desc = f"Move Absolute ({x} units, {y} units)"
+            x = abscoord(array[1:6])
+            y = abscoord(array[6:11])
+            self.plot_location(x * self.scale, y * self.scale, 0)
+            desc = f"Move Absolute ({x}μm, {y}μm)"
         elif array[0] == 0x89:  # 0b10001001 5 characters
             if len(array) > 1:
-                dx = relcoord(array[1:3]) * self.scale
-                dy = relcoord(array[3:5]) * self.scale
-                self.plot_location(self.x + dx, self.y + dy, 0)
-                desc = f"Move Relative ({dx} units, {dy} units)"
+                dx = relcoord(array[1:3])
+                dy = relcoord(array[3:5])
+                self.plot_location(self.x + dx * self.scale, self.y + dy * self.scale, 0)
+                desc = f"Move Relative ({dx:+}μm, {dy:+}μm)"
             else:
                 desc = "Move Relative (no coords)"
         elif array[0] == 0x8A:  # 0b10101010 3 characters
-            dx = relcoord(array[1:3]) * self.scale
-            self.plot_location(self.x + dx, self.y, 0)
-            desc = f"Move Horizontal Relative ({dx} units)"
+            dx = relcoord(array[1:3])
+            self.plot_location(self.x + dx * self.scale, self.y, 0)
+            desc = f"Move Horizontal Relative ({dx:+}μm)"
         elif array[0] == 0x8B:  # 0b10101011 3 characters
-            dy = relcoord(array[1:3]) * self.scale
-            self.plot_location(self.x, self.y + dy, 0)
-            desc = f"Move Vertical Relative ({dy} units)"
+            dy = relcoord(array[1:3])
+            self.plot_location(self.x, self.y + dy * self.scale, 0)
+            desc = f"Move Vertical Relative ({dy:+}μm)"
         elif array[0] == 0xA0:
             value = abscoord(array[2:7])
             if array[1] == 0x00:
@@ -736,23 +736,23 @@ class RDJob:
             elif array[1] == 0x08:
                 desc = f"Axis U Move {value}"
         elif array[0] == 0xA8:  # 0b10101000 11 characters.
-            x = abscoord(array[1:6]) * self.scale
-            y = abscoord(array[6:11]) * self.scale
-            self.plot_location(x, y, 1)
-            desc = f"Cut Absolute ({x} units, {y} units)"
+            x = abscoord(array[1:6])
+            y = abscoord(array[6:11])
+            self.plot_location(x * self.scale, y * self.scale, 1)
+            desc = f"Cut Absolute ({x}μm, {y}μm)"
         elif array[0] == 0xA9:  # 0b10101001 5 characters
-            dx = relcoord(array[1:3]) * self.scale
-            dy = relcoord(array[3:5]) * self.scale
-            self.plot_location(self.x + dx, self.y + dy, 1)
-            desc = f"Cut Relative ({dx} units, {dy} units)"
+            dx = relcoord(array[1:3])
+            dy = relcoord(array[3:5])
+            self.plot_location(self.x + dx * self.scale, self.y + dy * self.scale, 1)
+            desc = f"Cut Relative ({dx:+}μm, {dy:+}μm)"
         elif array[0] == 0xAA:  # 0b10101010 3 characters
-            dx = relcoord(array[1:3]) * self.scale
-            self.plot_location(self.x + dx, self.y, 1)
-            desc = f"Cut Horizontal Relative ({dx} units)"
+            dx = relcoord(array[1:3])
+            self.plot_location(self.x + dx * self.scale, self.y, 1)
+            desc = f"Cut Horizontal Relative ({dx:+}μm)"
         elif array[0] == 0xAB:  # 0b10101011 3 characters
-            dy = relcoord(array[1:3]) * self.scale
-            self.plot_location(self.x, self.y + dy, 1)
-            desc = f"Cut Vertical Relative ({dy} units)"
+            dy = relcoord(array[1:3])
+            self.plot_location(self.x, self.y + dy * self.scale, 1)
+            desc = f"Cut Vertical Relative ({dy:+}μm)"
         elif array[0] == 0xC7:
             try:
                 v0 = parse_power(array[1:3])
@@ -1034,9 +1034,9 @@ class RDJob:
             elif array[1] == 0x01:
                 pass  # Set filename for job (only realtime, see emulator)
             elif array[1] == 0x03:
-                c_x = abscoord(array[2:7]) * UNITS_PER_uM
-                c_y = abscoord(array[7:12]) * UNITS_PER_uM
-                desc = f"Process TopLeft ({c_x}, {c_y})"
+                c_x = abscoord(array[2:7])
+                c_y = abscoord(array[7:12])
+                desc = f"Process TopLeft ({c_x}μm, {c_y}μm)"
             elif array[1] == 0x04:
                 v0 = decode14(array[2:4])
                 v1 = decode14(array[4:6])
@@ -1054,9 +1054,9 @@ class RDJob:
                 v2 = decodeu35(array[7:12])
                 desc = f"Feed Repeat ({v1}, {v2})"
             elif array[1] == 0x07:
-                c_x = abscoord(array[2:7]) * UNITS_PER_uM
-                c_y = abscoord(array[7:12]) * UNITS_PER_uM
-                desc = f"Process BottomRight({c_x}, {c_y})"
+                c_x = abscoord(array[2:7])
+                c_y = abscoord(array[7:12])
+                desc = f"Process BottomRight({c_x}μm, {c_y}μm)"
             elif array[1] == 0x08:  # Same value given to F2 04
                 v0 = decode14(array[2:4])
                 v1 = decode14(array[4:6])
@@ -1081,17 +1081,17 @@ class RDJob:
                 v1 = array[2]
                 desc = f"Set File Head Distance {v1}"
             elif array[1] == 0x13:
-                c_x = abscoord(array[2:7]) * UNITS_PER_uM
-                c_y = abscoord(array[7:12]) * UNITS_PER_uM
-                desc = f"Array Min Point ({c_x},{c_y})"
+                c_x = abscoord(array[2:7])
+                c_y = abscoord(array[7:12])
+                desc = f"Array Min Point ({c_x}μm, {c_y}μm)"
             elif array[1] == 0x17:
-                c_x = abscoord(array[2:7]) * UNITS_PER_uM
-                c_y = abscoord(array[7:12]) * UNITS_PER_uM
-                desc = f"Array Max Point ({c_x},{c_y})"
+                c_x = abscoord(array[2:7])
+                c_y = abscoord(array[7:12])
+                desc = f"Array Max Point ({c_x}μm, {c_y}μm)"
             elif array[1] == 0x23:
-                c_x = abscoord(array[2:7]) * UNITS_PER_uM
-                c_y = abscoord(array[7:12]) * UNITS_PER_uM
-                desc = f"Array Add ({c_x},{c_y})"
+                c_x = abscoord(array[2:7])
+                c_y = abscoord(array[7:12])
+                desc = f"Array Add ({c_x}μm, {c_y}μm)"
             elif array[1] == 0x24:
                 v1 = array[2]
                 desc = f"Array Mirror {v1}"
@@ -1105,8 +1105,9 @@ class RDJob:
             elif array[1] == 0x32:
                 desc = f"Set File Empty"
             elif array[1] == 0x37:
-                v1 = decodeu35(array[2:7])
-                desc = f"Array Even Distance {v1}"
+                v1 = abscoord(array[2:7])
+                v2 = abscoord(array[7:12])
+                desc = f"Array Even Distance {v1} {v2}"
             elif array[1] == 0x38:
                 v1 = array[2]
                 desc = f"Set Feed Auto Pause {v1}"
@@ -1118,50 +1119,50 @@ class RDJob:
             elif array[1] == 0x46:
                 desc = "BY Test 0x11227766"
             elif array[1] == 0x50:
-                c_x = abscoord(array[1:6]) * UNITS_PER_uM
-                c_y = abscoord(array[6:11]) * UNITS_PER_uM
-                desc = f"Document Min Point({c_x}, {c_y})"
+                c_x = abscoord(array[1:6])
+                c_y = abscoord(array[6:11])
+                desc = f"Document Min Point({c_x}μm, {c_y}μm)"
             elif array[1] == 0x51:
-                c_x = abscoord(array[2:7]) * UNITS_PER_uM
-                c_y = abscoord(array[7:12]) * UNITS_PER_uM
-                desc = f"Document Max Point({c_x}, {c_y})"
+                c_x = abscoord(array[2:7])
+                c_y = abscoord(array[7:12])
+                desc = f"Document Max Point({c_x}μm, {c_y}μm)"
             elif array[1] == 0x52:
                 part = array[2]
-                c_x = abscoord(array[3:8]) * UNITS_PER_uM
-                c_y = abscoord(array[8:13]) * UNITS_PER_uM
-                desc = f"{part}, Min Point({c_x}, {c_y})"
+                c_x = abscoord(array[3:8])
+                c_y = abscoord(array[8:13])
+                desc = f"{part}, Min Point({c_x}μm, {c_y}μm)"
             elif array[1] == 0x53:
                 part = array[2]
-                c_x = abscoord(array[3:8]) * UNITS_PER_uM
-                c_y = abscoord(array[8:13]) * UNITS_PER_uM
-                desc = f"{part}, MaxPoint({c_x}, {c_y})"
+                c_x = abscoord(array[3:8])
+                c_y = abscoord(array[8:13])
+                desc = f"{part}, MaxPoint({c_x}μm, {c_y}μm)"
             elif array[1] == 0x54:
                 axis = array[2]
-                c_x = abscoord(array[3:8]) * UNITS_PER_uM
-                desc = f"Pen Offset {axis}: {c_x}"
+                c_x = abscoord(array[3:8])
+                desc = f"Pen Offset {axis}: {c_x}μm"
             elif array[1] == 0x55:
                 axis = array[2]
-                c_x = abscoord(array[3:8]) * UNITS_PER_uM
-                desc = f"Layer Offset {axis}: {c_x}"
+                c_x = abscoord(array[3:8])
+                desc = f"Layer Offset {axis}: {c_x}μm"
             elif array[1] == 0x57:
                 desc = f"PList Feed"
             elif array[1] == 0x60:
                 desc = f"Set Current Element Index ({array[2]})"
             elif array[1] == 0x61:
                 part = array[2]
-                c_x = abscoord(array[3:8]) * UNITS_PER_uM
-                c_y = abscoord(array[8:13]) * UNITS_PER_uM
-                desc = f"{part}, MinPointEx({c_x}, {c_y})"
+                c_x = abscoord(array[3:8])
+                c_y = abscoord(array[8:13])
+                desc = f"{part}, MinPointEx({c_x}μm, {c_y}μm)"
             elif array[1] == 0x62:
                 part = array[2]
-                c_x = abscoord(array[3:8]) * UNITS_PER_uM
-                c_y = abscoord(array[8:13]) * UNITS_PER_uM
-                desc = f"{part}, MaxPointEx({c_x}, {c_y})"
+                c_x = abscoord(array[3:8])
+                c_y = abscoord(array[8:13])
+                desc = f"{part}, MaxPointEx({c_x}μm, {c_y}μm)"
         elif array[0] == 0xE8:
             # Realtime command.
             pass
         elif array[0] == 0xEA:
-            index = array[1]  # TODO: Index error raised here.
+            index = array[1]
             desc = f"Array Start ({index})"
         elif array[0] == 0xEB:
             desc = "Array End"
@@ -1178,9 +1179,9 @@ class RDJob:
                 enable = array[2]
                 desc = f"Enable Block Cutting ({enable})"
             elif array[1] == 0x03:
-                c_x = abscoord(array[2:7]) * UNITS_PER_uM
-                c_y = abscoord(array[7:12]) * UNITS_PER_uM
-                desc = f"Display Offset ({c_x},{c_y})"
+                c_x = abscoord(array[2:7])
+                c_y = abscoord(array[7:12])
+                desc = f"Display Offset ({c_x}μm, {c_y}μm)"
             elif array[1] == 0x04:
                 enable = array[2]
                 desc = f"Feed Auto Calc ({enable})"
@@ -1197,13 +1198,13 @@ class RDJob:
                 name = bytes(array[2:12])
                 desc = f"Element Name ({str(name)})"
             if array[1] == 0x03:
-                c_x = abscoord(array[2:7]) * UNITS_PER_uM
-                c_y = abscoord(array[7:12]) * UNITS_PER_uM
-                desc = f"Element Array Min Point ({c_x},{c_y})"
+                c_x = abscoord(array[2:7])
+                c_y = abscoord(array[7:12])
+                desc = f"Element Array Min Point ({c_x}μm, {c_y}μm)"
             if array[1] == 0x04:
-                c_x = abscoord(array[2:7]) * UNITS_PER_uM
-                c_y = abscoord(array[7:12]) * UNITS_PER_uM
-                desc = f"Element Array Max Point ({c_x},{c_y})"
+                c_x = abscoord(array[2:7])
+                c_y = abscoord(array[7:12])
+                desc = f"Element Array Max Point ({c_x}μm, {c_y}μm)"
             if array[1] == 0x05:
                 v0 = decode14(array[2:4])
                 v1 = decode14(array[4:6])
@@ -1214,9 +1215,9 @@ class RDJob:
                 v6 = decode14(array[14:16])
                 desc = f"Element Array ({v0}, {v1}, {v2}, {v3}, {v4}, {v5}, {v6})"
             if array[1] == 0x06:
-                c_x = abscoord(array[2:7]) * UNITS_PER_uM
-                c_y = abscoord(array[7:12]) * UNITS_PER_uM
-                desc = f"Element Array Add ({c_x},{c_y})"
+                c_x = abscoord(array[2:7])
+                c_y = abscoord(array[7:12])
+                desc = f"Element Array Add ({c_x}μm, {c_y}μm)"
             if array[1] == 0x07:
                 index = array[2]
                 desc = f"Element Array Mirror ({index})"
