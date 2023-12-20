@@ -2,48 +2,8 @@
 Ruida control code. This governs the interplay between the active device and the emulator. Taking on some aspects that
 are not directly able to be emulated like giving the current state of the device or the location of that device.
 """
-import threading
 
 from meerk40t.ruida.emulator import RuidaEmulator
-
-
-class ThreadedSender:
-    def __init__(self, root, destination, name, start=False):
-        self.root = root
-        self._shutdown = False
-        self._lock = threading.Condition()
-        self._queue = []
-        self._thread = None
-        self._destination = destination
-        self._name = name
-        if start:
-            self.start()
-
-    def __call__(self, data, *args, **kwargs):
-        self._queue.append(data)
-        with self._lock:
-            self._lock.notify()
-
-    def shutdown(self):
-        self._shutdown = True
-        with self._lock:
-            self._lock.notify()
-
-    def start(self):
-        root = self.root
-        self._thread = root.threaded(
-            self._thread_execute,
-            thread_name=self._name,
-            daemon=True,
-        )
-
-    def _thread_execute(self):
-        while not self._shutdown:
-            while self._queue:
-                q = self._queue.pop(0)
-                self._destination(q)
-            with self._lock:
-                self._lock.wait()
 
 
 class RuidaControl:
@@ -52,10 +12,7 @@ class RuidaControl:
         self.verbose = None
         self.man_in_the_middle = None
         self.emulator = None
-        self.delay_emulator_checksum_write = None
-        self._lock = threading.Condition()
-        self._shutdown = False
-        self._queue = []
+        # self.delay_emulator_checksum_write = None
         self.udp_program_to_mk = None
         self.udp_program_to_mk_jog = None
         self.mk_to_laser = None
@@ -116,12 +73,22 @@ class RuidaControl:
         @param jog:
         @return:
         """
+        self.root.channel("rd2mk/recv").start(self.root)
+        self.root.channel("rd2mk/send").start(self.root)
+        self.root.channel("mk2lz/send").start(self.root)
+        self.root.channel("mk2lz/recv").start(self.root)
+
         self.root.channel("rd2mk/recv").watch(self.root.channel("mk2lz/send"))
         self.root.channel("rd2mk/send").watch(self.root.channel("mk2lz/recv"))
         self.root.channel("mk2lz/recv").watch(self.root.channel("rd2mk/send"))
         self.root.channel("mk2lz/send").watch(self.root.channel("rd2mk/recv"))
         if not jog:
             return
+        self.root.channel("rd2mk-jog/recv").start(self.root)
+        self.root.channel("rd2mk-jog/send").start(self.root)
+        self.root.channel("mk2lz-jog/send").start(self.root)
+        self.root.channel("mk2lz-jog/recv").start(self.root)
+
         self.root.channel("rd2mk-jog/recv").watch(self.root.channel("mk2lz-jog/send"))
         self.root.channel("rd2mk-jog/send").watch(self.root.channel("mk2lz-jog/recv"))
         self.root.channel("mk2lz-jog/recv").watch(self.root.channel("rd2mk-jog/send"))
@@ -134,7 +101,7 @@ class RuidaControl:
         @return:
         """
 
-        self.root.channel("rd2mk/recv").watch(self.delay_emulator_checksum_write)
+        self.root.channel("rd2mk/recv").watch(self.emulator.checksum_write)
         self.emulator.reply.watch(self.root.channel("rd2mk/send"))
         if not jog:
             return
@@ -152,9 +119,8 @@ class RuidaControl:
         root = self.root
         emulator = RuidaEmulator(root.device, root.device.view.matrix)
         self.emulator = emulator
-        if not self.man_in_the_middle:
-            self.emulator.reply = root.channel("ruida_reply")
-            self.emulator.realtime = root.channel("ruida_reply_realtime")
+        self.emulator.reply = root.channel("ruida_reply")
+        self.emulator.realtime = root.channel("ruida_reply_realtime")
         self.emulator.channel = root.channel("ruida")
 
     def open_verbose(self):
@@ -207,12 +173,6 @@ class RuidaControl:
         root = self.root
 
         self.open_emulator()
-        self.delay_emulator_checksum_write = ThreadedSender(
-            root,
-            destination=self.emulator.checksum_write,
-            name="ruidacontrol-sender",
-            start=True,
-        )
 
         channel = root.channel("console")
         _ = channel._
@@ -245,7 +205,7 @@ class RuidaControl:
         if self.verbose:
             pass
 
-        self.delay_emulator_checksum_write.shutdown()
+        #self.delay_emulator_checksum_write.stop()
         self.verbose = None
         self.man_in_the_middle = None
         del self.emulator
