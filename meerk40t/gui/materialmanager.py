@@ -82,6 +82,7 @@ class MaterialPanel(ScrolledPanel):
             "Copper",
             "Silver",
             "Gold",
+            "Zinc",
             "Metal",
         ]
         # Dictionary with key=Materialname, entry=Description (Name, Lasertype, entries)
@@ -490,9 +491,7 @@ class MaterialPanel(ScrolledPanel):
             ):
                 continue
             if filterlaser is not None:
-                if filterlaser == 0 or filterlaser == entry[3]:
-                    pass
-                else:
+                if filterlaser not in (0, entry[3]):
                     continue
             self.display_list.append(entry)
             visible_count[0] += 1
@@ -626,13 +625,13 @@ class MaterialPanel(ScrolledPanel):
         try:
             with open(local_file, "r") as f:
                 data = f.read()
-        except:
+        except (OSError, RuntimeError, PermissionError, FileNotFoundError):
             return
-        self.send_data_to_developers(local_file, data)
+        self.send_data_to_community(local_file, data)
 
-    def send_data_to_developers(self, filename, data):
+    def send_data_to_community(self, filename, data):
         """
-        Sends crash log to a server using rfc1341 7.2 The multipart Content-Type
+        Sends the material setting to a server using rfc1341 7.2 The multipart Content-Type
         https://www.w3.org/Protocols/rfc1341/7_2_Multipart.html
 
         @param filename: filename to use when sending file
