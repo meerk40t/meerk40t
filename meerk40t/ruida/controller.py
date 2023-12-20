@@ -273,9 +273,9 @@ def encode_frequency(frequency):
     return encode32(frequency)
 
 
-class RuidaEncoder:
+class RuidaController:
     """
-    Convert function calls into Ruida Encode data.
+    Implements the Ruida protocol data sending.
     """
 
     def __init__(self, service, pipe, real, magic=-1):

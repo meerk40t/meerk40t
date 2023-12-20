@@ -19,7 +19,7 @@ from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTIN
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.plotplanner import PlotPlanner
-from meerk40t.ruida.encoder import RuidaEncoder
+from meerk40t.ruida.controller import RuidaController
 from meerk40t.tools.geomstr import Geomstr
 
 
@@ -34,7 +34,7 @@ class RuidaDriver(Parameters):
         name = self.service.label.replace(" ", "-")
         name = name.replace("/", "-")
         send = service.channel(f"{name}/send")
-        self.controller = RuidaEncoder(self, send, send)
+        self.controller = RuidaController(self, send, send)
 
         self.controller.set_magic(service.magic)
         self.recv = service.channel(f"{name}/recv", pure=True)
