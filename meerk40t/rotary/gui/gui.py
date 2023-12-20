@@ -1,35 +1,39 @@
 ROTARY_VIEW = False
 
 
-def plugin(kernel, lifecycle):
+def plugin(service, lifecycle):
     if lifecycle == "cli":
-        kernel.set_feature("rotary")
+        service.set_feature("rotary")
     if lifecycle == "invalidate":
-        return not kernel.has_feature("wx")
-    if lifecycle == "register":
+        return not service.has_feature("wx")
+    if lifecycle == "service":
+        # Responding to "service" makes this a service plugin for the specific services created via the provider
+        # We are only a provider of lhystudios devices for now.
+        return "provider/device/lhystudios"
+    elif lifecycle == 'added':
         from meerk40t.gui.icons import icon_rotary
         from meerk40t.rotary.gui.rotarysettings import RotarySettings
 
-        _ = kernel.translation
+        _ = service._
 
-        kernel.register("window/Rotary", RotarySettings)
-        kernel.register(
+        service.register("window/Rotary", RotarySettings)
+        service.register(
             "button/device/Rotary",
             {
                 "label": _("Rotary"),
                 "icon": icon_rotary,
                 "tip": _("Opens Rotary Window"),
-                "action": lambda v: kernel.console("window toggle Rotary\n"),
+                "action": lambda v: service.console("window toggle Rotary\n"),
             },
         )
 
-        @kernel.console_command("rotaryview", help=_("Rotary View of Scene"))
+        @service.console_command("rotaryview", help=_("Rotary View of Scene"))
         def toggle_rotary_view(*args, **kwargs):
             """
             Rotary Stretch/Unstretch of Scene based on values in rotary service
             """
             global ROTARY_VIEW
-            rotary = kernel.rotary
+            rotary = service.rotary
             if ROTARY_VIEW:
                 rotary(f"scene aspect {rotary.scale_x} {rotary.scale_y}\n")
             else:
