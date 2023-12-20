@@ -472,6 +472,13 @@ class RuidaDriver(Parameters):
             (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
 
+    def focusz(self):
+        """
+        This is a FocusZ routine on the Ruida Device.
+        @return:
+        """
+        self.encoder.focus_z()
+
     def home(self):
         """
         This is called home, returns to center.

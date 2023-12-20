@@ -257,6 +257,14 @@ class RuidaDevice(Service):
             if self.connected:
                 self.active_interface.close()
 
+        @self.console_command(
+            "focusz",
+            hidden=True,
+            help=_("Initiates a FocusZ Operation"),
+        )
+        def interface_update(**kwargs):
+            self.driver.focusz()
+
         @self.console_argument("filename", type=str)
         @self.console_option(
             "magic",

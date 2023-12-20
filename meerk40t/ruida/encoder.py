@@ -778,7 +778,7 @@ class RuidaEncoder:
         self(HOME_XY)
 
     def focus_z(self):
-        self(FOCUS_Z)
+        self(FOCUS_Z, real=True)
 
     def _rapid_options(self, light=False, origin=False):
         if light and origin:
