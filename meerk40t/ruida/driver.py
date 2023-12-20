@@ -288,7 +288,7 @@ class RuidaDriver(Parameters):
                     part = current_settings.get("part", 0)
                     speed = current_settings.get("speed", 0)
                     power = current_settings.get("power", 0) / 10.0
-                    air = current_settings.get("air", True)
+                    air = current_settings.get("air_assist", True)
                     self.encoder.layer_end()
                     self.encoder.layer_number_part(part)
                     self.encoder.laser_device_0()
