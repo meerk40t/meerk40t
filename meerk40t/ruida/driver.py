@@ -206,7 +206,7 @@ class RuidaDriver(Parameters):
                         time.sleep(0.05)
                     self._move(p.real, p.imag, cut=True)
             elif isinstance(q, WaitCut):
-                self.wait(q.dwell_time)
+                self.controller.job.add_delay(q.dwell_time)
             elif isinstance(q, HomeCut):
                 self.home()
             elif isinstance(q, GotoCut):
