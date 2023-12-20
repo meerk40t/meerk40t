@@ -1,4 +1,5 @@
 import re
+import threading
 from collections import deque
 from datetime import datetime
 from typing import Callable, Optional, Union
@@ -92,6 +93,7 @@ class Channel:
         else:
             self.buffer = deque()
         self.ansi = ansi
+        self.threaded = False
 
     def __repr__(self):
         return f"Channel({repr(self.name)}, buffer_size={str(self.buffer_size)}, line_end={repr(self.line_end)})"
@@ -113,8 +115,12 @@ class Channel:
         *args,
         indent: Optional[bool] = True,
         ansi: Optional[bool] = False,
+        execute_threaded=True,
         **kwargs,
     ):
+        if self.threaded and execute_threaded:
+            self._threaded_call(message, *args, indent, ansi, **kwargs)
+            return
         if isinstance(message, (bytes, bytearray)) or self.pure:
             self._call_raw(message)
             return
@@ -210,3 +216,43 @@ class Channel:
 
     def unwatch(self, monitor_function: Callable):
         self.watchers.remove(monitor_function)
+
+    ###########################
+    # Threaded Channel Mixins.
+    ###########################
+
+    def start(self, root):
+        self.threaded = True
+        lock = threading.Condition()
+        queue = []
+
+        def threaded_call(
+            message: Union[str, bytes, bytearray],
+            *args,
+            **kwargs,
+        ):
+            queue.append((message, args, kwargs))
+            with lock:
+                lock.notify()
+        self._threaded_call = threaded_call
+
+        def run():
+            while self.threaded:
+                while queue:
+                    q, a, k = queue.pop(0)
+                    self(q, *a, **k, execute_threaded=False)
+                with lock:
+                    lock.wait()
+
+        def stop():
+            self.threaded = False
+            with lock:
+                lock.notify()
+
+        thread = root.threaded(
+            run,
+            thread_name=self.name,
+            daemon=True,
+        )
+        thread.stop = stop
+        return thread
