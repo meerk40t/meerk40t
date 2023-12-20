@@ -130,11 +130,12 @@ class RuidaDevice(Service):
             {
                 "attr": "interpolate",
                 "object": self,
-                "default": 50,
+                "default": 5000,
                 "type": int,
+                "trailer": "μm",
                 "label": _("Curve Interpolation"),
                 "section": "_10_Parameters",
-                "tip": _("Number of curve interpolation points"),
+                "tip": _("Native units interpolation points."),
             },
         ]
         self.register_choices("bed_dim", choices)
