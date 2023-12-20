@@ -1562,6 +1562,13 @@ class RDJob:
         self(MAX_POWER_4_PART, encode_part(part), encode_power(power), output=output)
 
     def through_power_1(self, power, output=None):
+        """
+        This is the power used for the Laser On / Laser Off Delay.
+
+        @param power:
+        @param output:
+        @return:
+        """
         self(THROUGH_POWER_1, encode_power(power), output=output)
 
     def through_power_2(self, power, output=None):

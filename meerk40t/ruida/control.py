@@ -73,19 +73,15 @@ class RuidaControl:
         @param jog:
         @return:
         """
-        self.root.channel("rd2mk/recv").start(self.root)
-        self.root.channel("rd2mk/send").start(self.root)
+
         self.root.channel("mk2lz/send").start(self.root)
         self.root.channel("mk2lz/recv").start(self.root)
-
         self.root.channel("rd2mk/recv").watch(self.root.channel("mk2lz/send"))
         self.root.channel("rd2mk/send").watch(self.root.channel("mk2lz/recv"))
         self.root.channel("mk2lz/recv").watch(self.root.channel("rd2mk/send"))
         self.root.channel("mk2lz/send").watch(self.root.channel("rd2mk/recv"))
         if not jog:
             return
-        self.root.channel("rd2mk-jog/recv").start(self.root)
-        self.root.channel("rd2mk-jog/send").start(self.root)
         self.root.channel("mk2lz-jog/send").start(self.root)
         self.root.channel("mk2lz-jog/recv").start(self.root)
 
@@ -103,10 +99,14 @@ class RuidaControl:
 
         self.root.channel("rd2mk/recv").watch(self.emulator.checksum_write)
         self.emulator.reply.watch(self.root.channel("rd2mk/send"))
+        self.root.channel("rd2mk/recv").start(self.root)
+        self.root.channel("rd2mk/send").start(self.root)
         if not jog:
             return
         self.root.channel("rd2mk-jog/recv").watch(self.emulator.realtime_write)
         self.emulator.realtime.watch(self.root.channel("rd2mk-jog/send"))
+        self.root.channel("rd2mk-jog/recv").start(self.root)
+        self.root.channel("rd2mk-jog/send").start(self.root)
 
     def open_emulator(self):
         """
@@ -205,7 +205,7 @@ class RuidaControl:
         if self.verbose:
             pass
 
-        #self.delay_emulator_checksum_write.stop()
+        # self.delay_emulator_checksum_write.stop()
         self.verbose = None
         self.man_in_the_middle = None
         del self.emulator
