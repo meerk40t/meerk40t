@@ -269,8 +269,8 @@ def encode_time(time):
     return encode32(time * 1000)
 
 
-def encode_frequency(frequency):
-    return encode32(frequency)
+def encode_frequency(freq_hz):
+    return encode32(freq_hz)
 
 
 def signed35(v):
@@ -885,7 +885,7 @@ class RDJob:
                 laser = array[2]
                 part = array[3]
                 frequency = parse_frequency(array[4:9])
-                desc = f"part, Laser {laser}, Frequency ({frequency})"
+                desc = f"{part}, Laser {laser}, Frequency ({frequency})"
                 if frequency != self.frequency:
                     self.frequency = frequency
         elif array[0] == 0xC9:
@@ -1315,8 +1315,11 @@ class RDJob:
             speed = current_settings.get("speed", 10)
             power = current_settings.get("power", 1000) / 10.0
             color = current_settings.get("line_color", 0)
+            frequency = current_settings.get("frequency")
 
             self.speed_laser_1_part(part, speed)
+            if frequency:
+                self.frequency_part(0, part, frequency)
             self.min_power_1_part(part, power)
             self.max_power_1_part(part, power)
             self.min_power_2_part(part, power)
