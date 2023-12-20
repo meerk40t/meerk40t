@@ -60,6 +60,7 @@ class RuidaEmulator:
             priority=0,
             channel=self._channel,
             units_to_device_matrix=units_to_device_matrix,
+            magic=self.magic,
         )
         self.z = 0.0
         self.u = 0.0
@@ -93,6 +94,7 @@ class RuidaEmulator:
 
     def _set_magic(self, magic):
         self.magic = magic
+        self.job.set_magic(magic)
         self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
         if self.channel:
             self.channel(f"Setting magic to 0x{self.magic:02x}")
@@ -149,10 +151,11 @@ class RuidaEmulator:
         @return:
         """
         packet = self.unswizzle(data) if unswizzle else data
-        for array in parse_commands(packet):
+        for command in parse_commands(packet):
+            array = list(command)
             try:
                 if not self._process_realtime(array):
-                    self.job.write_command(array)
+                    self.job.write_command(command)
                     self.device.spooler.send(self.job, prevent_duplicate=True)
             except (RuidaCommandError, IndexError):
                 if self.channel:
