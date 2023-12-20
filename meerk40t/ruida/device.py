@@ -239,6 +239,23 @@ class RuidaDevice(Service):
                 self.driver.encoder.out_pipe = self.interface_usb.write
                 self.driver.encoder.out_real = self.interface_usb.write_real
 
+        @self.console_command(("estop", "abort"), help=_("Abort Job"))
+        def pipe_abort(channel, _, **kwargs):
+            self.driver.reset()
+            channel(_("Emergency Stop."))
+            self.signal("pipe;running", False)
+
+        @self.console_command(
+            "pause",
+            help=_("realtime pause/resume of the machine"),
+        )
+        def realtime_pause(**kwargs):
+            if self.driver.paused:
+                self.driver.resume()
+            else:
+                self.driver.pause()
+            self.signal("pause")
+
         @self.console_command(
             "ruida_connect",
             hidden=True,

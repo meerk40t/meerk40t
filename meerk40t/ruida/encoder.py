@@ -399,12 +399,15 @@ class RuidaEncoder:
 
     def abort(self):
         self.mode = "rapid"
+        self.stop_process()
 
     def pause(self):
         self.paused = True
+        self.pause_process()
 
     def resume(self):
         self.paused = False
+        self.restore_process()
 
     #######################
     # Specific Commands
@@ -738,13 +741,13 @@ class RuidaEncoder:
         self(START_PROCESS)
 
     def stop_process(self):
-        self(STOP_PROCESS)
+        self(STOP_PROCESS, real=True)
 
     def pause_process(self):
-        self(PAUSE_PROCESS)
+        self(PAUSE_PROCESS, real=True)
 
     def restore_process(self):
-        self(RESTORE_PROCESS)
+        self(RESTORE_PROCESS, real=True)
 
     def ref_point_2(self):
         """
