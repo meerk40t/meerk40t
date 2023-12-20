@@ -327,7 +327,7 @@ class RuidaEncoder:
         self(self.file_data, swizzle=False)
 
     def calculate_filesum(self):
-        return sum(self.file_data)
+        return self.job.file_sum()
 
     @property
     def state(self):
