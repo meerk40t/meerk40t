@@ -416,6 +416,8 @@ class LihuiyuDevice(Service, Status):
 
         self.driver.out_pipe = self.controller if not self.networked else self.tcp
 
+        self.rotary = self.open("module/Rotary")
+
         _ = self.kernel.translation
 
         @self.console_option(

@@ -1,4 +1,4 @@
-from meerk40t.kernel import Service, lookup_listener, signal_listener
+from meerk40t.kernel import signal_listener, Module
 from meerk40t.svgelements import Matrix
 
 
@@ -7,24 +7,25 @@ def plugin(kernel, lifecycle=None):
         from .gui import gui
 
         return [gui.plugin]
-    if lifecycle == "configure":
-        # Must occur after devices are registered.
-        kernel.add_service("rotary", Rotary(kernel, 0))
+    if lifecycle == "preregister":
+        kernel.register("module/Rotary", Rotary)
 
 
-class Rotary(Service):
+class Rotary(Module):
     """
-    Rotary Service provides rotary information about the selected rotary you intend to use.
+    Rotary Module provides rotary information about the selected rotary you intend to use.
     """
 
-    def __init__(self, kernel, index=0, *args, **kwargs):
-        Service.__init__(self, kernel, f"rotary/{index}")
+    def __init__(self, context, name, index=0):
+        self.parent = context
+        context = context.derive(f"rotary{index}")
+        Module.__init__(self, context, name)
         self.index = index
-        _ = kernel.translation
+        _ = context._
         choices = [
             {
                 "attr": "active",
-                "object": self,
+                "object": context,
                 "default": False,
                 "type": bool,
                 "label": _("Rotary-Mode active"),
@@ -40,27 +41,27 @@ class Rotary(Service):
             # },
             {
                 "attr": "scale_x",
-                "object": self,
+                "object": context,
                 "default": 1.0,
                 "type": float,
                 "label": _("X-Scale"),
                 "tip": _("Scale that needs to be applied to the X-Axis"),
-                "conditional": (self, "active"),
+                "conditional": (context, "active"),
                 "subsection": _("Scale"),
             },
             {
                 "attr": "scale_y",
-                "object": self,
+                "object": context,
                 "default": 1.0,
                 "type": float,
                 "label": _("Y-Scale"),
                 "tip": _("Scale that needs to be applied to the Y-Axis"),
-                "conditional": (self, "active"),
+                "conditional": (context, "active"),
                 "subsection": _("Scale"),
             },
             {
                 "attr": "supress_home",
-                "object": self,
+                "object": context,
                 "default": False,
                 "type": bool,
                 "label": _("Ignore Home"),
@@ -69,45 +70,47 @@ class Rotary(Service):
             },
             {
                 "attr": "flip_x",
-                "object": self,
+                "object": context,
                 "default": False,
                 "type": bool,
                 "label": _("Mirror X"),
                 "tip": _("Mirror the elements on the X-Axis"),
-                "conditional": (self, "active"),
+                "conditional": (context, "active"),
                 "subsection": _("Mirror Output"),
             },
             {
                 "attr": "flip_y",
-                "object": self,
+                "object": context,
                 "default": False,
                 "type": bool,
                 "label": _("Mirror Y"),
                 "tip": _("Mirror the elements on the Y-Axis"),
-                "conditional": (self, "active"),
+                "conditional": (context, "active"),
                 "subsection": _("Mirror Output"),
             },
         ]
-        self.register_choices("rotary", choices)
+        self.parent.register_choices("rotary", choices)
 
-        @self.console_command(
+        @context.console_command(
             "rotary",
             help=_("Rotary base command"),
             output_type="rotary",
         )
         def rotary(command, channel, _, data=None, **kwargs):
             channel(
-                f"Rotary {self.index} set to scale: {self.scale_x}, scale:{self.scale_y}"
+                f"Rotary {self.index} set to scale: {context.scale_x}, scale:{context.scale_y}"
             )
             return "rotary", None
 
-        @self.console_command("rotaryscale", help=_("Rotary Scale selected elements"))
+        @context.console_command(
+            "rotaryscale", help=_("Rotary Scale selected elements")
+        )
         def apply_rotary_scale(*args, **kwargs):
-            sx = self.scale_x
-            sy = self.scale_y
-            x, y = self.device.current
+            sx = context.scale_x
+            sy = context.scale_y
+            x, y = context.device.current
             matrix = Matrix(f"scale({sx}, {sy}, {x}, {y})")
-            for node in self.elements.elems():
+            for node in context.elements.elems():
                 if hasattr(node, "rotary_scale"):
                     # This element is already scaled
                     return
@@ -118,7 +121,26 @@ class Rotary(Service):
                 except AttributeError:
                     pass
 
-    @lookup_listener("service/device/active")
+    @property
+    def scale_x(self):
+        return self.context.scale_x
+
+    @property
+    def scale_y(self):
+        return self.context.scale_y
+
+    @property
+    def active(self):
+        return self.context.active
+
+    @property
+    def flip_x(self):
+        return self.context.flip_x
+
+    @property
+    def flip_y(self):
+        return self.context.flip_y
+
     @signal_listener("scale_x")
     @signal_listener("scale_y")
     @signal_listener("active")
@@ -132,9 +154,9 @@ class Rotary(Service):
         @param args:
         @return:
         """
-        if origin is not None and origin != self.path:
+        if origin is not None and origin != self.context.path:
             return
-        device = self.device
+        device = self.context.device
         device.realize()
 
     @signal_listener("view;realized")
@@ -145,20 +167,11 @@ class Rotary(Service):
         @param args:
         @return:
         """
-        if not self.active:
+        if not self.context.active:
             return
-        device = self.device
-        device.view.scale(self.scale_x, self.scale_y)
-        if self.flip_x:
+        device = self.context.device
+        device.view.scale(self.context.scale_x, self.context.scale_y)
+        if self.context.flip_x:
             device.view.flip_x()
-        if self.flip_y:
+        if self.context.flip_y:
             device.view.flip_y()
-
-    def service_detach(self, *args, **kwargs):
-        pass
-
-    def service_attach(self, *args, **kwargs):
-        pass
-
-    def shutdown(self, *args, **kwargs):
-        pass
