@@ -1168,7 +1168,7 @@ class Elemental(Service):
         for e in self.flat():
             e.unregister()
 
-    def save_persistent_operations_list(self, name, oplist=None, opinfo=None, inform=True):
+    def save_persistent_operations_list(self, name, oplist=None, opinfo=None, inform=True, use_settings=None):
         """
         Saves a given list of operations to the op_data:Settings
 
@@ -1180,9 +1180,13 @@ class Elemental(Service):
             oplist = self.op_branch.children
         if opinfo is None:
             opinfo = dict()
-        self.clear_persistent_operations(name, flush=False)
-        if len(opinfo) > 0:
+        if use_settings is None:
             settings = self.op_data
+        else:
+            settings = use_settings
+
+        self.clear_persistent_operations(name, flush=False, use_settings=settings)
+        if len(opinfo) > 0:
             section = f"{name} info"
             for key, value in opinfo.items():
                 settings.write_persistent(section, key, value)
@@ -1192,7 +1196,7 @@ class Elemental(Service):
     # Operations uniform
     save_persistent_operations = save_persistent_operations_list
 
-    def _save_persistent_operation_tree(self, name, oplist, flush=True, inform=True):
+    def _save_persistent_operation_tree(self, name, oplist, flush=True, inform=True, use_settings=None):
         """
         Recursive save of the tree. Sections append additional values for deeper tree values.
         References are not saved.
@@ -1203,7 +1207,10 @@ class Elemental(Service):
                 then we will let everyone know
         @return:
         """
-        settings = self.op_data
+        if use_settings is None:
+            settings = self.op_data
+        else:
+            settings = use_settings
         for i, op in enumerate(oplist):
             if hasattr(op, "allow_save"):
                 if not op.allow_save():
@@ -1216,7 +1223,7 @@ class Elemental(Service):
             settings.write_persistent(section, "type", op.type)
             op.save(settings, section)
             try:
-                self._save_persistent_operation_tree(section, op.children)
+                self._save_persistent_operation_tree(section, op.children, use_settings=settings)
             except AttributeError:
                 pass
         if not flush:
@@ -1225,7 +1232,7 @@ class Elemental(Service):
         if inform and name.startswith("_default"):
             self.signal("default_operations")
 
-    def clear_persistent_operations(self, name, flush=True):
+    def clear_persistent_operations(self, name, flush=True, use_settings=None):
         """
         Clear operations for the derivables of the given name.
 
@@ -1233,15 +1240,21 @@ class Elemental(Service):
         @param flush: Optionally permit non-flushed to disk.
         @return:
         """
-        settings = self.op_data
+        if use_settings is None:
+            settings = self.op_data
+        else:
+            settings = use_settings
         for section in list(settings.derivable(name)):
             settings.clear_persistent(section)
         if not flush:
             return
         settings.write_configuration()
 
-    def load_persistent_op_info(self, name):
-        settings = self.op_data
+    def load_persistent_op_info(self, name, use_settings=None):
+        if use_settings is None:
+            settings = self.op_data
+        else:
+            settings = use_settings
         op_info = dict()
         for section in list(settings.derivable(name)):
             if section.endswith("info"):
@@ -1252,8 +1265,11 @@ class Elemental(Service):
                 break
         return op_info
 
-    def load_persistent_op_list(self, name):
-        settings = self.op_data
+    def load_persistent_op_list(self, name, use_settings=None):
+        if use_settings is None:
+            settings = self.op_data
+        else:
+            settings = use_settings
 
         op_tree = dict()
         op_info = dict()
@@ -1292,9 +1308,10 @@ class Elemental(Service):
         @param name:
         @return:
         """
+        settings=self.op_data
         self.clear_operations()
         operation_branch = self._tree.get(type="branch ops")
-        oplist, opinfo = self.load_persistent_op_list(name)
+        oplist, opinfo = self.load_persistent_op_list(name, use_settings=settings)
         for op in oplist:
             operation_branch.add_node(op)
         if not classify:
