@@ -284,23 +284,35 @@ class Kernel(Settings):
         """
         additional_plugins = plugin(self, "plugins")
         if additional_plugins is not None:
+            if not isinstance(additional_plugins, (tuple, list)):
+                additional_plugins = tuple(additional_plugins)
             for p in additional_plugins:
                 self.add_plugin(p)
-        plugins = self._kernel_plugins
-        service_path = plugin(self, "service")
-        if service_path is not None:
-            if service_path not in self._service_plugins:
-                self._service_plugins[service_path] = list()
-            plugins = self._service_plugins[service_path]
-        else:
-            module_path = plugin(self, "module")
-            if module_path is not None:
-                if module_path not in self._module_plugins:
-                    self._module_plugins[module_path] = list()
-                plugins = self._module_plugins[module_path]
-
-        if plugin not in plugins:
-            plugins.append(plugin)
+        service_paths = plugin(self, "service")
+        module_paths = plugin(self, "module")
+        if service_paths is None and module_paths is None:
+            # This is just a kernel plugin.
+            if plugin not in self._kernel_plugins:
+                self._kernel_plugins.append(plugin)
+            return
+        if service_paths is not None:
+            # This is a service plugin.
+            if not isinstance(service_paths, (tuple, list)):
+                service_paths = service_paths, # tuple
+            for p in service_paths:
+                if p not in self._service_plugins:
+                    self._service_plugins[p] = list()
+                if plugin not in self._service_plugins[p]:
+                    self._service_plugins[p].append(plugin)
+        if module_paths is not None:
+            # This is a module plugin.
+            if not isinstance(module_paths, (tuple, list)):
+                module_paths = module_paths, # tuple
+            for p in module_paths:
+                if p not in self._module_plugins:
+                    self._module_plugins[p] = list()
+                if plugin not in self._module_plugins[p]:
+                    self._module_plugins[p].append(plugin)
 
     # ==========
     # SERVICES API
