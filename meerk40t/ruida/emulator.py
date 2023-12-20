@@ -631,8 +631,8 @@ class RuidaEmulator:
                     if "Origin" in param:
                         try:
                             self.device.driver.move_abs(
-                                f"{x * 1000}mm",
-                                f"{y * 1000}mm",
+                                f"{x / 1000}mm",
+                                f"{y / 1000}mm",
                             )
                         except AttributeError:
                             pass
