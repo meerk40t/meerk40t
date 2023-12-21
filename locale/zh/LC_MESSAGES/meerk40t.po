@@ -10952,7 +10952,7 @@ msgid "X-Coordinate for placement to append?"
 msgstr "追加放置的 X 坐标？"
 
 #: meerk40t/core/elements/element_treeops.py:1541
-msgid "Append Placement"
+msgid "Append absolute placement"
 msgstr "追加放置"
 
 #: meerk40t/core/elements/element_treeops.py:1553
