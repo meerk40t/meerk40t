@@ -154,6 +154,10 @@ class PlacementPanel(wx.Panel):
         )
 
     def set_widgets(self, node):
+        def show_hide(sizer, flag):
+            sizer.ShowItems(flag)
+            sizer.Show(flag)
+
         self.operation = node
         if self.operation is None or not self.accepts(node):
             self.Hide()
@@ -173,16 +177,11 @@ class PlacementPanel(wx.Panel):
         self.text_y.Enable(flag_enabled)
         self.text_loops.Enable(flag_enabled)
         self.slider_angle.Enable(flag_enabled)
-        if is_current:
-            self.pos_sizer.Show(False)
-            self.rot_sizer.Show(False)
-            self.corner_sizer.Show(False)
-            self.loop_sizer.Show(False)
-        else:
-            self.loop_sizer.Show(True)
-            self.pos_sizer.Show(True)
-            self.rot_sizer.Show(True)
-            self.corner_sizer.Show(True)
+        show_hide(self.pos_sizer, not is_current)
+        show_hide(self.rot_sizer, not is_current)
+        show_hide(self.corner_sizer, not is_current)
+        show_hide(self.loop_sizer, not is_current)
+        if not is_current:
             units = self.context.units_name
             if units in ("inch", "inches"):
                 units = "in"
