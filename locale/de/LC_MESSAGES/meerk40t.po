@@ -16588,13 +16588,13 @@ msgstr "Layout"
 msgid "Distance between placements?"
 msgstr "Abstand zwischen den Job-Startpunkten?"
 
-msgid "How many additional placements on the X-Axis?\n(0 = as many as fit on the bed)"
+msgid "How many placements on the X-Axis?\n(0 = as many as fit on the bed)"
 msgstr "Wie viele zusätzliche Job-Startpunkte auf der X-Achse?\n(0 = so viele wie auf das Laserbett passen)"
 
 msgid "Create placements horizontally"
 msgstr "Job-Startpunkte auf X-Achse erstellen"
 
-msgid "How many additional placements on the Y-Axis?\n(0 = as many as fit on the bed)"
+msgid "How many placements on the Y-Axis?\n(0 = as many as fit on the bed)"
 msgstr "Wie viele zusätzliche Job-Startpunkte auf der Y-Achse?\n(0 = so viele wie auf dem Laserbett passen)"
 
 msgid "Create placements vertically"
@@ -16621,8 +16621,12 @@ msgstr "Y-Koordinate für den neuen Job-Startpunkt?"
 msgid "X-Coordinate for placement to append?"
 msgstr "X-Koordinate für den neuen Job-Startpunkt?"
 
-msgid "Append Placement"
-msgstr "Job-Startpunkt anhängen"
+msgid "Append absolute placement"
+msgstr "Fixen Job-Startpunkt anhängen"
+
+msgid "Append relative placement"
+msgstr "Relativen Job-Startpunkt anhängen"
+
 msgid "Unlevel groups if they just contain another group"
 msgstr "Gruppen eine Ebene tiefer setzen, wenn sie nur eine andere Gruppe enthalten"
 

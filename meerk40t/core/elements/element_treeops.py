@@ -623,137 +623,53 @@ def init_tree(kernel):
             self.signal("element_property_update", data)
             self.signal("refresh_scene", "Scene")
 
+
     @tree_submenu(_("Layout"))
     @tree_prompt("dx", _("Distance between placements?"))
     @tree_prompt(
         "nx",
         _(
-            "How many additional placements on the X-Axis?\n(0 = as many as fit on the bed)"
+            "How many placements on the X-Axis?\n(0 = as many as fit on the bed)"
         ),
     )
     @tree_operation(
         _("Create placements horizontally"), node_type="place point", help=""
     )
     def copies_horizontally(node, dx, nx, pos=None, **kwargs):
-        #
-        if dx is None or dx == "":
-            return
-        try:
-            len_dx = Length(dx)
-            dx_val = float(len_dx)
-        except ValueError:
-            return
-        if nx is None or nx == "":
-            return
-        try:
-            nx = int(nx)
-        except ValueError:
-            return
-        if nx < 0:
-            # Nothing to do
-            return
-        data = []
-        max_x = self.device.view.width
-        for n in list(self.ops(selected=True)):
-            if n.type == "place point":
-                data.append(n)
-        if len(data) == 0:
-            return
-        pos = None
-        for pnode in data:
-            startx = pnode.x + dx_val
-            starty = pnode.y
-            corner = pnode.corner
-            rotation = pnode.rotation
-            if nx == 0:
-                while startx < max_x:
-                    self.op_branch.add(
-                        type="place point",
-                        pos=pos,
-                        x=startx,
-                        y=starty,
-                        rotation=rotation,
-                        corner=corner,
-                    )
-                    startx += dx_val
-            else:
-                for idx in range(nx):
-                    self.op_branch.add(
-                        type="place point",
-                        pos=pos,
-                        x=startx,
-                        y=starty,
-                        rotation=rotation,
-                        corner=corner,
-                    )
-                    startx += dx_val
-        self.signal("updateop_tree")
-        self.signal("refresh_scene", "Scene")
+        self(f"placement_grid {nx} {dx} 1 0\n")
 
     @tree_submenu(_("Layout"))
     @tree_prompt("dy", _("Distance between placements?"))
     @tree_prompt(
         "ny",
         _(
-            "How many additional placements on the Y-Axis?\n(0 = as many as fit on the bed)"
+            "How many placements on the Y-Axis?\n(0 = as many as fit on the bed)"
         ),
     )
     @tree_operation(_("Create placements vertically"), node_type="place point", help="")
     def copies_vertically(node, dy, ny, pos=None, **kwargs):
-        #
-        if dy is None or dy == "":
-            return
-        try:
-            len_dy = Length(dy)
-            dy_val = float(len_dy)
-        except ValueError:
-            return
-        if ny is None or ny == "":
-            return
-        try:
-            ny = int(ny)
-        except ValueError:
-            return
-        if ny < 0:
-            # Nothing to do
-            return
-        data = []
-        max_y = self.device.view.height
-        for n in list(self.ops(selected=True)):
-            if n.type == "place point":
-                data.append(n)
-        if len(data) == 0:
-            return
-        pos = None
-        for pnode in data:
-            startx = pnode.x
-            starty = pnode.y + dy_val
-            corner = pnode.corner
-            rotation = pnode.rotation
-            if ny == 0:
-                while starty < max_y:
-                    self.op_branch.add(
-                        type="place point",
-                        pos=pos,
-                        x=startx,
-                        y=starty,
-                        rotation=rotation,
-                        corner=corner,
-                    )
-                    starty += dy_val
-            else:
-                for idx in range(ny):
-                    self.op_branch.add(
-                        type="place point",
-                        pos=pos,
-                        x=startx,
-                        y=starty,
-                        rotation=rotation,
-                        corner=corner,
-                    )
-                    starty += dy_val
-        self.signal("updateop_tree")
-        self.signal("refresh_scene", "Scene")
+        self(f"placement_grid 1 0 {ny} {dy}\n")
+
+    @tree_submenu(_("Layout"))
+    @tree_prompt("dx", _("Horizontal distance between placements?"))
+    @tree_prompt(
+        "nx",
+        _(
+            "How many placements on the X-Axis?\n(0 = as many as fit on the bed)"
+        ),
+    )
+    @tree_prompt("dy", _("Vertical distance between placements?"))
+    @tree_prompt(
+        "ny",
+        _(
+            "How many placements on the Y-Axis?\n(0 = as many as fit on the bed)"
+        ),
+    )
+    @tree_operation(
+        _("Create grid of placements"), node_type="place point", help=""
+    )
+    def copies_grid(node, dx, nx, dy, ny, pos=None, **kwargs):
+        self(f"placement_grid {nx} {dx} {ny} {dy}\n")
 
     # ---- Burn Direction
     def get_direction_values():
@@ -1831,8 +1747,8 @@ def init_tree(kernel):
     @tree_submenu(_("Append special operation(s)"))
     @tree_prompt("y", _("Y-Coordinate for placement to append?"))
     @tree_prompt("x", _("X-Coordinate for placement to append?"))
-    @tree_operation(_("Append Placement"), node_type="branch ops", help="")
-    def append_operation_placement(node, y, x, pos=None, **kwargs):
+    @tree_operation(_("Append absolute placement"), node_type="branch ops", help=_("Start job at specicic location"))
+    def append_absolute_placement(node, y, x, pos=None, **kwargs):
         self.op_branch.add(
             type="place point",
             pos=pos,
@@ -1841,6 +1757,12 @@ def init_tree(kernel):
             rotation=0,
             corner=0,
         )
+        self.signal("updateop_tree")
+
+    @tree_submenu(_("Append special operation(s)"))
+    @tree_operation(_("Append relative placement"), node_type="branch ops", help=_("Start job at current laserposition"))
+    def append_relative_placement(node, **kwargs):
+        self.op_branch.add(type="place current",)
         self.signal("updateop_tree")
 
     @tree_operation(

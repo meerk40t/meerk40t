@@ -11172,7 +11172,7 @@ msgid "X-Coordinate for placement to append?"
 msgstr "Coordenata X per l'inserimento di posizionamento?"
 
 #: meerk40t/core/elements/element_treeops.py:1541
-msgid "Append Placement"
+msgid "Append absolute placement"
 msgstr "Aggiungi Posizionamento"
 
 #: meerk40t/core/elements/element_treeops.py:1553
@@ -17385,13 +17385,13 @@ msgstr ""
 msgid "Distance between placements?"
 msgstr ""
 
-msgid "How many additional placements on the X-Axis?\n(0 = as many as fit on the bed)"
+msgid "How many placements on the X-Axis?\n(0 = as many as fit on the bed)"
 msgstr ""
 
 msgid "Create placements horizontally"
 msgstr ""
 
-msgid "How many additional placements on the Y-Axis?\n(0 = as many as fit on the bed)"
+msgid "How many placements on the Y-Axis?\n(0 = as many as fit on the bed)"
 msgstr ""
 
 msgid "Create placements vertically"
