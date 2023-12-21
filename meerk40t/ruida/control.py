@@ -263,7 +263,7 @@ class RuidaControl:
         if man_in_the_middle:
             self.issue_mitm_warnings(channel)
         if bridge:
-            self.open_tcp_server(jog=jog)
+            self.open_tcp_server(jog=jog, verbose=verbose)
         else:
             self.open_udp_server(jog=jog, man_in_the_middle=man_in_the_middle)
         if verbose:
