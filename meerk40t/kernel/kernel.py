@@ -89,7 +89,7 @@ class Kernel(Settings):
 
         # Persistent Settings
         Settings.__init__(
-            self, self.name, f"{profile}.cfg", ignore_settings=ignore_settings
+            self, self.name, f"{profile}.cfg", ignore_settings=ignore_settings, create_backup=3
         )
         self.settings = self
         self.delay = delay
