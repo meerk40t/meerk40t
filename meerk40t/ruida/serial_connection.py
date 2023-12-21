@@ -53,6 +53,7 @@ class SerialConnection:
             self.disconnect()
             self.connect()
             self.write(line, retry + 1)
+            self.read()
 
     def open(self):
         if self.laser:
