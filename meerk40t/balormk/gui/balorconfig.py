@@ -6,7 +6,7 @@ from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.kernel import signal_listener
+from meerk40t.kernel import signal_listener, Job
 
 _ = wx.GetTranslation
 
@@ -95,9 +95,12 @@ class BalorConfiguration(MWindow):
         self.Layout()
         for panel in self.panels:
             self.add_module_delegate(panel)
-        self.timer = wx.Timer(self, wx.ID_ANY)
-        self.Bind(wx.EVT_TIMER, self.update_bit_info)
-        # self.update_bit_info()
+        self.timer = Job(
+            process=self.update_bit_info,
+            job_name="balor-bit",
+            interval=1.0,
+            run_main=True,
+        )
 
     @property
     def test_pin(self):
@@ -136,12 +139,12 @@ class BalorConfiguration(MWindow):
     def window_close(self):
         for panel in self.panels:
             panel.pane_hide()
-        self.timer.Stop()
+        self.context.kernel.unschedule(self.timer)
 
     def window_open(self):
         for panel in self.panels:
             panel.pane_show()
-        self.timer.Start(1000)
+        self.context.kernel.schedule(self.timer)
 
     @signal_listener("balorpin")
     def on_pin_change(self, origina, *args):
