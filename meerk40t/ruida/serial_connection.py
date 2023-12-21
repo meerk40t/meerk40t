@@ -54,7 +54,7 @@ class SerialConnection:
             self.connect()
             self.write(line, retry + 1)
 
-    def connect(self):
+    def open(self):
         if self.laser:
             self.events("Already connected")
             return
@@ -89,7 +89,7 @@ class SerialConnection:
 
         self.service.signal("ruida;status", signal_load)
 
-    def disconnect(self):
+    def close(self):
         self.events("Disconnected")
         if self.laser:
             self.laser.close()
