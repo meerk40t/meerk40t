@@ -1625,7 +1625,11 @@ def init_tree(kernel):
 
     @tree_separator_before()
     @tree_separator_after()
-    @tree_operation(_("Material Manager"), node_type="branch ops", help=_("Open the Material Manager"))
+    @tree_operation(
+        _("Material Manager"),
+        node_type="branch ops",
+        help=_("Open the Material Manager"),
+    )
     def load_matman(node, **kwargs):
         self("window open MatManager\n")
 

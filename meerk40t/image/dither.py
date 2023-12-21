@@ -7,9 +7,8 @@ Suggestion to use Numba via Sophist https://github.com/meerk40t/meerk40t/issues/
 referencing: https://www.youtube.com/watch?v=Ld_cz1JwRHk
 """
 
-from PIL import Image
-
 import numpy as np
+from PIL import Image
 
 try:
     from numba import njit

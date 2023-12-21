@@ -1168,7 +1168,9 @@ class Elemental(Service):
         for e in self.flat():
             e.unregister()
 
-    def save_persistent_operations_list(self, name, oplist=None, opinfo=None, inform=True, use_settings=None):
+    def save_persistent_operations_list(
+        self, name, oplist=None, opinfo=None, inform=True, use_settings=None
+    ):
         """
         Saves a given list of operations to the op_data:Settings
 
@@ -1196,7 +1198,9 @@ class Elemental(Service):
     # Operations uniform
     save_persistent_operations = save_persistent_operations_list
 
-    def _save_persistent_operation_tree(self, name, oplist, flush=True, inform=True, use_settings=None):
+    def _save_persistent_operation_tree(
+        self, name, oplist, flush=True, inform=True, use_settings=None
+    ):
         """
         Recursive save of the tree. Sections append additional values for deeper tree values.
         References are not saved.
@@ -1223,7 +1227,9 @@ class Elemental(Service):
             settings.write_persistent(section, "type", op.type)
             op.save(settings, section)
             try:
-                self._save_persistent_operation_tree(section, op.children, use_settings=settings)
+                self._save_persistent_operation_tree(
+                    section, op.children, use_settings=settings
+                )
             except AttributeError:
                 pass
         if not flush:
@@ -1281,7 +1287,6 @@ class Elemental(Service):
 
                 continue
 
-
             op_type = settings.read_persistent(str, section, "type")
             try:
                 op = Node().create(type=op_type)
@@ -1308,7 +1313,7 @@ class Elemental(Service):
         @param name:
         @return:
         """
-        settings=self.op_data
+        settings = self.op_data
         if clear:
             self.clear_operations()
         operation_branch = self._tree.get(type="branch ops")
@@ -1452,10 +1457,7 @@ class Elemental(Service):
         needs_save = self.validate_ids(nodelist=oplist, generic=False)
         if needs_save:
             self.save_persistent_operations_list(
-                std_list,
-                oplist=oplist,
-                opinfo=opinfo,
-                inform=False
+                std_list, oplist=oplist, opinfo=opinfo, inform=False
             )
 
         self.default_operations = oplist

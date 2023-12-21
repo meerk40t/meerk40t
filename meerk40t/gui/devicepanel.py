@@ -267,10 +267,18 @@ class DevicePanel(wx.Panel):
         if size[0] == 0 or size[1] == 0:
             return
         remaining = size[0]
-        self.devices_list.SetColumnWidth(self.list_columns["device"], int(0.40 * remaining))
-        self.devices_list.SetColumnWidth(self.list_columns["driver"], int(0.25 * remaining))
-        self.devices_list.SetColumnWidth(self.list_columns["family"], int(0.25 * remaining))
-        self.devices_list.SetColumnWidth(self.list_columns["status"], int(0.10 * remaining))
+        self.devices_list.SetColumnWidth(
+            self.list_columns["device"], int(0.40 * remaining)
+        )
+        self.devices_list.SetColumnWidth(
+            self.list_columns["driver"], int(0.25 * remaining)
+        )
+        self.devices_list.SetColumnWidth(
+            self.list_columns["family"], int(0.25 * remaining)
+        )
+        self.devices_list.SetColumnWidth(
+            self.list_columns["status"], int(0.10 * remaining)
+        )
 
     def on_start_edit(self, event):
         event.Allow()
@@ -366,7 +374,9 @@ class DevicePanel(wx.Panel):
 
             self.devices_list.SetItem(index, self.list_columns["driver"], type_info)
             self.devices_list.SetItem(index, self.list_columns["family"], family_info)
-            self.devices_list.SetItem(index, self.list_columns["status"], _(active_status))
+            self.devices_list.SetItem(
+                index, self.list_columns["status"], _(active_status)
+            )
             self.devices_list.SetItemData(index, dev_index)
             if self.context.device is device:
                 self.devices_list.SetItemTextColour(index, wx.RED)

@@ -2,7 +2,6 @@ import unittest
 
 from meerk40t.kernel import Kernel
 
-
 state_1 = 0
 state_2 = 0
 
@@ -68,7 +67,6 @@ class TestLifeCycle(unittest.TestCase):
         kernel(partial=True)
 
     def test_kernel_lifecycle(self):
-
         def lifecycle_test(obj=None, lifecycle=None):
             global state_2
             if lifecycle == "preregister":

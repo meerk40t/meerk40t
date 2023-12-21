@@ -50,7 +50,7 @@ BOOL_PARAMETERS = (
     "advanced",
     "stopop",
     "effect",
-    "air_assist"
+    "air_assist",
 )
 
 STRING_PARAMETERS = (

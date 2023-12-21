@@ -298,7 +298,7 @@ class Kernel(Settings):
         if service_paths is not None:
             # This is a service plugin.
             if not isinstance(service_paths, (tuple, list)):
-                service_paths = service_paths, # tuple
+                service_paths = (service_paths,)  # tuple
             for p in service_paths:
                 if p not in self._service_plugins:
                     self._service_plugins[p] = list()
@@ -307,7 +307,7 @@ class Kernel(Settings):
         if module_paths is not None:
             # This is a module plugin.
             if not isinstance(module_paths, (tuple, list)):
-                module_paths = module_paths, # tuple
+                module_paths = (module_paths,)  # tuple
             for p in module_paths:
                 if p not in self._module_plugins:
                     self._module_plugins[p] = list()

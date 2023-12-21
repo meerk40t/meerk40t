@@ -45,6 +45,7 @@ from .icons import (
 from .imagesplitter import RenderSplit
 from .keymap import Keymap
 from .lasertoolpanel import LaserTool
+from .materialmanager import MaterialManager
 from .materialtest import TemplateTool
 from .notes import Notes
 from .operation_info import OperationInformation
@@ -82,7 +83,6 @@ from .simpleui import SimpleUI
 from .simulation import Simulation
 from .tips import Tips
 from .wordlisteditor import WordlistEditor
-from .materialmanager import MaterialManager
 from .wxmmain import MeerK40t
 
 """

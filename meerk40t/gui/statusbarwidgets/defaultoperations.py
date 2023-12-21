@@ -180,7 +180,7 @@ class DefaultOperationWidget(StatusBarWidget):
             size=(self.buttonsize_x, self.buttonsize_y),
             # style=wx.BORDER_RAISED,
         )
-        icon = icon_library.GetBitmap(resize = self.iconsize)
+        icon = icon_library.GetBitmap(resize=self.iconsize)
         self.btn_matman.SetBitmap(icon)
         self.btn_matman.SetToolTip(_("Open material manager"))
         size_it(self.btn_matman, self.buttonsize_x, self.buttonsize_y)
@@ -212,7 +212,9 @@ class DefaultOperationWidget(StatusBarWidget):
 
         def on_menu_material(matname):
             def handler(*args):
-                oplist, opinfo = self.context.elements.load_persistent_op_list(stored_mat)
+                oplist, opinfo = self.context.elements.load_persistent_op_list(
+                    stored_mat
+                )
                 if oplist is not None and len(oplist) > 0:
                     self.context.elements.default_operations = oplist
                     self.Signal("default_operations")
