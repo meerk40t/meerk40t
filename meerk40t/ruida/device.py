@@ -6,6 +6,7 @@ ruida files (*.rd) and turn them likewise into cutcode.
 """
 from meerk40t.core.view import View
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
+from .serial_connection import SerialConnection
 
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
@@ -173,6 +174,51 @@ class RuidaDevice(Service):
         ]
         self.register_choices("ruida-magic", choices)
 
+        def update(choice_dict):
+            """
+            Sets the choices and display of the serial_port values dynamically
+            @param choice_dict:
+            @return:
+            """
+            try:
+                import serial.tools.list_ports
+
+                ports = serial.tools.list_ports.comports()
+                serial_interface = [x.device for x in ports]
+                serial_interface_display = [str(x) for x in ports]
+
+                choice_dict["choices"] = serial_interface
+                choice_dict["display"] = serial_interface_display
+            except ImportError:
+                choice_dict["choices"] = ["UNCONFIGURED"]
+                choice_dict["display"] = ["pyserial-not-installed"]
+
+        choices = [
+            {
+                "attr": "serial_port",
+                "object": self,
+                "default": "UNCONFIGURED",
+                "type": str,
+                "style": "option",
+                "label": "",
+                "tip": _("What serial interface does this device connect to?"),
+                "section": "_10_Serial Interface",
+                "subsection": "_00_",
+                "dynamic": update,
+            },
+            {
+                "attr": "baud_rate",
+                "object": self,
+                "default": 115200,
+                "type": int,
+                "label": _("Baud Rate"),
+                "tip": _("Baud Rate of the device"),
+                "section": "_10_Serial Interface",
+                "subsection": "_00_",
+            },
+        ]
+        self.register_choices("serial", choices)
+
         self.setting(str, "interface", "usb")
         self.setting(int, "packet_count", 0)
         self.setting(str, "serial", None)
@@ -213,7 +259,7 @@ class RuidaDevice(Service):
         self.interface_mock = MockConnection(self)
         self.interface_udp = UDPConnection(self)
         self.interface_tcp = MockConnection(self)
-        self.interface_usb = MockConnection(self)
+        self.interface_usb = SerialConnection(self)
         self.active_interface = None
 
         @self.console_command(
