@@ -1063,7 +1063,7 @@ class MaterialPanel(ScrolledPanel):
         mydlg = wx.FileDialog(
             self,
             message=_("Choose a library-file"),
-            wildcard="Supported files|*.lib;*.clb|EZcad files (*.lib)|*.lib|Lightburn files (*.clb)|*.clb|All files (*.*)|*.*",
+            wildcard="Supported files|*.lib;*.ini;*.clb|EZcad files (*.lib;*.ini)|*.lib;*.ini|Lightburn files (*.clb)|*.clb|All files (*.*)|*.*",
             style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW,
         )
         if mydlg.ShowModal() == wx.ID_OK:
@@ -1075,7 +1075,7 @@ class MaterialPanel(ScrolledPanel):
         added = False
         if myfile.endswith(".clb"):
             added = self.import_lightburn(myfile)
-        elif myfile.endswith(".lib"):
+        elif myfile.endswith(".lib") or myfile.endswith(".ini"):
             added = self.import_ezcad(myfile)
         else:
             self.invalid_file(myfile)
