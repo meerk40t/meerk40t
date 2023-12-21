@@ -11,28 +11,6 @@ from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_si
 _ = wx.GetTranslation
 
 
-class ConfigurationUsb(wx.Panel):
-    def __init__(self, *args, context=None, **kwds):
-        # begin wxGlade: ConfigurationUsb.__init__
-        kwds["style"] = kwds.get("style", 0)
-        wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
-
-        sizer_usb_settings = StaticBoxSizer(
-            self, wx.ID_ANY, _("USB Settings"), wx.VERTICAL
-        )
-
-        self.SetSizer(sizer_usb_settings)
-
-        self.Layout()
-
-    def pane_show(self):
-        pass
-
-    def pane_hide(self):
-        pass
-
-
 class ConfigurationUdp(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: ConfigurationTcp.__init__
@@ -108,13 +86,13 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         )
         sizer_interface_radio.Add(self.radio_mock, 1, wx.EXPAND, 0)
 
-        self.panel_usb_settings = ConfigurationUsb(
-            self, wx.ID_ANY, context=self.context
+        self.panel_usb_settings = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context, choices="serial"
         )
-        sizer_interface.Add(self.panel_usb_settings, 0, wx.EXPAND, 0)
+        sizer_page_1.Add(self.panel_usb_settings, 5, wx.EXPAND, 1)
 
         self.panel_udp_config = ConfigurationUdp(self, wx.ID_ANY, context=self.context)
-        sizer_interface.Add(self.panel_udp_config, 0, wx.EXPAND, 0)
+        sizer_page_1.Add(self.panel_udp_config, 0, wx.EXPAND, 0)
 
         self.SetSizer(sizer_page_1)
 

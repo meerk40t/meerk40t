@@ -13,7 +13,6 @@ class UDPConnection:
         name = name.replace("/", "-")
         self.recv = service.channel(f"{name}/recv", pure=True)
         self.send = service.channel(f"{name}/send", pure=True)
-        self.send_realtime = service.channel(f"{name}/real", pure=True)
         self.events = service.channel(f"{name}/events", pure=True)
         self.is_shutdown = False
         self.recv_address = None
@@ -23,25 +22,27 @@ class UDPConnection:
         self.is_shutdown = True
 
     def open(self):
-        if not self.connected:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.socket.settimeout(4)
-            self.socket.bind(("", 40200))
+        if self.connected:
+            return
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.socket.settimeout(4)
+        self.socket.bind(("", 40200))
 
-            name = self.service.label.replace(" ", "-")
-            name = name.replace("/", "-")
-            self.service.threaded(
-                self._run_udp_listener, thread_name=f"thread-{name}", daemon=True
-            )
-            self.service.signal("pipe;usb_status", "connected")
-            self.events("Connected")
+        name = self.service.label.replace(" ", "-")
+        name = name.replace("/", "-")
+        self.service.threaded(
+            self._run_udp_listener, thread_name=f"thread-{name}", daemon=True
+        )
+        self.service.signal("pipe;usb_status", "connected")
+        self.events("Connected")
 
     def close(self):
-        if self.connected:
-            self.socket.close()
-            self.socket = None
-            self.service.signal("pipe;usb_status", "disconnected")
-            self.events("Disconnected")
+        if not self.connected:
+            return
+        self.socket.close()
+        self.socket = None
+        self.service.signal("pipe;usb_status", "disconnected")
+        self.events("Disconnected")
 
     @property
     def is_connecting(self):
