@@ -38,7 +38,7 @@ def init_commands(kernel):
     @self.console_argument("y", type=Length, help=_("y coord"))
     @self.console_command(
         "placement",
-        help=_("points *"),
+        help=_("Adds a placement = a fixed job start position"),
         input_type=None,
         output_type="ops",
         all_arguments_required=True,
@@ -69,7 +69,7 @@ def init_commands(kernel):
 
     @self.console_command(
         "current_position",
-        help=_("adds a current position placement"),
+        help=_("Adds a relative job start position (at the current laser position)"),
         input_type=None,
         output_type="ops",
         all_arguments_required=True,
@@ -81,13 +81,13 @@ def init_commands(kernel):
         return "ops", added
 
 
-    @self.console_argument("nx", type=int, help=_("How many additional placements on the X-Axis?\n(0 = as many as fit on the bed)"))
+    @self.console_argument("nx", type=int, help=_("How many placements on the X-Axis?\n(0 = as many as fit on the bed)"))
     @self.console_argument("dx", type=Length, help=_("Gap in x-direction"))
-    @self.console_argument("ny", type=int, help=_("How many additional placements on the Y-Axis?\n(0 = as many as fit on the bed)"))
+    @self.console_argument("ny", type=int, help=_("How many placements on the Y-Axis?\n(0 = as many as fit on the bed)"))
     @self.console_argument("dy", type=Length, help=_("Gap in y-direction"))
     @self.console_command(
         "placement_grid",
-        help=_("repeat placements in a grid orientation"),
+        help=_("Repeat placements in a grid orientation"),
         input_type=None,
         output_type="ops",
         all_arguments_required=True,
