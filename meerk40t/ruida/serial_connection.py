@@ -26,8 +26,7 @@ class SerialConnection:
         self.is_shutdown = True
 
     def open(self):
-        if self.laser:
-            self.events("Already connected")
+        if self.connected:
             return
 
         signal_load = "uninitialized"
@@ -70,12 +69,13 @@ class SerialConnection:
         self.service.signal("ruida;status", signal_load)
 
     def close(self):
+        if not self.connected:
+            return
         self.events("Disconnected")
-        if self.laser:
-            self.laser.close()
-            del self.laser
-            self.laser = None
-        self.service.signal("ruida;status", "disconnected")
+        self.laser.close()
+        del self.laser
+        self.laser = None
+        self.service.signal("pipe;usb_status", "disconnected")
 
     @property
     def connected(self):
@@ -89,6 +89,8 @@ class SerialConnection:
         pass
 
     def write(self, line, retry=0):
+        if not self.connected:
+            self.open()
         try:
             self.laser.write(line)
             self.send(line)
@@ -103,7 +105,7 @@ class SerialConnection:
 
     def _run_serial_listener(self):
         try:
-            while self.connected:
+            while self.connected and not self.is_shutdown:
                 try:
                     message = self.laser.read(self.laser.in_waiting)
                     if message:

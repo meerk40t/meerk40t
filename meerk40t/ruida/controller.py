@@ -19,7 +19,6 @@ class RuidaController:
         self.paused = False
 
         self.write = pipe
-        self.read = None
 
         self.job = RDJob()
         self._send_queue = []
