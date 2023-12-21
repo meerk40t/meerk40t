@@ -20,40 +20,10 @@ class SerialConnection:
         self.recv = service.channel(f"{name}/recv", pure=True)
         self.send = service.channel(f"{name}/send", pure=True)
         self.events = service.channel(f"{name}/events", pure=True)
+        self.is_shutdown = False
 
-    @property
-    def connected(self):
-        return self.laser is not None
-
-    @property
-    def is_connecting(self):
-        return False
-
-    def read(self):
-        try:
-            self.read_buffer += self.laser.read(self.laser.in_waiting)
-        except (SerialException, AttributeError, OSError, TypeError):
-            pass
-        f = self.read_buffer.find(b"\n")
-        if f == -1:
-            return None
-        response = self.read_buffer[:f]
-        self.read_buffer = self.read_buffer[f + 1 :]
-        self.recv(response)
-
-    def write(self, line, retry=0):
-        try:
-            self.laser.write(line)
-            self.send(line)
-        except (SerialException, PermissionError, TypeError, AttributeError) as e:
-            # Type error occurs when `pipe_abort_write_r` is none, inside serialpostix.read() (out of sequence close)
-            self.events(f"Error when writing '{line}: {str(e)}'")
-            if retry > 5:
-                return
-            self.disconnect()
-            self.connect()
-            self.write(line, retry + 1)
-            self.read()
+    def shutdown(self, *args, **kwargs):
+        self.is_shutdown = True
 
     def open(self):
         if self.laser:
@@ -81,6 +51,15 @@ class SerialConnection:
                 timeout=0,
             )
             self.events("Connected")
+
+            name = self.service.label.replace(" ", "-")
+            name = name.replace("/", "-")
+            self.service.threaded(
+                self._run_serial_listener, thread_name=f"thread-{name}", daemon=True
+            )
+            self.service.signal("pipe;usb_status", "connected")
+            self.events("Connected")
+
             signal_load = "connected"
         except ConnectionError:
             self.events("Connection Failed.")
@@ -97,3 +76,40 @@ class SerialConnection:
             del self.laser
             self.laser = None
         self.service.signal("ruida;status", "disconnected")
+
+    @property
+    def connected(self):
+        return self.laser is not None
+
+    @property
+    def is_connecting(self):
+        return False
+
+    def abort_connect(self):
+        pass
+
+    def write(self, line, retry=0):
+        try:
+            self.laser.write(line)
+            self.send(line)
+        except (SerialException, PermissionError, TypeError, AttributeError) as e:
+            # Type error occurs when `pipe_abort_write_r` is none, inside serialpostix.read() (out of sequence close)
+            self.events(f"Error when writing '{line}: {str(e)}'")
+            if retry > 5:
+                return
+            self.close()
+            self.open()
+            self.write(line, retry + 1)
+
+    def _run_serial_listener(self):
+        try:
+            while self.connected:
+                try:
+                    message = self.laser.read(self.laser.in_waiting)
+                    if message:
+                        self.recv(message)
+                except (SerialException, AttributeError, OSError, TypeError):
+                    pass
+
+        except OSError:
+            pass

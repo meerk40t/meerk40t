@@ -270,17 +270,25 @@ class RuidaDevice(Service):
         def interface_update(**kwargs):
             if self.interface == "mock":
                 self.active_interface = self.interface_mock
-                self.driver.controller.out_pipe = self.interface_mock.write
+                self.driver.controller.write = self.interface_mock.write
+                self.driver.controller.read = None
+                self.driver.controller.start()
             elif self.interface == "udp":
                 self.active_interface = self.interface_udp
-                self.driver.controller.out_pipe = self.interface_udp.write
+                self.driver.controller.write = self.interface_udp.write
+                self.driver.controller.read = None
+                self.driver.controller.start()
             elif self.interface == "tcp":
                 # Special tcp out to lightburn bridge et al.
                 self.active_interface = self.interface_tcp
-                self.driver.controller.out_pipe = self.interface_tcp.write
+                self.driver.controller.write = self.interface_tcp.write
+                self.driver.controller.read = None
+                self.driver.controller.start()
             elif self.interface == "usb":
                 self.active_interface = self.interface_usb
-                self.driver.controller.out_pipe = self.interface_usb.write
+                self.driver.controller.write = self.interface_usb.write
+                self.driver.controller.read = self.interface_usb.read
+                self.driver.controller.start()
 
         @self.console_command(("estop", "abort"), help=_("Abort Job"))
         def pipe_abort(channel, _, **kwargs):
@@ -344,7 +352,7 @@ class RuidaDevice(Service):
                     driver = RuidaDriver(self)
                     job = LaserJob(filename, list(data.plan), driver=driver)
 
-                    driver.controller.out_pipe = f.write
+                    driver.controller.write = f.write
                     driver.controller.job.set_magic(magic)
 
                     driver.job_start(job)

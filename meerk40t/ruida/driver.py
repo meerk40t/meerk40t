@@ -275,7 +275,7 @@ class RuidaDriver(Parameters):
         """
         old_current = self.service.current
         job = self.controller.job
-        out = self.controller.out_pipe
+        out = self.controller.write
         job.speed_laser_1(100.0, output=out)
         job.min_power_1(0, output=out)
         job.min_power_2(0, output=out)
@@ -309,7 +309,7 @@ class RuidaDriver(Parameters):
         """
         old_current = self.service.current
         job = self.controller.job
-        out = self.controller.out_pipe
+        out = self.controller.write
         dx, dy = self.service.view.position(dx, dy, vector=True)
         if dx == 0:
             if dy != 0:
@@ -337,7 +337,7 @@ class RuidaDriver(Parameters):
         @return:
         """
         job = self.controller.job
-        out = self.controller.out_pipe
+        out = self.controller.write
         job.focus_z(output=out)
 
     def home(self):
@@ -353,7 +353,7 @@ class RuidaDriver(Parameters):
         This would be the command to go to a real physical home position (ie hitting endstops)
         """
         job = self.controller.job
-        out = self.controller.out_pipe
+        out = self.controller.write
         job.home_xy(output=out)
 
     def rapid_mode(self):
@@ -481,7 +481,7 @@ class RuidaDriver(Parameters):
         @return:
         """
         job = self.controller.job
-        out = self.controller.out_pipe
+        out = self.controller.write
         job.laser_interval(time_in_ms, output=out)
 
     def set_abort(self):

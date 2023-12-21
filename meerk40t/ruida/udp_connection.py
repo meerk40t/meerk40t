@@ -13,7 +13,6 @@ class UDPConnection:
         name = name.replace("/", "-")
         self.recv = service.channel(f"{name}/recv", pure=True)
         self.send = service.channel(f"{name}/send", pure=True)
-        self.send_realtime = service.channel(f"{name}/real", pure=True)
         self.events = service.channel(f"{name}/events", pure=True)
         self.is_shutdown = False
         self.recv_address = None

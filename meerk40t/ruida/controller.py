@@ -18,7 +18,9 @@ class RuidaController:
         self.mode = "init"
         self.paused = False
 
-        self.out_pipe = pipe
+        self.write = pipe
+        self.read = None
+
         self.job = RDJob()
         self._send_queue = []
         self._send_lock = threading.Condition()
@@ -50,7 +52,7 @@ class RuidaController:
     def _data_sender(self):
         while self._send_queue:
             data = self._send_queue.pop(0)
-            self.out_pipe(data)
+            self.write(data)
             with self._send_lock:
                 if not self._send_lock.wait(5):
                     self.service.signal("warning", "Connection Problem.", "Timeout")
@@ -67,7 +69,7 @@ class RuidaController:
         self.events(f"-->: {e}")
 
     def start_record(self):
-        self.job.get_setting(MEM_CARD_ID, output=self.out_pipe)
+        self.job.get_setting(MEM_CARD_ID, output=self.write)
         self.job.clear()
 
     def stop_record(self):
@@ -128,12 +130,12 @@ class RuidaController:
 
     def abort(self):
         self.mode = "rapid"
-        self.job.stop_process(output=self.out_pipe)
+        self.job.stop_process(output=self.write)
 
     def pause(self):
         self.paused = True
-        self.job.pause_process(output=self.out_pipe)
+        self.job.pause_process(output=self.write)
 
     def resume(self):
         self.paused = False
-        self.job.restore_process(output=self.out_pipe)
+        self.job.restore_process(output=self.write)
