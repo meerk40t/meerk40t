@@ -1758,11 +1758,7 @@ def init_tree(kernel):
     @tree_submenu(_("Append special operation(s)"))
     @tree_operation(_("Append relative placement"), node_type="branch ops", help=_("Start job at current laserposition"))
     def append_relative_placement(node, **kwargs):
-        self.op_branch.add(
-            type="place current",
-            rotation=0,
-            corner=0,
-        )
+        self.op_branch.add(type="place current",)
         self.signal("updateop_tree")
 
     @tree_operation(
