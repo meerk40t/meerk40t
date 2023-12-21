@@ -10,7 +10,7 @@ from typing import Tuple, Union
 
 from meerk40t.kernel import get_safe_path
 
-from ..core.units import UNITS_PER_MM, UNITS_PER_uM
+from ..core.units import UNITS_PER_uM
 from .exceptions import RuidaCommandError
 from .rdjob import (
     RDJob,
@@ -587,52 +587,52 @@ class RuidaEmulator:
                     param = "Origin"
 
                 if array[1] == 0x00 or array[1] == 0x50:
-                    coord = abscoord(array[3:8]) * self.scale
+                    coord = abscoord(array[3:8])
                     self._describe(
-                        array, f"Move {param} X: {coord} ({self.x},{self.y})"
+                        array, f"Move {param} X: {coord:+}μm ({self.x},{self.y})"
                     )
                     try:
-                        self.device.driver.move_abs(self.x + coord, self.y)
+                        self.device.driver.move_abs(self.x + coord * self.scale, self.y)
                     except AttributeError:
                         pass
                 elif array[1] == 0x01 or array[1] == 0x51:
-                    coord = abscoord(array[3:8]) * self.scale
+                    coord = abscoord(array[3:8])
                     self._describe(
-                        array, f"Move {param} Y: {coord} ({self.x},{self.y})"
+                        array, f"Move {param} Y: {coord:+}μm ({self.x},{self.y})"
                     )
                     try:
-                        self.device.driver.move_abs(self.x, self.y + coord)
+                        self.device.driver.move_abs(self.x, self.y + coord * self.scale)
                     except AttributeError:
                         pass
                 elif array[1] == 0x02 or array[1] == 0x52:
                     coord = abscoord(array[3:8])
                     self._describe(
-                        array, f"Move {param} Z: {coord} ({self.x},{self.y})"
+                        array, f"Move {param} Z: {coord:+}μm ({self.x},{self.y})"
                     )
                     try:
-                        self.device.driver.axis("z", coord)
+                        self.device.driver.axis("z", coord * self.scale)
                     except AttributeError:
                         pass
                 elif array[1] == 0x03 or array[1] == 0x53:
                     coord = abscoord(array[3:8])
                     self._describe(
-                        array, f"Move {param} U: {coord} ({self.x},{self.y})"
+                        array, f"Move {param} U: {coord:+}μm ({self.x},{self.y})"
                     )
                     try:
-                        self.device.driver.axis("u", self.u)
+                        self.device.driver.axis("u", coord * self.scale)
                     except AttributeError:
                         pass
                 elif array[1] == 0x0F:
                     self._describe(array, "Feed Axis Move")
                 elif array[1] == 0x10 or array[1] == 0x60:
-                    x = abscoord(array[3:8]) * self.scale
-                    y = abscoord(array[8:13]) * self.scale
-                    self._describe(array, f"Move {param} XY ({x}, {y})")
+                    x = abscoord(array[3:8])
+                    y = abscoord(array[8:13])
+                    self._describe(array, f"Move {param} XY ({x}μm, {y}μm)")
                     if "Origin" in param:
                         try:
                             self.device.driver.move_abs(
-                                f"{x / UNITS_PER_MM}mm",
-                                f"{y / UNITS_PER_MM}mm",
+                                f"{x / 1000}mm",
+                                f"{y / 1000}mm",
                             )
                         except AttributeError:
                             pass
@@ -647,11 +647,11 @@ class RuidaEmulator:
                     self.u = abscoord(array[13 : 13 + 5])
                     self._describe(
                         array,
-                        f"Move {param} XYU: {x * UNITS_PER_uM} ({y * UNITS_PER_uM},{self.u * UNITS_PER_uM})",
+                        f"Move {param} XYU: {x}μm ({y}μm, {self.u}μm)",
                     )
                     try:
-                        self.device.driver.move_abs(x * UNITS_PER_uM, y * UNITS_PER_uM)
-                        self.device.driver.axis("u", self.u * UNITS_PER_uM)
+                        self.device.driver.move_abs(x * self.scale, y * self.scale)
+                        self.device.driver.axis("u", self.u * self.scale)
                     except AttributeError:
                         pass
             return True
@@ -1414,7 +1414,7 @@ class RuidaEmulator:
         if mem == 0x0221:
             pos, state, minor = self.device.driver.status()
             x, y = self.units_to_device_matrix.point_in_inverse_space(pos)
-            x /= UNITS_PER_uM
+            x /= self.scale
             return "Axis Preferred Position 1, Pos X", int(x)
         if mem == 0x0223:
             return "X Total Travel (m)", 0
@@ -1423,7 +1423,7 @@ class RuidaEmulator:
         if mem == 0x0231:
             pos, state, minor = self.device.driver.status()
             x, y = self.units_to_device_matrix.point_in_inverse_space(pos)
-            y /= UNITS_PER_uM
+            y /= self.scale
             return "Axis Preferred Position 2, Pos Y", int(y)
         if mem == 0x0233:
             return "Y Total Travel (m)", 0

@@ -59,12 +59,43 @@ def plugin(kernel, lifecycle=None):
             action="store_true",
             help=_("shutdown current ruidaserver"),
         )
+        @kernel.console_option(
+            "jogless",
+            "j",
+            type=bool,
+            default=False,
+            action="store_true",
+            help=_("do not open jog ports"),
+        )
+        @kernel.console_option(
+            "man_in_the_middle",
+            "m",
+            type=str,
+            help=_("Redirect traffic to a real laser"),
+        )
+        @kernel.console_option(
+            "bridge",
+            "b",
+            type=bool,
+            default=False,
+            action="store_true",
+            help=_("Use LB2RD Bridge Protocol"),
+        )
         @kernel.console_command(
             "ruidacontrol",
             help=_("activate the ruidaserver."),
-            hidden=True,
         )
-        def ruidaserver(command, channel, _, verbose=False, quit=False, **kwargs):
+        def ruidaserver(
+            command,
+            channel,
+            _,
+            verbose=False,
+            quit=False,
+            jogless=False,
+            man_in_the_middle=None,
+            bridge=False,
+            **kwargs,
+        ):
             """
             The ruidaserver emulation methods provide a simulation of a ruida device.
             this interprets ruida devices in order to be compatible with software that
@@ -78,7 +109,12 @@ def plugin(kernel, lifecycle=None):
                     return
                 ruidacontrol = RuidaControl(root)
                 root.device.register("ruidacontrol", ruidacontrol)
-                ruidacontrol.start(verbose=verbose)
+                ruidacontrol.start(
+                    verbose=verbose,
+                    man_in_the_middle=man_in_the_middle,
+                    jog=not jogless,
+                    bridge=bridge,
+                )
             if quit:
                 ruidacontrol.quit()
                 root.device.unregister("ruidacontrol")

@@ -206,14 +206,14 @@ class RuidaDriver(Parameters):
                         time.sleep(0.05)
                     self._move(p.real, p.imag, cut=True)
             elif isinstance(q, WaitCut):
-                self.wait(q.dwell_time)
+                self.controller.job.add_delay(q.dwell_time)
             elif isinstance(q, HomeCut):
                 self.home()
             elif isinstance(q, GotoCut):
                 start = q.start
                 self._move(start[0], start[1], cut=True)
             elif isinstance(q, DwellCut):
-                self.dwell(q.dwell_time)
+                self.controller.job.laser_interval(q.dwell_time)
             elif isinstance(q, (InputCut, OutputCut)):
                 # Ruida has no core GPIO functionality
                 pass
