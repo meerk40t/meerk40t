@@ -71,6 +71,14 @@ def plugin(kernel, lifecycle=None):
             type=str,
             help=_("Redirect traffic to a real laser"),
         )
+        @kernel.console_option(
+            "bridge",
+            "b",
+            type=bool,
+            default=False,
+            action="store_true",
+            help=_("Use LB2RD Bridge Protocol"),
+        )
         @kernel.console_command(
             "ruidacontrol",
             help=_("activate the ruidaserver."),
@@ -83,6 +91,7 @@ def plugin(kernel, lifecycle=None):
             quit=False,
             jogless=False,
             man_in_the_middle=None,
+            bridge=False,
             **kwargs,
         ):
             """
@@ -98,7 +107,12 @@ def plugin(kernel, lifecycle=None):
                     return
                 ruidacontrol = RuidaControl(root)
                 root.device.register("ruidacontrol", ruidacontrol)
-                ruidacontrol.start(verbose=verbose, man_in_the_middle=man_in_the_middle, jog=not jogless)
+                ruidacontrol.start(
+                    verbose=verbose,
+                    man_in_the_middle=man_in_the_middle,
+                    jog=not jogless,
+                    bridge=bridge,
+                )
             if quit:
                 ruidacontrol.quit()
                 root.device.unregister("ruidacontrol")

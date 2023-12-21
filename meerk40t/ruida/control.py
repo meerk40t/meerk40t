@@ -2,6 +2,7 @@
 Ruida control code. This governs the interplay between the active device and the emulator. Taking on some aspects that
 are not directly able to be emulated like giving the current state of the device or the location of that device.
 """
+import struct
 
 from meerk40t.ruida.emulator import RuidaEmulator
 
@@ -17,6 +18,7 @@ class RuidaControl:
         self.udp_program_to_mk_jog = None
         self.mk_to_laser = None
         self.mk_to_laser_jog = None
+        self.send_buffer = bytearray()
 
     def open_udp_to_mk(self, jog=True):
         """
@@ -123,7 +125,7 @@ class RuidaControl:
         self.emulator.realtime = root.channel("ruida_reply_realtime")
         self.emulator.channel = root.channel("ruida")
 
-    def open_verbose(self):
+    def open_verbose_udp(self):
         """
         Attaches various channels to the console.
         @return:
@@ -159,7 +161,87 @@ class RuidaControl:
             ansi=True,
         )
 
-    def start(self, verbose=False, man_in_the_middle=None, jog=True):
+    def open_udp_server(self, man_in_the_middle=None, jog=True):
+        """
+        Connect UDP to Emulator
+
+        @param man_in_the_middle: Send UDP data to a real laser, and snoop on that connection.
+        @param jog: Should connect the 50207 jogging ports too.
+        @return:
+        """
+        root = self.root
+        channel = root.channel("console")
+        _ = channel._
+        try:
+            self.open_udp_to_mk(jog=jog)
+            self.connect_emulator_to_udp(jog=jog)
+            if man_in_the_middle:
+                self.open_udp_to_laser(jog=jog)
+                self.connect_man_in_the_middle(jog=jog)
+        except OSError as e:
+            channel(_("Server failed."))
+            channel(str(e.strerror))
+            return
+
+    def open_tcp_server(self, jog=False, verbose=True):
+        """
+        Opens a Lightburn Bridge LB2RD Protocol connection at port 5005.
+
+        @param jog:
+        @return:
+        """
+
+        root = self.root
+        channel = root.channel("console")
+        _ = channel._
+
+        try:
+            tcp_server = root.open_as("module/TCPServer", "ruidabridge", port=5005)
+            tcp_recv_channel = root.channel("ruidabridge/recv", pure=True)
+            tcp_send_channel = root.channel("ruidabridge/send", pure=True)
+
+            def lb2rd_protocol(line):
+                self.send_buffer += line
+                if len(self.send_buffer) < 3:
+                    return
+
+                cmd = self.send_buffer[0]
+                length = struct.unpack(">H", line[1:3])[0]
+                if length > len(line):
+                    # Command is incomplete.
+                    return
+                # We have the full packet.
+                packet = line[3 : length + 3]
+                del self.send_buffer[3 : length + 3]
+                if cmd == ord("L"):
+                    self.emulator.checksum_write(packet)
+                elif cmd == ord("P"):
+                    # Directly respond 2 bytes, we're version 1.0
+                    tcp_send_channel(b"P\x00\x02\x01\x00")
+                    del self.send_buffer[:3]
+
+            def rd2lb_protocol(line):
+                tcp_send_channel(b"L" + struct.pack(">H", len(line)) + line)
+
+            tcp_recv_channel.watch(lb2rd_protocol)
+            self.emulator.reply.watch(rd2lb_protocol)
+            tcp_recv_channel.start(self.root)
+            self.root.channel("ruidabridge/send").start(self.root)
+            if tcp_recv_channel:
+                channel(_("Ruida Data Server opened on port {port}.").format(port=5005))
+
+            console = root.channel("console")
+            self.emulator.channel.watch(console)
+            if verbose:
+                tcp_server.events_channel.watch(console)
+                tcp_server.data_channel.watch(console)
+
+        except (OSError, ValueError):
+            channel(_("Server failed on port: {port}").format(port=5005))
+
+        return
+
+    def start(self, verbose=False, man_in_the_middle=None, jog=True, bridge=False):
         """
         Start Ruidacontrol server.
 
@@ -180,18 +262,12 @@ class RuidaControl:
         self.issue_warnings(channel)
         if man_in_the_middle:
             self.issue_mitm_warnings(channel)
-
-        try:
-            self.open_udp_to_mk(jog=jog)
-            self.connect_emulator_to_udp(jog=jog)
-            if man_in_the_middle:
-                self.open_udp_to_laser(jog=jog)
-                self.connect_man_in_the_middle(jog=jog)
-            if verbose:
-                self.open_verbose()
-        except OSError as e:
-            channel(_("Server failed."))
-            channel(str(e.strerror))
+        if bridge:
+            self.open_tcp_server(jog=jog)
+        else:
+            self.open_udp_server(jog=jog, man_in_the_middle=man_in_the_middle)
+        if verbose:
+            self.open_verbose_udp()
 
     def quit(self):
         """
