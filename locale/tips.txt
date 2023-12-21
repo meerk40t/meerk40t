@@ -63,3 +63,13 @@ MeerK40t can use that camera to display the live picture on the scene background
 Click on the camera button in the toolbar and calibrate your camera picture.
 cmd=camdetect\n
 img=https://github.com/meerk40t/meerk40t/assets/2670784/53207cbb-dfbc-4bce-841d-dedc305118e7
+
+tip=You can store and reuse the settings for engraving, cutting etc. for a certain material (like 4mm plywood or acrylic).
+Use the Material Manager to manage the individual settings for the materials you use.
+cmd=window open MatManager
+img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+
+tip=Did you know that you can share your perfect settings for a material with the MeerK40t community and that you can equally benefit from the contributions of others?
+Use the Material Manager to share and retrieve settings from the global MeerK40t Library.
+cmd=window open MatManager
+img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762

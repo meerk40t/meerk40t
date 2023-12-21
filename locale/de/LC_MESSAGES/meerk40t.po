@@ -3025,12 +3025,12 @@ msgid "Load"
 msgstr "Laden"
 
 #: meerk40t/core/elements.py:7151
-msgid "Other/Blue/Red"
-msgstr "Sonstige/Blau/Rot"
+msgid "Minimal"
+msgstr "Minimale Liste"
 
 #: meerk40t/core/elements.py:7157
 msgid "Basic"
-msgstr "Standard"
+msgstr "Standard Liste"
 
 #: meerk40t/core/elements.py:7161 meerk40t/core/elements.py:7168
 #: meerk40t/gui/wxmmain.py:643

@@ -11044,7 +11044,7 @@ msgid "Load"
 msgstr "Carica"
 
 #: meerk40t/core/elements/element_treeops.py:1353
-msgid "Other/Blue/Red"
+msgid "Minimal"
 msgstr "Altro/Blu/Rosso"
 
 #: meerk40t/core/elements/element_treeops.py:1359
