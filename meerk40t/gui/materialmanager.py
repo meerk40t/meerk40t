@@ -748,6 +748,7 @@ class MaterialPanel(ScrolledPanel):
             inform=False,
             use_settings=self.op_data,
         )
+        self.op_data.write_configuration()
         self.retrieve_material_list(reload=True, setter=newsection)
 
     def on_delete(self, event):
@@ -760,6 +761,7 @@ class MaterialPanel(ScrolledPanel):
                 self.active_material,
                 use_settings=self.op_data,
             )
+            self.op_data.write_configuration()
             self.retrieve_material_list(reload=True)
 
     def on_delete_all(self, event):
@@ -772,6 +774,7 @@ class MaterialPanel(ScrolledPanel):
                     material,
                     use_settings=self.op_data,
                 )
+            self.op_data.write_configuration()
             self.on_reset(None)
 
     def invalid_file(self, filename):
@@ -1158,6 +1161,7 @@ class MaterialPanel(ScrolledPanel):
                 inform=False,
                 use_settings=self.op_data,
             )
+        self.op_data.write_configuration()
         self.retrieve_material_list(reload=True, setter=section)
 
     def on_use_current(self, event):
@@ -1208,6 +1212,7 @@ class MaterialPanel(ScrolledPanel):
             inform=False,
             use_settings=self.op_data,
         )
+        self.op_data.write_configuration()
         self.retrieve_material_list(reload=True, setter=section)
 
     def on_reset(self, event):
@@ -1245,10 +1250,14 @@ class MaterialPanel(ScrolledPanel):
         op_ltype = self.combo_entry_type.GetSelection()
         if op_ltype < 0:
             return
+        changes = False
         for entry in self.display_list:
             material = entry[0]
             section = f"{material} info"
             self.op_data.write_persistent(section, "laser", op_ltype)
+            changes = True
+        if changes:
+            self.op_data.write_configuration()
         self.on_reset(None)
 
     def update_entry(self, event):
@@ -1305,6 +1314,7 @@ class MaterialPanel(ScrolledPanel):
                 inform=False,
                 use_settings=self.op_data,
             )
+            self.op_data.write_configuration()
             self.retrieve_material_list(reload=True, setter=self.active_material)
 
     def on_list_selection(self, event):
@@ -1422,6 +1432,7 @@ class MaterialPanel(ScrolledPanel):
                 False,
                 use_settings=self.op_data,
             )
+            self.op_data.write_configuration()
             self.retrieve_material_list(reload=True, setter=section)
 
         def create_basic(event):
@@ -1435,6 +1446,7 @@ class MaterialPanel(ScrolledPanel):
                 False,
                 use_settings=self.op_data,
             )
+            self.op_data.write_configuration()
             self.retrieve_material_list(reload=True, setter=section)
 
         menu.AppendSeparator()
@@ -1647,6 +1659,7 @@ class MaterialPanel(ScrolledPanel):
                     flush=False,
                     use_settings=self.op_data,
                 )
+                self.op_data.write_configuration()
                 self.fill_preview()
 
         item = menu.Append(wx.ID_ANY, _("Fill missing ids/label"), "", wx.ITEM_NORMAL)
@@ -1704,6 +1717,8 @@ class MaterialPanel(ScrolledPanel):
                 # speed
                 self.op_data.write_persistent(key, "speed", new_data)
             # Set the new data in the listctrl
+            self.op_data.write_configuration()
+
             self.list_preview.SetItem(list_id, col_id, new_data)
 
     def set_parent(self, par_panel):
