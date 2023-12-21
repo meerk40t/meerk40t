@@ -229,10 +229,9 @@ class RuidaControl:
             self.root.channel("ruidabridge/send").start(self.root)
             if tcp_recv_channel:
                 channel(_("Ruida Data Server opened on port {port}.").format(port=5005))
-
-            console = root.channel("console")
-            self.emulator.channel.watch(console)
             if verbose:
+                console = root.channel("console")
+                self.emulator.channel.watch(console)
                 tcp_server.events_channel.watch(console)
                 tcp_server.data_channel.watch(console)
 
