@@ -133,7 +133,7 @@ Il valore Indice di partenza per il campo nella tabella Variabili di testo indic
 
 Ma supponiamo, per motivi di efficienza, di voler masterizzare contemporaneamente due tag di prenotazione di posti, ciascuno con un nome diverso dallo stesso elenco. In questo caso, se il primo tag usa '{NAME#+0}' e il secondo '{NAME#+1}' (notare il segno più). '{NAME}' o '{NAME#+0}' utilizza la voce corrente (indicata dal valore dell'indice), '{NAME#+1}' utilizza la voce successiva a quella corrente, ecc.
 
-Con questo sistema, è possibile utilizzare questi valori tutte le volte che si desidera nel proprio progetto. 
+Con questo sistema, è possibile utilizzare questi valori tutte le volte che si desidera nel proprio progetto.
 Per far avanzare l'indice è necessario fare clic sui pulsanti Prev / Next della barra degli strumenti.
 
 In alternativa all'inserimento manuale dei valori in Variabili di testo tramite il Gestione variabili di testo, è possibile utilizzare un file CSV standard separato da virgole. I nomi dei segnaposto sono definiti nella riga di intestazione standard del file CSV (la prima riga del file CSV) e i contenuti sono presi da tutte le righe successive. Il modo più semplice per creare un file CSV è utilizzare un foglio di calcolo, ad esempio Excel.
@@ -158,6 +158,12 @@ I segnaposto per "data" e "ora" possono anche contenere istruzioni di formattazi
 	{time@%H:%M} - 23:59
 
 Per un insieme completo delle istruzioni di formattazione, vedere: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
+"""
+
+english_material_howto = """
+The Material Library Manager allows to create, maintain, use and manage operations that are customized to provide a desired effect with a given material (hence the name Material Library).
+The parameters you want to use e.g. for cutting acrylic are very different from the ones you want to use to engrave a picture on slate.
+You can share such a material setting with the MeerK40t community and you can benefit from the contributions of others by loading and using their settings.
 """
 
 

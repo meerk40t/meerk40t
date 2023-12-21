@@ -1595,71 +1595,92 @@ def init_tree(kernel):
             self.validate_selected_area()
             self.signal("refresh_scene", "Scene")
 
-    materials = [
-        _("Wood"),
-        _("Acrylic"),
-        _("Foam"),
-        _("Leather"),
-        _("Cardboard"),
-        _("Cork"),
-        _("Textiles"),
-        _("Paper"),
-        _("Save-1"),
-        _("Save-2"),
-        _("Save-3"),
-    ]
+    # materials = [
+    #     _("Wood"),
+    #     _("Acrylic"),
+    #     _("Foam"),
+    #     _("Leather"),
+    #     _("Cardboard"),
+    #     _("Cork"),
+    #     _("Textiles"),
+    #     _("Paper"),
+    #     _("Save-1"),
+    #     _("Save-2"),
+    #     _("Save-3"),
+    # ]
 
-    def union_materials_saved():
-        union = [
-            d
-            for d in self.op_data.section_set()
-            if d not in materials and d != "previous"
-        ]
-        union.extend(materials)
-        return union
+    # def union_materials_saved():
+    #     union = [
+    #         d
+    #         for d in self.op_data.section_set()
+    #         if d not in materials and d != "previous"
+    #     ]
+    #     union.extend(materials)
+    #     return union
 
-    def difference_materials_saved():
-        secs = self.op_data.section_set()
-        difference = [m for m in materials if m not in secs]
-        return difference
-
-    @tree_separator_before()
-    @tree_submenu(_("Load"))
-    @tree_values("opname", values=self.op_data.section_set)
-    @tree_operation("{opname}", node_type="branch ops", help="")
-    def load_ops(node, opname, **kwargs):
-        self(f"material load {opname}\n")
+    # def difference_materials_saved():
+    #     secs = self.op_data.section_set()
+    #     difference = [m for m in materials if m not in secs]
+    #     return difference
 
     @tree_separator_before()
-    @tree_submenu(_("Load"))
-    @tree_operation(_("Other/Blue/Red"), node_type="branch ops", help="")
-    def default_classifications(node, **kwargs):
-        self.load_default(performclassify=True)
-
-    @tree_submenu(_("Load"))
     @tree_separator_after()
-    @tree_operation(_("Basic"), node_type="branch ops", help="")
-    def basic_classifications(node, **kwargs):
-        self.load_default2(performclassify=True)
+    @tree_operation(_("Material Manager"), node_type="branch ops", help=_("Open the Material Manager"))
+    def load_matman(node, **kwargs):
+        self("window open MatManager\n")
 
-    @tree_submenu(_("Save"))
-    @tree_values("opname", values=self.op_data.section_set)
-    @tree_operation("{opname}", node_type="branch ops", help="")
-    def save_materials(node, opname="saved", **kwargs):
-        self(f"material save {opname}\n")
+    # def material_name(material):
+    #     oplist, opinfo = self.load_persistent_op_list(material)
+    #     if "name" in opinfo:
+    #         name = opinfo["name"]
+    #     elif material == "_default":
+    #         name = "Generic Defaults"
+    #     elif material.startswith("_default_"):
+    #         name = f"Default for {material[9:]}"
+    #     else:
+    #         name = material.replace("_", " ")
+    #     if "thickness" in opinfo:
+    #         if opinfo["thickness"]:
+    #             name += ", " + opinfo["thickness"]
+    #     return name
 
-    @tree_separator_before()
-    @tree_submenu(_("Save"))
-    @tree_prompt("opname", _("Name to store current operations under?"))
-    @tree_operation(_("New"), node_type="branch ops", help="")
-    def save_material_custom(node, opname, **kwargs):
-        self(f"material save {opname.replace(' ', '_')}\n")
+    # @tree_submenu(_("Load"))
+    # @tree_values("opname", values=self.op_data.section_set)
+    # @tree_calc("material", lambda opname: material_name(opname) )
+    # @tree_operation("{material}", node_type="branch ops", help="")
+    # def load_ops(node, opname, **kwargs):
+    #     self(f"material load {opname}\n")
 
-    @tree_submenu(_("Delete"))
-    @tree_values("opname", values=self.op_data.section_set)
-    @tree_operation("{opname}", node_type="branch ops", help="")
-    def remove_ops(node, opname="saved", **kwargs):
-        self(f"material delete {opname}\n")
+    # @tree_separator_before()
+    # @tree_submenu(_("Load"))
+    # @tree_operation(_("Minimal"), node_type="branch ops", help=_("Load a minimal set of operations"))
+    # def default_classifications(node, **kwargs):
+    #     self.load_default(performclassify=True)
+
+    # @tree_submenu(_("Load"))
+    # @tree_operation(_("Basic"), node_type="branch ops", help=_("Load a basic set of operation"))
+    # def basic_classifications(node, **kwargs):
+    #     self.load_default2(performclassify=True)
+
+    # @tree_submenu(_("Save"))
+    # @tree_values("opname", values=self.op_data.section_set)
+    # @tree_calc("material", lambda opname: material_name(opname) )
+    # @tree_operation("{material}", node_type="branch ops", help="")
+    # def save_materials(node, opname="saved", **kwargs):
+    #     self(f"material save {opname}\n")
+
+    # @tree_separator_before()
+    # @tree_submenu(_("Save"))
+    # @tree_prompt("opname", _("Name to store current operations under?"))
+    # @tree_operation(_("New"), node_type="branch ops", help="")
+    # def save_material_custom(node, opname, **kwargs):
+    #     self(f"material save {opname.replace(' ', '_')}\n")
+
+    # @tree_submenu(_("Delete"))
+    # @tree_values("opname", values=self.op_data.section_set)
+    # @tree_operation("{opname}", node_type="branch ops", help="")
+    # def remove_ops(node, opname="saved", **kwargs):
+    #     self(f"material delete {opname}\n")
 
     @tree_separator_before()
     @tree_submenu(_("Append operation"))

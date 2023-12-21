@@ -15,6 +15,7 @@ def plugin(kernel, lifecycle=None):
 
     if lifecycle == "register":
         kernel.register("provider/device/moshi", MoshiDevice)
+        kernel.register("provider/friendly/moshi", ("Older CO2-Laser (Moshi)", 4))
         _ = kernel.translation
         kernel.register(
             "dev_info/moshi-co2",

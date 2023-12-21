@@ -21,6 +21,7 @@ def plugin(kernel, lifecycle=None):
             return True
     if lifecycle == "register":
         kernel.register("provider/device/lhystudios", LihuiyuDevice)
+        kernel.register("provider/friendly/lhystudios", ("CO2-Laser (K40)", 1))
         _ = kernel.translation
         kernel.register(
             "dev_info/m2-nano",
