@@ -7064,7 +7064,7 @@ msgid ""
 "following the vector-paths of the data.\n"
 "(Usually done last)"
 msgstr ""
-"Questo inciderà/taglierà gli elementi contenuti,\n"
+"Iincide/taglia gli elementi contenuti,\n"
 "seguendo i percorsi vettoriali dei dati.\n"
 "(Solitamente fatto per ultimo)"
 
@@ -7073,7 +7073,7 @@ msgid ""
 "This will engrave the elements contained,\n"
 "following the vector-paths of the data."
 msgstr ""
-"Questo inciderà gli elementi contenuti,\n"
+"Incide gli elementi contenuti,\n"
 "seguendo i percorsi vettoriali dei dati."
 
 #: meerk40t/gui/wxmtree.py:1640
@@ -7081,7 +7081,7 @@ msgid ""
 "This is an operation that will engrave a vector shape\n"
 "filled with a set of vector-patterns like lines"
 msgstr ""
-"Questa è un'operazione che inciderà una forma vettoriale\n"
+"Incide un singolo punto per un periodo di tempo definito"
 "riempita con un insieme di pattern vettoriali come linee"
 
 #: meerk40t/gui/wxmtree.py:1645
@@ -7089,7 +7089,7 @@ msgid ""
 "This engraves already created images pixel by pixel,\n"
 "applying the settings to the individual pictures"
 msgstr ""
-"Questo incide immagini già create pixel per pixel,\n"
+"Incide immagini già create pixel per pixel,\n"
 "applicando le impostazioni alle immagini individuali"
 
 #: meerk40t/gui/wxmtree.py:1650
@@ -7098,40 +7098,40 @@ msgid ""
 "into an intermediary image which then will be\n"
 "engraved pixel by pixel."
 msgstr ""
-"Questo renderizzerà tutti gli elementi contenuti\n"
+"Renderizza tutti gli elementi contenuti\n"
 "in un'immagine intermedia che verrà successivamente\n"
 "incisa pixel per pixel."
 
 #: meerk40t/gui/wxmtree.py:1656
 msgid "This will engrave a single point for a given period of time"
-msgstr "Questo inciderà un singolo punto per un periodo di tempo specifico"
+msgstr "Incide un singolo punto per un periodo di tempo definito"
 
 #: meerk40t/gui/wxmtree.py:1660
 msgid "This allows to execute an arbitrary command during the engrave process"
-msgstr "Ciò consente di eseguire un comando arbitrario durante il processo di incisione"
+msgstr "Consente di eseguire un comando arbitrario durante il processo di incisione"
 
 #: meerk40t/gui/wxmtree.py:1664
 msgid "This will send the laser back to its logical start position"
-msgstr "Questo riporterà il laser alla sua posizione di inizio logica"
+msgstr "Porta il laser alla sua posizione di inizio logica"
 
 #: meerk40t/gui/wxmtree.py:1668
 msgid "This will send the laser back to its physical start position"
-msgstr "Questo riporterà il laser alla sua posizione di inizio fisico"
+msgstr "Ripristina il laser alla sua posizione di inizio fisico"
 
 #: meerk40t/gui/wxmtree.py:1672
 msgid ""
 "This will wait for active IO bits on the laser (mainly fibre laser for "
 "now)"
 msgstr ""
-"Questo aspetterà bit IO attivi sul laser (principalmente su laser a fibra per ora)"
+"Aspetta che bit IO attivi sul laser (principalmente su laser a fibra per ora)"
 
 #: meerk40t/gui/wxmtree.py:1676
 msgid "This will set some IO bits on the laser (mainly fibre laser for now)"
-msgstr "Questo imposterà alcuni bit IO sul laser (principalmente su laser a fibra per ora)"
+msgstr "Imposta alcuni bit IO sul laser (principalmente su laser a fibra per ora)"
 
 #: meerk40t/gui/wxmtree.py:1680
 msgid "This will pause the engrave process for a given period"
-msgstr "Questo metterà in pausa il processo di incisione per un periodo specifico"
+msgstr "Mette in pausa il processo di incisione per un periodo specifico"
 
 #: meerk40t/gui/wxmtree.py:1684
 msgid ""
@@ -10813,7 +10813,7 @@ msgstr "Cancella non utilizzati"
 
 #: meerk40t/core/elements/element_treeops.py:601
 msgid "Clear operations without children"
-msgstr "Cancella operazioni senza figli"
+msgstr "Cancella operazioni senza Elementi associati"
 
 #: meerk40t/core/elements/element_treeops.py:622
 msgid "Scale speed settings"
@@ -10870,11 +10870,11 @@ msgstr "Elimina {ecount} operazioni completamente"
 
 #: meerk40t/core/elements/element_treeops.py:919
 msgid "Delete group '{name}' and all its child-elements fully"
-msgstr "Elimina il gruppo '{name}' e tutti i suoi elementi figlio completamente"
+msgstr "Elimina il gruppo '{name}' e tutti i suoi Elementi associati completamente"
 
 #: meerk40t/core/elements/element_treeops.py:935
 msgid "Remove loaded file '{name}' and all its child-elements fully"
-msgstr "Rimuovi il file caricato '{name}' e tutti i suoi elementi figlio completamente"
+msgstr "Rimuovi il file caricato '{name}' e tutti i suoi Elementi associati completamente"
 
 #: meerk40t/core/elements/element_treeops.py:945
 msgid "Remove transparent objects"
@@ -11044,7 +11044,7 @@ msgid "Load"
 msgstr "Carica"
 
 #: meerk40t/core/elements/element_treeops.py:1353
-msgid "Other/Blue/Red"
+msgid "Minimal"
 msgstr "Altro/Blu/Rosso"
 
 #: meerk40t/core/elements/element_treeops.py:1359
@@ -11443,7 +11443,7 @@ msgstr "Unisci elementi"
 
 #: meerk40t/core/elements/element_treeops.py:2256
 msgid "Merge this node's children into 1 path."
-msgstr "Unisci i figli di questo nodo in un unico percorso."
+msgstr "Unisci gli Elementi associati di questo nodo in un unico percorso."
 
 #: meerk40t/core/elements/element_treeops.py:2267
 msgid "Unlock element, allows manipulation"
@@ -11518,19 +11518,19 @@ msgstr "Salva l'immagine elaborata in output.png"
 
 #: meerk40t/core/elements/element_treeops.py:2432
 msgid "Expand all children"
-msgstr "Espandi tutti i figli"
+msgstr "Espandi tutti gli Elementi associati"
 
 #: meerk40t/core/elements/element_treeops.py:2447
 msgid "Expand all children of this given node."
-msgstr "Espandi tutti i figli di questo nodo specificato."
+msgstr "Espandi tutti gli Elementi associati di questo nodo specificato."
 
 #: meerk40t/core/elements/element_treeops.py:2454
 msgid "Collapse all children"
-msgstr "Comprimi tutti i figli"
+msgstr "Comprimi tutti gli Elementi associati"
 
 #: meerk40t/core/elements/element_treeops.py:2469
 msgid "Collapse all children of this given node."
-msgstr "Comprimi tutti i figli di questo nodo specificato."
+msgstr "Comprimi tutti gli Elementi associati di questo nodo specificato."
 
 #: meerk40t/core/elements/grid.py:67
 msgid "x distance"
@@ -13503,7 +13503,7 @@ msgstr "Informazioni:"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:685
 msgid "Children:"
-msgstr "Figli:"
+msgstr "Elementi associati:"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:687
 msgid "Est. burn-time:"
@@ -13541,7 +13541,7 @@ msgid ""
 "In a raster engrave, the step size is the distance between raster lines "
 "in 1/1000\" "
 msgstr ""
-"In un incisione raster, la dimensione del passo è la distanza tra le linee raster "
+"In un'incisione raster, la dimensione del passo è la distanza tra le linee raster "
 "in 1/1000\" "
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1159
@@ -13621,7 +13621,7 @@ msgstr ""
 msgid ""
 "Because rastering in the X-direction involve moving only the laser head which is relatively low mass."
 msgstr ""
-"Poiché il rastering nella direzione X coinvolge solo lo spostamento della testa del laser che ha una massa relativamente bassa."
+"Questo perché rasterizzare nella direzione X coinvolge solo lo spostamento della sola testa del laser che ha una massa relativamente leggera."
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1229
 msgid ""
@@ -13639,13 +13639,13 @@ msgstr ""
 msgid ""
 "This total mass is much greater, acceleration therefore needs to be much slower, "
 msgstr ""
-"Questa massa totale è molto maggiore, quindi l'accelerazione deve essere molto più lenta, "
+"A causa della maggiore massa è necesssario impostare una velocità sensibilmente più bassa"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1239
 msgid ""
 "and allow for space at each end of the raster to reverse direction the speed has to be much slower."
 msgstr ""
-"e occorre lasciare spazio ad ogni estremità del raster per invertire la direzione, quindi la velocità deve essere molto più lenta."
+"ed occorre lasciare spazio ad ogni estremità del raster per consentire l'inversione di direzione."
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1251
 msgid "Directional Raster:"
@@ -13658,7 +13658,7 @@ msgstr "Raster su avanzamento e ritorno o solo su avanzamento?"
 msgid ""
 "Rastering only on forward swings will double the time required to "
 "complete the raster."
-msgstr "Rasterizzare solo su avanzamenti raddoppierà il tempo necessario per completare il raster."
+msgstr "Rasterizzare solo in avanzamento raddoppierà il tempo di esecuzione, senza vantaggi sulla qualità finale."
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1263
 msgid ""

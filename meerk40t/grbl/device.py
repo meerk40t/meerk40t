@@ -805,7 +805,7 @@ class GRBLDevice(Service, Status):
     @signal_listener("flip_x")
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
-    def realize(self, origin=None):
+    def realize(self, origin=None, *args):
         if origin is not None and origin != self.path:
             return
         corner = self.setting(str, "home_corner")

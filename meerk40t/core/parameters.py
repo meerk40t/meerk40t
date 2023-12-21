@@ -50,6 +50,7 @@ BOOL_PARAMETERS = (
     "advanced",
     "stopop",
     "effect",
+    "air_assist",
 )
 
 STRING_PARAMETERS = (
@@ -705,3 +706,12 @@ class Parameters:
     def output_message(self, value):
         self.settings["output_message"] = value
         self.__dict__["output_message"] = value
+
+    @property
+    def air_assist(self):
+        return self.settings.get("air_assist", True)
+
+    @air_assist.setter
+    def air_assist(self, value):
+        self.settings["air_assist"] = value
+        self.__dict__["air_assist"] = value

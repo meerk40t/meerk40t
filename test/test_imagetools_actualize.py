@@ -31,7 +31,7 @@ class TestActualize(unittest.TestCase):
     #                 self.assertEqual(element.matrix.value_trans_x(), 100)
     #                 self.assertEqual(element.matrix.value_trans_y(), 100)
     #     finally:
-    #         kernel.shutdown()
+    #         kernel()
 
     # def test_actualize_smallcircle_step3(self):
     #     """
@@ -72,7 +72,7 @@ class TestActualize(unittest.TestCase):
     #                 self.assertEqual(element.matrix.value_trans_x(), 100)
     #                 self.assertEqual(element.matrix.value_trans_y(), 100)
     #     finally:
-    #         kernel.shutdown()
+    #         kernel()
 
     # def test_actualize_transparent_colorvalue_wb(self):
     #     """
@@ -118,7 +118,7 @@ class TestActualize(unittest.TestCase):
     #                 self.assertEqual(node.matrix.value_trans_x(), 100)
     #                 self.assertEqual(node.matrix.value_trans_y(), 100)
     #     finally:
-    #         kernel.shutdown()
+    #         kernel()
 
     # def test_actualize_transparent_colorvalue_bw(self):
     #     """
@@ -166,7 +166,7 @@ class TestActualize(unittest.TestCase):
     #                 # Test corner for whiteness.
     #                 self.assertEqual(node.image.getpixel((-1, -1)), 255)
     #     finally:
-    #         kernel.shutdown()
+    #         kernel()
 
     def test_actualize_circle_step3_direct_transparent(self):
         """
@@ -253,7 +253,7 @@ class TestActualize(unittest.TestCase):
     #                 self.assertEqual(node.matrix.value_trans_x(), 0)
     #                 self.assertEqual(node.matrix.value_trans_y(), 0)
     #     finally:
-    #         kernel.shutdown()
+    #         kernel()
 
     def test_actualize_purewhite(self):
         """
@@ -278,7 +278,7 @@ class TestActualize(unittest.TestCase):
                     self.assertEqual(element.matrix.value_trans_x(), 0)
                     self.assertEqual(element.matrix.value_trans_y(), 0)
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_actualize_pureblack(self):
         """
@@ -303,4 +303,4 @@ class TestActualize(unittest.TestCase):
                     self.assertEqual(element.matrix.value_trans_x(), 0)
                     self.assertEqual(element.matrix.value_trans_y(), 0)
         finally:
-            kernel.shutdown()
+            kernel()

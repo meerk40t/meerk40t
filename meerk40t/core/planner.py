@@ -273,9 +273,11 @@ def plugin(kernel, lifecycle=None):
     elif lifecycle == "poststart":
         planner = kernel.planner
         auto = hasattr(kernel.args, "auto") and kernel.args.auto
+        console = hasattr(kernel.args, "console") and kernel.args.console
+        quit = hasattr(kernel.args, "quit") and kernel.args.quit
         if auto:
             planner("plan copy preprocess validate blob preopt optimize\n")
-            if hasattr(kernel.args, "quit") and kernel.args.quit:
+            if quit or not console:
                 planner("plan console quit\n")
             planner("plan spool\n")
 

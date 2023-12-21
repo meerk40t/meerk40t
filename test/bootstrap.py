@@ -66,7 +66,7 @@ def bootstrap(profile="MeerK40t_TEST", ignore_settings=True):
 
     kernel.add_plugin(rotary.plugin)
 
-    kernel()
+    kernel(partial=True)
     kernel.console("channel print console\n")
     kernel.console("service device start dummy 0\n")
     return kernel

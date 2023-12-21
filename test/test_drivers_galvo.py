@@ -61,14 +61,14 @@ class TestDriverGRBL(unittest.TestCase):
             kernel.console("contexts\n")
             kernel.console("plugins\n")
         finally:
-            kernel.shutdown()
+            kernel()
 
         kernel = bootstrap.bootstrap(profile="MeerK40t_GALVO", ignore_settings=False)
         try:
             devs = [name for name in kernel.contexts if name.startswith("balor")]
             self.assertGreater(len(devs), 1)
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_driver_basic_rect_engrave(self):
         """
@@ -85,7 +85,7 @@ class TestDriverGRBL(unittest.TestCase):
                 f"rect 2cm 2cm 1cm 1cm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
         finally:
-            kernel.shutdown()
+            kernel()
         with open(file1) as f:
             data = f.read()
         self.assertEqual(lmc_rect, data)
@@ -105,7 +105,7 @@ class TestDriverGRBL(unittest.TestCase):
                 f"rect 2cm 2cm 1cm 1cm cut -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
         finally:
-            kernel.shutdown()
+            kernel()
         with open(file1) as f:
             data = f.read()
         self.assertEqual(lmc_rect, data)
@@ -127,7 +127,7 @@ class TestDriverGRBL(unittest.TestCase):
                 f"rect 2cm 2cm 1cm 1cm raster -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
         finally:
-            kernel.shutdown()
+            kernel()
         with open(file1) as f:
             data = f.read()
         self.assertEqual(data, lmc_blank)
@@ -150,16 +150,16 @@ class TestDriverGalvoRotary(unittest.TestCase):
             kernel.console("service device start -i balor 0\n")
             kernel.console("operation* delete\n")
             device = kernel.device
-            rotary_path = kernel.rotary.path
-            device(f"set -p {rotary_path} active True")
-            device(f"set -p {rotary_path} scale_y 2.0")
+            rotary_path = kernel.device.path
+            device(f"set -p {rotary_path} rotary_active True")
+            device(f"set -p {rotary_path} rotary_scale_y 2.0")
             device.signal("rotary_active", True)
-            kernel.rotary.realize()  # In case signal doesn't update the device settings quickly enough.
+            kernel.device.rotary.realize()  # In case signal doesn't update the device settings quickly enough.
             kernel.console(
                 f"rect 2cm 2cm 1cm 1cm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
             )
         finally:
-            kernel.shutdown()
+            kernel()
         with open(file1) as f:
             data = f.read()
         self.assertNotEqual(lmc_rect, data)

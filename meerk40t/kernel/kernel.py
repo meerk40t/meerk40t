@@ -284,23 +284,35 @@ class Kernel(Settings):
         """
         additional_plugins = plugin(self, "plugins")
         if additional_plugins is not None:
+            if not isinstance(additional_plugins, (tuple, list)):
+                additional_plugins = tuple(additional_plugins)
             for p in additional_plugins:
                 self.add_plugin(p)
-        plugins = self._kernel_plugins
-        service_path = plugin(self, "service")
-        if service_path is not None:
-            if service_path not in self._service_plugins:
-                self._service_plugins[service_path] = list()
-            plugins = self._service_plugins[service_path]
-        else:
-            module_path = plugin(self, "module")
-            if module_path is not None:
-                if module_path not in self._module_plugins:
-                    self._module_plugins[module_path] = list()
-                plugins = self._module_plugins[module_path]
-
-        if plugin not in plugins:
-            plugins.append(plugin)
+        service_paths = plugin(self, "service")
+        module_paths = plugin(self, "module")
+        if service_paths is None and module_paths is None:
+            # This is just a kernel plugin.
+            if plugin not in self._kernel_plugins:
+                self._kernel_plugins.append(plugin)
+            return
+        if service_paths is not None:
+            # This is a service plugin.
+            if not isinstance(service_paths, (tuple, list)):
+                service_paths = (service_paths,)  # tuple
+            for p in service_paths:
+                if p not in self._service_plugins:
+                    self._service_plugins[p] = list()
+                if plugin not in self._service_plugins[p]:
+                    self._service_plugins[p].append(plugin)
+        if module_paths is not None:
+            # This is a module plugin.
+            if not isinstance(module_paths, (tuple, list)):
+                module_paths = (module_paths,)  # tuple
+            for p in module_paths:
+                if p not in self._module_plugins:
+                    self._module_plugins[p] = list()
+                if plugin not in self._module_plugins[p]:
+                    self._module_plugins[p].append(plugin)
 
     # ==========
     # SERVICES API
@@ -1118,8 +1130,11 @@ class Kernel(Settings):
         if print not in self._console_channel.watchers:
             print(*args, **kwargs)
 
-    def __call__(self):
-        self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_POSTMAIN)
+    def __call__(self, partial=False):
+        if partial:
+            self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_POSTMAIN)
+        else:
+            self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_SHUTDOWN)
 
     def precli(self):
         pass
@@ -1200,6 +1215,8 @@ class Kernel(Settings):
                     line = line.strip()
                     if line in ("quit", "shutdown", "restart"):
                         self._quit = True
+                        if line == "restart":
+                            self._restart = True
                         break
                     self.console(f".{line}\n")
                     if line == "gui":
@@ -1213,9 +1230,7 @@ class Kernel(Settings):
             self.channel("console").unwatch(self.__print_delegate)
 
     def postmain(self):
-        if self._quit:
-            self._shutdown = True
-            self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_SHUTDOWN)
+        pass
 
     def preshutdown(self):
         channel = self.channel("shutdown")
@@ -3375,20 +3390,23 @@ class Kernel(Settings):
             ("quit", "shutdown"), help=_("shuts down all processes and exits")
         )
         def shutdown(**kwargs):
-            if self._shutdown:
-                return
+            """
+            Calls full shutdown of kernel. This is expected to be executed of booted with partial lifecycle.
+
+            @param kwargs:
+            @return:
+            """
             self._shutdown = True
-            self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_SHUTDOWN)
+            self()
 
         @self.console_command(
             "restart", help=_("shuts down all processes, exits and restarts meerk40t")
         )
         def restart(**kwargs):
+            self.restart = True
             if self._shutdown:
                 return
-            self._shutdown = True
-            self.restart = True
-            self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_SHUTDOWN)
+            self.console("quit\n")
 
         # ==========
         # FILE MANAGER

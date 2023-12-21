@@ -14,25 +14,6 @@ def plugin(service, lifecycle):
 
         _ = service._
 
-        def popup_info(event):
-            dlg = wx.MessageDialog(
-                None,
-                _("Ruida Driver is not yet completed."),
-                _("Non Implemented Device"),
-                wx.OK | wx.ICON_WARNING,
-            )
-            dlg.ShowModal()
-            dlg.Destroy()
-
-        service.register(
-            "button/control/Info",
-            {
-                "label": _("Ruida Info"),
-                "icon": icons8_info,
-                "tip": _("Provide information about the Ruida Driver"),
-                "action": popup_info,
-            },
-        )
         service.register(
             "button/control/Controller",
             {
@@ -51,6 +32,18 @@ def plugin(service, lifecycle):
                 "action": lambda v: service("window toggle Configuration\n"),
             },
         )
+
+        service.register(
+            "button/control/FocusZ",
+            {
+                "label": _("Focus Z"),
+                "icon": icons8_info,
+                "tip": _("Send a Ruida FocusZ command"),
+                "help": "deviceruida",
+                "action": lambda v: service("focusz\n"),
+            },
+        )
+
         from meerk40t.ruida.gui.ruidaconfig import RuidaConfiguration
         from meerk40t.ruida.gui.ruidacontroller import RuidaController
         from meerk40t.ruida.gui.ruidaoperationproperties import RuidaOperationPanel

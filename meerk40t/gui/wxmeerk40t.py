@@ -45,6 +45,7 @@ from .icons import (
 from .imagesplitter import RenderSplit
 from .keymap import Keymap
 from .lasertoolpanel import LaserTool
+from .materialmanager import MaterialManager
 from .materialtest import TemplateTool
 from .notes import Notes
 from .operation_info import OperationInformation
@@ -860,6 +861,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/About", About)
         kernel.register("window/Keymap", Keymap)
         kernel.register("window/Wordlist", WordlistEditor)
+        kernel.register("window/MatManager", MaterialManager)
         kernel.register("window/Navigation", Navigation)
         kernel.register("window/Notes", Notes)
         kernel.register("window/JobSpooler", JobSpooler)
@@ -938,6 +940,7 @@ class wxMeerK40t(wx.App, Module):
         if context.debug_mode:
             from meerk40t.gui.mkdebug import (
                 register_panel_color,
+                register_panel_crash,
                 register_panel_debugger,
                 register_panel_icon,
             )
@@ -945,6 +948,7 @@ class wxMeerK40t(wx.App, Module):
             kernel.register("wxpane/debug_tree", register_panel_debugger)
             kernel.register("wxpane/debug_color", register_panel_color)
             kernel.register("wxpane/debug_icons", register_panel_icon)
+            kernel.register("wxpane/debug_shutdown", register_panel_crash)
 
         @context.console_argument("sure", type=str, help="Are you sure? 'yes'?")
         @context.console_command("nuke_settings", hidden=True)

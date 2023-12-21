@@ -143,7 +143,7 @@ class TestOperations(unittest.TestCase):
             self.assertIsNot(node_copy._root, root)
 
         finally:
-            kernel.shutdown()
+            kernel()
 
     def test_operation_copy_cut(self):
         """

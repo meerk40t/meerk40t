@@ -2102,7 +2102,7 @@ class Transform(wx.Panel):
     def on_modified_element(self, origin, *args):
         self.update_matrix_text()
 
-    def on_emphasized_elements_changed(self, origin, elements):
+    def on_emphasized_elements_changed(self, origin, *args):
         self.select_ready(self.context.elements.has_emphasis())
         self.update_matrix_text()
 

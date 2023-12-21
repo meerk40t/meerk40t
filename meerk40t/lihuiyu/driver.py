@@ -613,7 +613,7 @@ class LihuiyuDriver(Parameters):
         @param values:
         @return:
         """
-        if self.service.rotary.active and self.service.rotary.supress_home:
+        if self.service.rotary.active and self.service.rotary.suppress_home:
             return
         self.rapid_mode()
         self(b"IPP\n")
@@ -688,7 +688,7 @@ class LihuiyuDriver(Parameters):
                 if function == "dwell":
                     self.plot_start()
                     self.rapid_mode()
-                    self.move_abs(start.real, start.imag)
+                    self._move_absolute(start.real, start.imag)
                     self.wait_finish()
                     self.dwell(sets.get("dwell_time"))
                 elif function == "wait":
@@ -732,7 +732,7 @@ class LihuiyuDriver(Parameters):
             self.plot_start()
             self.rapid_mode()
             start = plot.start
-            self.move_abs(start[0], start[1])
+            self._move_absolute(start[0], start[1])
             self.wait_finish()
             self.dwell(plot.dwell_time)
         elif isinstance(plot, WaitCut):
@@ -775,6 +775,9 @@ class LihuiyuDriver(Parameters):
         @param time_in_ms:
         @return:
         """
+        self.wait_finish()
+        while self.hold_work(0):
+            time.sleep(0.05)
         time.sleep(time_in_ms / 1000.0)
 
     def wait_finish(self, *values):
@@ -789,7 +792,9 @@ class LihuiyuDriver(Parameters):
 
         def temp_hold():
             try:
-                return len(self.out_pipe) != 0
+                return (
+                    len(self.out_pipe) != 0 or self.service.controller.state == "wait"
+                )
             except TypeError:
                 return False
 
@@ -802,6 +807,9 @@ class LihuiyuDriver(Parameters):
         @param function:
         @return:
         """
+        self.wait_finish()
+        while self.hold_work(0):
+            time.sleep(0.05)
         function()
 
     def beep(self):
@@ -810,6 +818,9 @@ class LihuiyuDriver(Parameters):
 
         @return:
         """
+        self.wait_finish()
+        while self.hold_work(0):
+            time.sleep(0.05)
         self.service("beep\n")
 
     def console(self, value):
@@ -819,6 +830,9 @@ class LihuiyuDriver(Parameters):
         @param value: console command
         @return:
         """
+        self.wait_finish()
+        while self.hold_work(0):
+            time.sleep(0.05)
         self.service(value)
 
     def signal(self, signal, *args):
@@ -829,6 +843,9 @@ class LihuiyuDriver(Parameters):
         @param args:
         @return:
         """
+        self.wait_finish()
+        while self.hold_work(0):
+            time.sleep(0.05)
         self.service.signal(signal, *args)
 
     ######################

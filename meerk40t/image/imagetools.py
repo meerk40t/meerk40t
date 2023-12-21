@@ -8,6 +8,7 @@ from ..core.exceptions import BadFileError
 from ..core.units import DEFAULT_PPI, UNITS_PER_PIXEL, Angle
 from ..svgelements import Color, Matrix, Path
 from ..tools.geomstr import Geomstr
+from .dither import dither
 
 
 def plugin(kernel, lifecycle=None):
@@ -1713,113 +1714,6 @@ def plugin(kernel, lifecycle=None):
 
         post.append(context.elements.post_classify(data_out))
         return "image", data_out
-
-
-_DIFFUSION_MAPS = {
-    "floyd-steinberg": (
-        (1, 0, 7 / 16),
-        (-1, 1, 3 / 16),
-        (0, 1, 5 / 16),
-        (1, 1, 1 / 16),
-    ),
-    "atkinson": (
-        (1, 0, 1 / 8),
-        (2, 0, 1 / 8),
-        (-1, 1, 1 / 8),
-        (0, 1, 1 / 8),
-        (1, 1, 1 / 8),
-        (0, 2, 1 / 8),
-    ),
-    "jarvis-judice-ninke": (
-        (1, 0, 7 / 48),
-        (2, 0, 5 / 48),
-        (-2, 1, 3 / 48),
-        (-1, 1, 5 / 48),
-        (0, 1, 7 / 48),
-        (1, 1, 5 / 48),
-        (2, 1, 3 / 48),
-        (-2, 2, 1 / 48),
-        (-1, 2, 3 / 48),
-        (0, 2, 5 / 48),
-        (1, 2, 3 / 48),
-        (2, 2, 1 / 48),
-    ),
-    "stucki": (
-        (1, 0, 8 / 42),
-        (2, 0, 4 / 42),
-        (-2, 1, 2 / 42),
-        (-1, 1, 4 / 42),
-        (0, 1, 8 / 42),
-        (1, 1, 4 / 42),
-        (2, 1, 2 / 42),
-        (-2, 2, 1 / 42),
-        (-1, 2, 2 / 42),
-        (0, 2, 4 / 42),
-        (1, 2, 2 / 42),
-        (2, 2, 1 / 42),
-    ),
-    "burkes": (
-        (1, 0, 8 / 32),
-        (2, 0, 4 / 32),
-        (-2, 1, 2 / 32),
-        (-1, 1, 4 / 32),
-        (0, 1, 8 / 32),
-        (1, 1, 4 / 32),
-        (2, 1, 2 / 32),
-    ),
-    "sierra3": (
-        (1, 0, 5 / 32),
-        (2, 0, 3 / 32),
-        (-2, 1, 2 / 32),
-        (-1, 1, 4 / 32),
-        (0, 1, 5 / 32),
-        (1, 1, 4 / 32),
-        (2, 1, 2 / 32),
-        (-1, 2, 2 / 32),
-        (0, 2, 3 / 32),
-        (1, 2, 2 / 32),
-    ),
-    "sierra2": (
-        (1, 0, 4 / 16),
-        (2, 0, 3 / 16),
-        (-2, 1, 1 / 16),
-        (-1, 1, 2 / 16),
-        (0, 1, 3 / 16),
-        (1, 1, 2 / 16),
-        (2, 1, 1 / 16),
-    ),
-    "sierra-2-4a": (
-        (1, 0, 2 / 4),
-        (-1, 1, 1 / 4),
-        (0, 1, 1 / 4),
-    ),
-}
-
-
-def dither(image, method="Floyd-Steinberg"):
-    """
-    This function and the associated _DIFFUSION_MAPS taken from hitherdither. MIT License.
-    :copyright: 2016-2017 by hbldh <henrik.blidh@nedomkull.com>
-    https://github.com/hbldh/hitherdither
-    """
-
-    diff_map = _DIFFUSION_MAPS.get(method.lower())
-    if diff_map is None:
-        raise NotImplementedError
-    img = image
-    diff = img.convert("F")
-    pix = diff.load()
-    width, height = image.size
-    for y in range(height):
-        for x in range(width):
-            pixel = pix[x, y]
-            pix[x, y] = 0 if pixel <= 127 else 255
-            error = pixel - pix[x, y]
-            for dx, dy, diffusion_coefficient in diff_map:
-                xn, yn = x + dx, y + dy
-                if (0 <= xn < width) and (0 <= yn < height):
-                    pix[xn, yn] += error * diffusion_coefficient
-    return diff
 
 
 class RasterScripts:
