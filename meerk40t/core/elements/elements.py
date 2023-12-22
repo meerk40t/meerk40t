@@ -526,7 +526,7 @@ class Elemental(Service):
         self.setting(float, "svg_ppi", 96.0)
         self.setting(bool, "operation_default_empty", True)
 
-        self.op_data = Settings(self.kernel.name, "operations.cfg", create_backup=2) # keep backup (max 1 / hour)
+        self.op_data = Settings(self.kernel.name, "operations.cfg", create_backup=True) # keep backup
 
         self.wordlists = {"version": [1, self.kernel.version]}
 
