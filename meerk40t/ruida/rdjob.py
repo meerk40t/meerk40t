@@ -133,6 +133,22 @@ HOME_Z = b"\xD8\x2C"
 HOME_U = b"\xD8\x2D"
 HOME_XY = b"\xD8\x2A"
 FOCUS_Z = b"\xD8\x2E"
+KEYDOWN_X_LEFT = b"\xD8\x20"
+KEYDOWN_X_RIGHT = b"\xD8\x21"
+KEYDOWN_Y_TOP = b"\xD8\x22"
+KEYDOWN_Y_BOTTOM = b"\xD8\x23"
+KEYDOWN_Z_UP = b"\xD8\x24"
+KEYDOWN_Z_DOWN = b"\xD8\x25"
+KEYDOWN_U_FORWARD = b"\xD8\x26"
+KEYDOWN_U_BACKWARDS = b"\xD8\x27"
+KEYUP_X_LEFT = b"\xD8\x30"
+KEYUP_X_RIGHT = b"\xD8\x31"
+KEYUP_Y_TOP = b"\xD8\x32"
+KEYUP_Y_BOTTOM = b"\xD8\x33"
+KEYUP_Z_UP = b"\xD8\x34"
+KEYUP_Z_DOWN = b"\xD8\x35"
+KEYUP_U_FORWARD = b"\xD8\x36"
+KEYUP_U_BACKWARDS = b"\xD8\x37"
 RAPID_OPTION_LIGHT = b"\x03"
 RAPID_OPTION_LIGHTORIGIN = b"\x01"
 RAPID_OPTION_ORIGIN = b"\x00"
@@ -1736,6 +1752,42 @@ class RDJob:
 
     def focus_z(self, output=None):
         self(FOCUS_Z, output=output)
+
+    def keydown_x_left(self, output=None):
+        self(KEYDOWN_X_LEFT, output=output)
+
+    def keyup_x_left(self, output=None):
+        self(KEYUP_X_LEFT, output=output)
+
+    def keydown_x_right(self, output=None):
+        self(KEYDOWN_X_RIGHT, output=output)
+
+    def keyup_x_right(self, output=None):
+        self(KEYUP_X_RIGHT, output=output)
+
+    def keydown_y_top(self, output=None):
+        self(KEYDOWN_Y_TOP, output=output)
+
+    def keyup_y_top(self, output=None):
+        self(KEYUP_Y_TOP, output=output)
+
+    def keydown_y_bottom(self, output=None):
+        self(KEYDOWN_Y_BOTTOM, output=output)
+
+    def keyup_y_bottom(self, output=None):
+        self(KEYUP_Y_BOTTOM, output=output)
+
+    def keydown_z_up(self, output=None):
+        self(KEYDOWN_Z_UP, output=output)
+
+    def keyup_z_up(self, output=None):
+        self(KEYUP_Z_UP, output=output)
+
+    def keydown_z_down(self, output=None):
+        self(KEYDOWN_Z_DOWN, output=output)
+
+    def keyup_z_down(self, output=None):
+        self(KEYUP_Z_DOWN, output=output)
 
     def _rapid_options(self, light=False, origin=False):
         if light and origin:
