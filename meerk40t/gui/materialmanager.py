@@ -61,6 +61,7 @@ class MaterialPanel(ScrolledPanel):
         self._active_material = None
         self._active_operation = None
         self.no_reload = False
+        self.share_ready = False
 
         # Categorisation
         # 0 = Material (thickness), 1 = Lasertype (Material), 2 = Thickness (Material)
@@ -360,7 +361,7 @@ class MaterialPanel(ScrolledPanel):
         self.Bind(wx.EVT_SIZE, self.on_resize)
         self.SetupScrolling()
         # Hide not-yet-supported functions
-        self.btn_share.Show(False)
+        self.btn_share.Show(self.share_ready)
         self.active_material = None
         self.on_reset(None)
 
@@ -787,7 +788,7 @@ class MaterialPanel(ScrolledPanel):
         dlg.ShowModal()
         dlg.Destroy()
 
-    def import_lightburn(self, filename):
+    def import_lightburn(self, filename, join_entries):
         if not os.path.exists(filename):
             return False
         added = False
@@ -822,9 +823,10 @@ class MaterialPanel(ScrolledPanel):
         #     for child in node:
         #         traverse(child)
         # traverse(root)
-
+        operation_ids = dict()
         for material_node in root:
             material = material_node.attrib["name"]
+            last_thickness = None
             for entry_node in material_node:
                 thickness = entry_node.attrib.get("Thickness", "-1")
                 try:
@@ -835,14 +837,29 @@ class MaterialPanel(ScrolledPanel):
                     thickness = ""
                 desc = entry_node.attrib.get("Desc", "")
                 title = entry_node.attrib.get("NoThickTitle", "")
-                new_import_id += 1
-                sect_num = -1
-                sect = f"{pattern}{new_import_id:0>4}"
-                info_section_name = f"{sect} info"
-                self.op_data.write_persistent(info_section_name, "name", material)
-                self.op_data.write_persistent(info_section_name, "laser", 0)
-                self.op_data.write_persistent(info_section_name, "thickness", thickness)
-                note = f"{desc} - {title}"
+                label = desc
+                if title:
+                    if label:
+                        label += " - "
+                    label += title
+                if last_thickness == thickness and join_entries:
+                    # We keep those together
+                    pass
+                else:
+                    operation_ids.clear()
+                    operation_ids["op engrave"] = ["E", 0]
+                    operation_ids["op raster"] = ["R", 0]
+                    operation_ids["op cut"] = ["C", 0]
+                    operation_ids["op image"] = ["I", 0]
+                    new_import_id += 1
+                    sect_num = -1
+                    sect = f"{pattern}{new_import_id:0>4}"
+                    info_section_name = f"{sect} info"
+                    self.op_data.write_persistent(info_section_name, "name", material)
+                    self.op_data.write_persistent(info_section_name, "laser", 0)
+                    self.op_data.write_persistent(info_section_name, "thickness", thickness)
+                    note = label
+                last_thickness = thickness
                 added = True
                 for cutsetting_node in entry_node:
                     sect_num += 1
@@ -852,11 +869,19 @@ class MaterialPanel(ScrolledPanel):
                         op_type = "op engrave"
                     elif cut_type.lower() == "scan":
                         op_type = "op raster"
+                    elif cut_type.lower() == "image":
+                        op_type = "op image"
                     else:
                         op_type = "op engrave"
+                    if op_type in operation_ids:
+                        operation_ids[op_type][1] += 1
+                    else:
+                        operation_ids[op_type] = [op_type[3].upper(), 1]
+
                     self.op_data.write_persistent(section_name, "type", op_type)
+                    self.op_data.write_persistent(section_name, "id", f"{operation_ids[op_type][0]}{operation_ids[op_type][1]}")
                     self.op_data.write_persistent(
-                        section_name, "label", f"{desc} - {title}"
+                        section_name, "label", label
                     )
 
                     for param_node in cutsetting_node:
@@ -936,7 +961,7 @@ class MaterialPanel(ScrolledPanel):
                     if not line:
                         break
                     line = line.strip()
-                    if line.startswith("[F "):
+                    if line.startswith("["):
                         if info_box and info_section_name:
                             self.op_data.write_persistent(
                                 info_section_name, "note", info_box
@@ -946,7 +971,9 @@ class MaterialPanel(ScrolledPanel):
                         sect = f"{pattern}{new_import_id:0>4}"
                         info_section_name = f"{sect} info"
                         section_name = f"{sect} {0:0>6}"
-                        matname = line[3:-1]
+                        matname = line[1:-1]
+                        if matname.startswith("F "):
+                            matname = matname[2:]
                         self.op_data.write_persistent(
                             info_section_name, "name", matname
                         )
@@ -956,16 +983,10 @@ class MaterialPanel(ScrolledPanel):
                         self.op_data.write_persistent(
                             section_name, "type", "op engrave"
                         )
+                        self.op_data.write_persistent(
+                            section_name, "id", "F1"
+                        )
                         added = True
-                    elif line.startswith("["):
-                        if info_box and info_section_name:
-                            self.op_data.write_persistent(
-                                info_section_name, "note", info_box
-                            )
-                        # Anything else...
-                        section_name = ""
-                        info_section_name = ""
-                        info_box = ""
                     else:
                         if not section_name:
                             continue
@@ -1074,7 +1095,8 @@ class MaterialPanel(ScrolledPanel):
             return
         added = False
         if myfile.endswith(".clb"):
-            added = self.import_lightburn(myfile)
+            flag = self.context.kernel.yesno(_("Do you want to consolidate entries of the same thickness for materials?"), caption=_("Import"))
+            added = self.import_lightburn(myfile, flag)
         elif myfile.endswith(".lib") or myfile.endswith(".ini"):
             added = self.import_ezcad(myfile)
         else:
@@ -1415,11 +1437,11 @@ class MaterialPanel(ScrolledPanel):
         menu.Enable(item.GetId(), bool(self.active_material is not None))
         self.Bind(wx.EVT_MENU, self.on_delete, item)
 
-        menu.AppendSeparator()
-
-        item = menu.Append(wx.ID_ANY, _("Share"), "", wx.ITEM_NORMAL)
-        menu.Enable(item.GetId(), bool(self.active_material is not None))
-        self.Bind(wx.EVT_MENU, self.on_share, item)
+        if self.share_ready:
+            menu.AppendSeparator()
+            item = menu.Append(wx.ID_ANY, _("Share"), "", wx.ITEM_NORMAL)
+            menu.Enable(item.GetId(), bool(self.active_material is not None))
+            self.Bind(wx.EVT_MENU, self.on_share, item)
 
         def create_minimal(event):
             section = "minimal"
