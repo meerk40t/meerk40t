@@ -27,6 +27,171 @@ from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size
 _ = wx.GetTranslation
 
 
+class ImportDialog(wx.Dialog):
+    def __init__(self, *args, context=None, **kwds):
+        kwds["style"] = (
+                kwds.get("style", 0) | wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
+        )
+        wx.Dialog.__init__(self, *args, **kwds)
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.context = context
+        file_sizer = StaticBoxSizer(self, wx.ID_ANY, _("File to import"), wx.VERTICAL)
+
+        file_box = wx.BoxSizer(wx.HORIZONTAL)
+        self.txt_filename = wx.TextCtrl(self, wx.ID_ANY)
+        self.btn_file = wx.Button(self, wx.ID_ANY, "...")
+        file_box.Add(self.txt_filename, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        file_box.Add(self.btn_file, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        file_sizer.Add(file_box, 0, wx.EXPAND, 0)
+
+        self.check_consolidate = wx.CheckBox(self, wx.ID_ANY, _("Consolidate same thickness for material"))
+        file_sizer.Add(self.check_consolidate, 0, 0, 0)
+
+        main_sizer.Add(file_sizer, 0, wx.EXPAND, 0)
+
+        lens_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Different Lens-Size"), wx.VERTICAL)
+        self.check_lens = wx.CheckBox(self, wx.ID_ANY, _("Convert Power/Speed"))
+
+        lens_param_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        label_old = wx.StaticText(self, wx.ID_ANY, "Old:")
+        unit_old = wx.StaticText(self, wx.ID_ANY, "mm")
+        self.txt_lens_old = wx.TextCtrl(self, wx.ID_ANY)
+        label_new = wx.StaticText(self, wx.ID_ANY, "New:")
+        self.txt_lens_new = wx.TextCtrl(self, wx.ID_ANY)
+        unit_new = wx.StaticText(self, wx.ID_ANY, "mm")
+        lens_param_sizer.Add(label_old, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        lens_param_sizer.Add(self.txt_lens_old, 0, 0, 0)
+        lens_param_sizer.Add(unit_old, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        lens_param_sizer.AddSpacer(25)
+
+        lens_param_sizer.Add(label_new, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        lens_param_sizer.Add(self.txt_lens_new, 0, 0, 0)
+        lens_param_sizer.Add(unit_new, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        lens_sizer.Add(self.check_lens, 0, 0, 0)
+        lens_sizer.Add(lens_param_sizer, 0, 0, 0)
+        main_sizer.Add(lens_sizer, 0, wx.EXPAND, 0)
+
+        wattage_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Different Laser-Power"), wx.VERTICAL)
+        self.check_wattage = wx.CheckBox(self, wx.ID_ANY, _("Convert Power/Speed"))
+
+        wattage_param_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        label_old = wx.StaticText(self, wx.ID_ANY, "Old:")
+        unit_old = wx.StaticText(self, wx.ID_ANY, "W")
+        self.txt_wattage_old = wx.TextCtrl(self, wx.ID_ANY)
+        label_new = wx.StaticText(self, wx.ID_ANY, "New:")
+        unit_new = wx.StaticText(self, wx.ID_ANY, "W")
+        self.txt_wattage_new = wx.TextCtrl(self, wx.ID_ANY)
+        wattage_param_sizer.Add(label_old, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        wattage_param_sizer.Add(self.txt_wattage_old, 0, 0, 0)
+        wattage_param_sizer.Add(unit_old, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        wattage_param_sizer.AddSpacer(25)
+
+        wattage_param_sizer.Add(label_new, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        wattage_param_sizer.Add(self.txt_wattage_new, 0, 0, 0)
+        wattage_param_sizer.Add(unit_new, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        wattage_sizer.Add(self.check_wattage, 0, 0, 0)
+        wattage_sizer.Add(wattage_param_sizer, 0, 0, 0)
+        main_sizer.Add(wattage_sizer, 0, wx.EXPAND, 0)
+
+        box_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.btn_ok = wx.Button(self, wx.ID_OK, _("OK"))
+        self.btn_cancel = wx.Button(self, wx.ID_CANCEL, _("Cancel"))
+        box_sizer.Add(self.btn_ok, 0, 0, 0)
+        box_sizer.Add(self.btn_cancel, 0, 0, 0)
+        main_sizer.Add(box_sizer, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+
+
+        self.SetSizer(main_sizer)
+        self.Layout()
+        main_sizer.Fit(self)
+        self.validate(None)
+        self.on_check(None)
+        self.Bind(wx.EVT_TEXT, self.validate, self.txt_filename)
+        self.Bind(wx.EVT_BUTTON, self.on_file, self.btn_file)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check, self.check_lens)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check, self.check_wattage)
+
+    def on_file(self, event):
+        mydlg = wx.FileDialog(
+            self,
+            message=_("Choose a library-file"),
+            wildcard="Supported files|*.lib;*.ini;*.clb|EZcad files (*.lib;*.ini)|*.lib;*.ini|Lightburn files (*.clb)|*.clb|All files (*.*)|*.*",
+            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW,
+        )
+        if mydlg.ShowModal() == wx.ID_OK:
+            # This returns a Python list of files that were selected.
+            self.txt_filename.SetValue(mydlg.GetPath())
+            self.validate()
+        mydlg.Destroy()
+
+    def on_check(self, event):
+        flag = self.check_lens.GetValue()
+        self.txt_lens_old.Enable(flag)
+        self.txt_lens_new.Enable(flag)
+        flag = self.check_wattage.GetValue()
+        self.txt_wattage_old.Enable(flag)
+        self.txt_wattage_new.Enable(flag)
+
+    def validate(self, *args):
+        flag = True
+        fname = self.txt_filename.GetValue()
+        if fname == "" or not os.path.exists(fname):
+            flag = False
+        if flag and fname.endswith(".clb"):
+            self.check_consolidate.Enable(True)
+        else:
+            self.check_consolidate.Enable(False)
+
+        self.btn_ok.Enable(flag)
+
+    def result(self):
+        old_lens = None
+        new_lens = None
+        factor_from_lens = 1.0
+        if self.check_lens.GetValue():
+            a_s = self.txt_lens_old.GetValue()
+            b_s = self.txt_lens_new.GetValue()
+            try:
+                a = float(a_s)
+                b = float(b_s)
+                if a != 0 and b != 0:
+                    old_lens = a_s
+                    new_lens = b_s
+                    factor_from_lens = b / a
+            except ValueError:
+                pass
+
+        old_power = None
+        new_power = None
+        factor_from_power = 1.0
+        if self.check_wattage.GetValue():
+            a_s = self.txt_wattage_old.GetValue()
+            b_s = self.txt_wattage_new.GetValue()
+            try:
+                a = float(a_s)
+                b = float(b_s)
+                if a != 0 and b != 0:
+                    old_power = a_s
+                    new_power = b_s
+                    factor_from_power = a / b
+            except ValueError:
+                pass
+
+        fname = self.txt_filename.GetValue()
+        if fname == "" or not os.path.exists(fname):
+            fname = None
+
+        consolidate = self.check_consolidate.GetValue()
+        if not self.check_consolidate.Enabled:
+            consolidate = False
+        factor = factor_from_lens * factor_from_power
+        info = (fname, old_lens, new_lens, old_power, new_power, factor_from_lens, factor_from_power, factor, consolidate)
+        return info
+
 class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
     """TextEditMixin allows any column to be edited."""
 
@@ -788,7 +953,12 @@ class MaterialPanel(ScrolledPanel):
         dlg.ShowModal()
         dlg.Destroy()
 
-    def import_lightburn(self, filename, join_entries):
+    def import_lightburn(self, info):
+        # info = (fname, old_lens, new_lens, old_power, new_power, factor_from_lens, factor_from_power, factor, consolidate)
+        filename = info[0]
+        factor = info[7]
+        join_entries = info[8]
+
         if not os.path.exists(filename):
             return False
         added = False
@@ -824,6 +994,7 @@ class MaterialPanel(ScrolledPanel):
         #         traverse(child)
         # traverse(root)
         operation_ids = dict()
+
         for material_node in root:
             material = material_node.attrib["name"]
             last_thickness = None
@@ -862,6 +1033,8 @@ class MaterialPanel(ScrolledPanel):
                 last_thickness = thickness
                 added = True
                 for cutsetting_node in entry_node:
+                    powerval = None
+                    speedval = None
                     sect_num += 1
                     section_name = f"{sect} {sect_num:0>6}"
                     cut_type = cutsetting_node.attrib.get("type", "Scan")
@@ -901,14 +1074,10 @@ class MaterialPanel(ScrolledPanel):
                                 )
                         elif param == "speed":
                             if numeric_value != 0:
-                                self.op_data.write_persistent(
-                                    section_name, "speed", numeric_value
-                                )
+                                speedval = numeric_value
                         elif param == "maxpower":
                             if numeric_value != 0:
-                                self.op_data.write_persistent(
-                                    section_name, "power", numeric_value * 10
-                                )
+                                powerval = numeric_value * 10
                         elif param == "frequency":
                             # khz
                             if numeric_value != 0:
@@ -924,12 +1093,37 @@ class MaterialPanel(ScrolledPanel):
                                     section_name, "rapid_speed", numeric_value
                                 )
                         else:
-                            note += f"\\n{param} = {numeric_value}"
+                            # note += f"\\n{param} = {numeric_value}"
+                            pass
+                    # Ready, let's write power and speed
+                    if factor != 1:
+                        old_l = info[1]
+                        new_l = info[2]
+                        factor_l = info[5]
+                        if old_l is not None:
+                            note += f"\\n({cut_type}) Converted lens-size {old_l0}mm -> {new_l}mm: {factor_l:.2}"
+                        old_l = info[3]
+                        new_l = info[4]
+                        factor_l = info[6]
+                        if old_l is not None:
+                            note += f"\\n({cut_type}) Converted power {old_l}W -> {new_l}W: {factor_l:.2}"
+                    if powerval * factor > 1000:
+                        # Too much, let's reduce speed instead
+                        if speedval:
+                            note += f"\\n({cut_type}) Needed to reduce speed {speedval:.1}mm/s -> {speedval / factor:.2}mm/s"
+                            speedval *= 1 / factor
+                    else:
+                        powerval *= factor
+                    self.op_data.write_persistent(section_name, "speed", speedval)
+                    self.op_data.write_persistent(section_name, "power", powerval)
                 self.op_data.write_persistent(info_section_name, "note", note)
 
         return added
 
-    def import_ezcad(self, filename):
+    def import_ezcad(self, info):
+        # info = (fname, old_lens, new_lens, old_power, new_power, factor_from_lens, factor_from_power, factor, consolidate)
+        filename = info[0]
+        factor = info[7]
         if not os.path.exists(filename):
             return False
         added = False
@@ -956,6 +1150,37 @@ class MaterialPanel(ScrolledPanel):
                 section_name = ""
                 info_section_name = ""
                 info_box = ""
+                powerval = None
+                speedval = None
+
+                def write_power_speed():
+                    if factor != 1:
+                        old_l = info[1]
+                        new_l = info[2]
+                        factor_l = info[5]
+                        if old_l is not None:
+                            if info_box:
+                                info_box += "\\n"
+                            info_box += f"Converted lens-size {old_l}mm -> {new_l}mm: {factor_l:.2}"
+                        old_l = info[3]
+                        new_l = info[4]
+                        factor_l = info[6]
+                        if old_l is not None:
+                            if info_box:
+                                info_box += "\\n"
+                            info_box += f"Converted power {old_l}W -> {new_l}W: {factor_l:.2}"
+                    if powerval * factor > 1000:
+                        # Too much, let's reduce speed instead
+                        if speedval:
+                            if info_box:
+                                info_box += "\\n"
+                            info_box += f"Needed to reduce speed {numeric_value:.1}mm/s -> {numeric_value * speed_factor:.2}mm/s"
+                            speedval *= 1 / factor
+                    else:
+                        powerval *= factor
+                    self.op_data.write_persistent(section_name, "speed", speedval)
+                    self.op_data.write_persistent(section_name, "power", powerval)
+
                 while True:
                     line = f.readline()
                     if not line:
@@ -966,6 +1191,10 @@ class MaterialPanel(ScrolledPanel):
                             self.op_data.write_persistent(
                                 info_section_name, "note", info_box
                             )
+                        if powerval and section_name:
+                            write_power_speed()
+                        powerval = None
+                        speedval = None
                         info_box = ""
                         new_import_id += 1
                         sect = f"{pattern}{new_import_id:0>4}"
@@ -986,6 +1215,7 @@ class MaterialPanel(ScrolledPanel):
                         self.op_data.write_persistent(
                             section_name, "id", "F1"
                         )
+                        speed_factor = 1.0
                         added = True
                     else:
                         if not section_name:
@@ -1006,14 +1236,10 @@ class MaterialPanel(ScrolledPanel):
                                 )
                         elif param == "markspeed":
                             if numeric_value != 0:
-                                self.op_data.write_persistent(
-                                    section_name, "speed", numeric_value
-                                )
+                                speedval = numeric_value
                         elif param == "powerratio":
                             if numeric_value != 0:
-                                self.op_data.write_persistent(
-                                    section_name, "power", numeric_value * 10
-                                )
+                                powerval = numeric_value * 10
                         elif param == "freq":
                             # khz
                             if numeric_value != 0:
@@ -1069,6 +1295,8 @@ class MaterialPanel(ScrolledPanel):
                                     info_box += "\\n"
                                 info_box += f"{param} = {numeric_value}"
                 # Residual information available?
+                if powerval and section_name:
+                    write_power_speed()
                 if info_box and info_section_name:
                     self.op_data.write_persistent(info_section_name, "note", info_box)
 
@@ -1080,25 +1308,20 @@ class MaterialPanel(ScrolledPanel):
 
     def on_import(self, event):
         #
-        myfile = ""
-        mydlg = wx.FileDialog(
-            self,
-            message=_("Choose a library-file"),
-            wildcard="Supported files|*.lib;*.ini;*.clb|EZcad files (*.lib;*.ini)|*.lib;*.ini|Lightburn files (*.clb)|*.clb|All files (*.*)|*.*",
-            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW,
-        )
+        info = None
+        mydlg = ImportDialog(None, id=wx.ID_ANY, context=self.context)
         if mydlg.ShowModal() == wx.ID_OK:
             # This returns a Python list of files that were selected.
-            myfile = mydlg.GetPath()
+            info = mydlg.result()
         mydlg.Destroy()
-        if myfile == "":
+        if info is None:
             return
         added = False
+        myfile = info[0]
         if myfile.endswith(".clb"):
-            flag = self.context.kernel.yesno(_("Do you want to consolidate entries of the same thickness for materials?"), caption=_("Import"))
-            added = self.import_lightburn(myfile, flag)
+            added = self.import_lightburn(info)
         elif myfile.endswith(".lib") or myfile.endswith(".ini"):
-            added = self.import_ezcad(myfile)
+            added = self.import_ezcad(info)
         else:
             self.invalid_file(myfile)
 
