@@ -437,7 +437,7 @@ class RuidaDevice(Service):
             "ruida_binds",
             hidden=True,
         )
-        def grbl_binds(data, **kwgs):
+        def ruida_binds(data, **kwgs):
             self("bind a +xbackward")
             self("bind d +xforward")
             self("bind s +ybackward")
