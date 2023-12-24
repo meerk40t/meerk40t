@@ -28,7 +28,7 @@ def init_commands(kernel):
         _,
         mode,
         bounds,
-        elements,
+        data,
         align_x=None,
         align_y=None,
         asgroup=None,
@@ -39,7 +39,7 @@ def init_commands(kernel):
 
         The complete validation stuff...
         """
-        if elements is None:
+        if data is None:
             return
         if align_x is None or align_y is None:
             channel(_("You need to provide parameters for both x and y"))
@@ -53,6 +53,8 @@ def init_commands(kernel):
         if align_y not in ("min", "max", "center", "none"):
             channel(_("Invalid alignment parameter for y"))
             return
+        elements = self.condense_elements(data)
+
         if mode == "default":
             if len(elements) < 2:
                 channel(_("No sense in aligning an element to itself"))
@@ -90,7 +92,7 @@ def init_commands(kernel):
         elif mode == "ref":
             align_bounds = bounds
         self.align_elements(
-            data=elements,
+            data_to_align=elements,
             alignbounds=align_bounds,
             positionx=align_x,
             positiony=align_y,
