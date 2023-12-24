@@ -511,6 +511,7 @@ class MaterialPanel(ScrolledPanel):
         )
         unit = wx.StaticText(self, wx.ID_ANY, _("mm"))
         box4.Add(self.txt_entry_lens, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        box4.Add(unit, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.txt_entry_note = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE)
         self.txt_entry_note.SetMinSize(dip_size(self, -1, 2 * 23))
@@ -775,6 +776,8 @@ class MaterialPanel(ScrolledPanel):
                 this_category_secondary = info
             else:
                 this_category_secondary = entry[sort_key_secondary]
+            if not this_category_primary:
+                this_category_primary = "No " + sort_key_primary
             key = entry["section"]
             if filtername is not None and filtername.lower() not in entry["material"].lower():
                 continue
