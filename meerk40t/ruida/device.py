@@ -7,6 +7,7 @@ ruida files (*.rd) and turn them likewise into cutcode.
 from meerk40t.core.view import View
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from .serial_connection import SerialConnection
+from .tcp_connection import TCPConnection
 
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
@@ -258,7 +259,7 @@ class RuidaDevice(Service):
 
         self.interface_mock = MockConnection(self)
         self.interface_udp = UDPConnection(self)
-        self.interface_tcp = MockConnection(self)
+        self.interface_tcp = TCPConnection(self)
         self.interface_usb = SerialConnection(self)
         self.active_interface = None
 
