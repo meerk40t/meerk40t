@@ -1445,7 +1445,7 @@ class Elemental(Service):
             create_raster(oplist)
             create_image(oplist)
             opinfo.clear()
-            opinfo["name"] = "Default"
+            opinfo["material"] = "Default"
             opinfo["author"] = "MeerK40t"
             needs_save = True
         # Ensure we have an id for everything
