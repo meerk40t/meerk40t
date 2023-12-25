@@ -807,6 +807,43 @@ class LaserRender:
                 x += 0.25 * (x_to - x_from)
                 y += 0.25 * (y_to - y_from)
             gc.DrawText(symbol, x, y)
+        symbol = ""
+        if hasattr(node, "nx") and hasattr(node, "ny"):
+            nx = node.nx
+            if nx is None:
+                nx = 1
+            ny = node.ny
+            if ny is None:
+                ny = 1
+            if nx != 1 or ny != 1:
+                symbol = f"{nx},{ny}"
+        if symbol:
+            font_size = 10 * zoomscale
+            if font_size < 1.0:
+                font_size = 1.0
+            try:
+                font = wx.Font(
+                    font_size,
+                    wx.FONTFAMILY_SWISS,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+            except TypeError:
+                font = wx.Font(
+                    int(font_size),
+                    wx.FONTFAMILY_SWISS,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+            gc.SetFont(font, wx.Colour(red=255, green=0, blue=0, alpha=alpha))
+            (t_width, t_height) = gc.GetTextExtent(symbol)
+            x = x_from + (x_from - (x_from + x_to) / 2) - t_width / 2
+            y = y_from + (y_from - (y_from + y_to) / 2) - t_height / 2
+            # is corner center then shift it a bit more
+            if node.corner == 4:
+                x += 0.75 * abs(x_to - x_from)
+                y += 0.75 * abs(y_to - y_from)
+            gc.DrawText(symbol, x, y)
 
         gc.PopState()
 
