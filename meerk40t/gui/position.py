@@ -453,16 +453,23 @@ class PositionPanel(wx.Panel):
                 new_h = float(
                     Length(f"{round(self.position_h, 6)}{self.position_units}")
                 )
-
-                try:
-                    scalex = new_w / (bb[2] - bb[0])
-                    scaley = new_h / (bb[3] - bb[1])
-                except ZeroDivisionError:
-                    continue
-                # print("Old=%.1f, new=%.1f, sx=%.1f" % ((bb[2]-bb[0]), new_w, scalex))
-                if abs(scalex - 1) < 0.000001:
+                # A line may have a zero dimension
+                if abs(bb[2] - bb[0]) < delta:
                     scalex = 1
-                if abs(scaley - 1) < 0.000001:
+                else:
+                    scalex = new_w / (bb[2] - bb[0])
+                    if abs(scalex) < delta:
+                        scalex = 1
+                if abs(bb[3] - bb[1]) < delta:
+                    scaley = 1
+                else:
+                    scaley = new_h / (bb[3] - bb[1])
+                    if abs(scaley) < delta:
+                        scaley = 1
+                # print("Old=%.1f, new=%.1f, sx=%.1f" % ((bb[2]-bb[0]), new_w, scalex))
+                if abs(scalex - 1) < delta:
+                    scalex = 1
+                if abs(scaley - 1) < delta:
                     scaley = 1
                 if scalex == 1 and scaley == 1:
                     continue
@@ -488,11 +495,16 @@ class PositionPanel(wx.Panel):
                 abs(self.position_w - self.org_w) >= delta
                 or abs(self.position_h - self.org_h) >= delta
             ):
-                if self.org_w != 0 and self.org_h != 0:
+                if abs(self.org_w) > delta:
                     sx = round(self.position_w / self.org_w, 6)
+                else:
+                    sx = 1
+                if abs(self.org_h) > delta:
                     sy = round(self.position_h / self.org_h, 6)
-                    if sx != 1.0 or sy != 1.0:
-                        cmd2 = f"scale {sx} {sy}\n"
+                else:
+                    sy = 1
+                if sx != 1.0 or sy != 1.0:
+                    cmd2 = f"scale {sx} {sy}\n"
             # cmd = f"resize {round(self.position_x, 6)}{u} {round(self.position_y, 0)}{u}"
             # cmd += f" {round(self.position_w, 6)}{u} {round(self.position_h, 6)}{u}\n"
             cmd = cmd1 + cmd2
