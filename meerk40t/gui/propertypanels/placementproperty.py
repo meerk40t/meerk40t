@@ -81,6 +81,63 @@ class PlacementPanel(wx.Panel):
         self.pos_sizer.Add(self.text_y, 1, wx.EXPAND, 0)
         main_sizer.Add(self.pos_sizer, 0, wx.EXPAND, 0)
 
+        self.grid_sizer_1 = StaticBoxSizer(self, wx.ID_ANY, _("Repetitions in X-direction"), wx.HORIZONTAL)
+        info_x1 = wx.StaticText(self, wx.ID_ANY, _("Repeats:"))
+        self.text_repeats_x = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "",
+            limited=True,
+            check="int",
+            style=wx.TE_PROCESS_ENTER,
+        )
+        self.text_repeats_x.lower_limit = 0
+        info_x2 = wx.StaticText(self, wx.ID_ANY, _("Gap:"))
+        self.text_gap_x = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "",
+            limited=True,
+            check="length",
+            style=wx.TE_PROCESS_ENTER,
+        )
+        self.text_gap_x.SetToolTip(_("Gap in X-direction"))
+        self.grid_sizer_1.Add(info_x1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.grid_sizer_1.Add(self.text_repeats_x, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.grid_sizer_1.Add(info_x2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.grid_sizer_1.Add(self.text_gap_x, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.grid_sizer_2 = StaticBoxSizer(self, wx.ID_ANY, _("Repetitions in Y-direction"), wx.HORIZONTAL)
+        info_y1 = wx.StaticText(self, wx.ID_ANY, _("Repeats:"))
+        self.text_repeats_y = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "",
+            limited=True,
+            check="int",
+            style=wx.TE_PROCESS_ENTER,
+        )
+        self.text_repeats_y.lower_limit = 0
+        info_y2 = wx.StaticText(self, wx.ID_ANY, _("Gap:"))
+        self.text_gap_y = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "",
+            limited=True,
+            check="length",
+            style=wx.TE_PROCESS_ENTER,
+        )
+        self.text_repeats_x.SetToolTip(_("How many repetitions in X-direction?\n0 = As many as possible"))
+        self.text_repeats_y.SetToolTip(_("How many repetitions in Y-direction?\n0 = As many as possible"))
+        self.text_gap_x.SetToolTip(_("Gap between placements in X-direction"))
+        self.text_gap_y.SetToolTip(_("Gap between placements in Y-direction"))
+        self.grid_sizer_2.Add(info_y1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.grid_sizer_2.Add(self.text_repeats_y, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.grid_sizer_2.Add(info_y2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.grid_sizer_2.Add(self.text_gap_y, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        main_sizer.Add(self.grid_sizer_1, 0, wx.EXPAND, 0)
+        main_sizer.Add(self.grid_sizer_2, 0, wx.EXPAND, 0)
         # Rotation
         self.rot_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Rotation:"), wx.HORIZONTAL)
         self.text_rot = TextCtrl(
@@ -136,8 +193,12 @@ class PlacementPanel(wx.Panel):
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_corner, self.combo_corner)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_output, self.checkbox_output)
         self.text_rot.SetActionRoutine(self.on_text_rot)
+        self.text_repeats_x.SetActionRoutine(self.on_text_nx)
+        self.text_repeats_y.SetActionRoutine(self.on_text_ny)
         self.text_x.SetActionRoutine(self.on_text_x)
         self.text_y.SetActionRoutine(self.on_text_y)
+        self.text_gap_x.SetActionRoutine(self.on_text_dx)
+        self.text_gap_y.SetActionRoutine(self.on_text_dy)
         self.text_loops.SetActionRoutine(self.on_text_loops)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
 
@@ -177,7 +238,14 @@ class PlacementPanel(wx.Panel):
         self.text_y.Enable(flag_enabled)
         self.text_loops.Enable(flag_enabled)
         self.slider_angle.Enable(flag_enabled)
+        self.text_gap_x.Enable(flag_enabled)
+        self.text_gap_y.Enable(flag_enabled)
+        self.text_repeats_x.Enable(flag_enabled)
+        self.text_repeats_y.Enable(flag_enabled)
+
         show_hide(self.pos_sizer, not is_current)
+        show_hide(self.grid_sizer_1, not is_current)
+        show_hide(self.grid_sizer_2, not is_current)
         show_hide(self.rot_sizer, not is_current)
         show_hide(self.corner_sizer, not is_current)
         show_hide(self.loop_sizer, not is_current)
@@ -196,6 +264,16 @@ class PlacementPanel(wx.Panel):
                 y = float(Length(y))
             if y is None:
                 y = 0
+            dx = self.operation.dx
+            if isinstance(dx, str):
+                dx = float(Length(dx))
+            if dx is None:
+                dx = 0
+            dy = self.operation.dy
+            if isinstance(dy, str):
+                dy = float(Length(dy))
+            if dy is None:
+                dy = 0
             ang = self.operation.rotation
             myang = Angle(ang, digits=2)
             if ang is None:
@@ -204,6 +282,8 @@ class PlacementPanel(wx.Panel):
             if loops is None:
                 loops = 1
             set_ctrl_value(self.text_loops, str(loops))
+            set_ctrl_value(self.text_repeats_x, str(self.operation.nx))
+            set_ctrl_value(self.text_repeats_y, str(self.operation.ny))
             set_ctrl_value(
                 self.text_x,
                 f"{Length(amount=x, preferred_units=units, digits=4).preferred_length}",
@@ -211,6 +291,14 @@ class PlacementPanel(wx.Panel):
             set_ctrl_value(
                 self.text_y,
                 f"{Length(amount=y, preferred_units=units, digits=4).preferred_length}",
+            )
+            set_ctrl_value(
+                self.text_gap_x,
+                f"{Length(amount=dx, preferred_units=units, digits=4).preferred_length}",
+            )
+            set_ctrl_value(
+                self.text_gap_y,
+                f"{Length(amount=dy, preferred_units=units, digits=4).preferred_length}",
             )
             set_ctrl_value(self.text_rot, f"{myang.angle_degrees}")
             try:
@@ -286,6 +374,17 @@ class PlacementPanel(wx.Panel):
             self.operation.x = x
             self.updated()
 
+    def on_text_dx(self):
+        if self.operation is None or not hasattr(self.operation, "dx"):
+            return
+        try:
+            x = float(Length(self.text_gap_x.GetValue()))
+        except ValueError:
+            return
+        if self.operation.dx != x:
+            self.operation.dx = x
+            self.updated()
+
     def on_text_y(self):
         if self.operation is None or not hasattr(self.operation, "y"):
             return
@@ -295,6 +394,17 @@ class PlacementPanel(wx.Panel):
             return
         if self.operation.y != y:
             self.operation.y = y
+            self.updated()
+
+    def on_text_dy(self):
+        if self.operation is None or not hasattr(self.operation, "dy"):
+            return
+        try:
+            y = float(Length(self.text_gap_y.GetValue()))
+        except ValueError:
+            return
+        if self.operation.dy != y:
+            self.operation.dy = y
             self.updated()
 
     def on_text_loops(self):
@@ -310,8 +420,34 @@ class PlacementPanel(wx.Panel):
             self.operation.loops = loops
             self.updated()
 
+    def on_text_nx(self):
+        if self.operation is None or not hasattr(self.operation, "nx"):
+            return
+        try:
+            nx = int(self.text_repeats_x.GetValue())
+            if nx < 0:
+                nx = 0
+        except ValueError:
+            return
+        if self.operation.nx != nx:
+            self.operation.nx = nx
+            self.updated()
+
+    def on_text_ny(self):
+        if self.operation is None or not hasattr(self.operation, "ny"):
+            return
+        try:
+            ny = int(self.text_repeats_y.GetValue())
+            if ny < 0:
+                ny = 0
+        except ValueError:
+            return
+        if self.operation.ny != ny:
+            self.operation.ny = ny
+            self.updated()
+
     def updated(self):
-        self.context.elements.signal("element_property_update", self.operation)
+        self.context.elements.signal("element_property_reload", self.operation)
         self.context.elements.signal("refresh_scene", "Scene")
 
 

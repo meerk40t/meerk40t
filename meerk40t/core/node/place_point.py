@@ -15,37 +15,70 @@ class PlacePointNode(Node):
     PlacePointNode is the bootstrapped node type for the 'place point' type.
     """
 
-    def __init__(self, x=0, y=0, rotation=0, corner=0, loops=1, **kwargs):
+    def __init__(
+        self,
+        x=0,
+        y=0,
+        rotation=0,
+        corner=0,
+        loops=1,
+        dx=0,
+        dy=0,
+        nx=1,
+        ny=1,
+        alternating_dx=0,
+        alternating_dy=0,
+        **kwargs,
+    ):
         self.x = x
         self.y = y
+        self.dx = dx
+        self.dy = dy
+        self.nx = nx
+        self.ny = ny
+        self.alternating_dx = dx
+        self.alternating_dy = dy
         self.rotation = rotation
         self.corner = corner
         self.loops = loops
         self.output = True
         super().__init__(type="place point", **kwargs)
-        self._formatter = "{enabled}{loops}{element_type} {corner} {x} {y} {rotation}"
+        self._formatter = (
+            "{enabled}{loops}{element_type}{grid} {corner} {x} {y} {rotation}"
+        )
         self.validate()
 
     def validate(self):
+        def _valid_length(field):
+            try:
+                if isinstance(field, str):
+                    value = float(Length(field))
+                elif isinstance(field, Length):
+                    value = float(field)
+                else:
+                    value = field
+            except ValueError:
+                value = 0
+            return value
+
+        def _valid_int(field, minim, maxim):
+            if field is None:
+                value = minim
+            try:
+                value = min(maxim, max(minim, int(field)))
+            except ValueError:
+                value = minim
+            return value
+
         if isinstance(self.output, str):
             try:
                 self.output = bool(self.output)
             except ValueError:
                 self.output = True
-        try:
-            if isinstance(self.x, str):
-                self.x = float(Length(self.x))
-            elif isinstance(self.x, Length):
-                self.x = float(self.x)
-        except ValueError:
-            self.x = 0
-        try:
-            if isinstance(self.y, str):
-                self.y = float(Length(self.y))
-            elif isinstance(self.y, Length):
-                self.y = float(self.y)
-        except ValueError:
-            self.y = 0
+        self.x = _valid_length(self.x)
+        self.y = _valid_length(self.y)
+        self.dx = _valid_length(self.dx)
+        self.dy = _valid_length(self.dy)
         try:
             if isinstance(self.rotation, str):
                 self.rotation = Angle(self.rotation).radians
@@ -53,18 +86,6 @@ class PlacePointNode(Node):
                 self.rotation = self.rotation.radians
         except ValueError:
             self.rotation = 0
-        try:
-            self.corner = min(4, max(0, int(self.corner)))
-        except ValueError:
-            self.corner = 0
-        # repetitions at the same point
-        if self.loops is None:
-            self.loops = 1
-        else:
-            try:
-                self.loops = int(self.loops)
-            except ValueError:
-                self.loops = 1
 
     def placements(self, context, outline, matrix, plan):
         if outline is None:
@@ -74,20 +95,46 @@ class PlacePointNode(Node):
         scene_height = context.device.view.unit_height
         unit_x = Length(self.x, relative_length=scene_width).units
         unit_y = Length(self.y, relative_length=scene_height).units
-        x, y = matrix.point_in_matrix_space((unit_x, unit_y))
+        org_x, org_y = matrix.point_in_matrix_space((unit_x, unit_y))
+        dx, dy = matrix.point_in_matrix_space((self.dx, self.dy))
         if 0 <= self.corner <= 3:
             cx, cy = outline[self.corner]
         else:
             cx = sum([c[0] for c in outline]) / len(outline)
             cy = sum([c[1] for c in outline]) / len(outline)
-        x -= cx
-        y -= cy
-        shift_matrix = Matrix()
-        if self.rotation != 0:
-            shift_matrix.post_rotate(self.rotation, cx, cy)
-        shift_matrix.post_translate(x, y)
+        # Create grid...
+        xloop = self.nx
+        if xloop == 0:  # as much as we can fit
+            if abs(self.dx) < 1e-6:
+                xloop = 1
+            else:
+                x = self.x
+                while x + self.dx < scene_width:
+                    x += self.dx
+                    xloop += 1
+        yloop = self.ny
+        if yloop == 0:  # as much as we can fit
+            if abs(self.dy) < 1e-6:
+                yloop = 1
+            else:
+                y = self.y
+                while y + self.dy < scene_height:
+                    y += self.dy
+                    yloop += 1
 
-        yield matrix * shift_matrix
+        x = org_x - cx
+        # print (f"Generating {xloop}x{yloop}")
+        for xcount in range(xloop):
+            y = org_y - cy
+            for ycount in range(yloop):
+                shift_matrix = Matrix()
+                if self.rotation != 0:
+                    shift_matrix.post_rotate(self.rotation, cx, cy)
+                shift_matrix.post_translate(x, y)
+
+                yield matrix * shift_matrix
+                y += dy
+            x += dx
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
@@ -108,6 +155,11 @@ class PlacePointNode(Node):
         default_map["y"] = f"{ylen.length_cm}"
         default_map["rotation"] = f"{Angle(self.rotation, digits=1).degrees}°"
         default_map["loops"] = f"{str(self.loops) + 'X ' if self.loops > 1 else ''}"
+        if self.nx != 1 or self.ny != 1:
+            default_map["grid"] = f"{self.nx}x{self.ny}"
+        else:
+            default_map["grid"] = ""
+
         if self.corner == 0:
             default_map["corner"] = "`+ "
         elif self.corner == 1:
