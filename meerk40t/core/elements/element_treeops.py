@@ -624,52 +624,52 @@ def init_tree(kernel):
             self.signal("refresh_scene", "Scene")
 
 
-    @tree_submenu(_("Layout"))
-    @tree_prompt("dx", _("Distance between placements?"))
-    @tree_prompt(
-        "nx",
-        _(
-            "How many placements on the X-Axis?\n(0 = as many as fit on the bed)"
-        ),
-    )
-    @tree_operation(
-        _("Create placements horizontally"), node_type="place point", help=""
-    )
-    def copies_horizontally(node, dx, nx, pos=None, **kwargs):
-        self(f"placement_grid {nx} {dx} 1 0\n")
+    # @tree_submenu(_("Layout"))
+    # @tree_prompt("dx", _("Distance between placements?"))
+    # @tree_prompt(
+    #     "nx",
+    #     _(
+    #         "How many placements on the X-Axis?\n(0 = as many as fit on the bed)"
+    #     ),
+    # )
+    # @tree_operation(
+    #     _("Create placements horizontally"), node_type="place point", help=""
+    # )
+    # def copies_horizontally(node, dx, nx, pos=None, **kwargs):
+    #     self(f"placement_grid {nx} {dx} 1 0\n")
 
-    @tree_submenu(_("Layout"))
-    @tree_prompt("dy", _("Distance between placements?"))
-    @tree_prompt(
-        "ny",
-        _(
-            "How many placements on the Y-Axis?\n(0 = as many as fit on the bed)"
-        ),
-    )
-    @tree_operation(_("Create placements vertically"), node_type="place point", help="")
-    def copies_vertically(node, dy, ny, pos=None, **kwargs):
-        self(f"placement_grid 1 0 {ny} {dy}\n")
+    # @tree_submenu(_("Layout"))
+    # @tree_prompt("dy", _("Distance between placements?"))
+    # @tree_prompt(
+    #     "ny",
+    #     _(
+    #         "How many placements on the Y-Axis?\n(0 = as many as fit on the bed)"
+    #     ),
+    # )
+    # @tree_operation(_("Create placements vertically"), node_type="place point", help="")
+    # def copies_vertically(node, dy, ny, pos=None, **kwargs):
+    #     self(f"placement_grid 1 0 {ny} {dy}\n")
 
-    @tree_submenu(_("Layout"))
-    @tree_prompt("dx", _("Horizontal distance between placements?"))
-    @tree_prompt(
-        "nx",
-        _(
-            "How many placements on the X-Axis?\n(0 = as many as fit on the bed)"
-        ),
-    )
-    @tree_prompt("dy", _("Vertical distance between placements?"))
-    @tree_prompt(
-        "ny",
-        _(
-            "How many placements on the Y-Axis?\n(0 = as many as fit on the bed)"
-        ),
-    )
-    @tree_operation(
-        _("Create grid of placements"), node_type="place point", help=""
-    )
-    def copies_grid(node, dx, nx, dy, ny, pos=None, **kwargs):
-        self(f"placement_grid {nx} {dx} {ny} {dy}\n")
+    # @tree_submenu(_("Layout"))
+    # @tree_prompt("dx", _("Horizontal distance between placements?"))
+    # @tree_prompt(
+    #     "nx",
+    #     _(
+    #         "How many placements on the X-Axis?\n(0 = as many as fit on the bed)"
+    #     ),
+    # )
+    # @tree_prompt("dy", _("Vertical distance between placements?"))
+    # @tree_prompt(
+    #     "ny",
+    #     _(
+    #         "How many placements on the Y-Axis?\n(0 = as many as fit on the bed)"
+    #     ),
+    # )
+    # @tree_operation(
+    #     _("Create grid of placements"), node_type="place point", help=""
+    # )
+    # def copies_grid(node, dx, nx, dy, ny, pos=None, **kwargs):
+    #     self(f"placement_grid {nx} {dx} {ny} {dy}\n")
 
     # ---- Burn Direction
     def get_direction_values():
