@@ -1551,8 +1551,8 @@ def init_tree(kernel):
 
     # def material_name(material):
     #     oplist, opinfo = self.load_persistent_op_list(material)
-    #     if "name" in opinfo:
-    #         name = opinfo["name"]
+    #     if "material" in opinfo:
+    #         name = opinfo["material"]
     #     elif material == "_default":
     #         name = "Generic Defaults"
     #     elif material.startswith("_default_"):
