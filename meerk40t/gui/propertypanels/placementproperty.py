@@ -253,7 +253,7 @@ class PlacementPanel(wx.Panel):
 
         main_sizer.AddSpacer(25)
         self.helper_sizer = StaticBoxSizer(
-            self, wx.ID_ANY, _("Grid Helper (Tesselation):"), wx.HORIZONTAL
+            self, wx.ID_ANY, _("Grid Helper (Tiling):"), wx.HORIZONTAL
         )
 
         info1 = wx.StaticText(self, wx.ID_ANY, _("Shape"))
@@ -273,7 +273,7 @@ class PlacementPanel(wx.Panel):
         self.text_dimension.SetToolTip(ttip)
 
         self.btn_generate = wx.Button(self, wx.ID_ANY, _("Define"))
-
+        self.btn_generate.SetToolTip(_("Establishes the parameter for the selected grid-type"))
         self.helper_sizer.Add(info1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.helper_sizer.Add(self.combo_shape, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         self.helper_sizer.Add(self.dimension_info, 0, wx.ALIGN_CENTER_VERTICAL, 0)
