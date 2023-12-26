@@ -31,5 +31,17 @@ def plugin(kernel, lifecycle=None):
                 "page": "Input/Output",
                 "section": "Input",
             },
+            {
+                "attr": "dxf_try_unsupported",
+                "object": kernel.elements,
+                "default": True,
+                "type": bool,
+                "label": _("Try to read 3D-polylines"),
+                "tip": _(
+                    "Tries to use dxf 3D-polylines, disable it if the file contains meshes or other 3D data"
+                ),
+                "page": "Input/Output",
+                "section": "Input",
+            },
         ]
         kernel.register_choices("preferences", choices)
