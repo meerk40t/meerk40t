@@ -343,11 +343,15 @@ class MoshiBuilder:
         self.data.clear()
         self._stage = 0
 
-    def pipe_int8(self, value):
+    def pipe_uint8(self, value):
         """
         Write an 8 bit into to the current program.
         """
-        self.write(struct.pack("b", value))
+        if value > 255:
+            value = 255
+        if value < 0:
+            value = 0
+        self.write(struct.pack("B", value))
 
     def pipe_int16le(self, value):
         """
@@ -385,8 +389,8 @@ class MoshiBuilder:
             speed_mms = 256
         if speed_mms < 1:
             speed_mms = 1
-        self.pipe_int8(speed_mms - 1)
-        self.pipe_int8(normal_speed_mms - 1)
+        self.pipe_uint8(speed_mms - 1)
+        self.pipe_uint8(normal_speed_mms - 1)
 
     def raster_speed(self, speed_mms):
         """
@@ -400,7 +404,7 @@ class MoshiBuilder:
         speed_cms = int(round(speed_mms / 10))
         if speed_cms == 0:
             speed_cms = 1
-        self.pipe_int8(speed_cms - 1)
+        self.pipe_uint8(speed_cms - 1)
         self._vector = False
 
     def set_offset(self, z, x, y):
