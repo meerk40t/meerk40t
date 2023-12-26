@@ -184,6 +184,26 @@ class PlacementPanel(wx.Panel):
         )
         self.corner_sizer.Add(info_corner, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.corner_sizer.Add(self.combo_corner, 1, wx.EXPAND, 0)
+        info_orientation = wx.StaticText(self, wx.ID_ANY, _("Orientation:"))
+        self.combo_orientation = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=[
+                _("L2R (unidirectional)"),
+                _("L2R (bidirectional)"),
+                _("T2B (bidirectional)"),
+            ],
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
+        self.combo_orientation.SetToolTip(
+            _("Orientation defines the sequence of placement points") + "\n" +
+            _("Left to right (unidirectional)") + "\n" +
+            _("Left to right (bidirectional)") + "\n" +
+            _("Top to bottom (bidirectional)")
+        )
+
+        self.corner_sizer.Add(info_orientation, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.corner_sizer.Add(self.combo_orientation, 1, wx.EXPAND, 0)
         main_sizer.Add(self.corner_sizer, 0, wx.EXPAND, 0)
 
         self.SetSizer(main_sizer)
@@ -191,6 +211,7 @@ class PlacementPanel(wx.Panel):
         self.Layout()
 
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_corner, self.combo_corner)
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_orientation, self.combo_orientation)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_output, self.checkbox_output)
         self.text_rot.SetActionRoutine(self.on_text_rot)
         self.text_repeats_x.SetActionRoutine(self.on_text_nx)
@@ -313,6 +334,9 @@ class PlacementPanel(wx.Panel):
             corner = max(min(self.operation.corner, 4), 0)  # between 0 and 4
             self.combo_corner.SetSelection(corner)
 
+            orientation = max(min(self.operation.orientation, 2), 0)  # between 0 and 2
+            self.combo_orientation.SetSelection(orientation)
+
         self.Layout()
         self.Show()
 
@@ -352,6 +376,7 @@ class PlacementPanel(wx.Panel):
         self.text_rot.Enable(flag)
         self.slider_angle.Enable(flag)
         self.combo_corner.Enable(flag)
+        self.combo_orientation.Enable(flag)
 
     def on_combo_corner(self, event):
         if self.operation is None or not hasattr(self.operation, "corner"):
@@ -361,6 +386,16 @@ class PlacementPanel(wx.Panel):
             return
         if self.operation.corner != corner:
             self.operation.corner = corner
+            self.updated()
+
+    def on_combo_orientation(self, event):
+        if self.operation is None or not hasattr(self.operation, "orientation"):
+            return
+        orientation = self.combo_orientation.GetSelection()
+        if orientation < 0:
+            return
+        if self.operation.orientation != orientation:
+            self.operation.orientation = orientation
             self.updated()
 
     def on_text_x(self):

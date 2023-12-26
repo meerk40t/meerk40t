@@ -28,6 +28,7 @@ class PlacePointNode(Node):
         ny=1,
         alternating_dx=0,
         alternating_dy=0,
+        orientation=0,
         **kwargs,
     ):
         self.x = x
@@ -36,6 +37,21 @@ class PlacePointNode(Node):
         self.dy = dy
         self.nx = nx
         self.ny = ny
+        """
+        Orientation defines the sequence of placement points
+        0 = standard
+        1 = Boustrodephon - horizontal (snake movement along the rows)
+        2 = Boustrodephon - vertical (snake movement along the columns)
+        Example for 3 x 3 grid
+        Standard       Horizontal      Vertical
+        1 2 3          1 2 3           1 6 7
+        4 5 6          6 5 4           2 5 8
+        7 8 9          7 8 9           3 4 9
+
+        """
+        self.orientation = orientation
+        if self.orientation is None or self.orientation not in (0, 1, 2):
+            self.orientation = 0
         self.alternating_dx = dx
         self.alternating_dy = dy
         self.rotation = rotation
@@ -121,20 +137,50 @@ class PlacePointNode(Node):
                 while y + self.dy < scene_height:
                     y += self.dy
                     yloop += 1
-
-        x = org_x - cx
-        # print (f"Generating {xloop}x{yloop}")
-        for xcount in range(xloop):
+        max_x = org_x + (xloop - 1) * dx
+        max_y = org_y + (yloop - 1) * dy
+        if self.orientation == 2:
+            x = org_x - cx
+            hither = True
+            # print (f"Generating {xloop}x{yloop}")
+            for xcount in range(xloop):
+                if hither:
+                    y = org_y - cy
+                    ddy = dy
+                else:
+                    y = max_y - cy
+                    ddy = -dy
+                for ycount in range(yloop):
+                    shift_matrix = Matrix()
+                    if self.rotation != 0:
+                        shift_matrix.post_rotate(self.rotation, cx, cy)
+                    shift_matrix.post_translate(x, y)
+                    yield matrix * shift_matrix
+                    y += ddy
+                x += dx
+                hither = not hither
+        else:
+            # Vertical
             y = org_y - cy
+            hither = True
+            # print (f"Generating {xloop}x{yloop}")
             for ycount in range(yloop):
-                shift_matrix = Matrix()
-                if self.rotation != 0:
-                    shift_matrix.post_rotate(self.rotation, cx, cy)
-                shift_matrix.post_translate(x, y)
-
-                yield matrix * shift_matrix
+                if hither:
+                    x = org_x - cx
+                    ddx = dx
+                else:
+                    x = max_x - cx
+                    ddx = -dx
+                for xcount in range(xloop):
+                    shift_matrix = Matrix()
+                    if self.rotation != 0:
+                        shift_matrix.post_rotate(self.rotation, cx, cy)
+                    shift_matrix.post_translate(x, y)
+                    yield matrix * shift_matrix
+                    x += ddx
                 y += dy
-            x += dx
+                if self.orientation == 1:
+                    hither = not hither
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
