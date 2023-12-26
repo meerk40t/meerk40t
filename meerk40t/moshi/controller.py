@@ -58,8 +58,8 @@ class MoshiController:
     Checks done before the Epilogue will have 205 state.
     """
 
-    def __init__(self, context, channel=None, force_mock=False, *args, **kwargs):
-        self.context = context
+    def __init__(self, service, channel=None, force_mock=False, *args, **kwargs):
+        self.context = service
         self.state = "unknown"
 
         self._programs = []  # Programs to execute.
@@ -83,13 +83,13 @@ class MoshiController:
         self.count = 0
         self.abort_waiting = False
 
-        name = self.context.label
-        self.pipe_channel = context.channel(f"{name}/events")
-        self.usb_log = context.channel(f"{name}/usb", buffer_size=500)
-        self.usb_send_channel = context.channel(f"{name}/usb_send")
-        self.recv_channel = context.channel(f"{name}/recv")
+        name = service.safe_label
+        self.pipe_channel = service.channel(f"{name}/events")
+        self.usb_log = service.channel(f"{name}/usb", buffer_size=500)
+        self.usb_send_channel = service.channel(f"{name}/usb_send")
+        self.recv_channel = service.channel(f"{name}/recv")
 
-        self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
+        self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
 
     def viewbuffer(self):
         """
