@@ -81,11 +81,34 @@ class PlacePointNode(Node):
                 value = 0
             return value
 
-        def _valid_int(field, minim, maxim):
+        def _valid_int(field, minim=None, maxim=None):
             if field is None:
-                value = minim
+                if minim is None:
+                    value = 0
+                else:
+                    value = minim
             try:
-                value = min(maxim, max(minim, int(field)))
+                value = int(field)
+                if minim is not None and value < minim:
+                    value = minim
+                if maxim is not None and value > maxim:
+                    value = maxim
+            except ValueError:
+                value = minim
+            return value
+
+        def _valid_float(field, minim=None, maxim=None):
+            if field is None:
+                if minim is None:
+                    value = 0
+                else:
+                    value = minim
+            try:
+                value = float(field)
+                if minim is not None and value < minim:
+                    value = minim
+                if maxim is not None and value > maxim:
+                    value = maxim
             except ValueError:
                 value = minim
             return value
@@ -99,6 +122,12 @@ class PlacePointNode(Node):
         self.y = _valid_length(self.y)
         self.dx = _valid_length(self.dx)
         self.dy = _valid_length(self.dy)
+        self.alternating_dx = _valid_float(self.alternating_dx)
+        self.alternating_dy = _valid_float(self.alternating_dy)
+        self.loops = _valid_int(self.loops, 1, None)
+        self.corner = _valid_int(self.corner, 0, 4)
+        self.nx = _valid_int(self.nx, 0, None)
+        self.ny = _valid_int(self.ny, 0, None)
         try:
             if isinstance(self.rotation, str):
                 self.rotation = Angle(self.rotation).radians
@@ -146,6 +175,7 @@ class PlacePointNode(Node):
         max_x = org_x + (xloop - 1) * dx
         max_y = org_y + (yloop - 1) * dy
         if self.orientation == 2:
+            # Vertical
             x = org_x - cx
             hither = True
             # print (f"Generating {xloop}x{yloop}")
@@ -156,13 +186,13 @@ class PlacePointNode(Node):
                 else:
                     y = max_y - cy
                     ddy = -dy
-                xx = x
                 yy = y
                 if self.alternating_dy != 0 and xcount % 2 == 1:
-                    yy += self.alternating_dy * ddy
+                    yy += self.alternating_dy * abs(ddy)
                 for ycount in range(yloop):
+                    xx = x
                     if self.alternating_dx != 0 and ycount % 2 == 1:
-                        xx += self.alternating_dx * dx
+                        xx += self.alternating_dx * abs(dx)
                     shift_matrix = Matrix()
                     if self.rotation != 0:
                         shift_matrix.post_rotate(self.rotation, cx, cy)
@@ -172,7 +202,6 @@ class PlacePointNode(Node):
                 x += dx
                 hither = not hither
         else:
-            # Vertical
             y = org_y - cy
             hither = True
             # print (f"Generating {xloop}x{yloop}")
@@ -184,18 +213,18 @@ class PlacePointNode(Node):
                     x = max_x - cx
                     ddx = -dx
                 xx = x
-                yy = y
                 if self.alternating_dx != 0 and ycount % 2 == 1:
-                    xx += self.alternating_dx * ddx
+                    xx += self.alternating_dx * abs(ddx)
                 for xcount in range(xloop):
+                    yy = y
                     if self.alternating_dy != 0 and xcount % 2 == 1:
-                        yy += self.alternating_dy * dy
+                        yy += self.alternating_dy * abs(dy)
                     shift_matrix = Matrix()
                     if self.rotation != 0:
                         shift_matrix.post_rotate(self.rotation, cx, cy)
                     shift_matrix.post_translate(xx, yy)
                     yield matrix * shift_matrix
-                    x += ddx
+                    xx += ddx
                 y += dy
                 if self.orientation == 1:
                     hither = not hither

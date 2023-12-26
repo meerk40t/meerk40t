@@ -2,6 +2,7 @@
 Display and Editing of the properties of 'place current', 'place point'
 """
 
+import math
 import wx
 
 from meerk40t.core.units import Angle, Length
@@ -79,7 +80,30 @@ class PlacementPanel(wx.Panel):
         self.pos_sizer.Add(self.text_x, 1, wx.EXPAND, 0)
         self.pos_sizer.Add(info_y, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.pos_sizer.Add(self.text_y, 1, wx.EXPAND, 0)
-        main_sizer.Add(self.pos_sizer, 0, wx.EXPAND, 0)
+
+        # Rotation
+        self.rot_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Rotation:"), wx.HORIZONTAL)
+        self.text_rot = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "",
+            limited=True,
+            check="angle",
+            style=wx.TE_PROCESS_ENTER,
+        )
+        self.rot_sizer.Add(self.text_rot, 1, wx.EXPAND, 0)
+        self.slider_angle = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
+        self.rot_sizer.Add(self.slider_angle, 3, wx.EXPAND, 0)
+        ttip = _(
+            "The to be plotted elements can be rotated around the defined coordinate"
+        )
+        self.text_rot.SetToolTip(ttip)
+        self.slider_angle.SetToolTip(ttip)
+
+        pos_rot_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        pos_rot_sizer.Add(self.pos_sizer, 1, wx.EXPAND, 0)
+        pos_rot_sizer.Add(self.rot_sizer, 1, wx.EXPAND, 0)
+        main_sizer.Add(pos_rot_sizer, 0, wx.EXPAND, 0)
 
         self.grid_sizer_1 = StaticBoxSizer(self, wx.ID_ANY, _("Repetitions in X-direction"), wx.HORIZONTAL)
         info_x1 = wx.StaticText(self, wx.ID_ANY, _("Repeats:"))
@@ -139,25 +163,6 @@ class PlacementPanel(wx.Panel):
         grid_sizer.Add(self.grid_sizer_1, 1, wx.EXPAND, 0)
         grid_sizer.Add(self.grid_sizer_2, 1, wx.EXPAND, 0)
         main_sizer.Add(grid_sizer, 0, wx.EXPAND, 0)
-        # Rotation
-        self.rot_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Rotation:"), wx.HORIZONTAL)
-        self.text_rot = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "",
-            limited=True,
-            check="angle",
-            style=wx.TE_PROCESS_ENTER,
-        )
-        self.rot_sizer.Add(self.text_rot, 1, wx.EXPAND, 0)
-        self.slider_angle = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
-        self.rot_sizer.Add(self.slider_angle, 3, wx.EXPAND, 0)
-        ttip = _(
-            "The to be plotted elements can be rotated around the defined coordinate"
-        )
-        self.text_rot.SetToolTip(ttip)
-        self.slider_angle.SetToolTip(ttip)
-        main_sizer.Add(self.rot_sizer, 0, wx.EXPAND, 0)
         self.text_alternating_x = TextCtrl(
             self,
             wx.ID_ANY,
@@ -174,8 +179,8 @@ class PlacementPanel(wx.Panel):
             check="percent",
             style=wx.TE_PROCESS_ENTER,
         )
-        self.slider_alternating_x = wx.Slider(self, wx.ID_ANY, 0, -100, 100)
-        self.slider_alternating_y = wx.Slider(self, wx.ID_ANY, 0, -100, 100)
+        self.slider_alternating_x = wx.Slider(self, wx.ID_ANY, 0, -200, 200)
+        self.slider_alternating_y = wx.Slider(self, wx.ID_ANY, 0, -200, 200)
         ttip = _(
             "Every other {area} can be displaced by a percentage of the gap in {direction}-direction\n"+
             "Useful for honeycomb- or other irregular patterns that need to overlap"
@@ -246,12 +251,44 @@ class PlacementPanel(wx.Panel):
         self.corner_sizer.Add(self.combo_orientation, 1, wx.EXPAND, 0)
         main_sizer.Add(self.corner_sizer, 0, wx.EXPAND, 0)
 
-        self.SetSizer(main_sizer)
+        main_sizer.AddSpacer(25)
+        self.helper_sizer = StaticBoxSizer(
+            self, wx.ID_ANY, _("Grid Helper (Tesselation):"), wx.HORIZONTAL
+        )
 
+        info1 = wx.StaticText(self, wx.ID_ANY, _("Shape"))
+        self.shape_information = (
+            ( _("Quadratic"), _("Side"), self.generate_quadratic ),
+            ( _("Hexagon"), _("Side"), self.generate_hexagon ),
+            ( _("Circular"), _("Diameter"), self.generate_circular ),
+        )
+        choices = [e[0] for e in self.shape_information]
+
+        self.combo_shape = wx.ComboBox(self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        ttip = _("Please provide some data about the intended tiling")
+        self.combo_shape.SetToolTip(ttip)
+
+        self.dimension_info = wx.StaticText(self, wx.ID_ANY, _("Dimension"))
+        self.text_dimension = TextCtrl(self, wx.ID_ANY, limited=True, check="length")
+        self.text_dimension.SetToolTip(ttip)
+
+        self.btn_generate = wx.Button(self, wx.ID_ANY, _("Define"))
+
+        self.helper_sizer.Add(info1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.helper_sizer.Add(self.combo_shape, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.helper_sizer.Add(self.dimension_info, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.helper_sizer.Add(self.text_dimension, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.helper_sizer.Add(self.btn_generate, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        main_sizer.Add(self.helper_sizer, 0, wx.EXPAND, 0)
+        self.combo_shape.SetSelection(0)
+        self.on_combo_shape(None)
+        self.SetSizer(main_sizer)
         self.Layout()
 
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_corner, self.combo_corner)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_orientation, self.combo_orientation)
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_shape, self.combo_shape)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_output, self.checkbox_output)
         self.text_rot.SetActionRoutine(self.on_text_rot)
         self.text_alternating_x.SetActionRoutine(self.on_text_alternating_x)
@@ -263,6 +300,8 @@ class PlacementPanel(wx.Panel):
         self.text_gap_x.SetActionRoutine(self.on_text_dx)
         self.text_gap_y.SetActionRoutine(self.on_text_dy)
         self.text_loops.SetActionRoutine(self.on_text_loops)
+        self.text_dimension.SetActionRoutine(self.on_dimension)
+        self.btn_generate.Bind(wx.EVT_BUTTON, self.on_btn_generate)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_alternating_x, self.slider_alternating_x)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_alternating_y, self.slider_alternating_y)
@@ -320,6 +359,7 @@ class PlacementPanel(wx.Panel):
         show_hide(self.alt_y_sizer, not is_current)
         show_hide(self.corner_sizer, not is_current)
         show_hide(self.loop_sizer, not is_current)
+        show_hide(self.helper_sizer, not is_current)
         if not is_current:
             units = self.context.units_name
             if units in ("inch", "inches"):
@@ -381,10 +421,19 @@ class PlacementPanel(wx.Panel):
                 self.slider_angle.SetValue(int(h_angle))
             except ValueError:
                 pass
-            value = max(-100, min(100, int(100.0 * self.operation.alternating_dx)))
+            # print (self.operation.alternating_dx, type(self.operation.alternating_dx).__name__)
+            value = int(100.0 * self.operation.alternating_dx)
+            if value > 200:
+                value = 200
+            if value < -200:
+                value = -200
             self.slider_alternating_x.SetValue(value)
             self.text_alternating_x.SetValue(f"{value}%")
-            value = max(-100, min(100, int(100.0 * self.operation.alternating_dy)))
+            value = int(100.0 * self.operation.alternating_dy)
+            if value > 200:
+                value = 200
+            if value < -200:
+                value = -200
             self.slider_alternating_y.SetValue(value)
             self.text_alternating_y.SetValue(f"{value}%")
 
@@ -591,6 +640,143 @@ class PlacementPanel(wx.Panel):
         if self.operation.ny != ny:
             self.operation.ny = ny
             self.updated()
+
+    def generate_quadratic(self, dimension, sx, sy):
+        scene_width = self.context.device.view.unit_width
+        scene_height = self.context.device.view.unit_height
+        x = sx
+        y = sy
+        nx = 0
+        ny = 0
+        dx = dimension
+        dy = dimension
+        alt_x = 0
+        alt_y = 0
+        while x + dimension <= scene_width:
+            x += dimension
+            nx += 1
+        while y + dimension <= scene_height:
+            y += dimension
+            ny += 1
+        if nx == 0:
+            nx = 1
+        if ny == 0:
+            ny = 1
+        return nx, ny, dx, dy, alt_x, alt_y
+
+    def generate_circular(self, dimension, sx, sy):
+        scene_width = self.context.device.view.unit_width
+        scene_height = self.context.device.view.unit_height
+        x = sx
+        y = sy
+        nx = 0
+        ny = 0
+        radius = dimension / 2.0
+        # cos(30°) * d
+        dx = math.cos(math.tau / 12) * dimension
+        dy = dimension
+        alt_x = 0
+        alt_y = 0.5
+        while x + 3 * radius <= scene_width:
+            x += dimension
+            nx += 1
+        while y + 3 * radius <= scene_height:
+            y += dimension
+            ny += 1
+        if nx == 0:
+            nx = 1
+        if ny == 0:
+            ny = 1
+
+        return nx, ny, dx, dy, alt_x, alt_y
+
+    def generate_hexagon(self, dimension, sx, sy):
+        scene_width = self.context.device.view.unit_width
+        scene_height = self.context.device.view.unit_height
+        dim_x = 2 * dimension
+        dim_y = math.sqrt(3) * dimension
+        x = sx
+        y = sy
+        nx = 0
+        ny = 0
+        radius = dimension / 2.0
+        dx = 1.5 * dimension
+        dy = math.sqrt(3.0) * dimension
+        alt_x = 0
+        alt_y = 0.5
+        while x + dim_x <= scene_width:
+            x += dim_x
+            nx += 1
+        while y + dim_y <= scene_height:
+            y += dim_y
+            ny += 1
+        if nx == 0:
+            nx = 1
+        if ny == 0:
+            ny = 1
+
+        return nx, ny, dx, dy, alt_x, alt_y
+
+    def validate_tesselation(self):
+        flag = True
+        idx = self.combo_shape.GetSelection()
+        if idx < 0:
+            flag = False
+        s = self.text_dimension.GetValue()
+        if s:
+            try:
+                val = float(Length(s))
+            except ValueError:
+                val = 0
+            if flag <= 0:
+                flag = False
+        else:
+            flag = False
+        self.btn_generate.Enable(flag)
+
+    def on_combo_shape(self, event):
+        idx = self.combo_shape.GetSelection()
+        if idx < 0:
+            s = _("Dimension")
+        else:
+            s = self.shape_information[idx][1]
+        self.dimension_info.SetLabel(s)
+        self.validate_tesselation()
+
+    def on_dimension(self, *args):
+        self.validate_tesselation()
+
+    def on_btn_generate(self, event):
+        if self.operation is None or not hasattr(self.operation, "x"):
+            return
+        shape = self.combo_shape.GetSelection()
+        if shape < 0:
+            return
+        s_dimen = self.text_dimension.GetValue()
+        if s_dimen == "":
+            return
+        try:
+            dimens = float(Length(s_dimen))
+            if dimens == 0:
+                return
+        except ValueError:
+            return
+        try:
+            sx = float(Length(self.text_x.GetValue()))
+            sy = float(Length(self.text_y.GetValue()))
+        except ValueError:
+            return
+        function = self.shape_information[shape][2]
+        nx, ny, dx, dy, alt_x, alt_y = function(dimens, sx, sy)
+        self.operation.x = sx
+        self.operation.y = sy
+        self.operation.nx = nx
+        self.operation.ny = ny
+        self.operation.dx = dx
+        self.operation.dy = dy
+        self.operation.alternating_dx = alt_x
+        self.operation.alternating_dy = alt_y
+        self.updated()
 
     def updated(self):
         self.context.elements.signal("element_property_reload", self.operation)
