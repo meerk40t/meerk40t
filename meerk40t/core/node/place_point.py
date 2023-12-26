@@ -52,8 +52,12 @@ class PlacePointNode(Node):
         self.orientation = orientation
         if self.orientation is None or self.orientation not in (0, 1, 2):
             self.orientation = 0
-        self.alternating_dx = dx
-        self.alternating_dy = dy
+        # Alternating are factors that decide if and by what amount
+        # every other line will be displaced (alternating dy)
+        # and/or every column will be displaced (alternating dx)
+        # These are factors between -1 and +1
+        self.alternating_dx = alternating_dx
+        self.alternating_dy = alternating_dy
         self.rotation = rotation
         self.corner = corner
         self.loops = loops
@@ -113,6 +117,8 @@ class PlacePointNode(Node):
         unit_y = Length(self.y, relative_length=scene_height).units
         org_x, org_y = matrix.point_in_matrix_space((unit_x, unit_y))
         dx, dy = matrix.point_in_matrix_space((self.dx, self.dy))
+        ddx = dx
+        ddy = dy
         if 0 <= self.corner <= 3:
             cx, cy = outline[self.corner]
         else:
@@ -150,13 +156,19 @@ class PlacePointNode(Node):
                 else:
                     y = max_y - cy
                     ddy = -dy
+                xx = x
+                yy = y
+                if self.alternating_dy != 0 and xcount % 2 == 1:
+                    yy += self.alternating_dy * ddy
                 for ycount in range(yloop):
+                    if self.alternating_dx != 0 and ycount % 2 == 1:
+                        xx += self.alternating_dx * dx
                     shift_matrix = Matrix()
                     if self.rotation != 0:
                         shift_matrix.post_rotate(self.rotation, cx, cy)
-                    shift_matrix.post_translate(x, y)
+                    shift_matrix.post_translate(xx, yy)
                     yield matrix * shift_matrix
-                    y += ddy
+                    yy += ddy
                 x += dx
                 hither = not hither
         else:
@@ -171,11 +183,17 @@ class PlacePointNode(Node):
                 else:
                     x = max_x - cx
                     ddx = -dx
+                xx = x
+                yy = y
+                if self.alternating_dx != 0 and ycount % 2 == 1:
+                    xx += self.alternating_dx * ddx
                 for xcount in range(xloop):
+                    if self.alternating_dy != 0 and xcount % 2 == 1:
+                        yy += self.alternating_dy * dy
                     shift_matrix = Matrix()
                     if self.rotation != 0:
                         shift_matrix.post_rotate(self.rotation, cx, cy)
-                    shift_matrix.post_translate(x, y)
+                    shift_matrix.post_translate(xx, yy)
                     yield matrix * shift_matrix
                     x += ddx
                 y += dy

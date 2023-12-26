@@ -135,9 +135,10 @@ class PlacementPanel(wx.Panel):
         self.grid_sizer_2.Add(self.text_repeats_y, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.grid_sizer_2.Add(info_y2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.grid_sizer_2.Add(self.text_gap_y, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-
-        main_sizer.Add(self.grid_sizer_1, 0, wx.EXPAND, 0)
-        main_sizer.Add(self.grid_sizer_2, 0, wx.EXPAND, 0)
+        grid_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        grid_sizer.Add(self.grid_sizer_1, 1, wx.EXPAND, 0)
+        grid_sizer.Add(self.grid_sizer_2, 1, wx.EXPAND, 0)
+        main_sizer.Add(grid_sizer, 0, wx.EXPAND, 0)
         # Rotation
         self.rot_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Rotation:"), wx.HORIZONTAL)
         self.text_rot = TextCtrl(
@@ -151,13 +152,52 @@ class PlacementPanel(wx.Panel):
         self.rot_sizer.Add(self.text_rot, 1, wx.EXPAND, 0)
         self.slider_angle = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
         self.rot_sizer.Add(self.slider_angle, 3, wx.EXPAND, 0)
-        main_sizer.Add(self.rot_sizer, 0, wx.EXPAND, 0)
         ttip = _(
             "The to be plotted elements can be rotated around the defined coordinate"
         )
         self.text_rot.SetToolTip(ttip)
         self.slider_angle.SetToolTip(ttip)
-
+        main_sizer.Add(self.rot_sizer, 0, wx.EXPAND, 0)
+        self.text_alternating_x = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "",
+            limited=True,
+            check="percent",
+            style=wx.TE_PROCESS_ENTER,
+        )
+        self.text_alternating_y = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "",
+            limited=True,
+            check="percent",
+            style=wx.TE_PROCESS_ENTER,
+        )
+        self.slider_alternating_x = wx.Slider(self, wx.ID_ANY, 0, -100, 100)
+        self.slider_alternating_y = wx.Slider(self, wx.ID_ANY, 0, -100, 100)
+        ttip = _(
+            "Every other {area} can be displaced by a percentage of the gap in {direction}-direction\n"+
+            "Useful for honeycomb- or other irregular patterns that need to overlap"
+        ).format(area=_("column"), direction="X")
+        self.text_alternating_x.SetToolTip(ttip)
+        self.slider_alternating_x.SetToolTip(ttip)
+        ttip = _(
+            "Every other {area} can be displaced by a percentage of the gap in {direction}-direction\n"+
+            "Useful for honeycomb- or other irregular patterns that need to overlap"
+        ).format(area=_("row"), direction="Y")
+        self.text_alternating_y.SetToolTip(ttip)
+        self.slider_alternating_y.SetToolTip(ttip)
+        self.alt_x_sizer = StaticBoxSizer(self, wx.ID_ANY, _("X-Displacement:"), wx.HORIZONTAL)
+        self.alt_x_sizer.Add(self.text_alternating_x, 1, wx.EXPAND, 0)
+        self.alt_x_sizer.Add(self.slider_alternating_x, 3, wx.EXPAND, 0)
+        self.alt_y_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Y-Displacement:"), wx.HORIZONTAL)
+        self.alt_y_sizer.Add(self.text_alternating_y, 1, wx.EXPAND, 0)
+        self.alt_y_sizer.Add(self.slider_alternating_y, 3, wx.EXPAND, 0)
+        alt_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        alt_sizer.Add(self.alt_x_sizer, 1, wx.EXPAND, 0)
+        alt_sizer.Add(self.alt_y_sizer, 1, wx.EXPAND, 0)
+        main_sizer.Add(alt_sizer, 0, wx.EXPAND, 0)
         # Corner
 
         self.corner_sizer = StaticBoxSizer(
@@ -214,6 +254,8 @@ class PlacementPanel(wx.Panel):
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_orientation, self.combo_orientation)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_output, self.checkbox_output)
         self.text_rot.SetActionRoutine(self.on_text_rot)
+        self.text_alternating_x.SetActionRoutine(self.on_text_alternating_x)
+        self.text_alternating_y.SetActionRoutine(self.on_text_alternating_y)
         self.text_repeats_x.SetActionRoutine(self.on_text_nx)
         self.text_repeats_y.SetActionRoutine(self.on_text_ny)
         self.text_x.SetActionRoutine(self.on_text_x)
@@ -222,6 +264,8 @@ class PlacementPanel(wx.Panel):
         self.text_gap_y.SetActionRoutine(self.on_text_dy)
         self.text_loops.SetActionRoutine(self.on_text_loops)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
+        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_alternating_x, self.slider_alternating_x)
+        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_alternating_y, self.slider_alternating_y)
 
     def pane_hide(self):
         pass
@@ -259,6 +303,10 @@ class PlacementPanel(wx.Panel):
         self.text_y.Enable(flag_enabled)
         self.text_loops.Enable(flag_enabled)
         self.slider_angle.Enable(flag_enabled)
+        self.slider_alternating_x.Enable(flag_enabled)
+        self.slider_alternating_y.Enable(flag_enabled)
+        self.slider_alternating_x.Enable(flag_enabled)
+        self.slider_alternating_y.Enable(flag_enabled)
         self.text_gap_x.Enable(flag_enabled)
         self.text_gap_y.Enable(flag_enabled)
         self.text_repeats_x.Enable(flag_enabled)
@@ -268,6 +316,8 @@ class PlacementPanel(wx.Panel):
         show_hide(self.grid_sizer_1, not is_current)
         show_hide(self.grid_sizer_2, not is_current)
         show_hide(self.rot_sizer, not is_current)
+        show_hide(self.alt_x_sizer, not is_current)
+        show_hide(self.alt_y_sizer, not is_current)
         show_hide(self.corner_sizer, not is_current)
         show_hide(self.loop_sizer, not is_current)
         if not is_current:
@@ -331,6 +381,13 @@ class PlacementPanel(wx.Panel):
                 self.slider_angle.SetValue(int(h_angle))
             except ValueError:
                 pass
+            value = max(-100, min(100, int(100.0 * self.operation.alternating_dx)))
+            self.slider_alternating_x.SetValue(value)
+            self.text_alternating_x.SetValue(f"{value}%")
+            value = max(-100, min(100, int(100.0 * self.operation.alternating_dy)))
+            self.slider_alternating_y.SetValue(value)
+            self.text_alternating_y.SetValue(f"{value}%")
+
             corner = max(min(self.operation.corner, 4), 0)  # between 0 and 4
             self.combo_corner.SetSelection(corner)
 
@@ -365,6 +422,60 @@ class PlacementPanel(wx.Panel):
         value = self.slider_angle.GetValue()
         self.text_rot.SetValue(f"{value}deg")
         self.on_text_rot()
+
+    def on_text_alternating_x(self):
+        if self.operation is None or not hasattr(self.operation, "alternating_dx"):
+            return
+        txt = self.text_alternating_x.GetValue().strip()
+        if not txt:
+            return
+        if txt.endswith("%"):
+            txt = txt[:-1]
+        try:
+            factor = float(txt) / 100.0
+            self.operation.alternating_dx = factor
+            self.updated()
+        except ValueError:
+            return
+        myval = self.operation.alternating_dx
+        if myval is None:
+            myval = 0
+        myval *= 100.0
+        self.slider_alternating_x.SetValue(int(myval))
+
+    def on_slider_alternating_x(self, event):
+        if self.operation is None or not hasattr(self.operation, "alternating_dx"):
+            return
+        value = self.slider_alternating_x.GetValue()
+        self.text_alternating_x.SetValue(f"{value}%")
+        self.on_text_alternating_x()
+
+    def on_text_alternating_y(self):
+        if self.operation is None or not hasattr(self.operation, "alternating_dy"):
+            return
+        txt = self.text_alternating_y.GetValue().strip()
+        if not txt:
+            return
+        if txt.endswith("%"):
+            txt = txt[:-1]
+        try:
+            factor = float(txt) / 100.0
+            self.operation.alternating_dy = factor
+            self.updated()
+        except ValueError:
+            return
+        myval = self.operation.alternating_dy
+        if myval is None:
+            myval = 0
+        myval *= 100.0
+        self.slider_alternating_y.SetValue(int(myval))
+
+    def on_slider_alternating_y(self, event):
+        if self.operation is None or not hasattr(self.operation, "alternating_dy"):
+            return
+        value = self.slider_alternating_y.GetValue()
+        self.text_alternating_y.SetValue(f"{value}%")
+        self.on_text_alternating_y()
 
     def on_check_output(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         if self.operation.output != bool(self.checkbox_output.GetValue()):
