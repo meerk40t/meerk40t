@@ -36,7 +36,7 @@ def plugin(kernel, lifecycle=None):
                 "object": kernel.elements,
                 "default": True,
                 "type": bool,
-                "label": _("Try to read 3D-polylines"),
+                "label": _("DXF: Try to read 3D-polylines"),
                 "tip": _(
                     "Tries to use dxf 3D-polylines, disable it if the file contains meshes or other 3D data"
                 ),
