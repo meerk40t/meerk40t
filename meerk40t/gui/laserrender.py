@@ -778,7 +778,12 @@ class LaserRender:
         loops = 1
         if hasattr(node, "loops") and node.loops is not None:
             # No zero or negative values please
-            loops = max(1, node.loops)
+            try:
+                loops = int(node.loops)
+            except ValueError:
+                loops = 1
+            if loops < 1:
+                loops = 1
         if loops > 1:
             symbol = f"{loops}x"
             font_size = 10 * zoomscale
