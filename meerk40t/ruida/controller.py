@@ -24,9 +24,7 @@ class RuidaController:
         self._send_queue = []
         self._send_lock = threading.Condition()
         self._send_thread = None
-        name = service.label.replace(" ", "-")
-        name = name.replace("/", "-")
-        self.events = service.channel(f"{name}/events")
+        self.events = service.channel(f"{service.safe_label}/events")
 
     def start_sending(self):
         self._send_thread = threading.Thread(target=self._data_sender, daemon=True)

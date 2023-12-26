@@ -12,8 +12,7 @@ import struct
 class MockConnection:
     def __init__(self, service):
         self.service = service
-        name = self.service.label.replace(" ", "-")
-        name = name.replace("/", "-")
+        name = self.service.safe_label
         self.channel = service.channel(f"{name}/mock")
         self.send = service.channel(f"{name}/send")
         self.recv = service.channel(f"{name}/recv", pure=True)
