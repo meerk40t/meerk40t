@@ -139,8 +139,7 @@ class RuidaControllerPanel(wx.ScrolledWindow):
             self.context("ruida_connect\n")
 
     def pane_show(self):
-        name = self.service.label.replace(" ", "-")
-        name = name.replace("/", "-")
+        name = self.service.safe_label
         self.context.channel(f"{name}/recv", pure=True).watch(self.update_text)
         self.context.channel(f"{name}/send", pure=True).watch(self.update_text)
         self.context.channel(f"{name}/real", pure=True).watch(self.update_text)
@@ -153,8 +152,7 @@ class RuidaControllerPanel(wx.ScrolledWindow):
             self.set_button_disconnected()
 
     def pane_hide(self):
-        name = self.service.label.replace(" ", "-")
-        name = name.replace("/", "-")
+        name = self.service.safe_label
         self.context.channel(f"{name}/recv").unwatch(self.update_text)
         self.context.channel(f"{name}/send").unwatch(self.update_text)
         self.context.channel(f"{name}/real").unwatch(self.update_text)
