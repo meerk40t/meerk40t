@@ -40,6 +40,7 @@ class Rotary:
                 "type": bool,
                 "label": _("Rotary-Mode active"),
                 "tip": _("Is the rotary mode active for this device"),
+                "signals": "device;modified",
             },
             # {
             #     "attr": "axis",
