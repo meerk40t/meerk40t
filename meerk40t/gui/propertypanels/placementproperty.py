@@ -690,8 +690,8 @@ class PlacementPanel(wx.Panel):
             self.updated()
 
     def generate_quadratic(self, dimension, sx, sy):
-        scene_width = self.context.device.view.unit_width
-        scene_height = self.context.device.view.unit_height
+        scene_width = self.context.device.view.width
+        scene_height = self.context.device.view.height
         x = sx
         y = sy
         nx = 0
@@ -702,16 +702,16 @@ class PlacementPanel(wx.Panel):
         alt_y = 0
         flag_x = False
         flag_y = False
-        geom = Geomstr()
-        points = (
-            sx + 1j * sy,
-            sx + dimension + 1j * sy,
-            sx + dimension + 1j * (sy + dimension),
-            sx + 1j * (sy + dimension),
-            sx + 1j * sy,
-        )
-        geom.polyline(points)
-        geom.end()
+        geom = Geomstr.rect(sx, sy, dimension, dimension)
+        # points = (
+        #     sx + 1j * sy,
+        #     sx + dimension + 1j * sy,
+        #     sx + dimension + 1j * (sy + dimension),
+        #     sx + 1j * (sy + dimension),
+        #     sx + 1j * sy,
+        # )
+        # geom.polyline(points)
+        # geom.end()
         while x + dimension <= scene_width:
             x += dimension
             nx += 1
@@ -725,8 +725,8 @@ class PlacementPanel(wx.Panel):
         return nx, ny, dx, dy, alt_x, alt_y, flag_x, flag_y, geom
 
     def generate_triangular(self, dimension, sx, sy):
-        scene_width = self.context.device.view.unit_width
-        scene_height = self.context.device.view.unit_height
+        scene_width = self.context.device.view.width
+        scene_height = self.context.device.view.height
         x = sx
         y = sy
         nx = 0
@@ -749,10 +749,10 @@ class PlacementPanel(wx.Panel):
         geom.end()
 
         while x + dimension <= scene_width:
-            x += dimension
+            x += dx
             nx += 1
         while y + dimension <= scene_height:
-            y += dimension
+            y += dy
             ny += 1
         if nx == 0:
             nx = 1
@@ -761,8 +761,8 @@ class PlacementPanel(wx.Panel):
         return nx, ny, dx, dy, alt_x, alt_y, flag_x, flag_y, geom
 
     def generate_circular(self, dimension, sx, sy):
-        scene_width = self.context.device.view.unit_width
-        scene_height = self.context.device.view.unit_height
+        scene_width = self.context.device.view.width
+        scene_height = self.context.device.view.height
         x = sx
         y = sy
         nx = 0
@@ -791,8 +791,8 @@ class PlacementPanel(wx.Panel):
         return nx, ny, dx, dy, alt_x, alt_y, flag_x, flag_y, geom
 
     def generate_hexagon(self, dimension, sx, sy):
-        scene_width = self.context.device.view.unit_width
-        scene_height = self.context.device.view.unit_height
+        scene_width = self.context.device.view.width
+        scene_height = self.context.device.view.height
         dim_x = 2 * dimension
         dim_y = math.sqrt(3) * dimension
         x = sx
@@ -820,10 +820,10 @@ class PlacementPanel(wx.Panel):
         alt_x = 0
         alt_y = 0.5
         while x + dim_x <= scene_width:
-            x += dim_x
+            x += dx
             nx += 1
         while y + dim_y <= scene_height:
-            y += dim_y
+            y += dy
             ny += 1
         if nx == 0:
             nx = 1
@@ -894,6 +894,8 @@ class PlacementPanel(wx.Panel):
         self.operation.alternating_dy = alt_y
         self.operation.alternate_rot_x = flag_x
         self.operation.alternate_rot_y = flag_y
+        self.operation.corner = 0
+        self.operation.rotation = 0
         self.updated()
         if self.check_generate.GetValue() and geom is not None:
             node = self.context.elements.elem_branch.add(
