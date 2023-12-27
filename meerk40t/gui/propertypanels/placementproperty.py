@@ -9,7 +9,8 @@ from meerk40t.core.units import Angle, Length
 from meerk40t.gui.propertypanels.attributes import IdPanel
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, set_ctrl_value
 from meerk40t.kernel import signal_listener
-
+from meerk40t.tools.geomstr import Geomstr
+from meerk40t.svgelements import Color
 _ = wx.GetTranslation
 
 
@@ -187,18 +188,33 @@ class PlacementPanel(wx.Panel):
         ).format(area=_("column"), direction="X")
         self.text_alternating_x.SetToolTip(ttip)
         self.slider_alternating_x.SetToolTip(ttip)
+        self.check_alt_x = wx.CheckBox(self, wx.ID_ANY)
+        ttip = _(
+            "Rotate elements every other {area}\n"+
+            "Useful for triangular patterns."
+        ).format(area=_("column"))
+        self.check_alt_x.SetToolTip(ttip)
         ttip = _(
             "Every other {area} can be displaced by a percentage of the gap in {direction}-direction\n"+
             "Useful for honeycomb- or other irregular patterns that need to overlap"
         ).format(area=_("row"), direction="Y")
         self.text_alternating_y.SetToolTip(ttip)
         self.slider_alternating_y.SetToolTip(ttip)
+        self.check_alt_y = wx.CheckBox(self, wx.ID_ANY)
+        ttip = _(
+            "Rotate elements every other {area}\n"+
+            "Useful for triangular patterns."
+        ).format(area=_("row"))
+        self.check_alt_y.SetToolTip(ttip)
+
         self.alt_x_sizer = StaticBoxSizer(self, wx.ID_ANY, _("X-Displacement:"), wx.HORIZONTAL)
-        self.alt_x_sizer.Add(self.text_alternating_x, 1, wx.EXPAND, 0)
-        self.alt_x_sizer.Add(self.slider_alternating_x, 3, wx.EXPAND, 0)
+        self.alt_x_sizer.Add(self.text_alternating_x, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.alt_x_sizer.Add(self.slider_alternating_x, 3, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.alt_x_sizer.Add(self.check_alt_x, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.alt_y_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Y-Displacement:"), wx.HORIZONTAL)
         self.alt_y_sizer.Add(self.text_alternating_y, 1, wx.EXPAND, 0)
         self.alt_y_sizer.Add(self.slider_alternating_y, 3, wx.EXPAND, 0)
+        self.alt_y_sizer.Add(self.check_alt_y, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         alt_sizer = wx.BoxSizer(wx.HORIZONTAL)
         alt_sizer.Add(self.alt_x_sizer, 1, wx.EXPAND, 0)
         alt_sizer.Add(self.alt_y_sizer, 1, wx.EXPAND, 0)
@@ -261,6 +277,7 @@ class PlacementPanel(wx.Panel):
             ( _("Quadratic"), _("Side"), self.generate_quadratic ),
             ( _("Hexagon"), _("Side"), self.generate_hexagon ),
             ( _("Circular"), _("Diameter"), self.generate_circular ),
+            ( _("Triangular"), _("Side"), self.generate_triangular ),
         )
         choices = [e[0] for e in self.shape_information]
 
@@ -274,11 +291,14 @@ class PlacementPanel(wx.Panel):
 
         self.btn_generate = wx.Button(self, wx.ID_ANY, _("Define"))
         self.btn_generate.SetToolTip(_("Establishes the parameter for the selected grid-type"))
+        self.check_generate = wx.CheckBox(self, wx.ID_ANY)
+        self.check_generate.SetToolTip(_("If set then Define will create a matching pattern too"))
         self.helper_sizer.Add(info1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.helper_sizer.Add(self.combo_shape, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         self.helper_sizer.Add(self.dimension_info, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.helper_sizer.Add(self.text_dimension, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.helper_sizer.Add(self.btn_generate, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.helper_sizer.Add(self.btn_generate, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.helper_sizer.Add(self.check_generate, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         main_sizer.Add(self.helper_sizer, 0, wx.EXPAND, 0)
         self.combo_shape.SetSelection(0)
@@ -290,6 +310,8 @@ class PlacementPanel(wx.Panel):
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_orientation, self.combo_orientation)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_shape, self.combo_shape)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_output, self.checkbox_output)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_alternate_x, self.check_alt_x)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_alternate_y, self.check_alt_y)
         self.text_rot.SetActionRoutine(self.on_text_rot)
         self.text_alternating_x.SetActionRoutine(self.on_text_alternating_x)
         self.text_alternating_y.SetActionRoutine(self.on_text_alternating_y)
@@ -346,6 +368,8 @@ class PlacementPanel(wx.Panel):
         self.slider_alternating_y.Enable(flag_enabled)
         self.slider_alternating_x.Enable(flag_enabled)
         self.slider_alternating_y.Enable(flag_enabled)
+        self.check_alt_x.Enable(flag_enabled)
+        self.check_alt_y.Enable(flag_enabled)
         self.text_gap_x.Enable(flag_enabled)
         self.text_gap_y.Enable(flag_enabled)
         self.text_repeats_x.Enable(flag_enabled)
@@ -392,6 +416,18 @@ class PlacementPanel(wx.Panel):
             loops = self.operation.loops
             if loops is None:
                 loops = 1
+            fx = self.operation.alternate_rot_x
+            if isinstance(fx, str):
+                fx = bool(fx)
+            if fx is None:
+                fx = False
+            fy = self.operation.alternate_rot_y
+            if isinstance(fy, str):
+                fy = bool(fy)
+            if fy is None:
+                fy = False
+            self.check_alt_x.SetValue(fx)
+            self.check_alt_y.SetValue(fy)
             set_ctrl_value(self.text_loops, str(loops))
             set_ctrl_value(self.text_repeats_x, str(self.operation.nx))
             set_ctrl_value(self.text_repeats_y, str(self.operation.ny))
@@ -526,6 +562,18 @@ class PlacementPanel(wx.Panel):
         self.text_alternating_y.SetValue(f"{value}%")
         self.on_text_alternating_y()
 
+    def on_check_alternate_x(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+        f = bool(self.check_alt_x.GetValue())
+        if self.operation.alternate_rot_x != f:
+            self.operation.alternate_rot_x = f
+            self.context.elements.signal("element_property_update", self.operation)
+
+    def on_check_alternate_y(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+        f = bool(self.check_alt_y.GetValue())
+        if self.operation.alternate_rot_y != f:
+            self.operation.alternate_rot_y = f
+            self.context.elements.signal("element_property_update", self.operation)
+
     def on_check_output(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         if self.operation.output != bool(self.checkbox_output.GetValue()):
             self.operation.output = bool(self.checkbox_output.GetValue())
@@ -642,8 +690,8 @@ class PlacementPanel(wx.Panel):
             self.updated()
 
     def generate_quadratic(self, dimension, sx, sy):
-        scene_width = self.context.device.view.unit_width
-        scene_height = self.context.device.view.unit_height
+        scene_width = self.context.device.view.width
+        scene_height = self.context.device.view.height
         x = sx
         y = sy
         nx = 0
@@ -652,6 +700,18 @@ class PlacementPanel(wx.Panel):
         dy = dimension
         alt_x = 0
         alt_y = 0
+        flag_x = False
+        flag_y = False
+        geom = Geomstr.rect(sx, sy, dimension, dimension)
+        # points = (
+        #     sx + 1j * sy,
+        #     sx + dimension + 1j * sy,
+        #     sx + dimension + 1j * (sy + dimension),
+        #     sx + 1j * (sy + dimension),
+        #     sx + 1j * sy,
+        # )
+        # geom.polyline(points)
+        # geom.end()
         while x + dimension <= scene_width:
             x += dimension
             nx += 1
@@ -662,11 +722,47 @@ class PlacementPanel(wx.Panel):
             nx = 1
         if ny == 0:
             ny = 1
-        return nx, ny, dx, dy, alt_x, alt_y
+        return nx, ny, dx, dy, alt_x, alt_y, flag_x, flag_y, geom
+
+    def generate_triangular(self, dimension, sx, sy):
+        scene_width = self.context.device.view.width
+        scene_height = self.context.device.view.height
+        x = sx
+        y = sy
+        nx = 0
+        ny = 0
+        dx = 0.5 * dimension
+        dy = 0.5 * math.sqrt(3) * dimension
+        alt_x = 0
+        alt_y = 0
+        flag_x = True
+        flag_y = False
+
+        geom = Geomstr()
+        points = (
+            sx + 1j * (sy + dy),
+            sx + dimension + 1j * (sy + dy),
+            sx + 0.5 * dimension + 1j * sy,
+            sx + 1j * (sy + dy),
+        )
+        geom.polyline(points)
+        geom.end()
+
+        while x + dimension <= scene_width:
+            x += dx
+            nx += 1
+        while y + dimension <= scene_height:
+            y += dy
+            ny += 1
+        if nx == 0:
+            nx = 1
+        if ny == 0:
+            ny = 1
+        return nx, ny, dx, dy, alt_x, alt_y, flag_x, flag_y, geom
 
     def generate_circular(self, dimension, sx, sy):
-        scene_width = self.context.device.view.unit_width
-        scene_height = self.context.device.view.unit_height
+        scene_width = self.context.device.view.width
+        scene_height = self.context.device.view.height
         x = sx
         y = sy
         nx = 0
@@ -677,45 +773,65 @@ class PlacementPanel(wx.Panel):
         dy = dimension
         alt_x = 0
         alt_y = 0.5
-        while x + 3 * radius <= scene_width:
-            x += dimension
+        flag_x = False
+        flag_y = False
+
+        geom = Geomstr.circle(radius, sx + radius, sy + radius, slices=4)
+        while x + dimension <= scene_width:
+            x += dx
             nx += 1
-        while y + 3 * radius <= scene_height:
-            y += dimension
+
+        while y + dimension + radius <= scene_height:
+            y += dy
             ny += 1
+
         if nx == 0:
             nx = 1
         if ny == 0:
             ny = 1
-
-        return nx, ny, dx, dy, alt_x, alt_y
+        return nx, ny, dx, dy, alt_x, alt_y, flag_x, flag_y, geom
 
     def generate_hexagon(self, dimension, sx, sy):
-        scene_width = self.context.device.view.unit_width
-        scene_height = self.context.device.view.unit_height
+        scene_width = self.context.device.view.width
+        scene_height = self.context.device.view.height
         dim_x = 2 * dimension
         dim_y = math.sqrt(3) * dimension
         x = sx
         y = sy
         nx = 0
         ny = 0
-        radius = dimension / 2.0
+        flag_x = False
+        flag_y = False
+
+        geom = Geomstr()
+        points = (
+            sx + 0.5 * dimension + 1j * sy,
+            sx + 1.5 * dimension + 1j * sy,
+            sx + 2 * dimension + 1j * (sy + 0.5 * dim_y),
+            sx + 1.5 * dimension + 1j * (sy + dim_y),
+            sx + 0.5 * dimension + 1j * (sy + dim_y),
+            sx + 1j * (sy + 0.5 * dim_y),
+            sx + 0.5 * dimension + 1j * sy,
+        )
+        geom.polyline(points)
+        geom.end()
+
         dx = 1.5 * dimension
         dy = math.sqrt(3.0) * dimension
         alt_x = 0
         alt_y = 0.5
         while x + dim_x <= scene_width:
-            x += dim_x
+            x += dx
             nx += 1
         while y + dim_y <= scene_height:
-            y += dim_y
+            y += dy
             ny += 1
         if nx == 0:
             nx = 1
         if ny == 0:
             ny = 1
 
-        return nx, ny, dx, dy, alt_x, alt_y
+        return nx, ny, dx, dy, alt_x, alt_y, flag_x, flag_y, geom
 
     def validate_tesselation(self):
         flag = True
@@ -741,6 +857,7 @@ class PlacementPanel(wx.Panel):
         else:
             s = self.shape_information[idx][1]
         self.dimension_info.SetLabel(s)
+        self.Layout()
         self.validate_tesselation()
 
     def on_dimension(self, *args):
@@ -767,7 +884,7 @@ class PlacementPanel(wx.Panel):
         except ValueError:
             return
         function = self.shape_information[shape][2]
-        nx, ny, dx, dy, alt_x, alt_y = function(dimens, sx, sy)
+        nx, ny, dx, dy, alt_x, alt_y, flag_x, flag_y, geom = function(dimens, sx, sy)
         self.operation.x = sx
         self.operation.y = sy
         self.operation.nx = nx
@@ -776,7 +893,23 @@ class PlacementPanel(wx.Panel):
         self.operation.dy = dy
         self.operation.alternating_dx = alt_x
         self.operation.alternating_dy = alt_y
+        self.operation.alternate_rot_x = flag_x
+        self.operation.alternate_rot_y = flag_y
+        self.operation.corner = 0
+        self.operation.rotation = 0
         self.updated()
+        if self.check_generate.GetValue() and geom is not None:
+            node = self.context.elements.elem_branch.add(
+                type="elem path",
+                geometry=geom,
+                stroke = Color("blue"),
+                stroke_width = 1000,
+                label = "Template",
+            )
+            data = [node]
+            if self.context.elements.classify_new:
+                self.context.elements.classify(data)
+            self.context.root.signal("refresh_scene", "Scene")
 
     def updated(self):
         self.context.elements.signal("element_property_reload", self.operation)

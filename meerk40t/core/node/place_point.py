@@ -4,7 +4,8 @@ A project may contain multiple such placements, for every placement
 a copy of the plan will be executed with the placement indicating
 the relative position
 """
-
+import ast
+from math import tau
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import Angle, Length
 from meerk40t.svgelements import Matrix
@@ -28,6 +29,8 @@ class PlacePointNode(Node):
         ny=1,
         alternating_dx=0,
         alternating_dy=0,
+        alternate_rot_x=False,
+        alternate_rot_y=False,
         orientation=0,
         **kwargs,
     ):
@@ -58,6 +61,8 @@ class PlacePointNode(Node):
         # These are factors between -1 and +1
         self.alternating_dx = alternating_dx
         self.alternating_dy = alternating_dy
+        self.alternate_rot_x = alternate_rot_x
+        self.alternate_rot_y = alternate_rot_y
         self.rotation = rotation
         self.corner = corner
         self.loops = loops
@@ -69,12 +74,37 @@ class PlacePointNode(Node):
         self.validate()
 
     def validate(self):
+        def _valid_bool(field):
+            if isinstance(field, str):
+                try:
+                    value = bool(ast.literal_eval(field))
+                except (ValueError, SyntaxError):
+                    value = False
+            else:
+                try:
+                    value = bool(field)
+                except ValueError:
+                    value = False
+            return value
+
         def _valid_length(field):
             try:
                 if isinstance(field, str):
                     value = float(Length(field))
                 elif isinstance(field, Length):
                     value = float(field)
+                else:
+                    value = field
+            except ValueError:
+                value = 0
+            return value
+
+        def _valid_angle(field):
+            try:
+                if isinstance(field, str):
+                    value = Angle(field).radians
+                elif isinstance(field, Angle):
+                    value = field.radians
                 else:
                     value = field
             except ValueError:
@@ -113,28 +143,20 @@ class PlacePointNode(Node):
                 value = minim
             return value
 
-        if isinstance(self.output, str):
-            try:
-                self.output = bool(self.output)
-            except ValueError:
-                self.output = True
+        self.output = _valid_bool(self.output)
+        self.alternate_rot_x = _valid_bool(self.alternate_rot_x)
+        self.alternate_rot_y = _valid_bool(self.alternate_rot_y)
         self.x = _valid_length(self.x)
         self.y = _valid_length(self.y)
         self.dx = _valid_length(self.dx)
         self.dy = _valid_length(self.dy)
         self.alternating_dx = _valid_float(self.alternating_dx)
         self.alternating_dy = _valid_float(self.alternating_dy)
+        self.rotation = _valid_angle(self.rotation)
         self.loops = _valid_int(self.loops, 1, None)
         self.corner = _valid_int(self.corner, 0, 4)
         self.nx = _valid_int(self.nx, 0, None)
         self.ny = _valid_int(self.ny, 0, None)
-        try:
-            if isinstance(self.rotation, str):
-                self.rotation = Angle(self.rotation).radians
-            elif isinstance(self.rotation, Angle):
-                self.rotation = self.rotation.radians
-        except ValueError:
-            self.rotation = 0
 
     def placements(self, context, outline, matrix, plan):
         if outline is None:
@@ -146,13 +168,13 @@ class PlacePointNode(Node):
         unit_y = Length(self.y, relative_length=scene_height).units
         org_x, org_y = matrix.point_in_matrix_space((unit_x, unit_y))
         dx, dy = matrix.point_in_matrix_space((self.dx, self.dy))
-        ddx = dx
-        ddy = dy
+        ccx = sum([c[0] for c in outline]) / len(outline)
+        ccy = sum([c[1] for c in outline]) / len(outline)
         if 0 <= self.corner <= 3:
             cx, cy = outline[self.corner]
         else:
-            cx = sum([c[0] for c in outline]) / len(outline)
-            cy = sum([c[1] for c in outline]) / len(outline)
+            cx = ccx
+            cy = ccy
         # Create grid...
         xloop = self.nx
         if xloop == 0:  # as much as we can fit
@@ -172,62 +194,70 @@ class PlacePointNode(Node):
                 while y + self.dy < scene_height:
                     y += self.dy
                     yloop += 1
-        max_x = org_x + (xloop - 1) * dx
-        max_y = org_y + (yloop - 1) * dy
-        if self.orientation == 2:
-            # Vertical
+        result = []
+        sorted_result= []
+        y = org_y - cy
+        # print (f"Generating {xloop}x{yloop}")
+        for ycount in range(yloop):
+            roty = 0
             x = org_x - cx
-            hither = True
-            # print (f"Generating {xloop}x{yloop}")
+            xx = x
+            if ycount % 2 == 1:
+                if self.alternating_dx != 0:
+                    xx += self.alternating_dx * abs(dx)
+                if self.alternate_rot_y:
+                    roty = tau / 2
             for xcount in range(xloop):
-                if hither:
-                    y = org_y - cy
-                    ddy = dy
-                else:
-                    y = max_y - cy
-                    ddy = -dy
+                rotx = 0
                 yy = y
-                if self.alternating_dy != 0 and xcount % 2 == 1:
-                    yy += self.alternating_dy * abs(ddy)
-                for ycount in range(yloop):
-                    xx = x
-                    if self.alternating_dx != 0 and ycount % 2 == 1:
-                        xx += self.alternating_dx * abs(dx)
-                    shift_matrix = Matrix()
-                    if self.rotation != 0:
-                        shift_matrix.post_rotate(self.rotation, cx, cy)
-                    shift_matrix.post_translate(xx, yy)
-                    yield matrix * shift_matrix
-                    yy += ddy
-                x += dx
-                hither = not hither
-        else:
-            y = org_y - cy
-            hither = True
-            # print (f"Generating {xloop}x{yloop}")
-            for ycount in range(yloop):
-                if hither:
-                    x = org_x - cx
-                    ddx = dx
-                else:
-                    x = max_x - cx
-                    ddx = -dx
-                xx = x
-                if self.alternating_dx != 0 and ycount % 2 == 1:
-                    xx += self.alternating_dx * abs(ddx)
-                for xcount in range(xloop):
-                    yy = y
-                    if self.alternating_dy != 0 and xcount % 2 == 1:
+                if xcount % 2 == 1:
+                    if self.alternating_dy != 0:
                         yy += self.alternating_dy * abs(dy)
-                    shift_matrix = Matrix()
-                    if self.rotation != 0:
-                        shift_matrix.post_rotate(self.rotation, cx, cy)
-                    shift_matrix.post_translate(xx, yy)
-                    yield matrix * shift_matrix
-                    xx += ddx
-                y += dy
-                if self.orientation == 1:
-                    hither = not hither
+                    if self.alternate_rot_x:
+                        rotx = tau / 2
+                shift_matrix = Matrix()
+                rotangle = rotx + roty
+                if self.rotation != 0:
+                    shift_matrix.post_rotate(self.rotation, cx, cy)
+                if rotangle != 0:
+                    shift_matrix.post_rotate(rotangle, ccx, ccy)
+                shift_matrix.post_translate(xx, yy)
+                result.append(matrix * shift_matrix)
+                xx += dx
+            y += dy
+
+        def idx_horizontal(row, col):
+            return row * xloop + col
+
+        def idx_vertical(col, row):
+            return row * xloop + col
+
+        if self.orientation == 2:
+            max_outer = xloop
+            max_inner = yloop
+            func = idx_vertical
+            hither = True
+        elif self.orientation == 1:
+            max_outer = yloop
+            max_inner = xloop
+            func = idx_horizontal
+            hither = True
+        else:
+            max_outer = yloop
+            max_inner = xloop
+            func = idx_horizontal
+            hither = False
+
+        for idx_outer in range(max_outer):
+            for idx_inner in range(max_inner):
+                if hither and idx_outer % 2 == 1:
+                    sorted_idx = func(idx_outer, max_inner - 1 - idx_inner)
+                else:
+                    sorted_idx = func(idx_outer, idx_inner)
+                sorted_result.append(result[sorted_idx])
+
+        for mat in sorted_result:
+            yield mat
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)

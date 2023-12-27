@@ -1268,24 +1268,39 @@ def init_tree(kernel):
         help="",
     )
     def make_polygon_regular(node, **kwargs):
+        def norm_angle(angle):
+            while angle < 0:
+                angle += math.tau
+            while angle >= math.tau:
+                angle -= math.tau
+            return angle
+
         if node is None or node.type != "elem polyline":
             return
         pts = list(node.geometry.as_points())
         vertex_count = len(pts) - 1
         baseline = abs(pts[1] - pts[0])
         circumradius = baseline / (2 * math.sin(math.tau / (2 * vertex_count)))
-        # apothem = baseline / (2 * math.tan(math.tau / (2 * vertex_count)))
-        # midpoint = (pts[0] - pts[1]) / 2
-
+        apothem = baseline / (2 * math.tan(math.tau / (2 * vertex_count)))
+        midpoint = (pts[0] + pts[1]) / 2
+        angle0 = Geomstr.angle(None, pts[0], pts[1])
+        angle1 = norm_angle(angle0 + math.tau / 4)
+        angle2 = norm_angle(angle0 - math.tau / 4)
+        pt1 = Geomstr.polar(None, midpoint, angle1, apothem)
+        pt2 = Geomstr.polar(None, midpoint, angle2, apothem)
         # The arithmetic center (ax, ay) indicates to which
         # 'side' of the baseline the polygon needs to be constructed
         arithmetic_center = sum(pts[:-1]) / vertex_count
+        if Geomstr.distance(None, pt1 , arithmetic_center) < Geomstr.distance(None, pt2, arithmetic_center):
+            center_point = pt1
+        else:
+            center_point = pt2
 
-        start_angle = Geomstr.angle(None, arithmetic_center, pts[0])
+        start_angle = Geomstr.angle(None, center_point, pts[0])
 
         node.geometry = Geomstr.regular_polygon(
             vertex_count,
-            arithmetic_center,
+            center_point,
             radius=circumradius,
             radius_inner=circumradius,
             start_angle=start_angle,
