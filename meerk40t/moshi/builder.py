@@ -357,6 +357,10 @@ class MoshiBuilder:
         """
         Write a 16 bit little-endian value to the current program.
         """
+        if value < -32768:
+            value = -32768
+        elif value > 32767:
+            value = 32767
         self.write(struct.pack("<h", value))
 
     def write(self, bytes_to_write):
