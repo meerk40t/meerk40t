@@ -899,6 +899,17 @@ class LihuiyuDevice(Service, Status):
                     channel(_("Intepreter cannot be attached to any device."))
                 return
 
+    @property
+    def safe_label(self):
+        """
+        Provides a safe label without spaces or / which could cause issues when used in timer or other names.
+        @return:
+        """
+        if not hasattr(self, "label"):
+            return self.name
+        name = self.label.replace(" ", "-")
+        return name.replace("/", "-")
+
     def service_attach(self, *args, **kwargs):
         self.realize()
 
