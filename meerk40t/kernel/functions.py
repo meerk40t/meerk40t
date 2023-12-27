@@ -318,19 +318,27 @@ def console_command(
         inner.options = list()
         inner.object = None
 
-        def register(registration, obj=None):
+        # Process registration.
+        def register(reg, obj=None):
+            if force_kernel and hasattr(reg, "kernel"):
+                reg = reg.kernel
             for cmd in cmds:
                 for i in ins:
                     p = f"command/{i}/{cmd}"
                     inner.object = obj
-                    if force_kernel and hasattr(registration, "kernel"):
-                        registration = registration.kernel
-                    registration.register(p, inner)
+                    reg.register(p, inner)
+
+        def unregister(reg):
+            if force_kernel and hasattr(reg, "kernel"):
+                reg = reg.kernel
+            console_command_remove(reg, path, input_type)
+
+        inner.unreg = unregister
+        inner.reg = register
 
         if registration:
-            register(registration)
-        else:
-            inner.reg = register
+            inner.reg(registration)
+
         return inner
 
     return decorator
