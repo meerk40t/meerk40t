@@ -611,7 +611,7 @@ def init_tree(kernel):
     @tree_submenu(_("Set placement loops"))
     @tree_radio(radio_match_loops)
     @tree_iterate("loopvalue", 1, 10)
-    @tree_operation(_("Loops {loopvalue}"), node_type=place_nodes, help="")
+    @tree_operation(_("Loops {loopvalue}"), node_type="place point", help="")
     def set_n_loops(node, loopvalue=1, **kwargs):
         data = list()
         for n in list(self.ops(selected=True)):
