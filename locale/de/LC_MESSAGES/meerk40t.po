@@ -17877,3 +17877,127 @@ msgstr "Verzögert die GRBL-Kommunikation nach dem Verbindungsaufbau (einige lan
 
 msgid "Open the configuration window for the active device"
 msgstr "Öffne das Einstellungsfenster für das aktive Gerät"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:108
+msgid "Repetitions in X-direction"
+msgstr "Anzahl in X-Richtung"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:109
+msgid "Repeats:"
+msgstr "Wiederholung:"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:119
+msgid "Gap:"
+msgstr "Abstand:"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:128
+msgid "Gap in X-direction"
+msgstr "Abstand X-Richtung"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:134
+msgid "Repetitions in Y-direction"
+msgstr "Anzahl in Y-Richtung"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:154
+msgid "How many repetitions in X-direction?\n0 = As many as possible"
+msgstr "Wieviele Job-Starts in X-Richtung?\n0 = So viel wie möglich"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:155
+msgid "How many repetitions in Y-direction?\n0 = As many as possible"
+msgstr "Wieviele Job-Starts in Y-Richtung?\n0 = So viel wie möglich"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:156
+msgid "Gap between placements in X-direction"
+msgstr "Abstand zwischen Job-Starts in X-Richtung"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:157
+msgid "Gap between placements in Y-direction"
+msgstr "Abstand zwischen Job-Starts in Y-Richtung"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:187
+msgid ""
+"Every other {area} can be displaced by a percentage of the gap in {direction}-direction\n"
+"Useful for honeycomb- or other irregular patterns that need to overlap"
+msgstr ""
+"Jede zweite {area} kann um einen Prozentsatz des Regel-Abstands in {direction}-Rchtung verschoben werden.\n"
+"Nützlich für Wabengitter oder andere Strukturen die einander überlagern müssen."
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:187
+msgid "column"
+msgstr "Spalte"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:193
+msgid "row"
+msgstr "Zeile"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:196
+msgid "X-Displacement:"
+msgstr "Verschiebung in X:"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:199
+msgid "Y-Displacement:"
+msgstr "Verschiebung in Y:"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:237
+msgid "L2R (unidirectional)"
+msgstr "L2R (unidirektional)"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:238
+msgid "L2R (bidirectional)"
+msgstr "L2R (bidirektional)"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:239
+msgid "T2B (bidirectional)"
+msgstr "T2B (bidirektional)"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:244
+msgid "Orientation defines the sequence of placement points"
+msgstr "Orientierung legt die Abfolge der Job-Starts fest"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:245
+msgid "Left to right (unidirectional)"
+msgstr "Links nach Rechts (unidirektional)"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:246
+msgid "Left to right (bidirectional)"
+msgstr "Links nach Rechts (bidirektional)"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:247
+msgid "Top to bottom (bidirectional)"
+msgstr "Oben nach Unten (bidirektional)"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:256
+msgid "Grid Helper (Tiling):"
+msgstr "Gitter-Parameter (Kachelung):"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:261
+msgid "Quadratic"
+msgstr "Quadratisch"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:261
+msgid "Side"
+msgstr "Seitenlänge"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:262
+msgid "Hexagon"
+msgstr "Wabengitter"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:263
+msgid "Circular"
+msgstr "Keise"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:263
+msgid "Diameter"
+msgstr "Durchmesser"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:268
+msgid "Please provide some data about the intended tiling"
+msgstr "Bitte Daten zum geplanten Gitter angeben"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:275
+msgid "Define"
+msgstr "Festlegen"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:276
+msgid "Establishes the parameter for the selected grid-type"
+msgstr "Legt die passenden Parameter für einen Gitter-Typ fest"

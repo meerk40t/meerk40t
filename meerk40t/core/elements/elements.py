@@ -140,7 +140,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/place current", "{enabled}{element_type}")
         kernel.register(
             "format/place point",
-            "{enabled}{loops}{element_type} {corner} {x} {y} {rotation}",
+            "{enabled}{loops}{element_type}{grid} {corner} {x} {y} {rotation}",
         )
     elif lifecycle == "register":
         kernel.add_service("elements", Elemental(kernel))

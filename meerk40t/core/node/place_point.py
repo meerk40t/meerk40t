@@ -15,37 +15,119 @@ class PlacePointNode(Node):
     PlacePointNode is the bootstrapped node type for the 'place point' type.
     """
 
-    def __init__(self, x=0, y=0, rotation=0, corner=0, loops=1, **kwargs):
+    def __init__(
+        self,
+        x=0,
+        y=0,
+        rotation=0,
+        corner=0,
+        loops=1,
+        dx=0,
+        dy=0,
+        nx=1,
+        ny=1,
+        alternating_dx=0,
+        alternating_dy=0,
+        orientation=0,
+        **kwargs,
+    ):
         self.x = x
         self.y = y
+        self.dx = dx
+        self.dy = dy
+        self.nx = nx
+        self.ny = ny
+        """
+        Orientation defines the sequence of placement points
+        0 = standard
+        1 = Boustrodephon - horizontal (snake movement along the rows)
+        2 = Boustrodephon - vertical (snake movement along the columns)
+        Example for 3 x 3 grid
+        Standard       Horizontal      Vertical
+        1 2 3          1 2 3           1 6 7
+        4 5 6          6 5 4           2 5 8
+        7 8 9          7 8 9           3 4 9
+
+        """
+        self.orientation = orientation
+        if self.orientation is None or self.orientation not in (0, 1, 2):
+            self.orientation = 0
+        # Alternating are factors that decide if and by what amount
+        # every other line will be displaced (alternating dy)
+        # and/or every column will be displaced (alternating dx)
+        # These are factors between -1 and +1
+        self.alternating_dx = alternating_dx
+        self.alternating_dy = alternating_dy
         self.rotation = rotation
         self.corner = corner
         self.loops = loops
         self.output = True
         super().__init__(type="place point", **kwargs)
-        self._formatter = "{enabled}{loops}{element_type} {corner} {x} {y} {rotation}"
+        self._formatter = (
+            "{enabled}{loops}{element_type}{grid} {corner} {x} {y} {rotation}"
+        )
         self.validate()
 
     def validate(self):
+        def _valid_length(field):
+            try:
+                if isinstance(field, str):
+                    value = float(Length(field))
+                elif isinstance(field, Length):
+                    value = float(field)
+                else:
+                    value = field
+            except ValueError:
+                value = 0
+            return value
+
+        def _valid_int(field, minim=None, maxim=None):
+            if field is None:
+                if minim is None:
+                    value = 0
+                else:
+                    value = minim
+            try:
+                value = int(field)
+                if minim is not None and value < minim:
+                    value = minim
+                if maxim is not None and value > maxim:
+                    value = maxim
+            except ValueError:
+                value = minim
+            return value
+
+        def _valid_float(field, minim=None, maxim=None):
+            if field is None:
+                if minim is None:
+                    value = 0
+                else:
+                    value = minim
+            try:
+                value = float(field)
+                if minim is not None and value < minim:
+                    value = minim
+                if maxim is not None and value > maxim:
+                    value = maxim
+            except ValueError:
+                value = minim
+            return value
+
         if isinstance(self.output, str):
             try:
                 self.output = bool(self.output)
             except ValueError:
                 self.output = True
-        try:
-            if isinstance(self.x, str):
-                self.x = float(Length(self.x))
-            elif isinstance(self.x, Length):
-                self.x = float(self.x)
-        except ValueError:
-            self.x = 0
-        try:
-            if isinstance(self.y, str):
-                self.y = float(Length(self.y))
-            elif isinstance(self.y, Length):
-                self.y = float(self.y)
-        except ValueError:
-            self.y = 0
+        self.x = _valid_length(self.x)
+        self.y = _valid_length(self.y)
+        self.dx = _valid_length(self.dx)
+        self.dy = _valid_length(self.dy)
+        self.alternating_dx = _valid_float(self.alternating_dx)
+        self.alternating_dy = _valid_float(self.alternating_dy)
+        self.loops = _valid_int(self.loops, 1, None)
+        self.corner = _valid_int(self.corner, 0, 4)
+        self.nx = _valid_int(self.nx, 0, None)
+        self.ny = _valid_int(self.ny, 0, None)
         try:
             if isinstance(self.rotation, str):
                 self.rotation = Angle(self.rotation).radians
@@ -53,18 +135,6 @@ class PlacePointNode(Node):
                 self.rotation = self.rotation.radians
         except ValueError:
             self.rotation = 0
-        try:
-            self.corner = min(4, max(0, int(self.corner)))
-        except ValueError:
-            self.corner = 0
-        # repetitions at the same point
-        if self.loops is None:
-            self.loops = 1
-        else:
-            try:
-                self.loops = int(self.loops)
-            except ValueError:
-                self.loops = 1
 
     def placements(self, context, outline, matrix, plan):
         if outline is None:
@@ -74,20 +144,90 @@ class PlacePointNode(Node):
         scene_height = context.device.view.unit_height
         unit_x = Length(self.x, relative_length=scene_width).units
         unit_y = Length(self.y, relative_length=scene_height).units
-        x, y = matrix.point_in_matrix_space((unit_x, unit_y))
+        org_x, org_y = matrix.point_in_matrix_space((unit_x, unit_y))
+        dx, dy = matrix.point_in_matrix_space((self.dx, self.dy))
+        ddx = dx
+        ddy = dy
         if 0 <= self.corner <= 3:
             cx, cy = outline[self.corner]
         else:
             cx = sum([c[0] for c in outline]) / len(outline)
             cy = sum([c[1] for c in outline]) / len(outline)
-        x -= cx
-        y -= cy
-        shift_matrix = Matrix()
-        if self.rotation != 0:
-            shift_matrix.post_rotate(self.rotation, cx, cy)
-        shift_matrix.post_translate(x, y)
-
-        yield matrix * shift_matrix
+        # Create grid...
+        xloop = self.nx
+        if xloop == 0:  # as much as we can fit
+            if abs(self.dx) < 1e-6:
+                xloop = 1
+            else:
+                x = self.x
+                while x + self.dx < scene_width:
+                    x += self.dx
+                    xloop += 1
+        yloop = self.ny
+        if yloop == 0:  # as much as we can fit
+            if abs(self.dy) < 1e-6:
+                yloop = 1
+            else:
+                y = self.y
+                while y + self.dy < scene_height:
+                    y += self.dy
+                    yloop += 1
+        max_x = org_x + (xloop - 1) * dx
+        max_y = org_y + (yloop - 1) * dy
+        if self.orientation == 2:
+            # Vertical
+            x = org_x - cx
+            hither = True
+            # print (f"Generating {xloop}x{yloop}")
+            for xcount in range(xloop):
+                if hither:
+                    y = org_y - cy
+                    ddy = dy
+                else:
+                    y = max_y - cy
+                    ddy = -dy
+                yy = y
+                if self.alternating_dy != 0 and xcount % 2 == 1:
+                    yy += self.alternating_dy * abs(ddy)
+                for ycount in range(yloop):
+                    xx = x
+                    if self.alternating_dx != 0 and ycount % 2 == 1:
+                        xx += self.alternating_dx * abs(dx)
+                    shift_matrix = Matrix()
+                    if self.rotation != 0:
+                        shift_matrix.post_rotate(self.rotation, cx, cy)
+                    shift_matrix.post_translate(xx, yy)
+                    yield matrix * shift_matrix
+                    yy += ddy
+                x += dx
+                hither = not hither
+        else:
+            y = org_y - cy
+            hither = True
+            # print (f"Generating {xloop}x{yloop}")
+            for ycount in range(yloop):
+                if hither:
+                    x = org_x - cx
+                    ddx = dx
+                else:
+                    x = max_x - cx
+                    ddx = -dx
+                xx = x
+                if self.alternating_dx != 0 and ycount % 2 == 1:
+                    xx += self.alternating_dx * abs(ddx)
+                for xcount in range(xloop):
+                    yy = y
+                    if self.alternating_dy != 0 and xcount % 2 == 1:
+                        yy += self.alternating_dy * abs(dy)
+                    shift_matrix = Matrix()
+                    if self.rotation != 0:
+                        shift_matrix.post_rotate(self.rotation, cx, cy)
+                    shift_matrix.post_translate(xx, yy)
+                    yield matrix * shift_matrix
+                    xx += ddx
+                y += dy
+                if self.orientation == 1:
+                    hither = not hither
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
@@ -108,6 +248,11 @@ class PlacePointNode(Node):
         default_map["y"] = f"{ylen.length_cm}"
         default_map["rotation"] = f"{Angle(self.rotation, digits=1).degrees}°"
         default_map["loops"] = f"{str(self.loops) + 'X ' if self.loops > 1 else ''}"
+        if self.nx != 1 or self.ny != 1:
+            default_map["grid"] = f"{self.nx}x{self.ny}"
+        else:
+            default_map["grid"] = ""
+
         if self.corner == 0:
             default_map["corner"] = "`+ "
         elif self.corner == 1:
