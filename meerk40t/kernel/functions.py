@@ -105,6 +105,7 @@ def console_command(
     input_type: Union[str, Tuple[str, ...]] = None,
     output_type: str = None,
     all_arguments_required: bool = False,
+    force_kernel: bool = False,
 ):
     """
     Console Command registers is a decorator that registers a command to the kernel. Any commands that execute
@@ -123,6 +124,7 @@ def console_command(
     @param input_type: What is the incoming context for the command
     @param output_type: What is the outgoing context for the command
     @param all_arguments_required: Should raise a syntax error if any argument is unfilled
+    @param force_kernel: Forces an otherwise correct registration for a service into the global registration
     @return:
     """
 
@@ -276,7 +278,12 @@ def console_command(
                 remainder = ""  # not chaining
 
             # Call the function.
-            returned = func(command=command, channel=channel, **ik, **kwargs)
+            if inner.object:
+                returned = func(
+                    inner.object, command=command, channel=channel, **ik, **kwargs
+                )
+            else:
+                returned = func(command=command, channel=channel, **ik, **kwargs)
 
             # Process return values.
             if returned is None:
@@ -309,14 +316,32 @@ def console_command(
 
         inner.arguments = list()
         inner.options = list()
+        inner.object = None
 
-        for cmd in cmds:
-            for i in ins:
-                p = f"command/{i}/{cmd}"
-                registration.register(p, inner)
+        def register(registration, obj=None):
+            for cmd in cmds:
+                for i in ins:
+                    p = f"command/{i}/{cmd}"
+                    inner.object = obj
+                    if force_kernel and hasattr(registration, "kernel"):
+                        registration = registration.kernel
+                    registration.register(p, inner)
+
+        if registration:
+            register(registration)
+        else:
+            inner.reg = register
         return inner
 
     return decorator
+
+
+def kernel_console_command(*args, **kwargs):
+    return console_command(None, *args, **kwargs, force_kernel=True)
+
+
+def service_console_command(*args, **kwargs):
+    return console_command(None, *args, **kwargs)
 
 
 def console_command_remove(
