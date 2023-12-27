@@ -1152,7 +1152,7 @@ class Kernel(Settings):
 
         @return:
         """
-        self.scheduler_thread = self.threaded(self.run, "Scheduler")
+        self.scheduler_thread = self.threaded(self.run, thread_name="Scheduler")
         self.signal_job = self.add_job(
             run=self.process_queue,
             name="kernel.signals",
