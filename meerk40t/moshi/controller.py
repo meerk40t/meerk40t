@@ -89,7 +89,8 @@ class MoshiController:
         self.usb_send_channel = service.channel(f"{name}/usb_send")
         self.recv_channel = service.channel(f"{name}/recv")
 
-        self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
+    def usb_signal_update(self, e):
+        self.context.signal("pipe;usb_status", e)
 
     def viewbuffer(self):
         """
@@ -104,8 +105,10 @@ class MoshiController:
 
     def added(self, *args, **kwargs):
         self.start()
+        self.usb_log.watch(self.usb_signal_update)
 
     def shutdown(self, *args, **kwargs):
+        self.usb_log.unwatch(self.usb_signal_update)
         self.update_state("terminate")
         if self._thread is not None:
             self.is_shutdown = True
