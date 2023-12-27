@@ -777,13 +777,14 @@ class PlacementPanel(wx.Panel):
         flag_y = False
 
         geom = Geomstr.circle(radius, sx + radius, sy + radius, slices=4)
-
-        while x + 3 * radius <= scene_width:
-            x += dimension
+        while x + dimension <= scene_width:
+            x += dx
             nx += 1
-        while y + 3 * radius <= scene_height:
-            y += dimension
+
+        while y + dimension + radius <= scene_height:
+            y += dy
             ny += 1
+
         if nx == 0:
             nx = 1
         if ny == 0:
