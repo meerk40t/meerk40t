@@ -548,6 +548,7 @@ class Kernel(Settings):
         for i in range(len(self.delegates) - 1, -1, -1):
             delegate_value, ref = self.delegates[i]
             if delegate_value is delegate and ref is lifecycle_object:
+                self._command_detach(lifecycle_object, delegate)
                 self._signal_detach(delegate)
                 self._lookup_detach(delegate)
                 del self.delegates[i]
@@ -737,6 +738,7 @@ class Kernel(Settings):
                     channel(f"kernel-boot: {str(k)} boot")
                 if hasattr(k, "boot"):
                     k.boot()
+                self._command_attach(self, k)
                 self._signal_attach(k)
                 self._lookup_attach(k)
         if start < LIFECYCLE_KERNEL_BOOT <= end:
@@ -872,6 +874,7 @@ class Kernel(Settings):
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PRESHUTDOWN
                 if channel:
                     channel(f"kernel-preshutdown: {str(k)}")
+                self._command_detach(kernel, k)
                 self._signal_detach(k)
                 self._lookup_detach(k)
                 if hasattr(k, "preshutdown"):
@@ -887,6 +890,7 @@ class Kernel(Settings):
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_SHUTDOWN
                 if channel:
                     channel(f"kernel-shutdown: {str(k)}")
+                self._command_detach(kernel, k)
                 self._signal_detach(k)
                 self._lookup_detach(k)
                 if hasattr(k, "shutdown"):
@@ -922,6 +926,7 @@ class Kernel(Settings):
                     channel(f"service-added: {str(s)}")
                 if hasattr(s, "added"):
                     s.added(*args, **kwargs)
+                self._command_attach(service, s)
 
         # Update plugin: added
         if start < LIFECYCLE_SERVICE_ADDED <= end:
@@ -1017,6 +1022,7 @@ class Kernel(Settings):
                     channel(f"service-shutdown: {str(s)}")
                 if hasattr(s, "shutdown"):
                     s.shutdown(*args, **kwargs)
+                self._command_detach(service, s)
 
         # Update plugin: shutdown
         if start < LIFECYCLE_KERNEL_SHUTDOWN <= end:
@@ -2134,6 +2140,53 @@ class Kernel(Settings):
             self._removing_listeners.append((signal, funct, lifecycle_object))
         # if len(self._removing_listeners) != len(set(self._removing_listeners)):
         #     print("Warning duplicate listener removing.")
+
+    def _command_attach(
+        self,
+        registration: None,
+        scan_object: Union[Service, Module, None] = None,
+    ) -> None:
+        """
+        Registers any "@console_commands" into the kernel.
+
+        @param scan_object: object to scan for command_console functions
+        @return:
+        """
+        obj_class = type(scan_object)
+        for attr in dir(scan_object):
+            # Handle is excluded. triggers a knock-on effect bug in wxPython GTK systems.
+            if attr == "Handle":
+                continue
+            if isinstance(getattr(obj_class, attr, None), property):
+                continue
+            func = getattr(scan_object, attr)
+            if hasattr(func, "reg"):
+                if registration is None:
+                    func.reg(self, scan_object)
+                else:
+                    func.reg(registration, scan_object)
+
+    def _command_detach(
+        self,
+        registration: None,
+        scan_object: Any,
+    ) -> None:
+        """
+        @return:
+        """
+        obj_class = type(scan_object)
+        for attr in dir(scan_object):
+            # Handle is excluded. triggers a knock-on effect bug in wxPython GTK systems.
+            if attr == "Handle":
+                continue
+            if isinstance(getattr(obj_class, attr, None), property):
+                continue
+            func = getattr(scan_object, attr)
+            if hasattr(func, "unreg"):
+                if registration is None:
+                    func.unreg(self, scan_object)
+                else:
+                    func.unreg(registration, scan_object)
 
     def _signal_attach(
         self,
