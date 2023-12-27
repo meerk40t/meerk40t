@@ -328,7 +328,7 @@ def console_command(
                     inner.object = obj
                     reg.register(p, inner)
 
-        def unregister(reg):
+        def unregister(reg, obj=None):
             if force_kernel and hasattr(reg, "kernel"):
                 reg = reg.kernel
             console_command_remove(reg, path, input_type)
