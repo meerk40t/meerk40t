@@ -1582,12 +1582,28 @@ class MoveWidget(Widget):
                 # with the points of the non-selected elements (provided they
                 # lie within the selection area plus boundary) and look for
                 # the closest distance.
-                # It's probably a *very* stupid way of dealing with it via
-                # numpy, so any further optimisation would be welcome
+
+                def shortest_distance(p1, p2):
+                    """
+                    Calculates the shortest distance between two arrays of 2-dimensional points.
+                    """
+                    # Calculate the Euclidean distance between each point in p1 and p2
+                    dist = np.sqrt(np.sum((p1[:, np.newaxis] - p2) ** 2, axis=2))
+
+                    # Find the minimum distance and its corresponding indices
+                    min_dist = np.min(dist)
+                    min_indices = np.argwhere(dist == min_dist)
+
+                    # Return the coordinates of the two points
+                    return min_dist, p1[min_indices[0][0]], p2[min_indices[0][1]]
+
                 other_points = []
+                selected_points = []
                 for e in self.scene.context.elements.elems():
                     if e.emphasized:
-                        continue
+                        target = selected_points
+                    else:
+                        target = other_points
                     if not hasattr(e, "as_geometry"):
                         continue
                     geom = e.as_geometry()
@@ -1607,7 +1623,7 @@ class MoveWidget(Widget):
                                     or yy > b[3] + gap
                                 )
                                 if not ignore:
-                                    other_points.append((start.real, start.imag))
+                                    target.append((start.real, start.imag))
                             xx = end.real
                             yy = end.imag
                             ignore = (
@@ -1617,53 +1633,19 @@ class MoveWidget(Widget):
                                 or yy > b[3] + gap
                             )
                             if not ignore:
-                                other_points.append((end.real, end.imag))
+                                target.append((end.real, end.imag))
                             last = end
                 if len(other_points) > 0:
-                    smallest_distance = float("inf")
-                    dx = 0
-                    dy = 0
-                    other_nodes = np.asarray(other_points)
-                    for e in self.scene.context.elements.elems(emphasized=True):
-                        if not hasattr(e, "as_geometry"):
-                            continue
-                        geom = e.as_geometry()
-                        last = None
+                    np_other = np.asarray(other_points)
+                    np_selected = np.asarray(selected_points)
+                    dist, pt1, pt2 = shortest_distance(
+                        np_other, np_selected
+                    )
 
-                        def calc_distance(point):
-                            # https://codereview.stackexchange.com/questions/28207/finding-the-closest-point-to-a-list-of-points
-                            node = (point.real, point.imag)
-                            dist_2 = np.sum((other_nodes - node) ** 2, axis=1)
-                            closest_index = np.argmin(dist_2)
-                            closest = other_nodes[closest_index]
-                            pgap = math.sqrt(
-                                (closest[0] - node[0]) ** 2
-                                + (closest[1] - node[1]) ** 2
-                            )
-                            pdx = closest[0] - node[0]
-                            pdy = closest[1] - node[1]
-                            return pgap, pdx, pdy
-
-                        for seg in geom.segments[: geom.index]:
-                            start = seg[0]
-                            seg_type = int(seg[2].real)
-                            end = seg[4]
-                            if seg_type != TYPE_END:
-                                if last != start:
-                                    ddist, ddx, ddy = calc_distance(start)
-                                    if ddist < gap and ddist < smallest_distance:
-                                        did_snap_to_point = True
-                                        smallest_distance = ddist
-                                        dx = ddx
-                                        dy = ddy
-                                ddist, ddx, ddy = calc_distance(end)
-                                if ddist < gap and ddist < smallest_distance:
-                                    did_snap_to_point = True
-                                    smallest_distance = ddist
-                                    dx = ddx
-                                    dy = ddy
-                                last = end
-                    if did_snap_to_point:
+                    if dist < gap:
+                        did_snap_to_point = True
+                        dx = pt1[0] - pt2[0]
+                        dy = pt1[1] - pt2[1]
                         self.total_dx = 0
                         self.total_dy = 0
                         move_to(dx, dy)
