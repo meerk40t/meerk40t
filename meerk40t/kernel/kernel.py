@@ -2274,11 +2274,13 @@ class Kernel(Settings):
             except UnicodeDecodeError:
                 return
         self._console_buffer += data
+        data_out = None
         while "\n" in self._console_buffer:
             pos = self._console_buffer.find("\n")
             command = self._console_buffer[0:pos].strip("\r")
             self._console_buffer = self._console_buffer[pos + 1 :]
-            self._console_parse(command, channel=self._console_channel)
+            data_out = self._console_parse(command, channel=self._console_channel)
+        return data_out
 
     def _console_interface(self, command: str):
         pass
