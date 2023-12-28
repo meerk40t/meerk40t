@@ -15,10 +15,10 @@ LockWidget: Widget to lock and unlock the given object.
 
 
 import math
+from time import perf_counter
 
 import numpy as np
 import wx
-from time import perf_counter
 
 from meerk40t.core.elements.element_types import *
 from meerk40t.core.units import Length
@@ -1643,9 +1643,7 @@ class MoveWidget(Widget):
                 if len(other_points) > 0:
                     np_other = np.asarray(other_points)
                     np_selected = np.asarray(selected_points)
-                    dist, pt1, pt2 = shortest_distance(
-                        np_other, np_selected
-                    )
+                    dist, pt1, pt2 = shortest_distance(np_other, np_selected)
 
                     if dist < gap:
                         did_snap_to_point = True
@@ -1670,15 +1668,13 @@ class MoveWidget(Widget):
                     (b[2], b[1]),
                     (b[0], b[3]),
                     (b[2], b[3]),
-                    ((b[0] + b[2]) / 2, (b[1] + b[3])/2),
+                    ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
                 )
                 other_points = self.scene.pane.grid.grid_points
                 if len(other_points) > 0:
                     np_other = np.asarray(other_points)
                     np_selected = np.asarray(selected_points)
-                    dist, pt1, pt2 = shortest_distance(
-                        np_other, np_selected
-                    )
+                    dist, pt1, pt2 = shortest_distance(np_other, np_selected)
                     if dist < gap:
                         did_snap_to_point = True
                         dx = pt1[0] - pt2[0]
