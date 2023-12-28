@@ -33,7 +33,7 @@ from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import StaticBoxSizer, create_menu_for_node
 from meerk40t.svgelements import Point
-from meerk40t.tools.geomstr import TYPE_END, Geomstr
+from meerk40t.tools.geomstr import TYPE_END
 
 NEARLY_ZERO = 1.0e-6
 
@@ -1559,13 +1559,11 @@ class MoveWidget(Widget):
             # )
 
         if event == 1:  # end
-            """
-            Cleanup - we check for:
-            a) Would a point of the selection snap to a point of the non-selected elements? If yes we are done
-            b) Use the distance of the 4 corners and the center to a grid point -> take smallest distance
-            c) Regular snap-check
-            d) Use magnet lines
-            """
+            # Cleanup - we check for:
+            # a) Would a point of the selection snap to a point of the non-selected elements? If yes we are done
+            # b) Use the distance of the 4 corners and the center to a grid point -> take smallest distance
+            # c) Regular snap-check
+            # d) Use magnet lines
 
             def shortest_distance(p1, p2):
                 """
