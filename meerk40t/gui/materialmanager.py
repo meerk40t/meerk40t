@@ -711,19 +711,19 @@ class MaterialPanel(ScrolledPanel):
 
         if self.categorisation == 1:
             # lasertype
-            sort_key_primary = "laser" # 3
-            sort_key_secondary = "material" # 1
-            sort_key_tertiary = "thickness" # 4
+            sort_key_primary = "laser"  # 3
+            sort_key_secondary = "material"  # 1
+            sort_key_tertiary = "thickness"  # 4
         elif self.categorisation == 2:
             # thickness
-            sort_key_primary = "thickness" # 4
+            sort_key_primary = "thickness"  # 4
             sort_key_secondary = "material"
-            sort_key_tertiary = "laser" # 3
+            sort_key_tertiary = "laser"  # 3
         else:
             # material
             sort_key_primary = "material"
-            sort_key_secondary = "thickness" # 4
-            sort_key_tertiary = "laser" # 3
+            sort_key_secondary = "thickness"  # 4
+            sort_key_tertiary = "laser"  # 3
         for key, entry in self.material_list.items():
             listidx += 1
             display.append((entry, listidx))
@@ -771,11 +771,14 @@ class MaterialPanel(ScrolledPanel):
             if not this_category_primary:
                 this_category_primary = "No " + sort_key_primary
             key = entry["section"]
-            if filtername is not None and filtername.lower() not in entry["material"].lower():
-                continue
-            if filterthickness is not None and not entry["thickness"].lower().startswith(
-                filterthickness.lower()
+            if (
+                filtername is not None
+                and filtername.lower() not in entry["material"].lower()
             ):
+                continue
+            if filterthickness is not None and not entry[
+                "thickness"
+            ].lower().startswith(filterthickness.lower()):
                 continue
             if filterlaser is not None:
                 if filterlaser not in (0, entry["laser"]):
@@ -2146,6 +2149,7 @@ class MaterialPanel(ScrolledPanel):
     def pane_hide(self):
         pass
 
+
 class ImportPanel(wx.Panel):
     """
     Displays a how to summary
@@ -2159,6 +2163,7 @@ class ImportPanel(wx.Panel):
         label = wx.StaticText(self, wx.ID_ANY, "UNDER CONSTRUCTION")
         main_sizer.Add(label, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
+
 
 class AboutPanel(wx.Panel):
     """

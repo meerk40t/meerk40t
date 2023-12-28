@@ -242,7 +242,9 @@ class LaserPanel(wx.Panel):
         sizer_main.Add(sizer_control_update, 0, wx.EXPAND, 0)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
-        self.rotary_indicator = wx.StaticText(self, wx.ID_ANY, _("Rotary active"), style=wx.ALIGN_CENTRE_HORIZONTAL)
+        self.rotary_indicator = wx.StaticText(
+            self, wx.ID_ANY, _("Rotary active"), style=wx.ALIGN_CENTRE_HORIZONTAL
+        )
         bg_color = self.context.themes.get("pause_bg")
         fg_color = self.context.themes.get("pause_fg")
         self.rotary_indicator.SetBackgroundColour(bg_color)

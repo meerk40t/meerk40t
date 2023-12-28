@@ -51,7 +51,9 @@ class SerialConnection:
             self.events("Connected")
 
             self.service.threaded(
-                self._run_serial_listener, thread_name=f"thread-{self.service.safe_label}", daemon=True
+                self._run_serial_listener,
+                thread_name=f"thread-{self.service.safe_label}",
+                daemon=True,
             )
             self.service.signal("pipe;usb_status", "connected")
             self.events("Connected")

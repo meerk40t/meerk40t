@@ -623,7 +623,6 @@ def init_tree(kernel):
             self.signal("element_property_update", data)
             self.signal("refresh_scene", "Scene")
 
-
     # @tree_submenu(_("Layout"))
     # @tree_prompt("dx", _("Distance between placements?"))
     # @tree_prompt(
@@ -1291,7 +1290,9 @@ def init_tree(kernel):
         # The arithmetic center (ax, ay) indicates to which
         # 'side' of the baseline the polygon needs to be constructed
         arithmetic_center = sum(pts[:-1]) / vertex_count
-        if Geomstr.distance(None, pt1 , arithmetic_center) < Geomstr.distance(None, pt2, arithmetic_center):
+        if Geomstr.distance(None, pt1, arithmetic_center) < Geomstr.distance(
+            None, pt2, arithmetic_center
+        ):
             center_point = pt1
         else:
             center_point = pt2
@@ -1762,7 +1763,11 @@ def init_tree(kernel):
     @tree_submenu(_("Append special operation(s)"))
     @tree_prompt("y", _("Y-Coordinate for placement to append?"))
     @tree_prompt("x", _("X-Coordinate for placement to append?"))
-    @tree_operation(_("Append absolute placement"), node_type="branch ops", help=_("Start job at specicic location"))
+    @tree_operation(
+        _("Append absolute placement"),
+        node_type="branch ops",
+        help=_("Start job at specicic location"),
+    )
     def append_absolute_placement(node, y, x, pos=None, **kwargs):
         self.op_branch.add(
             type="place point",
@@ -1775,9 +1780,15 @@ def init_tree(kernel):
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))
-    @tree_operation(_("Append relative placement"), node_type="branch ops", help=_("Start job at current laserposition"))
+    @tree_operation(
+        _("Append relative placement"),
+        node_type="branch ops",
+        help=_("Start job at current laserposition"),
+    )
     def append_relative_placement(node, **kwargs):
-        self.op_branch.add(type="place current",)
+        self.op_branch.add(
+            type="place current",
+        )
         self.signal("updateop_tree")
 
     @tree_operation(

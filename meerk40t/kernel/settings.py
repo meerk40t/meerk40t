@@ -103,7 +103,13 @@ class Settings:
 
                         v1_file = base_name + ".bak"
                         os.rename(targetfile, v1_file)
-                except (PermissionError, OSError, RuntimeError, FileExistsError, FileNotFoundError) as e:
+                except (
+                    PermissionError,
+                    OSError,
+                    RuntimeError,
+                    FileExistsError,
+                    FileNotFoundError,
+                ) as e:
                     # print (f"Error happened: {e}")
                     pass
             with open(targetfile, "w", encoding="utf-8") as fp:

@@ -239,7 +239,9 @@ class GalvoController:
         self.force_mock = force_mock
         self.is_shutdown = False  # Shutdown finished.
 
-        self.usb_log = service.channel(f"{self.service.safe_label}/usb", buffer_size=500)
+        self.usb_log = service.channel(
+            f"{self.service.safe_label}/usb", buffer_size=500
+        )
         self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
 
         self.connection = None

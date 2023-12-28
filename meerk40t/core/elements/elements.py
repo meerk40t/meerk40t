@@ -526,7 +526,9 @@ class Elemental(Service):
         self.setting(float, "svg_ppi", 96.0)
         self.setting(bool, "operation_default_empty", True)
 
-        self.op_data = Settings(self.kernel.name, "operations.cfg", create_backup=True) # keep backup
+        self.op_data = Settings(
+            self.kernel.name, "operations.cfg", create_backup=True
+        )  # keep backup
 
         self.wordlists = {"version": [1, self.kernel.version]}
 
@@ -1013,7 +1015,9 @@ class Elemental(Service):
             except AttributeError:
                 pass
 
-    def align_elements(self, data_to_align, alignbounds, positionx, positiony, as_group):
+    def align_elements(
+        self, data_to_align, alignbounds, positionx, positiony, as_group
+    ):
         """
 
         @param data_to_align: elements to align

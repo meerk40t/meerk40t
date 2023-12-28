@@ -177,6 +177,7 @@ I parametri da utilizzare, ad esempio, per tagliare l'acrilico sono molto divers
 È possibile condividere tali impostazioni di lavorazione dei materiali con la comunità MeerK40t e beneficiare dei contributi degli altri caricando e utilizzando le loro impostazioni.
 """
 
+
 def asset(context, asset):
     language = context.language
     lang = "english"

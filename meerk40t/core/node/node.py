@@ -725,16 +725,22 @@ class Node:
             if node is None:
                 node = self
             # Any change to position / size needs a recalculation of the bounds
-            self._parent.notify_translated(node=node, dx=dx, dy=dy, invalidate = True, **kwargs)
+            self._parent.notify_translated(
+                node=node, dx=dx, dy=dy, invalidate=True, **kwargs
+            )
 
-    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, invalidate=False, **kwargs):
+    def notify_scaled(
+        self, node=None, sx=1, sy=1, ox=0, oy=0, invalidate=False, **kwargs
+    ):
         if invalidate:
             self.set_dirty_bounds()
         if self._parent is not None:
             if node is None:
                 node = self
             # Any change to position / size needs a recalculation of the bounds
-            self._parent.notify_scaled(node=node, sx=sx, sy=sy, ox=ox, oy=oy, invalidate = True, **kwargs)
+            self._parent.notify_scaled(
+                node=node, sx=sx, sy=sy, ox=ox, oy=oy, invalidate=True, **kwargs
+            )
 
     def notify_altered(self, node=None, **kwargs):
         if self._parent is not None:

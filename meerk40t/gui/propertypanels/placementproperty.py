@@ -3,14 +3,16 @@ Display and Editing of the properties of 'place current', 'place point'
 """
 
 import math
+
 import wx
 
 from meerk40t.core.units import Angle, Length
 from meerk40t.gui.propertypanels.attributes import IdPanel
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, set_ctrl_value
 from meerk40t.kernel import signal_listener
-from meerk40t.tools.geomstr import Geomstr
 from meerk40t.svgelements import Color
+from meerk40t.tools.geomstr import Geomstr
+
 _ = wx.GetTranslation
 
 
@@ -106,7 +108,9 @@ class PlacementPanel(wx.Panel):
         pos_rot_sizer.Add(self.rot_sizer, 1, wx.EXPAND, 0)
         main_sizer.Add(pos_rot_sizer, 0, wx.EXPAND, 0)
 
-        self.grid_sizer_1 = StaticBoxSizer(self, wx.ID_ANY, _("Repetitions in X-direction"), wx.HORIZONTAL)
+        self.grid_sizer_1 = StaticBoxSizer(
+            self, wx.ID_ANY, _("Repetitions in X-direction"), wx.HORIZONTAL
+        )
         info_x1 = wx.StaticText(self, wx.ID_ANY, _("Repeats:"))
         self.text_repeats_x = TextCtrl(
             self,
@@ -132,7 +136,9 @@ class PlacementPanel(wx.Panel):
         self.grid_sizer_1.Add(info_x2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.grid_sizer_1.Add(self.text_gap_x, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.grid_sizer_2 = StaticBoxSizer(self, wx.ID_ANY, _("Repetitions in Y-direction"), wx.HORIZONTAL)
+        self.grid_sizer_2 = StaticBoxSizer(
+            self, wx.ID_ANY, _("Repetitions in Y-direction"), wx.HORIZONTAL
+        )
         info_y1 = wx.StaticText(self, wx.ID_ANY, _("Repeats:"))
         self.text_repeats_y = TextCtrl(
             self,
@@ -152,8 +158,12 @@ class PlacementPanel(wx.Panel):
             check="length",
             style=wx.TE_PROCESS_ENTER,
         )
-        self.text_repeats_x.SetToolTip(_("How many repetitions in X-direction?\n0 = As many as possible"))
-        self.text_repeats_y.SetToolTip(_("How many repetitions in Y-direction?\n0 = As many as possible"))
+        self.text_repeats_x.SetToolTip(
+            _("How many repetitions in X-direction?\n0 = As many as possible")
+        )
+        self.text_repeats_y.SetToolTip(
+            _("How many repetitions in Y-direction?\n0 = As many as possible")
+        )
         self.text_gap_x.SetToolTip(_("Gap between placements in X-direction"))
         self.text_gap_y.SetToolTip(_("Gap between placements in Y-direction"))
         self.grid_sizer_2.Add(info_y1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -183,35 +193,37 @@ class PlacementPanel(wx.Panel):
         self.slider_alternating_x = wx.Slider(self, wx.ID_ANY, 0, -200, 200)
         self.slider_alternating_y = wx.Slider(self, wx.ID_ANY, 0, -200, 200)
         ttip = _(
-            "Every other {area} can be displaced by a percentage of the gap in {direction}-direction\n"+
-            "Useful for honeycomb- or other irregular patterns that need to overlap"
+            "Every other {area} can be displaced by a percentage of the gap in {direction}-direction\n"
+            + "Useful for honeycomb- or other irregular patterns that need to overlap"
         ).format(area=_("column"), direction="X")
         self.text_alternating_x.SetToolTip(ttip)
         self.slider_alternating_x.SetToolTip(ttip)
         self.check_alt_x = wx.CheckBox(self, wx.ID_ANY)
         ttip = _(
-            "Rotate elements every other {area}\n"+
-            "Useful for triangular patterns."
+            "Rotate elements every other {area}\n" + "Useful for triangular patterns."
         ).format(area=_("column"))
         self.check_alt_x.SetToolTip(ttip)
         ttip = _(
-            "Every other {area} can be displaced by a percentage of the gap in {direction}-direction\n"+
-            "Useful for honeycomb- or other irregular patterns that need to overlap"
+            "Every other {area} can be displaced by a percentage of the gap in {direction}-direction\n"
+            + "Useful for honeycomb- or other irregular patterns that need to overlap"
         ).format(area=_("row"), direction="Y")
         self.text_alternating_y.SetToolTip(ttip)
         self.slider_alternating_y.SetToolTip(ttip)
         self.check_alt_y = wx.CheckBox(self, wx.ID_ANY)
         ttip = _(
-            "Rotate elements every other {area}\n"+
-            "Useful for triangular patterns."
+            "Rotate elements every other {area}\n" + "Useful for triangular patterns."
         ).format(area=_("row"))
         self.check_alt_y.SetToolTip(ttip)
 
-        self.alt_x_sizer = StaticBoxSizer(self, wx.ID_ANY, _("X-Displacement:"), wx.HORIZONTAL)
+        self.alt_x_sizer = StaticBoxSizer(
+            self, wx.ID_ANY, _("X-Displacement:"), wx.HORIZONTAL
+        )
         self.alt_x_sizer.Add(self.text_alternating_x, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         self.alt_x_sizer.Add(self.slider_alternating_x, 3, wx.ALIGN_CENTER_VERTICAL, 0)
         self.alt_x_sizer.Add(self.check_alt_x, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.alt_y_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Y-Displacement:"), wx.HORIZONTAL)
+        self.alt_y_sizer = StaticBoxSizer(
+            self, wx.ID_ANY, _("Y-Displacement:"), wx.HORIZONTAL
+        )
         self.alt_y_sizer.Add(self.text_alternating_y, 1, wx.EXPAND, 0)
         self.alt_y_sizer.Add(self.slider_alternating_y, 3, wx.EXPAND, 0)
         self.alt_y_sizer.Add(self.check_alt_y, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -257,10 +269,13 @@ class PlacementPanel(wx.Panel):
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
         self.combo_orientation.SetToolTip(
-            _("Orientation defines the sequence of placement points") + "\n" +
-            _("Left to right (unidirectional)") + "\n" +
-            _("Left to right (bidirectional)") + "\n" +
-            _("Top to bottom (bidirectional)")
+            _("Orientation defines the sequence of placement points")
+            + "\n"
+            + _("Left to right (unidirectional)")
+            + "\n"
+            + _("Left to right (bidirectional)")
+            + "\n"
+            + _("Top to bottom (bidirectional)")
         )
 
         self.corner_sizer.Add(info_orientation, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -274,14 +289,16 @@ class PlacementPanel(wx.Panel):
 
         info1 = wx.StaticText(self, wx.ID_ANY, _("Shape"))
         self.shape_information = (
-            ( _("Quadratic"), _("Side"), self.generate_quadratic ),
-            ( _("Hexagon"), _("Side"), self.generate_hexagon ),
-            ( _("Circular"), _("Diameter"), self.generate_circular ),
-            ( _("Triangular"), _("Side"), self.generate_triangular ),
+            (_("Quadratic"), _("Side"), self.generate_quadratic),
+            (_("Hexagon"), _("Side"), self.generate_hexagon),
+            (_("Circular"), _("Diameter"), self.generate_circular),
+            (_("Triangular"), _("Side"), self.generate_triangular),
         )
         choices = [e[0] for e in self.shape_information]
 
-        self.combo_shape = wx.ComboBox(self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.combo_shape = wx.ComboBox(
+            self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
         ttip = _("Please provide some data about the intended tiling")
         self.combo_shape.SetToolTip(ttip)
 
@@ -290,9 +307,13 @@ class PlacementPanel(wx.Panel):
         self.text_dimension.SetToolTip(ttip)
 
         self.btn_generate = wx.Button(self, wx.ID_ANY, _("Define"))
-        self.btn_generate.SetToolTip(_("Establishes the parameter for the selected grid-type"))
+        self.btn_generate.SetToolTip(
+            _("Establishes the parameter for the selected grid-type")
+        )
         self.check_generate = wx.CheckBox(self, wx.ID_ANY)
-        self.check_generate.SetToolTip(_("If set then Define will create a matching pattern too"))
+        self.check_generate.SetToolTip(
+            _("If set then Define will create a matching pattern too")
+        )
         self.helper_sizer.Add(info1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.helper_sizer.Add(self.combo_shape, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         self.helper_sizer.Add(self.dimension_info, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -325,8 +346,16 @@ class PlacementPanel(wx.Panel):
         self.text_dimension.SetActionRoutine(self.on_dimension)
         self.btn_generate.Bind(wx.EVT_BUTTON, self.on_btn_generate)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
-        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_alternating_x, self.slider_alternating_x)
-        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_alternating_y, self.slider_alternating_y)
+        self.Bind(
+            wx.EVT_COMMAND_SCROLL,
+            self.on_slider_alternating_x,
+            self.slider_alternating_x,
+        )
+        self.Bind(
+            wx.EVT_COMMAND_SCROLL,
+            self.on_slider_alternating_y,
+            self.slider_alternating_y,
+        )
 
     def pane_hide(self):
         pass
@@ -562,13 +591,17 @@ class PlacementPanel(wx.Panel):
         self.text_alternating_y.SetValue(f"{value}%")
         self.on_text_alternating_y()
 
-    def on_check_alternate_x(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    def on_check_alternate_x(
+        self, event=None
+    ):  # wxGlade: OperationProperty.<event_handler>
         f = bool(self.check_alt_x.GetValue())
         if self.operation.alternate_rot_x != f:
             self.operation.alternate_rot_x = f
             self.context.elements.signal("element_property_update", self.operation)
 
-    def on_check_alternate_y(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    def on_check_alternate_y(
+        self, event=None
+    ):  # wxGlade: OperationProperty.<event_handler>
         f = bool(self.check_alt_y.GetValue())
         if self.operation.alternate_rot_y != f:
             self.operation.alternate_rot_y = f
@@ -902,9 +935,9 @@ class PlacementPanel(wx.Panel):
             node = self.context.elements.elem_branch.add(
                 type="elem path",
                 geometry=geom,
-                stroke = Color("blue"),
-                stroke_width = 1000,
-                label = "Template",
+                stroke=Color("blue"),
+                stroke_width=1000,
+                label="Template",
             )
             data = [node]
             if self.context.elements.classify_new:

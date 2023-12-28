@@ -73,7 +73,10 @@ class MoshiDriver(Parameters):
         def primary_hold():
             if self.out_pipe is None:
                 return True
-            if hasattr(self.service.controller, "is_shutdown") and self.service.controller.is_shutdown:
+            if (
+                hasattr(self.service.controller, "is_shutdown")
+                and self.service.controller.is_shutdown
+            ):
                 raise ConnectionAbortedError("Cannot hold for a shutdown pipe.")
             return self.paused
 
@@ -550,10 +553,12 @@ class MoshiDriver(Parameters):
         @param values:
         @return:
         """
+
         def temp_hold():
             try:
                 return (
-                    self.service.controller.state == "wait" or len(self.service.controller) != 0
+                    self.service.controller.state == "wait"
+                    or len(self.service.controller) != 0
                 )
             except TypeError:
                 return False

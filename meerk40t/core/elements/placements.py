@@ -21,7 +21,6 @@ def init_commands(kernel):
     # PLACEMENTS
     # ==========
 
-
     @self.console_option(
         "loops", "l", type=int, help=_("placement repetitions"), default=0
     )
@@ -35,8 +34,18 @@ def init_commands(kernel):
         help=_("placement corner (0=TL, 1=TR, 2=BR, 3=BL, 4=center)"),
         default=-1,
     )
-    @self.console_option("nx", "s", type=int, help=_("How many placements on the X-Axis?\n(0 = as many as fit on the bed)"))
-    @self.console_option("ny", "t", type=int, help=_("How many placements on the Y-Axis?\n(0 = as many as fit on the bed)"))
+    @self.console_option(
+        "nx",
+        "s",
+        type=int,
+        help=_("How many placements on the X-Axis?\n(0 = as many as fit on the bed)"),
+    )
+    @self.console_option(
+        "ny",
+        "t",
+        type=int,
+        help=_("How many placements on the Y-Axis?\n(0 = as many as fit on the bed)"),
+    )
     @self.console_option("dx", "m", type=Length, help=_("Gap in x-direction"))
     @self.console_option("dy", "n", type=Length, help=_("Gap in y-direction"))
     @self.console_argument("x", type=Length, help=_("x coord"))
@@ -48,12 +57,21 @@ def init_commands(kernel):
         output_type="ops",
         all_arguments_required=True,
     )
-    def place_points(command, channel, _,
-        x=None, y=None,
-        nx=None, ny=None,
-        dx=None, dy=None,
-        rotation=None, corner=None, loops=None,
-        **kwargs):
+    def place_points(
+        command,
+        channel,
+        _,
+        x=None,
+        y=None,
+        nx=None,
+        ny=None,
+        dx=None,
+        dy=None,
+        rotation=None,
+        corner=None,
+        loops=None,
+        **kwargs,
+    ):
         if loops is None:
             loops = 1
         if corner is None:

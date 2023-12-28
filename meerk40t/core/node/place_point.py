@@ -6,6 +6,7 @@ the relative position
 """
 import ast
 from math import tau
+
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import Angle, Length
 from meerk40t.svgelements import Matrix
@@ -195,7 +196,7 @@ class PlacePointNode(Node):
                     y += self.dy
                     yloop += 1
         result = []
-        sorted_result= []
+        sorted_result = []
         y = org_y - cy
         # print (f"Generating {xloop}x{yloop}")
         for ycount in range(yloop):

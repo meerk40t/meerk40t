@@ -248,7 +248,9 @@ class MoshiControllerPanel(wx.Panel):
 
     def pane_show(self):
         self._channel_watch = f"{self.context.safe_label}/usb"
-        self.context.channel(self._channel_watch, buffer_size=500).watch(self.update_text)
+        self.context.channel(self._channel_watch, buffer_size=500).watch(
+            self.update_text
+        )
         self.context.listen("pipe;status", self.update_status)
         self.context.listen("pipe;usb_status", self.on_connection_status_change)
         self.context.listen("pipe;state", self.on_connection_state_change)
