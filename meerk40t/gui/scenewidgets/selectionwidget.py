@@ -1685,6 +1685,9 @@ class MoveWidget(Widget):
 
                 t2 = perf_counter()
                 # print (f"Corner-points, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t2-t1:.2f}sec")
+                if did_snap_to_point:
+                    # Even then magnets win!
+                    self.check_for_magnets()
 
             if not did_snap_to_point:
                 if nearest_snap is None:
