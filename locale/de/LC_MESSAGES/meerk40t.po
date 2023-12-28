@@ -5253,6 +5253,34 @@ msgstr "Bitte zunächst einen cutcode-Eintrag"
 msgid "from the operations panel"
 msgstr "aus der Arbeitsablauf-Liste auswählen"
 
+#: ./meerk40t\gui\simulation.py:843
+msgid "Apply the settings and recalculate the cutplan"
+msgstr "Nutze Einstellungen und berechne den Cutplan neu"
+
+#: ./meerk40t\gui\simulation.py:882
+msgid "Start the simulation replay"
+msgstr "Starte die Simulations-Wiedergabe"
+
+#: ./meerk40t\gui\simulation.py:884
+msgid "Set the speed for the simulation"
+msgstr "Setze Wiedergabegeschwindigkeit"
+
+#: ./meerk40t\gui\simulation.py:904
+msgid "Send the current cutplan to the laser."
+msgstr "Sende den aktuellen Cutplan an den Laser"
+
+#: ./meerk40t\gui\simulation.py:1042
+msgid "Extra Time"
+msgstr "Extra"
+
+#: ./meerk40t\gui\simulation.py:1332
+msgid "Show travel path"
+msgstr "Zeige Leerfahrten"
+
+#: ./meerk40t\gui\simulation.py:1333
+msgid "Displays the laser travel when not burning"
+msgstr "Zeigt die Laserbewegungen zwischen Brennvorgängen"
+
 msgid "Tolerance to decide if a shape is truly inside another one."
 msgstr ""
 "Toleranz bei der Überprüfung, ob ein Element wirklich vollständig\n"
@@ -10578,6 +10606,10 @@ msgstr "Wählen Sie den zu verwendenden Dithering-Algorithmus aus"
 msgid "Invert Grayscale"
 msgstr "Graustufen invertieren"
 
+#: ./meerk40t\gui\propertypanels\imageproperty.py:1205
+msgid "Reset the grayscale modifiers to standard values"
+msgstr ""
+
 #: meerk40t/gui/propertypanels/imageproperty.py:149
 msgid "Red component amount"
 msgstr "Aussteuerung Rot-Anteil"
@@ -15090,6 +15122,9 @@ msgstr "QR-Code"
 msgid "Options:"
 msgstr "Optionen:"
 
+msgid "Options"
+msgstr "Optionen"
+
 msgid "How wide/high will the resulting qr-code be?"
 msgstr "Welche Größe soll der QR-Code haben?"
 
@@ -16983,7 +17018,7 @@ msgstr "Eintrag löschen"
 
 #: ./meerk40t\gui\propertypanels\imageproperty.py:571
 msgid "Will delete the current entry"
-msgstr "Löschte den aktuellen Eintrag"
+msgstr "Lösche den aktuellen Eintrag"
 
 #: ./meerk40t\gui\propertypanels\imageproperty.py:578
 msgid "Toggles enable-status of operation"
@@ -17004,6 +17039,14 @@ msgstr "{op} anhängen"
 #: ./meerk40t\gui\propertypanels\imageproperty.py:598
 msgid "Will append this operation to the end of the list"
 msgstr "Hängt diese Operation ans Ende der Liste an"
+
+#: ./meerk40t\gui\propertypanels\imageproperty.py:402
+msgid "Apply image modification script\nRight click: append to existing script"
+msgstr "Verwende Bildbearbeitungs-Script\nRechts-Click: an bestehende Operationen anhängen"
+
+#: ./meerk40t\gui\propertypanels\imageproperty.py:405
+msgid "Remove all image operations"
+msgstr "Alle Bild-Operationen entfernen"
 
 #: ./meerk40t\core\elements\elements.py:326
 msgid "Remove unused default operations"
@@ -17984,7 +18027,7 @@ msgstr "Wabengitter"
 
 #: ./meerk40t\gui\propertypanels\placementproperty.py:263
 msgid "Circular"
-msgstr "Keise"
+msgstr "Kreise"
 
 #: ./meerk40t\gui\propertypanels\placementproperty.py:263
 msgid "Diameter"
@@ -18001,3 +18044,312 @@ msgstr "Festlegen"
 #: ./meerk40t\gui\propertypanels\placementproperty.py:276
 msgid "Establishes the parameter for the selected grid-type"
 msgstr "Legt die passenden Parameter für einen Gitter-Typ fest"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:195
+msgid "Rotate elements every other {area}\nUseful for triangular patterns."
+msgstr "Rotiert Elemente jede zweite {area}\nNotwendig bei Dreiecks-Kachelung."
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:280
+msgid "Triangular"
+msgstr "Dreieck"
+
+#: ./meerk40t\gui\propertypanels\placementproperty.py:295
+msgid "If set then Define will create a matching pattern too"
+msgstr "Falls aktiv, wird bei 'Festlegen' ein passendes Template miterzeugt"
+
+#: ./meerk40t\gui\statusbarwidgets\defaultoperations.py:185
+msgid "Open material manager"
+msgstr "Öffnet Material-Bibliothek"
+
+#: ./meerk40t\gui\materialmanager.py:42
+msgid "Consolidate same thickness for material"
+msgstr "Einträge mit gleicher Dicke zusammenführen"
+
+#: ./meerk40t\gui\materialmanager.py:44
+msgid "Compensate Lens-Sizes"
+msgstr "Linsen-Größe umrechnen"
+
+#: ./meerk40t\gui\materialmanager.py:47
+msgid "Compensate Power-Levels"
+msgstr "Leistung umrechnen"
+
+#: ./meerk40t\gui\materialmanager.py:61
+msgid "File to import"
+msgstr "Quelldatei"
+
+#: ./meerk40t\gui\materialmanager.py:74
+msgid "Different Lens-Size"
+msgstr "Andere Linsen"
+
+#: ./meerk40t\gui\materialmanager.py:97
+msgid "Different Laser-Power"
+msgstr "Andere Leistung"
+
+#: ./meerk40t\gui\materialmanager.py:128
+msgid "Provide the full filename for material library"
+msgstr "Der vollständige Dateiname der zu importierenden Datei"
+
+#: ./meerk40t\gui\materialmanager.py:130
+msgid "Click to select files"
+msgstr "Clicken um Dateien auszwählen"
+
+#: ./meerk40t\gui\materialmanager.py:132
+msgid "This will group entries with the same material description together"
+msgstr "Dies fasst Bibliotheks-Einträge mit derselben Materialbeschreibung zusammen"
+
+#: ./meerk40t\gui\materialmanager.py:137
+msgid "If active, power and speed values will be adjusted,\nto accommodate different lens-sizes"
+msgstr ""
+"Falls aktiv, werden die Werte für Leistung und Geschwindigkeit angepasst,\n"
+"um die unterschiedliche Linsengröße der verwendeten Laser zu kompensieren."
+
+#: ./meerk40t\gui\materialmanager.py:142
+msgid "If active, power and speed values will be adjusted,\nto accommodate different laser power"
+msgstr ""
+"Falls aktiv, werden die Werte für Leistung und Geschwindigkeit angepasst,\n"
+"um die unterschiedliche Ausgangleistung der verwendeten Laser zu kompensieren."
+
+#: ./meerk40t\gui\materialmanager.py:154
+msgid "Choose a library-file"
+msgstr "Bibliotheks-Datei auswählen"
+
+#: ./meerk40t\gui\materialmanager.py:304
+msgid "Filter Materials"
+msgstr "Materialien filtern"
+
+#: ./meerk40t\gui\materialmanager.py:306
+msgid "Material"
+msgstr "Material"
+
+#: ./meerk40t\gui\materialmanager.py:316
+msgid "Thickness"
+msgstr "Dicke"
+
+#: ./meerk40t\gui\materialmanager.py:326
+msgid "<All Lasertypes>"
+msgstr "<Alle Lasertypen>"
+
+#: ./meerk40t\gui\materialmanager.py:344
+msgid "Reset Filter"
+msgstr "Alle"
+
+#: ./meerk40t\gui\materialmanager.py:348
+msgid "Matching library entries"
+msgstr "Passend Bibliotheks-Einträge"
+
+#: ./meerk40t\gui\materialmanager.py:357
+msgid "Click to select / Right click for actions"
+msgstr "Click für Auswahl, Rechts-Click für Aktionen"
+
+#: ./meerk40t\gui\materialmanager.py:413
+msgid "Title"
+msgstr "Titel"
+
+#: ./meerk40t\gui\materialmanager.py:425
+msgid "Set"
+msgstr "Setzen"
+
+#: ./meerk40t\gui\materialmanager.py:429
+msgid ""
+"Change the name / lasertype of the current entry\n"
+"Right-Click: assign lasertype to all visible entries"
+msgstr ""
+"Speichere die Daten für den aktuellen Eintrag\n"
+"Rechtsclick: Setze den Lasertyp für alle sichtbaren Einträge"
+
+#: ./meerk40t\gui\materialmanager.py:498
+msgid "W"
+msgstr "W"
+
+#: ./meerk40t\gui\materialmanager.py:503
+msgid "Lens-Size"
+msgstr "Linsen-Größe"
+
+#: ./meerk40t\gui\materialmanager.py:524
+msgid "Filter entries with a certain title."
+msgstr "Filtert Einträge, die diesen Begriff im Titel enthalten"
+
+#: ./meerk40t\gui\materialmanager.py:526
+msgid "Filter entries with a certain material thickness."
+msgstr "Filtert Einträge mit dieser Dicke"
+
+#: ./meerk40t\gui\materialmanager.py:528
+msgid "Filter entries of a certain laser type"
+msgstr "Filter Einträge mit dem passenden Lasertyp"
+
+#: ./meerk40t\gui\materialmanager.py:530
+msgid "Internal name of the library entry."
+msgstr "Interner Schlüssel für den Eintrag"
+
+#: ./meerk40t\gui\materialmanager.py:531
+msgid "Name of the library entry."
+msgstr "Name des Eintrags"
+
+#: ./meerk40t\gui\materialmanager.py:532
+msgid "Thickness of the material."
+msgstr "Dicke des Materials"
+
+#: ./meerk40t\gui\materialmanager.py:534
+msgid "Is this entry specific for a certain laser?"
+msgstr "Ist dieser Eintrag spezifisch für einen Laser-Typ?"
+
+#: ./meerk40t\gui\materialmanager.py:536
+msgid "You can add additional information here."
+msgstr "Hier können Zusatzinformationen hinterlegt werden"
+
+#: ./meerk40t\gui\materialmanager.py:540
+msgid "Add new"
+msgstr "Neu"
+
+#: ./meerk40t\gui\materialmanager.py:541
+msgid "Add a new library entry"
+msgstr "Neuen Eintrag anlegen"
+
+#: ./meerk40t\gui\materialmanager.py:542
+msgid "Get current"
+msgstr "Aus Projekt laden"
+
+#: ./meerk40t\gui\materialmanager.py:543
+msgid "Use the currently defined operations"
+msgstr ""
+
+#: ./meerk40t\gui\materialmanager.py:544
+msgid "Load into Tree"
+msgstr "In Projekt übernehmen"
+
+#: ./meerk40t\gui\materialmanager.py:546
+msgid "Apply the current library entry to the operations branch"
+msgstr "Den aktiven Eintrag in die Projekt-Arbeitsvorgänge übernehmen"
+
+#: ./meerk40t\gui\materialmanager.py:548
+msgid "Use for statusbar"
+msgstr "Für Statuszeile"
+
+#: ./meerk40t\gui\materialmanager.py:550
+msgid "Use the current library entry for the statusbar icons"
+msgstr "Den aktiven Eintrag für die Statuszeilen-Knöpfe übernehmen"
+
+#: ./meerk40t\gui\materialmanager.py:553
+msgid "Delete the current library entry"
+msgstr "Aktuellen Eintrag löschen"
+
+#: ./meerk40t\gui\materialmanager.py:555
+msgid "Duplicate the current library entry"
+msgstr "Aktuellen Eintrag verdoppeln"
+
+#: ./meerk40t\gui\materialmanager.py:558
+msgid "Import a material library from ezcad or LightBurn"
+msgstr "Importiere die Material-Bibliothek von LightBurn oder EzCad"
+
+#: ./meerk40t\gui\materialmanager.py:560
+msgid "Share"
+msgstr "Teilen"
+
+#: ./meerk40t\gui\materialmanager.py:562
+msgid "Share the current library entry with the MeerK40t community"
+msgstr "Den aktuellen Bibliotheks-Eintrag mit der MeerK40t Community teilen."
+
+#: ./meerk40t\gui\materialmanager.py:632
+msgid "Click to hide extended infos"
+msgstr "Klicken, damit die erweiterten Infos ausgebelendet werden."
+
+#: ./meerk40t\gui\materialmanager.py:635
+msgid "Click to show extended infos"
+msgstr "Klicken, damit erweiterte Infos angezeigt werden."
+
+#: ./meerk40t\gui\materialmanager.py:748
+msgid "Materials"
+msgstr "Materialien"
+
+#: ./meerk40t\gui\materialmanager.py:868
+msgid ""
+"Thank you for your willingness to share your material setting with the MeerK40t community.\n"
+"Please provide a name to honor your authorship."
+msgstr ""
+"Vielen Dank für die Bereitschaft, diesen Material-Eintrag mit der MeerK40t Community zu teilen.\n"
+"Bitte den Namen angeben, damit wir die Herkunft würdigen können."
+
+#: ./meerk40t\gui\materialmanager.py:869
+msgid "Share material setting"
+msgstr "Material-Eintrag teilen"
+
+#: ./meerk40t\gui\materialmanager.py:987
+msgid "We got your file. Thank you for helping\n\n"
+msgstr "Datei erfolgreich hochgeladen, Danke für die Hilfe.\n\n"
+
+#: ./meerk40t\gui\materialmanager.py:997
+msgid "We're sorry, that didn't work.\n\n"
+msgstr "Tut uns leid, das scheint nicht geklappt zu haben.\n\n"
+
+#: ./meerk40t\gui\materialmanager.py:1053
+msgid "Do you really want to delete this entry? This can't be undone."
+msgstr "Soll dieser Eintrag wirklich gelöscht werden? Das kann nicht rückgängig gemacht werden."
+
+#: ./meerk40t\gui\materialmanager.py:1064
+msgid "Do you really want to delete all visible entries? This can't be undone."
+msgstr "Sollen wirklich alle angezeigten Einträge gelöscht werden? Das kann nicht rückgängig gemacht werden."
+
+#: ./meerk40t\gui\materialmanager.py:1080
+msgid "Invalid file"
+msgstr "Ungültige Datei"
+
+#: ./meerk40t\gui\materialmanager.py:1516
+msgid "Do you want to remove all existing operations before loaading this set?"
+msgstr "Sollen alle bestehende Arbeitsvorgänge vor dem Laden dieser Einträge entfernt werden"
+
+#: ./meerk40t\gui\materialmanager.py:1517
+msgid "Clear Operation-List"
+msgstr "Arbeitsvorgänge löschen"
+
+#: ./meerk40t\gui\materialmanager.py:1580
+msgid "Do you want to use the operations in the tree for the current entry?"
+msgstr "Sollen die aktuellen Arbeitsvorgänge im Projekt-Baum geladen werden?"
+
+#: ./meerk40t\gui\materialmanager.py:1877
+msgid "Create minimal"
+msgstr "Minimal-Eintrag anlegen"
+
+#: ./meerk40t\gui\materialmanager.py:1879
+msgid "Create basic"
+msgstr "Basis-Eintrag anlegen"
+
+#: ./meerk40t\gui\materialmanager.py:1882
+msgid "Delete all"
+msgstr "Alle Löschen"
+
+#: ./meerk40t\gui\materialmanager.py:1885
+msgid "Sort by..."
+msgstr "Sortieren nach..."
+
+#: ./meerk40t\gui\materialmanager.py:1923
+msgid "Expand all"
+msgstr "Alles ausklappen"
+
+#: ./meerk40t\gui\materialmanager.py:1925
+msgid "Collapse all"
+msgstr "Alles einklappen"
+
+#: ./meerk40t\gui\materialmanager.py:2089
+msgid "Fill missing ids/label"
+msgstr "Fehlende IDs und Label setzen"
+
+#: ./meerk40t\gui\materialmanager.py:2227
+msgid "Library"
+msgstr "Bibliothek"
+
+#: ./meerk40t\gui\materialmanager.py:2233
+msgid "Material Library"
+msgstr "Materialien"
+
+msgid "Material Manager"
+msgstr "Materialien"
+
+#: ./meerk40t\gui\materialmanager.py:2256
+msgid "Manages Material Settings"
+msgstr "Verwaltung der Material-Bibliothek"
+
+msgid "Old:"
+msgstr "Alt:"
+
+msgid "New:"
+msgstr "Neu:"

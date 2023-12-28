@@ -75,9 +75,9 @@ class ImportDialog(wx.Dialog):
         )
 
         lens_param_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        label_old = wx.StaticText(self, wx.ID_ANY, "Old:")
+        label_old = wx.StaticText(self, wx.ID_ANY, _("Old:"))
         unit_old = wx.StaticText(self, wx.ID_ANY, "mm")
-        label_new = wx.StaticText(self, wx.ID_ANY, "New:")
+        label_new = wx.StaticText(self, wx.ID_ANY, _("New:"))
         unit_new = wx.StaticText(self, wx.ID_ANY, "mm")
         lens_param_sizer.Add(label_old, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         lens_param_sizer.Add(self.txt_lens_old, 0, 0, 0)
@@ -410,14 +410,12 @@ class MaterialPanel(ScrolledPanel):
         self.box_extended.Add(box3, 0, wx.EXPAND, 0)
         self.box_extended.Add(box4, 0, wx.EXPAND, 0)
 
+        def size_it(ctrl, minsize, maxsize):
+            ctrl.SetMinSize(dip_size(self, minsize, -1))
+            ctrl.SetMaxSize(dip_size(self, maxsize, -1))
+
         label = wx.StaticText(self, wx.ID_ANY, _("Title"))
-        # label.SetMinSize(
-        #     dip_size(
-        #         self,
-        #         60,
-        #         -1,
-        #     )
-        # )
+        # size_it(label, 60, 100)
         box1.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.txt_entry_title = wx.TextCtrl(self, wx.ID_ANY, "")
         box1.Add(self.txt_entry_title, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -440,13 +438,7 @@ class MaterialPanel(ScrolledPanel):
         box1.Add(self.btn_expand, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         label = wx.StaticText(self, wx.ID_ANY, _("Material"))
-        label.SetMinSize(
-            dip_size(
-                self,
-                60,
-                -1,
-            )
-        )
+        size_it(label, 60, 100)
         box2.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         # self.txt_entry_material = wx.TextCtrl(self, wx.ID_ANY, "")
         self.txt_entry_material = wx.ComboBox(
@@ -456,13 +448,13 @@ class MaterialPanel(ScrolledPanel):
         box2.Add(self.txt_entry_material, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         label = wx.StaticText(self, wx.ID_ANY, _("Thickness"))
-        label.SetMinSize(dip_size(self, 60, -1))
+        size_it(label, 60, 100)
         box2.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.txt_entry_thickness = TextCtrl(self, wx.ID_ANY, "", limited=True)
         box2.Add(self.txt_entry_thickness, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         label = wx.StaticText(self, wx.ID_ANY, _("Laser"))
-        label.SetMinSize(dip_size(self, 60, -1))
+        size_it(label, 60, 100)
         box3.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         choices = self.laser_choices  # [1:]
@@ -475,7 +467,7 @@ class MaterialPanel(ScrolledPanel):
         box3.AddSpacer(20)
 
         label = wx.StaticText(self, wx.ID_ANY, _("Id"))
-        label.SetMinSize(dip_size(self, 60, -1))
+        size_it(label, 60, 100)
         box3.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.txt_entry_section = TextCtrl(
             self,
@@ -487,7 +479,7 @@ class MaterialPanel(ScrolledPanel):
         box3.Add(self.txt_entry_section, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         label = wx.StaticText(self, wx.ID_ANY, _("Power"))
-        label.SetMinSize(dip_size(self, 60, -1))
+        size_it(label, 60, 100)
         box4.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.txt_entry_power = TextCtrl(
             self,
@@ -501,7 +493,7 @@ class MaterialPanel(ScrolledPanel):
         box4.AddSpacer(20)
 
         label = wx.StaticText(self, wx.ID_ANY, _("Lens-Size"))
-        label.SetMinSize(dip_size(self, 60, -1))
+        size_it(label, 60, 100)
         box4.Add(label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.txt_entry_lens = TextCtrl(
             self,
@@ -577,7 +569,6 @@ class MaterialPanel(ScrolledPanel):
         main_sizer.Add(outer_box, 1, wx.EXPAND, 0)
 
         self.SetSizer(main_sizer)
-        self.Layout()
         self.btn_reset.Bind(wx.EVT_BUTTON, self.on_reset)
         self.combo_lasertype.Bind(wx.EVT_COMBOBOX, self.update_list)
         self.txt_material.Bind(wx.EVT_TEXT, self.update_list)
@@ -616,6 +607,7 @@ class MaterialPanel(ScrolledPanel):
         self.btn_share.Show(self.share_ready)
         self.active_material = None
         self.expanded_info = False
+        self.Layout()
         self.on_reset(None)
 
     @property
