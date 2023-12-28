@@ -3780,7 +3780,7 @@ msgstr "Crescente"
 
 #: meerk40t/gui/materialtest.py:132
 msgid "Create Pattern"
-msgstr "Crea Pattern"
+msgstr "Crea modello"
 
 #: meerk40t/gui/materialtest.py:139
 msgid "Operation to test"
@@ -3804,7 +3804,7 @@ msgstr "Parametro:"
 
 #: meerk40t/gui/materialtest.py:168 meerk40t/gui/materialtest.py:222
 msgid "Count:"
-msgstr "Conteggio:"
+msgstr "Elementi:"
 
 #: meerk40t/gui/materialtest.py:173 meerk40t/gui/materialtest.py:227
 msgid "Minimum:"
@@ -3959,10 +3959,11 @@ msgstr "Altezza del pattern da creare"
 
 #: meerk40t/gui/materialtest.py:359
 msgid "Horizontal gap between patterns"
-msgstr "Spazio orizzontale tra i pattern"
+msgstr "Spazio orizzontale tra i modelli - patterns"
+
 #: meerk40t/gui/materialtest.py:360
 msgid "Vertical gap between patterns"
-msgstr ""
+msgstr "Spazio verticale tra i modelli - patterns"
 
 #: meerk40t/core/elements/element_treeops.py:1594
 #: meerk40t/core/elements/element_treeops.py:1604
@@ -4392,7 +4393,7 @@ msgstr "Valore interno attuale: "
 
 #: meerk40t/gui/navigationpanels.py:1982
 msgid "Jog Distance:"
-msgstr "Distanza di Jog:"
+msgstr "Spazio di spostamento:"
 
 #: meerk40t/gui/navigationpanels.py:2105
 msgid "Opens Navigation Window"
@@ -18048,31 +18049,38 @@ msgid "steps"
 msgstr ""
 
 msgid "Pattern"
-msgstr ""
+msgstr "Modello"
 
 msgid "Rectangular (box joints)"
-msgstr ""
+msgstr "Rettangolare (giunti a scatola)"
 
 msgid "Circular (inlays)"
-msgstr ""
+msgstr "Circolare (intarsi)"
 
 msgid "Slider"
-msgstr ""
+msgstr "Cursore"
 
 msgid "Cut-Operation"
-msgstr ""
+msgstr "Operazione di taglio"
 
 msgid "If you want to produce cut out shapes with *exact* dimensions after the burn, then you need to take half the width of the laserbeam into consideration (aka Kerf compensation).\nThis routine will create a couple of test shapes for you to establish this value.\nAfter you cut these shapes out you need to try to fit the shapes with the same label together. Choose the pair that has a perfect fit and use the label as your kerf-compensation value."
 msgstr "Se si desidera ottenere forme ritagliate con dimensioni *esatte* (ad esempio forme che vanno incastrate tra loro) è necessario considerare il materiale asportato dal laser per effetto della bruciatura: la metà di questa misura rappresenta il valore di compensazione KERF.\nLa routine creerà delle forme di prova per stabilire questo valore. \nDopo aver eseguito il taglio, provare a far combaciare le forme con la stessa etichetta. Scegliere la coppia che si adatta perfettamente e utilizzare l'etichetta come valore di compensazione."
 
+#: meerk40t\tools\kerftest.py:210
+msgid "% of maximum power - This is a percentage of the maximum power of the laser."
+msgstr "Valore in percentuale della potenza impostata del laser"
+
+#: meerk40t\tools\kerftest.py:184
 msgid "Minimum value for Kerf"
-msgstr ""
+msgstr "Valore minimo per Kerf"
 
+#: meerk40t\tools\kerftest.py:185
 msgid "Maximum value for Kerf"
-msgstr ""
+msgstr "Valore massimo per Kerf"
 
+#: meerk40t\tools\kerftest.py:186
 msgid "Dimension of the to be created pattern"
-msgstr ""
+msgstr "Dimensione del modello da creare"
 
 msgid "Create a test-pattern with your values"
 msgstr ""
@@ -18106,3 +18114,165 @@ msgstr "Disegna una stella a linee intersecanti (2)"
 
 msgid "Draw a growing polygon"
 msgstr "Disegna un poligono a spirale"
+
+msgid "Material Library"
+msgstr "Biblioteca dei materiali"
+
+msgid "Library"
+msgstr "Biblioteca"
+
+msgid "Filter Materials"
+msgstr "Filtro materiali"
+
+msgid "Thickness"
+msgstr "Spessore"
+
+msgid "Thickness of the material."
+msgstr "Spessore del materiale"
+
+msgid "Reset Filter"
+msgstr "Reset filtri"
+
+msgid "Matching library entries"
+msgstr "Corrispondenza delle voci della biblioteca"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:540
+msgid "Add new"
+msgstr "Crea nuovo"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:541
+msgid "Add a new library entry"
+msgstr "Aggiungere una nuova voce alla biblioteca"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:542
+msgid "Get current"
+msgstr "Aggiungi Operazioni in uso"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:542
+msgid "Use the currently defined operations"
+msgstr "Aggiungi alla biblioteca le impostazioni definite in Operazioni"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:543
+msgid "Utilizzare le operazioni attualmente impostate"
+msgstr "Aggiungere una nuova voce della biblioteca"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:548
+msgid "Use for statusbar"
+msgstr "Usa nella Statubar"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:550
+msgid "Use the current library entry for the statusbar icons"
+msgstr "Usa la voce della libreria selezionata per le icone nella barra di stato"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:544
+msgid "Load into Tree"
+msgstr "Carica in Operazioni"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:546
+msgid "Apply the current library entry to the operations branch"
+msgstr "Carica i dati della biblioteca in operazioni"
+
+msgid "Title"
+msgstr "Titolo"
+
+msgid "Material"
+msgstr "Materiale"
+
+msgid "Name of the library entry."
+msgstr "Nome della voce della biblioteca"
+
+msgid "Set"
+msgstr "Imposta"
+
+msgid "Operation"
+msgstr "Operazione"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:428
+msgid "Change the name / lasertype of the current entry\nRight-Click: assign lasertype to all visible entries"
+msgstr "Modificare il nome/il tipo di laser\nClick destro: assegna il tipo di laser a tutte le voci visibili.
+
+msgid "Click to hide extended infos"
+msgstr "Click per nascondere i dettagli"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:553
+msgid "Delete the current library entry"
+msgstr "Cancellare la biblioteca selezionata"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:555
+msgid "Duplicate the current library entry"
+msgstr "Duplica la biblioteca selezionata"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:535
+msgid "Click to show extended infos"
+msgstr "Click per avere informazioni più dettagliate"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:503
+msgid "Lens-Size"
+msgstr "Diametro-lente"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:357
+#: meerk40t\meerk40t\gui\materialmanager.py:376
+msgid "Click to select / Right click for actions"
+msgstr "Click per selezionare/click destro per le azioni"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:555
+msgid "Duplicate the current library entry"
+msgstr "Duplica la biblioteca selezionata"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:558
+msgid "Import a material library from ezcad or LightBurn"
+msgstr "Importa una biblioteca di materiali da ezcad o LightBurn"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:1877
+msgid "Create minimal"
+msgstr "Crea una biblioteca minima"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:1879
+msgid "Create basic"
+msgstr "Crea una biblioteca base"
+
+msgid "Delete all"
+msgstr "Cancella tutto"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:1923
+msgid "Expand all"
+msgstr "Espandi tutto"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:1925
+msgid "Collapse all"
+msgstr "Comprimi tutto"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:526
+msgid "Filter entries with a certain material thickness."
+msgstr "Filtra per spessore"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:528
+msgid "Filter entries of a certain laser type"
+msgstr "Filtra per tipo di CNC (laser)"
+
+msgid "Materials"
+msgstr "Materiali"
+
+#: meerk40t\gui\alignment.py:1612
+msgid "Element Alignment"
+msgstr "Allineamento elementi"
+
+#: meerk40t\gui\imagesplitter.py:511
+msgid "Image Splitting"
+msgstr "Divisione immagine"
+
+#: meerk40t\gui\navigationpanels.py:2489
+msgid "Jog, Move and Transform"
+msgstr "Spostamenti e trasformazioni"
+
+#: meerk40t\tools\kerftest.py: 299
+msgid "Every {dist}"
+msgstr "Ogni {dist}"
+
+#: meerk40t\gui\position.py:228
+msgid "Set the point of reference for the element,\n"
+msgstr "Imposta il punto di riferimento per l'elemento,"
+
+#: meerk40t\gui\position.py:229
+msgid "which edge/corner should be put on the given location"
+msgstr "il cui bordo/angolo deve essere collocato nella posizione indicata"
