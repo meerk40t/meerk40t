@@ -15,6 +15,7 @@ LockWidget: Widget to lock and unlock the given object.
 
 
 import math
+
 import numpy as np
 import wx
 
@@ -30,8 +31,8 @@ from meerk40t.gui.scene.scene import (
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import StaticBoxSizer, create_menu_for_node
-from meerk40t.tools.geomstr import TYPE_END, Geomstr
 from meerk40t.svgelements import Point
+from meerk40t.tools.geomstr import TYPE_END, Geomstr
 
 NEARLY_ZERO = 1.0e-6
 
@@ -1558,21 +1559,31 @@ class MoveWidget(Widget):
 
         if event == 1:  # end
             """
-            We check for:
-            a) did a point of the selection snap to a point of the non-selected elements? If yes we are done
-            b) calculate the distance of the 4 corners and the center to a grid point -> take smallest distance
+            Cleanup - we check for:
+            a) Would a point of the selection snap to a point of the non-selected elements? If yes we are done
+            b) Use the distance of the 4 corners and the center to a grid point -> take smallest distance
             c) Use magnet lines
             """
             b = elements._emphasized_bounds
             if b is None:
                 b = elements.selected_area()
             did_snap_to_point = False
-            if self.scene.context.snap_points and not "shift" in modifiers and b is not None:
+            if (
+                self.scene.context.snap_points
+                and not "shift" in modifiers
+                and b is not None
+            ):
                 matrix = self.scene.widget_root.scene_widget.matrix
                 gap = self.scene.context.action_attract_len / matrix.value_scale_x()
                 # We gather all points of non-selected elements,
                 # but only those that lie within the boundaries
                 # of the selected area
+                # We compare every point of the selected elements
+                # with the points of the non-selected elements (provided they
+                # lie within the selection area plus boundary) and look for
+                # the closest distance.
+                # It's probably a *very* stupid way of dealing with it via
+                # numpy, so any further optimisation would be welcome
                 other_points = []
                 for e in self.scene.context.elements.elems():
                     if e.emphasized:
@@ -1589,12 +1600,22 @@ class MoveWidget(Widget):
                             if start != last:
                                 xx = start.real
                                 yy = start.imag
-                                ignore =  xx < b[0] - gap or xx > b[2] + gap or yy < b[1] - gap or yy > b[3] + gap
+                                ignore = (
+                                    xx < b[0] - gap
+                                    or xx > b[2] + gap
+                                    or yy < b[1] - gap
+                                    or yy > b[3] + gap
+                                )
                                 if not ignore:
                                     other_points.append((start.real, start.imag))
                             xx = end.real
                             yy = end.imag
-                            ignore =  xx < b[0] - gap or xx > b[2] + gap or yy < b[1] - gap or yy > b[3] + gap
+                            ignore = (
+                                xx < b[0] - gap
+                                or xx > b[2] + gap
+                                or yy < b[1] - gap
+                                or yy > b[3] + gap
+                            )
                             if not ignore:
                                 other_points.append((end.real, end.imag))
                             last = end
@@ -1612,10 +1633,13 @@ class MoveWidget(Widget):
                         def calc_distance(point):
                             # https://codereview.stackexchange.com/questions/28207/finding-the-closest-point-to-a-list-of-points
                             node = (point.real, point.imag)
-                            dist_2 = np.sum((other_nodes - node)**2, axis=1)
+                            dist_2 = np.sum((other_nodes - node) ** 2, axis=1)
                             closest_index = np.argmin(dist_2)
                             closest = other_nodes[closest_index]
-                            pgap = math.sqrt((closest[0] - node[0])**2 + (closest[1] - node[1])**2)
+                            pgap = math.sqrt(
+                                (closest[0] - node[0]) ** 2
+                                + (closest[1] - node[1]) ** 2
+                            )
                             pdx = closest[0] - node[0]
                             pdy = closest[1] - node[1]
                             return pgap, pdx, pdy
@@ -1638,6 +1662,7 @@ class MoveWidget(Widget):
                                     smallest_distance = ddist
                                     dx = ddx
                                     dy = ddy
+                                last = end
                     if did_snap_to_point:
                         self.total_dx = 0
                         self.total_dy = 0
@@ -1646,9 +1671,10 @@ class MoveWidget(Widget):
                 if nearest_snap is None:
                     move_to(lastdx, lastdy)
                 else:
-                    move_to(lastdx - self.master.offset_x, lastdy - self.master.offset_y)
-                if not did_snap_to_point:
-                    self.check_for_magnets()
+                    move_to(
+                        lastdx - self.master.offset_x, lastdy - self.master.offset_y
+                    )
+                self.check_for_magnets()
             # if abs(self.total_dx) + abs(self.total_dy) > 1e-3:
             #     # Did we actually move?
             #     # Remember this, it is still okay
