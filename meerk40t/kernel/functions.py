@@ -105,7 +105,7 @@ def console_command(
     input_type: Union[str, Tuple[str, ...]] = None,
     output_type: str = None,
     all_arguments_required: bool = False,
-    force_kernel: bool = False,
+    force: str = None,
 ):
     """
     Console Command registers is a decorator that registers a command to the kernel. Any commands that execute
@@ -124,7 +124,7 @@ def console_command(
     @param input_type: What is the incoming context for the command
     @param output_type: What is the outgoing context for the command
     @param all_arguments_required: Should raise a syntax error if any argument is unfilled
-    @param force_kernel: Forces an otherwise correct registration for a service into the global registration
+    @param force: force registration destination.
     @return:
     """
 
@@ -319,25 +319,35 @@ def console_command(
         inner.object = None
 
         # Process registration.
+        def unregister(reg, obj=None):
+            """
+            Unregister into registration.
+            """
+            if force == "kernel" and hasattr(reg, "kernel"):
+                reg = reg.kernel
+            console_command_remove(reg, path, input_type)
+
         def register(reg, obj=None):
-            if force_kernel and hasattr(reg, "kernel"):
+            """
+            Register in the service or kernel.
+            """
+            if force == "service":
+                if not hasattr(reg, "kernel"):
+                    # Force service reg, but kernel registration given. Abort.
+                    return
+            if force == "kernel" and hasattr(reg, "kernel"):
+                # force kernel reg, and given service. Use kernel.
                 reg = reg.kernel
             for cmd in cmds:
                 for i in ins:
                     p = f"command/{i}/{cmd}"
-                    inner.object = obj
                     reg.register(p, inner)
+            inner.object = obj
+            inner.unreg = unregister
 
-        def unregister(reg, obj=None):
-            if force_kernel and hasattr(reg, "kernel"):
-                reg = reg.kernel
-            console_command_remove(reg, path, input_type)
-
-        inner.unreg = unregister
         inner.reg = register
-
         if registration:
-            inner.reg(registration)
+            register(registration)
 
         return inner
 
@@ -345,11 +355,11 @@ def console_command(
 
 
 def kernel_console_command(*args, **kwargs):
-    return console_command(None, *args, **kwargs, force_kernel=True)
+    return console_command(None, *args, **kwargs, force="kernel")
 
 
 def service_console_command(*args, **kwargs):
-    return console_command(None, *args, **kwargs)
+    return console_command(None, *args, **kwargs, force="service")
 
 
 def console_command_remove(
