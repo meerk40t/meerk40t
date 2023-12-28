@@ -705,6 +705,7 @@ class Kernel(Settings):
             for plugin in self._kernel_plugins:
                 plugin(kernel, "register")
 
+        objects = self.get_linked_objects(kernel)
         for k in objects:
             if klp(k) < LIFECYCLE_KERNEL_CONFIGURE <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_CONFIGURE
@@ -890,7 +891,6 @@ class Kernel(Settings):
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_SHUTDOWN
                 if channel:
                     channel(f"kernel-shutdown: {str(k)}")
-                self._command_detach(kernel, k)
                 self._signal_detach(k)
                 self._lookup_detach(k)
                 if hasattr(k, "shutdown"):
