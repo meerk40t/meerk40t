@@ -1566,16 +1566,31 @@ class MoveWidget(Widget):
             c) Regular snap-check
             d) Use magnet lines
             """
+
+            def shortest_distance(p1, p2):
+                """
+                Calculates the shortest distance between two arrays of 2-dimensional points.
+                """
+                # Calculate the Euclidean distance between each point in p1 and p2
+                dist = np.sqrt(np.sum((p1[:, np.newaxis] - p2) ** 2, axis=2))
+
+                # Find the minimum distance and its corresponding indices
+                min_dist = np.min(dist)
+                min_indices = np.argwhere(dist == min_dist)
+
+                # Return the coordinates of the two points
+                return min_dist, p1[min_indices[0][0]], p2[min_indices[0][1]]
+
             b = elements._emphasized_bounds
             if b is None:
                 b = elements.selected_area()
+            matrix = self.scene.widget_root.scene_widget.matrix
             did_snap_to_point = False
             if (
                 self.scene.context.snap_points
                 and not "shift" in modifiers
                 and b is not None
             ):
-                matrix = self.scene.widget_root.scene_widget.matrix
                 gap = self.scene.context.action_attract_len / matrix.value_scale_x()
                 # We gather all points of non-selected elements,
                 # but only those that lie within the boundaries
@@ -1585,19 +1600,6 @@ class MoveWidget(Widget):
                 # lie within the selection area plus boundary) and look for
                 # the closest distance.
 
-                def shortest_distance(p1, p2):
-                    """
-                    Calculates the shortest distance between two arrays of 2-dimensional points.
-                    """
-                    # Calculate the Euclidean distance between each point in p1 and p2
-                    dist = np.sqrt(np.sum((p1[:, np.newaxis] - p2) ** 2, axis=2))
-
-                    # Find the minimum distance and its corresponding indices
-                    min_dist = np.min(dist)
-                    min_indices = np.argwhere(dist == min_dist)
-
-                    # Return the coordinates of the two points
-                    return min_dist, p1[min_indices[0][0]], p2[min_indices[0][1]]
                 t1 = perf_counter()
                 other_points = []
                 selected_points = []
