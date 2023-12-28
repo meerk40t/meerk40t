@@ -125,6 +125,7 @@ class MWindow(wx.Frame, Module):
             if display == wx.NOT_FOUND:
                 self.SetPosition((x, y))
         self.Show()
+        self.Raise()
         self.window_open()
 
     def module_close(self, *args, shutdown=False, **kwargs):
