@@ -18,6 +18,7 @@ import math
 
 import numpy as np
 import wx
+from time import perf_counter
 
 from meerk40t.core.elements.element_types import *
 from meerk40t.core.units import Length
@@ -1562,7 +1563,8 @@ class MoveWidget(Widget):
             Cleanup - we check for:
             a) Would a point of the selection snap to a point of the non-selected elements? If yes we are done
             b) Use the distance of the 4 corners and the center to a grid point -> take smallest distance
-            c) Use magnet lines
+            c) Regular snap-check
+            d) Use magnet lines
             """
             b = elements._emphasized_bounds
             if b is None:
@@ -1596,7 +1598,7 @@ class MoveWidget(Widget):
 
                     # Return the coordinates of the two points
                     return min_dist, p1[min_indices[0][0]], p2[min_indices[0][1]]
-
+                t1 = perf_counter()
                 other_points = []
                 selected_points = []
                 for e in self.scene.context.elements.elems():
@@ -1635,6 +1637,7 @@ class MoveWidget(Widget):
                             if not ignore:
                                 target.append((end.real, end.imag))
                             last = end
+                t2 = perf_counter()
                 if len(other_points) > 0:
                     np_other = np.asarray(other_points)
                     np_selected = np.asarray(selected_points)
@@ -1649,6 +1652,42 @@ class MoveWidget(Widget):
                         self.total_dx = 0
                         self.total_dy = 0
                         move_to(dx, dy)
+                t3 = perf_counter()
+                # print (f"Snap, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t3-t1:.2f}sec, Generation: {t2-t1:.2f}sec, shortest: {t3-t2:.2f}sec")
+            if (
+                self.scene.context.snap_grid
+                and not "shift" in modifiers
+                and b is not None
+                and not did_snap_to_point
+            ):
+                t1 = perf_counter()
+                gap = self.scene.context.grid_attract_len / matrix.value_scale_x()
+                # Check for corner points + center:
+                selected_points = (
+                    (b[0], b[1]),
+                    (b[2], b[1]),
+                    (b[0], b[3]),
+                    (b[2], b[3]),
+                    ((b[0] + b[2]) / 2, (b[1] + b[3])/2),
+                )
+                other_points = self.scene.pane.grid.grid_points
+                if len(other_points) > 0:
+                    np_other = np.asarray(other_points)
+                    np_selected = np.asarray(selected_points)
+                    dist, pt1, pt2 = shortest_distance(
+                        np_other, np_selected
+                    )
+                    if dist < gap:
+                        did_snap_to_point = True
+                        dx = pt1[0] - pt2[0]
+                        dy = pt1[1] - pt2[1]
+                        self.total_dx = 0
+                        self.total_dy = 0
+                        move_to(dx, dy)
+
+                t2 = perf_counter()
+                # print (f"Corner-points, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t2-t1:.2f}sec")
+
             if not did_snap_to_point:
                 if nearest_snap is None:
                     move_to(lastdx, lastdy)
