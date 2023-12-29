@@ -170,6 +170,9 @@ class FormatPainter():
             ("wobble_speed", False),
             ("wobble_type", False),
         )
+        self.path_update_needed = (
+            "mkfont", "mkfontsize",
+        )
         # State-Machine
         self._state = None
         self.state = INACTIVE
@@ -221,6 +224,7 @@ class FormatPainter():
                     continue
                 flag_changed = False
                 flag_classify = False
+                flag_pathupdate = False
                 for entry in self.possible_attributes:
                     attr = entry[0]
                     generic = entry[1]
@@ -235,12 +239,28 @@ class FormatPainter():
                             flag_changed = True
                             if attr in ("stroke", "fill"):
                                 flag_classify = True
+                            if attr in self.path_update_needed:
+                                flag_pathupdate = True
                         except ValueError:
                             continue
                 if flag_changed:
                     nodes_changed.append(node)
                     if node.type == "elem image":
                         nodes_images.append(node)
+                if flag_pathupdate:
+                    if hasattr(node, "mktext"):
+                        newtext = self.context.elements.wordlist_translate(
+                            node.mktext, elemnode=node, increment=False
+                        )
+                        oldtext = getattr(node, "_translated_text", "")
+                        if newtext != oldtext:
+                            node._translated_text = newtext
+                        kernel = self.context.kernel
+                        for property_op in kernel.lookup_all("path_updater/.*"):
+                            property_op(kernel.root, node)
+                        if hasattr(node, "_cache"):
+                            node._cache = None
+
                 if flag_classify:
                     nodes_classify.append(node)
             if len(nodes_changed) > 0:
