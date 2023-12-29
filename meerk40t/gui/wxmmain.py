@@ -2,6 +2,7 @@ import datetime
 import os
 import platform
 import sys
+from copy import copy
 from functools import partial
 
 import wx
@@ -56,6 +57,8 @@ from .icons import (  # icon_duplicate,; icon_nohatch,
     icon_mk_rectangular,
     icon_mk_redo,
     icon_mk_undo,
+    icon_paint_brush,
+    icon_paint_brush_green,
     icon_power_button,
     icons8_centerh,
     icons8_centerv,
@@ -114,6 +117,147 @@ from .mwindow import MWindow
 
 _ = wx.GetTranslation
 
+INACTIVE = "inactive"
+WAITING = "waiting"
+PASTING = "pasting"
+
+class FormatPainter():
+    def __init__(self, context, button, identifier, *args, **kwds):
+        self.context = context
+        # Path to button
+        self.button = button
+        self.identifier = identifier
+        # The node to use
+        self.template = None
+        # List of tuples with (attribute_name, generic)
+        self.possible_attributes = (
+            # Standard line and fill attributes
+            ("stroke", True),
+            ("stroke_width",  True),
+            ("stroke_scale", True),
+            ("fill", True),
+            ("linecap", True),
+            ("linejoin", True),
+            ("fillrule", True),
+            # Image attributes
+            ("dpi", False),
+            ("operations", False),
+            ("invert", False),
+            ("dither", False),
+            ("dither_type", False),
+            ("red", False),
+            ("green", False),
+            ("blue", False),
+            ("lightness", False),
+            # Text attributes
+            ("mkfont", True),
+            ("mkfontsize", True),
+            ("font_style", False),
+            ("font_variant", False),
+            ("font_weight", False),
+            ("font_stretch", False),
+            ("font_size", False),
+            ("line_height", False),
+            ("font_family", False),
+            # Hatches
+            ("hatch_distance", False),
+            ("hatch_angle", False),
+            ("hatch_angle_delta", False),
+            ("hatch_type", False),
+            # Wobbles
+            ("wobble_radius", False),
+            ("wobble_interval", False),
+            ("wobble_speed", False),
+            ("wobble_type", False),
+        )
+        # State-Machine
+        self._state = None
+        self.state = INACTIVE
+
+    @property
+    def state(self):
+        return self._state
+
+    @state.setter
+    def state(self, value):
+        if value not in (INACTIVE, WAITING, PASTING):
+            value = INACTIVE
+        if value == INACTIVE:
+            self.template = None
+        elif value == WAITING:
+            node = self.context.elements.first_emphasized
+            if node is not None and node.type not in ("file", "group"):
+                self.template = node
+                value = PASTING
+        elif value == PASTING:
+            pass
+        self._state = value
+        toggle = bool(value != INACTIVE)
+        self.context.signal(self.identifier, toggle)
+
+    def on_emphasis(self, *args):
+        if self.state == INACTIVE:
+            return
+        elif self.state == WAITING:
+            node = self.context.elements.first_emphasized
+            if node is None:
+                return
+            if node.type in ("file", "group"):
+                return
+            self.template = node
+            self.state = PASTING
+            return
+        elif self.state == PASTING:
+            try:
+                id = self.template.id
+            except (RuntimeError, AttributeError):
+                # No longer existing or invalid?
+                self.state = INACTIVE
+            nodes_changed = []
+            nodes_classify = []
+            nodes_images = []
+            for node in self.context.elements.elems(emphasized=True):
+                if node is self.template:
+                    continue
+                flag_changed = False
+                flag_classify = False
+                for entry in self.possible_attributes:
+                    attr = entry[0]
+                    generic = entry[1]
+                    if not generic and node.type != self.template.type:
+                        continue
+                    if hasattr(self.template, attr) and hasattr(node, attr):
+                        value = getattr(self.template, attr, None)
+                        if isinstance(value, (list, tuple)):
+                            value = copy(value)
+                        try:
+                            setattr(node, attr, value)
+                            flag_changed = True
+                            if attr in ("stroke", "fill"):
+                                flag_classify = True
+                        except ValueError:
+                            continue
+                if flag_changed:
+                    nodes_changed.append(node)
+                    if node.type == "elem image":
+                        nodes_images.append(node)
+                if flag_classify:
+                    nodes_classify.append(node)
+            if len(nodes_changed) > 0:
+                for node in nodes_images:
+                    node.update(None)
+                if len(nodes_classify) > 0 and self.context.elements.classify_new:
+                    self.context.elements.classify(nodes_classify)
+                self.context.signal("element_property_update", nodes_changed)
+                self.context.signal("refresh_scene", "Scene")
+
+
+    def on_click(self, *args):
+        # print(f"On_click called, state was : {self.state}")
+        if self.state == INACTIVE:
+            self.state = WAITING
+        else:
+            self.state = INACTIVE
 
 class MeerK40t(MWindow):
     """MeerK40t main window"""
@@ -736,6 +880,7 @@ class MeerK40t(MWindow):
 
     @signal_listener("emphasized")
     def on_update_statusbar(self, origin, *args):
+        self.format_painter.on_emphasis(args)
         value = self.context.elements.has_emphasis()
         self._update_status_menu(self.edit_menu, self.edit_menu_choice)
         self._update_status_menu(self.view_menu, self.view_menu_choice)
@@ -1142,6 +1287,27 @@ class MeerK40t(MWindow):
             set_icon_appearance(2.0, 0)
         else:
             set_icon_appearance(1.0, 0)
+
+        self.format_painter = FormatPainter(self.context, "button/basicediting/Paint", "editpaint")
+        self.context.kernel.register(
+            "button/basicediting/Paint",
+            {
+                "label": _("Paint format"),
+                "icon": icon_paint_brush,
+                "tip": _("First select your template, then every subsequent selection will apply the templates properties to the selected elements"),
+                "help": "basicediting",
+                "action": self.format_painter.on_click,
+                "identifier": "editpaint",
+                "toggle": {
+                    "label": _("Stop"),
+                    "help": "devicegrbl",
+                    "action": self.format_painter.on_click,
+                    "icon": icon_paint_brush_green,
+                    "signal": "editpaint",
+                    "tip": _("Click again to disable the paint mode")
+                },
+            },
+        )
 
     def open_property_window_for_node(self, node):
         """
@@ -1661,6 +1827,7 @@ class MeerK40t(MWindow):
                 "rule_enabled": lambda cond: clipboard_filled(),
             },
         )
+
         # kernel.register(
         #     "button/basicediting/Duplicate",
         #     {
