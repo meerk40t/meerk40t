@@ -1666,6 +1666,8 @@ class MaterialPanel(ScrolledPanel):
         if self.active_material is None:
             return
         op_section = self.txt_entry_section.GetValue()
+        for forbidden in (" []"):
+            op_section = op_section.replace(forbidden, "_")
         ctrls = (
             self.txt_entry_title,
             self.txt_entry_material,
