@@ -800,9 +800,9 @@ class wxMeerK40t(wx.App, Module):
         language = context.language
 
         # See issue #2103
-        # context.setting(str, "i18n", "en")
-        # language = context.i18n
-        # self.update_language_kernel(language)
+        context.setting(str, "i18n", "en")
+        language = context.i18n
+        self.update_language_kernel(language)
 
         from meerk40t.gui.help_assets.help_assets import asset
 
@@ -810,8 +810,8 @@ class wxMeerK40t(wx.App, Module):
             return asset(context, asset_name)
 
         context.asset = get_asset
-        if language is not None and language != 0:
-            self.update_language(language)
+        # if language is not None and language != 0:
+        #     self.update_language(language)
 
         kernel.register("window/MeerK40t", MeerK40t)
 

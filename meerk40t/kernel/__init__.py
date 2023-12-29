@@ -24,7 +24,8 @@ def set_language(domain, localedir, language):
     import sys
 
     localedirs = list()
-    try:  # pyinstaller internal location
+    try:
+        # pyinstaller internal location
         # pylint: disable=no-member
         _resource_path = os.path.join(sys._MEIPASS, localedir)
         localedirs.append(_resource_path)
