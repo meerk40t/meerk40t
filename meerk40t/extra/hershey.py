@@ -1,10 +1,12 @@
+from functools import lru_cache
 from glob import glob
 from os.path import basename, exists, join, realpath, splitext
 
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.kernel import get_safe_path
-from meerk40t.svgelements import Arc, Color, Path
+from meerk40t.svgelements import Color
+from meerk40t.tools.geomstr import Geomstr
 from meerk40t.tools.jhfparser import JhfFont
 from meerk40t.tools.shxparser import ShxFont, ShxFontParseError
 from meerk40t.tools.ttfparser import TrueTypeFont
@@ -12,29 +14,49 @@ from meerk40t.tools.ttfparser import TrueTypeFont
 
 class FontPath:
     def __init__(self):
-        self.path = Path()
+        self.geom = Geomstr()
+        self.start = None
 
     def new_path(self):
-        pass
+        self.geom.end()
 
     def move(self, x, y):
-        self.path.move((x, -y))
+        # self.geom.move((x, -y))
+        if self.start is not None:
+            self.geom.end()
+        self.start = x - 1j * y
 
     def line(self, x0, y0, x1, y1):
-        self.path.line((x1, -y1))
+        # self.path.line((x1, -y1))
+        end = x1 - 1j * y1
+        self.geom.line(self.start, end)
+        self.start = end
 
     def quad(self, x0, y0, x1, y1, x2, y2):
-        self.path.quad((x1, -y1), (x2, -y2))
+        # self.path.quad((x1, -y1), (x2, -y2))
+        control = x1 - 1j * y1
+        end = x2 - 1j * y2
+        self.geom.quad(self.start, control, end)
+        self.start = end
 
     def cubic(self, x0, y0, x1, y1, x2, y2, x3, y3):
-        self.path.cubic((x1, -y1), (x2, -y2), (x3, -y3))
+        # self.path.cubic((x1, -y1), (x2, -y2), (x3, -y3))
+        control0 = x1 - 1j * y1
+        control1 = x2 - 1j * y2
+        end = x3 - 1j * y3
+        self.geom.cubic(self.start, control0, control1, end)
+        self.start = end
 
     def close(self):
-        self.path.closed()
+        self.geom.close()
 
     def arc(self, x0, y0, cx, cy, x1, y1):
-        arc = Arc(start=(x0, -y0), control=(cx, -cy), end=(x1, -y1))
-        self.path += arc
+        # arc = Arc(start=(x0, -y0), control=(cx, -cy), end=(x1, -y1))
+        # self.path += arc
+        control = cx - 1j * cy
+        end = x1 - 1j * y1
+        self.geom.arc(self.start, control, end)
+        self.start = end
 
 
 def fonts_registered():
@@ -57,6 +79,33 @@ def have_hershey_fonts(context):
         for p in glob(join(font_dir, "*." + extension.upper())):
             return True
     return False
+
+@lru_cache(maxsize=128)
+def cached_fontclass(context, fontname):
+    registered_fonts = fonts_registered()
+    font_dir = getattr(context, "font_directory", "")
+    font_path = join(font_dir, fontname)
+    if not exists(font_path):
+        # Fallback to meerk40t directory...
+        safe_dir = realpath(get_safe_path(context.kernel.name))
+        font_path = join(safe_dir, fontname)
+        if not exists(font_path):
+            return
+    try:
+        filename, file_extension = splitext(font_path)
+        if len(file_extension) > 0:
+            # Remove dot...
+            file_extension = file_extension[1:].lower()
+        item = registered_fonts[file_extension]
+        fontclass = item[1]
+    except (KeyError, IndexError):
+        # channel(_("Unknown fonttype {ext}").format(ext=file_extension))
+        # print ("unknown fonttype, exit")
+        return
+    # print("Nearly there, all fonts checked...")
+    cfont = fontclass(font_path)
+
+    return cfont
 
 
 def validate_node(node):
@@ -108,58 +157,46 @@ def update_linetext(context, node, newtext):
     if not hasattr(node, "mkfontsize"):
         # print ("no fontsize attr, exit")
         return
+    # from time import perf_counter
+    # _t0 = perf_counter()
     oldtext = getattr(node, "_translated_text", "")
-    registered_fonts = fonts_registered()
     fontname = node.mkfont
     fontsize = node.mkfontsize
     # old_color = node.stroke
     # old_strokewidth = node.stroke_width
     # old_strokescaled = node._stroke_scaled
-    font_dir = getattr(context, "font_directory", "")
-    font_path = join(font_dir, fontname)
-    if not exists(font_path):
-        # Fallback to meerk40t directory...
-        safe_dir = realpath(get_safe_path(context.kernel.name))
-        font_path = join(safe_dir, fontname)
-        if not exists(font_path):
-            return
-    try:
-        filename, file_extension = splitext(font_path)
-        if len(file_extension) > 0:
-            # Remove dot...
-            file_extension = file_extension[1:].lower()
-        item = registered_fonts[file_extension]
-        fontclass = item[1]
-    except (KeyError, IndexError):
-        # channel(_("Unknown fonttype {ext}").format(ext=file_extension))
-        # print ("unknown fonttype, exit")
-        return
-    # print("Nearly there, all fonts checked...")
-    cfont = fontclass(font_path)
+    cfont = cached_fontclass(context, fontname)
+
+    # _t1 = perf_counter()
+
     path = FontPath()
     # print (f"Path={path}, text={remainder}, font-size={font_size}")
     horizontal = True
     mytext = context.elements.wordlist_translate(newtext)
     cfont.render(path, mytext, horizontal, float(fontsize))
-    olda = node.path.transform.a
-    oldb = node.path.transform.b
-    oldc = node.path.transform.c
-    oldd = node.path.transform.d
-    olde = node.path.transform.e
-    oldf = node.path.transform.f
-    node.path = path.path
-    node.path.transform.a = olda
-    node.path.transform.b = oldb
-    node.path.transform.c = oldc
-    node.path.transform.d = oldd
-    node.path.transform.e = olde
-    node.path.transform.f = oldf
+    # _t2 = perf_counter()
+    olda = node.matrix.a
+    oldb = node.matrix.b
+    oldc = node.matrix.c
+    oldd = node.matrix.d
+    olde = node.matrix.e
+    oldf = node.matrix.f
+    node.geometry = path.geom
+    node.matrix.a = olda
+    node.matrix.b = oldb
+    node.matrix.c = oldc
+    node.matrix.d = oldd
+    node.matrix.e = olde
+    node.matrix.f = oldf
     # print (f"x={node.mkcoordx}, y={node.mkcoordy}")
     # node.path.transform = Matrix.translate(node.mkcoordx, node.mkcoordy)
     # print (f"Updated: from {oldtext} -> {mytext}")
     node.mktext = newtext
     node._translated_text = mytext
+    # _t3 = perf_counter()
     node.altered()
+    # _t4 = perf_counter()
+    # print (f"Readfont: {_t1 -_t0:.2f}s, render: {_t2 -_t1:.2f}s, path: {_t3 -_t2:.2f}s, alter: {_t4 -_t3:.2f}s, total={_t4 -_t0:.2f}s")
 
 
 def create_linetext_node(context, x, y, text, font=None, font_size=None):
@@ -226,20 +263,9 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
     if font is None or font == "":
         # print ("Font was empty")
         return None
-    font_path = join(font_dir, font)
-    try:
-        filename, file_extension = splitext(font_path)
-        if len(file_extension) > 0:
-            # Remove dot...
-            file_extension = file_extension[1:].lower()
-        item = registered_fonts[file_extension]
-        fontclass = item[1]
-    except (KeyError, IndexError):
-        # print(f"Unknown fonttype {file_extension}")
-        return None
     horizontal = True
+    cfont = cached_fontclass(context, font_path)
     try:
-        cfont = fontclass(font_path)
         path = FontPath()
         # print (f"Path={path}, text={remainder}, font-size={font_size}")
         mytext = context.elements.wordlist_translate(text)
@@ -253,7 +279,7 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
     #     return None
 
     path_node = PathNode(
-        path=path.path,
+        geometry=path.geom,
         stroke=Color("black"),
     )
     path_node.matrix.post_translate(x, y)
@@ -319,6 +345,8 @@ def plugin(kernel, lifecycle):
                 return
             if remainder is None:
                 channel(_("No text to make a path with."))
+                info = str(cached_fontclass.cache_info())
+                channel(info)
                 return
             x = 0
             y = float(font_size)
