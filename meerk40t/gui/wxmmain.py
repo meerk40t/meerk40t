@@ -897,10 +897,12 @@ class MeerK40t(MWindow):
             self.main_statusbar.Signal("rebuild_tree")
 
     # --------- Events for status bar
+    @signal_listener("element_clicked")
+    def on_element_clicked(self, origin, *args):
+        self.format_painter.on_emphasis(args)
 
     @signal_listener("emphasized")
     def on_update_statusbar(self, origin, *args):
-        self.format_painter.on_emphasis(args)
         value = self.context.elements.has_emphasis()
         self._update_status_menu(self.edit_menu, self.edit_menu_choice)
         self._update_status_menu(self.view_menu, self.view_menu_choice)
