@@ -135,6 +135,17 @@ class LineTextPropertyPanel(wx.Panel):
         self.btn_smaller.SetToolTip(_("Decrease the font-size"))
         sizer_text.Add(self.btn_smaller, 0, wx.EXPAND, 0)
 
+        self.btn_bigger_spacing = wx.Button(self, wx.ID_ANY, "+")
+        self.btn_bigger_spacing.SetToolTip(_("Increase the character-gap"))
+        sizer_text.Add(self.btn_bigger_spacing, 0, wx.EXPAND, 0)
+
+        self.btn_smaller_spacing = wx.Button(self, wx.ID_ANY, "-")
+        self.btn_smaller_spacing.SetToolTip(_("Decrease the character-gap"))
+        sizer_text.Add(self.btn_smaller_spacing, 0, wx.EXPAND, 0)
+
+        for btn in (self.btn_bigger, self.btn_smaller, self.btn_bigger_spacing, self.btn_smaller_spacing):
+            btn.SetMinSize(dip_size(self,35, -1))
+
         sizer_fonts = StaticBoxSizer(
             self, wx.ID_ANY, _("Fonts (double-click to use)"), wx.VERTICAL
         )
@@ -156,6 +167,12 @@ class LineTextPropertyPanel(wx.Panel):
         self.Layout()
         self.btn_bigger.Bind(wx.EVT_BUTTON, self.on_button_bigger)
         self.btn_smaller.Bind(wx.EVT_BUTTON, self.on_button_smaller)
+
+        self.btn_bigger_spacing.Bind(wx.EVT_BUTTON, self.on_button_bigger_spacing)
+        self.btn_smaller_spacing.Bind(wx.EVT_BUTTON, self.on_button_smaller_spacing)
+        self.btn_bigger_spacing.Bind(wx.EVT_RIGHT_DOWN, self.on_button_reset_spacing)
+        self.btn_smaller_spacing.Bind(wx.EVT_RIGHT_DOWN, self.on_button_reset_spacing)
+
         self.text_text.Bind(wx.EVT_TEXT, self.on_text_change)
         self.list_fonts.Bind(wx.EVT_LISTBOX, self.on_list_font)
         self.list_fonts.Bind(wx.EVT_LISTBOX_DCLICK, self.on_list_font_dclick)
@@ -185,6 +202,8 @@ class LineTextPropertyPanel(wx.Panel):
         if self.node is None or not self.accepts(node):
             self.Hide()
             return
+        if not hasattr(self.node, "mkfontspacing") or self.node.mkfontspacing is None:
+            self.node.mkfontspacing = 1.0
         fontdir = fontdirectory(self.context)
         self.load_directory(fontdir)
         self.text_text.SetValue(str(node.mktext))
@@ -226,6 +245,23 @@ class LineTextPropertyPanel(wx.Panel):
         if self.node is None:
             return
         self.node.mkfontsize /= 1.2
+        self.update_node()
+
+    def on_button_reset_spacing(self, event):
+        print ("Reset")
+        self.node.mkfontspacing = 1.0
+        self.update_node()
+
+    def on_button_bigger_spacing(self, event):
+        if self.node is None:
+            return
+        self.node.mkfontspacing += 0.01
+        self.update_node()
+
+    def on_button_smaller_spacing(self, event):
+        if self.node is None:
+            return
+        self.node.mkfontspacing -= 0.01
         self.update_node()
 
     def on_text_change(self, event):
@@ -519,8 +555,8 @@ class PanelFontManager(wx.Panel):
         sizer_buttons.Add(self.combo_webget, 0, wx.EXPAND, 0)
 
         self.SetSizer(mainsizer)
-
         self.Layout()
+        mainsizer.Fit(self)
 
         self.Bind(wx.EVT_TEXT, self.on_text_directory, self.text_fontdir)
         self.Bind(wx.EVT_BUTTON, self.on_btn_directory, self.btn_dirselect)
