@@ -2380,6 +2380,7 @@ class Elemental(Service):
             self._emphasized_bounds = bounds
             self._emphasized_bounds_painted = bounds_painted
             self.set_emphasis(e_list)
+            self.signal("element_clicked")
         else:
             self._emphasized_bounds = None
             self._emphasized_bounds_painted = None

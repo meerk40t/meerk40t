@@ -105,6 +105,7 @@ class RectSelectWidget(Widget):
 
     def rect_select(self, elements, sx, sy, ex, ey):
         sector = self.sector
+        selected = False
         for node in elements.elems():
             try:
                 q = node.bounds
@@ -148,19 +149,24 @@ class RectSelectWidget(Widget):
                 if cover >= self.selection_method[sector]:
                     node.emphasized = True
                     node.selected = True
+                    selected = True
             elif "ctrl" in self.modifiers:
                 # Invert Selection
                 if cover >= self.selection_method[sector]:
                     node.emphasized = not node.emphasized
                     node.selected = node.emphasized
+                    selected = True
             else:
                 # Replace Selection
                 if cover >= self.selection_method[sector]:
                     node.emphasized = True
                     node.selected = True
+                    selected = True
                 else:
                     node.emphasized = False
                     node.selected = False
+        if selected:
+            self.scene.context.signal("element_clicked")
 
     def update_statusmsg(self, value):
         if value != self.store_last_msg:

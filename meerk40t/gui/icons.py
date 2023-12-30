@@ -7,25 +7,39 @@ from wx.lib.embeddedimage import PyEmbeddedImage as py_embedded_image
 from meerk40t.tools.geomstr import TYPE_ARC, TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, Geomstr
 
 """
-icons serves as a central repository for icons and other assets. These are all processed as PyEmbeddedImages which is
-extended from the wx.lib utility of the same name. We allow several additional modifications to these assets. For
-example we allow resizing and inverting this allows us to easily reuse the icons and to use the icons for dark themed
-guis. We permit rotation of the icons, so as to permit reusing these icons and coloring the icons to match a particular
-colored object, for example the icons in the tree for operations using color specific matching.
+icons serves as a central repository for icons and other assets. These come in two flavors:
+A)  Bitmap based icons - they are processed as PyEmbeddedImages which is extended from
+    the wx.lib utility of the same name.
+B)  Vector icons - they are using the SVG syntax and are processed via the VectorIcon class.
 
-----
-The icons are from Icon8 and typically IOS Glyph, IOS or Windows Metro in style.
+We allow several additional modifications to these assets. For example we allow resizing
+and inverting this allows us to easily reuse the icons and to use the icons for dark themed
+guis. We permit rotation of the icons, so as to permit reusing these icons and coloring
+the icons to match a particular colored object, for example the icons in the tree for operations
+using color specific matching.
 
-https://icons8.com/icons
+Origin of icons and addition of new ones
+----------------------------------------
+A)  The bitmapped icons are from Icon8 and typically IOS Glyph, IOS or Windows Metro in style.
 
-Find the desired icon and download in 50x50. We use the free license.
+    https://icons8.com/icons
 
-Put the icon file in the Pycharm working directory.
-Using Local Terminal, with wxPython installed.
+    Find the desired icon and download in 50x50. We use the free license.
 
-img2py -a icons8-icon-name-50.png icons.py
+    Put the icon file in the Pycharm working directory.
+    Using Local Terminal, with wxPython installed.
 
-Paste the icon8_icon_name PyEmbeddedImage() block into icons.py
+    img2py -a icons8-icon-name-50.png icons.py
+
+    Paste the icon8_icon_name PyEmbeddedImage() block into icons.py
+B)  VectorIcons may come as well from the Icon8 library, in this case we have named
+    them icon8_xxxxx, but a lot of the other icons have been designed by the
+    MeerK40t team, either by creating them from scratch or by vectorizing some other
+    freely available images.
+    You can add a VectorIcon by changing into meerk40t source directory and issiuing
+
+    python ./meerk40t/gui/icons.py <fully qualified filename of a svg-file>
+
 """
 
 DARKMODE = False
@@ -440,7 +454,8 @@ class VectorIcon:
         if strokewidth is None:
             self.strokewidth = 2
         else:
-            self.strokewidth = strokewidth
+            self.strokewidth = int(strokewidth)
+
         if not fill:
             pass
         elif isinstance(fill, str):
@@ -772,7 +787,7 @@ class VectorIcon:
             final_icon_height = resize
         if resolution > 1:
             # We don't need to have a one pixel resolution=size
-            # It#s good enough to have one every resolution pixel
+            # It's good enough to have one every resolution pixel
             final_icon_height = int(final_icon_height / resolution) * resolution
             final_icon_width = int(final_icon_width / resolution) * resolution
 
@@ -2888,4 +2903,28 @@ icon_library = VectorIcon(
     ),
     fill=(),
     strokewidth=1,
+)
+
+icon_paint_brush = VectorIcon(
+    fill=(),
+    stroke=(
+        'M 223754,317144 L 295271,245627 L 233971,184326 L 285055,133243 L 468956,317144 L 417873,368228 L 356572,306927 L 285055,378445 L 244188,378445 L 223754,358011 L 223754,317144',
+        'M 280194,337386 C 280194,334311 279384,331291 277847,328628 C 276310,325966 274098,323754 271436,322217 C 268773,320680 265753,319871 262678,319871 C 259604,319871 256583,320680 253921,322217 C 251258,323754 249047,325966 247510,328628 C 245972,331291 245163,334311 245163,337386 C 245163,340460 245972,343481 247510,346143 C 249047,348806 251258,351017 253921,352554 C 256583,354092 259604,354901 262678,354901 C 265753,354901 268773,354092 271436,352554 C 274098,351017 276310,348806 277847,346143 C 279384,343481 280194,340460 280194,337386',
+        'M 305488,153676 L 407656,51509 L 478575,122823 L 433996,193918 L 525230,168520 L 550690,194543 L 448523,296711',
+        'M 551629,216730 C 542599,231173 520205,258130 515507,274503 C 513977,279838 513384,291574 515507,296701 C 518370,303612 529753,314995 536663,317857 C 543576,320721 559682,320721 566595,317857 C 573505,314995 584888,303612 587751,296701 C 589874,291574 589281,279838 587751,274503 C 583053,258130 560659,231173 551629,216730',
+        'M 525230,168520 L 450372,247589',
+        'M 431325,75576 L 356466,154645',
+        'M 457526,102244 L 382667,181313'),
+)
+
+icon_paint_brush_green = VectorIcon(
+    fill=(),
+    stroke=(
+        '[green]M 223754,317144 L 295271,245627 L 233971,184326 L 285055,133243 L 468956,317144 L 417873,368228 L 356572,306927 L 285055,378445 L 244188,378445 L 223754,358011 L 223754,317144',
+        '[green]M 280194,337386 C 280194,334311 279384,331291 277847,328628 C 276310,325966 274098,323754 271436,322217 C 268773,320680 265753,319871 262678,319871 C 259604,319871 256583,320680 253921,322217 C 251258,323754 249047,325966 247510,328628 C 245972,331291 245163,334311 245163,337386 C 245163,340460 245972,343481 247510,346143 C 249047,348806 251258,351017 253921,352554 C 256583,354092 259604,354901 262678,354901 C 265753,354901 268773,354092 271436,352554 C 274098,351017 276310,348806 277847,346143 C 279384,343481 280194,340460 280194,337386',
+        '[green]M 305488,153676 L 407656,51509 L 478575,122823 L 433996,193918 L 525230,168520 L 550690,194543 L 448523,296711',
+        '[green]M 551629,216730 C 542599,231173 520205,258130 515507,274503 C 513977,279838 513384,291574 515507,296701 C 518370,303612 529753,314995 536663,317857 C 543576,320721 559682,320721 566595,317857 C 573505,314995 584888,303612 587751,296701 C 589874,291574 589281,279838 587751,274503 C 583053,258130 560659,231173 551629,216730',
+        '[green]M 525230,168520 L 450372,247589',
+        '[green]M 431325,75576 L 356466,154645',
+        '[green]M 457526,102244 L 382667,181313'),
 )
