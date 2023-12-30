@@ -241,6 +241,17 @@ class LaserPanel(wx.Panel):
         sizer_control_update = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control_update, 0, wx.EXPAND, 0)
 
+        box = wx.BoxSizer(wx.HORIZONTAL)
+        self.rotary_indicator = wx.StaticText(
+            self, wx.ID_ANY, _("Rotary active"), style=wx.ALIGN_CENTRE_HORIZONTAL
+        )
+        bg_color = self.context.themes.get("pause_bg")
+        fg_color = self.context.themes.get("pause_fg")
+        self.rotary_indicator.SetBackgroundColour(bg_color)
+        self.rotary_indicator.SetForegroundColour(fg_color)
+        box.Add(self.rotary_indicator, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_main.Add(box, 0, wx.EXPAND, 0)
+
         sizer_source = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_source, 0, wx.EXPAND, 0)
 
@@ -441,6 +452,10 @@ class LaserPanel(wx.Panel):
         self.update_override_controls()
         showit = count > 1
         self.sizer_devices.ShowItems(showit)
+        flag = False
+        if hasattr(self.context.device, "rotary"):
+            flag = self.context.device.rotary.active
+        self.rotary_indicator.Show(flag)
         self.Layout()
 
     @signal_listener("device;connected")

@@ -987,7 +987,7 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
 
     groups = [cut for cut in context if isinstance(cut, (CutGroup, RasterCut))]
     closed_groups = [g for g in groups if isinstance(g, CutGroup) and g.closed]
-    total_pass = len(groups) + len(closed_groups)
+    total_pass = len(groups) * len(closed_groups)
     context.contains = closed_groups
     if channel:
         channel(

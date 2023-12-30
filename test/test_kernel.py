@@ -1,8 +1,57 @@
 import unittest
 from test import bootstrap
 
+from meerk40t.kernel import kernel_console_command, service_console_command
+
+
+def test_plugin_service(kernel, lifecycle):
+    if lifecycle == "register":
+        service = kernel.elements
+        service.add_service_delegate(TestObject())
+
+
+def test_plugin_kernel(kernel, lifecycle):
+    if lifecycle == "register":
+        kernel.add_delegate(TestObject(), kernel)
+
+
+class TestObject:
+    """
+    Object flagged with service and kernel console commands.
+    """
+
+    @service_console_command("hello")
+    def service_console_command(self, command, channel, **kwargs):
+        return "elements", "hello"
+
+    @kernel_console_command("hello")
+    def kernel_console_command2(self, command, channel, **kwargs):
+        return "elements", 1
+
 
 class TestKernel(unittest.TestCase):
+    def test_object_service_commands(self):
+        """
+        Test registration of service command via classbased decorator
+        """
+        kernel = bootstrap.bootstrap(plugins=[test_plugin_service])
+        try:
+            n = kernel.root("hello")
+            self.assertEqual(n, "hello")
+        finally:
+            kernel()
+
+    def test_object_kernel_commands(self):
+        """
+        Test registration of kernel command via classbased decorator
+        """
+        kernel = bootstrap.bootstrap(plugins=[test_plugin_kernel])
+        try:
+            n = kernel.root("hello")
+            self.assertEqual(n, 1)
+        finally:
+            kernel()
+
     def test_kernel_commands(self):
         """
         Tests all commands with no arguments to test for crashes...

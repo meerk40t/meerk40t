@@ -228,24 +228,28 @@ class DefaultOperationWidget(StatusBarWidget):
             if matcount == 0:
                 item = menu.Append(wx.ID_ANY, _("Load materials/operations"), "")
                 item.Enable(False)
-            oplist, opinfo = self.context.elements.load_persistent_op_list(material)
-            if "name" in opinfo:
-                name = opinfo["name"]
-            elif material == "_default":
-                name = "Generic Defaults"
-            elif material.startswith("_default_"):
-                name = f"Default for {material[9:]}"
-            else:
-                name = material.replace("_", " ")
+            opinfo = self.context.elements.load_persistent_op_info(material)
+            material_name = opinfo.get("material", "")
+            material_title = opinfo.get("title", "")
+            label = material_name
+            if material_title:
+                label += " - " + material_title
+            if not material_name:
+                if material == "_default":
+                    label = "Generic Defaults"
+                elif material.startswith("_default_"):
+                    label = f"Default for {material[9:]}"
+                else:
+                    label = material.replace("_", " ")
             if "thickness" in opinfo:
                 if opinfo["thickness"]:
-                    name += ", " + opinfo["thickness"]
+                    label += ", " + opinfo["thickness"]
             matcount += 1
 
             self.parent.Bind(
                 wx.EVT_MENU,
                 on_menu_material(material),
-                menu.Append(wx.ID_ANY, name, ""),
+                menu.Append(wx.ID_ANY, label, ""),
             )
 
         if matcount > 0:

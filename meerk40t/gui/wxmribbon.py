@@ -138,7 +138,9 @@ class MKRibbonBarPanel(RibbonBarPanel):
             self.context._ribbons = dict()
         self.context._ribbons[self.identifier] = self
 
-        self.storage = Settings(self.context.kernel.name, f"ribbon_{identifier}.cfg")
+        self.storage = Settings(
+            self.context.kernel.name, f"ribbon_{identifier}.cfg", create_backup=True
+        )  # keep backup
         self.storage.read_configuration()
 
         self.allow_labels = bool(show_labels is None or show_labels)

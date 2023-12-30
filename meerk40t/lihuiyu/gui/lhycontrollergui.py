@@ -260,7 +260,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
 
     def pane_show(self):
         # Channel watching is to make sure we unwatch the channel we watched even if label changes.
-        self._channel_watching = f"{self.context.label}/usb"
+        self._channel_watching = f"{self.context.safe_label}/usb"
         self.context.channel(self._channel_watching, buffer_size=500).watch(
             self.update_text
         )

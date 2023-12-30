@@ -48,7 +48,8 @@ class DxfLoader:
         """
         try:
             dxf = ezdxf.readfile(pathname)
-        except ezdxf.DXFError:
+        except ezdxf.DXFError as e:
+            # print (f"Error while reading: {e}")
             try:
                 # dxf is low quality. Attempt recovery.
                 from ezdxf import recover
@@ -80,6 +81,7 @@ class DXFProcessor:
         self.reverse = False
         self.requires_classification = True
         self.pathname = None
+        self.try_unsupported = True
         # Path stroke width
         self.std_stroke = 1000
 
@@ -92,6 +94,7 @@ class DXFProcessor:
         for entity in entities:
             self.parse(entity, file_node, self.elements_list)
         dxf_center = self.elements.setting(bool, "dxf_center", True)
+        self.try_unsupported = self.elements.setting(bool, "dxf_try_unsupported", True)
         if dxf_center:
             bbox = file_node.bounds
             if bbox is not None:
@@ -259,8 +262,15 @@ class DXFProcessor:
             e_list.append(node)
             return
         elif entity.dxftype() == "POLYLINE":
-            # https://ezdxf.readthedocs.io/en/stable/dxfentities/lwpolyline.html
-            if entity.is_2d_polyline:
+            # https://ezdxf.readthedocs.io/en/stable/dxfentities/polyline.html
+            supported = entity.is_2d_polyline
+            if not supported:
+                # for _att in dir(entity):
+                #     if hasattr(entity, _att):
+                #         print (f"{_att}: {getattr(entity, _att, '')}")
+                if self.try_unsupported:
+                    supported = True
+            if supported:
                 if not entity.has_arc:
                     if entity.is_closed:
                         element = Polygon([(p[0], p[1]) for p in entity.points()])
@@ -285,7 +295,8 @@ class DXFProcessor:
                 else:
                     element = Path()
                     bulge = 0
-                    for e in entity:
+                    maxidx = len(entity)
+                    for idx, e in enumerate(entity):
                         point = e.dxf.location
                         if bulge == 0:
                             element.line((point[0], point[1]))

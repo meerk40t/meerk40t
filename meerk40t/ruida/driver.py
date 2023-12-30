@@ -30,8 +30,7 @@ class RuidaDriver(Parameters):
         self.native_y = 0
         self.name = str(self.service)
 
-        name = self.service.label.replace(" ", "-")
-        name = name.replace("/", "-")
+        name = self.service.safe_label
         send = service.channel(f"{name}/send")
         self.controller = RuidaController(self.service, send)
         self.controller.job.set_magic(service.magic)

@@ -3780,7 +3780,7 @@ msgstr "Crescente"
 
 #: meerk40t/gui/materialtest.py:132
 msgid "Create Pattern"
-msgstr "Crea Pattern"
+msgstr "Crea modello"
 
 #: meerk40t/gui/materialtest.py:139
 msgid "Operation to test"
@@ -3804,7 +3804,7 @@ msgstr "Parametro:"
 
 #: meerk40t/gui/materialtest.py:168 meerk40t/gui/materialtest.py:222
 msgid "Count:"
-msgstr "Conteggio:"
+msgstr "Elementi:"
 
 #: meerk40t/gui/materialtest.py:173 meerk40t/gui/materialtest.py:227
 msgid "Minimum:"
@@ -3959,10 +3959,11 @@ msgstr "Altezza del pattern da creare"
 
 #: meerk40t/gui/materialtest.py:359
 msgid "Horizontal gap between patterns"
-msgstr "Spazio orizzontale tra i pattern"
+msgstr "Spazio orizzontale tra i modelli - patterns"
+
 #: meerk40t/gui/materialtest.py:360
 msgid "Vertical gap between patterns"
-msgstr ""
+msgstr "Spazio verticale tra i modelli - patterns"
 
 #: meerk40t/core/elements/element_treeops.py:1594
 #: meerk40t/core/elements/element_treeops.py:1604
@@ -4392,7 +4393,7 @@ msgstr "Valore interno attuale: "
 
 #: meerk40t/gui/navigationpanels.py:1982
 msgid "Jog Distance:"
-msgstr "Distanza di Jog:"
+msgstr "Spazio di spostamento:"
 
 #: meerk40t/gui/navigationpanels.py:2105
 msgid "Opens Navigation Window"
@@ -4558,14 +4559,14 @@ msgstr "Panoramica con la rotellina del mouse"
 
 #: meerk40t/gui/plugin.py:121
 msgid "Unset: MouseWheel=Zoom. Shift+MouseWheel=Horizontal pan."
-msgstr "Non impostato: Rotellina del mouse=Zoom. Shift+Rotellina del mouse=Panoramicà orizzontale."
+msgstr "Non impostato: Rotellina del mouse=Zoom.\nShift+Rotellina del mouse=Panoramicà orizzontale."
 
 #: meerk40t/gui/plugin.py:122
 msgid ""
 "Set: MouseWheel=Vertical pan. Ctrl+MouseWheel=Zoom. "
 "Shift+MouseWheel=Horizontal pan."
 msgstr ""
-"Impostato: Rotellina del mouse=Panoramica verticale. Ctrl+Rotellina del mouse=Zoom. "
+"Impostato: Rotellina del mouse=Panoramica verticale.\nCtrl+Rotellina del mouse=Zoom.\n"
 "Shift+Rotellina del mouse=Panoramica orizzontale."
 
 #: meerk40t/gui/plugin.py:135
@@ -4590,7 +4591,7 @@ msgstr "Disabilita suggerimenti"
 
 #: meerk40t/gui/plugin.py:160
 msgid "If you do not want to see tooltips like this one, check this box."
-msgstr "Se non vuoi vedere suggerimenti come questo, spunta questa casella."
+msgstr "Per non vedere suggerimenti come questo, spunta questa casella."
 
 #: meerk40t/gui/plugin.py:163
 msgid "Particularly useful if you have a touch screen."
@@ -4606,7 +4607,7 @@ msgstr "Disabilita suggerimenti sopra l'albero"
 
 #: meerk40t/gui/plugin.py:178
 msgid "You can suppress the tooltips over operations and elements in the tree"
-msgstr "Puoi sopprimere i suggerimenti sulle operazioni e sugli elementi nell'albero"
+msgstr "Per non visualizzare i suggerimenti sulle operazioni e sugli elementi nell'albero"
 
 #: meerk40t/gui/plugin.py:193
 msgid "Information Required:"
@@ -4835,7 +4836,7 @@ msgstr "Interfaccia Grafica"
 
 #: meerk40t/gui/preferences.py:529 meerk40t/gui/wxmscene.py:1210
 msgid "Scene"
-msgstr "Scena"
+msgstr "Area di lavoro"
 
 #: meerk40t/gui/preferences.py:530
 #: meerk40t/gui/propertypanels/textproperty.py:484
@@ -5096,7 +5097,7 @@ msgstr "Simula lavoro"
 
 #: meerk40t/gui/snapoptions.py:17
 msgid "Snap-Options"
-msgstr "Opzioni di Snap"
+msgstr "Opzioni di ancoraggio"
 
 #: meerk40t/gui/snapoptions.py:43 meerk40t/gui/wxmmain.py:528
 msgid "Defines until which distance snap points will be highlighted"
@@ -5104,7 +5105,7 @@ msgstr "Definisce fino a quale distanza i punti di snap saranno evidenziati"
 
 #: meerk40t/gui/snapoptions.py:46 meerk40t/gui/wxmmain.py:539
 msgid "Snap to element"
-msgstr "Snap agli elementi"
+msgstr "Ancoraggio agli elementi"
 
 #: meerk40t/gui/snapoptions.py:48 meerk40t/gui/wxmmain.py:540
 msgid "Shall the cursor snap to the next element point?"
@@ -5118,7 +5119,7 @@ msgstr "Imposta la distanza entro la quale il cursore si aggancerà al punto suc
 
 #: meerk40t/gui/snapoptions.py:59 meerk40t/gui/wxmmain.py:567
 msgid "Snap to Grid"
-msgstr "Snap alla Griglia"
+msgstr "Ancora alla Griglia"
 
 #: meerk40t/gui/snapoptions.py:61 meerk40t/gui/wxmmain.py:568
 msgid "Shall the cursor snap to the next grid intersection?"
@@ -5667,7 +5668,7 @@ msgstr "Mantieni lo zoom durante il ridimensionamento"
 
 #: meerk40t/gui/wxmmain.py:451
 msgid "Autofocus bed when resizing the main window"
-msgstr "Auto-focalizza il piano di lavoro durante il ridimensionamento della finestra principale"
+msgstr "Autofocus sul piano di lavoro durante il ridimensionamento della finestra principale"
 
 #: meerk40t/gui/wxmmain.py:464
 msgid "Select smallest element on scene"
@@ -5679,8 +5680,8 @@ msgid ""
 "(ctrl+click selects the largest) / Inactive: Single click selects the "
 "largest element  (ctrl+click the smallest)."
 msgstr ""
-"Attivo: Un singolo click seleziona l'elemento più piccolo sotto il cursore "
-"(Ctrl+click seleziona il più grande) / Inattivo: Un singolo click seleziona l'elemento più grande (Ctrl+click il più piccolo)."
+"Attivo: Un singolo click seleziona l'elemento più piccolo, doppio click seleziona il più grande.\n"
+"Inattivo: Un singolo click seleziona l'elemento più grande, doppio click seleziana il più piccolo."
 
 #: meerk40t/gui/wxmmain.py:476
 msgid "Auto-select element after creation"
@@ -5690,7 +5691,7 @@ msgstr "Seleziona automaticamente l'elemento dopo la creazione"
 msgid ""
 "Active: selects a newly created element (via one of the tools in the "
 "toolbar)"
-msgstr "Attivo: seleziona un elemento appena creato (tramite uno degli strumenti nella barra degli strumenti)"
+msgstr "Attivo: seleziona un elemento appena creato, tramite uno degli strumenti di edit grafico"
 
 #: meerk40t/gui/wxmmain.py:492
 msgid "Display colorbar in statusbar"
@@ -5702,14 +5703,15 @@ msgstr "Abilita la visualizzazione di una barra dei colori in basso sullo scherm
 
 #: meerk40t/gui/wxmmain.py:508
 msgid "Draw selection handle outside of bounding box"
-msgstr "Disegna l'impugnatura di selezione al di fuori del bounding box"
+msgstr "Disegna le maniglie di selezione sul riquadro della selezione"
 
 #: meerk40t/gui/wxmmain.py:509
 msgid ""
 "Active: draw handles outside of / Inactive: Draw them on the bounding box"
 " of the selection."
 msgstr ""
-"Attivo: disegna le impugnature all'esterno / Inattivo: Disegnale sul bounding box della selezione."
+"Attivo: disegna le maniglie all'esterno\nInattivo: Disegna le maniglie sul riquadro della selezione."
+
 #: meerk40t/gui/wxmmain.py:527
 msgid "Display-Distance"
 msgstr "Distanza di visualizzazione"
@@ -10503,11 +10505,11 @@ msgstr "Tratta il 'Nero' come raster anche per elementi di base (come fa Whisper
 
 #: meerk40t/core/elements/elements.py:226
 msgid "Ticked: Classify will assign black elements to a raster operation"
-msgstr "Spuntato: La classificazione assegnerà gli elementi neri a un'operazione raster"
+msgstr "Attivo: La classificazione assegnerà gli elementi neri a un'operazione raster"
 
 #: meerk40t/core/elements/elements.py:230
 msgid "Unticked: Classify will assign black elements to an engrave operation"
-msgstr "Non spuntato: La classificazione assegnerà gli elementi neri a un'operazione di incisione"
+msgstr "Inattivo: La classificazione assegnerà gli elementi neri a un'operazione di incisione"
 
 #: meerk40t/core/elements/elements.py:242
 msgid "Assign to default operations"
@@ -10564,22 +10566,21 @@ msgid ""
 "Locked elements cannot be modified, but can still be moved if this option"
 " is checked."
 msgstr ""
-"Gli elementi bloccati non possono essere modificati, ma possono ancora essere spostati se questa opzione"
-" è selezionata."
+"Consente di spostare, ma non di modificare gli elementi bloccati"
 
 #: meerk40t/core/elements/elements.py:324
 msgid "Display 'default' for unchanged values"
-msgstr "Mostra 'predefinito' per valori invariati"
+msgstr "Visualizza i valori predefiniti per quelli non modificati"
 
 #: meerk40t/core/elements/elements.py:325
 msgid ""
 "Ticked: For power and speed display a 'default' string if default values "
 "in place."
-msgstr "Spuntato: Per potenza e velocità mostra una stringa 'predefinita' se i valori predefiniti sono in uso."
+msgstr "Attivo: Per potenza e velocità mostra una stringa 'predefinita' se i valori predefiniti sono in uso."
 
 #: meerk40t/core/elements/elements.py:329
 msgid "Unticked: Show their current value."
-msgstr "Non spuntato: Mostra il valore attuale."
+msgstr "Inattivo: Mostra il valore attuale."
 
 #: meerk40t/core/elements/elements.py:342
 msgid "Autogenerate both for fill and stroke"
@@ -10601,7 +10602,7 @@ msgstr ""
 
 #: meerk40t/core/elements/elements.py:361
 msgid "Copy will increase {variable} references"
-msgstr "La copia aumenterà i riferimenti {variable}"
+msgstr "La copia incrementerà i riferimenti {variabile}"
 
 #: meerk40t/core/elements/elements.py:362
 msgid ""
@@ -10609,7 +10610,8 @@ msgid ""
 "will be increased (effectively referencing the next entry in the "
 "wordlist)"
 msgstr ""
-"Attivo: se copi un elemento testo contenente un riferimento a una wordlist, questo verrà aumentato (riferendosi efficacemente all'elemento successivo nella wordlist)"
+"Attivo: se copi un elemento testo contenente un riferimento delle variabili di testo questo verrà aumentato (riferendosi efficacemente all'elemento successivo nel Gestore variabili di testo)"
+
 #: meerk40t/core/elements/elements.py:3039
 msgid "All valid types"
 msgstr "Tutti i tipi validi"
@@ -11172,7 +11174,7 @@ msgid "X-Coordinate for placement to append?"
 msgstr "Coordenata X per l'inserimento di posizionamento?"
 
 #: meerk40t/core/elements/element_treeops.py:1541
-msgid "Append Placement"
+msgid "Append absolute placement"
 msgstr "Aggiungi Posizionamento"
 
 #: meerk40t/core/elements/element_treeops.py:1553
@@ -17385,13 +17387,13 @@ msgstr ""
 msgid "Distance between placements?"
 msgstr ""
 
-msgid "How many additional placements on the X-Axis?\n(0 = as many as fit on the bed)"
+msgid "How many placements on the X-Axis?\n(0 = as many as fit on the bed)"
 msgstr ""
 
 msgid "Create placements horizontally"
 msgstr ""
 
-msgid "How many additional placements on the Y-Axis?\n(0 = as many as fit on the bed)"
+msgid "How many placements on the Y-Axis?\n(0 = as many as fit on the bed)"
 msgstr ""
 
 msgid "Create placements vertically"
@@ -17512,43 +17514,43 @@ msgid " Area= {area:.3f} {unit}°"
 msgstr ""
 
 msgid "Show current device info."
-msgstr ""
+msgstr "Mostra le informazioni sul dispositivo corrente."
 
 msgid "Show power as %"
-msgstr ""
+msgstr "Mostra la potenza come %"
 
 msgid "Active: Full power will be shown as 100%\nInactive: Full power will be shown as 1000 ppi"
-msgstr ""
+msgstr "Attivo: La piena potenza viene visualizzata al 100%: La piena potenza sarà visualizzata come 1000 ppi"
 
 msgid "Show speed in mm/min"
-msgstr ""
+msgstr "Mostra la potenza come mm/min"
 
 msgid "Active: Speed will be shown in mm/min\nInactive: Speed will be shown in mm/s"
-msgstr ""
+msgstr "Attivo: La velocità viene visualizzata in mm/min: La velocità viene visualizzata in mm/s"
 
 msgid "Unknown fonttype {ext}"
-msgstr ""
+msgstr "Tipo di carattere sconosciuto {ext}"
 
 msgid "Inkscape executable at \"{path}\" is: {version}"
-msgstr ""
+msgstr "L'eseguibile di Inkscape in \"{path}\" è: {version}"
 
 msgid "Will translate incoming to device: {dev}"
-msgstr ""
+msgstr "Traduce i dati in arrivo sul dispositivo: {dev}"
 
 msgid "TCP Port of the GRBL device"
-msgstr ""
+msgstr "Porta TCP del dispositivo GRBL"
 
 msgid "Serial"
-msgstr ""
+msgstr "Seriale"
 
 msgid "TCP-Network"
-msgstr ""
+msgstr "Rete TCP"
 
 msgid "mock"
 msgstr ""
 
 msgid "Interface Type"
-msgstr ""
+msgstr "Tipo di interfaccia"
 
 msgid "Select the interface type for the grbl device"
 msgstr ""
@@ -17710,64 +17712,64 @@ msgid "Load Project"
 msgstr ""
 
 msgid "The screen distance in pixels inside which snap points will be highlighted"
-msgstr ""
+msgstr "La distanza in pixel dello schermo all'interno della quale verranno evidenziati i punti di ancoraggio."
 
 msgid "Snap to Element"
-msgstr ""
+msgstr "Ancora all'elemento"
 
 msgid "Set the screen distance in pixels inside which the cursor will snap to the nearest element point"
-msgstr ""
+msgstr "Impostare la distanza dello schermo in pixel entro la quale il cursore scatta al punto più vicino dell'elemento."
 
 msgid "Set the screen distance in pixels inside which the cursor will snap to the nearest grid intersection"
-msgstr ""
+msgstr "Imposta la distanza in pixel all'interno della quale il cursore scatta all'intersezione della griglia più vicina."
 
 msgid "Current Value: {value} pixel"
-msgstr ""
+msgstr "Valore corrente: {value} pixel"
 
 msgid "All incomplete jobs"
-msgstr ""
+msgstr "Tutti i lavori incompleti"
 
 msgid "Disable"
-msgstr ""
+msgstr "Disattiva"
 
 msgid "Crash Detected! Send Log?"
-msgstr ""
+msgstr "Rilevato un arresto anomalo! Inviare il log?"
 
 msgid "Ribbon-Size:"
-msgstr ""
+msgstr "Dimenzione della barra"
 
 msgid "Autofocus bed on resize"
-msgstr ""
+msgstr "Autofocus sul piano in ridimensionamento"
 
 msgid "If checked, the cursor will snap to the closest element point within the specified threshold"
-msgstr ""
+msgstr "Attiva: il cursore si posizionerà sul punto più vicino all'elemento entro la soglia specificata."
 
 msgid "Element-Point-Snap-Threshold"
-msgstr ""
+msgstr "Elemento-Punto-Soglia di ancoraggio"
 
 msgid "If checked, the cursor will snap to the closest grid intersection"
-msgstr ""
+msgstr "Attiva: il cursore si posiziona sull'intersezione della griglia più vicina."
 
 msgid "Grid-Point-Snap-Threshold"
-msgstr ""
+msgstr "Soglia dei punti sulla griglia"
 
 msgid "Clear magnets on File/New"
-msgstr ""
+msgstr "Cancella guide magnetiche in apertura file o creazione nuovo"
 
 msgid "File/New can remove all defined magnetlines (active)\nor leave them in place (inactive)"
-msgstr ""
+msgstr "Con l'apertura di un file o la creazione di uno nuovo rimuovere tutte le guide magnetiche esistenti\nAttiva: cancella le impostazioni preesistenti\nInattiva lascia tutto come impostato"
 
 msgid "Button repeat-interval"
-msgstr ""
+msgstr "Intervallo di ripetizione del pulsante"
 
 msgid "If you click and hold the mouse-button on the Jog/Drag-Panels\nthe movement action will be repeated. This value establishes\nthe interval between individual executions.\nA value of 0 will disable this feature."
-msgstr ""
+msgstr "Se tieni premuto il pulsante del mouse sui pannelli Jog/Drag, l'azione di movimento viene ripetuta.\nQuesto valore stabilisce l'intervallo tra le singole esecuzioni.\nUn valore pari a 0 disabilita questa funzione."
 
 msgid "Accelerate repeats"
-msgstr ""
+msgstr "Accelera le ripetizioni"
 
 msgid "If you hold the button for some time, then after some repetitions\nthe action will increase in speed if you activate this option."
-msgstr ""
+msgstr "Se tieni premuto il pulsante per un certo tempo, dopo alcune ripetizioni l'azione aumenterà di velocità se si attiva questa opzione."
 
 msgid "No, thank you"
 msgstr "No, grazie"
@@ -17779,7 +17781,7 @@ msgid "Look for major+beta releases"
 msgstr "Cerca versioni principali+beta"
 
 msgid "Check for available updates on startup."
-msgstr "Verifica aggiornamenti all'avvio del programma"
+msgstr "Verifica aggiornamenti all'avvio"
 
 msgid "Delete selected items"
 msgstr "Cancella oggetto selezionato"
@@ -17819,67 +17821,67 @@ msgid "No help text"
 msgstr ""
 
 msgid "Show the Ribbon Labels"
-msgstr ""
+msgstr "Mostrare l'etichetta sulla barra"
 
 msgid "Active: Show the labels for ribbonbar.\nInactive: Hide the ribbon labels."
 msgstr ""
 
 msgid "Ribbons"
-msgstr ""
+msgstr "Barre"
 
 msgid "Pages"
-msgstr ""
+msgstr "Pagine"
 
 msgid "Panels"
-msgstr ""
+msgstr "Pannelli"
 
 msgid "Available Panels"
-msgstr ""
+msgstr "Pannelli disponibili"
 
 msgid "Add to page"
-msgstr ""
+msgstr "Aggiungi alla pagina"
 
 msgid "Apply"
-msgstr ""
+msgstr "Applica"
 
 msgid "Reset to Default"
-msgstr ""
+msgstr "Ripristino delle impostazioni"
 
 msgid "Add the selected panel to the selected page"
-msgstr ""
+msgstr "Aggiungere il pannello selezionato alla pagina selezionata"
 
 msgid "Apply the configuration"
-msgstr ""
+msgstr "Applicare la configurazione"
 
 msgid "Reset the ribbon appearance to the default configuration"
-msgstr ""
+msgstr "Ripristinare l'aspetto della barra multifunzione alla configurazione predefinita"
 
 msgid "Add an additional page to the ribbon"
-msgstr ""
+msgstr "Aggiungere una pagina supplementare alla barra"
 
 msgid "Remove the selected page from the list"
-msgstr ""
+msgstr "Rimuovere la pagina selezionata dall'elenco"
 
 msgid "Decrease the position of the selected page"
-msgstr ""
+msgstr "Sposta verso il basso la pagina selezionata"
 
 msgid "Increase the position of the selected page"
-msgstr ""
+msgstr "Sposta verso l'alto la pagina selezionata"
 
 msgid "Modify the label of the selected page"
-msgstr ""
+msgstr "Modificare l'etichetta della pagina selezionata"
 
 msgid "Remove the selected panel from the list"
-msgstr ""
+msgstr "Rimuovere il pannello selezionato dall'elenco"
 
 msgid "Decrease the position of the selected panel"
-msgstr ""
+msgstr "Sposta verso il basso il pannello selezionato"
 
 msgid "Increase the position of the selected panel"
-msgstr ""
+msgstr "Sposta verso l'alto il pannello selezionato"
 
 msgid "Allow/suppress the display of labels beneath the icons in the ribbon"
-msgstr ""
+msgstr "Consente/nega la visualizzazione delle etichette sotto le icone della barra multifunzione"
 
 msgid "Burn-Operation"
 msgstr ""
@@ -18047,31 +18049,38 @@ msgid "steps"
 msgstr ""
 
 msgid "Pattern"
-msgstr ""
+msgstr "Modello"
 
 msgid "Rectangular (box joints)"
-msgstr ""
+msgstr "Rettangolare (giunti a scatola)"
 
 msgid "Circular (inlays)"
-msgstr ""
+msgstr "Circolare (intarsi)"
 
 msgid "Slider"
-msgstr ""
+msgstr "Cursore"
 
 msgid "Cut-Operation"
-msgstr ""
+msgstr "Operazione di taglio"
 
 msgid "If you want to produce cut out shapes with *exact* dimensions after the burn, then you need to take half the width of the laserbeam into consideration (aka Kerf compensation).\nThis routine will create a couple of test shapes for you to establish this value.\nAfter you cut these shapes out you need to try to fit the shapes with the same label together. Choose the pair that has a perfect fit and use the label as your kerf-compensation value."
 msgstr "Se si desidera ottenere forme ritagliate con dimensioni *esatte* (ad esempio forme che vanno incastrate tra loro) è necessario considerare il materiale asportato dal laser per effetto della bruciatura: la metà di questa misura rappresenta il valore di compensazione KERF.\nLa routine creerà delle forme di prova per stabilire questo valore. \nDopo aver eseguito il taglio, provare a far combaciare le forme con la stessa etichetta. Scegliere la coppia che si adatta perfettamente e utilizzare l'etichetta come valore di compensazione."
 
+#: meerk40t\tools\kerftest.py:210
+msgid "% of maximum power - This is a percentage of the maximum power of the laser."
+msgstr "Valore in percentuale della potenza impostata del laser"
+
+#: meerk40t\tools\kerftest.py:184
 msgid "Minimum value for Kerf"
-msgstr ""
+msgstr "Valore minimo per Kerf"
 
+#: meerk40t\tools\kerftest.py:185
 msgid "Maximum value for Kerf"
-msgstr ""
+msgstr "Valore massimo per Kerf"
 
+#: meerk40t\tools\kerftest.py:186
 msgid "Dimension of the to be created pattern"
-msgstr ""
+msgstr "Dimensione del modello da creare"
 
 msgid "Create a test-pattern with your values"
 msgstr ""
@@ -18081,3 +18090,189 @@ msgstr ""
 
 msgid "Kerf-Test"
 msgstr "Test compensazione taglio -Kerf-"
+
+msgid "Add a simple line element"
+msgstr "Strumento linea"
+
+msgid "Create an ean-barcode or a qr-code"
+msgstr "Strumento per creare codici a barre EAN o QR"
+
+msgid "Wrap the current node in a hatch\n(Right click removes the hatch)"
+msgstr "Riempie l'area selezionata con un tratteggio\nClick destro per rimuovere il tratteggio"
+
+msgid "Draw a freehand polygon (f)"
+msgstr "Disegna liberamente un poligono (f)"
+
+msgid "Draw a regular polygon (r)"
+msgstr "Disegna un poligono regolare (r)"
+
+msgid "Draw a regular star (1)"
+msgstr "Disegna una stella (1)"
+
+msgid "Draw a crossing star (2)"
+msgstr "Disegna una stella a linee intersecanti (2)"
+
+msgid "Draw a growing polygon"
+msgstr "Disegna un poligono a spirale"
+
+msgid "Material Library"
+msgstr "Biblioteca dei materiali"
+
+msgid "Library"
+msgstr "Biblioteca"
+
+msgid "Filter Materials"
+msgstr "Filtro materiali"
+
+msgid "Thickness"
+msgstr "Spessore"
+
+msgid "Thickness of the material."
+msgstr "Spessore del materiale"
+
+msgid "Reset Filter"
+msgstr "Reset filtri"
+
+msgid "Matching library entries"
+msgstr "Corrispondenza delle voci della biblioteca"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:540
+msgid "Add new"
+msgstr "Crea nuovo"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:541
+msgid "Add a new library entry"
+msgstr "Aggiungere una nuova voce alla biblioteca"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:542
+msgid "Get current"
+msgstr "Aggiungi Operazioni in uso"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:542
+msgid "Use the currently defined operations"
+msgstr "Aggiungi alla biblioteca le impostazioni definite in Operazioni"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:543
+msgid "Utilizzare le operazioni attualmente impostate"
+msgstr "Aggiungere una nuova voce della biblioteca"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:548
+msgid "Use for statusbar"
+msgstr "Usa nella Statubar"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:550
+msgid "Use the current library entry for the statusbar icons"
+msgstr "Usa la voce della libreria selezionata per le icone nella barra di stato"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:544
+msgid "Load into Tree"
+msgstr "Carica in Operazioni"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:546
+msgid "Apply the current library entry to the operations branch"
+msgstr "Carica i dati della biblioteca in operazioni"
+
+msgid "Title"
+msgstr "Titolo"
+
+msgid "Material"
+msgstr "Materiale"
+
+msgid "Name of the library entry."
+msgstr "Nome della voce della biblioteca"
+
+msgid "Set"
+msgstr "Imposta"
+
+msgid "Operation"
+msgstr "Operazione"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:428
+msgid "Change the name / lasertype of the current entry\nRight-Click: assign lasertype to all visible entries"
+msgstr "Modificare il nome/il tipo di laser\nClick destro: assegna il tipo di laser a tutte le voci visibili.
+
+msgid "Click to hide extended infos"
+msgstr "Click per nascondere i dettagli"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:553
+msgid "Delete the current library entry"
+msgstr "Cancellare la biblioteca selezionata"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:555
+msgid "Duplicate the current library entry"
+msgstr "Duplica la biblioteca selezionata"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:535
+msgid "Click to show extended infos"
+msgstr "Click per avere informazioni più dettagliate"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:503
+msgid "Lens-Size"
+msgstr "Diametro-lente"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:357
+#: meerk40t\meerk40t\gui\materialmanager.py:376
+msgid "Click to select / Right click for actions"
+msgstr "Click per selezionare/click destro per le azioni"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:555
+msgid "Duplicate the current library entry"
+msgstr "Duplica la biblioteca selezionata"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:558
+msgid "Import a material library from ezcad or LightBurn"
+msgstr "Importa una biblioteca di materiali da ezcad o LightBurn"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:1877
+msgid "Create minimal"
+msgstr "Crea una biblioteca minima"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:1879
+msgid "Create basic"
+msgstr "Crea una biblioteca base"
+
+msgid "Delete all"
+msgstr "Cancella tutto"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:1923
+msgid "Expand all"
+msgstr "Espandi tutto"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:1925
+msgid "Collapse all"
+msgstr "Comprimi tutto"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:526
+msgid "Filter entries with a certain material thickness."
+msgstr "Filtra per spessore"
+
+#: meerk40t\meerk40t\gui\materialmanager.py:528
+msgid "Filter entries of a certain laser type"
+msgstr "Filtra per tipo di CNC (laser)"
+
+msgid "Materials"
+msgstr "Materiali"
+
+#: meerk40t\gui\alignment.py:1612
+msgid "Element Alignment"
+msgstr "Allineamento elementi"
+
+#: meerk40t\gui\imagesplitter.py:511
+msgid "Image Splitting"
+msgstr "Divisione immagine"
+
+#: meerk40t\gui\navigationpanels.py:2489
+msgid "Jog, Move and Transform"
+msgstr "Spostamenti e trasformazioni"
+
+#: meerk40t\tools\kerftest.py: 299
+msgid "Every {dist}"
+msgstr "Ogni {dist}"
+
+#: meerk40t\gui\position.py:228
+msgid "Set the point of reference for the element,\n"
+msgstr "Imposta il punto di riferimento per l'elemento,"
+
+#: meerk40t\gui\position.py:229
+msgid "which edge/corner should be put on the given location"
+msgstr "il cui bordo/angolo deve essere collocato nella posizione indicata"

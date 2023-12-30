@@ -15,8 +15,7 @@ class SerialConnection:
         self.laser = None
         self.read_buffer = bytearray()
 
-        name = self.service.label.replace(" ", "-")
-        name = name.replace("/", "-")
+        name = self.service.safe_label
         self.recv = service.channel(f"{name}/recv", pure=True)
         self.send = service.channel(f"{name}/send", pure=True)
         self.events = service.channel(f"{name}/events", pure=True)
@@ -51,10 +50,10 @@ class SerialConnection:
             )
             self.events("Connected")
 
-            name = self.service.label.replace(" ", "-")
-            name = name.replace("/", "-")
             self.service.threaded(
-                self._run_serial_listener, thread_name=f"thread-{name}", daemon=True
+                self._run_serial_listener,
+                thread_name=f"thread-{self.service.safe_label}",
+                daemon=True,
             )
             self.service.signal("pipe;usb_status", "connected")
             self.events("Connected")

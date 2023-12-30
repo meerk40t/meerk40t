@@ -90,13 +90,14 @@ class WordlistMiniPanel(wx.Panel):
             sample = ""
             if node.type == "elem text":
                 if node.text is not None:
-                    sample = node.text
+                    sample = str(node.text)
             elif node.type == "elem path" and hasattr(node, "mktext"):
                 if node.mktext is not None:
-                    sample = node.mktext
+                    sample = str(node.mktext)
             if sample == "":
                 continue
-            # we can be rather agnostic on the individual variable, we are interested in the highest {variable#+offset} pattern
+            # we can be rather agnostic on the individual variable,
+            # we are interested in the highest {variable#+offset} pattern
             brackets = re.compile(r"\{[^}]+\}")
             for bracketed_key in brackets.findall(sample):
                 #            print(f"Key found: {bracketed_key}")

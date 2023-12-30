@@ -9,8 +9,7 @@ import struct
 class UDPConnection:
     def __init__(self, service):
         self.service = service
-        name = self.service.label.replace(" ", "-")
-        name = name.replace("/", "-")
+        name = self.service.safe_label
         self.recv = service.channel(f"{name}/recv", pure=True)
         self.send = service.channel(f"{name}/send", pure=True)
         self.events = service.channel(f"{name}/events", pure=True)
@@ -28,8 +27,7 @@ class UDPConnection:
         self.socket.settimeout(4)
         self.socket.bind(("", 40200))
 
-        name = self.service.label.replace(" ", "-")
-        name = name.replace("/", "-")
+        name = self.service.safe_label
         self.service.threaded(
             self._run_udp_listener, thread_name=f"thread-{name}", daemon=True
         )

@@ -140,7 +140,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/place current", "{enabled}{element_type}")
         kernel.register(
             "format/place point",
-            "{enabled}{loops}{element_type} {corner} {x} {y} {rotation}",
+            "{enabled}{loops}{element_type}{grid} {corner} {x} {y} {rotation}",
         )
     elif lifecycle == "register":
         kernel.add_service("elements", Elemental(kernel))
@@ -526,7 +526,9 @@ class Elemental(Service):
         self.setting(float, "svg_ppi", 96.0)
         self.setting(bool, "operation_default_empty", True)
 
-        self.op_data = Settings(self.kernel.name, "operations.cfg")
+        self.op_data = Settings(
+            self.kernel.name, "operations.cfg", create_backup=True
+        )  # keep backup
 
         self.wordlists = {"version": [1, self.kernel.version]}
 
@@ -899,6 +901,8 @@ class Elemental(Service):
         it in the sense that if all elements of a given hierarchy
         (ie group or file) are in this set, then they will be
         replaced and represented by this parent element
+        NB: we will set the emphasized_time of the parent element
+        to the minimum time of all children
         """
 
         def remove_children_from_list(list_to_deal, parent_node):
@@ -909,6 +913,12 @@ class Elemental(Service):
                     list_to_deal[idx] = None
                     if len(node.children) > 0:
                         remove_children_from_list(list_to_deal, node)
+                    t1 = parent_node._emphasized_time
+                    t2 = node._emphasized_time
+                    if t2 is None:
+                        continue
+                    if t1 is None or t2 < t1:
+                        parent_node._emphasized_time = t2
 
         align_data = [e for e in data]
         needs_repetition = True
@@ -1005,10 +1015,12 @@ class Elemental(Service):
             except AttributeError:
                 pass
 
-    def align_elements(self, data, alignbounds, positionx, positiony, as_group):
+    def align_elements(
+        self, data_to_align, alignbounds, positionx, positiony, as_group
+    ):
         """
 
-        @param data: elements to align
+        @param data_to_align: elements to align
         @param alignbounds: boundary tuple (left, top, right, bottom)
                             to which data needs to be aligned to
         @param positionx:   one of "min", "max", "center"
@@ -1040,7 +1052,6 @@ class Elemental(Service):
                 ) / 2
             return dx, dy
 
-        data_to_align = self.condense_elements(data)
         # Selection boundaries
         boundary_points = []
         for node in data_to_align:
@@ -1079,6 +1090,7 @@ class Elemental(Service):
             else:
                 dx = groupdx
                 dy = groupdy
+            # print (f"Translating {q.type} by {dx:.0f}, {dy:.0f}")
             self.translate_node(q, dx, dy)
         self.signal("refresh_scene", "Scene")
 
@@ -1450,7 +1462,7 @@ class Elemental(Service):
             create_raster(oplist)
             create_image(oplist)
             opinfo.clear()
-            opinfo["name"] = "Default"
+            opinfo["material"] = "Default"
             opinfo["author"] = "MeerK40t"
             needs_save = True
         # Ensure we have an id for everything
