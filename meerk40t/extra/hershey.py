@@ -6,16 +6,35 @@ from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.kernel import get_safe_path
 from meerk40t.svgelements import Color
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.tools.geomstr import Geomstr, BeamTable
 from meerk40t.tools.jhfparser import JhfFont
 from meerk40t.tools.shxparser import ShxFont, ShxFontParseError
 from meerk40t.tools.ttfparser import TrueTypeFont
 
 
 class FontPath:
-    def __init__(self):
+    def __init__(self, weld):
+        self.total_geometry = Geomstr()
         self.geom = Geomstr()
         self.start = None
+        self.weld = weld
+
+    @property
+    def geometry(self):
+        return self.total_geometry
+
+    def character_end(self):
+        # Indicates that a glyph has been finished
+        # So we merge the glyph and append it to the remaining geometry
+        if self.weld:
+            # Is there something to weld to?
+            self.total_geometry.append(self.geom)
+            bt = BeamTable(self.total_geometry)
+            # I think this is flawed... the indices should be different...
+            self.total_geometry = bt.union(0, 1)
+        else:
+            self.total_geometry.append(self.geom)
+        self.geom.clear()
 
     def new_path(self):
         self.geom.end()
@@ -162,6 +181,11 @@ def update_linetext(context, node, newtext):
         spacing = node.mkfontspacing
     if spacing is None:
         spacing = 1
+    weld = None
+    if hasattr(node, "mkfontweld"):
+        weld = node.mkfontweld
+    if weld is None:
+        weld = False
     # from time import perf_counter
     # _t0 = perf_counter()
     oldtext = getattr(node, "_translated_text", "")
@@ -177,7 +201,7 @@ def update_linetext(context, node, newtext):
 
     # _t1 = perf_counter()
 
-    path = FontPath()
+    path = FontPath(weld)
     # print (f"Path={path}, text={remainder}, font-size={font_size}")
     horizontal = True
     mytext = context.elements.wordlist_translate(newtext)
@@ -189,7 +213,7 @@ def update_linetext(context, node, newtext):
     oldd = node.matrix.d
     olde = node.matrix.e
     oldf = node.matrix.f
-    node.geometry = path.geom
+    node.geometry = path.geometry
     node.matrix.a = olda
     node.matrix.b = oldb
     node.matrix.c = oldc
@@ -277,8 +301,9 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None, font_sp
     if cfont is None:
         # This font does not exist in our environment
         return
+    weld = False
     try:
-        path = FontPath()
+        path = FontPath(weld)
         # print (f"Path={path}, text={remainder}, font-size={font_size}")
         mytext = context.elements.wordlist_translate(text)
         cfont.render(path, mytext, horizontal, float(font_size), font_spacing)
@@ -291,13 +316,14 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None, font_sp
     #     return None
 
     path_node = PathNode(
-        geometry=path.geom,
+        geometry=path.geometry,
         stroke=Color("black"),
     )
     path_node.matrix.post_translate(x, y)
     path_node.mkfont = font
     path_node.mkfontsize = float(font_size)
     path_node.mkfontspacing = float(font_spacing)
+    path_node.mkfontweld = weld
     path_node.mktext = text
     path_node._translated_text = mytext
     path_node.mkcoordx = x

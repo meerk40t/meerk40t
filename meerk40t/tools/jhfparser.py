@@ -40,6 +40,9 @@ class JhfPath:
         """
         self.path.append((x0, y0, x1, y1))
 
+    def character_end(self):
+        pass
+
 
 class JhfFont:
     """
@@ -285,6 +288,7 @@ class JhfFont:
                     idx += 1
                 cidx += 1
                 offsetx += struct["right"] * spacing
+                path.character_end()
                 # offsetx += struct["realright"] + 1
             else:
                 # print(f"Char '{tchar}' (ord={ord(tchar)}) not in font...")
