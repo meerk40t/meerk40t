@@ -1322,7 +1322,7 @@ class MeerK40t(MWindow):
                 "identifier": "editpaint",
                 "toggle": {
                     "label": _("Stop"),
-                    "help": "devicegrbl",
+                    "help": "basicediting",
                     "action": self.format_painter.on_click,
                     "icon": icon_paint_brush_green,
                     "signal": "editpaint",
