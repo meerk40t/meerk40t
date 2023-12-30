@@ -59,13 +59,14 @@ class TrueTypeFont:
         self.parse_cmap()
         self.glyphs = list(self.parse_glyf())
 
-    def render(self, path, text, horizontal=True, font_size=12.0):
+    def render(self, path, text, horizontal=True, font_size=12.0, spacing=1.0):
+        # Letter spacing
         scale = font_size / self.units_per_em
         offset_x = 0
         offset_y = 0
         for c in text:
             index = self._character_map.get(c, 0)
-            advance_x = self.horizontal_metrics[index][0]
+            advance_x = self.horizontal_metrics[index][0] * spacing
             advance_y = 0
             glyph = self.glyphs[index]
             path.new_path()
