@@ -1565,13 +1565,17 @@ class MoveWidget(Widget):
             # c) Regular snap-check
             # d) Use magnet lines
 
-            def shortest_distance(p1, p2):
+            def shortest_distance(p1, p2, tuplemode):
                 """
                 Calculates the shortest distance between two arrays of 2-dimensional points.
                 """
                 # Calculate the Euclidean distance between each point in p1 and p2
-                dist = np.sqrt(np.sum((p1[:, np.newaxis] - p2) ** 2, axis=2))
-
+                if tuplemode:
+                    # For an array of tuples:
+                    dist = np.sqrt(np.sum((p1[:, np.newaxis] - p2) ** 2, axis=2))
+                else:
+                    # For an array of complex numbers
+                    dist = np.abs(p1[:, np.newaxis] - p2[np.newaxis, :])
                 # Find the minimum distance and its corresponding indices
                 min_dist = np.min(dist)
                 min_indices = np.argwhere(dist == min_dist)
@@ -1625,7 +1629,7 @@ class MoveWidget(Widget):
                                     or yy > b[3] + gap
                                 )
                                 if not ignore:
-                                    target.append((start.real, start.imag))
+                                    target.append(start)
                             xx = end.real
                             yy = end.imag
                             ignore = (
@@ -1635,18 +1639,18 @@ class MoveWidget(Widget):
                                 or yy > b[3] + gap
                             )
                             if not ignore:
-                                target.append((end.real, end.imag))
+                                target.append(end)
                             last = end
                 t2 = perf_counter()
                 if len(other_points) > 0:
                     np_other = np.asarray(other_points)
                     np_selected = np.asarray(selected_points)
-                    dist, pt1, pt2 = shortest_distance(np_other, np_selected)
+                    dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
 
                     if dist < gap:
                         did_snap_to_point = True
-                        dx = pt1[0] - pt2[0]
-                        dy = pt1[1] - pt2[1]
+                        dx = pt1.real - pt2.real
+                        dy = pt1.imag - pt2.imag
                         self.total_dx = 0
                         self.total_dy = 0
                         move_to(dx, dy)
@@ -1672,7 +1676,7 @@ class MoveWidget(Widget):
                 if len(other_points) > 0:
                     np_other = np.asarray(other_points)
                     np_selected = np.asarray(selected_points)
-                    dist, pt1, pt2 = shortest_distance(np_other, np_selected)
+                    dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
                     if dist < gap:
                         did_snap_to_point = True
                         dx = pt1[0] - pt2[0]
