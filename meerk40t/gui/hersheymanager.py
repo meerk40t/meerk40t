@@ -248,7 +248,7 @@ class LineTextPropertyPanel(wx.Panel):
         self.update_node()
 
     def on_button_reset_spacing(self, event):
-        print ("Reset")
+        # print ("Reset")
         self.node.mkfontspacing = 1.0
         self.update_node()
 
