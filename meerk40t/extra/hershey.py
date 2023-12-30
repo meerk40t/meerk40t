@@ -166,6 +166,9 @@ def update_linetext(context, node, newtext):
     # old_strokewidth = node.stroke_width
     # old_strokescaled = node._stroke_scaled
     cfont = cached_fontclass(context, fontname)
+    if cfont is None:
+        # This font does not exist in our environment
+        return
 
     # _t1 = perf_counter()
 
@@ -265,6 +268,9 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
         return None
     horizontal = True
     cfont = cached_fontclass(context, font_path)
+    if cfont is None:
+        # This font does not exist in our environment
+        return
     try:
         path = FontPath()
         # print (f"Path={path}, text={remainder}, font-size={font_size}")
@@ -351,13 +357,13 @@ def plugin(kernel, lifecycle):
             x = 0
             y = float(font_size)
 
-            try:
-                font = ShxFont(font_path)
-                path = FontPath()
-                font.render(path, remainder, True, float(font_size))
-            except ShxFontParseError as e:
-                channel(f"{e.args}")
-                return
+            # try:
+            #     font = ShxFont(font_path)
+            #     path = FontPath()
+            #     font.render(path, remainder, True, float(font_size))
+            # except ShxFontParseError as e:
+            #     channel(f"{e.args}")
+            #     return
             path_node = create_linetext_node(context, x, y, remainder, font, font_size)
             # path_node = PathNode(
             #     path=path.path,
