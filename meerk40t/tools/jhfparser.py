@@ -170,7 +170,7 @@ class JhfFont:
                     self.bottom = struct["bottom"]
             cidx += 1
 
-    def render(self, path, text, horizontal=True, font_size=12.0):
+    def render(self, path, text, horizontal=True, font_size=12.0, spacing=1.0):
         """
         From https://emergent.unpythonic.net/software/hershey
         The structure is basically as follows: each character consists of a number 1->4000 (not all used) in column 0:4,
@@ -260,7 +260,7 @@ class JhfFont:
                 struct = self.glyphs[tchar]
                 nverts = struct["nverts"]
                 vertices = struct["vertices"]
-                offsetx += abs(struct["left"])
+                offsetx += abs(struct["left"]) * spacing
                 # offsetx += abs(struct["realleft"] - 1)
                 idx = 0
                 penup = True
@@ -284,7 +284,7 @@ class JhfFont:
                         lasty = rightval
                     idx += 1
                 cidx += 1
-                offsetx += struct["right"]
+                offsetx += struct["right"] * spacing
                 # offsetx += struct["realright"] + 1
             else:
                 # print(f"Char '{tchar}' (ord={ord(tchar)}) not in font...")

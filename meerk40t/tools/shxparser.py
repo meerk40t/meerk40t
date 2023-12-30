@@ -347,12 +347,16 @@ class ShxFont:
         except IndexError as e:
             raise ShxFontParseError("No codes to pop()") from e
 
-    def render(self, path, text, horizontal=True, font_size=12.0):
+    def render(self, path, text, horizontal=True, font_size=12.0, spacing=1.0):
         if self.above is None:
             self.above = 1
         self._scale = font_size / self.above
         self._horizontal = horizontal
         self._path = path
+        self._x = 0
+        self._y = 0
+        self._last_x = 0
+        self._last_y = 0
         replacer = []
         for tchar in text:
             to_replace = None
@@ -378,6 +382,8 @@ class ShxFont:
             # print (f"Replace all '{to_replace[0]}' with '{to_replace[1]}'")
             text = text.replace(to_replace[0], to_replace[1])
         for letter in text:
+            last_letter_x = self._last_x
+            last_letter_y = self._last_y
             self._letter = letter
             try:
                 self._code = bytearray(reversed(self.glyphs[ord(letter)]))
@@ -391,6 +397,10 @@ class ShxFont:
                 except IndexError as e:
                     raise ShxFontParseError("Stack Error during render.") from e
             self._skip = False
+            if spacing != 1.0:
+                dx = (spacing - 1) * (self._last_x - last_letter_x)
+                self._last_x += dx
+                self._x += dx
         if self._debug:
             print(f"Render Complete.\n\n\n")
 
