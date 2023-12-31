@@ -77,28 +77,21 @@ class FontPath:
         list1 = np.array(rectangles1)
         list2 = np.array(rectangles2)
         # Extract the x and y coordinates from each list
-        a1, b1 = list1[:, 0], list1[:, 1]
-        a2, b2 = list1[:, 2], list1[:, 3]
-        x1, y1 = list2[:, 0], list2[:, 1]
-        x2, y2 = list2[:, 2], list2[:, 3]
+        # Extract the x and y coordinates from each list
+        try:
+            x1, y1 = list1[:, 0], list1[:, 1]
+            x2, y2 = list2[:, 0], list2[:, 1]
+        except IndexError:
+            print(f"Crash: {list1}, {list2}")
+            return (), ()
 
         # Find the indices of overlapping elements
-        overlapping_indices_1 = np.intersect1d(
-            np.where(
-                (a1[:, np.newaxis] <= x1[:, np.newaxis]) &
-                (a2[:, np.newaxis] >= x1[:, np.newaxis]) &
-                (b1[:, np.newaxis] <= y1[:, np.newaxis]) &
-                (b2[:, np.newaxis] >= y1[:, np.newaxis])
-            )[0], np.arange(len(list2))
-        )
-        overlapping_indices_2 = np.intersect1d(
-            np.where(
-                (x1[:, np.newaxis] <= a1[:, np.newaxis]) &
-                (x2[:, np.newaxis] >= a1[:, np.newaxis]) &
-                (y1[:, np.newaxis] <= b1[:, np.newaxis]) &
-                (y2[:, np.newaxis] >= b1[:, np.newaxis])
-            )[0], np.arange(len(list1))
-        )
+        overlapping_indices_1 = np.intersect1d(np.where(
+            (x1[:, np.newaxis] < x2) & (x1[:, np.newaxis] + list1[:, 2] > x2) & (y1[:, np.newaxis] < y2) & (
+                        y1[:, np.newaxis] + list1[:, 3] > y2))[0], np.arange(len(list2)))
+        overlapping_indices_2 = np.intersect1d(np.where(
+            (x2[:, np.newaxis] < x1) & (x2[:, np.newaxis] + list2[:, 2] > x1) & (y2[:, np.newaxis] < y1) & (
+                        y2[:, np.newaxis] + list2[:, 3] > y1))[0], np.arange(len(list1)))
         # Sort the overlapping indices in descending order
         overlapping_indices_1 = overlapping_indices_1[np.argsort(-overlapping_indices_1)]
         overlapping_indices_2 = overlapping_indices_2[np.argsort(-overlapping_indices_2)]
@@ -116,7 +109,13 @@ class FontPath:
             bb = sp.bbox()
             geom_list.append(sp)
             geom_bounds.append(bb)
-        if self.weld and self.total_list:
+        if len(geom_bounds) == 0:
+            # That was a space or an invalid glyph?!
+            self.geom.clear()
+            return
+
+        # print (f"G: {geom_bounds}\nT: {self.total_bounds}")
+        if self.weld and len(self.total_list) > 0:
             # Is there something to weld to?
             overlap_total, overlap_geom = self.get_overlapping_rectangles_indices(self.total_bounds, geom_bounds)
             subject = Geomstr()
