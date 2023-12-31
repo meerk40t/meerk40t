@@ -28,7 +28,15 @@ class FontPath:
         # So we merge the glyph and append it to the remaining geometry
         if self.weld:
             # Is there something to weld to?
-            self.total_geometry.append(self.geom)
+            self.total_geometry.flag_settings(flag=0)
+            self.geom.as_interpolated_points()
+            c = Geomstr()
+            for sp in self.geom.as_subpaths():
+                for segs in sp.as_interpolated_segments(interpolate=10):
+                    c.polyline(segs)
+                    c.end()
+            c.flag_settings(flag=1)
+            self.total_geometry.append(c)
             bt = BeamTable(self.total_geometry)
             # I think this is flawed... the indices should be different...
             self.total_geometry = bt.union(0, 1)
@@ -98,6 +106,7 @@ def have_hershey_fonts(context):
         for p in glob(join(font_dir, "*." + extension.upper())):
             return True
     return False
+
 
 @lru_cache(maxsize=128)
 def cached_fontclass(context, fontname):
