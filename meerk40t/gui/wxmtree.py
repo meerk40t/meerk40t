@@ -1,3 +1,5 @@
+import time
+
 import wx
 from wx import aui
 
@@ -561,6 +563,7 @@ class ShadowTree:
         self._too_big = False
         self.refresh_tree_counter = 0
         self._last_hover_item = None
+        self._last_hover_time = None
 
     def service_attach(self, *args):
         self.elements.listen_tree(self)
@@ -1861,8 +1864,9 @@ class ShadowTree:
         ttip = ""
         pt = event.GetPosition()
         item, flags = self.wxtree.HitTest(pt)
-        if self._last_hover_item is item:
+        if self._last_hover_item is item:  # always false
             return
+
         if item:
             node = self.wxtree.GetItemData(item)
             if node is not None:
@@ -1988,7 +1992,16 @@ class ShadowTree:
                             + "you drag onto it and will fill the shape with a line pattern.\n"
                             + "To activate / deactivate this effect please use the context menu."
                         )
+        if self._last_hover_time and self._last_hover_item == item:
+            duration = time.time() - self._last_hover_time
+            if self.dragging_nodes and duration > 1:
+                self.refresh_tree(self.wxtree.GetItemData(item))
+                self.wxtree.ExpandAllChildren(item)
+                self.set_expanded(item, 1)
+                self._last_hover_time = None
+        self._last_hover_time = time.time()
         self._last_hover_item = item
+
         if ttip != self.wxtree.GetToolTipText():
             self.wxtree.SetToolTip(ttip)
 
