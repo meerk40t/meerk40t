@@ -647,40 +647,41 @@ class BeamTable:
         g.append_lines(segments)
         return g
 
-    def union(self, subject, clip):
-        return self.cag("union", subject, clip)
+    def union(self, *args):
+        return self.cag("union", *args)
 
-    def intersection(self, subject, clip):
-        return self.cag("intersection", subject, clip)
+    def intersection(self, *args):
+        return self.cag("intersection", *args)
 
-    def xor(self, subject, clip):
-        return self.cag("xor", subject, clip)
+    def xor(self, *args):
+        return self.cag("xor", *args)
 
-    def difference(self, subject, clip):
-        return self.cag("difference", subject, clip)
+    def difference(self, *args):
+        return self.cag("difference", *args)
 
-    def cag(self, cag_op, subject, clip):
+    def cag(self, cag_op, *args):
         if self._nb_scan is None:
             self.compute_beam_brute()
         g = Geomstr()
         actives = self._nb_scan[:-1]
         lines = self.geometry.segments[actives][..., 2]
-
-        s = np.dstack((np.imag(lines) == subject, actives != -1)).all(axis=2)
-        # a = np.pad(s, ((0, 0), (1, 0)), constant_values=False)
-        qq = np.cumsum(s, axis=1) % 2
-        c = np.dstack((np.imag(lines) == clip, actives != -1)).all(axis=2)
-        rr = np.cumsum(c, axis=1) % 2
-        if cag_op == "union":
-            cc = qq | rr
-        elif cag_op == "intersection":
-            cc = qq & rr
-        elif cag_op == "xor":
-            cc = qq ^ rr
-        elif cag_op == "difference":
-            cc = ~qq | rr
-        elif cag_op == "eq":
-            cc = qq == rr
+        cc = None
+        for v in args:
+            s = np.dstack((np.imag(lines) == v, actives != -1)).all(axis=2)
+            qq = np.cumsum(s, axis=1) % 2
+            if cc is None:
+                cc = qq
+            else:
+                if cag_op == "union":
+                    cc = cc | qq
+                elif cag_op == "intersection":
+                    cc = cc & qq
+                elif cag_op == "xor":
+                    cc = cc ^ qq
+                elif cag_op == "difference":
+                    cc = ~cc | qq
+                elif cag_op == "eq":
+                    cc = cc == qq
         yy = np.pad(cc, ((0, 0), (1, 0)), constant_values=0)
         hh = np.diff(yy, axis=1)
         from_vals = self._nb_events[:-1]
