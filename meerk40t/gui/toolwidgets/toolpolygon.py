@@ -25,8 +25,8 @@ class PolygonTool(PointListTool):
     Adds polygon with clicks.
     """
 
-    def __init__(self, scene):
-        PointListTool.__init__(self, scene)
+    def __init__(self, scene, mode=None):
+        PointListTool.__init__(self, scene, mode=mode)
 
         # design_mode
         # 0 - freehand polygon

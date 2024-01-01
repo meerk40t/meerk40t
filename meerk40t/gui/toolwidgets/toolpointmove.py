@@ -15,7 +15,7 @@ class PointMoveTool(ToolWidget):
     Node Move Tool allows clicking and dragging of nodes to new locations.
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, mode=None):
         ToolWidget.__init__(self, scene)
         self.points = list()
         self.pt_offset = 5

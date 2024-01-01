@@ -374,7 +374,7 @@ class MeerK40tScenePanel(wx.Panel):
 
         @context.console_argument("tool", help=_("tool to use."))
         @context.console_command("tool", help=_("sets a particular tool for the scene"))
-        def tool_base(command, channel, _, tool=None, **kwgs):
+        def tool_base(command, channel, _, tool=None, remainder=None, **kwgs):
             if tool is None:
                 channel(_("Tools:"))
                 channel("none")
@@ -393,12 +393,12 @@ class MeerK40tScenePanel(wx.Panel):
                 toolbar.modified()
             try:
                 if tool == "none":
-                    success, response = self.tool_container.set_tool(None)
+                    success, response = self.tool_container.set_tool(None, remainder)
                     channel(response)
                     if not success:
                         return
                 else:
-                    success, response = self.tool_container.set_tool(tool.lower())
+                    success, response = self.tool_container.set_tool(tool.lower(), remainder)
                     channel(response)
                     if not success:
                         return
