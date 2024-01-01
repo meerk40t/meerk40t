@@ -26,9 +26,7 @@ class GravityNode:
             self.position = list(self.ribbon.position)
         vx = self.velocity[0] * (1 - self.friction)
         vy = self.velocity[1] * (1 - self.friction)
-        angle = Geomstr.angle(
-            None, complex(*towards_pos), complex(*self.position)
-        )
+        angle = Geomstr.angle(None, complex(*towards_pos), complex(*self.position))
         vx -= self.attraction * math.cos(angle)
         vy -= self.attraction * math.sin(angle)
 
@@ -128,7 +126,7 @@ class Ribbon:
         return obj
 
     @classmethod
-    def bezier_gravity_tool(cls):
+    def line_gravity_tool(cls):
         obj = cls()
         obj.nodes.append(PositionNode(obj))
         obj.nodes.append(GravityNode(obj, 0))
@@ -158,10 +156,15 @@ class RibbonTool(ToolWidget):
     Ribbon Tool draws new segments by animating some click and press locations.
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, mode="gravity"):
         ToolWidget.__init__(self, scene)
         self.stop = False
-        self.ribbon = Ribbon.gravity_tool()
+        if mode == "gravity":
+            self.ribbon = Ribbon.gravity_tool()
+        elif mode == "line":
+            self.ribbon = Ribbon.line_gravity_tool()
+        else:
+            self.ribbon = Ribbon.line_gravity_tool()
 
     def process_draw(self, gc: wx.GraphicsContext):
         self.ribbon.process_draw(gc)
