@@ -1,3 +1,9 @@
+"""
+The ribbon tool includes a series of different animated physics based drawing methods dealing with the relationships
+between different nodes. Each tick of animation each node performs its generic actions to update its positions.
+Special care is taken to indicate how the drawing between the several nodes should take place.
+"""
+
 import math
 
 import wx
@@ -8,11 +14,15 @@ from meerk40t.tools.geomstr import Geomstr
 
 
 class GravityNode:
+    """
+    Gravity node moves towards the node index it is attracted to at the given friction and attraction amount
+    """
+
     def __init__(self, ribbon, attract_node=0):
         self.ribbon = ribbon
         self.friction = 0.05
         self.distance = 50
-        self.attraction = 1000
+        self.attraction = 500
         self.position = None
         self.velocity = [0, 0]
         self.brush = wx.Brush(wx.RED)
@@ -46,6 +56,10 @@ class GravityNode:
 
 
 class PositionNode:
+    """
+    Position node is simply the ribbon's last identified position as a node.
+    """
+
     def __init__(self, ribbon):
         self.ribbon = ribbon
         self.brush = wx.Brush(wx.RED)
@@ -67,6 +81,16 @@ class PositionNode:
 
 
 class DrawSequence:
+    """
+    Draw sequence is what sort of drawn connections should occur between the different nodes and in what sequences.
+
+    There are three levels of steps.
+    1. The outermost is the series level and each series level step is drawn completely independent of any other series.
+    These are disjointed paths.
+    2. The step level is done in tick order.
+    3. The indexes are performed in order during a tick.
+    """
+
     def __init__(self, ribbon, sequences):
         self.series = {}
         self.tick_index = 0
@@ -76,6 +100,12 @@ class DrawSequence:
 
     @classmethod
     def zig(cls, ribbon):
+        """
+        This is one path, [] and each is in a 4 tick sequence. The first sequence is 0 the second 0, third 1 and then 1
+        So this draws between element 0, then element 0, then element 1, then element 1. Performing a zig-zag.
+        @param ribbon:
+        @return:
+        """
         return cls(ribbon, sequences=[[[0], [0], [1], [1]]])
 
     @classmethod
@@ -83,6 +113,10 @@ class DrawSequence:
         return cls(ribbon, sequences=[[list(args)]])
 
     def tick(self):
+        """
+        Process draw sequencing for the given tick.
+        @return:
+        """
         self.tick_index += 1
         for s, sequence in enumerate(self.sequences):
             series = self.series.get(s)
@@ -98,17 +132,30 @@ class DrawSequence:
                 series.append((x, y))
 
     def process_draw(self, gc: wx.GraphicsContext):
+        """
+        Draws the current sequence.
+        @param gc:
+        @return:
+        """
         gc.SetPen(self.pen)
         for q in self.series:
             series = self.series[q]
             gc.StrokeLines(series)
 
     def get_path(self):
+        """
+        Get the sequence as a geomstr path.
+        @return: geomstr return object
+        """
+
         g = Geomstr()
         for q in self.series:
             series = self.series[q]
             g.polyline(points=[complex(x, y) for x, y in series])
         return g
+
+    def clear(self):
+        self.series.clear()
 
 
 class Ribbon:
@@ -119,6 +166,10 @@ class Ribbon:
 
     @classmethod
     def gravity_tool(cls):
+        """
+        Gravity tool is a position node and a single gravity node that moves towards it.
+        @return:
+        """
         obj = cls()
         obj.nodes.append(PositionNode(obj))
         obj.nodes.append(GravityNode(obj, 0))
@@ -127,6 +178,12 @@ class Ribbon:
 
     @classmethod
     def line_gravity_tool(cls):
+        """
+        Gravity line tool is a position node, being tracked by a gravity node, which in turn is tracked by another such
+        node. The draw sequence bounces between the two gravity nodes.
+
+        @return:
+        """
         obj = cls()
         obj.nodes.append(PositionNode(obj))
         obj.nodes.append(GravityNode(obj, 0))
@@ -135,20 +192,32 @@ class Ribbon:
         return obj
 
     def tick(self):
+        """
+        Delegate to nodes and sequence.
+        @return:
+        """
         for node in self.nodes:
             node.tick()
         self.sequence.tick()
 
     def process_draw(self, gc: wx.GraphicsContext):
+        """
+        Delegate to nodes and sequence.
+        @return:
+        """
         for node in self.nodes:
             node.process_draw(gc)
         self.sequence.process_draw(gc)
 
     def get_path(self):
+        """
+        Delegate to sequence.
+        @return:
+        """
         return self.sequence.get_path()
 
     def clear(self):
-        self.sequence.series.clear()
+        self.sequence.clear()
 
 
 class RibbonTool(ToolWidget):
@@ -164,7 +233,7 @@ class RibbonTool(ToolWidget):
         elif mode == "line":
             self.ribbon = Ribbon.line_gravity_tool()
         else:
-            self.ribbon = Ribbon.line_gravity_tool()
+            self.ribbon = Ribbon.gravity_tool()
 
     def process_draw(self, gc: wx.GraphicsContext):
         self.ribbon.process_draw(gc)
@@ -202,17 +271,18 @@ class RibbonTool(ToolWidget):
         elif event_type == "leftup":
             self.stop = True
             t = self.ribbon.get_path()
-            if t:
-                elements = self.scene.context.elements
-                node = elements.elem_branch.add(
-                    geometry=t,
-                    type="elem path",
-                    stroke_width=elements.default_strokewidth,
-                    stroke=elements.default_stroke,
-                    fill=elements.default_fill,
-                )
-                if elements.classify_new:
-                    elements.classify([node])
-                self.ribbon.clear()
+            if not t:
+                return RESPONSE_CONSUME
+            elements = self.scene.context.elements
+            node = elements.elem_branch.add(
+                geometry=t,
+                type="elem path",
+                stroke_width=elements.default_strokewidth,
+                stroke=elements.default_stroke,
+                fill=elements.default_fill,
+            )
+            if elements.classify_new:
+                elements.classify([node])
+            self.ribbon.clear()
             response = RESPONSE_CONSUME
         return response
