@@ -1061,13 +1061,17 @@ class MaterialPanel(ScrolledPanel):
         if self.context.kernel.yesno(
             _("Do you really want to delete all visible entries? This can't be undone.")
         ):
-            for entry in self.display_list:
+            busy = self.context.kernel.busyinfo
+            busy.start(msg=_("Deleting data"))
+            for idx, entry in enumerate(self.display_list):
+                busy.change(msg=f"{idx+1}/{len(self.display_list)}", keep=1)
                 material = entry["section"]
                 self.context.elements.clear_persistent_operations(
                     material,
                     use_settings=self.op_data,
                 )
             self.op_data.write_configuration()
+            busy.end()
             self.on_reset(None)
 
     def invalid_file(self, filename):
