@@ -218,7 +218,7 @@ class EllipseNode(Node, Stroked, FunctionalParameter):
 
     def drop(self, drag_node, modify=True):
         # Dragging element into element.
-        if drag_node.type.startswith("elem"):
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             if modify:
                 self.insert_sibling(drag_node)
             return True
