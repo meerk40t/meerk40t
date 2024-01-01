@@ -1,7 +1,6 @@
 import numpy as np
 from functools import lru_cache
 from glob import glob
-from time import perf_counter
 from os.path import basename, exists, join, realpath, splitext
 
 from meerk40t.core.node.elem_path import PathNode
@@ -17,146 +16,33 @@ from meerk40t.tools.ttfparser import TrueTypeFont
 class FontPath:
     def __init__(self, weld):
         self.total_list = list()
-        self.total_bounds = list()
         self.total_geometry = Geomstr()
         self.geom = Geomstr()
+        self._index = 0
         self.start = None
         self.weld = weld
-    """
-    Tats code:
-    @property
-    def geometry(self):
-        return self.total_geometry
 
     def character_end(self):
-        # Indicates that a glyph has been finished
-        # So we merge the glyph and append it to the remaining geometry
         if self.weld:
-            # Is there something to weld to?
-            self.total_geometry.flag_settings(flag=0)
             self.geom.as_interpolated_points()
             c = Geomstr()
             for sp in self.geom.as_subpaths():
                 for segs in sp.as_interpolated_segments(interpolate=10):
                     c.polyline(segs)
                     c.end()
-            c.flag_settings(flag=1)
+            c.flag_settings(flag=self._index)
+            self._index += 1
             self.total_geometry.append(c)
-            bt = BeamTable(self.total_geometry)
-            # I think this is flawed... the indices should be different...
-            self.total_geometry = bt.union(0, 1)
         else:
             self.total_geometry.append(self.geom)
-        self.geom.clear()    
-    """
+        self.geom.clear()
 
     @property
     def geometry(self):
-        result = Geomstr()
-        for g in self.total_list:
-            result.append(g)
-        return result
-
-    @staticmethod
-    def get_overlapping_rectangles_indices(rectangles1, rectangles2):
-        """
-        Returns a tuple of two NumPy arrays, where the first array contains the indices of the rectangles from the first
-        list that overlap with any of the rectangles in the second list, and the second array contains the indices
-        of the rectangles from the second list that overlap with any of the rectangles in the first list.
-
-        Testcode:
-        rectangles1 = ((0, 0, 2, 2), (1, 1, 3, 3), (4, 4, 5, 5))
-        rectangles2 = ((2, 2, 4, 4), (3, 3, 5, 5))
-        # Call the get_overlapping_rectangles_indices function
-        overlapping_indices1, overlapping_indices2 = self.get_overlapping_rectangles_indices(rectangles1, rectangles2)
-        # Print the results
-        print("Indices of overlapping rectangles in the first list:", overlapping_indices1)
-        print("Indices of overlapping rectangles in the second list:", overlapping_indices2)
-        """
-        # Convert the lists of rectangle coordinates to NumPy arrays
-        list1 = np.array(rectangles1)
-        list2 = np.array(rectangles2)
-        # Extract the x and y coordinates from each list
-        # Extract the x and y coordinates from each list
-        try:
-            x1, y1 = list1[:, 0], list1[:, 1]
-            x2, y2 = list2[:, 0], list2[:, 1]
-        except IndexError:
-            print(f"Crash: {list1}, {list2}")
-            return (), ()
-
-        # Find the indices of overlapping elements
-        overlapping_indices_1 = np.intersect1d(np.where(
-            (x1[:, np.newaxis] < x2) & (x1[:, np.newaxis] + list1[:, 2] > x2) & (y1[:, np.newaxis] < y2) & (
-                        y1[:, np.newaxis] + list1[:, 3] > y2))[0], np.arange(len(list2)))
-        overlapping_indices_2 = np.intersect1d(np.where(
-            (x2[:, np.newaxis] < x1) & (x2[:, np.newaxis] + list2[:, 2] > x1) & (y2[:, np.newaxis] < y1) & (
-                        y2[:, np.newaxis] + list2[:, 3] > y1))[0], np.arange(len(list1)))
-        # Sort the overlapping indices in descending order
-        overlapping_indices_1 = overlapping_indices_1[np.argsort(-overlapping_indices_1)]
-        overlapping_indices_2 = overlapping_indices_2[np.argsort(-overlapping_indices_2)]
-        return overlapping_indices_1, overlapping_indices_2
-
-
-    def character_end(self):
-        # Indicates that a glyph has been finished
-        # So we merge the glyph and append it to the remaining geometry
-
-        _t0 = perf_counter()
-        geom_list = list()
-        geom_bounds = list()
-        for sp in self.geom.as_subpaths():
-            bb = sp.bbox()
-            geom_list.append(sp)
-            geom_bounds.append(bb)
-        if len(geom_bounds) == 0:
-            # That was a space or an invalid glyph?!
-            self.geom.clear()
-            return
-
-        # print (f"G: {geom_bounds}\nT: {self.total_bounds}")
-        if self.weld and len(self.total_list) > 0:
-            # Is there something to weld to?
-            overlap_total, overlap_geom = self.get_overlapping_rectangles_indices(self.total_bounds, geom_bounds)
-            subject = Geomstr()
-            clip = Geomstr()
-            print (f"Checking {len(overlap_total)}/{len(self.total_bounds)} vs {len(overlap_geom)}/{len(geom_bounds)}")
-            if len(overlap_total) > 0 and len(overlap_geom) > 0:
-                for idx in overlap_total:
-                    # It's sorted in descending order, so we can safely remove things...
-                    subject.append(self.total_list[idx])
-                    self.total_list.pop(idx)
-                    self.total_bounds.pop(idx)
-                for idx in overlap_geom:
-                    # It's sorted in descending order, so we can safely remove things...
-                    clip.append(geom_list[idx].as_interpolated_segments(interpolate=10))
-                    geom_list.pop(idx)
-                    geom_bounds.pop(idx)
-                # Carry over those contours that don't overlap...
-                for sp, bb in zip(geom_list, geom_bounds):
-                    self.total_list.append(sp)
-                    self.total_bounds.append(bb)
-                subject.flag_settings(flag=0)
-                clip.flag_settings(flag=1)
-                bt = BeamTable(subject)
-                subject = bt.union(0, 1)
-                for sp in subject.as_subpaths():
-                    bb = sp.bbox()
-                    self.total_list.append(sp)
-                    self.total_bounds.append(bb)
-            else:
-                if len(overlap_total) > 0 or len(overlap_geom) > 0:
-                    print (f"That's strange, left side claims {len(overlap_total)} but right side claims {len(overlap_geom)}")
-                for sp, bb in zip(geom_list, geom_bounds):
-                    self.total_list.append(sp)
-                    self.total_bounds.append(bb)
-        else:
-            for sp, bb in zip(geom_list, geom_bounds):
-                self.total_list.append(sp)
-                self.total_bounds.append(bb)
-        self.geom.clear()
-        _t1 = perf_counter()
-        print (f"Time for character_end: {_t1-_t0:.3f}s")
+        if not self.weld:
+            return self.total_geometry
+        bt = BeamTable(self.total_geometry)
+        return bt.union(*list(range(self._index)))
 
     def new_path(self):
         self.geom.end()
@@ -358,7 +244,6 @@ def update_linetext(context, node, newtext):
     node.altered()
     # _t4 = perf_counter()
     # print (f"Readfont: {_t1 -_t0:.2f}s, render: {_t2 -_t1:.2f}s, path: {_t3 -_t2:.2f}s, alter: {_t4 -_t3:.2f}s, total={_t4 -_t0:.2f}s")
-
 
 def create_linetext_node(context, x, y, text, font=None, font_size=None, font_spacing=1.0):
     registered_fonts = fonts_registered()
