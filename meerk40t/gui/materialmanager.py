@@ -736,6 +736,7 @@ class MaterialPanel(ScrolledPanel):
         )
 
         tree = self.tree_library
+        tree.Freeze()
         tree.DeleteAllItems()
         tree_root = tree.AddRoot(_("Materials"))
         tree.SetItemData(tree_root, -1)
@@ -831,6 +832,8 @@ class MaterialPanel(ScrolledPanel):
         else:
             tree.ExpandAllChildren(selected_parent)
             self.tree_library.SelectItem(selected)
+        tree.Thaw()
+        tree.Refresh()
 
     @staticmethod
     def get_nth_dict_entry(dictionary: dict, n=0):
@@ -1058,8 +1061,7 @@ class MaterialPanel(ScrolledPanel):
         if self.context.kernel.yesno(
             _("Do you really want to delete all visible entries? This can't be undone.")
         ):
-            for content in self.display_list:
-                entry = content[0]
+            for entry in self.display_list:
                 material = entry["section"]
                 self.context.elements.clear_persistent_operations(
                     material,
@@ -1678,8 +1680,7 @@ class MaterialPanel(ScrolledPanel):
         if op_ltype < 0:
             return
         changes = False
-        for content in self.display_list:
-            entry = content[0]
+        for entry in self.display_list:
             material = entry["section"]
             section = f"{material} info"
             self.op_data.write_persistent(section, "laser", op_ltype)
@@ -1760,6 +1761,7 @@ class MaterialPanel(ScrolledPanel):
             return
 
     def fill_preview(self):
+        self.list_preview.Freeze()
         self.list_preview.DeleteAllItems()
         self.operation_list.clear()
         secdesc = ""
@@ -1821,6 +1823,8 @@ class MaterialPanel(ScrolledPanel):
                 self.list_preview.SetItemData(list_id, idx - 1)
                 self.operation_list[subsection] = (optype, opid, oplabel, power, speed)
 
+        self.list_preview.Thaw()
+        self.list_preview.Refresh()
         if self.active_material is None:
             actval = ""
         else:
