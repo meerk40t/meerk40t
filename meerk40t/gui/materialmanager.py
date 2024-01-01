@@ -1069,6 +1069,7 @@ class MaterialPanel(ScrolledPanel):
                 self.context.elements.clear_persistent_operations(
                     material,
                     use_settings=self.op_data,
+                    flush=False
                 )
             self.op_data.write_configuration()
             busy.end()
