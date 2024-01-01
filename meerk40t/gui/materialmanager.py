@@ -1297,36 +1297,6 @@ class MaterialPanel(ScrolledPanel):
                 powerval = None
                 speedval = None
 
-                def write_power_speed():
-                    if factor != 1:
-                        old_l = info[1]
-                        new_l = info[2]
-                        factor_l = info[5]
-                        if old_l is not None:
-                            if info_box:
-                                info_box += "\\n"
-                            info_box += f"Converted lens-size {old_l}mm -> {new_l}mm: {factor_l:.2}"
-                        old_l = info[3]
-                        new_l = info[4]
-                        factor_l = info[6]
-                        if old_l is not None:
-                            if info_box:
-                                info_box += "\\n"
-                            info_box += (
-                                f"Converted power {old_l}W -> {new_l}W: {factor_l:.2}"
-                            )
-                    if powerval * factor > 1000:
-                        # Too much, let's reduce speed instead
-                        if speedval:
-                            if info_box:
-                                info_box += "\\n"
-                            info_box += f"Needed to reduce speed {numeric_value:.1}mm/s -> {numeric_value * speed_factor:.2}mm/s"
-                            speedval *= 1 / factor
-                    else:
-                        powerval *= factor
-                    self.op_data.write_persistent(section_name, "speed", speedval)
-                    self.op_data.write_persistent(section_name, "power", powerval)
-
                 while True:
                     line = f.readline()
                     if not line:
@@ -1338,7 +1308,36 @@ class MaterialPanel(ScrolledPanel):
                                 info_section_name, "note", info_box
                             )
                         if powerval and section_name:
-                            write_power_speed()
+                            if factor != 1:
+                                old_l = info[1]
+                                new_l = info[2]
+                                factor_l = info[5]
+                                if old_l is not None:
+                                    if info_box:
+                                        info_box += "\\n"
+                                    info_box += f"Converted lens-size {old_l}mm -> {new_l}mm: {factor_l:.2}"
+                                old_l = info[3]
+                                new_l = info[4]
+                                factor_l = info[6]
+                                if old_l is not None:
+                                    if info_box:
+                                        info_box += "\\n"
+                                    info_box += f"Converted power {old_l}W -> {new_l}W: {factor_l:.2}"
+                            if powerval * factor > 1000:
+                                # Too much, let's reduce speed instead
+                                if speedval:
+                                    if info_box:
+                                        info_box += "\\n"
+                                    info_box += f"Needed to reduce speed {numeric_value:.1}mm/s -> {numeric_value * speed_factor:.2}mm/s"
+                                    speedval *= 1 / factor
+                            else:
+                                powerval *= factor
+                            self.op_data.write_persistent(
+                                section_name, "speed", speedval
+                            )
+                            self.op_data.write_persistent(
+                                section_name, "power", powerval
+                            )
                         powerval = None
                         speedval = None
                         info_box = ""
@@ -1452,7 +1451,34 @@ class MaterialPanel(ScrolledPanel):
                                 info_box += f"{param} = {numeric_value}"
                 # Residual information available?
                 if powerval and section_name:
-                    write_power_speed()
+                    if factor != 1:
+                        old_l = info[1]
+                        new_l = info[2]
+                        factor_l = info[5]
+                        if old_l is not None:
+                            if info_box:
+                                info_box += "\\n"
+                            info_box += f"Converted lens-size {old_l}mm -> {new_l}mm: {factor_l:.2}"
+                        old_l = info[3]
+                        new_l = info[4]
+                        factor_l = info[6]
+                        if old_l is not None:
+                            if info_box:
+                                info_box += "\\n"
+                            info_box += (
+                                f"Converted power {old_l}W -> {new_l}W: {factor_l:.2}"
+                            )
+                    if powerval * factor > 1000:
+                        # Too much, let's reduce speed instead
+                        if speedval:
+                            if info_box:
+                                info_box += "\\n"
+                            info_box += f"Needed to reduce speed {numeric_value:.1}mm/s -> {numeric_value * speed_factor:.2}mm/s"
+                            speedval *= 1 / factor
+                    else:
+                        powerval *= factor
+                    self.op_data.write_persistent(section_name, "speed", speedval)
+                    self.op_data.write_persistent(section_name, "power", powerval)
                 if info_box and info_section_name:
                     self.op_data.write_persistent(info_section_name, "note", info_box)
 
@@ -1666,7 +1692,7 @@ class MaterialPanel(ScrolledPanel):
         if self.active_material is None:
             return
         op_section = self.txt_entry_section.GetValue()
-        for forbidden in (" []"):
+        for forbidden in " []":
             op_section = op_section.replace(forbidden, "_")
         ctrls = (
             self.txt_entry_title,
