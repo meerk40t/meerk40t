@@ -14,6 +14,10 @@ from meerk40t.tools.geomstr import Geomstr
 
 
 class RibbonNode:
+    """
+    Base RibbonNode class.
+    """
+
     def __init__(self, ribbon):
         self.brush = wx.Brush(wx.RED)
         self.pen = wx.Pen(wx.BLUE)
@@ -38,6 +42,10 @@ class RibbonNode:
 
 
 class RetroNode(RibbonNode):
+    """
+    Position of node is the referenced nodes position <count> ticks ago. Or the average of the last <count> ticks.
+    """
+
     def __init__(self, ribbon, retro_node, count, average=False):
         super().__init__(ribbon)
         self.retro_node = retro_node
@@ -67,7 +75,7 @@ class RetroNode(RibbonNode):
 
 class MidpointNode(RibbonNode):
     """
-    Position node is simply the ribbon's last identified position as a node.
+    Node's position is the average of the provided nodes positions.
     """
 
     def __init__(self, ribbon, nodes):
@@ -97,7 +105,7 @@ class MidpointNode(RibbonNode):
 
 class OffsetNode(RibbonNode):
     """
-    Position node is simply the ribbon's last identified position as a node.
+    Position is the referenced node's position plus a static offset.
     """
 
     def __init__(self, ribbon, offset_node, dx=0.0, dy=0.0):
@@ -120,6 +128,9 @@ class OffsetNode(RibbonNode):
 class OrientationNode(RibbonNode):
     """
     Orientation node is a 5 node positional. It is located at the reference node. At some angle and some distance away.
+    If a0, a1 are not given the angle is static at offset_angle.
+    if d0, d1 are not given the radius is static at offset_radius.
+    dx, dy are static offsets.
     """
 
     def __init__(
