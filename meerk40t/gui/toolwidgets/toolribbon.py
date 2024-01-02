@@ -48,6 +48,8 @@ class RetroNode(RibbonNode):
 
     def tick(self):
         tracking_pos = self.get(self.retro_node)
+        if tracking_pos is None:
+            return
         self._xs.append(tracking_pos[0])
         self._ys.append(tracking_pos[1])
         if self.average:
@@ -208,6 +210,7 @@ class PositionNode(RibbonNode):
         self.ribbon = ribbon
         self.brush = wx.Brush(wx.RED)
         self.pen = wx.Pen(wx.BLUE)
+        self.position = self.ribbon.position
 
     def tick(self):
         self.position = self.ribbon.position
@@ -399,6 +402,33 @@ class Ribbon:
         return obj
 
     @classmethod
+    def crescent_tool(cls):
+        """
+        o3,4,120,100o3,4,0,100o3,4,-120,100kB5, 10B5,5f0"
+        @return:
+        """
+        obj = cls()
+        obj.nodes.append(
+            OrientationNode(
+                obj, 3, 3, 4, offset_angle=math.tau / 3, offset_radius=10000
+            )
+        )
+        obj.nodes.append(
+            OrientationNode(obj, 3, 3, 4, offset_angle=0, offset_radius=10000)
+        )
+        obj.nodes.append(
+            OrientationNode(
+                obj, 3, 3, 4, offset_angle=-math.tau / 3, offset_radius=10000
+            )
+        )
+        obj.nodes.append(RetroNode(obj, 5, 10, average=True))
+        obj.nodes.append(RetroNode(obj, 5, 5, average=True))
+        obj.nodes.append(PositionNode(obj))
+
+        obj.sequence = DrawSequence.bounce_back(obj, 0, 1, 2)
+        return obj
+
+    @classmethod
     def rake_tool(cls):
         """
         "f0B0,10o1,0,90,100s.3ns.6ns-.3ns-.6D2,3,1,4,5"
@@ -417,14 +447,16 @@ class Ribbon:
             OrientationNode(obj, 1, 0, 1, offset_angle=math.tau / 4, offset_radius=5000)
         )
         obj.nodes.append(
-            OrientationNode(obj, 1, 0, 1, offset_angle=math.tau / 4, offset_radius=-5000)
+            OrientationNode(
+                obj, 1, 0, 1, offset_angle=math.tau / 4, offset_radius=-5000
+            )
         )
         obj.nodes.append(
             OrientationNode(
                 obj, 1, 0, 1, offset_angle=math.tau / 4, offset_radius=-10000
             )
         )
-        obj.sequence = DrawSequence.parallel(obj,  2, 3, 1, 4, 5)
+        obj.sequence = DrawSequence.parallel(obj, 2, 3, 1, 4, 5)
 
         return obj
 
@@ -494,6 +526,8 @@ class RibbonTool(ToolWidget):
             self.ribbon = Ribbon.bendy_calligraphy_tool()
         elif mode == "rake":
             self.ribbon = Ribbon.rake_tool()
+        elif mode == "crescent":
+            self.ribbon = Ribbon.crescent_tool()
         else:
             self.ribbon = Ribbon.gravity_tool()
 
