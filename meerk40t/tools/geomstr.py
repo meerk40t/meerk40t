@@ -400,25 +400,27 @@ class BeamTable:
     def sort_key(self, e):
         return e[0].real, e[0].imag, ~e[1]
 
-    def _compute_beam(self):
+    def compute_beam_bo(self):
         g = self.geometry
         gs = g.segments
         events = []
         # Add start and end events.
         for i in range(g.index):
-            if gs[i][2] != TYPE_LINE:
+            if np.real(gs[i][2]) != TYPE_LINE:
                 continue
-            if (gs[i][0].imag, gs[i][0].real) < (gs[i][-1].imag, gs[i][-1].real):
+            if (gs[i][0].real, gs[i][0].imag) < (gs[i][-1].real, gs[i][-1].imag):
                 events.append((g.segments[i][0], i, None))
                 events.append((g.segments[i][-1], ~i, None))
             else:
                 events.append((g.segments[i][0], ~i, None))
                 events.append((g.segments[i][-1], i, None))
 
-        # Sort start and end events.
+        # Sort start, end events.
         events.sort(key=self.sort_key)
 
-        def check_intersection(q, r, y):
+        checked_swaps = []
+
+        def check_intersection(q, r, sl):
             """
             Check for intersections between p and r, at y.
 
@@ -427,88 +429,108 @@ class BeamTable:
             y is used to ensure this is a future point.
             @param q: lower-active value
             @param r: higher-active value
-            @param y: y value to not be equal
+            @param sl: sl value to not be equal
             @return:
             """
+            print(f"Checking intersections: {q} and {r} at {sl}")
             try:
                 for t1, t2 in g.intersections(q, r):
                     if t1 in (0, 1) and t2 in (0, 1):
                         continue
                     pt_intersect = g.position(q, t1)
-                    if y < pt_intersect.imag:
+                    if sl.real < pt_intersect.real:
+                        if (q, r) in checked_swaps:
+                            print(checked_swaps)
+                            # Already getting checked.
+                            continue
+                        checked_swaps.append((q, r))
                         events.append((pt_intersect, 0, (q, r)))
                         self.intersections.point(pt_intersect)
                         events.sort(key=self.sort_key)
             except AttributeError:
                 pass
 
+        actives = []
+        i = 0
+        while i < len(events):
+            event = events[i]
+            pt, index, swap = event
+
+            try:
+                next, _, _ = events[i + 1]
+                scanline = (pt + next) / 2
+            except IndexError:
+                next = complex(float("inf"), float("inf"))
+                scanline = next
+            print(actives)
+            print(event)
+            if swap is not None:
+                s1 = actives.index(swap[0])
+                s2 = actives.index(swap[1])
+                actives[s1], actives[s2] = actives[s2], actives[s1]
+                if s1 > 0:
+                    check_intersection(actives[s1-1], actives[s1], scanline)
+                if s2 < len(actives) - 1 :
+                    check_intersection(actives[s2], actives[s2+1], scanline)
+            elif index >= 0:
+                y_int = float(g.y_intercept(index, scanline.real, scanline.imag))
+                actives_y_int = [float(g.y_intercept(active, scanline.real, scanline.imag)) for active in actives]
+                ip = bisect.bisect(actives_y_int, y_int)
+                actives.insert(ip, index)
+                if ip > 0:
+                    check_intersection(actives[ip-1], actives[ip], scanline)
+                if ip < len(actives) -1:
+                    check_intersection(actives[ip], actives[ip+1], scanline)
+            else:
+                rp = actives.index(~index)
+                del actives[rp]
+                if 0 < rp < len(actives) -1:
+                    check_intersection(actives[rp-1], actives[rp], scanline)
+            i += 1
+
+        # Sort start, end, intersections events.
+        events.sort(key=self.sort_key)
+
         # Store currently active segments.
         actives = []
 
         # Store previously active segments
         active_lists = []
+        real_events = []
 
         largest_actives = 0
-        for pt, index, swap in events:
-            x_pos = pt.real
-            y_pos = pt.imag
-            if isinstance(swap, tuple):
-                idx1, idx2 = swap
-                pos1 = actives.index(idx1)
-                pos2 = actives.index(idx2)
-                actives[pos1], actives[pos2] = actives[pos2], actives[pos1]
-                # We swapped pos1 and pos2 so we must check the outer values of this swap.
-                try:
-                    check_intersection(actives[pos1 - 1], actives[pos1], y_pos)
-                except IndexError:
-                    pass
-                try:
-                    check_intersection(actives[pos2], actives[pos2 + 1], y_pos)
-                except IndexError:
-                    pass
-            elif index >= 0:
-                # Index is being inserted, find x-position sorted.
-                lines = g.segments[actives]
-                a = lines[:, 0]
-                b = lines[:, -1]
 
-                old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
-                try:
-                    # If horizontal slope is undefined. But, all x-ints are at x since x0=x1
-                    m = (b.imag - a.imag) / (b.real - a.real)
-                    y0 = a.imag - (m * a.real)
-                    x_intercepts = np.where(~np.isinf(m), (y_pos - y0) / m, a.real)
-                finally:
-                    np.seterr(**old_np_seterr)
-                idx = np.searchsorted(x_intercepts, np.imag(pt))
-                actives.insert(idx, index)
+        for i in range(len(events)):
+            event = events[i]
+            pt, index, swap = event
+
+            try:
+                next, _, _ = events[i + 1]
+                scanline = (pt + next) / 2
+            except IndexError:
+                next = complex(float("inf"), float("inf"))
+                scanline = next
+
+            if swap is not None:
+                s1 = actives.index(swap[0])
+                s2 = actives.index(swap[1])
+                actives[s1], actives[s2] = actives[s2], actives[s1]
+            elif index >= 0:
+                y_int = float(g.y_intercept(index, scanline.real, scanline.imag))
+                actives_y_int = [float(g.y_intercept(active, scanline.real, scanline.imag)) for active in actives]
+                ip = bisect.bisect(actives_y_int, y_int)
+                actives.insert(ip, index)
+            else:
+                rp = actives.index(~index)
+                del actives[rp]
+
+            if pt != next:
                 if len(actives) > largest_actives:
                     largest_actives = len(actives)
+                real_events.append(pt)
+                active_lists.append(list(actives))
 
-                # Check intersections between idx, idx + 1
-                try:
-                    check_intersection(index, actives[idx + 1], y_pos)
-                except IndexError:
-                    pass
-
-                # Check intersections between idx, idx - 1
-                try:
-                    check_intersection(actives[idx - 1], index, y_pos)
-                except IndexError:
-                    pass
-            else:
-                remove_index = actives.index(~index)
-                # Check intersections between idx-1, idx+ 1
-                try:
-                    check_intersection(actives[idx - 1], actives[idx + 1], y_pos)
-                except IndexError:
-                    pass
-                del actives[remove_index]
-
-            active_lists.append(list(actives))
-
-        active_lists.append([])
-        self._nb_events = [(e.imag, e.real) for e, _, _ in events]
+        self._nb_events = real_events
         self._nb_scan = np.zeros((len(active_lists), largest_actives), dtype=int)
         self._nb_scan -= 1
         for i, active in enumerate(active_lists):
