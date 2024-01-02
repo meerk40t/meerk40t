@@ -1260,17 +1260,19 @@ msgstr "Mostra lo Spooler all'avvio del lavoro"
 msgid "Open the Spooler window automatically when you Execute a Job"
 msgstr "Apri automaticamente la finestra dello Spooler quando esegui un lavoro"
 
+msgid "Reducing Movements"
+msgstr "Ottimizza movimenti"
+
 #: meerk40t/core/planner.py:55
 msgid "Reduce Travel Time"
 msgstr "Riduci il tempo di spostamento"
 
-#: meerk40t/core/planner.py:56
+#: meerk40t/core/planner.py:85
 msgid ""
 "Using this option can significantly reduce the time spent moving between "
 "elements with the laser off by optimizing the sequence that elements are "
 "burned. "
-msgstr ""
-"Utilizzando questa opzione è possibile ridurre significativamente il tempo "
+msgstr "Questa opzione permette di ridurre significativamente il tempo "
 "impiegato per gli spostamenti tra gli elementi con il laser spento, "
 "ottimizzando la sequenza con cui gli elementi vengono tagliati."
 
@@ -1279,35 +1281,32 @@ msgid ""
 "When this option is NOT checked, elements are burned strictly in the "
 "order they appear in the Operation tree, and the Merge options will have "
 "no effect on the burn time. "
-msgstr ""
-"Quando questa opzione NON è selezionata, gli elementi vengono tagliati "
-"tassativamente nell'ordine in cui appaiono in (Operation tree) e "
-"le opzioni di Unione non avranno alcun effetto sulla durata della lavorazione."
+msgstr "Non impostando questo parametro, gli elementi vengono tagliati tassativamente nell'ordine "
+"in cui appaiono nell'albero delle Operazioni e le opzioni di "
+"Unione non avranno alcun effetto sulla durata della lavorazione."
 
 #: meerk40t/core/planner.py:68
-msgid ""
-"When this option IS checked, Meerk40t will burn each subpath and then "
+msgid "When this option IS checked, Meerk40t will burn each subpath and then "
 "move to the nearest remaining subpath instead, reducing the time taken "
 "moving between burn items."
-msgstr ""
-"Quando questa opzione è SELEZIONATA, Meerk40t procederà da un sottotracciato "
+msgstr "Attivando questa opzione Meerk40t procederà da un sottotracciato "
 "all’altro scegliendo quello più vicino, riducendo così il tempo "
-"necessario allo spostamento tra gli elementi."
+"necessario allo spostamento tra gli elementi.\n"
 
 #: meerk40t/core/planner.py:81
 msgid "Burn Complete Subpaths"
-msgstr "Masterizza sottoperorsi completi"
-#: meerk40t/core/planner.py:82
+msgstr "Taglia/incide sottopercorsi completi"
+
+#: meerk40t/core/planner.py:111
 msgid ""
 "By default Reduce Travel Time optimises using SVG individual path "
 "segments, which means that non-closed subpaths can be burned in several "
 "shorter separate burns rather than one continuous burn from start to end."
 " "
 msgstr ""
-"Per impostazione predefinita, Riduci il Tempo di Spostamento ottimizza "
-"utilizzando i singoli segmenti del percorso SVG, il che significa che i "
-"sottopercorsi non chiusi possono essere tagliati in differenti lavorazioni "
-"più brevi anziché in una sola lavorazione continua, dall'inizio alla fine."
+"Per impostazione predefinita, Riduci il tempo di spostamento, ottimizza singoli segmenti di percorsi SVG, "
+"il che significa che i sottopercorsi non chiusi possono essere tagliari/incisi in differenti lavorazioni "
+"più brevi e separati, piuttosto che in un unico percorso continuo dall'inizio alla fine."
 
 #: meerk40t/core/planner.py:88
 msgid ""
@@ -1320,16 +1319,16 @@ msgid ""
 "differences in total burn depth at the point the burns join. "
 msgstr ""
 "Questa opzione riguarda solo i percorsi non chiusi. Quando questa opzione è selezionata, "
-"i sottopercorsi non chiusi vengono sempre masterizzati in una sola masterizzazione continua "
-"dall'inizio alla fine anziché iniziare le masterizzazioni a metà percorso. Sebbene questo possa "
+"i sottopercorsi non chiusi vengono sempre tagliati/incisi in una sola lavorazione continua "
+"dall'inizio alla fine anziché iniziare il lavoro a metà percorso. Sebbene questo possa "
 "creare uno spostamento più lungo fino alla fine del sottopercorso, evita anche successivi "
 "spostamenti da o verso il punto intermedio. Pertanto, il tempo di spostamento totale potrebbe "
 "essere più breve o più lungo. Potrebbe anche evitare piccole differenze nella profondità totale "
-"della masterizzazione nel punto in cui le masterizzazioni si uniscono."
+"del taglio/incisione nel punto in cui le masterizzazioni si uniscono."
 
 #: meerk40t/core/planner.py:107
 msgid "Merge Passes"
-msgstr "Unisci Passaggi"
+msgstr "Unisci passaggi"
 
 #: meerk40t/core/planner.py:108
 msgid ""
@@ -1338,8 +1337,8 @@ msgid ""
 " closed paths round-and-round and non-closed paths back-and-forth, before"
 " Meerk40t moves to the next path. "
 msgstr ""
-"Combina più passaggi nella stessa ottimizzazione. Questo comporterà "
-"tipicamente che ciascun sottopercorso verrà masterizzato più volte di "
+"Combina più passaggi nella stessa ottimizzazione.\nQuesto comporterà "
+"che ciascun sottopercorso verrà masterizzato più volte di "
 "seguito, masterizzando i percorsi chiusi in tondo e i percorsi non chiusi "
 "avanti e indietro, prima che Meerk40t passi al percorso successivo."
 
@@ -1360,7 +1359,8 @@ msgid ""
 "and this can result in greater charring or even an increased risk of the "
 "material catching fire."
 msgstr ""
-"NOTA: Quando masterizzi percorsi molto brevi più volte di seguito in rapida successione, "
+"NOTA:\n"
+"Quando masterizzi percorsi molto brevi più volte di seguito in rapida successione, "
 "questo non lascia il tempo al materiale di raffreddarsi tra le masterizzazioni e ciò può "
 "causare una maggiore carbonizzazione o persino un aumento del rischio che il materiale prenda fuoco."
 
@@ -1374,9 +1374,9 @@ msgid ""
 "globally. Operations of different types will be optimised together to "
 "reduce travel time, so vector and raster burns will be mixed. "
 msgstr ""
-"Combina più operazioni di masterizzazione consecutive e ottimizzale globalmente. "
-"Le operazioni di tipi diversi verranno ottimizzate insieme per ridurre il tempo di spostamento, "
-"quindi le masterizzazioni di vettori e raster verranno mescolate."
+"Combina più operazioni di masterizzazione consicutive e applica l'ottimizzazione alla totalità dei processi"
+"Le operazioni di tipi diverso verranno ottimizzate insieme per ridurre il tempo di spostamento, "
+"quindi le lavorazioni dei vettori e raster verranno mescolate."
 
 #: meerk40t/core/planner.py:143
 msgid ""
@@ -1384,8 +1384,9 @@ msgid ""
 "the same passes merged. If Merge Passes is also checked, then all burns "
 "will be optimised globally."
 msgstr ""
-"Se Merge Passes non è selezionato, le operazioni con >1 passaggio avranno solo gli stessi passaggi uniti. "
-"Se Merge Passes è anche selezionato, allora tutte le masterizzazioni verranno ottimizzate globalmente."
+"Attivo: tutte le masterizzazioni verranno ottimizzate globalmente\n"
+"--------------------\n"
+"Inattivo: le Operazioni con più di un passaggio avranno i passaggi uniti"
 
 #: meerk40t/core/planner.py:148
 msgid ""
@@ -1393,7 +1394,7 @@ msgid ""
 "burn operations, using this option can significantly INCREASE the "
 "optimisation time. "
 msgstr ""
-"Se hai un progetto complesso con molti percorsi su più operazioni di masterizzazione consecutive, "
+"Se hai un progetto complesso con molti percorsi con più operazioni di masterizzazione consecutive, "
 "utilizzare questa opzione può aumentare significativamente il tempo di ottimizzazione."
 
 #: meerk40t/core/planner.py:161
@@ -1419,11 +1420,11 @@ msgid ""
 "using Merge Operations or Cut Inner First \n"
 "* If you are using multiple passes, check Merge Passes"
 msgstr ""
-"Se l'utilizzo di questa opzione aumenta significativamente il tempo di ottimizzazione, le alternative sono: \n"
-"* Deselezionare Tagliaprima l'interno se non stai tagliando completamente il tuo materiale \n"
-"* Inserire i percorsi interni in un'operazione (o operazioni) separata(e) in precedenza e non utilizzare "
-"Unisci Operazioni o Taglia Interno Per Primo \n"
-"* Se stai utilizzando passaggi multipli, seleziona Merge Passes"
+"L'utilizzo di questa opzione aumenta significativamente il tempo di ottimizzazione, le alternative sono: \n\n"
+"* Deselezionare Taglia prima l'interno se non stai tagliando completamente il materiale \n"
+"* Inserire i percorsi interni in un'operazione(i) separata(e) in precedenza e non utilizzare "
+"Unisci Operazioni o Taglia prima l'interno\n\n"
+"* Se stai utilizzando passaggi multipli, seleziona Unisci passaggi"
 
 #: meerk40t/core/planner.py:182
 #: meerk40t/gui/propertypanels/imageproperty.py:731
@@ -1449,11 +1450,11 @@ msgid ""
 "is finished before starting on another."
 msgstr ""
 "Cerca di completare tutti i tagli interni unitamente al relativo "
-"contorno esterno prima di passare ad altri elementi. Questa opzione "
-"produce risultati solo se è selezionato anche Taglia prima l’interno. "
+"contorno esterno prima di passare ad altri elementi.\nQuesta opzione "
+"produce risultati solo se è selezionato anche Taglia prima l’interno.\n"
 "Se il progetto contiene più elementi separati, questo dovrebbe far "
 "sì che ciascuno di essi venga completato prima di passare a tagliare "
-"un altro elemento. In caso di interruzioni o errori ciò permette di "
+"il successivo.\nIn caso di interruzioni o errori ciò permette di "
 "non sprecare l’intero supporto, salvando gli elementi già completati."
 
 #: meerk40t/core/planner.py:204
@@ -1472,8 +1473,8 @@ msgid ""
 msgstr ""
 "Poiché questa ottimizzazione viene eseguita una volta che i raster "
 "sono stati trasformati in immagini, gli elementi interni potrebbero "
-"risultare composti da più componenti: "
-"in tal caso potrebbero essere ottimizzati insieme.."
+"risultare composti da più componenti, "
+"in tal caso potrebbero essere ottimizzati insieme."
 
 #: meerk40t/core/planner.py:222
 msgid "Closed Distance"
@@ -3286,10 +3287,6 @@ msgstr "Operazione foro chiave"
 msgid "Image ops"
 msgstr "Operazioni immagine"
 
-#: meerk40t/gui/imagesplitter.py:481
-msgid "Open create split image dialog / keyhole generation"
-msgstr "Apri finestra di creazione immagine divisa / generazione foro chiave"
-
 #: meerk40t/gui/keymap.py:25
 msgid "Add Hotkey"
 msgstr "Aggiungi tasto di scelta rapida"
@@ -3442,7 +3439,7 @@ msgstr "Simula il lavoro"
 
 #: meerk40t/gui/laserpanel.py:180 meerk40t/gui/simulation.py:924
 msgid "Enable/Disable Optimize"
-msgstr "Abilita/Disabilita Ottimizzazione"
+msgstr "Abilita/Disabilita Ottimizza"
 
 #: meerk40t/gui/laserpanel.py:182
 msgid "Override"
@@ -4153,11 +4150,11 @@ msgstr "Allinea il laser con la prima posizione"
 
 #: meerk40t/gui/navigationpanels.py:416
 msgid "Perform a convex hull trace of the selection (Right different algorithm)"
-msgstr "Esegui una traccia del guscio convesso della selezione (Destro: algoritmo diverso)"
+msgstr "Esegui una traccia del guscio convesso della selezione (Click destro: algoritmo diverso)"
 
 #: meerk40t/gui/navigationpanels.py:422
 msgid "Perform a simple trace of the selection (Right=Circle around)"
-msgstr "Esegui una traccia semplice della selezione (Destro=circonferenza intorno)"
+msgstr "Esegui una traccia semplice della selezione (Click destro: circonferenza intorno)"
 
 #: meerk40t/gui/navigationpanels.py:534 meerk40t/gui/navigationpanels.py:1133
 msgid "Cannot move outside bed dimensions"
@@ -4248,7 +4245,7 @@ msgstr "Imposta il valore Y per lo Sposta in"
 
 #: meerk40t/gui/navigationpanels.py:1026
 msgid "Current laserhead position. Double-click to use."
-msgstr "Posizione attuale della testa laser. Doppio click per utilizzare."
+msgstr "Posizione attuale della testa laser.\nDoppio click per utilizzare."
 
 #: meerk40t/gui/navigationpanels.py:1031
 msgid "Move Laser to:"
@@ -4426,6 +4423,7 @@ msgstr "Note"
 #: meerk40t/gui/simulation.py:921
 msgid "Operations"
 msgstr "Operazioni"
+
 #: meerk40t/gui/opassignment.py:58
 #: meerk40t/gui/statusbarwidgets/opassignwidget.py:32
 msgid "-> OP"
@@ -4465,7 +4463,7 @@ msgstr "-> Elem - gli elementi adotteranno il colore dell'operazione assegnata"
 
 #: meerk40t/gui/opassignment.py:80
 msgid "Assign as well all other elements with the same stroke-color,"
-msgstr "Assegna anche tutti gli altri elementi dello stesso colore del tratto,"
+msgstr "Assegna anche a tutti gli altri elementi dello stesso colore"
 
 #: meerk40t/gui/opassignment.py:82
 msgid "respectively with the same fill-color if you right-click the button"
@@ -5619,10 +5617,6 @@ msgstr ""
 #: meerk40t/gui/wxmmain.py:365
 msgid "Icon size:"
 msgstr "Dimensione icona:"
-
-#: meerk40t/gui/wxmmain.py:366
-msgid "Appearance of all icons in the GUI (requires a restart to take effect)"
-msgstr "Aspetto di tutte le icone nell'interfaccia utente (richiede un riavvio per avere effetto)"
 
 #: meerk40t/gui/wxmmain.py:377
 msgid "Mini icon in tree"
@@ -9598,7 +9592,7 @@ msgstr "Completo in tempo reale"
 
 #: meerk40t/balormk/gui/gui.py:78
 msgid "Trace Hull"
-msgstr "Traccia scafo"
+msgstr "Traccia il contorno"
 
 #: meerk40t/balormk/gui/gui.py:83
 msgid "Trace Bounds"
@@ -12395,11 +12389,11 @@ msgstr "declassifica gli elementi selezionati"
 
 #: meerk40t/core/elements/trace.py:363
 msgid "Delay hull trace"
-msgstr "Ritardo tracciamento dello scafo"
+msgstr "Ritardo tracciamento del contorno"
 
 #: meerk40t/core/elements/trace.py:364
 msgid "Establish if and how an element hull trace should wait"
-msgstr "Stabilisci se e come un tracciamento dello scafo dell'elemento dovrebbe attendere"
+msgstr "Determina come viene avviato il tracciamento del contorno"
 
 #: meerk40t/core/elements/trace.py:368
 msgid "Immediate"
@@ -12981,10 +12975,6 @@ msgstr "Blocca elemento"
 #: meerk40t/gui/propertypanels/attributes.py:862
 msgid "Prevent changes:"
 msgstr "Prevenire modifiche:"
-
-#: meerk40t/gui/propertypanels/attributes.py:874
-msgid "If active then this element is effectively prevented from being modified"
-msgstr "Se attivo, questo elemento è effettivamente impedito di essere modificato"
 
 #: meerk40t/gui/propertypanels/attributes.py:922
 msgid "Rounded Corners"
@@ -14044,10 +14034,6 @@ msgstr "Attiva/Disattiva sottolineato"
 msgid "Toggle strikethrough"
 msgstr "Attiva/Disattiva barrato"
 
-#: meerk40t/gui/propertypanels/textproperty.py:389
-msgid "Define where to place the origin (i.e. current mouse position)"
-msgstr "Definisci dove posizionare l'origine (ovvero la posizione corrente del mouse)"
-
 #: meerk40t/gui/propertypanels/textproperty.py:485
 msgid "Text-Variables"
 msgstr "Variabili di Testo"
@@ -15054,6 +15040,26 @@ msgstr "Configurazione di Newly"
 #: meerk40t/newly/gui/newlyconfig.py:32
 msgid "Newly"
 msgstr ""
+
+#: ./meerk40t\core\planner.py:62
+msgid "Splitting rasters"
+msgstr "Suddivisione dei raster"
+
+#: ./meerk40t\core\planner.py:53
+msgid "Cluster raster objects"
+msgstr "Raggruppa oggetti raster"
+
+#: ./meerk40t\core\planner.py:55
+msgid ""
+"Separate non-overlapping raster objects.\n"
+"Active: this will raster close (ie overlapping) objects as one,\n"
+"but will separately process objects lying apart from each other.\n"
+"Inactive: all objects will be lasered as one single unit."
+msgstr ""
+"Separa gli oggetti raster non sovrapposti.\n\n"
+"Attivo: rasterizza gli oggetti vicini (sovrapposti) come se fossero uno solo, ma gli oggetti distanti vengono rasterizzati separatamente.\n"
+"--------------------\n"
+"Inattivo: tutti gli oggetti vengono rasterizzati insieme in un unico processo"
 
 #: meerk40t/newly/gui/newlyconfig.py:34
 msgid "Global"
@@ -16622,11 +16628,13 @@ msgstr "Attiva l'assistenza all'aria per elemento"
 #~ msgid "SHX fonts in {path}:"
 #~ msgstr ""
 
-#~ msgid "COM Port"
-#~ msgstr ""
+#: meerk40t/grbl/device.py:241
+msgid "COM Port"
+msgstr "Porta COM"
 
-#~ msgid "What com port does this device connect to?"
-#~ msgstr ""
+#: meerk40t/grbl/device.py:242
+msgid "What com port does this device connect to?"
+msgstr "A quale porta com si collega il dispositivo?"
 
 #~ msgid "Update moshi codes for movement"
 #~ msgstr ""
@@ -16646,8 +16654,9 @@ msgstr "Attiva l'assistenza all'aria per elemento"
 #~ msgid "Splitter"
 #~ msgstr ""
 
-#~ msgid "Open create split image dialog"
-#~ msgstr ""
+#: meerk40t/gui/imagesplitter.py:492
+msgid "Open create split image dialog / keyhole generation"
+msgstr "Apri finestra di dialogo per dividere le immagini o creare sezioni di esse"
 
 msgid "Laser-Tools"
 msgstr "Strumenti laser"
@@ -16750,34 +16759,41 @@ msgstr "Strumenti laser"
 #~ msgid "For a complete set of format-directives see:"
 #~ msgstr ""
 
-#~ msgid "Appearance of all icons in the GUI (requires a restart to take effect)"
-#~ msgstr ""
+#: .\meerk40t\gui\wxmmain.py:971
+msgid "Appearance of all icons in the GUI (requires a restart to take effect)"
+msgstr "Visualizzazione delle icone nell'interfaccia utente (richiedere il riavvio)"
 
-#~ msgid "Suppress labels"
-#~ msgstr ""
+msgid "Suppress labels"
+msgstr "Sopprimi le etichette"
 
-#~ msgid ""
-#~ "Suppress the display of labels in "
-#~ "the toolbar at the top of the "
-#~ "window\n"
-#~ "a) requires a restart to take effect\n"
-#~ "b) will always suppressed if your system is in dark mode"
-#~ msgstr ""
+msgid ""
+"Suppress the display of labels in the toolbar at the top of the window\n"
+"a) requires a restart to take effect\n"
+"b) will always suppressed if your system is in dark mode"
+msgstr ""
+"Sopprime la visualizzazione delle etichette nella barra degli strumenti nella parte superiore della finestra"
+"a) richiede un riavvio per avere effetto\n"
+"b) viene sempre soppressa se il sistema è in modalità scura (dark)"
 
+#: meerk40t/lihuiyu/device.py:707
 #~ msgid "Lihuiyu Emulator attached to {device}"
 #~ msgstr ""
 
+#: meerk40t/ruida/device.py:71
 #~ msgid "relay commands to physical laser at the given network address"
 #~ msgstr ""
 
+#: meerk40t/ruida/device.py:141
 #~ msgid "Ruida Data Destination opened on port {port}."
 #~ msgstr ""
 
+#: meerk40t/ruida/device.py:147
 #~ msgid "Ruida Jog Destination opened on port {port}."
 #~ msgstr ""
 
-#~ msgid "If active then this element is effectly prevented from being modified"
-#~ msgstr ""
+#: meerk40t/gui/propertypanels/attributes.py:372
+msgid "If active then this element is effectively prevented from being modified"
+msgstr "Se attivo, l'elemento è protetto da tutte le modifiche"
 
 #~ msgid ""
 #~ "Operation Type\n"
@@ -16794,42 +16810,50 @@ msgstr "Strumenti laser"
 #~ " Outer-most."
 #~ msgstr ""
 
-#~ msgid "Define where to place the origin (i.e. current mouse position"
-#~ msgstr ""
+#: meerk40t/gui/propertypanels/textproperty.py:389
+msgid "Define where to place the origin (i.e. current mouse position)"
+msgstr "Definisci dove posizionare l'origine (ovvero la posizione corrente del mouse)"
 
-#~ msgid "Fill:"
-#~ msgstr ""
+#: .\meerk40t\gui\propertypanels\pathproperty.py:64
+#: .\meerk40t\gui\propertypanels\pointproperty.py:38
+#: .\meerk40t\gui\propertypanels\textproperty.py:212
+msgid "Fill:"
+msgstr "Riempimento:"
 
-#~ msgid "Operation"
-#~ msgstr ""
+#: .\meerk40t\core\svg_io.py:1245
+#: .\meerk40t\gui\materialmanager.py:366
+msgid "Operation"
+msgstr "Operazione"
 
-#~ msgid "Alt Raster Style"
-#~ msgstr ""
+#: meerk40t/lihuiyu/gui/lhydrivergui.py:726
+msgid "Alt Raster Style"
+msgstr "Stile Alt Raster"
 
-#~ msgid ""
-#~ "This feature uses an alternative raster"
-#~ " method performing a raster turn "
-#~ "around using NSE rather than G00x "
-#~ "encoding."
-#~ msgstr ""
-
-#~ msgid "GUI-Appearance"
-#~ msgstr ""
-
-msgid "Shape-Attributes"
+#: meerk40t/lihuiyu/gui/lhydrivergui.py:729
+msgid ""
+"This feature uses an alternative raster method performing a raster turn "
+"around using NSE rather than G00x encoding."
 msgstr ""
+"Funzione che utilizza un metodo alternativo di raster che prevede l'inversione del movimento "
+"viene attivata con i comandi NSE anziché G00x"
 
+#: .\meerk40t\gui\wxmmain.py:3463
 msgid "GUI Appearance"
 msgstr "Interfaccia grafica"
 
+#: .\meerk40t\gui\wxmmain.py:3673
+msgid "Shape-Attributes"
+msgstr "Attributo elemento"
+
+#: .\meerk40t\gui\wxmmain.py:3625
 msgid "Render-Options"
 msgstr "Opzioni di visualizzazione"
 
 #~ msgid "Presets"
 #~ msgstr ""
 
-#~ msgid "Burn sequence"
-#~ msgstr ""
+msgid "Burn sequence"
+msgstr "Sequenza di taglio/incisione"
 
 #~ msgid "Merging"
 #~ msgstr ""
@@ -16912,8 +16936,8 @@ msgstr "Opzioni di visualizzazione"
 #~ msgid "Device-Settings"
 #~ msgstr ""
 
-#~ msgid "Burning"
-#~ msgstr ""
+msgid "Burning"
+msgstr "Attività Laser"
 
 #~ msgid "Flip Axis"
 #~ msgstr ""
@@ -16939,14 +16963,17 @@ msgstr "Opzioni di visualizzazione"
 #~ msgid "Pulse-Width-Modulation"
 #~ msgstr ""
 
-#~ msgid "Element Alignment"
-#~ msgstr ""
+#: meerk40t\gui\alignment.py:1612
+msgid "Element Alignment"
+msgstr "Allineamento elementi"
 
-#~ msgid "Image Splitting"
-#~ msgstr ""
+#: meerk40t\gui\imagesplitter.py:511
+msgid "Image Splitting"
+msgstr "Divisione immagine"
 
-#~ msgid "Jog, Move and Transform"
-#~ msgstr ""
+#: meerk40t\gui\navigationpanels.py:2489
+msgid "Jog, Move and Transform"
+msgstr "Spostamenti e trasformazioni"
 
 #~ msgid "Variables + Wordlists"
 #~ msgstr ""
@@ -17155,9 +17182,6 @@ msgstr "Proprietà degli operazioni/elementi"
 #~ "See more: https://en.wikipedia.org/wiki/Hershey_fonts , "
 #~ msgstr ""
 
-#~ msgid "Appearance of all icons in the GUI (requires a restart to take effect))"
-#~ msgstr ""
-
 #~ msgid "Delete\tDel"
 #~ msgstr ""
 
@@ -17206,6 +17230,33 @@ msgstr "Proprietà degli operazioni/elementi"
 
 #~ msgid "Replay {index}"
 #~ msgstr "Riproduci {index}"
+
+#: .\meerk40t\extra\updater.py:30
+msgid "Check for updates on startup"
+msgstr "Verificare la presenza di nuove versioni all'avvio del programma"
+
+#: .\meerk40t\extra\updater.py:40
+msgid "At every startup"
+msgstr "Ad ogni avvio"
+
+#: .\meerk40t\extra\updater.py:41
+msgid "Once per day"
+msgstr "Una volta al giorno"
+
+#: .\meerk40t\extra\updater.py:42
+msgid "Once per week"
+msgstr "Una volta alla settimana"
+
+#: .\meerk40t\dxf\plugin.py:39
+msgid "DXF: Try to read 3D-polylines"
+msgstr "DXF: prova a leggere le polilinee 3D"
+
+#: .\meerk40t\dxf\plugin.py:41
+msgid "Tries to use dxf 3D-polylines, disable it if the file contains meshes or other 3D data"
+msgstr "Tenta di utilizzare le polilinee 3D di dxf; disattevare se il file contiene mesh o altri dati 3D"
+
+msgid "How often should MeerK40t look for new versions"
+msgstr "Wie oft soll MeerK40t nach neuen Versionen suchen"
 
 msgid "What pin is your foot pedal hooked to on the GPIO"
 msgstr ""
@@ -17639,11 +17690,9 @@ msgstr ""
 msgid "Elem inherits color"
 msgstr ""
 
+#: .\meerk40t\gui\basicops.py:72
 msgid "Assign as well all other elements with the same stroke-color"
-msgstr ""
-
-msgid "Operation"
-msgstr ""
+msgstr "Assegna anche a tutti gli altri elementi lo stesso colore"
 
 msgid "Show"
 msgstr ""
@@ -17654,17 +17703,20 @@ msgstr ""
 msgid "Right click: Extended options for operation"
 msgstr ""
 
+#: .\meerk40t\gui\basicops.py:486
 msgid "Click to select all contained elements on the scene."
-msgstr ""
+msgstr "Fare clic per selezionare tutti gli elementi contenuti in questa operazione"
 
+#: .\meerk40t\gui\basicops.py:488
 msgid "Double click to open the property dialog for the operation"
-msgstr ""
+msgstr "Fare doppio clic per aprire la finestra di dialogo delle proprietà dell'operazione."
 
+#: .\meerk40t\gui\basicops.py:424
 msgid "Power ({unit})"
-msgstr ""
+msgstr "Potenza {unit}"
 
 msgid "Speed ({unit})"
-msgstr ""
+msgstr "Velocità {unit}"
 
 msgid "No File"
 msgstr ""
@@ -17883,11 +17935,13 @@ msgstr "Sposta verso l'alto il pannello selezionato"
 msgid "Allow/suppress the display of labels beneath the icons in the ribbon"
 msgstr "Consente/nega la visualizzazione delle etichette sotto le icone della barra multifunzione"
 
+#: .\meerk40t\gui\wxmtree.py:100
 msgid "Burn-Operation"
-msgstr ""
+msgstr "Operazioni Laser"
 
+#: .\meerk40t\gui\wxmtree.py:101
 msgid "Details"
-msgstr ""
+msgstr "Dettagli"
 
 msgid "You have elements in disabled operations, that won't be burned"
 msgstr ""
@@ -18060,6 +18114,7 @@ msgstr "Circolare (intarsi)"
 msgid "Slider"
 msgstr "Cursore"
 
+#: .\meerk40t\tools\kerftest.py:106
 msgid "Cut-Operation"
 msgstr "Operazione di taglio"
 
@@ -18184,9 +18239,6 @@ msgstr "Nome della voce della biblioteca"
 msgid "Set"
 msgstr "Imposta"
 
-msgid "Operation"
-msgstr "Operazione"
-
 #: meerk40t\meerk40t\gui\materialmanager.py:428
 msgid "Change the name / lasertype of the current entry\nRight-Click: assign lasertype to all visible entries"
 msgstr "Modificare il nome/il tipo di laser\nClick destro: assegna il tipo di laser a tutte le voci visibili.
@@ -18253,18 +18305,6 @@ msgstr "Filtra per tipo di CNC (laser)"
 msgid "Materials"
 msgstr "Materiali"
 
-#: meerk40t\gui\alignment.py:1612
-msgid "Element Alignment"
-msgstr "Allineamento elementi"
-
-#: meerk40t\gui\imagesplitter.py:511
-msgid "Image Splitting"
-msgstr "Divisione immagine"
-
-#: meerk40t\gui\navigationpanels.py:2489
-msgid "Jog, Move and Transform"
-msgstr "Spostamenti e trasformazioni"
-
 #: meerk40t\tools\kerftest.py: 299
 msgid "Every {dist}"
 msgstr "Ogni {dist}"
@@ -18276,3 +18316,103 @@ msgstr "Imposta il punto di riferimento per l'elemento,"
 #: meerk40t\gui\position.py:229
 msgid "which edge/corner should be put on the given location"
 msgstr "il cui bordo/angolo deve essere collocato nella posizione indicata"
+
+#: ./meerk40t\core\planner.py:69
+msgid "Margin:"
+msgstr "Margine:"
+
+#: ./meerk40t\core\planner.py:71
+msgid "Allowed gap between rasterable objects, to still be counted as one."
+msgstr "Distanza minima tra gli oggetti da rasterizzare in modo che siano separati"
+
+#: .\meerk40t\gui\helper.py:103
+msgid "Information about the control the mouse is hovering over"
+msgstr "Aiuto contestuale legato al passaggio del mouse"
+
+#: -------------
+#: Tiks & Triks
+#: -------------
+
+#: ./meerk40t\gui\wxmmain.py:3738
+msgid "Tips && Tricks"
+msgstr "Suggerimenti e Trucchi"
+
+#: ./meerk40t\gui\tips.py:108
+msgid "Try it out"
+msgstr "Provate"
+
+#: ./meerk40t\gui\tips.py:113
+msgid "Launch an example, please be aware that this might change your design,\nas new elements could be created to show the functionality"
+msgstr "Lanciando un esempio, si tenga presente che questo potrebbe modificare il progetto, in quanto potrebbero essere creati nuovi elementi per mostrare la funzionalità"
+
+#: ./meerk40t\gui\tips.py:81
+msgid "Previous tip"
+msgstr "Suggerimento precedente"
+
+#: ./meerk40t\gui\tips.py:83
+msgid "Jump back to the previously displayed tip"
+msgstr "Torna al suggerimento visualizzato in precedenza"
+
+#: ./meerk40t\gui\tips.py:89
+msgid "Next tip"
+msgstr "Suggerimento successivo"
+
+#: ./meerk40t\gui\tips.py:91
+msgid "Jump to the next tip"
+msgstr "Vai al suggerimento successivo"
+
+#: ./meerk40t\gui\tips.py:116
+msgid "Automatically Update"
+msgstr "Aggiornamento automatico"
+
+#: ./meerk40t\gui\tips.py:124
+msgid "Look for new tips on MeerK40ts website.\nThe list of tips is constantly expanded.\n"
+msgstr "Cercate nuovi suggerimenti sul sito web di MeerK40ts.\nL'elenco dei suggerimenti viene costantemente ampliato.\n"
+
+#: ./meerk40t\gui\tips.py:98
+msgid "Show tips at startup"
+msgstr "Mostra i suggerimenti all'avvio"
+
+#: ./meerk40t\gui\tips.py:103
+msgid "Show tips at program start.\nEven if disabled, 'Tips & Tricks' are always available in the Help-menu."
+msgstr "Mostra suggerimenti all'avvio del programma. Anche se disattivati, i Suggerimenti e Trucchi' sono sempre disponibili nel menu Aiuto."
+
+#: ./meerk40t\gui\tips.py:318
+msgid "Do you want to get extended information about a feature in MeerK40t?\nJust place your mouse over a window or an UI-element and press F11."
+msgstr "Volete ottenere informazioni estese su una funzione di MeerK40t?\nBasta posizionare il mouse su una finestra o un elemento dell'interfaccia utente e premere F11."
+
+#: ./meerk40t\gui\tips.py:330
+msgid "MeerK40t supports more than 'just' a K40 laser.\nYou can add more devices in the Device-Manager.\nAnd you can even add multiple instances for the same physical device,\nwhere you can have different configuration settings (eg regular and rotary)."
+msgstr "MeerK40t supporta più di un 'solo' laser K40.\nÈ possibile aggiungere altri dispositivi nel Device-Manager.\nE si possono anche aggiungere più istanze per lo stesso dispositivo fisico,\ndove si possono avere diverse impostazioni di configurazione (ad esempio, il modulo rotante)."
+
+#: ./meerk40t\gui\tips.py:340
+msgid "There are a couple of YouTube-videos that deal with some specific functionalities and explain their usage:\nhttps://www.youtube.com/channel/UCsAUV23O2FyKxC0HN7nkAQQ"
+msgstr "Ci sono un paio di video su YouTube che trattano alcune funzionalità specifiche e ne spiegano l'utilizzo:\n\nhttps://www.youtube.com/channel/UCsAUV23O2FyKxC0HN7nkAQQ"
+
+#: ./meerk40t\gui\tips.py:350
+msgid "More instructional videos? Sure, here is another channel:\n\nhttps://www.youtube.com/channel/UCMN9gGvpacxZINPZCSOecaQ"
+msgstr "Altri video didattici? Certo, ecco un altro canale:\n\nhttps://www.youtube.com/channel/UCMN9gGvpacxZINPZCSOecaQ"
+
+#: ./meerk40t\gui\tips.py:359
+msgid "MeerK40t can create a so called outline around an element.\nJust select the element, right click on top of it to get the context menu and choose from the 'Outline elements' menu..."
+msgstr "MeerK40t può creare un cosiddetto contorno intorno ad un elemento.\nBasta selezionare l'elemento, fare clic con il tasto destro del mouse sopra di esso per ottenere il menu contestuale e scegliere dal menu 'Elementi di contorno'..."
+
+#: ./meerk40t\gui\tips.py:368
+msgid "MeerK40t has an extensive set of commands that allow a lot of scriptable actions.\nJust open the console window and type 'help'"
+msgstr "MeerK40t dispone di un'ampia serie di comandi che consentono di eseguire molte azioni di scripting.\nBasta aprire la finestra della console e digitare 'help'."
+
+#: ./meerk40t\gui\tips.py:379
+msgid "Do you want to see more Tips & Tricks?\nJust click on the 'Update'-button to load additional hints from MeerK40ts website.\nThe list of tips is constantly expanded, so please update it every now and then to learn about new or hidden features."
+msgstr "Vuoi vedere altri suggerimenti e trucchi?\nBasta fare clic sul pulsante 'Aggiorna' per caricare ulteriori suggerimenti dal sito web di MeerK40ts.\nL'elenco dei suggerimenti viene costantemente ampliato, quindi ti invitiamo ad aggiornarlo di tanto in tanto per conoscere nuove funzionalità o funzioni nascoste."
+
+#: ./meerk40t\gui\wxmmain.py:1297
+msgid ""
+"First select your template, then every subsequent selection will apply the templates properties to the selected elements"
+msgstr ""
+"Prima selezionare l'elemento di origine, poi per ogni nuova selezione, "
+"verrà adottato il formato dell'oggetto di origine (ad esempio, il colore)."
+
+#: ./meerk40t\gui\wxmmain.py:1307
+msgid "Click again to disable the paint mode"
+msgstr "Fare nuovamente clic per disattivare la modalità di modalità copia del formato"
+
