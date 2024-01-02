@@ -63,6 +63,58 @@ class RetroNode(RibbonNode):
                 self.position = self._xs.pop(0), self._ys.pop(0)
 
 
+class MidpointNode(RibbonNode):
+    """
+    Position node is simply the ribbon's last identified position as a node.
+    """
+
+    def __init__(self, ribbon, nodes):
+        super().__init__(ribbon)
+        self.average_node = nodes
+        self.ribbon = ribbon
+        self.brush = wx.Brush(wx.RED)
+        self.pen = wx.Pen(wx.BLUE)
+
+    def tick(self):
+        count = len(self.average_node)
+        xs = 0
+        ys = 0
+        for node in self.average_node:
+            pos = self.get(node)
+            if pos is None:
+                count -= 1
+                continue
+            else:
+                xs += pos[0]
+                ys += pos[1]
+        if count == 0:
+            self.position = None
+            return
+        self.position = xs / count, ys / count
+
+
+class OffsetNode(RibbonNode):
+    """
+    Position node is simply the ribbon's last identified position as a node.
+    """
+
+    def __init__(self, ribbon, offset_node, dx=0.0, dy=0.0):
+        super().__init__(ribbon)
+        self.offset_node = offset_node
+        self.ribbon = ribbon
+        self.brush = wx.Brush(wx.RED)
+        self.pen = wx.Pen(wx.BLUE)
+        self.dx = dx
+        self.dy = dy
+
+    def tick(self):
+        pos = self.get(self.offset_node)
+        if pos is None:
+            self.position = None
+            return
+        self.position = pos[0] + self.dx, pos[1] + self.dy
+
+
 class OrientationNode(RibbonNode):
     """
     Orientation node is a 5 node positional. It is located at the reference node. At some angle and some distance away.
@@ -135,9 +187,10 @@ class GravityNode(RibbonNode):
             self.position = list(self.ribbon.position)
         vx = self.velocity[0] * (1 - self.friction)
         vy = self.velocity[1] * (1 - self.friction)
-        angle = Geomstr.angle(None, complex(*towards_pos), complex(*self.position))
-        vx -= self.attraction * math.cos(angle)
-        vy -= self.attraction * math.sin(angle)
+        if towards_pos is not None:
+            angle = Geomstr.angle(None, complex(*towards_pos), complex(*self.position))
+            vx -= self.attraction * math.cos(angle)
+            vy -= self.attraction * math.sin(angle)
 
         self.velocity[0] = vx
         self.velocity[1] = vy
@@ -191,6 +244,10 @@ class DrawSequence:
     @classmethod
     def bounce(cls, ribbon, *args):
         return cls(ribbon, sequences=[[list(args)]])
+
+    @classmethod
+    def bounce_back(cls, ribbon, *args):
+        return cls(ribbon, sequences=[[list(args), list(reversed(args))]])
 
     def tick(self):
         """
@@ -311,6 +368,26 @@ class Ribbon:
         obj.sequence = DrawSequence.bounce(obj, 1, 2)
         return obj
 
+    @classmethod
+    def calligraphy_tool(cls):
+        obj = cls()
+        obj.nodes.append(PositionNode(obj))
+        obj.nodes.append(OffsetNode(obj, 0, 10000, 10000))
+        obj.sequence = DrawSequence.bounce_back(obj, 0, 1)
+        return obj
+
+    @classmethod
+    def nudge_loop(cls):
+        obj = cls()
+        obj.nodes.append(PositionNode(obj))
+        obj.nodes.append(GravityNode(obj, 2))
+        obj.nodes.append(GravityNode(obj, 3))
+        obj.nodes.append(GravityNode(obj, 4))
+        obj.nodes.append(MidpointNode(obj, [0, 1]))
+        obj.nodes.append(OffsetNode(obj, 0, 10000, 10000))
+        obj.sequence = DrawSequence.bounce_back(obj, 1, 2, 3)
+        return obj
+
     def tick(self):
         """
         Delegate to nodes and sequence.
@@ -358,6 +435,10 @@ class RibbonTool(ToolWidget):
             self.ribbon = Ribbon.speed_zig_tool()
         elif mode == "reverb":
             self.ribbon = Ribbon.reverb_tool()
+        elif mode == "calligraphy":
+            self.ribbon = Ribbon.calligraphy_tool()
+        elif mode == "nudge":
+            self.ribbon = Ribbon.nudge_loop()
         else:
             self.ribbon = Ribbon.gravity_tool()
 
