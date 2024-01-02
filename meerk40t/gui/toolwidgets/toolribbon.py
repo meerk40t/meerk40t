@@ -37,13 +37,48 @@ class RibbonNode:
         gc.PopState()
 
 
+class RetroNode(RibbonNode):
+    def __init__(self, ribbon, retro_node, count, average=False):
+        super().__init__(ribbon)
+        self.retro_node = retro_node
+        self.count = count
+        self.average = average
+        self._xs = []
+        self._ys = []
+
+    def tick(self):
+        tracking_pos = self.get(self.retro_node)
+        self._xs.append(tracking_pos[0])
+        self._ys.append(tracking_pos[1])
+        if self.average:
+            xs = sum(self._xs) / len(self._xs)
+            ys = sum(self._ys) / len(self._ys)
+            self.position = [xs, ys]
+            if len(self._xs) >= self.count:
+                self._xs.pop(0)
+                self._ys.pop(0)
+        else:
+            self.position = None
+            if len(self._xs) >= self.count:
+                self.position = self._xs.pop(0), self._ys.pop(0)
+
+
 class OrientationNode(RibbonNode):
     """
     Orientation node is a 5 node positional. It is located at the reference node. At some angle and some distance away.
     """
 
     def __init__(
-        self, ribbon, ref_node=0, a0=None, a1=None, d0=None, d1=None, dx=0., dy=0., d_theta=0.
+        self,
+        ribbon,
+        ref_node=0,
+        a0=None,
+        a1=None,
+        d0=None,
+        d1=None,
+        dx=0.0,
+        dy=0.0,
+        d_theta=0.0,
     ):
         super().__init__(ribbon)
         self.ref_node = ref_node
