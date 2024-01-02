@@ -130,7 +130,8 @@ class OrientationNode(RibbonNode):
         d1=None,
         dx=0.0,
         dy=0.0,
-        d_theta=0.0,
+        offset_radius=0.0,
+        offset_angle=0.0,
     ):
         super().__init__(ribbon)
         self.ref_node = ref_node
@@ -140,29 +141,28 @@ class OrientationNode(RibbonNode):
         self.d1 = d1
         self.dx = dx
         self.dy = dy
-        self.d_theta = d_theta
+        self.offset_radius = offset_radius
+        self.offset_angle = offset_angle
 
     def tick(self):
         ref_pos = self.get(self.ref_node)
-        angle_start = self.get(self.a0)
-        angle_end = self.get(self.a1)
-        distance_start = self.get(self.d0)
-        distance_end = self.get(self.d1)
-        if (
-            angle_start is None
-            or angle_end is None
-            or distance_start is None
-            or distance_end is None
-        ):
-            # Not engaged.
+        if ref_pos is None:
+            # ref position is required.
             self.position = None
             return
+        angle = self.offset_angle
+        if self.a0 is not None and self.a1 is not None:
+            a0 = self.get(self.a0)
+            a1 = self.get(self.a1)
+            if a0 is not None and a1 is not None:
+                angle += Geomstr.angle(None, complex(*a0), complex(*a1))
+        distance = self.offset_radius
+        if self.d0 is not None and self.d1 is not None:
+            d0 = self.get(self.d0)
+            d1 = self.get(self.d1)
+            if d0 is not None and d1 is not None:
+                distance += Geomstr.distance(None, complex(*d0), complex(*d1))
 
-        angle = Geomstr.angle(None, complex(*angle_start), complex(*angle_end))
-        angle += self.d_theta
-        distance = Geomstr.distance(
-            None, complex(*distance_start), complex(*distance_end)
-        )
         x = distance * math.cos(angle) + ref_pos[0] + self.dx
         y = distance * math.sin(angle) + ref_pos[1] + self.dy
         self.position = [x, y]
@@ -248,6 +248,12 @@ class DrawSequence:
     @classmethod
     def bounce_back(cls, ribbon, *args):
         return cls(ribbon, sequences=[[list(args), list(reversed(args))]])
+
+    @classmethod
+    def parallel(cls, ribbon, *args):
+        sequence = [[[arg]] for arg in args]
+        print(sequence)
+        return cls(ribbon, sequences=sequence)
 
     def tick(self):
         """
@@ -336,8 +342,10 @@ class Ribbon:
         @return:
         """
         obj = cls()
-        obj.nodes.append(OrientationNode(obj, 2, 2, 3, 2, 3, d_theta=math.tau / 4))
-        obj.nodes.append(OrientationNode(obj, 2, 2, 3, 2, 3, d_theta=-math.tau / 4))
+        obj.nodes.append(OrientationNode(obj, 2, 2, 3, 2, 3, offset_angle=math.tau / 4))
+        obj.nodes.append(
+            OrientationNode(obj, 2, 2, 3, 2, 3, offset_angle=-math.tau / 4)
+        )
         obj.nodes.append(PositionNode(obj))
         obj.nodes.append(RetroNode(obj, 2, 5, average=True))
         obj.sequence = DrawSequence.zig(obj, 0, 1)
@@ -388,6 +396,35 @@ class Ribbon:
         obj.nodes.append(RetroNode(obj, 0, 5, average=True))
         obj.nodes.append(RetroNode(obj, 1, 10, average=True))
         obj.sequence = DrawSequence.bounce_back(obj, 2, 3)
+        return obj
+
+    @classmethod
+    def rake_tool(cls):
+        """
+        "f0B0,10o1,0,90,100s.3ns.6ns-.3ns-.6D2,3,1,4,5"
+        @return:
+        """
+        obj = cls()
+        obj.nodes.append(PositionNode(obj))
+        obj.nodes.append(RetroNode(obj, 0, 10, average=True))
+
+        obj.nodes.append(
+            OrientationNode(
+                obj, 1, 0, 1, offset_angle=math.tau / 4, offset_radius=10000
+            )
+        )
+        obj.nodes.append(
+            OrientationNode(obj, 1, 0, 1, offset_angle=math.tau / 4, offset_radius=5000)
+        )
+        obj.nodes.append(
+            OrientationNode(obj, 1, 0, 1, offset_angle=math.tau / 4, offset_radius=-5000)
+        )
+        obj.nodes.append(
+            OrientationNode(
+                obj, 1, 0, 1, offset_angle=math.tau / 4, offset_radius=-10000
+            )
+        )
+        obj.sequence = DrawSequence.parallel(obj,  2, 3, 1, 4, 5)
 
         return obj
 
@@ -455,6 +492,8 @@ class RibbonTool(ToolWidget):
             self.ribbon = Ribbon.nudge_loop_tool()
         elif mode == "bendy_calligraphy":
             self.ribbon = Ribbon.bendy_calligraphy_tool()
+        elif mode == "rake":
+            self.ribbon = Ribbon.rake_tool()
         else:
             self.ribbon = Ribbon.gravity_tool()
 
