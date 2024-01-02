@@ -51,7 +51,7 @@ not properly give a counterclockwise circle. If the three points are all
 collinear this is effectively a line. If all three points are coincident
 this is effectively a point.
 """
-
+import bisect
 import math
 import re
 from contextlib import contextmanager
@@ -563,9 +563,14 @@ class BeamTable:
                 scanline = next
 
             if swap is not None:
-                pass
+                s1 = actives.index(swap[0])
+                s2 = actives.index(swap[1])
+                actives[s1], actives[s2] = actives[s2], actives[s1]
             elif index >= 0:
-                actives.append(index)
+                y_int = float(g.y_intercept(index, scanline.real, scanline.imag))
+                actives_y_int = [float(g.y_intercept(active, scanline.real, scanline.imag)) for active in actives]
+                ip = bisect.bisect(actives_y_int, y_int)
+                actives.insert(ip, index)
             else:
                 remove_index = actives.index(~index)
                 del actives[remove_index]
@@ -573,7 +578,6 @@ class BeamTable:
             if pt != next:
                 if len(actives) > largest_actives:
                     largest_actives = len(actives)
-                actives.sort(key=y_ints)
                 real_events.append(pt)
                 active_lists.append(list(actives))
 
