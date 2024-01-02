@@ -170,14 +170,14 @@ class DrawSequence:
         self.sequences = sequences
 
     @classmethod
-    def zig(cls, ribbon):
+    def zig(cls, ribbon, zig=0, zag=1):
         """
         This is one path, [] and each is in a 4 tick sequence. The first sequence is 0 the second 0, third 1 and then 1
         So this draws between element 0, then element 0, then element 1, then element 1. Performing a zig-zag.
         @param ribbon:
         @return:
         """
-        return cls(ribbon, sequences=[[[0], [0], [1], [1]]])
+        return cls(ribbon, sequences=[[[zig], [zig], [zag], [zag]]])
 
     @classmethod
     def bounce(cls, ribbon, *args):
@@ -248,6 +248,20 @@ class Ribbon:
         return obj
 
     @classmethod
+    def smooth_gravity_tool(cls):
+        """
+        Gravity tool is a position node and a single gravity node that moves towards it.
+        @return:
+        """
+        obj = cls()
+        obj.nodes.append(PositionNode(obj))
+        obj.nodes.append(RetroNode(obj, 0, 25, average=True))
+        obj.nodes.append(GravityNode(obj, 1))
+
+        obj.sequence = DrawSequence.zig(obj, 1, 2)
+        return obj
+
+    @classmethod
     def line_gravity_tool(cls):
         """
         Gravity line tool is a position node, being tracked by a gravity node, which in turn is tracked by another such
@@ -303,6 +317,8 @@ class RibbonTool(ToolWidget):
             self.ribbon = Ribbon.gravity_tool()
         elif mode == "line":
             self.ribbon = Ribbon.line_gravity_tool()
+        elif mode == "smooth":
+            self.ribbon = Ribbon.smooth_gravity_tool()
         else:
             self.ribbon = Ribbon.gravity_tool()
 
