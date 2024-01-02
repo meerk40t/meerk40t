@@ -96,7 +96,12 @@ class OrientationNode(RibbonNode):
         angle_end = self.get(self.a1)
         distance_start = self.get(self.d0)
         distance_end = self.get(self.d1)
-        if angle_start is None or angle_end is None or distance_start is None or distance_end is None:
+        if (
+            angle_start is None
+            or angle_end is None
+            or distance_start is None
+            or distance_end is None
+        ):
             # Not engaged.
             self.position = None
             return
@@ -282,6 +287,16 @@ class Ribbon:
         return obj
 
     @classmethod
+    def reverb_tool(cls):
+        """
+        @return:
+        """
+        obj = cls()
+        obj.nodes.append(PositionNode(obj))
+        obj.nodes.append(RetroNode(obj, 0, 20))
+        return obj
+
+    @classmethod
     def line_gravity_tool(cls):
         """
         Gravity line tool is a position node, being tracked by a gravity node, which in turn is tracked by another such
@@ -341,6 +356,8 @@ class RibbonTool(ToolWidget):
             self.ribbon = Ribbon.smooth_gravity_tool()
         elif mode == "speedzig":
             self.ribbon = Ribbon.speed_zig_tool()
+        elif mode == "reverb":
+            self.ribbon = Ribbon.reverb_tool()
         else:
             self.ribbon = Ribbon.gravity_tool()
 
