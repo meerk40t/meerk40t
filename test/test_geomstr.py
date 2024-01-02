@@ -1763,9 +1763,9 @@ class TestGeomstr(unittest.TestCase):
 
     def test_scan_table_random_brute(self):
         print("\n\n")
-        for c in range(5):
+        for c in range(500):
             g = Geomstr()
-            for i in range(25):
+            for i in range(250):
                 random_segment(
                     g, i=1000, arc=False, point=False, quad=False, cubic=False
                 )
@@ -1781,10 +1781,10 @@ class TestGeomstr(unittest.TestCase):
 
             # self.assertEqual(sb1.intersections, sb2.intersections)
             for a, b in zip(sb1._nb_scan, sb2._nb_scan):
-                print(f"{a} :: {b}")
+                # print(f"{a} :: {b}")
                 for c, d in zip(a, b):
                     self.assertEqual(c, d)
-            print(f"With binary inserts: brute: {brute_time} vs bo{bo_time} improvement: {100 * (brute_time - bo_time) / brute_time}%")
+            print(f"With binary inserts: brute: {brute_time} vs bo {bo_time} improvement: {100 * (brute_time - bo_time) / brute_time}%")
 
     def test_geomstr_image(self):
         from PIL import Image, ImageDraw
