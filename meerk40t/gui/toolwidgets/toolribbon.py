@@ -13,25 +13,80 @@ from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.tools.geomstr import Geomstr
 
 
-class GravityNode:
+class RibbonNode:
+    def __init__(self, ribbon):
+        self.brush = wx.Brush(wx.RED)
+        self.pen = wx.Pen(wx.BLUE)
+        self.diameter = 5000
+        self.ribbon = ribbon
+        self.position = None
+
+    def get(self, index):
+        return self.ribbon.nodes[index].position
+
+    def tick(self):
+        pass
+
+    def process_draw(self, gc: wx.GraphicsContext):
+        if not self.position:
+            return
+        gc.PushState()
+        gc.SetPen(self.pen)
+        gc.SetBrush(self.brush)
+        gc.DrawEllipse(self.position[0], self.position[1], self.diameter, self.diameter)
+        gc.PopState()
+
+
+class OrientationNode(RibbonNode):
+    """
+    Orientation node is a 5 node positional. It is located at the reference node. At some angle and some distance away.
+    """
+
+    def __init__(
+        self, ribbon, ref_node=0, a0=None, a1=None, d0=None, d1=None, dx=0., dy=0., d_theta=0.
+    ):
+        super().__init__(ribbon)
+        self.ref_node = ref_node
+        self.a0 = a0
+        self.a1 = a1
+        self.d0 = d0
+        self.d1 = d1
+        self.dx = dx
+        self.dy = dy
+        self.d_theta = d_theta
+
+    def tick(self):
+        ref_pos = self.get(self.ref_node)
+        angle_start = self.get(self.a0)
+        angle_end = self.get(self.a1)
+        angle = Geomstr.angle(None, complex(*angle_start), complex(*angle_end))
+        angle += self.d_theta
+
+        distance_start = self.get(self.d0)
+        distance_end = self.get(self.d1)
+        distance = Geomstr.distance(
+            None, complex(*distance_start), complex(*distance_end)
+        )
+        x = distance * math.cos(angle) + ref_pos[0] + self.dx
+        y = distance * math.sin(angle) + ref_pos[1] + self.dy
+        self.position = [x, y]
+
+
+class GravityNode(RibbonNode):
     """
     Gravity node moves towards the node index it is attracted to at the given friction and attraction amount
     """
 
     def __init__(self, ribbon, attract_node=0):
-        self.ribbon = ribbon
+        super().__init__(ribbon)
         self.friction = 0.05
         self.distance = 50
         self.attraction = 500
-        self.position = None
-        self.velocity = [0, 0]
-        self.brush = wx.Brush(wx.RED)
-        self.pen = wx.Pen(wx.BLUE)
-        self.diameter = 5000
+        self.velocity = [0.0, 0.0]
         self.attract_node = attract_node
 
     def tick(self):
-        towards_pos = self.ribbon.nodes[self.attract_node].position
+        towards_pos = self.get(self.attract_node)
         if self.position is None:
             self.position = list(self.ribbon.position)
         vx = self.velocity[0] * (1 - self.friction)
@@ -45,39 +100,20 @@ class GravityNode:
         self.position[0] += vx
         self.position[1] += vy
 
-    def process_draw(self, gc: wx.GraphicsContext):
-        if not self.position:
-            return
-        gc.PushState()
-        gc.SetPen(self.pen)
-        gc.SetBrush(self.brush)
-        gc.DrawEllipse(self.position[0], self.position[1], self.diameter, self.diameter)
-        gc.PopState()
 
-
-class PositionNode:
+class PositionNode(RibbonNode):
     """
     Position node is simply the ribbon's last identified position as a node.
     """
 
     def __init__(self, ribbon):
+        super().__init__(ribbon)
         self.ribbon = ribbon
         self.brush = wx.Brush(wx.RED)
         self.pen = wx.Pen(wx.BLUE)
 
-    @property
-    def position(self):
-        return self.ribbon.position
-
     def tick(self):
-        pass
-
-    def process_draw(self, gc: wx.GraphicsContext):
-        if not self.position:
-            return
-        gc.SetPen(self.pen)
-        gc.SetBrush(self.brush)
-        gc.DrawEllipse(self.position[0], self.position[1], 5000, 5000)
+        self.position = self.ribbon.position
 
 
 class DrawSequence:
