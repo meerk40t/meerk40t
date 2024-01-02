@@ -15,7 +15,7 @@ class DrawTool(ToolWidget):
     Draw Tool adds paths that are clicked and drawn within the scene.
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, mode=None):
         ToolWidget.__init__(self, scene)
         self.preferred_length = 50
         self.series = None

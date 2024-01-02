@@ -13,6 +13,7 @@ class ToolContainer(Widget):
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
         self._active_tool = "unset"
+        self._tool_mode = "unset"
         # Selection/Manipulation widget.
         self.mode = "selection"
         self.selection_widgets = {
@@ -33,13 +34,17 @@ class ToolContainer(Widget):
     def signal(self, signal, *args, **kwargs):
         if signal == "tool":
             tool = args[0]
-            self.set_tool(tool)
+            if len(args) > 1:
+                mode = args[1]
+            else:
+                mode = None
+            self.set_tool(tool, mode=mode)
 
-    def set_tool(self, tool):
-        response = ""
-        if self._active_tool == tool:
+    def set_tool(self, tool, mode=None):
+        if self._active_tool == tool and self._tool_mode == mode:
             return True, f"Tool {tool} was already active"
         self._active_tool = tool
+        self._tool_mode = mode
         self.scene.pane.tool_active = False
         self.scene.pane.modif_active = False
         self.scene.pane.suppress_selection = False
@@ -59,7 +64,7 @@ class ToolContainer(Widget):
 
         self.add_widget(widget=self.selection_widgets.get(self.mode))
         if new_tool is not None:
-            self.add_widget(widget=new_tool(self.scene))
+            self.add_widget(widget=new_tool(self.scene, mode=mode))
 
         self.scene.cursor("arrow")
 

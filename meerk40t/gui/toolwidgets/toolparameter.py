@@ -235,7 +235,7 @@ class ParameterTool(ToolWidget):
     and allows to change them visually.
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, mode=None):
         ToolWidget.__init__(self, scene)
         self.element = None
         self.params = []
