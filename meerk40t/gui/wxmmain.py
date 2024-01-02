@@ -1417,7 +1417,7 @@ class MeerK40t(MWindow):
         def contains_a_param():
             result = False
             for e in kernel.elements.elems(emphasized=True):
-                if e.functional_parameter is not None:
+                if hasattr(e, "functional_parameter") and e.functional_parameter is not None:
                     result = True
                     break
             return result
