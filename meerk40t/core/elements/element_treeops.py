@@ -2521,6 +2521,105 @@ def init_tree(kernel):
         self(f"outline {offset}mm\n")
         self.signal("refresh_tree")
 
+    def mergeable(node):
+        elems = list(self.elems(emphasized=True))
+        if len(elems) < 2:
+            return False
+        result = True
+        for e in elems:
+            if e.type not in (
+                "elem ellipse",
+                "elem path",
+                "elem polyline",
+                "elem rect",
+                "elem line",
+            ):
+                result = False
+            break
+        return result
+
+    @tree_conditional(lambda node: mergeable(node))
+    @tree_operation(
+        _("Merge elements"),
+        node_type=(
+            "elem ellipse",
+            "elem path",
+            "elem polyline",
+            "elem rect",
+            "elem line",
+        ),
+        help=_("Merge two or more elements together into a single path"),
+    )
+    def elem_merge(singlenode, **kwargs):
+        def get_common_parent_node(data):
+            def _get_common_parent(node1, node2):
+                top = self.elem_branch
+                list1 = [node1]
+                list2 = [node2]
+                n = node1
+                while n is not top:
+                    n = n.parent
+                    list1.append(n)
+                n = node2
+                while n is not top:
+                    n = n.parent
+                    list2.append(n)
+                # Both lists contain the node itself and the top node
+                for n in list1:
+                    if n in list2:
+                        return n
+                # That should not be the case...
+                return top
+
+            root = self.elem_branch
+            par = None
+            for e in data:
+                if par is None:
+                    par =  e
+                else:
+                    par = _get_common_parent(par, e)
+                if par is root:
+                    break
+            return par
+
+
+        data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            return
+        parent = get_common_parent_node(data)
+        node = parent.add(type="elem path")
+        for e in data:
+            try:
+                path = e.as_geometry()
+            except AttributeError:
+                continue
+            try:
+                if node.stroke is None:
+                    node.stroke = e.stroke
+            except AttributeError:
+                pass
+            try:
+                if node.fill is None:
+                    node.fill = e.fill
+            except AttributeError:
+                pass
+            try:
+                if node.stroke_width is None:
+                    node.stroke_width = e.stroke_width
+            except AttributeError:
+                pass
+            node.geometry.append(path)
+        self.remove_elements(data)
+        # Newly created! Classification needed?
+        data = [node]
+        if self.classify_new:
+            self.classify(data)
+        self.set_node_emphasis(node, True)
+        self.signal("refresh_scene", "Scene")
+        self.signal("rebuild_tree")
+        node.focus()
+
+
     def has_vectorize(node):
         result = False
         make_vector = self.lookup("render-op/make_vector")
