@@ -377,14 +377,28 @@ class Ribbon:
         return obj
 
     @classmethod
-    def nudge_loop(cls):
+    def bendy_calligraphy_tool(cls):
+        """
+        B5,5B2,10kO5,3,4vvl100,100f0"
+        @return:
+        """
+        obj = cls()
+        obj.nodes.append(PositionNode(obj))
+        obj.nodes.append(OffsetNode(obj, 0, 10000, 10000))
+        obj.nodes.append(RetroNode(obj, 0, 5, average=True))
+        obj.nodes.append(RetroNode(obj, 1, 10, average=True))
+        obj.sequence = DrawSequence.bounce_back(obj, 2, 3)
+
+        return obj
+
+    @classmethod
+    def nudge_loop_tool(cls):
         obj = cls()
         obj.nodes.append(PositionNode(obj))
         obj.nodes.append(GravityNode(obj, 2))
         obj.nodes.append(GravityNode(obj, 3))
         obj.nodes.append(GravityNode(obj, 4))
         obj.nodes.append(MidpointNode(obj, [0, 1]))
-        obj.nodes.append(OffsetNode(obj, 0, 10000, 10000))
         obj.sequence = DrawSequence.bounce_back(obj, 1, 2, 3)
         return obj
 
@@ -438,7 +452,9 @@ class RibbonTool(ToolWidget):
         elif mode == "calligraphy":
             self.ribbon = Ribbon.calligraphy_tool()
         elif mode == "nudge":
-            self.ribbon = Ribbon.nudge_loop()
+            self.ribbon = Ribbon.nudge_loop_tool()
+        elif mode == "bendy_calligraphy":
+            self.ribbon = Ribbon.bendy_calligraphy_tool()
         else:
             self.ribbon = Ribbon.gravity_tool()
 
