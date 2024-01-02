@@ -540,11 +540,6 @@ class BeamTable:
         # Store currently active segments.
         actives = []
 
-        scanline = None
-
-        def y_ints(e):
-            return g.y_intercept(e, scanline.real, scanline.imag)
-
         # Store previously active segments
         active_lists = []
         real_events = []
