@@ -669,7 +669,7 @@ class PanelFontManager(wx.Panel):
             | wx.FD_FILE_MUST_EXIST
             | wx.FD_MULTIPLE
             | wx.FD_PREVIEW
-            | wx.FD_SHOW_HIDDEN,
+#            | wx.FD_SHOW_HIDDEN,
         )
         try:
             # Might not be present in early wxpython versions
