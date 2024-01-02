@@ -94,11 +94,15 @@ class OrientationNode(RibbonNode):
         ref_pos = self.get(self.ref_node)
         angle_start = self.get(self.a0)
         angle_end = self.get(self.a1)
-        angle = Geomstr.angle(None, complex(*angle_start), complex(*angle_end))
-        angle += self.d_theta
-
         distance_start = self.get(self.d0)
         distance_end = self.get(self.d1)
+        if angle_start is None or angle_end is None or distance_start is None or distance_end is None:
+            # Not engaged.
+            self.position = None
+            return
+
+        angle = Geomstr.angle(None, complex(*angle_start), complex(*angle_end))
+        angle += self.d_theta
         distance = Geomstr.distance(
             None, complex(*distance_start), complex(*distance_end)
         )
@@ -199,7 +203,10 @@ class DrawSequence:
             q = self.tick_index % len(sequence)
             seq = sequence[q]
             for i in seq:
-                x, y = self.ribbon.nodes[i].position
+                pos = self.ribbon.nodes[i].position
+                if pos is None:
+                    continue
+                x, y = pos
                 series.append((x, y))
 
     def process_draw(self, gc: wx.GraphicsContext):
@@ -262,6 +269,19 @@ class Ribbon:
         return obj
 
     @classmethod
+    def speed_zig_tool(cls):
+        """
+        @return:
+        """
+        obj = cls()
+        obj.nodes.append(OrientationNode(obj, 2, 2, 3, 2, 3, d_theta=math.tau / 4))
+        obj.nodes.append(OrientationNode(obj, 2, 2, 3, 2, 3, d_theta=-math.tau / 4))
+        obj.nodes.append(PositionNode(obj))
+        obj.nodes.append(RetroNode(obj, 2, 5, average=True))
+        obj.sequence = DrawSequence.zig(obj, 0, 1)
+        return obj
+
+    @classmethod
     def line_gravity_tool(cls):
         """
         Gravity line tool is a position node, being tracked by a gravity node, which in turn is tracked by another such
@@ -319,6 +339,8 @@ class RibbonTool(ToolWidget):
             self.ribbon = Ribbon.line_gravity_tool()
         elif mode == "smooth":
             self.ribbon = Ribbon.smooth_gravity_tool()
+        elif mode == "speedzig":
+            self.ribbon = Ribbon.speed_zig_tool()
         else:
             self.ribbon = Ribbon.gravity_tool()
 
