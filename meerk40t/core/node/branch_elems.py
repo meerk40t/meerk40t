@@ -17,7 +17,7 @@ class BranchElementsNode(Node):
         return default_map
 
     def drop(self, drag_node, modify=True):
-        if drag_node.type.startswith("elem"):
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             if modify:
                 self.append_child(drag_node)
             return True

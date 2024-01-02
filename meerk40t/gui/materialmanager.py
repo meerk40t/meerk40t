@@ -736,6 +736,7 @@ class MaterialPanel(ScrolledPanel):
         )
 
         tree = self.tree_library
+        tree.Freeze()
         tree.DeleteAllItems()
         tree_root = tree.AddRoot(_("Materials"))
         tree.SetItemData(tree_root, -1)
@@ -831,6 +832,8 @@ class MaterialPanel(ScrolledPanel):
         else:
             tree.ExpandAllChildren(selected_parent)
             self.tree_library.SelectItem(selected)
+        tree.Thaw()
+        tree.Refresh()
 
     @staticmethod
     def get_nth_dict_entry(dictionary: dict, n=0):
@@ -1058,14 +1061,18 @@ class MaterialPanel(ScrolledPanel):
         if self.context.kernel.yesno(
             _("Do you really want to delete all visible entries? This can't be undone.")
         ):
-            for content in self.display_list:
-                entry = content[0]
+            busy = self.context.kernel.busyinfo
+            busy.start(msg=_("Deleting data"))
+            for idx, entry in enumerate(self.display_list):
+                busy.change(msg=f"{idx+1}/{len(self.display_list)}", keep=1)
                 material = entry["section"]
                 self.context.elements.clear_persistent_operations(
                     material,
                     use_settings=self.op_data,
+                    flush=False
                 )
             self.op_data.write_configuration()
+            busy.end()
             self.on_reset(None)
 
     def invalid_file(self, filename):
@@ -1297,36 +1304,6 @@ class MaterialPanel(ScrolledPanel):
                 powerval = None
                 speedval = None
 
-                def write_power_speed():
-                    if factor != 1:
-                        old_l = info[1]
-                        new_l = info[2]
-                        factor_l = info[5]
-                        if old_l is not None:
-                            if info_box:
-                                info_box += "\\n"
-                            info_box += f"Converted lens-size {old_l}mm -> {new_l}mm: {factor_l:.2}"
-                        old_l = info[3]
-                        new_l = info[4]
-                        factor_l = info[6]
-                        if old_l is not None:
-                            if info_box:
-                                info_box += "\\n"
-                            info_box += (
-                                f"Converted power {old_l}W -> {new_l}W: {factor_l:.2}"
-                            )
-                    if powerval * factor > 1000:
-                        # Too much, let's reduce speed instead
-                        if speedval:
-                            if info_box:
-                                info_box += "\\n"
-                            info_box += f"Needed to reduce speed {numeric_value:.1}mm/s -> {numeric_value * speed_factor:.2}mm/s"
-                            speedval *= 1 / factor
-                    else:
-                        powerval *= factor
-                    self.op_data.write_persistent(section_name, "speed", speedval)
-                    self.op_data.write_persistent(section_name, "power", powerval)
-
                 while True:
                     line = f.readline()
                     if not line:
@@ -1338,7 +1315,36 @@ class MaterialPanel(ScrolledPanel):
                                 info_section_name, "note", info_box
                             )
                         if powerval and section_name:
-                            write_power_speed()
+                            if factor != 1:
+                                old_l = info[1]
+                                new_l = info[2]
+                                factor_l = info[5]
+                                if old_l is not None:
+                                    if info_box:
+                                        info_box += "\\n"
+                                    info_box += f"Converted lens-size {old_l}mm -> {new_l}mm: {factor_l:.2}"
+                                old_l = info[3]
+                                new_l = info[4]
+                                factor_l = info[6]
+                                if old_l is not None:
+                                    if info_box:
+                                        info_box += "\\n"
+                                    info_box += f"Converted power {old_l}W -> {new_l}W: {factor_l:.2}"
+                            if powerval * factor > 1000:
+                                # Too much, let's reduce speed instead
+                                if speedval:
+                                    if info_box:
+                                        info_box += "\\n"
+                                    info_box += f"Needed to reduce speed {numeric_value:.1}mm/s -> {numeric_value * speed_factor:.2}mm/s"
+                                    speedval *= 1 / factor
+                            else:
+                                powerval *= factor
+                            self.op_data.write_persistent(
+                                section_name, "speed", speedval
+                            )
+                            self.op_data.write_persistent(
+                                section_name, "power", powerval
+                            )
                         powerval = None
                         speedval = None
                         info_box = ""
@@ -1452,7 +1458,34 @@ class MaterialPanel(ScrolledPanel):
                                 info_box += f"{param} = {numeric_value}"
                 # Residual information available?
                 if powerval and section_name:
-                    write_power_speed()
+                    if factor != 1:
+                        old_l = info[1]
+                        new_l = info[2]
+                        factor_l = info[5]
+                        if old_l is not None:
+                            if info_box:
+                                info_box += "\\n"
+                            info_box += f"Converted lens-size {old_l}mm -> {new_l}mm: {factor_l:.2}"
+                        old_l = info[3]
+                        new_l = info[4]
+                        factor_l = info[6]
+                        if old_l is not None:
+                            if info_box:
+                                info_box += "\\n"
+                            info_box += (
+                                f"Converted power {old_l}W -> {new_l}W: {factor_l:.2}"
+                            )
+                    if powerval * factor > 1000:
+                        # Too much, let's reduce speed instead
+                        if speedval:
+                            if info_box:
+                                info_box += "\\n"
+                            info_box += f"Needed to reduce speed {numeric_value:.1}mm/s -> {numeric_value * speed_factor:.2}mm/s"
+                            speedval *= 1 / factor
+                    else:
+                        powerval *= factor
+                    self.op_data.write_persistent(section_name, "speed", speedval)
+                    self.op_data.write_persistent(section_name, "power", powerval)
                 if info_box and info_section_name:
                     self.op_data.write_persistent(info_section_name, "note", info_box)
 
@@ -1652,8 +1685,7 @@ class MaterialPanel(ScrolledPanel):
         if op_ltype < 0:
             return
         changes = False
-        for content in self.display_list:
-            entry = content[0]
+        for entry in self.display_list:
             material = entry["section"]
             section = f"{material} info"
             self.op_data.write_persistent(section, "laser", op_ltype)
@@ -1666,7 +1698,7 @@ class MaterialPanel(ScrolledPanel):
         if self.active_material is None:
             return
         op_section = self.txt_entry_section.GetValue()
-        for forbidden in (" []"):
+        for forbidden in " []":
             op_section = op_section.replace(forbidden, "_")
         ctrls = (
             self.txt_entry_title,
@@ -1734,6 +1766,7 @@ class MaterialPanel(ScrolledPanel):
             return
 
     def fill_preview(self):
+        self.list_preview.Freeze()
         self.list_preview.DeleteAllItems()
         self.operation_list.clear()
         secdesc = ""
@@ -1795,6 +1828,8 @@ class MaterialPanel(ScrolledPanel):
                 self.list_preview.SetItemData(list_id, idx - 1)
                 self.operation_list[subsection] = (optype, opid, oplabel, power, speed)
 
+        self.list_preview.Thaw()
+        self.list_preview.Refresh()
         if self.active_material is None:
             actval = ""
         else:

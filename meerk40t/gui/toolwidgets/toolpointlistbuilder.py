@@ -28,7 +28,7 @@ class PointListTool(ToolWidget):
 
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, mode=None):
         ToolWidget.__init__(self, scene)
         self.start_position = None
         self.point_series = []

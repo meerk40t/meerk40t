@@ -30,7 +30,7 @@ class ReferenceNode(Node):
         return default_map
 
     def drop(self, drag_node, modify=True):
-        if drag_node.type.startswith("elem"):
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             op = self.parent
             drop_index = op.children.index(self)
             if modify:
