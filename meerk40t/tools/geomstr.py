@@ -416,49 +416,55 @@ class BeamTable:
                 events.append((g.segments[i][-1], i, None))
 
         # Sort start, end events.
-        events.sort(key=self.sort_key)
+        events.sort(key=lambda e: (e[0].real, e[0].imag, ~e[1]))
+
+        def bisect_events(a, x, lo):
+            x = (x[0].real, x[0].imag, ~x[1])
+            hi = len(a)
+            while lo < hi:
+                mid = (lo + hi) // 2
+                q = a[mid]
+
+                if x < (q[0].real, q[0].imag, ~q[1]):
+                    hi = mid
+                else:
+                    lo = mid + 1
+            return lo
+
+        def bisect_yint(a, x, scanline):
+            x = float(g.y_intercept(x, scanline.real, scanline.imag))
+            lo = 0
+            hi = len(a)
+            while lo < hi:
+                mid = (lo + hi) // 2
+                if x < float(g.y_intercept(a[mid], scanline.real, scanline.imag)):
+                    hi = mid
+                else:
+                    lo = mid + 1
+            return lo
 
         checked_swaps = {}
 
-        def check_intersection(q, r, sl):
-            """
-            Check for intersections between p and r, at y.
-
-            p must occur before r in the sorted actives.
-
-            y is used to ensure this is a future point.
-            @param q: lower-active value
-            @param r: higher-active value
-            @param sl: sl value to not be equal
-            @return:
-            """
+        def check_intersection(i, q, r, sl):
             if (q, r) in checked_swaps:
                 return
-            # print(f"Checking intersections: {q} and {r} at {sl}")
-            try: # self._line_line_intersections(line1, line2)
-                for t1, t2 in g.intersections(q, r):
-                    if t1 in (0, 1) and t2 in (0, 1):
-                        continue
-                    pt_intersect = g.position(q, t1)
-                    # if sl.real == pt_intersect.real:
-                    #     print(f"{s1} is equal to intersection.")
-                    if sl.real < pt_intersect.real:
-                        checked_swaps[(q, r)] = True
-                        # events.append((pt_intersect, 0, (q, r)))
-                        # events.sort(key=self.sort_key)
-                        bisect.insort(events, (pt_intersect, 0, (q, r)), key=self.sort_key)
-                        self.intersections.point(pt_intersect)
-                    # else:
-                    #     print("Intersection was in the past.")
-            except AttributeError:
-                pass
+            for t1, t2 in g.intersections(q, r):
+                if t1 in (0, 1) and t2 in (0, 1):
+                    continue
+                pt_intersect = g.position(q, t1)
+                if sl.real >= pt_intersect.real:
+                    continue
+                checked_swaps[(q, r)] = True
+                x = pt_intersect, 0, (q, r)
+                ip = bisect_events(events, x, lo=i)
+                events.insert(ip, x)
+                self.intersections.point(pt_intersect)
 
         actives = []
 
         # Store previously active segments
         active_lists = []
         real_events = []
-
         largest_actives = 0
 
         i = 0
@@ -468,33 +474,31 @@ class BeamTable:
 
             try:
                 next, _, _ = events[i + 1]
+                # scanline = (next + pt) / 2.0
                 scanline = pt
-                # Was average
             except IndexError:
                 next = complex(float("inf"), float("inf"))
                 scanline = next
             if swap is not None:
                 s1 = actives.index(swap[0])
-                s2 = actives.index(swap[1])
+                s2 = s1 + 1
                 actives[s1], actives[s2] = actives[s2], actives[s1]
                 if s1 > 0:
-                    check_intersection(actives[s1-1], actives[s1], scanline)
+                    check_intersection(i, actives[s1-1], actives[s1], pt)
                 if s2 < len(actives) - 1:
-                    check_intersection(actives[s2], actives[s2+1], scanline)
+                    check_intersection(i, actives[s2], actives[s2+1], pt)
             elif index >= 0:
-                y_int = float(g.y_intercept(index, scanline.real, scanline.imag))
-                actives_y_int = [float(g.y_intercept(active, scanline.real, scanline.imag)) for active in actives]
-                ip = bisect.bisect(actives_y_int, y_int)
+                ip = bisect_yint(actives, index, scanline)
                 actives.insert(ip, index)
                 if ip > 0:
-                    check_intersection(actives[ip-1], actives[ip], scanline)
+                    check_intersection(i, actives[ip-1], actives[ip], pt)
                 if ip < len(actives) - 1:
-                    check_intersection(actives[ip], actives[ip+1], scanline)
+                    check_intersection(i, actives[ip], actives[ip+1], pt)
             else:
                 rp = actives.index(~index)
                 del actives[rp]
                 if 0 < rp < len(actives):
-                    check_intersection(actives[rp-1], actives[rp], scanline)
+                    check_intersection(i, actives[rp-1], actives[rp], pt)
             i += 1
             if pt == next:
                 continue
