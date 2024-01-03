@@ -31,6 +31,8 @@ def bezier_qprimeprime(ctrlPoly, t):
 
 # Fit one (ore more) Bezier curves to a set of points
 def fitCurve(points, maxError):
+    if not isinstance(points, np.ndarray):
+        points = np.array(points)
     leftTangent = normalize(points[1] - points[0])
     rightTangent = normalize(points[-2] - points[-1])
     return fitCubic(points, leftTangent, rightTangent, maxError)

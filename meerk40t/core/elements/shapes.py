@@ -798,6 +798,69 @@ def init_commands(kernel):
         after = f"Segments after rdp (epsilon={epsilon:.2f}): {newcount}"
         return changed, before, after
 
+    def simplify_bezier(node, epsilon):
+        if not hasattr(node, "geometry"):
+            return False, "", ""
+        changed = False
+        geom = node.geometry
+        newgeometry = Geomstr()
+        to_simplify = list()
+        last = None
+        oldcount = 0
+        newcount = 0
+        if epsilon is None:
+            epsilon = 10.0
+        for seg in geom.segments[:geom.index]:
+            oldcount += 1
+            start = seg[0]
+            # c1 = seg[1]
+            seg_type = int(seg[2].real)
+            # c2 = seg[3]
+            end = seg[4]
+            if seg_type == TYPE_LINE:
+                if last is None:
+                    to_simplify.append((start.real, start.imag))
+                to_simplify.append((end.real, end.imag))
+                last = end
+            else:
+                last = end
+                if len(to_simplify) > 0:
+                    bezier_list = fitCurve(to_simplify, maxError=epsilon)
+                    changed = True
+                    for bezier in bezier_list:
+                        cs = bezier[0][0] + 1j * bezier[0][1]
+                        c1 = bezier[1][0] + 1j * bezier[1][1]
+                        c2 = bezier[2][0] + 1j * bezier[2][1]
+                        ce = bezier[3][0] + 1j * bezier[3][1]
+                        newgeometry.cubic(cs, c1, c2, ce)
+                        newcount += 1
+                    to_simplify.clear()
+                    last = None
+                newgeometry._ensure_capacity(newgeometry.index + 1)
+                newgeometry.segments[newgeometry.index] = [ seg[0], seg[1], seg[2], seg[3], seg[4] ]
+                newgeometry.index += 1
+
+                newcount += 1
+
+        if len(to_simplify) > 0:
+            bezier_list = fitCurve(to_simplify, maxError=epsilon)
+            changed = True
+            for bezier in bezier_list:
+                cs = bezier[0][0] + 1j * bezier[0][1]
+                c1 = bezier[1][0] + 1j * bezier[1][1]
+                c2 = bezier[2][0] + 1j * bezier[2][1]
+                ce = bezier[3][0] + 1j * bezier[3][1]
+                newgeometry.cubic(cs, c1, c2, ce)
+                newcount += 1
+            to_simplify.clear()
+            last = None
+
+        if changed:
+            node.geometry = newgeometry
+        before = f"Segments before: {oldcount}"
+        after = f"Segments after bezier (epsilon={epsilon:.2f}): {newcount}"
+        return changed, before, after
+
     @self.console_option(
         "epsilon", "e", type=float, help=_("Defines the epsilon parameter for RDP")
     )
@@ -827,8 +890,12 @@ def init_commands(kernel):
                 pts_before = 0
             if method == "rdp":
                 changed, before, after = simplify_rdp(node, epsilon)
+            elif method == "bezier":
+                changed, before, after = simplify_bezier(node, epsilon)
             else:
-                changed, before, after = self.simplify_node(node)
+                changed, before, after = simplify_rdp(node, epsilon)
+                changed, before, after = simplify_bezier(node, epsilon)
+                # changed, before, after = self.simplify_node(node)
             if changed:
                 node.altered()
                 try:
