@@ -258,13 +258,13 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None, font_sp
     font_dir = context.font_directory
     # Check whether the default is still valid
     if context.shx_preferred is not None and context.shx_preferred != "":
-        font_path = join(font_dir, context.shx_preferred)
-        if not exists(font_path):
+        dummy = join(font_dir, context.shx_preferred)
+        if not exists(dummy):
             context.shx_preferred = None
     # Valid font?
     if font is not None and font != "":
-        font_path = join(font_dir, font)
-        if not exists(font_path):
+        dummy = join(font_dir, font)
+        if not exists(dummy):
             font = None
     if font is not None:
         context.shx_preferred = font
@@ -284,8 +284,8 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None, font_sp
             "arial.ttf",
         )
         for fname in candidates:
-            fullfname = join(font_dir, fname)
-            if exists(fullfname):
+            dummy = join(font_dir, fname)
+            if exists(dummy):
                 # print (f"Taking font {fname} instead")
                 font = fname
                 context.shx_preferred = font
@@ -310,6 +310,7 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None, font_sp
     if font is None or font == "":
         # print ("Font was empty")
         return None
+    font_path = join(font_dir, font)
     horizontal = True
     cfont = cached_fontclass(context, font_path)
     if cfont is None:
