@@ -798,7 +798,7 @@ def init_commands(kernel):
         after = f"Segments after rdp (epsilon={epsilon:.2f}): {newcount}"
         return changed, before, after
 
-    def simplify_bezier(node, epsilon):
+    def fit_bezier(node, epsilon):
         if not hasattr(node, "geometry"):
             return False, "", ""
         changed = False
@@ -864,15 +864,13 @@ def init_commands(kernel):
     @self.console_option(
         "epsilon", "e", type=float, help=_("Defines the epsilon parameter for RDP")
     )
-    @self.console_argument("method", type=str, help=_("method to use: default, rdp, bezier"))
     @self.console_command(
-        "simplify", input_type=("elements", None), output_type="elements"
+        "simplify", input_type=("elements", None), output_type="elements",
+        help=_("Reduces the amount of lines by merging adjacent lines with similar slopes"),
     )
-    def simplify_path(command, channel, _, data=None, method=None, epsilon=None, post=None, **kwargs):
+    def simplify_path(command, channel, _, data=None, epsilon=None, post=None, **kwargs):
         if data is None:
             data = list(self.elems(emphasized=True))
-        if method is None or method not in ("default", "rdp", "bezier"):
-            method = "default"
         data_changed = list()
         if len(data) == 0:
             channel("Requires a selected polygon")
@@ -888,14 +886,8 @@ def init_commands(kernel):
                 pts_before = node.as_geometry().index
             except AttributeError:
                 pts_before = 0
-            if method == "rdp":
-                changed, before, after = simplify_rdp(node, epsilon)
-            elif method == "bezier":
-                changed, before, after = simplify_bezier(node, epsilon)
-            else:
-                changed, before, after = simplify_rdp(node, epsilon)
-                changed, before, after = simplify_bezier(node, epsilon)
-                # changed, before, after = self.simplify_node(node)
+            changed, before, after = simplify_rdp(node, epsilon)
+            # changed, before, after = self.simplify_node(node)
             if changed:
                 node.altered()
                 try:
@@ -919,6 +911,54 @@ def init_commands(kernel):
             self.signal("refresh_scene", "Scene")
         return "elements", data
 
+    @self.console_option(
+        "maxerror", "e", type=float, help=_("Defines the maxerror parameter for a cubic fit")
+    )
+    @self.console_command(
+        "fit", input_type=("elements", None), output_type="elements"
+    )
+    def cubic_fit_path(command, channel, _, data=None, maxerror=None, post=None, **kwargs):
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        data_changed = list()
+        if len(data) == 0:
+            channel("Requires a selected polygon")
+            return None
+        epsilon = maxerror
+        if epsilon is None:
+            epsilon = 10.0
+        for node in data:
+            try:
+                sub_before = len(list(node.as_geometry().as_subpaths()))
+            except AttributeError:
+                sub_before = 0
+            try:
+                pts_before = node.as_geometry().index
+            except AttributeError:
+                pts_before = 0
+            changed, before, after = fit_bezier(node, epsilon)
+            if changed:
+                node.altered()
+                try:
+                    sub_after = len(list(node.as_geometry().as_subpaths()))
+                except AttributeError:
+                    sub_after = 0
+                try:
+                    pts_after = node.as_geometry().index
+                except AttributeError:
+                    pts_after = 0
+                channel(
+                    f"Fitted {node.type} ({node.label}): from {before} to {after}"
+                )
+                channel(f"Subpaths: from {sub_before} to {sub_after}")
+                channel(f"Segments: from {pts_before} to {pts_after}")
+                data_changed.append(node)
+            else:
+                channel(f"Could not fit {node.type} ({node.label})")
+        if len(data_changed) > 0:
+            self.signal("element_property_update", data_changed)
+            self.signal("refresh_scene", "Scene")
+        return "elements", data
 
     @self.console_command(
         "polycut", input_type=("elements", None), output_type="elements"
