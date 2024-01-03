@@ -1029,7 +1029,7 @@ msgid ""
 "Inkscape's Object List"
 msgstr ""
 "Classificar elementos em operações em ordem reversa, por exemplo, para corresponder "
-à Lista de Objetos do Inkscape"
+"à Lista de Objetos do Inkscape"
 
 #: meerk40t/core/elements.py:148
 msgid "Classify elements after creation"
