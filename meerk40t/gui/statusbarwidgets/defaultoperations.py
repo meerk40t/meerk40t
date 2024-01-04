@@ -127,14 +127,14 @@ class DefaultOperationWidget(StatusBarWidget):
             opid = op.id
             if opid is None:
                 opid = ""
-            fontsize = 12
+            fontsize = 10
             if len(opid) > 2:
-                fontsize = 10
-            elif len(opid) > 3:
                 fontsize = 8
+            elif len(opid) > 3:
+                fontsize = 7
             elif len(opid) > 4:
                 fontsize = 6
-            # use_theme=False is needed as othewise colors will get reversed
+            # use_theme=False is needed as otherwise colors will get reversed
             icon = EmptyIcon(
                 size=(self.iconsize, min(self.iconsize, self.height)),
                 color=wx.Colour(swizzlecolor(op.color)),
