@@ -1636,16 +1636,16 @@ class TestGeomstr(unittest.TestCase):
 
     def test_static_beam_vertical_bowtie(self):
         """
-       0   3
+           3
         --------
         \     /
-         \   /
+        0\   /2
           \/
           /\
-         /  \
+        2/  \0
         /    \
         ------
-        2   1
+           1
         @return:
         """
         bowtie = Geomstr.lines(
