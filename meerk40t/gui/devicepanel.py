@@ -173,10 +173,16 @@ class DevicePanel(wx.Panel):
             | wx.LC_SINGLE_SEL
             | wx.LC_SORT_ASCENDING,
         )
-        self.devices_list.InsertColumn(0, _("Device"))
-        self.devices_list.InsertColumn(1, _("Driver"))
-        self.devices_list.InsertColumn(2, _("Type"))
-        self.devices_list.InsertColumn(3, _("Status"))
+        self.list_columns = {
+            "device": 0,
+            "driver": 1,
+            "family": 2,
+            "status": 3,
+        }
+        self.devices_list.InsertColumn(self.list_columns["device"], _("Device"))
+        self.devices_list.InsertColumn(self.list_columns["driver"], _("Driver"))
+        self.devices_list.InsertColumn(self.list_columns["family"], _("Type"))
+        self.devices_list.InsertColumn(self.list_columns["status"], _("Status"))
         sizer_1.Add(self.devices_list, 7, wx.EXPAND, 0)
 
         sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
@@ -237,6 +243,7 @@ class DevicePanel(wx.Panel):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_config_device, self.button_config_device
         )
+        self.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_start_edit, self.devices_list)
         self.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_end_edit, self.devices_list)
         self.Parent.Bind(wx.EVT_SIZE, self.on_resize)
         # end wxGlade
@@ -259,10 +266,22 @@ class DevicePanel(wx.Panel):
         size = self.devices_list.GetSize()
         if size[0] == 0 or size[1] == 0:
             return
-        self.devices_list.SetColumnWidth(0, int(0.4 * size[0]))
-        self.devices_list.SetColumnWidth(1, int(0.25 * size[0]))
-        self.devices_list.SetColumnWidth(2, int(0.25 * size[0]))
-        self.devices_list.SetColumnWidth(3, int(0.10 * size[0]))
+        remaining = size[0]
+        self.devices_list.SetColumnWidth(
+            self.list_columns["device"], int(0.40 * remaining)
+        )
+        self.devices_list.SetColumnWidth(
+            self.list_columns["driver"], int(0.25 * remaining)
+        )
+        self.devices_list.SetColumnWidth(
+            self.list_columns["family"], int(0.25 * remaining)
+        )
+        self.devices_list.SetColumnWidth(
+            self.list_columns["status"], int(0.10 * remaining)
+        )
+
+    def on_start_edit(self, event):
+        event.Allow()
 
     def on_end_edit(self, event):
         prohibited = "'" + '"' + "/"
@@ -353,9 +372,11 @@ class DevicePanel(wx.Panel):
             except AttributeError:
                 pass
 
-            self.devices_list.SetItem(index, 1, type_info)
-            self.devices_list.SetItem(index, 2, family_info)
-            self.devices_list.SetItem(index, 3, _(active_status))
+            self.devices_list.SetItem(index, self.list_columns["driver"], type_info)
+            self.devices_list.SetItem(index, self.list_columns["family"], family_info)
+            self.devices_list.SetItem(
+                index, self.list_columns["status"], _(active_status)
+            )
             self.devices_list.SetItemData(index, dev_index)
             if self.context.device is device:
                 self.devices_list.SetItemTextColour(index, wx.RED)

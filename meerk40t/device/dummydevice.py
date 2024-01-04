@@ -113,6 +113,17 @@ class DummyDevice(Service, Status):
         )
         self.view = View(self.bedwidth, self.bedheight)
 
+    @property
+    def safe_label(self):
+        """
+        Provides a safe label without spaces or / which could cause issues when used in timer or other names.
+        @return:
+        """
+        if not hasattr(self, "label"):
+            return self.name
+        name = self.label.replace(" ", "-")
+        return name.replace("/", "-")
+
     @signal_listener("bedwidth")
     @signal_listener("bedheight")
     @signal_listener("scale_x")

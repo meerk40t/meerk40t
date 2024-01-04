@@ -102,7 +102,7 @@ class EngraveOpNode(Node, Parameters):
 
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
-        if drag_node.type.startswith("elem") or drag_node.type.startswith("effect"):
+        if hasattr(drag_node, "as_geometry"):
             if (
                 drag_node.type not in self._allowed_elements_dnd
                 or drag_node._parent.type == "branch reg"

@@ -19,7 +19,7 @@ class LineTextTool(ToolWidget):
     Adds a linetext, first point click then Text-Entry
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, mode=None):
         ToolWidget.__init__(self, scene)
         self.start_position = None
         self.p1 = None

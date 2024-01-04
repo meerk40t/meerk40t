@@ -58,19 +58,29 @@ class MoshiDriver(Parameters):
         self.program = MoshiBuilder()
 
         self.paused = False
-        self.hold = False
-        self.paused = False
+        self.holds = []
+        self.temp_holds = []
 
         self.preferred_offset_x = 0
         self.preferred_offset_y = 0
 
-        name = self.service.label.replace(" ", "-")
-        name = name.replace("/", "-")
-        self.pipe_channel = service.channel(f"{name}/events")
+        self.pipe_channel = service.channel(f"{service.safe_label}/events")
         self.program.channel = self.pipe_channel
 
         self.out_pipe = None
         self.out_real = None
+
+        def primary_hold():
+            if self.out_pipe is None:
+                return True
+            if (
+                hasattr(self.service.controller, "is_shutdown")
+                and self.service.controller.is_shutdown
+            ):
+                raise ConnectionAbortedError("Cannot hold for a shutdown pipe.")
+            return self.paused
+
+        self.holds.append(primary_hold)
 
     def __repr__(self):
         return f"MoshiDriver({self.name})"
@@ -83,13 +93,32 @@ class MoshiDriver(Parameters):
 
     def hold_work(self, priority):
         """
-        Required.
+        Holds are criteria to use to pause the data interpretation. These halt the production of new data until the
+        criteria is met. A hold is constant and will always halt the data while true. A temp_hold will be removed
+        as soon as it does not hold the data.
 
-        Spooler check. to see if the work cycle should be held.
-
-        @return: hold?
+        @return: Whether data interpretation should hold.
         """
-        return priority <= 0 and (self.paused or self.hold)
+        if priority > 0:
+            # Don't hold realtime work.
+            return False
+
+        temp_hold = False
+        fail_hold = False
+        for i, hold in enumerate(self.temp_holds):
+            if not hold():
+                self.temp_holds[i] = None
+                fail_hold = True
+            else:
+                temp_hold = True
+        if fail_hold:
+            self.temp_holds = [hold for hold in self.temp_holds if hold is not None]
+        if temp_hold:
+            return True
+        for hold in self.holds:
+            if hold():
+                return True
+        return False
 
     def job_start(self, job):
         pass
@@ -385,7 +414,7 @@ class MoshiDriver(Parameters):
         Send a home command to the device. In the case of Moshiboards this is merely a move to
         0,0 in absolute position.
         """
-        if self.service.rotary.active and self.service.rotary.supress_home:
+        if self.service.rotary.active and self.service.rotary.suppress_home:
             return
         self.rapid_mode()
         self.speed = 40
@@ -524,8 +553,17 @@ class MoshiDriver(Parameters):
         @param values:
         @return:
         """
-        self.hold = True
-        # self.temp_holds.append(lambda: len(self.output) != 0)
+
+        def temp_hold():
+            try:
+                return (
+                    self.service.controller.state == "wait"
+                    or len(self.service.controller) != 0
+                )
+            except TypeError:
+                return False
+
+        self.temp_holds.append(temp_hold)
 
     def function(self, function):
         """

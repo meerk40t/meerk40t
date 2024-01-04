@@ -21,6 +21,7 @@ from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
 from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
 from meerk40t.kernel.kernel import Job
+from .propertypanels.gotoproperty import GotoPropertyPanel
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from ..tools.kerftest import KerfTool
@@ -45,6 +46,7 @@ from .icons import (
 from .imagesplitter import RenderSplit
 from .keymap import Keymap
 from .lasertoolpanel import LaserTool
+from .materialmanager import MaterialManager
 from .materialtest import TemplateTool
 from .notes import Notes
 from .operation_info import OperationInformation
@@ -171,20 +173,20 @@ class ActionPanel(wx.Panel):
 
         t = self.button_go.GetBitmap().Size
         # print(f"Was asking for {best_size}x{best_size}, got {s[0]}x{s[1]}, button has {t[0]}x{t[1]}")
-        scalex = s[0] / t[0]
-        scaley = s[1] / t[1]
-        if abs(1 - scalex) > 1e-2 or abs(1 - scaley) > 1e-2:
-            # print(f"Scale factors: {scalex:.2f}, {scaley:.2f}")
+        scale_x = s[0] / t[0]
+        scale_y = s[1] / t[1]
+        if abs(1 - scale_x) > 1e-2 or abs(1 - scale_y) > 1e-2:
+            # print(f"Scale factors: {scale_x:.2f}, {scale_y:.2f}")
             # This is a bug within wxPython! It seems to appear only here at very high scale factors under windows
             bmp = self.icon.GetBitmap(
                 color=self.fgcolor,
-                resize=(best_size * scalex, best_size * scaley),
+                resize=(best_size * scale_x, best_size * scale_y),
                 buffer=border,
             )
             s = bmp.Size
             self.button_go.SetBitmap(bmp)
             bmp = self.icon.GetBitmap(
-                resize=(best_size * scalex, best_size * scaley), buffer=border
+                resize=(best_size * scale_x, best_size * scale_y), buffer=border
             )
             self.button_go.SetBitmapFocus(bmp)
 
@@ -838,6 +840,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
         kernel.register("property/BlobNode/BlobProperty", BlobPropertyPanel)
         kernel.register("property/WaitOperation/WaitProperty", WaitPropertyPanel)
+        kernel.register("property/GotoOperation/GotoProperty", GotoPropertyPanel)
         kernel.register("property/InputOperation/InputProperty", InputPropertyPanel)
         kernel.register("property/BranchOperationsNode/LoopProperty", OpBranchPanel)
         kernel.register("property/OutputOperation/OutputProperty", OutputPropertyPanel)
@@ -861,6 +864,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/About", About)
         kernel.register("window/Keymap", Keymap)
         kernel.register("window/Wordlist", WordlistEditor)
+        kernel.register("window/MatManager", MaterialManager)
         kernel.register("window/Navigation", Navigation)
         kernel.register("window/Notes", Notes)
         kernel.register("window/JobSpooler", JobSpooler)

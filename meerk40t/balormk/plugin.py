@@ -22,6 +22,7 @@ def plugin(kernel, lifecycle):
         from meerk40t.balormk.device import BalorDevice
 
         kernel.register("provider/device/balor", BalorDevice)
+        kernel.register("provider/friendly/balor", ("Fibre-Laser", 3))
         _ = kernel.translation
         kernel.register(
             "dev_info/balor-fiber",

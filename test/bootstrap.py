@@ -1,7 +1,7 @@
 from meerk40t.kernel import Kernel
 
 
-def bootstrap(profile="MeerK40t_TEST", ignore_settings=True):
+def bootstrap(profile="MeerK40t_TEST", ignore_settings=True, plugins=None):
     kernel = Kernel(
         "MeerK40t",
         "0.0.0-testing",
@@ -65,6 +65,10 @@ def bootstrap(profile="MeerK40t_TEST", ignore_settings=True):
     from meerk40t.rotary import rotary
 
     kernel.add_plugin(rotary.plugin)
+
+    if plugins:
+        for plugin in plugins:
+            kernel.add_plugin(plugin)
 
     kernel(partial=True)
     kernel.console("channel print console\n")

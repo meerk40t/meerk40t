@@ -12,7 +12,7 @@ class PointTool(ToolWidget):
     Adds points with clicks.
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, mode=None):
         ToolWidget.__init__(self, scene)
 
     def process_draw(self, gc: wx.GraphicsContext):

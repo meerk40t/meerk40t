@@ -4,7 +4,7 @@ from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
-from meerk40t.gui.icons import EmptyIcon
+from meerk40t.gui.icons import EmptyIcon, icon_library
 from meerk40t.gui.laserrender import swizzlecolor
 
 from .statusbarwidget import StatusBarWidget
@@ -127,14 +127,14 @@ class DefaultOperationWidget(StatusBarWidget):
             opid = op.id
             if opid is None:
                 opid = ""
-            fontsize = 12
+            fontsize = 10
             if len(opid) > 2:
-                fontsize = 10
-            elif len(opid) > 3:
                 fontsize = 8
+            elif len(opid) > 3:
+                fontsize = 7
             elif len(opid) > 4:
                 fontsize = 6
-            # use_theme=False is needed as othewise colors will get reversed
+            # use_theme=False is needed as otherwise colors will get reversed
             icon = EmptyIcon(
                 size=(self.iconsize, min(self.iconsize, self.height)),
                 color=wx.Colour(swizzlecolor(op.color)),
@@ -174,6 +174,23 @@ class DefaultOperationWidget(StatusBarWidget):
         self.SetActive(self.btn_next, False)
         self.btn_next.Bind(wx.EVT_LEFT_DOWN, self.on_next)
 
+        self.btn_matman = wx.StaticBitmap(
+            parent,
+            id=wx.ID_ANY,
+            size=(self.buttonsize_x, self.buttonsize_y),
+            # style=wx.BORDER_RAISED,
+        )
+        icon = icon_library.GetBitmap(resize=self.iconsize)
+        self.btn_matman.SetBitmap(icon)
+        self.btn_matman.SetToolTip(_("Open material manager"))
+        size_it(self.btn_matman, self.buttonsize_x, self.buttonsize_y)
+
+        self.Add(self.btn_matman, 0, wx.EXPAND, 0)
+        self.btn_matman.Bind(wx.EVT_LEFT_DOWN, self.on_matman)
+
+    def on_matman(self, event):
+        self.context("window open MatManager\n")
+
     def on_button_left(self, event):
         button = event.GetEventObject()
         shift_pressed = event.ShiftDown()
@@ -188,16 +205,16 @@ class DefaultOperationWidget(StatusBarWidget):
 
     def on_button_right(self, event):
         # Allow loading of a different set of operations...
-        # Sae function for all buttons...
+        # See function for all buttons...
         # button = event.GetEventObject()
         menu = wx.Menu()
-        item = menu.Append(wx.ID_ANY, _("Load materials/operations"), "")
-        item.Enable(False)
         matcount = 0
 
         def on_menu_material(matname):
             def handler(*args):
-                oplist = self.context.elements.load_persistent_op_list(stored_mat)
+                oplist, opinfo = self.context.elements.load_persistent_op_list(
+                    stored_mat
+                )
                 if oplist is not None and len(oplist) > 0:
                     self.context.elements.default_operations = oplist
                     self.Signal("default_operations")
@@ -208,22 +225,43 @@ class DefaultOperationWidget(StatusBarWidget):
         for material in self.context.elements.op_data.section_set():
             if material == "previous":
                 continue
-            if material == "_default":
-                name = "Generic Defaults"
-            elif material.startswith("_default_"):
-                name = f"Default for {material[9:]}"
-            else:
-                name = material.replace("_", " ")
+            if matcount == 0:
+                item = menu.Append(wx.ID_ANY, _("Load materials/operations"), "")
+                item.Enable(False)
+            opinfo = self.context.elements.load_persistent_op_info(material)
+            material_name = opinfo.get("material", "")
+            material_title = opinfo.get("title", "")
+            label = material_name
+            if material_title:
+                label += " - " + material_title
+            if not material_name:
+                if material == "_default":
+                    label = "Generic Defaults"
+                elif material.startswith("_default_"):
+                    label = f"Default for {material[9:]}"
+                else:
+                    label = material.replace("_", " ")
+            if "thickness" in opinfo:
+                if opinfo["thickness"]:
+                    label += ", " + opinfo["thickness"]
             matcount += 1
 
             self.parent.Bind(
                 wx.EVT_MENU,
                 on_menu_material(material),
-                menu.Append(wx.ID_ANY, name, ""),
+                menu.Append(wx.ID_ANY, label, ""),
             )
 
         if matcount > 0:
-            self.parent.PopupMenu(menu)
+            menu.AppendSeparator()
+
+        self.parent.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context("window open MatManager\n"),
+            menu.Append(wx.ID_ANY, _("Material Library"), ""),
+        )
+
+        self.parent.PopupMenu(menu)
 
         menu.Destroy()
 
@@ -269,12 +307,14 @@ class DefaultOperationWidget(StatusBarWidget):
                                 x += gap + w
                 self.SetActive(btn, btnflag)
             self.SetActive(self.btn_next, residual)
+            self.SetActive(self.btn_matman, not residual)
 
         else:
             self.SetActive(self.btn_prev, False)
             for btn in self.assign_buttons:
                 self.SetActive(btn, False)
             self.SetActive(self.btn_next, False)
+            self.SetActive(self.btn_matman, True)
         self.Layout()
         self.RefreshItems(showit)
 

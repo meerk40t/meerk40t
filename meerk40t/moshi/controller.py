@@ -58,8 +58,8 @@ class MoshiController:
     Checks done before the Epilogue will have 205 state.
     """
 
-    def __init__(self, context, channel=None, force_mock=False, *args, **kwargs):
-        self.context = context
+    def __init__(self, service, channel=None, force_mock=False, *args, **kwargs):
+        self.context = service
         self.state = "unknown"
 
         self._programs = []  # Programs to execute.
@@ -83,13 +83,14 @@ class MoshiController:
         self.count = 0
         self.abort_waiting = False
 
-        name = self.context.label
-        self.pipe_channel = context.channel(f"{name}/events")
-        self.usb_log = context.channel(f"{name}/usb", buffer_size=500)
-        self.usb_send_channel = context.channel(f"{name}/usb_send")
-        self.recv_channel = context.channel(f"{name}/recv")
+        name = service.safe_label
+        self.pipe_channel = service.channel(f"{name}/events")
+        self.usb_log = service.channel(f"{name}/usb", buffer_size=500)
+        self.usb_send_channel = service.channel(f"{name}/usb_send")
+        self.recv_channel = service.channel(f"{name}/recv")
 
-        self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
+    def usb_signal_update(self, e):
+        self.context.signal("pipe;usb_status", e)
 
     def viewbuffer(self):
         """
@@ -104,8 +105,10 @@ class MoshiController:
 
     def added(self, *args, **kwargs):
         self.start()
+        self.usb_log.watch(self.usb_signal_update)
 
     def shutdown(self, *args, **kwargs):
+        self.usb_log.unwatch(self.usb_signal_update)
         self.update_state("terminate")
         if self._thread is not None:
             self.is_shutdown = True

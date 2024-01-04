@@ -611,7 +611,7 @@ def init_tree(kernel):
     @tree_submenu(_("Set placement loops"))
     @tree_radio(radio_match_loops)
     @tree_iterate("loopvalue", 1, 10)
-    @tree_operation(_("Loops {loopvalue}"), node_type=place_nodes, help="")
+    @tree_operation(_("Loops {loopvalue}"), node_type="place point", help="")
     def set_n_loops(node, loopvalue=1, **kwargs):
         data = list()
         for n in list(self.ops(selected=True)):
@@ -623,137 +623,52 @@ def init_tree(kernel):
             self.signal("element_property_update", data)
             self.signal("refresh_scene", "Scene")
 
-    @tree_submenu(_("Layout"))
-    @tree_prompt("dx", _("Distance between placements?"))
-    @tree_prompt(
-        "nx",
-        _(
-            "How many additional placements on the X-Axis?\n(0 = as many as fit on the bed)"
-        ),
-    )
-    @tree_operation(
-        _("Create placements horizontally"), node_type="place point", help=""
-    )
-    def copies_horizontally(node, dx, nx, pos=None, **kwargs):
-        #
-        if dx is None or dx == "":
-            return
-        try:
-            len_dx = Length(dx)
-            dx_val = float(len_dx)
-        except ValueError:
-            return
-        if nx is None or nx == "":
-            return
-        try:
-            nx = int(nx)
-        except ValueError:
-            return
-        if nx < 0:
-            # Nothing to do
-            return
-        data = []
-        max_x = self.device.view.width
-        for n in list(self.ops(selected=True)):
-            if n.type == "place point":
-                data.append(n)
-        if len(data) == 0:
-            return
-        pos = None
-        for pnode in data:
-            startx = pnode.x + dx_val
-            starty = pnode.y
-            corner = pnode.corner
-            rotation = pnode.rotation
-            if nx == 0:
-                while startx < max_x:
-                    self.op_branch.add(
-                        type="place point",
-                        pos=pos,
-                        x=startx,
-                        y=starty,
-                        rotation=rotation,
-                        corner=corner,
-                    )
-                    startx += dx_val
-            else:
-                for idx in range(nx):
-                    self.op_branch.add(
-                        type="place point",
-                        pos=pos,
-                        x=startx,
-                        y=starty,
-                        rotation=rotation,
-                        corner=corner,
-                    )
-                    startx += dx_val
-        self.signal("updateop_tree")
-        self.signal("refresh_scene", "Scene")
+    # @tree_submenu(_("Layout"))
+    # @tree_prompt("dx", _("Distance between placements?"))
+    # @tree_prompt(
+    #     "nx",
+    #     _(
+    #         "How many placements on the X-Axis?\n(0 = as many as fit on the bed)"
+    #     ),
+    # )
+    # @tree_operation(
+    #     _("Create placements horizontally"), node_type="place point", help=""
+    # )
+    # def copies_horizontally(node, dx, nx, pos=None, **kwargs):
+    #     self(f"placement_grid {nx} {dx} 1 0\n")
 
-    @tree_submenu(_("Layout"))
-    @tree_prompt("dy", _("Distance between placements?"))
-    @tree_prompt(
-        "ny",
-        _(
-            "How many additional placements on the Y-Axis?\n(0 = as many as fit on the bed)"
-        ),
-    )
-    @tree_operation(_("Create placements vertically"), node_type="place point", help="")
-    def copies_vertically(node, dy, ny, pos=None, **kwargs):
-        #
-        if dy is None or dy == "":
-            return
-        try:
-            len_dy = Length(dy)
-            dy_val = float(len_dy)
-        except ValueError:
-            return
-        if ny is None or ny == "":
-            return
-        try:
-            ny = int(ny)
-        except ValueError:
-            return
-        if ny < 0:
-            # Nothing to do
-            return
-        data = []
-        max_y = self.device.view.height
-        for n in list(self.ops(selected=True)):
-            if n.type == "place point":
-                data.append(n)
-        if len(data) == 0:
-            return
-        pos = None
-        for pnode in data:
-            startx = pnode.x
-            starty = pnode.y + dy_val
-            corner = pnode.corner
-            rotation = pnode.rotation
-            if ny == 0:
-                while starty < max_y:
-                    self.op_branch.add(
-                        type="place point",
-                        pos=pos,
-                        x=startx,
-                        y=starty,
-                        rotation=rotation,
-                        corner=corner,
-                    )
-                    starty += dy_val
-            else:
-                for idx in range(ny):
-                    self.op_branch.add(
-                        type="place point",
-                        pos=pos,
-                        x=startx,
-                        y=starty,
-                        rotation=rotation,
-                        corner=corner,
-                    )
-                    starty += dy_val
-        self.signal("updateop_tree")
-        self.signal("refresh_scene", "Scene")
+    # @tree_submenu(_("Layout"))
+    # @tree_prompt("dy", _("Distance between placements?"))
+    # @tree_prompt(
+    #     "ny",
+    #     _(
+    #         "How many placements on the Y-Axis?\n(0 = as many as fit on the bed)"
+    #     ),
+    # )
+    # @tree_operation(_("Create placements vertically"), node_type="place point", help="")
+    # def copies_vertically(node, dy, ny, pos=None, **kwargs):
+    #     self(f"placement_grid 1 0 {ny} {dy}\n")
+
+    # @tree_submenu(_("Layout"))
+    # @tree_prompt("dx", _("Horizontal distance between placements?"))
+    # @tree_prompt(
+    #     "nx",
+    #     _(
+    #         "How many placements on the X-Axis?\n(0 = as many as fit on the bed)"
+    #     ),
+    # )
+    # @tree_prompt("dy", _("Vertical distance between placements?"))
+    # @tree_prompt(
+    #     "ny",
+    #     _(
+    #         "How many placements on the Y-Axis?\n(0 = as many as fit on the bed)"
+    #     ),
+    # )
+    # @tree_operation(
+    #     _("Create grid of placements"), node_type="place point", help=""
+    # )
+    # def copies_grid(node, dx, nx, dy, ny, pos=None, **kwargs):
+    #     self(f"placement_grid {nx} {dx} {ny} {dy}\n")
 
     # ---- Burn Direction
     def get_direction_values():
@@ -1352,24 +1267,41 @@ def init_tree(kernel):
         help="",
     )
     def make_polygon_regular(node, **kwargs):
+        def norm_angle(angle):
+            while angle < 0:
+                angle += math.tau
+            while angle >= math.tau:
+                angle -= math.tau
+            return angle
+
         if node is None or node.type != "elem polyline":
             return
         pts = list(node.geometry.as_points())
         vertex_count = len(pts) - 1
         baseline = abs(pts[1] - pts[0])
         circumradius = baseline / (2 * math.sin(math.tau / (2 * vertex_count)))
-        # apothem = baseline / (2 * math.tan(math.tau / (2 * vertex_count)))
-        # midpoint = (pts[0] - pts[1]) / 2
-
+        apothem = baseline / (2 * math.tan(math.tau / (2 * vertex_count)))
+        midpoint = (pts[0] + pts[1]) / 2
+        angle0 = Geomstr.angle(None, pts[0], pts[1])
+        angle1 = norm_angle(angle0 + math.tau / 4)
+        angle2 = norm_angle(angle0 - math.tau / 4)
+        pt1 = Geomstr.polar(None, midpoint, angle1, apothem)
+        pt2 = Geomstr.polar(None, midpoint, angle2, apothem)
         # The arithmetic center (ax, ay) indicates to which
         # 'side' of the baseline the polygon needs to be constructed
         arithmetic_center = sum(pts[:-1]) / vertex_count
+        if Geomstr.distance(None, pt1, arithmetic_center) < Geomstr.distance(
+            None, pt2, arithmetic_center
+        ):
+            center_point = pt1
+        else:
+            center_point = pt2
 
-        start_angle = Geomstr.angle(None, arithmetic_center, pts[0])
+        start_angle = Geomstr.angle(None, center_point, pts[0])
 
         node.geometry = Geomstr.regular_polygon(
             vertex_count,
-            arithmetic_center,
+            center_point,
             radius=circumradius,
             radius_inner=circumradius,
             start_angle=start_angle,
@@ -1408,7 +1340,7 @@ def init_tree(kernel):
                         for dentry in entry["display"]:
                             newdisplay.append(_(dentry))
                         entry["display"] = newdisplay
-                dialog = dialog_class(self.kernel, choices=choices)
+                dialog = dialog_class(self.kernel.root, choices=choices)
                 res = dialog.dialog_options(
                     title=_("Blob-Conversion"),
                     intro=_(
@@ -1595,71 +1527,96 @@ def init_tree(kernel):
             self.validate_selected_area()
             self.signal("refresh_scene", "Scene")
 
-    materials = [
-        _("Wood"),
-        _("Acrylic"),
-        _("Foam"),
-        _("Leather"),
-        _("Cardboard"),
-        _("Cork"),
-        _("Textiles"),
-        _("Paper"),
-        _("Save-1"),
-        _("Save-2"),
-        _("Save-3"),
-    ]
+    # materials = [
+    #     _("Wood"),
+    #     _("Acrylic"),
+    #     _("Foam"),
+    #     _("Leather"),
+    #     _("Cardboard"),
+    #     _("Cork"),
+    #     _("Textiles"),
+    #     _("Paper"),
+    #     _("Save-1"),
+    #     _("Save-2"),
+    #     _("Save-3"),
+    # ]
 
-    def union_materials_saved():
-        union = [
-            d
-            for d in self.op_data.section_set()
-            if d not in materials and d != "previous"
-        ]
-        union.extend(materials)
-        return union
+    # def union_materials_saved():
+    #     union = [
+    #         d
+    #         for d in self.op_data.section_set()
+    #         if d not in materials and d != "previous"
+    #     ]
+    #     union.extend(materials)
+    #     return union
 
-    def difference_materials_saved():
-        secs = self.op_data.section_set()
-        difference = [m for m in materials if m not in secs]
-        return difference
-
-    @tree_separator_before()
-    @tree_submenu(_("Load"))
-    @tree_values("opname", values=self.op_data.section_set)
-    @tree_operation("{opname}", node_type="branch ops", help="")
-    def load_ops(node, opname, **kwargs):
-        self(f"material load {opname}\n")
+    # def difference_materials_saved():
+    #     secs = self.op_data.section_set()
+    #     difference = [m for m in materials if m not in secs]
+    #     return difference
 
     @tree_separator_before()
-    @tree_submenu(_("Load"))
-    @tree_operation(_("Other/Blue/Red"), node_type="branch ops", help="")
-    def default_classifications(node, **kwargs):
-        self.load_default(performclassify=True)
-
-    @tree_submenu(_("Load"))
     @tree_separator_after()
-    @tree_operation(_("Basic"), node_type="branch ops", help="")
-    def basic_classifications(node, **kwargs):
-        self.load_default2(performclassify=True)
+    @tree_operation(
+        _("Material Manager"),
+        node_type="branch ops",
+        help=_("Open the Material Manager"),
+    )
+    def load_matman(node, **kwargs):
+        self("window open MatManager\n")
 
-    @tree_submenu(_("Save"))
-    @tree_values("opname", values=self.op_data.section_set)
-    @tree_operation("{opname}", node_type="branch ops", help="")
-    def save_materials(node, opname="saved", **kwargs):
-        self(f"material save {opname}\n")
+    # def material_name(material):
+    #     oplist, opinfo = self.load_persistent_op_list(material)
+    #     if "material" in opinfo:
+    #         name = opinfo["material"]
+    #     elif material == "_default":
+    #         name = "Generic Defaults"
+    #     elif material.startswith("_default_"):
+    #         name = f"Default for {material[9:]}"
+    #     else:
+    #         name = material.replace("_", " ")
+    #     if "thickness" in opinfo:
+    #         if opinfo["thickness"]:
+    #             name += ", " + opinfo["thickness"]
+    #     return name
 
-    @tree_separator_before()
-    @tree_submenu(_("Save"))
-    @tree_prompt("opname", _("Name to store current operations under?"))
-    @tree_operation(_("New"), node_type="branch ops", help="")
-    def save_material_custom(node, opname, **kwargs):
-        self(f"material save {opname.replace(' ', '_')}\n")
+    # @tree_submenu(_("Load"))
+    # @tree_values("opname", values=self.op_data.section_set)
+    # @tree_calc("material", lambda opname: material_name(opname) )
+    # @tree_operation("{material}", node_type="branch ops", help="")
+    # def load_ops(node, opname, **kwargs):
+    #     self(f"material load {opname}\n")
 
-    @tree_submenu(_("Delete"))
-    @tree_values("opname", values=self.op_data.section_set)
-    @tree_operation("{opname}", node_type="branch ops", help="")
-    def remove_ops(node, opname="saved", **kwargs):
-        self(f"material delete {opname}\n")
+    # @tree_separator_before()
+    # @tree_submenu(_("Load"))
+    # @tree_operation(_("Minimal"), node_type="branch ops", help=_("Load a minimal set of operations"))
+    # def default_classifications(node, **kwargs):
+    #     self.load_default(performclassify=True)
+
+    # @tree_submenu(_("Load"))
+    # @tree_operation(_("Basic"), node_type="branch ops", help=_("Load a basic set of operation"))
+    # def basic_classifications(node, **kwargs):
+    #     self.load_default2(performclassify=True)
+
+    # @tree_submenu(_("Save"))
+    # @tree_values("opname", values=self.op_data.section_set)
+    # @tree_calc("material", lambda opname: material_name(opname) )
+    # @tree_operation("{material}", node_type="branch ops", help="")
+    # def save_materials(node, opname="saved", **kwargs):
+    #     self(f"material save {opname}\n")
+
+    # @tree_separator_before()
+    # @tree_submenu(_("Save"))
+    # @tree_prompt("opname", _("Name to store current operations under?"))
+    # @tree_operation(_("New"), node_type="branch ops", help="")
+    # def save_material_custom(node, opname, **kwargs):
+    #     self(f"material save {opname.replace(' ', '_')}\n")
+
+    # @tree_submenu(_("Delete"))
+    # @tree_values("opname", values=self.op_data.section_set)
+    # @tree_operation("{opname}", node_type="branch ops", help="")
+    # def remove_ops(node, opname="saved", **kwargs):
+    #     self(f"material delete {opname}\n")
 
     @tree_separator_before()
     @tree_submenu(_("Append operation"))
@@ -1709,6 +1666,23 @@ def init_tree(kernel):
     @tree_operation(_("Append Return to Origin"), node_type="branch ops", help="")
     def append_operation_goto(node, pos=None, **kwargs):
         self.op_branch.add(type="util goto", pos=pos, x=0, y=0)
+        self.signal("updateop_tree")
+
+    @tree_submenu(_("Append special operation(s)"))
+    @tree_prompt("y", _("Y-Coordinate of Goto?"))
+    @tree_prompt("x", _("X-Coordinate of Goto?"))
+    @tree_operation(
+        _("Append Goto Location"),
+        node_type="branch ops",
+        help=_("Send laser to specific location."),
+    )
+    def append_operation_goto_location(node, y, x, pos=None, **kwargs):
+        self.op_branch.add(
+            type="util goto",
+            pos=pos,
+            x=x,
+            y=y,
+        )
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))
@@ -1806,8 +1780,12 @@ def init_tree(kernel):
     @tree_submenu(_("Append special operation(s)"))
     @tree_prompt("y", _("Y-Coordinate for placement to append?"))
     @tree_prompt("x", _("X-Coordinate for placement to append?"))
-    @tree_operation(_("Append Placement"), node_type="branch ops", help="")
-    def append_operation_placement(node, y, x, pos=None, **kwargs):
+    @tree_operation(
+        _("Append absolute placement"),
+        node_type="branch ops",
+        help=_("Start job at specicic location"),
+    )
+    def append_absolute_placement(node, y, x, pos=None, **kwargs):
         self.op_branch.add(
             type="place point",
             pos=pos,
@@ -1815,6 +1793,18 @@ def init_tree(kernel):
             y=y,
             rotation=0,
             corner=0,
+        )
+        self.signal("updateop_tree")
+
+    @tree_submenu(_("Append special operation(s)"))
+    @tree_operation(
+        _("Append relative placement"),
+        node_type="branch ops",
+        help=_("Start job at current laserposition"),
+    )
+    def append_relative_placement(node, **kwargs):
+        self.op_branch.add(
+            type="place current",
         )
         self.signal("updateop_tree")
 
@@ -2547,6 +2537,105 @@ def init_tree(kernel):
     def make_outlines(node, offset=1, **kwargs):
         self(f"outline {offset}mm\n")
         self.signal("refresh_tree")
+
+    def mergeable(node):
+        elems = list(self.elems(emphasized=True))
+        if len(elems) < 2:
+            return False
+        result = True
+        for e in elems:
+            if e.type not in (
+                "elem ellipse",
+                "elem path",
+                "elem polyline",
+                "elem rect",
+                "elem line",
+            ):
+                result = False
+            break
+        return result
+
+    @tree_conditional(lambda node: mergeable(node))
+    @tree_operation(
+        _("Merge elements"),
+        node_type=(
+            "elem ellipse",
+            "elem path",
+            "elem polyline",
+            "elem rect",
+            "elem line",
+        ),
+        help=_("Merge two or more elements together into a single path"),
+    )
+    def elem_merge(singlenode, **kwargs):
+        def get_common_parent_node(data):
+            def _get_common_parent(node1, node2):
+                top = self.elem_branch
+                list1 = [node1]
+                list2 = [node2]
+                n = node1
+                while n is not top:
+                    n = n.parent
+                    list1.append(n)
+                n = node2
+                while n is not top:
+                    n = n.parent
+                    list2.append(n)
+                # Both lists contain the node itself and the top node
+                for n in list1:
+                    if n in list2:
+                        return n
+                # That should not be the case...
+                return top
+
+            root = self.elem_branch
+            par = None
+            for e in data:
+                if par is None:
+                    par =  e
+                else:
+                    par = _get_common_parent(par, e)
+                if par is root:
+                    break
+            return par
+
+
+        data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            return
+        parent = get_common_parent_node(data)
+        node = parent.add(type="elem path")
+        for e in data:
+            try:
+                path = e.as_geometry()
+            except AttributeError:
+                continue
+            try:
+                if node.stroke is None:
+                    node.stroke = e.stroke
+            except AttributeError:
+                pass
+            try:
+                if node.fill is None:
+                    node.fill = e.fill
+            except AttributeError:
+                pass
+            try:
+                if node.stroke_width is None:
+                    node.stroke_width = e.stroke_width
+            except AttributeError:
+                pass
+            node.geometry.append(path)
+        self.remove_elements(data)
+        # Newly created! Classification needed?
+        data = [node]
+        if self.classify_new:
+            self.classify(data)
+        self.set_node_emphasis(node, True)
+        self.signal("refresh_scene", "Scene")
+        self.signal("rebuild_tree")
+        node.focus()
+
 
     def has_vectorize(node):
         result = False

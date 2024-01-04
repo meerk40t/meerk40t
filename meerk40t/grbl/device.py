@@ -743,6 +743,17 @@ class GRBLDevice(Service, Status):
                 channel(_("Interpreter cannot be attached to any device."))
             return
 
+    @property
+    def safe_label(self):
+        """
+        Provides a safe label without spaces or / which could cause issues when used in timer or other names.
+        @return:
+        """
+        if not hasattr(self, "label"):
+            return self.name
+        name = self.label.replace(" ", "-")
+        return name.replace("/", "-")
+
     def _register_console_serial(self):
         _ = self.kernel.translation
 
@@ -805,7 +816,7 @@ class GRBLDevice(Service, Status):
     @signal_listener("flip_x")
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
-    def realize(self, origin=None):
+    def realize(self, origin=None, *args):
         if origin is not None and origin != self.path:
             return
         corner = self.setting(str, "home_corner")

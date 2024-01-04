@@ -27,6 +27,7 @@ def plugin(kernel, lifecycle=None):
         _ = kernel.translation
 
         kernel.register("provider/device/grbl", GRBLDevice)
+        kernel.register("provider/friendly/grbl", ("GRBL-Diode-Laser", 2))
         kernel.register(
             "dev_info/grbl-generic",
             {

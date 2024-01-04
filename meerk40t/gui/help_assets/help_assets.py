@@ -133,7 +133,7 @@ Il valore Indice di partenza per il campo nella tabella Variabili di testo indic
 
 Ma supponiamo, per motivi di efficienza, di voler masterizzare contemporaneamente due tag di prenotazione di posti, ciascuno con un nome diverso dallo stesso elenco. In questo caso, se il primo tag usa '{NAME#+0}' e il secondo '{NAME#+1}' (notare il segno più). '{NAME}' o '{NAME#+0}' utilizza la voce corrente (indicata dal valore dell'indice), '{NAME#+1}' utilizza la voce successiva a quella corrente, ecc.
 
-Con questo sistema, è possibile utilizzare questi valori tutte le volte che si desidera nel proprio progetto. 
+Con questo sistema, è possibile utilizzare questi valori tutte le volte che si desidera nel proprio progetto.
 Per far avanzare l'indice è necessario fare clic sui pulsanti Prev / Next della barra degli strumenti.
 
 In alternativa all'inserimento manuale dei valori in Variabili di testo tramite il Gestione variabili di testo, è possibile utilizzare un file CSV standard separato da virgole. I nomi dei segnaposto sono definiti nella riga di intestazione standard del file CSV (la prima riga del file CSV) e i contenuti sono presi da tutte le righe successive. Il modo più semplice per creare un file CSV è utilizzare un foglio di calcolo, ad esempio Excel.
@@ -158,6 +158,23 @@ I segnaposto per "data" e "ora" possono anche contenere istruzioni di formattazi
 	{time@%H:%M} - 23:59
 
 Per un insieme completo delle istruzioni di formattazione, vedere: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
+"""
+
+english_material_howto = """
+The Material Library Manager allows to create, maintain, use and manage operations that are customized to provide a desired effect with a given material (hence the name Material Library).
+The parameters you want to use e.g. for cutting acrylic are very different from the ones you want to use to engrave a picture on slate.
+You can share such a material setting with the MeerK40t community and you can benefit from the contributions of others by loading and using their settings.
+"""
+
+german_material_howto = """
+Die Material-Bibliothek erlaubt es Arbeitsgangs-Einstellungen für spezifische Materialien anzulegen und zu verwalten.
+Die Parameter, die man z.B. für das Schneiden von Acryl benötigt unterscheiden sich deutlich von denen, die man etwa zum Gravieren eine Fotos auf Schiefer braucht.
+Diese Daten können im Übrigen mit der Meerk40t Commnity geteilt werden, un man im Gegenzug von den Beiträgen anderer profitieren.
+"""
+italian_material_howto = """
+Il Gestore della libreria di materiali consente di creare, gestire, memorizzare e utilizzare i parametri di lavorazione per ottenere l'effetto desiderato con un determinato materiale.
+I parametri da utilizzare, ad esempio, per tagliare l'acrilico sono molto diversi da quelli da utilizzare per incidere un'immagine sull'ardesia.
+È possibile condividere tali impostazioni di lavorazione dei materiali con la comunità MeerK40t e beneficiare dei contributi degli altri caricando e utilizzando le loro impostazioni.
 """
 
 
@@ -193,7 +210,7 @@ def asset(context, asset):
         text = globals()[f"{lang}_{asset}"]
     except KeyError:
         try:
-            text = globals()["english" + asset]
+            text = globals()["english_" + asset]
         except KeyError as e:
             pass
     if text and text[0] == "\n":

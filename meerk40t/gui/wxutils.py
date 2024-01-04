@@ -169,11 +169,54 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
 
         def specific(event=None):
             prompts = f.user_prompt
-            for prompt in prompts:
-                response = elements.kernel.prompt(prompt["type"], prompt["prompt"])
-                if response is None:
-                    return
-                func_dict[prompt["attr"]] = response
+            if len(prompts) > 0:
+                with wx.Dialog(
+                    None,
+                    wx.ID_ANY,
+                    _("Parameters"),
+                    style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
+                ) as dlg:
+                    sizer = wx.BoxSizer(wx.VERTICAL)
+                    fields = []
+                    for prompt in prompts:
+                        label = wx.StaticText(dlg, wx.ID_ANY, prompt["prompt"])
+                        sizer.Add(label, 0, wx.EXPAND, 0)
+                        dtype = prompt["type"]
+                        if dtype == bool:
+                            control = wx.CheckBox(dlg, wx.ID_ANY)
+                        else:
+                            control = wx.TextCtrl(dlg, wx.ID_ANY)
+                            control.SetMaxSize(dip_size(dlg, 75, -1))
+                        fields.append(control)
+                        sizer.Add(control, 0, wx.EXPAND, 0)
+                        sizer.AddSpacer(23)
+                    b_sizer = wx.BoxSizer(wx.HORIZONTAL)
+                    button_OK = wx.Button(dlg, wx.ID_OK, _("OK"))
+                    button_CANCEL = wx.Button(dlg, wx.ID_CANCEL, _("Cancel"))
+                    # dlg.SetAffirmativeId(button_OK.GetId())
+                    # dlg.SetEscapeId(button_CANCEL.GetId())
+                    b_sizer.Add(button_OK, 0, wx.EXPAND, 0)
+                    b_sizer.Add(button_CANCEL, 0, wx.EXPAND, 0)
+                    sizer.Add(b_sizer, 0, wx.EXPAND, 0)
+                    sizer.Fit(dlg)
+                    dlg.SetSizer(sizer)
+                    dlg.Layout()
+
+                    response = dlg.ShowModal()
+                    if response != wx.ID_OK:
+                        return
+                    for prompt, control in zip(prompts, fields):
+                        dtype = prompt["type"]
+                        try:
+                            value = dtype(control.GetValue())
+                        except ValueError:
+                            return
+                        func_dict[prompt["attr"]] = value
+            # for prompt in prompts:
+            #     response = elements.kernel.prompt(prompt["type"], prompt["prompt"])
+            #     if response is None:
+            #         return
+            # func_dict[prompt["attr"]] = response
             f(node, **func_dict)
 
         return specific

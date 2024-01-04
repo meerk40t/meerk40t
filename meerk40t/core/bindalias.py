@@ -245,6 +245,7 @@ DEFAULT_KEYMAP = {
         "reset_bind_alias",
     ),
     "ctrl+alt+shift+home": ("bind default;alias default",),
+    "ctrl+shift+l": ("signal lock_helper",),
 }
 DEFAULT_ALIAS = {
     "+scale_up": (".timerscale_up 0 0.1 .scale 1.02",),

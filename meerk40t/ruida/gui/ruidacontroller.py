@@ -110,58 +110,52 @@ class RuidaControllerPanel(wx.ScrolledWindow):
 
     @signal_listener("pipe;usb_status")
     def on_usb_update(self, origin=None, status=None):
+        if origin != self.service.path:
+            return
         if status is None:
             status = "Unknown"
-        try:
-            connected = self.service.driver.connected
-        except AttributeError:
-            return
-        try:
-            self.button_device_connect.SetLabel(status)
-            if connected:
-                self.set_button_connected()
-            else:
-                self.set_button_disconnected()
-        except RuntimeError:
-            pass
+        connected = self.service.connected
+        if status == "connected":
+            self.button_device_connect.SetLabel(_("Connected"))
+        if status == "disconnected":
+            self.button_device_connect.SetLabel(_("Disconnected"))
+        if connected:
+            self.set_button_connected()
+        else:
+            self.set_button_disconnected()
 
     def on_button_start_connection(self, event):  # wxGlade: Controller.<event_handler>
-        try:
-            connected = self.service.driver.connected
-        except AttributeError:
+        connected = self.service.connected
+        if self.service.is_connecting:
+            self.service.abort_connect()
+            self.service.set_disable_connect(False)
             return
-        try:
-            if self.service.driver.connection.is_connecting:
-                self.service.driver.connection.abort_connect()
-                self.service.driver.connection.set_disable_connect(False)
-                return
-        except AttributeError:
-            pass
 
         if connected:
-            self.context("usb_disconnect\n")
-            self.service.driver.connection.set_disable_connect(False)
+            self.context("ruida_disconnect\n")
+            self.service.set_disable_connect(False)
         else:
-            self.service.driver.connection.set_disable_connect(False)
-            self.context("usb_connect\n")
+            self.service.set_disable_connect(False)
+            self.context("ruida_connect\n")
 
     def pane_show(self):
-        name = self.service.label.replace(" ", "-")
-        name = name.replace("/", "-")
-        self.context.channel(f"{name}/usb").watch(self.update_text)
-        try:
-            connected = self.service.driver.connected
-            if connected:
-                self.set_button_connected()
-            else:
-                self.set_button_disconnected()
-        except RuntimeError:
-            pass
+        self._name = self.service.safe_label
+        self.context.channel(f"{self._name}/recv", pure=True).watch(self.update_text)
+        self.context.channel(f"{self._name}/send", pure=True).watch(self.update_text)
+        self.context.channel(f"{self._name}/real", pure=True).watch(self.update_text)
+        self.context.channel(f"{self._name}/events").watch(self.update_text)
+
+        connected = self.service.connected
+        if connected:
+            self.set_button_connected()
+        else:
+            self.set_button_disconnected()
 
     def pane_hide(self):
-        name = self.service.label.replace(" ", "-")
-        name = name.replace("/", "-")
-        self.context.channel(f"{name}/usb").unwatch(self.update_text)
+        self.context.channel(f"{self._name}/recv").unwatch(self.update_text)
+        self.context.channel(f"{self._name}/send").unwatch(self.update_text)
+        self.context.channel(f"{self._name}/real").unwatch(self.update_text)
+        self.context.channel(f"{self._name}/events").unwatch(self.update_text)
 
 
 class RuidaController(MWindow):

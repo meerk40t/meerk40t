@@ -103,7 +103,9 @@ class TCPServer(Module):
                 if connection is None:
                     return
                 try:
-                    connection.send(bytes(e, "utf-8"))
+                    if isinstance(e, str):
+                        e = bytes(e, "utf-8")
+                    connection.send(e)
                     self.data_channel(f"<-- {str(e)}")
                 except (ConnectionAbortedError, ConnectionResetError):
                     connection.close()

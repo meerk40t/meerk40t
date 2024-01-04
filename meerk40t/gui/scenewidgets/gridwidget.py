@@ -73,6 +73,7 @@ class GridWidget(Widget):
         self.grid_secondary_cy = None
         self.grid_secondary_scale_x = 1
         self.grid_secondary_scale_y = 1
+        self.set_secondary_axis_scales()
         # Circular grid
         self.draw_grid_circular = False
         self.grid_circular_cx = None
@@ -85,6 +86,18 @@ class GridWidget(Widget):
         self.grid_points = None  # Points representing the grid - total of primary + secondary + circular
 
         self.set_colors()
+
+    def set_secondary_axis_scales(self):
+        sx = 1.0
+        sy = 1.0
+        if hasattr(self.scene.context.device, "rotary"):
+            if self.scene.context.device.rotary.scale_x is not None:
+                sx = self.scene.context.device.rotary.scale_x
+            if self.scene.context.device.rotary.scale_y is not None:
+                sy = self.scene.context.device.rotary.scale_y
+
+        self.grid_secondary_scale_x = sx
+        self.grid_secondary_scale_y = sy
 
     @property
     def scene_scale(self):
@@ -198,6 +211,7 @@ class GridWidget(Widget):
         Based on the current matrix calculate the grid within the bed-space.
         """
         d = self.scene.context
+        self.set_secondary_axis_scales()
         self.zero_x, self.zero_y = d.space.origin_zero()
         self._calc_primary_grid_lines()
         self._calc_secondary_grid_lines()

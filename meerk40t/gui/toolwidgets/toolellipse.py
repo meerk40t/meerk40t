@@ -19,7 +19,7 @@ class EllipseTool(ToolWidget):
     Adds Circle with click and drag.
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, mode=None):
         ToolWidget.__init__(self, scene)
         self.start_position = None
         self.p1 = None

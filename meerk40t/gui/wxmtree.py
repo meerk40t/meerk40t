@@ -2003,6 +2003,33 @@ class ShadowTree:
                             + "you drag onto it and will fill the shape with a line pattern.\n"
                             + "To activate / deactivate this effect please use the context menu."
                         )
+                    if node.type in op_nodes:
+                        if hasattr(node, "label") and node.label is not None:
+                            ttip += f"\n{node.label}"
+                        ps_info = ""
+                        if hasattr(node, "power") and node.power is not None:
+                            if self.context.device.use_percent_for_power_display:
+                                ps_info += (
+                                    f"{', ' if ps_info else ''}{node.power / 10:.1f}%"
+                                )
+                            else:
+                                ps_info += (
+                                    f"{', ' if ps_info else ''}{node.power:.0f}ppi"
+                                )
+
+                        if hasattr(node, "speed") and node.speed is not None:
+                            if self.context.device.use_mm_min_for_speed_display:
+                                ps_info += f"{', ' if ps_info else ''}{node.speed * 60.0:.0f}mm/min"
+                            else:
+                                ps_info += f"{', ' if ps_info else ''}{node.speed:.0f}mm/s"
+
+                        if hasattr(self.context.device, "default_frequency"):
+                            if hasattr(node, "frequency") and node.frequency is not None:
+                                ps_info += (
+                                    f"{', ' if ps_info else ''}{node.frequency:.0f}kHz"
+                                )
+                        if ps_info:
+                            ttip += f"\n{ps_info}"
         self._last_hover_item = item
         if ttip != self.wxtree.GetToolTipText():
             self.wxtree.SetToolTip(ttip)

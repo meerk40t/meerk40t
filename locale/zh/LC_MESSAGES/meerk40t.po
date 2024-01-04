@@ -10822,7 +10822,7 @@ msgid "Load"
 msgstr "加载"
 
 #: meerk40t/core/elements/element_treeops.py:1353
-msgid "Other/Blue/Red"
+msgid "Minimal"
 msgstr "其他/蓝色/红色"
 
 #: meerk40t/core/elements/element_treeops.py:1359
@@ -10952,7 +10952,7 @@ msgid "X-Coordinate for placement to append?"
 msgstr "追加放置的 X 坐标？"
 
 #: meerk40t/core/elements/element_treeops.py:1541
-msgid "Append Placement"
+msgid "Append absolute placement"
 msgstr "追加放置"
 
 #: meerk40t/core/elements/element_treeops.py:1553

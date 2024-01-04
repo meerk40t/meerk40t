@@ -89,7 +89,11 @@ class Kernel(Settings):
 
         # Persistent Settings
         Settings.__init__(
-            self, self.name, f"{profile}.cfg", ignore_settings=ignore_settings
+            self,
+            self.name,
+            f"{profile}.cfg",
+            ignore_settings=ignore_settings,
+            create_backup=True,
         )
         self.settings = self
         self.delay = delay
@@ -284,23 +288,35 @@ class Kernel(Settings):
         """
         additional_plugins = plugin(self, "plugins")
         if additional_plugins is not None:
+            if not isinstance(additional_plugins, (tuple, list)):
+                additional_plugins = tuple(additional_plugins)
             for p in additional_plugins:
                 self.add_plugin(p)
-        plugins = self._kernel_plugins
-        service_path = plugin(self, "service")
-        if service_path is not None:
-            if service_path not in self._service_plugins:
-                self._service_plugins[service_path] = list()
-            plugins = self._service_plugins[service_path]
-        else:
-            module_path = plugin(self, "module")
-            if module_path is not None:
-                if module_path not in self._module_plugins:
-                    self._module_plugins[module_path] = list()
-                plugins = self._module_plugins[module_path]
-
-        if plugin not in plugins:
-            plugins.append(plugin)
+        service_paths = plugin(self, "service")
+        module_paths = plugin(self, "module")
+        if service_paths is None and module_paths is None:
+            # This is just a kernel plugin.
+            if plugin not in self._kernel_plugins:
+                self._kernel_plugins.append(plugin)
+            return
+        if service_paths is not None:
+            # This is a service plugin.
+            if not isinstance(service_paths, (tuple, list)):
+                service_paths = (service_paths,)  # tuple
+            for p in service_paths:
+                if p not in self._service_plugins:
+                    self._service_plugins[p] = list()
+                if plugin not in self._service_plugins[p]:
+                    self._service_plugins[p].append(plugin)
+        if module_paths is not None:
+            # This is a module plugin.
+            if not isinstance(module_paths, (tuple, list)):
+                module_paths = (module_paths,)  # tuple
+            for p in module_paths:
+                if p not in self._module_plugins:
+                    self._module_plugins[p] = list()
+                if plugin not in self._module_plugins[p]:
+                    self._module_plugins[p].append(plugin)
 
     # ==========
     # SERVICES API
@@ -536,6 +552,7 @@ class Kernel(Settings):
         for i in range(len(self.delegates) - 1, -1, -1):
             delegate_value, ref = self.delegates[i]
             if delegate_value is delegate and ref is lifecycle_object:
+                self._command_detach(lifecycle_object, delegate)
                 self._signal_detach(delegate)
                 self._lookup_detach(delegate)
                 del self.delegates[i]
@@ -692,6 +709,7 @@ class Kernel(Settings):
             for plugin in self._kernel_plugins:
                 plugin(kernel, "register")
 
+        objects = self.get_linked_objects(kernel)
         for k in objects:
             if klp(k) < LIFECYCLE_KERNEL_CONFIGURE <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_CONFIGURE
@@ -725,6 +743,7 @@ class Kernel(Settings):
                     channel(f"kernel-boot: {str(k)} boot")
                 if hasattr(k, "boot"):
                     k.boot()
+                self._command_attach(self, k)
                 self._signal_attach(k)
                 self._lookup_attach(k)
         if start < LIFECYCLE_KERNEL_BOOT <= end:
@@ -860,6 +879,7 @@ class Kernel(Settings):
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PRESHUTDOWN
                 if channel:
                     channel(f"kernel-preshutdown: {str(k)}")
+                self._command_detach(kernel, k)
                 self._signal_detach(k)
                 self._lookup_detach(k)
                 if hasattr(k, "preshutdown"):
@@ -910,6 +930,7 @@ class Kernel(Settings):
                     channel(f"service-added: {str(s)}")
                 if hasattr(s, "added"):
                     s.added(*args, **kwargs)
+                self._command_attach(service, s)
 
         # Update plugin: added
         if start < LIFECYCLE_SERVICE_ADDED <= end:
@@ -1005,6 +1026,7 @@ class Kernel(Settings):
                     channel(f"service-shutdown: {str(s)}")
                 if hasattr(s, "shutdown"):
                     s.shutdown(*args, **kwargs)
+                self._command_detach(service, s)
 
         # Update plugin: shutdown
         if start < LIFECYCLE_KERNEL_SHUTDOWN <= end:
@@ -1140,7 +1162,7 @@ class Kernel(Settings):
 
         @return:
         """
-        self.scheduler_thread = self.threaded(self.run, "Scheduler")
+        self.scheduler_thread = self.threaded(self.run, thread_name="Scheduler")
         self.signal_job = self.add_job(
             run=self.process_queue,
             name="kernel.signals",
@@ -2123,6 +2145,53 @@ class Kernel(Settings):
         # if len(self._removing_listeners) != len(set(self._removing_listeners)):
         #     print("Warning duplicate listener removing.")
 
+    def _command_attach(
+        self,
+        registration: None,
+        scan_object: Union[Service, Module, None] = None,
+    ) -> None:
+        """
+        Registers any "@console_commands" into the kernel.
+
+        @param scan_object: object to scan for command_console functions
+        @return:
+        """
+        obj_class = type(scan_object)
+        for attr in dir(scan_object):
+            # Handle is excluded. triggers a knock-on effect bug in wxPython GTK systems.
+            if attr == "Handle":
+                continue
+            if isinstance(getattr(obj_class, attr, None), property):
+                continue
+            func = getattr(scan_object, attr)
+            if hasattr(func, "reg"):
+                if registration is None:
+                    func.reg(self, scan_object)
+                else:
+                    func.reg(registration, scan_object)
+
+    def _command_detach(
+        self,
+        registration: None,
+        scan_object: Any,
+    ) -> None:
+        """
+        @return:
+        """
+        obj_class = type(scan_object)
+        for attr in dir(scan_object):
+            # Handle is excluded. triggers a knock-on effect bug in wxPython GTK systems.
+            if attr == "Handle":
+                continue
+            if isinstance(getattr(obj_class, attr, None), property):
+                continue
+            func = getattr(scan_object, attr)
+            if hasattr(func, "unreg"):
+                if registration is None:
+                    func.unreg(self, scan_object)
+                else:
+                    func.unreg(registration, scan_object)
+
     def _signal_attach(
         self,
         scan_object: Union[Service, Module, None] = None,
@@ -2209,11 +2278,13 @@ class Kernel(Settings):
             except UnicodeDecodeError:
                 return
         self._console_buffer += data
+        data_out = None
         while "\n" in self._console_buffer:
             pos = self._console_buffer.find("\n")
             command = self._console_buffer[0:pos].strip("\r")
             self._console_buffer = self._console_buffer[pos + 1 :]
-            self._console_parse(command, channel=self._console_channel)
+            data_out = self._console_parse(command, channel=self._console_channel)
+        return data_out
 
     def _console_interface(self, command: str):
         pass
@@ -3369,6 +3440,35 @@ class Kernel(Settings):
             channel(
                 _("Persistent settings imported from {file}.").format(file=filename)
             )
+        # ==========
+        # SIGNAL
+        # ==========
+        @self.console_argument(
+            "signalname", type=str, help=_("Signal to send")
+        )
+        @self.console_argument(
+            "signalargs", type=str, help=_("Signal content")
+        )
+        @self.console_command(
+            ("signal"), help=_("sends a signal")
+        )
+        def send_signal(channel, _, signalname=None, signalargs=None, **kwargs):
+            if signalname is None:
+                channel(_("Please provide a signal to send, attached listeners:"))
+                signal_keys = list(self.listeners.keys())
+                signal_keys.sort()
+                for idx, key in enumerate(signal_keys):
+                    channel(f"{idx}: {key}")
+                return
+            try:
+                if signalargs is None:
+                    self.root.signal(signalname)
+                else:
+                    self.root.signal(signalname, signalargs)
+                channel(f"Signal {signalname}, {signalargs} successfully sent")
+            except (TypeError, RuntimeError) as e:
+                channel(f"Error while sending {signalname}, {signalargs}: {e}")
+            return
 
         # ==========
         # LIFECYCLE

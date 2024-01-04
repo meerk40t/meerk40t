@@ -11,7 +11,6 @@ from ..tools.geomstr import Geomstr
 from .dither import dither
 
 
-
 def plugin(kernel, lifecycle=None):
     """
     ImageTools mostly provides the image functionality to the console. It should be loaded in the root context.
@@ -1715,7 +1714,6 @@ def plugin(kernel, lifecycle=None):
 
         post.append(context.elements.post_classify(data_out))
         return "image", data_out
-
 
 
 class RasterScripts:

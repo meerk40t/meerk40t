@@ -17,8 +17,8 @@ class MeasureTool(PointListTool):
     and after 3 points the covered area as well
     """
 
-    def __init__(self, scene):
-        PointListTool.__init__(self, scene)
+    def __init__(self, scene, mode=None):
+        PointListTool.__init__(self, scene, mode=mode)
         self.line_pen = wx.Pen()
         self.line_pen.SetColour(self.scene.colors.color_measure_line)
         self.line_pen.SetStyle(wx.PENSTYLE_DOT)

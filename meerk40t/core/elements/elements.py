@@ -140,7 +140,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/place current", "{enabled}{element_type}")
         kernel.register(
             "format/place point",
-            "{enabled}{loops}{element_type} {corner} {x} {y} {rotation}",
+            "{enabled}{loops}{element_type}{grid} {corner} {x} {y} {rotation}",
         )
     elif lifecycle == "register":
         kernel.add_service("elements", Elemental(kernel))
@@ -526,7 +526,9 @@ class Elemental(Service):
         self.setting(float, "svg_ppi", 96.0)
         self.setting(bool, "operation_default_empty", True)
 
-        self.op_data = Settings(self.kernel.name, "operations.cfg")
+        self.op_data = Settings(
+            self.kernel.name, "operations.cfg", create_backup=True
+        )  # keep backup
 
         self.wordlists = {"version": [1, self.kernel.version]}
 
@@ -899,6 +901,8 @@ class Elemental(Service):
         it in the sense that if all elements of a given hierarchy
         (ie group or file) are in this set, then they will be
         replaced and represented by this parent element
+        NB: we will set the emphasized_time of the parent element
+        to the minimum time of all children
         """
 
         def remove_children_from_list(list_to_deal, parent_node):
@@ -909,6 +913,12 @@ class Elemental(Service):
                     list_to_deal[idx] = None
                     if len(node.children) > 0:
                         remove_children_from_list(list_to_deal, node)
+                    t1 = parent_node._emphasized_time
+                    t2 = node._emphasized_time
+                    if t2 is None:
+                        continue
+                    if t1 is None or t2 < t1:
+                        parent_node._emphasized_time = t2
 
         align_data = [e for e in data]
         needs_repetition = True
@@ -1005,10 +1015,12 @@ class Elemental(Service):
             except AttributeError:
                 pass
 
-    def align_elements(self, data, alignbounds, positionx, positiony, as_group):
+    def align_elements(
+        self, data_to_align, alignbounds, positionx, positiony, as_group
+    ):
         """
 
-        @param data: elements to align
+        @param data_to_align: elements to align
         @param alignbounds: boundary tuple (left, top, right, bottom)
                             to which data needs to be aligned to
         @param positionx:   one of "min", "max", "center"
@@ -1040,7 +1052,6 @@ class Elemental(Service):
                 ) / 2
             return dx, dy
 
-        data_to_align = self.condense_elements(data)
         # Selection boundaries
         boundary_points = []
         for node in data_to_align:
@@ -1079,6 +1090,7 @@ class Elemental(Service):
             else:
                 dx = groupdx
                 dy = groupdy
+            # print (f"Translating {q.type} by {dx:.0f}, {dy:.0f}")
             self.translate_node(q, dx, dy)
         self.signal("refresh_scene", "Scene")
 
@@ -1162,12 +1174,15 @@ class Elemental(Service):
         self.listen_tree(self)
 
     def shutdown(self, *args, **kwargs):
+        # No need for an opinfo dict
         self.save_persistent_operations("previous")
         self.op_data.write_configuration()
         for e in self.flat():
             e.unregister()
 
-    def save_persistent_operations_list(self, name, oplist=None, inform=True):
+    def save_persistent_operations_list(
+        self, name, oplist=None, opinfo=None, inform=True, use_settings=None
+    ):
         """
         Saves a given list of operations to the op_data:Settings
 
@@ -1177,13 +1192,27 @@ class Elemental(Service):
         """
         if oplist is None:
             oplist = self.op_branch.children
-        self.clear_persistent_operations(name, flush=False)
+        if opinfo is None:
+            opinfo = dict()
+        if use_settings is None:
+            settings = self.op_data
+        else:
+            settings = use_settings
+
+        self.clear_persistent_operations(name, flush=False, use_settings=settings)
+        if len(opinfo) > 0:
+            section = f"{name} info"
+            for key, value in opinfo.items():
+                settings.write_persistent(section, key, value)
+
         self._save_persistent_operation_tree(name, oplist, flush=True, inform=True)
 
     # Operations uniform
     save_persistent_operations = save_persistent_operations_list
 
-    def _save_persistent_operation_tree(self, name, oplist, flush=True, inform=True):
+    def _save_persistent_operation_tree(
+        self, name, oplist, flush=True, inform=True, use_settings=None
+    ):
         """
         Recursive save of the tree. Sections append additional values for deeper tree values.
         References are not saved.
@@ -1194,7 +1223,10 @@ class Elemental(Service):
                 then we will let everyone know
         @return:
         """
-        settings = self.op_data
+        if use_settings is None:
+            settings = self.op_data
+        else:
+            settings = use_settings
         for i, op in enumerate(oplist):
             if hasattr(op, "allow_save"):
                 if not op.allow_save():
@@ -1207,7 +1239,9 @@ class Elemental(Service):
             settings.write_persistent(section, "type", op.type)
             op.save(settings, section)
             try:
-                self._save_persistent_operation_tree(section, op.children)
+                self._save_persistent_operation_tree(
+                    section, op.children, use_settings=settings
+                )
             except AttributeError:
                 pass
         if not flush:
@@ -1216,7 +1250,7 @@ class Elemental(Service):
         if inform and name.startswith("_default"):
             self.signal("default_operations")
 
-    def clear_persistent_operations(self, name, flush=True):
+    def clear_persistent_operations(self, name, flush=True, use_settings=None):
         """
         Clear operations for the derivables of the given name.
 
@@ -1224,18 +1258,47 @@ class Elemental(Service):
         @param flush: Optionally permit non-flushed to disk.
         @return:
         """
-        settings = self.op_data
+        if use_settings is None:
+            settings = self.op_data
+        else:
+            settings = use_settings
         for section in list(settings.derivable(name)):
             settings.clear_persistent(section)
         if not flush:
             return
         settings.write_configuration()
 
-    def load_persistent_op_list(self, name):
-        settings = self.op_data
+    def load_persistent_op_info(self, name, use_settings=None):
+        if use_settings is None:
+            settings = self.op_data
+        else:
+            settings = use_settings
+        op_info = dict()
+        for section in list(settings.derivable(name)):
+            if section.endswith("info"):
+                for key in settings.keylist(section):
+                    content = settings.read_persistent(str, section, key)
+                    op_info[key] = content
+
+                break
+        return op_info
+
+    def load_persistent_op_list(self, name, use_settings=None):
+        if use_settings is None:
+            settings = self.op_data
+        else:
+            settings = use_settings
 
         op_tree = dict()
+        op_info = dict()
         for section in list(settings.derivable(name)):
+            if section.endswith("info"):
+                for key in settings.keylist(section):
+                    content = settings.read_persistent(str, section, key)
+                    op_info[key] = content
+
+                continue
+
             op_type = settings.read_persistent(str, section, "type")
             try:
                 op = Node().create(type=op_type)
@@ -1251,9 +1314,9 @@ class Elemental(Service):
                 op_list.append(op_tree[section])
             else:
                 op_tree[parent].add_node(op_tree[section])
-        return op_list
+        return op_list, op_info
 
-    def load_persistent_operations(self, name, classify=True):
+    def load_persistent_operations(self, name, classify=True, clear=True):
         """
         Load oplist section to replace current op_branch data.
 
@@ -1262,9 +1325,12 @@ class Elemental(Service):
         @param name:
         @return:
         """
-        self.clear_operations()
+        settings = self.op_data
+        if clear:
+            self.clear_operations()
         operation_branch = self._tree.get(type="branch ops")
-        for op in self.load_persistent_op_list(name):
+        oplist, opinfo = self.load_persistent_op_list(name, use_settings=settings)
+        for op in oplist:
             operation_branch.add_node(op)
         if not classify:
             return
@@ -1376,17 +1442,18 @@ class Elemental(Service):
         std_list = "_default"
         needs_signal = len(self.default_operations) != 0
         oplist = []
+        opinfo = dict()
         if hasattr(self, "device"):
             std_list = f"_default_{self.device.label}"
             # We need to replace all ' ' by an underscore
             for forbidden in (" ",):
                 std_list = std_list.replace(forbidden, "_")
             # print(f"Try to load '{std_list}'")
-            oplist = self.load_persistent_op_list(std_list)
+            oplist, opinfo = self.load_persistent_op_list(std_list)
         if len(oplist) == 0:
             std_list = "_default"
             # print(f"Try to load '{std_list}'")
-            oplist = self.load_persistent_op_list(std_list)
+            oplist, opinfo = self.load_persistent_op_list(std_list)
 
         if len(oplist) == 0:
             # Then let's create something useful
@@ -1394,11 +1461,16 @@ class Elemental(Service):
             create_engrave(oplist)
             create_raster(oplist)
             create_image(oplist)
+            opinfo.clear()
+            opinfo["material"] = "Default"
+            opinfo["author"] = "MeerK40t"
             needs_save = True
         # Ensure we have an id for everything
         needs_save = self.validate_ids(nodelist=oplist, generic=False)
         if needs_save:
-            self.save_persistent_operations_list(std_list, oplist=oplist, inform=False)
+            self.save_persistent_operations_list(
+                std_list, oplist=oplist, opinfo=opinfo, inform=False
+            )
 
         self.default_operations = oplist
         if needs_signal:
@@ -1542,51 +1614,181 @@ class Elemental(Service):
     def unlisten_tree(self, listener):
         self._tree.unlisten(listener)
 
+    def create_minimal_op_list(self):
+        oplist = []
+        pwr = 1000
+        spd = 140
+        node = Node().create(
+            type="op image",
+            color="black",
+            label=f"Image ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="I1",
+            power=pwr,
+            speed=spd,
+            raster_step=3,
+        )
+        oplist.append(node)
+        pwr = 1000
+        spd = 150
+        node = Node().create(
+            type="op raster",
+            label=f"Raster ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="R1",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["fill"]
+        oplist.append(node)
+        pwr = 1000
+        spd = 35
+        node = Node().create(
+            type="op engrave",
+            label=f"Engrave ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="E1",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["stroke"]
+        oplist.append(node)
+        pwr = 1000
+        spd = 5
+        node = Node().create(
+            type="op cut",
+            label=f"Cut ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="C1",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["stroke"]
+        oplist.append(node)
+        return oplist
+
+    def create_basic_op_list(self):
+        oplist = []
+        pwr = 1000
+        spd = 140
+        node = Node().create(
+            type="op image",
+            color="black",
+            label=f"Image ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="I1",
+            power=pwr,
+            speed=spd,
+            raster_step=3,
+        )
+        oplist.append(node)
+        pwr = 1000
+        spd = 150
+        node = Node().create(
+            type="op raster",
+            label=f"Cut ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="R1",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["fill"]
+        oplist.append(node)
+        pwr = 1000
+        spd = 35
+        node = Node().create(
+            type="op engrave",
+            color="blue",
+            label=f"Engrave ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="E1",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["stroke"]
+        oplist.append(node)
+        pwr = 1000
+        spd = 30
+        node = Node().create(
+            type="op engrave",
+            color="green",
+            label=f"Engrave ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="E2",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["stroke"]
+        oplist.append(node)
+        pwr = 1000
+        spd = 25
+        node = Node().create(
+            type="op engrave",
+            color="magenta",
+            label=f"Engrave ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="E3",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["stroke"]
+        oplist.append(node)
+        pwr = 1000
+        spd = 20
+        node = Node().create(
+            type="op engrave",
+            color="cyan",
+            label=f"Engrave ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="E4",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["stroke"]
+        oplist.append(node)
+        pwr = 1000
+        spd = 15
+        node = Node().create(
+            type="op engrave",
+            color="yellow",
+            label=f"Engrave ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="E5",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["stroke"]
+        oplist.append(node)
+        pwr = 1000
+        spd = 5
+        node = Node().create(
+            type="op cut",
+            label=f"Cut ({pwr/10.0:.0f}%, {spd}mm/s)",
+            color="red",
+            id="C1",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["stroke"]
+        oplist.append(node)
+        pwr = 1000
+        spd = 2
+        node = Node().create(
+            type="op cut",
+            color="darkred",
+            label=f"Cut ({pwr/10.0:.0f}%, {spd}mm/s)",
+            id="C2",
+            power=pwr,
+            speed=spd,
+        )
+        node.allowed_attributes = ["stroke"]
+        oplist.append(node)
+        return oplist
+
     def load_default(self, performclassify=True):
         with self.static("load default"):
             self.clear_operations()
-            self.op_branch.add(
-                type="op image",
-                color="black",
-                speed=140.0,
-                power=1000.0,
-                raster_step=3,
-            )
-            node = self.op_branch.add(type="op raster")
-            node.allowed_attributes = ["fill"]
-            node = self.op_branch.add(type="op engrave")
-            node.allowed_attributes = ["stroke"]
-            node = self.op_branch.add(type="op cut")
-            node.allowed_attributes = ["stroke"]
+            nodes = self.create_minimal_op_list()
+            for node in nodes:
+                self.op_branch.add_node(node)
             if performclassify:
                 self.classify(list(self.elems()))
 
     def load_default2(self, performclassify=True):
-        with self.static("load default 2"):
+        with self.static("load default"):
             self.clear_operations()
-            self.op_branch.add(
-                type="op image",
-                color="black",
-                speed=140.0,
-                power=1000.0,
-                raster_step=3,
-            )
-            node = self.op_branch.add(type="op raster")
-            node.allowed_attributes = ["fill"]
-            node = self.op_branch.add(type="op engrave")
-            node.allowed_attributes = ["stroke"]
-            node = self.op_branch.add(type="op engrave", color="blue")
-            node.allowed_attributes = ["stroke"]
-            node = self.op_branch.add(type="op engrave", color="green")
-            node.allowed_attributes = ["stroke"]
-            node = self.op_branch.add(type="op engrave", color="magenta")
-            node.allowed_attributes = ["stroke"]
-            node = self.op_branch.add(type="op engrave", color="cyan")
-            node.allowed_attributes = ["stroke"]
-            node = self.op_branch.add(type="op engrave", color="yellow")
-            node.allowed_attributes = ["stroke"]
-            node = self.op_branch.add(type="op cut")
-            node.allowed_attributes = ["stroke"]
+            nodes = self.create_basic_op_list()
+            for node in nodes:
+                self.op_branch.add_node(node)
             if performclassify:
                 self.classify(list(self.elems()))
 
@@ -2178,6 +2380,7 @@ class Elemental(Service):
             self._emphasized_bounds = bounds
             self._emphasized_bounds_painted = bounds_painted
             self.set_emphasis(e_list)
+            self.signal("element_clicked")
         else:
             self._emphasized_bounds = None
             self._emphasized_bounds_painted = None
