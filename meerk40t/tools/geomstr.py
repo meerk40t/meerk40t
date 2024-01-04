@@ -434,13 +434,25 @@ class BeamTable:
             return lo
 
         def bisect_yint(a, x, scanline):
-            x = float(g.y_intercept(x, scanline.real, scanline.imag))
+            value = float(g.y_intercept(x, scanline.real, scanline.imag))
             lo = 0
             hi = len(a)
             while lo < hi:
                 mid = (lo + hi) // 2
-                if x < float(g.y_intercept(a[mid], scanline.real, scanline.imag)):
+                x_test = float(g.y_intercept(a[mid], scanline.real, scanline.imag))
+                if value < x_test:
                     hi = mid
+                elif value == x_test:
+                    x_slope = g.slope(x)
+                    if np.isposinf(x_slope):
+                        x_slope *= -1
+                    t_slope = g.slope(a[mid])
+                    if np.isposinf(t_slope):
+                        t_slope *= -1
+                    if x_slope > t_slope:
+                        hi = mid
+                    else:
+                        lo = mid + 1
                 else:
                     lo = mid + 1
             return lo
@@ -515,6 +527,86 @@ class BeamTable:
             self._nb_scan[i, 0 : len(active)] = active
 
     def compute_beam_brute(self):
+        g = self.geometry
+        gs = g.segments
+        events = []
+        # Add start and end events.
+        for i in range(g.index):
+            if np.real(gs[i][2]) != TYPE_LINE:
+                continue
+            if (gs[i][0].real, gs[i][0].imag) < (gs[i][-1].real, gs[i][-1].imag):
+                events.append((g.segments[i][0], i, None))
+                events.append((g.segments[i][-1], ~i, None))
+            else:
+                events.append((g.segments[i][0], ~i, None))
+                events.append((g.segments[i][-1], i, None))
+
+        wh, p, ta, tb = g.brute_line_intersections()
+        for w, pos in zip(wh, p):
+            events.append((pos, 0, w))
+            self.intersections.point(pos)
+
+        # Sort start, end, intersections events.
+        events.sort(key=self.sort_key)
+
+        # Store currently active segments.
+        actives = []
+
+        # scanline = None
+        def bisect_yint(a, x, scanline):
+            x = float(g.y_intercept(x, scanline.real, scanline.imag))
+            lo = 0
+            hi = len(a)
+            while lo < hi:
+                mid = (lo + hi) // 2
+                if x < float(g.y_intercept(a[mid], scanline.real, scanline.imag)):
+                    hi = mid
+                else:
+                    lo = mid + 1
+            return lo
+
+        # Store previously active segments
+        active_lists = []
+        real_events = []
+
+        largest_actives = 0
+
+        for i in range(len(events)):
+            event = events[i]
+            pt, index, swap = event
+
+            try:
+                next, _, _ = events[i + 1]
+                scanline = (pt + next) / 2
+            except IndexError:
+                next = complex(float("inf"), float("inf"))
+                scanline = next
+
+            if swap is not None:
+                s1 = actives.index(swap[0])
+                s2 = actives.index(swap[1])
+                actives[s1], actives[s2] = actives[s2], actives[s1]
+            elif index >= 0:
+                ip = bisect_yint(actives, index, scanline)
+                actives.insert(ip, index)
+            else:
+                remove_index = actives.index(~index)
+                del actives[remove_index]
+
+            if pt != next:
+                if len(actives) > largest_actives:
+                    largest_actives = len(actives)
+                # actives.sort(key=y_ints)
+                real_events.append(pt)
+                active_lists.append(list(actives))
+
+        self._nb_events = real_events
+        self._nb_scan = np.zeros((len(active_lists), largest_actives), dtype=int)
+        self._nb_scan -= 1
+        for i, active in enumerate(active_lists):
+            self._nb_scan[i, 0 : len(active)] = active
+
+    def compute_beam_brute_old(self):
         g = self.geometry
         gs = g.segments
         events = []
