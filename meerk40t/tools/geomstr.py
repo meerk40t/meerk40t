@@ -4531,10 +4531,13 @@ class Geomstr:
 
     def simplify(self, tolerance = 25):
         """
-        a)  Removes two or more consecutive ends to avoid the handing back of empty subpaths
-        b)  if tolerance > 1: applies
-            a value of about 25 would reduce the effective resolution to about 1/1000 mm
-            a value of 65 to about 1 mil = 1/1000 inch
+            Simplifies polyline sections of a geomstr by applying the Ramer-Douglas-Peucker algorithm.
+            https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
+
+            Tolerance is the maximum distance a point might have from a line to still be considered
+            collinear.
+            - a value of about 25 would reduce the effective resolution to about 1/1000 mm
+            - a value of 65 to about 1 mil = 1/1000 inch
         """
 
         def _compute_distances(points, start, end):
