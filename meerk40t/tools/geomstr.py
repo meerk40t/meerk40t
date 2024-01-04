@@ -538,6 +538,11 @@ class BeamTable:
         # Store currently active segments.
         actives = []
 
+        scanline = None
+
+        def y_ints(e):
+            return g.y_intercept(e, scanline.real, scanline.imag)
+
         # Store previously active segments
         active_lists = []
         real_events = []
@@ -556,14 +561,9 @@ class BeamTable:
                 scanline = next
 
             if swap is not None:
-                s1 = actives.index(swap[0])
-                s2 = actives.index(swap[1])
-                actives[s1], actives[s2] = actives[s2], actives[s1]
+                pass
             elif index >= 0:
-                y_int = float(g.y_intercept(index, scanline.real, scanline.imag))
-                actives_y_int = [float(g.y_intercept(active, scanline.real, scanline.imag)) for active in actives]
-                ip = bisect.bisect(actives_y_int, y_int)
-                actives.insert(ip, index)
+                actives.append(index)
             else:
                 remove_index = actives.index(~index)
                 del actives[remove_index]
@@ -571,6 +571,7 @@ class BeamTable:
             if pt != next:
                 if len(actives) > largest_actives:
                     largest_actives = len(actives)
+                actives.sort(key=y_ints)
                 real_events.append(pt)
                 active_lists.append(list(actives))
 
