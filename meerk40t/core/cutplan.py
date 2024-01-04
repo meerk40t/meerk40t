@@ -200,9 +200,12 @@ class CutPlan:
                 if op.type.startswith("place "):
                     continue
                 self.plan.append(op)
-                if op.type.startswith("op"):
+                if op.type.startswith("op") or op.type.startswith("util"):
+                    # Call preprocess on any op or util ops in our list.
                     if hasattr(op, "preprocess"):
                         op.preprocess(self.context, placement, self)
+
+                if op.type.startswith("op"):
                     for node in op.flat():
                         if node is op:
                             continue
