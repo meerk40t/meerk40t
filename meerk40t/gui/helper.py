@@ -126,11 +126,12 @@ class HelperPanel(wx.Panel):
         self.context.kernel.unschedule(self.job)
 
     def __set_properties(self):
-        s = ("Information about the control the mouse is hovering over")
+        s = _("Information about the control the mouse is hovering over")
         self.text_info.SetToolTip(s)
         self.check_allow.SetToolTip(
-            s+ "\n" +
-            _("If inactive then no more updates will happen until you check this checkbox again")
+            s + "\n" +
+            _("If inactive then no more updates will happen until you check this checkbox again") + "\n" +
+            _("Tip: Press Ctrl+Shift+F while hovering over a control to lock the content.")
         )
         # self.button_webhelp.SetToolTip(_("Call online help-page"))
 
