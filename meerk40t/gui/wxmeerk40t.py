@@ -21,6 +21,7 @@ from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
 from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
 from meerk40t.kernel.kernel import Job
+from .propertypanels.gotoproperty import GotoPropertyPanel
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from ..tools.kerftest import KerfTool
@@ -838,6 +839,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
         kernel.register("property/BlobNode/BlobProperty", BlobPropertyPanel)
         kernel.register("property/WaitOperation/WaitProperty", WaitPropertyPanel)
+        kernel.register("property/GotoOperation/GotoProperty", GotoPropertyPanel)
         kernel.register("property/InputOperation/InputProperty", InputPropertyPanel)
         kernel.register("property/BranchOperationsNode/LoopProperty", OpBranchPanel)
         kernel.register("property/OutputOperation/OutputProperty", OutputPropertyPanel)
