@@ -173,20 +173,20 @@ class ActionPanel(wx.Panel):
 
         t = self.button_go.GetBitmap().Size
         # print(f"Was asking for {best_size}x{best_size}, got {s[0]}x{s[1]}, button has {t[0]}x{t[1]}")
-        scalex = s[0] / t[0]
-        scaley = s[1] / t[1]
-        if abs(1 - scalex) > 1e-2 or abs(1 - scaley) > 1e-2:
-            # print(f"Scale factors: {scalex:.2f}, {scaley:.2f}")
+        scale_x = s[0] / t[0]
+        scale_y = s[1] / t[1]
+        if abs(1 - scale_x) > 1e-2 or abs(1 - scale_y) > 1e-2:
+            # print(f"Scale factors: {scale_x:.2f}, {scale_y:.2f}")
             # This is a bug within wxPython! It seems to appear only here at very high scale factors under windows
             bmp = self.icon.GetBitmap(
                 color=self.fgcolor,
-                resize=(best_size * scalex, best_size * scaley),
+                resize=(best_size * scale_x, best_size * scale_y),
                 buffer=border,
             )
             s = bmp.Size
             self.button_go.SetBitmap(bmp)
             bmp = self.icon.GetBitmap(
-                resize=(best_size * scalex, best_size * scaley), buffer=border
+                resize=(best_size * scale_x, best_size * scale_y), buffer=border
             )
             self.button_go.SetBitmapFocus(bmp)
 
