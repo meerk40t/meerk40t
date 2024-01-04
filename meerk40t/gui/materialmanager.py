@@ -1540,7 +1540,7 @@ class MaterialPanel(ScrolledPanel):
             return
         response = self.context.kernel.yesno(
             _(
-                "Do you want to remove all existing operations before loaading this set?"
+                "Do you want to remove all existing operations before loading this set?"
             ),
             caption=_("Clear Operation-List"),
         )
@@ -1987,7 +1987,7 @@ class MaterialPanel(ScrolledPanel):
                 try:
                     targetop = Node().create(type=op_type)
                 except ValueError:
-                    # Attempted to create a non-boostrapped node type.
+                    # Attempted to create a non-bootstrapped node type.
                     return
                 targetop.load(settings, sect)
                 op_id = targetop.id
