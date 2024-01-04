@@ -1329,7 +1329,8 @@ class Art:
         try:
             wxsize = wx.Size(ptdefault, ptdefault)
             dipsize = self.parent.FromDIP(wxsize)
-            ptsize = int(dipsize[0])
+            ptsize = int(wxsize[0] + 0.5 * (dipsize[0] - wxsize[0]))
+            # print(ptdefault, wxsize[0], ptsize, dipsize[0])
         except AttributeError:
             ptsize = ptdefault
         self.default_font = wx.Font(

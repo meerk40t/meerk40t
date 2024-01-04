@@ -87,9 +87,11 @@ class PositionPanel(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
-        self.button_execute.SetBitmap(icons8_compress.GetBitmap(resize=resize_param))
-        w, h = self.button_execute.GetBitmap().Size
-        icon_size = w
+        # This is a bug within wxPython! It seems to appear only here at very high scale factors under windows
+        bmp = icons8_compress.GetBitmap(resize=resize_param)
+        s = bmp.Size
+        icon_size = s[0]
+        self.button_execute.SetBitmap(bmp)
         self.pos_bitmaps = self.calculate_icons(icon_size)
         self.button_param.SetBitmap(self.pos_bitmaps[self.offset_index])
 
