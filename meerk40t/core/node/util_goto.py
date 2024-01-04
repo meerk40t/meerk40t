@@ -1,6 +1,7 @@
 from meerk40t.core.cutcode.gotocut import GotoCut
 from meerk40t.core.elements.element_types import *
 from meerk40t.core.node.node import Node
+from meerk40t.core.units import Length
 
 
 class GotoOperation(Node):
@@ -48,6 +49,19 @@ class GotoOperation(Node):
                 drop_node.append_child(drag_node)
             return True
         return False
+
+    def preprocess(self, context, matrix, plan):
+        """
+        Preprocess util goto
+
+        @param context:
+        @param matrix:
+        @param plan: Plan value during preprocessor call
+        @return:
+        """
+        self.x = float(Length(self.x))
+        self.y = float(Length(self.y))
+        self.x, self.y = matrix.point_in_matrix_space((self.x, self.y))
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """
