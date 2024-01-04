@@ -452,7 +452,7 @@ class BeamTable:
                 if t1 in (0, 1) and t2 in (0, 1):
                     continue
                 pt_intersect = g.position(q, t1)
-                if sl.real >= pt_intersect.real:
+                if (sl.real, sl.imag) >= (pt_intersect.real, pt_intersect.imag):
                     continue
                 checked_swaps[(q, r)] = True
                 x = pt_intersect, 0, (q, r)
