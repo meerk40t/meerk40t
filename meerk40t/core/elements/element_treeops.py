@@ -1682,8 +1682,6 @@ def init_tree(kernel):
             pos=pos,
             x=x,
             y=y,
-            rotation=0,
-            corner=0,
         )
         self.signal("updateop_tree")
 
