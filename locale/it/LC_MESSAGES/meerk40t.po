@@ -106,7 +106,7 @@ msgstr "Capovolgi l'asse X"
 
 #: meerk40t/balormk/device.py:182
 msgid "Flip the X axis for the Balor device"
-msgstr "Capovolgi l'asse X per il dispositivo Balor"
+msgstr "Capovolgi l'asse X del dispositivo Balor"
 
 #: meerk40t/balormk/device.py:192 meerk40t/grbl/device.py:102
 #: meerk40t/lihuiyu/device.py:150 meerk40t/moshi/device.py:128
@@ -116,7 +116,7 @@ msgstr "Capovolgi l'asse Y"
 
 #: meerk40t/balormk/device.py:193 meerk40t/lihuiyu/device.py:151
 msgid "Flip the Y axis for the Balor device"
-msgstr "Capovolgi l'asse Y per il dispositivo Balor"
+msgstr "Capovolgi l'asse Y del dispositivo Balor"
 
 #: meerk40t/balormk/device.py:203 meerk40t/grbl/device.py:114
 #: meerk40t/moshi/device.py:141 meerk40t/newly/device.py:184
@@ -125,7 +125,7 @@ msgstr "Scambia XY"
 
 #: meerk40t/balormk/device.py:204 meerk40t/newly/device.py:185
 msgid "Swap the X and Y axis for the device"
-msgstr "Scambia l'asse X e Y per il dispositivo"
+msgstr "Scambia l'asse X e Y del dispositivo"
 
 #: meerk40t/balormk/device.py:213 meerk40t/grbl/device.py:315
 #: meerk40t/moshi/device.py:176 meerk40t/newly/device.py:194
@@ -138,7 +138,7 @@ msgstr "Numero di punti di interpolazione della curva"
 #: meerk40t/balormk/device.py:222 meerk40t/grbl/device.py:336
 #: meerk40t/moshi/device.py:185 meerk40t/newly/device.py:203
 msgid "Run mock-usb backend"
-msgstr "Esegui backend USB simulato"
+msgstr "Avvia la simulazione USB"
 
 #: meerk40t/balormk/device.py:223 meerk40t/grbl/device.py:337
 #: meerk40t/moshi/device.py:186 meerk40t/newly/device.py:204
@@ -146,7 +146,19 @@ msgid ""
 "This starts connects to fake software laser rather than real one for "
 "debugging."
 msgstr ""
-"Questo connette a un finto laser software invece di uno reale per il debug."
+"Consente la connessione a un laser simulato invece che a un "
+"dispositivo reale. A scopo di test"
+
+msgid "Home position"
+msgstr "Posizione Home"
+
+#: ./meerk40t\grbl\device.py:150
+msgid "Force Declared Home"
+msgstr "Imposta la posizione Home"
+
+#: ./meerk40t\grbl\device.py:151
+msgid "Override native home location"
+msgstr "Sovrascrivere la posizione nativa iniziale"
 
 #: meerk40t/balormk/device.py:234 meerk40t/newly/device.py:215
 msgid "Machine index to select"
@@ -5884,6 +5896,10 @@ msgstr "Incolla"
 msgid "Paste elements from clipboard"
 msgstr "Incolla"
 
+#: ./meerk40t\gui\wxmmain.py:560
+msgid "Paste from system\tShift-Ctrl-V"
+msgstr "Incolla da sistema\tShift-Ctrl-V"
+
 #: meerk40t/gui/wxmmain.py:921
 msgid "Undo"
 msgstr "Annulla"
@@ -8896,11 +8912,11 @@ msgstr "Velocità raster al grafico."
 
 #: meerk40t/newly/device.py:163
 msgid "Flip the X axis for the device"
-msgstr "Capovolgere l'asse X per il dispositivo"
+msgstr "Capovolgere l'asse X del dispositivo"
 
 #: meerk40t/newly/device.py:174
 msgid "Flip the Y axis for the device"
-msgstr "Capovolgere l'asse Y per il dispositivo"
+msgstr "Capovolgere l'asse Y del dispositivo"
 
 #: meerk40t/newly/device.py:228
 msgid "Output File"
@@ -8959,7 +8975,7 @@ msgstr "Potenza massima"
 
 #: meerk40t/newly/device.py:298
 msgid "Maximum laser power, all other power will be a scale of this amount"
-msgstr "Potenza laser massima, tutta l'altra potenza sarà una scala di questa quantità"
+msgstr "Potenza massima del laser, tutti gli altri parametri sono scalate a questo valore"
 
 #: meerk40t/newly/device.py:309
 msgid "PWM Power"
@@ -8967,7 +8983,7 @@ msgstr "Potenza PWM"
 
 #: meerk40t/newly/device.py:310
 msgid "Power Width Modulation enabled for device."
-msgstr "Modulazione di ampiezza di potenza abilitata per il dispositivo."
+msgstr "Modulazione di ampiezza di potenza abilitata del dispositivo."
 
 #: meerk40t/newly/device.py:322
 msgid "PWM Frequency"
@@ -13755,6 +13771,7 @@ msgstr "Orientamento:"
 #: meerk40t/gui/propertypanels/placementproperty.py:108
 msgid "Corner:"
 msgstr "Angolo:"
+
 #: meerk40t/gui/propertypanels/placementproperty.py:113
 msgid "Top-Left"
 msgstr "In alto a sinistra"
@@ -18051,17 +18068,21 @@ msgstr ""
 msgid "Reset\nstatistics"
 msgstr ""
 
+#: ./meerk40t\newly\device.py:310
 msgid "Max Pulse Power"
-msgstr ""
+msgstr "Potenza massima dell'impulso"
 
+#: ./meerk40t\newly\device.py:312
 msgid "What max power level should pulses be fired at?"
-msgstr ""
+msgstr "Livello di potenza massima a cui devono essere generati gli impulsi"
 
+#: ./meerk40t\newly\device.py:367
 msgid "Maximum Raster Jog"
-msgstr ""
+msgstr "Massimo spostamento raster"
 
+#: ./meerk40t\newly\device.py:370
 msgid "Maximum distance allowed to be done during a raster step/jog"
-msgstr ""
+msgstr "Distanza massima di salto consentita durante i Raster"
 
 msgid "At what power level do we raster?"
 msgstr ""
@@ -18152,8 +18173,25 @@ msgstr "Strumento linea"
 msgid "Create an ean-barcode or a qr-code"
 msgstr "Strumento per creare codici a barre EAN o QR"
 
+#: ./meerk40t\gui\wxmmain.py:1133
 msgid "Wrap the current node in a hatch\n(Right click removes the hatch)"
 msgstr "Riempie l'area selezionata con un tratteggio\nClick destro per rimuovere il tratteggio"
+
+#: .\meerk40t\gui\wxmmain.py:1354
+msgid "Simple line hatch"
+msgstr "Tratteggio con linea semplice"
+
+#: .\meerk40t\gui\wxmmain.py:1362
+msgid "Diagonal line hatch"
+msgstr "Tratteggio con linea diagonale"
+
+#: .\meerk40t\gui\wxmmain.py:1371
+msgid "Simple line hatch (bidirectional)"
+msgstr "Tratteggio con linea semplice"
+
+#: .\meerk40t\gui\wxmmain.py:1379
+msgid "Diagonal line hatch (bidirectional)"
+msgstr "Tratteggio con linea diagonale"
 
 msgid "Draw a freehand polygon (f)"
 msgstr "Disegna liberamente un poligono (f)"
@@ -18167,27 +18205,34 @@ msgstr "Disegna una stella (1)"
 msgid "Draw a crossing star (2)"
 msgstr "Disegna una stella a linee intersecanti (2)"
 
+#: .\meerk40t\gui\toolwidgets\toolpolygon.py:124
 msgid "Draw a growing polygon"
 msgstr "Disegna un poligono a spirale"
 
+#: .\meerk40t\gui\materialmanager.py:2233
 msgid "Material Library"
 msgstr "Biblioteca dei materiali"
 
+#: ./meerk40t\gui\materialmanager.py:2227
 msgid "Library"
 msgstr "Biblioteca"
 
+#: ./meerk40t\gui\materialmanager.py:304
 msgid "Filter Materials"
 msgstr "Filtro materiali"
 
+#: ./meerk40t\gui\materialmanager.py:532
 msgid "Thickness"
 msgstr "Spessore"
 
 msgid "Thickness of the material."
 msgstr "Spessore del materiale"
 
+#: ./meerk40t\gui\materialmanager.py:344
 msgid "Reset Filter"
 msgstr "Reset filtri"
 
+#: ./meerk40t\gui\materialmanager.py:348
 msgid "Matching library entries"
 msgstr "Corrispondenza delle voci della biblioteca"
 
@@ -18227,15 +18272,25 @@ msgstr "Carica in Operazioni"
 msgid "Apply the current library entry to the operations branch"
 msgstr "Carica i dati della biblioteca in operazioni"
 
+#: ./meerk40t\gui\materialmanager.py:413
 msgid "Title"
 msgstr "Titolo"
 
+#: ./meerk40t\gui\materialmanager.py:306
+#: ./meerk40t\gui\statusbarwidgets\defaultoperations.py:233
 msgid "Material"
 msgstr "Materiale"
 
+#: ./meerk40t\gui\materialmanager.py:531
 msgid "Name of the library entry."
 msgstr "Nome della voce della biblioteca"
 
+#: .\meerk40t\gui\materialmanager.py:423
+#: .\meerk40t\camera\plugin.py:226
+#: .\meerk40t\lihuiyu\device.py:477
+#: .\meerk40t\kernel\kernel.py:1181
+#: .\meerk40t\core\elements\wordlist.py:88
+#: .\meerk40t\core\elements\penbox.py:120
 msgid "Set"
 msgstr "Imposta"
 
@@ -18243,6 +18298,7 @@ msgstr "Imposta"
 msgid "Change the name / lasertype of the current entry\nRight-Click: assign lasertype to all visible entries"
 msgstr "Modificare il nome/il tipo di laser\nClick destro: assegna il tipo di laser a tutte le voci visibili.
 
+#: ./meerk40t\gui\materialmanager.py:632
 msgid "Click to hide extended infos"
 msgstr "Click per nascondere i dettagli"
 
@@ -18275,30 +18331,31 @@ msgstr "Duplica la biblioteca selezionata"
 msgid "Import a material library from ezcad or LightBurn"
 msgstr "Importa una biblioteca di materiali da ezcad o LightBurn"
 
-#: meerk40t\meerk40t\gui\materialmanager.py:1877
+#: .\meerk40t\gui\materialmanager.py:1877
 msgid "Create minimal"
 msgstr "Crea una biblioteca minima"
 
-#: meerk40t\meerk40t\gui\materialmanager.py:1879
+#: .\meerk40t\gui\materialmanager.py:1879
 msgid "Create basic"
 msgstr "Crea una biblioteca base"
 
+#: .\meerk40t\gui\materialmanager.py:1914
 msgid "Delete all"
 msgstr "Cancella tutto"
 
-#: meerk40t\meerk40t\gui\materialmanager.py:1923
+#: .\meerk40t\gui\materialmanager.py:1923
 msgid "Expand all"
 msgstr "Espandi tutto"
 
-#: meerk40t\meerk40t\gui\materialmanager.py:1925
+#: .\meerk40t\gui\materialmanager.py:1925
 msgid "Collapse all"
 msgstr "Comprimi tutto"
 
-#: meerk40t\meerk40t\gui\materialmanager.py:526
+#: .\meerk40t\gui\materialmanager.py:526
 msgid "Filter entries with a certain material thickness."
 msgstr "Filtra per spessore"
 
-#: meerk40t\meerk40t\gui\materialmanager.py:528
+#: .\meerk40t\gui\materialmanager.py:528
 msgid "Filter entries of a certain laser type"
 msgstr "Filtra per tipo di CNC (laser)"
 
@@ -18325,9 +18382,20 @@ msgstr "Margine:"
 msgid "Allowed gap between rasterable objects, to still be counted as one."
 msgstr "Distanza minima tra gli oggetti da rasterizzare in modo che siano separati"
 
-#: .\meerk40t\gui\helper.py:103
+#: .\meerk40t\gui\helper.py:55
+msgid "Display control-information"
+msgstr "Visualizza informazioni contestuali"
+
+#: .\meerk40t\gui\helper.py:129
 msgid "Information about the control the mouse is hovering over"
-msgstr "Aiuto contestuale legato al passaggio del mouse"
+msgstr "Informazioni contestuali al passaggio del mouse"
+
+#: .\meerk40t\gui\helper.py:133
+msgid "If inactive then no more updates will happen until you check this checkbox again"
+msgstr "Inattivo: non ci saranno più aggiornamenti fino a quando non si selezionerà nuovamente questa casella di controllo"
+
+msgid "Tip: Press Ctrl+Shift+F while hovering over a control to lock the content."
+msgstr "Suggerimento: premi Ctrl+Maiusc+F mentre passi il mouse su un controllo per bloccare il contenuto."
 
 #: -------------
 #: Tiks & Triks
@@ -18415,4 +18483,3 @@ msgstr ""
 #: ./meerk40t\gui\wxmmain.py:1307
 msgid "Click again to disable the paint mode"
 msgstr "Fare nuovamente clic per disattivare la modalità di modalità copia del formato"
-
