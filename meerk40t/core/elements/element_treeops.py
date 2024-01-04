@@ -1669,6 +1669,25 @@ def init_tree(kernel):
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))
+    @tree_prompt("y", _("Y-Coordinate of Goto?"))
+    @tree_prompt("x", _("X-Coordinate of Goto?"))
+    @tree_operation(
+        _("Append Goto Location"),
+        node_type="branch ops",
+        help=_("Send laser to specific location."),
+    )
+    def append_operation_goto_location(node, y, x, pos=None, **kwargs):
+        self.op_branch.add(
+            type="util goto",
+            pos=pos,
+            x=x,
+            y=y,
+            rotation=0,
+            corner=0,
+        )
+        self.signal("updateop_tree")
+
+    @tree_submenu(_("Append special operation(s)"))
     @tree_operation(_("Append Beep"), node_type="branch ops", help="")
     def append_operation_beep(node, pos=None, **kwargs):
         self.op_branch.add(
