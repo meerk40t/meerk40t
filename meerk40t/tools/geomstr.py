@@ -449,7 +449,7 @@ class BeamTable:
                     t_slope = g.slope(a[mid])
                     if np.isposinf(t_slope):
                         t_slope *= -1
-                    if x_slope > t_slope:
+                    if x_slope < t_slope:
                         hi = mid
                     else:
                         lo = mid + 1
@@ -485,14 +485,11 @@ class BeamTable:
         while i < len(events):
             event = events[i]
             pt, index, swap = event
-
             try:
                 next, _, _ = events[i + 1]
-                # scanline = (next + pt) / 2.0
-                scanline = pt
             except IndexError:
                 next = complex(float("inf"), float("inf"))
-                scanline = next
+
             if swap is not None:
                 s1 = actives.index(swap[0])
                 s2 = s1 + 1
@@ -502,7 +499,7 @@ class BeamTable:
                 if s2 < len(actives) - 1:
                     check_intersection(i, actives[s2], actives[s2 + 1], pt)
             elif index >= 0:
-                ip = bisect_yint(actives, index, scanline)
+                ip = bisect_yint(actives, index, pt)
                 actives.insert(ip, index)
                 if ip > 0:
                     check_intersection(i, actives[ip - 1], actives[ip], pt)
