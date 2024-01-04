@@ -1219,7 +1219,7 @@ class TestGeomstr(unittest.TestCase):
         # Beam Table calculation.
         bt1 = time.time()
         q = BeamTable(poly.geomstr)
-        q.compute_beam_brute()
+        q.compute_beam()
 
         # BeamTable Pip
         bt2 = time.time()
@@ -1245,7 +1245,7 @@ class TestGeomstr(unittest.TestCase):
         g.line(complex(50, -1), complex(50, 1), 1)
         # g.line(complex(50,1), complex(100,50), 1)
         bt = BeamTable(g)
-        bt.compute_beam_brute()
+        bt.compute_beam()
         q = bt.union(0, 1)
         print(q.segments)
 
@@ -1253,7 +1253,7 @@ class TestGeomstr(unittest.TestCase):
         g = Geomstr.rect(0, 0, 100, 100, settings=0)
         g.append(Geomstr.rect(51, 51, 100, 100, settings=1))
         bt = BeamTable(g)
-        bt.compute_beam_brute()
+        bt.compute_beam()
         q = bt.union(0, 1)
         print(q.segments)
 
@@ -1705,7 +1705,7 @@ class TestGeomstr(unittest.TestCase):
                 )
             t = time.time()
             sb = BeamTable(g)
-            sb.compute_beam_brute()
+            sb.compute_beam()
             intersections = sb.intersections
             print(f"Time: {time.time() - t}")
             try:
@@ -1744,7 +1744,7 @@ class TestGeomstr(unittest.TestCase):
                 )
             t = time.time()
             sb = BeamTable(g)
-            sb.compute_beam_brute()
+            sb.compute_beam()
             intersections = sb.intersections
             print(f"Time: {time.time() - t}")
 
@@ -1784,8 +1784,8 @@ class TestGeomstr(unittest.TestCase):
                 # print(f"{a} :: {b}")
                 for c, d in zip(a, b):
                     self.assertEqual(c, d)
-            # print(f"With binary inserts: brute: {brute_time} vs bo {bo_time} improvement: {100 * (brute_time - bo_time) / brute_time}%")
-            # print(f"Intersections {len(sb1.intersections)}, {len(sb2.intersections)}")
+            print(f"With binary inserts: brute: {brute_time} vs bo {bo_time} improvement: {100 *  brute_time/bo_time}%")
+            print(f"Intersections {len(sb1.intersections)}, {len(sb2.intersections)}")
 
     def test_geomstr_image(self):
         from PIL import Image, ImageDraw

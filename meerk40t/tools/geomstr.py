@@ -51,7 +51,6 @@ not properly give a counterclockwise circle. If the three points are all
 collinear this is effectively a line. If all three points are coincident
 this is effectively a point.
 """
-import bisect
 import math
 import re
 from contextlib import contextmanager
@@ -400,6 +399,9 @@ class BeamTable:
     def sort_key(self, e):
         return e[0].real, e[0].imag, ~e[1]
 
+    def compute_beam(self):
+        self.compute_beam_bo()
+
     def compute_beam_bo(self):
         g = self.geometry
         gs = g.segments
@@ -484,21 +486,21 @@ class BeamTable:
                 s2 = s1 + 1
                 actives[s1], actives[s2] = actives[s2], actives[s1]
                 if s1 > 0:
-                    check_intersection(i, actives[s1-1], actives[s1], pt)
+                    check_intersection(i, actives[s1 - 1], actives[s1], pt)
                 if s2 < len(actives) - 1:
-                    check_intersection(i, actives[s2], actives[s2+1], pt)
+                    check_intersection(i, actives[s2], actives[s2 + 1], pt)
             elif index >= 0:
                 ip = bisect_yint(actives, index, scanline)
                 actives.insert(ip, index)
                 if ip > 0:
-                    check_intersection(i, actives[ip-1], actives[ip], pt)
+                    check_intersection(i, actives[ip - 1], actives[ip], pt)
                 if ip < len(actives) - 1:
-                    check_intersection(i, actives[ip], actives[ip+1], pt)
+                    check_intersection(i, actives[ip], actives[ip + 1], pt)
             else:
                 rp = actives.index(~index)
                 del actives[rp]
                 if 0 < rp < len(actives):
-                    check_intersection(i, actives[rp-1], actives[rp], pt)
+                    check_intersection(i, actives[rp - 1], actives[rp], pt)
             i += 1
             if pt == next:
                 continue
@@ -583,7 +585,7 @@ class BeamTable:
 
     def points_in_polygon(self, e):
         if self._nb_scan is None:
-            self.compute_beam_brute()
+            self.compute_beam()
 
         idx = np.searchsorted(self._nb_events, e)
         actives = self._nb_scan[idx - 1]
@@ -609,7 +611,7 @@ class BeamTable:
 
     def actives_at(self, value):
         if self._nb_scan is None:
-            self.compute_beam_brute()
+            self.compute_beam()
         idx = np.searchsorted(self._nb_events, value)
         actives = self._nb_scan[idx - 1]
         aw = np.argwhere(actives != -1)[:, 0]
@@ -621,7 +623,7 @@ class BeamTable:
         @return:
         """
         if self._nb_scan is None:
-            self.compute_beam_brute()
+            self.compute_beam()
         g = Geomstr()
         actives = self._nb_scan[:-1]
         from_vals = self._nb_events[:-1]
@@ -659,7 +661,7 @@ class BeamTable:
 
     def cag(self, cag_op, *args):
         if self._nb_scan is None:
-            self.compute_beam_brute()
+            self.compute_beam()
         g = Geomstr()
         actives = self._nb_scan[:-1]
         lines = self.geometry.segments[actives][..., 2]
