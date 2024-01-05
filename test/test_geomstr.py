@@ -1776,7 +1776,7 @@ class TestGeomstr(unittest.TestCase):
 
             t = time.time()
             sb2 = BeamTable(g)
-            sb2.compute_beam_brute_old()
+            sb2.compute_beam_bo()
             bo_time = time.time() - t
 
             # self.assertEqual(sb1.intersections, sb2.intersections)
