@@ -1784,7 +1784,7 @@ class TestGeomstr(unittest.TestCase):
                 # print(f"{a} :: {b}")
                 for c, d in zip(a, b):
                     self.assertEqual(c, d)
-            print(f"With binary inserts: brute: {brute_time} vs bo {bo_time} improvement: {100 *  brute_time/bo_time}%")
+            print(f"With binary inserts: brute: {brute_time} vs bo {bo_time} improvement: {brute_time/bo_time}x or {bo_time / brute_time}x")
             print(f"Intersections {len(sb1.intersections)}, {len(sb2.intersections)}")
 
     def test_geomstr_image(self):
