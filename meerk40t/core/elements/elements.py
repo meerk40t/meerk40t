@@ -3658,6 +3658,14 @@ class Elemental(Service):
                     if len(node.children) == 0:
                         node.remove_node()
                         something_was_deleted = True
+        something_was_deleted = True
+        while something_was_deleted:
+            something_was_deleted = False
+            for node in self.regmarks_nodes():
+                if node.type in ("file", "group"):
+                    if len(node.children) == 0:
+                        node.remove_node()
+                        something_was_deleted = True
 
     @staticmethod
     def element_classify_color(element: SVGElement):
