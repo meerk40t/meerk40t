@@ -4628,7 +4628,7 @@ class Geomstr:
             if len(simplified) != len(to_simplify):
                 g = Geomstr.lines(c_simp)
                 newsegs = g.segments[: g.index]
-                newgeometry.replace(s, e + 1, newsegs)
+                newgeometry.replace(s, e - 1, newsegs)
         return newgeometry
 
     #######################
