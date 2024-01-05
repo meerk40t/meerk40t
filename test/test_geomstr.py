@@ -1396,6 +1396,24 @@ class TestGeomstr(unittest.TestCase):
             self.assertIn(q, s)
             self.assertIn(q, e)
 
+    def test_simplify(self):
+        """
+        Simplify of large circle.
+        @return:
+        """
+
+        lenpoly = 1000
+        polygon = [
+            [np.sin(x) + 0.5, np.cos(x) + 0.5]
+            for x in np.linspace(0, 2 * np.pi, lenpoly)
+        ]
+        polygon = np.array(polygon, dtype="float32")
+        pg = polygon[:, 0] + polygon[:, 1] * 1j
+        poly = Polygon(*pg)
+        geometry = poly.geomstr
+        simplified = geometry.simplify(0.01)
+        self.assertEqual(len(simplified), 32)
+
     def test_point_towards_numpy(self):
         p1 = complex(0, 100)
         p2 = complex(50, 22)
