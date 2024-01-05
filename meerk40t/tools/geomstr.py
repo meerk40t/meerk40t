@@ -400,7 +400,7 @@ class BeamTable:
         return e[0].real, e[0].imag, ~e[1]
 
     def compute_beam(self):
-        self.compute_beam_bo()
+        self.compute_beam_brute()
 
     def compute_beam_bo(self):
         g = self.geometry
@@ -3812,8 +3812,8 @@ class Geomstr:
 
         x_vals = ax1[hits] + ta_hit * (ax2[hits] - ax1[hits])
         y_vals = ay1[hits] + ta_hit * (ay2[hits] - ay1[hits])
-
-        return where_hits, x_vals + y_vals * 1j, ta_hit, tb_hit
+        wh = q[0][where_hits]
+        return wh, x_vals + y_vals * 1j, ta_hit, tb_hit
 
     #######################
     # Geom Tranformations
