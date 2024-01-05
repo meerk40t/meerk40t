@@ -4612,11 +4612,9 @@ class Geomstr:
         newgeometry = Geomstr()
         to_simplify = list()
         last = None
-        oldcount = 0
-        newcount = 0
         for seg in self.segments[:self.index]:
-            oldcount += 1
-            start = seg[0]
+            start, c1, info, c2, end = seg
+
             # c1 = seg[1]
             seg_type = int(seg[2].real)
             # c2 = seg[3]
@@ -4633,32 +4631,29 @@ class Geomstr:
                     if len(simplified) != len(to_simplify):
                         g = Geomstr.lines(simplified)
                         newgeometry.append(g)
-                        changed = True
-                        newcount += len(simplified)
+                        # changed = True
                     to_simplify.clear()
                     last = None
                 newgeometry._ensure_capacity(newgeometry.index + 1)
                 newgeometry.segments[newgeometry.index] = [ seg[0], seg[1], seg[2], seg[3], seg[4] ]
                 newgeometry.index += 1
 
-                newcount += 1
-
         if len(to_simplify) > 0:
             simplified = _rdp(np.array(to_simplify), tolerance)
             if len(simplified) != len(to_simplify):
                 g = Geomstr.lines(simplified)
                 newgeometry.append(g)
-                changed = True
-                newcount += len(simplified)
+                # changed = True
+                # newcount += len(simplified)
             to_simplify.clear()
-            last = None
-
-        if changed:
-            self.clear()
-            self.append(newgeometry)
-
-        after = self.index
-        return changed, before, after
+            # last = None
+        return newgeometry
+        # if changed:
+        #     self.clear()
+        #     self.append(newgeometry)
+        #
+        # after = self.index
+        # return changed, before, after
 
     #######################
     # Global Functions
