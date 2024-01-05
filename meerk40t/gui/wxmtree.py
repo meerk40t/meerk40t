@@ -324,6 +324,10 @@ class TreePanel(wx.Panel):
         self.shadow_tree.update_warn_sign()
         self.check_for_issues()
 
+    @signal_listener("update_group_labels")
+    def on_group_update(self, origin, *args):
+        self.shadow_tree.update_group_labels("signal")
+
     @signal_listener("select_emphasized_tree")
     def on_shadow_select_emphasized_tree(self, origin, *args):
         self.shadow_tree.select_in_tree_by_emphasis(origin, *args)
@@ -392,7 +396,7 @@ class TreePanel(wx.Panel):
         #     self.shadow_tree.wxtree.Expand(startnode)
         # else:
         #     self.shadow_tree.rebuild_tree()
-        self.shadow_tree.rebuild_tree()
+        self.shadow_tree.rebuild_tree("signal")
 
     @signal_listener("refresh_tree")
     def on_refresh_tree_signal(self, origin, nodes=None, *args):
@@ -664,7 +668,7 @@ class ShadowTree:
     def check_validity(self, item):
         if item is None or not item.IsOk():
             # raise ValueError("Bad Item")
-            self.rebuild_tree()
+            self.rebuild_tree("validity")
             self.elements.signal("refresh_scene", "Scene")
             return
 
@@ -869,7 +873,7 @@ class ShadowTree:
         @param node:
         @return:
         """
-        self.rebuild_tree()
+        self.rebuild_tree("reorder")
 
     def update(self, node):
         """
@@ -970,6 +974,7 @@ class ShadowTree:
 
         # if node is None:
         #     return
+        # print (f"Refresh tree called {source}")
         self.update_op_labels()
         if node is not None:
             if isinstance(node, (tuple, list)):
@@ -987,6 +992,8 @@ class ShadowTree:
                 except RuntimeError:
                     # A timer can update after the tree closes.
                     return
+        else:
+            self.update_group_labels("refresh_tree")
 
         self.wxtree._freeze = False
         branch_elems_item = self.elements.get(type="branch elems")._item
@@ -1090,12 +1097,13 @@ class ShadowTree:
     def reset_expanded(self):
         self.was_already_expanded = []
 
-    def rebuild_tree(self):
+    def rebuild_tree(self, source):
         """
         Tree requires being deleted and completely rebuilt.
 
         @return:
         """
+        # print (f"Rebuild called from {source}")
         # let's try to remember which branches were expanded:
         self._freeze = True
         self.reset_expanded()
@@ -1167,6 +1175,7 @@ class ShadowTree:
             ),
         )
         self.update_op_labels()
+        self.update_group_labels("rebuild_tree")
         # Expand Ops, Element, and Regmarks nodes only
         self.wxtree.CollapseAll()
         self.wxtree.Expand(node_operations._item)
@@ -1216,13 +1225,7 @@ class ShadowTree:
             raise ValueError("Item was None for node " + repr(node))
         self.check_validity(item)
         # We might need to update the decorations for all parent objects
-        e = node.parent
-        while e is not None:
-            if e.type in ("group", "file"):
-                self.update_decorations(e, force=True)
-            else:
-                break
-            e = e.parent
+        self.context.signal("update_group_labels")
 
         node.unregister_object()
         self.wxtree.Delete(node._item)
@@ -1291,13 +1294,7 @@ class ShadowTree:
             except (AttributeError, KeyError, TypeError):
                 pass
         # We might need to update the decorations for all parent objects
-        e = node.parent
-        while e is not None:
-            if e.type in ("group", "file"):
-                self.update_decorations(e, force=True)
-            else:
-                break
-            e = e.parent
+        self.context.signal("update_group_labels")
 
     def set_enhancements(self, node):
         """
@@ -1533,6 +1530,15 @@ class ShadowTree:
             self.update_decorations(node=node, force=True)
             child, cookie = self.wxtree.GetNextChild(startnode, cookie)
 
+    def update_group_labels(self, src):
+        # print(f"group_labels: {src}")
+        for e in self.context.elements.elems():
+            if e.type == "group":
+                self.update_decorations(e)
+        for e in self.context.elements.regmarks():
+            if e.type == "group":
+                self.update_decorations(e)
+
     def update_decorations(self, node, force=False):
         """
         Updates the decorations for a particular node/tree item
@@ -1608,7 +1614,7 @@ class ShadowTree:
             force = False
         if node._item is None:
             # This node is not registered the tree has desynced.
-            self.rebuild_tree()
+            self.rebuild_tree("desync")
             return
 
         self.set_icon(node, force=force)
