@@ -1437,7 +1437,7 @@ class TestGeomstr(unittest.TestCase):
         steps = 10
         splits = list(g.split(0, np.linspace(1, 0, steps)[1:-1]))
         g.replace(0, 7, splits)
-        self.assertEqual(g.index, steps - 2)
+        self.assertEqual(g.index, len(splits))
         for i in range(1, g.index):
             self.assertAlmostEqual(g.length(i - 1), g.length(i))
 
@@ -1457,14 +1457,14 @@ class TestGeomstr(unittest.TestCase):
         steps = 10
         splits = list(g.split(0, np.linspace(1, 0, steps)[1:-1]))
         g.replace(0, 7, splits)
-        self.assertEqual(g.index, steps - 2)
+        self.assertEqual(g.index, len(splits))
 
     def test_point_split_quad_numpy_2(self):
         steps = 10
         g = Geomstr()
         g.quad(complex(0, 0), complex(0, 50), complex(0, 100))
         splits = list(g.split(0, np.linspace(1, 0, steps)[1:-1]))
-        g.replace(0, 0, splits)
+        g.replace(0, 1, splits)
         for i in range(1, g.index):
             self.assertAlmostEqual(g.length(i - 1), g.length(i))
 
