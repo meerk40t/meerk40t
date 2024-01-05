@@ -1219,7 +1219,7 @@ class TestGeomstr(unittest.TestCase):
         # Beam Table calculation.
         bt1 = time.time()
         q = BeamTable(poly.geomstr)
-        q.compute_beam_brute()
+        q.compute_beam()
 
         # BeamTable Pip
         bt2 = time.time()
@@ -1245,7 +1245,7 @@ class TestGeomstr(unittest.TestCase):
         g.line(complex(50, -1), complex(50, 1), 1)
         # g.line(complex(50,1), complex(100,50), 1)
         bt = BeamTable(g)
-        bt.compute_beam_brute()
+        bt.compute_beam()
         q = bt.union(0, 1)
         print(q.segments)
 
@@ -1253,7 +1253,7 @@ class TestGeomstr(unittest.TestCase):
         g = Geomstr.rect(0, 0, 100, 100, settings=0)
         g.append(Geomstr.rect(51, 51, 100, 100, settings=1))
         bt = BeamTable(g)
-        bt.compute_beam_brute()
+        bt.compute_beam()
         q = bt.union(0, 1)
         print(q.segments)
 
@@ -1636,16 +1636,16 @@ class TestGeomstr(unittest.TestCase):
 
     def test_static_beam_vertical_bowtie(self):
         """
-       0   3
+           3
         --------
         \     /
-         \   /
+        0\   /2
           \/
           /\
-         /  \
+        2/  \0
         /    \
         ------
-        2   1
+           1
         @return:
         """
         bowtie = Geomstr.lines(
@@ -1705,7 +1705,7 @@ class TestGeomstr(unittest.TestCase):
                 )
             t = time.time()
             sb = BeamTable(g)
-            sb.compute_beam_brute()
+            sb.compute_beam()
             intersections = sb.intersections
             print(f"Time: {time.time() - t}")
             try:
@@ -1744,7 +1744,7 @@ class TestGeomstr(unittest.TestCase):
                 )
             t = time.time()
             sb = BeamTable(g)
-            sb.compute_beam_brute()
+            sb.compute_beam()
             intersections = sb.intersections
             print(f"Time: {time.time() - t}")
 
@@ -1760,6 +1760,32 @@ class TestGeomstr(unittest.TestCase):
                 draw_geom(g, *b, filename="scantable-fill.png")
             except PermissionError:
                 pass
+
+    def test_scan_table_random_brute(self):
+        print("\n\n")
+        for c in range(5):
+            g = Geomstr()
+            for i in range(100):
+                random_segment(
+                    g, i=1000, arc=False, point=False, quad=False, cubic=False
+                )
+            t = time.time()
+            sb1 = BeamTable(g)
+            sb1.compute_beam_brute()
+            brute_time = time.time() - t
+
+            t = time.time()
+            sb2 = BeamTable(g)
+            sb2.compute_beam_bo()
+            bo_time = time.time() - t
+
+            # self.assertEqual(sb1.intersections, sb2.intersections)
+            for a, b in zip(sb1._nb_scan, sb2._nb_scan):
+                # print(f"{a} :: {b}")
+                for c, d in zip(a, b):
+                    self.assertEqual(c, d)
+            print(f"With binary inserts: brute: {brute_time} vs bo {bo_time} improvement: {brute_time/bo_time}x or {bo_time / brute_time}x")
+            print(f"Intersections {len(sb1.intersections)}, {len(sb2.intersections)}")
 
     def test_geomstr_image(self):
         from PIL import Image, ImageDraw

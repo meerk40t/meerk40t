@@ -51,7 +51,6 @@ not properly give a counterclockwise circle. If the three points are all
 collinear this is effectively a line. If all three points are coincident
 this is effectively a point.
 """
-
 import math
 import re
 from contextlib import contextmanager
@@ -400,115 +399,125 @@ class BeamTable:
     def sort_key(self, e):
         return e[0].real, e[0].imag, ~e[1]
 
-    def _compute_beam(self):
+    def compute_beam(self):
+        self.compute_beam_brute()
+
+    def compute_beam_bo(self):
         g = self.geometry
         gs = g.segments
         events = []
         # Add start and end events.
         for i in range(g.index):
-            if gs[i][2] != TYPE_LINE:
+            if np.real(gs[i][2]) != TYPE_LINE:
                 continue
-            if (gs[i][0].imag, gs[i][0].real) < (gs[i][-1].imag, gs[i][-1].real):
+            if (gs[i][0].real, gs[i][0].imag) < (gs[i][-1].real, gs[i][-1].imag):
                 events.append((g.segments[i][0], i, None))
                 events.append((g.segments[i][-1], ~i, None))
             else:
                 events.append((g.segments[i][0], ~i, None))
                 events.append((g.segments[i][-1], i, None))
 
-        # Sort start and end events.
-        events.sort(key=self.sort_key)
+        # Sort start, end events.
+        events.sort(key=lambda e: (e[0].real, e[0].imag, ~e[1]))
 
-        def check_intersection(q, r, y):
-            """
-            Check for intersections between p and r, at y.
+        def bisect_events(a, x, lo):
+            x = (x[0].real, x[0].imag, ~x[1])
+            hi = len(a)
+            while lo < hi:
+                mid = (lo + hi) // 2
+                q = a[mid]
 
-            p must occur before r in the sorted actives.
+                if x < (q[0].real, q[0].imag, ~q[1]):
+                    hi = mid
+                else:
+                    lo = mid + 1
+            return lo
 
-            y is used to ensure this is a future point.
-            @param q: lower-active value
-            @param r: higher-active value
-            @param y: y value to not be equal
-            @return:
-            """
-            try:
-                for t1, t2 in g.intersections(q, r):
-                    if t1 in (0, 1) and t2 in (0, 1):
-                        continue
-                    pt_intersect = g.position(q, t1)
-                    if y < pt_intersect.imag:
-                        events.append((pt_intersect, 0, (q, r)))
-                        self.intersections.point(pt_intersect)
-                        events.sort(key=self.sort_key)
-            except AttributeError:
-                pass
+        def bisect_yint(a, x, scanline):
+            value = float(g.y_intercept(x, scanline.real, scanline.imag))
+            lo = 0
+            hi = len(a)
+            while lo < hi:
+                mid = (lo + hi) // 2
+                x_test = float(g.y_intercept(a[mid], scanline.real, scanline.imag))
+                if value < x_test:
+                    hi = mid
+                elif value == x_test:
+                    x_slope = g.slope(x)
+                    if np.isposinf(x_slope):
+                        x_slope *= -1
+                    t_slope = g.slope(a[mid])
+                    if np.isposinf(t_slope):
+                        t_slope *= -1
+                    if x_slope < t_slope:
+                        hi = mid
+                    else:
+                        lo = mid + 1
+                else:
+                    lo = mid + 1
+            return lo
 
-        # Store currently active segments.
+        checked_swaps = {}
+
+        def check_intersection(i, q, r, sl):
+            if (q, r) in checked_swaps:
+                return
+            for t1, t2 in g.intersections(q, r):
+                if t1 in (0, 1) and t2 in (0, 1):
+                    continue
+                pt_intersect = g.position(q, t1)
+                if (sl.real, sl.imag) >= (pt_intersect.real, pt_intersect.imag):
+                    continue
+                checked_swaps[(q, r)] = True
+                x = pt_intersect, 0, (q, r)
+                ip = bisect_events(events, x, lo=i)
+                events.insert(ip, x)
+                self.intersections.point(pt_intersect)
+
         actives = []
 
         # Store previously active segments
         active_lists = []
-
+        real_events = []
         largest_actives = 0
-        for pt, index, swap in events:
-            x_pos = pt.real
-            y_pos = pt.imag
-            if isinstance(swap, tuple):
-                idx1, idx2 = swap
-                pos1 = actives.index(idx1)
-                pos2 = actives.index(idx2)
-                actives[pos1], actives[pos2] = actives[pos2], actives[pos1]
-                # We swapped pos1 and pos2 so we must check the outer values of this swap.
-                try:
-                    check_intersection(actives[pos1 - 1], actives[pos1], y_pos)
-                except IndexError:
-                    pass
-                try:
-                    check_intersection(actives[pos2], actives[pos2 + 1], y_pos)
-                except IndexError:
-                    pass
+
+        i = 0
+        while i < len(events):
+            event = events[i]
+            pt, index, swap = event
+            try:
+                next, _, _ = events[i + 1]
+            except IndexError:
+                next = complex(float("inf"), float("inf"))
+
+            if swap is not None:
+                s1 = actives.index(swap[0])
+                s2 = s1 + 1
+                actives[s1], actives[s2] = actives[s2], actives[s1]
+                if s1 > 0:
+                    check_intersection(i, actives[s1 - 1], actives[s1], pt)
+                if s2 < len(actives) - 1:
+                    check_intersection(i, actives[s2], actives[s2 + 1], pt)
             elif index >= 0:
-                # Index is being inserted, find x-position sorted.
-                lines = g.segments[actives]
-                a = lines[:, 0]
-                b = lines[:, -1]
-
-                old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
-                try:
-                    # If horizontal slope is undefined. But, all x-ints are at x since x0=x1
-                    m = (b.imag - a.imag) / (b.real - a.real)
-                    y0 = a.imag - (m * a.real)
-                    x_intercepts = np.where(~np.isinf(m), (y_pos - y0) / m, a.real)
-                finally:
-                    np.seterr(**old_np_seterr)
-                idx = np.searchsorted(x_intercepts, np.imag(pt))
-                actives.insert(idx, index)
-                if len(actives) > largest_actives:
-                    largest_actives = len(actives)
-
-                # Check intersections between idx, idx + 1
-                try:
-                    check_intersection(index, actives[idx + 1], y_pos)
-                except IndexError:
-                    pass
-
-                # Check intersections between idx, idx - 1
-                try:
-                    check_intersection(actives[idx - 1], index, y_pos)
-                except IndexError:
-                    pass
+                ip = bisect_yint(actives, index, pt)
+                actives.insert(ip, index)
+                if ip > 0:
+                    check_intersection(i, actives[ip - 1], actives[ip], pt)
+                if ip < len(actives) - 1:
+                    check_intersection(i, actives[ip], actives[ip + 1], pt)
             else:
-                remove_index = actives.index(~index)
-                # Check intersections between idx-1, idx+ 1
-                try:
-                    check_intersection(actives[idx - 1], actives[idx + 1], y_pos)
-                except IndexError:
-                    pass
-                del actives[remove_index]
-
+                rp = actives.index(~index)
+                del actives[rp]
+                if 0 < rp < len(actives):
+                    check_intersection(i, actives[rp - 1], actives[rp], pt)
+            i += 1
+            if pt == next:
+                continue
+            if len(actives) > largest_actives:
+                largest_actives = len(actives)
+            real_events.append(pt)
             active_lists.append(list(actives))
-
-        active_lists.append([])
-        self._nb_events = [(e.imag, e.real) for e, _, _ in events]
+        self._nb_events = real_events
         self._nb_scan = np.zeros((len(active_lists), largest_actives), dtype=int)
         self._nb_scan -= 1
         for i, active in enumerate(active_lists):
@@ -540,10 +549,18 @@ class BeamTable:
         # Store currently active segments.
         actives = []
 
-        scanline = None
-
-        def y_ints(e):
-            return g.y_intercept(e, scanline.real, scanline.imag)
+        # scanline = None
+        def bisect_yint(a, x, scanline):
+            x = float(g.y_intercept(x, scanline.real, scanline.imag))
+            lo = 0
+            hi = len(a)
+            while lo < hi:
+                mid = (lo + hi) // 2
+                if x < float(g.y_intercept(a[mid], scanline.real, scanline.imag)):
+                    hi = mid
+                else:
+                    lo = mid + 1
+            return lo
 
         # Store previously active segments
         active_lists = []
@@ -563,9 +580,12 @@ class BeamTable:
                 scanline = next
 
             if swap is not None:
-                pass
+                s1 = actives.index(swap[0])
+                s2 = actives.index(swap[1])
+                actives[s1], actives[s2] = actives[s2], actives[s1]
             elif index >= 0:
-                actives.append(index)
+                ip = bisect_yint(actives, index, scanline)
+                actives.insert(ip, index)
             else:
                 remove_index = actives.index(~index)
                 del actives[remove_index]
@@ -573,7 +593,7 @@ class BeamTable:
             if pt != next:
                 if len(actives) > largest_actives:
                     largest_actives = len(actives)
-                actives.sort(key=y_ints)
+                # actives.sort(key=y_ints)
                 real_events.append(pt)
                 active_lists.append(list(actives))
 
@@ -585,7 +605,7 @@ class BeamTable:
 
     def points_in_polygon(self, e):
         if self._nb_scan is None:
-            self.compute_beam_brute()
+            self.compute_beam()
 
         idx = np.searchsorted(self._nb_events, e)
         actives = self._nb_scan[idx - 1]
@@ -611,7 +631,7 @@ class BeamTable:
 
     def actives_at(self, value):
         if self._nb_scan is None:
-            self.compute_beam_brute()
+            self.compute_beam()
         idx = np.searchsorted(self._nb_events, value)
         actives = self._nb_scan[idx - 1]
         aw = np.argwhere(actives != -1)[:, 0]
@@ -623,7 +643,7 @@ class BeamTable:
         @return:
         """
         if self._nb_scan is None:
-            self.compute_beam_brute()
+            self.compute_beam()
         g = Geomstr()
         actives = self._nb_scan[:-1]
         from_vals = self._nb_events[:-1]
@@ -661,7 +681,7 @@ class BeamTable:
 
     def cag(self, cag_op, *args):
         if self._nb_scan is None:
-            self.compute_beam_brute()
+            self.compute_beam()
         g = Geomstr()
         actives = self._nb_scan[:-1]
         lines = self.geometry.segments[actives][..., 2]
@@ -3723,8 +3743,8 @@ class Geomstr:
 
         x_vals = ax1[hits] + ta_hit * (ax2[hits] - ax1[hits])
         y_vals = ay1[hits] + ta_hit * (ay2[hits] - ay1[hits])
-
-        return where_hits, x_vals + y_vals * 1j, ta_hit, tb_hit
+        wh = q[0][where_hits]
+        return wh, x_vals + y_vals * 1j, ta_hit, tb_hit
 
     #######################
     # Geom Tranformations
