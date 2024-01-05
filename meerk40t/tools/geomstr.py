@@ -1873,8 +1873,8 @@ class Geomstr:
         self.index += space
 
     def replace(self, e0, e1, lines):
-        space = len(lines) - (e1 - e0) - 1
-        self.allocate_at_position(e0, space)
+        space = len(lines) - (e1 - e0)
+        self.allocate_at_position(e1, space)
         if len(lines):
             self.segments[e0 : e0 + len(lines)] = lines
 
