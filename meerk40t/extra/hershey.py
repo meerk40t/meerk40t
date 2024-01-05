@@ -41,7 +41,7 @@ class FontPath:
     def geometry(self):
         if not self.weld:
             return self.total_geometry
-        bt = BeamTable(self.total_geometry.simplify())
+        bt = BeamTable(self.total_geometry)
         return bt.union(*list(range(self._index)))
 
     def new_path(self):
