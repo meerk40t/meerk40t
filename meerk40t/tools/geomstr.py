@@ -198,7 +198,7 @@ class Clip:
             if not s:
                 continue
             split_lines = list(subject.split(s0, s, breaks=breaks))
-            subject.replace(s0, s0 + 1, split_lines)
+            subject.replace(s0, s0, split_lines)
         subject.validate()
         return subject
 
@@ -4628,7 +4628,7 @@ class Geomstr:
             if len(simplified) != len(to_simplify):
                 g = Geomstr.lines(c_simp)
                 newsegs = g.segments[: g.index]
-                newgeometry.replace(s, e, newsegs)
+                newgeometry.replace(s, e + 1, newsegs)
         return newgeometry
 
     #######################
