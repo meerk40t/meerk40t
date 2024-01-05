@@ -762,23 +762,24 @@ def init_commands(kernel):
                 sub_before = 0
             if hasattr(node, "geometry"):
                 geom = node.geometry
-                seg_before = geom.index
-                changed, before, after = geom.simplify(tolerance)
-                if changed:
-                    node.altered()
-                    seg_after = geom.index
-                    try:
-                        sub_after = len(list(node.as_geometry().as_subpaths()))
-                    except AttributeError:
-                        sub_after = 0
-                    channel(
-                        f"Simplified {node.type} ({node.label}): from {before} to {after} (tolerance: {tolerance}={Length(tolerance, digits=4).length_mm})"
-                    )
-                    channel(f"Subpaths before: {sub_before} to {sub_after}")
-                    channel(f"Segments before: {seg_before} to {seg_after}")
-                    data_changed.append(node)
+                seg_before = node.geometry.index
+                node.geometry = geom.simplify(tolerance)
+                node.altered()
+                seg_after = node.geometry.index
+                try:
+                    sub_after = len(list(node.as_geometry().as_subpaths()))
+                except AttributeError:
+                    sub_after = 0
+                channel(
+                    f"Simplified {node.type} ({node.label}), tolerance: {tolerance}={Length(tolerance, digits=4).length_mm})"
+                )
+                if seg_before:
+                    saving = f"({(seg_before - seg_after)/seg_before*100:.1f}%)"
                 else:
-                    channel(f"Could not simplify {node.type} ({node.label})")
+                    saving = ""
+                channel(f"Subpaths before: {sub_before} to {sub_after}")
+                channel(f"Segments before: {seg_before} to {seg_after} {saving}")
+                data_changed.append(node)
             else:
                 channel(f"Invalid node for simplify {node.type} ({node.label})")
         if len(data_changed) > 0:
