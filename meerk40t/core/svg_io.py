@@ -18,6 +18,7 @@ from ..svgelements import (
     SVG_ATTR_CENTER_X,
     SVG_ATTR_CENTER_Y,
     SVG_ATTR_DATA,
+    SVG_ATTR_DISPLAY,
     SVG_ATTR_FILL,
     SVG_ATTR_FILL_OPACITY,
     SVG_ATTR_FONT_FAMILY,
@@ -1335,8 +1336,13 @@ class SVGProcessor:
         @param uselabel:
         @return:
         """
-
-        if element.values.get("visibility") == "hidden":
+        display = ""
+        if "display" in element.values:
+            display = element.values.get('display').lower()
+            if display=="none":
+                if branch not in ("elements", "regmarks"):
+                    return
+        if element.values.get("visibility") == "hidden" or display=="none":
             if branch != "regmarks":
                 self.parse(
                     element,
@@ -1501,6 +1507,7 @@ class SVGLoader:
                 height=height,
                 ppi=ppi,
                 color="black",
+                parse_display_none=True,
                 transform=f"scale({scale_factor})",
             )
         except ParseError as e:
