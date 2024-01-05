@@ -1873,7 +1873,7 @@ class Geomstr:
         self.index += space
 
     def replace(self, e0, e1, lines):
-        space = len(lines) - (e1 - e0)
+        space = len(lines) - (e1 - e0) - 1
         self.allocate_at_position(e1, space)
         if len(lines):
             self.segments[e0 : e0 + len(lines)] = lines
@@ -2437,7 +2437,7 @@ class Geomstr:
             fit = Geomstr.fit_to_points(
                 replacement, start, end, flags=int(np.real(control))
             )
-            self.replace(i, i + 1, fit.segments[: fit.index])
+            self.replace(i, i, fit.segments[: fit.index])
 
     #######################
     # Query Properties

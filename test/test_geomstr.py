@@ -1437,7 +1437,7 @@ class TestGeomstr(unittest.TestCase):
         steps = 10
         splits = list(g.split(0, np.linspace(1, 0, steps)[1:-1]))
         g.replace(0, 7, splits)
-        self.assertEqual(g.index, len(splits))
+        self.assertEqual(g.index, steps - 2)
         for i in range(1, g.index):
             self.assertAlmostEqual(g.length(i - 1), g.length(i))
 
@@ -1457,14 +1457,14 @@ class TestGeomstr(unittest.TestCase):
         steps = 10
         splits = list(g.split(0, np.linspace(1, 0, steps)[1:-1]))
         g.replace(0, 7, splits)
-        self.assertEqual(g.index, len(splits))
+        self.assertEqual(g.index, steps - 2)
 
     def test_point_split_quad_numpy_2(self):
         steps = 10
         g = Geomstr()
         g.quad(complex(0, 0), complex(0, 50), complex(0, 100))
         splits = list(g.split(0, np.linspace(1, 0, steps)[1:-1]))
-        g.replace(0, 1, splits)
+        g.replace(0, 0, splits)
         for i in range(1, g.index):
             self.assertAlmostEqual(g.length(i - 1), g.length(i))
 
@@ -1484,7 +1484,7 @@ class TestGeomstr(unittest.TestCase):
         steps = 10
         splits = list(g.split(0, np.linspace(1, 0, steps)[1:-1]))
         g.replace(0, 7, splits)
-        self.assertEqual(g.index, len(splits))
+        self.assertEqual(g.index, steps - 2)
 
     def test_geomstr_svg(self):
         gs = Geomstr.svg("M0,0 h100 v100 h-100 v-100 z")
