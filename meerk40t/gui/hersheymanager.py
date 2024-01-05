@@ -143,6 +143,10 @@ class LineTextPropertyPanel(wx.Panel):
         self.btn_smaller_spacing.SetToolTip(_("Decrease the character-gap"))
         sizer_text.Add(self.btn_smaller_spacing, 0, wx.EXPAND, 0)
 
+        self.check_weld = wx.CheckBox(self, wx.ID_ANY, "")
+        self.check_weld.SetToolTip(_("Weld overlapping characters together?"))
+        sizer_text.Add(self.check_weld, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
         for btn in (self.btn_bigger, self.btn_smaller, self.btn_bigger_spacing, self.btn_smaller_spacing):
             btn.SetMinSize(dip_size(self,35, -1))
 
@@ -172,6 +176,7 @@ class LineTextPropertyPanel(wx.Panel):
         self.btn_smaller_spacing.Bind(wx.EVT_BUTTON, self.on_button_smaller_spacing)
         self.btn_bigger_spacing.Bind(wx.EVT_RIGHT_DOWN, self.on_button_reset_spacing)
         self.btn_smaller_spacing.Bind(wx.EVT_RIGHT_DOWN, self.on_button_reset_spacing)
+        self.check_weld.Bind(wx.EVT_CHECKBOX, self.on_weld)
 
         self.text_text.Bind(wx.EVT_TEXT, self.on_text_change)
         self.list_fonts.Bind(wx.EVT_LISTBOX, self.on_list_font)
@@ -204,6 +209,9 @@ class LineTextPropertyPanel(wx.Panel):
             return
         if not hasattr(self.node, "mkfontspacing") or self.node.mkfontspacing is None:
             self.node.mkfontspacing = 1.0
+        if not hasattr(self.node, "mkfontweld") or self.node.mkfontweld is None:
+            self.node.mkfontweld = False
+        self.check_weld.SetValue(self.node.mkfontweld)
         fontdir = fontdirectory(self.context)
         self.load_directory(fontdir)
         self.text_text.SetValue(str(node.mktext))
@@ -234,6 +242,12 @@ class LineTextPropertyPanel(wx.Panel):
         update_linetext(self.context, self.node, vtext)
         self.context.signal("element_property_reload", self.node)
         self.context.signal("refresh_scene", "Scene")
+
+    def on_weld(self, event):
+        if self.node is None:
+            return
+        self.node.mkfontweld = self.check_weld.GetValue()
+        self.update_node()
 
     def on_button_bigger(self, event):
         if self.node is None:

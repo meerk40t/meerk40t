@@ -116,6 +116,7 @@ class TrueTypeFont:
                 path.close()
             offset_x += advance_x
             offset_y += advance_y
+            path.character_end()
 
     def parse_ttf(self, font_path, require_checksum=True):
         with open(font_path, "rb") as f:
