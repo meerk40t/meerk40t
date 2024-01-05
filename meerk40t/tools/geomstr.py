@@ -4628,10 +4628,9 @@ class Geomstr:
                 last = end
                 if len(to_simplify) > 0:
                     simplified = _rdp(np.array(to_simplify), tolerance)
-                    if len(simplified) != len(to_simplify):
-                        g = Geomstr.lines(simplified)
-                        newgeometry.append(g)
-                        # changed = True
+                    g = Geomstr.lines(simplified)
+                    newgeometry.append(g)
+                    # changed = True
                     to_simplify.clear()
                     last = None
                 newgeometry._ensure_capacity(newgeometry.index + 1)
@@ -4640,9 +4639,8 @@ class Geomstr:
 
         if len(to_simplify) > 0:
             simplified = _rdp(np.array(to_simplify), tolerance)
-            if len(simplified) != len(to_simplify):
-                g = Geomstr.lines(simplified)
-                newgeometry.append(g)
+            g = Geomstr.lines(simplified)
+            newgeometry.append(g)
                 # changed = True
                 # newcount += len(simplified)
             to_simplify.clear()
