@@ -2437,7 +2437,7 @@ class Geomstr:
             fit = Geomstr.fit_to_points(
                 replacement, start, end, flags=int(np.real(control))
             )
-            self.replace(i, i, fit.segments[: fit.index])
+            self.replace(i, i + 1, fit.segments[: fit.index])
 
     #######################
     # Query Properties
