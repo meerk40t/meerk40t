@@ -291,6 +291,19 @@ class CameraPanel(wx.Panel, Job):
         @return:
         """
         self.camera(f"camera{self.index} perspective reset\n")
+        if self.camera.perspective is None:
+            width = self.camera.width
+            height = self.camera.height
+            self.camera.perspective = [
+                [0, 0],
+                [width, 0],
+                [width, height],
+                [0, height],
+            ]
+        for v in self.widget_scene.widget_root.scene_widget:
+            if hasattr(v, "update"):
+                v.update()
+        self.widget_scene.request_refresh()
 
     def reset_fisheye(self, event=None):
         """
@@ -300,6 +313,7 @@ class CameraPanel(wx.Panel, Job):
         @return:
         """
         self.camera(f"camera{self.index} fisheye reset\n")
+        self.widget_scene.request_refresh()
 
     def on_check_perspective(self, event=None):
         """
@@ -550,14 +564,27 @@ class CamInterfaceWidget(Widget):
             def check_perspect(event=None):
                 self.cam.camera.correction_perspective = perspect.IsChecked()
 
+            def reset_perspect(event=None):
+                self.cam.camera(f"camera{self.cam.index} perspective reset\n")
+                if self.cam.camera.perspective is None:
+                    width = self.cam.camera.width
+                    height = self.cam.camera.height
+                    self.cam.camera.perspective = [
+                        [0, 0],
+                        [width, 0],
+                        [width, height],
+                        [0, height],
+                    ]
+                for v in self.scene.widget_root.scene_widget:
+                    if hasattr(v, "update"):
+                        v.update()
+
             self.cam.Bind(wx.EVT_MENU, check_perspect, perspect)
             menu.AppendSeparator()
             item = menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
             self.cam.Bind(
                 wx.EVT_MENU,
-                lambda e: self.cam.camera(
-                    f"camera{self.cam.index} perspective reset\n"
-                ),
+                reset_perspect,
                 id=item.GetId(),
             )
             item = menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
@@ -693,6 +720,10 @@ class CamSceneWidget(Widget):
             if len(self):
                 self.remove_all_widgets()
 
+    def update(self):
+        for v in self:
+            if hasattr(v, "update"):
+                v.update()
 
 class CamImageWidget(Widget):
     def __init__(self, scene, camera):

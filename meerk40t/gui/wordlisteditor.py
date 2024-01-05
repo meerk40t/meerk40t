@@ -200,7 +200,7 @@ class WordlistPanel(wx.Panel):
         sizer_index_left.Add(
             sizer_edit_wordlist_buttons, 0, wx.ALIGN_CENTER_VERTICAL, 0
         )
-        testsize = dip_size(self, 22, 22)
+        testsize = dip_size(self, 20, 20)
         icon_size = testsize[0]
 
         self.btn_edit_wordlist_del = wx.StaticBitmap(
@@ -221,6 +221,13 @@ class WordlistPanel(wx.Panel):
         self.btn_edit_content_paste = wx.StaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
+        # Circumvent a WXPython bug at high resolutions under Windows
+        bmp = icon_trash.GetBitmap(resize=icon_size, buffer=1)
+        self.btn_edit_wordlist_del.SetBitmap(bmp)
+        testsize = self.btn_edit_wordlist_del.GetBitmap().Size
+        if testsize[0] != icon_size:
+            icon_size = int(icon_size * icon_size / testsize[0])
+
         self.btn_edit_wordlist_del.SetBitmap(
             icon_trash.GetBitmap(resize=icon_size, buffer=1)
         )

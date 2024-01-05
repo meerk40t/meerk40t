@@ -1,3 +1,4 @@
+import numpy as np
 from functools import lru_cache
 from glob import glob
 from os.path import basename, exists, join, realpath, splitext
@@ -6,16 +7,42 @@ from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.kernel import get_safe_path
 from meerk40t.svgelements import Color
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.tools.geomstr import Geomstr, BeamTable
 from meerk40t.tools.jhfparser import JhfFont
 from meerk40t.tools.shxparser import ShxFont, ShxFontParseError
 from meerk40t.tools.ttfparser import TrueTypeFont
 
 
 class FontPath:
-    def __init__(self):
+    def __init__(self, weld):
+        self.total_list = list()
+        self.total_geometry = Geomstr()
         self.geom = Geomstr()
+        self._index = 0
         self.start = None
+        self.weld = weld
+
+    def character_end(self):
+        if self.weld:
+            self.geom.as_interpolated_points()
+            c = Geomstr()
+            for sp in self.geom.as_subpaths():
+                for segs in sp.as_interpolated_segments(interpolate=10):
+                    c.polyline(segs)
+                    c.end()
+            c.flag_settings(flag=self._index)
+            self._index += 1
+            self.total_geometry.append(c)
+        else:
+            self.total_geometry.append(self.geom)
+        self.geom.clear()
+
+    @property
+    def geometry(self):
+        if not self.weld:
+            return self.total_geometry
+        bt = BeamTable(self.total_geometry)
+        return bt.union(*list(range(self._index)))
 
     def new_path(self):
         self.geom.end()
@@ -79,6 +106,7 @@ def have_hershey_fonts(context):
         for p in glob(join(font_dir, "*." + extension.upper())):
             return True
     return False
+
 
 @lru_cache(maxsize=128)
 def cached_fontclass(context, fontname):
@@ -159,9 +187,20 @@ def update_linetext(context, node, newtext):
         return
     spacing = None
     if hasattr(node, "mkfontspacing"):
-        spacing = node.mkfontspacing
+        try:
+            spacing = float(node.mkfontspacing)
+        except AttributeError:
+            pass
     if spacing is None:
         spacing = 1
+    weld = None
+    if hasattr(node, "mkfontweld"):
+        try:
+            weld = bool(node.mkfontweld)
+        except ValueError:
+            pass
+    if weld is None:
+        weld = False
     # from time import perf_counter
     # _t0 = perf_counter()
     oldtext = getattr(node, "_translated_text", "")
@@ -177,7 +216,7 @@ def update_linetext(context, node, newtext):
 
     # _t1 = perf_counter()
 
-    path = FontPath()
+    path = FontPath(weld)
     # print (f"Path={path}, text={remainder}, font-size={font_size}")
     horizontal = True
     mytext = context.elements.wordlist_translate(newtext)
@@ -189,7 +228,7 @@ def update_linetext(context, node, newtext):
     oldd = node.matrix.d
     olde = node.matrix.e
     oldf = node.matrix.f
-    node.geometry = path.geom
+    node.geometry = path.geometry
     node.matrix.a = olda
     node.matrix.b = oldb
     node.matrix.c = oldc
@@ -206,7 +245,6 @@ def update_linetext(context, node, newtext):
     # _t4 = perf_counter()
     # print (f"Readfont: {_t1 -_t0:.2f}s, render: {_t2 -_t1:.2f}s, path: {_t3 -_t2:.2f}s, alter: {_t4 -_t3:.2f}s, total={_t4 -_t0:.2f}s")
 
-
 def create_linetext_node(context, x, y, text, font=None, font_size=None, font_spacing=1.0):
     registered_fonts = fonts_registered()
 
@@ -220,13 +258,13 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None, font_sp
     font_dir = context.font_directory
     # Check whether the default is still valid
     if context.shx_preferred is not None and context.shx_preferred != "":
-        font_path = join(font_dir, context.shx_preferred)
-        if not exists(font_path):
+        dummy = join(font_dir, context.shx_preferred)
+        if not exists(dummy):
             context.shx_preferred = None
     # Valid font?
     if font is not None and font != "":
-        font_path = join(font_dir, font)
-        if not exists(font_path):
+        dummy = join(font_dir, font)
+        if not exists(dummy):
             font = None
     if font is not None:
         context.shx_preferred = font
@@ -246,8 +284,8 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None, font_sp
             "arial.ttf",
         )
         for fname in candidates:
-            fullfname = join(font_dir, fname)
-            if exists(fullfname):
+            dummy = join(font_dir, fname)
+            if exists(dummy):
                 # print (f"Taking font {fname} instead")
                 font = fname
                 context.shx_preferred = font
@@ -272,13 +310,15 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None, font_sp
     if font is None or font == "":
         # print ("Font was empty")
         return None
+    font_path = join(font_dir, font)
     horizontal = True
     cfont = cached_fontclass(context, font_path)
     if cfont is None:
         # This font does not exist in our environment
         return
+    weld = False
     try:
-        path = FontPath()
+        path = FontPath(weld)
         # print (f"Path={path}, text={remainder}, font-size={font_size}")
         mytext = context.elements.wordlist_translate(text)
         cfont.render(path, mytext, horizontal, float(font_size), font_spacing)
@@ -291,13 +331,14 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None, font_sp
     #     return None
 
     path_node = PathNode(
-        geometry=path.geom,
+        geometry=path.geometry,
         stroke=Color("black"),
     )
     path_node.matrix.post_translate(x, y)
     path_node.mkfont = font
     path_node.mkfontsize = float(font_size)
     path_node.mkfontspacing = float(font_spacing)
+    path_node.mkfontweld = weld
     path_node.mktext = text
     path_node._translated_text = mytext
     path_node.mkcoordx = x
@@ -314,6 +355,8 @@ def plugin(kernel, lifecycle):
 
         # Register update routine for linetext
         kernel.register("path_updater/linetext", update)
+        for idx, attrib in enumerate(("mkfontsize", "mkfontweld", "mkfontspacing")):
+            kernel.register(f"registered_mk_svg_parameters/font{idx}", attrib)
 
         @context.console_option("font", "f", type=str, help=_("SHX font file."))
         @context.console_option(

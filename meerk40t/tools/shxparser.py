@@ -401,6 +401,7 @@ class ShxFont:
                 dx = (spacing - 1) * (self._last_x - last_letter_x)
                 self._last_x += dx
                 self._x += dx
+            path.character_end()
         if self._debug:
             print(f"Render Complete.\n\n\n")
 

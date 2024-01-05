@@ -741,168 +741,37 @@ def init_commands(kernel):
         self.signal("refresh_scene", "Scene")
         self.validate_selected_area()
 
-    def simplify_rdp(node, epsilon):
-        if not hasattr(node, "geometry"):
-            return False, "", ""
-        changed = False
-        geom = node.geometry
-        newgeometry = Geomstr()
-        to_simplify = list()
-        last = None
-        oldcount = 0
-        newcount = 0
-        if epsilon is None:
-            epsilon = 10.0
-        for seg in geom.segments[:geom.index]:
-            oldcount += 1
-            start = seg[0]
-            # c1 = seg[1]
-            seg_type = int(seg[2].real)
-            # c2 = seg[3]
-            end = seg[4]
-            if seg_type == TYPE_LINE:
-                if last is None:
-                    to_simplify.append((start.real, start.imag))
-                to_simplify.append((end.real, end.imag))
-                last = end
-            else:
-                last = end
-                if len(to_simplify) > 0:
-                    simplified = rdp(to_simplify, epsilon)
-                    if len(simplified) != len(to_simplify):
-                        g = Geomstr.lines(simplified)
-                        newgeometry.append(g)
-                        changed = True
-                        newcount += len(simplified)
-                    to_simplify.clear()
-                    last = None
-                newgeometry._ensure_capacity(newgeometry.index + 1)
-                newgeometry.segments[newgeometry.index] = [ seg[0], seg[1], seg[2], seg[3], seg[4] ]
-                newgeometry.index += 1
-
-                newcount += 1
-
-        if len(to_simplify) > 0:
-            simplified = rdp(to_simplify, epsilon)
-            if len(simplified) != len(to_simplify):
-                g = Geomstr.lines(simplified)
-                newgeometry.append(g)
-                changed = True
-                newcount += len(simplified)
-            to_simplify.clear()
-            last = None
-
-        if changed:
-            node.geometry = newgeometry
-        before = f"Segments before: {oldcount}"
-        after = f"Segments after rdp (epsilon={epsilon:.2f}): {newcount}"
-        return changed, before, after
-
-    def fit_bezier(node, epsilon):
-        if not hasattr(node, "geometry"):
-            return False, "", ""
-        changed = False
-        geom = node.geometry
-        newgeometry = Geomstr()
-        to_simplify = list()
-        last = None
-        oldcount = 0
-        newcount = 0
-        if epsilon is None:
-            epsilon = 10.0
-        for seg in geom.segments[:geom.index]:
-            oldcount += 1
-            start = seg[0]
-            # c1 = seg[1]
-            seg_type = int(seg[2].real)
-            # c2 = seg[3]
-            end = seg[4]
-            if seg_type == TYPE_LINE:
-                if last is None:
-                    to_simplify.append((start.real, start.imag))
-                to_simplify.append((end.real, end.imag))
-                last = end
-            else:
-                last = end
-                if len(to_simplify) > 0:
-                    bezier_list = fitCurve(to_simplify, maxError=epsilon)
-                    changed = True
-                    for bezier in bezier_list:
-                        cs = bezier[0][0] + 1j * bezier[0][1]
-                        c1 = bezier[1][0] + 1j * bezier[1][1]
-                        c2 = bezier[2][0] + 1j * bezier[2][1]
-                        ce = bezier[3][0] + 1j * bezier[3][1]
-                        newgeometry.cubic(cs, c1, c2, ce)
-                        newcount += 1
-                    to_simplify.clear()
-                    last = None
-                newgeometry._ensure_capacity(newgeometry.index + 1)
-                newgeometry.segments[newgeometry.index] = [ seg[0], seg[1], seg[2], seg[3], seg[4] ]
-                newgeometry.index += 1
-
-                newcount += 1
-
-        if len(to_simplify) > 0:
-            bezier_list = fitCurve(to_simplify, maxError=epsilon)
-            changed = True
-            for bezier in bezier_list:
-                cs = bezier[0][0] + 1j * bezier[0][1]
-                c1 = bezier[1][0] + 1j * bezier[1][1]
-                c2 = bezier[2][0] + 1j * bezier[2][1]
-                ce = bezier[3][0] + 1j * bezier[3][1]
-                newgeometry.cubic(cs, c1, c2, ce)
-                newcount += 1
-            to_simplify.clear()
-            last = None
-
-        if changed:
-            node.geometry = newgeometry
-        before = f"Segments before: {oldcount}"
-        after = f"Segments after bezier (epsilon={epsilon:.2f}): {newcount}"
-        return changed, before, after
-
     @self.console_option(
-        "epsilon", "e", type=float, help=_("Defines the epsilon parameter for RDP")
+        "tolerance", "t", type=float, help=_("simplification tolerance"),
     )
     @self.console_command(
         "simplify", input_type=("elements", None), output_type="elements",
         help=_("Reduces the amount of lines by merging adjacent lines with similar slopes"),
     )
-    def simplify_path(command, channel, _, data=None, epsilon=None, post=None, **kwargs):
+    def simplify_path(command, channel, _, data=None, post=None, **kwargs):
         if data is None:
             data = list(self.elems(emphasized=True))
         data_changed = list()
         if len(data) == 0:
             channel("Requires a selected polygon")
             return None
-        if epsilon is None:
-            epsilon = 10.0
         for node in data:
             try:
                 sub_before = len(list(node.as_geometry().as_subpaths()))
             except AttributeError:
                 sub_before = 0
-            try:
-                pts_before = node.as_geometry().index
-            except AttributeError:
-                pts_before = 0
-            changed, before, after = simplify_rdp(node, epsilon)
-            # changed, before, after = self.simplify_node(node)
+
+            changed, before, after = self.simplify_node(node)
             if changed:
                 node.altered()
                 try:
                     sub_after = len(list(node.as_geometry().as_subpaths()))
                 except AttributeError:
                     sub_after = 0
-                try:
-                    pts_after = node.as_geometry().index
-                except AttributeError:
-                    pts_after = 0
                 channel(
                     f"Simplified {node.type} ({node.label}): from {before} to {after}"
                 )
-                channel(f"Subpaths: from {sub_before} to {sub_after}")
-                channel(f"Segments: from {pts_before} to {pts_after}")
+                channel(f"Subpaths before: {sub_before} to {sub_after}")
                 data_changed.append(node)
             else:
                 channel(f"Could not simplify {node.type} ({node.label})")

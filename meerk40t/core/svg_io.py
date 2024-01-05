@@ -729,6 +729,8 @@ class SVGProcessor:
         @param element:
         @return:
         """
+        mk_params = list(self.elements.kernel.lookup_all("registered_mk_svg_parameters"))
+        mk_params.append("mkbcparam")
         for prop in element.values:
             lc = element.values.get(prop)
             if prop.startswith("mk"):
@@ -743,10 +745,10 @@ class SVGProcessor:
                             node.functional_parameter = value
                         except (ValueError, SyntaxError):
                             pass
-                    elif prop == "mkbcparam":
+                    elif prop in mk_params:
                         try:
                             value = ast.literal_eval(lc)
-                            node.mkbcparam = value
+                            setattr(node, prop, value)
                         except (ValueError, SyntaxError):
                             pass
 

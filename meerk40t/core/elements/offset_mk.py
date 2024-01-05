@@ -368,8 +368,16 @@ def offset_path(self, path, offset_value=0):
         interpolation=500,
     )
     if p is None:
-        p = path
+        return path
+    g = Geomstr.svg(p)
+    # We are already at device resolution, so we need to reduce tolerance a lot
+    # Standard is 25 tats, so about 1/3 of a mil
+    g.simplify(tolerance=0.1)
+    p = g.as_path()
+    p.stroke = path.stroke
+    p.fill = path.fill
     return p
+
 
 
 def path_offset(

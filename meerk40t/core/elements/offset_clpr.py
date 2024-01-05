@@ -600,7 +600,10 @@ def init_commands(kernel):
         offs.add_path(path)
         offs.process_data(offset_value, jointype="round", separate=False)
         p = None
+        # Attention geometry is already at device resolution, so we need to use a small tolerance
         for g in offs.result_geometry():
+            changed, before, after = g.simplify(tolerance=0.1)
+            # print (before, after)
             if g is not None:
                 p = g.as_path()
                 break

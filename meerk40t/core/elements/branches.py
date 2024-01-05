@@ -544,12 +544,6 @@ def init_commands(kernel):
                 parent_node = EngraveOpNode()
                 parent_node.add_node(HatchEffectNode())
                 return parent_node
-            elif command == "waitop":
-                return WaitOperation()
-            elif command == "outputop":
-                return OutputOperation()
-            elif command == "inputop":
-                return InputOperation()
             else:
                 raise ValueError
 
@@ -672,6 +666,33 @@ def init_commands(kernel):
             op = self.op_branch.add(
                 type="util output", output_mask=mask, output_value=value
             )
+        return "ops", [op]
+
+    @self.console_argument(
+        "x",
+        type=Length,
+        default=0,
+        help=_("X-Coordinate of Goto?"),
+    )
+    @self.console_argument(
+        "y",
+        type=Length,
+        default=0,
+        help=_("Y-Coordinate of Goto?"),
+    )
+    @self.console_command(
+        "gotoop",
+        help=_("<gotoop> <x> <y> - Create new utility operation"),
+        input_type=None,
+        output_type="ops",
+    )
+    def gotoop(
+        command,
+        x=0,
+        y=0,
+        **kwargs,
+    ):
+        op = self.op_branch.add(type="util goto", x=str(x), y=str(y))
         return "ops", [op]
 
     @self.console_command(
