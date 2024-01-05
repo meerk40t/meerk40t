@@ -4548,16 +4548,15 @@ class Geomstr:
             return (x1 + ua * (x2 - x1)), (y1 + ua * (y2 - y1))
         return None
 
-
-    def simplify(self, tolerance = 25):
+    def simplify(self, tolerance=25):
         """
-            Simplifies polyline sections of a geomstr by applying the Ramer-Douglas-Peucker algorithm.
-            https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
+        Simplifies polyline sections of a geomstr by applying the Ramer-Douglas-Peucker algorithm.
+        https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
 
-            Tolerance is the maximum distance a point might have from a line to still be considered
-            collinear.
-            - a value of about 25 would reduce the effective resolution to about 1/1000 mm
-            - a value of 65 to about 1 mil = 1/1000 inch
+        Tolerance is the maximum distance a point might have from a line to still be considered
+        collinear.
+        - a value of about 25 would reduce the effective resolution to about 1/1000 mm
+        - a value of 65 to about 1 mil = 1/1000 inch
         """
 
         def _compute_distances(points, start, end):
@@ -4575,7 +4574,8 @@ class Geomstr:
             if line.size == 2:
                 return abs(np.cross(line, start - points)) / line_length  # 2D case
             return (
-                abs(np.linalg.norm(np.cross(line, start - points), axis=-1)) / line_length
+                abs(np.linalg.norm(np.cross(line, start - points), axis=-1))
+                / line_length
             )  # 3D case
 
         def _mask(points, epsilon: float):
@@ -4601,57 +4601,35 @@ class Geomstr:
                     indices[start_index + 1 : last_index] = False
             return indices
 
-
         def _rdp(points, epsilon: float):
             mask = _mask(points, epsilon)
             return points[mask]
 
-
-        before = self.index
-        changed = False
-        newgeometry = Geomstr()
-        to_simplify = list()
-        last = None
-        for seg in self.segments[:self.index]:
-            start, c1, info, c2, end = seg
-
-            # c1 = seg[1]
-            seg_type = int(seg[2].real)
-            # c2 = seg[3]
-            end = seg[4]
-            if seg_type == TYPE_LINE:
-                if last is None:
-                    to_simplify.append((start.real, start.imag))
-                to_simplify.append((end.real, end.imag))
-                last = end
-            else:
-                last = end
-                if len(to_simplify) > 0:
-                    simplified = _rdp(np.array(to_simplify), tolerance)
-                    g = Geomstr.lines(simplified)
-                    newgeometry.append(g)
-                    # changed = True
-                    to_simplify.clear()
-                    last = None
-                newgeometry._ensure_capacity(newgeometry.index + 1)
-                newgeometry.segments[newgeometry.index] = [ seg[0], seg[1], seg[2], seg[3], seg[4] ]
-                newgeometry.index += 1
-
-        if len(to_simplify) > 0:
-            simplified = _rdp(np.array(to_simplify), tolerance)
-            g = Geomstr.lines(simplified)
-            newgeometry.append(g)
-                # changed = True
-                # newcount += len(simplified)
-            to_simplify.clear()
-            # last = None
+        geoms = self.segments[: self.index]
+        infos = np.real(geoms[:, 2]).astype(int)
+        q = infos == TYPE_LINE
+        a = np.pad(q, (0, 1), constant_values=False)
+        b = np.pad(q, (1, 0), constant_values=False)
+        starts = a & ~b
+        ends = ~a & b
+        start_pos = np.nonzero(starts)[0]
+        end_pos = np.nonzero(ends)[0]
+        newgeometry = Geomstr(self)
+        for s, e in zip(reversed(start_pos), reversed(end_pos)):
+            to_simplify = list()
+            g = self.segments[s:e]
+            to_simplify.append(g[0, 0])
+            to_simplify.extend(g[:, -1])
+            points = [
+                (x, y) for x, y in zip(np.real(to_simplify), np.imag(to_simplify))
+            ]
+            simplified = _rdp(np.array(points), tolerance)
+            c_simp = simplified[:, 0] + simplified[:, 1] * 1j
+            if len(simplified) != len(to_simplify):
+                g = Geomstr.lines(c_simp)
+                newsegs = g.segments[: g.index]
+                newgeometry.replace(s, e, newsegs)
         return newgeometry
-        # if changed:
-        #     self.clear()
-        #     self.append(newgeometry)
-        #
-        # after = self.index
-        # return changed, before, after
 
     #######################
     # Global Functions
