@@ -198,7 +198,7 @@ class Clip:
             if not s:
                 continue
             split_lines = list(subject.split(s0, s, breaks=breaks))
-            subject.replace(s0, s0, split_lines)
+            subject.replace(s0, s0 + 1, split_lines)
         subject.validate()
         return subject
 
