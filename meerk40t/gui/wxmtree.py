@@ -352,7 +352,12 @@ class TreePanel(wx.Panel):
         @return:
         """
         if self.shadow_tree is not None:
+            stop_updates = not self.shadow_tree._freeze
+            if stop_updates:
+                self.shadow_tree.freeze_tree(True)
             self.shadow_tree.on_element_update(*args)
+            if stop_updates:
+                self.shadow_tree.freeze_tree(False)
 
     @signal_listener("element_property_reload")
     def on_force_element_update(self, origin, *args):
@@ -364,7 +369,12 @@ class TreePanel(wx.Panel):
         @return:
         """
         if self.shadow_tree is not None:
+            stop_updates = not self.shadow_tree._freeze
+            if stop_updates:
+                self.shadow_tree.freeze_tree(True)
             self.shadow_tree.on_force_element_update(*args)
+            if stop_updates:
+                self.shadow_tree.freeze_tree(False)
 
     @signal_listener("activate;device")
     @signal_listener("rebuild_tree")
@@ -453,12 +463,17 @@ class TreePanel(wx.Panel):
 
     @signal_listener("updateop_tree")
     def on_update_op_labels_tree(self, origin, *args):
+        stop_updates = not self.shadow_tree._freeze
+        if stop_updates:
+            self.shadow_tree.freeze_tree(True)
         self.shadow_tree.update_op_labels()
         opitem = self.context.elements.get(type="branch ops")._item
         if opitem is None:
             return
         tree = self.shadow_tree.wxtree
         tree.Expand(opitem)
+        if stop_updates:
+            self.shadow_tree.freeze_tree(False)
 
     @signal_listener("updateelem_tree")
     def on_update_elem_tree(self, origin, *args):
@@ -1566,12 +1581,17 @@ class ShadowTree:
 
     def update_group_labels(self, src):
         # print(f"group_labels: {src}")
+        stop_updates = not self._freeze
+        if stop_updates:
+            self.freeze_tree(True)
         for e in self.context.elements.elems_nodes():
             if e.type == "group":
                 self.update_decorations(e)
         for e in self.context.elements.regmarks_nodes():
             if e.type == "group":
                 self.update_decorations(e)
+        if stop_updates:
+            self.freeze_tree(False)
 
     def update_decorations(self, node, force=False):
         """
