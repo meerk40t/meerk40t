@@ -36,9 +36,10 @@ class GroupNode(Node):
         def elem_count(node):
             res = 0
             for e in node.children:
-                res += 1
                 if e.type in ("file", "group"):
                     res += elem_count(e)
+                else:
+                    res += 1
             return res
 
         default_map = super().default_map(default_map=default_map)
