@@ -588,7 +588,15 @@ class Elemental(Service):
     @contextlib.contextmanager
     def static(self, source):
         try:
-            self.stop_updates(source)
+            self.stop_updates(source, False)
+            yield self
+        finally:
+            self.resume_updates(source)
+
+    @contextlib.contextmanager
+    def verystatic(self, source):
+        try:
+            self.stop_updates(source, True)
             yield self
         finally:
             self.resume_updates(source)
@@ -601,14 +609,16 @@ class Elemental(Service):
         finally:
             self.do_undo = True
 
-    def stop_updates(self, source):
+    def stop_updates(self, source, stop_notify=False):
         # print (f"Stop update called from {source}")
+        self._tree.pause_notify = stop_notify
         self.suppress_updates = True
         self.signal("freeze_tree", True)
 
     def resume_updates(self, source, force_an_update=True):
         # print (f"Resume update called from {source}")
         self.suppress_updates = False
+        self._tree.pause_notify = False
         self.signal("freeze_tree", False)
         if force_an_update:
             self.signal("tree_changed")
@@ -3702,7 +3712,7 @@ class Elemental(Service):
                 if valid:
                     self.set_start_time("load")
                     self.set_start_time("full_load")
-                    with self.static("load elements"):
+                    with self.verystatic("load elements"):
                         try:
                             # We could stop the attachment to shadowtree for the duration
                             # of the load to avoid unnecessary actions, this will provide
