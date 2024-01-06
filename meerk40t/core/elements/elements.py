@@ -3652,22 +3652,33 @@ class Elemental(Service):
         return False
 
     def remove_empty_groups(self):
-        something_was_deleted = True
-        while something_was_deleted:
-            something_was_deleted = False
-            for node in self.elems_nodes():
-                if node.type in ("file", "group"):
-                    if len(node.children) == 0:
-                        node.remove_node()
-                        something_was_deleted = True
-        something_was_deleted = True
-        while something_was_deleted:
-            something_was_deleted = False
-            for node in self.regmarks_nodes():
-                if node.type in ("file", "group"):
-                    if len(node.children) == 0:
-                        node.remove_node()
-                        something_was_deleted = True
+
+        def descend_group(gnode):
+            gres = 0
+            gdel = 0
+            to_be_deleted = list()
+            for cnode in gnode.children:
+                if cnode.type in ("file", "group"):
+                    cres, cdel = descend_group(cnode)
+                    if cres == 0:
+                        # Empty, so remove it
+                        to_be_deleted.append(cnode)
+                        gdel += cdel + 1
+                    else:
+                        gres += cres
+                        gdel += cdel
+                else:
+                    gres += 1
+            for cnode in to_be_deleted:
+                cnode.remove_node(fast=True)
+            return gres, gdel
+
+        self.set_start_time("empty_groups")
+        l1, d1 = descend_group(self.elem_branch)
+        l2, d2 = descend_group(self.reg_branch)
+        self.set_end_time("empty_groups", display=True, message=f"{l1} / {l2}")
+        if d1 != 0 or d2 != 0:
+            self.signal("rebuild_tree")
 
     @staticmethod
     def element_classify_color(element: SVGElement):
