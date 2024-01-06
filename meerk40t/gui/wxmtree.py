@@ -671,7 +671,8 @@ class ShadowTree:
             # raise ValueError("Bad Item")
             self.rebuild_tree("validity")
             self.elements.signal("refresh_scene", "Scene")
-            return
+            return False
+        return True
 
     def selected(self, node):
         """
@@ -975,7 +976,8 @@ class ShadowTree:
 
         # if node is None:
         #     return
-        # print (f"Refresh tree called {source}")
+        self.context.elements.set_start_time("refresh_tree")
+        self.freeze_tree(True)
         self.update_op_labels()
         if node is not None:
             if isinstance(node, (tuple, list)):
@@ -993,10 +995,7 @@ class ShadowTree:
                 except RuntimeError:
                     # A timer can update after the tree closes.
                     return
-        else:
-            self.update_group_labels("refresh_tree")
 
-        self.wxtree._freeze = False
         branch_elems_item = self.elements.get(type="branch elems")._item
         if branch_elems_item:
             self.wxtree.Expand(branch_elems_item)
@@ -1004,7 +1003,9 @@ class ShadowTree:
         if branch_reg_item:
             self.wxtree.Expand(branch_reg_item)
         self.context.elements.signal("warn_state_update")
+        self.freeze_tree(False)
         self.context.elements.set_end_time("full_load", display=True, delete=True)
+        self.context.elements.set_end_time("refresh_tree", display=True)
 
     def update_warn_sign(self):
         # from time import perf_counter
@@ -1041,8 +1042,14 @@ class ShadowTree:
     def freeze_tree(self, status=None):
         if status is None:
             status = not self._freeze
-        self._freeze = status
-        self.wxtree.Enable(not self._freeze)
+        if self._freeze != status:
+            self._freeze = status
+            self.wxtree.Enable(not self._freeze)
+            if status:
+                self.wxtree.Freeze()
+            else:
+                self.wxtree.Thaw()
+                self.wxtree.Refresh()
 
     def was_expanded(self, node, level):
         txt = self.wxtree.GetItemText(node)
@@ -1106,8 +1113,11 @@ class ShadowTree:
         """
         # print (f"Rebuild called from {source}")
         # let's try to remember which branches were expanded:
-        self._freeze = True
+        self.context.elements.set_start_time("rebuild_tree")
+        self.freeze_tree(True)
+        #
         self.reset_expanded()
+
         # Safety net - if we have too many elements it will
         # take too long to create all preview icons...
         count = self.elements.count_elems() + self.elements.count_op()
@@ -1188,7 +1198,9 @@ class ShadowTree:
         for e in emphasized_list:
             e.emphasized = True
         self.restore_tree(self.wxtree.GetRootItem(), 0)
-        self._freeze = False
+        self.freeze_tree(False)
+        self.context.elements.set_end_time("rebuild_tree", display=True)
+        # print(f"Rebuild done for {source}")
 
     def register_children(self, node):
         """
@@ -1226,10 +1238,17 @@ class ShadowTree:
             raise ValueError("Item was None for node " + repr(node))
         self.check_validity(item)
         # We might need to update the decorations for all parent objects
-        self.context.signal("update_group_labels")
+        informed = list()
+        if not self._freeze:
+            parent = node._parent
+            while parent is not None and not parent.type.startswith("branch "):
+                informed.append(parent)
+                parent = parent._parent
 
         node.unregister_object()
         self.wxtree.Delete(node._item)
+        if len(informed) > 0:
+            self.context.signal("element_property_update", informed)
         for i in self.wxtree.GetSelections():
             self.wxtree.SelectItem(i, False)
 
@@ -1300,7 +1319,16 @@ class ShadowTree:
             except (AttributeError, KeyError, TypeError):
                 pass
         # We might need to update the decorations for all parent objects
-        self.context.signal("update_group_labels")
+        if not self._freeze:
+            informed = list()
+            parent = node._parent
+            while parent is not None and not parent.type.startswith("branch "):
+                informed.append(parent)
+                parent = parent._parent
+            if len(informed) > 0:
+                self.context.signal("element_property_update", informed)
+
+        # self.context.signal("update_group_labels")
 
     def set_enhancements(self, node):
         """
@@ -1538,10 +1566,10 @@ class ShadowTree:
 
     def update_group_labels(self, src):
         # print(f"group_labels: {src}")
-        for e in self.context.elements.elems():
+        for e in self.context.elements.elems_nodes():
             if e.type == "group":
                 self.update_decorations(e)
-        for e in self.context.elements.regmarks():
+        for e in self.context.elements.regmarks_nodes():
             if e.type == "group":
                 self.update_decorations(e)
 
