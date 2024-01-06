@@ -3819,7 +3819,7 @@ class Elemental(Service):
             return
         before = g.index
         node.geometry = g.simplify()
-        after = nodde.geometry.index
+        after = node.geometry.index
         changed = True
 
         return changed, before, after
