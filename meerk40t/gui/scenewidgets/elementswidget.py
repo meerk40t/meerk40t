@@ -40,7 +40,14 @@ class ElementsWidget(Widget):
         if (draw_mode & DRAW_MODE_REGMARKS) == 0:
             # Very faint in the background as orientation - alpha 64
             self.renderer.render(
-                context.elements.regmarks_nodes(),
+                context.elements.regmarks_nodes(selected=False),
+                gc,
+                draw_mode,
+                zoomscale=zoom_scale,
+                alpha=32,
+            )
+            self.renderer.render(
+                context.elements.regmarks_nodes(selected=True),
                 gc,
                 draw_mode,
                 zoomscale=zoom_scale,

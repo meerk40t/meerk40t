@@ -4040,6 +4040,7 @@ class MeerK40t(MWindow):
     @lookup_listener("service/device/active")
     def on_active_change(self, *args):
         self.__set_titlebar()
+        self.context.signal("update_group_labels")
 
     def window_close_veto(self):
         if self.any_device_running:

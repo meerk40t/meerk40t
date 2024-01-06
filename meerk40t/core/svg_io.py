@@ -18,6 +18,7 @@ from ..svgelements import (
     SVG_ATTR_CENTER_X,
     SVG_ATTR_CENTER_Y,
     SVG_ATTR_DATA,
+    SVG_ATTR_DISPLAY,
     SVG_ATTR_FILL,
     SVG_ATTR_FILL_OPACITY,
     SVG_ATTR_FONT_FAMILY,
@@ -665,6 +666,10 @@ class SVGProcessor:
         self.operations_replaced = False
         self.pathname = None
         self.load_operations = load_operations
+        self.mk_params = list(self.elements.kernel.lookup_all("registered_mk_svg_parameters"))
+        # Append barcode from external plugin
+        self.mk_params.append("mkbcparam")
+
 
         # Setting this is bringing as much benefit as anticipated
         # Both the time to load the file (unexpectedly) and the time
@@ -729,8 +734,6 @@ class SVGProcessor:
         @param element:
         @return:
         """
-        mk_params = list(self.elements.kernel.lookup_all("registered_mk_svg_parameters"))
-        mk_params.append("mkbcparam")
         for prop in element.values:
             lc = element.values.get(prop)
             if prop.startswith("mk"):
@@ -745,7 +748,7 @@ class SVGProcessor:
                             node.functional_parameter = value
                         except (ValueError, SyntaxError):
                             pass
-                    elif prop in mk_params:
+                    elif prop in self.mk_params:
                         try:
                             value = ast.literal_eval(lc)
                             setattr(node, prop, value)
@@ -1335,8 +1338,13 @@ class SVGProcessor:
         @param uselabel:
         @return:
         """
-
-        if element.values.get("visibility") == "hidden":
+        display = ""
+        if "display" in element.values:
+            display = element.values.get('display').lower()
+            if display=="none":
+                if branch not in ("elements", "regmarks"):
+                    return
+        if element.values.get("visibility") == "hidden" or display=="none":
             if branch != "regmarks":
                 self.parse(
                     element,
@@ -1501,6 +1509,7 @@ class SVGLoader:
                 height=height,
                 ppi=ppi,
                 color="black",
+                parse_display_none=True,
                 transform=f"scale({scale_factor})",
             )
         except ParseError as e:
