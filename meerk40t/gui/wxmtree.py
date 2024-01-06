@@ -379,7 +379,7 @@ class TreePanel(wx.Panel):
     @signal_listener("activate;device")
     def on_activate_device(self, origin, target=None, *args):
         self.shadow_tree.reset_formatter_cache()
-        self.shadow_tree.rebuild_tree("device")
+        self.shadow_tree.refresh_tree(source="device")
 
     @signal_listener("reset_formatter")
     def on_reset_formatter(self, origin, target=None, *args):
