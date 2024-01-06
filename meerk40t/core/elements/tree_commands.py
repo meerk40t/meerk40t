@@ -369,6 +369,7 @@ def init_commands(kernel):
         with self.static("delete"):
             self.remove_nodes(todelete[entry])
             self.validate_selected_area()
+        self.signal("update_group_labels")
         self.signal("refresh_scene", "Scene")
         return "tree", [self._tree]
 
@@ -387,6 +388,7 @@ def init_commands(kernel):
         # then we would 'only' delete those where we have the least danger, so that regmarks < operations < elements
         with self.static("remove"):
             self.remove_nodes(data)
+        self.signal("update_group_labels")
         self.signal("refresh_scene", "Scene")
         return "tree", [self._tree]
 

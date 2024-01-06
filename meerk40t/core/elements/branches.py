@@ -1230,6 +1230,7 @@ def init_commands(kernel):
                 self.remove_elements(data)
             else:
                 self.remove_operations(data)
+        self.signal("update_group_labels")
 
     # ==========
     # ELEMENT BASE

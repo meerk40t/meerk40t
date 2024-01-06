@@ -157,7 +157,7 @@ class FormatterPanel(wx.Panel):
                     "tip": _("Do yo want to use a bespoke formatter?"),
                     "section": sectname,
                     "subsection": f"_{node}_",
-                    "signals": "rebuild_tree",
+                    "signals": ("reset_formatter", "rebuild_tree"),
                 }
             )
             choices.append(
@@ -172,7 +172,7 @@ class FormatterPanel(wx.Panel):
                     "conditional": (self.context, f"formatter_{lbl}_active"),
                     "section": sectname,
                     "subsection": f"_{node}_",
-                    "signals": "rebuild_tree",
+                    "signals": ("reset_formatter", "rebuild_tree"),
                 }
             )
             # tree_changed does not suffice

@@ -2875,6 +2875,8 @@ def init_tree(kernel):
             for item in list(self.regmarks()):
                 if item.selected:
                     data.append(item)
+            if len(data) == 0:
+                data.append(node)
             for item in data:
                 drop_node.drop(item)
                 signal_needed = True
