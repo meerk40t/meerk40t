@@ -666,6 +666,10 @@ class SVGProcessor:
         self.operations_replaced = False
         self.pathname = None
         self.load_operations = load_operations
+        self.mk_params = list(self.elements.kernel.lookup_all("registered_mk_svg_parameters"))
+        # Append barcode from external plugin
+        self.mk_params.append("mkbcparam")
+
 
         # Setting this is bringing as much benefit as anticipated
         # Both the time to load the file (unexpectedly) and the time
@@ -730,8 +734,6 @@ class SVGProcessor:
         @param element:
         @return:
         """
-        mk_params = list(self.elements.kernel.lookup_all("registered_mk_svg_parameters"))
-        mk_params.append("mkbcparam")
         for prop in element.values:
             lc = element.values.get(prop)
             if prop.startswith("mk"):
@@ -746,7 +748,7 @@ class SVGProcessor:
                             node.functional_parameter = value
                         except (ValueError, SyntaxError):
                             pass
-                    elif prop in mk_params:
+                    elif prop in self.mk_params:
                         try:
                             value = ast.literal_eval(lc)
                             setattr(node, prop, value)

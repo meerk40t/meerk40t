@@ -562,6 +562,7 @@ class ShadowTree:
         self.image_cache = []
         self.cache_hits = 0
         self.cache_requests = 0
+        self.color_cache = dict()
         self._too_big = False
         self.refresh_tree_counter = 0
         self._last_hover_item = None
@@ -1233,17 +1234,22 @@ class ShadowTree:
             self.wxtree.SelectItem(i, False)
 
     def safe_color(self, color_to_set):
-        back_color = self.wxtree.GetBackgroundColour()
-        rgb = back_color.Get()
-        default_color = wx.Colour(
-            red=255 - rgb[0], green=255 - rgb[1], blue=255 - rgb[2], alpha=128
-        )
-        if color_to_set is not None and color_to_set.argb is not None:
-            mycolor = wx.Colour(swizzlecolor(color_to_set.argb))
-            if mycolor.Get() == rgb:
+        hash = str(color_to_set)
+        if hash not in self.color_cache:
+            back_color = self.wxtree.GetBackgroundColour()
+            rgb = back_color.Get()
+            default_color = wx.Colour(
+                red=255 - rgb[0], green=255 - rgb[1], blue=255 - rgb[2], alpha=128
+            )
+            if color_to_set is not None and color_to_set.argb is not None:
+                mycolor = wx.Colour(swizzlecolor(color_to_set.argb))
+                if mycolor.Get() == rgb:
+                    mycolor = default_color
+            else:
                 mycolor = default_color
+            self.color_cache[hash] = mycolor
         else:
-            mycolor = default_color
+            mycolor = self.color_cache[hash]
         return mycolor
 
     def node_register(self, node, pos=None, **kwargs):
