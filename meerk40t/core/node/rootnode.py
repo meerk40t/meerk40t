@@ -10,7 +10,6 @@ class RootNode(Node):
 
     def __init__(self, context, **kwargs):
         _ = context._
-        self.pause_notify = False
         super().__init__(type="root", **kwargs)
         self._root = self
         self.context = context
@@ -35,8 +34,6 @@ class RootNode(Node):
         self.listeners.remove(listener)
 
     def notify_created(self, node=None, **kwargs):
-        if self.pause_notify:
-            return
         if node is None:
             node = self
         for listen in self.listeners:
@@ -44,8 +41,6 @@ class RootNode(Node):
                 listen.node_created(node, **kwargs)
 
     def notify_destroyed(self, node=None, **kwargs):
-        if self.pause_notify:
-            return
         if node is None:
             node = self
         for listen in self.listeners:
@@ -53,8 +48,6 @@ class RootNode(Node):
                 listen.node_destroyed(node, **kwargs)
 
     def notify_attached(self, node=None, **kwargs):
-        if self.pause_notify:
-            return
         if node is None:
             node = self
         for listen in self.listeners:
@@ -62,8 +55,6 @@ class RootNode(Node):
                 listen.node_attached(node, **kwargs)
 
     def notify_detached(self, node=None, **kwargs):
-        if self.pause_notify:
-            return
         if node is None:
             node = self
         for listen in self.listeners:
@@ -71,8 +62,6 @@ class RootNode(Node):
                 listen.node_detached(node, **kwargs)
 
     def notify_changed(self, node=None, **kwargs):
-        if self.pause_notify:
-            return
         if node is None:
             node = self
         for listen in self.listeners:
@@ -80,8 +69,6 @@ class RootNode(Node):
                 listen.node_changed(node, **kwargs)
 
     def notify_selected(self, node=None, **kwargs):
-        if self.pause_notify:
-            return
         if node is None:
             node = self
         for listen in self.listeners:
@@ -89,8 +76,6 @@ class RootNode(Node):
                 listen.selected(node, **kwargs)
 
     def notify_emphasized(self, node=None, **kwargs):
-        if self.pause_notify:
-            return
         if node is None:
             node = self
         for listen in self.listeners:
@@ -98,8 +83,6 @@ class RootNode(Node):
                 listen.emphasized(node, **kwargs)
 
     def notify_targeted(self, node=None, **kwargs):
-        if self.pause_notify:
-            return
         if node is None:
             node = self
         for listen in self.listeners:
@@ -107,8 +90,6 @@ class RootNode(Node):
                 listen.targeted(node, **kwargs)
 
     def notify_highlighted(self, node=None, **kwargs):
-        if self.pause_notify:
-            return
         if node is None:
             node = self
         for listen in self.listeners:
@@ -123,8 +104,6 @@ class RootNode(Node):
         @param kwargs:
         @return:
         """
-        if self.pause_notify:
-            return
         if node is None:
             node = self
         self._bounds = None
@@ -142,8 +121,6 @@ class RootNode(Node):
         @param kwargs:
         @return:
         """
-        if self.pause_notify:
-            return
         if node is None:
             node = self
         if self._bounds is not None:
@@ -170,8 +147,6 @@ class RootNode(Node):
         @param kwargs:
         @return:
         """
-        if self.pause_notify:
-            return
         if node is None:
             node = self
         if self._bounds is not None:
@@ -202,8 +177,6 @@ class RootNode(Node):
         @param kwargs:
         @return:
         """
-        if self.pause_notify:
-            return
         if node is None:
             node = self
         for listen in self.listeners:
@@ -211,8 +184,6 @@ class RootNode(Node):
                 listen.altered(node, **kwargs)
 
     def notify_expand(self, node=None, **kwargs):
-        if self.pause_notify:
-            return
         if node is None:
             node = self
         for listen in self.listeners:
@@ -220,8 +191,6 @@ class RootNode(Node):
                 listen.expand(node, **kwargs)
 
     def notify_collapse(self, node=None, **kwargs):
-        if self.pause_notify:
-            return
         if node is None:
             node = self
         for listen in self.listeners:
@@ -229,8 +198,6 @@ class RootNode(Node):
                 listen.collapse(node, **kwargs)
 
     def notify_reorder(self, node=None, **kwargs):
-        if self.pause_notify:
-            return
         if node is None:
             node = self
         for listen in self.listeners:
@@ -238,8 +205,6 @@ class RootNode(Node):
                 listen.reorder(node, **kwargs)
 
     def notify_update(self, node=None, **kwargs):
-        if self.pause_notify:
-            return
         if node is None:
             node = self
         for listen in self.listeners:
@@ -247,8 +212,6 @@ class RootNode(Node):
                 listen.update(node, **kwargs)
 
     def notify_focus(self, node=None, **kwargs):
-        if self.pause_notify:
-            return
         if node is None:
             node = self
         for listen in self.listeners:

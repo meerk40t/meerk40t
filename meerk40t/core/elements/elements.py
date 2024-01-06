@@ -594,14 +594,6 @@ class Elemental(Service):
             self.resume_updates(source)
 
     @contextlib.contextmanager
-    def verystatic(self, source):
-        try:
-            self.stop_updates(source, True)
-            yield self
-        finally:
-            self.resume_updates(source)
-
-    @contextlib.contextmanager
     def undofree(self):
         try:
             self.do_undo = False
@@ -3712,7 +3704,7 @@ class Elemental(Service):
                 if valid:
                     self.set_start_time("load")
                     self.set_start_time("full_load")
-                    with self.verystatic("load elements"):
+                    with self.static("load elements"):
                         try:
                             # We could stop the attachment to shadowtree for the duration
                             # of the load to avoid unnecessary actions, this will provide
