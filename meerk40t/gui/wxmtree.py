@@ -377,6 +377,14 @@ class TreePanel(wx.Panel):
                 self.shadow_tree.freeze_tree(False)
 
     @signal_listener("activate;device")
+    def on_activate_device(self, origin, target=None, *args):
+        self.shadow_tree.reset_formatter_cache()
+        self.shadow_tree.rebuild_tree("device")
+
+    @signal_listener("reset_formatter")
+    def on_reset_formatter(self, origin, target=None, *args):
+        self.shadow_tree.reset_formatter_cache()
+
     @signal_listener("rebuild_tree")
     def on_rebuild_tree_signal(self, origin, target=None, *args):
         """
@@ -578,6 +586,7 @@ class ShadowTree:
         self.cache_hits = 0
         self.cache_requests = 0
         self.color_cache = dict()
+        self.formatter_cache = dict()
         self._too_big = False
         self.refresh_tree_counter = 0
         self._last_hover_item = None
@@ -1593,6 +1602,9 @@ class ShadowTree:
         if stop_updates:
             self.freeze_tree(False)
 
+    def reset_formatter_cache(self):
+        self.formatter_cache.clear()
+
     def update_decorations(self, node, force=False):
         """
         Updates the decorations for a particular node/tree item
@@ -1652,17 +1664,19 @@ class ShadowTree:
             return res
 
         def get_formatter(nodetype):
-            default = self.context.elements.lookup(f"format/{nodetype}")
-            lbl = nodetype.replace(" ", "_")
-            check_string = f"formatter_{lbl}_active"
-            pattern_string = f"formatter_{lbl}"
-            self.context.device.setting(bool, check_string, False)
-            self.context.device.setting(str, pattern_string, default)
-            bespoke = getattr(self.context.device, check_string, False)
-            pattern = getattr(self.context.device, pattern_string, "")
-            if bespoke and pattern is not None and pattern != "":
-                default = pattern
-            return default
+            if nodetype not in self.formatter_cache:
+                default = self.context.elements.lookup(f"format/{nodetype}")
+                lbl = nodetype.replace(" ", "_")
+                check_string = f"formatter_{lbl}_active"
+                pattern_string = f"formatter_{lbl}"
+                self.context.device.setting(bool, check_string, False)
+                self.context.device.setting(str, pattern_string, default)
+                bespoke = getattr(self.context.device, check_string, False)
+                pattern = getattr(self.context.device, pattern_string, "")
+                if bespoke and pattern is not None and pattern != "":
+                    default = pattern
+                self.formatter_cache[nodetype] = default
+            return self.formatter_cache[nodetype]
 
         if force is None:
             force = False
