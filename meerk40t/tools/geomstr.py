@@ -1663,6 +1663,61 @@ class Geomstr:
         self.capacity = len(self.segments)
         self.index = self.capacity
 
+    def as_contiguous_segments(self, start_pos=0, end_pos=None):
+        """
+        Interpolated segments gives interpolated points as a generator of lists.
+
+        At points of disjoint, the list is yielded.
+        @param end_pos:
+        @param start_pos:
+        """
+        segments = list()
+        for point in self.as_contiguous_points(start_pos=start_pos, end_pos=end_pos):
+            if point is None:
+                if segments:
+                    yield segments
+                    segments = list()
+            else:
+                segments.append(point)
+        if segments:
+            yield segments
+
+    def as_contiguous_points(self, start_pos=0, end_pos=None):
+        """
+        Yields points between the given positions where the lines are connected and the settings are the same.
+        Gaps are caused by settings being unequal, segment_type changing, or disjointed segments.
+        Gaps yield a None.
+
+        @param start_pos: position to start
+        @param end_pos:  position to end.
+        @return:
+        """
+        if end_pos is None:
+            end_pos = self.index
+        at_start = True
+        end = None
+        settings = None
+        for e in self.segments[start_pos: end_pos]:
+            seg_type = int(e[2].real)
+            set_type = int(e[2].imag)
+            start = e[0]
+            if (end != start or set_type != settings) and not at_start:
+                # Start point does not equal previous end point, or settings changed
+                yield None
+                at_start = True
+                if seg_type == TYPE_END:
+                    # End segments, flag new start but should not be returned.
+                    continue
+            end = e[4]
+            settings = set_type
+            if at_start:
+                yield start
+                at_start = False
+            if seg_type == TYPE_END:
+                at_start = True
+                continue
+            yield end
+
     def as_points(self):
         at_start = True
         for start, c1, info, c2, end in self.segments[: self.index]:
@@ -4617,6 +4672,7 @@ class Geomstr:
         newgeometry = Geomstr(self)
         for s, e in zip(reversed(start_pos), reversed(end_pos)):
             to_simplify = list()
+            to_simplify = g.as_points()
             g = self.segments[s:e]
             to_simplify.append(g[0, 0])
             to_simplify.extend(g[:, -1])
