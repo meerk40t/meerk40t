@@ -4671,20 +4671,16 @@ class Geomstr:
         end_pos = np.nonzero(ends)[0]
         newgeometry = Geomstr(self)
         for s, e in zip(reversed(start_pos), reversed(end_pos)):
-            to_simplify = list()
-            to_simplify = g.as_points()
-            g = self.segments[s:e]
-            to_simplify.append(g[0, 0])
-            to_simplify.extend(g[:, -1])
-            points = [
-                (x, y) for x, y in zip(np.real(to_simplify), np.imag(to_simplify))
-            ]
-            simplified = _rdp(np.array(points), tolerance)
-            c_simp = simplified[:, 0] + simplified[:, 1] * 1j
-            if len(simplified) != len(to_simplify):
-                g = Geomstr.lines(c_simp)
-                newsegs = g.segments[: g.index]
-                newgeometry.replace(s, e - 1, newsegs)
+            replace = Geomstr()
+            for to_simplify in self.as_contiguous_segments(s, e):
+                points = [
+                    (x, y) for x, y in zip(np.real(to_simplify), np.imag(to_simplify))
+                ]
+                simplified = _rdp(np.array(points), tolerance)
+                c_simp = simplified[:, 0] + simplified[:, 1] * 1j
+                replace.append(Geomstr.lines(c_simp))
+            newsegs = replace.segments[: replace.index]
+            newgeometry.replace(s, e - 1, newsegs)
         return newgeometry
 
     #######################
