@@ -1540,6 +1540,7 @@ class Elemental(Service):
             for e in emph_data:
                 e.emphasized = True
         self.signal("element_property_reload", data)
+        self.signal("warn_state_update")
 
     def remove_unused_default_copies(self):
         # Let's clean non-used operations that come from defaults...
