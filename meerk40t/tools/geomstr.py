@@ -4603,7 +4603,7 @@ class Geomstr:
             return (x1 + ua * (x2 - x1)), (y1 + ua * (y2 - y1))
         return None
 
-    def simplify(self, tolerance=25):
+    def simplify(self, tolerance=25, inplace=False):
         """
         Simplifies polyline sections of a geomstr by applying the Ramer-Douglas-Peucker algorithm.
         https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
@@ -4669,7 +4669,10 @@ class Geomstr:
         ends = ~a & b
         start_pos = np.nonzero(starts)[0]
         end_pos = np.nonzero(ends)[0]
-        newgeometry = Geomstr(self)
+        if inplace:
+            newgeometry = self
+        else:
+            newgeometry = Geomstr(self)
         for s, e in zip(reversed(start_pos), reversed(end_pos)):
             replace = Geomstr()
             for to_simplify, settings in self.as_contiguous_segments(s, e):

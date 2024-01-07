@@ -1434,6 +1434,7 @@ class TestGeomstr(unittest.TestCase):
         geometry.append(g, end=False)
         simplified = geometry.simplify(0.01)
         self.assertEqual(len(simplified), 64 + 1)
+        self.assertIsNot(simplified, geometry)
 
     def test_simplify_settings(self):
         """
@@ -1453,10 +1454,11 @@ class TestGeomstr(unittest.TestCase):
         g = Geomstr(geometry)
         g.flag_settings(1)
         geometry.append(g, end=False)
-        simplified = geometry.simplify(0.01)
+        simplified = geometry.simplify(0.01, inplace=True)
         self.assertEqual(len(simplified), 64 + 1)
         self.assertEqual(simplified.segments[16][2].imag, 0)
         self.assertEqual(simplified.segments[48][2].imag, 1)
+        self.assertIs(simplified, geometry)
 
     def test_point_towards_numpy(self):
         p1 = complex(0, 100)
