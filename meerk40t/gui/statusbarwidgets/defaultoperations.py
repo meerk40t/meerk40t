@@ -38,6 +38,7 @@ class DefaultOperationWidget(StatusBarWidget):
             slabel = f"Image ({node.power/10:.0f}%, {node.speed}mm/s)"
         else:
             slabel = ""
+        slabel = _("Assign the selection to:") + "\n" + slabel + "\n" + _("Right click for options")
         return slabel
 
     def GenerateControls(self, parent, panelidx, identifier, context):
@@ -142,10 +143,7 @@ class DefaultOperationWidget(StatusBarWidget):
                 ptsize=fontsize,
             ).GetBitmap(noadjustment=True, use_theme=False)
             btn.SetBitmap(icon)
-            op_label = op.label
-            if op_label is None:
-                op_label = str(op)
-            btn.SetToolTip(op_label)
+            btn.SetToolTip(self.node_label(op))
             size_it(btn, self.buttonsize_x, self.buttonsize_y)
             self.assign_buttons.append(btn)
             self.assign_operations.append(op)
@@ -221,6 +219,39 @@ class DefaultOperationWidget(StatusBarWidget):
 
             stored_mat = matname
             return handler
+
+        # def on_update_button_from_tree(idx, operation):
+        #     def handler(*args):
+        #         self.assign_operations[stored_idx] = self.context.elements.create_usable_copy(stored_op)
+        #
+        #     stored_idx = idx
+        #     stored_op = operation
+        #     return handler
+        #
+        # # Check if the id of this entry is already existing (and the types match too)
+        # button = event.GetEventObject()
+        # node_index = -1
+        # node = None
+        # idx = 0
+        # while idx < len(self.assign_buttons):
+        #     if button is self.assign_buttons[idx]:
+        #         node_index = idx
+        #         node = self.assign_operations[idx]
+        #         break
+        #     idx += 1
+        # foundop = None
+        # if node_index >= 0 and node.id is not None:
+        #     for op in self.context.elements.ops():
+        #         if op.type == node.type and op.id == node.id:
+        #             foundop = op
+        #             break
+        # if node is not None and foundop is not None:
+        #     self.parent.Bind(
+        #         wx.EVT_MENU,
+        #         on_update_button_from_tree(node_index, foundop),
+        #         menu.Append(wx.ID_ANY, _("Use settings from tree for this button"), ""),
+        #     )
+        #     menu.AppendSeparator()
 
         for material in self.context.elements.op_data.section_set():
             if material == "previous":
