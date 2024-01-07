@@ -1023,17 +1023,15 @@ class MaterialPanel(ScrolledPanel):
             if newsection not in self.material_list:
                 break
 
-        # print (f"Section={oldsection} -> {newsection}")
-
         oldname = oldsection
-        if "material" in op_info:
-            oldname = op_info["material"]
+        if "title" in op_info:
+            oldname = op_info["title"]
             if oldname.endswith(")"):
                 idx = oldname.rfind("(")
                 if idx >= 0:
                     oldname = oldname[:idx]
         newname = f"{oldname} ({counter})"
-        op_info["material"] = newname
+        op_info["title"] = newname
         self.context.elements.save_persistent_operations_list(
             newsection,
             oplist=op_list,
