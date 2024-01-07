@@ -1757,7 +1757,10 @@ class MaterialPanel(ScrolledPanel):
             if item:
                 listidx = self.tree_library.GetItemData(item)
                 if listidx >= 0:
-                    self.active_material = self.get_nth_material(listidx)
+                    info = self.get_nth_material(listidx)
+                    self.active_material = info
+                else:
+                    self.active_material = None
         except RuntimeError:
             return
 
