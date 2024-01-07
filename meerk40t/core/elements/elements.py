@@ -781,8 +781,9 @@ class Elemental(Service):
         #                 element attrib (ie stroke or fill)
         #               - anything else: leave all colors unchanged
         # attrib:       one of 'stroke', 'fill' to establish the source color
-        #               ('auto' is an option too that will pick the color from the
-        #               operation settings)
+        #               ('auto' is an option too, that will pick the color from the
+        #               operation settings) - if we talk about an engrave or cut operation
+        #               and if 'stroke' or 'auto' have been set, 'fill' will be set None
         # similar:      will use attrib (see above) to establish similar elements (having (nearly) the same
         #               color) and assign those as well
         # exclusive:    will delete all other assignments of the source elements in other operations if True
@@ -880,6 +881,7 @@ class Elemental(Service):
                     data.append(n)
 
         needs_refresh = False
+        set_fill_to_none = op_assign.type in ("op engrave", "op cut") and attrib == "stroke"
         for n in data:
             if op_assign.drop(n, modify=False):
                 if exclusive:
@@ -889,6 +891,8 @@ class Elemental(Service):
                 if impose == "to_elem" and target_color is not None:
                     if hasattr(n, attrib):
                         setattr(n, attrib, target_color)
+                        if set_fill_to_none and hasattr(n, "fill"):
+                            n.fill = None
                         needs_refresh = True
         # Refresh the operation so any changes like color materialize...
         self.signal("element_property_reload", op_assign)
