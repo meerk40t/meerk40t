@@ -326,7 +326,7 @@ class RectSelectWidget(Widget):
                                     target.append(end)
                                 last = end
                     # t2 = perf_counter()
-                    if len(other_points) > 0:
+                    if len(other_points) > 0 and len(selected_points) > 0:
                         np_other = np.asarray(other_points)
                         np_selected = np.asarray(selected_points)
                         dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
@@ -357,7 +357,7 @@ class RectSelectWidget(Widget):
                         ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
                     )
                     other_points = self.scene.pane.grid.grid_points
-                    if len(other_points) > 0:
+                    if len(other_points) > 0 and len(selected_points) > 0:
                         np_other = np.asarray(other_points)
                         np_selected = np.asarray(selected_points)
                         dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
