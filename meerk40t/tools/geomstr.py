@@ -1347,7 +1347,7 @@ class Geomstr:
         return segments
 
     @classmethod
-    def lines(cls, *points):
+    def lines(cls, *points, settings=0):
         path = cls()
         if not points:
             return path
@@ -1368,10 +1368,10 @@ class Geomstr:
             for i in range(1, len(points)):
                 if points[i - 1] is not None and points[i] is not None:
                     on = True
-                    path.line(points[i - 1], points[i])
+                    path.line(points[i - 1], points[i], settings=settings)
                 else:
                     if on:
-                        path.end()
+                        path.end(settings=settings)
                     on = False
         return path
 
