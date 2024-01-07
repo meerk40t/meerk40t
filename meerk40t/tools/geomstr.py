@@ -680,6 +680,8 @@ class BeamTable:
         return self.cag("difference", *args)
 
     def cag(self, cag_op, *args):
+        if self.geometry.index == 0:
+            return Geomstr()
         if self._nb_scan is None:
             self.compute_beam()
         g = Geomstr()
