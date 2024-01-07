@@ -892,7 +892,7 @@ class MeerK40tScenePanel(wx.Panel):
                     f.write(f"x={Length(x, preferred_units='mm').preferred_length}\n")
                 for y in self.magnet_y:
                     f.write(f"y={Length(y, preferred_units='mm').preferred_length}\n")
-        except ValueError:  # ( PermissionError, OSError, FileNotFoundError ):
+        except (ValueError, PermissionError, OSError, FileNotFoundError):
             return
 
     def load_magnets(self):
