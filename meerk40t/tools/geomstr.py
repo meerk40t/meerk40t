@@ -1673,20 +1673,19 @@ class Geomstr:
         """
         segments = list()
         for point in self.as_contiguous_points(start_pos=start_pos, end_pos=end_pos):
-            if point is None:
+            if isinstance(point, tuple):
+                point, settings = point
                 if segments:
-                    yield segments
+                    yield segments, settings
                     segments = list()
             else:
                 segments.append(point)
-        if segments:
-            yield segments
 
     def as_contiguous_points(self, start_pos=0, end_pos=None):
         """
         Yields points between the given positions where the lines are connected and the settings are the same.
         Gaps are caused by settings being unequal, segment_type changing, or disjointed segments.
-        Gaps yield a None.
+        Gaps yield a None, followed by a setting value.
 
         @param start_pos: position to start
         @param end_pos:  position to end.
@@ -1703,7 +1702,7 @@ class Geomstr:
             start = e[0]
             if (end != start or set_type != settings) and not at_start:
                 # Start point does not equal previous end point, or settings changed
-                yield None
+                yield None, settings
                 at_start = True
                 if seg_type == TYPE_END:
                     # End segments, flag new start but should not be returned.
@@ -1717,6 +1716,7 @@ class Geomstr:
                 at_start = True
                 continue
             yield end
+        yield None, settings
 
     def as_points(self):
         at_start = True
@@ -4672,13 +4672,13 @@ class Geomstr:
         newgeometry = Geomstr(self)
         for s, e in zip(reversed(start_pos), reversed(end_pos)):
             replace = Geomstr()
-            for to_simplify in self.as_contiguous_segments(s, e):
+            for to_simplify, settings in self.as_contiguous_segments(s, e):
                 points = [
                     (x, y) for x, y in zip(np.real(to_simplify), np.imag(to_simplify))
                 ]
                 simplified = _rdp(np.array(points), tolerance)
                 c_simp = simplified[:, 0] + simplified[:, 1] * 1j
-                replace.append(Geomstr.lines(c_simp))
+                replace.append(Geomstr.lines(c_simp,settings=settings))
             newsegs = replace.segments[: replace.index]
             newgeometry.replace(s, e - 1, newsegs)
         return newgeometry
