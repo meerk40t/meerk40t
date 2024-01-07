@@ -3817,10 +3817,11 @@ class Elemental(Service):
             g = node.as_geometry()
         except AttributeError:
             return
-        changed, before, after = g.simplify()
-        if changed:
-            # Replace node geometry with simplified geometry.
-            node.geometry = g
+        before = g.index
+        node.geometry = g.simplify()
+        after = node.geometry.index
+        changed = True
+
         return changed, before, after
 
 

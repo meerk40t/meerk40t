@@ -1396,6 +1396,70 @@ class TestGeomstr(unittest.TestCase):
             self.assertIn(q, s)
             self.assertIn(q, e)
 
+    def test_simplify(self):
+        """
+        Simplify of large circle.
+        @return:
+        """
+
+        lenpoly = 1000
+        polygon = [
+            [np.sin(x) + 0.5, np.cos(x) + 0.5]
+            for x in np.linspace(0, 2 * np.pi, lenpoly)
+        ]
+        polygon = np.array(polygon, dtype="float32")
+        pg = polygon[:, 0] + polygon[:, 1] * 1j
+        poly = Polygon(*pg)
+        geometry = poly.geomstr
+        simplified = geometry.simplify(0.01)
+        self.assertEqual(len(simplified), 32)
+
+    def test_simplify_disjoint(self):
+        """
+        Simplify of 2 large circles. The circles are not denoted with an `END` but only by their disjoint.
+        @return:
+        """
+
+        lenpoly = 1000
+        polygon = [
+            [np.sin(x) + 0.5, np.cos(x) + 0.5]
+            for x in np.linspace(0, 2 * np.pi, lenpoly)
+        ]
+        polygon = np.array(polygon, dtype="float32")
+        pg = polygon[:, 0] + polygon[:, 1] * 1j
+        poly = Polygon(*pg)
+        geometry = poly.geomstr
+        g = Geomstr(geometry)
+        g.translate(20,20)
+        geometry.append(g, end=False)
+        simplified = geometry.simplify(0.01)
+        self.assertEqual(len(simplified), 64 + 1)
+        self.assertIsNot(simplified, geometry)
+
+    def test_simplify_settings(self):
+        """
+        Simplify of 2 large circles. The circles are not denoted with an `END`, but have different settings flags.
+        @return:
+        """
+
+        lenpoly = 1000
+        polygon = [
+            [np.sin(x) + 0.5, np.cos(x) + 0.5]
+            for x in np.linspace(0, 2 * np.pi, lenpoly)
+        ]
+        polygon = np.array(polygon, dtype="float32")
+        pg = polygon[:, 0] + polygon[:, 1] * 1j
+        poly = Polygon(*pg)
+        geometry = poly.geomstr
+        g = Geomstr(geometry)
+        g.flag_settings(1)
+        geometry.append(g, end=False)
+        simplified = geometry.simplify(0.01, inplace=True)
+        self.assertEqual(len(simplified), 64 + 1)
+        self.assertEqual(simplified.segments[16][2].imag, 0)
+        self.assertEqual(simplified.segments[48][2].imag, 1)
+        self.assertIs(simplified, geometry)
+
     def test_point_towards_numpy(self):
         p1 = complex(0, 100)
         p2 = complex(50, 22)

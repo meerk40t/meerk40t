@@ -1347,7 +1347,7 @@ class Geomstr:
         return segments
 
     @classmethod
-    def lines(cls, *points):
+    def lines(cls, *points, settings=0):
         path = cls()
         if not points:
             return path
@@ -1368,10 +1368,10 @@ class Geomstr:
             for i in range(1, len(points)):
                 if points[i - 1] is not None and points[i] is not None:
                     on = True
-                    path.line(points[i - 1], points[i])
+                    path.line(points[i - 1], points[i], settings=settings)
                 else:
                     if on:
-                        path.end()
+                        path.end(settings=settings)
                     on = False
         return path
 
@@ -1663,6 +1663,61 @@ class Geomstr:
         self.capacity = len(self.segments)
         self.index = self.capacity
 
+    def as_contiguous_segments(self, start_pos=0, end_pos=None):
+        """
+        Interpolated segments gives interpolated points as a generator of lists.
+
+        At points of disjoint, the list is yielded.
+        @param end_pos:
+        @param start_pos:
+        """
+        segments = list()
+        for point in self.as_contiguous_points(start_pos=start_pos, end_pos=end_pos):
+            if isinstance(point, tuple):
+                point, settings = point
+                if segments:
+                    yield segments, settings
+                    segments = list()
+            else:
+                segments.append(point)
+
+    def as_contiguous_points(self, start_pos=0, end_pos=None):
+        """
+        Yields points between the given positions where the lines are connected and the settings are the same.
+        Gaps are caused by settings being unequal, segment_type changing, or disjointed segments.
+        Gaps yield a None, followed by a setting value.
+
+        @param start_pos: position to start
+        @param end_pos:  position to end.
+        @return:
+        """
+        if end_pos is None:
+            end_pos = self.index
+        at_start = True
+        end = None
+        settings = None
+        for e in self.segments[start_pos: end_pos]:
+            seg_type = int(e[2].real)
+            set_type = int(e[2].imag)
+            start = e[0]
+            if (end != start or set_type != settings) and not at_start:
+                # Start point does not equal previous end point, or settings changed
+                yield None, settings
+                at_start = True
+                if seg_type == TYPE_END:
+                    # End segments, flag new start but should not be returned.
+                    continue
+            end = e[4]
+            settings = set_type
+            if at_start:
+                yield start
+                at_start = False
+            if seg_type == TYPE_END:
+                at_start = True
+                continue
+            yield end
+        yield None, settings
+
     def as_points(self):
         at_start = True
         for start, c1, info, c2, end in self.segments[: self.index]:
@@ -1874,7 +1929,7 @@ class Geomstr:
 
     def replace(self, e0, e1, lines):
         space = len(lines) - (e1 - e0) - 1
-        self.allocate_at_position(e0, space)
+        self.allocate_at_position(e1, space)
         if len(lines):
             self.segments[e0 : e0 + len(lines)] = lines
 
@@ -4548,16 +4603,15 @@ class Geomstr:
             return (x1 + ua * (x2 - x1)), (y1 + ua * (y2 - y1))
         return None
 
-
-    def simplify(self, tolerance = 25):
+    def simplify(self, tolerance=25, inplace=False):
         """
-            Simplifies polyline sections of a geomstr by applying the Ramer-Douglas-Peucker algorithm.
-            https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
+        Simplifies polyline sections of a geomstr by applying the Ramer-Douglas-Peucker algorithm.
+        https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
 
-            Tolerance is the maximum distance a point might have from a line to still be considered
-            collinear.
-            - a value of about 25 would reduce the effective resolution to about 1/1000 mm
-            - a value of 65 to about 1 mil = 1/1000 inch
+        Tolerance is the maximum distance a point might have from a line to still be considered
+        collinear.
+        - a value of about 25 would reduce the effective resolution to about 1/1000 mm
+        - a value of 65 to about 1 mil = 1/1000 inch
         """
 
         def _compute_distances(points, start, end):
@@ -4575,7 +4629,8 @@ class Geomstr:
             if line.size == 2:
                 return abs(np.cross(line, start - points)) / line_length  # 2D case
             return (
-                abs(np.linalg.norm(np.cross(line, start - points), axis=-1)) / line_length
+                abs(np.linalg.norm(np.cross(line, start - points), axis=-1))
+                / line_length
             )  # 3D case
 
         def _mask(points, epsilon: float):
@@ -4601,64 +4656,35 @@ class Geomstr:
                     indices[start_index + 1 : last_index] = False
             return indices
 
-
         def _rdp(points, epsilon: float):
             mask = _mask(points, epsilon)
             return points[mask]
 
-
-        before = self.index
-        changed = False
-        newgeometry = Geomstr()
-        to_simplify = list()
-        last = None
-        oldcount = 0
-        newcount = 0
-        for seg in self.segments[:self.index]:
-            oldcount += 1
-            start = seg[0]
-            # c1 = seg[1]
-            seg_type = int(seg[2].real)
-            # c2 = seg[3]
-            end = seg[4]
-            if seg_type == TYPE_LINE:
-                if last is None:
-                    to_simplify.append((start.real, start.imag))
-                to_simplify.append((end.real, end.imag))
-                last = end
-            else:
-                last = end
-                if len(to_simplify) > 0:
-                    simplified = _rdp(np.array(to_simplify), tolerance)
-                    if len(simplified) != len(to_simplify):
-                        g = Geomstr.lines(simplified)
-                        newgeometry.append(g)
-                        changed = True
-                        newcount += len(simplified)
-                    to_simplify.clear()
-                    last = None
-                newgeometry._ensure_capacity(newgeometry.index + 1)
-                newgeometry.segments[newgeometry.index] = [ seg[0], seg[1], seg[2], seg[3], seg[4] ]
-                newgeometry.index += 1
-
-                newcount += 1
-
-        if len(to_simplify) > 0:
-            simplified = _rdp(np.array(to_simplify), tolerance)
-            if len(simplified) != len(to_simplify):
-                g = Geomstr.lines(simplified)
-                newgeometry.append(g)
-                changed = True
-                newcount += len(simplified)
-            to_simplify.clear()
-            last = None
-
-        if changed:
-            self.clear()
-            self.append(newgeometry)
-
-        after = self.index
-        return changed, before, after
+        geoms = self.segments[: self.index]
+        infos = np.real(geoms[:, 2]).astype(int)
+        q = infos == TYPE_LINE
+        a = np.pad(q, (0, 1), constant_values=False)
+        b = np.pad(q, (1, 0), constant_values=False)
+        starts = a & ~b
+        ends = ~a & b
+        start_pos = np.nonzero(starts)[0]
+        end_pos = np.nonzero(ends)[0]
+        if inplace:
+            newgeometry = self
+        else:
+            newgeometry = Geomstr(self)
+        for s, e in zip(reversed(start_pos), reversed(end_pos)):
+            replace = Geomstr()
+            for to_simplify, settings in self.as_contiguous_segments(s, e):
+                points = [
+                    (x, y) for x, y in zip(np.real(to_simplify), np.imag(to_simplify))
+                ]
+                simplified = _rdp(np.array(points), tolerance)
+                c_simp = simplified[:, 0] + simplified[:, 1] * 1j
+                replace.append(Geomstr.lines(c_simp,settings=settings))
+            newsegs = replace.segments[: replace.index]
+            newgeometry.replace(s, e - 1, newsegs)
+        return newgeometry
 
     #######################
     # Global Functions

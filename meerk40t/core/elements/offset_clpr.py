@@ -599,17 +599,19 @@ def init_commands(kernel):
         offs = ClipperOffset(interpolation=500)
         offs.add_path(path)
         offs.process_data(offset_value, jointype="round", separate=False)
-        p = None
+        rp = None
         # Attention geometry is already at device resolution, so we need to use a small tolerance
-        for g in offs.result_geometry():
-            changed, before, after = g.simplify(tolerance=0.1)
-            # print (before, after)
+        for geo in offs.result_geometry():
+            g = geo.simplify(tolerance=0.1)
             if g is not None:
                 p = g.as_path()
-                break
-        if p is None:
-            p = path
-        return p
+                if rp is None:
+                    rp = p
+                else:
+                    rp += p
+        if rp is None:
+            rp = path
+        return rp
 
     classify_new = self.post_classify
 

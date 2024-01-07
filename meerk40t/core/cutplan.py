@@ -212,7 +212,7 @@ class CutPlan:
                             continue
                         if hasattr(node, "geometry") and perform_simplify:
                             # We are still in scene reolution and not yet at device level
-                            node.geometry.simplify(tolerance=tolerance)
+                            node.geometry = node.geometry.simplify(tolerance=tolerance)
                         if hasattr(node, "mktext") and hasattr(node, "_cache"):
                             newtext = self.context.elements.wordlist_translate(
                                 node.mktext, elemnode=node, increment=False
