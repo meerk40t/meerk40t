@@ -1698,7 +1698,7 @@ class Geomstr:
         at_start = True
         end = None
         settings = None
-        for e in self.segments[start_pos: end_pos]:
+        for e in self.segments[start_pos:end_pos]:
             seg_type = int(e[2].real)
             set_type = int(e[2].imag)
             start = e[0]
@@ -4683,7 +4683,7 @@ class Geomstr:
                 ]
                 simplified = _rdp(np.array(points), tolerance)
                 c_simp = simplified[:, 0] + simplified[:, 1] * 1j
-                replace.append(Geomstr.lines(c_simp,settings=settings))
+                replace.append(Geomstr.lines(c_simp, settings=settings))
             newsegs = replace.segments[: replace.index]
             newgeometry.replace(s, e - 1, newsegs)
         return newgeometry

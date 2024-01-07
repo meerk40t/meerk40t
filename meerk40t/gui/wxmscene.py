@@ -398,7 +398,9 @@ class MeerK40tScenePanel(wx.Panel):
                     if not success:
                         return
                 else:
-                    success, response = self.tool_container.set_tool(tool.lower(), remainder)
+                    success, response = self.tool_container.set_tool(
+                        tool.lower(), remainder
+                    )
                     channel(response)
                     if not success:
                         return

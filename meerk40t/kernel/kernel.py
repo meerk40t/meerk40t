@@ -3440,18 +3440,13 @@ class Kernel(Settings):
             channel(
                 _("Persistent settings imported from {file}.").format(file=filename)
             )
+
         # ==========
         # SIGNAL
         # ==========
-        @self.console_argument(
-            "signalname", type=str, help=_("Signal to send")
-        )
-        @self.console_argument(
-            "signalargs", type=str, help=_("Signal content")
-        )
-        @self.console_command(
-            ("signal"), help=_("sends a signal")
-        )
+        @self.console_argument("signalname", type=str, help=_("Signal to send"))
+        @self.console_argument("signalargs", type=str, help=_("Signal content"))
+        @self.console_command(("signal"), help=_("sends a signal"))
         def send_signal(channel, _, signalname=None, signalargs=None, **kwargs):
             if signalname is None:
                 channel(_("Please provide a signal to send, attached listeners:"))

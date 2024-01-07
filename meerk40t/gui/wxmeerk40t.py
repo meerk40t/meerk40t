@@ -21,7 +21,6 @@ from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
 from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
 from meerk40t.kernel.kernel import Job
-from .propertypanels.gotoproperty import GotoPropertyPanel
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from ..tools.kerftest import KerfTool
@@ -53,6 +52,7 @@ from .operation_info import OperationInformation
 from .preferences import Preferences
 from .propertypanels.blobproperty import BlobPropertyPanel
 from .propertypanels.consoleproperty import ConsolePropertiesPanel
+from .propertypanels.gotoproperty import GotoPropertyPanel
 from .propertypanels.groupproperties import FilePropertiesPanel, GroupPropertiesPanel
 from .propertypanels.hatchproperty import HatchPropertyPanel
 from .propertypanels.imageproperty import (

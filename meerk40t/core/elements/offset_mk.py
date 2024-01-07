@@ -378,7 +378,6 @@ def offset_path(self, path, offset_value=0):
     return p
 
 
-
 def path_offset(
     path, offset_value=0, radial_connector=False, linearize=True, interpolation=500
 ):

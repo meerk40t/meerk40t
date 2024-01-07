@@ -184,7 +184,9 @@ class CutPlan:
         idx = 0
         self.context.elements.mywordlist.push()
 
-        perform_simplify = self.context.opt_reduce_details and self.context.do_optimization
+        perform_simplify = (
+            self.context.opt_reduce_details and self.context.do_optimization
+        )
         tolerance = self.context.opt_reduce_tolerance
         for placement in placements:
             # Adjust wordlist

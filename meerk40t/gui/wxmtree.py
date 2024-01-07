@@ -2080,10 +2080,15 @@ class ShadowTree:
                             if self.context.device.use_mm_min_for_speed_display:
                                 ps_info += f"{', ' if ps_info else ''}{node.speed * 60.0:.0f}mm/min"
                             else:
-                                ps_info += f"{', ' if ps_info else ''}{node.speed:.0f}mm/s"
+                                ps_info += (
+                                    f"{', ' if ps_info else ''}{node.speed:.0f}mm/s"
+                                )
 
                         if hasattr(self.context.device, "default_frequency"):
-                            if hasattr(node, "frequency") and node.frequency is not None:
+                            if (
+                                hasattr(node, "frequency")
+                                and node.frequency is not None
+                            ):
                                 ps_info += (
                                     f"{', ' if ps_info else ''}{node.frequency:.0f}kHz"
                                 )

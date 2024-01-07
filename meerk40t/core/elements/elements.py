@@ -3652,7 +3652,6 @@ class Elemental(Service):
         return False
 
     def remove_empty_groups(self):
-
         def descend_group(gnode):
             gres = 0
             gdel = 0

@@ -391,7 +391,6 @@ def init_commands(kernel):
             self.polygon_list = []
             self.first = 0
 
-
         def add_nodes(self, nodelist):
             # breaks down the path to a list of subgeometries.
             self.clear()

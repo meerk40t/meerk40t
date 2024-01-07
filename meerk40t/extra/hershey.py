@@ -1,13 +1,14 @@
-import numpy as np
 from functools import lru_cache
 from glob import glob
 from os.path import basename, exists, join, realpath, splitext
+
+import numpy as np
 
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.kernel import get_safe_path
 from meerk40t.svgelements import Color
-from meerk40t.tools.geomstr import Geomstr, BeamTable
+from meerk40t.tools.geomstr import BeamTable, Geomstr
 from meerk40t.tools.jhfparser import JhfFont
 from meerk40t.tools.shxparser import ShxFont, ShxFontParseError
 from meerk40t.tools.ttfparser import TrueTypeFont
@@ -45,7 +46,6 @@ class FontPath:
         union = bt.union(*list(range(self._index)))
         union.greedy_distance()
         return union.simplify()
-
 
     def new_path(self):
         self.geom.end()
@@ -248,7 +248,10 @@ def update_linetext(context, node, newtext):
     # _t4 = perf_counter()
     # print (f"Readfont: {_t1 -_t0:.2f}s, render: {_t2 -_t1:.2f}s, path: {_t3 -_t2:.2f}s, alter: {_t4 -_t3:.2f}s, total={_t4 -_t0:.2f}s")
 
-def create_linetext_node(context, x, y, text, font=None, font_size=None, font_spacing=1.0):
+
+def create_linetext_node(
+    context, x, y, text, font=None, font_size=None, font_spacing=1.0
+):
     registered_fonts = fonts_registered()
 
     if font_size is None:
@@ -366,13 +369,24 @@ def plugin(kernel, lifecycle):
             "font_size", "s", type=Length, default="20px", help=_("Font size")
         )
         @context.console_option(
-            "font_spacing", "g", type=float, default=1, help=_("Character spacing factor")
+            "font_spacing",
+            "g",
+            type=float,
+            default=1,
+            help=_("Character spacing factor"),
         )
         @context.console_command(
             "linetext", help=_("linetext <font> <font_size> <text>")
         )
         def linetext(
-            command, channel, _, font=None, font_size=None, font_spacing=None, remainder=None, **kwargs
+            command,
+            channel,
+            _,
+            font=None,
+            font_size=None,
+            font_spacing=None,
+            remainder=None,
+            **kwargs,
         ):
             def display_fonts():
                 for extension, item in registered_fonts:
@@ -422,7 +436,9 @@ def plugin(kernel, lifecycle):
             # except ShxFontParseError as e:
             #     channel(f"{e.args}")
             #     return
-            path_node = create_linetext_node(context, x, y, remainder, font, font_size, font_spacing)
+            path_node = create_linetext_node(
+                context, x, y, remainder, font, font_size, font_spacing
+            )
             # path_node = PathNode(
             #     path=path.path,
             #     matrix=Matrix.translate(0, float(font_size)),

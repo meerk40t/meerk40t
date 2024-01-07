@@ -147,8 +147,13 @@ class LineTextPropertyPanel(wx.Panel):
         self.check_weld.SetToolTip(_("Weld overlapping characters together?"))
         sizer_text.Add(self.check_weld, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        for btn in (self.btn_bigger, self.btn_smaller, self.btn_bigger_spacing, self.btn_smaller_spacing):
-            btn.SetMinSize(dip_size(self,35, -1))
+        for btn in (
+            self.btn_bigger,
+            self.btn_smaller,
+            self.btn_bigger_spacing,
+            self.btn_smaller_spacing,
+        ):
+            btn.SetMinSize(dip_size(self, 35, -1))
 
         sizer_fonts = StaticBoxSizer(
             self, wx.ID_ANY, _("Fonts (double-click to use)"), wx.VERTICAL
@@ -679,11 +684,8 @@ class PanelFontManager(wx.Panel):
             defaultDir=defdir,
             defaultFile="",
             wildcard=wildcard,
-            style=wx.FD_OPEN
-            | wx.FD_FILE_MUST_EXIST
-            | wx.FD_MULTIPLE
-            | wx.FD_PREVIEW
-#            | wx.FD_SHOW_HIDDEN,
+            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_MULTIPLE | wx.FD_PREVIEW
+            #            | wx.FD_SHOW_HIDDEN,
         )
         try:
             # Might not be present in early wxpython versions

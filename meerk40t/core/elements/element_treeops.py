@@ -2592,13 +2592,12 @@ def init_tree(kernel):
             par = None
             for e in data:
                 if par is None:
-                    par =  e
+                    par = e
                 else:
                     par = _get_common_parent(par, e)
                 if par is root:
                     break
             return par
-
 
         data = list(self.elems(emphasized=True))
         if len(data) == 0:
@@ -2635,7 +2634,6 @@ def init_tree(kernel):
         self.signal("refresh_scene", "Scene")
         self.signal("rebuild_tree")
         node.focus()
-
 
     def has_vectorize(node):
         result = False

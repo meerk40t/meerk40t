@@ -1430,7 +1430,7 @@ class TestGeomstr(unittest.TestCase):
         poly = Polygon(*pg)
         geometry = poly.geomstr
         g = Geomstr(geometry)
-        g.translate(20,20)
+        g.translate(20, 20)
         geometry.append(g, end=False)
         simplified = geometry.simplify(0.01)
         self.assertEqual(len(simplified), 64 + 1)
@@ -1848,7 +1848,9 @@ class TestGeomstr(unittest.TestCase):
                 # print(f"{a} :: {b}")
                 for c, d in zip(a, b):
                     self.assertEqual(c, d)
-            print(f"With binary inserts: brute: {brute_time} vs bo {bo_time} improvement: {brute_time/bo_time}x or {bo_time / brute_time}x")
+            print(
+                f"With binary inserts: brute: {brute_time} vs bo {bo_time} improvement: {brute_time/bo_time}x or {bo_time / brute_time}x"
+            )
             print(f"Intersections {len(sb1.intersections)}, {len(sb2.intersections)}")
 
     def test_geomstr_image(self):

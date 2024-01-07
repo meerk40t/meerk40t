@@ -741,12 +741,17 @@ def init_commands(kernel):
         self.validate_selected_area()
 
     @self.console_option(
-        "tolerance", "t", type=float, help=_("simplification tolerance"),
+        "tolerance",
+        "t",
+        type=float,
+        help=_("simplification tolerance"),
     )
     @self.console_command(
         "simplify", input_type=("elements", None), output_type="elements"
     )
-    def simplify_path(command, channel, _, data=None, tolerance=None, post=None, **kwargs):
+    def simplify_path(
+        command, channel, _, data=None, tolerance=None, post=None, **kwargs
+    ):
         if data is None:
             data = list(self.elems(emphasized=True))
         data_changed = list()
@@ -754,7 +759,7 @@ def init_commands(kernel):
             channel("Requires a selected polygon")
             return None
         if tolerance is None:
-            tolerance = 25 # About 1/1000 mil
+            tolerance = 25  # About 1/1000 mil
         for node in data:
             try:
                 sub_before = len(list(node.as_geometry().as_subpaths()))

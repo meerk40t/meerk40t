@@ -585,13 +585,19 @@ class Drag(wx.Panel):
         scale_y = s[1] / t[1]
         self.resize_factor = (self.icon_size * scale_x, self.icon_size * scale_y)
         self.button_align_corner_top_left.SetBitmap(
-            icon_corner1.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+            icon_corner1.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
         )
         self.button_align_drag_up.SetBitmap(
-            icons8_caret_up.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+            icons8_caret_up.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
         )
         self.button_align_corner_top_right.SetBitmap(
-            icon_corner2.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+            icon_corner2.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
         )
         self.button_align_drag_left.SetBitmap(
             icons8_caret_left.GetBitmap(
@@ -609,7 +615,9 @@ class Drag(wx.Panel):
             )
         )
         self.button_align_corner_bottom_left.SetBitmap(
-            icon_corner4.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+            icon_corner4.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
         )
         self.button_align_drag_down.SetBitmap(
             icons8_caret_down.GetBitmap(
@@ -617,13 +625,19 @@ class Drag(wx.Panel):
             )
         )
         self.button_align_corner_bottom_right.SetBitmap(
-            icon_corner3.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+            icon_corner3.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
         )
         self.button_align_first_position.SetBitmap(
-            icon_circled_1.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+            icon_circled_1.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
         )
         self.button_align_trace_hull.SetBitmap(
-            icons8_pentagon.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+            icons8_pentagon.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
         )
         self.button_align_trace_quick.SetBitmap(
             icons8_pentagon_squared.GetBitmap(
@@ -1028,7 +1042,9 @@ class Jog(wx.Panel):
             iconsize = max(15, min(dim_x, dim_y))
         self.icon_size = iconsize
         # This is a bug within wxPython! It seems to appear only here at very high scale factors under windows
-        bmp = icons8_up_left.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        bmp = icons8_up_left.GetBitmap(
+            resize=self.icon_size, resolution=self.resolution
+        )
         s = bmp.Size
         self.button_navigate_up_left.SetBitmap(bmp)
         t = self.button_navigate_up_left.GetBitmap().Size
@@ -1037,13 +1053,17 @@ class Jog(wx.Panel):
         scale_y = s[1] / t[1]
         self.resize_factor = (self.icon_size * scale_x, self.icon_size * scale_y)
         self.button_navigate_up_left.SetBitmap(
-            icons8_up_left.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+            icons8_up_left.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
         )
         self.button_navigate_up.SetBitmap(
             icons8_up.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
         )
         self.button_navigate_up_right.SetBitmap(
-            icons8_up_right.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+            icons8_up_right.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
         )
         self.button_navigate_left.SetBitmap(
             icons8_left.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
@@ -1054,7 +1074,9 @@ class Jog(wx.Panel):
             )
         )
         self.button_navigate_right.SetBitmap(
-            icons8_right.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+            icons8_right.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
         )
         self.button_navigate_down_left.SetBitmap(
             icons8_down_left.GetBitmap(
@@ -1070,7 +1092,9 @@ class Jog(wx.Panel):
             )
         )
         self.button_navigate_unlock.SetBitmap(
-            icons8_unlock.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+            icons8_unlock.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
         )
         self.button_navigate_lock.SetBitmap(
             icons8_lock.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
@@ -2051,7 +2075,9 @@ class Transform(wx.Panel):
             iconsize = max(15, min(dim_x, dim_y))
         self.icon_size = iconsize
         # This is a bug within wxPython! It seems to appear only here at very high scale factors under windows
-        bmp = icons8_compress.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        bmp = icons8_compress.GetBitmap(
+            resize=self.icon_size, resolution=self.resolution
+        )
         s = bmp.Size
         self.button_scale_down.SetBitmap(bmp)
         t = self.button_scale_down.GetBitmap().Size
@@ -2061,22 +2087,30 @@ class Transform(wx.Panel):
         self.resize_factor = (self.icon_size * scale_x, self.icon_size * scale_y)
 
         self.button_scale_down.SetBitmap(
-            icons8_compress.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+            icons8_compress.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
         )
         self.button_translate_up.SetBitmap(
             icons8_up.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
         )
         self.button_scale_up.SetBitmap(
-            icons8_enlarge.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+            icons8_enlarge.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
         )
         self.button_translate_left.SetBitmap(
             icons8_left.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
         )
         self.button_reset.SetBitmap(
-            icons8_delete.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+            icons8_delete.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
         )
         self.button_translate_right.SetBitmap(
-            icons8_right.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+            icons8_right.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
         )
         self.button_rotate_ccw.SetBitmap(
             icons8_rotate_left.GetBitmap(

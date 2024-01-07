@@ -1067,9 +1067,7 @@ class MaterialPanel(ScrolledPanel):
                 busy.change(msg=f"{idx+1}/{len(self.display_list)}", keep=1)
                 material = entry["section"]
                 self.context.elements.clear_persistent_operations(
-                    material,
-                    use_settings=self.op_data,
-                    flush=False
+                    material, use_settings=self.op_data, flush=False
                 )
             self.op_data.write_configuration()
             busy.end()
@@ -1539,9 +1537,7 @@ class MaterialPanel(ScrolledPanel):
         if len(op_list) == 0:
             return
         response = self.context.kernel.yesno(
-            _(
-                "Do you want to remove all existing operations before loading this set?"
-            ),
+            _("Do you want to remove all existing operations before loading this set?"),
             caption=_("Clear Operation-List"),
         )
         self.context.elements.load_persistent_operations(

@@ -666,10 +666,11 @@ class SVGProcessor:
         self.operations_replaced = False
         self.pathname = None
         self.load_operations = load_operations
-        self.mk_params = list(self.elements.kernel.lookup_all("registered_mk_svg_parameters"))
+        self.mk_params = list(
+            self.elements.kernel.lookup_all("registered_mk_svg_parameters")
+        )
         # Append barcode from external plugin
         self.mk_params.append("mkbcparam")
-
 
         # Setting this is bringing as much benefit as anticipated
         # Both the time to load the file (unexpectedly) and the time
@@ -1340,11 +1341,11 @@ class SVGProcessor:
         """
         display = ""
         if "display" in element.values:
-            display = element.values.get('display').lower()
-            if display=="none":
+            display = element.values.get("display").lower()
+            if display == "none":
                 if branch not in ("elements", "regmarks"):
                     return
-        if element.values.get("visibility") == "hidden" or display=="none":
+        if element.values.get("visibility") == "hidden" or display == "none":
             if branch != "regmarks":
                 self.parse(
                     element,

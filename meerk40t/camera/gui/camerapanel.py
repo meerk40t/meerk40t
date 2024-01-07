@@ -725,6 +725,7 @@ class CamSceneWidget(Widget):
             if hasattr(v, "update"):
                 v.update()
 
+
 class CamImageWidget(Widget):
     def __init__(self, scene, camera):
         Widget.__init__(self, scene, all=False)

@@ -121,7 +121,8 @@ INACTIVE = "inactive"
 WAITING = "waiting"
 PASTING = "pasting"
 
-class FormatPainter():
+
+class FormatPainter:
     def __init__(self, context, button, identifier, *args, **kwds):
         self.context = context
         # Path to button
@@ -133,7 +134,7 @@ class FormatPainter():
         self.possible_attributes = (
             # Standard line and fill attributes
             ("stroke", True),
-            ("stroke_width",  True),
+            ("stroke_width", True),
             ("stroke_scale", True),
             ("fill", True),
             ("linecap", True),
@@ -171,7 +172,8 @@ class FormatPainter():
             ("wobble_type", False),
         )
         self.path_update_needed = (
-            "mkfont", "mkfontsize",
+            "mkfont",
+            "mkfontsize",
         )
         # State-Machine
         self._state = None
@@ -271,13 +273,13 @@ class FormatPainter():
                 self.context.signal("element_property_update", nodes_changed)
                 self.context.signal("refresh_scene", "Scene")
 
-
     def on_click(self, *args):
         # print(f"On_click called, state was : {self.state}")
         if self.state == INACTIVE:
             self.state = WAITING
         else:
             self.state = INACTIVE
+
 
 class MeerK40t(MWindow):
     """MeerK40t main window"""
@@ -1310,13 +1312,17 @@ class MeerK40t(MWindow):
         else:
             set_icon_appearance(1.0, 0)
 
-        self.format_painter = FormatPainter(self.context, "button/basicediting/Paint", "editpaint")
+        self.format_painter = FormatPainter(
+            self.context, "button/basicediting/Paint", "editpaint"
+        )
         self.context.kernel.register(
             "button/basicediting/Paint",
             {
                 "label": _("Paint format"),
                 "icon": icon_paint_brush,
-                "tip": _("First select your template, then every subsequent selection will apply the templates properties to the selected elements"),
+                "tip": _(
+                    "First select your template, then every subsequent selection will apply the templates properties to the selected elements"
+                ),
                 "help": "basicediting",
                 "action": self.format_painter.on_click,
                 "identifier": "editpaint",
@@ -1326,7 +1332,7 @@ class MeerK40t(MWindow):
                     "action": self.format_painter.on_click,
                     "icon": icon_paint_brush_green,
                     "signal": "editpaint",
-                    "tip": _("Click again to disable the paint mode")
+                    "tip": _("Click again to disable the paint mode"),
                 },
             },
         )
@@ -1417,7 +1423,10 @@ class MeerK40t(MWindow):
         def contains_a_param():
             result = False
             for e in kernel.elements.elems(emphasized=True):
-                if hasattr(e, "functional_parameter") and e.functional_parameter is not None:
+                if (
+                    hasattr(e, "functional_parameter")
+                    and e.functional_parameter is not None
+                ):
                     result = True
                     break
             return result

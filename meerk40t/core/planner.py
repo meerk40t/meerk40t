@@ -262,11 +262,13 @@ def plugin(kernel, lifecycle=None):
                 "type": bool,
                 "label": _("Reduce polyline details"),
                 "tip": _(
-                    "Active: reduce the details of polyline elements,\n" +
-                    "so that less information needs to be sent to the laser."
-                    ) + "\n" + _(
-                    "This can reduce the processing and laser time but can as well\n" +
-                    "compromise the quality at higher levels, so use with care and preview in simulation."
+                    "Active: reduce the details of polyline elements,\n"
+                    + "so that less information needs to be sent to the laser."
+                )
+                + "\n"
+                + _(
+                    "This can reduce the processing and laser time but can as well\n"
+                    + "compromise the quality at higher levels, so use with care and preview in simulation."
                 ),
                 "page": "Optimisations",
                 "section": "_30_Details",
@@ -280,15 +282,15 @@ def plugin(kernel, lifecycle=None):
                 "label": _("Level"),
                 "style": "option",
                 "choices": (1, 10, 50, 100),
-                "display": (_("Minimal"), _("Fine"), _("Medium"),_("Coarse")),
+                "display": (_("Minimal"), _("Fine"), _("Medium"), _("Coarse")),
                 "tip": _(
-                    "This can reduce the processing and laser time but can as well\n" +
-                    "compromise the quality at higher levels, so use with care and preview in simulation."
+                    "This can reduce the processing and laser time but can as well\n"
+                    + "compromise the quality at higher levels, so use with care and preview in simulation."
                 ),
                 "page": "Optimisations",
                 "section": "_30_Details",
                 "subsection": "_10_",
-                "conditional": (context, "opt_reduce_details")
+                "conditional": (context, "opt_reduce_details"),
             },
         ]
         for c in choices:

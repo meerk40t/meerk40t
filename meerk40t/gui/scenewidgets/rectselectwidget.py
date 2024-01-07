@@ -80,7 +80,6 @@ class RectSelectWidget(Widget):
         self.mode = "select"
         self.can_drag_move = False
 
-
     def hit(self):
         return HITCHAIN_HIT
 
@@ -199,14 +198,18 @@ class RectSelectWidget(Widget):
                     return
             allowlockmove = self.scene.context.elements.lock_allows_move
             with self.scene.context.elements.undofree():
-                for e in self.scene.context.elements.flat(types=elem_nodes, emphasized=True):
+                for e in self.scene.context.elements.flat(
+                    types=elem_nodes, emphasized=True
+                ):
                     if not e.can_move(allowlockmove):
                         continue
                     e.matrix.post_translate(dx, dy)
                     # We would normally not adjust the node properties,
                     # but the pure adjustment of the bbox is hopefully not hurting
                     e.translated(dx, dy)
-            self.scene.context.elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
+            self.scene.context.elements.update_bounds(
+                [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy]
+            )
             self.scene.request_refresh()
 
         if modifiers is not None:
@@ -244,6 +247,7 @@ class RectSelectWidget(Widget):
                 self.scene.request_refresh()
                 self.scene.context.signal("select_emphasized_tree", 0)
             else:
+
                 def shortest_distance(p1, p2, tuplemode):
                     """
                     Calculates the shortest distance between two arrays of 2-dimensional points.
@@ -269,9 +273,9 @@ class RectSelectWidget(Widget):
                 matrix = self.scene.widget_root.scene_widget.matrix
                 did_snap_to_point = False
                 if (
-                        self.scene.context.snap_points
-                        and "shift" not in modifiers
-                        and b is not None
+                    self.scene.context.snap_points
+                    and "shift" not in modifiers
+                    and b is not None
                 ):
                     gap = self.scene.context.action_attract_len / matrix.value_scale_x()
                     # We gather all points of non-selected elements,
@@ -303,20 +307,20 @@ class RectSelectWidget(Widget):
                                     xx = start.real
                                     yy = start.imag
                                     ignore = (
-                                            xx < b[0] - gap
-                                            or xx > b[2] + gap
-                                            or yy < b[1] - gap
-                                            or yy > b[3] + gap
+                                        xx < b[0] - gap
+                                        or xx > b[2] + gap
+                                        or yy < b[1] - gap
+                                        or yy > b[3] + gap
                                     )
                                     if not ignore:
                                         target.append(start)
                                 xx = end.real
                                 yy = end.imag
                                 ignore = (
-                                        xx < b[0] - gap
-                                        or xx > b[2] + gap
-                                        or yy < b[1] - gap
-                                        or yy > b[3] + gap
+                                    xx < b[0] - gap
+                                    or xx > b[2] + gap
+                                    or yy < b[1] - gap
+                                    or yy > b[3] + gap
                                 )
                                 if not ignore:
                                     target.append(end)
@@ -489,7 +493,11 @@ class RectSelectWidget(Widget):
         """
         Draw the selection rectangle
         """
-        if self.mode == "select" and self.start_location is not None and self.end_location is not None:
+        if (
+            self.mode == "select"
+            and self.start_location is not None
+            and self.end_location is not None
+        ):
             self.selection_style[0][0] = self.scene.colors.color_selection1
             self.selection_style[1][0] = self.scene.colors.color_selection2
             self.selection_style[2][0] = self.scene.colors.color_selection3

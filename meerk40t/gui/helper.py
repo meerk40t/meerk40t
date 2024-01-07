@@ -52,7 +52,9 @@ class HelperPanel(wx.Panel):
         self.text_info = wx.TextCtrl(
             self, wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_READONLY
         )
-        self.check_allow = wx.CheckBox(self, wx.ID_ANY, _("Display control-information"))
+        self.check_allow = wx.CheckBox(
+            self, wx.ID_ANY, _("Display control-information")
+        )
         # self.button_webhelp = wx.Button(self, wx.ID_ANY, _("Online-Help"))
         # self.button_webhelp.SetBitmap(icons8_info.GetBitmap(resize = 0.5 * get_default_icon_size()))
         self.active = False
@@ -129,9 +131,15 @@ class HelperPanel(wx.Panel):
         s = _("Information about the control the mouse is hovering over")
         self.text_info.SetToolTip(s)
         self.check_allow.SetToolTip(
-            s + "\n" +
-            _("If inactive then no more updates will happen until you check this checkbox again") + "\n" +
-            _("Tip: Press Ctrl+Shift+F while hovering over a control to lock the content.")
+            s
+            + "\n"
+            + _(
+                "If inactive then no more updates will happen until you check this checkbox again"
+            )
+            + "\n"
+            + _(
+                "Tip: Press Ctrl+Shift+F while hovering over a control to lock the content."
+            )
         )
         # self.button_webhelp.SetToolTip(_("Call online help-page"))
 
