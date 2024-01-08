@@ -4085,6 +4085,7 @@ class MeerK40t(MWindow):
                     and hasattr(op, "speed")
                     and op.output
                     and op.type in optypes
+                    and len(op.children) > 0
                 ):
                     # Is a warning defined?
                     checker = f"dangerlevel_{op.type.replace(' ', '_')}"
