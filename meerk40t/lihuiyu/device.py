@@ -269,6 +269,34 @@ class LihuiyuDevice(Service, Status):
                 ),
                 "section": "_00_" + _("General Options"),
             },
+            {
+                "attr": "max_vector_speed",
+                "object": self,
+                "default": 140,
+                "type": float,
+                "label": _("Max vector speed"),
+                "trailer": "mm/s",
+                "tip": _(
+                    "What is the highest reliable speed your laser is able to perform vecture operations, ie engraving or cutting.\n"
+                    "You can finetune this in the Warning Sections of this configuration dialog."
+                ),
+                "section": "_00_" + _("General Options"),
+                "subsection": "_10_",
+            },
+            {
+                "attr": "max_raster_speed",
+                "object": self,
+                "default": 750,
+                "type": float,
+                "label": _("Max raster speed"),
+                "trailer": "mm/s",
+                "tip": _(
+                    "What is the highest reliable speed your laser is able to perform raster or image operations.\n"
+                    "You can finetune this in the Warning Sections of this configuration dialog."
+                ),
+                "section": "_00_" + _("General Options"),
+                "subsection": "_10_",
+            },
         ]
         self.register_choices("lhy-general", choices)
 
@@ -329,6 +357,7 @@ class LihuiyuDevice(Service, Status):
                 "trailer": "mm/s",
                 "conditional": (self, "rapid_override"),
                 "section": "_00_" + _("Rapid Override"),
+                "subsection": "_10_",
             },
             {
                 "attr": "rapid_override_speed_y",
@@ -340,6 +369,7 @@ class LihuiyuDevice(Service, Status):
                 "trailer": "mm/s",
                 "conditional": (self, "rapid_override"),
                 "section": "_00_" + _("Rapid Override"),
+                "subsection": "_10_",
             },
         ]
         self.register_choices("lhy-rapid-override", choices)
