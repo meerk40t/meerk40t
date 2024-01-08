@@ -187,7 +187,7 @@ class BalorDevice(Service, Status):
                 "subsection": "_10_Axis corrections",
             },
             {
-                "attr": "interpolate",
+                "attr": "interp",
                 "object": self,
                 "default": 50,
                 "type": int,
