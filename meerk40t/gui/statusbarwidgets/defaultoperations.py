@@ -253,44 +253,74 @@ class DefaultOperationWidget(StatusBarWidget):
         #     )
         #     menu.AppendSeparator()
 
+        entries = []
         for material in self.context.elements.op_data.section_set():
             if material == "previous":
                 continue
-            if matcount == 0:
-                item = menu.Append(wx.ID_ANY, _("Load materials/operations"), "")
-                item.Enable(False)
             opinfo = self.context.elements.load_persistent_op_info(material)
             material_name = opinfo.get("material", "")
             material_title = opinfo.get("title", "")
-            label = material_name
-            if material_title:
-                label += " - " + material_title
-            if not material_name:
-                if material == "_default":
-                    label = "Generic Defaults"
-                elif material.startswith("_default_"):
-                    label = f"Default for {material[9:]}"
+            material_thickness = opinfo.get("thickness", "")
+            if material_title == "":
+                if material_name:
+                    material_title = material_name
                 else:
-                    label = material.replace("_", " ")
-            if "thickness" in opinfo:
-                if opinfo["thickness"]:
-                    label += ", " + opinfo["thickness"]
+                    if material == "_default":
+                        material_title = "Generic Defaults"
+                    elif material.startswith("_default_"):
+                        material_title = f"Default for {material[9:]}"
+                    else:
+                        material_title = material.replace("_", " ")
+            entries.append( (material_name, material_thickness, material_title) )
             matcount += 1
-
-            self.parent.Bind(
-                wx.EVT_MENU,
-                on_menu_material(material),
-                menu.Append(wx.ID_ANY, label, ""),
+        # Let's sort them
+        entries.sort(
+            key=lambda e: (
+                e[0],
+                e[1],
+                e[2],
             )
-
-        if matcount > 0:
-            menu.AppendSeparator()
+        )
 
         self.parent.Bind(
             wx.EVT_MENU,
             lambda e: self.context("window open MatManager\n"),
             menu.Append(wx.ID_ANY, _("Material Library"), ""),
         )
+
+        if matcount > 0:
+            menu.AppendSeparator()
+            item = menu.Append(wx.ID_ANY, _("Load materials/operations"), "")
+            item.Enable(False)
+            menu_root = menu
+            menu_primary = menu
+            menu_secondary = menu
+            last_material = None
+            last_thick = None
+            for mat in entries:
+                if mat[0] != last_material:
+                    last_material = mat[0]
+                    last_thick = None
+                    if mat[0]:
+                        menu_primary = wx.Menu()
+                        item = menu_root.AppendSubMenu(menu_primary, mat[0])
+                    else:
+                        menu_primary = menu_root
+                    menu_secondary = menu_primary
+                if mat[1] != last_thick:
+                    last_thick = mat[1]
+                    if mat[1]:
+                        menu_secondary = wx.Menu()
+                        item = menu_primary.AppendSubMenu(menu_secondary, mat[1])
+                    else:
+                        menu_secondary = menu_primary
+
+                self.parent.Bind(
+                    wx.EVT_MENU,
+                    on_menu_material(material),
+                    menu_secondary.Append(wx.ID_ANY, mat[2], ""),
+                )
+
 
         self.parent.PopupMenu(menu)
 
