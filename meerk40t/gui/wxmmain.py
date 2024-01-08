@@ -29,7 +29,13 @@ from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
 from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
 from meerk40t.kernel import lookup_listener, signal_listener
 
-from ..core.units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL, Length
+from ..core.units import (
+    DEFAULT_PPI,
+    UNITS_PER_INCH,
+    UNITS_PER_PIXEL,
+    UNITS_PER_MM,
+    Length,
+)
 from ..svgelements import Color, Matrix, Path
 from .icons import (  # icon_duplicate,; icon_nohatch,
     STD_ICON_SIZE,
@@ -60,6 +66,7 @@ from .icons import (  # icon_duplicate,; icon_nohatch,
     icon_paint_brush,
     icon_paint_brush_green,
     icon_power_button,
+    icon_warning,
     icons8_centerh,
     icons8_centerv,
     icons8_circled_left,
@@ -390,6 +397,12 @@ class MeerK40t(MWindow):
         self.update_check_at_startup()
         self.tips_at_startup()
         self.parametric_info = None
+        self._concerns = list()
+        self._device_acceleration_info = dict()
+
+    @property
+    def concerns(self):
+        return "\n".join(self._concerns)
 
     def tips_at_startup(self):
         self.context.setting(bool, "show_tips", True)
@@ -1334,6 +1347,25 @@ class MeerK40t(MWindow):
                     "signal": "editpaint",
                     "tip": _("Click again to disable the paint mode"),
                 },
+            },
+        )
+
+        def show_concerns(*args):
+            if len(self._concerns):
+                wx.MessageBox(
+                    self.concerns, _("Warning"), style=wx.OK | wx.ICON_WARNING
+                )
+
+        self.context.kernel.register(
+            "button/jobstart/Warning",
+            {
+                "label": _("Warning"),
+                "icon": icon_warning,
+                "rule_visible": lambda d: len(self._concerns) > 0,
+                "action": show_concerns,
+                "tip": _("There are issues with your project"),
+                "size": STD_ICON_SIZE,
+                "priority": 2,
             },
         )
 
@@ -4041,6 +4073,191 @@ class MeerK40t(MWindow):
                 "size": STD_ICON_SIZE,
             },
         )
+
+    @signal_listener("warn_state_update")
+    @signal_listener("updateop_tree")
+    @signal_listener("tool_modified")
+    def warning_indicator(self, *args):
+        def has_ambitious_operations(maxspeed, optypes):
+            for op in self.context.elements.ops():
+                if (
+                    hasattr(op, "output")
+                    and hasattr(op, "speed")
+                    and op.output
+                    and op.type in optypes
+                ):
+                    # Is a warning defined?
+                    checker = f"dangerlevel_{op.type.replace(' ', '_')}"
+                    danger = False
+                    if hasattr(self.context.device, checker):
+                        maxspeed_minpower = getattr(self.context.device, checker)
+                        if (
+                            isinstance(maxspeed_minpower, (tuple, list))
+                            and len(maxspeed_minpower) == 8
+                        ):
+                            # minpower, maxposer, minspeed, maxspeed
+                            # print ("Yes: ", checker, maxspeed_minpower)
+                            danger = False
+                            if hasattr(op, "power"):
+                                value = op.power
+                                if (
+                                    maxspeed_minpower[0]
+                                    and value < maxspeed_minpower[1]
+                                ):
+                                    danger = True
+                                if (
+                                    maxspeed_minpower[2]
+                                    and value > maxspeed_minpower[3]
+                                ):
+                                    danger = True
+                            if hasattr(op, "speed"):
+                                value = op.speed
+                                if (
+                                    maxspeed_minpower[4]
+                                    and value < maxspeed_minpower[5]
+                                ):
+                                    danger = True
+                                if (
+                                    maxspeed_minpower[6]
+                                    and value > maxspeed_minpower[7]
+                                ):
+                                    danger = True
+                    if danger:
+                        return True
+                    # Is a generic maximum speed defined?
+                    if maxspeed is not None and op.speed >= maxspeed:
+                        return True
+
+            return False
+
+        def has_objects_outside():
+            wd = self.context.space.display.width
+            ht = self.context.space.display.height
+            for op in self.context.elements.ops():
+                if hasattr(op, "output") and op.output:
+                    for refnode in op.children:
+                        node = refnode.node
+                        bb = getattr(node, "paint_bounds", None)
+                        if bb is None:
+                            bb = getattr(node, "bounds", None)
+                        if bb is None:
+                            continue
+                        if bb[2] > wd or bb[0] < 0 or bb[3] > ht or bb[1] < 0:
+                            return True
+            return False
+
+        def has_close_to_edge_rasters():
+            wd = self.context.space.display.width
+            ht = self.context.space.display.height
+            additional_info = ""
+            devname = self.context.device.name
+            if devname not in self._device_acceleration_info:
+                acceleration = False
+                device_dict = dir(self.context.device)
+                for d in device_dict:
+                    if "acceler" in d.lower():
+                        acceleration = True
+                        break
+                if not acceleration and hasattr(self.context.device, "driver"):
+                    device_dict = dir(self.context.device.driver)
+                    for d in device_dict:
+                        if "acceler" in d.lower():
+                            acceleration = True
+                            break
+                self._device_acceleration_info[devname] = acceleration
+            acceleration = self._device_acceleration_info[devname]
+
+            for op in self.context.elements.ops():
+                if (
+                    hasattr(op, "output")
+                    and op.output
+                    and op.type in ("op raster", "op image")
+                ):
+                    dx = 0
+                    dy = 0
+                    if hasattr(op, "overscan") and op.overscan is not None:
+                        try:
+                            ov = float(op.overscan)
+                        except ValueError:
+                            ov = 0
+                        dx += ov
+                        dy += ov
+                    if acceleration:
+                        # Acceleration / deacceleration plays a role.
+                        if hasattr(op, "speed") and op.speed:
+                            a = 500  # arbitrary 500 mm/sec²
+                            dt = op.speed / a
+                            ds = 0.5 * a * dt * dt
+                            dx += ds * UNITS_PER_MM
+
+                    for refnode in op.children:
+                        node = refnode.node
+                        bb = getattr(node, "paint_bounds", None)
+                        if bb is None:
+                            bb = getattr(node, "bounds", None)
+                        if bb is None:
+                            continue
+                        if bb[2] > wd or bb[0] < 0 or bb[3] > ht or bb[1] < 0:
+                            # Even though is bad, that's not what we are looking for
+                            continue
+                        flag = False
+                        if bb[2] + dx > wd or bb[0] - dx < 0:
+                            if additional_info:
+                                additional_info += ", "
+                            additional_info += f"x > {Length(dx, digits=1).length_mm}"
+                            flag = True
+                        if bb[3] + dy > ht or bb[1] - dy < 0:
+                            if additional_info:
+                                additional_info += ", "
+                            additional_info += f"y > {Length(dy, digits=1).length_mm}"
+                            return True, additional_info
+                        if flag:
+                            return True, additional_info
+
+            return False, ""
+
+        self._concerns.clear()
+        max_speed = getattr(self.context.device, "max_vector_speed", None)
+        if has_ambitious_operations(max_speed, ("op cut", "op engrave")):
+            self._concerns.append(
+                _("- Vector operations are too fast.")
+                + "\n  "
+                + _("Could lead to erratic stepper behaviour and incomplete burns.")
+            )
+        max_speed = getattr(self.context.device, "max_raster_speed", None)
+        if has_ambitious_operations(max_speed, ("op raster", "op image")):
+            self._concerns.append(
+                _("- Raster operations are too fast.")
+                + "\n  "
+                + _("Could lead to erratic stepper behaviour and incomplete burns.")
+            )
+        if has_objects_outside():
+            self._concerns.append(
+                _("- Elements are lying outside the burnable area.")
+                + "\n  "
+                + _("Could lead to the laserhead bumping into the rails.")
+            )
+        flag, info = has_close_to_edge_rasters()
+        if flag:
+            self._concerns.append(
+                _("- Raster operations get very close to the edge.")
+                + "\n  "
+                + _("Could lead to the laserhead bumping into the rails.")
+                + "\n  "
+                + info
+            )
+
+        non_assigned, non_burn = self.context.elements.have_unburnable_elements()
+        if non_assigned:
+            self._concerns.append(
+                _("- Elements aren't assigned to an operation and will not be burnt")
+            )
+        if non_burn:
+            self._concerns.append(
+                _(
+                    "- Some operations containing elements aren't active, so some elements will not be burnt"
+                )
+            )
 
     @signal_listener("file;loaded")
     @signal_listener("file;saved")
