@@ -285,9 +285,9 @@ class GRBLDevice(Service, Status):
                 ),
             },
             {
-                "attr": "interpolate",
+                "attr": "interp",
                 "object": self,
-                "default": 50,
+                "default": 5,
                 "type": int,
                 "label": _("Curve Interpolation"),
                 "section": "_5_Config",
