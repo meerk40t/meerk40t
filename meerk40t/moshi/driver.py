@@ -228,7 +228,7 @@ class MoshiDriver(Parameters):
             elif segment_type == "end":
                 pass
             elif segment_type == "quad":
-                interp = self.service.interpolate
+                interp = self.service.interp
                 g.clear()
                 g.quad(start, c1, end)
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
@@ -236,7 +236,7 @@ class MoshiDriver(Parameters):
                         time.sleep(0.05)
                     self._goto_absolute(p.real, p.imag, 1)
             elif segment_type == "cubic":
-                interp = self.service.interpolate
+                interp = self.service.interp
                 g.clear()
                 g.cubic(start, c1, c2, end)
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
@@ -244,7 +244,7 @@ class MoshiDriver(Parameters):
                         time.sleep(0.05)
                     self._goto_absolute(p.real, p.imag, 1)
             elif segment_type == "arc":
-                interp = self.service.interpolate
+                interp = self.service.interp
                 g.clear()
                 g.arc(start, c1, end)
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
@@ -294,7 +294,7 @@ class MoshiDriver(Parameters):
             if isinstance(q, LineCut):
                 self._goto_absolute(*q.end, 1)
             elif isinstance(q, QuadCut):
-                interp = self.service.interpolate
+                interp = self.service.interp
                 g = Geomstr()
                 g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
@@ -302,7 +302,7 @@ class MoshiDriver(Parameters):
                         time.sleep(0.05)
                     self._goto_absolute(p.real, p.imag, 1)
             elif isinstance(q, CubicCut):
-                interp = self.service.interpolate
+                interp = self.service.interp
                 g = Geomstr()
                 g.cubic(
                     complex(*q.start),
