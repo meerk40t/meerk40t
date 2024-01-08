@@ -3,7 +3,7 @@ from math import atan, cos, sin, sqrt, tau
 import wx
 
 from meerk40t.core.units import Length
-
+from meerk40t.gui.wxutils import matrix_scale
 from .toolpointlistbuilder import PointListTool
 
 _ = wx.GetTranslation
@@ -36,11 +36,14 @@ class MeasureTool(PointListTool):
         if not self.point_series:
             return
         matrix = gc.GetTransform().Get()
+        # mat.a mat.d
+        mat_fact = matrix[0]
         try:
-            font_size = 10.0 / matrix[0]
+            font_size = 10.0 / mat_fact
         except ZeroDivisionError:
             font_size = 5000
-            return
+        if font_size> 1E8:
+            font_size = 5000
         # print ("Fontsize=%.3f, " % self.font_size)
         if font_size < 1.0:
             font_size = 1.0  # Mac does not allow values lower than 1.
@@ -61,7 +64,7 @@ class MeasureTool(PointListTool):
         gc.SetFont(font, self.scene.colors.color_measure_text)
 
         matrix = self.parent.matrix
-        linewidth = 2.0 / matrix.value_scale_x()
+        linewidth = 2.0 / matrix_scale(matrix)
         if linewidth < 1:
             linewidth = 1
         try:

@@ -24,6 +24,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_DROP,
 )
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
+from meerk40t.gui.wxutils import matrix_scale
 from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point
 
@@ -829,7 +830,7 @@ class Scene(Module, Job):
 
                     sdx = new_x_space - space_pos[0]
                     if current_matrix is not None and not current_matrix.is_identity():
-                        sdx *= current_matrix.value_scale_x()
+                        sdx *= matrix_scale(current_matrix)
                     snap_x = window_pos[0] + sdx
                     sdy = new_y_space - space_pos[1]
                     if current_matrix is not None and not current_matrix.is_identity():
@@ -1008,7 +1009,7 @@ class Scene(Module, Job):
             self._calculate_attraction_points()
 
         matrix = self.widget_root.scene_widget.matrix
-        length = self.context.show_attract_len / matrix.value_scale_x()
+        length = self.context.show_attract_len / matrix_scale(matrix)
 
         if snap_points and self.snap_attraction_points:
             self._calculate_snap_points(my_x, my_y, length)
@@ -1038,7 +1039,7 @@ class Scene(Module, Job):
                     min_delta = delta
             if new_x is not None:
                 matrix = self.widget_root.scene_widget.matrix
-                pixel = self.context.action_attract_len / matrix.value_scale_x()
+                pixel = self.context.action_attract_len / matrix_scale(matrix)
                 if abs(new_x - my_x) <= pixel and abs(new_y - my_y) <= pixel:
                     # If the distance is small enough: snap.
                     res_x = new_x
