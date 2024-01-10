@@ -723,6 +723,8 @@ class GRBLDriver(Parameters):
         @return:
         """
         self(f"$X{self.line_end}", real=True)
+        if self.service.extended_alarm_clear:
+            self.reset()
 
     def declare_modals(self, modals):
         self.move_mode = 0 if "G0" in modals else 1
