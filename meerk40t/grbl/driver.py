@@ -307,7 +307,7 @@ class GRBLDriver(Parameters):
                 first = False
             elif segment_type == "quad":
                 self.move_mode = 1
-                interp = self.service.interpolate
+                interp = self.service.interp
                 g.clear()
                 g.quad(complex(start), complex(c1), complex(end))
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
@@ -316,7 +316,7 @@ class GRBLDriver(Parameters):
                     self._move(p.real, p.imag)
             elif segment_type == "cubic":
                 self.move_mode = 1
-                interp = self.service.interpolate
+                interp = self.service.interp
                 g.clear()
                 g.cubic(
                     complex(start),
@@ -331,7 +331,7 @@ class GRBLDriver(Parameters):
             elif segment_type == "arc":
                 # TODO: Allow arcs to be directly executed by GRBL which can actually use them.
                 self.move_mode = 1
-                interp = self.service.interpolate
+                interp = self.service.interp
                 g.clear()
                 g.arc(
                     complex(start),
@@ -424,7 +424,7 @@ class GRBLDriver(Parameters):
                 self._move(*q.end)
             elif isinstance(q, QuadCut):
                 self.move_mode = 1
-                interp = self.service.interpolate
+                interp = self.service.inter
                 g = Geomstr()
                 g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
@@ -433,7 +433,7 @@ class GRBLDriver(Parameters):
                     self._move(p.real, p.imag)
             elif isinstance(q, CubicCut):
                 self.move_mode = 1
-                interp = self.service.interpolate
+                interp = self.service.interp
                 g = Geomstr()
                 g.cubic(
                     complex(*q.start),
@@ -723,6 +723,8 @@ class GRBLDriver(Parameters):
         @return:
         """
         self(f"$X{self.line_end}", real=True)
+        if self.service.extended_alarm_clear:
+            self.reset()
 
     def declare_modals(self, modals):
         self.move_mode = 0 if "G0" in modals else 1
