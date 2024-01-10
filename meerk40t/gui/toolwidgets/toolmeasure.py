@@ -4,6 +4,7 @@ import wx
 
 from meerk40t.core.units import Length
 from meerk40t.gui.wxutils import matrix_scale
+
 from .toolpointlistbuilder import PointListTool
 
 _ = wx.GetTranslation
@@ -42,7 +43,7 @@ class MeasureTool(PointListTool):
             font_size = 10.0 / mat_fact
         except ZeroDivisionError:
             font_size = 5000
-        if font_size> 1E8:
+        if font_size > 1e8:
             font_size = 5000
         # print ("Fontsize=%.3f, " % self.font_size)
         if font_size < 1.0:

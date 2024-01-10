@@ -881,7 +881,9 @@ class Elemental(Service):
                     data.append(n)
 
         needs_refresh = False
-        set_fill_to_none = op_assign.type in ("op engrave", "op cut") and attrib == "stroke"
+        set_fill_to_none = (
+            op_assign.type in ("op engrave", "op cut") and attrib == "stroke"
+        )
         for n in data:
             if op_assign.drop(n, modify=False):
                 if exclusive:

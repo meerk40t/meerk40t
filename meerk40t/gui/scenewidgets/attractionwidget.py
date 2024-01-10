@@ -242,8 +242,8 @@ class AttractionWidget(Widget):
             return
         # Anything within a 15 Pixel Radius will be attracted, anything within a 45 Pixel Radius will be displayed
         local_attract_len = self.context.show_attract_len / matrix_scale(matrix)
-        local_action_attract_len = (
-            self.context.action_attract_len / matrix_scale(matrix)
+        local_action_attract_len = self.context.action_attract_len / matrix_scale(
+            matrix
         )
         local_grid_attract_len = self.context.grid_attract_len / matrix_scale(matrix)
 

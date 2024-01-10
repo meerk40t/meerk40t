@@ -18,6 +18,7 @@ _ = wx.GetTranslation
 # NODE MENU
 ##############
 
+
 def matrix_scale(matrix):
     # We usually use the value_scale_x to establish a pixel size
     # by counteracting the scene matrix, linewidth = 1 / matrix.value_scale_x()
@@ -25,12 +26,14 @@ def matrix_scale(matrix):
     # that into consideration, so let's look at the
     # distance from (1, 0) to (0, 0) and call this our scale
     from math import sqrt
+
     x0, y0 = matrix.point_in_matrix_space((0, 0))
     x1, y1 = matrix.point_in_matrix_space((1, 0))
-    res = sqrt((x1 - x0)**2 + (y1 - y0)**2)
-    if res < 1E-8:
+    res = sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2)
+    if res < 1e-8:
         res = 1
     return res
+
 
 def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
     """
