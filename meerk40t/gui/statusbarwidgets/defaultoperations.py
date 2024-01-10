@@ -38,7 +38,13 @@ class DefaultOperationWidget(StatusBarWidget):
             slabel = f"Image ({node.power/10:.0f}%, {node.speed}mm/s)"
         else:
             slabel = ""
-        slabel = _("Assign the selection to:") + "\n" + slabel + "\n" + _("Right click for options")
+        slabel = (
+            _("Assign the selection to:")
+            + "\n"
+            + slabel
+            + "\n"
+            + _("Right click for options")
+        )
         return slabel
 
     def GenerateControls(self, parent, panelidx, identifier, context):
@@ -271,7 +277,7 @@ class DefaultOperationWidget(StatusBarWidget):
                         material_title = f"Default for {material[9:]}"
                     else:
                         material_title = material.replace("_", " ")
-            entries.append( (material_name, material_thickness, material_title) )
+            entries.append((material_name, material_thickness, material_title))
             matcount += 1
         # Let's sort them
         entries.sort(
@@ -320,7 +326,6 @@ class DefaultOperationWidget(StatusBarWidget):
                     on_menu_material(material),
                     menu_secondary.Append(wx.ID_ANY, mat[2], ""),
                 )
-
 
         self.parent.PopupMenu(menu)
 
@@ -438,6 +443,9 @@ class DefaultOperationWidget(StatusBarWidget):
                         break
 
     def Signal(self, signal, *args):
+        if len(self.context.elements.default_operations) != len(self.assign_buttons):
+            # desync !
+            signal = "default_operations"
         if signal in ("rebuild_tree",):
             self.reset_tooltips()
         elif signal == "element_property_update":
