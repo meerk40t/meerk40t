@@ -178,7 +178,7 @@ class PositionPanel(wx.Panel):
         if scene_name == "Scene":
             self.update_position(True)
 
-    @signal_listener("tool_modified")
+    @signal_listener("modified_by_tool")
     def on_modified(self, *args):
         self.update_position(True)
 

@@ -304,7 +304,7 @@ class AttractionWidget(Widget):
         """
         Signal commands which indicate that we need to refresh / discard some data
         """
-        if signal in ("modified", "emphasized", "element_added", "tool_modified"):
+        if signal in ("modified", "emphasized", "element_added", "modified_by_tool"):
             self.scene.reset_snap_attraction()
         elif signal == "theme":
             self.load_colors()

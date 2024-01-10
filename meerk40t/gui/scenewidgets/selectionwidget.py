@@ -455,7 +455,7 @@ class RotationWidget(Widget):
             self.master.last_angle = None
             self.master.start_angle = None
             self.master.rotated_angle = 0
-            self.scene.context.signal("tool_modified")
+            self.scene.context.signal("modified_by_tool")
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
@@ -737,7 +737,7 @@ class CornerWidget(Widget):
             for e in images:
                 e.update(self.scene.context)
             self.scene.pane.modif_active = False
-            self.scene.context.signal("tool_modified")
+            self.scene.context.signal("modified_by_tool")
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
@@ -986,7 +986,7 @@ class SideWidget(Widget):
             for e in images:
                 e.update(self.scene.context)
             self.scene.pane.modif_active = False
-            self.scene.context.signal("tool_modified")
+            self.scene.context.signal("modified_by_tool")
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
@@ -1214,7 +1214,7 @@ class SkewWidget(Widget):
                     images.append(e)
             for e in images:
                 e.update(self.scene.context)
-            self.scene.context.signal("tool_modified")
+            self.scene.context.signal("modified_by_tool")
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
@@ -1712,7 +1712,7 @@ class MoveWidget(Widget):
             #     # .translated will set the scene emphasized bounds dirty, that's not needed, so...
             #     elements.update_bounds([bx0, by0, bx1, by1])
 
-            self.scene.context.signal("tool_modified")
+            self.scene.context.signal("modified_by_tool")
             self.scene.pane.modif_active = False
         elif event == -1:  # start
             if "alt" in modifiers:

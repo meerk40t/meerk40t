@@ -52,12 +52,12 @@ class PropertyWindow(MWindow):
                 if hasattr(p, "signal"):
                     p.signal("refresh_scene", myargs)
 
-    @signal_listener("tool_modified")
+    @signal_listener("modified_by_tool")
     def on_tool_modified(self, origin, *args):
         myargs = [i for i in args]
         for p in self.panel_instances:
             if hasattr(p, "signal"):
-                p.signal("tool_modified", myargs)
+                p.signal("modified_by_tool", myargs)
 
     @signal_listener("selected")
     def on_selected(self, origin, *args):

@@ -343,6 +343,35 @@ class GRBLDevice(Service, Status):
                 "section": "_10_Red Dot",
             },
             {
+                "attr": "max_vector_speed",
+                "object": self,
+                "default": 140,
+                "type": float,
+                "label": _("Max vector speed"),
+                "trailer": "mm/s",
+                "tip": _(
+                    "What is the highest reliable speed your laser is able to perform vecture operations, ie engraving or cutting.\n"
+                    "You can finetune this in the Warning Sections of this configuration dialog."
+                ),
+                "section": "_20_" + _("Maximum speeds"),
+                "subsection": "_10_",
+            },
+            {
+                "attr": "max_raster_speed",
+                "object": self,
+                "default": 750,
+                "type": float,
+                "label": _("Max raster speed"),
+                "trailer": "mm/s",
+                "tip": _(
+                    "What is the highest reliable speed your laser is able to perform raster or image operations.\n"
+                    "You can finetune this in the Warning Sections of this configuration dialog."
+                ),
+                "section": "_20_" + _("Maximum speeds"),
+                "subsection": "_10_",
+            },
+
+            {
                 "attr": "limit_buffer",
                 "object": self,
                 "default": True,
