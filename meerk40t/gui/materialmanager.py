@@ -2268,13 +2268,14 @@ class MaterialManager(MWindow):
         Drop file handler
         Accepts only a single file drop.
         """
-        for pathname in event.GetFiles():
-            if self.panel_import.import_csv(pathname):
-                break
+        pass
+        # for pathname in event.GetFiles():
+        #     if self.panel_import.import_csv(pathname):
+        #         break
 
     def delegates(self):
         yield self.panel_library
-        yield self.panel_import
+        # yield self.panel_import
         yield self.panel_about
 
     @staticmethod
