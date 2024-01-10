@@ -151,6 +151,8 @@ class GRBLControllerPanel(wx.Panel):
     def send_gcode(self, gcode_cmd):
         def handler(event):
             self.service(f"gcode_realtime {gcode_cmd}")
+            if gcode_cmd == "$X" and self.service.extended_alarm_clear:
+                self.service("gcode_realtime \x18")
 
         return handler
 

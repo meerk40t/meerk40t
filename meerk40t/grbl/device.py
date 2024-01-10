@@ -285,6 +285,15 @@ class GRBLDevice(Service, Status):
                 ),
             },
             {
+                "attr": "extended_alarm_clear",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Reset on 'Clear Alarm'"),
+                "section": "_5_Config",
+                "tip": _("Reset the controller too on a 'Clear Alarm' command"),
+            },
+            {
                 "attr": "interp",
                 "object": self,
                 "default": 5,
