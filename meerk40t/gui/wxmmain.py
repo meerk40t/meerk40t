@@ -3856,7 +3856,8 @@ class MeerK40t(MWindow):
 
     @signal_listener("warn_state_update")
     @signal_listener("updateop_tree")
-    @signal_listener("tool_modified")
+    @signal_listener("tree_changed")
+    @signal_listener("modified_by_tool")
     def warning_indicator(self, *args):
         self.warning_routine.warning_indicator()
 

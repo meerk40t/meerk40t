@@ -1902,6 +1902,7 @@ def init_commands(kernel):
             raise CommandSyntaxError
         if changes:
             self.signal("refresh_scene", "Scene")
+            self.signal("modified_by_tool")
         return "elements", data
 
     @self.console_argument("tx", type=self.length_x, help=_("New x value"))
@@ -1938,6 +1939,7 @@ def init_commands(kernel):
                 changes = True
         if changes:
             self.signal("refresh_scene", "Scene")
+            self.signal("modified_by_tool")
         return "elements", data
 
     @self.console_command(

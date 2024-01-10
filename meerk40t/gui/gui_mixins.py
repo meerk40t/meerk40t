@@ -4,7 +4,7 @@ warnings to the user
 """
 
 import wx
-from meerk40t.core.units import UNITS_PER_MM
+from meerk40t.core.units import UNITS_PER_MM, Length
 from meerk40t.gui.icons import (
     icon_warning,
     icon_paint_brush_green,
@@ -303,21 +303,22 @@ class Warnings:
             additional_info = ""
             devname = self.context.device.name
             if devname not in self._device_acceleration_info:
-                acceleration = False
-                device_dict = dir(self.context.device)
-                for d in device_dict:
-                    if "acceler" in d.lower():
-                        acceleration = True
-                        break
-                if not acceleration and hasattr(self.context.device, "driver"):
-                    device_dict = dir(self.context.device.driver)
+                acceleration = hasattr(self.context.device, "acceleration_overrun")
+                if not acceleration:
+                    device_dict = dir(self.context.device)
                     for d in device_dict:
                         if "acceler" in d.lower():
                             acceleration = True
                             break
+                    if not acceleration and hasattr(self.context.device, "driver"):
+                        device_dict = dir(self.context.device.driver)
+                        for d in device_dict:
+                            if "acceler" in d.lower():
+                                acceleration = True
+                                break
                 self._device_acceleration_info[devname] = acceleration
             acceleration = self._device_acceleration_info[devname]
-
+            # print(f"Accel info: {devname} = {acceleration}")
             for op in self.context.elements.ops():
                 if (
                     hasattr(op, "output")
@@ -335,11 +336,18 @@ class Warnings:
                         dy += ov
                     if acceleration:
                         # Acceleration / deceleration plays a role.
-                        if hasattr(op, "speed") and op.speed:
+                        if hasattr(self.context.device, "acceleration_overrun"):
+                            # is_raster is true...
+                            ds = self.context.device.acceleration_overrun(
+                                True, op.speed
+                            )
+                            # print("Specific", op.speed, ds, Length(ds).length_mm)
+                        else:
                             a = 500  # arbitrary 500 mm/sec²
                             dt = op.speed / a
-                            ds = 0.5 * a * dt * dt
-                            dx += ds * UNITS_PER_MM
+                            ds = 0.5 * a * dt * dt * UNITS_PER_MM
+                            # print("Generic", op.speed, ds, Length(ds).length_mm)
+                        dx += ds
 
                     for refnode in op.children:
                         node = refnode.node

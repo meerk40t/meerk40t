@@ -770,7 +770,7 @@ class PositionSizePanel(wx.Panel):
         if signalstr == "refresh_scene":
             if myargs[0] == "Scene":
                 self.set_widgets(self.node)
-        elif signalstr == "tool_modified":
+        elif signalstr == "modified_by_tool":
             self.set_widgets(self.node)
 
     def _set_widgets_hidden(self):
