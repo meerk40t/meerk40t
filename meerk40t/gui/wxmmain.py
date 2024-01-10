@@ -1313,10 +1313,10 @@ class MeerK40t(MWindow):
             set_icon_appearance(1.0, 0)
 
         self.format_painter = FormatPainter(
-            self.context, "button/basicediting/Paint", "editpaint"
+            self.context, "button/extended_tools/Paint", "editpaint"
         )
         self.context.kernel.register(
-            "button/basicediting/Paint",
+            "button/extended_tools/Paint",
             {
                 "label": _("Paint format"),
                 "icon": icon_paint_brush,
