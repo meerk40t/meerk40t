@@ -30,7 +30,7 @@ _ = wx.GetTranslation
 
 
 class ImportDialog(wx.Dialog):
-    def __init__(self, *args, context=None, **kwds):
+    def __init__(self, *args, context=None, filename=None, **kwds):
         kwds["style"] = (
             kwds.get("style", 0) | wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         )
@@ -55,6 +55,8 @@ class ImportDialog(wx.Dialog):
         self.on_check(None)
         self.check_consolidate.SetValue(True)
         self._define_logic()
+        if filename is not None:
+            self.txt_filename.SetValue(filename)
 
     def _define_layout(self):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -1491,10 +1493,12 @@ class MaterialPanel(ScrolledPanel):
             self.op_data.write_configuration()
         return added
 
-    def on_import(self, event):
+    def on_import(self, event, filename=None):
         #
         info = None
-        mydlg = ImportDialog(None, id=wx.ID_ANY, context=self.context)
+        mydlg = ImportDialog(
+            None, id=wx.ID_ANY, context=self.context, filename=filename
+        )
         if mydlg.ShowModal() == wx.ID_OK:
             # This returns a Python list of files that were selected.
             info = mydlg.result()
@@ -2268,10 +2272,9 @@ class MaterialManager(MWindow):
         Drop file handler
         Accepts only a single file drop.
         """
-        pass
-        # for pathname in event.GetFiles():
-        #     if self.panel_import.import_csv(pathname):
-        #         break
+        for pathname in event.GetFiles():
+            self.panel_library.on_import(None, filename=pathname)
+            break
 
     def delegates(self):
         yield self.panel_library
