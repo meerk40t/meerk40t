@@ -146,7 +146,7 @@ class NewlyDriver:
                 last_x, last_y = con.get_last_xy()
                 if last_x != start.real or last_y != start.imag:
                     con.goto(start.real, start.imag)
-                interp = self.service.interpolate
+                interp = self.service.interp
                 g.clear()
                 g.quad(start, c1, end)
 
@@ -165,7 +165,7 @@ class NewlyDriver:
                 last_x, last_y = con.get_last_xy()
                 if last_x != start.real or last_y != start.imag:
                     con.goto(start.real, start.imag)
-                interp = self.service.interpolate
+                interp = self.service.interp
                 g.clear()
                 g.cubic(start, c1, c2, end)
 
@@ -184,7 +184,7 @@ class NewlyDriver:
                 last_x, last_y = con.get_last_xy()
                 if last_x != start.real or last_y != start.imag:
                     con.goto(start.real, start.imag)
-                interp = self.service.interpolate
+                interp = self.service.interp
                 g.clear()
                 g.arc(start, c1, end)
 
@@ -263,7 +263,7 @@ class NewlyDriver:
                 x, y = q.start
                 if last_x != x or last_y != y:
                     con.goto(x, y)
-                interp = self.service.interpolate
+                interp = self.service.interp
                 g = Geomstr()
                 if isinstance(q, CubicCut):
                     g.cubic(

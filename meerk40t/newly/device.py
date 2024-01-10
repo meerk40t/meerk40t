@@ -188,9 +188,9 @@ class NewlyDevice(Service, Status):
                 "subsection": "_10_Axis corrections",
             },
             {
-                "attr": "interpolate",
+                "attr": "interp",
                 "object": self,
-                "default": 50,
+                "default": 5,
                 "type": int,
                 "label": _("Curve Interpolation"),
                 "section": "_10_Parameters",

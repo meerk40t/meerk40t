@@ -294,9 +294,9 @@ class GRBLDevice(Service, Status):
                 "tip": _("Reset the controller too on a 'Clear Alarm' command"),
             },
             {
-                "attr": "interpolate",
+                "attr": "interp",
                 "object": self,
-                "default": 50,
+                "default": 5,
                 "type": int,
                 "label": _("Curve Interpolation"),
                 "section": "_5_Config",
