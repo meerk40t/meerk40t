@@ -1041,3 +1041,41 @@ class LihuiyuDevice(Service, Status):
             return self.tcp
         else:
             return self.controller
+
+    def acceleration_overrun(self, is_raster, op_speed):
+        """
+        https://github.com/meerk40t/meerk40t/wiki/Tech:-Lhymicro-Control-Protocols
+        Non - Raster:
+        1: [0 - 25.4]
+        2: (25.4 - 60]
+        3: (60 - 127)
+        4: [127 - max)
+        Raster:
+        1: [0 - 25.4]
+        2: (25.4 - 127]
+        3: [127 - 320)
+        4: [320 - max)
+        Four step ticks will move 1 mil distance.
+        Acceleration and deceleration (braking) happen
+        in the same amount of distance, so Accel 1-2 would be
+        512 steps / 4 = 128 * 2 (for both acceleration and braking)
+        for a total of 256 mil distance for ramping up to speed and slowing down after.
+        """
+        if is_raster:
+            limits = (320.0, 127.0, 25.4)
+        else:
+            limits = (127.0, 60.0, 25.4)
+
+        if op_speed >= limits[0]:
+            accel = 4
+            steps = 256
+        elif op_speed >= limits[1]:
+            accel = 3
+            steps = 256
+        elif op_speed >= limits[2]:
+            accel = 2
+            steps = 128
+        else:
+            accel = 1
+            steps = 128
+        return UNITS_PER_MIL * steps
