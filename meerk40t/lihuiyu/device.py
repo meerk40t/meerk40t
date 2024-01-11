@@ -277,7 +277,7 @@ class LihuiyuDevice(Service, Status):
                 "label": _("Max vector speed"),
                 "trailer": "mm/s",
                 "tip": _(
-                    "What is the highest reliable speed your laser is able to perform vecture operations, ie engraving or cutting.\n"
+                    "What is the highest reliable speed your laser is able to perform vector operations, ie engraving or cutting.\n"
                     "You can finetune this in the Warning Sections of this configuration dialog."
                 ),
                 "section": "_00_" + _("General Options"),
