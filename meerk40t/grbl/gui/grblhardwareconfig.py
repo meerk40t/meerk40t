@@ -98,7 +98,10 @@ class GrblIoButtons(wx.Panel):
                 setting = chart.GetItemText(i)
                 value = chart.GetItemText(i, 2)
                 if chart.GetItemText(i, 3) in ("bitmask", "boolean"):
-                    value = int(float(value))
+                    try:
+                        value = int(float(value))
+                    except ValueError:
+                        continue
                 f.write(f"{setting}={value}\n")
 
 
