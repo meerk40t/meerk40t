@@ -350,7 +350,7 @@ class GRBLDevice(Service, Status):
                 "label": _("Max vector speed"),
                 "trailer": "mm/s",
                 "tip": _(
-                    "What is the highest reliable speed your laser is able to perform vecture operations, ie engraving or cutting.\n"
+                    "What is the highest reliable speed your laser is able to perform vector operations, ie engraving or cutting.\n"
                     "You can finetune this in the Warning Sections of this configuration dialog."
                 ),
                 "section": "_20_" + _("Maximum speeds"),
@@ -370,7 +370,6 @@ class GRBLDevice(Service, Status):
                 "section": "_20_" + _("Maximum speeds"),
                 "subsection": "_10_",
             },
-
             {
                 "attr": "limit_buffer",
                 "object": self,

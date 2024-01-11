@@ -15264,6 +15264,22 @@ msgstr ""
 msgid "Complete text-entry by pressing either Enter or Escape"
 msgstr "Text-Eingabe mit Eingabetaste oder Escape abschließen."
 
+#: ./meerk40t\gui\hersheymanager.py:139
+msgid "Increase the character-gap"
+msgstr "Zeichenabstand erhöhen"
+
+#: ./meerk40t\gui\hersheymanager.py:143
+msgid "Decrease the character-gap"
+msgstr "Zeichenabstand verringern"
+
+#: ./meerk40t\gui\hersheymanager.py:147
+msgid "Weld overlapping characters together?"
+msgstr "Überlappende Zeichen zusammenführen?"
+
+#: ./meerk40t\gui\hersheymanager.py:515
+msgid "Information"
+msgstr "Information"
+
 msgid "Outline element(s)..."
 msgstr "Umrande Elemente..."
 
@@ -16940,6 +16956,18 @@ msgstr "Punkt-Eigenschaften"
 msgid "Load materials/operations"
 msgstr "Lade Material-Bibliothek"
 
+#: ./meerk40t\gui\statusbarwidgets\defaultoperations.py:42
+msgid "Assign the selection to:"
+msgstr "Ordne ausgewählte Elemente zu:"
+
+#: ./meerk40t\gui\statusbarwidgets\defaultoperations.py:46
+msgid "Right click for options"
+msgstr "Rechts-Click für mehr Optionen"
+
+#: ./meerk40t\gui\statusbarwidgets\defaultoperations.py:258
+msgid "Use settings from tree for this button"
+msgstr "Nutze aktuelle Werte für diesen Knopf"
+
 #: ./meerk40t\gui\statusbarwidgets\shapepropwidget.py:127
 msgid "Set the join of lines to an arc-shape"
 msgstr "Verbindung zwischen Linien als Kurve"
@@ -17555,6 +17583,10 @@ msgstr "Standardwerte wiederherstellen"
 msgid "Preparing Laserjob..."
 msgstr "Laserjob vorbereiten..."
 
+#: ./meerk40t\gui\laserpanel.py:246
+msgid "Rotary active"
+msgstr "Rotary aktiv"
+
 #: ./meerk40t\gui\mkdebug.py:35
 msgid "System-Colors"
 msgstr "System-Farben"
@@ -17712,6 +17744,42 @@ msgstr "Markiere innere weiße Bereiche"
 #: ./meerk40t\core\elements\element_treeops.py:2763
 msgid "Split image along white areas"
 msgstr "Teile Bild horizontal entlang weißer Flächen auf"
+
+#: ./meerk40t\core\elements\element_treeops.py:1675
+msgid "Append Goto Location"
+msgstr "Füge 'Gehe zu Position' hinzu"
+
+#: ./meerk40t\core\elements\element_treeops.py:1677
+msgid "Send laser to specific location."
+msgstr "Sende Laser zu bestimmter Position"
+
+#: ./meerk40t\core\elements\element_treeops.py:1786
+msgid "Start job at specicic location"
+msgstr "Starte Job an einem bestimmten Punkt"
+
+#: ./meerk40t\core\elements\element_treeops.py:1803
+msgid "Start job at current laserposition"
+msgstr "Starte Job an aktueller Laserposition"
+
+#: ./meerk40t\core\elements\element_treeops.py:1906
+msgid "Append Warp"
+msgstr "Verzerrung hinzufügen"
+
+#: ./meerk40t\core\elements\element_treeops.py:2233
+msgid "Open containing folder: '{name}'"
+msgstr "Öffne Verzeichnis von: '{name}'"
+
+#: ./meerk40t\core\elements\element_treeops.py:2235
+msgid "Open this file working directory in the system's file manager"
+msgstr "Öffne das zur Datei gehörende Verzeichnis im Dateinmanager"
+
+#: ./meerk40t\core\elements\element_treeops.py:2560
+msgid "Merge elements"
+msgstr "Elemente zusammenfügen"
+
+#: ./meerk40t\core\elements\element_treeops.py:2568
+msgid "Merge two or more elements together into a single path"
+msgstr "Füge zwei oder mehr Elemente zu einem einzigen Pfad zusammen"
 
 #: ./meerk40t\gui\position.py:226
 msgid ""
@@ -17917,6 +17985,67 @@ msgstr "Verzögerung nach Verbindungsaufbau"
 #: ./meerk40t\grbl\device.py:496
 msgid "Delay the GRBL communications after initial connect. (Some slow boot devices may need this)"
 msgstr "Verzögert die GRBL-Kommunikation nach dem Verbindungsaufbau (einige langsame Geräte mögen dies benötigen)"
+
+#: ./meerk40t\grbl\device.py:292
+msgid "Reset on 'Clear Alarm'"
+msgstr "Reset bei 'Alarm löschen"
+
+#: ./meerk40t\grbl\device.py:294
+msgid "Reset the controller too on a 'Clear Alarm' command"
+msgstr "Sendet neben dem 'Alarm löschen' noch ein 'Reset' Kommando an den Laser"
+
+#: ./meerk40t\grbl\device.py:350
+msgid "Max vector speed"
+msgstr "Max Vektor-Geschw."
+
+#: ./meerk40t\grbl\device.py:355
+msgid ""
+"What is the highest reliable speed your laser is able to perform vector operations, "
+"ie engraving or cutting.\n"
+"You can finetune this in the Warning Sections of this configuration dialog."
+msgstr ""
+"Was ist die höchste verlässliche Geschwindigkeit, bei der der Laser "
+"Vektor-Operationen (also Gravieren oder Schneiden) durchführen kann.\n"
+"Diese Werte können neben einigen anderen im 'Warnungen'-Abschnitt "
+"noch feiner definiert werden."
+
+#: ./meerk40t\grbl\device.py:356
+msgid "Maximum speeds"
+msgstr "Maximal-Geschwindigkeiten"
+
+#: ./meerk40t\grbl\device.py:364
+msgid "Max raster speed"
+msgstr "Max Raster Geschw."
+
+#: ./meerk40t\grbl\device.py:369
+msgid ""
+"What is the highest reliable speed your laser is able to "
+"perform raster or image operations.\n"
+"You can finetune this in the Warning Sections of this configuration dialog."
+msgstr ""
+"Was ist die höchste verlässliche Geschwindigkeit, bei der der Laser "
+"Raster-Operationen (also Raster oder Bilder) durchführen kann.\n"
+"Diese Werte können neben einigen anderen im 'Warnungen'-Abschnitt "
+"noch feiner definiert werden."
+
+#: ./meerk40t\grbl\device.py:427
+msgid "Reset on connect"
+msgstr "Reset bei Verbinden"
+
+#: ./meerk40t\grbl\device.py:430
+msgid ""
+"On connection, send the device a softreset message as soon as connection is established."
+msgstr ""
+"Soll beim Verbindungsaufbau ein softreset-Kommando geesndet werden?"
+
+#: ./meerk40t\grbl\device.py:438
+msgid "Check sequence on connect."
+msgstr "Auf Start-Meldung warten"
+
+#: ./meerk40t\grbl\device.py:439
+msgid "On connection, check the standard GRBL info for the device."
+msgstr ""
+"Soll bei Verbindungsaufbau auf die Standard-GRBL-Startsequenz gewartet werden."
 
 msgid "Open the configuration window for the active device"
 msgstr "Öffne das Einstellungsfenster für das aktive Gerät"
@@ -18163,7 +18292,7 @@ msgstr "W"
 
 #: ./meerk40t\gui\materialmanager.py:503
 msgid "Lens-Size"
-msgstr "Linsen-Größe"
+msgstr "Linse"
 
 #: ./meerk40t\gui\materialmanager.py:524
 msgid "Filter entries with a certain title."
@@ -18211,7 +18340,7 @@ msgstr "Aus Projekt laden"
 
 #: ./meerk40t\gui\materialmanager.py:543
 msgid "Use the currently defined operations"
-msgstr ""
+msgstr "Lade die aktuell im Projekt verwendeten Brennvorgänge"
 
 #: ./meerk40t\gui\materialmanager.py:544
 msgid "Load into Tree"
@@ -18348,6 +18477,16 @@ msgstr "Materialien"
 msgid "Manages Material Settings"
 msgstr "Verwaltung der Material-Bibliothek"
 
+#: ./meerk40t\gui\materialmanager.py:1065
+msgid "Deleting data"
+msgstr "Lösche Daten"
+
+#: ./meerk40t\gui\materialmanager.py:1542
+msgid "Do you want to remove all existing operations before loading this set?"
+msgstr ""
+"Sollen alle bestehenden Brennvorgänge gelöscht werden,\n"
+"bevor diese Einträge geladen werden?"
+
 msgid "Old:"
 msgstr "Alt:"
 
@@ -18366,14 +18505,75 @@ msgstr "Deaktivieren"
 msgid "Paint format"
 msgstr "Format kopieren"
 
-#: ./meerk40t\gui\wxmmain.py:1297
-msgid ""
-"First select your template, then every subsequent selection"
-"will apply the templates properties to the selected elements"
-msgstr ""
-"Zunächst das Quellelement auswählen, danach wird bei jeder\n"
-"neuen Objektauswahl das Format des Quellobjektes (z.B. Farbe) übernommen."
 
 #: ./meerk40t\gui\wxmmain.py:1307
 msgid "Click again to disable the paint mode"
 msgstr "Nochmals kopieren, um den Format-Kopiermodus zu beenden"
+
+#: ./meerk40t\gui\gui_mixins.py:36
+msgid "First select your template, then every subsequent selection will apply the templates properties to the selected elements"
+msgstr ""
+"Zunächst das Quellelement auswählen, danach wird bei jeder "
+"neuen Objektauswahl das Format des Quellobjektes (z.B. Farbe) übernommen."
+
+#: ./meerk40t\gui\gui_mixins.py:216
+msgid "There are issues with your project"
+msgstr "Es gibt Probleme mit dem Projekt"
+
+#: ./meerk40t\gui\gui_mixins.py:382
+msgid "- Vector operations are too fast."
+msgstr "- Vektor-Operationen sind zu schnell."
+
+#: ./meerk40t\gui\gui_mixins.py:384
+msgid "Could lead to erratic stepper behaviour and incomplete burns."
+msgstr "Kann zu fehlerhaften Stepper-Verhalten und fehlerhaften Brennvorgängen führen"
+
+#: ./meerk40t\gui\gui_mixins.py:389
+msgid "- Raster operations are too fast."
+msgstr "- Raster-Operationen sind zu schnell."
+
+#: ./meerk40t\gui\gui_mixins.py:395
+msgid "- Elements are lying outside the burnable area."
+msgstr "- Element liegen (teilweise) außerhalb des brennbaren Bereichs."
+
+#: ./meerk40t\gui\gui_mixins.py:397
+msgid "Could lead to the laserhead bumping into the rails."
+msgstr "Der Laserkopf könnte an die Begrenzungen fahren."
+
+#: ./meerk40t\gui\gui_mixins.py:402
+msgid "- Raster operations get very close to the edge."
+msgstr "- Raster-Operationen liegen sehr nahe am Rand."
+
+#: ./meerk40t\gui\gui_mixins.py:412
+msgid "- Elements aren't assigned to an operation and will not be burnt"
+msgstr "- Element sind keinem Brennvorgang zugeordnet und werden deswegen nicht gebrannt"
+
+#: ./meerk40t\gui\gui_mixins.py:418
+msgid "- Some operations containing elements aren't active, so some elements will not be burnt"
+msgstr "- Einige Brennvorgänge mit Elementen sind inaktiv, wodurch Element nicht gebrannt werden"
+
+#: ./meerk40t\gui\helper.py:56
+msgid "Display control-information"
+msgstr "Hilfstext anzeigen"
+
+#: ./meerk40t\gui\helper.py:58
+msgid "Online-Help"
+msgstr "Online-Hilfe"
+
+#: ./meerk40t\gui\helper.py:131
+msgid "Information about the control the mouse is hovering over"
+msgstr "Hilfs-Informationen zum Bildschirm-Element, über dem sich der Mauszeiger gerade befindet"
+
+#: ./meerk40t\gui\helper.py:138
+msgid "If inactive then no more updates will happen until you check this checkbox again"
+msgstr ""
+"Falls inaktiv, bleibt die Anzeigen fixiert und es werden solange keine "
+"neuen Inhalte angezeigt, bis diese Option wieder aktiviert wird."
+
+#: ./meerk40t\gui\helper.py:142
+msgid "Tip: Press Ctrl+Shift+F while hovering over a control to lock the content."
+msgstr "Tip: Mit Ctrl-Shift-F kann die aktuelle Anzeige fixiert werden."
+
+#: ./meerk40t\gui\helper.py:144
+msgid "Call online help-page"
+msgstr "Rufe Online-Hilfe-Seite auf"
