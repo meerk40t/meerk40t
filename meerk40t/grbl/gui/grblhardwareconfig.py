@@ -53,8 +53,10 @@ class GrblIoButtons(wx.Panel):
                 continue
             hardware_index = int(setting[1:])
             d = hardware_settings(hardware_index)
-
-            value = float(chart.GetItemText(i, 2))
+            try:
+                value = float(chart.GetItemText(i, 2))
+            except ValueError:
+                continue
             if d[-1] == int:
                 value = int(value)
             if value != self.service.hardware_config[hardware_index]:
