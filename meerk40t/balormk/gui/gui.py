@@ -156,6 +156,7 @@ def plugin(service, lifecycle):
                 "tip": _("Center selection on laserbed"),
                 "help": "devicebalor",
                 "action": lambda v: service("align bed group xy center center\n"),
+                "rule_enabled": lambda cond: bool(service.elements.has_emphasis()),
             },
         )
 
