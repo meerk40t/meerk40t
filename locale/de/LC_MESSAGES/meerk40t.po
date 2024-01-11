@@ -18353,3 +18353,27 @@ msgstr "Alt:"
 
 msgid "New:"
 msgstr "Neu:"
+
+#: ./meerk40t\gui\spoolerpanel.py:272
+msgid "Jobinfo"
+msgstr "Jobinfo"
+
+#: ./meerk40t\gui\spoolerpanel.py:530
+msgid "Disable"
+msgstr "Deaktivieren"
+
+#: ./meerk40t\gui\wxmmain.py:1295
+msgid "Paint format"
+msgstr "Format kopieren"
+
+#: ./meerk40t\gui\wxmmain.py:1297
+msgid ""
+"First select your template, then every subsequent selection"
+"will apply the templates properties to the selected elements"
+msgstr ""
+"Zunächst das Quellelement auswählen, danach wird bei jeder\n"
+"neuen Objektauswahl das Format des Quellobjektes (z.B. Farbe) übernommen."
+
+#: ./meerk40t\gui\wxmmain.py:1307
+msgid "Click again to disable the paint mode"
+msgstr "Nochmals kopieren, um den Format-Kopiermodus zu beenden"

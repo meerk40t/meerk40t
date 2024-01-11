@@ -316,6 +316,7 @@ def init_commands(kernel):
 
             self.np_list = []
             self.polygon_list = []
+            self.first = 0
             self._interpolation = None
             self.interpolation = interpolation
             self.any_open = False
@@ -388,6 +389,7 @@ def init_commands(kernel):
         def clear(self):
             self.np_list = []
             self.polygon_list = []
+            self.first = 0
 
         def add_nodes(self, nodelist):
             # breaks down the path to a list of subgeometries.
@@ -406,6 +408,8 @@ def init_commands(kernel):
             factor2 = 1000 / factor1
             self.factor = factor1
             self.tolerance = 0.5 * factor2 * 0.5 * factor2
+            first = True
+            self.first = 0
             for node in nodelist:
                 # print (f"Looking at {node.type} - {node.label}")
                 if hasattr(node, "as_geometry"):
@@ -414,6 +418,8 @@ def init_commands(kernel):
                     g = node.as_geometry()
                     idx = 0
                     for subg in g.as_contiguous():
+                        if not subg:
+                            continue
                         node_points = list(
                             subg.as_interpolated_points(self.interpolation)
                         )
@@ -421,6 +427,8 @@ def init_commands(kernel):
                         # print (node_points, flag)
                         self.np_list.append(node_points)
                         self.polygon_list.append(flag)
+                        if first:
+                            self.first += 1
                         # print (f"Adding structure #{idx} with {len(node_points)} pts")
                         idx += 1
                 else:
@@ -437,11 +445,16 @@ def init_commands(kernel):
                     )
                     self.np_list.append(node_points)
                     self.polygon_list.append(True)
+                    if first:
+                        self.first += 1
+
+                first = False
 
         def _add_data(self):
             self.clipr_clipper.clear()
             first = True
             self.any_open = False
+            idx = 0
             for node_points, is_polygon in zip(self.np_list, self.polygon_list):
                 # print (f"Add {'polygon' if is_polygon else 'polyline'}: {node_points}")
 
@@ -452,8 +465,7 @@ def init_commands(kernel):
                 temp = np.column_stack((complex_array.real, complex_array.imag))
                 np_points = temp.astype(int)
 
-                if first:
-                    first = False
+                if idx < self.first:
                     pyc_pathtype = pyclipr.PathType.Subject
                 else:
                     pyc_pathtype = pyclipr.PathType.Clip
@@ -462,6 +474,7 @@ def init_commands(kernel):
                 if not is_polygon:
                     self.any_open = True
                 self.clipr_clipper.addPath(np_points, pyc_pathtype, not is_polygon)
+                idx += 1
 
         def process_data(self, method, filltype):
             self._add_data()
@@ -585,14 +598,19 @@ def init_commands(kernel):
         offs = ClipperOffset(interpolation=500)
         offs.add_path(path)
         offs.process_data(offset_value, jointype="round", separate=False)
-        p = None
-        for g in offs.result_geometry():
+        rp = None
+        # Attention geometry is already at device resolution, so we need to use a small tolerance
+        for geo in offs.result_geometry():
+            g = geo.simplify(tolerance=0.1)
             if g is not None:
                 p = g.as_path()
-                break
-        if p is None:
-            p = path
-        return p
+                if rp is None:
+                    rp = p
+                else:
+                    rp += p
+        if rp is None:
+            rp = path
+        return rp
 
     classify_new = self.post_classify
 

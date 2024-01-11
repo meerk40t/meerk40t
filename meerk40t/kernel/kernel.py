@@ -3442,6 +3442,30 @@ class Kernel(Settings):
             )
 
         # ==========
+        # SIGNAL
+        # ==========
+        @self.console_argument("signalname", type=str, help=_("Signal to send"))
+        @self.console_argument("signalargs", type=str, help=_("Signal content"))
+        @self.console_command(("signal"), help=_("sends a signal"))
+        def send_signal(channel, _, signalname=None, signalargs=None, **kwargs):
+            if signalname is None:
+                channel(_("Please provide a signal to send, attached listeners:"))
+                signal_keys = list(self.listeners.keys())
+                signal_keys.sort()
+                for idx, key in enumerate(signal_keys):
+                    channel(f"{idx}: {key}")
+                return
+            try:
+                if signalargs is None:
+                    self.root.signal(signalname)
+                else:
+                    self.root.signal(signalname, signalargs)
+                channel(f"Signal {signalname}, {signalargs} successfully sent")
+            except (TypeError, RuntimeError) as e:
+                channel(f"Error while sending {signalname}, {signalargs}: {e}")
+            return
+
+        # ==========
         # LIFECYCLE
         # ==========
 

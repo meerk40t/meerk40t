@@ -184,6 +184,10 @@ class CutPlan:
         idx = 0
         self.context.elements.mywordlist.push()
 
+        perform_simplify = (
+            self.context.opt_reduce_details and self.context.do_optimization
+        )
+        tolerance = self.context.opt_reduce_tolerance
         for placement in placements:
             # Adjust wordlist
             if idx > 0:
@@ -200,12 +204,17 @@ class CutPlan:
                 if op.type.startswith("place "):
                     continue
                 self.plan.append(op)
-                if op.type.startswith("op"):
+                if op.type.startswith("op") or op.type.startswith("util"):
+                    # Call preprocess on any op or util ops in our list.
                     if hasattr(op, "preprocess"):
                         op.preprocess(self.context, placement, self)
+                if op.type.startswith("op"):
                     for node in op.flat():
                         if node is op:
                             continue
+                        if hasattr(node, "geometry") and perform_simplify:
+                            # We are still in scene reolution and not yet at device level
+                            node.geometry = node.geometry.simplify(tolerance=tolerance)
                         if hasattr(node, "mktext") and hasattr(node, "_cache"):
                             newtext = self.context.elements.wordlist_translate(
                                 node.mktext, elemnode=node, increment=False

@@ -1,10 +1,14 @@
 """
 Specifically draws the rectangle selection box and deals with emphasis of selected objects.
+Special case: if the user did not move the mouse within the first 0.5 seconds after
+the initial mouse press then we assume a drag move.
 """
+from time import perf_counter
 
-
+import numpy as np
 import wx
 
+from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.gui.scene.scene import (
     HITCHAIN_HIT,
     RESPONSE_CHAIN,
@@ -12,6 +16,7 @@ from meerk40t.gui.scene.scene import (
     RESPONSE_DROP,
 )
 from meerk40t.gui.scene.widget import Widget
+from meerk40t.tools.geomstr import TYPE_END
 
 
 class RectSelectWidget(Widget):
@@ -70,6 +75,10 @@ class RectSelectWidget(Widget):
         self.start_location = None
         self.end_location = None
         self.modifiers = []
+        self.mouse_down_time = 0
+        self.scene.context.setting(bool, "delayed_move", True)
+        self.mode = "select"
+        self.can_drag_move = False
 
     def hit(self):
         return HITCHAIN_HIT
@@ -95,6 +104,7 @@ class RectSelectWidget(Widget):
 
     def rect_select(self, elements, sx, sy, ex, ey):
         sector = self.sector
+        selected = False
         for node in elements.elems():
             try:
                 q = node.bounds
@@ -138,19 +148,24 @@ class RectSelectWidget(Widget):
                 if cover >= self.selection_method[sector]:
                     node.emphasized = True
                     node.selected = True
+                    selected = True
             elif "ctrl" in self.modifiers:
                 # Invert Selection
                 if cover >= self.selection_method[sector]:
                     node.emphasized = not node.emphasized
                     node.selected = node.emphasized
+                    selected = True
             else:
                 # Replace Selection
                 if cover >= self.selection_method[sector]:
                     node.emphasized = True
                     node.selected = True
+                    selected = True
                 else:
                     node.emphasized = False
                     node.selected = False
+        if selected:
+            self.scene.context.signal("element_clicked")
 
     def update_statusmsg(self, value):
         if value != self.store_last_msg:
@@ -162,50 +177,239 @@ class RectSelectWidget(Widget):
     def event(
         self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
+        def contains(box, x, y=None):
+            if box is None:
+                return False
+            if y is None:
+                y = x[1]
+                x = x[0]
+            return box[0] <= x <= box[2] and box[1] <= y <= box[3]
+
+        def move_to(dx, dy):
+            if dx == 0 and dy == 0:
+                return
+            # self.total_dx += dx
+            # self.total_dy += dy
+            b = self.scene.context.elements._emphasized_bounds
+            if b is None:
+                b = self.scene.context.elements.selected_area()
+                if b is None:
+                    # There is no emphasized bounds or selected area.
+                    return
+            allowlockmove = self.scene.context.elements.lock_allows_move
+            with self.scene.context.elements.undofree():
+                for e in self.scene.context.elements.flat(
+                    types=elem_nodes, emphasized=True
+                ):
+                    if not e.can_move(allowlockmove):
+                        continue
+                    e.matrix.post_translate(dx, dy)
+                    # We would normally not adjust the node properties,
+                    # but the pure adjustment of the bbox is hopefully not hurting
+                    e.translated(dx, dy)
+            self.scene.context.elements.update_bounds(
+                [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy]
+            )
+            self.scene.request_refresh()
+
         if modifiers is not None:
             self.modifiers = modifiers
 
         elements = self.scene.context.elements
         if event_type == "leftdown":
+            self.mouse_down_time = perf_counter()
+            self.mode = "unclear"
             self.start_location = space_pos
             self.end_location = space_pos
+            if contains(self.scene.context.elements._emphasized_bounds, space_pos):
+                self.can_drag_move = True
             # print ("RectSelect consumed leftdown")
             return RESPONSE_CONSUME
         elif event_type == "leftclick":
             # That's too fast
             # still chaining though
             self.scene.request_refresh()
-            self.start_location = None
-            self.end_location = None
+            self.reset()
             return RESPONSE_CHAIN
         elif event_type == "leftup":
-            if self.start_location is None:
-                return RESPONSE_CHAIN
-            _ = self.scene.context._
-            self.update_statusmsg(_("Status"))
-            elements.validate_selected_area()
-            sx = min(self.start_location[0], self.end_location[0])
-            sy = min(self.start_location[1], self.end_location[1])
-            ex = max(self.start_location[0], self.end_location[0])
-            ey = max(self.start_location[1], self.end_location[1])
-            self.rect_select(elements, sx, sy, ex, ey)
+            if self.mode == "select":
+                if self.start_location is None:
+                    return RESPONSE_CHAIN
+                _ = self.scene.context._
+                self.update_statusmsg(_("Status"))
+                elements.validate_selected_area()
+                sx = min(self.start_location[0], self.end_location[0])
+                sy = min(self.start_location[1], self.end_location[1])
+                ex = max(self.start_location[0], self.end_location[0])
+                ey = max(self.start_location[1], self.end_location[1])
+                self.rect_select(elements, sx, sy, ex, ey)
 
-            self.scene.request_refresh()
-            self.scene.context.signal("select_emphasized_tree", 0)
+                self.scene.request_refresh()
+                self.scene.context.signal("select_emphasized_tree", 0)
+            else:
 
-            self.start_location = None
-            self.end_location = None
+                def shortest_distance(p1, p2, tuplemode):
+                    """
+                    Calculates the shortest distance between two arrays of 2-dimensional points.
+                    """
+                    # Calculate the Euclidean distance between each point in p1 and p2
+                    if tuplemode:
+                        # For an array of tuples:
+                        dist = np.sqrt(np.sum((p1[:, np.newaxis] - p2) ** 2, axis=2))
+                    else:
+                        # For an array of complex numbers
+                        dist = np.abs(p1[:, np.newaxis] - p2[np.newaxis, :])
+
+                    # Find the minimum distance and its corresponding indices
+                    min_dist = np.min(dist)
+                    min_indices = np.argwhere(dist == min_dist)
+
+                    # Return the coordinates of the two points
+                    return min_dist, p1[min_indices[0][0]], p2[min_indices[0][1]]
+
+                b = self.scene.context.elements._emphasized_bounds
+                if b is None:
+                    b = self.scene.context.elements.selected_area()
+                matrix = self.scene.widget_root.scene_widget.matrix
+                did_snap_to_point = False
+                if (
+                    self.scene.context.snap_points
+                    and "shift" not in modifiers
+                    and b is not None
+                ):
+                    gap = self.scene.context.action_attract_len / matrix.value_scale_x()
+                    # We gather all points of non-selected elements,
+                    # but only those that lie within the boundaries
+                    # of the selected area
+                    # We compare every point of the selected elements
+                    # with the points of the non-selected elements (provided they
+                    # lie within the selection area plus boundary) and look for
+                    # the closest distance.
+
+                    # t1 = perf_counter()
+                    other_points = []
+                    selected_points = []
+                    for e in self.scene.context.elements.elems():
+                        if e.emphasized:
+                            target = selected_points
+                        else:
+                            target = other_points
+                        if not hasattr(e, "as_geometry"):
+                            continue
+                        geom = e.as_geometry()
+                        last = None
+                        for seg in geom.segments[: geom.index]:
+                            start = seg[0]
+                            seg_type = int(seg[2].real)
+                            end = seg[4]
+                            if seg_type != TYPE_END:
+                                if start != last:
+                                    xx = start.real
+                                    yy = start.imag
+                                    ignore = (
+                                        xx < b[0] - gap
+                                        or xx > b[2] + gap
+                                        or yy < b[1] - gap
+                                        or yy > b[3] + gap
+                                    )
+                                    if not ignore:
+                                        target.append(start)
+                                xx = end.real
+                                yy = end.imag
+                                ignore = (
+                                    xx < b[0] - gap
+                                    or xx > b[2] + gap
+                                    or yy < b[1] - gap
+                                    or yy > b[3] + gap
+                                )
+                                if not ignore:
+                                    target.append(end)
+                                last = end
+                    # t2 = perf_counter()
+                    if len(other_points) > 0:
+                        np_other = np.asarray(other_points)
+                        np_selected = np.asarray(selected_points)
+                        dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
+
+                        if dist < gap:
+                            did_snap_to_point = True
+                            dx = pt1.real - pt2.real
+                            dy = pt1.imag - pt2.imag
+                            move_to(dx, dy)
+                            # Get new value
+                            b = self.scene.context.elements._emphasized_bounds
+                    # t3 = perf_counter()
+                    # print (f"Snap, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t3-t1:.2f}sec, Generation: {t2-t1:.2f}sec, shortest: {t3-t2:.2f}sec")
+                if (
+                    self.scene.context.snap_grid
+                    and "shift" not in modifiers
+                    and b is not None
+                    and not did_snap_to_point
+                ):
+                    # t1 = perf_counter()
+                    gap = self.scene.context.grid_attract_len / matrix.value_scale_x()
+                    # Check for corner points + center:
+                    selected_points = (
+                        (b[0], b[1]),
+                        (b[2], b[1]),
+                        (b[0], b[3]),
+                        (b[2], b[3]),
+                        ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
+                    )
+                    other_points = self.scene.pane.grid.grid_points
+                    if len(other_points) > 0:
+                        np_other = np.asarray(other_points)
+                        np_selected = np.asarray(selected_points)
+                        dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
+                        if dist < gap:
+                            did_snap_to_point = True
+                            dx = pt1[0] - pt2[0]
+                            dy = pt1[1] - pt2[1]
+                            move_to(dx, dy)
+                            # Get new value
+                            b = self.scene.context.elements._emphasized_bounds
+
+                    # t2 = perf_counter()
+                    # print (f"Corner-points, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t2-t1:.2f}sec")
+                    # Even then magnets win!
+                    dx, dy = self.scene.pane.revised_magnet_bound(b)
+                    move_to(dx, dy)
+
+            self.reset()
 
             return RESPONSE_CONSUME
         elif event_type == "move":
-            self.scene.request_refresh()
-            self.end_location = space_pos
+            if self.mode == "unclear":
+                current_time = perf_counter()
+                # print (f"{current_time - self.mouse_down_time:.2f}sec.")
+                if current_time - self.mouse_down_time > 0.5 and self.can_drag_move:
+                    self.mode = "move"
+                    self.scene.cursor("sizing")
+                else:
+                    self.mode = "select"
+                    self.scene.cursor("arrow")
+
+            if self.mode == "select":
+                self.scene.request_refresh()
+                self.end_location = space_pos
+            elif self.mode == "move":
+                dx = space_pos[4]
+                dy = space_pos[5]
+                move_to(dx, dy)
+
             return RESPONSE_CONSUME
         elif event_type == "lost":
-            self.start_location = None
-            self.end_location = None
+            self.reset()
             return RESPONSE_CONSUME
         return RESPONSE_DROP
+
+    def reset(self):
+        self.start_location = None
+        self.end_location = None
+        self.mode = "unclear"
+        self.mouse_down_time = 0
+        self.can_drag_move = False
+        self.scene.cursor("arrow")
 
     def draw_rectangle(self, gc, x0, y0, x1, y1, tcolor, tstyle):
         matrix = self.parent.matrix
@@ -289,7 +493,11 @@ class RectSelectWidget(Widget):
         """
         Draw the selection rectangle
         """
-        if self.start_location is not None and self.end_location is not None:
+        if (
+            self.mode == "select"
+            and self.start_location is not None
+            and self.end_location is not None
+        ):
             self.selection_style[0][0] = self.scene.colors.color_selection1
             self.selection_style[1][0] = self.scene.colors.color_selection2
             self.selection_style[2][0] = self.scene.colors.color_selection3

@@ -629,11 +629,16 @@ class RibbonEditor(wx.Panel):
         self.button_down_page = wx.StaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 30, 20)
         )
+
         testsize = dip_size(self, 20, 20)
         iconsize = testsize[0]
-        self.button_add_page.SetBitmap(
-            icon_add_new.GetBitmap(resize=iconsize, buffer=1)
-        )
+        # Circumvent a WXPython bug at high resolutions under Windows
+        bmp = icon_trash.GetBitmap(resize=iconsize, buffer=1)
+        self.button_del_page.SetBitmap(bmp)
+        testsize = self.button_del_page.GetBitmap().Size
+        if testsize[0] != iconsize:
+            iconsize = int(iconsize * iconsize / testsize[0])
+
         self.button_del_page.SetBitmap(icon_trash.GetBitmap(resize=iconsize, buffer=1))
         self.button_up_page.SetBitmap(icons8_up.GetBitmap(resize=iconsize, buffer=1))
         self.button_down_page.SetBitmap(

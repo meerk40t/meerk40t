@@ -36,9 +36,10 @@ class GroupNode(Node):
         def elem_count(node):
             res = 0
             for e in node.children:
-                res += 1
                 if e.type in ("file", "group"):
                     res += elem_count(e)
+                else:
+                    res += 1
             return res
 
         default_map = super().default_map(default_map=default_map)
@@ -51,7 +52,7 @@ class GroupNode(Node):
         return default_map
 
     def drop(self, drag_node, modify=True):
-        if drag_node.type.startswith("elem"):
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             # Dragging element onto a group moves it to the group node.
             if modify:
                 self.append_child(drag_node)

@@ -588,7 +588,7 @@ class Elemental(Service):
     @contextlib.contextmanager
     def static(self, source):
         try:
-            self.stop_updates(source)
+            self.stop_updates(source, False)
             yield self
         finally:
             self.resume_updates(source)
@@ -601,14 +601,16 @@ class Elemental(Service):
         finally:
             self.do_undo = True
 
-    def stop_updates(self, source):
+    def stop_updates(self, source, stop_notify=False):
         # print (f"Stop update called from {source}")
+        self._tree.pause_notify = stop_notify
         self.suppress_updates = True
         self.signal("freeze_tree", True)
 
     def resume_updates(self, source, force_an_update=True):
         # print (f"Resume update called from {source}")
         self.suppress_updates = False
+        self._tree.pause_notify = False
         self.signal("freeze_tree", False)
         if force_an_update:
             self.signal("tree_changed")
@@ -2380,6 +2382,7 @@ class Elemental(Service):
             self._emphasized_bounds = bounds
             self._emphasized_bounds_painted = bounds_painted
             self.set_emphasis(e_list)
+            self.signal("element_clicked")
         else:
             self._emphasized_bounds = None
             self._emphasized_bounds_painted = None
@@ -3649,14 +3652,32 @@ class Elemental(Service):
         return False
 
     def remove_empty_groups(self):
-        something_was_deleted = True
-        while something_was_deleted:
-            something_was_deleted = False
-            for node in self.elems_nodes():
-                if node.type in ("file", "group"):
-                    if len(node.children) == 0:
-                        node.remove_node()
-                        something_was_deleted = True
+        def descend_group(gnode):
+            gres = 0
+            gdel = 0
+            to_be_deleted = list()
+            for cnode in gnode.children:
+                if cnode.type in ("file", "group"):
+                    cres, cdel = descend_group(cnode)
+                    if cres == 0:
+                        # Empty, so remove it
+                        to_be_deleted.append(cnode)
+                        gdel += cdel + 1
+                    else:
+                        gres += cres
+                        gdel += cdel
+                else:
+                    gres += 1
+            for cnode in to_be_deleted:
+                cnode.remove_node(fast=True)
+            return gres, gdel
+
+        self.set_start_time("empty_groups")
+        l1, d1 = descend_group(self.elem_branch)
+        l2, d2 = descend_group(self.reg_branch)
+        self.set_end_time("empty_groups", display=True, message=f"{l1} / {l2}")
+        if d1 != 0 or d2 != 0:
+            self.signal("rebuild_tree")
 
     @staticmethod
     def element_classify_color(element: SVGElement):
@@ -3795,10 +3816,11 @@ class Elemental(Service):
             g = node.as_geometry()
         except AttributeError:
             return
-        changed, before, after = g.simplify()
-        if changed:
-            # Replace node geometry with simplified geometry.
-            node.geometry = g
+        before = g.index
+        node.geometry = g.simplify()
+        after = node.geometry.index
+        changed = True
+
         return changed, before, after
 
 

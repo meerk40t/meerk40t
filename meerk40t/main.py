@@ -119,6 +119,13 @@ parser.add_argument(
     default=None,
     help="force default language",
 )
+parser.add_argument(
+    "-f",
+    "--profiler",
+    type=str,
+    default=None,
+    help="run meerk40t with profiler file specified",
+)
 
 
 def run():
@@ -149,6 +156,16 @@ def run():
     ###################
     # END Old Python Code.
     ###################
+    if args.profiler:
+        import cProfile
+
+        profiler = cProfile.Profile()
+        profiler.enable()
+        while _exe(args):
+            pass
+        profiler.disable()
+        profiler.dump_stats(args.profiler)
+        return
     while _exe(args):
         pass
 

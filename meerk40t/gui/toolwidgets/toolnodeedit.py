@@ -51,7 +51,7 @@ class EditTool(ToolWidget):
     polylines / polygons and paths.
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, mode=None):
         ToolWidget.__init__(self, scene)
         self._listener_active = False
         self.nodes = []

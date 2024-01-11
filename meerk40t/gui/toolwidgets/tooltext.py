@@ -17,7 +17,7 @@ class TextTool(ToolWidget):
     Adds Text at set location.
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, mode=None):
         ToolWidget.__init__(self, scene)
         self.start_position = None
         self.last_node_created = None

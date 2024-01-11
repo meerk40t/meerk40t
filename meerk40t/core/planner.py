@@ -255,6 +255,43 @@ def plugin(kernel, lifecycle=None):
                 "section": "_20_Reducing Movements",
                 "hidden": True,
             },
+            {
+                "attr": "opt_reduce_details",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "label": _("Reduce polyline details"),
+                "tip": _(
+                    "Active: reduce the details of polyline elements,\n"
+                    + "so that less information needs to be sent to the laser."
+                )
+                + "\n"
+                + _(
+                    "This can reduce the processing and laser time but can as well\n"
+                    + "compromise the quality at higher levels, so use with care and preview in simulation."
+                ),
+                "page": "Optimisations",
+                "section": "_30_Details",
+                "subsection": "_10_",
+            },
+            {
+                "attr": "opt_reduce_tolerance",
+                "object": context,
+                "default": 10,
+                "type": int,
+                "label": _("Level"),
+                "style": "option",
+                "choices": (1, 10, 50, 100),
+                "display": (_("Minimal"), _("Fine"), _("Medium"), _("Coarse")),
+                "tip": _(
+                    "This can reduce the processing and laser time but can as well\n"
+                    + "compromise the quality at higher levels, so use with care and preview in simulation."
+                ),
+                "page": "Optimisations",
+                "section": "_30_Details",
+                "subsection": "_10_",
+                "conditional": (context, "opt_reduce_details"),
+            },
         ]
         for c in choices:
             c["help"] = "optimisation"

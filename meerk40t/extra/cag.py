@@ -47,7 +47,7 @@ def plugin(kernel, lifecycle):
             for i in range(len(data)):
                 node = data[i]
                 try:
-                    path = node.as_path()
+                    path = abs(node.as_path())
                 except AttributeError:
                     return "elements", data
                 c = linearize_path(path)
