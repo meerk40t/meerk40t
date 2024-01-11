@@ -155,10 +155,13 @@ class GrblHardwareProperties(ScrolledPanel):
             if d is None:
                 continue
             ignore, parameter, units, data_type = d
+            value = ""
             if i in self.service.hardware_config:
-                value = str(data_type(self.service.hardware_config[i]))
-            else:
-                value = ""
+                try:
+                    value = str(data_type(self.service.hardware_config[i]))
+                except ValueError:
+                    # data_type could not be used to cast the value.
+                    pass
 
             row_id = chart.InsertItem(chart.GetItemCount(), f"${i}")
             chart.SetItem(row_id, 1, str(parameter))
