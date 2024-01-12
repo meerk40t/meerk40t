@@ -188,7 +188,8 @@ class GrblHardwareProperties(ScrolledPanel):
             ignore, parameter, units, data_type = settings
             new_data = str(data_type(new_data))
         except ValueError:
-            new_data = ""
+            event.Veto()
+            return
         self.chart.SetItem(row_id, col_id, new_data)
 
     @signal_listener("grbl:hwsettings")
