@@ -1286,6 +1286,7 @@ class Elemental(Service):
         settings.write_configuration()
 
     def load_persistent_op_info(self, name, use_settings=None):
+        name = self.safe_section_name(name)
         if use_settings is None:
             settings = self.op_data
         else:
