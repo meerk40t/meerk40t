@@ -170,7 +170,11 @@ class GrblHardwareProperties(ScrolledPanel):
             chart.SetItem(row_id, 4, str(parameter.upper()))
 
     def on_label_start_edit(self, event):
-        event.Allow()
+        col_id = event.GetColumn()  # Get the current column
+        if col_id == 2:
+            event.Allow()
+        else:
+            event.Veto()
 
     def on_label_end_edit(self, event):
         row_id = event.GetIndex()  # Get the current row
