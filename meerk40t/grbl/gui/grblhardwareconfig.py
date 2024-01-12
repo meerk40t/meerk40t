@@ -185,8 +185,9 @@ class GrblHardwareProperties(ScrolledPanel):
         try:
             v = int(v[1:])
             settings = hardware_settings(v)
-            ignore, parameter, units, data_type = settings
-            new_data = str(data_type(new_data))
+            if settings:
+                ignore, parameter, units, data_type = settings
+                new_data = str(data_type(new_data))
         except ValueError:
             event.Veto()
             return
