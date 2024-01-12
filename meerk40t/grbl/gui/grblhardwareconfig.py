@@ -182,7 +182,7 @@ class GrblHardwareProperties(ScrolledPanel):
             v = int(v[1:])
             settings = hardware_settings(v)
             ignore, parameter, units, data_type = settings
-            new_data = str(data_type(v))
+            new_data = str(data_type(new_data))
         except ValueError:
             new_data = ""
         self.chart.SetItem(row_id, col_id, new_data)
