@@ -59,7 +59,7 @@ class GrblIoButtons(wx.Panel):
                 continue
             if d[-1] == int:
                 value = int(value)
-            if value != self.service.hardware_config[hardware_index]:
+            if value != self.service.hardware_config.get(hardware_index):
                 eeprom_writes.append(f"${hardware_index}={value}")
         if eeprom_writes:
             dlg = wx.MessageDialog(
