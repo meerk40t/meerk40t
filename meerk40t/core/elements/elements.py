@@ -1188,6 +1188,12 @@ class Elemental(Service):
         for e in self.flat():
             e.unregister()
 
+    def safe_section_name(self, name):
+        res = name
+        for forbidden in " []":
+            res = res.replace(forbidden, "_")
+        return res
+
     def save_persistent_operations_list(
         self, name, oplist=None, opinfo=None, inform=True, use_settings=None
     ):
@@ -1198,6 +1204,7 @@ class Elemental(Service):
         @param oplist:
         @return:
         """
+        name = self.safe_section_name(name)
         if oplist is None:
             oplist = self.op_branch.children
         if opinfo is None:
@@ -1231,6 +1238,7 @@ class Elemental(Service):
                 then we will let everyone know
         @return:
         """
+        name = self.safe_section_name(name)
         if use_settings is None:
             settings = self.op_data
         else:
@@ -1266,6 +1274,7 @@ class Elemental(Service):
         @param flush: Optionally permit non-flushed to disk.
         @return:
         """
+        name = self.safe_section_name(name)
         if use_settings is None:
             settings = self.op_data
         else:
@@ -1292,6 +1301,7 @@ class Elemental(Service):
         return op_info
 
     def load_persistent_op_list(self, name, use_settings=None):
+        name = self.safe_section_name(name)
         if use_settings is None:
             settings = self.op_data
         else:
@@ -1311,7 +1321,7 @@ class Elemental(Service):
             try:
                 op = Node().create(type=op_type)
             except ValueError:
-                # Attempted to create a non-boostrapped node type.
+                # Attempted to create a non-bootstrapped node type.
                 continue
             op.load(settings, section)
             op_tree[section] = op
