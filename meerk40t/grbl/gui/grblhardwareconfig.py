@@ -176,6 +176,15 @@ class GrblHardwareProperties(ScrolledPanel):
         row_id = event.GetIndex()  # Get the current row
         col_id = event.GetColumn()  # Get the current column
         new_data = event.GetLabel()  # Get the changed data
+        # Validate
+        v = self.chart.GetItemText(row_id, 0)
+        try:
+            v = int(v[1:])
+            settings = hardware_settings(v)
+            ignore, parameter, units, data_type = settings
+            new_data = str(data_type(v))
+        except ValueError:
+            new_data = ""
         self.chart.SetItem(row_id, col_id, new_data)
 
     @signal_listener("grbl:hwsettings")
