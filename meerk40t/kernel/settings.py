@@ -218,7 +218,7 @@ class Settings:
                 item = ast.literal_eval(item)
             except (ValueError, SyntaxError):
                 pass
-            obj.__dict__[k] = item
+            setattr(obj, k, item)
 
     def read_persistent_string_dict(
         self, section: str, dictionary: Optional[Dict] = None, suffix: bool = False
