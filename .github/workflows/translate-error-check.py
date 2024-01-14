@@ -4,17 +4,48 @@ import re
 
 def find_erroneous_translations(file_path):
     with open(file_path, "r", encoding="utf-8") as file:
-        content = file.read()
+        file_lines = file.readlines()
 
     found_error = False
-    matches_msgid = re.findall(r'^msgid "(.*?)"', content, re.DOTALL)
-    matches_msgstr = re.findall(r'^msgstr "(.*?)"', content, re.DOTALL)
+    index = 0
+    msgids = []
+    msgstrs = []
+    while index < len(file_lines):
+        try:
+            msgids.append("")
+            # Find msgid and all multi-lined message ids
+            if re.match('msgid "(.*)"', file_lines[index]):
+                m = re.match('msgid "(.*)"', file_lines[index])
+                msgids[-1] = m.group(1)
+                index += 1
+                if index >= len(file_lines):
+                    break
+                while re.match('^"(.*)"$', file_lines[index]):
+                    m = re.match('^"(.*)"$', file_lines[index])
+                    msgids[-1] += m.group(1)
+                    index += 1
 
-    if len(matches_msgid) != len(matches_msgstr):
-        print(f"Error: Inconsistent Count of msgid/msgstr {file_path}: {len(matches_msgstr)} to {len(matches_msgid)}")
+            msgstrs.append("")
+            # find all message strings and all multi-line message strings
+            if re.match('msgstr "(.*)"', file_lines[index]):
+                m = re.match('msgstr "(.*)"', file_lines[index])
+                msgstrs[-1] += m.group(1)
+                index += 1
+                while re.match('^"(.*)"$', file_lines[index]):
+                    m = re.match('^"(.*)"$', file_lines[index])
+                    msgstrs[-1] += m.group(1)
+                    index += 1
+            index += 1
+        except IndexError:
+            break
+
+    if len(msgids) != len(msgstrs):
+        print(
+            f"Error: Inconsistent Count of msgid/msgstr {file_path}: {len(msgstrs)} to {len(msgids)}"
+        )
         found_error = True
 
-    for msgid, msgstr in zip(matches_msgid, matches_msgstr):
+    for msgid, msgstr in zip(msgids, msgstrs):
         # Find words inside curly brackets in both msgid and msgstr
         words_msgid = re.findall(r"\{(.+?)\}", msgid)
         words_msgstr = re.findall(r"\{(.+?)\}", msgstr)
