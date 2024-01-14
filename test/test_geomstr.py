@@ -1858,7 +1858,7 @@ class TestGeomstr(unittest.TestCase):
 
             t = time.time()
             sb2 = BeamTable(g)
-            sb2.compute_beam_bo()
+            sb2.compute_beam_rust()
             bo_time = time.time() - t
 
             # self.assertEqual(sb1.intersections, sb2.intersections)
@@ -1867,7 +1867,7 @@ class TestGeomstr(unittest.TestCase):
                 for c, d in zip(a, b):
                     self.assertEqual(c, d)
             print(
-                f"With binary inserts: brute: {brute_time} vs bo {bo_time} improvement: {brute_time/bo_time}x or {bo_time / brute_time}x"
+                f"With binary inserts: brute: {brute_time} vs rust {bo_time} improvement: {brute_time/bo_time}x or {bo_time / brute_time}x"
             )
             print(f"Intersections {len(sb1.intersections)}, {len(sb2.intersections)}")
 
