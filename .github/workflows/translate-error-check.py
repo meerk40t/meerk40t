@@ -10,6 +10,10 @@ def find_erroneous_translations(file_path):
     matches_msgid = re.findall(r'msgid "(.*?)"', content, re.DOTALL)
     matches_msgstr = re.findall(r'msgstr "(.*?)"', content, re.DOTALL)
 
+    if len(matches_msgid) != len(matches_msgstr):
+        print(f"Error: Inconsistent Count of msgid vs msgstr {len(matches_msgstr)} to {len(matches_msgid)}")
+        found_error = True
+
     for msgid, msgstr in zip(matches_msgid, matches_msgstr):
         # Find words inside curly brackets in both msgid and msgstr
         words_msgid = re.findall(r"\{(.+?)\}", msgid)
