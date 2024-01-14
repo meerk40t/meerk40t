@@ -2226,14 +2226,14 @@ msgid ""
 "{index}: stroke-width = {stroke_width}/{implied_stroke_width} - {name} - "
 "scaled-stroke"
 msgstr ""
-"{index}: largura-do-traço = {largura-do-traço}/{largura-do-traço-implied} - {nome} - traço-escalado"
+"{index}: largura-do-traço = stroke_width}/{implied_stroke_width} - {name} - traço-escalado"
 
 #: meerk40t/core/elements.py:4366
 msgid ""
 "{index}: stroke-width = {stroke_width}/{implied_stroke_width} - {name} - "
 "non-scaling-stroke"
 msgstr ""
-"{index}: largura-do-traço = {largura-do-traço}/{largura-do-traço-implied} - {nome} - traço-sem-escala"
+"{index}: largura-do-traço = {stroke_width}/{implied_stroke_width} - {name} - traço-sem-escala"
 
 #: meerk40t/core/elements.py:4422
 msgid "Linecap to apply to the path (one of butt, round, square)"
