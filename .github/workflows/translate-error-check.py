@@ -11,7 +11,7 @@ def find_erroneous_translations(file_path):
     matches_msgstr = re.findall(r'msgstr "(.*?)"', content, re.DOTALL)
 
     if len(matches_msgid) != len(matches_msgstr):
-        print(f"Error: Inconsistent Count of msgid vs msgstr {len(matches_msgstr)} to {len(matches_msgid)}")
+        print(f"Error: Inconsistent Count of msgid/msgstr {file_path}: {len(matches_msgstr)} to {len(matches_msgid)}")
         found_error = True
 
     for msgid, msgstr in zip(matches_msgid, matches_msgstr):
