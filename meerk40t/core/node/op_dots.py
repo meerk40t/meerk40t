@@ -180,7 +180,7 @@ class DotsOpNode(Node, Parameters):
         return False, False, None
 
     def load(self, settings, section):
-        settings.read_persistent_object(section, self)
+        settings.read_persistent_attributes(section, self)
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
