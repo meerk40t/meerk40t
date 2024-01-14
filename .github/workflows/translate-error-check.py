@@ -7,8 +7,8 @@ def find_erroneous_translations(file_path):
         content = file.read()
 
     found_error = False
-    matches_msgid = re.findall(r'msgid "(.*?)"', content, re.DOTALL)
-    matches_msgstr = re.findall(r'msgstr "(.*?)"', content, re.DOTALL)
+    matches_msgid = re.findall(r'^msgid "(.*?)"', content, re.DOTALL)
+    matches_msgstr = re.findall(r'^msgstr "(.*?)"', content, re.DOTALL)
 
     if len(matches_msgid) != len(matches_msgstr):
         print(f"Error: Inconsistent Count of msgid/msgstr {file_path}: {len(matches_msgstr)} to {len(matches_msgid)}")
