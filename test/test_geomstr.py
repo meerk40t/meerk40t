@@ -1866,6 +1866,9 @@ class TestGeomstr(unittest.TestCase):
                 # print(f"{a} :: {b}")
                 for c, d in zip(a, b):
                     self.assertEqual(c, d)
+            for a, b in zip(sb1._nb_events, sb2._nb_events):
+                self.assertAlmostEqual(a, b)
+            self.assertEqual(len(sb1._nb_events), len(sb2._nb_events))
             print(
                 f"With binary inserts: brute: {brute_time} vs rust {bo_time} improvement: {brute_time/bo_time}x or {bo_time / brute_time}x"
             )
