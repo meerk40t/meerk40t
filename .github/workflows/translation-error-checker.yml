@@ -22,7 +22,7 @@ jobs:
         python-version: 3.x
 
     - name: Run translation check script
-      run: translate-error-check.py
+      run: python translate-error-check.py
 
     - name: Check for script exit code
       run: |
