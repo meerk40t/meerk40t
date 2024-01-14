@@ -4,12 +4,13 @@ warnings to the user
 """
 
 import wx
+
 from meerk40t.core.units import UNITS_PER_MM, Length
 from meerk40t.gui.icons import (
-    icon_warning,
-    icon_paint_brush_green,
-    icon_paint_brush,
     STD_ICON_SIZE,
+    icon_paint_brush,
+    icon_paint_brush_green,
+    icon_warning,
 )
 
 _ = wx.GetTranslation

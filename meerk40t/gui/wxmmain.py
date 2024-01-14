@@ -33,8 +33,8 @@ from meerk40t.kernel import lookup_listener, signal_listener
 from ..core.units import (
     DEFAULT_PPI,
     UNITS_PER_INCH,
-    UNITS_PER_PIXEL,
     UNITS_PER_MM,
+    UNITS_PER_PIXEL,
     Length,
 )
 from ..svgelements import Color, Matrix, Path
