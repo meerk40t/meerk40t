@@ -1235,6 +1235,24 @@ class TestGeomstr(unittest.TestCase):
         except ZeroDivisionError:
             pass
 
+    def test_beam_table_wheel(self):
+        from beamtable import build
+        g = Geomstr.rect(0, 0, 100, 100, settings=0)
+        g.append(Geomstr.rect(51, 51, 100, 100, settings=1))
+        bt1 = BeamTable(g)
+        bt1.compute_beam_rust()
+        q = bt1.union(0, 1)
+        seg1 = q.segments
+        print(seg1)
+        print("")
+        bt2 = BeamTable(g)
+        bt2.compute_beam_bo()
+        q = bt2.union(0, 1)
+        print(q.segments)
+        self.assertEqual(bt1._nb_events, bt2._nb_events)
+        self.assertTrue((q.segments == seg1).all())
+
+
     def test_cag_union(self):
         # g = Geomstr.rect(0, 0, 100, 100, settings=0)
         # g.transform(Matrix.skew(0.002))

@@ -400,7 +400,26 @@ class BeamTable:
         return e[0].real, e[0].imag, ~e[1]
 
     def compute_beam(self):
-        self.compute_beam_brute()
+        self.compute_beam_rust()
+
+    def compute_beam_rust(self):
+        from beamtable import build
+        g = self.geometry
+        gs = g.segments
+        segs = []
+        for i in range(g.index):
+            if np.real(gs[i][2]) != TYPE_LINE:
+                continue
+            start = gs[i][0]
+            end = gs[i][-1]
+            segs.append((start.real, start.imag, end.real, end.imag))
+        events, actives = build(segments=segs)
+        largest_actives = max([len(a) for a in actives])
+        self._nb_events = [complex(x, y) for x, y in events]
+        self._nb_scan = np.zeros((len(actives), largest_actives), dtype=int)
+        self._nb_scan -= 1
+        for i, active in enumerate(actives):
+            self._nb_scan[i, 0 : len(active)] = active
 
     def compute_beam_bo(self):
         g = self.geometry
