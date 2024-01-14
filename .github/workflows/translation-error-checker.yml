@@ -22,7 +22,9 @@ jobs:
         python-version: 3.x
 
     - name: Run translation check script
-      run: python translate-error-check.py
+      run: |
+        cp .github/workflows/translate-error-check.py translate-error-check.py
+        python translate-error-check.py
 
     - name: Check for script exit code
       run: |
