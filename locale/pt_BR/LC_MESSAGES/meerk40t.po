@@ -2249,7 +2249,7 @@ msgstr "Extremidades da Linha:"
 
 #: meerk40t/core/elements.py:4466
 msgid "{index}: linecap = {linecap} - {name}"
-msgstr "{index}: extremidade-da-linha = {linecap} - {nome}"
+msgstr "{index}: extremidade-da-linha = {linecap} - {name}"
 
 #: meerk40t/core/elements.py:4499
 msgid ""
