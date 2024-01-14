@@ -10612,7 +10612,7 @@ msgstr ""
 
 #: meerk40t/core/elements/elements.py:361
 msgid "Copy will increase {variable} references"
-msgstr "La copia incrementerà i riferimenti {variabile}"
+msgstr "La copia incrementerà i riferimenti {variable}"
 
 #: meerk40t/core/elements/elements.py:362
 msgid ""
