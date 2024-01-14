@@ -1319,12 +1319,19 @@ class Elemental(Service):
                 continue
 
             op_type = settings.read_persistent(str, section, "type")
+            op_attr = dict()
+            for key in settings.keylist(section):
+                if key == "type":
+                    # We need to ignore it to avoid double attribute issues.
+                    continue
+                content = settings.read_persistent(str, section, key)
+                op_attr[key] = content
             try:
-                op = Node().create(type=op_type)
+                op = Node().create(type=op_type, **op_attr)
             except ValueError:
                 # Attempted to create a non-bootstrapped node type.
                 continue
-            op.load(settings, section)
+            # op.load(settings, section)
             op_tree[section] = op
         op_list = list()
         for section in op_tree:
