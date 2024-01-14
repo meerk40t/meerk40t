@@ -1448,7 +1448,7 @@ msgstr "计划："
 
 #: meerk40t/core/planner.py:331
 msgid "Commands {plan}:"
-msgstr "命令{计划}："
+msgstr "命令{plan}："
 
 #: meerk40t/core/planner.py:340
 msgid "plan(-selected)<?> copy"
