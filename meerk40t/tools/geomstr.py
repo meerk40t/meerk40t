@@ -406,13 +406,7 @@ class BeamTable:
         from beamtable import build
         g = self.geometry
         gs = g.segments
-        segs = []
-        for i in range(g.index):
-            if np.real(gs[i][2]) != TYPE_LINE:
-                continue
-            start = gs[i][0]
-            end = gs[i][-1]
-            segs.append((start.real, start.imag, end.real, end.imag))
+        segs = [((start.real, start.imag), (c1.real, c1.imag), (info.real, info.imag), (c2.real, c2.imag), (end.real, end.imag)) for start, c1, info, c2, end in g.segments[:g.index]]
         events, actives = build(segments=segs)
         largest_actives = max([len(a) for a in actives])
         self._nb_events = [complex(x, y) for x, y in events]
