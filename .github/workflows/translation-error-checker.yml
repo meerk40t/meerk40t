@@ -1,0 +1,34 @@
+name: Check Translations
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check_translations:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+
+    - name: Run translation check script
+      run: |
+        cp .github/workflows/translate-error-check.py translate-error-check.py
+        python translate-error-check.py
+
+    - name: Check for script exit code
+      run: |
+        if [ $? -ne 0 ]; then
+          echo "Error: Flawed translations found."
+          exit 1
+        fi
