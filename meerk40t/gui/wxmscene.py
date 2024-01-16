@@ -772,7 +772,7 @@ class MeerK40tScenePanel(wx.Panel):
                                 )
                             )
                         if scalex is None:
-                            rot = self.scene.context.rotary
+                            rot = self.scene.context.device.rotary
                             if rot.active:
                                 scalex = rot.scale_x
                                 scaley = rot.scale_y
