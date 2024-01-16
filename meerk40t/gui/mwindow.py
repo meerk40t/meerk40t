@@ -40,7 +40,7 @@ class MWindow(wx.Frame, Module):
         self.Bind(wx.EVT_MOVE, self.on_change_window, self)
         self.Bind(wx.EVT_SIZE, self.on_change_window, self)
 
-    def restore_aspect(self):
+    def restore_aspect(self, honor_initial_values=False):
         width = self._start_width
         height = self._start_height
         try:
@@ -50,19 +50,19 @@ class MWindow(wx.Frame, Module):
         except AttributeError:
             d_width = width
             d_height = height
-        width = d_width
-        height = d_height
-        # Forget about a default size, try to fit
-        # the content as good as you can.
-        sizer = self.GetSizer()
-        if sizer:
-            print(f"{self.Title}: had sizer")
-            sizer.Layout()
-            sizer.Fit(self)
+        if honor_initial_values:
+            width = d_width
+            height = d_height
         else:
-            print(f"{self.Title}: no sizer, doing it myself")
-            self.Fit()
-        width, height = self.GetSize()
+            # Forget about a default size, try to fit
+            # the content as good as you can.
+            sizer = self.GetSizer()
+            if sizer:
+                sizer.Layout()
+                sizer.Fit(self)
+            else:
+                self.Fit()
+            width, height = self.GetSize()
 
         if self.window_save:
             self.window_context.setting(int, "width", width)

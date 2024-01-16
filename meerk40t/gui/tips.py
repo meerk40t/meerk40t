@@ -58,7 +58,7 @@ class TipPanel(wx.Panel):
         # Main Sizer
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.image_tip = wx.StaticBitmap(self, wx.ID_ANY, style=wx.SB_FLAT)
-        self.image_tip.SetMinSize(wx.Size(250, -1))
+        self.image_tip.SetMinSize(dip_size(self, 250, -1))
         self.no_image_message = wx.TextCtrl(self, wx.ID_ANY, _("Image missing!"))
         self.no_image_message.SetToolTip(
             _(
@@ -317,7 +317,7 @@ class TipPanel(wx.Panel):
                     + "Just place your mouse over a window or an UI-element and press F11."
                 ),
                 "",
-                "",
+                icons8_light_on.GetBitmap(resize=200),
             )
         )
         self.tips.append(
@@ -536,11 +536,15 @@ class TipPanel(wx.Panel):
 class Tips(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(400, 350, *args, **kwds)
+        sizer = wx.BoxSizer(wx.VERTICAL)
         self.panel = TipPanel(
             self,
             wx.ID_ANY,
             context=self.context,
         )
+        sizer.Add(self.panel, 1, wx.EXPAND, 0)
+        self.SetSizer(sizer)
+        sizer.Layout()
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_detective.GetBitmap())
         self.SetIcon(_icon)
