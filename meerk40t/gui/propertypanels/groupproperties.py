@@ -103,6 +103,7 @@ class GroupProperty(MWindow):
         _icon.CopyFromBitmap(icons8_group_objects.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Group Properties"))
+        self.restore_aspect()
 
     def restore(self, *args, node=None, **kwds):
         self.panel.set_widgets(node)
@@ -206,6 +207,7 @@ class FileProperty(MWindow):
         _icon.CopyFromBitmap(icons8_group_objects.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("File Properties"))
+        self.restore_aspect()
 
     def restore(self, *args, node=None, **kwds):
         self.panel.set_widgets(node)

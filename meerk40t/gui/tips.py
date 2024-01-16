@@ -545,6 +545,7 @@ class Tips(MWindow):
         _icon.CopyFromBitmap(icons8_detective.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Tips"))
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

@@ -1567,6 +1567,7 @@ class TemplateTool(MWindow):
         _icon.CopyFromBitmap(icons8_detective.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Parameter-Test"))
+        self.restore_aspect()
 
     def callback_templates(self, command, param):
         # print (f"callback called with {command}, {param}")

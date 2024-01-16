@@ -120,6 +120,7 @@ class Notes(MWindow):
         self.SetIcon(_icon)
         self.SetTitle(_("Notes"))
         self.Children[0].SetFocus()
+        self.restore_aspect()
 
     @staticmethod
     def sub_register(kernel):

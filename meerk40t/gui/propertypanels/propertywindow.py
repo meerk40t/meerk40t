@@ -29,6 +29,7 @@ class PropertyWindow(MWindow):
         )
         self.notebook_main.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
         self.Layout()
+        self.restore_aspect()
 
     def on_page_changed(self, event):
         event.Skip()

@@ -462,6 +462,7 @@ class RenderSplit(MWindow):
         self.notebook_main.AddPage(self.panel_keyhole, _("Keyhole operation"))
 
         self.Layout()
+        self.restore_aspect()
 
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_split_image.GetBitmap())

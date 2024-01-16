@@ -289,6 +289,7 @@ class OperationInformation(MWindow):
         _icon.CopyFromBitmap(icons8_computer_support.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Operation Information"))
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

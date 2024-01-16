@@ -1442,6 +1442,7 @@ class SceneWindow(MWindow):
         self.SetIcon(_icon)
         self.SetTitle(_("Scene"))
         self.Layout()
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

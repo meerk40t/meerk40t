@@ -276,6 +276,7 @@ class ExecuteJob(MWindow):
         _icon.CopyFromBitmap(icons8_laser_beam.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Execute Job"))
+        self.restore_aspect()
 
     @staticmethod
     def sub_register(kernel):

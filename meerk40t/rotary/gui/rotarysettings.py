@@ -220,6 +220,7 @@ class RotarySettings(MWindow):
         _icon.CopyFromBitmap(icon_rotary.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Rotary-Settings"))
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

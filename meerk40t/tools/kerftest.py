@@ -871,6 +871,7 @@ class KerfTool(MWindow):
         self.SetIcon(_icon)
         self.SetTitle(_("Kerf-Test"))
         self.Layout()
+        self.restore_aspect()
 
     def window_open(self):
         self.panel_template.pane_show()

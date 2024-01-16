@@ -370,6 +370,7 @@ class PathProperty(MWindow):
         self.SetIcon(_icon)
         # begin wxGlade: PathProperty.__set_properties
         self.SetTitle(_("Path Properties"))
+        self.restore_aspect()
 
     def restore(self, *args, node=None, **kwds):
         self.panel.set_widgets(node)

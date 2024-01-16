@@ -58,6 +58,7 @@ class BufferView(MWindow):
         self.SetIcon(_icon)
         # begin wxGlade: BufferView.__set_properties
         self.SetTitle(_("BufferView"))
+        self.restore_aspect()
 
     def window_preserve(self):
         return False

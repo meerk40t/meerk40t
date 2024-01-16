@@ -896,6 +896,10 @@ class WordlistEditor(MWindow):
         self.DragAcceptFiles(True)
         self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
         self.SetTitle(_("Wordlist Editor"))
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
+        self.SetSizer(main_sizer)
+        self.restore_aspect()
 
     def on_drop_file(self, event):
         """

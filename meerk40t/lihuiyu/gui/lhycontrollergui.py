@@ -606,6 +606,7 @@ class LihuiyuControllerGui(MWindow):
         mainsizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.SetSizer(mainsizer)
         self.Layout()
+        self.restore_aspect()
 
     def create_menu(self, append):
         wxglade_tmp_menu = wx.Menu()

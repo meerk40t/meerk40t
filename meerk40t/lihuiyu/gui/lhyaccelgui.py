@@ -351,6 +351,7 @@ class LihuiyuAccelerationChart(MWindow):
         _icon.CopyFromBitmap(icons8_administrative_tools.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Acceleration Chart"))
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

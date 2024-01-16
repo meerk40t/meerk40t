@@ -2073,6 +2073,7 @@ class Simulation(MWindow):
         _icon.CopyFromBitmap(icons8_laser_beam_hazard.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Simulation"))
+        self.restore_aspect()
 
     @staticmethod
     def sub_register(kernel):

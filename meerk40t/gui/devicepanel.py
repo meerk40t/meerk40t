@@ -582,6 +582,7 @@ class DeviceManager(MWindow):
         _icon.CopyFromBitmap(icons8_manager.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Devices"))
+        self.restore_aspect()
 
     @staticmethod
     def sub_register(kernel):

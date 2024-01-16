@@ -1155,6 +1155,7 @@ class JobSpooler(MWindow):
         self.SetIcon(_icon)
         self.SetTitle(_("Job Spooler"))
         self.Layout()
+        self.restore_aspect()
 
     @staticmethod
     def sub_register(kernel):

@@ -17,6 +17,7 @@ class ConsoleProperty(MWindow):
         _icon.CopyFromBitmap(icons8_comments.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Console Properties"))
+        self.restore_aspect()
         self.Children[0].SetFocus()
 
     def window_preserve(self):

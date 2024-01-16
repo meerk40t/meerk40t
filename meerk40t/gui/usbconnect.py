@@ -79,6 +79,7 @@ class UsbConnect(MWindow):
         self.SetIcon(_icon)
         # begin wxGlade: Terminal.__set_properties
         self.SetTitle(_("UsbConnect"))
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

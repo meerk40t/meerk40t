@@ -467,6 +467,7 @@ class HersheyFontSelector(MWindow):
         # _icon.CopyFromBitmap(icons8_computer_support.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Font-Selection"))
+        self.restore_aspect()
 
     def window_open(self):
         pass
@@ -862,12 +863,19 @@ class HersheyFontManager(MWindow):
 
     def __init__(self, *args, **kwds):
         super().__init__(551, 234, submenu="", *args, **kwds)
+        sizer = wx.BoxSizer(wx.VERTICAL)
         self.panel = PanelFontManager(self, wx.ID_ANY, context=self.context)
+        sizer.Add(self.panel, 1, wx.EXPAND, 0)
+        self.SetSizer(sizer)
+        sizer.Layout()
+        sizer.Fit(self)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_choose_font.GetBitmap())
         # _icon.CopyFromBitmap(icons8_computer_support.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Font-Manager"))
+        self.Layout()
+        self.restore_aspect()
 
     def window_open(self):
         pass

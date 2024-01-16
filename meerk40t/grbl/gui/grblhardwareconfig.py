@@ -219,8 +219,8 @@ class GRBLHardwareConfig(MWindow):
 
         self.hw_panel = GrblHardwareProperties(self, wx.ID_ANY, context=self.service)
         self.Layout()
+        self.restore_aspect()
         self._opened_port = None
-        # end wxGlade
 
     def window_open(self):
         self.hw_panel.pane_show()

@@ -502,6 +502,7 @@ class ElementsTree(MWindow):
         _icon.CopyFromBitmap(icon_tree.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Tree"))
+        self.restore_aspect()
 
     def window_open(self):
         try:

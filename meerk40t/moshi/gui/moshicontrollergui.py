@@ -446,6 +446,7 @@ class MoshiControllerGui(MWindow):
         _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Moshiboard-Controller"))
+        self.restore_aspect()
 
     def create_menu(self, append):
         wxglade_tmp_menu = wx.Menu()

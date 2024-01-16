@@ -558,6 +558,7 @@ class Preferences(MWindow):
             self.panels.append(panel_space)
             self.panel_ids.append("space")
         self.Layout()
+        self.restore_aspect()
 
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools.GetBitmap())

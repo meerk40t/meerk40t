@@ -258,7 +258,7 @@ class GRBLController(MWindow):
         self.serial_panel = GRBLControllerPanel(self, wx.ID_ANY, context=self.service)
         self.Layout()
         self._opened_port = None
-        # end wxGlade
+        self.restore_aspect()
 
     @signal_listener("grbl;status")
     def on_serial_status(self, origin, state):

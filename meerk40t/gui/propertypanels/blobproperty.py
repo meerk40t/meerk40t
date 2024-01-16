@@ -103,6 +103,7 @@ class BlobProperty(MWindow):
         _icon.CopyFromBitmap(icons8_vector.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Blob Properties"))
+        self.restore_aspect()
 
     def restore(self, *args, node=None, **kwds):
         self.panel.set_widgets(node)

@@ -520,6 +520,7 @@ class Console(MWindow):
         self.SetIcon(_icon)
         self.SetTitle(_("Console"))
         self.Layout()
+        self.restore_aspect()
 
     @staticmethod
     def sub_register(kernel):

@@ -998,6 +998,7 @@ class LivingHingeTool(MWindow):
         self.SetTitle(_("Living-Hinges"))
         self.Layout()
         self.Bind(wx.EVT_ACTIVATE, self.window_active, self)
+        self.restore_aspect()
 
     def window_open(self):
         self.panel_template.pane_show()

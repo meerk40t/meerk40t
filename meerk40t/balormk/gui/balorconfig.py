@@ -101,6 +101,7 @@ class BalorConfiguration(MWindow):
             interval=1.0,
             run_main=True,
         )
+        self.restore_aspect()
 
     @property
     def test_pin(self):

@@ -319,6 +319,7 @@ class Keymap(MWindow):
         self.SetIcon(_icon)
         # begin wxGlade: Keymap.__set_properties
         self.SetTitle(_("Keymap Settings"))
+        self.restore_aspect()
 
     @staticmethod
     def sub_register(kernel):

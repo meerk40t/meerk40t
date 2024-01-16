@@ -2266,6 +2266,7 @@ class MaterialManager(MWindow):
         self.DragAcceptFiles(True)
         self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
         self.SetTitle(_("Material Library"))
+        self.restore_aspect()
 
     def on_drop_file(self, event):
         """

@@ -24,8 +24,25 @@ class MWindow(wx.Frame, Module):
                 style = (
                     wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
                 )
+        self._start_width = width
+        self._start_height = height
+        self.root_context = context.root
+        self.window_context = context.get_context(path)
+        self.root_context.setting(bool, "windows_save", True)
+        self.window_save = self.root_context.windows_save
+
         wx.Frame.__init__(self, parent, style=style)
         Module.__init__(self, context, path)
+
+        self.Bind(wx.EVT_CLOSE, self.on_close, self)
+        self.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_left_down, self)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_request, self)
+        self.Bind(wx.EVT_MOVE, self.on_change_window, self)
+        self.Bind(wx.EVT_SIZE, self.on_change_window, self)
+
+    def restore_aspect(self):
+        width = self._start_width
+        height = self._start_height
         try:
             dipsize = self.FromDIP(wx.Size(width, height))
             d_width = dipsize[0]
@@ -35,10 +52,18 @@ class MWindow(wx.Frame, Module):
             d_height = height
         width = d_width
         height = d_height
-        self.root_context = context.root
-        self.window_context = context.get_context(path)
-        self.root_context.setting(bool, "windows_save", True)
-        self.window_save = self.root_context.windows_save
+        # Forget about a default size, try to fit
+        # the content as good as you can.
+        sizer = self.GetSizer()
+        if sizer:
+            print(f"{self.Title}: had sizer")
+            sizer.Layout()
+            sizer.Fit(self)
+        else:
+            print(f"{self.Title}: no sizer, doing it myself")
+            self.Fit()
+        width, height = self.GetSize()
+
         if self.window_save:
             self.window_context.setting(int, "width", width)
             self.window_context.setting(int, "height", height)
@@ -56,13 +81,6 @@ class MWindow(wx.Frame, Module):
                     self.window_context.height = area[3]
                     self.window_context.setting(int, "y", 0)
             self.SetSize((self.window_context.width, self.window_context.height))
-        else:
-            self.SetSize(width, height)
-        self.Bind(wx.EVT_CLOSE, self.on_close, self)
-        self.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_left_down, self)
-        self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_request, self)
-        self.Bind(wx.EVT_MOVE, self.on_change_window, self)
-        self.Bind(wx.EVT_SIZE, self.on_change_window, self)
 
     def on_mouse_left_down(self, event):
         # Convert mac Control+left click into right click

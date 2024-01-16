@@ -1563,6 +1563,7 @@ class Alignment(MWindow):
         self.notebook_main.AddPage(self.panel_arrange, _("Arrange"))
 
         self.Layout()
+        self.restore_aspect()
 
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_arrange.GetBitmap())

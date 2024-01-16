@@ -64,6 +64,8 @@ class NewlyConfiguration(MWindow):
         self.notebook_main.AddPage(newpanel, _("Display Options"))
 
         self.Layout()
+        self.restore_aspect()
+
         for panel in self.panels:
             self.add_module_delegate(panel)
 

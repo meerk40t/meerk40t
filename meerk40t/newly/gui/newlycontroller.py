@@ -174,6 +174,7 @@ class NewlyController(MWindow):
         _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)
         self.Layout()
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

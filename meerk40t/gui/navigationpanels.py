@@ -2528,6 +2528,7 @@ class Navigation(MWindow):
         self.SetIcon(_icon)
         # begin wxGlade: Navigation.__set_properties
         self.SetTitle(_("Navigation"))
+        self.restore_aspect()
 
     @staticmethod
     def sub_register(kernel):

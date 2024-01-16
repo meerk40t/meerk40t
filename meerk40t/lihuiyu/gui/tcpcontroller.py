@@ -42,6 +42,7 @@ class TCPController(MWindow):
         self.max = 0
         self.state = None
         # self.on_tcp_buffer(None, 20)
+        self.restore_aspect()
 
     def on_port_change(self):
         try:

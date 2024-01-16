@@ -294,3 +294,4 @@ class About(MWindow):
         name = self.context.kernel.name
         version = self.context.kernel.version
         self.SetTitle(_("About {name} v{version}").format(name=name, version=version))
+        self.restore_aspect()

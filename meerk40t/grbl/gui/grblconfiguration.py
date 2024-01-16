@@ -197,6 +197,7 @@ class GRBLConfiguration(MWindow):
         self.Layout()
         for panel in self.panels:
             self.add_module_delegate(panel)
+        self.restore_aspect()
 
     def window_open(self):
         for panel in self.panels:
