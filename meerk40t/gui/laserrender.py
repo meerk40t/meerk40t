@@ -2,7 +2,7 @@ from copy import copy
 from math import ceil, isnan, sqrt
 
 import wx
-from PIL import Image
+from PIL import Image, ImageOps
 
 from meerk40t.core.elements.element_types import place_nodes
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
@@ -870,63 +870,33 @@ class LaserRender:
     def draw_text_node(self, node, gc, draw_mode=0, zoomscale=1.0, alpha=255):
         if node is None:
             return
-        text = node.text
-        if text is None or text == "":
-            return
-
-        try:
-            matrix = node.matrix
-        except AttributeError:
-            matrix = None
-
-        svgfont_to_wx(node)
-        font = node.wxfont
+        # The text representation is stored as a precached image (at 500 dpi)
+        # So we just paint the bitmap...
 
         gc.PushState()
+        matrix = node.matrix
+        if hasattr(node, "_cached_image"):
+            image = node._cached_image
+        else:
+            image = None
+        if image is None:
+            try:
+                node.update()
+            except AttributeError:
+                # A dummy 1x1 pixel...
+                image = Image.new("L", (1, 1), "white")
+        bounds = 0, 0, image.width, image.height
+
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        #
-        # sw = node.implied_stroke_width
-        # if draw_mode & DRAW_MODE_LINEWIDTH:
-        #     # No stroke rendering.
-        #     sw = 1000
-        # self._set_penwidth(sw)
-        # self.set_pen(
-        #     gc,
-        #     node.stroke,
-        #     alpha=alpha,
-        # )
-        # self.set_brush(gc, node.fill, alpha=255)
-
-        if node.fill is None or node.fill == "none":
-            fill_color = wx.BLACK
-        else:
-            fill_color = as_wx_color(node.fill)
-        gc.SetFont(font, fill_color)
-
-        if draw_mode & DRAW_MODE_VARIABLES:
-            # Only if flag show the translated values
-            text = self.context.elements.wordlist_translate(
-                text, elemnode=node, increment=False
+        try:
+            cache = self.make_thumbnail(
+                image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
             )
-        if node.texttransform is not None:
-            ttf = node.texttransform.lower()
-            if ttf == "capitalize":
-                text = text.capitalize()
-            elif ttf == "uppercase":
-                text = text.upper()
-            if ttf == "lowercase":
-                text = text.lower()
-        xmin, ymin, xmax, ymax = node.bbox(transformed=False)
-        height = ymax - ymin
-        width = xmax - xmin
-        dy = 0
-        dx = 0
-        if node.anchor == "middle":
-            dx -= width / 2
-        elif node.anchor == "end":
-            dx -= width
-        gc.DrawText(text, dx, dy)
+            min_x, min_y, max_x, max_y = bounds
+            gc.DrawBitmap(cache, min_x, min_y, max_x - min_x, max_y - min_y)
+        except MemoryError:
+            pass
         gc.PopState()
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
@@ -1021,6 +991,7 @@ class LaserRender:
                 text = text.lower()
         svgfont_to_wx(node)
         use_font = node.wxfont
+        # we need to scale this according to the node.dpi setting
         gc.SetFont(use_font, wx.WHITE)
         f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
         needs_revision = False
@@ -1077,21 +1048,15 @@ class LaserRender:
             image = Image.frombuffer(
                 "RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1
             )
-            node.text_cache = image
             img_bb = image.getbbox()
-            if img_bb is None:
-                node.raw_bbox = None
-            else:
-                newbb = (
-                    scaling * img_bb[0],
-                    scaling * img_bb[1],
-                    scaling * img_bb[2],
-                    scaling * img_bb[3],
-                )
-                node.raw_bbox = newbb
+            if img_bb is not None:
+                image = image.crop(img_bb)
+            # Now we need to invert the picture
+            # as we were drawing with white on black
+            image = ImageOps.invert(image)
+            node.update_image(image)
         except MemoryError:
-            node.text_cache = None
-            node.raw_bbox = None
+            node.update_image(None)
         node.ascent = f_height - f_descent
         if node.baseline != "hanging":
             node.matrix.pre_translate(0, -node.ascent)

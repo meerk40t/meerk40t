@@ -73,6 +73,11 @@ class TextNode(Node, Stroked, FunctionalParameter):
         self.font_size = 16.0  # 16px font 'normal' 12pt font
         self.line_height = 16.0
         self.font_family = "sans-serif"
+        # We store the bitmap representation of the text
+        self.dpi = 500
+        self._cached_image = None
+        self._generation = None
+
         # Offset values to allow fixing the drawing of slanted fonts. Without GetTextExtentBoundaries
         self.offset_x = 0
         self.offset_y = 0
@@ -161,6 +166,13 @@ class TextNode(Node, Stroked, FunctionalParameter):
     @font.setter
     def font(self, value):
         self.parse_font(value)
+
+    def update_image(self, image):
+        self._cached_image = image
+        if image is None:
+            self.raw_bbox = [0, 0, 1, 1]
+        else:
+            self.raw_bbox = [0, 0, image.width, image.height]
 
     def preprocess(self, context, matrix, plan):
         commands = plan.commands
@@ -343,13 +355,17 @@ class TextNode(Node, Stroked, FunctionalParameter):
                 transformed=True,
                 with_stroke=with_stroke,
             )
+        if self._cached_image is None and self._generation is not None:
+            # Let's update the image...
+            self._generation(self)
+
         if self.raw_bbox is None:
             self.raw_bbox = [0, 0, 0, 0]
         left, upper, right, lower = self.raw_bbox
-        xmin = left - 2
-        ymin = upper - 2
-        xmax = right + 2
-        ymax = lower + 2
+        xmin = left
+        ymin = upper
+        xmax = right
+        ymax = lower
         width = xmax - xmin
         if self.anchor == "middle":
             xmin -= width / 2
@@ -367,23 +383,7 @@ class TextNode(Node, Stroked, FunctionalParameter):
             xmax = max(p0[0], p1[0], p2[0], p3[0])
             ymax = max(p0[1], p1[1], p2[1], p3[1])
 
-        delta = 0.0
-        # if (
-        #     with_stroke
-        #     and self.stroke_width is not None
-        #     and not (self.stroke is None or self.stroke.value is None)
-        # ):
-        #     delta = (
-        #         float(self.implied_stroke_width)
-        #         if transformed
-        #         else float(self.stroke_width)
-        #     ) / 2.0
-        return (
-            xmin - delta,
-            ymin - delta,
-            xmax + delta,
-            ymax + delta,
-        )
+        return (xmin, ymin, xmax, ymax)
 
     """
     A text node has no paint_bounds that is different to bounds,
@@ -416,3 +416,11 @@ class TextNode(Node, Stroked, FunctionalParameter):
         self._bounds_dirty = False
         self._paint_bounds_dirty = False
         return self._bounds
+
+    def updated(self):
+        self.update_image(None)
+        super().updated()
+
+    def modified(self):
+        self.update_image(None)
+        super().modified()
