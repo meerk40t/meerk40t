@@ -4,6 +4,8 @@ import wx
 
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
+from meerk40t.gui.wxutils import matrix_scale
+from meerk40t.tools.geomstr import TYPE_END
 
 _ = wx.GetTranslation
 
@@ -95,10 +97,6 @@ class SimpleCheckbox:
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset = self.pt_offset / s
         inside = bool(abs(self.x - xpos) <= offset and abs(self.y - ypos) <= offset)
-        # print(
-        #     f"{self.identifier}: {inside} (offset={offset:.0f}) <- ({xpos:.0f}, {ypos:.0f}) to ({self.x:.0f}, {self.y:.0f})\n"
-        #     + f"dx={abs(self.x - xpos):.0f}, dy={abs(self.y - ypos):.0f}"
-        # )
         return inside
 
 
@@ -222,10 +220,6 @@ class SimpleSlider:
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset = self.pt_offset / s
         inside = bool(abs(self.ptx - xpos) <= offset and abs(self.pty - ypos) <= offset)
-        # print(
-        #     f"{self.identifier}: {inside} (offset={offset:.0f}) <- ({xpos:.0f}, {ypos:.0f}) to (({self.ptx:.0f}, {self.pty:.0f}))\n"
-        #     + f"dx={abs(self.ptx - xpos):.0f}, dy={abs(self.pty - ypos):.0f}"
-        # )
         return inside
 
 
@@ -617,6 +611,57 @@ class ParameterTool(ToolWidget):
                         self.scene.refresh_scene()
             return RESPONSE_CONSUME
         elif event_type == "leftup":
+            doit = (
+                self.point_index >= 0
+                and self.scene.context.snap_points
+                and "shift" not in modifiers
+            )
+            if doit:
+                matrix = self.scene.widget_root.scene_widget.matrix
+                gap = self.scene.context.action_attract_len / matrix_scale(matrix)
+                this_point = (
+                    self.params[self.point_index][0]
+                    + 1j * self.params[self.point_index][1]
+                )
+                found_pt = None
+                smallest_gap = float("inf")
+                for e in self.scene.context.elements.elems():
+                    if e.emphasized:
+                        # We care about other points, not our own
+                        continue
+                    if not hasattr(e, "as_geometry"):
+                        continue
+                    geom = e.as_geometry()
+                    last = None
+                    for seg in geom.segments[: geom.index]:
+                        start = seg[0]
+                        seg_type = int(seg[2].real)
+                        end = seg[4]
+                        if seg_type == TYPE_END:
+                            continue
+                        if start != last:
+                            delta = abs(start - this_point)
+                            if delta < smallest_gap:
+                                smallest_gap = delta
+                                found_pt = start
+                        delta = abs(end - this_point)
+                        if delta < smallest_gap:
+                            smallest_gap = delta
+                            found_pt = end
+
+                if smallest_gap < gap:
+                    pt = (found_pt.real, found_pt.imag)
+                    self.params[self.point_index] = pt
+                    if self.update_parameter():
+                        if self.mode in self._functions:
+                            # print(f"Update after pt for {self.mode}: {self.params}")
+                            func = self._functions[self.mode][0]
+                            if func is not None:
+                                func(self.element)
+                                self.sync_parameter()
+                        else:
+                            self.sync_parameter()
+                        self.scene.refresh_scene()
             self.is_moving = False
             return RESPONSE_CONSUME
         elif event_type == "rightdown":

@@ -19,13 +19,13 @@ from meerk40t.gui.icons import (
     icon_node_symmetric,
 )
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
     RESPONSE_DROP,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
+from meerk40t.gui.wxutils import matrix_scale
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import (
     Arc,
@@ -332,7 +332,7 @@ class EditTool(ToolWidget):
                 pass  # Exceeds 32 bit signed integer.
 
         matrix = self.scene.widget_root.scene_widget.matrix
-        linewidth = 1.0 / matrix.value_scale_x()
+        linewidth = 1.0 / matrix_scale(matrix)
         if linewidth < 1:
             linewidth = 1
         set_width_pen(self.pen, linewidth)

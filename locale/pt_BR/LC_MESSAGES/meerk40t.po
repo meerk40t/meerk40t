@@ -2226,14 +2226,14 @@ msgid ""
 "{index}: stroke-width = {stroke_width}/{implied_stroke_width} - {name} - "
 "scaled-stroke"
 msgstr ""
-"{index}: largura-do-traço = {largura-do-traço}/{largura-do-traço-implied} - {nome} - traço-escalado"
+"{index}: largura-do-traço = stroke_width}/{implied_stroke_width} - {name} - traço-escalado"
 
 #: meerk40t/core/elements.py:4366
 msgid ""
 "{index}: stroke-width = {stroke_width}/{implied_stroke_width} - {name} - "
 "non-scaling-stroke"
 msgstr ""
-"{index}: largura-do-traço = {largura-do-traço}/{largura-do-traço-implied} - {nome} - traço-sem-escala"
+"{index}: largura-do-traço = {stroke_width}/{implied_stroke_width} - {name} - traço-sem-escala"
 
 #: meerk40t/core/elements.py:4422
 msgid "Linecap to apply to the path (one of butt, round, square)"
@@ -2249,7 +2249,7 @@ msgstr "Extremidades da Linha:"
 
 #: meerk40t/core/elements.py:4466
 msgid "{index}: linecap = {linecap} - {name}"
-msgstr "{index}: extremidade-da-linha = {extremidade-da-linha} - {nome}"
+msgstr "{index}: extremidade-da-linha = {linecap} - {name}"
 
 #: meerk40t/core/elements.py:4499
 msgid ""
@@ -2268,7 +2268,7 @@ msgstr "Junções de Linha:"
 
 #: meerk40t/core/elements.py:4549
 msgid "{index}: linejoin = {linejoin} - {name}"
-msgstr "{index}: junção-da-linha = {junção-da-linha} - {nome}"
+msgstr "{index}: junção-da-linha = {linejoin} - {name}"
 
 #: meerk40t/core/elements.py:4586
 msgid ""
@@ -2310,11 +2310,11 @@ msgstr "Valores de Preenchimento:"
 
 #: meerk40t/core/elements.py:4802
 msgid "{index}: fill = none - {name}"
-msgstr "{index}: preenchimento = nenhum - {nome}"
+msgstr "{index}: preenchimento = nenhum - {name}"
 
 #: meerk40t/core/elements.py:4808
 msgid "{index}: fill = {fill} - {name}"
-msgstr "{index}: preenchimento = {preenchimento} - {nome}"
+msgstr "{index}: preenchimento = {fill} - {name}"
 
 #: meerk40t/core/elements.py:4856
 msgid "x offset."
@@ -2350,7 +2350,7 @@ msgstr "Valores de Rotação:"
 
 #: meerk40t/core/elements.py:4947
 msgid "{index}: rotate({angle}turn) - {name}"
-msgstr "{index}: rotacionar({ângulo}volta) - {nome}"
+msgstr "{index}: rotacionar({angle}volta) - {name}"
 
 #: meerk40t/core/elements.py:4990 meerk40t/core/elements.py:5370
 msgid "scale_x value"
@@ -3963,11 +3963,11 @@ msgstr "linhatexto <fonte> <tamanho_da_fonte> <texto>"
 
 #: meerk40t/extra/hershey.py:52
 msgid "SHX fonts in {path}:"
-msgstr "Fontes SHX em {caminho}:"
+msgstr "Fontes SHX em {path}:"
 
 #: meerk40t/extra/hershey.py:60
 msgid "Font was not found at {path}"
-msgstr "Fonte não encontrada em {caminho}"
+msgstr "Fonte não encontrada em {path}"
 
 #: meerk40t/extra/hershey.py:67
 msgid "No text to make a path with."
@@ -8751,11 +8751,11 @@ msgstr "aplicar meio-tom à imagem fornecida"
 
 #: meerk40t/kernel/kernel.py:1138
 msgid "{context}: Finalizing Module {path}: {object}"
-msgstr "{contexto}: Finalizando Módulo {path}: {objeto}"
+msgstr "{context}: Finalizando Módulo {path}: {object}"
 
 #: meerk40t/kernel/kernel.py:1187
 msgid "Suspended Signal: {signal} for {message}"
-msgstr "Sinal Suspenso: {sinal} para {mensagem}"
+msgstr "Sinal Suspenso: {signal} para {message}"
 
 #: meerk40t/kernel/kernel.py:1199
 msgid "Suspended Command: {c}"
@@ -8763,11 +8763,11 @@ msgstr "Comando Suspenso: {c}"
 
 #: meerk40t/kernel/kernel.py:1213
 msgid "Saving Context State: '{context}'"
-msgstr "Salvando Estado do Contexto: '{contexto}'"
+msgstr "Salvando Estado do Contexto: '{context}'"
 
 #: meerk40t/kernel/kernel.py:1219
 msgid "Context Shutdown Finished: '{context}'"
-msgstr "Encerramento do Contexto Concluído: '{contexto}'"
+msgstr "Encerramento do Contexto Concluído: '{context}'"
 
 #: meerk40t/kernel/kernel.py:1227
 msgid "Destroying persistence object"
@@ -8894,7 +8894,7 @@ msgstr "Erro de Sintaxe ({command}): {message}"
 
 #: meerk40t/kernel/kernel.py:2179
 msgid "{command} is not a registered command in this context: {context}"
-msgstr "{command} não é um comando registrado neste contexto: {contexto}"
+msgstr "{command} não é um comando registrado neste contexto: {context}"
 
 #: meerk40t/kernel/kernel.py:2227
 msgid "Print Shutdown"
@@ -9069,7 +9069,7 @@ msgstr "Objetos Registrados:"
 
 #: meerk40t/kernel/kernel.py:2654 meerk40t/kernel/kernel.py:2662
 msgid "{domain}, {index}: {object} type of {type}"
-msgstr "{domínio}, {index}: {object} tipo {type}"
+msgstr "{domain}, {index}: {object} tipo {type}"
 
 #: meerk40t/kernel/kernel.py:2668
 msgid "context"
@@ -9105,7 +9105,7 @@ msgstr "Módulos Registrados:"
 
 #: meerk40t/kernel/kernel.py:2710
 msgid "Loaded Modules in Context {context}:"
-msgstr "Módulos Carregados no Contexto {contexto}:"
+msgstr "Módulos Carregados no Contexto {context}:"
 
 #: meerk40t/kernel/kernel.py:2717
 msgid "{index}: {object} type of {type}"
@@ -14778,7 +14778,7 @@ msgid "Operations (Special)"
 msgstr "Operaciones (Especial)"
 
 msgid "Please provide the grid-size in {units}"
-msgstr "Proporcione el tamaño de la cuadrícula en {unidades}"
+msgstr "Proporcione el tamaño de la cuadrícula en {units}"
 
 msgid "User-defined grid-size"
 msgstr "Tamaño de cuadrícula definido por el usuario"

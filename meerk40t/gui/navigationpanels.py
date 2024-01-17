@@ -2145,7 +2145,7 @@ class Transform(wx.Panel):
         if scene_name == "Scene":
             self.update_matrix_text()
 
-    @signal_listener("tool_modified")
+    @signal_listener("modified_by_tool")
     def on_modified(self, *args):
         self.update_matrix_text()
 

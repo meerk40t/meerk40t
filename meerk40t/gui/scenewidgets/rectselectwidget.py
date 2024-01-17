@@ -16,6 +16,7 @@ from meerk40t.gui.scene.scene import (
     RESPONSE_DROP,
 )
 from meerk40t.gui.scene.widget import Widget
+from meerk40t.gui.wxutils import matrix_scale
 from meerk40t.tools.geomstr import TYPE_END
 
 
@@ -277,7 +278,7 @@ class RectSelectWidget(Widget):
                     and "shift" not in modifiers
                     and b is not None
                 ):
-                    gap = self.scene.context.action_attract_len / matrix.value_scale_x()
+                    gap = self.scene.context.action_attract_len / matrix_scale(matrix)
                     # We gather all points of non-selected elements,
                     # but only those that lie within the boundaries
                     # of the selected area
@@ -326,7 +327,7 @@ class RectSelectWidget(Widget):
                                     target.append(end)
                                 last = end
                     # t2 = perf_counter()
-                    if len(other_points) > 0:
+                    if len(other_points) > 0 and len(selected_points) > 0:
                         np_other = np.asarray(other_points)
                         np_selected = np.asarray(selected_points)
                         dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
@@ -347,7 +348,7 @@ class RectSelectWidget(Widget):
                     and not did_snap_to_point
                 ):
                     # t1 = perf_counter()
-                    gap = self.scene.context.grid_attract_len / matrix.value_scale_x()
+                    gap = self.scene.context.grid_attract_len / matrix_scale(matrix)
                     # Check for corner points + center:
                     selected_points = (
                         (b[0], b[1]),
@@ -357,7 +358,7 @@ class RectSelectWidget(Widget):
                         ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
                     )
                     other_points = self.scene.pane.grid.grid_points
-                    if len(other_points) > 0:
+                    if len(other_points) > 0 and len(selected_points) > 0:
                         np_other = np.asarray(other_points)
                         np_selected = np.asarray(selected_points)
                         dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
@@ -416,8 +417,7 @@ class RectSelectWidget(Widget):
         self.selection_pen.SetColour(tcolor)
         self.selection_pen.SetStyle(tstyle)
         gc.SetPen(self.selection_pen)
-
-        linewidth = 2.0 / matrix.value_scale_x()
+        linewidth = 2.0 / matrix_scale(matrix)
         if linewidth < 1:
             linewidth = 1
         try:
@@ -435,7 +435,7 @@ class RectSelectWidget(Widget):
         self.selection_pen.SetColour(tcolor)
         self.selection_pen.SetStyle(tstyle)
 
-        linewidth = 2.0 / matrix.value_scale_x()
+        linewidth = 2.0 / matrix_scale(matrix)
         if linewidth < 1:
             linewidth = 1
         try:
@@ -443,8 +443,8 @@ class RectSelectWidget(Widget):
         except TypeError:
             self.selection_pen.SetWidth(int(linewidth))
         gc.SetPen(self.selection_pen)
-        delta_X = 15.0 / matrix.value_scale_x()
-        delta_Y = 15.0 / matrix.value_scale_y()
+        delta_X = 15.0 / matrix_scale(matrix)
+        delta_Y = 15.0 / matrix_scale(matrix)
         if abs(x1 - x0) > delta_X and abs(y1 - y0) > delta_Y:  # Don't draw if too tiny
             # Draw tiny '+' in corner of pointer
             x_signum = +1 * delta_X if x0 < x1 else -1 * delta_X
@@ -455,7 +455,7 @@ class RectSelectWidget(Widget):
             gc.SetPen(self.selection_pen)
             gc.StrokeLine(ax1, y1, ax1, ay1)
             gc.StrokeLine(ax1, ay1, x1, ay1)
-            font_size = 10.0 / matrix.value_scale_x()
+            font_size = 10.0 / matrix_scale(matrix)
             if font_size < 1.0:
                 font_size = 1.0
             try:

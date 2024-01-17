@@ -509,9 +509,7 @@ class GRBLEmulator:
             return 3  # not yet supported
         elif data == "$X":
             if self.reply:
-                self.reply(
-                    "Alarm status was cleared\r\n"
-                )
+                self.reply("Alarm status was cleared\r\n")
             return 0
         else:
             return 3  # GRBL '$' system command was not recognized or supported.

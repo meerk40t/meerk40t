@@ -31,7 +31,7 @@ from meerk40t.gui.scene.scene import (
 )
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import StaticBoxSizer, create_menu_for_node
+from meerk40t.gui.wxutils import StaticBoxSizer, create_menu_for_node, matrix_scale
 from meerk40t.svgelements import Point
 from meerk40t.tools.geomstr import TYPE_END
 
@@ -455,7 +455,7 @@ class RotationWidget(Widget):
             self.master.last_angle = None
             self.master.start_angle = None
             self.master.rotated_angle = 0
-            self.scene.context.signal("tool_modified")
+            self.scene.context.signal("modified_by_tool")
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
@@ -737,7 +737,7 @@ class CornerWidget(Widget):
             for e in images:
                 e.update(self.scene.context)
             self.scene.pane.modif_active = False
-            self.scene.context.signal("tool_modified")
+            self.scene.context.signal("modified_by_tool")
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
@@ -986,7 +986,7 @@ class SideWidget(Widget):
             for e in images:
                 e.update(self.scene.context)
             self.scene.pane.modif_active = False
-            self.scene.context.signal("tool_modified")
+            self.scene.context.signal("modified_by_tool")
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
@@ -1214,7 +1214,7 @@ class SkewWidget(Widget):
                     images.append(e)
             for e in images:
                 e.update(self.scene.context)
-            self.scene.context.signal("tool_modified")
+            self.scene.context.signal("modified_by_tool")
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
@@ -1593,7 +1593,7 @@ class MoveWidget(Widget):
                 and not "shift" in modifiers
                 and b is not None
             ):
-                gap = self.scene.context.action_attract_len / matrix.value_scale_x()
+                gap = self.scene.context.action_attract_len / matrix_scale(matrix)
                 # We gather all points of non-selected elements,
                 # but only those that lie within the boundaries
                 # of the selected area
@@ -1642,7 +1642,7 @@ class MoveWidget(Widget):
                                 target.append(end)
                             last = end
                 t2 = perf_counter()
-                if len(other_points) > 0:
+                if len(other_points) > 0 and len(selected_points) > 0:
                     np_other = np.asarray(other_points)
                     np_selected = np.asarray(selected_points)
                     dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
@@ -1663,7 +1663,7 @@ class MoveWidget(Widget):
                 and not did_snap_to_point
             ):
                 t1 = perf_counter()
-                gap = self.scene.context.grid_attract_len / matrix.value_scale_x()
+                gap = self.scene.context.grid_attract_len / matrix_scale(matrix)
                 # Check for corner points + center:
                 selected_points = (
                     (b[0], b[1]),
@@ -1673,7 +1673,7 @@ class MoveWidget(Widget):
                     ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
                 )
                 other_points = self.scene.pane.grid.grid_points
-                if len(other_points) > 0:
+                if len(other_points) > 0 and len(selected_points) > 0:
                     np_other = np.asarray(other_points)
                     np_selected = np.asarray(selected_points)
                     dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
@@ -1712,7 +1712,7 @@ class MoveWidget(Widget):
             #     # .translated will set the scene emphasized bounds dirty, that's not needed, so...
             #     elements.update_bounds([bx0, by0, bx1, by1])
 
-            self.scene.context.signal("tool_modified")
+            self.scene.context.signal("modified_by_tool")
             self.scene.pane.modif_active = False
         elif event == -1:  # start
             if "alt" in modifiers:

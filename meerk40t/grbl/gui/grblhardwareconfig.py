@@ -53,11 +53,13 @@ class GrblIoButtons(wx.Panel):
                 continue
             hardware_index = int(setting[1:])
             d = hardware_settings(hardware_index)
-
-            value = float(chart.GetItemText(i, 2))
+            try:
+                value = float(chart.GetItemText(i, 2))
+            except ValueError:
+                continue
             if d[-1] == int:
                 value = int(value)
-            if value != self.service.hardware_config[hardware_index]:
+            if value != self.service.hardware_config.get(hardware_index):
                 eeprom_writes.append(f"${hardware_index}={value}")
         if eeprom_writes:
             dlg = wx.MessageDialog(
@@ -96,7 +98,10 @@ class GrblIoButtons(wx.Panel):
                 setting = chart.GetItemText(i)
                 value = chart.GetItemText(i, 2)
                 if chart.GetItemText(i, 3) in ("bitmask", "boolean"):
-                    value = int(float(value))
+                    try:
+                        value = int(float(value))
+                    except ValueError:
+                        continue
                 f.write(f"{setting}={value}\n")
 
 
@@ -150,10 +155,13 @@ class GrblHardwareProperties(ScrolledPanel):
             if d is None:
                 continue
             ignore, parameter, units, data_type = d
+            value = ""
             if i in self.service.hardware_config:
-                value = str(data_type(self.service.hardware_config[i]))
-            else:
-                value = ""
+                try:
+                    value = str(data_type(self.service.hardware_config[i]))
+                except ValueError:
+                    # data_type could not be used to cast the value.
+                    pass
 
             row_id = chart.InsertItem(chart.GetItemCount(), f"${i}")
             chart.SetItem(row_id, 1, str(parameter))
@@ -162,12 +170,27 @@ class GrblHardwareProperties(ScrolledPanel):
             chart.SetItem(row_id, 4, str(parameter.upper()))
 
     def on_label_start_edit(self, event):
-        event.Allow()
+        col_id = event.GetColumn()  # Get the current column
+        if col_id == 2:
+            event.Allow()
+        else:
+            event.Veto()
 
     def on_label_end_edit(self, event):
         row_id = event.GetIndex()  # Get the current row
         col_id = event.GetColumn()  # Get the current column
         new_data = event.GetLabel()  # Get the changed data
+        # Validate
+        v = self.chart.GetItemText(row_id, 0)
+        try:
+            v = int(v[1:])
+            settings = hardware_settings(v)
+            if settings:
+                ignore, parameter, units, data_type = settings
+                new_data = str(data_type(new_data))
+        except ValueError:
+            event.Veto()
+            return
         self.chart.SetItem(row_id, col_id, new_data)
 
     @signal_listener("grbl:hwsettings")

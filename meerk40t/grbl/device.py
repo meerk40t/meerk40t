@@ -294,9 +294,9 @@ class GRBLDevice(Service, Status):
                 "tip": _("Reset the controller too on a 'Clear Alarm' command"),
             },
             {
-                "attr": "interpolate",
+                "attr": "interp",
                 "object": self,
-                "default": 50,
+                "default": 5,
                 "type": int,
                 "label": _("Curve Interpolation"),
                 "section": "_5_Config",
@@ -341,6 +341,34 @@ class GRBLDevice(Service, Status):
                 ),
                 "conditional": (self, "use_red_dot"),
                 "section": "_10_Red Dot",
+            },
+            {
+                "attr": "max_vector_speed",
+                "object": self,
+                "default": 140,
+                "type": float,
+                "label": _("Max vector speed"),
+                "trailer": "mm/s",
+                "tip": _(
+                    "What is the highest reliable speed your laser is able to perform vector operations, ie engraving or cutting.\n"
+                    "You can finetune this in the Warning Sections of this configuration dialog."
+                ),
+                "section": "_20_" + _("Maximum speeds"),
+                "subsection": "_10_",
+            },
+            {
+                "attr": "max_raster_speed",
+                "object": self,
+                "default": 750,
+                "type": float,
+                "label": _("Max raster speed"),
+                "trailer": "mm/s",
+                "tip": _(
+                    "What is the highest reliable speed your laser is able to perform raster or image operations.\n"
+                    "You can finetune this in the Warning Sections of this configuration dialog."
+                ),
+                "section": "_20_" + _("Maximum speeds"),
+                "subsection": "_10_",
             },
             {
                 "attr": "limit_buffer",

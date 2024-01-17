@@ -158,9 +158,9 @@ class MoshiDevice(Service, Status):
                 "subsection": "_30_" + _("Home position"),
             },
             {
-                "attr": "interpolate",
+                "attr": "interp",
                 "object": self,
-                "default": 50,
+                "default": 5,
                 "type": int,
                 "label": _("Curve Interpolation"),
                 "tip": _("Distance of the curve interpolation in mils"),

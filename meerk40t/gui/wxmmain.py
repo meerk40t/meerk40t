@@ -10,6 +10,7 @@ from PIL import Image
 from wx import aui
 
 from meerk40t.core.exceptions import BadFileError
+from meerk40t.gui.gui_mixins import FormatPainter, Warnings
 from meerk40t.gui.statusbarwidgets.defaultoperations import DefaultOperationWidget
 from meerk40t.gui.statusbarwidgets.infowidget import (
     BurnProgressPanel,
@@ -29,7 +30,13 @@ from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
 from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
 from meerk40t.kernel import lookup_listener, signal_listener
 
-from ..core.units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL, Length
+from ..core.units import (
+    DEFAULT_PPI,
+    UNITS_PER_INCH,
+    UNITS_PER_MM,
+    UNITS_PER_PIXEL,
+    Length,
+)
 from ..svgelements import Color, Matrix, Path
 from .icons import (  # icon_duplicate,; icon_nohatch,
     STD_ICON_SIZE,
@@ -60,6 +67,7 @@ from .icons import (  # icon_duplicate,; icon_nohatch,
     icon_paint_brush,
     icon_paint_brush_green,
     icon_power_button,
+    icon_warning,
     icons8_centerh,
     icons8_centerv,
     icons8_circled_left,
@@ -116,169 +124,6 @@ from .laserrender import (
 from .mwindow import MWindow
 
 _ = wx.GetTranslation
-
-INACTIVE = "inactive"
-WAITING = "waiting"
-PASTING = "pasting"
-
-
-class FormatPainter:
-    def __init__(self, context, button, identifier, *args, **kwds):
-        self.context = context
-        # Path to button
-        self.button = button
-        self.identifier = identifier
-        # The node to use
-        self.template = None
-        # List of tuples with (attribute_name, generic)
-        self.possible_attributes = (
-            # Standard line and fill attributes
-            ("stroke", True),
-            ("stroke_width", True),
-            ("stroke_scale", True),
-            ("fill", True),
-            ("linecap", True),
-            ("linejoin", True),
-            ("fillrule", True),
-            # Image attributes
-            ("dpi", False),
-            ("operations", False),
-            ("invert", False),
-            ("dither", False),
-            ("dither_type", False),
-            ("red", False),
-            ("green", False),
-            ("blue", False),
-            ("lightness", False),
-            # Text attributes
-            ("mkfont", True),
-            ("mkfontsize", True),
-            ("font_style", False),
-            ("font_variant", False),
-            ("font_weight", False),
-            ("font_stretch", False),
-            ("font_size", False),
-            ("line_height", False),
-            ("font_family", False),
-            # Hatches
-            ("hatch_distance", False),
-            ("hatch_angle", False),
-            ("hatch_angle_delta", False),
-            ("hatch_type", False),
-            # Wobbles
-            ("wobble_radius", False),
-            ("wobble_interval", False),
-            ("wobble_speed", False),
-            ("wobble_type", False),
-        )
-        self.path_update_needed = (
-            "mkfont",
-            "mkfontsize",
-        )
-        # State-Machine
-        self._state = None
-        self.state = INACTIVE
-
-    @property
-    def state(self):
-        return self._state
-
-    @state.setter
-    def state(self, value):
-        if value not in (INACTIVE, WAITING, PASTING):
-            value = INACTIVE
-        if value == INACTIVE:
-            self.template = None
-        elif value == WAITING:
-            node = self.context.elements.first_emphasized
-            if node is not None and node.type not in ("file", "group"):
-                self.template = node
-                value = PASTING
-        elif value == PASTING:
-            pass
-        self._state = value
-        toggle = bool(value != INACTIVE)
-        self.context.signal(self.identifier, toggle)
-
-    def on_emphasis(self, *args):
-        if self.state == INACTIVE:
-            return
-        elif self.state == WAITING:
-            node = self.context.elements.first_emphasized
-            if node is None:
-                return
-            if node.type in ("file", "group"):
-                return
-            self.template = node
-            self.state = PASTING
-            return
-        elif self.state == PASTING:
-            try:
-                id = self.template.id
-            except (RuntimeError, AttributeError):
-                # No longer existing or invalid?
-                self.state = INACTIVE
-            nodes_changed = []
-            nodes_classify = []
-            nodes_images = []
-            for node in self.context.elements.elems(emphasized=True):
-                if node is self.template:
-                    continue
-                flag_changed = False
-                flag_classify = False
-                flag_pathupdate = False
-                for entry in self.possible_attributes:
-                    attr = entry[0]
-                    generic = entry[1]
-                    if not generic and node.type != self.template.type:
-                        continue
-                    if hasattr(self.template, attr) and hasattr(node, attr):
-                        value = getattr(self.template, attr, None)
-                        if isinstance(value, (list, tuple)):
-                            value = copy(value)
-                        try:
-                            setattr(node, attr, value)
-                            flag_changed = True
-                            if attr in ("stroke", "fill"):
-                                flag_classify = True
-                            if attr in self.path_update_needed:
-                                flag_pathupdate = True
-                        except ValueError:
-                            continue
-                if flag_changed:
-                    nodes_changed.append(node)
-                    if node.type == "elem image":
-                        nodes_images.append(node)
-                if flag_pathupdate:
-                    if hasattr(node, "mktext"):
-                        newtext = self.context.elements.wordlist_translate(
-                            node.mktext, elemnode=node, increment=False
-                        )
-                        oldtext = getattr(node, "_translated_text", "")
-                        if newtext != oldtext:
-                            node._translated_text = newtext
-                        kernel = self.context.kernel
-                        for property_op in kernel.lookup_all("path_updater/.*"):
-                            property_op(kernel.root, node)
-                        if hasattr(node, "_cache"):
-                            node._cache = None
-
-                if flag_classify:
-                    nodes_classify.append(node)
-            if len(nodes_changed) > 0:
-                for node in nodes_images:
-                    node.update(None)
-                if len(nodes_classify) > 0 and self.context.elements.classify_new:
-                    self.context.elements.classify(nodes_classify)
-                self.context.signal("element_property_update", nodes_changed)
-                self.context.signal("refresh_scene", "Scene")
-
-    def on_click(self, *args):
-        # print(f"On_click called, state was : {self.state}")
-        if self.state == INACTIVE:
-            self.state = WAITING
-        else:
-            self.state = INACTIVE
 
 
 class MeerK40t(MWindow):
@@ -1313,29 +1158,9 @@ class MeerK40t(MWindow):
             set_icon_appearance(1.0, 0)
 
         self.format_painter = FormatPainter(
-            self.context, "button/basicediting/Paint", "editpaint"
+            self.context, "button/extended_tools/Paint", "editpaint"
         )
-        self.context.kernel.register(
-            "button/basicediting/Paint",
-            {
-                "label": _("Paint format"),
-                "icon": icon_paint_brush,
-                "tip": _(
-                    "First select your template, then every subsequent selection will apply the templates properties to the selected elements"
-                ),
-                "help": "basicediting",
-                "action": self.format_painter.on_click,
-                "identifier": "editpaint",
-                "toggle": {
-                    "label": _("Stop"),
-                    "help": "basicediting",
-                    "action": self.format_painter.on_click,
-                    "icon": icon_paint_brush_green,
-                    "signal": "editpaint",
-                    "tip": _("Click again to disable the paint mode"),
-                },
-            },
-        )
+        self.warning_routine = Warnings(self.context, "button/jobstart/Warning")
 
     def open_property_window_for_node(self, node):
         """
@@ -4028,6 +3853,13 @@ class MeerK40t(MWindow):
             # if language_code not in trans and i != 0:
             #     m.Enable(False)
         self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
+
+    @signal_listener("warn_state_update")
+    @signal_listener("updateop_tree")
+    @signal_listener("tree_changed")
+    @signal_listener("modified_by_tool")
+    def warning_indicator(self, *args):
+        self.warning_routine.warning_indicator()
 
     @signal_listener("restart")
     def on_restart_required(self, *args):

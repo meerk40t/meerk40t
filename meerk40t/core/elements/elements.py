@@ -781,8 +781,9 @@ class Elemental(Service):
         #                 element attrib (ie stroke or fill)
         #               - anything else: leave all colors unchanged
         # attrib:       one of 'stroke', 'fill' to establish the source color
-        #               ('auto' is an option too that will pick the color from the
-        #               operation settings)
+        #               ('auto' is an option too, that will pick the color from the
+        #               operation settings) - if we talk about an engrave or cut operation
+        #               and if 'stroke' or 'auto' have been set, 'fill' will be set None
         # similar:      will use attrib (see above) to establish similar elements (having (nearly) the same
         #               color) and assign those as well
         # exclusive:    will delete all other assignments of the source elements in other operations if True
@@ -880,6 +881,9 @@ class Elemental(Service):
                     data.append(n)
 
         needs_refresh = False
+        set_fill_to_none = (
+            op_assign.type in ("op engrave", "op cut") and attrib == "stroke"
+        )
         for n in data:
             if op_assign.drop(n, modify=False):
                 if exclusive:
@@ -889,6 +893,8 @@ class Elemental(Service):
                 if impose == "to_elem" and target_color is not None:
                     if hasattr(n, attrib):
                         setattr(n, attrib, target_color)
+                        if set_fill_to_none and hasattr(n, "fill"):
+                            n.fill = None
                         needs_refresh = True
         # Refresh the operation so any changes like color materialize...
         self.signal("element_property_reload", op_assign)
@@ -1182,6 +1188,12 @@ class Elemental(Service):
         for e in self.flat():
             e.unregister()
 
+    def safe_section_name(self, name):
+        res = name
+        for forbidden in " []":
+            res = res.replace(forbidden, "_")
+        return res
+
     def save_persistent_operations_list(
         self, name, oplist=None, opinfo=None, inform=True, use_settings=None
     ):
@@ -1192,6 +1204,7 @@ class Elemental(Service):
         @param oplist:
         @return:
         """
+        name = self.safe_section_name(name)
         if oplist is None:
             oplist = self.op_branch.children
         if opinfo is None:
@@ -1225,6 +1238,7 @@ class Elemental(Service):
                 then we will let everyone know
         @return:
         """
+        name = self.safe_section_name(name)
         if use_settings is None:
             settings = self.op_data
         else:
@@ -1260,6 +1274,7 @@ class Elemental(Service):
         @param flush: Optionally permit non-flushed to disk.
         @return:
         """
+        name = self.safe_section_name(name)
         if use_settings is None:
             settings = self.op_data
         else:
@@ -1271,6 +1286,7 @@ class Elemental(Service):
         settings.write_configuration()
 
     def load_persistent_op_info(self, name, use_settings=None):
+        name = self.safe_section_name(name)
         if use_settings is None:
             settings = self.op_data
         else:
@@ -1286,6 +1302,7 @@ class Elemental(Service):
         return op_info
 
     def load_persistent_op_list(self, name, use_settings=None):
+        name = self.safe_section_name(name)
         if use_settings is None:
             settings = self.op_data
         else:
@@ -1302,12 +1319,19 @@ class Elemental(Service):
                 continue
 
             op_type = settings.read_persistent(str, section, "type")
+            op_attr = dict()
+            for key in settings.keylist(section):
+                if key == "type":
+                    # We need to ignore it to avoid double attribute issues.
+                    continue
+                content = settings.read_persistent(str, section, key)
+                op_attr[key] = content
             try:
-                op = Node().create(type=op_type)
+                op = Node().create(type=op_type, **op_attr)
             except ValueError:
-                # Attempted to create a non-boostrapped node type.
+                # Attempted to create a non-bootstrapped node type.
                 continue
-            op.load(settings, section)
+            # op.load(settings, section)
             op_tree[section] = op
         op_list = list()
         for section in op_tree:
@@ -1536,6 +1560,7 @@ class Elemental(Service):
             for e in emph_data:
                 e.emphasized = True
         self.signal("element_property_reload", data)
+        self.signal("warn_state_update")
 
     def remove_unused_default_copies(self):
         # Let's clean non-used operations that come from defaults...

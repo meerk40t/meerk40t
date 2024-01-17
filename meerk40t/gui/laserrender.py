@@ -111,7 +111,10 @@ def svgfont_to_wx(textnode):
             wx.FONTWEIGHT_BOLD if weight > 600 else wx.FONTWEIGHT_NORMAL
         )  # Gets numeric weight.
 
-    font_size = textnode.font_size
+    try:
+        font_size = float(textnode.font_size)
+    except ValueError:
+        font_size = 10
     try:
         wxfont.SetFractionalPointSize(font_size)
     except AttributeError:

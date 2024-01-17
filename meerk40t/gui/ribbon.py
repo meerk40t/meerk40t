@@ -1473,10 +1473,9 @@ class Art:
         lp_y = int(cy)
         dp_x = int(cx)
         dp_y = int(cy + r)
-        points = [(lp_x, lp_y), (dp_x, dp_y), (2 * dp_x - lp_x, lp_y)]
         dc.SetPen(wx.Pen(self.black_color))
         dc.SetBrush(wx.Brush(self.inactive_background))
-        dc.DrawRectangle(points)
+        dc.DrawRectangle(lp_x, lp_y, dp_x, dp_y)
 
     def _paint_dropdown(self, dc: wx.DC, dropdown: DropDown):
         """

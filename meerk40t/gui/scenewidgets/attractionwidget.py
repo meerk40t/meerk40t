@@ -9,6 +9,7 @@ import wx
 
 from meerk40t.gui.scene.sceneconst import HITCHAIN_PRIORITY_HIT, RESPONSE_CHAIN
 from meerk40t.gui.scene.widget import Widget
+from meerk40t.gui.wxutils import matrix_scale
 
 TYPE_BOUND = 0
 TYPE_POINT = 1
@@ -235,16 +236,16 @@ class AttractionWidget(Widget):
         matrix = self.parent.matrix
         try:
             # Intentionally big to clearly see shape
-            self.symbol_size = 10 / matrix.value_scale_x()
+            self.symbol_size = 10 / matrix_scale(matrix)
         except ZeroDivisionError:
             matrix.reset()
             return
         # Anything within a 15 Pixel Radius will be attracted, anything within a 45 Pixel Radius will be displayed
-        local_attract_len = self.context.show_attract_len / matrix.value_scale_x()
-        local_action_attract_len = (
-            self.context.action_attract_len / matrix.value_scale_x()
+        local_attract_len = self.context.show_attract_len / matrix_scale(matrix)
+        local_action_attract_len = self.context.action_attract_len / matrix_scale(
+            matrix
         )
-        local_grid_attract_len = self.context.grid_attract_len / matrix.value_scale_x()
+        local_grid_attract_len = self.context.grid_attract_len / matrix_scale(matrix)
 
         min_delta = float("inf")
         min_x = None
@@ -303,7 +304,7 @@ class AttractionWidget(Widget):
         """
         Signal commands which indicate that we need to refresh / discard some data
         """
-        if signal in ("modified", "emphasized", "element_added", "tool_modified"):
+        if signal in ("modified", "emphasized", "element_added", "modified_by_tool"):
             self.scene.reset_snap_attraction()
         elif signal == "theme":
             self.load_colors()
