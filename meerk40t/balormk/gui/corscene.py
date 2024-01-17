@@ -7,12 +7,14 @@ from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_DELEGATE,
     HITCHAIN_HIT,
     RESPONSE_CHAIN,
+    HITCHAIN_DELEGATE_AND_HIT,
 )
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui import icons
 from meerk40t.gui.icons import icons8_center_of_gravity
 from meerk40t.gui.utilitywidgets.buttonwidget import ButtonWidget
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
+from meerk40t.gui.utilitywidgets.textboxwidget import TextBoxWidget
 from meerk40t.tools.geomstr import Geomstr
 from meerk40t.tools.pmatrix import PMatrix
 
@@ -165,9 +167,22 @@ class CorFileWidget(Widget):
         self.name = "Corfile"
         self.render = LaserRender(scene.context)
         self.geometry = cor_file_geometry()
+        for x,y in ((21500,5200), (45000, 5200), (60000, 20000), (60000, 45000), (45000, 60000), (20000, 60000), (5200, 45000), (5200, 20000), (20000, 32000), (45000, 32000), (32000, 20000), (32000, 45000)):
+            self.add_widget(
+                -1,
+                TextBoxWidget(
+                    scene,
+                    x,
+                    y,
+                    width=5000,
+                    height=1000,
+                    text="50.0",
+                    tool_tip="Distance between these points in real units.",
+                ),
+            )
 
     def hit(self):
-        return HITCHAIN_HIT
+        return HITCHAIN_DELEGATE_AND_HIT
 
     def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         """
@@ -179,6 +194,9 @@ class CorFileWidget(Widget):
             return RESPONSE_CHAIN
         elif event_type == "doubleclick":
             pass
+        if event_type == "leftdown":
+            self.scene.request_refresh()
+            print(space_pos)
         return RESPONSE_CHAIN
 
     def rotate_left(self):
