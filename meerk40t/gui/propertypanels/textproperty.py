@@ -559,7 +559,7 @@ class TextPropertyPanel(ScrolledPanel):
         self.refresh()
 
     def refresh(self):
-        self.renderer.measure_text(self.node)
+        self.node.updated()
         bb = self.node.bounds
         self.context.elements.signal("element_property_reload", self.node)
         self.context.signal("refresh_scene", "Scene")

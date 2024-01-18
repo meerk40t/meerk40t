@@ -875,25 +875,26 @@ class LaserRender:
 
         gc.PushState()
         matrix = node.matrix
-        if hasattr(node, "_cached_image"):
-            image = node._cached_image
-        else:
-            image = None
+        image = node._cached_image
         if image is None:
-            try:
-                node.update()
-            except AttributeError:
-                # A dummy 1x1 pixel...
-                image = Image.new("L", (1, 1), "white")
-        bounds = 0, 0, image.width, image.height
+            node.update_image(None)
+            dummy = node.bounds
+            image = node._cached_image
+        if image is None:
+            image = Image.new("L", (1, 1), "white")
+        factor = node.dpi / 72.0
+        bounds = 0, 0, int(image.width / factor), int(image.height / factor)
 
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         try:
-            cache = self.make_thumbnail(
-                image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
-            )
             min_x, min_y, max_x, max_y = bounds
+            cache = self.make_thumbnail(
+                image,
+                alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
+                width=max_x - min_x,
+                height=max_y - min_y,
+            )
             gc.DrawBitmap(cache, min_x, min_y, max_x - min_x, max_y - min_y)
         except MemoryError:
             pass
@@ -961,16 +962,7 @@ class LaserRender:
         @param node:
         @return:
         """
-        dimension_x = 1000
-        dimension_y = 500
-        scaling = 1
-        bmp = wx.Bitmap(dimension_x, dimension_y, 32)
-        dc = wx.MemoryDC()
-        dc.SelectObject(bmp)
-        dc.SetBackground(wx.BLACK_BRUSH)
-        dc.Clear()
-        gc = wx.GraphicsContext.Create(dc)
-
+        self.context.elements.set_start_time("measure_text")
         draw_mode = self.context.draw_mode
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
@@ -990,56 +982,46 @@ class LaserRender:
             if ttf == "lowercase":
                 text = text.lower()
         svgfont_to_wx(node)
-        use_font = node.wxfont
-        # we need to scale this according to the node.dpi setting
-        gc.SetFont(use_font, wx.WHITE)
+        dimension_x = 10
+        dimension_y = 10
+        bmp = wx.Bitmap(dimension_x, dimension_y, 32)
+        dc = wx.MemoryDC()
+        dc.SelectObject(bmp)
+        dc.SetBackground(wx.BLACK_BRUSH)
+        dc.Clear()
+        gc = wx.GraphicsContext.Create(dc)
+        gc.SetFont(node.wxfont, wx.WHITE)
         f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
-        needs_revision = False
-        revision_factor = 3
-        if revision_factor * f_width >= dimension_x:
-            dimension_x = revision_factor * f_width
-            needs_revision = True
-        if revision_factor * f_height > dimension_y:
-            dimension_y = revision_factor * f_height
-            needs_revision = True
-        if needs_revision:
-            # We need to create an independent instance of the font
-            # as we may to need to change the font_size temporarily
-            fontdesc = node.wxfont.GetNativeFontInfoDesc()
-            use_font = wx.Font(fontdesc)
-            while True:
-                try:
-                    fsize = use_font.GetFractionalPointSize()
-                    fsize_org = node.wxfont.GetFractionalPointSize()
-                except AttributeError:
-                    fsize = use_font.GetPointSize()
-                    fsize_org = node.wxfont.GetPointSize()
-                # print (f"Revised bounds: {dimension_x} x {dimension_y}, font_size={fsize} (original={fsize_org}")
-                if fsize < 100 or dimension_x < 2000 or dimension_y < 1000:
-                    break
-                # We consume an enormous amount of time and memory to create insanely big
-                # temporary canvasses, so we intentionally reduce the resolution and accept
-                # smaller deviations...
-                scaling *= 10
-                fsize /= 10
-                dimension_x /= 10
-                dimension_y /= 10
-                try:
-                    use_font.SetFractionalPointSize(fsize)
-                except AttributeError:
-                    use_font.SetPointSize(int(fsize))
+        gc.Destroy()
+        dc.SelectObject(wx.NullBitmap)
+        dc.Destroy()
+        del dc
 
-            gc.Destroy()
-            dc.SelectObject(wx.NullBitmap)
-            dc.Destroy()
-            del dc
-            bmp = wx.Bitmap(int(dimension_x), int(dimension_y), 32)
-            dc = wx.MemoryDC()
-            dc.SelectObject(bmp)
-            dc.SetBackground(wx.BLACK_BRUSH)
-            dc.Clear()
-            gc = wx.GraphicsContext.Create(dc)
-            gc.SetFont(use_font, wx.WHITE)
+        # We need to create an independent instance of the font
+        # as we need to change the font_size
+        fontdesc = node.wxfont.GetNativeFontInfoDesc()
+        use_font = wx.Font(fontdesc)
+        # we need to scale this according to the node.dpi setting
+        factor = node.dpi / 72.0
+        try:
+            fsize = use_font.GetFractionalPointSize() * factor
+            use_font.SetFractionalPointSize(fsize)
+            fsize_org = node.wxfont.GetFractionalPointSize()
+        except AttributeError:
+            fsize = int(use_font.GetPointSize() * factor)
+            use_font.SetPointSize(fsize)
+            fsize_org = node.wxfont.GetPointSize()
+        dimension_x = int(1.5 * factor * f_width)
+        dimension_y = int(1.5 * factor * f_height)
+        bmp = wx.Bitmap(dimension_x, dimension_y, 32)
+        dc = wx.MemoryDC()
+        dc.SelectObject(bmp)
+        dc.SetBackground(wx.BLACK_BRUSH)
+        dc.Clear()
+        gc = wx.GraphicsContext.Create(dc)
+
+        msg = f"Revised bounds: {dimension_x} x {dimension_y}, factor={factor}, font_size={fsize} (original={fsize_org})"
+        gc.SetFont(use_font, wx.WHITE)
 
         gc.DrawText(text, 0, 0)
         try:
@@ -1066,6 +1048,7 @@ class LaserRender:
         dc.SelectObject(wx.NullBitmap)
         dc.Destroy()
         del dc
+        self.context.elements.set_end_time("measure_text", display=True, message=msg)
 
     def validate_text_nodes(self, nodes, translate_variables):
         self.context.elements.set_start_time("validate_text_nodes")
@@ -1075,8 +1058,9 @@ class LaserRender:
                 or item._paint_bounds_dirty
                 or item.bounds_with_variables_translated != translate_variables
             ):
-                # We never drew this cleanly; our initial bounds calculations will be off if we don't premeasure
-                self.measure_text(item)
+                # We never drew this cleanly; our initial bounds calculations
+                # will be off if we don't premeasure
+                item.set_generator(self.measure_text)
                 item.set_dirty_bounds()
                 dummy = item.bounds
         self.context.elements.set_end_time("validate_text_nodes")
@@ -1221,6 +1205,7 @@ class LaserRender:
             scale = min(scale_x, scale_y)
             width = int(round(width * scale))
             height = int(round(height * scale))
+        # print(f"Resizing from {image_width}x{image_height} to {width}x{height}")
         if image_width != width or image_height != height:
             pil_data = pil_data.resize((width, height))
         else:

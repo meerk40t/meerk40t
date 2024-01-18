@@ -74,7 +74,7 @@ class TextNode(Node, Stroked, FunctionalParameter):
         self.line_height = 16.0
         self.font_family = "sans-serif"
         # We store the bitmap representation of the text
-        self.dpi = 500
+        self.dpi = 360
         self._cached_image = None
         self._generation = None
 
@@ -169,6 +169,7 @@ class TextNode(Node, Stroked, FunctionalParameter):
 
     def update_image(self, image):
         self._cached_image = image
+        self.set_dirty_bounds()
         if image is None:
             self.raw_bbox = [0, 0, 1, 1]
         else:
@@ -362,10 +363,11 @@ class TextNode(Node, Stroked, FunctionalParameter):
         if self.raw_bbox is None:
             self.raw_bbox = [0, 0, 0, 0]
         left, upper, right, lower = self.raw_bbox
-        xmin = left
-        ymin = upper
-        xmax = right
-        ymax = lower
+        factor = self.dpi / 72.0
+        xmin = left / factor
+        ymin = upper / factor
+        xmax = right / factor
+        ymax = lower / factor
         width = xmax - xmin
         if self.anchor == "middle":
             xmin -= width / 2
@@ -424,3 +426,6 @@ class TextNode(Node, Stroked, FunctionalParameter):
     def modified(self):
         self.update_image(None)
         super().modified()
+
+    def set_generator(self, routine):
+        self._generation = routine
