@@ -74,7 +74,7 @@ class TextNode(Node, Stroked, FunctionalParameter):
         self.line_height = 16.0
         self.font_family = "sans-serif"
         # We store the bitmap representation of the text
-        self.dpi = 360
+        self._magnification = 1
         self._cached_image = None
         self._generation = None
 
@@ -363,7 +363,7 @@ class TextNode(Node, Stroked, FunctionalParameter):
         if self.raw_bbox is None:
             self.raw_bbox = [0, 0, 0, 0]
         left, upper, right, lower = self.raw_bbox
-        factor = self.dpi / 72.0
+        factor = self._magnification
         xmin = left / factor
         ymin = upper / factor
         xmax = right / factor

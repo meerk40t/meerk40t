@@ -882,7 +882,7 @@ class LaserRender:
             image = node._cached_image
         if image is None:
             image = Image.new("L", (1, 1), "white")
-        factor = node.dpi / 72.0
+        factor = node._magnification
         bounds = 0, 0, int(image.width / factor), int(image.height / factor)
 
         if matrix is not None and not matrix.is_identity():
@@ -1001,8 +1001,8 @@ class LaserRender:
         # as we need to change the font_size
         fontdesc = node.wxfont.GetNativeFontInfoDesc()
         use_font = wx.Font(fontdesc)
-        # we need to scale this according to the node.dpi setting
-        factor = node.dpi / 72.0
+        # we need to scale this according to the node magnification setting
+        factor = node._magnification
         try:
             fsize = use_font.GetFractionalPointSize() * factor
             use_font.SetFractionalPointSize(fsize)
@@ -1111,7 +1111,7 @@ class LaserRender:
         nodecopy = [e for e in _nodes]
         self.validate_text_nodes(nodecopy, variable_translation)
 
-        for item in _nodes:
+        for item in nodecopy:
             # bb = item.bounds
             bb = item.paint_bounds
             if bb is None:
