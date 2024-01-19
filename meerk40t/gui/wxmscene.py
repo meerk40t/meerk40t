@@ -1125,6 +1125,8 @@ class MeerK40tScenePanel(wx.Panel):
                 self.grid.draw_grid_secondary = not self.grid.draw_grid_secondary
             elif gridtype == "circular":
                 self.grid.draw_grid_circular = not self.grid.draw_grid_circular
+            self.scene.signal("guide")
+            self.scene.signal("grid")
             self.widget_scene.reset_snap_attraction()
             self.request_refresh()
 
