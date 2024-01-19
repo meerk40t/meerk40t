@@ -402,7 +402,6 @@ class BeamTable:
     def compute_beam(self):
         self.compute_beam_brute()
 
-
     def compute_beam_bo(self):
         g = self.geometry
         gs = g.segments
@@ -1658,7 +1657,16 @@ class Geomstr:
         return cls(float_segments)
 
     def as_float_segments(self):
-        return [((start.real, start.imag), (c1.real, c1.imag), (info.real, info.imag), (c2.real, c2.imag), (end.real, end.imag)) for start, c1, info, c2, end in g.segments[:g.index]]
+        return [
+            (
+                (start.real, start.imag),
+                (c1.real, c1.imag),
+                (info.real, info.imag),
+                (c2.real, c2.imag),
+                (end.real, end.imag),
+            )
+            for start, c1, info, c2, end in g.segments[: g.index]
+        ]
 
     def flag_settings(self, flag=None, start=0, end=None):
         if end is None:
