@@ -87,7 +87,7 @@ msgstr "Tentativo di connessione a {address} fallito (Time-Out)"
 
 #: meerk40t/network/tcp_server.py:133
 msgid "Connection to {address} was closed."
-msgstr "La connessione a {adress} è stata chiusa"
+msgstr "La connessione a {address} è stata chiusa"
                                    
 #: meerk40t/balormk/device.py:616 meerk40t/grbl/device.py:233 meerk40t/newly/device.py:110
 #: meerk40t/gui/propertypanels/attributes.py:229 meerk40t/moshi/device.py:129                                                                             
