@@ -1665,7 +1665,7 @@ class Geomstr:
                 (c2.real, c2.imag),
                 (end.real, end.imag),
             )
-            for start, c1, info, c2, end in g.segments[: g.index]
+            for start, c1, info, c2, end in self.segments[: self.index]
         ]
 
     def flag_settings(self, flag=None, start=0, end=None):
