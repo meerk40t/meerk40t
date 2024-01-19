@@ -83,11 +83,11 @@ msgstr "Socket non disponibile per stabilire una connessione"
 
 #: meerk40t/network/tcp_server.py:124
 msgid "Connection to {address} timed out."
-msgstr "Tentativo di connessione a {indirizzo} fallito (Time-Out)"
+msgstr "Tentativo di connessione a {address} fallito (Time-Out)"
 
 #: meerk40t/network/tcp_server.py:133
 msgid "Connection to {address} was closed."
-msgstr "La connessione a {indirizzo} è stata chiusa"
+msgstr "La connessione a {adress} è stata chiusa"
                                    
 #: meerk40t/balormk/device.py:616 meerk40t/grbl/device.py:233 meerk40t/newly/device.py:110
 #: meerk40t/gui/propertypanels/attributes.py:229 meerk40t/moshi/device.py:129                                                                             
@@ -1025,7 +1025,7 @@ msgstr "Tentativo di modifica dell'impostazione fallito, errore cv2"
 
 #: meerk40t/camera/plugin.py:261
 msgid "Attempt camera setting ({property}) to {value}. {current}->{old}"
-msgstr "Prova a impostare la fotocamera ({property}) su {value}. {corrente}->{vecchio}"
+msgstr "Prova a impostare la fotocamera ({property}) su {value}. {current}->{old}"
 
 #: meerk40t/core/bindalias.py:242
 msgid "bind <key> <console command>"
@@ -3005,7 +3005,7 @@ msgstr "Elimina l'elemento '{name}' completamente"
 
 #: meerk40t/core/elements/element_treeops.py:860
 msgid "Delete operation '{name}' fully"
-msgstr "Cancellare completamente l'operazione '{nome}"
+msgstr "Cancellare completamente l'operazione '{name}"
 
 #: meerk40t/core/elements/element_treeops.py:919
 msgid "Delete group '{name}' and all its child-elements fully"
@@ -3017,7 +3017,7 @@ msgstr "Cancellare completamente l'oggetto binario 'nome}'"
 
 #: meerk40t/core/elements/element_treeops.py:935
 msgid "Remove loaded file '{name}' and all its child-elements fully"
-msgstr "Elimina completamente il file '{nome}' e tutti i sottoelementi"
+msgstr "Elimina completamente il file '{name}' e tutti i sottoelementi"
 
 #: meerk40t/core/elements/element_treeops.py:997
 msgid "Delete {ecount} operations"
@@ -4309,7 +4309,7 @@ msgstr "inkscape locate    - imposta il percorso di Inkscape sul tuo computer"
 #: meerk40t/extra/inkscape.py:182
 msgid "Inkscape location: Platform '{platform}' unknown. No idea where to look"
 msgstr ""
-"Posizione di Inkscape: Piattaforma '{piattaforma}' sconosciuta. Non si sa dove cercare"
+"Posizione di Inkscape: Piattaforma '{platform}' sconosciuta. Non si sa dove cercare"
                     
 
 #: meerk40t/extra/inkscape.py:189
@@ -4653,15 +4653,15 @@ msgstr "Elementi selezionati: {count}"
 
 #: meerk40t/gui/alignment.py:133 meerk40t/gui/imagesplitter.py:96
 msgid "As in Selection: {type} {lbl}"
-msgstr "Come in Selezione: {tipo} {lbl}"
+msgstr "Come in Selezione: {type} {lbl}"
 
 #: meerk40t/gui/alignment.py:145 meerk40t/gui/imagesplitter.py:106
 msgid "First selected: {type} {lbl}"
-msgstr "Primo selezionato: {tipo} {lbl}"
+msgstr "Primo selezionato: {type} {lbl}"
 
 #: meerk40t/gui/alignment.py:156 meerk40t/gui/imagesplitter.py:115
 msgid "Last selected: {type} {lbl}"
-msgstr "Ultimo selezionato: {tipo} {lbl}"
+msgstr "Ultimo selezionato: {type} {lbl}"
 
 #: meerk40t/gui/alignment.py:165 meerk40t/gui/imagesplitter.py:123
 msgid "No elements selected"
@@ -7377,7 +7377,7 @@ msgstr "Seleziona un file CSV"
 
 #: meerk40t/gui/wordlisteditor.py:467
 msgid "Imported file, {col} fields, {row} rows"
-msgstr "File importato, {col} variabili, {riga} valori"
+msgstr "File importato, {col} variabili, {row} valori"
 
 #: meerk40t/gui/wordlisteditor.py:489
 msgid "How to use..."
@@ -16702,7 +16702,7 @@ msgid ""
 "Info: {info}"
 
 msgstr ""
-"Ultima versione su github: {nome} v{versione} ({label})\n"
+"Ultima versione su github: {name} v{version} ({label})\n"
 "Url: {url}}n"
 "Info: {info}"
 
@@ -18670,7 +18670,7 @@ msgid ""
 "Every other {area} can be displaced by a percentage of the gap in {direction}-direction\n"
 "Useful for honeycomb- or other irregular patterns that need to overlap"
 msgstr ""
-"Ogni secondo {area} può essere spostato di una percentuale della distanza della regola in direzione {direzione}."
+"Ogni secondo {area} può essere spostato di una percentuale della distanza della regola in direzione {direction}."
 "Utile per griglie a nido d'ape o altre strutture che devono sovrapporsi"
 
 #: ./meerk40t\gui\propertypanels\placementproperty.py:187
