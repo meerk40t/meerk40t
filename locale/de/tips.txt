@@ -60,18 +60,18 @@ Elemente können in den Registriermarken-Bereich bzw. auch wieder daraus mittels
 Dran denken: Elemente im Registrier-Marken können nicht verändert oder verschoben werden, dazu diese zuerst in den normalen Element-Bereich verschieben, manipulieren und dann wieder zurück in die Registriermarken.
 cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Regmarks
 
-tip=Ein Objekt soll ganz genau auf dem Laser-Bett platzier werden? Eine USB-Kamera leistet hier wertvolle Dienste.
-MeerK40t kann mehrere solcher kameras nutzen um das Kamerbild auf dem Arebtisbereich-Hintergrund einzublenden - damit wird das Platzieren von zu brennenden Elementen auf Gegenständen kinderleicht.
+tip=Ein Objekt soll ganz genau auf dem Laser-Bett platziert werden? Eine USB-Kamera leistet hier wertvolle Dienste.
+MeerK40t kann mehrere solcher Kameras nutzen, um das Kamerbild auf dem Arbeitsbereich-Hintergrund einzublenden - damit wird das Platzieren von zu brennenden Elementen auf Gegenständen kinderleicht.
 Auf das Kamera-Symbol in der Symbolleiste klicken und einmalig das Kamerabild kalibrieren.
 cmd=camdetect\n
 img=https://github.com/meerk40t/meerk40t/assets/2670784/53207cbb-dfbc-4bce-841d-dedc305118e7
 
 tip=Die individuellen Einstellungen zum Gravieren/Schneiden von Materialien (wie Plexiglas, 4mm Sperrholz usw.) können einfach gespeichert und wiederverwendet werden.
-Verwende die Material-Bibliothek um die Einsttelungen für die unterschiedlichen Materialien zu verwalten.
+Verwende die Material-Bibliothek, um die Einstellungen für die unterschiedlichen Materialien zu verwalten.
 cmd=window open MatManager
 img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
 
-tip=Man kann seine perfekten Einstellungen für ein Material übrigens mit anderen Nutzern teilen und gleichfalls auf die Ergebnisse von anderen Usern aus der MeerK40t Community zugreifen.
+tip=Man kann seine perfekten Einstellungen für ein Material übrigens mit anderen Nutzern teilen und gleichfalls auf die Ergebnisse von Anderen aus der MeerK40t Community zugreifen.
 Die Material-Bibliothek verwenden, um Einstellungen zu teilen, oder welche aus der Community abzurufen.
 cmd=window open MatManager
 img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
