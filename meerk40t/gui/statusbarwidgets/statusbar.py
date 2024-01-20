@@ -24,6 +24,7 @@ class CustomStatusBar(wx.StatusBar):
         self.widgets = {}
         self.activesizer = [None] * self.panelct
         self.nextbuttons = []
+        btn_size = 22
         for __ in range(self.panelct):
             # Linux wxPython has a fundamental flaw in the treatment of
             # small bitmap buttons. It reserves an extent around the
@@ -32,10 +33,8 @@ class CustomStatusBar(wx.StatusBar):
             btn = wx.StaticBitmap(
                 self,
                 id=wx.ID_ANY,
-                bitmap=icons8_circled_right.GetBitmap(
-                    resize=max(20, self.available_height - 4), buffer=1
-                ),
-                size=wx.Size(self.available_height - 2, self.available_height - 2),
+                bitmap=icons8_circled_right.GetBitmap(resize=btn_size, buffer=1),
+                size=wx.Size(btn_size, btn_size),
                 # style=wx.BORDER_RAISED,
             )
             # btn.SetBackgroundColour(wx.RED)

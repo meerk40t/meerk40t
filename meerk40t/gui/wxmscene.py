@@ -1074,6 +1074,12 @@ class MeerK40tScenePanel(wx.Panel):
 
     @signal_listener("scene_right_click")
     def on_scene_right(self, origin, *args):
+        def zoom_in(event=None):
+            self.context(f"scene zoom {1.5 / 1.0}\n")
+
+        def zoom_out(event=None):
+            self.context(f"scene zoom {1.0 / 1.5}\n")
+
         def zoom_to_bed(event=None):
             zoom = self.context.zoom_margin
             self.context(f"scene focus -a {-zoom}% {-zoom}% {zoom+100}% {zoom+100}%\n")
@@ -1119,6 +1125,8 @@ class MeerK40tScenePanel(wx.Panel):
                 self.grid.draw_grid_secondary = not self.grid.draw_grid_secondary
             elif gridtype == "circular":
                 self.grid.draw_grid_circular = not self.grid.draw_grid_circular
+            self.scene.signal("guide")
+            self.scene.signal("grid")
             self.widget_scene.reset_snap_attraction()
             self.request_refresh()
 
@@ -1200,6 +1208,24 @@ class MeerK40tScenePanel(wx.Panel):
                 ),
             )
         menu.AppendSeparator()
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: zoom_out(),
+            menu.Append(
+                wx.ID_ANY,
+                _("Zoom Out"),
+                _("Make the scene smaller"),
+            ),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: zoom_in(),
+            menu.Append(
+                wx.ID_ANY,
+                _("Zoom In"),
+                _("Make the scene larger"),
+            ),
+        )
         self.Bind(
             wx.EVT_MENU,
             lambda e: zoom_to_bed(),

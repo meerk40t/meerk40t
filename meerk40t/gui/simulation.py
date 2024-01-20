@@ -748,13 +748,13 @@ class CutcodePanel(wx.Panel):
 
 class SimulationPanel(wx.Panel, Job):
     def __init__(
-        self,
-        *args,
-        context=None,
-        plan_name=None,
-        auto_clear=True,
-        optimise_at_start=True,
-        **kwds,
+            self,
+            *args,
+            context=None,
+            plan_name=None,
+            auto_clear=True,
+            optimise_at_start=True,
+            **kwds,
     ):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -1211,6 +1211,17 @@ class SimulationPanel(wx.Panel, Job):
             self.widget_scene.widget_root, "background", None
         )
         self.widget_scene.request_refresh()
+    def zoom_in(self):
+        matrix = self.widget_scene.widget_root.matrix
+        zoomfactor = 1.5 / 1.0
+        matrix.post_scale(zoomfactor)
+        self.widget_scene.request_refresh()
+
+    def zoom_out(self):
+        matrix = self.widget_scene.widget_root.matrix
+        zoomfactor = 1.0 / 1.5
+        matrix.post_scale(zoomfactor)
+        self.widget_scene.request_refresh()
 
     def fit_scene_to_panel(self):
         bbox = self.context.device.view.source_bbox()
@@ -1336,6 +1347,25 @@ class SimulationPanel(wx.Panel, Job):
         self.Bind(wx.EVT_MENU, self.toggle_travel_display, id=id6.GetId())
         menu.Check(id6.GetId(), self.display_travel)
 
+        menu.AppendSeparator()
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.zoom_out(),
+            menu.Append(
+                wx.ID_ANY,
+                _("Zoom Out"),
+                _("Make the scene smaller"),
+            ),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.zoom_in(),
+            menu.Append(
+                wx.ID_ANY,
+                _("Zoom In"),
+                _("Make the scene larger"),
+            ),
+        )
         self.Bind(
             wx.EVT_MENU,
             lambda e: self.fit_scene_to_panel(),
