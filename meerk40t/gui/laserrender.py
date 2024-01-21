@@ -1,5 +1,5 @@
 from copy import copy
-from math import ceil, isnan, sqrt
+from math import ceil, isnan, sqrt, floor
 
 import wx
 from PIL import Image, ImageOps
@@ -16,20 +16,20 @@ from meerk40t.svgelements import (
     Move,
     QuadraticBezier,
 )
-
-from ..core.cutcode.cubiccut import CubicCut
-from ..core.cutcode.cutcode import CutCode
-from ..core.cutcode.dwellcut import DwellCut
-from ..core.cutcode.gotocut import GotoCut
-from ..core.cutcode.homecut import HomeCut
-from ..core.cutcode.inputcut import InputCut
-from ..core.cutcode.linecut import LineCut
-from ..core.cutcode.outputcut import OutputCut
-from ..core.cutcode.plotcut import PlotCut
-from ..core.cutcode.quadcut import QuadCut
-from ..core.cutcode.rastercut import RasterCut
-from ..core.cutcode.waitcut import WaitCut
-from ..tools.geomstr import (  # , TYPE_RAMP
+from meerk40t.core.units import UNITS_PER_INCH
+from meerk40t.core.cutcode.cubiccut import CubicCut
+from meerk40t.core.cutcode.cutcode import CutCode
+from meerk40t.core.cutcode.dwellcut import DwellCut
+from meerk40t.core.cutcode.gotocut import GotoCut
+from meerk40t.core.cutcode.homecut import HomeCut
+from meerk40t.core.cutcode.inputcut import InputCut
+from meerk40t.core.cutcode.linecut import LineCut
+from meerk40t.core.cutcode.outputcut import OutputCut
+from meerk40t.core.cutcode.plotcut import PlotCut
+from meerk40t.core.cutcode.quadcut import QuadCut
+from meerk40t.core.cutcode.rastercut import RasterCut
+from meerk40t.core.cutcode.waitcut import WaitCut
+from meerk40t.tools.geomstr import (  # , TYPE_RAMP
     TYPE_ARC,
     TYPE_CUBIC,
     TYPE_LINE,
@@ -883,10 +883,104 @@ class LaserRender:
         if image is None:
             image = Image.new("L", (1, 1), "white")
         factor = node._magnification
-        bounds = 0, 0, int(image.width / factor), int(image.height / factor)
+        # We need to...
+        transform_matrix = copy(node.matrix)  # Prevent Knock-on effect.
+        # dpi of text node is fixed
+        step_x = UNITS_PER_INCH / node._dpi
+        step_y = UNITS_PER_INCH / node._dpi
+        # Find the boundary points of the rotated box edges.
+        box = (0, 0, image.width, image.height)
+        boundary_points = [
+            transform_matrix.point_in_matrix_space([box[0], box[1]]),  # Top-left
+            transform_matrix.point_in_matrix_space([box[2], box[1]]),  # Top-right
+            transform_matrix.point_in_matrix_space([box[0], box[3]]),  # Bottom-left
+            transform_matrix.point_in_matrix_space([box[2], box[3]]),  # Bottom-right
+        ]
+        xs = [e[0] for e in boundary_points]
+        ys = [e[1] for e in boundary_points]
 
-        if matrix is not None and not matrix.is_identity():
-            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        # bbox here is expanded matrix size of box.
+        step_scale_x = 1 / float(step_x)
+        step_scale_y = 1 / float(step_y)
+
+        bbox = min(xs), min(ys), max(xs), max(ys)
+
+        image_width = ceil(bbox[2] * step_scale_x) - floor(bbox[0] * step_scale_x)
+        image_height = ceil(bbox[3] * step_scale_y) - floor(bbox[1] * step_scale_y)
+        tx = bbox[0]
+        ty = bbox[1]
+        # Caveat: we move the picture backward, so that the non-white
+        # image content aligns at 0 , 0 - but we don't crop the image
+        transform_matrix.post_translate(-tx, -ty)
+        transform_matrix.post_scale(step_scale_x, step_scale_y)
+        if step_y < 0:
+            # If step_y is negative, translate
+            transform_matrix.post_translate(0, image_height)
+        if step_x < 0:
+            # If step_x is negative, translate
+            transform_matrix.post_translate(image_width, 0)
+
+        try:
+            transform_matrix.inverse()
+        except ZeroDivisionError:
+            # malformed matrix, scale=0 or something.
+            transform_matrix.reset()
+        image.save("C:\\temp\\debug_before.bmp")
+        # Perform image transform if needed.
+        if (
+            matrix.a != step_x
+            or matrix.b != 0.0
+            or matrix.c != 0.0
+            or matrix.d != step_y
+        ):
+            if image_height <= 0:
+                image_height = 1
+            if image_width <= 0:
+                image_width = 1
+
+            try:
+                from PIL.Image import Transform
+
+                AFFINE = Transform.AFFINE
+            except ImportError:
+                AFFINE = Image.AFFINE
+
+            try:
+                from PIL.Image import Resampling
+
+                BICUBIC = Resampling.BICUBIC
+            except ImportError:
+                BICUBIC = Image.BICUBIC
+
+            image = image.transform(
+                (image_width, image_height),
+                AFFINE,
+                (
+                    transform_matrix.a,
+                    transform_matrix.c,
+                    transform_matrix.e,
+                    transform_matrix.b,
+                    transform_matrix.d,
+                    transform_matrix.f,
+                ),
+                resample=BICUBIC,
+                fillcolor="white",
+            )
+        image.save("C:\\temp\\debug_after.bmp")
+        actualized_matrix = Matrix()
+
+        if step_y < 0:
+            # if step_y is negative, translate.
+            actualized_matrix.post_translate(0, -image_height)
+        if step_x < 0:
+            # if step_x is negative, translate.
+            actualized_matrix.post_translate(-image_width, 0)
+
+        bounds = 0, 0, int(image.width / factor), int(image.height / factor)
+        print (bounds)
+
+        if matrix is not None and not actualized_matrix.is_identity():
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(actualized_matrix)))
         try:
             min_x, min_y, max_x, max_y = bounds
             cache = self.make_thumbnail(
@@ -1210,6 +1304,7 @@ class LaserRender:
             pil_data = pil_data.resize((width, height))
         else:
             pil_data = pil_data.copy()
+        pil_data.save("C:\\temp\\debug_thumb.bmp")
         if not alphablack:
             return wx.Bitmap.FromBufferRGBA(
                 width, height, pil_data.convert("RGBA").tobytes()

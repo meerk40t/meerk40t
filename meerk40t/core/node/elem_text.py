@@ -75,6 +75,7 @@ class TextNode(Node, Stroked, FunctionalParameter):
         self.font_family = "sans-serif"
         # We store the bitmap representation of the text
         self._magnification = 1
+        self._dpi = 72 * self._magnification
         self._cached_image = None
         self._generation = None
 
