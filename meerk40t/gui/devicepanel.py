@@ -576,12 +576,17 @@ class DevicePanel(wx.Panel):
 class DeviceManager(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(653, 332, *args, **kwds)
+        sizer = wx.BoxSizer(wx.VERTICAL)
         self.panel = DevicePanel(self, wx.ID_ANY, context=self.context)
+        sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_manager.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Devices"))
+        self.SetSizer(sizer)
+        sizer.Layout()
+        self.Layout()
         self.restore_aspect()
 
     @staticmethod
