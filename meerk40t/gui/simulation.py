@@ -2048,6 +2048,8 @@ class SimReticleWidget(Widget):
 class Simulation(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(706, 755, *args, **kwds)
+        # We do this very early to allow resizing events to do their thing...
+        self.restore_aspect(honor_initial_values=True)
         if len(args) > 3:
             plan_name = args[3]
         else:
@@ -2073,7 +2075,6 @@ class Simulation(MWindow):
         _icon.CopyFromBitmap(icons8_laser_beam_hazard.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Simulation"))
-        self.restore_aspect()
 
     @staticmethod
     def sub_register(kernel):
