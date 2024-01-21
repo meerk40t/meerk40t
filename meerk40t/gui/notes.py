@@ -111,7 +111,7 @@ class NotePanel(wx.Panel):
 
 class Notes(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(730, 621, *args, **kwds)
+        super().__init__(450, 350, *args, **kwds)
 
         self.panel = NotePanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
@@ -120,7 +120,7 @@ class Notes(MWindow):
         self.SetIcon(_icon)
         self.SetTitle(_("Notes"))
         self.Children[0].SetFocus()
-        self.restore_aspect()
+        self.restore_aspect(honor_initial_values=True)
 
     @staticmethod
     def sub_register(kernel):

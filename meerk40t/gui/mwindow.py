@@ -81,6 +81,7 @@ class MWindow(wx.Frame, Module):
                     self.window_context.height = area[3]
                     self.window_context.setting(int, "y", 0)
             self.SetSize((self.window_context.width, self.window_context.height))
+        self.Raise()
 
     def on_mouse_left_down(self, event):
         # Convert mac Control+left click into right click

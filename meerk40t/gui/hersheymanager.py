@@ -868,7 +868,6 @@ class HersheyFontManager(MWindow):
         sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.SetSizer(sizer)
         sizer.Layout()
-        sizer.Fit(self)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_choose_font.GetBitmap())
         # _icon.CopyFromBitmap(icons8_computer_support.GetBitmap())

@@ -535,7 +535,7 @@ class TipPanel(wx.Panel):
 
 class Tips(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(400, 350, *args, **kwds)
+        super().__init__(550, 350, *args, **kwds)
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.panel = TipPanel(
             self,
@@ -549,7 +549,7 @@ class Tips(MWindow):
         _icon.CopyFromBitmap(icons8_detective.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Tips"))
-        self.restore_aspect()
+        self.restore_aspect(honor_initial_values=True)
 
     def window_open(self):
         self.panel.pane_show()
