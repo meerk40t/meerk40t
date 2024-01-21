@@ -76,8 +76,8 @@ class TextNode(Node, Stroked, FunctionalParameter):
         self.line_height = 16.0
         self.font_family = "sans-serif"
         # We store the bitmap representation of the text
-        self._magnification = 2
-        self._dpi = 72 * self._magnification
+        # The magnification value establishes a finer resolution at the cost of the internal image size
+        self.__magnification = 2
         self._image = None
         self._processed_image = None
         self._processed_matrix = None
@@ -159,8 +159,27 @@ class TextNode(Node, Stroked, FunctionalParameter):
         nd["fill"] = copy(self.fill)
         newnode = TextNode(**nd)
         newnode._generator = self._generator
+        newnode.__magnification = self.__magnification
         newnode._image = self._image
         return newnode
+
+    @property
+    def _magnification(self):
+        return self.__magnification
+
+    @_magnification.setter
+    def _magnification(self, value):
+        if self.__magnification != value:
+            self.__magnification = value
+            self._image = None
+            self._processed_image = None
+            if self._generator is not None:
+                self._generator(self)
+
+
+    @property
+    def _dpi(self):
+        return 72 * self._magnification
 
     @property
     def font(self):
@@ -298,7 +317,7 @@ class TextNode(Node, Stroked, FunctionalParameter):
         # Caveat: we move the picture backward, so that the non-white
         # image content aligns at 0 , 0 - but we don't crop the image
         transform_matrix.post_translate(-tx, -ty)
-        transform_matrix.post_scale(step_scale_x, step_scale_y)
+        transform_matrix.post_scale(step_scale_x / self._magnification, step_scale_y / self._magnification)
         if step_y < 0:
             # If step_y is negative, translate
             transform_matrix.post_translate(0, image_height)
@@ -566,6 +585,19 @@ class TextNode(Node, Stroked, FunctionalParameter):
                     self.line_height = height
             except ValueError:
                 pass
+        # We evaluate the estimated image size and decide our resolution...
+        magnificent = 5 # 360 dpi should be enough
+        if self.font_size:
+            while magnificent > 0:
+                char_pixel = magnificent * self.font_size
+                pixels = len(self.text) * char_pixel * char_pixel
+                # print (f"Magn: {magnificent}, pixels={pixels} ({pixels // 1024})")
+                # More than 1 MB?
+                if pixels > 1024 * 1024:
+                    magnificent -= 1
+                else:
+                    break
+        self._magnification = magnificent
 
     @property
     def font_list(self):
