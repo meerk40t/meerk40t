@@ -868,131 +868,42 @@ class LaserRender:
         gc.PopState()
 
     def draw_text_node(self, node, gc, draw_mode=0, zoomscale=1.0, alpha=255):
-        if node is None:
-            return
-        # The text representation is stored as a precached image (at 500 dpi)
-        # So we just paint the bitmap...
-
         gc.PushState()
-        matrix = node.matrix
-        image = node._cached_image
-        if image is None:
-            node.update_image(None)
-            dummy = node.bounds
-            image = node._cached_image
-        if image is None:
-            image = Image.new("L", (1, 1), "white")
-        factor = node._magnification
-        # We need to...
-        transform_matrix = copy(node.matrix)  # Prevent Knock-on effect.
-        # dpi of text node is fixed
-        step_x = UNITS_PER_INCH / node._dpi
-        step_y = UNITS_PER_INCH / node._dpi
-        # Find the boundary points of the rotated box edges.
-        box = (0, 0, image.width, image.height)
-        boundary_points = [
-            transform_matrix.point_in_matrix_space([box[0], box[1]]),  # Top-left
-            transform_matrix.point_in_matrix_space([box[2], box[1]]),  # Top-right
-            transform_matrix.point_in_matrix_space([box[0], box[3]]),  # Bottom-left
-            transform_matrix.point_in_matrix_space([box[2], box[3]]),  # Bottom-right
-        ]
-        xs = [e[0] for e in boundary_points]
-        ys = [e[1] for e in boundary_points]
-
-        # bbox here is expanded matrix size of box.
-        step_scale_x = 1 / float(step_x)
-        step_scale_y = 1 / float(step_y)
-
-        bbox = min(xs), min(ys), max(xs), max(ys)
-
-        image_width = ceil(bbox[2] * step_scale_x) - floor(bbox[0] * step_scale_x)
-        image_height = ceil(bbox[3] * step_scale_y) - floor(bbox[1] * step_scale_y)
-        tx = bbox[0]
-        ty = bbox[1]
-        # Caveat: we move the picture backward, so that the non-white
-        # image content aligns at 0 , 0 - but we don't crop the image
-        transform_matrix.post_translate(-tx, -ty)
-        transform_matrix.post_scale(step_scale_x, step_scale_y)
-        if step_y < 0:
-            # If step_y is negative, translate
-            transform_matrix.post_translate(0, image_height)
-        if step_x < 0:
-            # If step_x is negative, translate
-            transform_matrix.post_translate(image_width, 0)
+        image = None
 
         try:
-            transform_matrix.inverse()
-        except ZeroDivisionError:
-            # malformed matrix, scale=0 or something.
-            transform_matrix.reset()
-        image.save("C:\\temp\\debug_before.bmp")
-        # Perform image transform if needed.
-        if (
-            matrix.a != step_x
-            or matrix.b != 0.0
-            or matrix.c != 0.0
-            or matrix.d != step_y
-        ):
-            if image_height <= 0:
-                image_height = 1
-            if image_width <= 0:
-                image_width = 1
+            image = node.active_image
+            matrix = node.active_matrix
+            bounds = 0, 0, image.width, image.height
+            if matrix is not None and not matrix.is_identity():
+                gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        except AttributeError:
+            pass
+        if image is None:
+            return
 
-            try:
-                from PIL.Image import Transform
-
-                AFFINE = Transform.AFFINE
-            except ImportError:
-                AFFINE = Image.AFFINE
-
-            try:
-                from PIL.Image import Resampling
-
-                BICUBIC = Resampling.BICUBIC
-            except ImportError:
-                BICUBIC = Image.BICUBIC
-
-            image = image.transform(
-                (image_width, image_height),
-                AFFINE,
-                (
-                    transform_matrix.a,
-                    transform_matrix.c,
-                    transform_matrix.e,
-                    transform_matrix.b,
-                    transform_matrix.d,
-                    transform_matrix.f,
-                ),
-                resample=BICUBIC,
-                fillcolor="white",
-            )
-        image.save("C:\\temp\\debug_after.bmp")
-        actualized_matrix = Matrix()
-
-        if step_y < 0:
-            # if step_y is negative, translate.
-            actualized_matrix.post_translate(0, -image_height)
-        if step_x < 0:
-            # if step_x is negative, translate.
-            actualized_matrix.post_translate(-image_width, 0)
-
-        bounds = 0, 0, int(image.width / factor), int(image.height / factor)
-        print (bounds)
-
-        if matrix is not None and not actualized_matrix.is_identity():
-            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(actualized_matrix)))
+        cache = None
         try:
-            min_x, min_y, max_x, max_y = bounds
-            cache = self.make_thumbnail(
+            cache = node._cache
+        except AttributeError:
+            pass
+        if cache is None:
+            node._cache_width, node._cache_height = image.size
+            node._cache = self.make_thumbnail(
                 image,
                 alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
-                width=max_x - min_x,
-                height=max_y - min_y,
             )
+        node._cache_width, node._cache_height = image.size
+        try:
+            cache = self.make_thumbnail(
+                image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
+            )
+            min_x, min_y, max_x, max_y = bounds
             gc.DrawBitmap(cache, min_x, min_y, max_x - min_x, max_y - min_y)
         except MemoryError:
             pass
         gc.PopState()
+
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         image, bounds = node.as_image()
@@ -1299,12 +1210,10 @@ class LaserRender:
             scale = min(scale_x, scale_y)
             width = int(round(width * scale))
             height = int(round(height * scale))
-        # print(f"Resizing from {image_width}x{image_height} to {width}x{height}")
         if image_width != width or image_height != height:
             pil_data = pil_data.resize((width, height))
         else:
             pil_data = pil_data.copy()
-        pil_data.save("C:\\temp\\debug_thumb.bmp")
         if not alphablack:
             return wx.Bitmap.FromBufferRGBA(
                 width, height, pil_data.convert("RGBA").tobytes()
