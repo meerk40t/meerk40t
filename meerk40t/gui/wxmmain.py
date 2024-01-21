@@ -357,7 +357,7 @@ class MeerK40t(MWindow):
             def paste_image(bmp):
                 # Create an image element from the data in the *system* clipboard
                 def WxBitmapToWxImage(myBitmap):
-                    return wx.ImageFromBitmap(myBitmap)
+                    return myBitmap.ConvertToImage()
 
                 def imageToPil(myWxImage):
                     myPilImage = Image.new(
