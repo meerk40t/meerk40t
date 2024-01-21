@@ -24,7 +24,7 @@ from .icons import (
     icons8_laserbeam_weak,
 )
 from .mwindow import MWindow
-from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size
+from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size, get_key_name
 
 _ = wx.GetTranslation
 
@@ -248,7 +248,6 @@ class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
         """Constructor"""
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         listmix.TextEditMixin.__init__(self)
-
 
 class MaterialPanel(ScrolledPanel):
     """
@@ -1845,7 +1844,7 @@ class MaterialPanel(ScrolledPanel):
         self.combo_entry_type.SetSelection(ltype)
 
     def on_preview_selection(self, event):
-        pass
+        event.Skip()
 
     def on_library_rightclick(self, event):
         event.Skip()
@@ -2239,6 +2238,8 @@ class AboutPanel(wx.Panel):
 class MaterialManager(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(860, 800, *args, **kwds)
+        # We do this very early to allow resizing events to do their thing...
+        self.restore_aspect(honor_initial_values=True)
 
         self.panel_library = MaterialPanel(self, wx.ID_ANY, context=self.context)
         # self.panel_import = ImportPanel(self, wx.ID_ANY, context=self.context)
@@ -2266,7 +2267,6 @@ class MaterialManager(MWindow):
         self.DragAcceptFiles(True)
         self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
         self.SetTitle(_("Material Library"))
-        self.restore_aspect()
 
     def on_drop_file(self, event):
         """
