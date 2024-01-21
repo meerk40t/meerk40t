@@ -1021,26 +1021,28 @@ class LaserRender:
         bmp = wx.Bitmap(dimension_x, dimension_y, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
-        dc.SetBackground(wx.BLACK_BRUSH)
+        dc.SetBackground(wx.WHITE_BRUSH)
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
 
         msg = f"Revised bounds: {dimension_x} x {dimension_y}, factor={factor}, font_size={fsize} (original={fsize_org})"
-        gc.SetFont(use_font, wx.WHITE)
+        if node.fill is None:
+            col = wx.BLACK
+        else:
+            col = as_wx_color(node.fill)
+        gc.SetFont(use_font, col)
 
         gc.DrawText(text, 0, 0)
         try:
             img = bmp.ConvertToImage()
-            buf = img.GetData()
-            image = Image.frombuffer(
-                "RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1
-            )
-            img_bb = image.getbbox()
+            image = Image.new("RGB", (img.GetWidth(), img.GetHeight()))
+            image.frombytes(img.GetData())
+            try:
+                img_bb = image.point(lambda e: 255 - e).getbbox()
+            except ValueError:
+                img_bb = None
             if img_bb is not None:
                 image = image.crop(img_bb)
-            # Now we need to invert the picture
-            # as we were drawing with white on black
-            image = ImageOps.invert(image)
             node.update_image(image)
         except MemoryError:
             node.update_image(None)
