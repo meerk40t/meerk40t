@@ -483,6 +483,7 @@ class BasicOpPanel(wx.Panel):
                     self.op_panel, wx.ID_ANY, label=info, style=wx.ST_ELLIPSIZE_END
                 )
                 header.SetToolTip(
+                    info + "\n" +
                     _("Click to select all contained elements on the scene.")
                     + "\n"
                     + _("Double click to open the property dialog for the operation")
@@ -649,6 +650,7 @@ class BasicOpPanel(wx.Panel):
     @signal_listener("tree_changed")
     @signal_listener("operation_removed")
     @signal_listener("add_operation")
+    @signal_listener("warn_state_update")
     def signal_handler_rebuild(self, origin, *args, **kwargs):
         # print (f"Signal rebuild called {args} / {kwargs} / {len(list(self.context.elements.ops()))}")
         self.ask_for_refill()
