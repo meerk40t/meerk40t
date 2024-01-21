@@ -372,7 +372,7 @@ class Preferences(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(
             525,
-            605,
+            750,
             *args,
             style=wx.CAPTION
             | wx.CLOSE_BOX
@@ -389,6 +389,7 @@ class Preferences(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
 
         # self.panel_main = PreferencesPanel(self, wx.ID_ANY, context=self.context)
         self.panel_main = PreferencesMain(self, wx.ID_ANY, context=self.context)
@@ -558,7 +559,7 @@ class Preferences(MWindow):
             self.panels.append(panel_space)
             self.panel_ids.append("space")
         self.Layout()
-        self.restore_aspect()
+        self.restore_aspect(honor_initial_values=True)
 
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools.GetBitmap())

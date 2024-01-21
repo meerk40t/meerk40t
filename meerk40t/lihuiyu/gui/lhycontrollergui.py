@@ -249,6 +249,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
         sizer_main.Add(sizer_main_vertical, 1, 0, 0)
         sizer_main.Add(self.text_usb_log, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_main)
+        sizer_main.Fit(self)
         self.Layout()
         # end wxGlade
 
@@ -582,7 +583,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
 
 class LihuiyuControllerGui(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(_advanced_width, _default_height, *args, **kwds)
+        super().__init__(_simple_width, _default_height, *args, **kwds)
 
         # ==========
         # MENU BAR
@@ -596,17 +597,15 @@ class LihuiyuControllerGui(MWindow):
         # ==========
         # MENUBAR END
         # ==========
+        self.restore_aspect(honor_initial_values=True)
         self.panel = LihuiyuControllerPanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Lihuiyu-Controller"))
-        mainsizer = wx.BoxSizer(wx.VERTICAL)
-        mainsizer.Add(self.panel, 1, wx.EXPAND, 0)
-        self.SetSizer(mainsizer)
         self.Layout()
-        self.restore_aspect()
 
     def create_menu(self, append):
         wxglade_tmp_menu = wx.Menu()

@@ -364,6 +364,7 @@ class PathProperty(MWindow):
         super().__init__(288, 303, *args, **kwds)
 
         self.panel = PathPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_vector.GetBitmap())

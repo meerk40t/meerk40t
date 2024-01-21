@@ -542,13 +542,12 @@ class Tips(MWindow):
             wx.ID_ANY,
             context=self.context,
         )
-        sizer.Add(self.panel, 1, wx.EXPAND, 0)
-        self.SetSizer(sizer)
-        sizer.Layout()
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_detective.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Tips"))
+        self.Layout()
         self.restore_aspect(honor_initial_values=True)
 
     def window_open(self):

@@ -496,6 +496,7 @@ class ElementsTree(MWindow):
         super().__init__(423, 131, *args, **kwds)
 
         self.panel = TreePanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_tree.GetBitmap())

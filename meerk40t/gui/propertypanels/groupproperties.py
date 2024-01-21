@@ -98,6 +98,7 @@ class GroupProperty(MWindow):
         self.panel = GroupPropertiesPanel(
             self, wx.ID_ANY, context=self.context, node=node
         )
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_group_objects.GetBitmap())
@@ -202,6 +203,7 @@ class FileProperty(MWindow):
         self.panel = FilePropertiesPanel(
             self, wx.ID_ANY, context=self.context, node=node
         )
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_group_objects.GetBitmap())

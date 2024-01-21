@@ -29,7 +29,7 @@ class BalorConfiguration(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
-
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         options = (
             ("balor", "Balor"),
             ("balor-redlight", "Redlight"),

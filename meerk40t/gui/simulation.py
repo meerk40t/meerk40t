@@ -2071,6 +2071,7 @@ class Simulation(MWindow):
             auto_clear=auto_clear,
             optimise_at_start=optimise,
         )
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_hazard.GetBitmap())
         self.SetIcon(_icon)

@@ -751,6 +751,7 @@ class CameraInterface(MWindow):
         super().__init__(640, 480, context, path, parent, **kwds)
         self.camera = self.context.get_context(f"camera/{index}")
         self.panel = CameraPanel(self, wx.ID_ANY, context=self.camera, index=index)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
 
         # ==========
@@ -1113,6 +1114,7 @@ class CameraURI(MWindow):
     def __init__(self, *args, index=None, **kwds):
         super().__init__(437, 530, *args, **kwds)
         self.panel = CameraURIPanel(self, wx.ID_ANY, context=self.context, index=index)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_camera.GetBitmap())
         self.SetIcon(_icon)

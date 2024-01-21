@@ -10,7 +10,7 @@ _ = wx.GetTranslation
 
 class PropertyWindow(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(598, 429, *args, **kwds)
+        super().__init__(600, 650, *args, **kwds)
 
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_computer_support.GetBitmap())
@@ -27,9 +27,10 @@ class PropertyWindow(MWindow):
             | aui.AUI_NB_TAB_SPLIT
             | aui.AUI_NB_TAB_MOVE,
         )
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.notebook_main.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
         self.Layout()
-        self.restore_aspect()
+        self.restore_aspect(honor_initial_values=True)
 
     def on_page_changed(self, event):
         event.Skip()

@@ -889,6 +889,7 @@ class WordlistEditor(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.notebook_main.AddPage(self.panel_editor, _("Editing"))
         self.notebook_main.AddPage(self.panel_import, _("Import/Export"))
         self.notebook_main.AddPage(self.panel_about, _("How to use"))
@@ -896,9 +897,6 @@ class WordlistEditor(MWindow):
         self.DragAcceptFiles(True)
         self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
         self.SetTitle(_("Wordlist Editor"))
-        main_sizer = wx.BoxSizer(wx.VERTICAL)
-        main_sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
-        self.SetSizer(main_sizer)
         self.restore_aspect()
 
     def on_drop_file(self, event):

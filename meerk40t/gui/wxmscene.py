@@ -1436,6 +1436,7 @@ class SceneWindow(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(1280, 800, *args, **kwds)
         self.panel = MeerK40tScenePanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())

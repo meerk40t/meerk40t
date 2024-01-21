@@ -870,6 +870,7 @@ class KerfTool(MWindow):
         _icon.CopyFromBitmap(icon_kerf.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Kerf-Test"))
+        self.sizer.Add(self.panel_template, 1, wx.EXPAND, 0)
         self.Layout()
         self.restore_aspect()
 

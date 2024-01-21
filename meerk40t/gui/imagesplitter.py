@@ -450,6 +450,7 @@ class RenderSplit(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.scene = getattr(self.context.root, "mainscene", None)
         # Hide Arrangement until ready...
         self.panel_split = SplitterPanel(

@@ -162,6 +162,7 @@ class RuidaController(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(499, 170, *args, **kwds)
         self.panel = RuidaControllerPanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         self.SetTitle(_("Ruida-Controller"))
         _icon = wx.NullIcon

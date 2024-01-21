@@ -1561,7 +1561,7 @@ class Alignment(MWindow):
             self, wx.ID_ANY, context=self.context, scene=self.scene
         )
         self.notebook_main.AddPage(self.panel_arrange, _("Arrange"))
-
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.Layout()
         self.restore_aspect()
 

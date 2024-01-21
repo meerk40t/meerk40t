@@ -39,6 +39,8 @@ class MWindow(wx.Frame, Module):
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_request, self)
         self.Bind(wx.EVT_MOVE, self.on_change_window, self)
         self.Bind(wx.EVT_SIZE, self.on_change_window, self)
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(self.sizer)
 
     def restore_aspect(self, honor_initial_values=False):
         width = self._start_width
@@ -56,12 +58,8 @@ class MWindow(wx.Frame, Module):
         else:
             # Forget about a default size, try to fit
             # the content as good as you can.
-            sizer = self.GetSizer()
-            if sizer:
-                sizer.Layout()
-                sizer.Fit(self)
-            else:
-                self.Fit()
+            self.sizer.Layout()
+            self.sizer.Fit(self)
             width, height = self.GetSize()
 
         if self.window_save:

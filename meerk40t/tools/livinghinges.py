@@ -991,6 +991,7 @@ class LivingHingeTool(MWindow):
             wx.ID_ANY,
             context=self.context,
         )
+        self.sizer.Add(self.panel_template, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel_template)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_hinges.GetBitmap())

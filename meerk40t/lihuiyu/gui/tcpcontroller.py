@@ -97,7 +97,7 @@ class TCPController(MWindow):
 
     def __do_layout(self):
         # begin wxGlade: Controller.__do_layout
-        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        sizer_main = self.sizer
         connection_controller = wx.BoxSizer(wx.VERTICAL)
         connection_controller.Add(self.button_device_connect, 0, wx.EXPAND, 0)
 
@@ -143,7 +143,6 @@ class TCPController(MWindow):
         buffer_sizer.Add(total_write_buffer, 0, wx.EXPAND, 0)
 
         sizer_main.Add(buffer_sizer, 0, wx.EXPAND, 0)
-        self.SetSizer(sizer_main)
         self.Layout()
         # end wxGlade
 

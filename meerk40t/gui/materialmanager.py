@@ -2238,8 +2238,6 @@ class AboutPanel(wx.Panel):
 class MaterialManager(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(860, 800, *args, **kwds)
-        # We do this very early to allow resizing events to do their thing...
-        self.restore_aspect(honor_initial_values=True)
 
         self.panel_library = MaterialPanel(self, wx.ID_ANY, context=self.context)
         # self.panel_import = ImportPanel(self, wx.ID_ANY, context=self.context)
@@ -2260,6 +2258,7 @@ class MaterialManager(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.notebook_main.AddPage(self.panel_library, _("Library"))
         # self.notebook_main.AddPage(self.panel_import, _("Import"))
         self.notebook_main.AddPage(self.panel_about, _("How to use"))
@@ -2267,6 +2266,7 @@ class MaterialManager(MWindow):
         self.DragAcceptFiles(True)
         self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
         self.SetTitle(_("Material Library"))
+        self.restore_aspect(honor_initial_values=True)
 
     def on_drop_file(self, event):
         """

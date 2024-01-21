@@ -384,6 +384,7 @@ class LihuiyuDriverGui(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.panels = []
         panel_config = ChoicePropertyPanel(
             self.notebook_main,
