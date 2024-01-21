@@ -1142,7 +1142,7 @@ class SpoolerPanel(wx.Panel):
 
 class JobSpooler(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(673, 456, *args, **kwds)
+        super().__init__(600, 400, *args, **kwds)
         selected_device = None
         if len(args) >= 4 and args[3]:
             selected_device = args[3]
@@ -1155,7 +1155,7 @@ class JobSpooler(MWindow):
         self.SetIcon(_icon)
         self.SetTitle(_("Job Spooler"))
         self.Layout()
-        self.restore_aspect()
+        self.restore_aspect(honor_initial_values=True)
 
     @staticmethod
     def sub_register(kernel):
