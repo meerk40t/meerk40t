@@ -206,42 +206,6 @@ class TextNode(Node, Stroked, FunctionalParameter):
         self._cache = None
         self.set_dirty_bounds()
 
-
-    def _get_transparent_mask(self, image):
-        """
-        Create Transparency Mask.
-        @param image:
-        @return:
-        """
-        if image is None:
-            return None
-        if "transparency" in image.info:
-            image = image.convert("RGBA")
-        try:
-            return image.getchannel("A").point(lambda e: 255 - e)
-        except ValueError:
-            return None
-
-    def _apply_mask(self, image, mask, reject_color=None):
-        """
-        Fill in original image with reject pixels.
-
-        @param image: Image to be masked off.
-        @param mask: Mask to apply to image
-        @param reject_color: Optional specified reject color override. Reject is usually "white" or black if inverted.
-        @return: image with mask pixels filled in with reject pixels
-        """
-        if not mask:
-            return image
-        if reject_color is None:
-            reject_color = "black" if self.invert else "white"
-        from PIL import Image
-
-        background = image.copy()
-        reject = Image.new("L", image.size, reject_color)
-        background.paste(reject, mask=mask)
-        return background
-
     def _get_crop_box(self, image):
         """
         Get the bbox cutting off the reject edges.
@@ -278,11 +242,7 @@ class TextNode(Node, Stroked, FunctionalParameter):
         except ImportError:
             BICUBIC = Image.BICUBIC
 
-        image = self._image.convert("L")
-
-        transparent_mask = self._get_transparent_mask(image)
-
-        image = self._apply_mask(image, transparent_mask)
+        image = self._image.convert("RGBA")
 
         # Calculate image box.
         box = None
@@ -293,7 +253,7 @@ class TextNode(Node, Stroked, FunctionalParameter):
         orgbox = (box[0], box[1], box[2], box[3])
 
         transform_matrix = copy(self.matrix)  # Prevent Knock-on effect.
-
+        transform_matrix.pre_scale(1 / self._magnification)
         # Find the boundary points of the rotated box edges.
         boundary_points = [
             transform_matrix.point_in_matrix_space([box[0], box[1]]),  # Top-left
@@ -310,14 +270,14 @@ class TextNode(Node, Stroked, FunctionalParameter):
 
         bbox = min(xs), min(ys), max(xs), max(ys)
 
-        image_width = ceil(bbox[2] * step_scale_x) - floor(bbox[0] * step_scale_x)
-        image_height = ceil(bbox[3] * step_scale_y) - floor(bbox[1] * step_scale_y)
+        image_width = ceil(bbox[2] * step_scale_x ) - floor(bbox[0] * step_scale_x )
+        image_height = ceil(bbox[3] * step_scale_y) - floor(bbox[1] * step_scale_y )
         tx = bbox[0]
         ty = bbox[1]
         # Caveat: we move the picture backward, so that the non-white
         # image content aligns at 0 , 0 - but we don't crop the image
         transform_matrix.post_translate(-tx, -ty)
-        transform_matrix.post_scale(step_scale_x / self._magnification, step_scale_y / self._magnification)
+        transform_matrix.post_scale(step_scale_x, step_scale_y)
         if step_y < 0:
             # If step_y is negative, translate
             transform_matrix.post_translate(0, image_height)
@@ -381,14 +341,11 @@ class TextNode(Node, Stroked, FunctionalParameter):
 
         actualized_matrix.post_scale(step_x, step_y)
         actualized_matrix.post_translate(tx, ty)
-
-        # Find rejection mask of white pixels. (already inverted)
-        reject_mask = image.point(lambda e: 0 if e == 255 else 255)
-
-        background = Image.new("L", image.size, "white")
-        background.paste(image, mask=reject_mask)
-        image = background
-
+        # # make white transparent
+        import numpy as np
+        x = np.asarray(image.convert('RGBA')).copy()
+        x[:, :, 3] = (255 * (x[:, :, :3] != 255).any(axis=2)).astype(np.uint8)
+        image = Image.fromarray(x)
         return actualized_matrix, image
 
 
@@ -399,8 +356,6 @@ class TextNode(Node, Stroked, FunctionalParameter):
         [b d f]
 
         Pil requires a, c, e, b, d, f accordingly.
-
-        As of 0.7.2 this converts the image to "L" as part of the process.
 
         There is a small amount of slop at the edge of converted images sometimes, so it's essential
         to mark the image as inverted if black should be treated as empty pixels. The scaled down image
