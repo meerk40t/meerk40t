@@ -16,12 +16,14 @@ from ..kernel.settings import Settings
 from .icons import (
     icon_library,
     icon_points,
+    icon_hatch,
     icons8_caret_down,
     icons8_caret_up,
     icons8_direction,
     icons8_image,
     icons8_laser_beam,
     icons8_laserbeam_weak,
+    icons8_console,
 )
 from .mwindow import MWindow
 from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size
@@ -382,6 +384,8 @@ class MaterialPanel(ScrolledPanel):
             "op image": ("Image", icons8_image, 0),
             "op engrave": ("Engrave", icons8_laserbeam_weak, 0),
             "op dots": ("Dots", icon_points, 0),
+            "op hatch": ("Hatch", icon_hatch, 0),
+            "generic": ("Generic", icons8_console, 0)
         }
         self.state_images = wx.ImageList()
         self.state_images.Create(width=25, height=25)
@@ -1810,6 +1814,7 @@ class MaterialPanel(ScrolledPanel):
                 oplabel = self.op_data.read_persistent(str, subsection, "label", "")
                 speed = self.op_data.read_persistent(str, subsection, "speed", "")
                 power = self.op_data.read_persistent(str, subsection, "power", "")
+                command = self.op_data.read_persistent(str, subsection, "command", "")
                 if power == "" and optype.startswith("op "):
                     power = "1000"
                 list_id = self.list_preview.InsertItem(
@@ -1818,8 +1823,14 @@ class MaterialPanel(ScrolledPanel):
                 try:
                     info = self.opinfo[optype]
                 except KeyError:
-                    continue
-
+                    info = self.opinfo["generic"]
+                    info = (optype, info[1], info[2])
+                if command:
+                    if oplabel:
+                        oplabel += " "
+                    else:
+                        oplabel = ""
+                    oplabel += f"({command})"
                 self.list_preview.SetItem(list_id, 1, info[0])
                 self.list_preview.SetItem(list_id, 2, opid)
                 self.list_preview.SetItem(list_id, 3, oplabel)
@@ -1848,7 +1859,7 @@ class MaterialPanel(ScrolledPanel):
         self.combo_entry_type.SetSelection(ltype)
 
     def on_preview_selection(self, event):
-        pass
+        event.Skip()
 
     def on_library_rightclick(self, event):
         event.Skip()
@@ -2058,9 +2069,12 @@ class MaterialPanel(ScrolledPanel):
             item = menu.Append(wx.ID_ANY, _("Load into Tree"), "", wx.ITEM_NORMAL)
             self.Bind(wx.EVT_MENU, on_menu_popup_apply_to_tree(key), item)
 
-            item = menu.Append(wx.ID_ANY, _("Use for statusbar"), "", wx.ITEM_NORMAL)
-            menu.Enable(item.GetId(), bool(self.active_material is not None))
-            self.Bind(wx.EVT_MENU, on_menu_popup_apply_to_statusbar(key), item)
+            settings = self.op_data
+            op_type = settings.read_persistent(str, key, "type")
+            if op_type.startswith("op "):
+                item = menu.Append(wx.ID_ANY, _("Use for statusbar"), "", wx.ITEM_NORMAL)
+                menu.Enable(item.GetId(), bool(self.active_material is not None))
+                self.Bind(wx.EVT_MENU, on_menu_popup_apply_to_statusbar(key), item)
 
         menu.AppendSeparator()
 
@@ -2150,8 +2164,22 @@ class MaterialPanel(ScrolledPanel):
 
     def before_operation_update(self, event):
         list_id = event.GetIndex()  # Get the current row
+        if list_id < 0:
+            event.Veto()
+            return
         col_id = event.GetColumn()  # Get the current column
-        if col_id in (2, 3, 4, 5):
+        ok = True
+        try:
+            index = self.list_preview.GetItemData(list_id)
+            key = self.get_nth_operation(index)
+            entry = self.operation_list[key]
+            if not entry[0].startswith("op "):
+                ok = False
+        except (AttributeError, KeyError):
+            ok = False
+        if col_id not in (2, 3, 4, 5):
+            ok = False
+        if ok:
             event.Allow()
         else:
             event.Veto()
