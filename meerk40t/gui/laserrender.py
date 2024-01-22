@@ -891,12 +891,12 @@ class LaserRender:
             node._cache_width, node._cache_height = image.size
             node._cache = self.make_thumbnail(
                 image,
-                alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
+                alphablack=False,
             )
         node._cache_width, node._cache_height = image.size
         try:
             cache = self.make_thumbnail(
-                image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
+                image, alphablack=False
             )
             min_x, min_y, max_x, max_y = bounds
             gc.DrawBitmap(cache, min_x, min_y, max_x - min_x, max_y - min_y)
