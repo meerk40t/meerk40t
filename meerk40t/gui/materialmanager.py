@@ -684,7 +684,7 @@ class MaterialPanel(ScrolledPanel):
                 for subsection in self.op_data.derivable(secname):
                     if subsection.endswith(" info"):
                         secdesc = self.op_data.read_persistent(
-                            str, subsection, "material", secname
+                            str, subsection, "material", ""
                         )
                         sectitle = self.op_data.read_persistent(
                             str, subsection, "title", ""
@@ -770,11 +770,11 @@ class MaterialPanel(ScrolledPanel):
             if sort_key_primary == "laser":  # laser
                 this_category_primary = info
             else:
-                this_category_primary = entry[sort_key_primary]
+                this_category_primary = entry[sort_key_primary].replace("_", " ")
             if sort_key_secondary == 3:  # laser
                 this_category_secondary = info
             else:
-                this_category_secondary = entry[sort_key_secondary]
+                this_category_secondary = entry[sort_key_secondary].replace("_", " ")
             if not this_category_primary:
                 this_category_primary = "No " + sort_key_primary
             key = entry["section"]
@@ -2102,10 +2102,17 @@ class MaterialPanel(ScrolledPanel):
                 return
             changes = False
             # Which ones do we have already?
+            replace_mk_pattern = True
+            mkpattern = "meerk40t:"
             uid = list()
-            for op in enumerate(op_list):
-                if hasattr(op, "id") and op.id is not None:
-                    list.append(op.id)
+            for op in op_list:
+                if not hasattr(op, "id"):
+                    continue
+                if not op.id:
+                    continue
+                if replace_mk_pattern and op.id.startswith(mkpattern):
+                    continue
+                uid.append(op.id)
             for op in op_list:
                 if hasattr(op, "label") and op.label is None:
                     pattern = op.type
@@ -2126,16 +2133,27 @@ class MaterialPanel(ScrolledPanel):
                         pattern += f" ({s1}{', ' if s1 and s2 else ''}{s2})"
                     op.label = pattern
                     changes = True
-                if hasattr(op, "id") and op.id is None:
+                replace_id = True
+                if not hasattr(op, "id"):
+                    oldid = "unknown"
+                    replace_id = False
+                else:
+                    oldid = op.id
+                    if op.id and not (replace_mk_pattern and op.id.startswith(mkpattern)):
+                        replace_id = False
+                # print (oldid, replace_id)
+                if replace_id:
+                    oldid = op.id
                     changes = True
                     if op.type.startswith("op "):
                         pattern = op.type[3].upper()
                     else:
-                        pattern = op.type[0:1].upper()
+                        pattern = op.type[0:2].upper()
                     idx = 1
                     while f"{pattern}{idx}" in uid:
                         idx += 1
                     op.id = f"{pattern}{idx}"
+                    # print (f"{oldid} -> {op.id}")
                     uid.append(op.id)
 
             if changes:
