@@ -16,12 +16,14 @@ from ..kernel.settings import Settings
 from .icons import (
     icon_library,
     icon_points,
+    icon_hatch,
     icons8_caret_down,
     icons8_caret_up,
     icons8_direction,
     icons8_image,
     icons8_laser_beam,
     icons8_laserbeam_weak,
+    icons8_console,
 )
 from .mwindow import MWindow
 from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size
@@ -382,6 +384,8 @@ class MaterialPanel(ScrolledPanel):
             "op image": ("Image", icons8_image, 0),
             "op engrave": ("Engrave", icons8_laserbeam_weak, 0),
             "op dots": ("Dots", icon_points, 0),
+            "op hatch": ("Hatch", icon_hatch, 0),
+            "generic": ("Generic", icons8_console, 0)
         }
         self.state_images = wx.ImageList()
         self.state_images.Create(width=25, height=25)
@@ -680,7 +684,7 @@ class MaterialPanel(ScrolledPanel):
                 for subsection in self.op_data.derivable(secname):
                     if subsection.endswith(" info"):
                         secdesc = self.op_data.read_persistent(
-                            str, subsection, "material", secname
+                            str, subsection, "material", ""
                         )
                         sectitle = self.op_data.read_persistent(
                             str, subsection, "title", ""
@@ -695,7 +699,7 @@ class MaterialPanel(ScrolledPanel):
                     else:
                         count += 1
                 if not sectitle:
-                    sectitle = secdesc
+                    sectitle = secname.replace("_", " ")
                 entry = {
                     "section": secname,
                     "material": secdesc,
@@ -766,11 +770,11 @@ class MaterialPanel(ScrolledPanel):
             if sort_key_primary == "laser":  # laser
                 this_category_primary = info
             else:
-                this_category_primary = entry[sort_key_primary]
+                this_category_primary = entry[sort_key_primary].replace("_", " ")
             if sort_key_secondary == 3:  # laser
                 this_category_secondary = info
             else:
-                this_category_secondary = entry[sort_key_secondary]
+                this_category_secondary = entry[sort_key_secondary].replace("_", " ")
             if not this_category_primary:
                 this_category_primary = "No " + sort_key_primary
             key = entry["section"]
@@ -1778,7 +1782,7 @@ class MaterialPanel(ScrolledPanel):
         note = ""
         ltype = 0
         if self.active_material is not None:
-            secdesc = self.active_material
+            secdesc = ""
             idx = 0
             for subsection in self.op_data.derivable(self.active_material):
                 if subsection.endswith(" info"):
@@ -1792,7 +1796,7 @@ class MaterialPanel(ScrolledPanel):
                         str, subsection, "lens", ""
                     )
                     secdesc = self.op_data.read_persistent(
-                        str, subsection, "material", secdesc
+                        str, subsection, "material", ""
                     )
                     thickness = self.op_data.read_persistent(
                         str, subsection, "thickness", ""
@@ -1810,6 +1814,7 @@ class MaterialPanel(ScrolledPanel):
                 oplabel = self.op_data.read_persistent(str, subsection, "label", "")
                 speed = self.op_data.read_persistent(str, subsection, "speed", "")
                 power = self.op_data.read_persistent(str, subsection, "power", "")
+                command = self.op_data.read_persistent(str, subsection, "command", "")
                 if power == "" and optype.startswith("op "):
                     power = "1000"
                 list_id = self.list_preview.InsertItem(
@@ -1818,8 +1823,14 @@ class MaterialPanel(ScrolledPanel):
                 try:
                     info = self.opinfo[optype]
                 except KeyError:
-                    continue
-
+                    info = self.opinfo["generic"]
+                    info = (optype, info[1], info[2])
+                if command:
+                    if oplabel:
+                        oplabel += " "
+                    else:
+                        oplabel = ""
+                    oplabel += f"({command})"
                 self.list_preview.SetItem(list_id, 1, info[0])
                 self.list_preview.SetItem(list_id, 2, opid)
                 self.list_preview.SetItem(list_id, 3, oplabel)
@@ -1835,6 +1846,9 @@ class MaterialPanel(ScrolledPanel):
             actval = ""
         else:
             actval = self.active_material
+        # print (f"id: '{actval}'\ntitle: '{info_title}'\nmaterial: '{secdesc}'")
+        if not info_title:
+            info_title = actval.replace("_", " ")
         self.txt_entry_section.SetValue(actval)
         self.txt_entry_material.SetValue(secdesc)
         self.txt_entry_thickness.SetValue(thickness)
@@ -1845,7 +1859,7 @@ class MaterialPanel(ScrolledPanel):
         self.combo_entry_type.SetSelection(ltype)
 
     def on_preview_selection(self, event):
-        pass
+        event.Skip()
 
     def on_library_rightclick(self, event):
         event.Skip()
@@ -1985,12 +1999,18 @@ class MaterialPanel(ScrolledPanel):
             def apply_to_tree_handler(*args):
                 settings = self.op_data
                 op_type = settings.read_persistent(str, sect, "type")
+                op_attr = dict()
+                for key in settings.keylist(sect):
+                    if key == "type":
+                        # We need to ignore it to avoid double attribute issues.
+                        continue
+                    content = settings.read_persistent(str, sect, key)
+                    op_attr[key] = content
                 try:
-                    targetop = Node().create(type=op_type)
+                    targetop = Node().create(type=op_type, **op_attr)
                 except ValueError:
                     # Attempted to create a non-bootstrapped node type.
                     return
-                targetop.load(settings, sect)
                 op_id = targetop.id
                 if op_id is None:
                     # WTF, that should not be the case
@@ -2001,7 +2021,8 @@ class MaterialPanel(ScrolledPanel):
                     # Already existing?
                     if op.id == targetop.id:
                         newone = False
-                        self.context.elements.op_branch.replace_node(targetop)
+                        op_attr["type"] = targetop.type
+                        op.replace_node(keep_children=True, **op_attr)
                         break
                 if newone:
                     try:
@@ -2021,12 +2042,18 @@ class MaterialPanel(ScrolledPanel):
             def apply_to_tree_handler(*args):
                 settings = self.op_data
                 op_type = settings.read_persistent(str, sect, "type")
+                op_attr = dict()
+                for key in settings.keylist(sect):
+                    if key == "type":
+                        # We need to ignore it to avoid double attribute issues.
+                        continue
+                    content = settings.read_persistent(str, sect, key)
+                    op_attr[key] = content
                 try:
-                    targetop = Node().create(type=op_type)
+                    targetop = Node().create(type=op_type, **op_attr)
                 except ValueError:
-                    # Attempted to create a non-boostrapped node type.
+                    # Attempted to create a non-bootstrapped node type.
                     return
-                targetop.load(settings, sect)
                 op_id = targetop.id
                 if op_id is None:
                     # WTF, that should not be the case
@@ -2055,9 +2082,12 @@ class MaterialPanel(ScrolledPanel):
             item = menu.Append(wx.ID_ANY, _("Load into Tree"), "", wx.ITEM_NORMAL)
             self.Bind(wx.EVT_MENU, on_menu_popup_apply_to_tree(key), item)
 
-            item = menu.Append(wx.ID_ANY, _("Use for statusbar"), "", wx.ITEM_NORMAL)
-            menu.Enable(item.GetId(), bool(self.active_material is not None))
-            self.Bind(wx.EVT_MENU, on_menu_popup_apply_to_statusbar(key), item)
+            settings = self.op_data
+            op_type = settings.read_persistent(str, key, "type")
+            if op_type.startswith("op "):
+                item = menu.Append(wx.ID_ANY, _("Use for statusbar"), "", wx.ITEM_NORMAL)
+                menu.Enable(item.GetId(), bool(self.active_material is not None))
+                self.Bind(wx.EVT_MENU, on_menu_popup_apply_to_statusbar(key), item)
 
         menu.AppendSeparator()
 
@@ -2072,10 +2102,17 @@ class MaterialPanel(ScrolledPanel):
                 return
             changes = False
             # Which ones do we have already?
+            replace_mk_pattern = True
+            mkpattern = "meerk40t:"
             uid = list()
-            for op in enumerate(op_list):
-                if hasattr(op, "id") and op.id is not None:
-                    list.append(op.id)
+            for op in op_list:
+                if not hasattr(op, "id"):
+                    continue
+                if not op.id:
+                    continue
+                if replace_mk_pattern and op.id.startswith(mkpattern):
+                    continue
+                uid.append(op.id)
             for op in op_list:
                 if hasattr(op, "label") and op.label is None:
                     pattern = op.type
@@ -2096,16 +2133,27 @@ class MaterialPanel(ScrolledPanel):
                         pattern += f" ({s1}{', ' if s1 and s2 else ''}{s2})"
                     op.label = pattern
                     changes = True
-                if hasattr(op, "id") and op.id is None:
+                replace_id = True
+                if not hasattr(op, "id"):
+                    oldid = "unknown"
+                    replace_id = False
+                else:
+                    oldid = op.id
+                    if op.id and not (replace_mk_pattern and op.id.startswith(mkpattern)):
+                        replace_id = False
+                # print (oldid, replace_id)
+                if replace_id:
+                    oldid = op.id
                     changes = True
                     if op.type.startswith("op "):
                         pattern = op.type[3].upper()
                     else:
-                        pattern = op.type[0:1].upper()
+                        pattern = op.type[0:2].upper()
                     idx = 1
                     while f"{pattern}{idx}" in uid:
                         idx += 1
                     op.id = f"{pattern}{idx}"
+                    # print (f"{oldid} -> {op.id}")
                     uid.append(op.id)
 
             if changes:
@@ -2147,8 +2195,22 @@ class MaterialPanel(ScrolledPanel):
 
     def before_operation_update(self, event):
         list_id = event.GetIndex()  # Get the current row
+        if list_id < 0:
+            event.Veto()
+            return
         col_id = event.GetColumn()  # Get the current column
-        if col_id in (2, 3, 4, 5):
+        ok = True
+        try:
+            index = self.list_preview.GetItemData(list_id)
+            key = self.get_nth_operation(index)
+            entry = self.operation_list[key]
+            if not entry[0].startswith("op "):
+                ok = False
+        except (AttributeError, KeyError):
+            ok = False
+        if col_id not in (2, 3, 4, 5):
+            ok = False
+        if ok:
             event.Allow()
         else:
             event.Veto()
