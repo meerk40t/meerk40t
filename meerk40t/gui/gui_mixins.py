@@ -420,3 +420,4 @@ class Warnings:
                     "- Some operations containing elements aren't active, so some elements will not be burnt"
                 )
             )
+        self.context.signal("icons")

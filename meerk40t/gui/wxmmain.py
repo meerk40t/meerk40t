@@ -3858,6 +3858,8 @@ class MeerK40t(MWindow):
     @signal_listener("updateop_tree")
     @signal_listener("tree_changed")
     @signal_listener("modified_by_tool")
+    @signal_listener("device;renamed")
+    @signal_listener("service/device/active")
     def warning_indicator(self, *args):
         self.warning_routine.warning_indicator()
 
