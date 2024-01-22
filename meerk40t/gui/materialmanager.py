@@ -615,6 +615,7 @@ class MaterialPanel(ScrolledPanel):
         self.active_material = None
         self.expanded_info = False
         self.Layout()
+        self.on_resize(None)
         self.on_reset(None)
 
     @property
@@ -1880,12 +1881,18 @@ class MaterialPanel(ScrolledPanel):
         self.txt_entry_lens.SetValue(info_lens)
         self.txt_entry_note.SetValue(note)
         self.combo_entry_type.SetSelection(ltype)
+        wd4 = self.list_preview.GetColumnWidth(4)
         wd5 = self.list_preview.GetColumnWidth(5)
         wd6 = self.list_preview.GetColumnWidth(6)
         if self.is_balor and wd6 == 0:
-            self.list_preview.SetColumnWidth(6, wd5)
+            wd = int((wd4 + wd5) / 3)
+            for col in range(4, 7):
+                self.list_preview.SetColumnWidth(col, wd)
         elif not self.is_balor and wd6 != 0:
             self.list_preview.SetColumnWidth(6, 0)
+            wd = int((wd4 + wd5 + wd6) / 2)
+            for col in range(4, 6):
+                self.list_preview.SetColumnWidth(col, wd)
 
     def on_preview_selection(self, event):
         event.Skip()
