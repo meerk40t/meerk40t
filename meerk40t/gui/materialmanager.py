@@ -348,7 +348,7 @@ class MaterialPanel(ScrolledPanel):
         self.btn_reset = wx.Button(self, wx.ID_ANY, _("Reset Filter"))
         filter_box.Add(self.btn_reset, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         main_sizer.Add(filter_box, 0, wx.EXPAND, 0)
-        result_box = StaticBoxSizer(
+        self.result_box = StaticBoxSizer(
             self, wx.ID_ANY, _("Matching library entries"), wx.VERTICAL
         )
         self.tree_library = wx.TreeCtrl(
@@ -377,6 +377,7 @@ class MaterialPanel(ScrolledPanel):
         )
         self.list_preview.AppendColumn(_("Power"), format=wx.LIST_FORMAT_LEFT, width=50)
         self.list_preview.AppendColumn(_("Speed"), format=wx.LIST_FORMAT_LEFT, width=50)
+        self.list_preview.AppendColumn(_("Frequency"), format=wx.LIST_FORMAT_LEFT, width=50)
         self.list_preview.SetToolTip(_("Click to select / Right click for actions"))
         self.opinfo = {
             "op cut": ("Cut", icons8_laser_beam, 0),
@@ -515,9 +516,9 @@ class MaterialPanel(ScrolledPanel):
         self.txt_entry_note.SetMinSize(dip_size(self, -1, 2 * 23))
         self.box_extended.Add(self.txt_entry_note, 0, wx.EXPAND, 0)
 
-        result_box.Add(self.tree_library, 1, wx.EXPAND, 0)
-        result_box.Add(param_box, 0, wx.EXPAND, 0)
-        result_box.Add(self.list_preview, 1, wx.EXPAND, 0)
+        self.result_box.Add(self.tree_library, 1, wx.EXPAND, 0)
+        self.result_box.Add(param_box, 0, wx.EXPAND, 0)
+        self.result_box.Add(self.list_preview, 1, wx.EXPAND, 0)
 
         self.txt_material.SetToolTip(_("Filter entries with a certain title."))
         self.txt_thickness.SetToolTip(
@@ -570,7 +571,7 @@ class MaterialPanel(ScrolledPanel):
         button_box.Add(self.btn_import, 0, wx.EXPAND, 0)
         button_box.Add(self.btn_share, 0, wx.EXPAND, 0)
         outer_box = wx.BoxSizer(wx.HORIZONTAL)
-        outer_box.Add(result_box, 1, wx.EXPAND, 0)
+        outer_box.Add(self.result_box, 1, wx.EXPAND, 0)
         outer_box.Add(button_box, 0, wx.EXPAND, 0)
         main_sizer.Add(outer_box, 1, wx.EXPAND, 0)
 
@@ -660,6 +661,15 @@ class MaterialPanel(ScrolledPanel):
         self.btn_set.Enable(active)
         self.list_preview.Enable(active)
         self.fill_preview()
+
+    @property
+    def is_balor(self):
+        if self.active_material is None:
+            return False
+        # a) laser-settings are set to fibre = 3
+        # b) laser-settings are set to general and we have a defined fibre laser
+        # Will be updated in fill_preview
+        return self._balor
 
     def retrieve_material_list(
         self,
@@ -1771,6 +1781,12 @@ class MaterialPanel(ScrolledPanel):
             return
 
     def fill_preview(self):
+        self._balor = False
+        for obj, name, sname in self.context.find("dev_info"):
+            if obj is not None and "balor" in sname.lower():
+                self._balor = True
+                break
+
         self.list_preview.Freeze()
         self.list_preview.DeleteAllItems()
         self.operation_list.clear()
@@ -1805,6 +1821,10 @@ class MaterialPanel(ScrolledPanel):
                     note = self.op_data.read_persistent(str, subsection, "note", "")
                     # We need to replace stored linebreaks with real linebreaks
                     note = note.replace("\\n", "\n")
+                    if ltype == 3:
+                        self._balor = True
+                    elif ltype != 0:
+                        self._balor = False
                     continue
                 optype = self.op_data.read_persistent(str, subsection, "type", "")
                 if optype is None or optype == "":
@@ -1814,6 +1834,9 @@ class MaterialPanel(ScrolledPanel):
                 oplabel = self.op_data.read_persistent(str, subsection, "label", "")
                 speed = self.op_data.read_persistent(str, subsection, "speed", "")
                 power = self.op_data.read_persistent(str, subsection, "power", "")
+                frequency = self.op_data.read_persistent(str, subsection, "frequency", "")
+                if not self.is_balor:
+                    frequency = ""
                 command = self.op_data.read_persistent(str, subsection, "command", "")
                 if power == "" and optype.startswith("op "):
                     power = "1000"
@@ -1836,10 +1859,10 @@ class MaterialPanel(ScrolledPanel):
                 self.list_preview.SetItem(list_id, 3, oplabel)
                 self.list_preview.SetItem(list_id, 4, power)
                 self.list_preview.SetItem(list_id, 5, speed)
+                self.list_preview.SetItem(list_id, 6, frequency)
                 self.list_preview.SetItemImage(list_id, info[2])
                 self.list_preview.SetItemData(list_id, idx - 1)
                 self.operation_list[subsection] = (optype, opid, oplabel, power, speed)
-
         self.list_preview.Thaw()
         self.list_preview.Refresh()
         if self.active_material is None:
@@ -1857,6 +1880,12 @@ class MaterialPanel(ScrolledPanel):
         self.txt_entry_lens.SetValue(info_lens)
         self.txt_entry_note.SetValue(note)
         self.combo_entry_type.SetSelection(ltype)
+        wd5 = self.list_preview.GetColumnWidth(5)
+        wd6 = self.list_preview.GetColumnWidth(6)
+        if self.is_balor and wd6 == 0:
+            self.list_preview.SetColumnWidth(6, wd5)
+        elif not self.is_balor and wd6 != 0:
+            self.list_preview.SetColumnWidth(6, 0)
 
     def on_preview_selection(self, event):
         event.Skip()
@@ -2175,23 +2204,35 @@ class MaterialPanel(ScrolledPanel):
 
     def on_resize(self, event):
         # Resize the columns in the listctrl
-        size = self.list_preview.GetSize()
+        size = self.result_box.GetSize()
+        # size = self.list_preview.GetSize()
         if size[0] == 0 or size[1] == 0:
             return
-        remaining = size[0]
+        remaining = size[0] * 0.8
         # 0 "#"
         # 1 "Operation"
         # 2 "Id"
         # 3 "Label"
         # 4 "Power"
         # 5 "Speed"
-
-        self.list_preview.SetColumnWidth(0, int(0.10 * remaining))
-        self.list_preview.SetColumnWidth(1, int(0.15 * remaining))
-        self.list_preview.SetColumnWidth(2, int(0.15 * remaining))
-        self.list_preview.SetColumnWidth(3, int(0.40 * remaining))
-        self.list_preview.SetColumnWidth(4, int(0.10 * remaining))
-        self.list_preview.SetColumnWidth(5, int(0.10 * remaining))
+        # 6 "Frequency"
+        if self.is_balor:
+            p1 = 0.15
+            p2 = 0.35
+            p3 = (1.0 - p1 - p2)/4
+            p4 = p3
+        else:
+            p1 = 0.15
+            p2 = 0.40
+            p3 = (1.0 - p1 - p2)/3
+            p4 = 0
+        self.list_preview.SetColumnWidth(0, int(p3 * remaining))
+        self.list_preview.SetColumnWidth(1, int(p1 * remaining))
+        self.list_preview.SetColumnWidth(2, int(p1 * remaining))
+        self.list_preview.SetColumnWidth(3, int(p2 * remaining))
+        self.list_preview.SetColumnWidth(4, int(p3 * remaining))
+        self.list_preview.SetColumnWidth(5, int(p3 * remaining))
+        self.list_preview.SetColumnWidth(6, int(p4 * remaining))
 
     def before_operation_update(self, event):
         list_id = event.GetIndex()  # Get the current row
@@ -2208,7 +2249,9 @@ class MaterialPanel(ScrolledPanel):
                 ok = False
         except (AttributeError, KeyError):
             ok = False
-        if col_id not in (2, 3, 4, 5):
+        if col_id not in range(2, 7):
+            ok = False
+        if col_id == 6 and not self.is_balor:
             ok = False
         if ok:
             event.Allow()
@@ -2222,7 +2265,7 @@ class MaterialPanel(ScrolledPanel):
         index = self.list_preview.GetItemData(list_id)
         key = self.get_nth_operation(index)
 
-        if list_id >= 0 and col_id in (2, 3, 4, 5):
+        if list_id >= 0 and col_id in range(2, 7):
             if col_id == 2:
                 # id
                 self.op_data.write_persistent(key, "id", new_data)
@@ -2235,6 +2278,9 @@ class MaterialPanel(ScrolledPanel):
             elif col_id == 5:
                 # speed
                 self.op_data.write_persistent(key, "speed", new_data)
+            elif col_id == 6:
+                # speed
+                self.op_data.write_persistent(key, "frequency", new_data)
             # Set the new data in the listctrl
             self.op_data.write_configuration()
 
