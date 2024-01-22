@@ -13,7 +13,7 @@ _ = wx.GetTranslation
 
 class BalorConfiguration(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(420, 570, *args, **kwds)
+        super().__init__(550, 700, *args, **kwds)
         self.context = self.context.device
         self.SetHelpText("balorconfig")
         _icon = wx.NullIcon

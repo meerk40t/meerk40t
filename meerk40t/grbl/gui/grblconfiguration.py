@@ -126,7 +126,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
 
 class GRBLConfiguration(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(345, 415, *args, **kwds)
+        super().__init__(550, 700, *args, **kwds)
         self.context = self.context.device
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools.GetBitmap())
@@ -198,7 +198,7 @@ class GRBLConfiguration(MWindow):
         self.Layout()
         for panel in self.panels:
             self.add_module_delegate(panel)
-        self.restore_aspect()
+        self.restore_aspect(honor_initial_values=True)
 
     def window_open(self):
         for panel in self.panels:
