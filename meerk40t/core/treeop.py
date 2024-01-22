@@ -31,6 +31,32 @@ def tree_calc(value_name, calc_func):
     return decor
 
 
+def tree_submenu_list(start, submenus):
+    """
+    Add a list of submenu information to be used for tree_values
+    tree_values will look for the corresponding index in value_submenues
+    to establish whether this item shall be put in a submenu structure
+    start defines the root menu hierarchy (tree_submenu will be ignored!)
+    You can specify a multi-level hierarchy by spearating the hierarchy
+    levels by  pipe symbol '|'.
+    so "File|Preferences|Devices"
+    would have
+    File
+       +-Preferences
+          +- Devices
+               - Value 1
+               - Value 2
+               - Value 3
+    """
+    def decor(func):
+        if submenus is None:
+            func.value_submenus.clear()
+        else:
+            func.value_submenus = [f"{start}|{e}" for e in submenus]
+        return func
+
+    return decor
+
 def tree_values(value_name, values):
     """
     Append explicit list of values and value_name to the function.
@@ -282,6 +308,7 @@ def tree_operation(
 
         # List of accepted values.
         inner.values = [0]
+        inner.value_submenus = list()
 
         # Function enabled/disabled
         inner.enabled = enable
@@ -395,6 +422,11 @@ def tree_operations_for_node(registration, node):
             # Every value in the func.values gets an operation for the node.
             func_dict["iterator"] = i
             func_dict["value"] = value
+            if func.value_submenus:
+                try:
+                    func.submenu = func.value_submenus[i]
+                except IndexError:
+                    pass
             try:
                 func_dict[func.value_name] = value
             except AttributeError:
