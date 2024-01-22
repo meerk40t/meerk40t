@@ -15,8 +15,9 @@ class GotoOperation(Node):
         self.output = True
         self.x = 0.0
         self.y = 0.0
+        self.vector = False
         super().__init__(type="util goto", **kwargs)
-        self._formatter = "{enabled}{element_type} {x} {y}"
+        self._formatter = "{enabled}{element_type} {x} {y} {vector}"
 
     def __repr__(self):
         return f"GotoOperation('{self.x}, {self.y}')"
@@ -34,6 +35,7 @@ class GotoOperation(Node):
         default_map["element_type"] = "Origin" if origin else "Goto"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["adjust"] = f" ({self.x}, {self.y})" if not origin else ""
+        default_map["vector"] = "±" if self.vector else ""
         default_map.update(self.__dict__)
         return default_map
 
@@ -61,7 +63,10 @@ class GotoOperation(Node):
         """
         self.x = float(Length(self.x))
         self.y = float(Length(self.y))
-        self.x, self.y = matrix.point_in_matrix_space((self.x, self.y))
+        if self.vector:
+            self.x, self.y = matrix.transform_vector([self.x, self.y])
+        else:
+            self.x, self.y = matrix.point_in_matrix_space((self.x, self.y))
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """
