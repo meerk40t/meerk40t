@@ -1195,7 +1195,7 @@ class Elemental(Service):
         return res
 
     def save_persistent_operations_list(
-        self, name, oplist=None, opinfo=None, inform=True, use_settings=None
+        self, name, oplist=None, opinfo=None, inform=True, use_settings=None, flush=True,
     ):
         """
         Saves a given list of operations to the op_data:Settings
@@ -1220,7 +1220,7 @@ class Elemental(Service):
             for key, value in opinfo.items():
                 settings.write_persistent(section, key, value)
 
-        self._save_persistent_operation_tree(name, oplist, flush=True, inform=True)
+        self._save_persistent_operation_tree(name, oplist, flush=flush, inform=True)
 
     # Operations uniform
     save_persistent_operations = save_persistent_operations_list
