@@ -605,9 +605,9 @@ class MaterialPanel(ScrolledPanel):
         self.Bind(
             wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_preview_rightclick, self.list_preview
         )
-        self.Bind(
-            wx.EVT_LIST_COL_RIGHT_CLICK, self.on_preview_rightclick, self.list_preview
-        )
+        # self.Bind(
+        #     wx.EVT_LIST_COL_RIGHT_CLICK, self.on_preview_rightclick, self.list_preview
+        # )
         self.Bind(wx.EVT_SIZE, self.on_resize)
         self.SetupScrolling()
         # Hide not-yet-supported functions
@@ -2009,6 +2009,8 @@ class MaterialPanel(ScrolledPanel):
         if self.active_material is None:
             return
         listindex = event.Index
+        if listindex < 0:
+            return
         index = self.list_preview.GetItemData(listindex)
         key = self.get_nth_operation(index)
 
