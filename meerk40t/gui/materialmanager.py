@@ -348,7 +348,7 @@ class MaterialPanel(ScrolledPanel):
         self.btn_reset = wx.Button(self, wx.ID_ANY, _("Reset Filter"))
         filter_box.Add(self.btn_reset, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         main_sizer.Add(filter_box, 0, wx.EXPAND, 0)
-        self.result_box = StaticBoxSizer(
+        result_box = StaticBoxSizer(
             self, wx.ID_ANY, _("Matching library entries"), wx.VERTICAL
         )
         self.tree_library = wx.TreeCtrl(
@@ -516,9 +516,9 @@ class MaterialPanel(ScrolledPanel):
         self.txt_entry_note.SetMinSize(dip_size(self, -1, 2 * 23))
         self.box_extended.Add(self.txt_entry_note, 0, wx.EXPAND, 0)
 
-        self.result_box.Add(self.tree_library, 1, wx.EXPAND, 0)
-        self.result_box.Add(param_box, 0, wx.EXPAND, 0)
-        self.result_box.Add(self.list_preview, 1, wx.EXPAND, 0)
+        result_box.Add(self.tree_library, 1, wx.EXPAND, 0)
+        result_box.Add(param_box, 0, wx.EXPAND, 0)
+        result_box.Add(self.list_preview, 1, wx.EXPAND, 0)
 
         self.txt_material.SetToolTip(_("Filter entries with a certain title."))
         self.txt_thickness.SetToolTip(
@@ -571,7 +571,7 @@ class MaterialPanel(ScrolledPanel):
         button_box.Add(self.btn_import, 0, wx.EXPAND, 0)
         button_box.Add(self.btn_share, 0, wx.EXPAND, 0)
         outer_box = wx.BoxSizer(wx.HORIZONTAL)
-        outer_box.Add(self.result_box, 1, wx.EXPAND, 0)
+        outer_box.Add(result_box, 1, wx.EXPAND, 0)
         outer_box.Add(button_box, 0, wx.EXPAND, 0)
         main_sizer.Add(outer_box, 1, wx.EXPAND, 0)
 
@@ -2203,9 +2203,13 @@ class MaterialPanel(ScrolledPanel):
         menu.Destroy()
 
     def on_resize(self, event):
+        size = self.GetClientSize()
+        if size[0] != 0 and size[1] != 0:
+            self.tree_library.SetMaxSize(wx.Size(-1, int(0.4 * size[1])))
+            self.list_preview.SetMaxSize(wx.Size(-1, int(0.4 * size[1])))
+
         # Resize the columns in the listctrl
-        size = self.result_box.GetSize()
-        # size = self.list_preview.GetSize()
+        size = self.list_preview.GetSize()
         if size[0] == 0 or size[1] == 0:
             return
         remaining = size[0] * 0.8
