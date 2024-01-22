@@ -62,8 +62,11 @@ class SelectDevice(wx.Dialog):
             | wx.TR_SINGLE,
         )
         sizer_main.Add(self.tree_devices, 3, wx.EXPAND, 0)
-
-        self.label_info = wx.StaticText(self, wx.ID_ANY, "")
+        self.no_msg = _("Click on a device to see more details about it.") + "\n" + _("You can as well search for your device at the top of this screen.")
+        self.label_info = wx.StaticText(
+            self, wx.ID_ANY,
+            self.no_msg,
+        )
         sizer_main.Add(self.label_info, 1, wx.EXPAND, 0)
 
         sizer_2 = wx.StdDialogButtonSizer()
@@ -145,6 +148,8 @@ class SelectDevice(wx.Dialog):
             except RuntimeError:
                 # Dialog has already been destroyed...
                 return
+        if info=="":
+            info = self.no_msg
         self.label_info.SetLabel(info)
         self.button_OK.Enable(bool(self.device_type != ""))
         self.Layout()
