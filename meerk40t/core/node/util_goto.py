@@ -17,7 +17,7 @@ class GotoOperation(Node):
         self.y = 0.0
         self.vector = False
         super().__init__(type="util goto", **kwargs)
-        self._formatter = "{enabled}{element_type} {x} {y} {vector}"
+        self._formatter = "{enabled}{element_type} {vector}{x} {y} "
 
     def __repr__(self):
         return f"GotoOperation('{self.x}, {self.y}')"
@@ -35,8 +35,8 @@ class GotoOperation(Node):
         default_map["element_type"] = "Origin" if origin else "Goto"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["adjust"] = f" ({self.x}, {self.y})" if not origin else ""
-        default_map["vector"] = "±" if self.vector else ""
         default_map.update(self.__dict__)
+        default_map["vector"] = "H±" if self.vector else ""
         return default_map
 
     def drop(self, drag_node, modify=True):
