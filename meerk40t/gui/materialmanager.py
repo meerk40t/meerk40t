@@ -695,7 +695,7 @@ class MaterialPanel(ScrolledPanel):
                     else:
                         count += 1
                 if not sectitle:
-                    sectitle = secdesc
+                    sectitle = secname.replace("_", " ")
                 entry = {
                     "section": secname,
                     "material": secdesc,
@@ -1778,7 +1778,7 @@ class MaterialPanel(ScrolledPanel):
         note = ""
         ltype = 0
         if self.active_material is not None:
-            secdesc = self.active_material
+            secdesc = ""
             idx = 0
             for subsection in self.op_data.derivable(self.active_material):
                 if subsection.endswith(" info"):
@@ -1792,7 +1792,7 @@ class MaterialPanel(ScrolledPanel):
                         str, subsection, "lens", ""
                     )
                     secdesc = self.op_data.read_persistent(
-                        str, subsection, "material", secdesc
+                        str, subsection, "material", ""
                     )
                     thickness = self.op_data.read_persistent(
                         str, subsection, "thickness", ""
@@ -1835,6 +1835,9 @@ class MaterialPanel(ScrolledPanel):
             actval = ""
         else:
             actval = self.active_material
+        # print (f"id: '{actval}'\ntitle: '{info_title}'\nmaterial: '{secdesc}'")
+        if not info_title:
+            info_title = actval.replace("_", " ")
         self.txt_entry_section.SetValue(actval)
         self.txt_entry_material.SetValue(secdesc)
         self.txt_entry_thickness.SetValue(thickness)
