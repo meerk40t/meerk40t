@@ -34,12 +34,12 @@ class GotoPropertyPanel(wx.Panel):
                 "tip": _("Set the Y-Coordinate of the goto operation."),
             },
             {
-                "attr": "vector",
+                "attr": "absolute",
                 "object": self.operation,
                 "default": False,
                 "type": bool,
-                "label": _("Offset from Native Home"),
-                "tip": _("This value should be seen as an offset from laser native home rather than scene coords"),
+                "label": _("Goto Absolute Position"),
+                "tip": _("This value should give exact goto locations rather than offset from device origin."),
             },
         ]
         self.panel = ChoicePropertyPanel(
@@ -51,7 +51,7 @@ class GotoPropertyPanel(wx.Panel):
 
     @signal_listener("x")
     @signal_listener("y")
-    @signal_listener("vector")
+    @signal_listener("absolute")
     def location_changed(self, *args):
         self.context.elements.signal("element_property_update", self.operation)
 
