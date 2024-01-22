@@ -1999,12 +1999,18 @@ class MaterialPanel(ScrolledPanel):
             def apply_to_tree_handler(*args):
                 settings = self.op_data
                 op_type = settings.read_persistent(str, sect, "type")
+                op_attr = dict()
+                for key in settings.keylist(sect):
+                    if key == "type":
+                        # We need to ignore it to avoid double attribute issues.
+                        continue
+                    content = settings.read_persistent(str, sect, key)
+                    op_attr[key] = content
                 try:
-                    targetop = Node().create(type=op_type)
+                    targetop = Node().create(type=op_type, **op_attr)
                 except ValueError:
                     # Attempted to create a non-bootstrapped node type.
                     return
-                targetop.load(settings, sect)
                 op_id = targetop.id
                 if op_id is None:
                     # WTF, that should not be the case
@@ -2015,7 +2021,8 @@ class MaterialPanel(ScrolledPanel):
                     # Already existing?
                     if op.id == targetop.id:
                         newone = False
-                        self.context.elements.op_branch.replace_node(targetop)
+                        op_attr["type"] = targetop.type
+                        op.replace_node(keep_children=True, **op_attr)
                         break
                 if newone:
                     try:
@@ -2035,12 +2042,18 @@ class MaterialPanel(ScrolledPanel):
             def apply_to_tree_handler(*args):
                 settings = self.op_data
                 op_type = settings.read_persistent(str, sect, "type")
+                op_attr = dict()
+                for key in settings.keylist(sect):
+                    if key == "type":
+                        # We need to ignore it to avoid double attribute issues.
+                        continue
+                    content = settings.read_persistent(str, sect, key)
+                    op_attr[key] = content
                 try:
-                    targetop = Node().create(type=op_type)
+                    targetop = Node().create(type=op_type, **op_attr)
                 except ValueError:
-                    # Attempted to create a non-boostrapped node type.
+                    # Attempted to create a non-bootstrapped node type.
                     return
-                targetop.load(settings, sect)
                 op_id = targetop.id
                 if op_id is None:
                     # WTF, that should not be the case
