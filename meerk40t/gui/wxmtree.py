@@ -2064,7 +2064,7 @@ class ShadowTree:
                         )
                     if node.type in op_nodes:
                         if hasattr(node, "label") and node.label is not None:
-                            ttip += f"\n{node.label}"
+                            ttip += f"\n{node.id + ': ' if node.id is not None else ''}{node.label}"
                         ps_info = ""
                         if hasattr(node, "power") and node.power is not None:
                             if self.context.device.use_percent_for_power_display:
