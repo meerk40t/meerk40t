@@ -48,6 +48,7 @@ def tree_submenu_list(start, submenus):
                - Value 2
                - Value 3
     """
+
     def decor(func):
         if submenus is None:
             func.value_submenus.clear()
@@ -56,6 +57,7 @@ def tree_submenu_list(start, submenus):
         return func
 
     return decor
+
 
 def tree_values(value_name, values):
     """

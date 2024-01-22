@@ -1652,7 +1652,9 @@ def init_tree(kernel):
                         material_title = f"Default for {material[9:]}"
                     else:
                         material_title = material.replace("_", " ")
-            entries.append((material_name, material_thickness, material_title, material))
+            entries.append(
+                (material_name, material_thickness, material_title, material)
+            )
         # Let's sort them
         entries.sort(
             key=lambda e: (
@@ -1670,7 +1672,7 @@ def init_tree(kernel):
     @tree_submenu(_("Load"))
     @tree_values("opname", values=material_ids())
     @tree_submenu_list(_("Materials"), material_menus())
-    @tree_calc("material", lambda opname: material_name(opname) )
+    @tree_calc("material", lambda opname: material_name(opname))
     @tree_operation("{material}", node_type="branch ops", help="")
     def load_ops(node, opname, **kwargs):
         self(f"material load {opname}\n")

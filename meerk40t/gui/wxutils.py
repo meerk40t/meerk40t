@@ -267,7 +267,6 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                             parent_menu.AppendSubMenu(submenu, sname, func.help)
                             submenus[common] = submenu
                             parent_menu = submenu
-            print (f"Radio state: {func.radio_state}")
             menu_context = submenu if submenu is not None else menu
             if func.separate_before:
                 last_was_separator = True
@@ -353,7 +352,6 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                         parent_menu.AppendSubMenu(submenu, sname, func.help)
                         submenus[common] = submenu
                         parent_menu = submenu
-
 
         menu_context = submenu if submenu is not None else menu
         if func.separate_before:
