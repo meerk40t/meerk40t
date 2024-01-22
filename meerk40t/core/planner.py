@@ -485,6 +485,7 @@ class Planner(Service):
                                     params = opparam.split(",")
                                     x = 0
                                     y = 0
+                                    vector = False
                                     if len(params) > 0:
                                         try:
                                             x = float(Length(params[0]))
@@ -495,7 +496,9 @@ class Planner(Service):
                                             y = float(Length(params[1]))
                                         except ValueError:
                                             y = 0
-                                    addop = GotoOperation(x=x, y=y)
+                                    if len(params) > 2:
+                                        vector = params[2] not in ("False", "0")
+                                    addop = GotoOperation(x=x, y=y, vector=vector)
                             elif optype == "util wait":
                                 if opparam is not None:
                                     try:
