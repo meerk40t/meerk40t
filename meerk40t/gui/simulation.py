@@ -748,13 +748,13 @@ class CutcodePanel(wx.Panel):
 
 class SimulationPanel(wx.Panel, Job):
     def __init__(
-            self,
-            *args,
-            context=None,
-            plan_name=None,
-            auto_clear=True,
-            optimise_at_start=True,
-            **kwds,
+        self,
+        *args,
+        context=None,
+        plan_name=None,
+        auto_clear=True,
+        optimise_at_start=True,
+        **kwds,
     ):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -1211,6 +1211,7 @@ class SimulationPanel(wx.Panel, Job):
             self.widget_scene.widget_root, "background", None
         )
         self.widget_scene.request_refresh()
+
     def zoom_in(self):
         matrix = self.widget_scene.widget_root.matrix
         zoomfactor = 1.5 / 1.0

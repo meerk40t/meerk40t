@@ -7,12 +7,7 @@ from wx import aui
 
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
-from meerk40t.gui.icons import (
-    STD_ICON_SIZE,
-    icon_meerk40t,
-    icons8_r_white,
-    icons8_text,
-)
+from meerk40t.gui.icons import STD_ICON_SIZE, icon_meerk40t, icons8_r_white, icons8_text
 from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scenepanel import ScenePanel

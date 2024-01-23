@@ -443,12 +443,12 @@ class SVGWriter:
             ):
                 subelement.set(key, str(value))
 
-        ###############
-        # SAVE STROKE
-        ###############
-        if hasattr(c, "stroke_scaled"):
-            if not c.stroke_scaled:
-                subelement.set(SVG_ATTR_VECTOR_EFFECT, SVG_VALUE_NON_SCALING_STROKE)
+        # ###########################
+        # # SAVE SVG STROKE-SCALING
+        # ###########################
+        # if hasattr(c, "stroke_scaled"):
+        #     if not c.stroke_scaled:
+        #         subelement.set(SVG_ATTR_VECTOR_EFFECT, SVG_VALUE_NON_SCALING_STROKE)
 
         ###############
         # SAVE CAP/JOIN/FILL-RULE

@@ -407,7 +407,6 @@ def init_commands(kernel):
         action="store_true",
         help=_("force the inclusion of non-assigned/non-active elements"),
     )
-
     @self.console_command(
         "trace",
         help=_("trace the given elements"),
@@ -468,12 +467,13 @@ def init_commands(kernel):
                     else:
                         unused += 1
             if unused > 0:
-                msg = _(f"There are {unused} elements, that will not be burnt as they are not " +
-                        "contained in ops or are in disabled operations.\n" +
-                        "These will not be considered in the hull!\n" +
-                        "You can force their inclusion with the --force option"
-                    ).format(unused = unused)
-                channel( msg )
+                msg = _(
+                    f"There are {unused} elements, that will not be burnt as they are not "
+                    + "contained in ops or are in disabled operations.\n"
+                    + "These will not be considered in the hull!\n"
+                    + "You can force their inclusion with the --force option"
+                ).format(unused=unused)
+                channel(msg)
         if method == "segment":
             hull = generate_hull_shape_segment(target_data)
         elif method == "quick":

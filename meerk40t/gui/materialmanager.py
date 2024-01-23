@@ -14,16 +14,16 @@ from ..core.node.node import Node
 from ..kernel.kernel import get_safe_path
 from ..kernel.settings import Settings
 from .icons import (
+    icon_hatch,
     icon_library,
     icon_points,
-    icon_hatch,
     icons8_caret_down,
     icons8_caret_up,
+    icons8_console,
     icons8_direction,
     icons8_image,
     icons8_laser_beam,
     icons8_laserbeam_weak,
-    icons8_console,
 )
 from .mwindow import MWindow
 from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size, get_key_name
@@ -251,6 +251,7 @@ class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         listmix.TextEditMixin.__init__(self)
 
+
 class MaterialPanel(ScrolledPanel):
     """
     Panel to modify material library settings.
@@ -376,7 +377,9 @@ class MaterialPanel(ScrolledPanel):
         )
         self.list_preview.AppendColumn(_("Power"), format=wx.LIST_FORMAT_LEFT, width=50)
         self.list_preview.AppendColumn(_("Speed"), format=wx.LIST_FORMAT_LEFT, width=50)
-        self.list_preview.AppendColumn(_("Frequency"), format=wx.LIST_FORMAT_LEFT, width=50)
+        self.list_preview.AppendColumn(
+            _("Frequency"), format=wx.LIST_FORMAT_LEFT, width=50
+        )
         self.list_preview.SetToolTip(_("Click to select / Right click for actions"))
         self.opinfo = {
             "op cut": ("Cut", icons8_laser_beam, 0),
@@ -385,7 +388,7 @@ class MaterialPanel(ScrolledPanel):
             "op engrave": ("Engrave", icons8_laserbeam_weak, 0),
             "op dots": ("Dots", icon_points, 0),
             "op hatch": ("Hatch", icon_hatch, 0),
-            "generic": ("Generic", icons8_console, 0)
+            "generic": ("Generic", icons8_console, 0),
         }
         self.state_images = wx.ImageList()
         self.state_images.Create(width=25, height=25)
@@ -1834,7 +1837,9 @@ class MaterialPanel(ScrolledPanel):
                 oplabel = self.op_data.read_persistent(str, subsection, "label", "")
                 speed = self.op_data.read_persistent(str, subsection, "speed", "")
                 power = self.op_data.read_persistent(str, subsection, "power", "")
-                frequency = self.op_data.read_persistent(str, subsection, "frequency", "")
+                frequency = self.op_data.read_persistent(
+                    str, subsection, "frequency", ""
+                )
                 if not self.is_balor:
                     frequency = ""
                 command = self.op_data.read_persistent(str, subsection, "command", "")
@@ -2122,7 +2127,9 @@ class MaterialPanel(ScrolledPanel):
             settings = self.op_data
             op_type = settings.read_persistent(str, key, "type")
             if op_type.startswith("op "):
-                item = menu.Append(wx.ID_ANY, _("Use for statusbar"), "", wx.ITEM_NORMAL)
+                item = menu.Append(
+                    wx.ID_ANY, _("Use for statusbar"), "", wx.ITEM_NORMAL
+                )
                 menu.Enable(item.GetId(), bool(self.active_material is not None))
                 self.Bind(wx.EVT_MENU, on_menu_popup_apply_to_statusbar(key), item)
 
@@ -2176,7 +2183,9 @@ class MaterialPanel(ScrolledPanel):
                     replace_id = False
                 else:
                     oldid = op.id
-                    if op.id and not (replace_mk_pattern and op.id.startswith(mkpattern)):
+                    if op.id and not (
+                        replace_mk_pattern and op.id.startswith(mkpattern)
+                    ):
                         replace_id = False
                 # print (oldid, replace_id)
                 if replace_id:
@@ -2231,12 +2240,12 @@ class MaterialPanel(ScrolledPanel):
         if self.is_balor:
             p1 = 0.15
             p2 = 0.35
-            p3 = (1.0 - p1 - p2)/4
+            p3 = (1.0 - p1 - p2) / 4
             p4 = p3
         else:
             p1 = 0.15
             p2 = 0.40
-            p3 = (1.0 - p1 - p2)/3
+            p3 = (1.0 - p1 - p2) / 3
             p4 = 0
         self.list_preview.SetColumnWidth(0, int(p3 * remaining))
         self.list_preview.SetColumnWidth(1, int(p1 * remaining))

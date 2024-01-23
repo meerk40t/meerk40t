@@ -276,7 +276,9 @@ class DefaultOperationWidget(StatusBarWidget):
                         material_title = f"Default for {material[9:]}"
                     else:
                         material_title = material.replace("_", " ")
-            entries.append((material_name, material_thickness, material_title, material))
+            entries.append(
+                (material_name, material_thickness, material_title, material)
+            )
             matcount += 1
         # Let's sort them
         entries.sort(
