@@ -237,9 +237,11 @@ class SimpleUI(MWindow):
             | aui.AUI_NB_TAB_SPLIT
             | aui.AUI_NB_TAB_MOVE,
         )
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.notebook_main.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
 
         self.Layout()
+        self.restore_aspect()
         self.on_build()
 
     def on_page_changed(self, event):

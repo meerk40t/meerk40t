@@ -346,11 +346,13 @@ class LihuiyuAccelerationChart(MWindow):
         self.panel = LihuiyuAccelerationChartPanel(
             self, wx.ID_ANY, context=self.context
         )
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Acceleration Chart"))
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

@@ -450,6 +450,7 @@ class RenderSplit(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.scene = getattr(self.context.root, "mainscene", None)
         # Hide Arrangement until ready...
         self.panel_split = SplitterPanel(
@@ -462,6 +463,7 @@ class RenderSplit(MWindow):
         self.notebook_main.AddPage(self.panel_keyhole, _("Keyhole operation"))
 
         self.Layout()
+        self.restore_aspect()
 
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_split_image.GetBitmap())

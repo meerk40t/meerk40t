@@ -272,10 +272,12 @@ class ExecuteJob(MWindow):
             self, wx.ID_ANY, context=self.context, plan_name=plan_name
         )
         # self.add_module_delegate(self.panel)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Execute Job"))
+        self.restore_aspect()
 
     @staticmethod
     def sub_register(kernel):

@@ -52,12 +52,14 @@ class BufferView(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(697, 586, *args, **kwds)
         self.panel = BufferViewPanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_comments.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: BufferView.__set_properties
         self.SetTitle(_("BufferView"))
+        self.restore_aspect()
 
     def window_preserve(self):
         return False
