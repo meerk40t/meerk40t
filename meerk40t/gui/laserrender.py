@@ -82,9 +82,12 @@ def swizzlecolor(c):
 def as_wx_color(c):
     if c is None:
         return None
+    if isinstance(c, Color) and c.value is None:
+        return None
     if isinstance(c, int):
         c = Color(argb=c)
-    return wx.Colour(red=c.red, green=c.green, blue=c.blue, alpha=c.alpha)
+    res = wx.Colour(red=c.red, green=c.green, blue=c.blue, alpha=c.alpha)
+    return res
 
 
 def svgfont_to_wx(textnode):
@@ -966,6 +969,7 @@ class LaserRender:
         """
         self.context.elements.set_start_time("create_text_image")
         draw_mode = self.context.draw_mode
+        # print (f"DrawMode: {draw_mode}, would show variables: {draw_mode & DRAW_MODE_VARIABLES}")
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
             text = self.context.elements.wordlist_translate(
@@ -984,7 +988,11 @@ class LaserRender:
             if ttf == "lowercase":
                 text = text.lower()
         svgfont_to_wx(node)
-        textlines = text.split("\\n")
+        # There is an 'awful' font that completely ignores the
+        # given font boundaries: GoogleFonts - AlexBrush-Regular,
+        # where we need to extend the boundaries significantly..
+        overreach = 2.5
+        textlines = text.split("\n")
         dimension_x = 10
         dimension_y = 10
         bmp = wx.Bitmap(dimension_x, dimension_y, 32)
@@ -1002,8 +1010,9 @@ class LaserRender:
             fsize_org = node.wxfont.GetPointSize()
         line_gap = 0.1
         for line in textlines:
-            t_width, t_height, f_descent, t_external_leading = gc.GetFullTextExtent(line)
-            f_width = max(f_width, t_width)
+            dummy = "T" + line + "p"
+            t_width, t_height, f_descent, t_external_leading = gc.GetFullTextExtent(dummy)
+            f_width = max(f_width, t_width + t_external_leading)
             if f_height != 0:
                 # spacing
                 f_height += line_gap * fsize_org
@@ -1026,8 +1035,8 @@ class LaserRender:
         except AttributeError:
             fsize = int(use_font.GetPointSize() * factor)
             use_font.SetPointSize(fsize)
-        dimension_x = max(1, int(1.5 * factor * f_width))
-        dimension_y = max(1, int(1.5 * factor * f_height))
+        dimension_x = max(1, int(overreach * factor * f_width))
+        dimension_y = max(1, int(overreach * factor * f_height))
         bmp = wx.Bitmap(dimension_x, dimension_y, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
@@ -1036,20 +1045,20 @@ class LaserRender:
         gc = wx.GraphicsContext.Create(dc)
 
         msg = f"Revised bounds: {dimension_x} x {dimension_y}, factor={factor}, font_size={fsize} (original={fsize_org})"
-        if node.fill is None:
+        col = as_wx_color(node.fill)
+        if col is None:
             col = wx.BLACK
-        else:
-            col = as_wx_color(node.fill)
         gc.SetFont(use_font, col)
-        y = 0
+        offset = overreach / 2 * fsize
+        y = offset
         for line in textlines:
             t_width, t_height, t_descent, t_external_leading = gc.GetFullTextExtent(line)
             if node.anchor == "middle":
                 x = (dimension_x - t_width)/2
             elif node.anchor == "end":
-                x = dimension_x - t_width
+                x = dimension_x - t_width - offset
             else:
-                x = 0
+                x = offset
             gc.DrawText(line, int(x), int(y))
             y += line_gap * fsize
             y += t_height

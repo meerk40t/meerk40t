@@ -319,7 +319,7 @@ class TextPropertyPanel(ScrolledPanel):
             self.node = node
         try:
             if self.node.text is not None:
-                txt = self.node.text.replace("\\n", "\n")
+                txt = self.node.text # .replace("\\n", "\n")
                 self.text_text.SetValue(txt)
                 display_string = txt
                 if self.check_variable.GetValue():
@@ -533,7 +533,7 @@ class TextPropertyPanel(ScrolledPanel):
         self.label_fonttest.SetWindowStyle(mystyle)
 
         self.rb_align.SetSelection(new_anchor)
-        display_string = self.node.text.replace("\\n", "\n")
+        display_string = self.node.text # .replace("\\n", "\n")
         if self.check_variable.GetValue():
             display_string = self.context.elements.wordlist_translate(
                 display_string,
@@ -668,7 +668,7 @@ class TextPropertyPanel(ScrolledPanel):
 
     def on_text_change(self, event):  # wxGlade: TextProperty.<event_handler>
         try:
-            self.node.text = self.text_text.GetValue().replace("\n", "\\n")
+            self.node.text = self.text_text.GetValue() # .replace("\n", "\\n")
             self.node.modified()
             self.update_label()
             self.refresh()
