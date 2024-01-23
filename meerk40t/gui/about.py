@@ -80,10 +80,19 @@ class AboutPanel(wx.Panel):
         hsizer_pic_info.Add(self.meerk40t_about_text_header, 1, wx.EXPAND, 0)
         vsizer_main.Add(hsizer_pic_info, 1, wx.EXPAND, 0)
         # Simplify addition of future developers without need to translate every single time
+        # Ordered by the amount of commits (as of Jan 2024)
+        # tatarize ~ 11.800
+        # jpirnay ~ 3.200
+        # Sophist-UK ~ 500
+        # tiger12506 ~ 90
+        # joerlane ~ 50
+        # jaredly ~ 15
+        # frogmaster ~ 10
         hall_of_fame = [
+            "jpirnay",
             "Sophist-UK",
             "tiger12506",
-            "jpirnay",
+            "jaredly",
             "frogmaster",
             "inspectionsbybob",
         ]
@@ -146,8 +155,6 @@ class InformationPanel(ScrolledPanel):
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
         self.mk_version = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.py_version = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.wx_version = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.config_path = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.os_version = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE
@@ -166,15 +173,7 @@ class InformationPanel(ScrolledPanel):
         import os
         import platform
         import socket
-        import sys
 
-        info = "wx"
-        try:
-            info = wx.version()
-        except:
-            pass
-        self.wx_version.SetValue(info)
-        self.py_version.SetValue(platform.python_version())
         uname = platform.uname()
         info = ""
         info += f"System: {uname.system}" + "\n"
@@ -202,14 +201,6 @@ class InformationPanel(ScrolledPanel):
         sizer_mk = StaticBoxSizer(self, wx.ID_ANY, "MeerK40t", wx.HORIZONTAL)
         sizer_mk.Add(self.mk_version, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_mk, 0, wx.EXPAND, 0)
-
-        sizer_py = StaticBoxSizer(self, wx.ID_ANY, "Python", wx.HORIZONTAL)
-        sizer_py.Add(self.py_version, 1, wx.EXPAND, 0)
-        sizer_main.Add(sizer_py, 0, wx.EXPAND, 0)
-
-        sizer_wx = StaticBoxSizer(self, wx.ID_ANY, "wxPython", wx.HORIZONTAL)
-        sizer_wx.Add(self.wx_version, 1, wx.EXPAND, 0)
-        sizer_main.Add(sizer_wx, 0, wx.EXPAND, 0)
 
         sizer_cfg = StaticBoxSizer(
             self, wx.ID_ANY, _("Configuration-Path"), wx.HORIZONTAL
@@ -255,6 +246,324 @@ class InformationPanel(ScrolledPanel):
             wx.Bell()
 
 
+class ComponentPanel(ScrolledPanel):
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: MovePanel.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        ScrolledPanel.__init__(self, *args, **kwds)
+        self.context = context
+        self.list_preview = wx.ListCtrl(
+            self,
+            wx.ID_ANY,
+            style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+        )
+        self.info_btn = wx.Button(self, wx.ID_ANY, _("Copy to Clipboard"))
+        self.Bind(wx.EVT_BUTTON, self.copy_debug_info, self.info_btn)
+        self.content = list()
+        self.get_components()
+        self.__set_properties()
+        self.__do_layout()
+        self.SetupScrolling()
+
+    def __set_properties(self):
+        self.list_preview.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=55)
+        self.list_preview.AppendColumn(
+            _("Component"), format=wx.LIST_FORMAT_LEFT, width=100
+        )
+        self.list_preview.AppendColumn(
+            _("Version"), format=wx.LIST_FORMAT_LEFT, width=120
+        )
+        self.list_preview.AppendColumn(
+            _("Status"), format=wx.LIST_FORMAT_LEFT, width=120
+        )
+        self.list_preview.AppendColumn(
+            _("Source"), format=wx.LIST_FORMAT_LEFT, width=200
+        )
+        for idx, entry in enumerate(self.content):
+            list_id = self.list_preview.InsertItem(
+                self.list_preview.GetItemCount(), f"#{idx + 1}"
+            )
+            self.list_preview.SetItem(list_id, 1, entry[0])
+            self.list_preview.SetItem(list_id, 2, entry[1])
+            self.list_preview.SetItem(list_id, 3, entry[2])
+            self.list_preview.SetItem(list_id, 4, entry[3])
+
+    def __do_layout(self):
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        sizer_main.Add(self.list_preview, 1, wx.EXPAND, 0)
+        sizer_main.Add(self.info_btn, 0, 0, 0)
+        sizer_main.Layout()
+        self.SetSizer(sizer_main)
+
+    def get_components(self):
+        def get_python():
+            import platform
+
+            entry = [
+                "Python",
+                platform.python_version(),
+                _("Present"),
+                "https://www.python.org",
+            ]
+            self.content.append(entry)
+
+        def get_wxp():
+            entry = ["wxPython", "", "", "https://www.wxpython.org"]
+            info = "??"
+            status = _("Old")
+            try:
+                info = wx.version()
+                status = _("Present")
+            except:
+                pass
+            entry[1] = info
+            entry[2] = status
+            self.content.append(entry)
+
+        def get_numpy():
+            entry = ["numpy", "", "", "https://numpy.org/"]
+            try:
+                import numpy as np
+
+                try:
+                    info = np.version.short_version
+                except AttributeError:
+                    info = "??"
+                status = _("Present")
+            except ImportError:
+                info = "??"
+                status = _("Missing")
+            entry[1] = info
+            entry[2] = status
+            self.content.append(entry)
+
+        def get_pillow():
+            entry = ["pillow", "", "", "https://pillow.readthedocs.io/en/stable/"]
+            try:
+                import PIL
+
+                try:
+                    info = PIL.__version__
+                except AttributeError:
+                    info = "??"
+                status = _("Present")
+            except ImportError:
+                info = "??"
+                status = _("Missing")
+            entry[1] = info
+            entry[2] = status
+            self.content.append(entry)
+
+        def get_potrace():
+            entry = ["potracer", "", "", "https://pypi.org/project/potracer/"]
+            try:
+                import potrace
+
+                if hasattr(potrace, "potracelib_version"):
+                    status = _("Present (fast)")
+                    entry[0] = "pypotrace"
+                    entry[3] = "https://pypi.org/project/pypotrace/"
+                    info = potrace.potracelib_version()
+                else:
+                    status = _("Present (slow)")
+                    info = "??"
+            except ImportError:
+                info = "??"
+                status = _("Missing")
+            entry[1] = info
+            entry[2] = status
+            self.content.append(entry)
+
+        def get_ezdxf():
+            entry = ["ezdxf", "", "", "https://ezdxf.readthedocs.io/en/stable/"]
+            try:
+                import ezdxf
+
+                try:
+                    info = ezdxf.__version__
+                except AttributeError:
+                    info = "??"
+                status = _("Present")
+            except ImportError:
+                info = "??"
+                status = _("Missing")
+            entry[1] = info
+            entry[2] = status
+            self.content.append(entry)
+
+        def get_pyusb():
+            entry = ["pyusb", "", "", "https://pypi.org/project/pyusb/"]
+            try:
+                import usb
+
+                try:
+                    info = usb.__version__
+                except AttributeError:
+                    info = "??"
+                status = _("Present")
+            except ImportError:
+                info = "??"
+                status = _("Missing")
+            entry[1] = info
+            entry[2] = status
+            self.content.append(entry)
+
+        def get_pyserial():
+            entry = ["pyserial", "", "", "https://pypi.org/project/pyserial/"]
+            try:
+                import serial
+
+                try:
+                    info = serial.__version__
+                except AttributeError:
+                    info = "??"
+                status = _("Present")
+            except ImportError:
+                info = "??"
+                status = _("Missing")
+            entry[1] = info
+            entry[2] = status
+            self.content.append(entry)
+
+        def get_opencv():
+            entry = ["opencv", "", "", "https://opencv.org/"]
+            try:
+                import cv2
+
+                try:
+                    info = cv2.__version__
+                except AttributeError:
+                    info = "??"
+                status = _("Present")
+            except ImportError:
+                info = "??"
+                status = _("Missing")
+            entry[1] = info
+            entry[2] = status
+            self.content.append(entry)
+
+        def get_barcode():
+            entry = [
+                "barcode-plugin",
+                "",
+                "",
+                "https://pypi.org/project/meerk40t-barcodes/",
+            ]
+            has_barcodes = False
+            try:
+                import barcodes as mk
+
+                has_barcodes = True
+                if hasattr(mk, "version"):
+                    info = mk.version
+                elif hasattr(mk, "__version__"):
+                    info = mk.__version__
+                else:
+                    info = "??"
+                status = _("Present")
+            except ImportError:
+                info = "??"
+                status = _("Missing")
+            entry[1] = info
+            entry[2] = status
+            self.content.append(entry)
+            if has_barcodes:
+                try:
+                    import qrcode
+
+                    info = "??"
+                    try:
+                        info = qrcode.__version__
+                    except AttributeError:
+                        pass
+                    entry = (
+                        "qrcode",
+                        info,
+                        _("Present"),
+                        "https://github.com/lincolnloop/python-qrcode",
+                    )
+                    self.content.append(entry)
+                except ImportError:
+                    pass
+                try:
+                    import barcode
+
+                    info = "??"
+                    try:
+                        info = barcode.version
+                    except AttributeError:
+                        pass
+                    entry = (
+                        "barcodes",
+                        info,
+                        _("Present"),
+                        "https://github.com/WhyNotHugo/python-barcode",
+                    )
+                    self.content.append(entry)
+                except ImportError:
+                    pass
+
+        def get_clipper():
+            entry = ["clipper", "", "", "https://pypi.org/project/pyclipr/"]
+            try:
+                import pyclipr
+
+                try:
+                    info = pyclipr.__version__
+                except AttributeError:
+                    info = "??"
+                status = _("Present")
+            except ImportError:
+                info = "??"
+                status = _("Missing")
+            entry[1] = info
+            entry[2] = status
+            self.content.append(entry)
+
+        def get_numba():
+            entry = ["numba", "", "", "https://numba.pydata.org/"]
+            try:
+                import numba
+
+                try:
+                    info = numba.__version__
+                except AttributeError:
+                    info = "??"
+                status = _("Present")
+            except ImportError:
+                info = "??"
+                status = _("Missing")
+            entry[1] = info
+            entry[2] = status
+            self.content.append(entry)
+
+        self.content.clear()
+        get_python()
+        get_wxp()
+        get_numpy()
+        get_pillow()
+        get_potrace()
+        get_ezdxf()
+        get_pyusb()
+        get_pyserial()
+        get_opencv()
+        get_barcode()
+        get_clipper()
+        get_numba()
+
+    def copy_debug_info(self, event):
+        if wx.TheClipboard.Open():
+            msg = ""
+            for entry in self.content:
+                msg += f"{entry[0]}: {entry[1]}, {entry[2]} \n"
+            # print (msg)
+            wx.TheClipboard.SetData(wx.TextDataObject(msg))
+            wx.TheClipboard.Close()
+        else:
+            # print ("couldn't access clipboard")
+            wx.Bell()
+
+
 class About(MWindow):
     def __init__(self, *args, **kwds):
         from platform import system as _sys
@@ -282,11 +591,14 @@ class About(MWindow):
 
         self.panel_about = AboutPanel(self, wx.ID_ANY, context=self.context)
         self.panel_info = InformationPanel(self, wx.ID_ANY, context=self.context)
+        self.panel_component = ComponentPanel(self, wx.ID_ANY, context=self.context)
         self.notebook_main.AddPage(self.panel_about, _("About"))
         self.notebook_main.AddPage(self.panel_info, _("System-Information"))
+        self.notebook_main.AddPage(self.panel_component, _("MeerK40t-Components"))
 
         self.add_module_delegate(self.panel_about)
         self.add_module_delegate(self.panel_info)
+        self.add_module_delegate(self.panel_component)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_about.GetBitmap())
         self.SetIcon(_icon)
