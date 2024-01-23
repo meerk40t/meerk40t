@@ -251,6 +251,7 @@ class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         listmix.TextEditMixin.__init__(self)
 
+
 class MaterialPanel(ScrolledPanel):
     """
     Panel to modify material library settings.

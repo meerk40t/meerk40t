@@ -402,7 +402,9 @@ class BasicOpPanel(wx.Panel):
         check_filtered = wx.CheckBox(self.op_panel, wx.ID_ANY)
         check_filtered.SetToolTip(_("Suppress non-used operations"))
         check_filtered.SetValue(self.filtered)
-        check_filtered.SetMinSize(dip_size(self, 25, -1))  # 20 from button + 5 from spacer
+        check_filtered.SetMinSize(
+            dip_size(self, 25, -1)
+        )  # 20 from button + 5 from spacer
         check_filtered.SetMaxSize(dip_size(self, 25, -1))
         info_sizer.Add(check_filtered, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         check_filtered.Bind(wx.EVT_CHECKBOX, on_check_filtered)
@@ -494,13 +496,19 @@ class BasicOpPanel(wx.Panel):
                 else:
                     c_out.Enable(False)
                     showflag = False
-                c_out.SetToolTip(info + "\n" + _("Enable this operation for inclusion in Execute Job."))
+                c_out.SetToolTip(
+                    info
+                    + "\n"
+                    + _("Enable this operation for inclusion in Execute Job.")
+                )
                 op_sizer.Add(c_out, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
                 c_show = wx.CheckBox(self.op_panel, id=wx.ID_ANY)
                 c_show.SetMinSize(dip_size(self, 20, -1))
                 c_show.SetMaxSize(dip_size(self, 20, -1))
-                c_show.SetToolTip(info + "\n" + _("Hide all contained elements on scene if not set."))
+                c_show.SetToolTip(
+                    info + "\n" + _("Hide all contained elements on scene if not set.")
+                )
 
                 self.op_panel.Bind(wx.EVT_CHECKBOX, on_check_output(op, c_show), c_out)
                 self.op_panel.Bind(wx.EVT_CHECKBOX, on_check_show(op), c_show)
@@ -536,7 +544,9 @@ class BasicOpPanel(wx.Panel):
                     else:
                         t_power.SetValue(f"{sval:.0f}")
                         unit = "ppi"
-                    t_power.SetToolTip(info + "\n" + _("Power ({unit})").format(unit=unit))
+                    t_power.SetToolTip(
+                        info + "\n" + _("Power ({unit})").format(unit=unit)
+                    )
                 else:
                     t_power.Enable(False)
                 t_power.SetActionRoutine(on_power(op, t_power))
@@ -564,7 +574,9 @@ class BasicOpPanel(wx.Panel):
                     else:
                         t_speed.SetValue(f"{sval:.1f}")
                         unit = "mm/s"
-                    t_speed.SetToolTip(info + "\n" + _("Speed ({unit})").format(unit=unit))
+                    t_speed.SetToolTip(
+                        info + "\n" + _("Speed ({unit})").format(unit=unit)
+                    )
                 else:
                     t_speed.Enable(False)
                 t_speed.SetActionRoutine(on_speed(op, t_speed))
@@ -573,8 +585,9 @@ class BasicOpPanel(wx.Panel):
                     self.op_panel, wx.ID_ANY, label=info, style=wx.ST_ELLIPSIZE_END
                 )
                 header.SetToolTip(
-                    info + "\n" +
-                    _("Click to select all contained elements on the scene.")
+                    info
+                    + "\n"
+                    + _("Click to select all contained elements on the scene.")
                     + "\n"
                     + _("Double click to open the property dialog for the operation")
                 )

@@ -39,7 +39,9 @@ class GotoPropertyPanel(wx.Panel):
                 "default": False,
                 "type": bool,
                 "label": _("Goto Absolute Position"),
-                "tip": _("This value should give exact goto locations rather than offset from device origin."),
+                "tip": _(
+                    "This value should give exact goto locations rather than offset from device origin."
+                ),
             },
         ]
         self.panel = ChoicePropertyPanel(
