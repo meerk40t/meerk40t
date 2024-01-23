@@ -1395,7 +1395,7 @@ class MeerK40t(MWindow):
             cmd = hatch[0]
             if first_hatch is None:
                 first_hatch = cmd
-            tip = hatch[1] + rightmsg
+            tip = _(hatch[1]) + rightmsg
             icon = hatch[2]
             if icon is None:
                 icon = icon_hatch
@@ -1405,7 +1405,7 @@ class MeerK40t(MWindow):
                 "identifier": f"hatch_{idx}",
                 "label": _(label),
                 "icon": icon,
-                "tip": _(tip),
+                "tip": tip,
                 "help": "hatches",
                 "action": action(cmd),
                 "action_right": lambda v: kernel.elements("effect-remove\n"),
