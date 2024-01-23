@@ -1026,8 +1026,8 @@ class LaserRender:
         except AttributeError:
             fsize = int(use_font.GetPointSize() * factor)
             use_font.SetPointSize(fsize)
-        dimension_x = int(1.5 * factor * f_width)
-        dimension_y = int(1.5 * factor * f_height)
+        dimension_x = max(1, int(1.5 * factor * f_width))
+        dimension_y = max(1, int(1.5 * factor * f_height))
         bmp = wx.Bitmap(dimension_x, dimension_y, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
