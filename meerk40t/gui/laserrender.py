@@ -186,6 +186,7 @@ class LaserRender:
     def __init__(self, context):
         self.context = context
         self.context.setting(int, "draw_mode", 0)
+        self.context.setting(int, "min_text_magnifier", 1)
         self.pen = wx.Pen()
         self.brush = wx.Brush()
         self.color = wx.Colour()
@@ -1088,6 +1089,9 @@ class LaserRender:
 
     def validate_text_nodes(self, nodes, translate_variables):
         self.context.elements.set_start_time("validate_text_nodes")
+        minim = self.context.min_text_magnifier
+        if minim is None or minim < 1:
+            minim = 1
         for item in nodes:
             if item.type == "elem text" and (
                 item._bounds_dirty
@@ -1096,7 +1100,7 @@ class LaserRender:
             ):
                 # We never drew this cleanly; our initial bounds calculations
                 # will be off if we don't premeasure
-                item.set_generator(self.create_text_image)
+                item.set_generator(self.create_text_image, minim)
                 item.set_dirty_bounds()
                 dummy = item.bounds
         self.context.elements.set_end_time("validate_text_nodes")

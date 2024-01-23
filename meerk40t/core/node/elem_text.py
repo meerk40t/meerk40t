@@ -85,6 +85,7 @@ class TextNode(Node, Stroked, FunctionalParameter):
         self._processed_matrix = None
         self._process_image_failed = False
         self._generator = None
+        self._minimal_magnification = 1
 
         # Offset values to allow fixing the drawing of slanted fonts. Without GetTextExtentBoundaries
         self.offset_x = 0
@@ -163,6 +164,7 @@ class TextNode(Node, Stroked, FunctionalParameter):
         newnode._generator = self._generator
         newnode._magnification = self._magnification
         newnode._image = self._image
+        newnode._minimal_magnification = self._minimal_magnification
         return newnode
 
 
@@ -517,7 +519,7 @@ class TextNode(Node, Stroked, FunctionalParameter):
         # We have an overreach factor established of 2.5
         overreach = 2.5
         if self.font_size:
-            while magnificent > 1:
+            while magnificent > self._minimal_magnification:
                 char_pixel = magnificent * self.font_size * overreach
                 pixels = len(self.text) * char_pixel * char_pixel
                 # print (f"Magn: {magnificent}, pixels={pixels} ({pixels // 1024})")
@@ -631,7 +633,9 @@ class TextNode(Node, Stroked, FunctionalParameter):
         self.update_image(None)
         super().modified()
 
-    def set_generator(self, routine):
+    def set_generator(self, routine, minimal_magnifier):
+        if minimal_magnifier >= 1:
+            self._minimal_magnification = minimal_magnifier
         self._generator = routine
 
     @property
