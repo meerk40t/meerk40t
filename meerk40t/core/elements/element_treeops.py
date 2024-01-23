@@ -2752,6 +2752,8 @@ def init_tree(kernel):
         help=_("Convert bitmap text to vector text"),
     )
     def convert_to_vectext(node, **kwargs):
+        if node is None or not hasattr(node, "wxfont"):
+            return
         text = node.text
         fontname = node.wxfont.GetFaceName()
         if not fontname.endswith(".ttf"):
