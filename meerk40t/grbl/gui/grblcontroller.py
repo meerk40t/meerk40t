@@ -62,6 +62,7 @@ class GRBLControllerPanel(wx.Panel):
         sizer_1.Add(static_line_2, 0, wx.EXPAND, 0)
 
         self.data_exchange = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE)
+        self.data_exchange.SetMinSize(dip_size(self, -1, 100))
         sizer_1.Add(self.data_exchange, 1, wx.EXPAND, 0)
 
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
@@ -256,9 +257,10 @@ class GRBLController(MWindow):
         self.SetIcon(_icon)
 
         self.serial_panel = GRBLControllerPanel(self, wx.ID_ANY, context=self.service)
+        self.sizer.Add(self.serial_panel, 1, wx.EXPAND, 0)
         self.Layout()
         self._opened_port = None
-        # end wxGlade
+        self.restore_aspect()
 
     @signal_listener("grbl;status")
     def on_serial_status(self, origin, state):

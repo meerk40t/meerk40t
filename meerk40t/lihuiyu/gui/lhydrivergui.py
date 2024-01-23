@@ -368,7 +368,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
 
 class LihuiyuDriverGui(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(330, 630, *args, **kwds)
+        super().__init__(550, 700, *args, **kwds)
         self.context = self.context.device
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools.GetBitmap())
@@ -384,6 +384,7 @@ class LihuiyuDriverGui(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.panels = []
         panel_config = ChoicePropertyPanel(
             self.notebook_main,
@@ -421,6 +422,7 @@ class LihuiyuDriverGui(MWindow):
         self.notebook_main.AddPage(panel_format, _("Display Options"))
 
         self.Layout()
+        self.restore_aspect(honor_initial_values=True)
 
         for panel in self.panels:
             self.add_module_delegate(panel)

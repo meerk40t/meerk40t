@@ -278,6 +278,7 @@ class About(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
 
         self.panel_about = AboutPanel(self, wx.ID_ANY, context=self.context)
         self.panel_info = InformationPanel(self, wx.ID_ANY, context=self.context)
@@ -294,3 +295,4 @@ class About(MWindow):
         name = self.context.kernel.name
         version = self.context.kernel.version
         self.SetTitle(_("About {name} v{version}").format(name=name, version=version))
+        self.restore_aspect()

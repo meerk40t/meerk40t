@@ -56,8 +56,7 @@ _ = wx.GetTranslation
 
 
 def register_panel_tree(window, context):
-    context.root.setting(int, "tree_panel_page", 0)
-    lastpage = getattr(context.root, "tree_panel_page", 0)
+    lastpage = context.root.setting(int, "tree_panel_page", 1)
     if lastpage is None or lastpage < 0 or lastpage > 2:
         lastpage = 0
 
@@ -497,11 +496,13 @@ class ElementsTree(MWindow):
         super().__init__(423, 131, *args, **kwds)
 
         self.panel = TreePanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_tree.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Tree"))
+        self.restore_aspect()
 
     def window_open(self):
         try:
