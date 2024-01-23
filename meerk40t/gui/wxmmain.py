@@ -3244,6 +3244,11 @@ class MeerK40t(MWindow):
             Toggle the draw mode.
             @param bits: Bit to toggle.
             """
+            if bits == DRAW_MODE_VARIABLES:
+                # We need to invalidate the textnodes, as they need to recalculate
+                for e in self.context.elements.elems():
+                    if e.type == "elem text":
+                        e.updated()
             self.context.draw_mode ^= bits
             self.context.signal("draw_mode", self.context.draw_mode)
             self.context.elements.modified()
