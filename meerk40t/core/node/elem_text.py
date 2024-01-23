@@ -79,7 +79,7 @@ class TextNode(Node, Stroked, FunctionalParameter):
         self.font_family = "sans-serif"
         # We store the bitmap representation of the text
         # The magnification value establishes a finer resolution at the cost of the internal image size
-        self.__magnification = 2
+        self._magnification = 2
         self._image = None
         self._processed_image = None
         self._processed_matrix = None
@@ -161,18 +161,14 @@ class TextNode(Node, Stroked, FunctionalParameter):
         nd["fill"] = copy(self.fill)
         newnode = TextNode(**nd)
         newnode._generator = self._generator
-        newnode.__magnification = self.__magnification
+        newnode._magnification = self._magnification
         newnode._image = self._image
         return newnode
 
-    @property
-    def _magnification(self):
-        return self.__magnification
 
-    @_magnification.setter
-    def _magnification(self, value):
-        if self.__magnification != value:
-            self.__magnification = value
+    def set_magnification(self, value):
+        if self._magnification != value:
+            self._magnification = value
             self._image = None
             self._processed_image = None
             if self._generator is not None:
@@ -515,6 +511,23 @@ class TextNode(Node, Stroked, FunctionalParameter):
         self.font_family = match.group(7)
         self.validate_font()
 
+    def establish_magification(self):
+        # We evaluate the estimated image size and decide our resolution...
+        magnificent = 5  # 480 dpi should be enough
+        # We have an overreach factor established of 2.5
+        overreach = 2.5
+        if self.font_size:
+            while magnificent > 1:
+                char_pixel = magnificent * self.font_size * overreach
+                pixels = len(self.text) * char_pixel * char_pixel
+                # print (f"Magn: {magnificent}, pixels={pixels} ({pixels // 1024})")
+                # More than 4 MB?
+                if pixels > 4 * 1024 * 1024:
+                    magnificent -= 1
+                else:
+                    break
+        self.set_magnification(magnificent)
+
     def validate_font(self):
         if self.line_height is None:
             self.line_height = "12pt" if self.font_size is None else "100%"
@@ -540,19 +553,7 @@ class TextNode(Node, Stroked, FunctionalParameter):
                     self.line_height = height
             except ValueError:
                 pass
-        # We evaluate the estimated image size and decide our resolution...
-        magnificent = 5  # 360 dpi should be enough
-        if self.font_size:
-            while magnificent > 0:
-                char_pixel = magnificent * self.font_size
-                pixels = len(self.text) * char_pixel * char_pixel
-                # print (f"Magn: {magnificent}, pixels={pixels} ({pixels // 1024})")
-                # More than 1 MB?
-                if pixels > 1024 * 1024:
-                    magnificent -= 1
-                else:
-                    break
-        self._magnification = magnificent
+        self.establish_magification()
 
     @property
     def font_list(self):
@@ -607,10 +608,12 @@ class TextNode(Node, Stroked, FunctionalParameter):
         image = self.active_image
         image_width, image_height = image.size
         matrix = self.active_matrix
-        x0, y0 = matrix.point_in_matrix_space((0, 0))
-        x1, y1 = matrix.point_in_matrix_space((image_width, image_height))
-        x2, y2 = matrix.point_in_matrix_space((0, image_height))
-        x3, y3 = matrix.point_in_matrix_space((image_width, 0))
+        xoffs = 0
+        yoffs = 0
+        x0, y0 = matrix.point_in_matrix_space((0 + xoffs, 0 + yoffs))
+        x1, y1 = matrix.point_in_matrix_space((image_width + xoffs, image_height + yoffs))
+        x2, y2 = matrix.point_in_matrix_space((0 + xoffs, image_height + yoffs))
+        x3, y3 = matrix.point_in_matrix_space((image_width + xoffs, 0 + yoffs))
         return (
             min(x0, x1, x2, x3),
             min(y0, y1, y2, y3),
@@ -619,10 +622,12 @@ class TextNode(Node, Stroked, FunctionalParameter):
         )
 
     def updated(self):
+        self.establish_magification()
         self.update_image(None)
         super().updated()
 
     def modified(self):
+        self.establish_magification()
         self.update_image(None)
         super().modified()
 
