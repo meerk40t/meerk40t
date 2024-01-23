@@ -751,6 +751,7 @@ class CameraInterface(MWindow):
         super().__init__(640, 480, context, path, parent, **kwds)
         self.camera = self.context.get_context(f"camera/{index}")
         self.panel = CameraPanel(self, wx.ID_ANY, context=self.camera, index=index)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
 
         # ==========
@@ -769,6 +770,7 @@ class CameraInterface(MWindow):
         self.SetIcon(_icon)
         self.SetTitle(_("CameraInterface {index}").format(index=index))
         self.Layout()
+        self.restore_aspect()
 
     def create_menu(self, append):
         def identify_cameras(event=None):
@@ -1111,13 +1113,14 @@ class CameraURIPanel(wx.Panel):
 class CameraURI(MWindow):
     def __init__(self, *args, index=None, **kwds):
         super().__init__(437, 530, *args, **kwds)
-
         self.panel = CameraURIPanel(self, wx.ID_ANY, context=self.context, index=index)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_camera.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: CameraURI.__set_properties
         self.SetTitle(_("URI Manager"))
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

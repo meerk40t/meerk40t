@@ -26,7 +26,7 @@ from .icons import (
     icons8_console,
 )
 from .mwindow import MWindow
-from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size
+from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size, get_key_name
 
 _ = wx.GetTranslation
 
@@ -250,7 +250,6 @@ class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
         """Constructor"""
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         listmix.TextEditMixin.__init__(self)
-
 
 class MaterialPanel(ScrolledPanel):
     """
@@ -2380,6 +2379,7 @@ class MaterialManager(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.notebook_main.AddPage(self.panel_library, _("Library"))
         # self.notebook_main.AddPage(self.panel_import, _("Import"))
         self.notebook_main.AddPage(self.panel_about, _("How to use"))
@@ -2387,6 +2387,7 @@ class MaterialManager(MWindow):
         self.DragAcceptFiles(True)
         self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
         self.SetTitle(_("Material Library"))
+        self.restore_aspect(honor_initial_values=True)
 
     def on_drop_file(self, event):
         """
