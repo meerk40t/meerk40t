@@ -485,7 +485,8 @@ def init_tree(kernel):
             stroke_width=self.default_strokewidth,
             matrix=m,
         )
-        self.classify([n])
+        if self.classify_new:
+            self.classify([n])
 
     @tree_submenu(_("Convert to Path"))
     @tree_operation(_("Vertical"), node_type="elem image", help="")
@@ -499,7 +500,8 @@ def init_tree(kernel):
             stroke_width=self.default_strokewidth,
             matrix=m,
         )
-        self.classify([n])
+        if self.classify_new:
+            self.classify([n])
 
     def radio_match_speed(node, speed=0, **kwargs):
         return node.speed == float(speed)
@@ -2747,10 +2749,13 @@ def init_tree(kernel):
     @tree_operation(
         _("Convert to path"),
         node_type="elem text",
-        help="Convert bitmap text to vector text",
+        help=_("Convert bitmap text to vector text"),
     )
     def convert_to_vectext(node, **kwargs):
         text = node.text
+        fontname = node.wxfont.GetFaceName()
+        if not fontname.endswith(".ttf"):
+            fontname += ".ttf"
         node_args = dict()
         node_args["type"] = "elem path"
         node_args["stroke"] = node.stroke
@@ -2759,25 +2764,29 @@ def init_tree(kernel):
         node_args["fillrule"] = Fillrule.FILLRULE_NONZERO
         node_args["mktext"] = text
         node_args["mkfontsize"] = node.font_size
-        node_args["mkfont"] = node.wxfont.GetFaceName()
-        node_args["matrix"] = node.matrix
-        b = node.bounds
-        node_args["geometry"] = Geomstr.rect(x = b[0], y=b[1], width=b[2] - b[0], height=b[3] - b[1])
+        node_args["mkfont"] = fontname
+        old_matrix = Matrix(node.matrix)
+        cc = node.bounds
+        p0 = old_matrix.point_in_inverse_space((cc[0], cc[1]))
+        p1 = old_matrix.point_in_inverse_space((cc[2], cc[3]))
+        node_args["geometry"] = Geomstr.rect(x = p0.x, y=p0.y, width=p1.x - p0.x, height=p1.y - p0.y)
         # node_args["mkanchor"] = node.anchor
-        node.replace_node(**node_args)
+        newnode = node.replace_node(**node_args)
+        newnode.matrix = old_matrix
         # Now we need to render it...
+        newnode.set_dirty_bounds()
         newtext = self.wordlist_translate(
-            text, elemnode=node, increment=False
+            text, elemnode=newnode, increment=False
         )
-        oldtext = getattr(node, "_translated_text", "")
-        if newtext != oldtext:
-            node._translated_text = newtext
+        newnode._translated_text = newtext
         kernel = self.kernel
         for property_op in kernel.lookup_all("path_updater/.*"):
-            property_op(kernel.root, node)
-        if hasattr(node, "_cache"):
-            node._cache = None        
-        data = [node]
+            property_op(kernel.root, newnode)
+        if hasattr(newnode, "_cache"):
+            newnode._cache = None        
+        data = [newnode]
+        if self.classify_new:
+            self.classify(data)
         self.signal("rebuild_tree")
         self.signal("refresh_scene", "Scene")
 
