@@ -10,7 +10,7 @@ import os.path
 from copy import copy
 
 from meerk40t.core.node.elem_image import ImageNode
-from meerk40t.core.node.node import Node
+from meerk40t.core.node.node import Node, Fillrule
 from meerk40t.core.treeop import (
     get_tree_operation,
     tree_calc,
@@ -2743,6 +2743,43 @@ def init_tree(kernel):
     )
     def trace_bitmap(node, **kwargs):
         self("vectorize\n")
+
+    @tree_operation(
+        _("Convert to path"),
+        node_type="elem text",
+        help="Convert bitmap text to vector text",
+    )
+    def convert_to_vectext(node, **kwargs):
+        text = node.text
+        node_args = dict()
+        node_args["type"] = "elem path"
+        node_args["stroke"] = node.stroke
+        node_args["fill"] = node.fill
+        node_args["stroke_width"] = 500
+        node_args["fillrule"] = Fillrule.FILLRULE_NONZERO
+        node_args["mktext"] = text
+        node_args["mkfontsize"] = node.font_size
+        node_args["mkfont"] = node.wxfont.GetFaceName()
+        node_args["matrix"] = node.matrix
+        b = node.bounds
+        node_args["geometry"] = Geomstr.rect(x = b[0], y=b[1], width=b[2] - b[0], height=b[3] - b[1])
+        # node_args["mkanchor"] = node.anchor
+        node.replace_node(**node_args)
+        # Now we need to render it...
+        newtext = self.wordlist_translate(
+            text, elemnode=node, increment=False
+        )
+        oldtext = getattr(node, "_translated_text", "")
+        if newtext != oldtext:
+            node._translated_text = newtext
+        kernel = self.kernel
+        for property_op in kernel.lookup_all("path_updater/.*"):
+            property_op(kernel.root, node)
+        if hasattr(node, "_cache"):
+            node._cache = None        
+        data = [node]
+        self.signal("rebuild_tree")
+        self.signal("refresh_scene", "Scene")
 
     @tree_conditional(
         lambda node: not is_regmark(node)
