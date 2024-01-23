@@ -1195,7 +1195,13 @@ class Elemental(Service):
         return res
 
     def save_persistent_operations_list(
-        self, name, oplist=None, opinfo=None, inform=True, use_settings=None, flush=True,
+        self,
+        name,
+        oplist=None,
+        opinfo=None,
+        inform=True,
+        use_settings=None,
+        flush=True,
     ):
         """
         Saves a given list of operations to the op_data:Settings
