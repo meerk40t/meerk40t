@@ -80,10 +80,19 @@ class AboutPanel(wx.Panel):
         hsizer_pic_info.Add(self.meerk40t_about_text_header, 1, wx.EXPAND, 0)
         vsizer_main.Add(hsizer_pic_info, 1, wx.EXPAND, 0)
         # Simplify addition of future developers without need to translate every single time
+        # Ordered by the amount of commits (as of Jan 2024)
+        # tatarize ~ 11.800
+        # jpirnay ~ 3.200
+        # Sophist-UK ~ 500
+        # tiger12506 ~ 90
+        # joerlane ~ 50
+        # jaredly ~ 15
+        # frogmaster ~ 10
         hall_of_fame = [
+            "jpirnay",
             "Sophist-UK",
             "tiger12506",
-            "jpirnay",
+            "jaredly",
             "frogmaster",
             "inspectionsbybob",
         ]
@@ -236,6 +245,7 @@ class InformationPanel(ScrolledPanel):
             # print ("couldn't access clipboard")
             wx.Bell()
 
+
 class ComponentPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: MovePanel.__init__
@@ -257,10 +267,18 @@ class ComponentPanel(ScrolledPanel):
 
     def __set_properties(self):
         self.list_preview.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=55)
-        self.list_preview.AppendColumn(_("Component"), format=wx.LIST_FORMAT_LEFT, width=100)
-        self.list_preview.AppendColumn(_("Version"), format=wx.LIST_FORMAT_LEFT, width=120)
-        self.list_preview.AppendColumn(_("Status"), format=wx.LIST_FORMAT_LEFT, width=120)
-        self.list_preview.AppendColumn(_("Source"), format=wx.LIST_FORMAT_LEFT, width=200)
+        self.list_preview.AppendColumn(
+            _("Component"), format=wx.LIST_FORMAT_LEFT, width=100
+        )
+        self.list_preview.AppendColumn(
+            _("Version"), format=wx.LIST_FORMAT_LEFT, width=120
+        )
+        self.list_preview.AppendColumn(
+            _("Status"), format=wx.LIST_FORMAT_LEFT, width=120
+        )
+        self.list_preview.AppendColumn(
+            _("Source"), format=wx.LIST_FORMAT_LEFT, width=200
+        )
         for idx, entry in enumerate(self.content):
             list_id = self.list_preview.InsertItem(
                 self.list_preview.GetItemCount(), f"#{idx + 1}"
@@ -280,7 +298,13 @@ class ComponentPanel(ScrolledPanel):
     def get_components(self):
         def get_python():
             import platform
-            entry = ["Python", platform.python_version(), _("Present"), "https://www.python.org"]
+
+            entry = [
+                "Python",
+                platform.python_version(),
+                _("Present"),
+                "https://www.python.org",
+            ]
             self.content.append(entry)
 
         def get_wxp():
@@ -300,6 +324,7 @@ class ComponentPanel(ScrolledPanel):
             entry = ["numpy", "", "", "https://numpy.org/"]
             try:
                 import numpy as np
+
                 try:
                     info = np.version.short_version
                 except AttributeError:
@@ -316,6 +341,7 @@ class ComponentPanel(ScrolledPanel):
             entry = ["pillow", "", "", "https://pillow.readthedocs.io/en/stable/"]
             try:
                 import PIL
+
                 try:
                     info = PIL.__version__
                 except AttributeError:
@@ -332,6 +358,7 @@ class ComponentPanel(ScrolledPanel):
             entry = ["potracer", "", "", "https://pypi.org/project/potracer/"]
             try:
                 import potrace
+
                 if hasattr(potrace, "potracelib_version"):
                     status = _("Present (fast)")
                     entry[0] = "pypotrace"
@@ -351,6 +378,7 @@ class ComponentPanel(ScrolledPanel):
             entry = ["ezdxf", "", "", "https://ezdxf.readthedocs.io/en/stable/"]
             try:
                 import ezdxf
+
                 try:
                     info = ezdxf.__version__
                 except AttributeError:
@@ -367,6 +395,7 @@ class ComponentPanel(ScrolledPanel):
             entry = ["pyusb", "", "", "https://pypi.org/project/pyusb/"]
             try:
                 import usb
+
                 try:
                     info = usb.__version__
                 except AttributeError:
@@ -383,6 +412,7 @@ class ComponentPanel(ScrolledPanel):
             entry = ["pyserial", "", "", "https://pypi.org/project/pyserial/"]
             try:
                 import serial
+
                 try:
                     info = serial.__version__
                 except AttributeError:
@@ -399,6 +429,7 @@ class ComponentPanel(ScrolledPanel):
             entry = ["opencv", "", "", "https://opencv.org/"]
             try:
                 import cv2
+
                 try:
                     info = cv2.__version__
                 except AttributeError:
@@ -412,10 +443,16 @@ class ComponentPanel(ScrolledPanel):
             self.content.append(entry)
 
         def get_barcode():
-            entry = ["barcode-plugin", "", "", "https://pypi.org/project/meerk40t-barcodes/"]
+            entry = [
+                "barcode-plugin",
+                "",
+                "",
+                "https://pypi.org/project/meerk40t-barcodes/",
+            ]
             has_barcodes = False
             try:
                 import barcodes as mk
+
                 has_barcodes = True
                 if hasattr(mk, "version"):
                     info = mk.version
@@ -433,23 +470,35 @@ class ComponentPanel(ScrolledPanel):
             if has_barcodes:
                 try:
                     import qrcode
+
                     info = "??"
                     try:
                         info = qrcode.__version__
                     except AttributeError:
                         pass
-                    entry=("qrcode", info, _("Present"), "https://github.com/lincolnloop/python-qrcode")
+                    entry = (
+                        "qrcode",
+                        info,
+                        _("Present"),
+                        "https://github.com/lincolnloop/python-qrcode",
+                    )
                     self.content.append(entry)
                 except ImportError:
                     pass
                 try:
                     import barcode
+
                     info = "??"
                     try:
                         info = barcode.version
                     except AttributeError:
                         pass
-                    entry=("barcodes", info, _("Present"), "https://github.com/WhyNotHugo/python-barcode")
+                    entry = (
+                        "barcodes",
+                        info,
+                        _("Present"),
+                        "https://github.com/WhyNotHugo/python-barcode",
+                    )
                     self.content.append(entry)
                 except ImportError:
                     pass
@@ -458,6 +507,7 @@ class ComponentPanel(ScrolledPanel):
             entry = ["clipper", "", "", "https://pypi.org/project/pyclipr/"]
             try:
                 import pyclipr
+
                 try:
                     info = pyclipr.__version__
                 except AttributeError:
@@ -474,6 +524,7 @@ class ComponentPanel(ScrolledPanel):
             entry = ["numba", "", "", "https://numba.pydata.org/"]
             try:
                 import numba
+
                 try:
                     info = numba.__version__
                 except AttributeError:
@@ -511,6 +562,7 @@ class ComponentPanel(ScrolledPanel):
         else:
             # print ("couldn't access clipboard")
             wx.Bell()
+
 
 class About(MWindow):
     def __init__(self, *args, **kwds):
