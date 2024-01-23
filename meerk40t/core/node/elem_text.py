@@ -41,6 +41,8 @@ REGEX_CSS_FONT_FAMILY = re.compile(
     r"\s*'[^']+'|\s*\"[^\"]+\"|[^,\s]+"
 )
 
+DEFAULT_RES = 96
+
 
 class TextNode(Node, Stroked, FunctionalParameter):
     """
@@ -176,10 +178,9 @@ class TextNode(Node, Stroked, FunctionalParameter):
             if self._generator is not None:
                 self._generator(self)
 
-
     @property
     def _dpi(self):
-        return 72 * self._magnification
+        return DEFAULT_RES * self._magnification
 
     @property
     def font(self):
@@ -216,7 +217,6 @@ class TextNode(Node, Stroked, FunctionalParameter):
             return image.point(lambda e: 255 - e).getbbox()
         except ValueError:
             return None
-
 
     def _process_image(self, step_x, step_y):
         """
@@ -270,8 +270,8 @@ class TextNode(Node, Stroked, FunctionalParameter):
 
         bbox = min(xs), min(ys), max(xs), max(ys)
 
-        image_width = ceil(bbox[2] * step_scale_x ) - floor(bbox[0] * step_scale_x )
-        image_height = ceil(bbox[3] * step_scale_y) - floor(bbox[1] * step_scale_y )
+        image_width = ceil(bbox[2] * step_scale_x) - floor(bbox[0] * step_scale_x)
+        image_height = ceil(bbox[3] * step_scale_y) - floor(bbox[1] * step_scale_y)
         tx = bbox[0]
         ty = bbox[1]
         # Caveat: we move the picture backward, so that the non-white
@@ -343,11 +343,11 @@ class TextNode(Node, Stroked, FunctionalParameter):
         actualized_matrix.post_translate(tx, ty)
         # # make white transparent
         import numpy as np
-        x = np.asarray(image.convert('RGBA')).copy()
+
+        x = np.asarray(image.convert("RGBA")).copy()
         x[:, :, 3] = (255 * (x[:, :, :3] != 255).any(axis=2)).astype(np.uint8)
         image = Image.fromarray(x)
         return actualized_matrix, image
-
 
     def process_image(self, step_x, step_y):
         """
@@ -541,7 +541,7 @@ class TextNode(Node, Stroked, FunctionalParameter):
             except ValueError:
                 pass
         # We evaluate the estimated image size and decide our resolution...
-        magnificent = 5 # 360 dpi should be enough
+        magnificent = 5  # 360 dpi should be enough
         if self.font_size:
             while magnificent > 0:
                 char_pixel = magnificent * self.font_size

@@ -1,22 +1,9 @@
 from copy import copy
-from math import ceil, isnan, sqrt, floor
+from math import ceil, isnan, sqrt
 
 import wx
-from PIL import Image, ImageOps
+from PIL import Image
 
-from meerk40t.core.elements.element_types import place_nodes
-from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
-from meerk40t.svgelements import (
-    Arc,
-    Close,
-    Color,
-    CubicBezier,
-    Line,
-    Matrix,
-    Move,
-    QuadraticBezier,
-)
-from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.core.cutcode.cubiccut import CubicCut
 from meerk40t.core.cutcode.cutcode import CutCode
 from meerk40t.core.cutcode.dwellcut import DwellCut
@@ -29,6 +16,19 @@ from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.core.cutcode.waitcut import WaitCut
+from meerk40t.core.elements.element_types import place_nodes
+from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
+from meerk40t.core.units import UNITS_PER_INCH
+from meerk40t.svgelements import (
+    Arc,
+    Close,
+    Color,
+    CubicBezier,
+    Line,
+    Matrix,
+    Move,
+    QuadraticBezier,
+)
 from meerk40t.tools.geomstr import (  # , TYPE_RAMP
     TYPE_ARC,
     TYPE_CUBIC,
@@ -36,6 +36,7 @@ from meerk40t.tools.geomstr import (  # , TYPE_RAMP
     TYPE_QUAD,
     Geomstr,
 )
+
 from .fonts import wxfont_to_svg
 from .icons import icons8_image
 from .zmatrix import ZMatrix
@@ -231,8 +232,7 @@ class LaserRender:
                 nodes = [e for e in nodes if not e.type in place_nodes]
         _nodes = list(nodes)
         variable_translation = draw_mode & DRAW_MODE_VARIABLES
-        nodecopy = [e for e in _nodes]
-        self.validate_text_nodes(nodecopy, variable_translation)
+        self.validate_text_nodes(_nodes, variable_translation)
 
         for node in _nodes:
             if node.type == "reference":
@@ -895,15 +895,12 @@ class LaserRender:
             )
         node._cache_width, node._cache_height = image.size
         try:
-            cache = self.make_thumbnail(
-                image, alphablack=False
-            )
+            cache = self.make_thumbnail(image, alphablack=False)
             min_x, min_y, max_x, max_y = bounds
             gc.DrawBitmap(cache, min_x, min_y, max_x - min_x, max_y - min_y)
         except MemoryError:
             pass
         gc.PopState()
-
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         image, bounds = node.as_image()
@@ -955,9 +952,9 @@ class LaserRender:
                 gc.DrawText(txt, 30, 30)
                 gc.PopState()
 
-    def measure_text(self, node):
+    def create_text_image(self, node):
         """
-        Use default measure text routines to calculate height etc.
+        This routine creates the internal image representation of the text.
 
         Use the real draw of the font to calculate actual size.
         A 'real' height routine needs to draw the string on an
@@ -967,7 +964,7 @@ class LaserRender:
         @param node:
         @return:
         """
-        self.context.elements.set_start_time("measure_text")
+        self.context.elements.set_start_time("create_text_image")
         draw_mode = self.context.draw_mode
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
@@ -987,6 +984,7 @@ class LaserRender:
             if ttf == "lowercase":
                 text = text.lower()
         svgfont_to_wx(node)
+        textlines = text.split("\\n")
         dimension_x = 10
         dimension_y = 10
         bmp = wx.Bitmap(dimension_x, dimension_y, 32)
@@ -996,7 +994,21 @@ class LaserRender:
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
         gc.SetFont(node.wxfont, wx.WHITE)
-        f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
+        f_width = 0
+        f_height = 0
+        try:
+            fsize_org = node.wxfont.GetFractionalPointSize()
+        except AttributeError:
+            fsize_org = node.wxfont.GetPointSize()
+        line_gap = 0.1
+        for line in textlines:
+            t_width, t_height, f_descent, t_external_leading = gc.GetFullTextExtent(line)
+            f_width = max(f_width, t_width)
+            if f_height != 0:
+                # spacing
+                f_height += line_gap * fsize_org
+            f_height += t_height
+        # print (f"w={f_width}, h={f_height}")
         gc.Destroy()
         dc.SelectObject(wx.NullBitmap)
         dc.Destroy()
@@ -1011,11 +1023,9 @@ class LaserRender:
         try:
             fsize = use_font.GetFractionalPointSize() * factor
             use_font.SetFractionalPointSize(fsize)
-            fsize_org = node.wxfont.GetFractionalPointSize()
         except AttributeError:
             fsize = int(use_font.GetPointSize() * factor)
             use_font.SetPointSize(fsize)
-            fsize_org = node.wxfont.GetPointSize()
         dimension_x = int(1.5 * factor * f_width)
         dimension_y = int(1.5 * factor * f_height)
         bmp = wx.Bitmap(dimension_x, dimension_y, 32)
@@ -1031,8 +1041,18 @@ class LaserRender:
         else:
             col = as_wx_color(node.fill)
         gc.SetFont(use_font, col)
-
-        gc.DrawText(text, 0, 0)
+        y = 0
+        for line in textlines:
+            t_width, t_height, t_descent, t_external_leading = gc.GetFullTextExtent(line)
+            if node.anchor == "middle":
+                x = (dimension_x - t_width)/2
+            elif node.anchor == "end":
+                x = dimension_x - t_width
+            else:
+                x = 0
+            gc.DrawText(line, int(x), int(y))
+            y += line_gap * fsize
+            y += t_height
         try:
             img = bmp.ConvertToImage()
             image = Image.new("RGB", (img.GetWidth(), img.GetHeight()))
@@ -1055,7 +1075,7 @@ class LaserRender:
         dc.SelectObject(wx.NullBitmap)
         dc.Destroy()
         del dc
-        self.context.elements.set_end_time("measure_text", display=True, message=msg)
+        self.context.elements.set_end_time("create_text_image", display=True, message=msg)
 
     def validate_text_nodes(self, nodes, translate_variables):
         self.context.elements.set_start_time("validate_text_nodes")
@@ -1067,7 +1087,7 @@ class LaserRender:
             ):
                 # We never drew this cleanly; our initial bounds calculations
                 # will be off if we don't premeasure
-                item.set_generator(self.measure_text)
+                item.set_generator(self.create_text_image)
                 item.set_dirty_bounds()
                 dummy = item.bounds
         self.context.elements.set_end_time("validate_text_nodes")
@@ -1115,10 +1135,9 @@ class LaserRender:
 
         # if it's a raster we will always translate text variables...
         variable_translation = True
-        nodecopy = [e for e in _nodes]
-        self.validate_text_nodes(nodecopy, variable_translation)
+        self.validate_text_nodes(_nodes, variable_translation)
 
-        for item in nodecopy:
+        for item in _nodes:
             # bb = item.bounds
             bb = item.paint_bounds
             if bb is None:

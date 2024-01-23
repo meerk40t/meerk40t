@@ -175,7 +175,8 @@ class TextPropertyPanel(ScrolledPanel):
         self.renderer = LaserRender(self.context)
         self.SetHelpText("textproperty")
 
-        self.text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER|wx.TE_MULTILINE)
+        # self.text_text.SetSize(dip_size(self, -1, 100))
         self.node = node
         self.label_fonttest = wx.StaticText(
             self, wx.ID_ANY, "", style=wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE
@@ -318,8 +319,9 @@ class TextPropertyPanel(ScrolledPanel):
             self.node = node
         try:
             if self.node.text is not None:
-                self.text_text.SetValue(self.node.text)
-                display_string = self.node.text
+                txt = self.node.text.replace("\\n", "\n")
+                self.text_text.SetValue(txt)
+                display_string = txt
                 if self.check_variable.GetValue():
                     display_string = self.context.elements.wordlist_translate(
                         display_string,
@@ -531,7 +533,7 @@ class TextPropertyPanel(ScrolledPanel):
         self.label_fonttest.SetWindowStyle(mystyle)
 
         self.rb_align.SetSelection(new_anchor)
-        display_string = self.node.text
+        display_string = self.node.text.replace("\\n", "\n")
         if self.check_variable.GetValue():
             display_string = self.context.elements.wordlist_translate(
                 display_string,
@@ -666,7 +668,7 @@ class TextPropertyPanel(ScrolledPanel):
 
     def on_text_change(self, event):  # wxGlade: TextProperty.<event_handler>
         try:
-            self.node.text = self.text_text.GetValue()
+            self.node.text = self.text_text.GetValue().replace("\n", "\\n")
             self.node.modified()
             self.update_label()
             self.refresh()
