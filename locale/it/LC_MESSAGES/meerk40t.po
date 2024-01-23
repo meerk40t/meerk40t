@@ -16394,7 +16394,7 @@ msgid ""
 
 msgstr ""
 "Ultima versione su github: {name} v{version} ({label})\n"
-"Url: {url}}n"
+"Url: {url}n"
 "Info: {info}"
 
 msgid "Could not find any release information on github"
