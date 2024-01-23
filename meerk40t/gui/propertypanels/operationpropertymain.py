@@ -257,7 +257,10 @@ class LayerSettingPanel(wx.Panel):
                 if response == wx.ID_YES:
                     changed = []
                     for refnode in self.operation.children:
-                        cnode = refnode.node
+                        if hasattr(refnode, "node"):
+                            cnode = refnode.node
+                        else:
+                            cnode = refnode
                         add_to_change = False
                         if candidate_stroke and hasattr(cnode, "stroke"):
                             cnode.stroke = self.operation.color

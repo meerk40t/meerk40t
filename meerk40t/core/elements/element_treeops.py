@@ -23,6 +23,7 @@ from meerk40t.core.treeop import (
     tree_separator_after,
     tree_separator_before,
     tree_submenu,
+    tree_submenu_list,
     tree_values,
 )
 from meerk40t.core.units import UNITS_PER_INCH, Length
@@ -1556,7 +1557,6 @@ def init_tree(kernel):
     #     return difference
 
     @tree_separator_before()
-    @tree_separator_after()
     @tree_operation(
         _("Material Manager"),
         node_type="branch ops",
@@ -1565,27 +1565,117 @@ def init_tree(kernel):
     def load_matman(node, **kwargs):
         self("window open MatManager\n")
 
-    # def material_name(material):
-    #     oplist, opinfo = self.load_persistent_op_list(material)
-    #     if "material" in opinfo:
-    #         name = opinfo["material"]
-    #     elif material == "_default":
-    #         name = "Generic Defaults"
-    #     elif material.startswith("_default_"):
-    #         name = f"Default for {material[9:]}"
-    #     else:
-    #         name = material.replace("_", " ")
-    #     if "thickness" in opinfo:
-    #         if opinfo["thickness"]:
-    #             name += ", " + opinfo["thickness"]
-    #     return name
+    def material_name(material):
+        if material == "previous":
+            return _("<Previous set>")
+        oplist, opinfo = self.load_persistent_op_list(material)
+        material_name = opinfo.get("material", "")
+        material_title = opinfo.get("title", "")
+        material_thickness = opinfo.get("thickness", "")
+        if material_title == "":
+            if material_name:
+                material_title = material_name
+            else:
+                if material == "_default":
+                    material_title = "Generic Defaults"
+                elif material.startswith("_default_"):
+                    material_title = f"Default for {material[9:]}"
+                else:
+                    material_title = material.replace("_", " ")
+        name = ""
+        if material_name:
+            name += f"[{material_name}] "
+        name += material_title
+        if material_thickness:
+            name += f" {material_thickness}"
+        return name
 
-    # @tree_submenu(_("Load"))
-    # @tree_values("opname", values=self.op_data.section_set)
-    # @tree_calc("material", lambda opname: material_name(opname) )
-    # @tree_operation("{material}", node_type="branch ops", help="")
-    # def load_ops(node, opname, **kwargs):
-    #     self(f"material load {opname}\n")
+    def material_menus():
+        was_previous = False
+        entries = list()
+        for material in self.op_data.section_set():
+            if material == "previous":
+                was_previous = True
+                continue
+            opinfo = self.load_persistent_op_info(material)
+            material_name = opinfo.get("material", "")
+            material_title = opinfo.get("title", "")
+            material_thickness = opinfo.get("thickness", "")
+            if material_title == "":
+                if material_name:
+                    material_title = material_name
+                else:
+                    if material == "_default":
+                        material_title = "Generic Defaults"
+                    elif material.startswith("_default_"):
+                        material_title = f"Default for {material[9:]}"
+                    else:
+                        material_title = material.replace("_", " ")
+            submenu = ""
+            if material_name:
+                submenu += f"{'|' if submenu else ''}{material_name}"
+            if material_thickness:
+                submenu += f"{'|' if submenu else ''}{material_thickness}"
+
+            entries.append((material_name, material_thickness, material_title, submenu))
+        # Let's sort them
+        entries.sort(
+            key=lambda e: (
+                e[0],
+                e[1],
+                e[2],
+            )
+        )
+        submenus = [e[3] for e in entries]
+        if was_previous:
+            submenus.insert(0, "")
+        return submenus
+
+    def material_ids():
+        was_previous = False
+        entries = list()
+        for material in self.op_data.section_set():
+            if material == "previous":
+                was_previous = True
+                continue
+            opinfo = self.load_persistent_op_info(material)
+            material_name = opinfo.get("material", "")
+            material_title = opinfo.get("title", "")
+            material_thickness = opinfo.get("thickness", "")
+            if material_title == "":
+                if material_name:
+                    material_title = material_name
+                else:
+                    if material == "_default":
+                        material_title = "Generic Defaults"
+                    elif material.startswith("_default_"):
+                        material_title = f"Default for {material[9:]}"
+                    else:
+                        material_title = material.replace("_", " ")
+            entries.append(
+                (material_name, material_thickness, material_title, material)
+            )
+        # Let's sort them
+        entries.sort(
+            key=lambda e: (
+                e[0],
+                e[1],
+                e[2],
+            )
+        )
+        res = [e[3] for e in entries]
+        if was_previous:
+            res.insert(0, "previous")
+        return res
+
+    @tree_separator_after()
+    @tree_submenu(_("Load"))
+    @tree_values("opname", values=material_ids())
+    @tree_submenu_list(_("Materials"), material_menus())
+    @tree_calc("material", lambda opname: material_name(opname))
+    @tree_operation("{material}", node_type="branch ops", help="")
+    def load_ops(node, opname, **kwargs):
+        self(f"material load {opname}\n")
 
     # @tree_separator_before()
     # @tree_submenu(_("Load"))

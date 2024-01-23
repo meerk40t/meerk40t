@@ -74,12 +74,12 @@ def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
         choice = c
         submenu_name = get("submenu")
         submenu = None
-        if submenu_name in submenus:
+        if submenu_name and submenu_name in submenus:
             submenu = submenus[submenu_name]
         else:
             if get("separate_before", default=False):
                 menu.AppendSeparator()
-            if submenu_name is not None:
+            if submenu_name:
                 submenu = wx.Menu()
                 menu.AppendSubMenu(submenu, submenu_name)
                 submenus[submenu_name] = submenu
@@ -245,15 +245,28 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
         for func in tree_operations_for_node(optional_2nd_node):
             submenu_name = func.submenu
             submenu = None
-            if submenu_name in submenus:
+            if submenu_name and submenu_name in submenus:
                 submenu = submenus[submenu_name]
             else:
-                if submenu_name is not None:
+                if submenu_name:
                     last_was_separator = False
-                    submenu = wx.Menu()
-                    menu.AppendSubMenu(submenu, submenu_name, func.help)
-                    submenus[submenu_name] = submenu
-
+                    subs = submenu_name.split("|")
+                    common = ""
+                    parent_menu = menu
+                    for sname in subs:
+                        if sname == "":
+                            continue
+                        if common:
+                            common += "|"
+                        common += sname
+                        if common in submenus:
+                            submenu = submenus[common]
+                            parent_menu = submenu
+                        else:
+                            submenu = wx.Menu()
+                            parent_menu.AppendSubMenu(submenu, sname, func.help)
+                            submenus[common] = submenu
+                            parent_menu = submenu
             menu_context = submenu if submenu is not None else menu
             if func.separate_before:
                 last_was_separator = True
@@ -317,13 +330,28 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
     for func in tree_operations_for_node(node):
         submenu_name = func.submenu
         submenu = None
-        if submenu_name in submenus:
+        if submenu_name and submenu_name in submenus:
             submenu = submenus[submenu_name]
         else:
-            if submenu_name is not None:
-                submenu = wx.Menu()
-                menu.AppendSubMenu(submenu, submenu_name, func.help)
-                submenus[submenu_name] = submenu
+            if submenu_name:
+                last_was_separator = False
+                subs = submenu_name.split("|")
+                common = ""
+                parent_menu = menu
+                for sname in subs:
+                    if sname == "":
+                        continue
+                    if common:
+                        common += "|"
+                    common += sname
+                    if common in submenus:
+                        submenu = submenus[common]
+                        parent_menu = submenu
+                    else:
+                        submenu = wx.Menu()
+                        parent_menu.AppendSubMenu(submenu, sname, func.help)
+                        submenus[common] = submenu
+                        parent_menu = submenu
 
         menu_context = submenu if submenu is not None else menu
         if func.separate_before:
@@ -373,8 +401,15 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                 radio_check_not_needed.append(menu_context)
         if not submenu and func.separate_after:
             menu.AppendSeparator()
-
     for submenu in submenus.values():
+        plain = True
+        for item in submenu.GetMenuItems():
+            if not (item.IsSeparator() or item.IsSubMenu() or not item.IsEnabled()):
+                plain = False
+                break
+        if plain and submenu not in radio_check_not_needed:
+            radio_check_not_needed.append(submenu)
+
         if submenu not in radio_check_not_needed:
             item = submenu.Append(
                 wx.ID_ANY,

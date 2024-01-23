@@ -216,11 +216,10 @@ class DefaultOperationWidget(StatusBarWidget):
 
         def on_menu_material(matname):
             def handler(*args):
-                oplist, opinfo = self.context.elements.load_persistent_op_list(
-                    stored_mat
-                )
+                elements = self.context.elements
+                oplist, opinfo = elements.load_persistent_op_list(stored_mat)
                 if oplist is not None and len(oplist) > 0:
-                    self.context.elements.default_operations = oplist
+                    elements.default_operations = list(oplist)
                     self.Signal("default_operations")
 
             stored_mat = matname
@@ -277,7 +276,7 @@ class DefaultOperationWidget(StatusBarWidget):
                         material_title = f"Default for {material[9:]}"
                     else:
                         material_title = material.replace("_", " ")
-            entries.append((material_name, material_thickness, material_title))
+            entries.append((material_name, material_thickness, material_title, material))
             matcount += 1
         # Let's sort them
         entries.sort(
@@ -304,6 +303,7 @@ class DefaultOperationWidget(StatusBarWidget):
             last_material = None
             last_thick = None
             for mat in entries:
+                material = mat[3]
                 if mat[0] != last_material:
                     last_material = mat[0]
                     last_thick = None
