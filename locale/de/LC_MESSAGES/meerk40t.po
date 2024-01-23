@@ -17110,6 +17110,13 @@ msgstr "Zusammenfügen (CC EE RR II)"
 msgid "Choose if and how you want to group together / display the default operations at the bottom of the screen"
 msgstr "Festlegung, ob und wie die Bibliotheks-Arbeitsabläufe am untern Rand des Bildschirms zusammengefasst werden sollen"
 
+#: ./meerk40t\core\elements\element_treeops.py
+msgid "Convert to vector text"
+msgstr "In Vektor-Text umwandeln"
+
+msgid "Convert bitmap text to vector text"
+msgstr "Wandle klassischen Text in Vektor-Text um"
+
 #: ./meerk40t\core\elements\element_treeops.py:1535
 msgid "New"
 msgstr "Neu"

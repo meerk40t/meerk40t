@@ -2747,7 +2747,7 @@ def init_tree(kernel):
         self("vectorize\n")
 
     @tree_operation(
-        _("Convert to path"),
+        _("Convert to vector text"),
         node_type="elem text",
         help=_("Convert bitmap text to vector text"),
     )
