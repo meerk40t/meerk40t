@@ -4301,6 +4301,7 @@ class MeerK40t(MWindow):
         kernel.busyinfo.end()
         self.context(".tool none\n")
         context.elements.undo.mark("blank")
+        self.context.signal("selected")
 
     def clear_and_open(self, pathname, preferred_loader=None):
         self.clear_project(ops_too=False)
