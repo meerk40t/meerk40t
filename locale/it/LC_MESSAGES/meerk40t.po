@@ -3003,7 +3003,7 @@ msgstr "Elimina il gruppo '{name}' e tutti i suoi Elementi associati completamen
 
 #: meerk40t/core/elements/element_treeops.py:875
 msgid "Delete blob '{name}' fully"
-msgstr "Cancellare completamente l'oggetto binario 'nome}'"
+msgstr "Cancellare completamente l'oggetto binario '{name}'"
 
 #: meerk40t/core/elements/element_treeops.py:935
 msgid "Remove loaded file '{name}' and all its child-elements fully"
