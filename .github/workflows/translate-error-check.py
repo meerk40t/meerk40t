@@ -2,6 +2,25 @@ import os
 import re
 
 
+def are_curly_brackets_matched(input_str):
+    stack = []
+    escaped = False
+    for char in input_str:
+        if char == "\\":
+            escaped = True
+            continue
+        if escaped:
+            escaped = False
+            continue
+        if char == "{":
+            stack.append("{")
+        elif char == "}":
+            if not stack:
+                return False
+            stack.pop()
+    return not stack
+
+
 def find_erroneous_translations(file_path):
     with open(file_path, "r", encoding="utf-8") as file:
         file_lines = file.readlines()
@@ -10,6 +29,12 @@ def find_erroneous_translations(file_path):
     index = 0
     msgids = []
     msgstrs = []
+
+    for i, line in enumerate(file_lines):
+        if not are_curly_brackets_matched(line):
+            found_error = True
+            print(f"Line {index} has mismatched curly braces:\n{line}")
+
     while index < len(file_lines):
         try:
             msgids.append("")
