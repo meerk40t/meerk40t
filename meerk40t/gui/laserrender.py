@@ -1076,21 +1076,37 @@ class LaserRender:
             if img_bb is not None:
                 image = image.crop(img_bb)
             node.update_image(image)
+            width = image.width
         except MemoryError:
+            width = 0
             node.update_image(None)
-        node.ascent = f_height - f_descent
+        node.ascent = (f_height - f_descent) / factor
+        dy = 0
         if node.baseline != "hanging":
-            node.matrix.pre_translate(0, -node.ascent)
+            dy = -node.ascent
             if node.baseline == "middle":
-                node.matrix.pre_translate(0, node.ascent / 2)
+                dy += node.ascent / 2
             node.baseline = "hanging"
+        if node.leading is None:
+            node.leading = 0
+        ol = node.leading
+        dx = -1.0 * node.leading
+        if node.anchor == "middle":
+            node.leading = -0.5 * width / factor
+        elif node.anchor == "end":
+            node.leading = -1.0 * width / factor
+        else:
+            node.leading = 0
+        dx += node.leading
+        # print(f"Old: {ol:.1f}, new:{node.leading:.1f}, dx={dx:.1f}")
+        node.matrix.pre_translate(dx, dy)
         dc.SelectObject(wx.NullBitmap)
         dc.Destroy()
         del dc
         self.context.elements.set_end_time("create_text_image", display=True, message=msg)
 
     def validate_text_nodes(self, nodes, translate_variables):
-        self.context.elements.set_start_time("validate_text_nodes")
+        # self.context.elements.set_start_time("validate_text_nodes")
         minim = self.context.min_text_magnifier
         if minim is None or minim < 1:
             minim = 1
@@ -1105,7 +1121,7 @@ class LaserRender:
                 item.set_generator(self.create_text_image, minim)
                 item.set_dirty_bounds()
                 dummy = item.bounds
-        self.context.elements.set_end_time("validate_text_nodes")
+        # self.context.elements.set_end_time("validate_text_nodes")
 
     def make_raster(
         self,
