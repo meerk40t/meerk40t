@@ -338,11 +338,7 @@ class TextPropertyPanel(ScrolledPanel):
                         self.node,
                         increment=False,
                     )
-                self.label_fonttest.SetLabelText(display_string)
-                try:
-                    self.label_fonttest.SetFont(self.node.wxfont)
-                except AttributeError:
-                    pass
+                self.update_label()
         except AttributeError:
             pass
         self.text_text.SetFocus()
@@ -385,7 +381,7 @@ class TextPropertyPanel(ScrolledPanel):
         self.button_attrib_italic.SetToolTip(_("Toggle italic"))
         self.button_attrib_underline.SetToolTip(_("Toggle underline"))
         self.button_attrib_strikethrough.SetToolTip(_("Toggle strikethrough"))
-        msg = "\n" + _("- Hold shit-Key down for bigger change") + "\n" + _("- Right click will reset value to default")
+        msg = "\n" + _("- Hold shift/ctrl-Key down for bigger change") + "\n" + _("- Right click will reset value to default")
         self.button_attrib_lineplus.SetToolTip(_("Increase line distance") + msg)
         self.button_attrib_lineminus.SetToolTip(_("Reduce line distance") + msg)
 
@@ -568,7 +564,7 @@ class TextPropertyPanel(ScrolledPanel):
         for l in lines:
             if display_string:
                 display_string += "\n"
-            display_string = " " + l + " "
+            display_string += " " + l + " "
         self.label_fonttest.SetLabelText(display_string)
         self.label_fonttest.SetForegroundColour(wx.Colour(swizzlecolor(self.node.fill)))
         self.label_fonttest.Refresh()
