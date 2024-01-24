@@ -33,7 +33,7 @@ def find_erroneous_translations(file_path):
     for i, line in enumerate(file_lines):
         if not are_curly_brackets_matched(line):
             found_error = True
-            print(f"Line {i} has mismatched curly braces:\n{line}")
+            print(f"Error: {file_path}\nLine {i} has mismatched curly braces:\n{line}")
 
     while index < len(file_lines):
         try:
