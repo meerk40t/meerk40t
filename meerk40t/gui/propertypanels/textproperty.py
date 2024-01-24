@@ -319,6 +319,7 @@ class TextPropertyPanel(ScrolledPanel):
         pass
 
     def set_widgets(self, node):
+        self.Freeze()
         self.panel_id.set_widgets(node)
         self.panel_stroke.set_widgets(node)
         self.panel_fill.set_widgets(node)
@@ -343,6 +344,7 @@ class TextPropertyPanel(ScrolledPanel):
             pass
         self.text_text.SetFocus()
         self.text_text.SelectAll()
+        self.Thaw()
 
     def __set_properties(self):
         self.button_choose_font.SetSize(self.button_choose_font.GetBestSize())
@@ -673,6 +675,8 @@ class TextPropertyPanel(ScrolledPanel):
     def on_font_choice(self, event):
         lastfont = self.node.wxfont.GetFaceName()
         fface = self.combo_font.GetValue()
+        if lastfont == fface:
+            return
         self.node.wxfont.SetFaceName(fface)
         if not self.node.wxfont.IsOk():
             self.node.wxfont.SetFaceName(lastfont)
@@ -738,7 +742,10 @@ class TextPropertyPanel(ScrolledPanel):
 
     def on_text_change(self, event):  # wxGlade: TextProperty.<event_handler>
         try:
-            self.node.text = self.text_text.GetValue() # .replace("\n", "\\n")
+            s = self.text_text.GetValue()  # .replace("\n", "\\n")
+            if self.node.text == s:
+                return
+            self.node.text = s
             self.node.modified()
             self.update_label()
             self.refresh()
