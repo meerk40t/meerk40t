@@ -512,14 +512,16 @@ class ConsolePanel(wx.ScrolledWindow):
 
 class Console(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(581, 410, *args, **kwds)
+        super().__init__(550, 450, *args, **kwds)
         self.panel = ConsolePanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_console.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Console"))
         self.Layout()
+        self.restore_aspect(honor_initial_values=True)
 
     @staticmethod
     def sub_register(kernel):

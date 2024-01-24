@@ -2473,6 +2473,7 @@ class NavigationPanel(wx.Panel):
 
         main_sizer.Add(pulse_and_move_sizer, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
+        main_sizer.Fit(self)
         self.Layout()
         self.panels = [
             jogdistancepanel,
@@ -2514,9 +2515,10 @@ class NavigationPanel(wx.Panel):
 
 class Navigation(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(598, 429, *args, **kwds)
+        super().__init__(650, 450, *args, **kwds)
 
         self.panel = NavigationPanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         iconsize = int(0.75 * get_default_icon_size())
         minw = (3 + 3 + 3) * iconsize + 150
@@ -2528,6 +2530,7 @@ class Navigation(MWindow):
         self.SetIcon(_icon)
         # begin wxGlade: Navigation.__set_properties
         self.SetTitle(_("Navigation"))
+        self.restore_aspect(honor_initial_values=True)
 
     @staticmethod
     def sub_register(kernel):

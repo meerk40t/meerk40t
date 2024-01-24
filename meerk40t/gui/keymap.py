@@ -313,12 +313,14 @@ class Keymap(MWindow):
         super().__init__(500, 530, *args, **kwds)
 
         self.panel = KeymapPanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_keyboard.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Keymap.__set_properties
         self.SetTitle(_("Keymap Settings"))
+        self.restore_aspect()
 
     @staticmethod
     def sub_register(kernel):

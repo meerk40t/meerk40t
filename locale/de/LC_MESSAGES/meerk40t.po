@@ -4901,6 +4901,12 @@ msgstr "Gerätetyp"
 msgid "Opens Devices Window"
 msgstr "Öffnet den Gerätemanager"
 
+msgid "Click on a device to see more details about it."
+msgstr "Nach clicken auf einen Eintrag werden hier mehr Informationen zum Laser angezeigt."
+
+msgid "You can as well search for your device at the top of this screen."
+msgstr "Man kann nach einem Lasertyp durch Eingabe von Suchtext filtern."
+
 #: meerk40t/gui/executejob.py:41 meerk40t/gui/laserpanel.py:105
 #: meerk40t/gui/spoolerpanel.py:146
 msgid "Start"

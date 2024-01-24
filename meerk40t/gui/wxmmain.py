@@ -133,6 +133,8 @@ class MeerK40t(MWindow):
         width, height = wx.DisplaySize()
 
         super().__init__(int(width * 0.9), int(height * 0.9), *args, **kwds)
+        # We do this very early to allow resizing events to do their thing...
+        self.restore_aspect(honor_initial_values=True)
         try:
             self.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE | wx.TOUCH_PAN_GESTURES)
         except AttributeError:
@@ -1393,7 +1395,7 @@ class MeerK40t(MWindow):
             cmd = hatch[0]
             if first_hatch is None:
                 first_hatch = cmd
-            tip = hatch[1] + rightmsg
+            tip = _(hatch[1]) + rightmsg
             icon = hatch[2]
             if icon is None:
                 icon = icon_hatch
@@ -1403,7 +1405,7 @@ class MeerK40t(MWindow):
                 "identifier": f"hatch_{idx}",
                 "label": _(label),
                 "icon": icon,
-                "tip": _(tip),
+                "tip": tip,
                 "help": "hatches",
                 "action": action(cmd),
                 "action_right": lambda v: kernel.elements("effect-remove\n"),
@@ -3863,6 +3865,8 @@ class MeerK40t(MWindow):
     @signal_listener("updateop_tree")
     @signal_listener("tree_changed")
     @signal_listener("modified_by_tool")
+    @signal_listener("device;renamed")
+    @signal_listener("service/device/active")
     def warning_indicator(self, *args):
         self.warning_routine.warning_indicator()
 

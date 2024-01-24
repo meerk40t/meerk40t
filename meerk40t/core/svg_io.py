@@ -443,12 +443,12 @@ class SVGWriter:
             ):
                 subelement.set(key, str(value))
 
-        ###############
-        # SAVE STROKE
-        ###############
-        if hasattr(c, "stroke_scaled"):
-            if not c.stroke_scaled:
-                subelement.set(SVG_ATTR_VECTOR_EFFECT, SVG_VALUE_NON_SCALING_STROKE)
+        # ###########################
+        # # SAVE SVG STROKE-SCALING
+        # ###########################
+        # if hasattr(c, "stroke_scaled"):
+        #     if not c.stroke_scaled:
+        #         subelement.set(SVG_ATTR_VECTOR_EFFECT, SVG_VALUE_NON_SCALING_STROKE)
 
         ###############
         # SAVE CAP/JOIN/FILL-RULE
@@ -1120,16 +1120,17 @@ class SVGProcessor:
         """
         try:
             element.load(os.path.dirname(self.pathname))
-            try:
-                from PIL import ImageOps
+            if element.image is not None:
+                try:
+                    from PIL import ImageOps
 
-                element.image = ImageOps.exif_transpose(element.image)
-            except ImportError:
-                pass
-            try:
-                operations = ast.literal_eval(element.values["operations"])
-            except (ValueError, SyntaxError, KeyError):
-                operations = None
+                    element.image = ImageOps.exif_transpose(element.image)
+                except ImportError:
+                    pass
+                try:
+                    operations = ast.literal_eval(element.values["operations"])
+                except (ValueError, SyntaxError, KeyError):
+                    operations = None
 
             if element.image is not None:
                 try:
