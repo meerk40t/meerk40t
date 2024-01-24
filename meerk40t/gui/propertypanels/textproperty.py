@@ -598,9 +598,12 @@ class TextPropertyPanel(ScrolledPanel):
         self.refresh()
 
     def refresh(self):
+        # print (self.context.elements.selected_area())
         self.node.updated()
+        self.node.set_dirty_bounds()
         bb = self.node.bounds
         self.context.elements.validate_selected_area()
+        # print (self.context.elements.selected_area())
         self.context.elements.signal("element_property_reload", self.node)
         self.context.signal("refresh_scene", "Scene")
 
@@ -636,6 +639,8 @@ class TextPropertyPanel(ScrolledPanel):
             self.node.mk_line_gap = 1.1
         else:
             self.node.mk_line_gap -= gap
+        if self.node.mk_line_gap < 0:
+            self.node.mk_line_gap = 0
         self.refresh()
 
     def on_button_smaller(self, event):
