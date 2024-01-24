@@ -77,6 +77,7 @@ class TextNode(Node, Stroked, FunctionalParameter):
         self.font_size = 16.0  # 16px font 'normal' 12pt font
         self.line_height = 16.0
         self.font_family = "sans-serif"
+        self.mk_line_gap = 1.1
         # We store the bitmap representation of the text
         # The magnification value establishes a finer resolution at the cost of the internal image size
         self._magnification = 2
@@ -97,7 +98,7 @@ class TextNode(Node, Stroked, FunctionalParameter):
             font = None
         super().__init__(type="elem text", **kwargs)
 
-        # We might have relevant forn-information hidden inside settings...
+        # We might have relevant font-information hidden inside settings...
         rotangle = 0
         if "settings" in kwargs:
             kwa = kwargs["settings"]

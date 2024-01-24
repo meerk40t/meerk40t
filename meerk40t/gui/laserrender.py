@@ -1009,14 +1009,16 @@ class LaserRender:
             fsize_org = node.wxfont.GetFractionalPointSize()
         except AttributeError:
             fsize_org = node.wxfont.GetPointSize()
-        line_gap = 0.1
+        if node.mk_line_gap is None:
+            node.mk_line_gap = 1.1
+        line_step = node.mk_line_gap - 1.0
         for line in textlines:
             dummy = "T" + line + "p"
             t_width, t_height, f_descent, t_external_leading = gc.GetFullTextExtent(dummy)
             f_width = max(f_width, t_width + t_external_leading)
             if f_height != 0:
                 # spacing
-                f_height += line_gap * fsize_org
+                f_height += line_step * fsize_org
             f_height += t_height
         # print (f"w={f_width}, h={f_height}")
         gc.Destroy()
@@ -1061,7 +1063,7 @@ class LaserRender:
             else:
                 x = offset
             gc.DrawText(line, int(x), int(y))
-            y += line_gap * fsize
+            y += line_step * fsize
             y += t_height
         try:
             img = bmp.ConvertToImage()

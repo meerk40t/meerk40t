@@ -267,6 +267,12 @@ class TextPropertyPanel(ScrolledPanel):
         self.button_attrib_strikethrough = wx.ToggleButton(
             self, id=wx.ID_ANY, label="s", size=dip_size(self, mysize, mysize)
         )
+        self.button_attrib_lineplus = wx.Button(
+            self, id=wx.ID_ANY, label="+", size=dip_size(self, mysize, mysize)
+        )
+        self.button_attrib_lineminus = wx.Button(
+            self, id=wx.ID_ANY, label="-", size=dip_size(self, mysize, mysize)
+        )
 
         self.check_variable = wx.CheckBox(self, wx.ID_ANY, _(" Translate Variables"))
         self.check_variable.SetToolTip(_("If active, preview will translate variables"))
@@ -295,6 +301,10 @@ class TextPropertyPanel(ScrolledPanel):
         )
         self.rb_align.Bind(wx.EVT_RADIOBOX, self.on_radio_box)
         self.check_variable.Bind(wx.EVT_CHECKBOX, self.on_text_change)
+        self.Bind(wx.EVT_BUTTON, self.on_linegap_bigger, self.button_attrib_lineplus)
+        self.Bind(wx.EVT_BUTTON, self.on_linegap_smaller, self.button_attrib_lineminus)
+        self.button_attrib_lineplus.Bind(wx.EVT_RIGHT_DOWN, self.on_linegap_reset)
+        self.button_attrib_lineminus.Bind(wx.EVT_RIGHT_DOWN, self.on_linegap_reset)
 
     @staticmethod
     def accepts(node):
@@ -375,6 +385,9 @@ class TextPropertyPanel(ScrolledPanel):
         self.button_attrib_italic.SetToolTip(_("Toggle italic"))
         self.button_attrib_underline.SetToolTip(_("Toggle underline"))
         self.button_attrib_strikethrough.SetToolTip(_("Toggle strikethrough"))
+        msg = "\n" + _("- Hold shit-Key down for bigger change") + "\n" + _("- Right click will reset value to default")
+        self.button_attrib_lineplus.SetToolTip(_("Increase line distance") + msg)
+        self.button_attrib_lineminus.SetToolTip(_("Reduce line distance") + msg)
 
         align_options = [_("Left"), _("Center"), _("Right")]
         self.rb_align = wx.RadioBox(
@@ -411,6 +424,13 @@ class TextPropertyPanel(ScrolledPanel):
         sizer_attrib.Add(self.button_attrib_underline, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_attrib.Add(
             self.button_attrib_strikethrough, 0, wx.ALIGN_CENTER_VERTICAL, 0
+        )
+        sizer_attrib.AddSpacer(25)
+        sizer_attrib.Add(
+            self.button_attrib_lineplus, 0, wx.ALIGN_CENTER_VERTICAL, 0
+        )
+        sizer_attrib.Add(
+            self.button_attrib_lineminus, 0, wx.ALIGN_CENTER_VERTICAL, 0
         )
 
         sizer_anchor = wx.BoxSizer(wx.HORIZONTAL)
@@ -540,6 +560,15 @@ class TextPropertyPanel(ScrolledPanel):
                 self.node,
                 increment=False,
             )
+        # We try to vercome the issue that some fonts are clipped
+        # in the display due to their 'invalid' kerning information
+        # by adding spaces in ahead and behind every line...
+        lines = display_string.split("\n")
+        display_string = ""
+        for l in lines:
+            if display_string:
+                display_string += "\n"
+            display_string = " " + l + " "
         self.label_fonttest.SetLabelText(display_string)
         self.label_fonttest.SetForegroundColour(wx.Colour(swizzlecolor(self.node.fill)))
         self.label_fonttest.Refresh()
@@ -563,8 +592,43 @@ class TextPropertyPanel(ScrolledPanel):
     def refresh(self):
         self.node.updated()
         bb = self.node.bounds
+        self.context.elements.validate_selected_area()
         self.context.elements.signal("element_property_reload", self.node)
         self.context.signal("refresh_scene", "Scene")
+
+    def on_linegap_reset(self, event):
+        if self.node is None:
+            return
+        self.node.mk_line_gap = 1.1
+        self.refresh()
+
+    def on_linegap_bigger(self, event):
+        if self.node is None:
+            return
+        gap = 0.01
+        if wx.GetKeyState(wx.WXK_SHIFT):
+            gap = 0.1
+        if wx.GetKeyState(wx.WXK_CONTROL):
+            gap = 0.25
+        if self.node.mk_line_gap is None:
+            self.node.mk_line_gap = 1.1
+        else:
+            self.node.mk_line_gap += gap
+        self.refresh()
+
+    def on_linegap_smaller(self, event):
+        if self.node is None:
+            return
+        gap = 0.01
+        if wx.GetKeyState(wx.WXK_SHIFT):
+            gap = 0.1
+        if wx.GetKeyState(wx.WXK_CONTROL):
+            gap = 0.25
+        if self.node.mk_line_gap is None:
+            self.node.mk_line_gap = 1.1
+        else:
+            self.node.mk_line_gap -= gap
+        self.refresh()
 
     def on_button_smaller(self, event):
         try:

@@ -814,6 +814,8 @@ class wxMeerK40t(wx.App, Module):
         if language is not None and language != 0:
             self.update_language(language)
 
+        kernel.register(f"registered_mk_svg_parameters/elemtext1", "mk_line_gap")
+
         kernel.register("window/MeerK40t", MeerK40t)
 
         kernel.register("window/Properties", PropertyWindow)
