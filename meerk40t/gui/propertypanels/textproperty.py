@@ -610,7 +610,7 @@ class TextPropertyPanel(ScrolledPanel):
     def on_linegap_reset(self, event):
         if self.node is None:
             return
-        self.node.mk_line_gap = 1.1
+        self.node.mklinegap = 1.1
         self.refresh()
 
     def on_linegap_bigger(self, event):
@@ -621,10 +621,10 @@ class TextPropertyPanel(ScrolledPanel):
             gap = 0.1
         if wx.GetKeyState(wx.WXK_CONTROL):
             gap = 0.25
-        if self.node.mk_line_gap is None:
-            self.node.mk_line_gap = 1.1
+        if self.node.mklinegap is None:
+            self.node.mklinegap = 1.1
         else:
-            self.node.mk_line_gap += gap
+            self.node.mklinegap += gap
         self.refresh()
 
     def on_linegap_smaller(self, event):
@@ -635,12 +635,12 @@ class TextPropertyPanel(ScrolledPanel):
             gap = 0.1
         if wx.GetKeyState(wx.WXK_CONTROL):
             gap = 0.25
-        if self.node.mk_line_gap is None:
-            self.node.mk_line_gap = 1.1
+        if self.node.mklinegap is None:
+            self.node.mklinegap = 1.1
         else:
-            self.node.mk_line_gap -= gap
-        if self.node.mk_line_gap < 0:
-            self.node.mk_line_gap = 0
+            self.node.mklinegap -= gap
+        if self.node.mklinegap < 0:
+            self.node.mklinegap = 0
         self.refresh()
 
     def on_button_smaller(self, event):

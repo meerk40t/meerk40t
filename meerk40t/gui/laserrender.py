@@ -1009,9 +1009,9 @@ class LaserRender:
             fsize_org = node.wxfont.GetFractionalPointSize()
         except AttributeError:
             fsize_org = node.wxfont.GetPointSize()
-        if node.mk_line_gap is None:
-            node.mk_line_gap = 1.1
-        line_step = node.mk_line_gap - 1.0
+        if node.mklinegap is None:
+            node.mklinegap = 1.1
+        line_step = node.mklinegap - 1.0
         for line in textlines:
             dummy = "T" + line + "p"
             t_width, t_height, f_descent, t_external_leading = gc.GetFullTextExtent(dummy)
@@ -1055,7 +1055,7 @@ class LaserRender:
         offset = overreach / 2 * fsize
         y = offset
         for line in textlines:
-            t_width, t_height, t_descent, t_external_leading = gc.GetFullTextExtent(line)
+            t_width, t_height, f_descent, t_external_leading = gc.GetFullTextExtent(line)
             if node.anchor == "middle":
                 x = (dimension_x - t_width)/2
             elif node.anchor == "end":
@@ -1077,29 +1077,38 @@ class LaserRender:
                 image = image.crop(img_bb)
             node.update_image(image)
             width = image.width
+            height = image.height
         except MemoryError:
             width = 0
+            height = 0
             node.update_image(None)
-        node.ascent = (f_height - f_descent) / factor
-        dy = 0
-        if node.baseline != "hanging":
-            dy = -node.ascent
-            if node.baseline == "middle":
-                dy += node.ascent / 2
-            node.baseline = "hanging"
-        if node.leading is None:
-            node.leading = 0
-        ol = node.leading
-        dx = -1.0 * node.leading
+        # Align the imagebox relative to X and Y
+        if node.mkleading is None:
+            node.mkleading = 0
+        dx = -1.0 * node.mkleading
         if node.anchor == "middle":
-            node.leading = -0.5 * width / factor
+            node.mkleading = -0.5 * width / factor
         elif node.anchor == "end":
-            node.leading = -1.0 * width / factor
+            node.mkleading = -1.0 * width / factor
         else:
-            node.leading = 0
-        dx += node.leading
-        # print(f"Old: {ol:.1f}, new:{node.leading:.1f}, dx={dx:.1f}")
+            node.mkleading = 0
+        dx += node.mkleading
+
+        if node.mkascent is None:
+            node.mkascent = 0
+        dy = -1 * node.mkascent
+        if node.baseline == "top":
+            node.mkascent = -1.0 * height / factor
+        elif node.baseline == "middle":
+            node.mkascent = -0.5 * height / factor
+        elif node.anchor == "hanging":
+            node.mkascent = -1.0 * f_descent / factor
+        else:
+            node.mkascent = 0
+        dy += node.mkascent
+        # Pretranslate as we are still in pixels...
         node.matrix.pre_translate(dx, dy)
+
         dc.SelectObject(wx.NullBitmap)
         dc.Destroy()
         del dc

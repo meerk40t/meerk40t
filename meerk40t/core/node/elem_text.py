@@ -67,7 +67,6 @@ class TextNode(Node, Stroked, FunctionalParameter):
         self.width = None
         self.height = None
         self.descent = None
-        self.leading = None
         self.raw_bbox = None
         self.path = None
         self.font_style = "normal"
@@ -77,7 +76,9 @@ class TextNode(Node, Stroked, FunctionalParameter):
         self.font_size = 16.0  # 16px font 'normal' 12pt font
         self.line_height = 16.0
         self.font_family = "sans-serif"
-        self.mk_line_gap = 1.1
+        self.mklinegap = 1.1
+        self.mkleading = 0
+        self.mkascent = 0
         # We store the bitmap representation of the text
         # The magnification value establishes a finer resolution at the cost of the internal image size
         self._magnification = 2
@@ -166,6 +167,9 @@ class TextNode(Node, Stroked, FunctionalParameter):
         newnode._magnification = self._magnification
         newnode._image = self._image
         newnode._minimal_magnification = self._minimal_magnification
+        newnode.mkleading = self.mkleading
+        newnode.mklinegap = self.mklinegap
+        newnode.mkascent = self.mkascent
         return newnode
 
 

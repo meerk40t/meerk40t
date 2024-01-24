@@ -813,8 +813,8 @@ class wxMeerK40t(wx.App, Module):
         context.asset = get_asset
         if language is not None and language != 0:
             self.update_language(language)
-
-        kernel.register(f"registered_mk_svg_parameters/elemtext1", "mk_line_gap")
+        for idx, attr in enumerate("mklinegap", "mkascent", "mkleading"):
+            kernel.register(f"registered_mk_svg_parameters/elemtext{idx}", attr)
 
         kernel.register("window/MeerK40t", MeerK40t)
 
