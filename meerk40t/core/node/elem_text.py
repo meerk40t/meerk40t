@@ -196,10 +196,10 @@ class TextNode(Node, Stroked, FunctionalParameter):
         self.parse_font(value)
 
     def update_image(self, image):
-        if image is None:
-            s = "None"
-        else:
-            s = f"{image.width}x{image.height} ({image.mode})"
+        # if image is None:
+        #     s = "None"
+        # else:
+        #     s = f"{image.width}x{image.height} ({image.mode})"
         # print (f"update image {s}")
         self._image = image
         self._processed_image = None

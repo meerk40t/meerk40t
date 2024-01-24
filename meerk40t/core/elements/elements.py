@@ -1123,6 +1123,12 @@ class Elemental(Service):
 
     def wordlist_advance(self, delta):
         self.mywordlist.move_all_indices(delta)
+        for e in self.elems():
+            if e.type == "elem text" and "{" in e.text:
+                e.update_image(None)
+            elif e.type == "elem path" and hasattr(e, "mktext") and "{" in e.mktext:
+                e.set_dirty_bounds()
+
         self.signal("refresh_scene", "Scene")
         self.signal("wordlist")
 

@@ -347,6 +347,16 @@ class TextPropertyPanel(ScrolledPanel):
     def __set_properties(self):
         self.button_choose_font.SetSize(self.button_choose_font.GetBestSize())
 
+        self.button_attrib_lineplus.SetFont(
+            wx.Font(
+                9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, ""
+            )
+        )
+        self.button_attrib_lineminus.SetFont(
+            wx.Font(
+                9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, ""
+            )
+        )
         self.button_attrib_bold.SetFont(
             wx.Font(
                 9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD, 0, ""
