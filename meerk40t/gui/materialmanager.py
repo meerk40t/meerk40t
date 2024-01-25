@@ -607,9 +607,9 @@ class MaterialPanel(ScrolledPanel):
         self.Bind(
             wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_preview_rightclick, self.list_preview
         )
-        # self.Bind(
-        #     wx.EVT_LIST_COL_RIGHT_CLICK, self.on_preview_rightclick, self.list_preview
-        # )
+        self.Bind(
+            wx.EVT_LIST_COL_RIGHT_CLICK, self.on_preview_rightclick, self.list_preview
+        )
         self.Bind(wx.EVT_SIZE, self.on_resize)
         self.SetupScrolling()
         # Hide not-yet-supported functions
@@ -2016,14 +2016,40 @@ class MaterialPanel(ScrolledPanel):
         menu.Destroy()
 
     def on_preview_rightclick(self, event):
+        # A couple of basic operations
+        def max_keynum(secname):
+            maxfound = 0
+            for subsection in self.op_data.derivable(secname):
+                parts = subsection.split(" ")
+                number = parts[-1]
+                try:
+                    nr = int(number)
+                    if nr > maxfound:
+                        maxfound = nr
+                except ValueError:
+                    pass
+            return maxfound
+
+        def newkey():
+            sect = self.active_material
+            # fetch all section names...
+            sect_num = max_keynum(sect) + 1
+            section_name = f"{sect} {sect_num:0>6}"
+            return section_name
+
         event.Skip()
         if self.active_material is None:
             return
-        listindex = event.Index
-        if listindex < 0:
-            return
-        index = self.list_preview.GetItemData(listindex)
-        key = self.get_nth_operation(index)
+        key = None
+        try:
+            # main click
+            listindex = event.Index
+            if listindex >= 0:
+                index = self.list_preview.GetItemData(listindex)
+                key = self.get_nth_operation(index)
+        except AttributeError:
+            # Column click
+            pass
 
         menu = wx.Menu()
 
@@ -2036,6 +2062,54 @@ class MaterialPanel(ScrolledPanel):
 
             sect = op_section
             return remove_handler
+
+        def on_menu_popup_duplicate(op_section):
+            def dup_handler(*args):
+                settings = self.op_data
+                # print (f"Remove {sect}")
+                nkey = newkey()
+                for info in settings.keylist(sect):
+                    secdesc = settings.read_persistent(
+                        str, sect, info, ""
+                    )
+                    if info == "id":
+                        continue
+                    elif info == "label":
+                        idx = 0
+                        if secdesc.endswith(")") and secdesc[-2] in (str(i) for i in range(0,10)):
+                            i = secdesc.rfind("(")
+                            if i >= 0:
+                                try:
+                                    s = secdesc[i+1:]
+                                    t = secdesc[:i]
+                                    idx = int(s[:-1])
+                                    secdesc = t
+                                except ValueError:
+                                    pass
+                        secdesc += f"({idx + 1})"
+                    settings.write_persistent(nkey, info, secdesc)
+
+                on_menu_popup_missing()
+                settings.write_configuration()
+                self.fill_preview()
+
+            sect = op_section
+            return dup_handler
+
+        def on_menu_popup_newop(op_dict):
+            def add_handler(*args):
+                settings = self.op_data
+                # print (f"Remove {sect}")
+                nkey = newkey()
+                for key, value in opd.items():
+                    settings.write_persistent(nkey, key, value)
+
+                on_menu_popup_missing()
+                settings.write_configuration()
+                self.fill_preview()
+
+            opd = op_dict
+            return add_handler
 
         def on_menu_popup_apply_to_tree(op_section):
             def apply_to_tree_handler(*args):
@@ -2115,26 +2189,6 @@ class MaterialPanel(ScrolledPanel):
             sect = op_section
             return apply_to_tree_handler
 
-        if key:
-            item = menu.Append(wx.ID_ANY, _("Remove"), "", wx.ITEM_NORMAL)
-            self.Bind(wx.EVT_MENU, on_menu_popup_delete(key), item)
-
-            menu.AppendSeparator()
-
-            item = menu.Append(wx.ID_ANY, _("Load into Tree"), "", wx.ITEM_NORMAL)
-            self.Bind(wx.EVT_MENU, on_menu_popup_apply_to_tree(key), item)
-
-            settings = self.op_data
-            op_type = settings.read_persistent(str, key, "type")
-            if op_type.startswith("op "):
-                item = menu.Append(
-                    wx.ID_ANY, _("Use for statusbar"), "", wx.ITEM_NORMAL
-                )
-                menu.Enable(item.GetId(), bool(self.active_material is not None))
-                self.Bind(wx.EVT_MENU, on_menu_popup_apply_to_statusbar(key), item)
-
-        menu.AppendSeparator()
-
         def on_menu_popup_missing(*args):
             if self.active_material is None:
                 return
@@ -2213,8 +2267,66 @@ class MaterialPanel(ScrolledPanel):
                 self.op_data.write_configuration()
                 self.fill_preview()
 
-        item = menu.Append(wx.ID_ANY, _("Fill missing ids/label"), "", wx.ITEM_NORMAL)
-        self.Bind(wx.EVT_MENU, on_menu_popup_missing, item)
+        op_dict = {
+            "type": "op raster",
+            "speed": "140",
+            "power": "1000",
+            "label": "Raster",
+            "color": "#000000"
+        }
+        if self.is_balor:
+            op_dict["frequency"] = "35"
+        item = menu.Append(wx.ID_ANY, _("Add Raster"), "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, on_menu_popup_newop(op_dict), item)
+        op_dict = {
+            "type": "op engrave",
+            "speed": "50",
+            "power": "1000",
+            "label": "Engrave",
+            "color": "#0000FF"
+        }
+        if self.is_balor:
+            op_dict["frequency"] = "35"
+        item = menu.Append(wx.ID_ANY, _("Add Engrave"), "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, on_menu_popup_newop(op_dict), item)
+        op_dict = {
+            "type": "op cut",
+            "speed": "5",
+            "power": "1000",
+            "label": "Cut",
+            "color": "#FF0000"
+        }
+        if self.is_balor:
+            op_dict["frequency"] = "35"
+        item = menu.Append(wx.ID_ANY, _("Add Cut"), "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, on_menu_popup_newop(op_dict), item)
+
+        if key:
+            menu.AppendSeparator()
+            item = menu.Append(wx.ID_ANY, _("Duplicate"), "", wx.ITEM_NORMAL)
+            self.Bind(wx.EVT_MENU, on_menu_popup_duplicate(key), item)
+            item = menu.Append(wx.ID_ANY, _("Delete"), "", wx.ITEM_NORMAL)
+            self.Bind(wx.EVT_MENU, on_menu_popup_delete(key), item)
+
+            menu.AppendSeparator()
+
+            item = menu.Append(wx.ID_ANY, _("Load into Tree"), "", wx.ITEM_NORMAL)
+            self.Bind(wx.EVT_MENU, on_menu_popup_apply_to_tree(key), item)
+
+            settings = self.op_data
+            op_type = settings.read_persistent(str, key, "type")
+            if op_type.startswith("op "):
+                item = menu.Append(
+                    wx.ID_ANY, _("Use for statusbar"), "", wx.ITEM_NORMAL
+                )
+                menu.Enable(item.GetId(), bool(self.active_material is not None))
+                self.Bind(wx.EVT_MENU, on_menu_popup_apply_to_statusbar(key), item)
+
+        if self.list_preview.GetItemCount() > 0:
+            menu.AppendSeparator()
+
+            item = menu.Append(wx.ID_ANY, _("Fill missing ids/label"), "", wx.ITEM_NORMAL)
+            self.Bind(wx.EVT_MENU, on_menu_popup_missing, item)
 
         self.PopupMenu(menu)
         menu.Destroy()
