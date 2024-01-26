@@ -14,7 +14,6 @@ from meerk40t.gui.scene.sceneconst import (
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui import icons
 from meerk40t.gui.icons import icons8_center_of_gravity
-from meerk40t.gui.utilitywidgets.buttonwidget import ButtonWidget
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.tools.geomstr import Geomstr
 from meerk40t.tools.pmatrix import PMatrix
@@ -43,98 +42,6 @@ def cor_file_geometry(width=None):
     return path
 
 
-def setup_corfile_widget(service):
-    scene = service.root.opened.get("Scene")
-
-    scene.push_stack(SceneSpaceWidget(scene))
-    corfile_widget = CorFileWidget(scene)
-    scene.widget_root.scene_widget.add_widget(-1, corfile_widget)
-
-    def confirm(**kwargs):
-        scene.pop_stack()
-        scene.request_refresh()
-
-    def rotate_left(**kwargs):
-        corfile_widget.rotate_left()
-        scene.request_refresh()
-
-    def rotate_right(**kwargs):
-        corfile_widget.rotate_right()
-        scene.request_refresh()
-
-    def vflip(**kwargs):
-        corfile_widget.vflip()
-        scene.request_refresh()
-
-    def hflip(**kwargs):
-        corfile_widget.hflip()
-        scene.request_refresh()
-
-    size = 100
-    scene.widget_root.interface_widget.add_widget(
-        -1,
-        ButtonWidget(
-            scene,
-            0,
-            0,
-            size,
-            size,
-            icons.icons8_delete.GetBitmap(use_theme=False),
-            confirm,
-        ),
-    )
-    scene.widget_root.interface_widget.add_widget(
-        -1,
-        ButtonWidget(
-            scene,
-            0,
-            size * 2,
-            size,
-            size * 3,
-            icons.icons8_rotate_left.GetBitmap(use_theme=False),
-            rotate_left,
-        ),
-    )
-    scene.widget_root.interface_widget.add_widget(
-        -1,
-        ButtonWidget(
-            scene,
-            0,
-            size * 4,
-            size,
-            size * 5,
-            icons.icons8_rotate_right.GetBitmap(use_theme=False),
-            rotate_right,
-        ),
-    )
-    scene.widget_root.interface_widget.add_widget(
-        -1,
-        ButtonWidget(
-            scene,
-            0,
-            size * 6,
-            size,
-            size * 7,
-            icons.icons8_flip_horizontal.GetBitmap(use_theme=False),
-            hflip,
-        ),
-    )
-    scene.widget_root.interface_widget.add_widget(
-        -1,
-        ButtonWidget(
-            scene,
-            0,
-            size * 8,
-            size,
-            size * 9,
-            icons.icons8_flip_vertical.GetBitmap(use_theme=False),
-            vflip,
-        ),
-    )
-    scene.widget_root.focus_viewport_scene((0, 0, 0xFFFF, 0xFFFF), scene.gui.Size)
-    scene.request_refresh()
-
-
 def register_scene(service):
     _ = service.kernel.translation
 
@@ -155,7 +62,13 @@ def register_scene(service):
         help=_("Update galvo flips for movement"),
     )
     def scene_corfile(**kwargs):
-        setup_corfile_widget(service)
+        scene = service.root.opened.get("Scene")
+
+        scene.push_stack(SceneSpaceWidget(scene))
+        corfile_widget = CorFileWidget(scene)
+        scene.widget_root.scene_widget.add_widget(-1, corfile_widget)
+        scene.widget_root.focus_viewport_scene((0, 0, 0xFFFF, 0xFFFF), scene.gui.Size)
+        scene.request_refresh()
 
 
 class CorFileWidget(Widget):
@@ -193,7 +106,10 @@ class CorFileWidget(Widget):
         self.active = None
         self.hot = None
 
-        self.p1 = "50.0"
+        self.cursor = -1
+        self.is_opened = True
+
+        self.p1 = "500.0"
         self.p2 = "50.0"
         self.p3 = "50.0"
         self.p4 = "50.0"
@@ -205,7 +121,7 @@ class CorFileWidget(Widget):
         self.p10 = "50.0"
         self.p11 = "50.0"
         self.p12 = "50.0"
-        text_positions = (
+        self.text_fields = (
             (21500, 5200, 5000, 1000, self, "p1"),
             (45000, 5200, 5000, 1000, self, "p2"),
             (60000, 20000, 5000, 1000, self, "p3"),
@@ -219,7 +135,55 @@ class CorFileWidget(Widget):
             (32000, 20000, 5000, 1000, self, "p11"),
             (32000, 45000, 5000, 1000, self, "p12"),
         )
-        self.text_fields = text_positions
+
+        def close(*args):
+            self.scene.pop_stack()
+            self.scene.request_refresh()
+            self.is_opened = False
+
+        self.button_fields = (
+            (
+                -3000,
+                0,
+                3000,
+                3000,
+                icons.icons8_delete.GetBitmap(use_theme=False),
+                close,
+            ),
+            (
+                -3000,
+                3000,
+                3000,
+                3000,
+                icons.icons8_rotate_left.GetBitmap(use_theme=False),
+                self.rotate_left,
+            ),
+            (
+                -3000,
+                6000,
+                3000,
+                3000,
+                icons.icons8_rotate_right.GetBitmap(use_theme=False),
+                self.rotate_right,
+            ),
+            (
+                -3000,
+                9000,
+                3000,
+                3000,
+                icons.icons8_flip_horizontal.GetBitmap(use_theme=False),
+                self.hflip,
+            ),
+            (
+                -3000,
+                12000,
+                3000,
+                3000,
+                icons.icons8_flip_vertical.GetBitmap(use_theme=False),
+                self.vflip,
+            ),
+        )
+        self.scene.animate(self)
 
     def _contains(self, location, x, y, width, height):
         if location is None:
@@ -237,20 +201,22 @@ class CorFileWidget(Widget):
     def hit(self):
         return HITCHAIN_DELEGATE_AND_HIT
 
+    def tick(self):
+        self.scene.request_refresh()
+        return self.is_opened
+
     def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         """
         Capture and deal with the double click event.
 
         Doubleclick in the grid loads a menu to remove the background.
         """
-        if event_type == "hover_start":
-            self.scene.animate(self)
+        print(event_type)
+        print(kwargs)
         if event_type in ("hover", "move"):
             self.mouse_location = space_pos
         if event_type == "leftdown":
             self.was_clicked = True
-            print(space_pos)
-        self.scene.request_refresh()
         return RESPONSE_CHAIN
 
     def rotate_left(self):
@@ -282,15 +248,19 @@ class CorFileWidget(Widget):
         gc.DrawPath(path)
 
         if self.mouse_location:
-            gc.DrawRectangle(self.mouse_location[0] - 500, self.mouse_location[1] - 500, 1000, 1000)
+            gc.DrawRectangle(
+                self.mouse_location[0] - 500, self.mouse_location[1] - 500, 1000, 1000
+            )
         gc.SetBrush(self.background_brush)
         gc.SetPen(self.outline_pen)
         was_hovered = False
-        for i, textfield in enumerate(self.text_fields):
+        index = -1
+        for textfield in self.text_fields:
+            index += 1
             x, y, width, height, obj, attr = textfield
-            if self.hot == i:
+            if self.hot == index:
                 gc.SetBrush(self.hot_brush)
-            elif self.active == i:
+            elif self.active == index:
                 gc.SetBrush(self.active_brush)
             else:
                 gc.SetBrush(self.background_brush)
@@ -298,9 +268,9 @@ class CorFileWidget(Widget):
             if self._contains(self.mouse_location, x, y, width, height):
                 self.scene.cursor("text")
                 was_hovered = True
-                self.active = i
+                self.active = index
                 if self.was_clicked:
-                    self.hot = i
+                    self.hot = index
                     self.was_clicked = False
             if obj is None or not hasattr(obj, attr):
                 continue
@@ -314,12 +284,34 @@ class CorFileWidget(Widget):
             except AttributeError:
                 self.font.SetPointSize(int(text_size))
             gc.SetFont(self.font, self.font_color)
-            if self.active == i and int(time.time() * 2) % 2 == 0:
-                text += "|"
+            if self.hot == index and int(time.time() * 2) % 2 == 0:
+                if self.cursor > len(text) or self.cursor == -1:
+                    self.cursor = len(text)
+                c_pos = gc.GetPartialTextExtents(text[:self.cursor])
+                print(c_pos)
+                print(self.cursor)
+                print(text[:self.cursor])
+                gc.DrawRectangle(x + c_pos[-1], y, 40, height)
             gc.DrawText(text, x, y)
-
         if not was_hovered:
             self.scene.cursor("arrow")
+
+        for i, button in enumerate(self.button_fields):
+            index += 1
+            x, y, width, height, bmp, click = button
+            if self.active == index:
+                gc.SetBrush(self.background_brush)
+                gc.DrawRectangle(x, y, width, height)
+            gc.DrawBitmap(bmp, x, y, width, height)
+            if self._contains(self.mouse_location, x, y, width, height):
+                self.active = index
+                was_hovered = True
+                if self.was_clicked:
+                    self.hot = index
+                    self.was_clicked = False
+                    click()
+        if not was_hovered:
+            self.active = None
 
     def signal(self, signal, *args, **kwargs):
         """
