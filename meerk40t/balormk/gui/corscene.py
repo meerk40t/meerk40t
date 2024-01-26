@@ -6,11 +6,8 @@ import wx
 
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.scene.sceneconst import (
-    HITCHAIN_DELEGATE,
-    HITCHAIN_HIT,
     RESPONSE_CHAIN,
     HITCHAIN_DELEGATE_AND_HIT,
-    RESPONSE_CONSUME,
 )
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui import icons
@@ -40,6 +37,29 @@ def cor_file_geometry(width=None):
     path.line(complex(0xE146, 0x28F4), complex(0xD709, 0x3331))
     path.line(complex(0xD709, 0x3331), complex(0xCCCC, 0x28F4))
     path.line(complex(0xCCCC, 0x28F4), complex(0xD709, 0x1EB7))
+    return path
+
+
+def cor_file_line_associated(width=None):
+    path = Geomstr()
+
+    path.line(complex(0x1999, 0x1999), complex(0x7FFF, 0x1999), settings=0)
+    path.line(complex(0x7FFF, 0x1999), complex(0xE665, 0x1999), settings=1)
+
+    path.line(complex(0xE665, 0x1999), complex(0xE665, 0x7FFF), settings=2)
+    path.line(complex(0xE665, 0x7FFF), complex(0xE665, 0xE665), settings=3)
+
+    path.line(complex(0xE665, 0xE665), complex(0x7FFF, 0xE665), settings=4)
+    path.line(complex(0x7FFF, 0xE665), complex(0x1999, 0xE665), settings=5)
+
+    path.line(complex(0x1999, 0xE665), complex(0x1999, 0x7FFF), settings=6)
+    path.line(complex(0x1999, 0x7FFF), complex(0x1999, 0x1999), settings=7)
+
+    path.line(complex(0x17A5, 0x7FFF), complex(0x7FFF, 0x7FFF), settings=8)
+    path.line(complex(0x7FFF, 0x7FFF), complex(0xE859, 0x7FFF), settings=9)
+
+    path.line(complex(0x7FFF, 0x17A5), complex(0x7FFF, 0x7FFF), settings=10)
+    path.line(complex(0x7FFF, 0x7FFF), complex(0x7FFF, 0xE859), settings=11)
     return path
 
 
@@ -82,10 +102,15 @@ class CorFileWidget(Widget):
         self.name = "Corfile"
         self.render = LaserRender(scene.context)
         self.geometry = cor_file_geometry()
+        self.assoc = cor_file_line_associated()
 
         self.outline_pen = wx.Pen()
         self.outline_pen.SetColour(wx.BLACK)
         self.outline_pen.SetWidth(4)
+
+        self.highlight_pen = wx.Pen()
+        self.highlight_pen.SetColour(wx.BLUE)
+        self.highlight_pen.SetWidth(500)
 
         self.background_brush = wx.Brush()
         self.background_brush.SetColour(wx.WHITE)
@@ -111,7 +136,7 @@ class CorFileWidget(Widget):
         self.cursor = -1
         self.is_opened = True
 
-        self.p1 = "500.0"
+        self.p1 = "50.0"
         self.p2 = "50.0"
         self.p3 = "50.0"
         self.p4 = "50.0"
@@ -265,6 +290,11 @@ class CorFileWidget(Widget):
         gc.SetPen(wx.BLACK_PEN)
         path = self.render.make_geomstr(gc, self.geometry)
         gc.DrawPath(path)
+
+        if self.hot is not None and 0 <= self.hot < 12:
+            gc.SetPen(self.highlight_pen)
+            p2 = self.render.make_geomstr(gc, self.assoc, settings=self.hot)
+            gc.DrawPath(p2)
 
         if self.mouse_location:
             gc.DrawRectangle(
