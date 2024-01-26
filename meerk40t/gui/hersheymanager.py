@@ -619,9 +619,61 @@ class PanelFontManager(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_btn_import, self.btn_add)
         self.Bind(wx.EVT_BUTTON, self.on_btn_delete, self.btn_delete)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_webget, self.combo_webget)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.test_library)
         # end wxGlade
         fontdir = fontdirectory(self.context)
         self.text_fontdir.SetValue(fontdir)
+
+    def test_library(self, event):
+        import os
+        import platform
+        from time import perf_counter
+        t0 = perf_counter()
+        print ("Test...")
+        print (f"User dir: {os.path.expanduser('~')}" )
+        for key, value in os.environ.items():
+            print (f"Env: {key}: {value}")
+        systype = platform.system()
+        directories = []
+        directories.append(self.context.font_directory)
+        if systype == "Windows":
+            if "WINDIR" in os.environ:
+                windir = os.environ["WINDIR"]
+                directories.append(os.path.join(windir, "Fonts"))
+            if "LOCALAPPDATA" in os.environ:
+                appdir = os.environ["LOCALAPPDATA"]
+                directories.append(os.path.join(appdir, "Microsoft\\Windows\\Fonts"))
+        elif systype == "Linux":
+            directories.append("/usr/share/fonts")
+            directories.append("/usr/local/share/fonts")
+            directories.append("~/.local/share/fonts")
+        elif systype == "Darwin":
+            directories.append("/Library/Fonts")
+            directories.append("~/Library/Fonts")
+        # Walk through all folders recursively
+        found = dict()
+        font_types = list(fonts_registered())
+        fonts = []
+        for fontpath in directories:
+            for p in font_types:
+                found[p] = 0
+            try:
+                for root, dirs, files in os.walk(fontpath):
+                    for filename in files:
+                        fname = os.path.join(root, filename)
+                        test = filename.lower()
+                        for p in font_types:
+                            if test.endswith(p):
+                                if filename not in fonts:
+                                    fonts.append(filename)
+                                    found[p] += 1
+            except (OSError, FileNotFoundError, PermissionError):
+                continue
+            for key, value in found.items():
+                print(f"{key}: {value} - {fontpath}")
+
+        t1 = perf_counter()
+        print (f"Ready, took {t1 - t0:.2f}sec")
 
     def on_text_directory(self, event):
         fontdir = self.text_fontdir.GetValue()
