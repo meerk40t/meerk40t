@@ -453,22 +453,43 @@ class TrueTypeFont:
             yield value
 
     def parse_name(self):
+        def decode(string):
+            try:
+                return string.decode("UTF-16BE")
+            except UnicodeDecodeError:
+                try:
+                    return string.decode("UTF8")
+                except UnicodeDecodeError:
+                    return string
+
         data = self._raw_tables[b"name"]
         b = BytesIO(data)
         (
-            self.format,
+            format,
             count,
             offset,
         ) = struct.unpack(">HHH", b.read(6))
+        if format == 1:
+            (langtag_count,) = struct.unpack(">H", b.read(2))
+            for langtag_record in range(langtag_count):
+                (langtag_len, langtag_offset) = struct.unpack(">HH", b.read(4))
+
         records = [struct.unpack(">HHHHHH", b.read(2 * 6)) for _ in range(count)]
         strings = b.read()
-        for platform_id, platform_specific_id, language_id, name_id, length, str_offset in records:
+        for (
+            platform_id,
+            platform_specific_id,
+            language_id,
+            name_id,
+            length,
+            str_offset,
+        ) in records:
             if name_id == 1:
-                self.font_family = strings[str_offset:str_offset+length].decode("UTF-16BE")
+                self.font_family = decode(strings[str_offset : str_offset + length])
             elif name_id == 2:
-                self.font_subfamily = strings[str_offset:str_offset+length].decode("UTF-16BE")
+                self.font_subfamily = decode(strings[str_offset : str_offset + length])
             elif name_id == 3:
                 # Unique Subfamily Name
                 pass
             elif name_id == 4:
-                self.font_name = strings[str_offset:str_offset+length].decode("UTF-16BE")
+                self.font_name = decode(strings[str_offset : str_offset + length])
