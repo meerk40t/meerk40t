@@ -1,5 +1,4 @@
 import struct
-import time
 from io import BytesIO
 
 ON_CURVE_POINT = 1
@@ -103,11 +102,11 @@ class TrueTypeFont:
             # We are now at the name table.
             table_start = f.tell()
             (
-                format,
+                fmt,
                 count,
                 strings_offset,
             ) = struct.unpack(">HHH", f.read(6))
-            if format == 1:
+            if fmt == 1:
                 (langtag_count,) = struct.unpack(">H", f.read(2))
                 for langtag_record in range(langtag_count):
                     (langtag_len, langtag_offset) = struct.unpack(">HH", f.read(4))
