@@ -1212,6 +1212,18 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.widget_scene.request_refresh()
 
+    def zoom_in(self):
+        matrix = self.widget_scene.widget_root.matrix
+        zoomfactor = 1.5 / 1.0
+        matrix.post_scale(zoomfactor)
+        self.widget_scene.request_refresh()
+
+    def zoom_out(self):
+        matrix = self.widget_scene.widget_root.matrix
+        zoomfactor = 1.0 / 1.5
+        matrix.post_scale(zoomfactor)
+        self.widget_scene.request_refresh()
+
     def fit_scene_to_panel(self):
         bbox = self.context.device.view.source_bbox()
         self.widget_scene.widget_root.focus_viewport_scene(
@@ -1336,6 +1348,25 @@ class SimulationPanel(wx.Panel, Job):
         self.Bind(wx.EVT_MENU, self.toggle_travel_display, id=id6.GetId())
         menu.Check(id6.GetId(), self.display_travel)
 
+        menu.AppendSeparator()
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.zoom_out(),
+            menu.Append(
+                wx.ID_ANY,
+                _("Zoom Out"),
+                _("Make the scene smaller"),
+            ),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.zoom_in(),
+            menu.Append(
+                wx.ID_ANY,
+                _("Zoom In"),
+                _("Make the scene larger"),
+            ),
+        )
         self.Bind(
             wx.EVT_MENU,
             lambda e: self.fit_scene_to_panel(),
@@ -2048,6 +2079,8 @@ class SimReticleWidget(Widget):
 class Simulation(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(706, 755, *args, **kwds)
+        # We do this very early to allow resizing events to do their thing...
+        self.restore_aspect(honor_initial_values=True)
         if len(args) > 3:
             plan_name = args[3]
         else:
@@ -2069,6 +2102,7 @@ class Simulation(MWindow):
             auto_clear=auto_clear,
             optimise_at_start=optimise,
         )
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_hazard.GetBitmap())
         self.SetIcon(_icon)

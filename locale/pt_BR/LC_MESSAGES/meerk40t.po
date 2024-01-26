@@ -2226,7 +2226,7 @@ msgid ""
 "{index}: stroke-width = {stroke_width}/{implied_stroke_width} - {name} - "
 "scaled-stroke"
 msgstr ""
-"{index}: largura-do-traço = stroke_width}/{implied_stroke_width} - {name} - traço-escalado"
+"{index}: largura-do-traço = {stroke_width}/{implied_stroke_width} - {name} - traço-escalado"
 
 #: meerk40t/core/elements.py:4366
 msgid ""

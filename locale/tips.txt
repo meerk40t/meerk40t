@@ -73,3 +73,4 @@ tip=Did you know that you can share your perfect settings for a material with th
 Use the Material Manager to share and retrieve settings from the global MeerK40t Library.
 cmd=window open MatManager
 img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+version=1.0

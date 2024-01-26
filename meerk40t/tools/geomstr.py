@@ -1649,6 +1649,25 @@ class Geomstr:
 
         return cls.wobble(algorithm, outer, radius, interval, speed)
 
+    @classmethod
+    def from_float_segments(cls, float_segments):
+        sa = np.ndarray((len(float_segments), 5, 2))
+        sa[:] = float_segments
+        float_segments = sa[..., 0] + 1j * sa[..., 1]
+        return cls(float_segments)
+
+    def as_float_segments(self):
+        return [
+            (
+                (start.real, start.imag),
+                (c1.real, c1.imag),
+                (info.real, info.imag),
+                (c2.real, c2.imag),
+                (end.real, end.imag),
+            )
+            for start, c1, info, c2, end in self.segments[: self.index]
+        ]
+
     def flag_settings(self, flag=None, start=0, end=None):
         if end is None:
             end = self.index
@@ -4626,7 +4645,8 @@ class Geomstr:
             :return: Points distance to the line.
             """
             line = end - start
-            if (line_length := np.linalg.norm(line)) == 0:
+            line_length = np.linalg.norm(line)
+            if line_length == 0:
                 return np.linalg.norm(points - start, axis=-1)
             if line.size == 2:
                 return abs(np.cross(line, start - points)) / line_length  # 2D case

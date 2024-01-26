@@ -991,6 +991,7 @@ class LivingHingeTool(MWindow):
             wx.ID_ANY,
             context=self.context,
         )
+        self.sizer.Add(self.panel_template, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel_template)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_hinges.GetBitmap())
@@ -998,6 +999,7 @@ class LivingHingeTool(MWindow):
         self.SetTitle(_("Living-Hinges"))
         self.Layout()
         self.Bind(wx.EVT_ACTIVATE, self.window_active, self)
+        self.restore_aspect()
 
     def window_open(self):
         self.panel_template.pane_show()
