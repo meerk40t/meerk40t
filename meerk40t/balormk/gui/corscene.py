@@ -163,11 +163,6 @@ class CorFileWidget(Widget):
             (32000, 45000, 5000, 1000, self, "p12"),
         )
 
-        def close(*args):
-            self.scene.pop_stack()
-            self.scene.request_refresh()
-            self.is_opened = False
-
         self.button_fields = (
             (
                 -3000,
@@ -175,7 +170,7 @@ class CorFileWidget(Widget):
                 3000,
                 3000,
                 icons.icons8_delete.GetBitmap(use_theme=False),
-                close,
+                self.close,
             ),
             (
                 -3000,
@@ -262,6 +257,11 @@ class CorFileWidget(Widget):
                     self.hot %= 12
 
         return RESPONSE_CHAIN
+
+    def close(self):
+        self.scene.pop_stack()
+        self.scene.request_refresh()
+        self.is_opened = False
 
     def rotate_left(self):
         matrix = PMatrix.rotate(tau / 4, 0x7FFF, 0x7FFF)
