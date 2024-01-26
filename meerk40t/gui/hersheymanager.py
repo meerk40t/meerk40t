@@ -9,6 +9,7 @@ from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.extra.hershey import (
     create_linetext_node,
     fonts_registered,
+    get_font_information,
     update_linetext,
     validate_node,
 )
@@ -120,6 +121,7 @@ class LineTextPropertyPanel(wx.Panel):
         self.context = context
         self.node = node
         self.fonts = []
+        self.font_desc = []
 
         main_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Vector-Text"), wx.VERTICAL)
 
@@ -223,7 +225,8 @@ class LineTextPropertyPanel(wx.Panel):
         self.Show()
 
     def load_directory(self, fontdir):
-        self.fonts = []
+        self.fonts.clear()
+        self.font_desc.clear()
         self.list_fonts.Clear()
         if os.path.exists(fontdir):
             self.context.font_directory = fontdir
@@ -234,11 +237,23 @@ class LineTextPropertyPanel(wx.Panel):
                     fn = os.path.basename(p)
                     if fn not in self.fonts:
                         self.fonts.append(fn)
+                        extended = fn
+                        info = get_font_information(p)
+                        if info:
+                            # Tuple with font_family, font_subfamily, font_name
+                            extended = info[2]
+                        self.font_desc.append(extended)
                 for p in glob(os.path.join(fontdir, ext.upper())):
                     fn = os.path.basename(p)
                     if fn not in self.fonts:
                         self.fonts.append(fn)
-        self.list_fonts.SetItems(self.fonts)
+                        extended = fn
+                        info = get_font_information(p)
+                        if info:
+                            # Tuple with font_family, font_subfamily, font_name
+                            extended = info[2]
+                        self.font_desc.append(extended)
+        self.list_fonts.SetItems(self.font_desc)
         # index = -1
         # lookfor = getattr(self.context, "sxh_preferred", "")
 
@@ -326,6 +341,7 @@ class PanelFontSelect(wx.Panel):
 
         self.all_fonts = []
         self.fonts = []
+        self.font_desc = []
         self.font_checks = {}
 
         fontinfo = fonts_registered()
@@ -385,7 +401,7 @@ class PanelFontSelect(wx.Panel):
         self.load_directory(fontdir)
 
     def load_directory(self, fontdir):
-        self.all_fonts = []
+        self.all_fonts.clear
         self.list_fonts.Clear()
         if os.path.exists(fontdir):
             self.context.font_directory = fontdir
@@ -396,17 +412,31 @@ class PanelFontSelect(wx.Panel):
                     fn = os.path.basename(p)
                     if fn not in self.all_fonts:
                         self.all_fonts.append(fn)
+                        extended = fn
+                        info = get_font_information(p)
+                        if info:
+                            # Tuple with font_family, font_subfamily, font_name
+                            extended = info[2]
+                        self.font_desc.append(extended)
+
                 for p in glob(os.path.join(fontdir, ext.upper())):
                     fn = os.path.basename(p)
                     if fn not in self.all_fonts:
                         self.all_fonts.append(fn)
+                        extended = fn
+                        info = get_font_information(p)
+                        if info:
+                            # Tuple with font_family, font_subfamily, font_name
+                            extended = info[2]
+                        self.font_desc.append(extended)
         self.populate_list_box()
         # index = -1
         # lookfor = getattr(self.context, "sxh_preferred", "")
 
     def populate_list_box(self):
-        self.fonts = []
-        for entry in self.all_fonts:
+        self.fonts.clear()
+        font_desc = []
+        for entry, desc in zip(self.all_fonts, self.font_desc):
             parts = os.path.splitext(entry)
             if len(parts) > 1:
                 extension = parts[1][1:].lower()
@@ -415,7 +445,9 @@ class PanelFontSelect(wx.Panel):
                         entry = None
             if entry is not None:
                 self.fonts.append(entry)
-        self.list_fonts.SetItems(self.fonts)
+                font_desc.append(desc)
+
+        self.list_fonts.SetItems(font_desc)
 
     def on_checker(self, extension):
         def handler(event):
@@ -500,6 +532,7 @@ class PanelFontManager(wx.Panel):
         mainsizer = wx.BoxSizer(wx.VERTICAL)
 
         self.fonts = []
+        self.font_desc = []
 
         self.text_info = wx.TextCtrl(
             self,
@@ -592,7 +625,8 @@ class PanelFontManager(wx.Panel):
 
     def on_text_directory(self, event):
         fontdir = self.text_fontdir.GetValue()
-        self.fonts = []
+        self.fonts.clear()
+        self.font_desc.clear()
         self.list_fonts.Clear()
         if os.path.exists(fontdir):
             self.context.font_directory = fontdir
@@ -603,11 +637,23 @@ class PanelFontManager(wx.Panel):
                     fn = os.path.basename(p)
                     if fn not in self.fonts:
                         self.fonts.append(fn)
+                        extended = fn
+                        info = get_font_information(p)
+                        if info:
+                            # Tuple with font_family, font_subfamily, font_name
+                            extended = info[2]
+                        self.font_desc.append(extended)
                 for p in glob(os.path.join(fontdir, ext.upper())):
                     fn = os.path.basename(p)
                     if fn not in self.fonts:
                         self.fonts.append(fn)
-        self.list_fonts.SetItems(self.fonts)
+                        extended = fn
+                        info = get_font_information(p)
+                        if info:
+                            # Tuple with font_family, font_subfamily, font_name
+                            extended = info[2]
+                        self.font_desc.append(extended)
+        self.list_fonts.SetItems(self.font_desc)
         # Let the world know we have fonts
         self.context.signal("icons")
 

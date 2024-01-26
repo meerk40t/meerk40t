@@ -110,6 +110,13 @@ def have_hershey_fonts(context):
             return True
     return False
 
+@lru_cache(maxsize=512)
+def get_font_information(full_file_name):
+    if full_file_name.lower().endswith(".ttf"):
+        info = TrueTypeFont.query_name(full_file_name)
+        return info
+    else:
+        return None
 
 @lru_cache(maxsize=128)
 def cached_fontclass(context, fontname):
