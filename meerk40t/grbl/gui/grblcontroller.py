@@ -202,17 +202,56 @@ class GRBLControllerPanel(wx.Panel):
             self._buffer = ""
         self.data_exchange.AppendText(buffer)
 
+    def set_color_according_to_state(self, stateval, control):
+        def color_distance(c1, c2):
+            from math import sqrt
+            red_mean = int((c1.red + c2.red) / 2.0)
+            r = c1.red - c2.red
+            g = c1.green - c2.green
+            b = c1.blue - c2.blue
+            distance_sq = (
+                (((512 + red_mean) * r * r) >> 8)
+                + (4 * g * g)
+                + (((767 - red_mean) * b * b) >> 8)
+            )
+            return sqrt(distance_sq)
+
+        state_colors = {
+            "uninitialized": wx.Colour("#ffff00"),
+            "disconnected":  wx.Colour("#ffff00"),
+            "connected": wx.Colour("#00ff00"),
+            "STATE_DRIVER_NO_BACKEND": wx.Colour("#dfdf00"),
+            "STATE_UNINITIALIZED": wx.Colour("#ffff00"),
+            "STATE_USB_DISCONNECTED": wx.Colour("#ffff00"),
+            "STATE_USB_SET_DISCONNECTING": wx.Colour("#ffff00"),
+            "STATE_USB_CONNECTED": wx.Colour("#00ff00"),
+            "STATE_CONNECTED": wx.Colour("#00ff00"),
+            "STATE_CONNECTING": wx.Colour("#ffff00"),
+        }
+        if stateval in state_colors:
+            bgcol = state_colors[stateval]
+        else:
+            bgcol = wx.Colour("#66ff66")
+        d1 = color_distance(bgcol, wx.BLACK)
+        d2 = color_distance(bgcol, wx.WHITE)
+        # print(f"state={stateval}, to black={d1}, to_white={d2}")
+        if d1 <= d2:
+            fgcol = wx.WHITE
+        else:
+            fgcol = wx.BLACK
+        control.SetBackgroundColour(bgcol)
+        control.SetForegroundColour(fgcol)
+
     def on_status(self, origin, state):
         self.state = state
+        self.set_color_according_to_state(state, self.button_device_connect)
         if state == "uninitialized" or state == "disconnected":
-            self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(self.button_connect_string("Connect"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(use_theme=False, resize=self.iconsize)
             )
             self.button_device_connect.Enable()
         elif state == "connected":
-            self.button_device_connect.SetBackgroundColour("#00ff00")
             self.button_device_connect.SetLabel(
                 self.button_connect_string("Disconnect")
             )
