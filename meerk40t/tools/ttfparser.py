@@ -80,59 +80,63 @@ class TrueTypeFont:
                 except UnicodeDecodeError:
                     return string
 
-        with open(filename, "rb") as f:
-            (
-                sfnt_version,
-                num_tables,
-                search_range,
-                entry_selector,
-                range_shift,
-            ) = struct.unpack(">LHHHH", f.read(12))
-
-            name_table = False
-            for i in range(num_tables):
-                tag, checksum, offset, length = struct.unpack(">4sLLL", f.read(16))
-                if tag == b"name":
-                    f.seek(offset)
-                    name_table = True
-                    break
-            if not name_table:
-                return None, None, None
-
-            # We are now at the name table.
-            table_start = f.tell()
-            (
-                fmt,
-                count,
-                strings_offset,
-            ) = struct.unpack(">HHH", f.read(6))
-            if fmt == 1:
-                (langtag_count,) = struct.unpack(">H", f.read(2))
-                for langtag_record in range(langtag_count):
-                    (langtag_len, langtag_offset) = struct.unpack(">HH", f.read(4))
-
-            font_family = None
-            font_subfamily = None
-            font_name = None
-            for record_index in range(count):
+        try:
+            with open(filename, "rb") as f:
                 (
-                    platform_id,
-                    platform_specific_id,
-                    language_id,
-                    name_id,
-                    length,
-                    record_offset,
-                ) = struct.unpack(">HHHHHH", f.read(2 * 6))
-                pos = table_start + strings_offset + record_offset
-                if name_id == 1:
-                    font_family = get_string(f, pos, length)
-                elif name_id == 2:
-                    font_family = get_string(f, pos, length)
-                elif name_id == 4:
-                    font_name = get_string(f, pos, length)
-                if font_family and font_subfamily and font_name:
-                    break
-            return font_family, font_subfamily, font_name
+                    sfnt_version,
+                    num_tables,
+                    search_range,
+                    entry_selector,
+                    range_shift,
+                ) = struct.unpack(">LHHHH", f.read(12))
+
+                name_table = False
+                for i in range(num_tables):
+                    tag, checksum, offset, length = struct.unpack(">4sLLL", f.read(16))
+                    if tag == b"name":
+                        f.seek(offset)
+                        name_table = True
+                        break
+                if not name_table:
+                    return None, None, None
+
+                # We are now at the name table.
+                table_start = f.tell()
+                (
+                    fmt,
+                    count,
+                    strings_offset,
+                ) = struct.unpack(">HHH", f.read(6))
+                if fmt == 1:
+                    (langtag_count,) = struct.unpack(">H", f.read(2))
+                    for langtag_record in range(langtag_count):
+                        (langtag_len, langtag_offset) = struct.unpack(">HH", f.read(4))
+
+                font_family = None
+                font_subfamily = None
+                font_name = None
+                for record_index in range(count):
+                    (
+                        platform_id,
+                        platform_specific_id,
+                        language_id,
+                        name_id,
+                        length,
+                        record_offset,
+                    ) = struct.unpack(">HHHHHH", f.read(2 * 6))
+                    pos = table_start + strings_offset + record_offset
+                    if name_id == 1:
+                        font_family = get_string(f, pos, length)
+                    elif name_id == 2:
+                        font_family = get_string(f, pos, length)
+                    elif name_id == 4:
+                        font_name = get_string(f, pos, length)
+                    if font_family and font_subfamily and font_name:
+                        break
+                return font_family, font_subfamily, font_name
+        except (OSError, FileNotFoundError, PermissionError) as e:
+            print (f"Error while reading: {e}")
+            return None
 
     def render(self, path, text, horizontal=True, font_size=12.0, spacing=1.0):
         # Letter spacing
