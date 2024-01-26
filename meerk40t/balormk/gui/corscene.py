@@ -1,3 +1,12 @@
+"""
+The corfile widget is an immediate mode gui swap in for the regular scene. The intent is to allow the user to enter the
+required values to generate a lmc corfile by entering the required distances and allowing the calculation of the
+correction file.
+
+The use of immediate mode gui system is to allow for in-place editing of the values with robust interactions between
+the different widget elements. Such as the highlight and use of different text boxes, which deselects the other entries.
+"""
+
 import bisect
 import time
 from math import tau
@@ -17,16 +26,17 @@ from meerk40t.tools.geomstr import Geomstr
 from meerk40t.tools.pmatrix import PMatrix
 
 
-def cor_file_geometry(width=None):
+def cor_file_geometry(s=0x6666):
     path = Geomstr()
-    path.line(complex(0x17A5, 0x7FFF), complex(0xE859, 0x7FFF))
-    path.line(complex(0x7FFF, 0x17A5), complex(0x7FFF, 0xE859))
+    m = 0x7FFF
+    path.line(complex(0x17A5, m), complex(0xE859, m))
+    path.line(complex(m, 0x17A5), complex(m, 0xE859))
     path.line(complex(0x8A3C, 0x9EB6), complex(0x8A3C, 0x75C2))
 
-    path.line(complex(0x1999, 0x1999), complex(0xE665, 0x1999))
-    path.line(complex(0xE665, 0x1999), complex(0xE665, 0xE665))
-    path.line(complex(0xE665, 0xE665), complex(0x1999, 0xE665))
-    path.line(complex(0x1999, 0xE665), complex(0x1999, 0x1999))
+    path.line(complex(m - s, m - s), complex(m + s, m - s))
+    path.line(complex(m + s, m - s), complex(m + s, m + s))
+    path.line(complex(m + s, m + s), complex(m - s, m + s))
+    path.line(complex(m - s, m + s), complex(m - s, m - s))
 
     path.line(complex(0x1EB7, 0xCCCC), complex(0x3331, 0xCCCC))
     path.line(complex(0x3331, 0xCCCC), complex(0x3331, 0xE146))
@@ -40,26 +50,26 @@ def cor_file_geometry(width=None):
     return path
 
 
-def cor_file_line_associated(width=None):
+def cor_file_line_associated(s=0x6666):
     path = Geomstr()
+    m = 0x7FFF
+    path.line(complex(m - s, m - s), complex(m, m - s), settings=0)
+    path.line(complex(m, m - s), complex(m + s, m - s), settings=1)
 
-    path.line(complex(0x1999, 0x1999), complex(0x7FFF, 0x1999), settings=0)
-    path.line(complex(0x7FFF, 0x1999), complex(0xE665, 0x1999), settings=1)
+    path.line(complex(m + s, m - s), complex(m + s, m), settings=2)
+    path.line(complex(m + s, m), complex(m + s, m + s), settings=3)
 
-    path.line(complex(0xE665, 0x1999), complex(0xE665, 0x7FFF), settings=2)
-    path.line(complex(0xE665, 0x7FFF), complex(0xE665, 0xE665), settings=3)
+    path.line(complex(m + s, m + s), complex(m, m + s), settings=4)
+    path.line(complex(m, m + s), complex(m - s, m + s), settings=5)
 
-    path.line(complex(0xE665, 0xE665), complex(0x7FFF, 0xE665), settings=4)
-    path.line(complex(0x7FFF, 0xE665), complex(0x1999, 0xE665), settings=5)
+    path.line(complex(m - s, m + s), complex(m - s, m), settings=6)
+    path.line(complex(m - s, m), complex(m - s, m - s), settings=7)
 
-    path.line(complex(0x1999, 0xE665), complex(0x1999, 0x7FFF), settings=6)
-    path.line(complex(0x1999, 0x7FFF), complex(0x1999, 0x1999), settings=7)
+    path.line(complex(0x17A5, m), complex(m, m), settings=8)
+    path.line(complex(m, m), complex(0xE859, m), settings=9)
 
-    path.line(complex(0x17A5, 0x7FFF), complex(0x7FFF, 0x7FFF), settings=8)
-    path.line(complex(0x7FFF, 0x7FFF), complex(0xE859, 0x7FFF), settings=9)
-
-    path.line(complex(0x7FFF, 0x17A5), complex(0x7FFF, 0x7FFF), settings=10)
-    path.line(complex(0x7FFF, 0x7FFF), complex(0x7FFF, 0xE859), settings=11)
+    path.line(complex(m, 0x17A5), complex(m, m), settings=10)
+    path.line(complex(m, m), complex(m, 0xE859), settings=11)
     return path
 
 
@@ -110,7 +120,7 @@ class CorFileWidget(Widget):
 
         self.highlight_pen = wx.Pen()
         self.highlight_pen.SetColour(wx.BLUE)
-        self.highlight_pen.SetWidth(500)
+        self.highlight_pen.SetWidth(200)
 
         self.background_brush = wx.Brush()
         self.background_brush.SetColour(wx.WHITE)
@@ -360,9 +370,6 @@ class CorFileWidget(Widget):
                 try:
                     cursor_pos = c_pos[self.cursor]
                 except IndexError:
-                    print("Error.")
-                    print(self.cursor)
-                    print(c_pos)
                     cursor_pos = 0
                 gc.DrawRectangle(x + cursor_pos, y, 40, height)
             gc.DrawText(text, x, y)
