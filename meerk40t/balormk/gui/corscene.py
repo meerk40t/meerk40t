@@ -259,6 +259,7 @@ class CorFileWidget(Widget):
         for textfield in self.text_fields:
             index += 1
             x, y, width, height, obj, attr = textfield
+
             if self.hot == index:
                 gc.SetBrush(self.hot_brush)
             elif self.active == index:
@@ -266,15 +267,6 @@ class CorFileWidget(Widget):
             else:
                 gc.SetBrush(self.background_brush)
             gc.DrawRectangle(x, y, width, height)
-            if self._contains(self.mouse_location, x, y, width, height):
-                self.scene.cursor("text")
-                was_hovered = True
-                self.active = index
-                if self.was_clicked:
-                    self.hot = index
-                    self.was_clicked = False
-            if obj is None or not hasattr(obj, attr):
-                continue
 
             text = getattr(obj, attr)
             if text is None:
@@ -285,14 +277,26 @@ class CorFileWidget(Widget):
             except AttributeError:
                 self.font.SetPointSize(int(text_size))
             gc.SetFont(self.font, self.font_color)
+
+            if self._contains(self.mouse_location, x, y, width, height):
+                self.scene.cursor("text")
+                was_hovered = True
+                self.active = index
+                if self.was_clicked:
+                    c_pos = gc.GetPartialTextExtents(text)
+                    self.cursor = bisect.bisect(c_pos, (self.mouse_location[0] - x))
+                    self.hot = index
+                    self.was_clicked = False
+            if obj is None or not hasattr(obj, attr):
+                continue
+
             if self.hot == index and int(time.time() * 2) % 2 == 0:
                 if self.cursor > len(text) or self.cursor == -1:
                     self.cursor = len(text)
-                c_pos = gc.GetPartialTextExtents(text[:self.cursor])
-                print(c_pos)
-                print(self.cursor)
-                print(text[:self.cursor])
-                gc.DrawRectangle(x + c_pos[-1], y, 40, height)
+                c_pos = gc.GetPartialTextExtents(text)
+                c_pos.insert(0, 0)
+                gc.SetBrush(wx.BLACK_BRUSH)
+                gc.DrawRectangle(x + c_pos[self.cursor], y, 40, height)
             gc.DrawText(text, x, y)
         if not was_hovered:
             self.scene.cursor("arrow")
