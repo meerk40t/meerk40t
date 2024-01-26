@@ -48,6 +48,10 @@ class TrueTypeFont:
         self.metric_data_format = None
         self.number_of_long_hor_metrics = None
 
+        self.font_family = None
+        self.font_subfamily = None
+        self.font_name = None
+
         self._character_map = {}
         self._glyph_offsets = None
         self.horizontal_metrics = None
@@ -57,6 +61,7 @@ class TrueTypeFont:
         self.parse_hmtx()
         self.parse_loca()
         self.parse_cmap()
+        self.parse_name()
         self.glyphs = list(self.parse_glyf())
 
     def render(self, path, text, horizontal=True, font_size=12.0, spacing=1.0):
@@ -446,3 +451,24 @@ class TrueTypeFont:
             else:
                 pass
             yield value
+
+    def parse_name(self):
+        data = self._raw_tables[b"name"]
+        b = BytesIO(data)
+        (
+            self.format,
+            count,
+            offset,
+        ) = struct.unpack(">HHH", b.read(6))
+        records = [struct.unpack(">HHHHHH", b.read(2 * 6)) for _ in range(count)]
+        strings = b.read()
+        for platform_id, platform_specific_id, language_id, name_id, length, str_offset in records:
+            if name_id == 1:
+                self.font_family = strings[str_offset:str_offset+length].decode("UTF-16BE")
+            elif name_id == 2:
+                self.font_subfamily = strings[str_offset:str_offset+length].decode("UTF-16BE")
+            elif name_id == 3:
+                # Unique Subfamily Name
+                pass
+            elif name_id == 4:
+                self.font_name = strings[str_offset:str_offset+length].decode("UTF-16BE")
