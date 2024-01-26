@@ -103,6 +103,7 @@ class CorFileWidget(Widget):
 
         self.mouse_location = None
         self.was_clicked = None
+        self.typed = ""
 
         self.active = None
         self.hot = None
@@ -218,6 +219,16 @@ class CorFileWidget(Widget):
             self.mouse_location = space_pos
         if event_type == "leftdown":
             self.was_clicked = True
+        if event_type == "key_up":
+            key = kwargs.get("keycode")
+            if key:
+                self.typed += key
+            else:
+                modifier = kwargs.get("modifiers")
+                if modifier == "right":
+                    self.cursor += 1
+                elif modifier == "left":
+                    self.cursor -= 1
         return RESPONSE_CHAIN
 
     def rotate_left(self):
@@ -261,11 +272,11 @@ class CorFileWidget(Widget):
             x, y, width, height, obj, attr = textfield
 
             if self.hot == index:
-                gc.SetBrush(self.hot_brush)
+                gc.SetBrush(self.background_brush)
             elif self.active == index:
                 gc.SetBrush(self.active_brush)
             else:
-                gc.SetBrush(self.background_brush)
+                gc.SetBrush(self.hot_brush)
             gc.DrawRectangle(x, y, width, height)
 
             text = getattr(obj, attr)
@@ -291,12 +302,32 @@ class CorFileWidget(Widget):
                 continue
 
             if self.hot == index and int(time.time() * 2) % 2 == 0:
+                if self.typed:
+                    for char in self.typed:
+                        if char == "\x00":
+                            self.cursor = len(text)
+                        elif char == "\x08":
+                            if self.cursor != 0:
+                                text = text[: self.cursor - 1] + text[self.cursor :]
+                                self.cursor -= 1
+                        else:
+                            text = text[: self.cursor] + char + text[self.cursor :]
+                            self.cursor += 1
+                        setattr(obj, attr, text)
+                    self.typed = ""
                 if self.cursor > len(text) or self.cursor == -1:
                     self.cursor = len(text)
                 c_pos = gc.GetPartialTextExtents(text)
                 c_pos.insert(0, 0)
                 gc.SetBrush(wx.BLACK_BRUSH)
-                gc.DrawRectangle(x + c_pos[self.cursor], y, 40, height)
+                try:
+                    cursor_pos = c_pos[self.cursor]
+                except IndexError:
+                    print("Error.")
+                    print(self.cursor)
+                    print(c_pos)
+                    cursor_pos = 0
+                gc.DrawRectangle(x + cursor_pos, y, 40, height)
             gc.DrawText(text, x, y)
         if not was_hovered:
             self.scene.cursor("arrow")
