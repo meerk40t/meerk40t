@@ -146,6 +146,8 @@ class CorFileWidget(Widget):
         self.cursor = -1
         self.is_opened = True
         dev = scene.context.device
+        self.geometry_size = 0x6666
+        self._geometry_size = self.geometry_size
         self.text_fields = (
             (21500, 5200, 5000, 1000, dev, "cf_1"),
             (45000, 5200, 5000, 1000, dev, "cf_2"),
@@ -159,6 +161,7 @@ class CorFileWidget(Widget):
             (45000, 32000, 5000, 1000, dev, "cf_10"),
             (32000, 20000, 5000, 1000, dev, "cf_11"),
             (32000, 45000, 5000, 1000, dev, "cf_12"),
+            (0xFFFF - 5000, -2000, 5000, 1000, self, "geometry_size"),
         )
 
         self.button_fields = (
@@ -201,6 +204,22 @@ class CorFileWidget(Widget):
                 3000,
                 icons.icons8_flip_vertical.GetBitmap(use_theme=False),
                 self.vflip,
+            ),
+            (
+                0xFFFF - 5000,
+                -6000,
+                3000,
+                3000,
+                icons.icons8_up.GetBitmap(use_theme=False),
+                self.geometry_size_increase,
+            ),
+            (
+                0xFFFF - 2000,
+                -6000,
+                3000,
+                3000,
+                icons.icons8_down.GetBitmap(use_theme=False),
+                self.geometry_size_decrease,
             ),
         )
         self.scene.animate(self)
@@ -277,12 +296,22 @@ class CorFileWidget(Widget):
         matrix = PMatrix.scale(1, -1, 0x7FFF, 0x7FFF)
         self.geometry.transform3x3(matrix)
 
+    def geometry_size_increase(self):
+        self.geometry_size += 100
+
+    def geometry_size_decrease(self):
+        self.geometry_size -= 100
+
     def process_draw(self, gc: wx.GraphicsContext):
         """
         Draws the background on the scene.
         """
         unit_width = 0xFFFF
         unit_height = 0xFFFF
+        if self._geometry_size != self.geometry_size:
+            self._geometry_size = self.geometry_size
+            self.geometry = cor_file_geometry(self.geometry_size)
+            self.assoc = cor_file_line_associated(self.geometry_size)
         gc.SetBrush(wx.WHITE_BRUSH)
         gc.DrawRectangle(0, 0, unit_width, unit_height)
         gc.SetPen(wx.BLACK_PEN)
