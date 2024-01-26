@@ -20,6 +20,7 @@ from .icons import (
     icons8_console,
     icons8_detective,
     icons8_light_on,
+    icons8_manager,
 )
 from .mwindow import MWindow
 from .wxutils import dip_size
@@ -174,7 +175,12 @@ class TipPanel(wx.Panel):
                 my_tip[2], self._current_tip, self.context.tip_access_consent
             )
         else:
-            self.set_tip_image("", self._current_tip, self.context.tip_access_consent)
+            # Let's use the default image...
+            self.set_tip_image(
+                icons8_light_on.GetBitmap(resize=200), self._current_tip, self.context.tip_access_consent
+            )
+
+            # self.set_tip_image("", self._current_tip, self.context.tip_access_consent)
         self.label_position.SetLabel(
             _("Tip {idx}/{maxidx}").format(
                 idx=self._current_tip + 1, maxidx=len(self.tips)
@@ -325,11 +331,11 @@ class TipPanel(wx.Panel):
                 _(
                     "MeerK40t supports more than 'just' a K40 laser.\n"
                     + "You can add more devices in the Device-Manager.\n"
-                    + "And you can even add multiple instances for the same physical device,\n"
+                    + "And you can even add multiple instances for the same physical device, "
                     + "where you can have different configuration settings (eg regular and rotary)."
                 ),
                 "window open DeviceManager",
-                "",
+                icons8_manager.GetBitmap(resize=200),
             ),
         )
         self.tips.append(
