@@ -128,13 +128,9 @@ class TrueTypeFont:
                 if name_id == 1:
                     font_family = get_string(f, pos, length)
                 elif name_id == 2:
-                    font_family = get_string(
-                        f, pos, length
-                    )
+                    font_family = get_string(f, pos, length)
                 elif name_id == 4:
-                    font_name = get_string(
-                        f, pos, length
-                    )
+                    font_name = get_string(f, pos, length)
                 if font_family and font_subfamily and font_name:
                     break
             return font_family, font_subfamily, font_name
