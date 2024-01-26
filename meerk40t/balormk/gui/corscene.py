@@ -1,3 +1,4 @@
+import bisect
 import time
 from math import tau
 
