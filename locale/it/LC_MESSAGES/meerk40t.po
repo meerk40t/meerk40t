@@ -18173,11 +18173,11 @@ msgstr ""
 "È sufficiente spostare il mouse sull'elemento in questione e premere il tasto F11..."
 
 #: ./meerk40t\gui\tips.py:330
-msgid "MeerK40t supports more than 'just' a K40 laser.\nYou can add more devices in the Device-Manager.\nAnd you can even add multiple instances for the same physical device,\nwhere you can have different configuration settings (eg regular and rotary)."
+msgid "MeerK40t supports more than 'just' a K40 laser.\nYou can add more devices in the Device-Manager.\nAnd you can even add multiple instances for the same physical device, where you can have different configuration settings (eg regular and rotary)."
 msgstr ""
 "MeerK40t supporta più di un 'solo' laser K40.\n"
 "È possibile aggiungere altri dispositivi nella gestione dispositivi.\n"
-"E si possono anche creare più istanze dello stesso dispositivo,\n"
+"E si possono anche creare più istanze dello stesso dispositivo, "
 "in cui vengono utilizzate configurazioni diverse"
  "(ad esempio per il funzionamento dell'asse normale e di quello rotante)."
 

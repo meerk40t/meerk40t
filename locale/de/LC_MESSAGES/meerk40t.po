@@ -17909,12 +17909,12 @@ msgstr ""
 "Einfach mit der Maus über das relevante Element fahren und die F11-Taste drücken..."
 
 #: ./meerk40t\gui\tips.py:330
-msgid "MeerK40t supports more than 'just' a K40 laser.\nYou can add more devices in the Device-Manager.\nAnd you can even add multiple instances for the same physical device,\nwhere you can have different configuration settings (eg regular and rotary)."
+msgid "MeerK40t supports more than 'just' a K40 laser.\nYou can add more devices in the Device-Manager.\nAnd you can even add multiple instances for the same physical device, where you can have different configuration settings (eg regular and rotary)."
 msgstr ""
 "MeerK40t unterstützt mehr als 'nur' einen K40-Laser.\n"
 "Man kann weitere Geräte im Geräte-Manager hinzufügen.\n"
-"Und man kann auch weitere Instanzen desselben Geräts anlegen,\n"
-"bei denen unterschiedliche Konfigurationen verwendet werden\n"
+"Und man kann auch weitere Instanzen desselben Geräts anlegen, "
+"bei denen unterschiedliche Konfigurationen verwendet werden "
  "(etwa für normalen und Drehachsen-Betrieb)."
 
 #: ./meerk40t\gui\tips.py:340
