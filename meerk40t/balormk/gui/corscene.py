@@ -145,32 +145,20 @@ class CorFileWidget(Widget):
 
         self.cursor = -1
         self.is_opened = True
-
-        self.p1 = "50.0"
-        self.p2 = "50.0"
-        self.p3 = "50.0"
-        self.p4 = "50.0"
-        self.p5 = "50.0"
-        self.p6 = "50.0"
-        self.p7 = "50.0"
-        self.p8 = "50.0"
-        self.p9 = "50.0"
-        self.p10 = "50.0"
-        self.p11 = "50.0"
-        self.p12 = "50.0"
+        dev = scene.context.device
         self.text_fields = (
-            (21500, 5200, 5000, 1000, self, "p1"),
-            (45000, 5200, 5000, 1000, self, "p2"),
-            (60000, 20000, 5000, 1000, self, "p3"),
-            (60000, 45000, 5000, 1000, self, "p4"),
-            (45000, 60000, 5000, 1000, self, "p5"),
-            (20000, 60000, 5000, 1000, self, "p6"),
-            (5200, 45000, 5000, 1000, self, "p7"),
-            (5200, 20000, 5000, 1000, self, "p8"),
-            (20000, 32000, 5000, 1000, self, "p9"),
-            (45000, 32000, 5000, 1000, self, "p10"),
-            (32000, 20000, 5000, 1000, self, "p11"),
-            (32000, 45000, 5000, 1000, self, "p12"),
+            (21500, 5200, 5000, 1000, dev, "cf_1"),
+            (45000, 5200, 5000, 1000, dev, "cf_2"),
+            (60000, 20000, 5000, 1000, dev, "cf_3"),
+            (60000, 45000, 5000, 1000, dev, "cf_4"),
+            (45000, 60000, 5000, 1000, dev, "cf_5"),
+            (20000, 60000, 5000, 1000, dev, "cf_6"),
+            (5200, 45000, 5000, 1000, dev, "cf_7"),
+            (5200, 20000, 5000, 1000, dev, "cf_8"),
+            (20000, 32000, 5000, 1000, dev, "cf_9"),
+            (45000, 32000, 5000, 1000, dev, "cf_10"),
+            (32000, 20000, 5000, 1000, dev, "cf_11"),
+            (32000, 45000, 5000, 1000, dev, "cf_12"),
         )
 
         self.button_fields = (
@@ -326,7 +314,7 @@ class CorFileWidget(Widget):
                 gc.SetBrush(self.hot_brush)
             gc.DrawRectangle(x, y, width, height)
 
-            text = getattr(obj, attr)
+            text = str(getattr(obj, attr))
             if text is None:
                 text = ""
             text_size = height * 3.0 / 4.0  # px to pt conversion
@@ -351,16 +339,21 @@ class CorFileWidget(Widget):
             if self.hot == index and int(time.time() * 2) % 2 == 0:
                 if self.typed:
                     for char in self.typed:
+                        new_cursor = self.cursor
                         if char == "\x00":
-                            self.cursor = len(text)
+                            new_cursor = len(text)
                         elif char == "\x08":
                             if self.cursor != 0:
                                 text = text[: self.cursor - 1] + text[self.cursor :]
-                                self.cursor -= 1
+                                new_cursor -= 1
                         else:
                             text = text[: self.cursor] + char + text[self.cursor :]
-                            self.cursor += 1
-                        setattr(obj, attr, text)
+                            new_cursor += 1
+                        try:
+                            setattr(obj, attr, float(text))
+                        except ValueError:
+                            continue
+                        self.cursor = new_cursor
                     self.typed = ""
                 if self.cursor > len(text) or self.cursor == -1:
                     self.cursor = len(text)
