@@ -669,6 +669,94 @@ class BalorDevice(Service, Status):
         ]
         self.register_choices("balor-extra", choices)
 
+        choices = [
+            {
+                "attr": "cf_1",
+                "object": self,
+                "default": "50",
+                "type": float,
+                "label": _("Corfile distance {index}").format(index=1),
+            },
+            {
+                "attr": "cf_2",
+                "object": self,
+                "default": "50",
+                "type": float,
+                "label": _("Corfile distance {index}").format(index=2),
+            },
+            {
+                "attr": "cf_3",
+                "object": self,
+                "default": "50",
+                "type": float,
+                "label": _("Corfile distance {index}").format(index=3),
+            },
+            {
+                "attr": "cf_4",
+                "object": self,
+                "default": "50",
+                "type": float,
+                "label": _("Corfile distance {index}").format(index=4),
+            },
+            {
+                "attr": "cf_5",
+                "object": self,
+                "default": "50",
+                "type": float,
+                "label": _("Corfile distance {index}").format(index=5),
+            },
+            {
+                "attr": "cf_6",
+                "object": self,
+                "default": "50",
+                "type": float,
+                "label": _("Corfile distance {index}").format(index=6),
+            },
+            {
+                "attr": "cf_7",
+                "object": self,
+                "default": "50",
+                "type": float,
+                "label": _("Corfile distance {index}").format(index=7),
+            },
+            {
+                "attr": "cf_8",
+                "object": self,
+                "default": "50",
+                "type": float,
+                "label": _("Corfile distance {index}").format(index=8),
+            },
+            {
+                "attr": "cf_9",
+                "object": self,
+                "default": "50",
+                "type": float,
+                "label": _("Corfile distance {index}").format(index=9),
+            },
+            {
+                "attr": "cf_10",
+                "object": self,
+                "default": "50",
+                "type": float,
+                "label": _("Corfile distance {index}").format(index=10),
+            },
+            {
+                "attr": "cf_11",
+                "object": self,
+                "default": "50",
+                "type": float,
+                "label": _("Corfile distance {index}").format(index=11),
+            },
+            {
+                "attr": "cf_12",
+                "object": self,
+                "default": "50",
+                "type": float,
+                "label": _("Corfile distance {index}").format(index=12),
+            },
+        ]
+        self.register_choices("balor-corfile", choices)
+
         self.state = 0
 
         unit_size = float(Length(self.lens_size))
