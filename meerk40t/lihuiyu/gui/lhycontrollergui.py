@@ -80,6 +80,10 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_show_usb_log, self.checkbox_show_usb_log
         )
+        # # Test the color combos...
+        # self.Bind(wx.EVT_RIGHT_DOWN, self.debug_colors)
+        # self._debug_counter = 0
+
         self.last_control_state = None
         self.retries = 0
         self._buffer = ""
@@ -87,6 +91,24 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.set_widgets()
         self.SetupScrolling()
         self._channel_watching = None
+
+    # def debug_colors(self, event):
+    #     states = (
+    #         "STATE_CONNECTION_FAILED",
+    #         "STATE_FAILED_RETRYING",
+    #         "STATE_FAILED_SUSPENDED",
+    #         "STATE_DRIVER_NO_BACKEND",
+    #         "STATE_UNINITIALIZED",
+    #         "STATE_USB_DISCONNECTED",
+    #         "STATE_USB_SET_DISCONNECTING",
+    #         "STATE_USB_CONNECTED",
+    #         "STATE_CONNECTED",
+    #         "STATE_CONNECTING",
+    #     )
+    #     if self._debug_counter >= len(states):
+    #         self._debug_counter = 0
+    #     self.context.signal("pipe;state", states[self._debug_counter])
+    #     self._debug_counter += 1
 
     def __set_properties(self):
         self.SetFont(
@@ -363,6 +385,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
     def on_connection_state_change(self, origin, state):
         if origin != self.context._path:
             return
+        self.button_device_connect.SetForegroundColour(wx.BLACK)
         if state == "STATE_CONNECTION_FAILED":
             self.button_device_connect.SetBackgroundColour("#dfdf00")
             origin, usb_status = self.context.last_signal("pipe;usb_status")
@@ -375,6 +398,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             self.button_device_connect.Enable()
         elif state == "STATE_FAILED_RETRYING":
             self.button_device_connect.SetBackgroundColour("#df0000")
+            self.button_device_connect.SetForegroundColour(wx.WHITE)
             origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("Retrying..."))
             self.button_device_connect.SetBitmap(
@@ -385,6 +409,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             self.button_device_connect.Enable()
         elif state == "STATE_FAILED_SUSPENDED":
             self.button_device_connect.SetBackgroundColour("#0000df")
+            self.button_device_connect.SetForegroundColour(wx.WHITE)
             origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("Suspended Retrying"))
             self.button_device_connect.SetBitmap(
