@@ -213,8 +213,6 @@ class CorFileWidget(Widget):
 
         Doubleclick in the grid loads a menu to remove the background.
         """
-        print(event_type)
-        print(kwargs)
         if event_type in ("hover", "move"):
             self.mouse_location = space_pos
         if event_type == "leftdown":
@@ -229,6 +227,15 @@ class CorFileWidget(Widget):
                     self.cursor += 1
                 elif modifier == "left":
                     self.cursor -= 1
+                elif modifier == "tab":
+                    self.cursor = -1
+                    self.hot += 1
+                    self.hot %= 12
+                elif modifier == "shift+tab":
+                    self.cursor = -1
+                    self.hot += 11
+                    self.hot %= 12
+
         return RESPONSE_CHAIN
 
     def rotate_left(self):
