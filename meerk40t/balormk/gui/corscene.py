@@ -125,6 +125,13 @@ class CorFileWidget(Widget):
         self.background_brush = wx.Brush()
         self.background_brush.SetColour(wx.WHITE)
 
+        self.hot_text_brush = wx.Brush()
+        self.hot_text_brush.SetColour(wx.Colour(0xFF, 0xFF, 0xAA))
+        self.active_text_brush = wx.Brush()
+        self.active_text_brush.SetColour(wx.Colour(0xAA, 0xFF, 0xFF))
+        self.default_text_brush = wx.Brush()
+        self.default_text_brush.SetColour(wx.WHITE)
+
         self.active_brush = wx.LIGHT_GREY_BRUSH
 
         self.hot_brush = wx.MEDIUM_GREY_BRUSH
@@ -221,6 +228,14 @@ class CorFileWidget(Widget):
                 icons.icons8_down.GetBitmap(use_theme=False),
                 self.geometry_size_decrease,
             ),
+            (
+                0xFFFF,
+                0,
+                3000,
+                3000,
+                icons.icons8_save.GetBitmap(use_theme=False),
+                self.corfile_save,
+            ),
         )
         self.scene.animate(self)
 
@@ -308,6 +323,9 @@ class CorFileWidget(Widget):
         matrix = PMatrix.scale(1, -1, 0x7FFF, 0x7FFF)
         self.geometry.transform3x3(matrix)
 
+    def corfile_save(self):
+        pass
+
     def geometry_size_increase(self):
         self.geometry_size += 100
 
@@ -333,11 +351,11 @@ class CorFileWidget(Widget):
 
             # Set brush based on state.
             if self.hot == index:
-                gc.SetBrush(self.background_brush)
+                gc.SetBrush(self.hot_text_brush)
             elif self.active == index:
-                gc.SetBrush(self.active_brush)
+                gc.SetBrush(self.active_text_brush)
             else:
-                gc.SetBrush(self.hot_brush)
+                gc.SetBrush(self.default_text_brush)
 
             # Draw text box.
             gc.DrawRectangle(x, y, width, height)
