@@ -16,7 +16,7 @@ import wx
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
-    HITCHAIN_DELEGATE_AND_HIT,
+    HITCHAIN_HIT,
 )
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui import icons
@@ -238,7 +238,7 @@ class CorFileWidget(Widget):
         return True
 
     def hit(self):
-        return HITCHAIN_DELEGATE_AND_HIT
+        return HITCHAIN_HIT
 
     def tick(self):
         self.scene.request_refresh()
