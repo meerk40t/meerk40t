@@ -1583,16 +1583,17 @@ def init_tree(kernel):
                 else:
                     material_title = material.replace("_", " ")
         name = ""
-        if material_name:
-            name += f"[{material_name}] "
+        # if material_name:
+        #     name += f"[{material_name}] "
         name += material_title
-        if material_thickness:
-            name += f" {material_thickness}"
+        # if material_thickness:
+        #     name += f" {material_thickness}"
         return name
 
     def material_menus():
         was_previous = False
         entries = list()
+        self.op_data.read_configuration()
         for material in self.op_data.section_set():
             if material == "previous":
                 was_previous = True
@@ -1611,12 +1612,11 @@ def init_tree(kernel):
                         material_title = f"Default for {material[9:]}"
                     else:
                         material_title = material.replace("_", " ")
-            submenu = ""
+            submenu = _("Materials")
             if material_name:
                 submenu += f"{'|' if submenu else ''}{material_name}"
             if material_thickness:
                 submenu += f"{'|' if submenu else ''}{material_thickness}"
-
             entries.append((material_name, material_thickness, material_title, submenu))
         # Let's sort them
         entries.sort(
@@ -1628,7 +1628,7 @@ def init_tree(kernel):
         )
         submenus = [e[3] for e in entries]
         if was_previous:
-            submenus.insert(0, "")
+            submenus.insert(0, _("Materials"))
         return submenus
 
     def material_ids():
@@ -1670,8 +1670,8 @@ def init_tree(kernel):
 
     @tree_separator_after()
     @tree_submenu(_("Load"))
-    @tree_values("opname", values=material_ids())
-    @tree_submenu_list(_("Materials"), material_menus())
+    @tree_values("opname", values=material_ids)
+    @tree_submenu_list(material_menus)
     @tree_calc("material", lambda opname: material_name(opname))
     @tree_operation("{material}", node_type="branch ops", help="")
     def load_ops(node, opname, **kwargs):
