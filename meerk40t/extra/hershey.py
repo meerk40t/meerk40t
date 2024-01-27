@@ -127,7 +127,7 @@ class Meerk40tFonts:
         self._available_fonts = None
 
     def have_hershey_fonts(self):
-        p = self.available_fonts()
+        p = self.available_fonts(sort=False)
         return len(p) > 0
 
     @lru_cache(maxsize=512)
@@ -140,7 +140,7 @@ class Meerk40tFonts:
 
     def _get_full_info(self, short):
         s_lower = short.lower()
-        p = self.available_fonts()
+        p = self.available_fonts(sort=False)
         for info in p:
             # We don't care about capitalisation
             f_lower = info[0].lower()
@@ -344,7 +344,7 @@ class Meerk40tFonts:
                     break
             if font == "":
                 # You know, I take anything at this point...
-                if self.available_fonts():
+                if self.available_fonts(sort=False):
                     font = self._available_fonts[0]
                     # print (f"Fallback to first file found: {font}")
                     self.context.last_font = font
@@ -458,7 +458,7 @@ class Meerk40tFonts:
             bitmap.LoadFile(bmpfile, wx.BITMAP_TYPE_PNG)
         return bitmap
 
-    def available_fonts(self):
+    def available_fonts(self, sort=True):
         if self._available_fonts is not None:
             return self._available_fonts
 
@@ -516,6 +516,8 @@ class Meerk40tFonts:
             #     print(f"{key}: {value} - {fontpath}")
 
         t1 = perf_counter()
+        if sort:
+            self._available_fonts.sort(key=lambda e: e[1])
         # print (f"Ready, took {t1 - t0:.2f}sec")
         return self._available_fonts
 
