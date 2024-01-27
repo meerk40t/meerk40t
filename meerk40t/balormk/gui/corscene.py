@@ -315,36 +315,58 @@ class CorFileWidget(Widget):
         self.geometry_size -= 100
 
     def process_textboxes(self, gc: wx.GraphicsContext, was_hovered: bool, index: int):
+        """
+        Process textboxes founds in self.text_fields
+
+        @param gc:
+        @param was_hovered:
+        @param index:
+        @return:
+        """
+        if not self.text_fields:
+            return was_hovered, index
         gc.SetBrush(self.background_brush)
         gc.SetPen(self.outline_pen)
         for textfield in self.text_fields:
             index += 1
             x, y, width, height, obj, attr = textfield
 
+            # Set brush based on state.
             if self.hot == index:
                 gc.SetBrush(self.background_brush)
             elif self.active == index:
                 gc.SetBrush(self.active_brush)
             else:
                 gc.SetBrush(self.hot_brush)
+
+            # Draw text box.
             gc.DrawRectangle(x, y, width, height)
 
+            # Get the text from obj.attr
             text = str(getattr(obj, attr))
             if text is None:
                 text = ""
+
+            # Set text size by textfield height.
             text_size = height * 3.0 / 4.0  # px to pt conversion
             try:
                 self.font.SetFractionalPointSize(text_size)
             except AttributeError:
                 self.font.SetPointSize(int(text_size))
+
+            # Set the font.
             gc.SetFont(self.font, self.font_color)
 
             if self._contains(self.mouse_location, x, y, width, height):
+                # Is this textfield found at the last mouse location.
                 self.scene.cursor("text")
                 was_hovered = True
                 self.active = index
                 if self.was_clicked:
+                    # Are we processing a click?
                     c_pos = gc.GetPartialTextExtents(text)
+
+                    # Bisect the cursor location.
                     self.cursor = bisect.bisect(c_pos, (self.mouse_location[0] - x))
                     self.hot = index
                     self.was_clicked = False
@@ -352,53 +374,87 @@ class CorFileWidget(Widget):
                 continue
 
             if self.hot == index and int(time.time() * 2) % 2 == 0:
+                # Are we drawing a hot text box?
                 if self.typed:
+                    # Were typed events processed?
                     for char in self.typed:
                         new_cursor = self.cursor
                         if char == "\x00":
+                            # This is a end or a home button.
                             new_cursor = len(text)
                         elif char == "\x08":
+                            # This is a backspace.
                             if self.cursor != 0:
                                 text = text[: self.cursor - 1] + text[self.cursor :]
                                 new_cursor -= 1
                         else:
+                            # This is normal text.
                             text = text[: self.cursor] + char + text[self.cursor :]
                             new_cursor += 1
+
                         try:
+                            # Set the obj.attr value as a float()
                             setattr(obj, attr, float(text))
                         except ValueError:
                             continue
+                        # If we correctly set the value, update the cursor location.
                         self.cursor = new_cursor
+                    # Unset the typed data.
                     self.typed = ""
                 if self.cursor > len(text) or self.cursor == -1:
+                    # If cursor is new, or beyond, place it at the end.
                     self.cursor = len(text)
+
+                # Get the x-offsets of the individual letters.
                 c_pos = gc.GetPartialTextExtents(text)
                 c_pos.insert(0, 0)
+
+                # Draw the cursor, located at the cursor_position.
                 gc.SetBrush(wx.BLACK_BRUSH)
                 try:
                     cursor_pos = c_pos[self.cursor]
                 except IndexError:
                     cursor_pos = 0
                 gc.DrawRectangle(x + cursor_pos, y, 40, height)
+
+            # Draw the text inside the textbox.
             gc.DrawText(text, x, y)
+
         if not was_hovered:
+            # If nothing was hovered, restore the cursor to the arrow-type.
             self.scene.cursor("arrow")
         return was_hovered, index
 
     def process_buttons(self, gc: wx.GraphicsContext, was_hovered: bool, index: int):
+        """
+        Draw buttons registered in `self.button_fields`
+
+        @param gc:
+        @param was_hovered:
+        @param index:
+        @return:
+        """
+        if not self.button_fields:
+            return was_hovered, index
         gc.SetBrush(self.background_brush)
         gc.SetPen(self.outline_pen)
         for i, button in enumerate(self.button_fields):
             index += 1
             x, y, width, height, bmp, click = button
             if self.active == index:
+                # If this is an active button, draw a white background.
                 gc.SetBrush(self.background_brush)
                 gc.DrawRectangle(x, y, width, height)
+
+            # Draw Icon.
             gc.DrawBitmap(bmp, x, y, width, height)
+
             if self._contains(self.mouse_location, x, y, width, height):
+                # If mouse contained this point, set this as active.
                 self.active = index
                 was_hovered = True
                 if self.was_clicked:
+                    # If we are processing a click value, call the `click()` function.
                     self.hot = index
                     self.was_clicked = False
                     click()
@@ -411,29 +467,42 @@ class CorFileWidget(Widget):
         unit_width = 0xFFFF
         unit_height = 0xFFFF
         if self._geometry_size != self.geometry_size:
+            # Update the geometry if the size has changed.
             self._geometry_size = self.geometry_size
             self.geometry = cor_file_geometry(self.geometry_size)
             self.assoc = cor_file_line_associated(self.geometry_size)
+        # Draw the background.
         gc.SetBrush(wx.WHITE_BRUSH)
         gc.DrawRectangle(0, 0, unit_width, unit_height)
+
+        # Draw the geometry
         gc.SetPen(wx.BLACK_PEN)
-        path = self.render.make_geomstr(gc, self.geometry)
-        gc.DrawPath(path)
+        wx_path_geom = self.render.make_geomstr(gc, self.geometry)
+        gc.DrawPath(wx_path_geom)
 
         if self.hot is not None and 0 <= self.hot < 12:
+            # If a text box is hot, we draw the assoc line.
             gc.SetPen(self.highlight_pen)
-            p2 = self.render.make_geomstr(gc, self.assoc, settings=self.hot)
-            gc.DrawPath(p2)
+            wx_path_assoc = self.render.make_geomstr(gc, self.assoc, settings=self.hot)
+            gc.DrawPath(wx_path_assoc)
 
         if self.mouse_location:
+            # Draw rectangle around mouse location.
             gc.DrawRectangle(
                 self.mouse_location[0] - 500, self.mouse_location[1] - 500, 1000, 1000
             )
 
+        # Draw text boxes.
         was_hovered, index = self.process_textboxes(gc, False, -1)
+
+        # Draw buttons.
         was_hovered, index = self.process_buttons(gc, was_hovered, index)
+
         if not was_hovered:
+            # Nothing was hovered, there is no active.
             self.active = None
+
+        # If click wasn't processed, it clicked nothing.
         self.was_clicked = False
 
     def signal(self, signal, *args, **kwargs):
