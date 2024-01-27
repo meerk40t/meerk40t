@@ -239,7 +239,7 @@ class PanelFontSelect(wx.Panel):
         self.fonts = []
         self.font_checks = {}
 
-        fontinfo = self.context.fonts.fonts_registered()
+        fontinfo = self.context.fonts.fonts_registered
         sizer_checker = wx.BoxSizer(wx.HORIZONTAL)
         for extension in fontinfo:
             info = fontinfo[extension]
@@ -449,6 +449,9 @@ class PanelFontManager(wx.Panel):
         lbl_spacer = wx.StaticText(self, wx.ID_ANY, "")
         sizer_buttons.Add(lbl_spacer, 1, 0, 0)
 
+        self.btn_refresh = wx.Button(self, wx.ID_ANY, _("Refresh"))
+        sizer_buttons.Add(self.btn_refresh, 0, wx.EXPAND, 0)
+
         self.webresources = [
             "https://github.com/kamalmostafa/hershey-fonts/tree/master/hershey-fonts",
             "http://iki.fi/sol/hershey/index.html",
@@ -479,6 +482,7 @@ class PanelFontManager(wx.Panel):
         self.Bind(wx.EVT_LISTBOX_DCLICK, self.on_list_font_dclick, self.list_fonts)
         self.Bind(wx.EVT_BUTTON, self.on_btn_import, self.btn_add)
         self.Bind(wx.EVT_BUTTON, self.on_btn_delete, self.btn_delete)
+        self.Bind(wx.EVT_BUTTON, self.on_btn_refresh, self.btn_refresh)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_webget, self.combo_webget)
         # end wxGlade
         fontdir = self.context.fonts.font_directory
@@ -535,7 +539,7 @@ class PanelFontManager(wx.Panel):
             self.bmp_preview.SetBitmap(bmp)
 
     def on_btn_import(self, event, defaultdirectory=None, defaultextension=None):
-        fontinfo = self.context.fonts.fonts_registered()
+        fontinfo = self.context.fonts.fonts_registered
         wildcard = "Vector-Fonts"
         idx = 0
         filterindex = 0
@@ -634,6 +638,10 @@ class PanelFontManager(wx.Panel):
             wx.OK | wx.ICON_INFORMATION,
         )
         # Reload....
+        self.on_text_directory(None)
+
+    def on_btn_refresh(self, event):
+        self.context.fonts.reset_cache()
         self.on_text_directory(None)
 
     def on_btn_delete(self, event):

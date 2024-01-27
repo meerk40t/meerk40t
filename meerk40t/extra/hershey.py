@@ -1,9 +1,9 @@
 from functools import lru_cache
 from glob import glob
-from os import environ, walk
+import os
 from os.path import basename, exists, join, realpath, splitext
 
-import numpy as np
+# import numpy as np
 
 from meerk40t.core.node.node import Fillrule
 from meerk40t.core.node.elem_path import PathNode
@@ -104,13 +104,14 @@ class Meerk40tFonts:
         self.context = context
         self._available_fonts = None
 
+    @property
     def fonts_registered(self):
-        registered_fonts = {
-            "shx": ("Autocad", ShxFont),
-            "jhf": ("Hershey", JhfFont),
-            "ttf": ("TrueType", TrueTypeFont),
+        fonts = {
+            "shx": ("Autocad", ShxFont, None),
+            "jhf": ("Hershey", JhfFont, None),
+            "ttf": ("TrueType", TrueTypeFont, TrueTypeFont.query_name),
         }
-        return registered_fonts
+        return fonts
 
     @property
     def font_directory(self):
@@ -126,21 +127,39 @@ class Meerk40tFonts:
         self.context.font_directory = value
         self._available_fonts = None
 
+    @property
+    def cache_file(self):
+        return join(self.font_directory, "fonts.cache")
+
+    def reset_cache(self):
+        fn = self.cache_file
+        try:
+            os.remove(fn)
+        except (OSError, FileNotFoundError, PermissionError):
+            pass
+
     def have_hershey_fonts(self):
-        p = self.available_fonts(sort=False)
+        p = self.available_fonts()
         return len(p) > 0
 
     @lru_cache(maxsize=512)
     def get_font_information(self, full_file_name):
-        if full_file_name.lower().endswith(".ttf"):
-            info = TrueTypeFont.query_name(full_file_name)
-            return info
-        else:
+        filename, file_extension = splitext(full_file_name)
+        if len(file_extension) == 0:
             return None
+        # Remove dot...
+        file_extension = file_extension[1:].lower()
+        try:
+            item = self.fonts_registered[file_extension]
+        except KeyError:
+            return None
+        if item[2]:
+            return item[2](full_file_name)
+        return None
 
     def _get_full_info(self, short):
         s_lower = short.lower()
-        p = self.available_fonts(sort=False)
+        p = self.available_fonts()
         for info in p:
             # We don't care about capitalisation
             f_lower = info[0].lower()
@@ -151,8 +170,18 @@ class Meerk40tFonts:
     def is_system_font(self, short):
         info = self._get_full_info(short)
         if info:
-            return info[2]
+            return info[4]
         return True
+
+    def face_to_full_name(self, short):
+        s_lower = short.lower()
+        p = self.available_fonts()
+        for info in p:
+            # We don't care about capitalisation
+            f_lower = info[3].lower()
+            if f_lower == s_lower:
+                return info[0]
+        return None
 
     def full_name(self, short):
         info = self._get_full_info(short)
@@ -165,7 +194,7 @@ class Meerk40tFonts:
 
     @lru_cache(maxsize=128)
     def cached_fontclass(self, fontname):
-        registered_fonts = self.fonts_registered()
+        registered_fonts = self.fonts_registered
         if not exists(fontname):
             return
         try:
@@ -211,7 +240,7 @@ class Meerk40tFonts:
         #         value = 0
         #     node.mkcoordy = value
 
-    def update(self, node):
+    def update(self, context=None, node=None):
         # We need to check for the validity ourselves...
         if (
             hasattr(node, "mktext")
@@ -344,7 +373,7 @@ class Meerk40tFonts:
                     break
             if font == "":
                 # You know, I take anything at this point...
-                if self.available_fonts(sort=False):
+                if self.available_fonts():
                     font = self._available_fonts[0]
                     # print (f"Fallback to first file found: {font}")
                     self.context.last_font = font
@@ -458,23 +487,58 @@ class Meerk40tFonts:
             bitmap.LoadFile(bmpfile, wx.BITMAP_TYPE_PNG)
         return bitmap
 
-    def available_fonts(self, sort=True):
+    def available_fonts(self):
         if self._available_fonts is not None:
             return self._available_fonts
 
         # Return a tuple of two values
         import platform
         from time import perf_counter
+        _ = self.context.kernel.translation
         t0 = perf_counter()
+        self._available_fonts = []
+
+        cache = self.cache_file
+        if exists(cache):
+            try:
+                with open(cache, "r", encoding="utf-8") as f:
+                    while True:
+                        line = f.readline()
+                        if not line:
+                            break
+                        line = line.strip()
+                        parts = line.split("|")
+                        if len(parts) > 4:
+                            flag = False
+                            if parts[4].lower in ("true", "1"):
+                                flag = True
+                            self._available_fonts.append(
+                                (
+                                    parts[0],
+                                    parts[1],
+                                    parts[2],
+                                    parts[3],
+                                    flag,
+                                )
+                            )
+            except (OSError, FileNotFoundError, PermissionError):
+                self._available_fonts = []
+            if len(self._available_fonts):
+                t1 = perf_counter()
+                # print (f"Cached, took {t1 - t0:.2f}sec")
+                return self._available_fonts
+
+        busy = self.context.kernel.busyinfo
+        busy.start(msg=_("Reading system fonts..."))
         systype = platform.system()
         directories = []
         directories.append(self.font_directory)
         if systype == "Windows":
-            if "WINDIR" in environ:
-                windir = environ["WINDIR"]
+            if "WINDIR" in os.environ:
+                windir = os.environ["WINDIR"]
                 directories.append(join(windir, "Fonts"))
-            if "LOCALAPPDATA" in environ:
-                appdir = environ["LOCALAPPDATA"]
+            if "LOCALAPPDATA" in os.environ:
+                appdir = os.environ["LOCALAPPDATA"]
                 directories.append(join(appdir, "Microsoft\\Windows\\Fonts"))
         elif systype == "Linux":
             directories.append("/usr/share/fonts")
@@ -485,15 +549,17 @@ class Meerk40tFonts:
             directories.append("~/Library/Fonts")
         # Walk through all folders recursively
         found = dict()
-        font_types = list(self.context.fonts.fonts_registered())
-        self._available_fonts = []
+        font_types = self.fonts_registered
         filelist = []
         for idx, fontpath in enumerate(directories):
+            busy.change(msg=fontpath, keep=1)
+            busy.show()
+
             systemfont = idx != 0
             for p in font_types:
                 found[p] = 0
             try:
-                for root, dirs, files in walk(fontpath):
+                for root, dirs, files in os.walk(fontpath):
                     for filename in files:
                         short = basename(filename)
                         full_name = join(root, filename)
@@ -501,12 +567,18 @@ class Meerk40tFonts:
                         for p in font_types:
                             if test.endswith(p):
                                 if filename not in filelist:
-                                    extended = short
-                                    info = self.context.fonts.get_font_information(full_name)
+                                    font_family = ""
+                                    font_subfamily = ""
+                                    face_name = short
+                                    info = self.get_font_information(full_name)
                                     if info:
-                                        # Tuple with font_family, font_subfamily, font_name
-                                        extended = info[2]
-                                    self._available_fonts.append((full_name, extended, systemfont))
+                                        # Tuple with font_family, font_subfamily, face_name
+                                        font_family, font_subfamily, face_name = info
+                                    else:
+                                        entry = font_types[p]
+                                        font_family = entry[0]
+                                    self._available_fonts.append((full_name, face_name, font_family, font_subfamily, systemfont))
+                                    # print (face_name, font_family, font_subfamily, full_name)
                                     filelist.append(filename)
                                     found[p] += 1
                                 break
@@ -515,9 +587,13 @@ class Meerk40tFonts:
             # for key, value in found.items():
             #     print(f"{key}: {value} - {fontpath}")
 
+        self._available_fonts.sort(key=lambda e: e[1])
+        with open(cache, "w", encoding="utf-8") as f:
+            for p in self._available_fonts:
+                f.write(f"{p[0]}|{p[1]}|{p[2]}|{p[3]}|{p[4]}\n")
+
         t1 = perf_counter()
-        if sort:
-            self._available_fonts.sort(key=lambda e: e[1])
+        busy.end()
         # print (f"Ready, took {t1 - t0:.2f}sec")
         return self._available_fonts
 
@@ -568,7 +644,7 @@ def plugin(kernel, lifecycle):
                         channel(p)
                     return
 
-            registered_fonts = context.fonts.fonts_registered()
+            registered_fonts = context.fonts.fonts_registered
             if font_spacing is None:
                 font_spacing = 1
 
