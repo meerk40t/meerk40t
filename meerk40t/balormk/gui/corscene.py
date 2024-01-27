@@ -90,7 +90,7 @@ def register_scene(service):
     @service.console_command(
         "widget_corfile",
         hidden=True,
-        help=_("Update galvo flips for movement"),
+        help=_("Show the corfile scene widget"),
     )
     def scene_corfile(**kwargs):
         scene = service.root.opened.get("Scene")
@@ -226,7 +226,7 @@ class CorFileWidget(Widget):
 
     def _contains(self, location, x, y, width, height):
         if location is None:
-            return
+            return False
         if location[0] < x:
             return False
         if location[1] < y:
@@ -244,7 +244,14 @@ class CorFileWidget(Widget):
         self.scene.request_refresh()
         return self.is_opened
 
-    def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
+    def event(
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        **kwargs,
+    ):
         """
         Capture and deal with the double click event.
 
