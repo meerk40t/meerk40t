@@ -260,14 +260,29 @@ class Meerk40tFonts:
         if not hasattr(node, "mkfontsize"):
             # print ("no fontsize attr, exit")
             return
-        spacing = None
+        h_spacing = None
         if hasattr(node, "mkfontspacing"):
             try:
-                spacing = float(node.mkfontspacing)
+                h_spacing = float(node.mkfontspacing)
             except AttributeError:
                 pass
-        if spacing is None:
-            spacing = 1
+        if h_spacing is None:
+            h_spacing = 1
+        v_spacing = None
+        if hasattr(node, "mklinegap"):
+            try:
+                v_spacing = float(node.mklinegap)
+            except AttributeError:
+                pass
+        if v_spacing is None:
+            v_spacing = 1.1
+
+        align = None
+        if hasattr(node, "mkalign"):
+            align = node.mkalign
+        if align is None or align not in("start", "middle", "end"):
+            align = "start"
+
         weld = None
         if hasattr(node, "mkfontweld"):
             try:
@@ -302,7 +317,7 @@ class Meerk40tFonts:
         # print (f"Path={path}, text={remainder}, font-size={font_size}")
         horizontal = True
         mytext = self.context.elements.wordlist_translate(newtext)
-        cfont.render(path, mytext, horizontal, float(fontsize), spacing)
+        cfont.render(path, mytext, horizontal, float(fontsize), h_spacing, v_spacing, align)
         # _t2 = perf_counter()
         olda = node.matrix.a
         oldb = node.matrix.b
@@ -412,6 +427,8 @@ class Meerk40tFonts:
         path_node.mkfontsize = float(font_size)
         path_node.mkfontspacing = float(font_spacing)
         path_node.mkfontweld = weld
+        path_node.mkalign = "start"
+        path_node.mklinegap = 1.1
         path_node.mktext = text
         path_node._translated_text = mytext
         path_node.mkcoordx = x
@@ -605,7 +622,7 @@ def plugin(kernel, lifecycle):
 
         # Register update routine for linetext
         kernel.register("path_updater/linetext", context.fonts.update)
-        for idx, attrib in enumerate(("mkfontsize", "mkfontweld", "mkfontspacing")):
+        for idx, attrib in enumerate(("mkfontsize", "mkfontweld", "mkfontspacing", "mklinegap")):
             kernel.register(f"registered_mk_svg_parameters/font{idx}", attrib)
 
         @context.console_option("font", "f", type=str, help=_("SHX font file."))

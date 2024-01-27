@@ -25,6 +25,7 @@ def remove_fontfile(fontfile):
         except (OSError, RuntimeError, PermissionError, FileNotFoundError):
             pass
 
+
 class LineTextPropertyPanel(wx.Panel):
     """
     Panel for post-creation text property editing
@@ -47,36 +48,72 @@ class LineTextPropertyPanel(wx.Panel):
         main_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Vector-Text"), wx.VERTICAL)
 
         sizer_text = StaticBoxSizer(self, wx.ID_ANY, _("Content"), wx.HORIZONTAL)
-        self.text_text = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER|wx.TE_MULTILINE)
         sizer_text.Add(self.text_text, 1, wx.EXPAND, 0)
+
+        text_all_options = wx.BoxSizer(wx.HORIZONTAL)
+
+        align_options = [_("Left"), _("Center"), _("Right")]
+        self.rb_align = wx.RadioBox(
+            self,
+            wx.ID_ANY,
+            "",
+            wx.DefaultPosition,
+            wx.DefaultSize,
+            align_options,
+            len(align_options),
+            wx.RA_SPECIFY_COLS | wx.BORDER_NONE,
+        )
+        self.rb_align.SetToolTip(
+            _("Textalignment for multi-lines")
+        )
+        text_all_options.Add(self.rb_align, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        text_options = StaticBoxSizer(self, wx.ID_ANY, "", wx.HORIZONTAL)
+        text_all_options.Add(text_options, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
 
         self.btn_bigger = wx.Button(self, wx.ID_ANY, "++")
         self.btn_bigger.SetToolTip(_("Increase the font-size"))
-        sizer_text.Add(self.btn_bigger, 0, wx.EXPAND, 0)
+        text_options.Add(self.btn_bigger, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_smaller = wx.Button(self, wx.ID_ANY, "--")
         self.btn_smaller.SetToolTip(_("Decrease the font-size"))
-        sizer_text.Add(self.btn_smaller, 0, wx.EXPAND, 0)
+        text_options.Add(self.btn_smaller, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        text_options.AddSpacer(25)
 
         self.btn_bigger_spacing = wx.Button(self, wx.ID_ANY, "+")
         self.btn_bigger_spacing.SetToolTip(_("Increase the character-gap"))
-        sizer_text.Add(self.btn_bigger_spacing, 0, wx.EXPAND, 0)
+        text_options.Add(self.btn_bigger_spacing, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_smaller_spacing = wx.Button(self, wx.ID_ANY, "-")
         self.btn_smaller_spacing.SetToolTip(_("Decrease the character-gap"))
-        sizer_text.Add(self.btn_smaller_spacing, 0, wx.EXPAND, 0)
+        text_options.Add(self.btn_smaller_spacing, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
+        text_options.AddSpacer(25)
+
+        self.btn_attrib_lineplus = wx.Button(self, id=wx.ID_ANY, label="v")
+        self.btn_attrib_lineminus = wx.Button(self, id=wx.ID_ANY, label="^")
+        text_options.Add(self.btn_attrib_lineplus, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        text_options.Add(self.btn_attrib_lineminus, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        msg = "\n" + _("- Hold shift/ctrl-Key down for bigger change") + "\n" + _("- Right click will reset value to default")
+        self.btn_attrib_lineplus.SetToolTip(_("Increase line distance") + msg)
+        self.btn_attrib_lineminus.SetToolTip(_("Reduce line distance") + msg)
         self.check_weld = wx.CheckBox(self, wx.ID_ANY, "")
         self.check_weld.SetToolTip(_("Weld overlapping characters together?"))
-        sizer_text.Add(self.check_weld, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        text_options.AddSpacer(25)
+        text_options.Add(self.check_weld, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         for btn in (
             self.btn_bigger,
             self.btn_smaller,
             self.btn_bigger_spacing,
             self.btn_smaller_spacing,
+            self.btn_attrib_lineminus,
+            self.btn_attrib_lineplus,
         ):
-            btn.SetMinSize(dip_size(self, 35, -1))
+            btn.SetMinSize(dip_size(self, 35, 35))
 
         sizer_fonts = StaticBoxSizer(
             self, wx.ID_ANY, _("Fonts (double-click to use)"), wx.VERTICAL
@@ -90,10 +127,11 @@ class LineTextPropertyPanel(wx.Panel):
         sizer_fonts.Add(self.list_fonts, 0, wx.EXPAND, 0)
 
         self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
-        self.bmp_preview.SetMinSize(dip_size(self, -1, 70))
+        self.bmp_preview.SetMinSize(dip_size(self, -1, 50))
         sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
 
         main_sizer.Add(sizer_text, 0, wx.EXPAND, 0)
+        main_sizer.Add(text_all_options, 0, wx.EXPAND, 0)
         main_sizer.Add(sizer_fonts, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         self.Layout()
@@ -104,7 +142,12 @@ class LineTextPropertyPanel(wx.Panel):
         self.btn_smaller_spacing.Bind(wx.EVT_BUTTON, self.on_button_smaller_spacing)
         self.btn_bigger_spacing.Bind(wx.EVT_RIGHT_DOWN, self.on_button_reset_spacing)
         self.btn_smaller_spacing.Bind(wx.EVT_RIGHT_DOWN, self.on_button_reset_spacing)
+        self.Bind(wx.EVT_BUTTON, self.on_linegap_bigger, self.btn_attrib_lineplus)
+        self.Bind(wx.EVT_BUTTON, self.on_linegap_smaller, self.btn_attrib_lineminus)
+        self.btn_attrib_lineplus.Bind(wx.EVT_RIGHT_DOWN, self.on_linegap_reset)
+        self.btn_attrib_lineminus.Bind(wx.EVT_RIGHT_DOWN, self.on_linegap_reset)
         self.check_weld.Bind(wx.EVT_CHECKBOX, self.on_weld)
+        self.rb_align.Bind(wx.EVT_RADIOBOX, self.on_radio_box)
 
         self.text_text.Bind(wx.EVT_TEXT, self.on_text_change)
         self.list_fonts.Bind(wx.EVT_LISTBOX, self.on_list_font)
@@ -157,6 +200,52 @@ class LineTextPropertyPanel(wx.Panel):
         self.context.fonts.update_linetext(self.node, vtext)
         self.context.signal("element_property_reload", self.node)
         self.context.signal("refresh_scene", "Scene")
+
+    def on_linegap_reset(self, event):
+        if self.node is None:
+            return
+        self.node.mklinegap = 1.1
+        self.update_node()
+
+    def on_linegap_bigger(self, event):
+        if self.node is None:
+            return
+        gap = 0.01
+        if wx.GetKeyState(wx.WXK_SHIFT):
+            gap = 0.1
+        if wx.GetKeyState(wx.WXK_CONTROL):
+            gap = 0.25
+        if self.node.mklinegap is None:
+            self.node.mklinegap = 1.1
+        else:
+            self.node.mklinegap += gap
+        self.update_node()
+
+    def on_linegap_smaller(self, event):
+        if self.node is None:
+            return
+        gap = 0.01
+        if wx.GetKeyState(wx.WXK_SHIFT):
+            gap = 0.1
+        if wx.GetKeyState(wx.WXK_CONTROL):
+            gap = 0.25
+        if self.node.mklinegap is None:
+            self.node.mklinegap = 1.1
+        else:
+            self.node.mklinegap -= gap
+        if self.node.mklinegap < 0:
+            self.node.mklinegap = 0
+        self.update_node()
+
+    def on_radio_box(self, event):
+        new_anchor = event.GetInt()
+        if new_anchor == 0:
+            self.node.mkalign = "start"
+        elif new_anchor == 1:
+            self.node.mkalign = "middle"
+        elif new_anchor == 2:
+            self.node.mkalign = "end"
+        self.update_node()
 
     def on_weld(self, event):
         if self.node is None:
