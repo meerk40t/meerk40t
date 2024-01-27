@@ -404,22 +404,18 @@ class Meerk40tFonts:
             except Exception as e:
                 # We may encounter an IndexError, a ValueError or an error thrown by struct
                 # The latter cannot be named? So a global except...
-                print (f"Node creation failed: {e}")
+                # print (f"Node creation failed: {e}")
                 return False
             if node is None:
-                print ("Node creation failed: Node was none")
                 return False
             if node.bounds is None:
-                print ("Node creation failed: bounds was none")
                 return False
             make_raster = self.context.elements.lookup("render-op/make_raster")
             if make_raster is None:
-                print ("Node creation failed: no raster")
                 return False
             xmin, ymin, xmax, ymax = node.bounds
             if isinf(xmin):
                 # No bounds for selected elements
-                print ("Node creation failed: bounds isinf")
                 return False
             width = xmax - xmin
             height = ymax - ymin
@@ -438,13 +434,13 @@ class Meerk40tFonts:
                     bitmap=True,
                 )
             except Exception as e:
-                print (f"Raster failed: {e}")
+                # print (f"Raster failed: {e}")
                 # Invalid path or whatever...
                 return False
             try:
                 bitmap.SaveFile(bmpfile, bitmap_format)
             except (OSError, RuntimeError, PermissionError, FileNotFoundError) as e:
-                print (f"Save failed: {e}")
+                # print (f"Save failed: {e}")
                 return False
             return True
 
@@ -516,11 +512,11 @@ class Meerk40tFonts:
                                 break
             except (OSError, FileNotFoundError, PermissionError):
                 continue
-            for key, value in found.items():
-                print(f"{key}: {value} - {fontpath}")
+            # for key, value in found.items():
+            #     print(f"{key}: {value} - {fontpath}")
 
         t1 = perf_counter()
-        print (f"Ready, took {t1 - t0:.2f}sec")
+        # print (f"Ready, took {t1 - t0:.2f}sec")
         return self._available_fonts
 
 def plugin(kernel, lifecycle):
