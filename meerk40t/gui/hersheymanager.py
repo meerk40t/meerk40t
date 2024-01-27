@@ -140,8 +140,7 @@ class LineTextPropertyPanel(wx.Panel):
         if not hasattr(self.node, "mkfontweld") or self.node.mkfontweld is None:
             self.node.mkfontweld = False
         self.check_weld.SetValue(self.node.mkfontweld)
-        fontdir = self.context.fonts.font_directory
-        self.load_directory(fontdir)
+        self.load_directory()
         self.text_text.SetValue(str(node.mktext))
         self.Show()
 
@@ -293,8 +292,7 @@ class PanelFontSelect(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_btn_smaller, self.btn_smaller)
 
         # end wxGlade
-        fontdir = self.context.fonts.font_directory
-        self.load_directory(fontdir)
+        self.load_directory()
 
     def load_directory(self):
         self.all_fonts = self.context.fonts.available_fonts()
@@ -525,7 +523,6 @@ class PanelFontManager(wx.Panel):
         if self.list_fonts.GetSelection() >= 0:
             full_font_file = self.fonts[self.list_fonts.GetSelection()]
             is_system = self.context.fonts.is_system_font(full_font_file)
-            print(full_font_file, is_system)
             self.btn_delete.Enable(not is_system)
             bmp = self.context.fonts.preview_file(full_font_file)
             # if bmp is not None:
