@@ -244,6 +244,14 @@ class CorFileWidget(Widget):
         self.scene.request_refresh()
         return self.is_opened
 
+    def tab_next(self):
+        self.hot += 1
+        self.hot %= 12
+
+    def tab_prev(self):
+        self.hot += 11
+        self.hot %= 12
+
     def event(
         self,
         window_pos=None,
@@ -273,13 +281,10 @@ class CorFileWidget(Widget):
                     self.cursor -= 1
                 elif modifier == "tab":
                     self.cursor = -1
-                    self.hot += 1
-                    self.hot %= 12
+                    self.tab_next()
                 elif modifier == "shift+tab":
                     self.cursor = -1
-                    self.hot += 11
-                    self.hot %= 12
-
+                    self.tab_prev()
         return RESPONSE_CHAIN
 
     def close(self):
@@ -309,35 +314,9 @@ class CorFileWidget(Widget):
     def geometry_size_decrease(self):
         self.geometry_size -= 100
 
-    def process_draw(self, gc: wx.GraphicsContext):
-        """
-        Draws the background on the scene.
-        """
-        unit_width = 0xFFFF
-        unit_height = 0xFFFF
-        if self._geometry_size != self.geometry_size:
-            self._geometry_size = self.geometry_size
-            self.geometry = cor_file_geometry(self.geometry_size)
-            self.assoc = cor_file_line_associated(self.geometry_size)
-        gc.SetBrush(wx.WHITE_BRUSH)
-        gc.DrawRectangle(0, 0, unit_width, unit_height)
-        gc.SetPen(wx.BLACK_PEN)
-        path = self.render.make_geomstr(gc, self.geometry)
-        gc.DrawPath(path)
-
-        if self.hot is not None and 0 <= self.hot < 12:
-            gc.SetPen(self.highlight_pen)
-            p2 = self.render.make_geomstr(gc, self.assoc, settings=self.hot)
-            gc.DrawPath(p2)
-
-        if self.mouse_location:
-            gc.DrawRectangle(
-                self.mouse_location[0] - 500, self.mouse_location[1] - 500, 1000, 1000
-            )
+    def process_textboxes(self, gc: wx.GraphicsContext, was_hovered: bool, index: int):
         gc.SetBrush(self.background_brush)
         gc.SetPen(self.outline_pen)
-        was_hovered = False
-        index = -1
         for textfield in self.text_fields:
             index += 1
             x, y, width, height, obj, attr = textfield
@@ -404,7 +383,11 @@ class CorFileWidget(Widget):
             gc.DrawText(text, x, y)
         if not was_hovered:
             self.scene.cursor("arrow")
+        return was_hovered, index
 
+    def process_buttons(self, gc: wx.GraphicsContext, was_hovered: bool, index: int):
+        gc.SetBrush(self.background_brush)
+        gc.SetPen(self.outline_pen)
         for i, button in enumerate(self.button_fields):
             index += 1
             x, y, width, height, bmp, click = button
@@ -419,8 +402,39 @@ class CorFileWidget(Widget):
                     self.hot = index
                     self.was_clicked = False
                     click()
+        return was_hovered, index
+
+    def process_draw(self, gc: wx.GraphicsContext):
+        """
+        Draws the background on the scene.
+        """
+        unit_width = 0xFFFF
+        unit_height = 0xFFFF
+        if self._geometry_size != self.geometry_size:
+            self._geometry_size = self.geometry_size
+            self.geometry = cor_file_geometry(self.geometry_size)
+            self.assoc = cor_file_line_associated(self.geometry_size)
+        gc.SetBrush(wx.WHITE_BRUSH)
+        gc.DrawRectangle(0, 0, unit_width, unit_height)
+        gc.SetPen(wx.BLACK_PEN)
+        path = self.render.make_geomstr(gc, self.geometry)
+        gc.DrawPath(path)
+
+        if self.hot is not None and 0 <= self.hot < 12:
+            gc.SetPen(self.highlight_pen)
+            p2 = self.render.make_geomstr(gc, self.assoc, settings=self.hot)
+            gc.DrawPath(p2)
+
+        if self.mouse_location:
+            gc.DrawRectangle(
+                self.mouse_location[0] - 500, self.mouse_location[1] - 500, 1000, 1000
+            )
+
+        was_hovered, index = self.process_textboxes(gc, False, -1)
+        was_hovered, index = self.process_buttons(gc, was_hovered, index)
         if not was_hovered:
             self.active = None
+        self.was_clicked = False
 
     def signal(self, signal, *args, **kwargs):
         """
