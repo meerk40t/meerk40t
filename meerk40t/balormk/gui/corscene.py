@@ -20,7 +20,7 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui import icons
-from meerk40t.gui.icons import icons8_center_of_gravity, icons8_detective
+from meerk40t.gui.icons import icons8_detective
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.tools.geomstr import Geomstr
 from meerk40t.tools.pmatrix import PMatrix
