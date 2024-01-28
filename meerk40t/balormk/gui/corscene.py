@@ -376,7 +376,23 @@ class CorFileWidget(Widget):
         self.geometry.transform3x3(matrix)
 
     def corfile_save(self):
-        pass
+        root = self.scene.context.root
+        _ = self.scene.context.kernel.translation
+        filetype = "*.cor"
+        with wx.FileDialog(
+            root.gui,
+            _("Export Corfile") + ": Doesn't currently export",
+            wildcard=filetype,
+            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+        ) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return
+            pathname = fileDialog.GetPath()
+            if not pathname.lower().endswith(".cor"):
+                pathname += ".cor"
+
+        with open(pathname, "wb") as f:
+            f.write(b"Testing...")
 
     def geometry_size_increase(self):
         self.geometry_size += 100
@@ -548,8 +564,9 @@ class CorFileWidget(Widget):
         bottom = area_height * 0.9
         w = right - left
         h = bottom - top
-        text_size, test_width, test_height = determine_font_size(gc, self.toast_font, self.message, w
-                                                                 , h)
+        text_size, test_width, test_height = determine_font_size(
+            gc, self.toast_font, self.message, w, h
+        )
 
         try:
             self.toast_font.SetFractionalPointSize(text_size)
