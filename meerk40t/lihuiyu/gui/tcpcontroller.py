@@ -21,8 +21,9 @@ class TCPController(MWindow):
         self.service = self.context.device
         self.text_status = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_ip_host = TextCtrl(
-            self, wx.ID_ANY, "", limited=True, style=wx.TE_PROCESS_ENTER, check="empty"
+            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, check="empty"
         )
+        self.text_ip_host.SetMinSize(dip_size(self, 125, -1))
         self.text_port = TextCtrl(
             self, wx.ID_ANY, "", check="int", limited=True, style=wx.TE_PROCESS_ENTER
         )
