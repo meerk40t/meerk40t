@@ -289,6 +289,7 @@ class CorFileWidget(Widget):
         self.set_toast_alpha(255)
 
         self.scene.animate(self)
+        self.job = None
 
     def set_text_fields(self):
         def p(v):
@@ -399,41 +400,51 @@ class CorFileWidget(Widget):
     def rotate_left(self):
         matrix = PMatrix.rotate(tau / 4, 0x7FFF, 0x7FFF)
         self.geometry.transform3x3(matrix)
+        if self.job:
+            self.job._geometry = self.geometry
+            self.job.update()
 
     def rotate_right(self):
         matrix = PMatrix.rotate(-tau / 4, 0x7FFF, 0x7FFF)
         self.geometry.transform3x3(matrix)
+        if self.job:
+            self.job._geometry = self.geometry
+            self.job.update()
 
     def hflip(self):
         matrix = PMatrix.scale(-1, 1, 0x7FFF, 0x7FFF)
         self.geometry.transform3x3(matrix)
+        if self.job:
+            self.job._geometry = self.geometry
+            self.job.update()
 
     def vflip(self):
         matrix = PMatrix.scale(1, -1, 0x7FFF, 0x7FFF)
         self.geometry.transform3x3(matrix)
+        if self.job:
+            self.job._geometry = self.geometry
+            self.job.update()
 
     def corfile_outline(self):
         service = self.scene.context.device
-        if hasattr(service, "job") and service.job is not None:
-            service.job.stop()
-            service.job = None
+        if self.job:
+            self.job.stop()
+            self.job = None
             return
-        from meerk40t.balormk.elementlightjob import ElementLightJob
-        service.job = ElementLightJob(
+        from meerk40t.balormk.livelightjob import LiveLightJob
+
+        self.job = LiveLightJob(
             service,
-            self.geometry,
+            "geometry",
+            geometry=self.geometry,
             travel_speed=8000,
             jump_delay=10,
-            simulation_speed=8000,
-            quantization=1,
-            simulate=True,
             raw=True,
         )
-        service.spooler.send(service.job)
+        service.spooler.send(self.job)
 
     def corfile_burn(self):
         pass
-
 
     def corfile_save(self):
         root = self.scene.context.root
@@ -654,6 +665,9 @@ class CorFileWidget(Widget):
             self._geometry_size = self.geometry_size
             self.geometry = cor_file_geometry(self.geometry_size)
             self.assoc = cor_file_line_associated(self.geometry_size)
+            if self.job:
+                self.job._geometry = self.geometry
+                self.job.update()
         # Draw the background.
         gc.SetBrush(wx.WHITE_BRUSH)
         gc.DrawRectangle(0, 0, unit_width, unit_height)

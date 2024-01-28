@@ -4,7 +4,6 @@ import struct
 import time
 
 from meerk40t.balormk.driver import BalorDriver
-from meerk40t.balormk.elementlightjob import ElementLightJob
 from meerk40t.balormk.livelightjob import LiveLightJob
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.kernel import CommandSyntaxError
