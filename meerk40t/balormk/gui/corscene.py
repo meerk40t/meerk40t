@@ -184,24 +184,9 @@ class CorFileWidget(Widget):
 
         self.cursor = -1
         self.is_opened = True
-        dev = scene.context.device
         self.geometry_size = 0x6666
         self._geometry_size = self.geometry_size
-        self.text_fields = (
-            (21500, 5200, 5000, 1000, dev, "cf_1"),
-            (45000, 5200, 5000, 1000, dev, "cf_2"),
-            (60000, 20000, 5000, 1000, dev, "cf_3"),
-            (60000, 45000, 5000, 1000, dev, "cf_4"),
-            (45000, 60000, 5000, 1000, dev, "cf_5"),
-            (20000, 60000, 5000, 1000, dev, "cf_6"),
-            (5200, 45000, 5000, 1000, dev, "cf_7"),
-            (5200, 20000, 5000, 1000, dev, "cf_8"),
-            (20000, 32000, 5000, 1000, dev, "cf_9"),
-            (45000, 32000, 5000, 1000, dev, "cf_10"),
-            (32000, 20000, 5000, 1000, dev, "cf_11"),
-            (32000, 45000, 5000, 1000, dev, "cf_12"),
-            (0xFFFF - 5000, -2000, 5000, 1000, self, "geometry_size"),
-        )
+        self.set_text_fields()
 
         self.button_fields = (
             (
@@ -288,6 +273,27 @@ class CorFileWidget(Widget):
         self.set_toast_alpha(255)
 
         self.scene.animate(self)
+
+    def set_text_fields(self):
+        def p(v):
+            return 0x7FFF + (self.geometry_size * v)
+
+        dev = self.scene.context.device
+        self.text_fields = (
+            (p(-0.45), p(-1.05), 5000, 1000, dev, "cf_1"),
+            (p(0.45), p(-1.05), 5000, 1000, dev, "cf_2"),
+            (p(1.05), p(-0.45), 5000, 1000, dev, "cf_3"),
+            (p(1.05), p(0.45), 5000, 1000, dev, "cf_4"),
+            (p(0.45), p(1.05), 5000, 1000, dev, "cf_5"),
+            (p(-0.45), p(1.05), 5000, 1000, dev, "cf_6"),
+            (p(-1.05), p(0.45), 5000, 1000, dev, "cf_7"),
+            (p(-1.05), p(-0.45), 5000, 1000, dev, "cf_8"),
+            (p(-0.45), p(-0.05), 5000, 1000, dev, "cf_9"),
+            (p(0.45), p(-0.05), 5000, 1000, dev, "cf_10"),
+            (p(-0.05), p(-0.45), 5000, 1000, dev, "cf_11"),
+            (p(-0.05), p(0.45), 5000, 1000, dev, "cf_12"),
+            (0xFFFF - 5000, -2000, 5000, 1000, self, "geometry_size"),
+        )
 
     def set_toast_alpha(self, alpha):
         """
@@ -605,6 +611,7 @@ class CorFileWidget(Widget):
         unit_height = 0xFFFF
         if self._geometry_size != self.geometry_size:
             # Update the geometry if the size has changed.
+            self.set_text_fields()
             self._geometry_size = self.geometry_size
             self.geometry = cor_file_geometry(self.geometry_size)
             self.assoc = cor_file_line_associated(self.geometry_size)
