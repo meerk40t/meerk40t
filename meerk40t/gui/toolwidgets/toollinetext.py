@@ -170,13 +170,8 @@ class LineTextTool(ToolWidget):
                 to_add = ""
                 if keycode is not None:
                     to_add = keycode
-                # if modifiers.startswith("shift+") and modifiers != "shift+":
-                #     to_add = modifiers[-1].upper()
-                # elif len(modifiers) == 1:
-                #     to_add = modifiers
-                # elif modifiers == "space":
-                #     to_add = " "
-                # elif modifiers == "back":
+                elif keycode is None and modifiers=="ctrl+return":
+                    to_add = "\n"
                 if modifiers == "back":
                     to_add = ""
                     if len(self.vtext) > 0:
