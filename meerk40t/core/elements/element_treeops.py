@@ -10,7 +10,7 @@ import os.path
 from copy import copy
 
 from meerk40t.core.node.elem_image import ImageNode
-from meerk40t.core.node.node import Node
+from meerk40t.core.node.node import Node, Fillrule
 from meerk40t.core.treeop import (
     get_tree_operation,
     tree_calc,
@@ -485,7 +485,8 @@ def init_tree(kernel):
             stroke_width=self.default_strokewidth,
             matrix=m,
         )
-        self.classify([n])
+        if self.classify_new:
+            self.classify([n])
 
     @tree_submenu(_("Convert to Path"))
     @tree_operation(_("Vertical"), node_type="elem image", help="")
@@ -499,7 +500,8 @@ def init_tree(kernel):
             stroke_width=self.default_strokewidth,
             matrix=m,
         )
-        self.classify([n])
+        if self.classify_new:
+            self.classify([n])
 
     def radio_match_speed(node, speed=0, **kwargs):
         return node.speed == float(speed)
@@ -2743,6 +2745,82 @@ def init_tree(kernel):
     )
     def trace_bitmap(node, **kwargs):
         self("vectorize\n")
+
+    @tree_operation(
+        _("Convert to vector text"),
+        node_type="elem text",
+        help=_("Convert bitmap text to vector text"),
+    )
+    def convert_to_vectext(node, **kwargs):
+        data = []
+        nodelist = list(self.flat(emphasized=True, types=("elem text", )))
+        for e in nodelist:
+            if e is None or not hasattr(e, "wxfont"):
+                # print (f"Invalid node: {e.type}")
+                continue
+            text = e.text
+            facename = e.wxfont.GetFaceName()
+            # print (f"Facename: {facename}, svg: {getattr(e, 'font_family', '')}")
+            fontfile = self.kernel.root.fonts.face_to_full_name(facename)
+            if fontfile is None:
+                # print (f"could not find a font for {facename}")
+                return
+            fontname = self.kernel.root.fonts.short_name(fontfile)
+            # print (f"{facename} -> {fontname}, {fontfile}")
+            node_args = dict()
+            node_args["type"] = "elem path"
+            node_args["stroke"] = e.stroke
+            node_args["fill"] = e.fill
+            node_args["stroke_width"] = 500
+            node_args["fillrule"] = Fillrule.FILLRULE_NONZERO
+            node_args["mktext"] = text
+            fsize = e.font_size
+            if fsize is None:
+                fsize = 12
+            fsize *= 4 / 3
+            node_args["mkfontsize"] = fsize
+            node_args["mkfont"] = fontname
+            anchor = e.anchor
+            if anchor is None:
+                anchor = "start"
+            node_args["mkalign"] = anchor
+            # print (f"{text} aligns in the {anchor}")
+
+            old_matrix = Matrix(e.matrix)
+            cc = e.bounds
+            p0 = old_matrix.point_in_inverse_space((cc[0], cc[1]))
+            p1 = old_matrix.point_in_inverse_space((cc[2], cc[3]))
+
+            # node_args["mkcoordx"] = p0.x
+            # node_args["mkcoordy"] = p1.y
+
+            node_args["geometry"] = Geomstr.rect(x = p0.x, y=p1.y, width=p1.x - p0.x, height=p1.y - p0.y)
+            if e.label is None:
+                x = text.split("\n")
+                node_args["label"] = f"Text: {x[0]}"
+            newnode = e.replace_node(**node_args)
+            newnode.matrix = old_matrix
+            newnode.matrix.pre_translate_y (p1.y - p0.y)
+            if anchor != "start":
+                newnode.matrix.pre_translate_x (-1 * (p1.x - p0.x) / 2)
+
+            # Now we need to render it...
+            # newnode.set_dirty_bounds()
+            # newtext = self.wordlist_translate(text, elemnode=newnode, increment=False)
+            # newnode._translated_text = newtext
+
+            kernel = self.kernel
+            for property_op in kernel.lookup_all("path_updater/.*"):
+                property_op(kernel.root, newnode)
+            if hasattr(newnode, "_cache"):
+                newnode._cache = None
+
+            data.append(newnode)
+        if len(data):
+            if self.classify_new:
+                self.classify(data)
+            self.signal("rebuild_tree")
+            self.signal("refresh_scene", "Scene")
 
     @tree_conditional(
         lambda node: not is_regmark(node)
