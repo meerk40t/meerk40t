@@ -29,47 +29,62 @@ from meerk40t.tools.pmatrix import PMatrix
 def cor_file_geometry(s=0x6666):
     path = Geomstr()
     m = 0x7FFF
-    path.line(complex(0x17A5, m), complex(0xE859, m))
-    path.line(complex(m, 0x17A5), complex(m, 0xE859))
-    path.line(complex(0x8A3C, 0x9EB6), complex(0x8A3C, 0x75C2))
 
-    path.line(complex(m - s, m - s), complex(m + s, m - s))
-    path.line(complex(m + s, m - s), complex(m + s, m + s))
-    path.line(complex(m + s, m + s), complex(m - s, m + s))
-    path.line(complex(m - s, m + s), complex(m - s, m - s))
+    def c(x, y):
+        return complex(m + (s * x), m + (s * y))
 
-    path.line(complex(0x1EB7, 0xCCCC), complex(0x3331, 0xCCCC))
-    path.line(complex(0x3331, 0xCCCC), complex(0x3331, 0xE146))
-    path.line(complex(0x3331, 0xE146), complex(0x1EB7, 0xE146))
-    path.line(complex(0x1EB7, 0xE146), complex(0x1EB7, 0xCCCC))
+    # Center Lines.
+    path.line(c(-1.019, 0), c(1.019, 0))
+    path.line(c(0, -1.019), c(0, 1.019))
 
-    path.line(complex(0xD709, 0x1EB7), complex(0xE146, 0x28F4))
-    path.line(complex(0xE146, 0x28F4), complex(0xD709, 0x3331))
-    path.line(complex(0xD709, 0x3331), complex(0xCCCC, 0x28F4))
-    path.line(complex(0xCCCC, 0x28F4), complex(0xD709, 0x1EB7))
+    # Line Marker
+    path.line(c(0.1, 0.3), c(0.1, -0.1))
+
+    # Outer Edge
+    path.line(c(-1, -1), c(1, -1))
+    path.line(c(1, -1), c(1, 1))
+    path.line(c(1, 1), c(-1, 1))
+    path.line(c(-1, 1), c(-1, -1))
+
+    # Square Marker
+    path.line(c(-0.95, 0.75), c(-0.75, 0.75))
+    path.line(c(-0.75, 0.75), c(-0.75, 0.95))
+    path.line(c(-0.75, 0.95), c(-0.95, 0.95))
+    path.line(c(-0.95, 0.95), c(-0.95, 0.75))
+
+    # Diamond Marker
+    path.line(c(0.85, -0.95), c(0.95, -0.85))
+    path.line(c(0.95, -0.85), c(0.85, -0.75))
+    path.line(c(0.85, -0.75), c(0.75, -0.85))
+    path.line(c(0.75, -0.85), c(0.85, -0.95))
+
     return path
 
 
 def cor_file_line_associated(s=0x6666):
     path = Geomstr()
     m = 0x7FFF
-    path.line(complex(m - s, m - s), complex(m, m - s), settings=0)
-    path.line(complex(m, m - s), complex(m + s, m - s), settings=1)
 
-    path.line(complex(m + s, m - s), complex(m + s, m), settings=2)
-    path.line(complex(m + s, m), complex(m + s, m + s), settings=3)
+    def c(x, y):
+        return complex(m + (s * x), m + (s * y))
 
-    path.line(complex(m + s, m + s), complex(m, m + s), settings=4)
-    path.line(complex(m, m + s), complex(m - s, m + s), settings=5)
+    path.line(c(-1, -1), c(0, -1), settings=0)
+    path.line(c(0, -1), c(1, -1), settings=1)
 
-    path.line(complex(m - s, m + s), complex(m - s, m), settings=6)
-    path.line(complex(m - s, m), complex(m - s, m - s), settings=7)
+    path.line(c(1, -1), c(1, 0), settings=2)
+    path.line(c(1, 0), c(1, 1), settings=3)
 
-    path.line(complex(0x17A5, m), complex(m, m), settings=8)
-    path.line(complex(m, m), complex(0xE859, m), settings=9)
+    path.line(c(1, 1), c(0, 1), settings=4)
+    path.line(c(0, 1), c(-1, 1), settings=5)
 
-    path.line(complex(m, 0x17A5), complex(m, m), settings=10)
-    path.line(complex(m, m), complex(m, 0xE859), settings=11)
+    path.line(c(-1, 1), c(-1, 0), settings=6)
+    path.line(c(-1, 0), c(-1, -1), settings=7)
+
+    path.line(c(-1.019, 0), c(0, 0), settings=8)
+    path.line(c(0, 0), c(1.019, 0), settings=9)
+
+    path.line(c(0, -1.019), c(0, 0), settings=10)
+    path.line(c(0, 0), c(0, 1.019), settings=11)
     return path
 
 
