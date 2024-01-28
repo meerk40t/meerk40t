@@ -102,6 +102,26 @@ def register_scene(service):
         scene.request_refresh()
 
 
+def determine_font_size(
+    gc: wx.GraphicsContext, font: wx.Font, message: str, box_width, box_height
+):
+    test_height = float("inf")
+    test_width = float("inf")
+    text_size = box_height * 0.75 / 0.9
+    while test_height > box_height or test_width > box_width:
+        # If we do not fit in the box, decrease size
+        text_size *= 0.9
+        # Set font size.
+        try:
+            font.SetFractionalPointSize(text_size)
+        except AttributeError:
+            font.SetPointSize(int(text_size))
+        gc.SetFont(font, wx.BLACK)
+        # Measure again.
+        test_width, test_height = gc.GetTextExtent(message)
+    return text_size, test_width, test_height
+
+
 class CorFileWidget(Widget):
     """
     Widget for cor file creation routine.
@@ -139,9 +159,6 @@ class CorFileWidget(Widget):
         self.font_color = wx.Colour()
         self.font_color.SetRGBA(0xFF000000)
         self.font = wx.Font(wx.SWISS_FONT)
-
-        self.text_height = float("inf")
-        self.text_width = float("inf")
 
         self.mouse_location = None
         self.was_clicked = None
@@ -237,7 +254,40 @@ class CorFileWidget(Widget):
                 self.corfile_save,
             ),
         )
+
+        self.countdown = 0
+        self.message = None
+        self.token = None
+
+        self.toast_brush = wx.Brush()
+        self.toast_pen = wx.Pen()
+        self.toast_font = wx.SWISS_FONT
+
+        self.brush_color = wx.Colour()
+        self.pen_color = wx.Colour()
+        self.font_color = wx.Colour()
+
+        self.toast_pen.SetWidth(10)
+
+        self.toast_alpha = None
+        self.set_toast_alpha(255)
+
         self.scene.animate(self)
+
+    def set_toast_alpha(self, alpha):
+        """
+        We set the alpha for all the colors.
+
+        @param alpha:
+        @return:
+        """
+        if alpha != self.toast_alpha:
+            self.toast_alpha = alpha
+            self.brush_color.SetRGBA(0xFFFFFF | alpha << 24)
+            self.pen_color.SetRGBA(0x70FF70 | alpha << 24)
+            self.font_color.SetRGBA(0x000000 | alpha << 24)
+            self.toast_brush.SetColour(self.brush_color)
+            self.toast_pen.SetColour(self.pen_color)
 
     def _contains(self, location, x, y, width, height):
         if location is None:
@@ -284,6 +334,8 @@ class CorFileWidget(Widget):
             self.mouse_location = space_pos
         if event_type == "leftdown":
             self.was_clicked = True
+            # self.message = "Testing Toast..."
+            # self.countdown = 100
         if event_type == "key_up":
             key = kwargs.get("keycode")
             if key:
@@ -373,7 +425,7 @@ class CorFileWidget(Widget):
                 self.font.SetPointSize(int(text_size))
 
             # Set the font.
-            gc.SetFont(self.font, self.font_color)
+            gc.SetFont(self.font, wx.BLACK)
 
             if self._contains(self.mouse_location, x, y, width, height):
                 # Is this textfield found at the last mouse location.
@@ -478,6 +530,41 @@ class CorFileWidget(Widget):
                     click()
         return was_hovered, index
 
+    def process_toast(self, gc: wx.GraphicsContext):
+        if self.countdown <= 0:
+            self.message = None
+        if not self.message:
+            return
+        alpha = 255
+        if self.countdown <= 20:
+            alpha = int(self.countdown * 12.5)
+        self.set_toast_alpha(alpha)
+        self.countdown -= 1
+
+        area_width, area_height = 0xFFFF, 0xFFFF
+        left = area_width * 0.1
+        top = area_height * 0.8
+        right = area_width * 0.9
+        bottom = area_height * 0.9
+        w = right - left
+        h = bottom - top
+        text_size, test_width, test_height = determine_font_size(gc, self.toast_font, self.message, w
+                                                                 , h)
+
+        try:
+            self.toast_font.SetFractionalPointSize(text_size)
+        except AttributeError:
+            self.toast_font.SetPointSize(int(text_size))
+        gc.SetFont(self.toast_font, self.font_color)
+
+        gc.SetPen(self.toast_pen)
+        gc.SetBrush(self.toast_brush)
+        gc.DrawRectangle(left, top, w, h)
+
+        toast_x = left + (w - test_width) / 2.0
+        toast_y = top + (h - test_height) / 2.0
+        gc.DrawText(self.message, toast_x, toast_y)
+
     def process_draw(self, gc: wx.GraphicsContext):
         """
         Draws the background on the scene.
@@ -515,6 +602,9 @@ class CorFileWidget(Widget):
 
         # Draw buttons.
         was_hovered, index = self.process_buttons(gc, was_hovered, index)
+
+        if self.message:
+            self.process_toast(gc)
 
         if not was_hovered:
             # Nothing was hovered, there is no active.
