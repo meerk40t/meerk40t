@@ -57,7 +57,16 @@ def cor_file_geometry(s=0x6666):
     path.line(c(0.95, -0.85), c(0.85, -0.75))
     path.line(c(0.85, -0.75), c(0.75, -0.85))
     path.line(c(0.75, -0.85), c(0.85, -0.95))
+    path.settings(0, {
+        "power": 1000,
+        "delay_laser_on": 100,
+        "delay_laser_off": 100,
+        "delay_laser_polygon": 100,
+        "speed": 255,
+        "rapid_speed": 255,
+        "timing_enabled": True,
 
+    })
     return path
 
 
@@ -444,7 +453,8 @@ class CorFileWidget(Widget):
         service.spooler.send(self.job)
 
     def corfile_burn(self):
-        pass
+        service = self.scene.context.device
+        service.spooler.laserjob([self.geometry])
 
     def corfile_save(self):
         root = self.scene.context.root
