@@ -221,10 +221,13 @@ class TrueTypeFont:
         max_len = max(line_lengths)
         offsets = []
         for ll in line_lengths:
+            # NB anchor not only defines the alignment of the individual
+            # lines to another but as well of the whole block relative
+            # to the origin
             if align=="middle":
-                offs = (max_len - ll) / 2
+                offs = -max_len / 2 + (max_len - ll) / 2
             elif align=="end":
-                offs = max_len - ll
+                offs = -ll
             else:
                 offs = 0
             offsets.append(offs)
