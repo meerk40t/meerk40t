@@ -950,39 +950,43 @@ class ChoicePropertyPanel(ScrolledPanel):
                     data = getattr(local_obj, param)
                     ctrl.ClearAll()
                     for column in columns:
+                        wd = column.get("width", 150)
+                        if wd < 0:
+                            wd = ctrl.Size[0] - 10
                         ctrl.AppendColumn(
                             column.get("label", ""),
                             format=wx.LIST_FORMAT_LEFT,
-                            width=column.get("width", 150),
+                            width=wd,
                         )
-                    if isinstance(data, dict):
-                        for dataline in data:
+                    for dataline in data:
+                        if isinstance(dataline, dict):
+                            for kk in dataline.keys():
+                                key = kk
+                                break
                             row_id = ctrl.InsertItem(
                                 ctrl.GetItemCount(),
-                                dataline.get(dataline.keys(0), 0),
+                                dataline.get(key, 0),
                             )
                             for column_id, column in enumerate(columns):
                                 c_attr = column.get("attr")
                                 ctrl.SetItem(
                                     row_id, column_id, str(dataline.get(c_attr, ""))
                                 )
-                    else:
-                        for dataline in data:
-                            if isinstance(dataline, str):
-                                row_id = ctrl.InsertItem(
-                                    ctrl.GetItemCount(),
-                                    dataline,
+                        elif isinstance(dataline, str):
+                            row_id = ctrl.InsertItem(
+                                ctrl.GetItemCount(),
+                                dataline,
+                            )
+                        elif isinstance(dataline, (list, tuple)):
+                            row_id = ctrl.InsertItem(
+                                ctrl.GetItemCount(),
+                                dataline[0],
+                            )
+                            for column_id, column in enumerate(columns):
+                                # c_attr = column.get("attr")
+                                ctrl.SetItem(
+                                    row_id, column_id, dataline[column_id]
                                 )
-                            elif isinstance(dataline, (list, tuple)):
-                                row_id = ctrl.InsertItem(
-                                    ctrl.GetItemCount(),
-                                    dataline[0],
-                                )
-                                for column_id, column in enumerate(columns):
-                                    # c_attr = column.get("attr")
-                                    ctrl.SetItem(
-                                        row_id, column_id, dataline[column_id]
-                                    )
 
                 fill_ctrl(chart, obj, attr, l_columns)
 
@@ -1011,11 +1015,14 @@ class ChoicePropertyPanel(ScrolledPanel):
                         c_attr = column.get("attr")
                         c_type = column.get("type")
                         values = getattr(local_obj, param)
-                        if isinstance(values, dict):
+                        if isinstance(values[row_id], dict):
                             values[row_id][c_attr] = c_type(new_data)
                             self.context.signal(param, values, row_id, param)
-                        else:
+                        elif isinstance(values[row_id], str):
                             values[row_id] = c_type(new_data)
+                            self.context.signal(param, values, row_id)
+                        else:
+                            values[row_id][col_id] = c_type(new_data)
                             self.context.signal(param, values, row_id)
 
                     return chart_stop
@@ -1043,7 +1050,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                                 values = getattr(local_obj, param)
                                 # try:
                                 values.pop(row_id)
-                                self.context.signal(param, values, row_id, param)
+                                self.context.signal(param, values, 0, param)
                                 fill_ctrl(ctrl, local_obj, param, columns)
                                 # except IndexError:
                                 #    pass
@@ -1067,7 +1074,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                                 else:
                                     newentry = copy(values[row_id])
                                 values.append(newentry)
-                                self.context.signal(param, values, row_id, param)
+                                self.context.signal(param, values, 0, param)
                                 # except IndexError:
                                 #    pass
                                 fill_ctrl(ctrl, local_obj, param, columns)
