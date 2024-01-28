@@ -26,6 +26,7 @@ class TrueTypeFont:
         self.units_per_em = None
         self.created = None
         self.modified = None
+        self.active = True
         self.x_min = None
         self.y_min = None
         self.x_max = None
