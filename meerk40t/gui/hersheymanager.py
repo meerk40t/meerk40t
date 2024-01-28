@@ -81,12 +81,19 @@ class LineTextPropertyPanel(wx.Panel):
 
         text_options.AddSpacer(25)
 
+        msg = (
+            "\n"
+            + _("- Hold shift/ctrl-Key down for bigger change")
+            + "\n"
+            + _("- Right click will reset value to default")
+        )
+
         self.btn_bigger_spacing = wx.Button(self, wx.ID_ANY, "+")
-        self.btn_bigger_spacing.SetToolTip(_("Increase the character-gap"))
+        self.btn_bigger_spacing.SetToolTip(_("Increase the character-gap") + msg)
         text_options.Add(self.btn_bigger_spacing, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_smaller_spacing = wx.Button(self, wx.ID_ANY, "-")
-        self.btn_smaller_spacing.SetToolTip(_("Decrease the character-gap"))
+        self.btn_smaller_spacing.SetToolTip(_("Decrease the character-gap") + msg)
         text_options.Add(self.btn_smaller_spacing, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         text_options.AddSpacer(25)
@@ -96,12 +103,6 @@ class LineTextPropertyPanel(wx.Panel):
         text_options.Add(self.btn_attrib_lineplus, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         text_options.Add(self.btn_attrib_lineminus, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        msg = (
-            "\n"
-            + _("- Hold shift/ctrl-Key down for bigger change")
-            + "\n"
-            + _("- Right click will reset value to default")
-        )
         self.btn_attrib_lineplus.SetToolTip(_("Increase line distance") + msg)
         self.btn_attrib_lineminus.SetToolTip(_("Reduce line distance") + msg)
         self.check_weld = wx.CheckBox(self, wx.ID_ANY, "")
@@ -184,9 +185,20 @@ class LineTextPropertyPanel(wx.Panel):
             return
         if not hasattr(self.node, "mkfontspacing") or self.node.mkfontspacing is None:
             self.node.mkfontspacing = 1.0
+        if not hasattr(self.node, "mklinegap") or self.node.mklinegap is None:
+            self.node.mklinegap = 1.1
         if not hasattr(self.node, "mkfontweld") or self.node.mkfontweld is None:
             self.node.mkfontweld = False
         self.check_weld.SetValue(self.node.mkfontweld)
+        if not hasattr(self.node, "mkalign") or self.node.mkalign is None:
+            self.node.mkalign = "start"
+        vals = ("start", "middle", "end")
+        try:
+            idx = vals.index(self.node.mkalign)
+        except IndexError:
+            idx = 0
+        self.rb_align.SetSelection(idx)
+
         self.load_directory()
         self.text_text.SetValue(str(node.mktext))
         self.Show()
@@ -277,13 +289,23 @@ class LineTextPropertyPanel(wx.Panel):
     def on_button_bigger_spacing(self, event):
         if self.node is None:
             return
-        self.node.mkfontspacing += 0.01
+        gap = 0.01
+        if wx.GetKeyState(wx.WXK_SHIFT):
+            gap = 0.1
+        if wx.GetKeyState(wx.WXK_CONTROL):
+            gap = 0.25
+        self.node.mkfontspacing += gap
         self.update_node()
 
     def on_button_smaller_spacing(self, event):
         if self.node is None:
             return
-        self.node.mkfontspacing -= 0.01
+        gap = 0.01
+        if wx.GetKeyState(wx.WXK_SHIFT):
+            gap = 0.1
+        if wx.GetKeyState(wx.WXK_CONTROL):
+            gap = 0.25
+        self.node.mkfontspacing -= gap
         self.update_node()
 
     def on_text_change(self, event):
