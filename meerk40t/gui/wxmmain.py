@@ -711,6 +711,10 @@ class MeerK40t(MWindow):
         self.context.signal("draw_mode", self.context.draw_mode)
         self.context.signal("refresh_scene", "Scene")
 
+    @signal_listener("system_font_directories")
+    def font_sources_changed(self, origin, signal, *args):
+        self.context.fonts.reset_cache()
+
     # --- Listen to external events to update the bar
     # @signal_listener("show_colorbar")
     # def on_colobar_signal(self, origin, *args):

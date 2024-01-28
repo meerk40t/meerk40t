@@ -9,7 +9,7 @@ from os.path import basename, exists, join, realpath, splitext
 from meerk40t.core.node.node import Fillrule
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
-from meerk40t.kernel import get_safe_path
+from meerk40t.kernel import get_safe_path, signal_listener
 from meerk40t.svgelements import Color
 from meerk40t.tools.geomstr import BeamTable, Geomstr
 from meerk40t.tools.jhfparser import JhfFont
@@ -138,6 +138,8 @@ class Meerk40tFonts:
             os.remove(fn)
         except (OSError, FileNotFoundError, PermissionError):
             pass
+        self._available_fonts = None
+        p = self.available_fonts()
 
     def have_hershey_fonts(self):
         p = self.available_fonts()
@@ -628,8 +630,8 @@ def plugin(kernel, lifecycle):
             {
                 "attr": "system_font_directories",
                 "object": context,
-                "page": "Fonts",
-                "section": "_10_Font locations",
+                "page": "_95_Fonts",
+                "section": "_95_Font locations",
                 "default": directories,
                 "type": list,
                 "columns": [
@@ -637,7 +639,7 @@ def plugin(kernel, lifecycle):
                         "attr": "directory",
                         "type": str,
                         "label": _("Directory"),
-                        "width": 300,
+                        "width": -1,
                         "editable": True,
                     },
                 ],
