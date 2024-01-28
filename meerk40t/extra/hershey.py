@@ -181,7 +181,8 @@ class Meerk40tFonts:
         p = self.available_fonts()
         for info in p:
             # We don't care about capitalisation
-            f_lower = info[3].lower()
+            f_lower = info[1].lower()
+            # print (f"Comparing {s_lower} to {f_lower} ({info[1]}, {info[2]}, {info[3]})")
             if f_lower == s_lower:
                 return info[0]
         return None
