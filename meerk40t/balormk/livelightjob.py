@@ -253,7 +253,12 @@ class LiveLightJob:
         return self._light_geometry(con, geometry)
 
     def _static(self, con):
-        self._light_geometry(con, self._geometry)
+        geometry = Geomstr(self._geometry)
+        rotate = self._redlight_adjust_matrix()
+        if not self.raw:
+            geometry.transform(self.service.view.matrix)
+        geometry.transform(rotate)
+        return self._light_geometry(con, geometry)
 
     def _bounds(self, con):
         """
@@ -276,7 +281,8 @@ class LiveLightJob:
             (xmin, ymin),
         )
         rotate = self._redlight_adjust_matrix()
-        geometry.transform(self.service.view.matrix)
+        if not self.raw:
+            geometry.transform(self.service.view.matrix)
         geometry.transform(rotate)
         return self._light_geometry(con, geometry, bounded=True)
 

@@ -19,12 +19,7 @@ class ElementLightJob:
         self,
         service,
         geometry,
-        travel_speed=None,
-        jump_delay=200.0,
-        simulation_speed=None,
-        quantization=500,
-        simulate=True,
-        raw=False,
+
     ):
         self.service = service
         self.geometry = geometry
@@ -112,6 +107,15 @@ class ElementLightJob:
             con._dark_speed = self.service.redlight_speed
             con._goto_speed = self.service.redlight_speed
         con.light_mode()
+        return self._mode_light(con)
+
+    def _redlight_adjust_matrix(self):
+        """
+        Calculate the redlight adjustment matrix which is the product of the redlight offset values and the
+        redlight rotation value.
+
+        @return:
+        """
 
         x_offset = float(
             Length(
@@ -127,13 +131,20 @@ class ElementLightJob:
                 unitless=UNITS_PER_PIXEL,
             )
         )
-        delay_dark = self.jump_delay
+        redlight_adjust_matrix = Matrix()
+        redlight_adjust_matrix.post_rotate(
+            self.service.redlight_angle.radians, 0x8000, 0x8000
+        )
+        redlight_adjust_matrix.post_translate(x_offset, y_offset)
+        return redlight_adjust_matrix
 
+    def _mode_light(self, con):
+        redlight_matrix = self._redlight_adjust_matrix()
+
+        delay_dark = self.jump_delay
         delay_between = 8
+
         quantization = self.quantization
-        rotate = Matrix()
-        rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
-        rotate.post_translate(x_offset, y_offset)
 
         geometry = Geomstr(self.geometry)
 
@@ -142,7 +153,7 @@ class ElementLightJob:
             geometry.transform(self.service.view.matrix)
 
         # Add redlight adjustments within device space.
-        geometry.transform(rotate)
+        geometry.transform(redlight_matrix)
 
         points = list(geometry.as_equal_interpolated_points(distance=quantization))
         move = True
