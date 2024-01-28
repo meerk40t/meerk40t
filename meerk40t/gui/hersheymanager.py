@@ -511,7 +511,7 @@ class PanelFontManager(wx.Panel):
 
         mainsizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.fonts = []
+        self.font_infos = []
 
         self.text_info = wx.TextCtrl(
             self,
@@ -537,6 +537,7 @@ class PanelFontManager(wx.Panel):
 
         self.text_fontdir = wx.TextCtrl(self, wx.ID_ANY, "")
         sizer_directory.Add(self.text_fontdir, 1, wx.EXPAND, 0)
+        self.text_fontdir.SetToolTip(_("Additional directory for userdefined fonts (also used to store some cache files)"))
 
         self.btn_dirselect = wx.Button(self, wx.ID_ANY, "...")
         sizer_directory.Add(self.btn_dirselect, 0, wx.EXPAND, 0)
@@ -598,20 +599,21 @@ class PanelFontManager(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_btn_delete, self.btn_delete)
         self.Bind(wx.EVT_BUTTON, self.on_btn_refresh, self.btn_refresh)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_webget, self.combo_webget)
+        self.list_fonts.Bind(wx.EVT_MOTION, self.on_list_hover)
         # end wxGlade
         fontdir = self.context.fonts.font_directory
         self.text_fontdir.SetValue(fontdir)
 
     def on_text_directory(self, event):
         fontdir = self.text_fontdir.GetValue()
-        self.fonts.clear()
+        self.font_infos.clear()
         font_desc = []
         self.list_fonts.Clear()
         if os.path.exists(fontdir):
             self.context.fonts.font_directory = fontdir
-        p = self.context.fonts.available_fonts()
-        for info in p:
-            self.fonts.append(info[0])
+        self.font_infos = self.context.fonts.available_fonts()
+
+        for info in self.font_infos:
             font_desc.append(info[1])
         self.list_fonts.SetItems(font_desc)
         # Let the world know we have fonts
@@ -633,14 +635,15 @@ class PanelFontManager(wx.Panel):
 
     def on_list_font_dclick(self, event):
         if self.list_fonts.GetSelection() >= 0:
-            font_file = self.fonts[self.list_fonts.GetSelection()]
+            font_file = self.font_infos[self.list_fonts.GetSelection()][0]
             self.context.setting(str, "last_font", None)
             self.context.last_font = font_file
 
     def on_list_font(self, event):
         if self.list_fonts.GetSelection() >= 0:
-            full_font_file = self.fonts[self.list_fonts.GetSelection()]
-            is_system = self.context.fonts.is_system_font(full_font_file)
+            info = self.font_infos[self.list_fonts.GetSelection()]
+            full_font_file = info[0]
+            is_system = info[4]
             self.btn_delete.Enable(not is_system)
             bmp = self.context.fonts.preview_file(full_font_file)
             # if bmp is not None:
@@ -651,6 +654,19 @@ class PanelFontManager(wx.Panel):
             if bmp is None:
                 bmp = wx.NullBitmap
             self.bmp_preview.SetBitmap(bmp)
+    
+    def on_list_hover(self, event):
+        event.Skip()
+        pt = event.GetPosition()
+        item = self.list_fonts.HitTest(pt)
+        ttip = _("List of available fonts")
+        if item >= 0:
+            try:
+                info = self.font_infos[item]
+                ttip = f"{info[1]}\nFamily: {info[2]}\nSubfamily: {info[3]}\n{info[0]}"
+            except IndexError:
+                pass
+        self.list_fonts.SetToolTip(ttip)
 
     def on_btn_import(self, event, defaultdirectory=None, defaultextension=None):
         fontinfo = self.context.fonts.fonts_registered
@@ -760,7 +776,8 @@ class PanelFontManager(wx.Panel):
 
     def on_btn_delete(self, event):
         if self.list_fonts.GetSelection() >= 0:
-            full_font_file = self.fonts[self.list_fonts.GetSelection()]
+            info = self.font_infos[self.list_fonts.GetSelection()]
+            full_font_file = info[0]
             font_file = os.path.basename(full_font_file)
             if self.context.fonts.is_system_font(full_font_file):
                 return
