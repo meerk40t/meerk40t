@@ -250,6 +250,22 @@ class CorFileWidget(Widget):
                 0,
                 3000,
                 3000,
+                icons.icon_balor_full.GetBitmap(use_theme=False),
+                self.corfile_outline,
+            ),
+            (
+                0xFFFF,
+                3000,
+                3000,
+                3000,
+                icons.icons8_gas_industry.GetBitmap(use_theme=False),
+                self.corfile_burn,
+            ),
+            (
+                0xFFFF,
+                6000,
+                3000,
+                3000,
                 icons.icons8_save.GetBitmap(use_theme=False),
                 self.corfile_save,
             ),
@@ -395,6 +411,29 @@ class CorFileWidget(Widget):
     def vflip(self):
         matrix = PMatrix.scale(1, -1, 0x7FFF, 0x7FFF)
         self.geometry.transform3x3(matrix)
+
+    def corfile_outline(self):
+        service = self.scene.context.device
+        if hasattr(service, "job") and service.job is not None:
+            service.job.stop()
+            service.job = None
+            return
+        from meerk40t.balormk.elementlightjob import ElementLightJob
+        service.job = ElementLightJob(
+            service,
+            self.geometry,
+            travel_speed=8000,
+            jump_delay=10,
+            simulation_speed=8000,
+            quantization=1,
+            simulate=True,
+            raw=True,
+        )
+        service.spooler.send(service.job)
+
+    def corfile_burn(self):
+        pass
+
 
     def corfile_save(self):
         root = self.scene.context.root
