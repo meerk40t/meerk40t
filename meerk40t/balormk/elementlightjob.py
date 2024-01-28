@@ -103,9 +103,14 @@ class ElementLightJob:
         if not self.geometry:
             return False
 
-        con._light_speed = self.service.redlight_speed
-        con._dark_speed = self.service.redlight_speed
-        con._goto_speed = self.service.redlight_speed
+        if self.simulate:
+            con._light_speed = self.simulation_speed
+            con._dark_speed = self.simulation_speed
+            con._goto_speed = self.simulation_speed
+        else:
+            con._light_speed = self.service.redlight_speed
+            con._dark_speed = self.service.redlight_speed
+            con._goto_speed = self.service.redlight_speed
         con.light_mode()
 
         x_offset = float(
