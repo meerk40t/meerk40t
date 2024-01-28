@@ -24,6 +24,7 @@ class ElementLightJob:
         simulation_speed=None,
         quantization=500,
         simulate=True,
+        raw=False,
     ):
         self.service = service
         self.geometry = geometry
@@ -34,6 +35,8 @@ class ElementLightJob:
         self.simulation_speed = simulation_speed
         self.quantization = quantization
         self.simulate = simulate
+        self.raw = raw
+
         self.priority = -1
         self.label = "Element Light Job"
         self.time_submitted = time.time()
@@ -130,7 +133,8 @@ class ElementLightJob:
         geometry = Geomstr(self.geometry)
 
         # Move to device space.
-        geometry.transform(self.service.view.matrix)
+        if not self.raw:
+            geometry.transform(self.service.view.matrix)
 
         # Add redlight adjustments within device space.
         geometry.transform(rotate)
