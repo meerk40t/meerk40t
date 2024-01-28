@@ -1,5 +1,6 @@
 from functools import lru_cache
 from glob import glob
+import platform
 import os
 from os.path import basename, exists, join, realpath, splitext
 
@@ -509,7 +510,6 @@ class Meerk40tFonts:
             return self._available_fonts
 
         # Return a tuple of two values
-        import platform
         from time import perf_counter
         _ = self.context.kernel.translation
         t0 = perf_counter()
@@ -547,23 +547,10 @@ class Meerk40tFonts:
 
         busy = self.context.kernel.busyinfo
         busy.start(msg=_("Reading system fonts..."))
-        systype = platform.system()
         directories = []
         directories.append(self.font_directory)
-        if systype == "Windows":
-            if "WINDIR" in os.environ:
-                windir = os.environ["WINDIR"]
-                directories.append(join(windir, "Fonts"))
-            if "LOCALAPPDATA" in os.environ:
-                appdir = os.environ["LOCALAPPDATA"]
-                directories.append(join(appdir, "Microsoft\\Windows\\Fonts"))
-        elif systype == "Linux":
-            directories.append("/usr/share/fonts")
-            directories.append("/usr/local/share/fonts")
-            directories.append("~/.local/share/fonts")
-        elif systype == "Darwin":
-            directories.append("/Library/Fonts")
-            directories.append("~/Library/Fonts")
+        for d in self.context.system_font_directories:
+            directories.append(d)
         # Walk through all folders recursively
         found = dict()
         font_types = self.fonts_registered
@@ -618,11 +605,57 @@ def plugin(kernel, lifecycle):
     if lifecycle == "register":
         _ = kernel.translation
         context = kernel.root
+        # Generate setting for system-directories
+        directories = []
+        systype = platform.system()
+        if systype == "Windows":
+            if "WINDIR" in os.environ:
+                windir = os.environ["WINDIR"]
+            else:
+                windir = "c:\\windows"
+            directories.append(join(windir, "Fonts"))
+            if "LOCALAPPDATA" in os.environ:
+                appdir = os.environ["LOCALAPPDATA"]
+                directories.append(join(appdir, "Microsoft\\Windows\\Fonts"))
+        elif systype == "Linux":
+            directories.append("/usr/share/fonts")
+            directories.append("/usr/local/share/fonts")
+            directories.append("~/.local/share/fonts")
+        elif systype == "Darwin":
+            directories.append("/Library/Fonts")
+            directories.append("~/Library/Fonts")
+        choices = [
+            {
+                "attr": "system_font_directories",
+                "object": context,
+                "page": "Fonts",
+                "section": "_10_Font locations",
+                "default": directories,
+                "type": list,
+                "columns": [
+                    {
+                        "attr": "directory",
+                        "type": str,
+                        "label": _("Directory"),
+                        "width": 300,
+                        "editable": True,
+                    },
+                ],
+                "label": "_00_",
+                "style": "chart",
+                "primary": "directory",
+                "allow_deletion": True,
+                "allow_duplication": True,
+                "tip": _("Places where MeerK40t will look for fonts."),
+
+            },
+        ]
+        kernel.register_choices("preferences", choices)
         context.fonts = Meerk40tFonts(context=context)
 
         # Register update routine for linetext
         kernel.register("path_updater/linetext", context.fonts.update)
-        for idx, attrib in enumerate(("mkfontsize", "mkfontweld", "mkfontspacing", "mklinegap")):
+        for idx, attrib in enumerate(("mkfontsize", "mkfontweld", "mkfontspacing", "mklinegap", "mkalign")):
             kernel.register(f"registered_mk_svg_parameters/font{idx}", attrib)
 
         @context.console_option("font", "f", type=str, help=_("SHX font file."))
