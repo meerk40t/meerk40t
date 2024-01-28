@@ -2,7 +2,7 @@ import wx
 
 from meerk40t.gui.wxutils import ScrolledPanel
 
-from ..icons import icons8_vector_50
+from ..icons import icons8_vector
 from ..mwindow import MWindow
 from .attributes import ColorPanel, IdPanel, PositionSizePanel, PreventChangePanel
 
@@ -119,12 +119,14 @@ class PointProperty(MWindow):
         self.panel = PointPropertyPanel(
             self, wx.ID_ANY, context=self.context, node=node
         )
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_vector_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_vector.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: PointProperty.__set_properties
         self.SetTitle(_("Point Properties"))
+        self.restore_aspect()
 
     def restore(self, *args, node=None, **kwds):
         self.panel.set_widgets(node)

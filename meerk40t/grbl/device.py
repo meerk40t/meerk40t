@@ -6,25 +6,29 @@ Registers relevant commands and options.
 """
 from time import sleep
 
-from meerk40t.kernel import CommandSyntaxError, Service
+from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
-from ..core.units import UNITS_PER_MIL, Length, ViewPort
+from ..core.units import MM_PER_INCH, Length
+from ..core.view import View
+from ..device.mixins import Status
 from .controller import GrblController
 from .driver import GRBLDriver
 
 
-class GRBLDevice(Service, ViewPort):
+class GRBLDevice(Service, Status):
     """
     GRBLDevice is driver for the Gcode Controllers
     """
 
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
+        self.hardware_config = {}
         self.permit_tcp = True
         self.permit_serial = True
 
         Service.__init__(self, kernel, path)
+        Status.__init__(self)
         self.name = "GRBLDevice"
         self.extension = "gcode"
         if choices is not None:
@@ -40,6 +44,16 @@ class GRBLDevice(Service, ViewPort):
         _ = self._
         choices = [
             {
+                "attr": "label",
+                "object": self,
+                "default": "grbl",
+                "type": str,
+                "label": _("Label"),
+                "tip": _("What is this device called."),
+                "width": 250,
+                "signals": "device;renamed",
+            },
+            {
                 "attr": "bedwidth",
                 "object": self,
                 "default": "235mm",
@@ -47,7 +61,6 @@ class GRBLDevice(Service, ViewPort):
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
                 "subsection": "Dimensions",
-                "signals": "bedsize",
                 "nonzero": True,
             },
             {
@@ -58,7 +71,6 @@ class GRBLDevice(Service, ViewPort):
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
                 "subsection": "Dimensions",
-                "signals": "bedsize",
                 "nonzero": True,
             },
             {
@@ -93,7 +105,6 @@ class GRBLDevice(Service, ViewPort):
                     "+X is standard for grbl but sometimes settings can flip that."
                 ),
                 "subsection": "_10_Flip Axis",
-                "signals": "bedsize",
             },
             {
                 "attr": "flip_y",
@@ -105,7 +116,6 @@ class GRBLDevice(Service, ViewPort):
                     "-Y is standard for grbl but sometimes settings can flip that."
                 ),
                 "subsection": "_10_Flip Axis",
-                "signals": "bedsize",
             },
             {
                 "attr": "swap_xy",
@@ -117,90 +127,32 @@ class GRBLDevice(Service, ViewPort):
                     "Swaps the X and Y axis. This happens before the FlipX and FlipY."
                 ),
                 "subsection": "_20_Axis corrections",
-                "signals": "bedsize",
             },
             {
-                "attr": "home_bottom",
+                "attr": "home_corner",
                 "object": self,
-                "default": True,
-                "type": bool,
-                "label": _("Home Bottom"),
-                "tip": _("Indicates the device Home is on the bottom"),
-                "subsection": "_30_Home position",
-                "signals": "bedsize",
-            },
-            {
-                "attr": "home_right",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Home Right"),
-                "tip": _("Indicates the device Home is at the right side"),
-                "subsection": "_30_Home position",
-                "signals": "bedsize",
+                "default": "auto",
+                "type": str,
+                "style": "combo",
+                "choices": [
+                    "auto",
+                    "top-left",
+                    "top-right",
+                    "bottom-left",
+                    "bottom-right",
+                    "center",
+                ],
+                "label": _("Force Declared Home"),
+                "tip": _("Override native home location"),
+                "subsection": "_30_" + _("Home position"),
             },
         ]
         self.register_choices("bed_dim", choices)
-        choices = [
-            {
-                "attr": "rotary_active",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Rotary-Mode active"),
-                "tip": _("Is the rotary mode active for this device"),
-            },
-            {
-                "attr": "rotary_scale_x",
-                "object": self,
-                "default": 1.0,
-                "type": float,
-                "label": _("X-Scale"),
-                "tip": _("Scale that needs to be applied to the X-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Scale"),
-            },
-            {
-                "attr": "rotary_scale_y",
-                "object": self,
-                "default": 1.0,
-                "type": float,
-                "label": _("Y-Scale"),
-                "tip": _("Scale that needs to be applied to the Y-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Scale"),
-            },
-            {
-                "attr": "rotary_supress_home",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Ignore Home"),
-                "tip": _("Ignore Home-Command"),
-                "conditional": (self, "rotary_active"),
-            },
-            {
-                "attr": "rotary_mirror_x",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror X"),
-                "tip": _("Mirror the elements on the X-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Mirror Output"),
-            },
-            {
-                "attr": "rotary_mirror_y",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror Y"),
-                "tip": _("Mirror the elements on the Y-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Mirror Output"),
-            },
-        ]
-        self.register_choices("rotary", choices)
+        # This device prefers to display power level in percent
+        self.setting(bool, "use_percent_for_power_display", True)
+        # This device prefers to display speed in mm/min
+        self.setting(bool, "use_mm_min_for_speed_display", False)
+
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
             list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
@@ -220,21 +172,19 @@ class GRBLDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        ViewPort.__init__(
-            self,
+        self.view = View(
             self.bedwidth,
             self.bedheight,
-            user_scale_x=self.scale_x,
-            user_scale_y=self.scale_y,
-            native_scale_x=UNITS_PER_MIL,
-            native_scale_y=UNITS_PER_MIL,
-            flip_x=self.flip_x,
-            flip_y=self.flip_y,
-            swap_xy=self.swap_xy,
-            origin_x=1.0 if self.home_right else 0.0,
-            origin_y=1.0 if self.home_bottom else 0.0,
+            dpi_x=1000.0,
+            dpi_y=1000.0,
         )
-
+        self.view_mm = View(
+            self.bedwidth,
+            self.bedheight,
+            dpi_x=MM_PER_INCH,
+            dpi_y=MM_PER_INCH,
+        )
+        self.realize()
         self.settings = dict()
         self.state = 0
 
@@ -324,95 +274,33 @@ class GRBLDevice(Service, ViewPort):
 
         choices = [
             {
-                "attr": "label",
-                "object": self,
-                "default": "grbl",
-                "type": str,
-                "label": _("Label"),
-                "tip": _("What is this device called."),
-                "width": 250,
-                "signals": "device;renamed",
-            },
-            {
-                "attr": "buffer_mode",
-                "object": self,
-                "default": "buffered",
-                "type": str,
-                "style": "combo",
-                "choices": ["buffered", "sync"],
-                "label": _("Sending Protocol"),
-                "tip": _(
-                    "Buffered sends data as long as the planning buffer permits it being sent. Sync requires an 'ok' between each line sent."
-                ),
-                "section": "_20_Protocol",
-                "subsection": "_00_",
-            },
-            {
-                "attr": "planning_buffer_size",
-                "object": self,
-                "default": 128,
-                "type": int,
-                "label": _("Planning Buffer Size"),
-                "tip": _("Size of Planning Buffer"),
-                "section": "_20_Protocol",
-                "subsection": "_00_",
-            },
-            {
-                "attr": "interpolate",
-                "object": self,
-                "default": 50,
-                "type": int,
-                "label": _("Curve Interpolation"),
-                "tip": _("Distance of the curve interpolation in mils"),
-            },
-            {
-                "attr": "line_end",
-                "object": self,
-                "default": "CR",
-                "type": str,
-                "style": "combosmall",
-                "choices": ["CR", "LF", "CRLF"],
-                "label": _("Line Ending"),
-                "tip": _(
-                    "CR for carriage return (\\r), LF for line feed(\\n), CRLF for both"
-                ),
-                "section": "_20_Protocol",
-            },
-            {
-                "attr": "limit_buffer",
-                "object": self,
-                "default": True,
-                "type": bool,
-                "label": _("Limit the controller buffer size"),
-                "tip": _("Enables the controller buffer limit."),
-                "section": "_30_Controller Buffer",
-            },
-            {
-                "attr": "max_buffer",
-                "object": self,
-                "default": 200,
-                "trailer": _("lines"),
-                "type": int,
-                "label": _("Controller Buffer"),
-                "tip": _(
-                    "This is the limit of the controller buffer size. Prevents full writing to the controller."
-                ),
-                "conditional": (self, "limit_buffer"),
-                "section": "_30_Controller Buffer",
-            },
-        ]
-        self.register_choices("grbl-connection", choices)
-
-        choices = [
-            {
                 "attr": "use_m3",
                 "object": self,
                 "default": False,
                 "type": bool,
                 "label": _("Use M3"),
+                "section": "_5_Config",
                 "tip": _(
                     "Uses M3 rather than M4 for laser start (see GRBL docs for additional info)"
                 ),
+            },
+            {
+                "attr": "extended_alarm_clear",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Reset on 'Clear Alarm'"),
+                "section": "_5_Config",
+                "tip": _("Reset the controller too on a 'Clear Alarm' command"),
+            },
+            {
+                "attr": "interp",
+                "object": self,
+                "default": 5,
+                "type": int,
+                "label": _("Curve Interpolation"),
+                "section": "_5_Config",
+                "tip": _("Distance of the curve interpolation in mils"),
             },
             {
                 "attr": "has_endstops",
@@ -420,6 +308,7 @@ class GRBLDevice(Service, ViewPort):
                 "default": False,
                 "type": bool,
                 "label": _("Device has endstops"),
+                "section": "_5_Config",
                 "tip": _(
                     "If the device has endstops, then the laser can home itself to this position = physical home ($H)"
                 ),
@@ -454,13 +343,67 @@ class GRBLDevice(Service, ViewPort):
                 "section": "_10_Red Dot",
             },
             {
-                "attr": "requires_validation",
+                "attr": "max_vector_speed",
+                "object": self,
+                "default": 140,
+                "type": float,
+                "label": _("Max vector speed"),
+                "trailer": "mm/s",
+                "tip": _(
+                    "What is the highest reliable speed your laser is able to perform vector operations, ie engraving or cutting.\n"
+                    "You can finetune this in the Warning Sections of this configuration dialog."
+                ),
+                "section": "_20_" + _("Maximum speeds"),
+                "subsection": "_10_",
+            },
+            {
+                "attr": "max_raster_speed",
+                "object": self,
+                "default": 750,
+                "type": float,
+                "label": _("Max raster speed"),
+                "trailer": "mm/s",
+                "tip": _(
+                    "What is the highest reliable speed your laser is able to perform raster or image operations.\n"
+                    "You can finetune this in the Warning Sections of this configuration dialog."
+                ),
+                "section": "_20_" + _("Maximum speeds"),
+                "subsection": "_10_",
+            },
+            {
+                "attr": "limit_buffer",
                 "object": self,
                 "default": True,
                 "type": bool,
-                "label": _("Require validation for device"),
+                "label": _("Limit the controller buffer size"),
+                "tip": _("Enables the controller buffer limit."),
+                "section": "_30_Controller Buffer",
+            },
+            {
+                "attr": "max_buffer",
+                "object": self,
+                "default": 200,
+                "trailer": _("lines"),
+                "type": int,
+                "label": _("Controller Buffer"),
                 "tip": _(
-                    "Ensure device is completely initialized before sending data. This is usually known to be valid at the 'Grbl xx.x' version message."
+                    "This is the limit of the controller buffer size. Prevents full writing to the controller."
+                ),
+                "conditional": (self, "limit_buffer"),
+                "section": "_30_Controller Buffer",
+            },
+        ]
+        self.register_choices("grbl-advanced", choices)
+
+        choices = [
+            {
+                "attr": "require_validator",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Require Validator"),
+                "tip": _(
+                    "Do not validate the connection without seeing the welcome message at start."
                 ),
                 "section": "_40_Validation",
             },
@@ -473,11 +416,79 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _(
                     "If for some reason the device needs a different welcome validator than 'Grbl' (default), for example, somewhat custom grbl-like firmware"
                 ),
-                "conditional": (self, "requires_validation"),
+                "section": "_40_Validation",
+            },
+            {
+                "attr": "reset_on_connect",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Reset on connect"),
+                "tip": _(
+                    "On connection, send the device a softreset message as soon as connection is established."
+                ),
+                "section": "_40_Validation",
+            },
+            {
+                "attr": "boot_connect_sequence",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Check sequence on connect."),
+                "tip": _("On connection, check the standard GRBL info for the device."),
+                "section": "_40_Validation",
+            },
+            {
+                "attr": "buffer_mode",
+                "object": self,
+                "default": "buffered",
+                "type": str,
+                "style": "combo",
+                "choices": ["buffered", "sync"],
+                "label": _("Sending Protocol"),
+                "tip": _(
+                    "Buffered sends data as long as the planning buffer permits it being sent. Sync requires an 'ok' between each line sent."
+                ),
+                "section": "_20_Protocol",
+                "subsection": "_00_",
+            },
+            {
+                "attr": "planning_buffer_size",
+                "object": self,
+                "default": 128,
+                "type": int,
+                "label": _("Planning Buffer Size"),
+                "tip": _("Size of Planning Buffer"),
+                "section": "_20_Protocol",
+                "subsection": "_00_",
+            },
+            {
+                "attr": "line_end",
+                "object": self,
+                "default": "CR",
+                "type": str,
+                "style": "combosmall",
+                "choices": ["CR", "LF", "CRLF"],
+                "label": _("Line Ending"),
+                "tip": _(
+                    "CR for carriage return (\\r), LF for line feed(\\n), CRLF for both"
+                ),
+                "section": "_20_Protocol",
+            },
+            {
+                "attr": "connect_delay",
+                "object": self,
+                "default": 0,
+                "trailer": _("ms"),
+                "type": int,
+                "label": _("Post Connection Delay"),
+                "tip": _(
+                    "Delay the GRBL communications after initial connect. (Some slow boot devices may need this)"
+                ),
                 "section": "_40_Validation",
             },
         ]
-        self.register_choices("grbl-advanced", choices)
+        self.register_choices("protocol", choices)
 
         self.driver = GRBLDriver(self)
         self.controller = GrblController(self)
@@ -519,13 +530,22 @@ class GRBLDevice(Service, ViewPort):
                 self.driver(remainder + self.driver.line_end, real=True)
 
         @self.console_command(
+            "grbl_validate",
+            help=_("Force grbl validation for the connection"),
+            input_type=None,
+        )
+        def grbl_validate(command, channel, _, data=None, remainder=None, **kwgs):
+            channel(_("Forced grbl validation."))
+            self.controller.force_validate()
+
+        @self.console_command(
             "soft_reset",
             help=_("Send realtime soft reset gcode to the device"),
             input_type=None,
         )
         def soft_reset(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.reset()
-            self.signal("pipe;running", False)
+            self.laser_status = "idle"
 
         @self.console_command(
             "estop",
@@ -534,8 +554,7 @@ class GRBLDevice(Service, ViewPort):
         )
         def estop(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.reset()
-            self.signal("pipe;running", False)
-            self.signal("pause")
+            self.laser_status = "idle"
 
         @self.console_command(
             "clear_alarm",
@@ -544,7 +563,7 @@ class GRBLDevice(Service, ViewPort):
         )
         def clear_alarm(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.clear_alarm()
-            self.signal("pipe;running", False)
+            self.laser_status = "idle"
 
         @self.console_command(
             "pause",
@@ -567,15 +586,82 @@ class GRBLDevice(Service, ViewPort):
             self.driver.resume()
             self.signal("pause")
 
-        @self.console_command(
-            "viewport_update",
+        @kernel.console_command(
+            "+xforward",
             hidden=True,
-            help=_("Update grbl codes for movement"),
         )
-        def codes_update(**kwargs):
-            self.origin_x = 1.0 if self.home_right else 0.0
-            self.origin_y = 1.0 if self.home_bottom else 0.0
-            self.realize()
+        def plus_x_forward(data, **kwgs):
+            feed = 2000
+            step = feed / 600
+            self(f".timerright 0 0.1 .gcode $J=G91G21X{step}F{feed}")
+
+        @kernel.console_command(
+            "-xforward",
+            hidden=True,
+        )
+        def minus_x_forward(data, **kwgs):
+            self(".timerright -oq")
+            # self.controller.realtime("\x85")
+
+        @kernel.console_command(
+            "+xbackward",
+            hidden=True,
+        )
+        def plus_x_backward(data, **kwgs):
+            feed = 2000
+            step = feed / 600
+            self(f".timerleft 0 0.1 .gcode $J=G91G21X-{step}F{feed}")
+
+        @kernel.console_command(
+            "-xbackward",
+            hidden=True,
+        )
+        def minus_x_backward(data, **kwgs):
+            self(".timerleft -oq")
+
+        @kernel.console_command(
+            "+yforward",
+            hidden=True,
+        )
+        def plus_y_forward(data, **kwgs):
+            feed = 2000
+            step = feed / 600
+            self(f".timertop 0 0.1 .gcode $J=G91G21Y{step}F{feed}")
+
+        @kernel.console_command(
+            "-yforward",
+            hidden=True,
+        )
+        def minus_y_forward(data, **kwgs):
+            self(".timertop -oq")
+            # self.controller.realtime("\x85")
+
+        @kernel.console_command(
+            "+ybackward",
+            hidden=True,
+        )
+        def plus_y_backward(data, **kwgs):
+            feed = 2000
+            step = feed / 600
+            self(f".timerbottom 0 0.1 .gcode $J=G91G21Y-{step}F{feed}")
+
+        @kernel.console_command(
+            "-ybackward",
+            hidden=True,
+        )
+        def minus_y_backward(data, **kwgs):
+            self(".timerbottom -oq")
+            # self.controller.realtime("\x85")
+
+        @kernel.console_command(
+            "grbl_binds",
+            hidden=True,
+        )
+        def grbl_binds(data, **kwgs):
+            self("bind a +xbackward")
+            self("bind d +xforward")
+            self("bind s +ybackward")
+            self("bind w +yforward")
 
         @self.console_option(
             "strength", "s", type=int, help="Set the dot laser strength."
@@ -694,6 +780,17 @@ class GRBLDevice(Service, ViewPort):
                 channel(_("Interpreter cannot be attached to any device."))
             return
 
+    @property
+    def safe_label(self):
+        """
+        Provides a safe label without spaces or / which could cause issues when used in timer or other names.
+        @return:
+        """
+        if not hasattr(self, "label"):
+            return self.name
+        name = self.label.replace(" ", "-")
+        return name.replace("/", "-")
+
     def _register_console_serial(self):
         _ = self.kernel.translation
 
@@ -737,12 +834,9 @@ class GRBLDevice(Service, ViewPort):
     @property
     def current(self):
         """
-        @return: the location in scene units for the current known x value.
+        @return: the location in units for the current known position.
         """
-        return self.device_to_scene_position(
-            self.driver.native_x,
-            self.driver.native_y,
-        )
+        return self.view.iposition(self.driver.native_x, self.driver.native_y)
 
     @property
     def native(self):
@@ -751,10 +845,55 @@ class GRBLDevice(Service, ViewPort):
         """
         return self.driver.native_x, self.driver.native_y
 
-    def realize(self, origin=None):
-        self.width = self.bedwidth
-        self.height = self.bedheight
-        self.origin_x = 1.0 if self.home_right else 0.0
-        self.origin_y = 1.0 if self.home_bottom else 0.0
-        super().realize()
-        self.space.update_bounds(0, 0, self.width, self.height)
+    @signal_listener("scale_x")
+    @signal_listener("scale_y")
+    @signal_listener("bedwidth")
+    @signal_listener("bedheight")
+    @signal_listener("home_corner")
+    @signal_listener("flip_x")
+    @signal_listener("flip_y")
+    @signal_listener("swap_xy")
+    def realize(self, origin=None, *args):
+        if origin is not None and origin != self.path:
+            return
+        corner = self.setting(str, "home_corner")
+        if corner == "auto":
+            home_dx = 0
+            home_dy = 0
+        elif corner == "top-left":
+            home_dx = 1 if self.flip_x else 0
+            home_dy = 1 if self.flip_y else 0
+        elif corner == "top-right":
+            home_dx = 0 if self.flip_x else 1
+            home_dy = 1 if self.flip_y else 0
+        elif corner == "bottom-left":
+            home_dx = 1 if self.flip_x else 0
+            home_dy = 0 if self.flip_y else 1
+        elif corner == "bottom-right":
+            home_dx = 0 if self.flip_x else 1
+            home_dy = 0 if self.flip_y else 1
+        elif corner == "center":
+            home_dx = 0.5
+            home_dy = 0.5
+        self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.transform(
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
+            origin_x=home_dx,
+            origin_y=home_dy,
+        )
+
+        self.view_mm.set_dims(self.bedwidth, self.bedheight)
+        self.view_mm.transform(
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
+            origin_x=home_dx,
+            origin_y=home_dy,
+        )
+        self.signal("view;realized")

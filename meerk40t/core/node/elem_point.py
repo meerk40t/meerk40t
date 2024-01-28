@@ -1,11 +1,12 @@
 from copy import copy
 
+from meerk40t.core.node.mixins import FunctionalParameter
 from meerk40t.core.node.node import Node
 from meerk40t.svgelements import Matrix, Point
 from meerk40t.tools.geomstr import Geomstr
 
 
-class PointNode(Node):
+class PointNode(Node, FunctionalParameter):
     """
     PointNode is the bootstrapped node type for the 'elem point' type.
     """
@@ -17,6 +18,7 @@ class PointNode(Node):
                 kwargs["x"] = point.x
             if "y" not in kwargs:
                 kwargs["y"] = point.y
+            del kwargs["point"]
         self.x = 0
         self.y = 0
         self.matrix = None
@@ -39,7 +41,7 @@ class PointNode(Node):
         nd["fill"] = copy(self.fill)
         return PointNode(**nd)
 
-    def as_geometry(self):
+    def as_geometry(self, **kws):
         path = Geomstr()
         path.point(complex(self.x, self.y))
         path.transform(self.matrix)
@@ -61,6 +63,9 @@ class PointNode(Node):
         p = self.matrix.point_in_matrix_space((x, y))
         return p[0], p[1], p[0], p[1]
 
+    def length(self):
+        return 0
+
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Point"
@@ -74,10 +79,14 @@ class PointNode(Node):
 
     def drop(self, drag_node, modify=True):
         # Dragging element into element.
-        if drag_node.type.startswith("elem"):
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             if modify:
                 self.insert_sibling(drag_node)
             return True
+        elif drag_node.type.startswith("op"):
+            # If we drag an operation to this node,
+            # then we will reverse the game
+            return drag_node.drop(self, modify=modify)
         return False
 
     def revalidate_points(self):

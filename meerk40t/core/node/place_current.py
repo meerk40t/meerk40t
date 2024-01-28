@@ -20,10 +20,6 @@ class PlaceCurrentNode(Node):
         self.output = True
         self._formatter = "{enabled}{element_type}"
 
-    def __copy__(self):
-        nd = self.node_dict
-        return PlaceCurrentNode(**nd)
-
     def placements(self, context, outline, matrix, plan):
         if outline is None:
             return
@@ -41,8 +37,4 @@ class PlaceCurrentNode(Node):
         return default_map
 
     def drop(self, drag_node, modify=True):
-        # if drag_node.type.startswith("op"):
-        #     if modify:
-        #         self.insert_sibling(drag_node)
-        #     return True
         return False

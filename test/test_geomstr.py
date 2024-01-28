@@ -8,9 +8,12 @@ from math import tau
 import numpy as np
 
 from meerk40t.fill.fills import scanline_fill
+from meerk40t.fill.patterns import set_diamond1, set_line
 from meerk40t.svgelements import Arc, CubicBezier, Line, Matrix, QuadraticBezier
 from meerk40t.tools.geomstr import (
     TYPE_LINE,
+    TYPE_POINT,
+    BeamTable,
     Clip,
     Geomstr,
     MergeGraph,
@@ -20,22 +23,65 @@ from meerk40t.tools.geomstr import (
 )
 
 
-def draw(segments, w, h, filename="test.png"):
+def draw(segments, min_x, min_y, max_x, max_y, buffer=0, filename="test.png"):
     from PIL import Image, ImageDraw
 
-    im = Image.new("RGBA", (w, h), "white")
+    min_x -= buffer
+    min_y -= buffer
+    max_x += buffer
+    max_y += buffer
+    im = Image.new("RGBA", (int(max_x - min_x) + 1, int(max_y - min_y) + 1), "white")
+
     draw = ImageDraw.Draw(im)
-    for segment in segments:
+    for i in range(len(segments) - 1):
         # Draw raw segments.
-        f = segment[0]
-        t = segment[-1]
-        draw.line(((f.real, f.imag), (t.real, t.imag)), fill="#000000")
-    for segment in segments:
-        # Draw end points.
-        f = segment[0]
-        t = segment[-1]
-        draw.ellipse((f.real - 3, f.imag - 3, f.real + 3, f.imag + 3), fill="#FF0000")
-        draw.ellipse((t.real - 2, t.imag - 2, t.real + 2, t.imag + 2), fill="#0000FF")
+        f = segments[i]
+        t = segments[i + 1]
+        if f is None or t is None:
+            continue
+        draw.line(
+            ((f.real - min_x, f.imag - min_y), (t.real - min_x, t.imag - min_y)),
+            fill="#000000",
+        )
+    # for segment in segments:
+    #     # Draw end points.
+    #     f = segment[0]
+    #     t = segment[-1]
+    #     draw.ellipse((f.real - 3, f.imag - 3, f.real + 3, f.imag + 3), fill="#FF0000")
+    #     draw.ellipse((t.real - 2, t.imag - 2, t.real + 2, t.imag + 2), fill="#0000FF")
+    im.save(filename)
+
+
+def draw_geom(segments, min_x, min_y, max_x, max_y, buffer=0, filename="test.png"):
+    from PIL import Image, ImageDraw
+
+    min_x -= buffer
+    min_y -= buffer
+    max_x += buffer
+    max_y += buffer
+    im = Image.new("RGBA", (int(max_x - min_x) + 1, int(max_y - min_y) + 1), "white")
+
+    draw = ImageDraw.Draw(im)
+    for line in segments.segments[: segments.index]:
+        if line[2].real == TYPE_POINT:
+            f = line[0]
+            draw.ellipse(
+                (
+                    f.real - 3 - min_x,
+                    f.imag - 3 - min_y,
+                    f.real + 3 - min_x,
+                    f.imag + 3 - min_y,
+                ),
+                fill="#FF0000",
+            )
+        elif line[2].real == TYPE_LINE:
+            # Draw raw segments.
+            f = line[0]
+            t = line[-1]
+            draw.line(
+                ((f.real - min_x, f.imag - min_y), (t.real - min_x, t.imag - min_y)),
+                fill="#000000",
+            )
     im.save(filename)
 
 
@@ -185,7 +231,11 @@ class TestGeomstr(unittest.TestCase):
         t = numpath.segments == c.segments
         self.assertTrue(np.all(t))
 
-    def test_geomstr_close(self):
+    def test_geomstr_subpath(self):
+        """
+        Adds two shapes and tests whether they are detected as subshapes with an `end` between them.
+        @return:
+        """
         numpath = Geomstr()
         numpath.polyline(
             (
@@ -211,29 +261,92 @@ class TestGeomstr(unittest.TestCase):
         numpath.rotate(tau * 0.25)
         subpaths = list(numpath.as_subpaths())
         for subpath in subpaths:
+            print(subpath.segments)
             for seg in subpath.segments:
                 self.assertEqual(seg[2].real, TYPE_LINE)
         self.assertEqual(len(subpaths[0]), 4)
         self.assertEqual(len(subpaths[1]), 4)
 
+    def test_geomstr_contiguous(self):
+        """
+        Tests two disconnected polylines without marked ends between them and determines whether two
+        shapes are correctly detected.
+        @return:
+        """
+        numpath = Geomstr()
+        numpath.polyline(
+            (
+                complex(0.05, 0.05),
+                complex(0.95, 0.05),
+                complex(0.95, 0.95),
+                complex(0.05, 0.95),
+                complex(0.05, 0.05),
+            )
+        )
+        numpath.polyline(
+            (
+                complex(0.25, 0.25),
+                complex(0.75, 0.25),
+                complex(0.75, 0.75),
+                complex(0.25, 0.75),
+                complex(0.25, 0.25),
+            )
+        )
+        numpath.uscale(10000)
+        numpath.rotate(tau * 0.25)
+        subpaths = list(numpath.as_contiguous())
+        print("")
+        for subpath in subpaths:
+            print(subpath.segments)
+            for seg in subpath.segments:
+                self.assertEqual(seg[2].real, TYPE_LINE)
+        self.assertEqual(len(subpaths[0]), 4)
+        self.assertEqual(len(subpaths[1]), 4)
+
+    def test_geomstr_subpath_contiguous(self):
+        """
+        Create a 2-contour path within a single subpath geomstr
+        @return:
+        """
+        numpath = Geomstr()
+        numpath.polyline(
+            (
+                complex(0.05, 0.05),
+                complex(0.95, 0.05),
+                complex(0.95, 0.95),
+                complex(0.05, 0.95),
+                complex(0.05, 0.05),
+            )
+        )
+        numpath.polyline(
+            (
+                complex(0.25, 0.25),
+                complex(0.75, 0.25),
+                complex(0.75, 0.75),
+                complex(0.25, 0.75),
+                complex(0.25, 0.25),
+            )
+        )
+        subpaths = list(numpath.as_subpaths())
+        self.assertEqual(len(subpaths), 1)
+        contigs = list(numpath.as_contiguous())
+        self.assertEqual(len(contigs), 2)
+
     def test_geomstr_scanline(self):
         w = 10000
         h = 10000
         paths = (
-            (
-                (w * 0.05, h * 0.05),
-                (w * 0.95, h * 0.05),
-                (w * 0.95, h * 0.95),
-                (w * 0.05, h * 0.95),
-                (w * 0.05, h * 0.05),
-            ),
-            (
-                (w * 0.25, h * 0.25),
-                (w * 0.75, h * 0.25),
-                (w * 0.75, h * 0.75),
-                (w * 0.25, h * 0.75),
-                (w * 0.25, h * 0.25),
-            ),
+            complex(w * 0.05, h * 0.05),
+            complex(w * 0.95, h * 0.05),
+            complex(w * 0.95, h * 0.95),
+            complex(w * 0.05, h * 0.95),
+            complex(w * 0.05, h * 0.05),
+            None,
+            complex(w * 0.25, h * 0.25),
+            complex(w * 0.75, h * 0.25),
+            complex(w * 0.75, h * 0.75),
+            complex(w * 0.25, h * 0.75),
+            complex(w * 0.25, h * 0.25),
         )
 
         fill = list(
@@ -254,7 +367,7 @@ class TestGeomstr(unittest.TestCase):
                 path.line(complex(last_x, last_y), complex(x, y))
             last_x, last_y = x, y
         p = copy(path)
-        self.assertNotEqual(path, p)
+        self.assertEqual(path, p)
         #
         # print(path.segments)
         # print("Original segments...")
@@ -263,6 +376,74 @@ class TestGeomstr(unittest.TestCase):
         # print(p.travel_distance())
         # print(p.segments)
         # draw(p.segments, w, h)
+
+    def test_geomstr_y_intercepts(self):
+        """
+        Draws, 6 perfectly horizontal lines. Queries the y_intercepts
+        @return:
+        """
+        g = Geomstr()
+        g.line(complex(0, 0), complex(100, 0))
+        g.line(complex(0, 20), complex(100, 20))
+        g.line(complex(0, 40), complex(100, 40))
+        g.line(complex(0, 80), complex(100, 80))
+        g.line(complex(0, 60), complex(100, 60))
+        g.line(complex(0, 100), complex(100, 100))
+        q = g.y_intercept([0, 1, 2, 3, 4, 5], 10, 1)
+        self.assertEqual(q[0], 0)
+        self.assertEqual(q[1], 20.0)
+        self.assertEqual(q[2], 40.0)
+        self.assertEqual(q[3], 80.0)
+        self.assertEqual(q[4], 60.0)
+        self.assertEqual(q[5], 100.0)
+
+    def test_geomstr_y_intercepts_vertical(self):
+        """
+        Draws 2 lines along the y-axis queries the intercept points.
+
+        Since there is no solution, default is returned.
+        @return:
+        """
+        g = Geomstr()
+        g.line(complex(0, 0), complex(0, 100))
+        g.line(complex(20, 0), complex(20, 100))
+        q = g.y_intercept([0, 1], 10, 1)
+        self.assertEqual(q[0], 1)
+        self.assertEqual(q[1], 1)
+
+    def test_geomstr_x_intercepts(self):
+        """
+        Draws, 6 perfectly vertical lines, including y-axis.
+        @return:
+        """
+        g = Geomstr()
+        g.line(complex(0, 0), complex(0, 100))
+        g.line(complex(20, 0), complex(20, 100))
+        g.line(complex(40, 0), complex(40, 100))
+        g.line(complex(80, 0), complex(80, 100))
+        g.line(complex(60, 0), complex(60, 100))
+        g.line(complex(100, 0), complex(100, 100))
+        q = g.x_intercept([0, 1, 2, 3, 4, 5], 10, 1)
+        self.assertEqual(q[0], 0)
+        self.assertEqual(q[1], 20.0)
+        self.assertEqual(q[2], 40.0)
+        self.assertEqual(q[3], 80.0)
+        self.assertEqual(q[4], 60.0)
+        self.assertEqual(q[5], 100.0)
+
+    def test_geomstr_x_intercepts_horizontal(self):
+        """
+        Draws 2 lines along the x-axis queries the intercept points.
+
+        Since there is no solution, default is returned.
+        @return:
+        """
+        g = Geomstr()
+        g.line(complex(0, 0), complex(100, 0))
+        g.line(complex(0, 20), complex(100, 20))
+        q = g.x_intercept([0, 1, 2, 3, 4, 5], 10, 1)
+        self.assertEqual(q[0], 1)
+        self.assertEqual(q[1], 1)
 
     def test_geomstr_classmethods(self):
         """
@@ -295,8 +476,22 @@ class TestGeomstr(unittest.TestCase):
         self.assertEqual(path.length(1), math.sqrt(2))
 
         for i in range(50):
-            path = Geomstr.regular_polygon(i, 100 + 100j, radius=50, radius_inner=30, alt_seq=1, density=5)
+            path = Geomstr.regular_polygon(
+                i, 100 + 100j, radius=50, radius_inner=30, alt_seq=1, density=5
+            )
             # draw(path.segments[:path.index], 200, 200, filename=f"test{i}.png")
+
+        q = np.array([complex(0, 0), complex(1, 1), complex(2, 2)])
+        path = Geomstr.lines(q)
+        self.assertEqual(len(path), 2)
+        self.assertEqual(path.length(0), math.sqrt(2))
+        self.assertEqual(path.length(1), math.sqrt(2))
+
+        r = np.array([[0.0, 0.0], [1.0, 1.0], [2.0, 2.0]])
+        path = Geomstr.lines(r)
+        self.assertEqual(len(path), 2)
+        self.assertEqual(path.length(0), math.sqrt(2))
+        self.assertEqual(path.length(1), math.sqrt(2))
 
     def test_geomstr_copies(self):
         path = Geomstr.lines(complex(0, 0), complex(1, 1), complex(2, 2))
@@ -375,7 +570,67 @@ class TestGeomstr(unittest.TestCase):
             t = random.random()
             self.assertEqual(c.point(t), path.position(0, t))
 
+    def test_geomstr_quad_equal_distances(self):
+        """
+        Ballpark estimate that the lines are 5 units apart. Really due to speed and curvature they could be less.
+        Also with distribution of the remaining length it could be more.
+        @return:
+        """
+        path = Geomstr()
+        path.quad(
+            (2.4597240004342713 + 51.217173195366975j),
+            (58.07775791133034 + 9.86075895321774j),
+            (58.09621943136784 + 98.90335897241886j),
+        )
+        p = np.array(list(path.as_equal_interpolated_points(5)))
+        distances = np.abs(p[:-1] - p[1:])
+        for d in distances:
+            self.assertAlmostEqual(d, 5, delta=1)
+
+    def test_geomstr_cubic_equal_distances(self):
+        """
+        Ballpark estimate that the lines are 5 units apart. Really due to speed and curvature they could be less.
+        Also with distribution of the remaining length it could be more.
+        @return:
+        """
+        path = Geomstr()
+        path.cubic(
+            (77.46150486344618 + 8.372252124023593j),
+            (99.5707686371264 + 1.7675099427501895j),
+            (48.146907914727855 + 48.97717310792103j),
+            (26.350415653100136 + 77.5272640600043j),
+        )
+        p = np.array(list(path.as_equal_interpolated_points(5)))
+        distances = np.abs(p[:-1] - p[1:])
+        for d in distances:
+            self.assertAlmostEqual(d, 5, delta=1)
+
+    # def test_geomstr_cubic_equal_distances(self):
+    #     for i in range(5):
+    #         start = random_point()
+    #         c1 = random_point()
+    #         c2 = random_point()
+    #         end = random_point()
+    #         path = Geomstr()
+    #         path.cubic(start, c1, c2, end)
+    #         print(f"curve: {start}, {c1}, {c2}, {end}")
+    #         p = np.array(list(path.as_equal_interpolated_points(5)))
+    #         distances = np.abs(p[:-1] - p[1:])
+    #         print(p)
+    #         print(distances)
+    #         for d in distances:
+    #             self.assertAlmostEqual(d, 5, delta=1)
+    #         print("\n")
+
     def test_geomstr_cubic_length(self):
+        """
+        This test is too time-consuming without scipy installed
+        @return:
+        """
+        try:
+            import scipy
+        except ImportError:
+            return
         difference = 0
         t0 = 0
         t1 = 0
@@ -543,6 +798,32 @@ class TestGeomstr(unittest.TestCase):
         path.two_opt_distance()
         self.assertEqual(path.travel_distance(), 0)
 
+    def test_geomstr_greedy(self):
+        path = Geomstr()
+        path.line(complex(0, 0), complex(50, 0))
+        path.line(complex(50, 50), complex(50, 0))
+        self.assertEqual(path.raw_length(), 100)
+        self.assertEqual(path.travel_distance(), 50)
+        path.greedy_distance()
+        self.assertEqual(path.travel_distance(), 0)
+
+    def test_geomstr_greedy_random(self):
+        for trials in range(50):
+            path = Geomstr()
+            for i in range(500):
+                path.line(
+                    random_point(50),
+                    random_point(50),
+                )
+            d1 = path.travel_distance()
+            path.greedy_distance()
+            d2 = path.travel_distance()
+            path.two_opt_distance()
+            d3 = path.travel_distance()
+            self.assertGreaterEqual(d1, d2)
+            self.assertGreaterEqual(d2, d3)
+            print(f"{d1} < {d2} < {d3}")
+
     def test_geomstr_scanbeam_build(self):
         """
         Build the scanbeam. In a correct scanbeam we should be able to iterate
@@ -551,24 +832,26 @@ class TestGeomstr(unittest.TestCase):
         No remove segment ~x should occur before the append segment x value.
         :return:
         """
-        path = Geomstr()
-        for i in range(5000):
-            path.line(
-                random_pointi(50),
-                random_pointi(50),
-            )
+        for trials in range(50):
+            path = Geomstr()
+            for i in range(500):
+                path.line(
+                    random_point(50),
+                    random_point(50),
+                )
 
-        beam = Scanbeam(path)
-        m = list()
-        for v, idx in beam._sorted_edge_list:
-            if idx >= 0:
-                m.append(idx)
-            else:
-                try:
-                    m.remove(~idx)
-                except ValueError as e:
-                    raise e
-        self.assertEqual(len(m), 0)
+            beam = Scanbeam(path)
+            m = list()
+            for v, idx in beam._sorted_edge_list:
+                if idx >= 0:
+                    m.append(idx)
+                else:
+                    try:
+                        m.remove(~idx)
+                    except ValueError as e:
+                        raise e
+            self.assertEqual(len(m), 0)
+            beam.compute_beam()
 
     def test_geomstr_scanbeam_increment(self):
         path = Geomstr()
@@ -675,8 +958,6 @@ class TestGeomstr(unittest.TestCase):
         print(results)
 
     def test_pattern_generation(self):
-        from meerk40t.fill.patternfill import set_diamond1
-
         f = set_diamond1
         p = Pattern()
         p.create_from_pattern(f)
@@ -693,8 +974,6 @@ class TestGeomstr(unittest.TestCase):
             # self.assertTrue((array == array2).all())
 
     def test_pattern_generation_counts(self):
-        from meerk40t.fill.patternfill import set_diamond1
-
         f = set_diamond1
         p = Pattern()
         p.create_from_pattern(f)
@@ -711,8 +990,6 @@ class TestGeomstr(unittest.TestCase):
         print("finished.")
 
     def test_pattern_clip(self):
-        from meerk40t.fill.patternfill import set_diamond1
-
         t = time.time()
         f = set_diamond1
         p = Pattern()
@@ -900,7 +1177,7 @@ class TestGeomstr(unittest.TestCase):
         r = q.points_in_polygon(points)
         t2 = time.time() - t
         for p1, p2 in zip(r, mask):
-            assert (bool(p1), bool(p2))
+            assert bool(p1) == bool(p2)
         try:
             print(
                 f"geomstr points in poly took {t2} seconds. Simple Scanline {t1}. Speed-up {t1 / t2}x"
@@ -908,9 +1185,92 @@ class TestGeomstr(unittest.TestCase):
         except ZeroDivisionError:
             pass
 
-    def test_point_in_polygon(self):
-        from meerk40t.fill.patternfill import set_diamond1
+    def test_point_in_polygon_beamtable_beat(self):
+        """
+        Test point in poly for Scanbeam against BeamTable.
+        @return:
+        """
 
+        N = 100000
+        lenpoly = 1000
+        polygon = [
+            [np.sin(x) + 0.5, np.cos(x) + 0.5]
+            for x in np.linspace(0, 2 * np.pi, lenpoly)
+        ]
+        polygon = np.array(polygon, dtype="float32")
+
+        points = np.random.uniform(-1.5, 1.5, size=(N, 2)).astype("float32")
+        points = points[:, 0] + points[:, 1] * 1j
+        pg = polygon[:, 0] + polygon[:, 1] * 1j
+
+        # Convert to correct format.
+        poly = Polygon(*pg)
+
+        # Scanbeam Timing
+        sb1 = time.time()
+        q = Scanbeam(poly.geomstr)
+        q.compute_beam()
+
+        # ScanBeam PiP
+        sb2 = time.time()
+        r1 = q.points_in_polygon(points)
+        sb3 = time.time()
+
+        # Beam Table calculation.
+        bt1 = time.time()
+        q = BeamTable(poly.geomstr)
+        q.compute_beam()
+
+        # BeamTable Pip
+        bt2 = time.time()
+        r2 = q.points_in_polygon(points)
+        bt3 = time.time()
+
+        for p1, p2 in zip(r1, r2):
+            self.assertEqual(bool(p1), bool(p2))
+        try:
+            print(
+                f"ScanBeam PiP: {sb3-sb2} seconds, {sb3-sb1} total. Beamtable PiP {bt3-bt2} seconds, {bt3-bt1} total."
+            )
+        except ZeroDivisionError:
+            pass
+
+    def test_cag_union(self):
+        # g = Geomstr.rect(0, 0, 100, 100, settings=0)
+        # g.transform(Matrix.skew(0.002))
+        # g.append(Geomstr.rect(50, 50, 100, 100, settings=1))
+        g = Geomstr()
+        g.line(complex(0, 0), complex(100, 0), 0)
+        # g.line(complex(0,-50), complex(50,-1), 1)
+        g.line(complex(50, -1), complex(50, 1), 1)
+        # g.line(complex(50,1), complex(100,50), 1)
+        bt = BeamTable(g)
+        bt.compute_beam()
+        q = bt.union(0, 1)
+        print(q.segments)
+
+    def test_cag_union2(self):
+        g = Geomstr.rect(0, 0, 100, 100, settings=0)
+        g.append(Geomstr.rect(51, 51, 100, 100, settings=1))
+        bt = BeamTable(g)
+        bt.compute_beam()
+        q = bt.union(0, 1)
+        print(q.segments)
+
+    def test_cag_combine(self):
+        g = Geomstr()
+        g.line(complex(0, 1), complex(0, 100), 0)
+        g.line(complex(1, 0), complex(100, 0), 0)
+        bt = BeamTable(g)
+        q = bt.combine()
+        self.assertEqual(q, g)
+
+    def test_render(self):
+        rect = Geomstr.rect(x=300, y=200, width=500, height=500, rx=50, ry=50)
+        image = rect.segmented().render()
+        image.save("render-test.png")
+
+    def test_point_in_polygon(self):
         t1 = 0
         t2 = 0
         f = set_diamond1
@@ -945,6 +1305,160 @@ class TestGeomstr(unittest.TestCase):
             )
         except ZeroDivisionError:
             print(f"{t2} vs {t1}")
+
+    def test_intersections_near(self):
+        for r1 in np.linspace(0, 100, 5):
+            r2 = r1 + 0.0001
+            circle1 = Geomstr.circle(cx=0, cy=0, r=r1)
+            circle2 = Geomstr.circle(cx=0, cy=0, r=r2)
+            circle1.rotate(r1)
+            for j in range(circle1.index):
+                for k in range(circle2.index):
+                    c = list(
+                        circle1.intersections(circle1.segments[j], circle2.segments[k])
+                    )
+                    print(r1, r2)
+                    self.assertFalse(c)
+
+    def test_livinghinge_whiskers2(self):
+        clip = Geomstr.ellipse(
+            rx=96436.11909338088,
+            ry=96436.11909338088,
+            cx=550118.9389283657,
+            cy=363374.1254904113,
+        )
+        subject = Geomstr()
+        subject.line(5.82716822e05 + 343372.64182036j, 6.48483387e05 + 343372.64182036j)
+        q = Clip(clip)
+        subject = q.polycut(subject)
+        subject = q.inside(subject)
+
+        m = Geomstr()
+        m.append(clip)
+        m.append(subject)
+        m.uscale(0.002)
+        draw(list(m.as_interpolated_points()), *m.bbox(), filename="whiskers.png")
+
+    def test_livinghinge_whiskers(self):
+        """
+        Test for Whiskers bug. The given clip and exactly the right settings could allow a line to not clip correctly
+
+        We use a previously failing set of settings and make sure that the midpoints and both ends are always on the
+        same side of the polygon.
+        @return:
+        """
+        clip = Geomstr.ellipse(
+            rx=96436.11909338088,
+            ry=96436.11909338088,
+            cx=550118.9389283657,
+            cy=363374.1254904113,
+        )
+        p = Pattern()
+        p.create_from_pattern(set_line, 0, 0, outershape=clip)
+        p.set_cell_padding(-11377.615848868112, -257.2803475393701)
+        p.set_cell_dims(65766.56560039372, 5593.051033464568)
+        p.extend_pattern = True
+        subject = Geomstr()
+        q = Clip(clip)
+        self.path = Geomstr()
+        for s in list(p.generate(*q.bounds)):
+            subject.append(s)
+
+        subject = q.polycut(subject)
+        subject = q.inside(subject)
+
+        m = Geomstr()
+        m.append(clip)
+        m.append(subject)
+        m.uscale(0.002)
+        draw(list(m.as_interpolated_points()), *m.bbox())
+
+        c = Geomstr()
+        # Pip currently only works with line segments
+        for sp in clip.as_subpaths():
+            for segs in sp.as_interpolated_segments(interpolate=100):
+                c.polyline(segs)
+                c.end()
+        sb = Scanbeam(c)
+
+        mid_points = subject.position(slice(subject.index), 0.5)
+        r = np.where(sb.points_in_polygon(mid_points))
+
+        s = np.where(
+            sb.points_in_polygon(subject.position(slice(subject.index), 0.05))
+        )[0]
+
+        e = np.where(
+            sb.points_in_polygon(subject.position(slice(subject.index), 0.95))
+        )[0]
+
+        for q in r[0]:
+            self.assertIn(q, s)
+            self.assertIn(q, e)
+
+    def test_simplify(self):
+        """
+        Simplify of large circle.
+        @return:
+        """
+
+        lenpoly = 1000
+        polygon = [
+            [np.sin(x) + 0.5, np.cos(x) + 0.5]
+            for x in np.linspace(0, 2 * np.pi, lenpoly)
+        ]
+        polygon = np.array(polygon, dtype="float32")
+        pg = polygon[:, 0] + polygon[:, 1] * 1j
+        poly = Polygon(*pg)
+        geometry = poly.geomstr
+        simplified = geometry.simplify(0.01)
+        self.assertEqual(len(simplified), 32)
+
+    def test_simplify_disjoint(self):
+        """
+        Simplify of 2 large circles. The circles are not denoted with an `END` but only by their disjoint.
+        @return:
+        """
+
+        lenpoly = 1000
+        polygon = [
+            [np.sin(x) + 0.5, np.cos(x) + 0.5]
+            for x in np.linspace(0, 2 * np.pi, lenpoly)
+        ]
+        polygon = np.array(polygon, dtype="float32")
+        pg = polygon[:, 0] + polygon[:, 1] * 1j
+        poly = Polygon(*pg)
+        geometry = poly.geomstr
+        g = Geomstr(geometry)
+        g.translate(20, 20)
+        geometry.append(g, end=False)
+        simplified = geometry.simplify(0.01)
+        self.assertEqual(len(simplified), 64 + 1)
+        self.assertIsNot(simplified, geometry)
+
+    def test_simplify_settings(self):
+        """
+        Simplify of 2 large circles. The circles are not denoted with an `END`, but have different settings flags.
+        @return:
+        """
+
+        lenpoly = 1000
+        polygon = [
+            [np.sin(x) + 0.5, np.cos(x) + 0.5]
+            for x in np.linspace(0, 2 * np.pi, lenpoly)
+        ]
+        polygon = np.array(polygon, dtype="float32")
+        pg = polygon[:, 0] + polygon[:, 1] * 1j
+        poly = Polygon(*pg)
+        geometry = poly.geomstr
+        g = Geomstr(geometry)
+        g.flag_settings(1)
+        geometry.append(g, end=False)
+        simplified = geometry.simplify(0.01, inplace=True)
+        self.assertEqual(len(simplified), 64 + 1)
+        self.assertEqual(simplified.segments[16][2].imag, 0)
+        self.assertEqual(simplified.segments[48][2].imag, 1)
+        self.assertIs(simplified, geometry)
 
     def test_point_towards_numpy(self):
         p1 = complex(0, 100)
@@ -1021,3 +1535,381 @@ class TestGeomstr(unittest.TestCase):
     def test_geomstr_svg(self):
         gs = Geomstr.svg("M0,0 h100 v100 h-100 v-100 z")
         self.assertEqual(gs.raw_length(), 400.0)
+
+    def test_geomstr_near(self):
+        """
+        Test geomstr near command to find number of segment points within a given range.
+        @return:
+        """
+        gs = Geomstr.circle(500, 0, 0)
+        q = gs.near(complex(0, 0), 499)
+        self.assertEqual(len(q), 0)
+        q = gs.near(complex(500, 0), 50)
+        self.assertEqual(len(q), 2)
+        gs.append(Geomstr.rect(0, 0, 10, 10))
+        gs.end()
+        gs.append(Geomstr.rect(5, 5, 10, 10))
+        q = gs.near(complex(0, 0), 499)
+        # 2 rectangles, 4 corners. 2 points each segment meeting at corners = 16
+        self.assertEqual(len(q), 16)
+
+    def test_geomstr_area(self):
+        gs = Geomstr.svg("M0,0 h100 v100 h-100 v-100 z")
+        self.assertAlmostEqual(gs.area(), 100 * 100)
+        gs = Geomstr.circle(100, 0, 0)
+        self.assertAlmostEqual(gs.area(density=1000), (tau / 2) * 100 * 100, delta=1)
+        gs = Geomstr.ellipse(100, 100, 0, 0)
+        self.assertAlmostEqual(gs.area(density=1000), (tau / 2) * 100 * 100, delta=1)
+        # We add another equally sized circle to the same geometry.
+        gs.append(Geomstr.ellipse(100, 100, 1000, 1000))
+        self.assertAlmostEqual(gs.area(density=1000), tau * 100 * 100, delta=1)
+
+    def test_geomstr_fractal_koch_snowflake(self):
+        # seed = Geomstr.svg("M0,0 1,0 2,1 3,0 4,0")
+        seed = Geomstr.turtle("F-F++F-F", n=6)
+
+        # design = Geomstr.turtle("F+F+F+F", n=4)
+        design = Geomstr.turtle("F+F+F+F", n=6)
+        design.uscale(500)
+        for i in range(5):
+            design.fractal(seed)
+            print(design)
+        bounds = design.bbox()
+        draw(
+            list(design.as_interpolated_points()),
+            *bounds,
+            buffer=50,
+            filename="koch.png",
+        )
+
+    def test_geomstr_fractal_swaps(self):
+        for i in range(4):
+            seed = Geomstr.svg("M0,0 h2 v1 l1,-1")
+            design = Geomstr.turtle("FFF", n=4)
+            design.segments[1][1] = i
+            design.segments[1][3] = i
+            design.uscale(500)
+            design.fractal(seed)
+            design.fractal(seed)
+            draw(
+                list(design.as_interpolated_points()),
+                *design.bbox(),
+                buffer=50,
+                filename=f"swaps{i}.png",
+            )
+
+    def test_geomstr_fractal_polya_sweep(self):
+        """
+        http://www.fractalcurves.com/images/2S_triangle_sweep.jpg
+        @return:
+        """
+        seed = Geomstr.turtle("f+B", n=4)
+        design = Geomstr.turtle("F", n=4)
+        design.uscale(500)
+        for _ in range(8):
+            design.fractal(seed)
+        draw(
+            list(design.as_interpolated_points()),
+            *design.bbox(),
+            buffer=50,
+            filename="polya.png",
+        )
+
+    def test_geomstr_fractal_terdragon(self):
+        """
+        http://www.fractalcurves.com/images/3T_ter.jpg
+        @return:
+        """
+        seed = Geomstr.turtle("F+F-F", n=3, d=math.sqrt(3))
+        design = copy(seed)
+        design.uscale(500)
+        for _ in range(5):
+            design.fractal(seed)
+        draw(
+            list(design.as_interpolated_points()),
+            *design.bbox(),
+            buffer=50,
+            filename="terdragon.png",
+        )
+
+    def test_geomstr_fractal_iterdragon(self):
+        """
+        http://www.fractalcurves.com/images/3T_butterfly.jpg
+        @return:
+        """
+        seed = Geomstr.turtle("b+b-b", n=3, d=math.sqrt(3))
+        design = copy(seed)
+        design.uscale(500)
+        for _ in range(8):
+            design.fractal(seed)
+        draw(
+            list(design.as_interpolated_points()),
+            *design.bbox(),
+            buffer=50,
+            filename="inverted-terdragon.png",
+        )
+
+    def test_geomstr_fractal_box(self):
+        """
+        http://www.fractalcurves.com/images/3T_block.jpg
+        @return:
+        """
+        seed = Geomstr.turtle("b+F-b", n=3, d=math.sqrt(3))
+        design = copy(seed)
+        design.uscale(500)
+        for _ in range(8):
+            design.fractal(seed)
+        draw(
+            list(design.as_interpolated_points()),
+            *design.bbox(),
+            buffer=50,
+            filename="box.png",
+        )
+
+    def test_geom_max_aabb(self):
+        g = Geomstr.rect(0, 0, 200, 200)
+        nx, ny, mx, my = g.aabb()
+        print(nx)
+
+    def test_static_beam_horizontal_bowtie(self):
+        """
+        0: down-right
+        1: right side
+        2: down-left
+        3: left side
+        30    21
+        |\   /|
+        | \ / |
+        | / \ |
+        |/   \|
+        @return:
+        """
+        bowtie = Geomstr.lines(
+            complex(0, 0),
+            complex(100, 100),
+            complex(100, 0),
+            complex(0, 100),
+            complex(0, 0),
+        )
+        sb = BeamTable(bowtie)
+        result = sb.actives_at(25)
+        actives = bowtie.x_intercept(result, 25)
+
+        for x, y in zip(result, (0, 2)):
+            self.assertEqual(x, y)
+
+    def test_static_beam_vertical_bowtie(self):
+        """
+           3
+        --------
+        \     /
+        0\   /2
+          \/
+          /\
+        2/  \0
+        /    \
+        ------
+           1
+        @return:
+        """
+        bowtie = Geomstr.lines(
+            complex(0, 0),
+            complex(100, 100),
+            complex(0, 100),
+            complex(100, 0),
+            complex(0, 0),
+        )
+        sb = BeamTable(bowtie)
+        result = sb.actives_at(complex(25, 0))
+        actives = bowtie.x_intercept(result, 25)
+
+        for x, y in zip(result, (3, 0, 2, 1)):
+            self.assertEqual(x, y)
+
+    def test_static_beam_midpoint_overlap(self):
+        """
+        We have two small lines [-2,2] on the x and y-axis.
+        At the x position 0, both are active, so long as the y position is greater than 2 or less than -2.
+
+        Line 2 is positioned above all lines.
+        @return:
+        """
+        g = Geomstr()
+        g.line(complex(-2, 0), complex(2, 0), 0)
+        g.line(complex(0, -2), complex(0, 2), 1)
+        g.line(complex(-5, 5), complex(5, 5), 2)  # Highest line always.
+        bt = BeamTable(g)
+        # Segment 1 is not active.
+        result = bt.actives_at(complex(0, 3))
+        for x, y in zip(result, (0, 2)):
+            self.assertEqual(x, y)
+
+        # Segment 1 is active, and above segment 0.
+        result = bt.actives_at(complex(0, 1))
+        for x, y in zip(result, (0, 1, 2)):
+            self.assertEqual(x, y)
+
+        # Segment 1 is active, and below segment 0.
+        result = bt.actives_at(complex(0, -1))
+        for x, y in zip(result, (1, 0, 2)):
+            self.assertEqual(x, y)
+
+        # Segment 1 is no longer active.
+        result = bt.actives_at(complex(0, -3))
+        for x, y in zip(result, (0, 2)):
+            self.assertEqual(x, y)
+
+    def test_scan_table_random(self):
+        for c in range(1):
+            print("\n\n\n\n\n")
+            g = Geomstr()
+            for i in range(25):
+                random_segment(
+                    g, i=1000, arc=False, point=False, quad=False, cubic=False
+                )
+            t = time.time()
+            sb = BeamTable(g)
+            sb.compute_beam()
+            intersections = sb.intersections
+            print(f"Time: {time.time() - t}")
+            try:
+                g.append(intersections)
+                draw_geom(g, *g.bbox(), filename="scantable.png")
+            except PermissionError:
+                pass
+
+    def test_scan_table_actives_monotonic(self):
+        """
+        Tests a random set of lines find the intercepts at all active positions and ensures that they are monotonic.
+
+        @return:
+        """
+        for c in range(10):
+            g = Geomstr()
+            for i in range(25):
+                random_segment(
+                    g, i=1000, arc=False, point=False, quad=False, cubic=False
+                )
+            sb = BeamTable(g)
+            b = g.bbox()
+            for x in range(int(b[0]), int(b[2])):
+                actives = sb.actives_at(x)
+                pos = g.y_intercept(actives, x)
+                for q in range(1, len(pos)):
+                    self.assertLessEqual(pos[q - 1], pos[q])
+
+    def test_scan_table_fill_random(self):
+        for c in range(1):
+            print("\n\n\n\n\n")
+            g = Geomstr()
+            for i in range(25):
+                random_segment(
+                    g, i=1000, arc=False, point=False, quad=False, cubic=False
+                )
+            t = time.time()
+            sb = BeamTable(g)
+            sb.compute_beam()
+            intersections = sb.intersections
+            print(f"Time: {time.time() - t}")
+
+            b = g.bbox()
+            for x in range(int(b[0]), int(b[2])):
+                actives = sb.actives_at(x)
+                pos = g.y_intercept(actives, x)
+                for q in range(1, len(pos), 2):
+                    g.line(complex(x, pos[q - 1]), complex(x, pos[q]))
+
+            g.append(intersections)
+            try:
+                draw_geom(g, *b, filename="scantable-fill.png")
+            except PermissionError:
+                pass
+
+    def test_scan_table_random_brute(self):
+        print("\n\n")
+        for c in range(5):
+            g = Geomstr()
+            for i in range(100):
+                random_segment(
+                    g, i=1000, arc=False, point=False, quad=False, cubic=False
+                )
+            t = time.time()
+            sb1 = BeamTable(g)
+            sb1.compute_beam_brute()
+            brute_time = time.time() - t
+
+            t = time.time()
+            sb2 = BeamTable(g)
+            sb2.compute_beam_bo()
+            bo_time = time.time() - t
+
+            # self.assertEqual(sb1.intersections, sb2.intersections)
+            for a, b in zip(sb1._nb_scan, sb2._nb_scan):
+                # print(f"{a} :: {b}")
+                for c, d in zip(a, b):
+                    self.assertEqual(c, d)
+            print(
+                f"With binary inserts: brute: {brute_time} vs bo {bo_time} improvement: {brute_time/bo_time}x or {bo_time / brute_time}x"
+            )
+            print(f"Intersections {len(sb1.intersections)}, {len(sb2.intersections)}")
+
+    def test_geomstr_image(self):
+        from PIL import Image, ImageDraw
+
+        image = Image.new("RGBA", (256, 256), "white")
+        draw = ImageDraw.Draw(image)
+        draw.ellipse((100, 100, 130, 130), "black")
+        image = image.convert(mode="1")
+        image.save("geom.png")
+        g = Geomstr.image(image)
+        draw_geom(g, *g.bbox(), filename="geom2.png")
+        self.assertEqual(g.index, 31)
+
+    def test_geomstr_image_multi(self):
+        from PIL import Image, ImageDraw
+
+        image = Image.new("RGBA", (256, 256), "white")
+        draw = ImageDraw.Draw(image)
+        draw.ellipse((100, 100, 130, 130), "black")
+        draw.ellipse((100, 20, 136, 50), "black")
+        image = image.convert(mode="1")
+        image.save("geom.png")
+        g = Geomstr.image(image, vertical=True)
+        draw_geom(g, *g.bbox(), filename="geom2.png")
+
+    def test_as_lines_execute(self):
+        g = Geomstr()
+        with g.function() as q:
+            q.line(complex(0, 0), complex(0, 1))
+            q.line(complex(0, 1), complex(1, 1))
+            q.line(complex(1, 1), complex(1, 0))
+            q.line(complex(1, 0), complex(0, 0))
+        self.assertEqual(len(g), 6)  # function, 4 lines, until.
+        executed = list(g.as_lines())
+        self.assertEqual(len(executed), 0)
+        g.call(1)
+        g.call(
+            1, placement=(0, complex(1000, 0), complex(1000, 1000), complex(0, 1000))
+        )
+        g.call(1)
+        executed = list(g.as_lines())
+        self.assertEqual(len(executed), 12)
+
+    # def test_geomstr_hatch(self):
+    #     gs = Geomstr.svg(
+    #         "M 207770.064517,235321.124952 C 206605.069353,234992.732685 205977.289179,234250.951228 205980.879932,233207.034699 C 205983.217733,232527.380908 206063.501616,232426.095743 206731.813533,232259.66605 L 207288.352862,232121.071081 L 207207.998708,232804.759538 C 207106.904585,233664.912764 207367.871267,234231.469286 207960.295387,234437.989447 C 208960.760372,234786.753419 209959.046638,234459.536445 210380.398871,233644.731075 C 210672.441667,233079.98258 210772.793626,231736.144349 210569.029382,231118.732625 C 210379.268508,230543.75153 209783.667018,230128.095713 209148.499972,230127.379646 C 208627.98084,230126.79283 208274.720902,230294.472682 207747.763851,230792.258962 C 207377.90966,231141.639128 207320.755956,231155.543097 206798.920578,231023.087178 C 206328.09633,230903.579262 206253.35266,230839.656219 206307.510015,230602.818034 C 206382.366365,230275.460062 207158.299204,225839.458855 207158.299204,225738.863735 C 207158.299204,225701.269015 208426.401454,225670.509699 209976.304204,225670.509699 C 211869.528049,225670.509699 212794.309204,225715.990496 212794.309204,225809.099369 C 212794.309204,225885.323687 212726.683921,226357.175687 212644.030798,226857.659369 L 212493.752392,227767.629699 L 210171.516354,227767.629699 L 207849.280317,227767.629699 L 207771.086662,228324.677199 C 207728.080152,228631.053324 207654.900983,229067.454479 207608.466287,229294.457543 L 207524.039566,229707.190387 L 208182.568319,229381.288158 C 209664.399179,228647.938278 211467.922971,228893.537762 212548.92912,229975.888551 C 214130.813964,231559.741067 213569.470754,234195.253882 211455.779825,235108.237047 C 210589.985852,235482.206254 208723.891068,235589.992389 207770.064517,235321.124952 L 207770.064517,235321.124952Z"
+    #         "M 217143.554487,235251.491866 C 215510.313868,234687.408946 214629.289204,233029.479999 214629.289204,230520.099699 C 214629.289204,227300.669136 216066.08164,225539.439699 218692.459204,225539.439699 C 221318.836768,225539.439699 222755.629204,227300.669136 222755.629204,230520.099699 C 222755.629204,233768.619944 221313.285526,235510.883949 218635.902338,235496.480807 C 218198.433364,235494.127417 217526.876831,235383.882393 217143.554487,235251.491866 L 217143.554487,235251.491866Z"
+    #         "M 190905.619204,231712.322088 L 190905.619204,228054.954477 L 190248.863277,228304.502088 C 189887.647517,228441.753274 189445.286267,228554.049699 189265.838277,228554.049699 C 188966.73452,228554.049699 188939.569204,228505.149339 188939.569204,227966.731848 C 188939.569204,227432.097785 188971.901741,227372.495945 189300.011704,227302.291681 C 190198.545589,227110.036287 190884.012886,226765.589154 191414.377757,226239.823305 C 191971.194511,225687.834949 192014.073023,225670.509699 192823.380257,225670.509699 L 193658.089204,225670.509699 L 193658.089204,230520.099699 L 193658.089204,235369.689699 L 192281.854204,235369.689699 L 190905.619204,235369.689699 L 190905.619204,231712.322088 L 190905.619204,231712.322088"
+    #
+    #     )
+    #     # gs.uscale(0.05)
+    #     # bounds = gs.bbox()
+    #     # t = list(gs.as_interpolated_points(interpolate=5))
+    #     # draw(t, *bounds)
+    #     # return
+    #
+    #     hatch = Geomstr.hatch(gs, distance=200, angle=tau / 4)
+    #     # hatch = Geomstr.hatch(gs, distance=200, angle=0)
+    #     print(hatch)
+    #     bounds = hatch.bbox()
+    #     draw(list(hatch.as_interpolated_points()), *bounds)

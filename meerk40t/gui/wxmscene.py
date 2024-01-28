@@ -6,18 +6,13 @@ import wx
 from wx import aui
 
 from meerk40t.core.elements.element_types import elem_nodes
-from meerk40t.core.units import UNITS_PER_PIXEL, Length
-from meerk40t.gui.icons import (
-    STD_ICON_SIZE,
-    icon_meerk40t,
-    icons8_menu_50,
-    icons8_r_white,
-    icons8_text_50,
-)
+from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
+from meerk40t.gui.icons import STD_ICON_SIZE, icon_meerk40t, icons8_r_white, icons8_text
 from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scenepanel import ScenePanel
-from meerk40t.gui.scenewidgets.affinemover import AffineMover
+
+# from meerk40t.gui.scenewidgets.affinemover import AffineMover
 from meerk40t.gui.scenewidgets.attractionwidget import AttractionWidget
 from meerk40t.gui.scenewidgets.bedwidget import BedWidget
 from meerk40t.gui.scenewidgets.elementswidget import ElementsWidget
@@ -25,18 +20,26 @@ from meerk40t.gui.scenewidgets.gridwidget import GridWidget
 from meerk40t.gui.scenewidgets.guidewidget import GuideWidget
 from meerk40t.gui.scenewidgets.laserpathwidget import LaserPathWidget
 from meerk40t.gui.scenewidgets.machineoriginwidget import MachineOriginWidget
+
+# from meerk40t.gui.scenewidgets.nodeselector import NodeSelector
 from meerk40t.gui.scenewidgets.rectselectwidget import RectSelectWidget
 from meerk40t.gui.scenewidgets.reticlewidget import ReticleWidget
-from meerk40t.gui.scenewidgets.selectionwidget import SelectionWidget
+
+# from meerk40t.gui.scenewidgets.selectionwidget import SelectionWidget
 from meerk40t.gui.toolwidgets.toolcircle import CircleTool
 from meerk40t.gui.toolwidgets.toolcontainer import ToolContainer
 from meerk40t.gui.toolwidgets.tooldraw import DrawTool
 from meerk40t.gui.toolwidgets.toolellipse import EllipseTool
+from meerk40t.gui.toolwidgets.toolimagecut import ImageCutTool
+from meerk40t.gui.toolwidgets.toolline import LineTool
 from meerk40t.gui.toolwidgets.toollinetext import LineTextTool
 from meerk40t.gui.toolwidgets.toolmeasure import MeasureTool
 from meerk40t.gui.toolwidgets.toolnodeedit import EditTool
+from meerk40t.gui.toolwidgets.toolnodemove import NodeMoveTool
+from meerk40t.gui.toolwidgets.toolparameter import ParameterTool
 from meerk40t.gui.toolwidgets.toolplacement import PlacementTool
 from meerk40t.gui.toolwidgets.toolpoint import PointTool
+from meerk40t.gui.toolwidgets.toolpointmove import PointMoveTool
 from meerk40t.gui.toolwidgets.toolpolygon import PolygonTool
 from meerk40t.gui.toolwidgets.toolpolyline import PolylineTool
 from meerk40t.gui.toolwidgets.toolrect import RectTool
@@ -51,7 +54,7 @@ from meerk40t.gui.utilitywidgets.seekbarwidget import SeekbarWidget
 from meerk40t.gui.utilitywidgets.togglewidget import ToggleWidget
 from meerk40t.gui.wxutils import get_key_name, is_navigation_key
 from meerk40t.kernel import CommandSyntaxError, signal_listener
-from meerk40t.svgelements import Angle, Color
+from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
 
@@ -93,10 +96,12 @@ class MeerK40tScenePanel(wx.Panel):
             scene_name="Scene" if index is None else f"Scene{index}",
             style=wx.EXPAND | wx.WANTS_CHARS,
         )
+        self.scene.start_scene()
         self.widget_scene = self.scene.scene
 
         self.tool_active = False
         self.modif_active = False
+        self.suppress_selection = False
         self._reference = None  # Reference Object
 
         # Stuff for magnet-lines
@@ -130,24 +135,39 @@ class MeerK40tScenePanel(wx.Panel):
         self._last_snap_ts = 0
 
         context = self.context
+        # Add in snap-to-grid functionality.
         self.widget_scene.add_scenewidget(AttractionWidget(self.widget_scene))
-        self.selectionwidget = SelectionWidget(self.widget_scene)
-        self.affinemover = None
-        self.widget_scene.add_scenewidget(self.selectionwidget)
+
+        # Tool container - Widget to hold tools.
         self.tool_container = ToolContainer(self.widget_scene)
         self.widget_scene.add_scenewidget(self.tool_container)
+
+        # Rectangular selection.
         self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
+
+        # Laser-Path blue-line drawer.
         self.laserpath_widget = LaserPathWidget(self.widget_scene)
         self.widget_scene.add_scenewidget(self.laserpath_widget)
+
+        # Draw elements in scene.
         self.widget_scene.add_scenewidget(
             ElementsWidget(self.widget_scene, LaserRender(context))
         )
 
+        # Draw Machine Origin widget.
         self.widget_scene.add_scenewidget(MachineOriginWidget(self.widget_scene))
+
+        # Draw Grid.
         self.grid = GridWidget(self.widget_scene)
         self.widget_scene.add_scenewidget(self.grid)
+
+        # Draw Bed
         self.widget_scene.add_scenewidget(BedWidget(self.widget_scene))
+
+        # Draw Interface Guide.
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
+
+        # Draw Interface Laser-Position
         self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
 
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
@@ -186,6 +206,7 @@ class MeerK40tScenePanel(wx.Panel):
 
         context.register("tool/draw", DrawTool)
         context.register("tool/rect", RectTool)
+        context.register("tool/line", LineTool)
         context.register("tool/polyline", PolylineTool)
         context.register("tool/polygon", PolygonTool)
         context.register("tool/point", PointTool)
@@ -199,8 +220,12 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/linetext", LineTextTool)
         context.register("tool/edit", EditTool)
         context.register("tool/placement", PlacementTool)
+        context.register("tool/nodemove", NodeMoveTool)
+        context.register("tool/pointmove", PointMoveTool)
+        context.register("tool/parameter", ParameterTool)
+        context.register("tool/imagecut", ImageCutTool)
 
-        buttonsize = int(STD_ICON_SIZE / 2)
+        bsize_normal = STD_ICON_SIZE
 
         def proxy_linetext():
             from meerk40t.extra.hershey import have_hershey_fonts
@@ -214,11 +239,11 @@ class MeerK40tScenePanel(wx.Panel):
             "button/tools/Linetext",
             {
                 "label": _("Vector Text"),
-                "icon": icons8_text_50,
+                "icon": icons8_text,
                 "tip": _("Add a vector text element"),
                 "action": lambda v: proxy_linetext(),
                 "group": "tool",
-                "size": 50,
+                "size": bsize_normal,
                 "identifier": "linetext",
             },
         )
@@ -230,7 +255,7 @@ class MeerK40tScenePanel(wx.Panel):
                 "icon": icons8_r_white,
                 "tip": _("Toggle Reference Object Status"),
                 "action": lambda v: self.toggle_ref_obj(),
-                "size": buttonsize,
+                "size": bsize_normal,
                 "identifier": "refobj",
                 "rule_enabled": lambda cond: len(
                     list(context.kernel.elements.elems(emphasized=True))
@@ -257,34 +282,34 @@ class MeerK40tScenePanel(wx.Panel):
                     pass
             dlg.Destroy()
 
-        @context.console_command("tool_menu", hidden=True)
-        def tool_menu(channel, _, **kwgs):
-            orgx = 5
-            orgy = 5
-            # Are guides drawn?
-            if self.context.draw_mode & DRAW_MODE_GUIDES == 0:
-                orgx += 25
-                orgy += 25
-            if self._tool_widget is not None:
-                visible = self._tool_widget.visible
-                self._tool_widget.show(not visible)
-                self.widget_scene.request_refresh()
+        # @context.console_command("tool_menu", hidden=True)
+        # def tool_menu(channel, _, **kwgs):
+        #     orgx = 5
+        #     orgy = 5
+        #     # Are guides drawn?
+        #     if self.context.draw_mode & DRAW_MODE_GUIDES == 0:
+        #         orgx += 25
+        #         orgy += 25
+        #     if self._tool_widget is not None:
+        #         visible = self._tool_widget.visible
+        #         self._tool_widget.show(not visible)
+        #         self.widget_scene.request_refresh()
 
-            if self._tool_widget is None:
-                self._tool_widget = ToggleWidget(
-                    self.widget_scene,
-                    orgx,
-                    orgy,
-                    orgx + 25,
-                    orgy + 25,
-                    icons8_menu_50.GetBitmap(use_theme=False),
-                    "button/tool",
-                )
-                self.widget_scene.widget_root.interface_widget.add_widget(
-                    -1,
-                    self._tool_widget,
-                )
-            channel(_("Added tool widget to interface"))
+        #     if self._tool_widget is None:
+        #         self._tool_widget = ToggleWidget(
+        #             self.widget_scene,
+        #             orgx,
+        #             orgy,
+        #             orgx + 25,
+        #             orgy + 25,
+        #             icons8_menu.GetBitmap(use_theme=False),
+        #             "button/tool",
+        #         )
+        #         self.widget_scene.widget_root.interface_widget.add_widget(
+        #             -1,
+        #             self._tool_widget,
+        #         )
+        #     channel(_("Added tool widget to interface"))
 
         @context.console_command("seek_bar", hidden=True)
         def seek_bar(channel, _, **kwgs):
@@ -324,30 +349,6 @@ class MeerK40tScenePanel(wx.Panel):
             channel(_("Added example_checkbox to interface"))
             self.widget_scene.request_refresh()
 
-        @context.console_command("affinemover", hidden=True)
-        def affinemover(channel, _, **kwgs):
-            """
-            Replaces the selection widget with the affine-mover.
-            """
-            if self.affinemover is None:
-                self.affinemover = AffineMover(self.widget_scene)
-                self.widget_scene.widget_root.scene_widget.remove_widget(
-                    self.selectionwidget
-                )
-                self.widget_scene.widget_root.scene_widget.add_widget(
-                    0, self.affinemover
-                )
-                channel(_("Affine-Mover made selection widget."))
-            else:
-                self.widget_scene.widget_root.scene_widget.remove_widget(
-                    self.affinemover
-                )
-                self.widget_scene.widget_root.scene_widget.add_widget(
-                    0, self.selectionwidget
-                )
-                channel(_("Selection-Widget selection widget."))
-                self.affinemover = None
-
         @context.console_command("cyclocycloid", hidden=True)
         def cyclocycloid(channel, _, **kwgs):
             self.widget_scene.widget_root.scene_widget.add_widget(
@@ -369,7 +370,7 @@ class MeerK40tScenePanel(wx.Panel):
 
         @context.console_argument("tool", help=_("tool to use."))
         @context.console_command("tool", help=_("sets a particular tool for the scene"))
-        def tool_base(command, channel, _, tool=None, **kwgs):
+        def tool_base(command, channel, _, tool=None, remainder=None, **kwgs):
             if tool is None:
                 channel(_("Tools:"))
                 channel("none")
@@ -377,11 +378,75 @@ class MeerK40tScenePanel(wx.Panel):
                     channel(t)
                 channel(_("-------"))
                 return
+            toolbar = context.lookup("ribbonbar/tools")
+            # Reset the edit toolbar
+            if toolbar is not None:
+                toolbar.remove_page("toolcontainer")
+                for pages in toolbar.pages:
+                    pages.visible = True
+                toolbar.validate_current_page()
+                toolbar.apply_enable_rules()
+                toolbar.modified()
             try:
                 if tool == "none":
-                    self.tool_container.set_tool(None)
+                    success, response = self.tool_container.set_tool(None, remainder)
+                    channel(response)
+                    if not success:
+                        return
                 else:
-                    self.tool_container.set_tool(tool.lower())
+                    success, response = self.tool_container.set_tool(
+                        tool.lower(), remainder
+                    )
+                    channel(response)
+                    if not success:
+                        return
+                    # Reset the edit toolbar
+                    if toolbar is not None:
+                        toolbar.remove_page("toolcontainer")
+                        tool_values = list(
+                            context.find(f"button/secondarytool_{tool}/.*")
+                        )
+                        # print(f"button/secondarytool_{tool}/.*\n{tool_values}")
+                        if tool_values is not None and len(tool_values) > 0:
+                            for pages in toolbar.pages:
+                                pages.visible = False
+                            newpage = toolbar.add_page(
+                                "toolcontainer",
+                                "toolcontainer",
+                                "Select",
+                                None,
+                            )
+
+                            select_panel = toolbar.add_panel(
+                                "toolback",
+                                newpage,
+                                "toolback",
+                                "Select",
+                                None,
+                            )
+                            select_values = (
+                                (
+                                    context.lookup("button/select/Scene"),
+                                    "button/select/Scene",
+                                    "Select",
+                                ),
+                            )
+                            select_panel.set_buttons(select_values)
+
+                            tool_panel = toolbar.add_panel(
+                                "toolutil",
+                                newpage,
+                                "toolutil",
+                                "Tools",
+                                None,
+                            )
+                            tool_panel.set_buttons(tool_values)
+                            newpage.visible = True
+                            toolbar.validate_current_page()
+                            toolbar.apply_enable_rules()
+
+                        toolbar.modified()
+
             except (KeyError, AttributeError):
                 raise CommandSyntaxError
 
@@ -522,7 +587,7 @@ class MeerK40tScenePanel(wx.Panel):
             return "scene", data
 
         @self.context.console_argument(
-            "angle", type=Angle.parse, default=0, help="Rotate scene"
+            "angle", type=Angle, default=0, help="Rotate scene"
         )
         @self.context.console_command("rotate", input_type="scene")
         def scene_rotate(command, _, channel, data, angle, **kwgs):
@@ -559,10 +624,26 @@ class MeerK40tScenePanel(wx.Panel):
             if height is None:
                 raise CommandSyntaxError("x, y, width, height not specified")
             try:
-                x = self.context.device.length(x, 0, unitless=UNITS_PER_PIXEL)
-                y = self.context.device.length(y, 1, unitless=UNITS_PER_PIXEL)
-                width = self.context.device.length(width, 0, unitless=UNITS_PER_PIXEL)
-                height = self.context.device.length(height, 1, unitless=UNITS_PER_PIXEL)
+                x = Length(
+                    x,
+                    relative_length=self.context.device.view.width,
+                    unitless=UNITS_PER_PIXEL,
+                )
+                y = Length(
+                    y,
+                    relative_length=self.context.device.view.height,
+                    unitless=UNITS_PER_PIXEL,
+                )
+                width = Length(
+                    width,
+                    relative_length=self.context.device.view.width,
+                    unitless=UNITS_PER_PIXEL,
+                )
+                height = Length(
+                    height,
+                    relative_length=self.context.device.view.height,
+                    unitless=UNITS_PER_PIXEL,
+                )
             except ValueError:
                 raise CommandSyntaxError("Not a valid length.")
             bbox = (x, y, width, height)
@@ -571,6 +652,18 @@ class MeerK40tScenePanel(wx.Panel):
             data.request_refresh()
             channel(str(matrix))
             return "scene", data
+
+        @context.console_command("feature_request")
+        def send_developer_feature(remainder="", **kwgs):
+            from .wxmeerk40t import send_data_to_developers
+
+            send_data_to_developers("feature_request.txt", remainder)
+
+        @context.console_command("bug")
+        def send_developer_bug(remainder="", **kwgs):
+            from .wxmeerk40t import send_data_to_developers
+
+            send_data_to_developers("bug.txt", remainder)
 
         @context.console_command("reference")
         def make_reference(**kwgs):
@@ -652,11 +745,11 @@ class MeerK40tScenePanel(wx.Panel):
                     )
                     self.scene.signal("guide")
                     self.scene.signal("grid")
+                    self.widget_scene.reset_snap_attraction()
                     self.request_refresh()
                 elif target[0] == "s":
                     self.grid.draw_grid_secondary = not self.grid.draw_grid_secondary
                     if self.grid.draw_grid_secondary:
-
                         if ox is None:
                             self.grid.grid_secondary_cx = None
                             self.grid.grid_secondary_cy = None
@@ -666,14 +759,18 @@ class MeerK40tScenePanel(wx.Panel):
                             if oy is None:
                                 oy = ox
                             self.grid.grid_secondary_cx = float(
-                                Length(ox, relative_length=self.context.device.width)
+                                Length(
+                                    ox, relative_length=self.context.device.view.width
+                                )
                             )
                             self.grid.grid_secondary_cy = float(
-                                Length(oy, relative_length=self.context.device.height)
+                                Length(
+                                    oy, relative_length=self.context.device.view.height
+                                )
                             )
                         if scalex is None:
-                            rot = self.scene.context.rotary
-                            if rot.rotary_enabled:
+                            rot = self.scene.context.device.rotary
+                            if rot.active:
                                 scalex = rot.scale_x
                                 scaley = rot.scale_y
                             else:
@@ -707,10 +804,14 @@ class MeerK40tScenePanel(wx.Panel):
                             if oy is None:
                                 oy = ox
                             self.grid.grid_circular_cx = float(
-                                Length(ox, relative_length=self.context.device.width)
+                                Length(
+                                    ox, relative_length=self.context.device.view.width
+                                )
                             )
                             self.grid.grid_circular_cy = float(
-                                Length(oy, relative_length=self.context.device.height)
+                                Length(
+                                    oy, relative_length=self.context.device.view.height
+                                )
                             )
                     channel(
                         _(
@@ -788,7 +889,7 @@ class MeerK40tScenePanel(wx.Panel):
                     f.write(f"x={Length(x, preferred_units='mm').preferred_length}\n")
                 for y in self.magnet_y:
                     f.write(f"y={Length(y, preferred_units='mm').preferred_length}\n")
-        except ValueError:  # ( PermissionError, OSError, FileNotFoundError ):
+        except (ValueError, PermissionError, OSError, FileNotFoundError):
             return
 
     def load_magnets(self):
@@ -868,7 +969,6 @@ class MeerK40tScenePanel(wx.Panel):
         return delta, y_val
 
     def revised_magnet_bound(self, bounds=None):
-
         dx = 0
         dy = 0
         if self.has_magnets() and self._magnet_attraction > 0:
@@ -969,6 +1069,12 @@ class MeerK40tScenePanel(wx.Panel):
 
     @signal_listener("scene_right_click")
     def on_scene_right(self, origin, *args):
+        def zoom_in(event=None):
+            self.context(f"scene zoom {1.5 / 1.0}\n")
+
+        def zoom_out(event=None):
+            self.context(f"scene zoom {1.0 / 1.5}\n")
+
         def zoom_to_bed(event=None):
             zoom = self.context.zoom_margin
             self.context(f"scene focus -a {-zoom}% {-zoom}% {zoom+100}% {zoom+100}%\n")
@@ -983,16 +1089,20 @@ class MeerK40tScenePanel(wx.Panel):
                 x_delta = (bbox[2] - bbox[0]) * zfact
                 y_delta = (bbox[3] - bbox[1]) * zfact
                 x0 = Length(
-                    amount=bbox[0] - x_delta, relative_length=self.context.device.width
+                    amount=bbox[0] - x_delta,
+                    relative_length=self.context.device.view.width,
                 ).length_mm
                 y0 = Length(
-                    amount=bbox[1] - y_delta, relative_length=self.context.device.height
+                    amount=bbox[1] - y_delta,
+                    relative_length=self.context.device.view.height,
                 ).length_mm
                 x1 = Length(
-                    amount=bbox[2] + x_delta, relative_length=self.context.device.width
+                    amount=bbox[2] + x_delta,
+                    relative_length=self.context.device.view.width,
                 ).length_mm
                 y1 = Length(
-                    amount=bbox[3] + y_delta, relative_length=self.context.device.height
+                    amount=bbox[3] + y_delta,
+                    relative_length=self.context.device.view.height,
                 ).length_mm
                 self.context(f"scene focus -a {x0} {y0} {x1} {y1}\n")
 
@@ -1010,6 +1120,9 @@ class MeerK40tScenePanel(wx.Panel):
                 self.grid.draw_grid_secondary = not self.grid.draw_grid_secondary
             elif gridtype == "circular":
                 self.grid.draw_grid_circular = not self.grid.draw_grid_circular
+            self.scene.signal("guide")
+            self.scene.signal("grid")
+            self.widget_scene.reset_snap_attraction()
             self.request_refresh()
 
         def toggle_grid_p(event=None):
@@ -1092,6 +1205,24 @@ class MeerK40tScenePanel(wx.Panel):
         menu.AppendSeparator()
         self.Bind(
             wx.EVT_MENU,
+            lambda e: zoom_out(),
+            menu.Append(
+                wx.ID_ANY,
+                _("Zoom Out"),
+                _("Make the scene smaller"),
+            ),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: zoom_in(),
+            menu.Append(
+                wx.ID_ANY,
+                _("Zoom In"),
+                _("Make the scene larger"),
+            ),
+        )
+        self.Bind(
+            wx.EVT_MENU,
             lambda e: zoom_to_bed(),
             menu.Append(
                 wx.ID_ANY,
@@ -1127,15 +1258,8 @@ class MeerK40tScenePanel(wx.Panel):
         if scene_name == "Scene":
             self.request_refresh()
 
-    @signal_listener("bedsize")
-    def on_bedsize_simple(self, origin, nocmd=None, *args):
-        # The next two are more or less the same, so we remove the direct invocation...
-        # self.context.device.realize()
-        issue_command = True
-        if nocmd is not None and nocmd:
-            issue_command = False
-        if issue_command:
-            self.context("viewport_update\n")
+    @signal_listener("view;realized")
+    def on_bedsize_simple(self, origin=None, nocmd=None, *args):
         self.scene.signal("guide")
         self.scene.signal("grid")
         self.request_refresh(origin)
@@ -1191,12 +1315,19 @@ class MeerK40tScenePanel(wx.Panel):
     def on_close(self, event):
         self.save_magnets()
 
-    @signal_listener("driver;mode")
-    def on_driver_mode(self, origin, state):
-        if state == 0:
-            self.widget_scene.overrule_background = None
-        else:
-            self.widget_scene.overrule_background = wx.RED
+    @signal_listener("pause")
+    @signal_listener("pipe;running")
+    def on_driver_mode(self, origin, *args):
+        # pipe running has (state) as args
+        new_color = None
+        try:
+            if self.context.device.driver.paused:
+                new_color = self.context.themes.get("pause_bg")
+            elif self.context.device.laser_status == "active":
+                new_color = self.context.themes.get("stop_bg")
+        except AttributeError:
+            pass
+        self.widget_scene.overrule_background = new_color
         self.widget_scene.request_refresh_for_animation()
 
     @signal_listener("background")
@@ -1217,9 +1348,9 @@ class MeerK40tScenePanel(wx.Panel):
         # self.scene.signal('guide')
         self.request_refresh(origin)
 
-    @signal_listener("tool_modified")
+    @signal_listener("modified_by_tool")
     def on_modification_by_tool(self, origin, *args):
-        self.scene.signal("tool_modified")
+        self.scene.signal("modified_by_tool")
 
     @signal_listener("emphasized")
     def on_emphasized_elements_changed(self, origin, *args):
@@ -1258,6 +1389,12 @@ class MeerK40tScenePanel(wx.Panel):
         # self.context.signal("rebuild_tree")
         self.context.signal("refresh_tree", nodes)
         self.widget_scene.request_refresh()
+
+    @signal_listener("rebuild_tree")
+    def on_rebuild_tree(self, origin, *args):
+        self.widget_scene._signal_widget(
+            self.widget_scene.widget_root, "rebuild_tree", None
+        )
 
     @signal_listener("theme")
     def on_theme_change(self, origin, theme=None):
@@ -1323,12 +1460,14 @@ class SceneWindow(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(1280, 800, *args, **kwds)
         self.panel = MeerK40tScenePanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Scene"))
         self.Layout()
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

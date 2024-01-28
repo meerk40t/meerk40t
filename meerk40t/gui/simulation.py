@@ -26,20 +26,21 @@ from ..svgelements import Matrix
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import (
     STD_ICON_SIZE,
-    icons8_bell_20,
-    icons8_close_window_20,
-    icons8_home_20,
-    icons8_image_50,
-    icons8_input_20,
-    icons8_laser_beam_hazard2_50,
-    icons8_output_20,
-    icons8_pause_50,
-    icons8_play_50,
-    icons8_return_20,
-    icons8_route_50,
-    icons8_stop_gesture_20,
-    icons8_system_task_20,
-    icons8_timer_20,
+    get_default_icon_size,
+    icon_bell,
+    icon_close_window,
+    icon_console,
+    icon_external,
+    icon_internal,
+    icon_return,
+    icon_round_stop,
+    icon_timer,
+    icons8_circled_play,
+    icons8_home_filled,
+    icons8_image,
+    icons8_laser_beam_hazard,
+    icons8_pause,
+    icons8_route,
 )
 from .laserrender import DRAW_MODE_BACKGROUND, LaserRender
 from .mwindow import MWindow
@@ -47,7 +48,7 @@ from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.bedwidget import BedWidget
 from .scenewidgets.gridwidget import GridWidget
-from .wxutils import StaticBoxSizer
+from .wxutils import StaticBoxSizer, dip_size
 from .zmatrix import ZMatrix
 
 _ = wx.GetTranslation
@@ -107,18 +108,18 @@ class OperationsPanel(wx.Panel):
     def setup_state_images(self):
         iconsize = 20
         self.default_images = [
-            ["beep", icons8_bell_20],
-            ["interrupt", icons8_stop_gesture_20],
-            ["quit", icons8_close_window_20],
-            ["wait", icons8_timer_20],
-            ["home", icons8_home_20],
-            ["goto", icons8_return_20],
-            ["origin", icons8_return_20],
-            ["output", icons8_output_20],
-            ["input", icons8_input_20],
-            ["cutcode", icons8_laser_beam_hazard2_50],
+            ["beep", icon_bell],
+            ["interrupt", icon_round_stop],
+            ["quit", icon_close_window],
+            ["wait", icon_timer],
+            ["home", icons8_home_filled],
+            ["goto", icon_return],
+            ["origin", icon_return],
+            ["output", icon_external],
+            ["input", icon_internal],
+            ["cutcode", icons8_laser_beam_hazard],
             # Intentionally the last...
-            ["console", icons8_system_task_20],
+            ["console", icon_console],
         ]
         self.options_images = wx.ImageList()
         self.options_images.Create(width=iconsize, height=iconsize)
@@ -436,7 +437,7 @@ class OperationsPanel(wx.Panel):
                     wx.ID_ANY,
                     _("Insert '{operation}' before").format(operation=entry[0]),
                     _(
-                        "Inserts this special operation before the current cutplan entrys"
+                        "Inserts this special operation before the current cutplan entry"
                     ),
                 ),
             )
@@ -724,7 +725,7 @@ class CutcodePanel(wx.Panel):
                     wx.ID_ANY,
                     _("Insert '{operation}' before").format(operation=entry[0]),
                     _(
-                        "Inserts this special operation before the current cutplan entrys"
+                        "Inserts this special operation before the current cutplan entry"
                     ),
                 ),
             )
@@ -759,8 +760,12 @@ class SimulationPanel(wx.Panel, Job):
         wx.Panel.__init__(self, *args, **kwds)
         self.parent = args[0]
         self.context = context
+        self.SetHelpText("simulate")
+
         self.plan_name = plan_name
         self.auto_clear = auto_clear
+        # Display travel paths?
+        self.display_travel = True
 
         Job.__init__(self)
         self._playback_cuts = True
@@ -794,6 +799,7 @@ class SimulationPanel(wx.Panel, Job):
             scene_name="SimScene",
             style=wx.EXPAND,
         )
+        self.view_pane.start_scene()
         self.view_pane.SetCanFocus(False)
         self.widget_scene = self.view_pane.scene
 
@@ -831,12 +837,10 @@ class SimulationPanel(wx.Panel, Job):
         self.panel_optimize.AddPage(self.subpanel_cutcode, _("Cutcode"))
         self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
-        if optimise_at_start:
-            self.checkbox_optimize.SetValue(1)
-        else:
-            self.checkbox_optimize.SetValue(0)
+        self.checkbox_optimize.SetValue(self.context.planner.do_optimization)
         self.btn_redo_it = wx.Button(self, wx.ID_ANY, _("Recalculate"))
         self.btn_redo_it.Bind(wx.EVT_BUTTON, self.on_redo_it)
+        self.btn_redo_it.SetToolTip(_("Apply the settings and recalculate the cutplan"))
 
         self.slider_progress = wx.Slider(self, wx.ID_ANY, self.max, 0, self.max)
         self.slider_progress.SetFocus()
@@ -875,7 +879,9 @@ class SimulationPanel(wx.Panel, Job):
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.button_play = wx.Button(self, wx.ID_ANY, "")
+        self.button_play.SetToolTip(_("Start the simulation replay"))
         self.slider_playbackspeed = wx.Slider(self, wx.ID_ANY, 180, 0, 310)
+        self.slider_playbackspeed.SetToolTip(_("Set the speed for the simulation"))
         self.text_playback_speed = wx.TextCtrl(
             self, wx.ID_ANY, "100%", style=wx.TE_READONLY
         )
@@ -895,6 +901,7 @@ class SimulationPanel(wx.Panel, Job):
         )
 
         self.button_spool = wx.Button(self, wx.ID_ANY, _("Send to Laser"))
+        self.button_spool.SetToolTip(_("Send the current cutplan to the laser."))
         self._slided_in = None
 
         self.__set_properties()
@@ -930,6 +937,7 @@ class SimulationPanel(wx.Panel, Job):
 
         self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene, self))
         self.sim_travel = SimulationTravelWidget(self.widget_scene, self)
+        self.sim_travel.display = self.display_travel
         self.widget_scene.add_scenewidget(self.sim_travel)
 
         self.grid = GridWidget(
@@ -976,8 +984,10 @@ class SimulationPanel(wx.Panel, Job):
             _("Time Estimate: Extra Time (ie to swing around)")
         )
         self.text_time_total.SetToolTip(_("Time Estimate: Total Time"))
-        self.button_play.SetBitmap(icons8_play_50.GetBitmap())
-        self.text_playback_speed.SetMinSize((55, 23))
+        self.button_play.SetBitmap(
+            icons8_circled_play.GetBitmap(resize=get_default_icon_size())
+        )
+        self.text_playback_speed.SetMinSize(dip_size(self, 55, 23))
         # self.combo_device.SetToolTip(_("Select the device"))
         self.button_spool.SetFont(
             wx.Font(
@@ -989,25 +999,27 @@ class SimulationPanel(wx.Panel, Job):
                 "Segoe UI",
             )
         )
-        self.button_spool.SetBitmap(icons8_route_50.GetBitmap())
+        self.button_spool.SetBitmap(
+            icons8_route.GetBitmap(resize=1.5 * get_default_icon_size())
+        )
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: Simulation.__do_layout
-        self.text_distance_laser.SetMinSize((35, -1))
-        self.text_distance_laser_step.SetMinSize((35, -1))
-        self.text_distance_total.SetMinSize((35, -1))
-        self.text_distance_total_step.SetMinSize((35, -1))
-        self.text_distance_travel.SetMinSize((35, -1))
-        self.text_distance_travel_step.SetMinSize((35, -1))
-        self.text_time_laser.SetMinSize((35, -1))
-        self.text_time_laser_step.SetMinSize((35, -1))
-        self.text_time_total.SetMinSize((35, -1))
-        self.text_time_total_step.SetMinSize((35, -1))
-        self.text_time_travel.SetMinSize((35, -1))
-        self.text_time_travel_step.SetMinSize((35, -1))
-        self.text_time_extra.SetMinSize((35, -1))
-        self.text_time_extra_step.SetMinSize((35, -1))
+        self.text_distance_laser.SetMinSize(dip_size(self, 35, -1))
+        self.text_distance_laser_step.SetMinSize(dip_size(self, 35, -1))
+        self.text_distance_total.SetMinSize(dip_size(self, 35, -1))
+        self.text_distance_total_step.SetMinSize(dip_size(self, 35, -1))
+        self.text_distance_travel.SetMinSize(dip_size(self, 35, -1))
+        self.text_distance_travel_step.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_laser.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_laser_step.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_total.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_total_step.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_travel.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_travel_step.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_extra.SetMinSize(dip_size(self, 35, -1))
+        self.text_time_extra_step.SetMinSize(dip_size(self, 35, -1))
         v_sizer_main = wx.BoxSizer(wx.VERTICAL)
         h_sizer_scroll = wx.BoxSizer(wx.HORIZONTAL)
         h_sizer_text_1 = wx.BoxSizer(wx.HORIZONTAL)
@@ -1053,7 +1065,7 @@ class SimulationPanel(wx.Panel, Job):
         self.checkbox_optimize.Reparent(self.subpanel_optimize)
         self.btn_redo_it.Reparent(self.subpanel_optimize)
 
-        self.checkbox_optimize.SetMinSize(wx.Size(-1, 23))
+        self.checkbox_optimize.SetMinSize(dip_size(self, -1, 23))
         opt_sizer.Add(self.options_optimize, 1, wx.EXPAND, 0)
         opt_sizer.Add(self.checkbox_optimize, 0, wx.EXPAND, 0)
         opt_sizer.Add(self.btn_redo_it, 0, wx.EXPAND, 0)
@@ -1070,7 +1082,7 @@ class SimulationPanel(wx.Panel, Job):
             mysize = 40
         else:
             mysize = 20
-        self.btn_slide_options.SetMinSize(wx.Size(mysize, -1))
+        self.btn_slide_options.SetMinSize(dip_size(self, mysize, -1))
         self.voption_sizer = wx.BoxSizer(wx.VERTICAL)
         self.voption_sizer.Add(self.panel_optimize, 1, wx.EXPAND, 0)
 
@@ -1120,7 +1132,7 @@ class SimulationPanel(wx.Panel, Job):
         label_playback_mode = wx.StaticText(self, wx.ID_ANY, _("Mode") + " ")
         sizer_display.Add(label_playback_mode, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         # Make sure it has about textbox size, otherwise too narrow
-        self.radio_cut.SetMinSize(wx.Size(-1, 23))
+        self.radio_cut.SetMinSize(dip_size(self, -1, 23))
         sizer_display.Add(self.radio_cut, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_display.Add(self.radio_time_seconds, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_display.Add(self.radio_time_minutes, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -1189,14 +1201,31 @@ class SimulationPanel(wx.Panel, Job):
     def toggle_grid_c(self, event):
         self.toggle_grid("circular")
 
+    def toggle_travel_display(self, event):
+        self.display_travel = not self.display_travel
+        self.sim_travel.display = self.display_travel
+        self.widget_scene.request_refresh()
+
     def remove_background(self, event):
         self.widget_scene._signal_widget(
             self.widget_scene.widget_root, "background", None
         )
         self.widget_scene.request_refresh()
 
+    def zoom_in(self):
+        matrix = self.widget_scene.widget_root.matrix
+        zoomfactor = 1.5 / 1.0
+        matrix.post_scale(zoomfactor)
+        self.widget_scene.request_refresh()
+
+    def zoom_out(self):
+        matrix = self.widget_scene.widget_root.matrix
+        zoomfactor = 1.0 / 1.5
+        matrix.post_scale(zoomfactor)
+        self.widget_scene.request_refresh()
+
     def fit_scene_to_panel(self):
-        bbox = self.context.device.bbox()
+        bbox = self.context.device.view.source_bbox()
         self.widget_scene.widget_root.focus_viewport_scene(
             bbox, self.view_pane.Size, 0.1
         )
@@ -1310,6 +1339,34 @@ class SimulationPanel(wx.Panel, Job):
             id5 = menu.Append(wx.ID_ANY, _("Remove Background"), "")
             self.Bind(wx.EVT_MENU, self.remove_background, id=id5.GetId())
         menu.AppendSeparator()
+        id6 = menu.Append(
+            wx.ID_ANY,
+            _("Show travel path"),
+            _("Displays the laser travel when not burning"),
+            wx.ITEM_CHECK,
+        )
+        self.Bind(wx.EVT_MENU, self.toggle_travel_display, id=id6.GetId())
+        menu.Check(id6.GetId(), self.display_travel)
+
+        menu.AppendSeparator()
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.zoom_out(),
+            menu.Append(
+                wx.ID_ANY,
+                _("Zoom Out"),
+                _("Make the scene smaller"),
+            ),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.zoom_in(),
+            menu.Append(
+                wx.ID_ANY,
+                _("Zoom In"),
+                _("Make the scene larger"),
+            ),
+        )
         self.Bind(
             wx.EVT_MENU,
             lambda e: self.fit_scene_to_panel(),
@@ -1350,7 +1407,6 @@ class SimulationPanel(wx.Panel, Job):
         self.interval = factor * 100.0 / float(value)
 
     def _refresh_simulated_plan(self):
-
         # Stop animation
         if self.running:
             self._stop()
@@ -1546,11 +1602,14 @@ class SimulationPanel(wx.Panel, Job):
 
         plan = self.plan_name
         if self.checkbox_optimize.GetValue():
-            opt = " optimize"
+            opt = " preopt optimize"
+            self.context.planner.do_optimization = True
         else:
             opt = ""
+            self.context.planner.do_optimization = False
+        self.context.signal("optimize", self.context.planner.do_optimization)
         self.context(
-            f"plan{plan} clear\nplan{plan} copy preprocess validate blob preopt{opt}\n"
+            f"plan{plan} clear\nplan{plan} copy preprocess validate blob{opt}\n"
         )
         busy.end()
         self._refresh_simulated_plan()
@@ -1558,7 +1617,7 @@ class SimulationPanel(wx.Panel, Job):
     def pane_show(self):
         self.context.setting(str, "units_name", "mm")
 
-        bbox = self.context.device.bbox()
+        bbox = self.context.device.view.source_bbox()
         self.widget_scene.widget_root.focus_viewport_scene(
             bbox, self.view_pane.Size, 0.1
         )
@@ -1599,12 +1658,16 @@ class SimulationPanel(wx.Panel, Job):
         self.context.signal("refresh_scene", self.widget_scene.name)
 
     def _start(self):
-        self.button_play.SetBitmap(icons8_pause_50.GetBitmap())
+        self.button_play.SetBitmap(
+            icons8_pause.GetBitmap(resize=get_default_icon_size())
+        )
         self.context.schedule(self)
         self.running = True
 
     def _stop(self):
-        self.button_play.SetBitmap(icons8_play_50.GetBitmap())
+        self.button_play.SetBitmap(
+            icons8_circled_play.GetBitmap(resize=get_default_icon_size())
+        )
         self.context.unschedule(self)
         self.running = False
 
@@ -1662,7 +1725,7 @@ class SimulationWidget(Widget):
         Widget.__init__(self, scene, all=False)
         self.renderer = LaserRender(self.scene.context)
         self.sim = sim
-        self.matrix.post_cat(scene.context.device.device_to_scene_matrix())
+        self.matrix.post_cat(~scene.context.device.view.matrix)
         self.last_msg = None
 
     def process_draw(self, gc: wx.GraphicsContext):
@@ -1680,8 +1743,8 @@ class SimulationWidget(Widget):
                 # We draw interpolated lines to acknowledge we are in the middle of a cut operation
                 starts = []
                 ends = []
-                cutstart = wx.Point2D(self.sim.cutcode[idx].start)
-                cutend = wx.Point2D(self.sim.cutcode[idx].end)
+                cutstart = wx.Point2D(*self.sim.cutcode[idx].start)
+                cutend = wx.Point2D(*self.sim.cutcode[idx].end)
                 if self.sim.statistics[idx]["type"] == "RasterCut":
                     # Rastercut object.
                     x = 0
@@ -1716,46 +1779,37 @@ class SimulationWidget(Widget):
                             cut._cache = None
                         cut._cache_id = id(image)
                     # Set draw - constraint
-                    clip_x = 0
-                    clip_y = 0
-                    clip_w = cut._cache_width
-                    clip_h = cut._cache_height
-                    mode = ""
                     if cut.horizontal:
-                        if cut.start_on_top:
-                            mode = "T2B"
+                        if cut.start_minimum_y:
+                            # mode = "T2B"
+                            clip_w = cut._cache_width
+                            clip_h = int(residual * cut._cache_height)
+                            clip_x = 0
+                            clip_y = 0
                         else:
-                            mode = "B2T"
+                            # mode = "B2T"
+                            clip_w = cut._cache_width
+                            clip_h = int(residual * cut._cache_height)
+                            clip_x = 0
+                            clip_y = cut._cache_height - clip_h
                     else:
-                        if cut.start_on_left:
-                            mode = "L2R"
+                        if cut.start_minimum_x:
+                            # mode = "L2R"
+                            clip_w = int(residual * cut._cache_width)
+                            clip_h = cut._cache_height
+                            clip_x = 0
+                            clip_y = 0
                         else:
-                            mode = "R2L"
+                            # mode = "R2L"
+                            clip_w = int(residual * cut._cache_width)
+                            clip_h = cut._cache_height
+                            clip_x = cut._cache_width - clip_w
+                            clip_y = 0
 
                     # msg = f"Mode: {mode}, Horiz: {cut.horizontal}, from left: {cut.start_on_left}, from top: {cut.start_on_top}"
                     # if msg != self.last_msg:
                     #     print (msg)
                     #     self.last_msg = msg
-                    if mode == "T2B":
-                        clip_w = cut._cache_width
-                        clip_h = int(residual * cut._cache_height)
-                        clip_x = 0
-                        clip_y = 0
-                    elif mode == "B2T":
-                        clip_w = cut._cache_width
-                        clip_h = int(residual * cut._cache_height)
-                        clip_x = 0
-                        clip_y = cut._cache_height - clip_h
-                    elif mode == "L2R":
-                        clip_w = int(residual * cut._cache_width)
-                        clip_h = cut._cache_height
-                        clip_x = 0
-                        clip_y = 0
-                    elif mode == "R2L":
-                        clip_w = int(residual * cut._cache_width)
-                        clip_h = cut._cache_height
-                        clip_x = cut._cache_width - clip_w
-                        clip_y = 0
                     gc.Clip(clip_x, clip_y, clip_w, clip_h)
                     if cut._cache is not None:
                         # Cache exists and is valid.
@@ -1769,7 +1823,7 @@ class SimulationWidget(Widget):
                         gc.SetBrush(wx.RED_BRUSH)
                         gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
                         gc.DrawBitmap(
-                            icons8_image_50.GetBitmap(),
+                            icons8_image.GetBitmap(),
                             0,
                             0,
                             cut._cache_width,
@@ -1837,9 +1891,10 @@ class SimulationTravelWidget(Widget):
 
     def __init__(self, scene, sim):
         Widget.__init__(self, scene, all=False)
-        self.sim_matrix = scene.context.device.device_to_scene_matrix()
+        self.sim_matrix = ~scene.context.device.view.matrix
         self.sim = sim
-        self.matrix.post_cat(scene.context.device.device_to_scene_matrix())
+        self.matrix.post_cat(~scene.context.device.view.matrix)
+        self.display = True
         self.initvars()
 
     def initvars(self):
@@ -1890,6 +1945,8 @@ class SimulationTravelWidget(Widget):
             prev = curr
 
     def process_draw(self, gc: wx.GraphicsContext):
+        if not self.display:
+            return
         if len(self.pos):
             residual = 0
             if self.sim.progress < self.sim.max:
@@ -1952,7 +2009,7 @@ class SimReticleWidget(Widget):
 
     def __init__(self, scene, sim):
         Widget.__init__(self, scene, all=False)
-        self.sim_matrix = scene.context.device.device_to_scene_matrix()
+        self.sim_matrix = ~scene.context.device.view.matrix
         self.sim = sim
 
     def process_draw(self, gc):
@@ -2022,6 +2079,8 @@ class SimReticleWidget(Widget):
 class Simulation(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(706, 755, *args, **kwds)
+        # We do this very early to allow resizing events to do their thing...
+        self.restore_aspect(honor_initial_values=True)
         if len(args) > 3:
             plan_name = args[3]
         else:
@@ -2043,20 +2102,24 @@ class Simulation(MWindow):
             auto_clear=auto_clear,
             optimise_at_start=optimise,
         )
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_laser_beam_hazard2_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_laser_beam_hazard.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Simulation"))
 
     @staticmethod
     def sub_register(kernel):
         def open_simulator(v=None):
+            opt = kernel.planner.do_optimization
+            optpart = " preopt optimize" if opt else ""
+
             busy = kernel.busyinfo
             busy.change(msg=_("Preparing simulation..."))
             busy.start()
 
             kernel.console(
-                "planz copy preprocess validate blob preopt optimize\nwindow toggle Simulation z\n"
+                f"planz copy preprocess validate blob{optpart}\nwindow toggle Simulation z\n"
             )
             busy.end()
 
@@ -2064,7 +2127,7 @@ class Simulation(MWindow):
             "button/jobstart/Simulation",
             {
                 "label": _("Simulate"),
-                "icon": icons8_laser_beam_hazard2_50,
+                "icon": icons8_laser_beam_hazard,
                 "tip": _("Simulate the current laser job"),
                 "action": open_simulator,
                 "size": STD_ICON_SIZE,

@@ -4,7 +4,7 @@ import wx
 
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH, Length
-from meerk40t.gui.icons import icons8_vector_50
+from meerk40t.gui.icons import icons8_vector
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.propertypanels.attributes import (
     ColorPanel,
@@ -29,6 +29,7 @@ class PathPropertyPanel(ScrolledPanel):
         self.context.setting(
             bool, "_auto_classify", self.context.elements.classify_on_color
         )
+        self.SetHelpText("pathproperty")
         self.node = node
         self.panels = []
         # `Id` at top in all cases...
@@ -109,6 +110,8 @@ class PathPropertyPanel(ScrolledPanel):
             return False
         elif node.type.startswith("elem"):
             return True
+        elif node.type.startswith("effect"):
+            return True
         return False
 
     def covered_area(self, nodes):
@@ -144,8 +147,13 @@ class PathPropertyPanel(ScrolledPanel):
                 bounds = Node.union_bounds(data)
             width = bounds[2] - bounds[0]
             height = bounds[3] - bounds[1]
-            new_width = int(width * dots_per_units)
-            new_height = int(height * dots_per_units)
+
+            try:
+                new_width = int(width * dots_per_units)
+                new_height = int(height * dots_per_units)
+            except OverflowError:
+                new_width = 0
+                new_height = 0
             # print(f"Width: {width:.0f} -> {new_width}")
             # print(f"Height: {height:.0f} -> {new_height}")
             keep_ratio = True
@@ -258,7 +266,7 @@ class PathPropertyPanel(ScrolledPanel):
         total_length = 0
         if hasattr(self.node, "as_path"):
             path = self.node.as_path()
-            total_length = path.length()
+            total_length = path.length(error=1e-2)
         else:
             total_length = 0
         total_area, second_area = self.covered_area([self.node])
@@ -283,6 +291,11 @@ class PathPropertyPanel(ScrolledPanel):
         self.lbl_info_segments.SetValue("")
 
         self.Refresh()
+
+    def signal(self, signalstr, myargs):
+        for panel in self.panels:
+            if hasattr(panel, "signal"):
+                panel.signal(signalstr, myargs)
 
     def __set_properties(self):
         return
@@ -351,12 +364,14 @@ class PathProperty(MWindow):
         super().__init__(288, 303, *args, **kwds)
 
         self.panel = PathPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_vector_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_vector.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: PathProperty.__set_properties
         self.SetTitle(_("Path Properties"))
+        self.restore_aspect()
 
     def restore(self, *args, node=None, **kwds):
         self.panel.set_widgets(node)

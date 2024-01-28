@@ -2,7 +2,16 @@
 GRBL Controller
 
 Tasked with sending data to the different connection.
+
+Validation Stages.
+        Stage 0, we are disconnected and invalid.
+        Stage 1, we are connected and need to check if we are GRBL send $
+        Stage 2, we parsed $ and need to try $$ $G
+        Stage 3, we successfully parsed $$
+        Stage 4, we successfully parsed $G, send ?
+        Stage 5, we successfully parsed ?
 """
+import ast
 import re
 import threading
 import time
@@ -10,6 +19,83 @@ import time
 from meerk40t.kernel import signal_listener
 
 SETTINGS_MESSAGE = re.compile(r"^\$([0-9]+)=(.*)")
+
+
+def hardware_settings(code):
+    """
+    Given a $# code returns the parameter and the units.
+
+    @param code: $$ code.
+    @return: parameter, units
+    """
+    if code == 0:
+        return 10, "step pulse time", "microseconds", float
+    if code == 1:
+        return 25, "step idle delay", "milliseconds", float
+    if code == 2:
+        return 0, "step pulse invert", "bitmask", int
+    if code == 3:
+        return 0, "step direction invert", "bitmask", int
+    if code == 4:
+        return 0, "invert step enable pin", "boolean", int
+    if code == 5:
+        return 0, "invert limit pins", "boolean", int
+    if code == 6:
+        return 0, "invert probe pin", "boolean", int
+    if code == 10:
+        return 255, "status report options", "bitmask", int
+    if code == 11:
+        return 0.010, "Junction deviation", "mm", float
+    if code == 12:
+        return 0.002, "arc tolerance", "mm", float
+    if code == 13:
+        return 0, "Report in inches", "boolean", int
+    if code == 20:
+        return 0, "Soft limits enabled", "boolean", int
+    if code == 21:
+        return 0, "hard limits enabled", "boolean", int
+    if code == 22:
+        return 0, "Homing cycle enable", "boolean", int
+    if code == 23:
+        return 0, "Homing direction invert", "bitmask", int
+    if code == 24:
+        return 25.000, "Homing locate feed rate", "mm/min", float
+    if code == 25:
+        return 500.000, "Homing search seek rate", "mm/min", float
+    if code == 26:
+        return 250, "Homing switch debounce delay", "ms", float
+    if code == 27:
+        return 1.000, "Homing switch pull-off distance", "mm", float
+    if code == 30:
+        return 1000, "Maximum spindle speed", "RPM", float
+    if code == 31:
+        return 0, "Minimum spindle speed", "RPM", float
+    if code == 32:
+        return 1, "Laser mode enable", "boolean", int
+    if code == 100:
+        return 250.000, "X-axis steps per millimeter", "steps", float
+    if code == 101:
+        return 250.000, "Y-axis steps per millimeter", "steps", float
+    if code == 102:
+        return 250.000, "Z-axis steps per millimeter", "steps", float
+    if code == 110:
+        return 500.000, "X-axis max rate", "mm/min", float
+    if code == 111:
+        return 500.000, "Y-axis max rate", "mm/min", float
+    if code == 112:
+        return 500.000, "Z-axis max rate", "mm/min", float
+    if code == 120:
+        return 10.000, "X-axis acceleration", "mm/s^2", float
+    if code == 121:
+        return 10.000, "Y-axis acceleration", "mm/s^2", float
+    if code == 122:
+        return 10.000, "Z-axis acceleration", "mm/s^2", float
+    if code == 130:
+        return 200.000, "X-axis max travel", "mm", float
+    if code == 131:
+        return 200.000, "Y-axis max travel", "mm", float
+    if code == 132:
+        return 200.000, "Z-axis max travel", "mm", float
 
 
 def grbl_error_code(code):
@@ -88,7 +174,7 @@ def grbl_error_code(code):
     elif code == 38:
         long = "Tool number greater than max value."
     else:
-        long = f"Unrecodgnised error code #{code}"
+        long = f"Unrecognised error code #{code}"
     return short, long
 
 
@@ -156,53 +242,11 @@ class GrblController:
     def __init__(self, context):
         self.service = context
         self.connection = None
+        self._validation_stage = 0
 
         self.update_connection()
 
         self.driver = self.service.driver
-        self.grbl_settings = {
-            0: 10,  # step pulse microseconds
-            1: 25,  # step idle delay
-            2: 0,  # step pulse invert
-            3: 0,  # step direction invert
-            4: 0,  # invert step enable pin, boolean
-            5: 0,  # invert limit pins, boolean
-            6: 0,  # invert probe pin
-            10: 255,  # status report options
-            11: 0.010,  # Junction deviation, mm
-            12: 0.002,  # arc tolerance, mm
-            13: 0,  # Report in inches
-            20: 0,  # Soft limits enabled.
-            21: 0,  # hard limits enabled
-            22: 0,  # Homing cycle enable
-            23: 0,  # Homing direction invert
-            24: 25.000,  # Homing locate feed rate, mm/min
-            25: 500.000,  # Homing search seek rate, mm/min
-            26: 250,  # Homing switch debounce delay, ms
-            27: 1.000,  # Homing switch pull-off distance, mm
-            30: 1000,  # Maximum spindle speed, RPM
-            31: 0,  # Minimum spindle speed, RPM
-            32: 1,  # Laser mode enable, boolean
-            100: 250.000,  # X-axis steps per millimeter
-            101: 250.000,  # Y-axis steps per millimeter
-            102: 250.000,  # Z-axis steps per millimeter
-            110: 500.000,  # X-axis max rate mm/min
-            111: 500.000,  # Y-axis max rate mm/min
-            112: 500.000,  # Z-axis max rate mm/min
-            120: 10.000,  # X-axis acceleration, mm/s^2
-            121: 10.000,  # Y-axis acceleration, mm/s^2
-            122: 10.000,  # Z-axis acceleration, mm/s^2
-            130: 200.000,  # X-axis max travel mm.
-            131: 200.000,  # Y-axis max travel mm
-            132: 200.000,  # Z-axis max travel mm.
-        }
-
-        # Welcome message into, indicates the device is initialized.
-        self.welcome = self.service.setting(str, "welcome", "Grbl")
-        self._requires_validation = self.service.setting(
-            bool, "requires_validation", True
-        )
-        self._connection_validated = not self._requires_validation
 
         # Sending variables.
         self._sending_thread = None
@@ -222,6 +266,7 @@ class GrblController:
 
         self._paused = False
         self._watchers = []
+        self.is_shutdown = False
 
     def __repr__(self):
         return f"GRBLController('{self.service.location()}')"
@@ -265,18 +310,18 @@ class GrblController:
             try:
                 from .serial_connection import SerialConnection
 
-                self.connection = SerialConnection(self.service)
+                self.connection = SerialConnection(self.service, self)
             except ImportError:
                 pass
         elif self.service.permit_tcp and self.service.interface == "tcp":
             from meerk40t.grbl.tcp_connection import TCPOutput
 
-            self.connection = TCPOutput(self.service)
+            self.connection = TCPOutput(self.service, self)
         else:
             # Mock
             from .mock_connection import MockConnection
 
-            self.connection = MockConnection(self.service)
+            self.connection = MockConnection(self.service, self)
 
     def add_watcher(self, watcher):
         self._watchers.append(watcher)
@@ -289,21 +334,18 @@ class GrblController:
             w(data, type=type)
 
     def _channel_log(self, data, type=None):
+        name = self.service.safe_label
         if type == "send":
             if not hasattr(self, "_grbl_send"):
-                self._grbl_send = self.service.channel(
-                    f"send-{self.service.label}", pure=True
-                )
+                self._grbl_send = self.service.channel(f"send-{name}", pure=True)
             self._grbl_send(data)
         elif type == "recv":
             if not hasattr(self, "_grbl_recv"):
-                self._grbl_recv = self.service.channel(
-                    f"recv-{self.service.label}", pure=True
-                )
+                self._grbl_recv = self.service.channel(f"recv-{name}", pure=True)
             self._grbl_recv(data)
         elif type == "event":
             if not hasattr(self, "_grbl_events"):
-                self._grbl_events = self.service.channel(f"events-{self.service.label}")
+                self._grbl_events = self.service.channel(f"events-{name}")
             self._grbl_events(data)
 
     def open(self):
@@ -320,6 +362,15 @@ class GrblController:
             self.log("Could not connect.", type="event")
             return
         self.log("Connecting to GRBL...", type="event")
+        if self.service.reset_on_connect:
+            self.driver.reset()
+        if not self.service.require_validator:
+            # We are required to wait for the validation.
+            if self.service.boot_connect_sequence:
+                self._validation_stage = 1
+                self.validate_start("$")
+            else:
+                self._validation_stage = 5
 
     def close(self):
         """
@@ -330,8 +381,9 @@ class GrblController:
         if not self.connection.connected:
             return
         self.connection.disconnect()
-        self._connection_validated = not self._requires_validation
         self.log("Disconnecting from GRBL...", type="event")
+        self.validate_stop("*")
+        self._validation_stage = 0
 
     def write(self, data):
         """
@@ -384,20 +436,53 @@ class GrblController:
         if self._channel_log not in self._watchers:
             self.add_watcher(self._channel_log)
 
-        if self._sending_thread is None:
+        if self._sending_thread is None or not self._sending_thread.is_alive():
+            self._sending_thread = True  # Avoid race condition.
             self._sending_thread = self.service.threaded(
                 self._sending,
                 thread_name=f"sender-{self.service.location()}",
                 result=self.stop,
                 daemon=True,
             )
-        if self._recving_thread is None:
+        if self._recving_thread is None or not self._recving_thread.is_alive():
+            self._recving_thread = True  # Avoid race condition.
             self._recving_thread = self.service.threaded(
                 self._recving,
                 thread_name=f"recver-{self.service.location()}",
                 result=self._rstop,
                 daemon=True,
             )
+
+    def shutdown(self):
+        self.is_shutdown = True
+        self._forward_buffer.clear()
+
+    def validate_start(self, cmd):
+        if cmd == "$":
+            delay = self.service.connect_delay / 1000
+        else:
+            delay = 0
+        name = self.service.safe_label
+        if delay:
+            self.service(f".timer 1 {delay} .gcode_realtime {cmd}")
+            self.service(
+                f".timer-{name}{cmd} 1 {delay} .timer-{name}{cmd} 0 1 gcode_realtime {cmd}"
+            )
+        else:
+            self.service(f".gcode_realtime {cmd}")
+            self.service(f".timer-{name}{cmd} 0 1 gcode_realtime {cmd}")
+
+    def validate_stop(self, cmd):
+        name = self.service.safe_label
+        if cmd == "*":
+            self.service(f".timer-{name}* -q --off")
+            return
+        self.service(f".timer-{name}{cmd} -q --off")
+        if cmd == "$":
+            if len(self._forward_buffer) > 3:
+                # If the forward planning buffer is longer than 3 it must have filled with failed attempts.
+                with self._forward_lock:
+                    self._forward_buffer.clear()
 
     def _rstop(self, *args):
         self._recving_thread = None
@@ -446,11 +531,12 @@ class GrblController:
             self._paused = True
         if "~" in line:
             self._paused = False
-        if "\x18" in line:
-            with self._forward_lock:
-                self._forward_buffer.clear()
         if line is not None:
             self._send(line)
+        if "\x18" in line:
+            self._paused = False
+            with self._forward_lock:
+                self._forward_buffer.clear()
 
     def _sending_single_line(self):
         """
@@ -471,9 +557,7 @@ class GrblController:
         @return:
         """
         with self._loop_cond:
-            self.service.signal("pipe;running", False)
             self._loop_cond.wait()
-            self.service.signal("pipe;running", True)
 
     def _send_resume(self):
         """
@@ -492,21 +576,24 @@ class GrblController:
         @return:
 
         """
-        self.service.signal("pipe;running", True)
         while self.connection.connected:
             if self._realtime_queue:
                 # Send realtime data.
                 self._sending_realtime()
                 continue
-            if self._paused or not self._connection_validated:
-                # We are paused. We do not send anything other than realtime commands.
+            if self._paused or not self.fully_validated():
+                # We are paused or invalid. We do not send anything other than realtime commands.
                 time.sleep(0.05)
                 continue
             if not self._sending_queue:
                 # There is nothing to write/realtime
+                self.service.laser_status = "idle"
                 self._send_halt()
                 continue
             buffer = len(self._forward_buffer)
+            if buffer:
+                self.service.laser_status = "active"
+
             if self.service.buffer_mode == "sync":
                 if buffer:
                     # Any buffer is too much buffer. Halt.
@@ -520,7 +607,7 @@ class GrblController:
                     continue
             # Go for send_line
             self._sending_single_line()
-        self.service.signal("pipe;running", False)
+        self.service.laser_status = "idle"
 
     ####################
     # GRBL RECV ROUTINES
@@ -560,6 +647,8 @@ class GrblController:
                     return
                 if not response:
                     time.sleep(0.01)
+                    if self.is_shutdown:
+                        return
             self.service.signal("grbl;response", response)
             self.log(response, type="recv")
             if response == "ok":
@@ -609,6 +698,10 @@ class GrblController:
                 self._process_feedback_message(response)
                 continue
             elif response.startswith("$"):
+                if self._validation_stage == 2:
+                    self.log("Stage 3: $$ was successfully parsed.", type="event")
+                    self.validate_stop("$$")
+                    self._validation_stage = 3
                 self._process_settings_message(response)
                 continue
             elif response.startswith("ALARM"):
@@ -623,27 +716,100 @@ class GrblController:
                 self._assembled_response = []
             elif response.startswith(">"):
                 self.log(f"STARTUP: {response}", type="event")
-            elif response.startswith(self.welcome):
-                self.log("Connection Confirmed.", type="event")
-                self._connection_validated = True
+            elif response.startswith(self.service.welcome):
+                if not self.service.require_validator:
+                    # Validation is not required, we reboot.
+                    if self.fully_validated():
+                        if self.service.boot_connect_sequence:
+                            # Boot sequence is required. Restart sequence.
+                            self.log(
+                                "Device Reset, revalidation required", type="event"
+                            )
+                            self._validation_stage = 1
+                            self.validate_start("$")
+                else:
+                    # Validation is required. This was stage 0.
+                    if self.service.boot_connect_sequence:
+                        # Boot sequence is required. Restart sequence.
+                        self._validation_stage = 1
+                        self.validate_start("$")
+                    else:
+                        # No boot sequence required. Declare fully connected.
+                        self._validation_stage = 5
             else:
                 self._assembled_response.append(response)
-        self.service.signal("pipe;running", False)
+
+    def fully_validated(self):
+        return self._validation_stage == 5
+
+    def force_validate(self):
+        self._validation_stage = 5
+        self.validate_stop("*")
 
     def _process_status_message(self, response):
         message = response[1:-1]
         data = list(message.split("|"))
         self.service.signal("grbl:state", data[0])
         for datum in data[1:]:
-            name, info = datum.split(":")
+            # While valid some grbl replies might violate the parsing convention.
+            try:
+                name, info = datum.split(":")
+            except ValueError:
+                continue
             if name == "F":
                 self.service.signal("grbl:speed", float(info))
+            elif name == "S":
+                self.service.signal("grbl:power", float(info))
             elif name == "FS":
-                if name == "F":
-                    f, s = info.split(",")
-                    self.service.signal("grbl:speed", float(f))
-                    self.service.signal("grbl:power", float(s))
+                f, s = info.split(",")
+                self.service.signal("grbl:speed", float(f))
+                self.service.signal("grbl:power", float(s))
+            elif name == "MPos":
+                coords = info.split(",")
+                try:
+                    nx = float(coords[0])
+                    ny = float(coords[1])
+
+                    if not self.fully_validated():
+                        # During validation, we declare positions.
+                        self.driver.declare_position(nx, ny)
+                    ox = self.driver.mpos_x
+                    oy = self.driver.mpos_y
+
+                    x, y = self.service.view_mm.position(f"{nx}mm", f"{ny}mm")
+
+                    (
+                        self.driver.mpos_x,
+                        self.driver.mpos_y,
+                    ) = self.service.view_mm.scene_position(f"{x}mm", f"{y}mm")
+
+                    if len(coords) >= 3:
+                        self.driver.mpos_z = float(coords[2])
+                    self.service.signal(
+                        "status;position",
+                        (ox, oy, self.driver.mpos_x, self.driver.mpos_y),
+                    )
+                except ValueError:
+                    pass
+            elif name == "WPos":
+                coords = info.split(",")
+                self.driver.wpos_x = coords[0]
+                self.driver.wpos_y = coords[1]
+                if len(coords) >= 3:
+                    self.driver.wpos_z = coords[2]
+            # See: https://github.com/grbl/grbl/blob/master/grbl/report.c#L421
+            # MPos: Coord values. Machine Position.
+            # WPos: MPos but with applied work coordinates. Work Position.
+            # RX: serial rx buffer count.
+            # Buf: plan block buffer count.
+            # Ln: line number.
+            # Lim: limits states
+            # Ctl: control pins and mask (binary).
             self.service.signal(f"grbl:status:{name}", info)
+        if self._validation_stage in (2, 3, 4):
+            self.log("Connection Confirmed.", type="event")
+            self._validation_stage = 5
+            self.validate_stop("*")
 
     def _process_feedback_message(self, response):
         if response.startswith("[MSG:"):
@@ -651,11 +817,31 @@ class GrblController:
             self.log(message, type="event")
             self.service.channel("console")(message)
         elif response.startswith("[GC:"):
+            # Parsing $G
             message = response[4:-1]
+            states = list(message.split(" "))
+            if not self.fully_validated():
+                self.log("Stage 4: $G was successfully parsed.", type="event")
+                self.driver.declare_modals(states)
+                self._validation_stage = 4
+                self.validate_stop("$G")
+                self.validate_start("?")
             self.log(message, type="event")
-            self.service.signal("grbl:states", list(message.split(" ")))
+            self.service.signal("grbl:states", states)
         elif response.startswith("[HLP:"):
+            # Parsing $
             message = response[5:-1]
+            if self._validation_stage == 1:
+                self.log("Stage 2: $ was successfully parsed.", type="event")
+                self._validation_stage = 2
+                self.validate_stop("$")
+                if "$$" in message:
+                    self.validate_start("$$")
+                if "$G" in message:
+                    self.validate_start("$G")
+                elif "?" in message:
+                    # No $G just request status.
+                    self.validate_start("?")
             self.log(message, type="event")
         elif response.startswith("[G54:"):
             message = response[5:-1]
@@ -695,7 +881,10 @@ class GrblController:
             self.service.signal("grbl:ver", message)
         elif response.startswith("[OPT:"):
             message = response[5:-1]
-            codes, block_buffer_size, rx_buffer_size = message.split(",")
+            opts = list(message.split(","))
+            codes = opts[0]
+            block_buffer_size = opts[1]
+            rx_buffer_size = opts[2]
             self.log(f"codes: {codes}", type="event")
             if "V" in codes:
                 # Variable spindle enabled
@@ -762,6 +951,15 @@ class GrblController:
         match = SETTINGS_MESSAGE.match(response)
         if match:
             try:
-                self.grbl_settings[int(match.group(1))] = float(match.group(2))
+                key = int(match.group(1))
+                value = match.group(2)
+                try:
+                    value = ast.literal_eval(value)
+                except SyntaxError:
+                    # GRBLHal can have things like "", and "Grbl" and "192.168.1.39" in the settings.
+                    pass
+
+                self.service.hardware_config[key] = value
+                self.service.signal(f"grbl:hwsettings", key, value)
             except ValueError:
                 pass

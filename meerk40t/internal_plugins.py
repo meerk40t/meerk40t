@@ -56,9 +56,9 @@ def plugin(kernel, lifecycle):
 
         plugins.append(fills.plugin)
 
-        from .fill import patternfill
+        from .fill import patterns
 
-        plugins.append(patternfill.plugin)
+        plugins.append(patterns.plugin)
 
         from .extra import vectrace
 
@@ -76,17 +76,13 @@ def plugin(kernel, lifecycle):
 
         plugins.append(hershey.plugin)
 
-        from .extra import embroider
-
-        plugins.append(embroider.plugin)
-
         from .extra import ezd
 
         plugins.append(ezd.plugin)
 
-        from .extra import pathoptimize
+        from .extra import lbrn
 
-        plugins.append(pathoptimize.plugin)
+        plugins.append(lbrn.plugin)
 
         from .extra import updater
 
@@ -95,6 +91,14 @@ def plugin(kernel, lifecycle):
         from .extra import winsleep
 
         plugins.append(winsleep.plugin)
+
+        from .extra import param_functions
+
+        plugins.append(param_functions.plugin)
+
+        from .extra import serial_exchange
+
+        plugins.append(serial_exchange.plugin)
 
         from meerk40t.camera.plugin import plugin as camera_plugin
 

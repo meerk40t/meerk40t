@@ -6,7 +6,7 @@ import wx
 from meerk40t.gui.wxutils import ScrolledPanel
 
 # from ...svgelements import SVG_ATTR_ID
-from ..icons import icons8_group_objects_50
+from ..icons import icons8_group_objects
 from ..mwindow import MWindow
 from ..wxutils import StaticBoxSizer
 from .attributes import IdPanel
@@ -98,11 +98,13 @@ class GroupProperty(MWindow):
         self.panel = GroupPropertiesPanel(
             self, wx.ID_ANY, context=self.context, node=node
         )
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_group_objects_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_group_objects.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Group Properties"))
+        self.restore_aspect()
 
     def restore(self, *args, node=None, **kwds):
         self.panel.set_widgets(node)
@@ -201,11 +203,13 @@ class FileProperty(MWindow):
         self.panel = FilePropertiesPanel(
             self, wx.ID_ANY, context=self.context, node=node
         )
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_group_objects_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_group_objects.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("File Properties"))
+        self.restore_aspect()
 
     def restore(self, *args, node=None, **kwds):
         self.panel.set_widgets(node)

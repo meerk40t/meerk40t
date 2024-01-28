@@ -150,15 +150,12 @@ class LivingHinges:
 
         if self.outershape is None:
             return
-        outer_path = self.outershape.as_path()
+        outer_path = self.outershape.as_geometry()
         if outer_path is None:
             return
         self.path = Geomstr()
-        clip = Geomstr()
-        for sp in outer_path.as_subpaths():
-            pts = [Path(sp).point(i / 100.0, error=1e4) for i in range(101)]
-            clip.polyline([complex(pt.x, pt.y) for pt in pts])
-            # clip.end()
+
+        clip = outer_path
 
         q = Clip(clip)
         subject = Geomstr()

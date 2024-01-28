@@ -48,6 +48,10 @@ class TrueTypeFont:
         self.metric_data_format = None
         self.number_of_long_hor_metrics = None
 
+        self.font_family = None
+        self.font_subfamily = None
+        self.font_name = None
+
         self._character_map = {}
         self._glyph_offsets = None
         self.horizontal_metrics = None
@@ -57,15 +61,91 @@ class TrueTypeFont:
         self.parse_hmtx()
         self.parse_loca()
         self.parse_cmap()
+        self.parse_name()
         self.glyphs = list(self.parse_glyf())
 
-    def render(self, path, text, horizontal=True, font_size=12.0):
+    @staticmethod
+    def query_name(filename):
+        def get_string(f, off, length):
+            string = None
+            try:
+                location = f.tell()
+                f.seek(off)
+                string = f.read(length)
+                f.seek(location)
+                return string.decode("UTF-16BE")
+            except UnicodeDecodeError:
+                try:
+                    return string.decode("UTF8")
+                except UnicodeDecodeError:
+                    return string
+
+        try:
+            with open(filename, "rb") as f:
+                (
+                    sfnt_version,
+                    num_tables,
+                    search_range,
+                    entry_selector,
+                    range_shift,
+                ) = struct.unpack(">LHHHH", f.read(12))
+
+                name_table = False
+                for i in range(num_tables):
+                    tag, checksum, offset, length = struct.unpack(">4sLLL", f.read(16))
+                    if tag == b"name":
+                        f.seek(offset)
+                        name_table = True
+                        break
+                if not name_table:
+                    return None, None, None
+
+                # We are now at the name table.
+                table_start = f.tell()
+                (
+                    fmt,
+                    count,
+                    strings_offset,
+                ) = struct.unpack(">HHH", f.read(6))
+                if fmt == 1:
+                    (langtag_count,) = struct.unpack(">H", f.read(2))
+                    for langtag_record in range(langtag_count):
+                        (langtag_len, langtag_offset) = struct.unpack(">HH", f.read(4))
+
+                font_family = None
+                font_subfamily = None
+                font_name = None
+                for record_index in range(count):
+                    (
+                        platform_id,
+                        platform_specific_id,
+                        language_id,
+                        name_id,
+                        length,
+                        record_offset,
+                    ) = struct.unpack(">HHHHHH", f.read(2 * 6))
+                    pos = table_start + strings_offset + record_offset
+                    if name_id == 1:
+                        font_family = get_string(f, pos, length)
+                    elif name_id == 2:
+                        font_family = get_string(f, pos, length)
+                    elif name_id == 4:
+                        font_name = get_string(f, pos, length)
+                    if font_family and font_subfamily and font_name:
+                        break
+                return font_family, font_subfamily, font_name
+        except (OSError, FileNotFoundError, PermissionError) as e:
+            print (f"Error while reading: {e}")
+            return None
+
+    def render(self, path, text, horizontal=True, font_size=12.0, spacing=1.0):
+        # Letter spacing
         scale = font_size / self.units_per_em
         offset_x = 0
         offset_y = 0
         for c in text:
             index = self._character_map.get(c, 0)
-            advance_x = self.horizontal_metrics[index][0]
+            advance_x = self.horizontal_metrics[index][0] * spacing
             advance_y = 0
             glyph = self.glyphs[index]
             path.new_path()
@@ -115,6 +195,7 @@ class TrueTypeFont:
                 path.close()
             offset_x += advance_x
             offset_y += advance_y
+            path.character_end()
 
     def parse_ttf(self, font_path, require_checksum=True):
         with open(font_path, "rb") as f:
@@ -444,3 +525,45 @@ class TrueTypeFont:
             else:
                 pass
             yield value
+
+    def parse_name(self):
+        def decode(string):
+            try:
+                return string.decode("UTF-16BE")
+            except UnicodeDecodeError:
+                try:
+                    return string.decode("UTF8")
+                except UnicodeDecodeError:
+                    return string
+
+        data = self._raw_tables[b"name"]
+        b = BytesIO(data)
+        (
+            format,
+            count,
+            offset,
+        ) = struct.unpack(">HHH", b.read(6))
+        if format == 1:
+            (langtag_count,) = struct.unpack(">H", b.read(2))
+            for langtag_record in range(langtag_count):
+                (langtag_len, langtag_offset) = struct.unpack(">HH", b.read(4))
+
+        records = [struct.unpack(">HHHHHH", b.read(2 * 6)) for _ in range(count)]
+        strings = b.read()
+        for (
+            platform_id,
+            platform_specific_id,
+            language_id,
+            name_id,
+            length,
+            str_offset,
+        ) in records:
+            if name_id == 1:
+                self.font_family = decode(strings[str_offset : str_offset + length])
+            elif name_id == 2:
+                self.font_subfamily = decode(strings[str_offset : str_offset + length])
+            elif name_id == 3:
+                # Unique Subfamily Name
+                pass
+            elif name_id == 4:
+                self.font_name = decode(strings[str_offset : str_offset + length])

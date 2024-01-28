@@ -17,7 +17,7 @@ class TextTool(ToolWidget):
     Adds Text at set location.
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, mode=None):
         ToolWidget.__init__(self, scene)
         self.start_position = None
         self.last_node_created = None
@@ -45,8 +45,7 @@ class TextTool(ToolWidget):
         self.scene.cursor("text")
         if event_type == "leftdown":
             if nearest_snap is None:
-                x = space_pos[0]
-                y = space_pos[1]
+                x, y = self.scene.get_snap_point(space_pos[0], space_pos[1], modifiers)
             else:
                 x = nearest_snap[0]
                 y = nearest_snap[1]

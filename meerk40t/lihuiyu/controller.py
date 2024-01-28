@@ -19,7 +19,6 @@ import time
 
 from meerk40t.ch341 import get_ch341_interface
 
-STATUS_BAD_STATE = 204
 STATUS_SERIAL_CORRECT_M3_FINISH = 204
 # 0xCC, 11001100
 STATUS_OK = 206
@@ -59,8 +58,8 @@ def get_code_string_from_code(code):
         return "Finish"
     elif code == STATUS_POWER:
         return "Low Power"
-    elif code == STATUS_BAD_STATE:
-        return "Bad State"
+    elif code == STATUS_SERIAL_CORRECT_M3_FINISH:
+        return "M3-Finished"
     elif code == 0:
         return "USB Failed"
     else:
@@ -141,8 +140,8 @@ class LihuiyuController:
     log, providing information about the connecting and error status of the USB device.
     """
 
-    def __init__(self, context, *args, **kwargs):
-        self.context = context
+    def __init__(self, service, *args, **kwargs):
+        self.context = service
         self.state = "unknown"
         self.is_shutdown = False
         self.serial_confirmed = None
@@ -158,10 +157,10 @@ class LihuiyuController:
         self._preempt = (
             bytearray()
         )  # Thread-unsafe preempt commands to prepend to the buffer.
-        self.context._buffer_size = 0
         self._queue_lock = threading.Lock()
         self._preempt_lock = threading.Lock()
         self._main_lock = threading.Lock()
+        self._connect_lock = threading.RLock()
         self._loop_cond = threading.Condition()
 
         self._status = [0] * 6
@@ -177,12 +176,12 @@ class LihuiyuController:
 
         self.abort_waiting = False
 
-        name = self.context.label
-        self.pipe_channel = context.channel(f"{name}/events")
-        self.usb_log = context.channel(f"{name}/usb", buffer_size=500)
-        self.usb_send_channel = context.channel(f"{name}/usb_send")
-        self.recv_channel = context.channel(f"{name}/recv")
-        self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
+        name = service.safe_label
+        self.pipe_channel = service.channel(f"{name}/events")
+        self.usb_log = service.channel(f"{name}/usb", buffer_size=500)
+        self.usb_send_channel = service.channel(f"{name}/usb_send")
+        self.recv_channel = service.channel(f"{name}/recv")
+        self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
         self.reset()
 
     @property
@@ -217,13 +216,24 @@ class LihuiyuController:
         return len(self._buffer) + len(self._queue) + len(self._preempt)
 
     def open(self):
-        _ = self.usb_log._
+        with self._connect_lock:
+            self._process_open()
+
+    def _process_open(self):
         if self.connection is not None and self.connection.is_connected():
             return  # Already connected.
+        _ = self.usb_log._
         self.pipe_channel("open()")
-
         try:
-            interfaces = list(get_ch341_interface(self.context, self.usb_log))
+            interfaces = list(
+                get_ch341_interface(
+                    self.context,
+                    self.usb_log,
+                    mock=self.context.mock,
+                    mock_status=STATUS_OK,
+                    bulk=True,
+                )
+            )
             if self.context.usb_index != -1:
                 # Instructed to check one specific device.
                 devices = [self.context.usb_index]
@@ -244,7 +254,8 @@ class LihuiyuController:
                         self.usb_log(_("Connection failed."))
                         self.connection = None
                         break
-        except PermissionError:
+        except PermissionError as e:
+            self.usb_log(str(e))
             return  # OS denied permissions, no point checking anything else.
 
         self.close()
@@ -293,7 +304,9 @@ class LihuiyuController:
 
     def close(self):
         self.pipe_channel("close()")
-        if self.connection is not None:
+        with self._connect_lock:
+            if self.connection is None:
+                return
             self.connection.close()
             self.connection = None
 
@@ -355,6 +368,8 @@ class LihuiyuController:
                 self.write(queue_bytes)
             return self
         self.pipe_channel(f"realtime_write({str(bytes_to_write)})")
+        if b"*" in bytes_to_write:
+            self.abort_waiting = True
         with self._preempt_lock:
             self._preempt = bytearray(bytes_to_write) + self._preempt
         self.start()
@@ -424,6 +439,7 @@ class LihuiyuController:
         self._buffer = bytearray()
         self._queue = bytearray()
         self._realtime_buffer = bytearray()
+        self.abort_waiting = False
         self.context.signal("pipe;buffer", 0)
         self.update_state("terminate")
 
@@ -490,11 +506,7 @@ class LihuiyuController:
             self.context.signal("pipe;thread", self.state)
 
     def update_buffer(self):
-        if self.context is not None:
-            self.context._buffer_size = (
-                len(self._realtime_buffer) + len(self._buffer) + len(self._queue)
-            )
-            self.context.signal("pipe;buffer", len(self))
+        self.context.signal("pipe;buffer", len(self))
 
     def update_packet(self, packet):
         self.context.signal("pipe;packet", convert_to_list_bytes(packet))
@@ -507,17 +519,17 @@ class LihuiyuController:
             if self.state == "init":
                 # If we are initialized. Change that to active since we're running.
                 self.update_state("active")
-            if self.state in ("pause", "busy", "suspend"):
-                # If we are paused just keep sleeping until the state changes.
+            elif self.state in ("pause", "busy", "suspend"):
+                # If we are paused just wait until the state changes.
                 if len(self._realtime_buffer) == 0 and len(self._preempt) == 0:
                     # Only pause if there are no realtime commands to queue.
-                    self.context.signal("pipe;running", False)
+                    self.context.laser_status = "idle"
                     with self._loop_cond:
                         self._loop_cond.wait()
                     continue
             if self.aborted_retries:
                 # We are not trying reconnection anymore.
-                self.context.signal("pipe;running", False)
+                self.context.laser_status = "idle"
                 with self._loop_cond:
                     self._loop_cond.wait()
                 continue
@@ -525,7 +537,7 @@ class LihuiyuController:
             self._check_transfer_buffer()
             if len(self._realtime_buffer) <= 0 and len(self._buffer) <= 0:
                 # The buffer and realtime buffers are empty. No packet creation possible.
-                self.context.signal("pipe;running", False)
+                self.context.laser_status = "idle"
                 with self._loop_cond:
                     self._loop_cond.wait()
                 continue
@@ -545,7 +557,7 @@ class LihuiyuController:
                 if self.refuse_counts >= 5:
                     self.context.signal("pipe;state", "STATE_FAILED_RETRYING")
                 self.context.signal("pipe;failing", self.refuse_counts)
-                self.context.signal("pipe;running", False)
+                self.context.laser_status = "idle"
                 if self.is_shutdown:
                     return  # Sometimes it could reset this and escape.
                 time.sleep(3)  # 3-second sleep on failed connection attempt.
@@ -555,12 +567,12 @@ class LihuiyuController:
                 self.connection_errors += 1
                 self.pre_ok = False
 
-                self.context.signal("pipe;running", False)
+                self.context.laser_status = "idle"
                 time.sleep(0.5)
                 self.close()
                 continue
 
-            self.context.signal("pipe;running", queue_processed)
+            self.context.laser_status = "active" if queue_processed else "idle"
             if queue_processed:
                 # Packet was sent.
                 if self.state not in (
@@ -591,7 +603,7 @@ class LihuiyuController:
             self._thread = None
             self.update_state("end")
             self.pre_ok = False
-            self.context.signal("pipe;running", False)
+            self.context.laser_status = "idle"
 
     def _check_transfer_buffer(self):
         if len(self._queue):  # check for and append queue
@@ -710,6 +722,8 @@ class LihuiyuController:
                 try:
                     self.update_status()
                     status = self._status[1]
+                    if attempts > 10:
+                        time.sleep(min(0.001 * attempts, 0.1))
                 except ConnectionError:
                     # Errors are ignored, must confirm packet.
                     flawless = False
@@ -723,8 +737,6 @@ class LihuiyuController:
                     break
                 elif status == STATUS_BUSY:
                     # Busy. We still do not have our confirmation. BUSY comes before ERROR or OK.
-                    if attempts > 10:
-                        time.sleep(0.05)
                     continue
                 elif status == STATUS_ERROR:
                     if not default_checksum:
@@ -751,8 +763,8 @@ class LihuiyuController:
                         post_send_command = None
                         continue
 
-            if status == 0:  # After 300 attempts we could only get status = 0.
-                raise ConnectionError  # Broken pipe. 300 attempts. Could not confirm packet.
+            if status == 0:  # After 500 attempts we could only get status = 0.
+                raise ConnectionError  # Broken pipe. Could not confirm packet.
             self.context.packet_count += (
                 1  # Our packet is confirmed or assumed confirmed.
             )
@@ -803,6 +815,8 @@ class LihuiyuController:
         i = 0
         while self.state != "terminate":
             self.update_status()
+            if self._status is None:
+                raise ConnectionError
             status = self._status[1]
             if status == 0:
                 raise ConnectionError
@@ -845,6 +859,7 @@ class LihuiyuController:
             if self.abort_waiting:
                 self.abort_waiting = False
                 break  # Wait abort was requested.
+            time.sleep(0.001)  # Only if we are using control transfer status checks.
         self.update_state(original_state)
 
     def _confirm_serial(self):

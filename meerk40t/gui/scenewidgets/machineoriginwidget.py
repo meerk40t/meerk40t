@@ -1,3 +1,10 @@
+"""
+This widget draws the machine origin as well as the X and Y directions for the coordinate system being used.
+
+The machine origin is actually the position of the 0,0 location for the device being used, whereas the coordinate
+system is the user display space.
+"""
+
 import wx
 
 from meerk40t.gui.laserrender import DRAW_MODE_ORIGIN
@@ -47,16 +54,33 @@ class MachineOriginWidget(Widget):
         y_dx, y_dy = space.display.iposition(0, 50000)
         ya1_dx, ya1_dy = space.display.iposition(5000, 45000)
         ya2_dx, ya2_dy = space.display.iposition(-5000, 45000)
-        dev0x, dev0y = self.scene.context.device.device_to_scene_position(0, 0)
         gc.SetBrush(self.brush)
-        gc.DrawRectangle(dev0x - margin, dev0y - margin, margin * 2, margin * 2)
+        try:
+            dev0x, dev0y = space.device.view.iposition(0, 0)
+            gc.DrawRectangle(dev0x - margin, dev0y - margin, margin * 2, margin * 2)
+        except AttributeError:
+            # device view does not exist, so we cannot draw the device machine origin widget
+            pass
 
         gc.SetBrush(wx.NullBrush)
         gc.SetPen(self.x_axis_pen)
-        gc.DrawLines(
-            [(x, y), (x_dx, x_dy), (xa1_dx, xa1_dy), (x_dx, x_dy), (xa2_dx, xa2_dy)]
-        )
+        # gc.DrawLines will draw a polygon according to the documentation!
+        # While the windows implementation of wxPython does not care
+        # and draws a polyline, the Linux implementation does and closes the
+        # polygon!
+        arrow1 = gc.CreatePath()
+        arrow1.MoveToPoint((x, y))
+        arrow1.AddLineToPoint((x_dx, x_dy))
+        arrow1.AddLineToPoint((xa1_dx, xa1_dy))
+        arrow1.MoveToPoint((x_dx, x_dy))
+        arrow1.AddLineToPoint((xa2_dx, xa2_dy))
+        gc.DrawPath(arrow1)
+
         gc.SetPen(self.y_axis_pen)
-        gc.DrawLines(
-            [(x, y), (y_dx, y_dy), (ya1_dx, ya1_dy), (y_dx, y_dy), (ya2_dx, ya2_dy)]
-        )
+        arrow2 = gc.CreatePath()
+        arrow2.MoveToPoint((x, y))
+        arrow2.AddLineToPoint((y_dx, y_dy))
+        arrow2.AddLineToPoint((ya1_dx, ya1_dy))
+        arrow2.MoveToPoint((y_dx, y_dy))
+        arrow2.AddLineToPoint((ya2_dx, ya2_dy))
+        gc.DrawPath(arrow2)

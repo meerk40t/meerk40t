@@ -26,8 +26,8 @@ class RasterPlotter:
         width,
         height,
         horizontal=True,
-        start_on_top=True,
-        start_on_left=True,
+        start_minimum_y=True,
+        start_minimum_x=True,
         bidirectional=True,
         use_integers=True,
         skip_pixel=0,
@@ -45,8 +45,8 @@ class RasterPlotter:
         @param width: Width of the given data.
         @param height: Height of the given data.
         @param horizontal: Flags for how the pixel traversal should be conducted.
-        @param start_on_top: Flags for how the pixel traversal should be conducted.
-        @param start_on_left: Flags for how the pixel traversal should be conducted.
+        @param start_minimum_y: Flags for how the pixel traversal should be conducted.
+        @param start_minimum_x: Flags for how the pixel traversal should be conducted.
         @param bidirectional: Flags for how the pixel traversal should be conducted.
         @param skip_pixel: Skip pixel. If this value is the pixel value, we skip travel in that direction.
         @param use_integers: return integer values rather than floating point values.
@@ -64,8 +64,8 @@ class RasterPlotter:
         self.width = width
         self.height = height
         self.horizontal = horizontal
-        self.start_on_top = start_on_top
-        self.start_on_left = start_on_left
+        self.start_minimum_y = start_minimum_y
+        self.start_minimum_x = start_minimum_x
         self.bidirectional = bidirectional
         self.use_integers = use_integers
         self.skip_pixel = skip_pixel
@@ -297,14 +297,14 @@ class RasterPlotter:
         @return: x,y coordinates of first pixel.
         """
         if self.horizontal:
-            y = 0 if self.start_on_top else self.height - 1
-            dy = 1 if self.start_on_top else -1
-            x, y = self.calculate_next_horizontal_pixel(y, dy, self.start_on_left)
+            y = 0 if self.start_minimum_y else self.height - 1
+            dy = 1 if self.start_minimum_y else -1
+            x, y = self.calculate_next_horizontal_pixel(y, dy, self.start_minimum_x)
             return x, y
         else:
-            x = 0 if self.start_on_left else self.width - 1
-            dx = 1 if self.start_on_left else -1
-            x, y = self.calculate_next_vertical_pixel(x, dx, self.start_on_top)
+            x = 0 if self.start_minimum_x else self.width - 1
+            dx = 1 if self.start_minimum_x else -1
+            x, y = self.calculate_next_vertical_pixel(x, dx, self.start_minimum_y)
             return x, y
 
     def calculate_last_pixel(self):
@@ -316,18 +316,18 @@ class RasterPlotter:
         @return: x,y coordinates of last pixel.
         """
         if self.horizontal:
-            y = self.height - 1 if self.start_on_top else 0
-            dy = -1 if self.start_on_top else 1
+            y = self.height - 1 if self.start_minimum_y else 0
+            dy = -1 if self.start_minimum_y else 1
             start_on_left = (
-                self.start_on_left if self.width & 1 else not self.start_on_left
+                self.start_minimum_x if self.width & 1 else not self.start_minimum_x
             )
             x, y = self.calculate_next_horizontal_pixel(y, dy, start_on_left)
             return x, y
         else:
-            x = self.width - 1 if self.start_on_left else 0
-            dx = -1 if self.start_on_left else 1
+            x = self.width - 1 if self.start_minimum_x else 0
+            dx = -1 if self.start_minimum_x else 1
             start_on_top = (
-                self.start_on_top if self.height & 1 else not self.start_on_top
+                self.start_minimum_y if self.height & 1 else not self.start_minimum_y
             )
             x, y = self.calculate_next_vertical_pixel(x, dx, start_on_top)
             return x, y
@@ -422,8 +422,8 @@ class RasterPlotter:
         skip_pixel = self.skip_pixel
 
         x, y = self.initial_position()
-        dx = 1 if self.start_on_left else -1
-        dy = 1 if self.start_on_top else -1
+        dx = 1 if self.start_minimum_x else -1
+        dy = 1 if self.start_minimum_y else -1
 
         yield x, y, 0
         while 0 <= x < width:
@@ -433,8 +433,8 @@ class RasterPlotter:
                 yield x, y, 0
                 continue
             upper_bound = self.bottommost_not_equal(x)
-            traveling_bottom = self.start_on_top if unidirectional else dy >= 0
-            next_traveling_bottom = self.start_on_top if unidirectional else dy <= 0
+            traveling_bottom = self.start_minimum_y if unidirectional else dy >= 0
+            next_traveling_bottom = self.start_minimum_y if unidirectional else dy <= 0
 
             next_x, next_y = self.calculate_next_vertical_pixel(
                 x + dx, dx, topmost_pixel=next_traveling_bottom
@@ -490,8 +490,8 @@ class RasterPlotter:
         skip_pixel = self.skip_pixel
 
         x, y = self.initial_position()
-        dx = 1 if self.start_on_left else -1
-        dy = 1 if self.start_on_top else -1
+        dx = 1 if self.start_minimum_x else -1
+        dy = 1 if self.start_minimum_y else -1
         yield x, y, 0
         while 0 <= y < height:
             lower_bound = self.leftmost_not_equal(y)
@@ -500,8 +500,8 @@ class RasterPlotter:
                 yield x, y, 0
                 continue
             upper_bound = self.rightmost_not_equal(y)
-            traveling_right = self.start_on_left if unidirectional else dx >= 0
-            next_traveling_right = self.start_on_left if unidirectional else dx <= 0
+            traveling_right = self.start_minimum_x if unidirectional else dx >= 0
+            next_traveling_right = self.start_minimum_x if unidirectional else dx <= 0
 
             next_x, next_y = self.calculate_next_horizontal_pixel(
                 y + dy, dy, leftmost_pixel=next_traveling_right

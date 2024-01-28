@@ -14,7 +14,7 @@ class PlacementTool(ToolWidget):
     Adds a placement with clicks.
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, mode=None):
         ToolWidget.__init__(self, scene)
         self.has_ctrl = False
         self.has_alt = False
@@ -71,7 +71,10 @@ class PlacementTool(ToolWidget):
             #     f"Ctrl={self.has_ctrl}, alt={self.has_alt}, shift={self.has_shift}, point={space_pos}, snap={nearest_snap}"
             # )
             if nearest_snap is None:
-                point = Point(space_pos[0], space_pos[1])
+                sx, sy = self.scene.get_snap_point(
+                    space_pos[0], space_pos[1], modifiers
+                )
+                point = Point(sx, sy)
             else:
                 point = Point(nearest_snap[0], nearest_snap[1])
             if self.has_ctrl:

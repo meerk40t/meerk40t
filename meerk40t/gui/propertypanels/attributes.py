@@ -2,10 +2,10 @@ from math import sqrt
 
 import wx
 
+import meerk40t.gui.icons as mkicons
 from meerk40t.core.units import Length
-from meerk40t.gui.icons import icons8_lock_50, icons8_padlock_50
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import CheckBox, StaticBoxSizer, TextCtrl
+from meerk40t.gui.wxutils import CheckBox, StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -54,8 +54,8 @@ class ColorPanel(wx.Panel):
         for i in range(len(self.bgcolors)):
             self.underliner.append(wx.StaticBitmap(self, wx.ID_ANY))
             self.underliner[i].SetBackgroundColour(wx.BLUE)
-            self.underliner[i].SetMaxSize(wx.Size(-1, 3))
-            # self.lbl_color[i].SetMinSize((-1, 20))
+            self.underliner[i].SetMaxSize(dip_size(self, -1, 3))
+            # self.lbl_color[i].SetMinSize(dip_size(self, -1, 20))
             self.btn_color.append(wx.Button(self, wx.ID_ANY, ""))
             if i == 0:
                 self.btn_color[i].SetForegroundColour(wx.RED)
@@ -66,7 +66,7 @@ class ColorPanel(wx.Panel):
                 self.btn_color[i].SetForegroundColour(wx.Colour(self.bgcolors[i]))
                 colinfo = wx.Colour(self.bgcolors[i]).GetAsString(wx.C2S_NAME)
                 self.btn_color[i].SetLabel(_(colinfo))
-            self.btn_color[i].SetMinSize((10, 23))
+            self.btn_color[i].SetMinSize(dip_size(self, 10, 23))
             self.btn_color[i].SetBackgroundColour(wx.Colour(self.bgcolors[i]))
             sizer = wx.BoxSizer(wx.VERTICAL)
             sizer.Add(self.btn_color[i], 0, wx.EXPAND, 0)
@@ -248,6 +248,9 @@ class IdPanel(wx.Panel):
         self.sizer_label.Add(self.text_label, 1, wx.EXPAND, 0)
         sizer_id_label.Add(self.sizer_id, 1, wx.EXPAND, 0)
         sizer_id_label.Add(self.sizer_label, 1, wx.EXPAND, 0)
+        self.icon_display = wx.StaticBitmap(self, wx.ID_ANY)
+        self.icon_display.SetSize(wx.Size(mkicons.STD_ICON_SIZE, mkicons.STD_ICON_SIZE))
+        sizer_id_label.Add(self.icon_display, 0, wx.EXPAND, 0)
 
         main_sizer.Add(sizer_id_label, 0, wx.EXPAND, 0)
 
@@ -261,14 +264,14 @@ class IdPanel(wx.Panel):
     def on_text_id_change(self):
         try:
             self.node.id = self.text_id.GetValue()
-            self.context.elements.signal("element_property_update", self.node)
+            self.context.elements.signal("element_property_reload", self.node)
         except AttributeError:
             pass
 
     def on_text_label_change(self):
         try:
             self.node.label = self.text_label.GetValue()
-            self.context.elements.signal("element_property_update", self.node)
+            self.context.elements.signal("element_property_reload", self.node)
         except AttributeError:
             pass
 
@@ -295,7 +298,7 @@ class IdPanel(wx.Panel):
                 self.text_id.SetValue(mklabel(node.id))
             self.text_id.Show(vis1)
             self.sizer_id.Show(vis1)
-        except RuntimeWarning:
+        except RuntimeError:
             # Could happen if the propertypanel has been destroyed
             pass
         try:
@@ -304,9 +307,53 @@ class IdPanel(wx.Panel):
                 self.text_label.SetValue(mklabel(node.label))
             self.text_label.Show(vis2)
             self.sizer_label.Show(vis2)
-        except RuntimeWarning:
+        except RuntimeError:
             # Could happen if the propertypanel has been destroyed
             pass
+
+        bmp = None
+        type_patterns = {
+            "util wait": mkicons.icon_timer,
+            "util home": mkicons.icons8_home_filled,
+            "util goto": mkicons.icon_return,
+            "util output": mkicons.icon_external,
+            "util input": mkicons.icon_internal,
+            "util console": mkicons.icon_console,
+            "op engrave": mkicons.icons8_laserbeam_weak,
+            "op cut": mkicons.icons8_laser_beam,
+            "op image": mkicons.icons8_image,
+            "op raster": mkicons.icons8_direction,
+            "op dots": mkicons.icon_points,
+            "effect hatch": mkicons.icon_effect_hatch,
+            "effect wobble": mkicons.icon_effect_wobble,
+            "effect warp": mkicons.icon_effect_wobble,
+            "place current": mkicons.icons8_home_filled,
+            "place point": mkicons.icons8_home_filled,
+            "elem point": mkicons.icon_points,
+            "file": mkicons.icons8_file,
+            "group": mkicons.icons8_group_objects,
+            "elem rect": mkicons.icon_mk_rectangular,
+            "elem ellipse": mkicons.icon_mk_ellipse,
+            "elem image": mkicons.icons8_image,
+            "elem path": mkicons.icon_path,
+            "elem line": mkicons.icon_line,
+            "elem polyline": mkicons.icon_mk_polyline,
+            "elem text": mkicons.icon_bmap_text,
+            "image raster": mkicons.icons8_image,
+            "blob": mkicons.icons8_file,
+        }
+        if hasattr(self.node, "type"):
+            if node.type in type_patterns:
+                icon = type_patterns[node.type]
+                bmp = icon.GetBitmap(resize=mkicons.STD_ICON_SIZE, buffer=2)
+        if bmp is None:
+            self.icon_display.Show(False)
+        else:
+            try:
+                self.icon_display.SetBitmap(bmp)
+                self.icon_display.Show(True)
+            except RuntimeError:
+                pass
 
         if vis1 or vis2:
             self.Show()
@@ -333,9 +380,9 @@ class LinePropPanel(wx.Panel):
         self.combo_fill = wx.ComboBox(
             self, wx.ID_ANY, choices=fillchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
-        self.combo_cap.SetMaxSize(wx.Size(100, -1))
-        self.combo_join.SetMaxSize(wx.Size(100, -1))
-        self.combo_fill.SetMaxSize(wx.Size(100, -1))
+        self.combo_cap.SetMaxSize(dip_size(self, 100, -1))
+        self.combo_join.SetMaxSize(dip_size(self, 100, -1))
+        self.combo_fill.SetMaxSize(dip_size(self, 100, -1))
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_attributes = wx.BoxSizer(wx.HORIZONTAL)
@@ -444,10 +491,15 @@ class StrokeWidthPanel(wx.Panel):
         main_sizer.Add(s_sizer, 1, wx.EXPAND, 0)
         # Plus one combobox + value field for stroke width
         strokewidth_label = wx.StaticText(self, wx.ID_ANY, label=_("Width:"))
-        self.text_width = wx.TextCtrl(
-            self, wx.ID_ANY, value="0.10", style=wx.TE_PROCESS_ENTER
+        self.text_width = TextCtrl(
+            self,
+            wx.ID_ANY,
+            value="0.10",
+            style=wx.TE_PROCESS_ENTER,
+            check="float",
+            limited=True,
         )
-        self.text_width.SetMaxSize(wx.Size(100, -1))
+        self.text_width.SetMaxSize(dip_size(self, 100, -1))
 
         self.unit_choices = ["px", "pt", "mm", "cm", "inch", "mil"]
         self.combo_units = wx.ComboBox(
@@ -457,7 +509,7 @@ class StrokeWidthPanel(wx.Panel):
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
         self.combo_units.SetSelection(0)
-        self.combo_units.SetMaxSize(wx.Size(100, -1))
+        self.combo_units.SetMaxSize(dip_size(self, 100, -1))
 
         self.chk_scale = wx.CheckBox(self, wx.ID_ANY, _("Scale"))
         self.chk_scale.SetToolTip(
@@ -471,9 +523,9 @@ class StrokeWidthPanel(wx.Panel):
         s_sizer.Add(self.text_width, 1, wx.EXPAND, 0)
         s_sizer.Add(self.combo_units, 1, wx.EXPAND, 0)
         s_sizer.Add(self.chk_scale, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.text_width)
+        self.Bind(wx.EVT_COMBOBOX, self.on_stroke_width_combo, self.combo_units)
         self.Bind(wx.EVT_CHECKBOX, self.on_chk_scale, self.chk_scale)
+        self.text_width.SetActionRoutine(self.on_stroke_width)
         self.SetSizer(main_sizer)
         main_sizer.Fit(self)
         self.Layout()
@@ -491,7 +543,10 @@ class StrokeWidthPanel(wx.Panel):
         except (ValueError, AttributeError):
             pass
 
-    def on_stroke_width(self, event):
+    def on_stroke_width_combo(self, event):
+        self.on_stroke_width()
+
+    def on_stroke_width(self):
         if self.node is None or self.node.lock:
             return
         try:
@@ -631,8 +686,12 @@ class PositionSizePanel(wx.Panel):
         )
         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
         self.btn_lock_ratio.SetValue(True)
-        self.bitmap_locked = icons8_lock_50.GetBitmap(resize=25, use_theme=False)
-        self.bitmap_unlocked = icons8_padlock_50.GetBitmap(resize=25, use_theme=False)
+        self.bitmap_locked = mkicons.icons8_lock.GetBitmap(
+            resize=mkicons.STD_ICON_SIZE / 2, use_theme=False
+        )
+        self.bitmap_unlocked = mkicons.icons8_unlock.GetBitmap(
+            resize=mkicons.STD_ICON_SIZE / 2, use_theme=False
+        )
         self.__set_properties()
         self.__do_layout()
 
@@ -658,7 +717,7 @@ class PositionSizePanel(wx.Panel):
         sizer_w.Add(self.text_w, 1, wx.EXPAND, 0)
         sizer_h.Add(self.text_h, 1, wx.EXPAND, 0)
 
-        self.btn_lock_ratio.SetMinSize((32, 32))
+        self.btn_lock_ratio.SetMinSize(dip_size(self, 32, 32))
         self.btn_lock_ratio.SetToolTip(
             _("Lock the ratio of width / height to the original values")
         )
@@ -705,6 +764,14 @@ class PositionSizePanel(wx.Panel):
 
     def pane_show(self):
         pass
+
+    def signal(self, signalstr, myargs):
+        # To get updates about translation / scaling of selected elements
+        if signalstr == "refresh_scene":
+            if myargs[0] == "Scene":
+                self.set_widgets(self.node)
+        elif signalstr == "modified_by_tool":
+            self.set_widgets(self.node)
 
     def _set_widgets_hidden(self):
         self.text_x.SetValue("")
@@ -760,6 +827,7 @@ class PositionSizePanel(wx.Panel):
         self.text_w.Enable(en_wh)
         self.text_h.Enable(en_wh)
         self.show_hide_wh(node.type != "elem point")
+        self.Refresh()
         self.Show()
 
     def translate_it(self):
@@ -778,6 +846,7 @@ class PositionSizePanel(wx.Panel):
             # self.node.modified()
             self.node.translated(dx, dy)
             self.context.elements.signal("element_property_update", self.node)
+            self.context.elements.signal("refresh_scene", "Scene")
 
     def scale_it(self, was_width):
         if not self.node.can_scale:
@@ -820,6 +889,7 @@ class PositionSizePanel(wx.Panel):
             )
 
             self.context.elements.signal("element_property_update", self.node)
+            self.context.elements.signal("refresh_scene", "Scene")
 
     def on_toggle_ratio(self, event):
         if self.btn_lock_ratio.GetValue():
@@ -944,11 +1014,15 @@ class RoundedRectPanel(wx.Panel):
         self.slider_y.SetToolTip(_("Ratio of Y-Radius compared to height (in %)"))
         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
         self.btn_lock_ratio.SetValue(True)
-        self.btn_lock_ratio.SetMinSize((32, 32))
+        self.btn_lock_ratio.SetMinSize(dip_size(self, 32, 32))
         self.btn_lock_ratio.SetToolTip(_("Lock the radii of X- and Y-axis"))
         # Set Bitmap
-        self.bitmap_locked = icons8_lock_50.GetBitmap(resize=25, use_theme=False)
-        self.bitmap_unlocked = icons8_padlock_50.GetBitmap(resize=25, use_theme=False)
+        self.bitmap_locked = mkicons.icons8_lock.GetBitmap(
+            resize=mkicons.STD_ICON_SIZE / 2, use_theme=False
+        )
+        self.bitmap_unlocked = mkicons.icons8_unlock.GetBitmap(
+            resize=mkicons.STD_ICON_SIZE / 2, use_theme=False
+        )
 
         sizer_x.Add(self.slider_x, 1, wx.EXPAND, 0)
         sizer_y.Add(self.slider_y, 1, wx.EXPAND, 0)
@@ -984,16 +1058,16 @@ class RoundedRectPanel(wx.Panel):
             return
         # Set values for rx and ry
         bb = self.node.bbox()
-        width = self.node.shape.width
-        height = self.node.shape.height
-        if self.node.shape.rx is None:
+        width = self.node.width
+        height = self.node.height
+        if self.node.rx is None:
             rx = 0
         else:
-            rx = self.node.shape.rx
-        if self.node.shape.ry is None:
+            rx = self.node.rx
+        if self.node.ry is None:
             ry = 0
         else:
-            ry = self.node.shape.ry
+            ry = self.node.ry
         flag = bool(rx == ry)
         self.btn_lock_ratio.SetValue(flag)
         self.on_toggle_ratio(None)
@@ -1015,21 +1089,21 @@ class RoundedRectPanel(wx.Panel):
 
     def set_values(self, axis, value):
         sync = self.btn_lock_ratio.GetValue()
-        width = self.node.shape.width
-        height = self.node.shape.height
+        width = self.node.width
+        height = self.node.height
         if axis == 0:  # x
             rx = value / 100 * width
-            self.node.shape.rx = rx
+            self.node.rx = rx
             if sync:
-                self.node.shape.ry = rx
+                self.node.ry = rx
                 max_val_y = self.slider_x.GetMax()
                 int_ry = int(100.0 * rx / height)
                 self.slider_y.SetValue(min(max_val_y, int_ry))
         else:
             ry = value / 100 * height
-            self.node.shape.ry = ry
+            self.node.ry = ry
             if sync:
-                self.node.shape.rx = ry
+                self.node.rx = ry
                 max_val_x = self.slider_x.GetMax()
                 int_rx = int(100.0 * ry / width)
                 self.slider_x.SetValue(min(max_val_x, int_rx))

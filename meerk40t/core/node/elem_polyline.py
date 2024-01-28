@@ -1,6 +1,6 @@
 from copy import copy
 
-from meerk40t.core.node.mixins import Stroked
+from meerk40t.core.node.mixins import FunctionalParameter, Stroked
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -13,7 +13,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class PolylineNode(Node, Stroked):
+class PolylineNode(Node, Stroked, FunctionalParameter):
     """
     PolylineNode is the bootstrapped node type for the 'elem polyline' type.
     """
@@ -91,6 +91,9 @@ class PolylineNode(Node, Stroked):
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
+    def __len__(self):
+        return len(self.geometry)
+
     @property
     def shape(self):
         if self.closed:
@@ -114,7 +117,7 @@ class PolylineNode(Node, Stroked):
     def shape(self, new_shape):
         self.geometry = Geomstr.svg(Path(new_shape))
 
-    def as_geometry(self):
+    def as_geometry(self, **kws):
         g = Geomstr(self.geometry)
         g.transform(self.matrix)
         return g
@@ -172,6 +175,11 @@ class PolylineNode(Node, Stroked):
             )
         return xmin, ymin, xmax, ymax
 
+    def length(self):
+        geometry = self.as_geometry()
+        # Polylines have length === raw_length
+        return geometry.raw_length()
+
     def preprocess(self, context, matrix, plan):
         self.stroke_scaled = False
         self.stroke_scaled = True
@@ -187,10 +195,14 @@ class PolylineNode(Node, Stroked):
 
     def drop(self, drag_node, modify=True):
         # Dragging element into element.
-        if drag_node.type.startswith("elem"):
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             if modify:
                 self.insert_sibling(drag_node)
             return True
+        elif drag_node.type.startswith("op"):
+            # If we drag an operation to this node,
+            # then we will reverse the game
+            return drag_node.drop(self, modify=modify)
         return False
 
     def revalidate_points(self):
@@ -231,11 +243,12 @@ class PolylineNode(Node, Stroked):
         return False
 
     def as_path(self):
-        path = Path(
-            transform=self.matrix,
-            stroke=self.stroke,
-            fill=self.fill,
-            stroke_width=self.stroke_width,
+        geometry = self.as_geometry()
+        path = geometry.as_path()
+        path.stroke = self.stroke
+        path.fill = self.fill
+        path.stroke_width = self.stroke_width
+        path.values[SVG_ATTR_VECTOR_EFFECT] = (
+            SVG_VALUE_NON_SCALING_STROKE if not self.stroke_scale else ""
         )
-        path.move(list(self.geometry.as_points()))
-        return Path
+        return path

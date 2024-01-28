@@ -4,6 +4,8 @@ import threading
 import wx
 from wx import aui
 
+from meerk40t.gui.icons import STD_ICON_SIZE, icons8_console
+from meerk40t.gui.mwindow import MWindow
 from meerk40t.kernel import get_safe_path, signal_listener
 
 try:
@@ -11,8 +13,6 @@ try:
 except ImportError:
     print("import of wx.richtext for console failed, using default console window")
 
-from meerk40t.gui.icons import STD_ICON_SIZE, icons8_console_50
-from meerk40t.gui.mwindow import MWindow
 
 _ = wx.GetTranslation
 
@@ -109,7 +109,7 @@ class ConsolePanel(wx.ScrolledWindow):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.ScrolledWindow.__init__(self, *args, **kwargs)
         self.context = context
-
+        self.SetHelpText("notes")
         font = wx.Font(
             10,
             wx.FONTFAMILY_TELETYPE,
@@ -218,7 +218,11 @@ class ConsolePanel(wx.ScrolledWindow):
 
     @property
     def is_dark(self):
-        return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        # try:
+        #     res = wx.SystemSettings().GetAppearance().IsDark()
+        # except AttributeError:
+        #     res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        return self.context.themes.dark
 
     def __set_properties(self):
         # begin wxGlade: ConsolePanel.__set_properties
@@ -242,6 +246,7 @@ class ConsolePanel(wx.ScrolledWindow):
         self.context.channel("console").unwatch(self.update_text)
 
     def clear(self):
+        self.text_main.SetValue("")
         self.text_main.Clear()
 
     def update_text(self, text):
@@ -271,8 +276,11 @@ class ConsolePanel(wx.ScrolledWindow):
         text = ""
         ansi_text = ""
         ansi = False
-        if not self.text_main.IsEmpty():
-            self.text_main.AppendText("\n")
+        try:
+            if not self.text_main.IsEmpty():
+                self.text_main.AppendText("\n")
+        except RuntimeError:
+            return
         for c in lines:
             b = ord(c)
             if c == "\n":
@@ -485,26 +493,35 @@ class ConsolePanel(wx.ScrolledWindow):
         fname, fexists = self.history_filename()
         if fexists:
             result = []
+        if fexists:
+            result = []
             try:
                 with open(fname, "rb") as f:
-                    result = tail(f, limit).decode("utf-8").splitlines()
+                    result = tail(f, 3 * limit).decode("utf-8").splitlines()
             except (PermissionError, OSError):
                 # Could not load
                 pass
             for entry in result:
+                if len(self.command_log) and entry == self.command_log[-1]:
+                    # print (f"ignored duplicate {entry}")
+                    continue
                 self.command_log.append(entry)
+            if len(self.command_log) > limit:
+                self.command_log = self.command_log[-limit:]
 
 
 class Console(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(581, 410, *args, **kwds)
+        super().__init__(550, 450, *args, **kwds)
         self.panel = ConsolePanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_console_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_console.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Console"))
         self.Layout()
+        self.restore_aspect(honor_initial_values=True)
 
     @staticmethod
     def sub_register(kernel):
@@ -513,8 +530,9 @@ class Console(MWindow):
             "button/preparation/Console",
             {
                 "label": _("Console"),
-                "icon": icons8_console_50,
+                "icon": icons8_console,
                 "tip": _("Open Console Window"),
+                "help": "console",
                 "action": lambda v: kernel.console("window toggle Console\n"),
                 "size": STD_ICON_SIZE,
                 "priority": 4,

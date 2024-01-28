@@ -11,7 +11,7 @@ import time
 
 import numpy as np
 
-from meerk40t.core.units import UNITS_PER_PIXEL
+from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.svgelements import Matrix
 from meerk40t.tools.geomstr import Geomstr
 
@@ -74,6 +74,8 @@ class LiveLightJob:
         if self.stopped:
             return True
         self.service.listen("emphasized", self.on_emphasis_changed)
+        self.service.listen("modified_by_tool", self.on_emphasis_changed)
+        self.service.listen("view;realized", self.on_emphasis_changed)
         self.time_started = time.time()
         self.started = True
         connection = driver.connection
@@ -87,6 +89,8 @@ class LiveLightJob:
         self.stopped = True
         self.runtime += time.time() - self.time_started
         self.service.unlisten("emphasized", self.on_emphasis_changed)
+        self.service.unlisten("modified_by_tool", self.on_emphasis_changed)
+        self.service.unlisten("view;realized", self.on_emphasis_changed)
         self.service.signal("light_simulate", False)
         if self.service.redlight_preferred:
             connection.light_on()
@@ -151,8 +155,11 @@ class LiveLightJob:
             # The emphasis selection has changed.
             self.changed = False
             con.abort()
-            first_x = 0x8000
-            first_y = 0x8000
+            first_x, first_y = con.get_last_xy()
+            # first_x = 0x8000
+            # first_y = 0x8000
+            con.light_off()
+            con.write_port()
             con.goto_xy(first_x, first_y, distance=0xFFFF)
             con.light_mode()
         con._light_speed = self.service.redlight_speed
@@ -236,7 +243,7 @@ class LiveLightJob:
             (xmin, ymin),
         )
         rotate = self._redlight_adjust_matrix()
-        geometry.transform(self.service.scene_to_device_matrix())
+        geometry.transform(self.service.view.matrix)
         geometry.transform(rotate)
         return self._light_geometry(con, geometry, bounded=True)
 
@@ -247,17 +254,20 @@ class LiveLightJob:
 
         @return:
         """
-        x_offset = self.service.length(
-            self.service.redlight_offset_x,
-            axis=0,
-            as_float=True,
-            unitless=UNITS_PER_PIXEL,
+
+        x_offset = float(
+            Length(
+                self.service.redlight_offset_x,
+                relative_length=self.service.view.width,
+                unitless=UNITS_PER_PIXEL,
+            )
         )
-        y_offset = self.service.length(
-            self.service.redlight_offset_y,
-            axis=1,
-            as_float=True,
-            unitless=UNITS_PER_PIXEL,
+        y_offset = float(
+            Length(
+                self.service.redlight_offset_y,
+                relative_length=self.service.view.height,
+                unitless=UNITS_PER_PIXEL,
+            )
         )
         redlight_adjust_matrix = Matrix()
         redlight_adjust_matrix.post_rotate(
@@ -280,7 +290,7 @@ class LiveLightJob:
         delay_dark = self.service.delay_jump_long
         delay_between = self.service.delay_jump_short
 
-        points = list(geometry.as_interpolated_points(interpolate=self.quantization))
+        points = list(geometry.as_equal_interpolated_points(distance=self.quantization))
         move = True
         for i, e in enumerate(points):
             if self.stopped:
@@ -321,25 +331,31 @@ class LiveLightJob:
         @param elements:
         @return:
         """
-        if not elements:
+        geometry = Geomstr()
+        for n in elements:
+            if hasattr(n, "as_geometry"):
+                geometry.append(n.as_geometry())
+            if hasattr(n, "as_image"):
+                nx, ny, mx, my = n.bounds
+                geometry.append(Geomstr.rect(nx, ny, mx - nx, my - ny))
+        if not geometry:
             # There are no elements, return a default crosshair.
             return self._crosshairs(con)
 
-        rotate = self._redlight_adjust_matrix()
-        for node in elements:
-            if self.stopped:
-                return False
-            if self.changed:
-                return True
-            geometry = Geomstr(node.as_geometry())
+        redlight_matrix = self._redlight_adjust_matrix()
+        if self.stopped:
+            return False
 
-            # Move to device space.
-            geometry.transform(self.service.scene_to_device_matrix())
+        if self.changed:
+            return True
 
-            # Add redlight adjustments within device space.
-            geometry.transform(rotate)
+        # Move to device space.
+        geometry.transform(self.service.view.matrix)
 
-            self._light_geometry(con, geometry)
+        # Add redlight adjustments within device space.
+        geometry.transform(redlight_matrix)
+
+        self._light_geometry(con, geometry)
         if con.light_off():
             con.list_write_port()
         return True
@@ -367,7 +383,7 @@ class LiveLightJob:
 
             # Convert to hull.
             hull = Geomstr.hull(geometry)
-            hull.transform(self.service.scene_to_device_matrix())
+            hull.transform(self.service.view.matrix)
             hull.transform(self._redlight_adjust_matrix())
             self.points = hull
 

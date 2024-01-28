@@ -13,6 +13,7 @@ class LhyAdvancedPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("k40operation")
         self.operation = node
 
         extras_sizer = wx.BoxSizer(wx.VERTICAL)

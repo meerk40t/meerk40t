@@ -1,7 +1,7 @@
 import math
 from copy import copy
 
-from meerk40t.core.node.mixins import Stroked
+from meerk40t.core.node.mixins import FunctionalParameter, Stroked
 from meerk40t.core.node.node import Fillrule, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -13,7 +13,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class RectNode(Node, Stroked):
+class RectNode(Node, Stroked, FunctionalParameter):
     """
     RectNode is the bootstrapped node type for the 'elem rect' type.
     """
@@ -80,7 +80,6 @@ class RectNode(Node, Stroked):
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
             self.stroke_width_zero()
-
         self.set_dirty_bounds()
 
     def __repr__(self):
@@ -108,7 +107,7 @@ class RectNode(Node, Stroked):
             stroke_width=self.stroke_width,
         )
 
-    def as_geometry(self):
+    def as_geometry(self, **kws):
         x = self.x
         y = self.y
         width = self.width
@@ -177,6 +176,9 @@ class RectNode(Node, Stroked):
             )
         return xmin, ymin, xmax, ymax
 
+    def length(self):
+        return self.width + self.width + self.height + self.height
+
     def preprocess(self, context, matrix, plan):
         self.stroke_scaled = False
         self.stroke_scaled = True
@@ -192,10 +194,14 @@ class RectNode(Node, Stroked):
 
     def drop(self, drag_node, modify=True):
         # Dragging element into element.
-        if drag_node.type.startswith("elem"):
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             if modify:
                 self.insert_sibling(drag_node)
             return True
+        elif drag_node.type.startswith("op"):
+            # If we drag an operation to this node,
+            # then we will reverse the game
+            return drag_node.drop(self, modify=modify)
         return False
 
     def revalidate_points(self):
@@ -244,3 +250,40 @@ class RectNode(Node, Stroked):
             SVG_VALUE_NON_SCALING_STROKE if not self.stroke_scale else ""
         )
         return path
+
+    @property
+    def functional_parameter(self):
+        dimens = 0.5 * min(self.width, self.height)
+        try:
+            k = min(1.0, self.rx / dimens)
+        except ZeroDivisionError:
+            k = 0.0
+        return (
+            "rect",
+            2,
+            k,
+        )
+
+    @functional_parameter.setter
+    def functional_parameter(self, param):
+        def getit(data, idx, default):
+            if idx < len(data):
+                return data[idx]
+            else:
+                return default
+
+        if not isinstance(param, (list, tuple)):
+            return
+        if len(param) == 0:
+            return
+        if param[0] != "rect":
+            return
+        dimens = 0.5 * min(self.width, self.height)
+        rx = getit(param, 2, 0)
+        self.rx = dimens * rx
+        ry = getit(param, 4, None)
+        if ry is None:
+            self.ry = self.rx
+        else:
+            self.ry = dimens * ry
+        self.altered()

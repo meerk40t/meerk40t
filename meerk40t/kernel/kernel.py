@@ -73,6 +73,8 @@ class Kernel(Settings):
         profile: str,
         ansi: bool = True,
         ignore_settings: bool = False,
+        delay: float = 0.05,  # 20 ticks per second
+        language: str = None,
     ):
         """
         Initialize the Kernel. This sets core attributes of the ecosystem that are accessible to all modules.
@@ -87,9 +89,14 @@ class Kernel(Settings):
 
         # Persistent Settings
         Settings.__init__(
-            self, self.name, f"{profile}.cfg", ignore_settings=ignore_settings
+            self,
+            self.name,
+            f"{profile}.cfg",
+            ignore_settings=ignore_settings,
+            create_backup=True,
         )
         self.settings = self
+        self.delay = delay
 
         # Boot State
         self._booted = False
@@ -126,7 +133,11 @@ class Kernel(Settings):
         self._lookup_lock = threading.Lock()
 
         # The translation object to be overridden by any valid translation functions
-        self.translation = lambda e: e
+        from . import _
+
+        self.translation = _
+        if language is not None:
+            self.set_language(language)
 
         # The function used to process the signals. This is useful if signals should be kept to a single thread.
         self.scheduler_handles_main_thread_jobs = True
@@ -141,14 +152,15 @@ class Kernel(Settings):
         # Signal Listener
         self.signal_job = None
         self.listeners = {}
+        self._add_lock = threading.Lock()
         self._adding_listeners = []
+        self._remove_lock = threading.Lock()
         self._removing_listeners = []
         self._last_message = {}
-        self._signal_lock = threading.Lock()
-        self._add_lock = threading.Lock()
-        self._remove_lock = threading.Lock()
+        self._message_queue_lock = threading.Lock()
         self._message_queue = {}
-        self._is_queue_processing = False
+        self._process_lock = threading.Lock()
+        self._processing = {}
 
         # Channels
         self.channels = {}
@@ -160,22 +172,53 @@ class Kernel(Settings):
 
         self.current_directory = "."
 
+        # Opened files
+        self._open_file_objects = {}
+
         # Arguments Objects
         self.args = None
 
     def __str__(self):
-        return "Kernel()"
+        return f"Kernel({self.name}, {self.profile}, {self.version})"
 
-    def open_safe(self, *args):
+    def set_language(self, language, localedir="locale"):
+        from . import set_language
+
+        set_language(self.name, localedir=localedir, language=language)
+
+    def open_safe(self, filename, *args):
+        """
+        Opens the given file with the arguments. If permissions are not granted, the safe path is used.
+
+        If the file already exists the same file object is returned.
+
+        @param filename:
+        @param args:
+        @return:
+        """
+
         try:
-            return open(*args)
-        except PermissionError:
-            original = os.getcwd()
+            file_obj = self._open_file_objects.get(filename)
+            if file_obj is not None and not file_obj.closed:
+                # Give cached file object.
+                return file_obj
+            file_obj = open(filename, *args)
+            self._open_file_objects[filename] = file_obj
+            return file_obj
+        except PermissionError as e:
+            original_dir = os.getcwd()
             os.chdir(get_safe_path(self.name, True))
+            safe_dir = os.getcwd()
+            if original_dir == safe_dir:
+                # Permissions error in safe dir. No solution.
+                raise PermissionError(
+                    "No permission to write to safe directory."
+                ) from e
+
             print(
-                f"Changing working directory from {str(original)} to {str(os.getcwd())}."
+                f"Changing working directory from {str(original_dir)} to {str(safe_dir)}."
             )
-            return open(*args)
+            return self.open_safe(filename, *args)
 
     def _start_debugging(self) -> None:
         """
@@ -245,23 +288,35 @@ class Kernel(Settings):
         """
         additional_plugins = plugin(self, "plugins")
         if additional_plugins is not None:
+            if not isinstance(additional_plugins, (tuple, list)):
+                additional_plugins = tuple(additional_plugins)
             for p in additional_plugins:
                 self.add_plugin(p)
-        plugins = self._kernel_plugins
-        service_path = plugin(self, "service")
-        if service_path is not None:
-            if service_path not in self._service_plugins:
-                self._service_plugins[service_path] = list()
-            plugins = self._service_plugins[service_path]
-        else:
-            module_path = plugin(self, "module")
-            if module_path is not None:
-                if module_path not in self._module_plugins:
-                    self._module_plugins[module_path] = list()
-                plugins = self._module_plugins[module_path]
-
-        if plugin not in plugins:
-            plugins.append(plugin)
+        service_paths = plugin(self, "service")
+        module_paths = plugin(self, "module")
+        if service_paths is None and module_paths is None:
+            # This is just a kernel plugin.
+            if plugin not in self._kernel_plugins:
+                self._kernel_plugins.append(plugin)
+            return
+        if service_paths is not None:
+            # This is a service plugin.
+            if not isinstance(service_paths, (tuple, list)):
+                service_paths = (service_paths,)  # tuple
+            for p in service_paths:
+                if p not in self._service_plugins:
+                    self._service_plugins[p] = list()
+                if plugin not in self._service_plugins[p]:
+                    self._service_plugins[p].append(plugin)
+        if module_paths is not None:
+            # This is a module plugin.
+            if not isinstance(module_paths, (tuple, list)):
+                module_paths = (module_paths,)  # tuple
+            for p in module_paths:
+                if p not in self._module_plugins:
+                    self._module_plugins[p] = list()
+                if plugin not in self._module_plugins[p]:
+                    self._module_plugins[p].append(plugin)
 
     # ==========
     # SERVICES API
@@ -497,6 +552,7 @@ class Kernel(Settings):
         for i in range(len(self.delegates) - 1, -1, -1):
             delegate_value, ref = self.delegates[i]
             if delegate_value is delegate and ref is lifecycle_object:
+                self._command_detach(lifecycle_object, delegate)
                 self._signal_detach(delegate)
                 self._lookup_detach(delegate)
                 del self.delegates[i]
@@ -653,6 +709,7 @@ class Kernel(Settings):
             for plugin in self._kernel_plugins:
                 plugin(kernel, "register")
 
+        objects = self.get_linked_objects(kernel)
         for k in objects:
             if klp(k) < LIFECYCLE_KERNEL_CONFIGURE <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_CONFIGURE
@@ -686,6 +743,7 @@ class Kernel(Settings):
                     channel(f"kernel-boot: {str(k)} boot")
                 if hasattr(k, "boot"):
                     k.boot()
+                self._command_attach(self, k)
                 self._signal_attach(k)
                 self._lookup_attach(k)
         if start < LIFECYCLE_KERNEL_BOOT <= end:
@@ -821,6 +879,7 @@ class Kernel(Settings):
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PRESHUTDOWN
                 if channel:
                     channel(f"kernel-preshutdown: {str(k)}")
+                self._command_detach(kernel, k)
                 self._signal_detach(k)
                 self._lookup_detach(k)
                 if hasattr(k, "preshutdown"):
@@ -871,6 +930,7 @@ class Kernel(Settings):
                     channel(f"service-added: {str(s)}")
                 if hasattr(s, "added"):
                     s.added(*args, **kwargs)
+                self._command_attach(service, s)
 
         # Update plugin: added
         if start < LIFECYCLE_SERVICE_ADDED <= end:
@@ -966,6 +1026,7 @@ class Kernel(Settings):
                     channel(f"service-shutdown: {str(s)}")
                 if hasattr(s, "shutdown"):
                     s.shutdown(*args, **kwargs)
+                self._command_detach(service, s)
 
         # Update plugin: shutdown
         if start < LIFECYCLE_KERNEL_SHUTDOWN <= end:
@@ -1079,8 +1140,11 @@ class Kernel(Settings):
         if print not in self._console_channel.watchers:
             print(*args, **kwargs)
 
-    def __call__(self):
-        self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_POSTMAIN)
+    def __call__(self, partial=False):
+        if partial:
+            self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_POSTMAIN)
+        else:
+            self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_SHUTDOWN)
 
     def precli(self):
         pass
@@ -1098,13 +1162,13 @@ class Kernel(Settings):
 
         @return:
         """
-        self.scheduler_thread = self.threaded(self.run, "Scheduler")
+        self.scheduler_thread = self.threaded(self.run, thread_name="Scheduler")
         self.signal_job = self.add_job(
             run=self.process_queue,
             name="kernel.signals",
-            interval=0.005,
+            interval=self.delay,
             run_main=True,
-            conditional=lambda: not self._is_queue_processing,
+            conditional=lambda: not self._processing,
         )
         self._booted = True
 
@@ -1147,14 +1211,22 @@ class Kernel(Settings):
             self.channel("console").watch(self.__print_delegate)
             import sys
 
+            if sys.stdin is None:
+                # This may happen if we are in gui-mode of a compiled application and launch with -c. There is no
+                # stdin and consequently trying to launch with this flag will otherwise crash.
+
+                return
+
             async def aio_readline(loop):
                 while not self._shutdown:
                     print(">>", end="", flush=True)
 
                     line = await loop.run_in_executor(None, sys.stdin.readline)
                     line = line.strip()
-                    if line in ("quit", "shutdown"):
+                    if line in ("quit", "shutdown", "restart"):
                         self._quit = True
+                        if line == "restart":
+                            self._restart = True
                         break
                     self.console(f".{line}\n")
                     if line == "gui":
@@ -1168,9 +1240,7 @@ class Kernel(Settings):
             self.channel("console").unwatch(self.__print_delegate)
 
     def postmain(self):
-        if self._quit:
-            self._shutdown = True
-            self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_SHUTDOWN)
+        pass
 
     def preshutdown(self):
         channel = self.channel("shutdown")
@@ -1252,7 +1322,7 @@ class Kernel(Settings):
                         channel(_("Suspended Command: {c}").format(c=c))
 
         # pylint: disable=method-hidden
-        self.console = console  # redefine console signal, hidden by design
+        self.console = console  # redefine console function, hidden by design
 
         self.process_queue()  # Process last events.
 
@@ -1311,7 +1381,7 @@ class Kernel(Settings):
                     )
                 )
             try:
-                if thread is threading.currentThread():
+                if thread is threading.current_thread():
                     if channel:
                         channel(
                             _("{name} is the current shutdown thread").format(
@@ -1348,6 +1418,13 @@ class Kernel(Settings):
         if thread_count == 0:
             if channel:
                 channel(_("No threads required halting."))
+
+        # Close any safe_files that are still opened.
+        for key, file_obj in self._open_file_objects.items():
+            try:
+                file_obj.close()
+            except:
+                pass
 
         # Process any remove attempts that were occurred too late for standard removal.
         self._process_remove_listeners()
@@ -1527,7 +1604,7 @@ class Kernel(Settings):
         @return:
         """
         self.channel("lookup")(
-            f"Changed all: {str(paths)} ({str(threading.currentThread().getName())})"
+            f"Changed all: {str(paths)} ({str(threading.current_thread().name)})"
         )
         with self._lookup_lock:
             if not self._dirty_paths:
@@ -1542,7 +1619,7 @@ class Kernel(Settings):
         @return:
         """
         self.channel("lookup")(
-            f"Changed {str(path)} ({str(threading.currentThread().getName())})"
+            f"Changed {str(path)} ({str(threading.current_thread().name)})"
         )
         with self._lookup_lock:
             if not self._dirty_paths:
@@ -1564,7 +1641,7 @@ class Kernel(Settings):
         channel = self.channel("lookup")
         if channel:
             channel(
-                f"Lookup Change Processing ({str(threading.currentThread().getName())})"
+                f"Lookup Change Processing ({str(threading.current_thread().name)})"
             )
         with self._lookup_lock:
             for matchtext in self.lookups:
@@ -1604,10 +1681,8 @@ class Kernel(Settings):
         @return:
         """
         self._registered[path] = obj
-        try:
+        if hasattr(obj, "sub_register"):
             obj.sub_register(self)
-        except AttributeError:
-            pass
         self.lookup_change(path)
 
     def unregister(self, path: str):
@@ -1810,7 +1885,7 @@ class Kernel(Settings):
         """
         self.state = "active"
         while self.state != "end":
-            time.sleep(0.005)  # 200 ticks a second.
+            time.sleep(self.delay)
             while self.state == "pause":
                 # The scheduler is paused.
                 time.sleep(0.1)
@@ -1910,67 +1985,82 @@ class Kernel(Settings):
         """
         Signals add the latest message to the message queue.
 
+        This merely writes the signal to the signal queue.
+
         @param code: Signal code
         @param path: Path of signal
         @param message: Message to send.
         """
-        with self._signal_lock:
+        with self._message_queue_lock:
             self._message_queue[code] = path, message
 
     def _process_add_listeners(self):
-        # Process any adding listeners.
+        """
+        Any add listeners are applied to update listeners.
+        Process any adding listeners.
+        @return:
+        """
         if not self._adding_listeners:
             return
         with self._add_lock:
             add = self._adding_listeners
             self._adding_listeners = []
+        if not add:
+            return
 
-        if add is not None:
-            for signal, funct, lso in add:
-                if signal in self.listeners:
-                    listeners = self.listeners[signal]
-                    listeners.append((funct, lso))
-                else:
-                    self.listeners[signal] = [(funct, lso)]
-                if signal in self._last_message:
-                    origin, message = self._last_message[signal]
-                    funct(origin, *message)
+        for signal, funct, lso in add:
+            if signal in self.listeners:
+                listeners = self.listeners[signal]
+                listeners.append((funct, lso))
+            else:
+                self.listeners[signal] = [(funct, lso)]
+            if signal in self._last_message:
+                origin, message = self._last_message[signal]
+                funct(origin, *message)
 
     def _process_remove_listeners(self):
-        # Process any removing listeners.
+        """
+        Any remove listeners are used to update the current listeners.
+        Process any removing listeners.
+        @return:
+        """
         if not self._removing_listeners:
             return
         with self._remove_lock:
             remove = self._removing_listeners
             self._removing_listeners = []
+        if not remove:
+            return
+        for signal, remove_funct, remove_lso in remove:
+            if signal in self.listeners:
+                listeners = self.listeners[signal]
+                removed = False
+                for i, listen in enumerate(listeners):
+                    listen_funct, listen_lso = listen
+                    if (listen_funct == remove_funct or remove_funct is None) and (
+                        listen_lso is remove_lso or remove_lso is None
+                    ):
+                        del listeners[i]
+                        removed = True
+                        break
+                if not removed:
+                    # This occurs if we attempt to remove a listener which does not exist.
+                    # This is not a useless error but rather a symptom of another bug.
+                    # This should not occur, if it does, something is desynced attempting
+                    # to double remove. Which could also mean listeners are stuck listening
+                    # to places they should not which can cause other errors.
+                    print(
+                        f"Error in {signal}, no {str(remove_funct)} matching {str(remove_lso)}"
+                    )
+                    for index, listener in enumerate(listeners):
+                        print(f"{index}: {str(listener)}")
 
-        if remove is not None:
-            for signal, remove_funct, remove_lso in remove:
-                if signal in self.listeners:
-                    listeners = self.listeners[signal]
-                    removed = False
-                    for i, listen in enumerate(listeners):
-                        listen_funct, listen_lso = listen
-                        if (listen_funct == remove_funct or remove_funct is None) and (
-                            listen_lso is remove_lso or remove_lso is None
-                        ):
-                            del listeners[i]
-                            removed = True
-                            break
-                    if not removed:
-                        # This occurs if we attempt to remove a listener which does not exist.
-                        # This is not a useless error but rather a symptom of another bug.
-                        # This should not occur, if it does, something is desynced attempting
-                        # to double remove. Which could also mean listeners are stuck listening
-                        # to places they should not which can cause other errors.
-                        print(
-                            f"Error in {signal}, no {str(remove_funct)} matching {str(remove_lso)}"
-                        )
-                        for index, listener in enumerate(listeners):
-                            print(f"{index}: {str(listener)}")
-
-    def _process_signal_queue(self, queue):
-        # Process signals.
+    def _process_signal_queue(self):
+        """
+        Process signals in the processing queue.
+        @return:
+        """
+        queue = self._processing
         signal_channel = self.channel("signals")
         for signal, payload in queue.items():
             origin, message = payload
@@ -1987,8 +2077,6 @@ class Kernel(Settings):
 
     def process_queue(self, *args) -> None:
         """
-        Performed in the run_later thread. Signal groups. Threadsafe.
-
         Process the signals queued up. Inserting any attaching listeners, removing any removing listeners. And
         providing the newly attached listeners the last message known from that signal.
         @param args: None
@@ -2000,15 +2088,14 @@ class Kernel(Settings):
             and len(self._removing_listeners) == 0
         ):
             return
-        self._is_queue_processing = True
-        with self._signal_lock:
-            queue = self._message_queue
-            self._message_queue = {}
-        self._process_add_listeners()
-        self._process_remove_listeners()
-
-        self._process_signal_queue(queue)
-        self._is_queue_processing = False
+        with self._process_lock:
+            with self._message_queue_lock:
+                self._processing.update(self._message_queue)
+                self._message_queue.clear()
+            self._process_add_listeners()
+            self._process_remove_listeners()
+            self._process_signal_queue()
+            self._processing.clear()
 
     def last_signal(self, signal: str) -> Optional[Tuple]:
         """
@@ -2058,6 +2145,53 @@ class Kernel(Settings):
         # if len(self._removing_listeners) != len(set(self._removing_listeners)):
         #     print("Warning duplicate listener removing.")
 
+    def _command_attach(
+        self,
+        registration: None,
+        scan_object: Union[Service, Module, None] = None,
+    ) -> None:
+        """
+        Registers any "@console_commands" into the kernel.
+
+        @param scan_object: object to scan for command_console functions
+        @return:
+        """
+        obj_class = type(scan_object)
+        for attr in dir(scan_object):
+            # Handle is excluded. triggers a knock-on effect bug in wxPython GTK systems.
+            if attr == "Handle":
+                continue
+            if isinstance(getattr(obj_class, attr, None), property):
+                continue
+            func = getattr(scan_object, attr)
+            if hasattr(func, "reg"):
+                if registration is None:
+                    func.reg(self, scan_object)
+                else:
+                    func.reg(registration, scan_object)
+
+    def _command_detach(
+        self,
+        registration: None,
+        scan_object: Any,
+    ) -> None:
+        """
+        @return:
+        """
+        obj_class = type(scan_object)
+        for attr in dir(scan_object):
+            # Handle is excluded. triggers a knock-on effect bug in wxPython GTK systems.
+            if attr == "Handle":
+                continue
+            if isinstance(getattr(obj_class, attr, None), property):
+                continue
+            func = getattr(scan_object, attr)
+            if hasattr(func, "unreg"):
+                if registration is None:
+                    func.unreg(self, scan_object)
+                else:
+                    func.unreg(registration, scan_object)
+
     def _signal_attach(
         self,
         scan_object: Union[Service, Module, None] = None,
@@ -2071,11 +2205,13 @@ class Kernel(Settings):
         """
         if cookie is None:
             cookie = scan_object
+        obj_class = type(scan_object)
         for attr in dir(scan_object):
             # Handle is excluded. triggers a knock-on effect bug in wxPython GTK systems.
             if attr == "Handle":
                 continue
-                # TODO: exclude properties.
+            if isinstance(getattr(obj_class, attr, None), property):
+                continue
             func = getattr(scan_object, attr)
             if hasattr(func, "signal_listener"):
                 for sl in func.signal_listener:
@@ -2093,18 +2229,17 @@ class Kernel(Settings):
         @param cookie: cookie used to bind this listener.
         @return:
         """
-        with self._signal_lock:
-            with self._remove_lock:
-                for signal in self.listeners:
-                    listens = self.listeners[signal]
-                    for listener, lso in listens:
-                        if lso is cookie:
-                            self._removing_listeners.append((signal, listener, cookie))
-            with self._add_lock:
-                for i in range(len(self._adding_listeners) - 1, -1, -1):
-                    sl, func, lso = self._adding_listeners[i]
+        with self._remove_lock:
+            for signal in self.listeners:
+                listens = self.listeners[signal]
+                for listener, lso in listens:
                     if lso is cookie:
-                        del self._adding_listeners[i]
+                        self._removing_listeners.append((signal, listener, cookie))
+        with self._add_lock:
+            for i in range(len(self._adding_listeners) - 1, -1, -1):
+                sl, func, lso = self._adding_listeners[i]
+                if lso is cookie:
+                    del self._adding_listeners[i]
 
         # if len(self._removing_listeners) != len(set(self._removing_listeners)):
         #     print("Warning duplicate listener removing.")
@@ -2143,11 +2278,13 @@ class Kernel(Settings):
             except UnicodeDecodeError:
                 return
         self._console_buffer += data
+        data_out = None
         while "\n" in self._console_buffer:
             pos = self._console_buffer.find("\n")
             command = self._console_buffer[0:pos].strip("\r")
             self._console_buffer = self._console_buffer[pos + 1 :]
-            self._console_parse(command, channel=self._console_channel)
+            data_out = self._console_parse(command, channel=self._console_channel)
+        return data_out
 
     def _console_interface(self, command: str):
         pass
@@ -2537,6 +2674,9 @@ class Kernel(Settings):
         @self.console_option(
             "gui", "g", action="store_true", help=_("Run this timer in the gui-thread")
         )
+        @self.console_option(
+            "quiet", "q", action="store_true", help=_("Quiet timer notifications")
+        )
         @self.console_argument(
             "times", help=_("Number of times this timer should execute.")
         )
@@ -2560,6 +2700,7 @@ class Kernel(Settings):
             duration=None,
             off=False,
             gui=False,
+            quiet=False,
             remainder=None,
             **kwargs,
         ):
@@ -2600,21 +2741,38 @@ class Kernel(Settings):
                 channel(_("----------"))
                 return
             if off:
-                if name == "*":
-                    for job_name in [j for j in self.jobs if j.startswith("timer")]:
-                        # removing jobs, must create current list
+                if "*" in name or "?" in name:
+                    # Multi cancel.
+                    name = name.replace("?", ".")
+                    name = name.replace("*", ".*")
+                    skipped = False
+                    canceled = False
+                    for job_name in list(self.jobs):
+                        if not job_name.startswith("timer"):
+                            continue
+                        timer_name = job_name[5:]
+                        if not re.match(name, timer_name):
+                            skipped = True
+                            continue
+                        canceled = True
                         job = self.jobs[job_name]
                         job.cancel()
                         self.unschedule(job)
-                    channel(_("All timers canceled."))
+                    if not quiet and not skipped and canceled:
+                        channel(_("All timers canceled."))
+                    if not quiet and skipped and not canceled:
+                        channel(_("No timers canceled."))
+
                     return
                 try:
                     obj = self.jobs[command]
                     obj.cancel()
                     self.unschedule(obj)
-                    channel(_("Timer '{name}' canceled.").format(name=name))
+                    if not quiet:
+                        channel(_("Timer '{name}' canceled.").format(name=name))
                 except KeyError:
-                    channel(_("Timer '{name}' does not exist.").format(name=name))
+                    if not quiet:
+                        channel(_("Timer '{name}' does not exist.").format(name=name))
                 return
             try:
                 times = int(times)
@@ -2658,10 +2816,8 @@ class Kernel(Settings):
                 except Exception:
                     pass
             elif OS_NAME == "Darwin":  # Mac
-
                 os.system("afplay /System/Library/Sounds/Ping.aiff")
             elif OS_NAME == "Linux":
-
                 print("\a")  # Beep.
                 os.system('say "Ding"')
 
@@ -3286,6 +3442,30 @@ class Kernel(Settings):
             )
 
         # ==========
+        # SIGNAL
+        # ==========
+        @self.console_argument("signalname", type=str, help=_("Signal to send"))
+        @self.console_argument("signalargs", type=str, help=_("Signal content"))
+        @self.console_command(("signal"), help=_("sends a signal"))
+        def send_signal(channel, _, signalname=None, signalargs=None, **kwargs):
+            if signalname is None:
+                channel(_("Please provide a signal to send, attached listeners:"))
+                signal_keys = list(self.listeners.keys())
+                signal_keys.sort()
+                for idx, key in enumerate(signal_keys):
+                    channel(f"{idx}: {key}")
+                return
+            try:
+                if signalargs is None:
+                    self.root.signal(signalname)
+                else:
+                    self.root.signal(signalname, signalargs)
+                channel(f"Signal {signalname}, {signalargs} successfully sent")
+            except (TypeError, RuntimeError) as e:
+                channel(f"Error while sending {signalname}, {signalargs}: {e}")
+            return
+
+        # ==========
         # LIFECYCLE
         # ==========
 
@@ -3293,10 +3473,23 @@ class Kernel(Settings):
             ("quit", "shutdown"), help=_("shuts down all processes and exits")
         )
         def shutdown(**kwargs):
+            """
+            Calls full shutdown of kernel. This is expected to be executed of booted with partial lifecycle.
+
+            @param kwargs:
+            @return:
+            """
+            self._shutdown = True
+            self()
+
+        @self.console_command(
+            "restart", help=_("shuts down all processes, exits and restarts meerk40t")
+        )
+        def restart(**kwargs):
+            self.restart = True
             if self._shutdown:
                 return
-            self._shutdown = True
-            self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_SHUTDOWN)
+            self.console("quit\n")
 
         # ==========
         # FILE MANAGER

@@ -55,7 +55,6 @@ class LihuiyuParser:
         self.number_consumer = {}
 
     def parse(self, data, elements):
-
         from meerk40t.tools.geomstr import Geomstr
 
         self.path = Geomstr()

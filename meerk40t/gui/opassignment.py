@@ -3,14 +3,15 @@ from wx import aui
 
 from meerk40t.core.elements.element_types import op_nodes
 from meerk40t.gui.icons import (
-    icons8_diagonal_20,
-    icons8_direction_20,
-    icons8_image_20,
-    icons8_laser_beam_20,
-    icons8_scatter_plot_20,
-    icons8_small_beam_20,
+    icon_effect_hatch,
+    icon_points,
+    icons8_direction,
+    icons8_image,
+    icons8_laser_beam,
+    icons8_laserbeam_weak,
 )
 from meerk40t.gui.laserrender import swizzlecolor
+from meerk40t.gui.wxutils import dip_size
 from meerk40t.svgelements import Color
 
 from ..kernel import signal_listener
@@ -49,7 +50,11 @@ class OperationAssignPanel(wx.Panel):
         self.buttons = []
         self.op_nodes = []
         for idx in range(self.MAXBUTTONS):
-            btn = wx.Button(self, id=wx.ID_ANY, size=(self.buttonsize, self.buttonsize))
+            btn = wx.Button(
+                self,
+                id=wx.ID_ANY,
+                size=dip_size(self, self.buttonsize, self.buttonsize),
+            )
             self.buttons.append(btn)
             self.op_nodes.append(None)
 
@@ -160,7 +165,7 @@ class OperationAssignPanel(wx.Panel):
             d = None
             if node.type == "op raster":
                 c, d = get_color()
-                result = icons8_direction_20.GetBitmap(
+                result = icons8_direction.GetBitmap(
                     color=c,
                     resize=(iconsize, iconsize),
                     noadjustment=True,
@@ -168,7 +173,7 @@ class OperationAssignPanel(wx.Panel):
                 )
             elif node.type == "op image":
                 c, d = get_color()
-                result = icons8_image_20.GetBitmap(
+                result = icons8_image.GetBitmap(
                     color=c,
                     resize=(iconsize, iconsize),
                     noadjustment=True,
@@ -176,7 +181,7 @@ class OperationAssignPanel(wx.Panel):
                 )
             elif node.type == "op engrave":
                 c, d = get_color()
-                result = icons8_small_beam_20.GetBitmap(
+                result = icons8_laserbeam_weak.GetBitmap(
                     color=c,
                     resize=(iconsize, iconsize),
                     noadjustment=True,
@@ -184,15 +189,7 @@ class OperationAssignPanel(wx.Panel):
                 )
             elif node.type == "op cut":
                 c, d = get_color()
-                result = icons8_laser_beam_20.GetBitmap(
-                    color=c,
-                    resize=(iconsize, iconsize),
-                    noadjustment=True,
-                    keepalpha=True,
-                )
-            elif node.type == "op hatch":
-                c, d = get_color()
-                result = icons8_diagonal_20.GetBitmap(
+                result = icons8_laser_beam.GetBitmap(
                     color=c,
                     resize=(iconsize, iconsize),
                     noadjustment=True,
@@ -200,7 +197,7 @@ class OperationAssignPanel(wx.Panel):
                 )
             elif node.type == "op dots":
                 c, d = get_color()
-                result = icons8_scatter_plot_20.GetBitmap(
+                result = icon_points.GetBitmap(
                     color=c,
                     resize=(iconsize, iconsize),
                     noadjustment=True,
@@ -220,7 +217,7 @@ class OperationAssignPanel(wx.Panel):
                 self.buttons[myidx].SetBitmap(wx.NullBitmap)
             else:
                 self.buttons[myidx].SetBitmap(image)
-                # self.buttons[myidx].SetBitmapDisabled(icons8_padlock_50.GetBitmap(color=Color("Grey"), resize=(self.iconsize, self.iconsize), noadjustment=True, keepalpha=True))
+                # self.buttons[myidx].SetBitmapDisabled(icons8_unlock.GetBitmap(color=Color("Grey"), resize=(self.iconsize, self.iconsize), noadjustment=True, keepalpha=True))
             self.buttons[myidx].SetToolTip(
                 str(node)
                 + "\n"

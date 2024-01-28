@@ -13,6 +13,7 @@ class OpBranchPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("opbranchproperty")
 
         self.operation = node
         self.choices = [
@@ -38,7 +39,7 @@ class OpBranchPanel(wx.Panel):
                 "default": 1,
                 "type": int,
                 "conditional": (self.operation, "loop_enabled"),
-                "label": _("Loop"),
+                "label": _("Loops"),
                 "trailing": _("times"),
                 "tip": _("How many times should the operation job loop"),
             },

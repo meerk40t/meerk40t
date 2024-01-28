@@ -1,4 +1,5 @@
 import ast
+import os
 from configparser import ConfigParser, MissingSectionHeaderError, NoSectionError
 from pathlib import Path
 from typing import Any, Dict, Generator, Optional, Union
@@ -12,18 +13,19 @@ class Settings:
     dictionary of dictionaries. The first dictionary key are called sections, and the sub-
     section are attributes. To save a list of related settings we add a space within the
     section name. E.g. `operation 0001` or `operation 0002` etc. The first element can be
-    divided up with various layers of `/` to make derivable subdirectories of settings.
+    divided up with various layers of `/` to make path-like subdirectories of settings.
 
     Reading/writing and deleting are performed on the config_dict which stores a set of values
     these are loaded during the `read_configuration` step and are committed to disk when
     `write_configuration` is called.
     """
 
-    def __init__(self, directory, filename, ignore_settings=False):
+    def __init__(self, directory, filename, ignore_settings=False, create_backup=False):
         self._config_file = Path(get_safe_path(directory, create=True)).joinpath(
             filename
         )
         self._config_dict = {}
+        self.create_backup = create_backup
         if not ignore_settings:
             self.read_configuration()
 
@@ -81,6 +83,35 @@ class Settings:
                     except NoSectionError:
                         parser.add_section(section_key)
                         parser.set(section_key, key, value)
+            if self.create_backup:
+                VERSIONS = 5
+                try:
+                    if os.path.exists(targetfile):
+                        base_name, base_ext = os.path.splitext(targetfile)
+                        for history in range(VERSIONS - 1, -1, -1):
+                            if history == 0:
+                                v0 = ".bak"
+                            else:
+                                v0 = f".ba{history}"
+                            v1 = f".ba{history + 1}"
+                            v0_file = base_name + v0
+                            v1_file = base_name + v1
+                            if os.path.exists(v0_file):
+                                if os.path.exists(v1_file):
+                                    os.remove(v1_file)
+                                os.rename(v0_file, v1_file)
+
+                        v1_file = base_name + ".bak"
+                        os.rename(targetfile, v1_file)
+                except (
+                    PermissionError,
+                    OSError,
+                    RuntimeError,
+                    FileExistsError,
+                    FileNotFoundError,
+                ) as e:
+                    # print (f"Error happened: {e}")
+                    pass
             with open(targetfile, "w", encoding="utf-8") as fp:
                 parser.write(fp)
         except (PermissionError, FileNotFoundError):
@@ -88,17 +119,22 @@ class Settings:
 
     def literal_dict(self):
         literal_dict = dict()
-        for section in self._config_dict:
-            section_dict = self._config_dict[section]
-            literal_section_dict = dict()
-            literal_dict[section] = literal_section_dict
-            for key in section_dict:
-                value = section_dict[key]
-                try:
-                    value = ast.literal_eval(value)
-                except (ValueError, SyntaxError):
-                    pass
-                literal_section_dict[key] = value
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            for section in self._config_dict:
+                section_dict = self._config_dict[section]
+                literal_section_dict = dict()
+                literal_dict[section] = literal_section_dict
+                for key in section_dict:
+                    value = section_dict[key]
+                    try:
+                        value = ast.literal_eval(value)
+                    except (ValueError, SyntaxError):
+                        pass
+                    literal_section_dict[key] = value
+
         return literal_dict
 
     def set_dict(self, literal_dict):
@@ -277,7 +313,7 @@ class Settings:
         @return:
         """
         try:
-            self._config_dict[section][key]
+            del self._config_dict[section][key]
         except KeyError:
             pass
 
@@ -303,13 +339,31 @@ class Settings:
     def derivable(self, section: str) -> Generator[str, None, None]:
         """
         Finds all derivable paths within the config from the set path location.
+
+        This would find:
+         `camera/1 000001`
+         `camera/1 000002`
+
+         It `derivable(camera)` would only find paths of the form `camera *`
+
         @param section:
         @return:
         """
         for section_name in self._config_dict:
-            section_name.split("/")
+            ss = section_name.split(" ")
 
-            if section_name.startswith(section):
+            if ss[0] == section:
+                yield section_name
+
+    def section_startswith(self, prefix: str) -> Generator[str, None, None]:
+        """
+        Finds all paths within the config that starts with the given prefix.
+
+        @param prefix:
+        @return:
+        """
+        for section_name in self._config_dict:
+            if section_name.startswith(prefix):
                 yield section_name
 
     def section_set(self) -> Generator[str, None, None]:

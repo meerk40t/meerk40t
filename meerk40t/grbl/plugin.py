@@ -27,6 +27,7 @@ def plugin(kernel, lifecycle=None):
         _ = kernel.translation
 
         kernel.register("provider/device/grbl", GRBLDevice)
+        kernel.register("provider/friendly/grbl", ("GRBL-Diode-Laser", 2))
         kernel.register(
             "dev_info/grbl-generic",
             {
@@ -65,16 +66,16 @@ def plugin(kernel, lifecycle=None):
                         "default": "FluidNC",
                     },
                     {
-                        "attr": "requires_validation",
-                        "default": False,
-                    },
-                    {
                         "attr": "source",
                         "default": "generic",
                     },
                     {
                         "attr": "flavor",
                         "default": "fluidnc",
+                    },
+                    {
+                        "attr": "require_validator",
+                        "default": False,
                     },
                 ],
             },
@@ -109,6 +110,10 @@ def plugin(kernel, lifecycle=None):
                         "attr": "source",
                         "default": "co2",
                     },
+                    {
+                        "attr": "require_validator",
+                        "default": True,
+                    },
                 ],
             },
         )
@@ -136,6 +141,37 @@ def plugin(kernel, lifecycle=None):
                         "attr": "source",
                         "default": "diode",
                     },
+                ],
+            },
+        )
+        kernel.register(
+            "dev_info/grbl-ortur",
+            {
+                "provider": "provider/device/grbl",
+                "friendly_name": _("Ortur Laser Master 2 (GRBL)"),
+                "extended_info": _("Ortur-branded self-assembled grbl diode lasers"),
+                "priority": 21,
+                "family": _("Diode-Laser"),
+                "family_priority": 50,
+                "choices": [
+                    {
+                        "attr": "label",
+                        "default": "Ortur-LM2",
+                    },
+                    {
+                        "attr": "has_endstops",
+                        "default": True,
+                    },
+                    {
+                        "attr": "source",
+                        "default": "diode",
+                    },
+                    {
+                        "attr": "require_validator",
+                        "default": False,
+                    },
+                    {"attr": "bedheight", "default": "430mm"},
+                    {"attr": "bedwidth", "default": "400mm"},
                 ],
             },
         )
@@ -228,6 +264,6 @@ def plugin(kernel, lifecycle=None):
             return
 
     elif lifecycle == "preboot":
-        suffix = "grbl"
-        for d in kernel.derivable(suffix):
-            kernel.root(f"service device start -p {d} {suffix}\n")
+        prefix = "grbl"
+        for d in kernel.section_startswith(prefix):
+            kernel.root(f"service device start -p {d} {prefix}\n")

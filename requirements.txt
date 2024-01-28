@@ -6,3 +6,4 @@ pyserial
 wxPython
 ezdxf>=0.14
 opencv-python-headless
+

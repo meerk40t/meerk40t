@@ -2,8 +2,13 @@ import threading
 
 import wx
 
-from meerk40t.gui.icons import icons8_connected_50, icons8_disconnected_50
+from meerk40t.gui.icons import (
+    get_default_icon_size,
+    icons8_connected,
+    icons8_disconnected,
+)
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import dip_size
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -14,6 +19,7 @@ class NewlyControllerPanel(wx.ScrolledWindow):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.ScrolledWindow.__init__(self, *args, **kwargs)
         self.context = context
+        self.SetHelpText("newlycontroller")
 
         font = wx.Font(
             10,
@@ -57,7 +63,9 @@ class NewlyControllerPanel(wx.ScrolledWindow):
             _("Force connection/disconnection from the device.")
         )
         self.button_device_connect.SetBitmap(
-            icons8_disconnected_50.GetBitmap(use_theme=False)
+            icons8_disconnected.GetBitmap(
+                use_theme=False, resize=get_default_icon_size()
+            )
         )
         # end wxGlade
 
@@ -67,7 +75,7 @@ class NewlyControllerPanel(wx.ScrolledWindow):
         connection_controller.Add(self.button_device_connect, 0, wx.EXPAND, 0)
         sizer_1.Add(connection_controller, 0, wx.EXPAND, 0)
         static_line_2 = wx.StaticLine(self, wx.ID_ANY)
-        static_line_2.SetMinSize((483, 5))
+        static_line_2.SetMinSize(dip_size(self, 483, 5))
         sizer_1.Add(static_line_2, 0, wx.EXPAND, 0)
         sizer_1.Add(self.text_usb_log, 5, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
@@ -88,14 +96,16 @@ class NewlyControllerPanel(wx.ScrolledWindow):
     def set_button_connected(self):
         self.button_device_connect.SetBackgroundColour("#00ff00")
         self.button_device_connect.SetBitmap(
-            icons8_connected_50.GetBitmap(use_theme=False)
+            icons8_connected.GetBitmap(use_theme=False, resize=get_default_icon_size())
         )
         self.button_device_connect.Enable()
 
     def set_button_disconnected(self):
         self.button_device_connect.SetBackgroundColour("#dfdf00")
         self.button_device_connect.SetBitmap(
-            icons8_disconnected_50.GetBitmap(use_theme=False)
+            icons8_disconnected.GetBitmap(
+                use_theme=False, resize=get_default_icon_size()
+            )
         )
         self.button_device_connect.Enable()
 
@@ -139,8 +149,8 @@ class NewlyControllerPanel(wx.ScrolledWindow):
             self.context("usb_connect\n")
 
     def pane_show(self):
-        name = self.service.label
-        self.context.channel(f"{name}/usb").watch(self.update_text)
+        self._channel_watching = f"{self.service.safe_label}/usb"
+        self.context.channel(self._channel_watching).watch(self.update_text)
         try:
             connected = self.service.driver.connected
             if connected:
@@ -151,20 +161,21 @@ class NewlyControllerPanel(wx.ScrolledWindow):
             pass
 
     def pane_hide(self):
-        name = self.service.label
-        self.context.channel(f"{name}/usb").unwatch(self.update_text)
+        self.context.channel(self._channel_watching).unwatch(self.update_text)
 
 
 class NewlyController(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(499, 170, *args, **kwds)
         self.panel = NewlyControllerPanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         self.SetTitle(_("Newly-Controller"))
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)
         self.Layout()
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

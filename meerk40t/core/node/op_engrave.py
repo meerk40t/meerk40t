@@ -16,17 +16,15 @@ class EngraveOpNode(Node, Parameters):
     This is a Node of type "op engrave".
     """
 
-    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
-        Node.__init__(self, type="op engrave", id=id, label=label, lock=lock)
-        Parameters.__init__(self, None, **kwargs)
-        self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
+    def __init__(self, settings=None, **kwargs):
+        if settings is not None:
+            settings = dict(settings)
+        Parameters.__init__(self, settings, **kwargs)
 
-        if len(args) == 1:
-            obj = args[0]
-            if hasattr(obj, "settings"):
-                self.settings = dict(obj.settings)
-            elif isinstance(obj, dict):
-                self.settings.update(obj)
+        # Is this op out of useful bounds?
+        self.dangerous = False
+
+        self.label = "Engrave"
         # We may want to add more advanced logic at a later time
         # to convert text to paths within dnd...
         self._allowed_elements_dnd = (
@@ -35,6 +33,9 @@ class EngraveOpNode(Node, Parameters):
             "elem polyline",
             "elem rect",
             "elem line",
+            "effect hatch",
+            "effect wobble",
+            "effect warp",
         )
         # Which elements do we consider for automatic classification?
         self._allowed_elements = (
@@ -43,32 +44,22 @@ class EngraveOpNode(Node, Parameters):
             "elem polyline",
             "elem rect",
             "elem line",
+            "effect hatch",
+            "effect wobble",
+            "effect warp",
         )
+
         # To which attributes does the classification color check respond
         # Can be extended / reduced by add_color_attribute / remove_color_attribute
         self.allowed_attributes = [
             "stroke",
         ]  # comma is relevant
-        # Is this op out of useful bounds?
-        self.dangerous = False
-        if label is None:
-            self.label = "Engrave"
-        else:
-            self.label = label
+
+        super().__init__(type="op engrave", **kwargs)
+        self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
 
     def __repr__(self):
         return "EngraveOpNode()"
-
-    def __copy__(self):
-        return EngraveOpNode(self)
-
-    # def is_dangerous(self, minpower, maxspeed):
-    #     result = False
-    #     if maxspeed is not None and self.speed > maxspeed:
-    #         result = True
-    #     if minpower is not None and self.power < minpower:
-    #         result = True
-    #     self.dangerous = result
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
@@ -99,11 +90,19 @@ class EngraveOpNode(Node, Parameters):
         default_map["opstop"] = "(stop)" if self.stopop else ""
         default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
+        default_map["percent"] = "100%"
+        default_map["ppi"] = "default"
+        if self.power is not None:
+            default_map["percent"] = f"{self.power / 10.0:.0f}%"
+            default_map["ppi"] = f"{self.power:.0f}"
+        default_map["speed_mm_min"] = (
+            "" if self.speed is None else f"{self.speed * 60:.0f}"
+        )
         return default_map
 
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
-        if drag_node.type.startswith("elem"):
+        if hasattr(drag_node, "as_geometry"):
             if (
                 drag_node.type not in self._allowed_elements_dnd
                 or drag_node._parent.type == "branch reg"
@@ -212,26 +211,22 @@ class EngraveOpNode(Node, Parameters):
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
-        update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        self.settings.update(update_dict)
-        self.validate()
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
         self.updated()
 
     def save(self, settings, section):
+        # Sync certain properties with self.settings
+        for attr in ("label", "lock", "id"):
+            if hasattr(self, attr) and attr in self.settings:
+                self.settings[attr] = getattr(self, attr)
+        if "hex_color" in self.settings:
+            self.settings["hex_color"] = self.color.hexa
+
         settings.write_persistent_attributes(section, self)
         settings.write_persistent(section, "hex_color", self.color.hexa)
         settings.write_persistent_dict(section, self.settings)
-
-    def copy_children(self, obj):
-        for element in obj.children:
-            self.add_reference(element)
-
-    def copy_children_as_real(self, copy_node):
-        for node in copy_node.children:
-            self.add_node(copy(node.node))
 
     def time_estimate(self):
         estimate = 0
@@ -295,6 +290,8 @@ class EngraveOpNode(Node, Parameters):
             elif node.type == "elem path":
                 path = abs(node.path)
                 path.approximate_arcs_with_cubics()
+            elif node.type.startswith("effect"):
+                path = node.as_geometry().as_path()
             elif node.type not in self._allowed_elements_dnd:
                 # These aren't valid.
                 continue

@@ -71,6 +71,12 @@ class ScenePanel(wx.Panel):
         main_sizer.Fit(self)
         self.Layout()
 
+    def start_scene(self):
+        self.context.schedule(self.scene)
+
+    def stop_scene(self):
+        self.context.unschedule(self.scene)
+
     def signal(self, *args, **kwargs):
         """
         Scene signal calls the signal command on the root which is used to pass message and data to deeper objects
@@ -90,6 +96,15 @@ class ScenePanel(wx.Panel):
             modifiers.append("shift")
         if event.MetaDown():
             modifiers.append("meta")
+        try:
+            if event.LeftIsDown():
+                modifiers.append("m_left")
+            if event.RightIsDown():
+                modifiers.append("m_right")
+            if event.MiddleIsDown():
+                modifiers.append("m_middle")
+        except AttributeError:
+            pass
         return modifiers
 
     def on_key(self, evt):

@@ -6,11 +6,23 @@ import threading
 
 import wx
 
-from meerk40t.gui.icons import icons8_connected_50, icons8_disconnected_50
+from meerk40t.gui.icons import (
+    get_default_icon_size,
+    icons8_connected,
+    icons8_disconnected,
+)
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import dip_size
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
+
+realtime_commands = (
+    "!",  # pause
+    "~",  # resume
+    "?",  # status report
+    # "$X",
+)
 
 
 class GRBLControllerPanel(wx.Panel):
@@ -19,10 +31,13 @@ class GRBLControllerPanel(wx.Panel):
         self.service = context
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
+        self.SetHelpText("grblcontoller")
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
-
+        self.iconsize = 0.75 * get_default_icon_size()
         self.state = None
-        self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
+        self.button_device_connect = wx.Button(
+            self, wx.ID_ANY, self.button_connect_string("Connection")
+        )
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_device_connect.SetFont(
             wx.Font(
@@ -38,24 +53,19 @@ class GRBLControllerPanel(wx.Panel):
             _("Force connection/disconnection from the device.")
         )
         self.button_device_connect.SetBitmap(
-            icons8_connected_50.GetBitmap(use_theme=False)
+            icons8_connected.GetBitmap(use_theme=False, resize=self.iconsize)
         )
         sizer_1.Add(self.button_device_connect, 0, wx.EXPAND, 0)
 
         static_line_2 = wx.StaticLine(self, wx.ID_ANY)
-        static_line_2.SetMinSize((483, 5))
+        static_line_2.SetMinSize(dip_size(self, 483, 5))
         sizer_1.Add(static_line_2, 0, wx.EXPAND, 0)
 
         self.data_exchange = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE)
+        self.data_exchange.SetMinSize(dip_size(self, -1, 100))
         sizer_1.Add(self.data_exchange, 1, wx.EXPAND, 0)
 
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
-        self.realtime_commands = (
-            "!",  # pause
-            "~",  # resume
-            "?",  # status report
-            # "$X",
-        )
         self.gcode_commands = list()
         if self.service.has_endstops:
             self.gcode_commands.append(
@@ -85,7 +95,11 @@ class GRBLControllerPanel(wx.Panel):
             btn.Bind(wx.EVT_BUTTON, self.send_gcode(entry[0]))
             btn.SetToolTip(entry[2])
             if entry[3] is not None:
-                btn.SetBitmap(entry[3].GetBitmap(size=25, use_theme=False))
+                btn.SetBitmap(
+                    entry[3].GetBitmap(
+                        resize=0.5 * get_default_icon_size(), use_theme=False
+                    )
+                )
             sizer_2.Add(btn, 1, wx.EXPAND, 0)
         self.btn_clear = wx.Button(self, wx.ID_ANY, _("Clear"))
         self.btn_clear.SetToolTip(_("Clear log window"))
@@ -110,6 +124,20 @@ class GRBLControllerPanel(wx.Panel):
         self._buffer_lock = threading.Lock()
         # end wxGlade
 
+    def button_connect_string(self, pattern):
+        res = _(pattern)
+        context = self.service
+        if context.permit_serial and context.interface == "serial":
+            iface = "?" if context.serial_port is None else context.serial_port
+        elif context.permit_tcp and context.interface == "tcp":
+            iface = f"{context.address}:{context.port}"
+        else:
+            # Mock
+            iface = "Mock"
+
+        res += f" ({iface})"
+        return res
+
     def on_clear_log(self, event):
         self.data_exchange.SetValue("")
 
@@ -123,13 +151,15 @@ class GRBLControllerPanel(wx.Panel):
 
     def send_gcode(self, gcode_cmd):
         def handler(event):
-            self.service(f"gcode {gcode_cmd}")
+            self.service(f"gcode_realtime {gcode_cmd}")
+            if gcode_cmd == "$X" and self.service.extended_alarm_clear:
+                self.service("gcode_realtime \x18")
 
         return handler
 
     def on_gcode_enter(self, event):  # wxGlade: SerialControllerPanel.<event_handler>
         cmd = self.gcode_text.GetValue()
-        if cmd in self.realtime_commands:
+        if cmd in realtime_commands:
             self.service(f"gcode_realtime {cmd}")
         else:
             self.service(f"gcode {cmd}")
@@ -160,6 +190,10 @@ class GRBLControllerPanel(wx.Panel):
             with self._buffer_lock:
                 self._buffer += f"{data}\n"
             self.service.signal("grbl_controller_update", True)
+        elif type == "connection":
+            with self._buffer_lock:
+                self._buffer += f"{data}\n"
+            self.service.signal("grbl_controller_update", True)
 
     @signal_listener("grbl_controller_update")
     def update_text_gui(self, origin, *args):
@@ -168,20 +202,61 @@ class GRBLControllerPanel(wx.Panel):
             self._buffer = ""
         self.data_exchange.AppendText(buffer)
 
+    def set_color_according_to_state(self, stateval, control):
+        def color_distance(c1, c2):
+            from math import sqrt
+            red_mean = int((c1.red + c2.red) / 2.0)
+            r = c1.red - c2.red
+            g = c1.green - c2.green
+            b = c1.blue - c2.blue
+            distance_sq = (
+                (((512 + red_mean) * r * r) >> 8)
+                + (4 * g * g)
+                + (((767 - red_mean) * b * b) >> 8)
+            )
+            return sqrt(distance_sq)
+
+        state_colors = {
+            "uninitialized": wx.Colour("#ffff00"),
+            "disconnected":  wx.Colour("#ffff00"),
+            "connected": wx.Colour("#00ff00"),
+            "STATE_DRIVER_NO_BACKEND": wx.Colour("#dfdf00"),
+            "STATE_UNINITIALIZED": wx.Colour("#ffff00"),
+            "STATE_USB_DISCONNECTED": wx.Colour("#ffff00"),
+            "STATE_USB_SET_DISCONNECTING": wx.Colour("#ffff00"),
+            "STATE_USB_CONNECTED": wx.Colour("#00ff00"),
+            "STATE_CONNECTED": wx.Colour("#00ff00"),
+            "STATE_CONNECTING": wx.Colour("#ffff00"),
+        }
+        if stateval in state_colors:
+            bgcol = state_colors[stateval]
+        else:
+            bgcol = wx.Colour("#66ff66")
+        d1 = color_distance(bgcol, wx.BLACK)
+        d2 = color_distance(bgcol, wx.WHITE)
+        # print(f"state={stateval}, to black={d1}, to_white={d2}")
+        if d1 <= d2:
+            fgcol = wx.WHITE
+        else:
+            fgcol = wx.BLACK
+        control.SetBackgroundColour(bgcol)
+        control.SetForegroundColour(fgcol)
+
     def on_status(self, origin, state):
         self.state = state
+        self.set_color_according_to_state(state, self.button_device_connect)
         if state == "uninitialized" or state == "disconnected":
-            self.button_device_connect.SetBackgroundColour("#ffff00")
-            self.button_device_connect.SetLabel(_("Connect"))
+            self.button_device_connect.SetLabel(self.button_connect_string("Connect"))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected_50.GetBitmap(use_theme=False)
+                icons8_disconnected.GetBitmap(use_theme=False, resize=self.iconsize)
             )
             self.button_device_connect.Enable()
         elif state == "connected":
-            self.button_device_connect.SetBackgroundColour("#00ff00")
-            self.button_device_connect.SetLabel(_("Disconnect"))
+            self.button_device_connect.SetLabel(
+                self.button_connect_string("Disconnect")
+            )
             self.button_device_connect.SetBitmap(
-                icons8_connected_50.GetBitmap(use_theme=False)
+                icons8_connected.GetBitmap(use_theme=False, resize=self.iconsize)
             )
             self.button_device_connect.Enable()
 
@@ -192,16 +267,18 @@ class GRBLControllerPanel(wx.Panel):
             or self.state == "disconnected"
         ):
             self.button_device_connect.SetBackgroundColour("#ffff00")
-            self.button_device_connect.SetLabel(_("Connect"))
+            self.button_device_connect.SetLabel(self.button_connect_string("Connect"))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected_50.GetBitmap(use_theme=False)
+                icons8_disconnected.GetBitmap(use_theme=False, resize=self.iconsize)
             )
             self.button_device_connect.Enable()
         elif self.state == "connected":
             self.button_device_connect.SetBackgroundColour("#00ff00")
-            self.button_device_connect.SetLabel(_("Disconnect"))
+            self.button_device_connect.SetLabel(
+                self.button_connect_string("Disconnect")
+            )
             self.button_device_connect.SetBitmap(
-                icons8_connected_50.GetBitmap(use_theme=False)
+                icons8_connected.GetBitmap(use_theme=False, resize=self.iconsize)
             )
             self.button_device_connect.Enable()
 
@@ -215,13 +292,14 @@ class GRBLController(MWindow):
         self.service = self.context.device
         self.SetTitle("GRBL Controller")
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)
 
         self.serial_panel = GRBLControllerPanel(self, wx.ID_ANY, context=self.service)
+        self.sizer.Add(self.serial_panel, 1, wx.EXPAND, 0)
         self.Layout()
         self._opened_port = None
-        # end wxGlade
+        self.restore_aspect()
 
     @signal_listener("grbl;status")
     def on_serial_status(self, origin, state):

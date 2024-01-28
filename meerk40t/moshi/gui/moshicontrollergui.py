@@ -2,9 +2,13 @@ import threading
 
 import wx
 
-from meerk40t.gui.icons import icons8_connected_50, icons8_disconnected_50
+from meerk40t.gui.icons import (
+    get_default_icon_size,
+    icons8_connected,
+    icons8_disconnected,
+)
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -19,6 +23,7 @@ class MoshiControllerPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context.device
+        self.SetHelpText("moshicontroller")
 
         self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         self.text_connection_status = wx.TextCtrl(
@@ -94,7 +99,9 @@ class MoshiControllerPanel(wx.Panel):
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_device_connect.SetForegroundColour(wx.BLACK)
         self.button_device_connect.SetBitmap(
-            icons8_disconnected_50.GetBitmap(use_theme=False)
+            icons8_disconnected.GetBitmap(
+                use_theme=False, resize=get_default_icon_size()
+            )
         )
         self.button_device_connect.SetFont(
             wx.Font(
@@ -115,46 +122,46 @@ class MoshiControllerPanel(wx.Panel):
                 "DEBUG. Without a K40 connected continue to process things as if there was one."
             )
         )
-        self.text_device_index.SetMinSize((55, 23))
-        self.spin_device_index.SetMinSize((40, 23))
+        self.text_device_index.SetMinSize(dip_size(self, 55, -1))
+        self.spin_device_index.SetMinSize(dip_size(self, 40, -1))
         self.spin_device_index.SetToolTip(
             _(
                 "Optional: Distinguish between different lasers using the match criteria below.\n"
                 "-1 match anything. 0+ match exactly that value."
             )
         )
-        self.text_device_address.SetMinSize((55, 23))
-        self.spin_device_address.SetMinSize((40, 23))
+        self.text_device_address.SetMinSize(dip_size(self, 55, -1))
+        self.spin_device_address.SetMinSize(dip_size(self, 40, -1))
         self.spin_device_address.SetToolTip(
             _(
                 "Optional: Distinguish between different lasers using the match criteria below.\n"
                 "-1 match anything. 0+ match exactly that value."
             )
         )
-        self.text_device_bus.SetMinSize((55, 23))
-        self.spin_device_bus.SetMinSize((40, 23))
+        self.text_device_bus.SetMinSize(dip_size(self, 55, -1))
+        self.spin_device_bus.SetMinSize(dip_size(self, 40, -1))
         self.spin_device_bus.SetToolTip(
             _(
                 "Optional: Distinguish between different lasers using the match criteria below.\n"
                 "-1 match anything. 0+ match exactly that value."
             )
         )
-        self.text_device_version.SetMinSize((55, 23))
-        self.spin_device_version.SetMinSize((40, 23))
+        self.text_device_version.SetMinSize(dip_size(self, 55, -1))
+        self.spin_device_version.SetMinSize(dip_size(self, 40, -1))
         self.spin_device_version.SetToolTip(
             _(
                 "Optional: Distinguish between different lasers using the match criteria below.\n"
                 "-1 match anything. 0+ match exactly that value."
             )
         )
-        self.text_byte_0.SetMinSize((77, 23))
-        self.text_byte_1.SetMinSize((77, 23))
-        self.text_desc.SetMinSize((75, 23))
+        self.text_byte_0.SetMinSize(dip_size(self, 77, -1))
+        self.text_byte_1.SetMinSize(dip_size(self, 77, -1))
+        self.text_desc.SetMinSize(dip_size(self, 75, 23))
         self.text_desc.SetToolTip(_("The meaning of Byte 1"))
-        self.text_byte_2.SetMinSize((77, 23))
-        self.text_byte_3.SetMinSize((77, 23))
-        self.text_byte_4.SetMinSize((77, 23))
-        self.text_byte_5.SetMinSize((77, 23))
+        self.text_byte_2.SetMinSize(dip_size(self, 77, -1))
+        self.text_byte_3.SetMinSize(dip_size(self, 77, -1))
+        self.text_byte_4.SetMinSize(dip_size(self, 77, -1))
+        self.text_byte_5.SetMinSize(dip_size(self, 77, -1))
         self.checkbox_show_usb_log.SetValue(1)
         # end wxGlade
 
@@ -240,16 +247,17 @@ class MoshiControllerPanel(wx.Panel):
         # end wxGlade
 
     def pane_show(self):
-        active = self.context.path.split("/")[-1]
-        self.context.channel(f"{active}/usb", buffer_size=500).watch(self.update_text)
+        self._channel_watch = f"{self.context.safe_label}/usb"
+        self.context.channel(self._channel_watch, buffer_size=500).watch(
+            self.update_text
+        )
         self.context.listen("pipe;status", self.update_status)
         self.context.listen("pipe;usb_status", self.on_connection_status_change)
         self.context.listen("pipe;state", self.on_connection_state_change)
         self.context.listen("active", self.on_active_change)
 
     def pane_hide(self):
-        active = self.context.path.split("/")[-1]
-        self.context.channel(f"{active}/usb").unwatch(self.update_text)
+        self.context.channel(self._channel_watch).unwatch(self.update_text)
         self.context.unlisten("pipe;status", self.update_status)
         self.context.unlisten("pipe;usb_status", self.on_connection_status_change)
         self.context.unlisten("pipe;state", self.on_connection_state_change)
@@ -319,35 +327,45 @@ class MoshiControllerPanel(wx.Panel):
             if usb_status is not None:
                 self.button_device_connect.SetLabel(str(usb_status[0]))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected_50.GetBitmap(use_theme=False)
+                icons8_disconnected.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
             )
             self.button_device_connect.Enable()
         elif state == "STATE_UNINITIALIZED" or state == "STATE_USB_DISCONNECTED":
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connect"))
             self.button_device_connect.SetBitmap(
-                icons8_connected_50.GetBitmap(use_theme=False)
+                icons8_connected.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
             )
             self.button_device_connect.Enable()
         elif state == "STATE_USB_SET_DISCONNECTING":
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Disconnecting..."))
             self.button_device_connect.SetBitmap(
-                icons8_disconnected_50.GetBitmap(use_theme=False)
+                icons8_disconnected.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
             )
             self.button_device_connect.Disable()
         elif state == "STATE_USB_CONNECTED" or state == "STATE_CONNECTED":
             self.button_device_connect.SetBackgroundColour("#00ff00")
             self.button_device_connect.SetLabel(_("Disconnect"))
             self.button_device_connect.SetBitmap(
-                icons8_connected_50.GetBitmap(use_theme=False)
+                icons8_connected.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
             )
             self.button_device_connect.Enable()
         elif state == "STATE_CONNECTING":
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connecting..."))
             self.button_device_connect.SetBitmap(
-                icons8_connected_50.GetBitmap(use_theme=False)
+                icons8_connected.GetBitmap(
+                    use_theme=False, resize=get_default_icon_size()
+                )
             )
             self.button_device_connect.Disable()
 
@@ -423,11 +441,13 @@ class MoshiControllerGui(MWindow):
         # ==========
 
         self.panel = MoshiControllerPanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Moshiboard-Controller"))
+        self.restore_aspect()
 
     def create_menu(self, append):
         wxglade_tmp_menu = wx.Menu()

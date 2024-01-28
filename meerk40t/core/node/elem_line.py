@@ -1,6 +1,6 @@
 from copy import copy
 
-from meerk40t.core.node.mixins import Stroked
+from meerk40t.core.node.mixins import FunctionalParameter, Stroked
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -12,7 +12,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class LineNode(Node, Stroked):
+class LineNode(Node, Stroked, FunctionalParameter):
     """
     LineNode is the bootstrapped node type for the 'elem line' type.
     """
@@ -72,6 +72,18 @@ class LineNode(Node, Stroked):
             self.stroke_width_zero()
 
         self.set_dirty_bounds()
+        self.functional_parameter = (
+            "line",
+            0,
+            self.x1,
+            self.y1,
+            0,
+            self.x2,
+            self.y2,
+            0,
+            (self.x1 + self.x2) / 2.0,
+            (self.y1 + self.y2) / 2.0,
+        )
 
     def __copy__(self):
         nd = self.node_dict
@@ -82,6 +94,14 @@ class LineNode(Node, Stroked):
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
+
+    @property
+    def p1(self):
+        return complex(*self.matrix.point_in_matrix_space((self.x1, self.y1)))
+
+    @property
+    def p2(self):
+        return complex(*self.matrix.point_in_matrix_space((self.x2, self.y2)))
 
     @property
     def shape(self):
@@ -96,7 +116,7 @@ class LineNode(Node, Stroked):
             stroke_width=self.stroke_width,
         )
 
-    def as_geometry(self):
+    def as_geometry(self, **kws):
         path = Geomstr.lines(self.x1, self.y1, self.x2, self.y2)
         path.transform(self.matrix)
         return path
@@ -160,6 +180,9 @@ class LineNode(Node, Stroked):
             )
         return xmin, ymin, xmax, ymax
 
+    def length(self):
+        return abs(self.p1 - self.p2)
+
     def preprocess(self, context, matrix, plan):
         self.stroke_scaled = False
         self.stroke_scaled = True
@@ -176,10 +199,14 @@ class LineNode(Node, Stroked):
 
     def drop(self, drag_node, modify=True):
         # Dragging element into element.
-        if drag_node.type.startswith("elem"):
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             if modify:
                 self.insert_sibling(drag_node)
             return True
+        elif drag_node.type.startswith("op"):
+            # If we drag an operation to this node,
+            # then we will reverse the game
+            return drag_node.drop(self, modify=modify)
         return False
 
     def revalidate_points(self):
@@ -226,3 +253,51 @@ class LineNode(Node, Stroked):
             SVG_VALUE_NON_SCALING_STROKE if not self.stroke_scale else ""
         )
         return path
+
+    @property
+    def functional_parameter(self):
+        return self.mkparam
+
+    @functional_parameter.setter
+    def functional_parameter(self, value):
+        def getit(data, idx, default):
+            if idx < len(data):
+                return data[idx]
+            else:
+                return default
+
+        if isinstance(value, (list, tuple)):
+            self.mkparam = value
+            if self.mkparam:
+                method = self.mkparam[0]
+
+                cx = (self.x1 + self.x2) / 2
+                cy = (self.y1 + self.y2) / 2
+                mx = getit(self.mkparam, 8, cx)
+                my = getit(self.mkparam, 9, cy)
+
+                if self.x1 != self.mkparam[2] or self.y1 != self.mkparam[3]:
+                    # Start changed.
+                    self.x1 = getit(self.mkparam, 2, self.x1)
+                    self.y1 = getit(self.mkparam, 3, self.y1)
+                    self.mkparam[8] = cx
+                    self.mkparam[9] = cy
+                elif self.x2 != self.mkparam[5] or self.y2 != self.mkparam[6]:
+                    # End changed
+                    self.x2 = getit(self.mkparam, 5, self.x2)
+                    self.y2 = getit(self.mkparam, 6, self.y2)
+                    self.mkparam[8] = cx
+                    self.mkparam[9] = cy
+                elif cx != mx or cy != my:
+                    # Midpoint changed.
+                    dx = mx - cx
+                    dy = my - cy
+                    self.x1 += dx
+                    self.y1 += dy
+                    self.x2 += dx
+                    self.y2 += dy
+                    self.mkparam[2] = self.x1
+                    self.mkparam[3] = self.y1
+                    self.mkparam[5] = self.x2
+                    self.mkparam[6] = self.y2
+                self.altered()

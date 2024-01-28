@@ -34,6 +34,7 @@ from ..device.basedevice import (
     PLOT_RAPID,
     PLOT_SETTING,
 )
+from ..tools.geomstr import Geomstr
 from .laserspeed import LaserSpeed
 
 distance_lookup = [
@@ -136,7 +137,8 @@ class LihuiyuDriver(Parameters):
         self.native_y = 0
 
         self.plot_planner = PlotPlanner(self.settings)
-        self.plot_planner.force_shift = service.plot_shift
+        self.plot_attribute_update()
+
         self.plot_data = None
 
         self.state = DRIVER_STATE_RAPID
@@ -156,7 +158,6 @@ class LihuiyuDriver(Parameters):
         self.CODE_LASER_OFF = b"U"
 
         self.paused = False
-        self.service._buffer_size = 0
 
         def primary_hold():
             if self.out_pipe is None:
@@ -188,6 +189,11 @@ class LihuiyuDriver(Parameters):
 
     def __call__(self, e):
         self.out_pipe.write(e)
+
+    def plot_attribute_update(self):
+        self.plot_planner.force_shift = self.service.plot_shift
+        self.plot_planner.phase_type = self.service.plot_phase_type
+        self.plot_planner.phase_value = self.service.plot_phase_value
 
     def hold_work(self, priority):
         """
@@ -290,6 +296,7 @@ class LihuiyuDriver(Parameters):
         """
         self(b"~PN!\n~")
         self.paused = True
+        self.service.signal("pause")
 
     def resume(self, *values):
         """
@@ -303,6 +310,7 @@ class LihuiyuDriver(Parameters):
         """
         self(b"~PN&\n~")
         self.paused = False
+        self.service.signal("pause")
 
     def reset(self):
         """
@@ -322,8 +330,8 @@ class LihuiyuDriver(Parameters):
         self(b"~I*\n~")
         self._reset_modes()
         self.state = DRIVER_STATE_RAPID
-        self.service.signal("driver;mode", self.state)
         self.paused = False
+        self.service.signal("pause")
 
     def abort(self):
         self(b"I\n")
@@ -349,9 +357,7 @@ class LihuiyuDriver(Parameters):
         @param y:
         @return:
         """
-        if self.service.swap_xy:
-            x, y = y, x
-        x, y = self.service.physical_to_device_position(x, y)
+        x, y = self.service.view.position(x, y)
         self.rapid_mode()
         self._move_absolute(int(round(x)), int(round(y)))
 
@@ -363,11 +369,9 @@ class LihuiyuDriver(Parameters):
         @param dy:
         @return:
         """
-        if self.service.swap_xy:
-            dx, dy = dy, dx
-        dx, dy = self.service.physical_to_device_length(dx, dy)
+        unit_dx, unit_dy = self.service.view.position(dx, dy, vector=True)
         self.rapid_mode()
-        self._move_relative(dx, dy)
+        self._move_relative(unit_dx, unit_dy)
 
     def dwell(self, time_in_ms):
         """
@@ -450,7 +454,6 @@ class LihuiyuDriver(Parameters):
             self(b"FNSE-\n")
             self.laser = False
         self.state = DRIVER_STATE_RAPID
-        self.service.signal("driver;mode", self.state)
 
     def finished_mode(self, *values):
         """
@@ -472,7 +475,6 @@ class LihuiyuDriver(Parameters):
         elif self.state == DRIVER_STATE_RAPID:
             self(b"I")
         self.state = DRIVER_STATE_FINISH
-        self.service.signal("driver;mode", self.state)
 
     def raster_mode(self, *values, dx=0, dy=0):
         """
@@ -543,7 +545,6 @@ class LihuiyuDriver(Parameters):
         self(self._code_declare_directions())
         self(b"S1E")
         self.state = DRIVER_STATE_RASTER
-        self.service.signal("driver;mode", self.state)
 
     def program_mode(self, *values, dx=0, dy=0):
         """
@@ -604,7 +605,6 @@ class LihuiyuDriver(Parameters):
             self.state = DRIVER_STATE_RASTER
         else:
             self.state = DRIVER_STATE_PROGRAM
-        self.service.signal("driver;mode", self.state)
 
     def home(self, *values):
         """
@@ -613,7 +613,7 @@ class LihuiyuDriver(Parameters):
         @param values:
         @return:
         """
-        if self.service.rotary_active and self.service.rotary_supress_home:
+        if self.service.rotary.active and self.service.rotary.suppress_home:
             return
         self.rapid_mode()
         self(b"IPP\n")
@@ -622,7 +622,6 @@ class LihuiyuDriver(Parameters):
         self.native_y = 0
         self._reset_modes()
         self.state = DRIVER_STATE_RAPID
-        self.service.signal("driver;mode", self.state)
 
         new_current = self.service.current
         self.service.signal(
@@ -660,6 +659,60 @@ class LihuiyuDriver(Parameters):
     def laser_enable(self, *values):
         self.laser_enabled = True
 
+    def geometry(self, geom):
+        """
+        Driver command to deal with `geometry` driver call.
+
+        @return:
+        """
+        for segment_type, start, c1, c2, end, sets in geom.as_lines():
+            if segment_type == "line":
+                self.plot_planner.push(plot)
+            elif segment_type == "end":
+                pass
+            elif segment_type == "quad":
+                self.plot_planner.push(plot)
+            elif segment_type == "cubic":
+                self.plot_planner.push(plot)
+            elif segment_type == "arc":
+                interp = 50
+                g = Geomstr()
+                g.clear()
+                g.arc(start, c1, end)
+                last = start
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    self.plot_planner.push((last, p))
+                    last = p
+            elif segment_type == "point":
+                function = sets.get("function")
+                if function == "dwell":
+                    self.plot_start()
+                    self.rapid_mode()
+                    self._move_absolute(start.real, start.imag)
+                    self.wait_finish()
+                    self.dwell(sets.get("dwell_time"))
+                elif function == "wait":
+                    self.plot_start()
+                    self.wait_finish()
+                    self.wait(sets.get("dwell_time"))
+                elif function == "home":
+                    self.plot_start()
+                    self.wait_finish()
+                    self.home()
+                elif function == "goto":
+                    self.plot_start()
+                    self.wait_finish()
+                    self._move_absolute(start.real, start.imag)
+                elif function == "input":
+                    self.plot_start()
+                    self.wait_finish()
+                elif function == "output":
+                    self.plot_start()
+                    self.wait_finish()
+        if self.plot_data is None:
+            self.plot_data = self.plot_planner.gen()
+        self._plotplanner_process()
+
     def plot(self, plot):
         """
         Gives the driver cutcode that should be plotted/performed.
@@ -679,7 +732,7 @@ class LihuiyuDriver(Parameters):
             self.plot_start()
             self.rapid_mode()
             start = plot.start
-            self.move_abs(start[0], start[1])
+            self._move_absolute(start[0], start[1])
             self.wait_finish()
             self.dwell(plot.dwell_time)
         elif isinstance(plot, WaitCut):
@@ -722,6 +775,9 @@ class LihuiyuDriver(Parameters):
         @param time_in_ms:
         @return:
         """
+        self.wait_finish()
+        while self.hold_work(0):
+            time.sleep(0.05)
         time.sleep(time_in_ms / 1000.0)
 
     def wait_finish(self, *values):
@@ -736,7 +792,9 @@ class LihuiyuDriver(Parameters):
 
         def temp_hold():
             try:
-                return len(self.out_pipe) != 0
+                return (
+                    len(self.out_pipe) != 0 or self.service.controller.state == "wait"
+                )
             except TypeError:
                 return False
 
@@ -749,6 +807,9 @@ class LihuiyuDriver(Parameters):
         @param function:
         @return:
         """
+        self.wait_finish()
+        while self.hold_work(0):
+            time.sleep(0.05)
         function()
 
     def beep(self):
@@ -757,6 +818,9 @@ class LihuiyuDriver(Parameters):
 
         @return:
         """
+        self.wait_finish()
+        while self.hold_work(0):
+            time.sleep(0.05)
         self.service("beep\n")
 
     def console(self, value):
@@ -766,6 +830,9 @@ class LihuiyuDriver(Parameters):
         @param value: console command
         @return:
         """
+        self.wait_finish()
+        while self.hold_work(0):
+            time.sleep(0.05)
         self.service(value)
 
     def signal(self, signal, *args):
@@ -776,6 +843,9 @@ class LihuiyuDriver(Parameters):
         @param args:
         @return:
         """
+        self.wait_finish()
+        while self.hold_work(0):
+            time.sleep(0.05)
         self.service.signal(signal, *args)
 
     ######################

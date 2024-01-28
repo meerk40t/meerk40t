@@ -58,6 +58,12 @@ and a wxpython version <= 4.1.1."""
     if not kernel.has_feature("wx"):
         return
     if lifecycle == "preregister":
+        # lc = kernel_root.setting(str, "i18n", "en")
+        # kernel.set_language(lc)
+        # from ..kernel import _
+        # import wx
+        # wx.GetTranslation = _
+
         from meerk40t.gui.fonts import wxfont_to_svg
         from meerk40t.gui.laserrender import LaserRender
         from meerk40t.gui.wxmeerk40t import wxMeerK40t
@@ -70,7 +76,6 @@ and a wxpython version <= 4.1.1."""
         kernel_root.register("render-op/make_raster", renderer.make_raster)
         kernel_root.register("font/wx_to_svg", wxfont_to_svg)
     if lifecycle == "register":
-
         from meerk40t.gui.guicolors import GuiColors
 
         kernel.add_service("colors", GuiColors(kernel))
@@ -78,6 +83,10 @@ and a wxpython version <= 4.1.1."""
         from meerk40t.gui.scene.scene import Scene
 
         kernel.register("module/Scene", Scene)
+
+        from meerk40t.gui.themes import Themes
+
+        kernel.add_service("themes", Themes(kernel))
 
     elif lifecycle == "boot":
         kernel_root = kernel.root
@@ -172,6 +181,7 @@ and a wxpython version <= 4.1.1."""
                 ),
                 "page": "Gui",
                 "section": "General",
+                "signals": "restart",
             },
             {
                 "attr": "disable_tree_tool_tips",
@@ -303,8 +313,23 @@ and a wxpython version <= 4.1.1."""
 
         if kernel._gui:
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
+
+            @kernel.console_command(
+                ("quit", "shutdown"), help=_("shuts down the gui and exits")
+            )
+            def shutdown(**kwargs):
+                try:
+                    meerk40tgui.TopWindow.Close()
+                except AttributeError:
+                    pass
+
+            if kernel.args.simpleui:
+                kernel.console("window open SimpleUI\n")
+                meerk40tgui.MainLoop()
+                return
+
             kernel.console("window open MeerK40t\n")
-            for window in kernel.derivable("window"):
+            for window in kernel.section_startswith("window/"):
                 wsplit = window.split(":")
                 window_name = wsplit[0]
                 window_index = wsplit[-1] if len(wsplit) > 1 else None

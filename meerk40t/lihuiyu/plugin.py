@@ -21,6 +21,7 @@ def plugin(kernel, lifecycle=None):
             return True
     if lifecycle == "register":
         kernel.register("provider/device/lhystudios", LihuiyuDevice)
+        kernel.register("provider/friendly/lhystudios", ("CO2-Laser (K40)", 1))
         _ = kernel.translation
         kernel.register(
             "dev_info/m2-nano",
@@ -97,6 +98,6 @@ def plugin(kernel, lifecycle=None):
         except ImportError:
             pass
     if lifecycle == "preboot":
-        suffix = "lhystudios"
-        for d in kernel.derivable(suffix):
-            kernel.root(f"service device start -p {d} {suffix}\n")
+        prefix = "lhystudios"
+        for d in kernel.section_startswith(prefix):
+            kernel.root(f"service device start -p {d} {prefix}\n")

@@ -12,7 +12,7 @@ class PointTool(ToolWidget):
     Adds points with clicks.
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, mode=None):
         ToolWidget.__init__(self, scene)
 
     def process_draw(self, gc: wx.GraphicsContext):
@@ -30,7 +30,10 @@ class PointTool(ToolWidget):
         response = RESPONSE_CHAIN
         if event_type == "leftclick":
             if nearest_snap is None:
-                point = Point(space_pos[0], space_pos[1])
+                sx, sy = self.scene.get_snap_point(
+                    space_pos[0], space_pos[1], modifiers
+                )
+                point = Point(sx, sy)
             else:
                 point = Point(nearest_snap[0], nearest_snap[1])
             elements = self.scene.context.elements

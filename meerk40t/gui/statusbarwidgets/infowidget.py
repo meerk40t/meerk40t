@@ -8,7 +8,7 @@ from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH, Length
-from meerk40t.gui.icons import icons8_up_50
+from meerk40t.gui.icons import icons8_up
 from meerk40t.gui.statusbarwidgets.statusbarwidget import StatusBarWidget
 from meerk40t.svgelements import Color
 
@@ -47,7 +47,7 @@ class SimpleInfoWidget(StatusBarWidget):
         self.btn_next = wx.StaticBitmap(
             self.parent,
             id=wx.ID_ANY,
-            bitmap=icons8_up_50.GetBitmap(resize=20),
+            bitmap=icons8_up.GetBitmap(resize=20),
             size=wx.Size(20, 20),
             style=wx.BORDER_RAISED,
         )
@@ -190,6 +190,8 @@ class InformationWidget(SimpleInfoWidget):
                 bounds = Node.union_bounds(data)
             width = bounds[2] - bounds[0]
             height = bounds[3] - bounds[1]
+            if isinf(width) or isinf(height):
+                return float("inf"), float("inf")
             new_width = int(width * dots_per_units)
             new_height = int(height * dots_per_units)
             # print(f"Width: {width:.0f} -> {new_width}")
@@ -250,7 +252,7 @@ class InformationWidget(SimpleInfoWidget):
                 ct += 1
                 if hasattr(e, "as_path"):
                     path = e.as_path()
-                    this_length = path.length()
+                    this_length = path.length(error=1e-2)
                 else:
                     this_length = 0
                 total_length += this_length

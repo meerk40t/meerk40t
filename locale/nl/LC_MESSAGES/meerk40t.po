@@ -1408,7 +1408,7 @@ msgstr ""
 #: meerk40t/core/planner.py:194
 msgid ""
 "Try to complete a set of inner burns and the associated outer cut before "
-"moving onto other elements.This option only does something if Burn Inner "
+"moving onto other elements.\nThis option only does something if Burn Inner "
 "First is also selected. If your design has multiple separate pieces on "
 "it, this should mostly cause each piece to be burned in entirety before "
 "moving on to burn another piece. This can reduce the risk of e.g. a shift"
@@ -2104,17 +2104,22 @@ msgid "return paths around image"
 msgstr "paden rond afbeelding terug"
 
 #: meerk40t/extra/updater.py:21
+msgid  "A new {type} release is available ({system}):"
+msgstr ""
+
 msgid ""
-"A new {type} release is available:\n"
 "Version: {name} v{version} ({label})\n"
 "Url: {url}"
 msgstr ""
 
 #: meerk40t/extra/updater.py:26
+msgid "You seem to have the latest {system} version."
+msgstr ""
+
 msgid ""
-"You seem to have the latest version.\n"
 "Latest version on github: {name} v{version} ({label})\n"
-"Url: {url}"
+"Url: {url}\n"
+"Info: {info}"
 msgstr ""
 
 #: meerk40t/extra/updater.py:30
@@ -3003,7 +3008,7 @@ msgid "Run the commands to make these operations valid."
 msgstr "Voer de opdrachten uit om deze bewerkingen geldig te maken."
 
 #: meerk40t/gui/executejob.py:232
-msgid "Create Lasercode"
+msgid "Convert data"
 msgstr ""
 
 #: meerk40t/gui/executejob.py:234
@@ -3631,7 +3636,7 @@ msgid "If you continue to move to the center, then the laserhead might"
 msgstr ""
 
 #: meerk40t/gui/lasertoolpanel.py:629
-msgid "slam into the walls and get damaged! Do you really want to proeed?"
+msgid "slam into the walls and get damaged! Do you really want to proceed?"
 msgstr ""
 
 #: meerk40t/gui/lasertoolpanel.py:632
@@ -4652,7 +4657,7 @@ msgid "Export"
 msgstr ""
 
 #: meerk40t/gui/preferences.py:144
-msgid "Export the the current settings to a different location"
+msgid "Export the current settings to a different location"
 msgstr ""
 
 #: meerk40t/gui/preferences.py:147
@@ -4673,7 +4678,7 @@ msgid "Info"
 msgstr ""
 
 #: meerk40t/gui/preferences.py:177
-msgid "This will import a previosuly saved configuration file!"
+msgid "This will import a previously saved configuration file!"
 msgstr ""
 
 #: meerk40t/gui/preferences.py:179
@@ -4683,7 +4688,7 @@ msgid ""
 msgstr ""
 
 #: meerk40t/gui/preferences.py:184
-msgid "You do this at you own risk - are you realy sure?"
+msgid "You do this at you own risk - are you really sure?"
 msgstr ""
 
 #: meerk40t/balormk/gui/balorconfig.py:53
@@ -4818,7 +4823,7 @@ msgid "Insert '{operation}' before"
 msgstr ""
 
 #: meerk40t/gui/simulation.py:502 meerk40t/gui/simulation.py:817
-msgid "Inserts this special operation before the current cutplan entrys"
+msgid "Inserts this special operation before the current cutplan entry"
 msgstr ""
 
 #: meerk40t/gui/simulation.py:514 meerk40t/gui/simulation.py:829
@@ -8924,7 +8929,7 @@ msgid "Raster Power"
 msgstr ""
 
 #: meerk40t/newly/device.py:411
-msgid "How what power level do we raster at?"
+msgid "At what power level we raster at?"
 msgstr ""
 
 #: meerk40t/newly/device.py:420
@@ -10940,7 +10945,7 @@ msgid "Load"
 msgstr ""
 
 #: meerk40t/core/elements/element_treeops.py:1353
-msgid "Other/Blue/Red"
+msgid "Minimal"
 msgstr "Ander/Blauw/Rood"
 
 #: meerk40t/core/elements/element_treeops.py:1359
@@ -11070,7 +11075,7 @@ msgid "X-Coordinate for placement to append?"
 msgstr ""
 
 #: meerk40t/core/elements/element_treeops.py:1541
-msgid "Append Placement"
+msgid "Append absolute placement"
 msgstr ""
 
 #: meerk40t/core/elements/element_treeops.py:1553
@@ -12760,7 +12765,7 @@ msgstr "Verbindingsstatus"
 #: meerk40t/grbl/gui/tcpcontroller.py:70
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:228
 #: meerk40t/lihuiyu/gui/tcpcontroller.py:73
-msgid "IP/Host if the server computer"
+msgid "IP/hostname of the server computer"
 msgstr "IP/Host van de servercomputer"
 
 #: meerk40t/grbl/gui/tcpcontroller.py:71
@@ -13301,8 +13306,8 @@ msgid "Speed (mm/s)"
 msgstr "Snelheid (mm/s)"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:415
-msgid "Speed at which the head moves in mm/s."
-msgstr "Snelheid waarmee de kop beweegt in mm/s."
+msgid "Speed at which the head moves in {unit}"
+msgstr "Snelheid waarmee de kop beweegt in {unit}."
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:417
 msgid ""
@@ -14325,7 +14330,7 @@ msgid "Smooth"
 msgstr ""
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:235
-msgid "Convert all lines into curves and smoothen"
+msgid "Convert all lines into smooth curves"
 msgstr ""
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:237
@@ -14582,7 +14587,7 @@ msgid "Byte 5"
 msgstr "Byte 5"
 
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:345
-msgid "Connect Failed"
+msgid "Connect failed"
 msgstr "Verbinding mislukt"
 
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:353

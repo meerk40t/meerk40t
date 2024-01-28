@@ -4,9 +4,9 @@ from meerk40t.device.gui.defaultactions import DefaultActionPanel
 from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
-from meerk40t.gui.icons import icons8_administrative_tools_50
+from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -16,7 +16,6 @@ FIX_SPEEDS_RATIO = 0.9195
 
 class ConfigurationUsb(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
-
         # begin wxGlade: ConfigurationUsb.__init__
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
@@ -43,7 +42,7 @@ class ConfigurationUsb(wx.Panel):
         sizer_chip_version.Add(self.text_device_version, 1, wx.EXPAND, 0)
 
         self.spin_device_version = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=100)
-        self.spin_device_version.SetMinSize((40, -1))
+        self.spin_device_version.SetMinSize(dip_size(self, 40, -1))
         self.spin_device_version.SetToolTip(
             _(
                 "Optional: Distinguish between different lasers using the match criteria below.\n-1 match anything. 0+ match exactly that value."
@@ -60,7 +59,7 @@ class ConfigurationUsb(wx.Panel):
         sizer_device_index.Add(self.text_device_index, 1, wx.EXPAND, 0)
 
         self.spin_device_index = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=5)
-        self.spin_device_index.SetMinSize((40, -1))
+        self.spin_device_index.SetMinSize(dip_size(self, 40, -1))
         self.spin_device_index.SetToolTip(
             _(
                 "Optional: Distinguish between different lasers using the match criteria below.\n-1 match anything. 0+ match exactly that value."
@@ -82,7 +81,7 @@ class ConfigurationUsb(wx.Panel):
         self.text_serial_number = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         )
-        self.text_serial_number.SetMinSize((50, -1))
+        self.text_serial_number.SetMinSize(dip_size(self, 50, -1))
         self.text_serial_number.SetToolTip(
             _(
                 "Board Serial Number to be used to identify a specific laser. If the device fails to match the serial number it will be disconnected."
@@ -119,7 +118,7 @@ class ConfigurationUsb(wx.Panel):
             self, wx.ID_ANY, "1500", min=1, max=1000000
         )
         self.spin_packet_buffer_max.SetToolTip(_("Current maximum write buffer limit."))
-        self.spin_packet_buffer_max.SetMaxSize((100, -1))
+        self.spin_packet_buffer_max.SetMaxSize(dip_size(self, 100, -1))
         sizer_buffer.Add(self.spin_packet_buffer_max, 1, wx.EXPAND, 0)
 
         self.SetSizer(sizer_usb_settings)
@@ -223,8 +222,8 @@ class ConfigurationTcp(wx.Panel):
         sizer_13.Add(h_sizer_y1, 3, wx.EXPAND, 0)
 
         self.text_address = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
-        self.text_address.SetMinSize((75, -1))
-        self.text_address.SetToolTip(_("IP/Host if the server computer"))
+        self.text_address.SetMinSize(dip_size(self, 75, -1))
+        self.text_address.SetToolTip(_("IP/hostname of the server computer"))
         h_sizer_y1.Add(self.text_address, 1, wx.EXPAND, 0)
 
         sizer_port = StaticBoxSizer(self, wx.ID_ANY, _("Port"), wx.VERTICAL)
@@ -369,10 +368,10 @@ class ConfigurationInterfacePanel(ScrolledPanel):
 
 class LihuiyuDriverGui(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(330, 630, *args, **kwds)
+        super().__init__(550, 700, *args, **kwds)
         self.context = self.context.device
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_administrative_tools.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Lihuiyu-Configuration"))
 
@@ -385,6 +384,7 @@ class LihuiyuDriverGui(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.panels = []
         panel_config = ChoicePropertyPanel(
             self.notebook_main,
@@ -406,14 +406,10 @@ class LihuiyuDriverGui(MWindow):
         panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
         panel_format = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
-        panel_rotary = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="rotary"
-        )
 
         self.panels.append(panel_config)
         self.panels.append(panel_interface)
         self.panels.append(panel_setup)
-        self.panels.append(panel_rotary)
         self.panels.append(panel_warn)
         self.panels.append(panel_actions)
         self.panels.append(panel_format)
@@ -421,12 +417,12 @@ class LihuiyuDriverGui(MWindow):
         self.notebook_main.AddPage(panel_config, _("Configuration"))
         self.notebook_main.AddPage(panel_interface, _("Interface"))
         self.notebook_main.AddPage(panel_setup, _("Setup"))
-        self.notebook_main.AddPage(panel_rotary, _("Rotary"))
         self.notebook_main.AddPage(panel_warn, _("Warning"))
         self.notebook_main.AddPage(panel_actions, _("Default Actions"))
         self.notebook_main.AddPage(panel_format, _("Display Options"))
 
         self.Layout()
+        self.restore_aspect(honor_initial_values=True)
 
         for panel in self.panels:
             self.add_module_delegate(panel)

@@ -3,7 +3,7 @@ from copy import deepcopy
 import wx
 
 from meerk40t.core.node.elem_image import ImageNode
-from meerk40t.gui.wxutils import StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 
 _ = wx.GetTranslation
 
@@ -14,7 +14,7 @@ class ContrastPanel(wx.Panel):
 
     @staticmethod
     def accepts(node):
-        if node.type != "elem image":
+        if not hasattr(node, "as_image"):
             return False
         for n in node.operations:
             if n.get("name") == "contrast":
@@ -154,7 +154,7 @@ class HalftonePanel(wx.Panel):
 
     @staticmethod
     def accepts(node):
-        if node.type != "elem image":
+        if not hasattr(node, "as_image"):
             return False
         for n in node.operations:
             if n.get("name") == "halftone":
@@ -335,7 +335,7 @@ class ToneCurvePanel(wx.Panel):
 
     @staticmethod
     def accepts(node):
-        if node.type != "elem image":
+        if not hasattr(node, "as_image"):
             return False
         for n in node.operations:
             if n.get("name") == "tone":
@@ -397,8 +397,8 @@ class ToneCurvePanel(wx.Panel):
         self.check_enable_tone.SetToolTip(_("Enable Tone Curve"))
         self.check_enable_tone.SetValue(1)
         self.button_reset_tone.SetToolTip(_("Reset Tone Curve"))
-        self.curve_panel.SetMinSize((256, 256))
-        self.curve_panel.SetMaxSize((256, 256))
+        self.curve_panel.SetMinSize(dip_size(self, 256, 256))
+        self.curve_panel.SetMaxSize(dip_size(self, 256, 256))
         # end wxGlade
 
     def __do_layout(self):
@@ -517,7 +517,7 @@ class SharpenPanel(wx.Panel):
 
     @staticmethod
     def accepts(node):
-        if node.type != "elem image":
+        if not hasattr(node, "as_image"):
             return False
         if node.operations is None:
             node.operations = list()
@@ -702,7 +702,7 @@ class GammaPanel(wx.Panel):
 
     @staticmethod
     def accepts(node):
-        if node.type != "elem image":
+        if not hasattr(node, "as_image"):
             return False
         for n in node.operations:
             if n.get("name") == "gamma":
@@ -802,7 +802,7 @@ class EdgePanel(wx.Panel):
 
     @staticmethod
     def accepts(node):
-        if node.type != "elem image":
+        if not hasattr(node, "as_image"):
             return False
         for n in node.operations:
             if n.get("name") == "edge_enhance":
@@ -860,7 +860,7 @@ class AutoContrastPanel(wx.Panel):
 
     @staticmethod
     def accepts(node):
-        if node.type != "elem image":
+        if not hasattr(node, "as_image"):
             return False
         for n in node.operations:
             if n.get("name") == "auto_contrast":

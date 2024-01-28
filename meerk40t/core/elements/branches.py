@@ -5,18 +5,18 @@ This is a giant list of console commands that deal with and often implement the 
 import re
 from copy import copy
 
+from meerk40t.core.node.effect_hatch import HatchEffectNode
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
-from meerk40t.core.node.op_hatch import HatchOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.node.util_input import InputOperation
 from meerk40t.core.node.util_output import OutputOperation
 from meerk40t.core.node.util_wait import WaitOperation
-from meerk40t.core.units import Length
+from meerk40t.core.units import Angle, Length
 from meerk40t.kernel import CommandSyntaxError
-from meerk40t.svgelements import Angle, Color, Matrix
+from meerk40t.svgelements import Color, Matrix
 
 
 def plugin(kernel, lifecycle=None):
@@ -541,13 +541,9 @@ def init_commands(kernel):
             elif command == "dots":
                 return DotsOpNode()
             elif command == "hatch":
-                return HatchOpNode()
-            elif command == "waitop":
-                return WaitOperation()
-            elif command == "outputop":
-                return OutputOperation()
-            elif command == "inputop":
-                return InputOperation()
+                parent_node = EngraveOpNode()
+                parent_node.add_node(HatchEffectNode())
+                return parent_node
             else:
                 raise ValueError
 
@@ -670,6 +666,33 @@ def init_commands(kernel):
             op = self.op_branch.add(
                 type="util output", output_mask=mask, output_value=value
             )
+        return "ops", [op]
+
+    @self.console_argument(
+        "x",
+        type=Length,
+        default=0,
+        help=_("X-Coordinate of Goto?"),
+    )
+    @self.console_argument(
+        "y",
+        type=Length,
+        default=0,
+        help=_("Y-Coordinate of Goto?"),
+    )
+    @self.console_command(
+        "gotoop",
+        help=_("<gotoop> <x> <y> - Create new utility operation"),
+        input_type=None,
+        output_type="ops",
+    )
+    def gotoop(
+        command,
+        x=0,
+        y=0,
+        **kwargs,
+    ):
+        op = self.op_branch.add(type="util goto", x=str(x), y=str(y))
         return "ops", [op]
 
     @self.console_command(
@@ -993,22 +1016,20 @@ def init_commands(kernel):
             op.updated()
         return "ops", data
 
-    @self.console_argument(
-        "angle", type=Angle.parse, help=_("Set hatch-angle of operations")
-    )
+    @self.console_argument("angle", type=Angle, help=_("Set hatch-angle of operations"))
     @self.console_option(
         "difference",
         "d",
         type=bool,
         action="store_true",
-        help=_("Change hatch-distance by this amount."),
+        help=_("Change hatch-angle by this amount."),
     )
     @self.console_option(
         "progress",
         "p",
         type=bool,
         action="store_true",
-        help=_("Change hatch-distance for each item in order"),
+        help=_("Change hatch-angle for each item in order"),
     )
     @self.console_command(
         "hatch-angle",
@@ -1028,8 +1049,8 @@ def init_commands(kernel):
     ):
         if angle is None:
             for op in data:
-                old = f"{Angle.parse(op.hatch_angle).as_turns:.4f}turn"
-                old_hatch_angle_deg = f"{Angle.parse(op.hatch_angle).as_degrees:.4f}deg"
+                old = Angle(op.hatch_angle, digits=4).angle_turns
+                old_hatch_angle_deg = Angle(op.hatch_angle, digits=4).angle_degrees
                 channel(
                     _(
                         "Hatch Angle for '{name}' is currently: {angle} ({angle_degree})"
@@ -1038,7 +1059,11 @@ def init_commands(kernel):
             return
         delta = 0
         for op in data:
-            old = Angle.parse(op.hatch_angle)
+            try:
+                old = Angle(op.hatch_angle)
+            except AttributeError:
+                # Console-Op or other non-angled op.
+                continue
             if progress:
                 s = old + delta
                 delta += angle
@@ -1046,17 +1071,17 @@ def init_commands(kernel):
                 s = old + angle
             else:
                 s = angle
-            s = Angle.radians(float(s))
-            op.hatch_angle = f"{s.as_turns}turn"
-            new_hatch_angle_turn = f"{s.as_turns:.4f}turn"
-            new_hatch_angle_deg = f"{s.as_degrees:.4f}deg"
+            s = Angle.from_radians(float(s))
+            op.hatch_angle = s.angle_turns
+            new_hatch_angle_turn = s.angle_turns
+            new_hatch_angle_deg = s.angle_degrees
 
             channel(
                 _(
                     "Hatch Angle for '{name}' updated {old_angle} -> {angle} ({angle_degree})"
                 ).format(
                     name=str(op),
-                    old_angle=f"{old.as_turns:.4f}turn",
+                    old_angle=old.angle_turns,
                     angle=new_hatch_angle_turn,
                     angle_degree=new_hatch_angle_deg,
                 )
@@ -1205,6 +1230,7 @@ def init_commands(kernel):
                 self.remove_elements(data)
             else:
                 self.remove_operations(data)
+        self.signal("update_group_labels")
 
     # ==========
     # ELEMENT BASE
@@ -1489,6 +1515,7 @@ def init_commands(kernel):
 
             try:
                 geometry = node.as_geometry()
+                geometry.ensure_proper_subpaths()
             except AttributeError:
                 continue
 

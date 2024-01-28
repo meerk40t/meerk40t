@@ -805,6 +805,8 @@ class VectorMontonizer:
 
         @return:
         """
+        if len(self._events) == 0:
+            return None, None
         self._sort_events()
         y_min = self._events[0][0]
         y_max = self._events[-1][0]

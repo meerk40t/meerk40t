@@ -3,7 +3,7 @@ import wx
 from meerk40t.kernel import signal_listener
 
 from .choicepropertypanel import ChoicePropertyPanel
-from .icons import STD_ICON_SIZE, icons8_laser_beam_52
+from .icons import get_default_icon_size, icons8_laser_beam
 from .mwindow import MWindow
 from .wxutils import disable_window
 
@@ -83,7 +83,9 @@ class PlannerPanel(wx.Panel):
             )
         )
         self.button_start.SetForegroundColour(wx.BLACK)
-        self.button_start.SetBitmap(icons8_laser_beam_52.GetBitmap())
+        self.button_start.SetBitmap(
+            icons8_laser_beam.GetBitmap(resize=get_default_icon_size())
+        )
         # end wxGlade
 
     def __do_layout(self):
@@ -182,8 +184,6 @@ class PlannerPanel(wx.Panel):
         self.update_gui()
 
     def pane_show(self):
-        # self.context.setting(bool, "opt_rasters_split", True)
-        # TODO: OPT_RASTER_SPLIT
         cutplan = self.context.planner.default_plan
         self.Children[0].SetFocus()
         if len(cutplan.plan) == 0 and len(cutplan.commands) == 0:
@@ -240,7 +240,7 @@ class PlannerPanel(wx.Panel):
                 _("Run the commands to make these operations valid.")
             )
         elif self.stage == 3:
-            self.button_start.SetLabelText(_("Create Lasercode"))
+            self.button_start.SetLabelText(_("Convert data"))
             self.button_start.SetBackgroundColour(wx.Colour(102, 102, 255))
             self.button_start.SetToolTip(_("Turn this set of operations into Cutcode"))
         elif self.stage == 4:
@@ -272,24 +272,27 @@ class ExecuteJob(MWindow):
             self, wx.ID_ANY, context=self.context, plan_name=plan_name
         )
         # self.add_module_delegate(self.panel)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
+        _icon.CopyFromBitmap(icons8_laser_beam.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Execute Job"))
+        self.restore_aspect()
 
     @staticmethod
     def sub_register(kernel):
-        kernel.register(
-            "button/jobstart/ExecuteJob",
-            {
-                "label": _("Execute Job"),
-                "icon": icons8_laser_beam_52,
-                "tip": _("Execute the current laser project"),
-                "action": lambda v: kernel.console("window toggle ExecuteJob 0\n"),
-                "size": STD_ICON_SIZE,
-                "priority": 2,
-            },
-        )
+        pass
+        # kernel.register(
+        #     "button/jobstart/ExecuteJob",
+        #     {
+        #         "label": _("Execute Job"),
+        #         "icon": icons8_laser_beam,
+        #         "tip": _("Execute the current laser project"),
+        #         "action": lambda v: kernel.console("window toggle ExecuteJob 0\n"),
+        #         "size": STD_ICON_SIZE,
+        #         "priority": 2,
+        #     },
+        # )
 
     def delegates(self):
         yield self.panel

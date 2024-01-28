@@ -9,7 +9,7 @@ import time
 
 import numpy as np
 
-from meerk40t.core.units import UNITS_PER_PIXEL
+from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.svgelements import Matrix
 from meerk40t.tools.geomstr import Geomstr
 
@@ -105,17 +105,19 @@ class ElementLightJob:
         con._goto_speed = self.service.redlight_speed
         con.light_mode()
 
-        x_offset = self.service.length(
-            self.service.redlight_offset_x,
-            axis=0,
-            as_float=True,
-            unitless=UNITS_PER_PIXEL,
+        x_offset = float(
+            Length(
+                self.service.redlight_offset_x,
+                relative_length=self.service.view.width,
+                unitless=UNITS_PER_PIXEL,
+            )
         )
-        y_offset = self.service.length(
-            self.service.redlight_offset_y,
-            axis=1,
-            as_float=True,
-            unitless=UNITS_PER_PIXEL,
+        y_offset = float(
+            Length(
+                self.service.redlight_offset_y,
+                relative_length=self.service.view.height,
+                unitless=UNITS_PER_PIXEL,
+            )
         )
         delay_dark = self.jump_delay
 
@@ -128,12 +130,12 @@ class ElementLightJob:
         geometry = Geomstr(self.geometry)
 
         # Move to device space.
-        geometry.transform(self.service.scene_to_device_matrix())
+        geometry.transform(self.service.view.matrix)
 
         # Add redlight adjustments within device space.
         geometry.transform(rotate)
 
-        points = list(geometry.as_interpolated_points(interpolate=quantization))
+        points = list(geometry.as_equal_interpolated_points(distance=quantization))
         move = True
         for i, e in enumerate(points):
             if self.stopped:

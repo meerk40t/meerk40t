@@ -1,6 +1,6 @@
 import wx
 
-from meerk40t.gui.icons import icons8_next_page_20
+from meerk40t.gui.icons import icons8_circled_right
 
 
 class CustomStatusBar(wx.StatusBar):
@@ -24,6 +24,7 @@ class CustomStatusBar(wx.StatusBar):
         self.widgets = {}
         self.activesizer = [None] * self.panelct
         self.nextbuttons = []
+        btn_size = 22
         for __ in range(self.panelct):
             # Linux wxPython has a fundamental flaw in the treatment of
             # small bitmap buttons. It reserves an extent around the
@@ -32,12 +33,12 @@ class CustomStatusBar(wx.StatusBar):
             btn = wx.StaticBitmap(
                 self,
                 id=wx.ID_ANY,
-                bitmap=icons8_next_page_20.GetBitmap(noadjustment=True),
-                size=wx.Size(20, self.MinHeight),
+                bitmap=icons8_circled_right.GetBitmap(resize=btn_size, buffer=1),
+                size=wx.Size(btn_size, btn_size),
                 # style=wx.BORDER_RAISED,
             )
             # btn.SetBackgroundColour(wx.RED)
-            # btn.SetBitmap(icons8_next_page_20.GetBitmap(noadjustment=True, color=Color("red")))
+            # btn.SetBitmap(icons8_circled_right.GetBitmap(noadjustment=True, color=Color("red")))
             btn.Show(False)
             btn.Bind(wx.EVT_LEFT_DOWN, self.on_button_next)
             btn.Bind(wx.EVT_RIGHT_DOWN, self.on_button_prev)
@@ -48,6 +49,11 @@ class CustomStatusBar(wx.StatusBar):
         # set the initial position of the checkboxes
         self.Reposition()
         self.startup = False
+
+    @property
+    def available_height(self):
+        sb_size = self.GetSize()
+        return sb_size[1]
 
     def Clear(self):
         """
@@ -81,7 +87,7 @@ class CustomStatusBar(wx.StatusBar):
         widget.active = visible
         self.widgets[identifier] = widget
 
-    def activate_panel(self, identifier, newflag):
+    def activate_panel(self, identifier, newflag, force=False):
         # Activate Panel will make the indicated panel become choosable
         # print ("Activate Panel: %s -> %s" % (identifier, newflag))
         try:
@@ -93,7 +99,7 @@ class CustomStatusBar(wx.StatusBar):
 
             # Choosable
             self.widgets[identifier].active = newflag
-            if newflag and self.activesizer[panelidx] is None:
+            if newflag and (self.activesizer[panelidx] is None or force):
                 self.activesizer[panelidx] = identifier
             elif not newflag and self.activesizer[panelidx] == identifier:
                 # Was the active one, so look for an alternative

@@ -1,13 +1,13 @@
 import wx
 
 from meerk40t.gui.icons import (
-    icons8_computer_support_50,
-    icons8_diagonal_20,
-    icons8_direction_20,
-    icons8_image_20,
-    icons8_laser_beam_20,
-    icons8_scatter_plot_20,
-    icons8_small_beam_20,
+    icon_effect_hatch,
+    icon_points,
+    icons8_computer_support,
+    icons8_direction,
+    icons8_image,
+    icons8_laser_beam,
+    icons8_laserbeam_weak,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import ScrolledPanel
@@ -21,6 +21,7 @@ class OpInfoPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("operationinfo")
 
         self.list_operations = wx.ListCtrl(
             self,
@@ -62,12 +63,11 @@ class OpInfoPanel(ScrolledPanel):
         self.Layout()
 
         self.opinfo = {
-            "op cut": ("Cut", icons8_laser_beam_20, 0),
-            "op raster": ("Raster", icons8_direction_20, 0),
-            "op image": ("Image", icons8_image_20, 0),
-            "op engrave": ("Engrave", icons8_small_beam_20, 0),
-            "op dots": ("Dots", icons8_scatter_plot_20, 0),
-            "op hatch": ("Hatch", icons8_diagonal_20, 0),
+            "op cut": ("Cut", icons8_laser_beam, 0),
+            "op raster": ("Raster", icons8_direction, 0),
+            "op image": ("Image", icons8_image, 0),
+            "op engrave": ("Engrave", icons8_laserbeam_weak, 0),
+            "op dots": ("Dots", icon_points, 0),
         }
         self.state_images = wx.ImageList()
         self.state_images.Create(width=25, height=25)
@@ -130,6 +130,7 @@ class OpInfoPanel(ScrolledPanel):
             "elem rect": 0,
             "elem line": 0,
             "elem text": 0,
+            "image raster": 0,
         }
         elems = list(self.context.elements.elems())
         for node in elems:
@@ -283,11 +284,13 @@ class OperationInformation(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(551, 234, submenu="Operations", *args, **kwds)
         self.panel = OpInfoPanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_computer_support.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Operation Information"))
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

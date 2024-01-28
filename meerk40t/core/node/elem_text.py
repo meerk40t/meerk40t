@@ -2,7 +2,7 @@ import re
 from copy import copy
 from math import tau
 
-from meerk40t.core.node.mixins import Stroked
+from meerk40t.core.node.mixins import FunctionalParameter, Stroked
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_POINT, Length
 from meerk40t.svgelements import (
@@ -40,7 +40,7 @@ REGEX_CSS_FONT_FAMILY = re.compile(
 )
 
 
-class TextNode(Node, Stroked):
+class TextNode(Node, Stroked, FunctionalParameter):
     """
     TextNode is the bootstrapped node type for the 'elem text' type.
     """
@@ -185,10 +185,14 @@ class TextNode(Node, Stroked):
 
     def drop(self, drag_node, modify=True):
         # Dragging element into element.
-        if drag_node.type.startswith("elem"):
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             if modify:
                 self.insert_sibling(drag_node)
             return True
+        elif drag_node.type.startswith("op"):
+            # If we drag an operation to this node,
+            # then we will reverse the game
+            return drag_node.drop(self, modify=modify)
         return False
 
     def revalidate_points(self):

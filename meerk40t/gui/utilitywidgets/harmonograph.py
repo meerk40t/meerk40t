@@ -152,9 +152,8 @@ class HShape:
 
 class HarmonographWidget(Widget):
     def __init__(self, scene):
-        bed_width, bed_height = scene.context.device.physical_to_scene_position(
-            "100%", "100%"
-        )
+        bed_width = scene.context.space.display.unit_width
+        bed_height = scene.context.space.display.unit_height
         x, y = bed_width / 2, bed_height / 2
         super().__init__(scene, x, y, x, y)
         self.tool_pen = wx.Pen()
@@ -179,7 +178,7 @@ class HarmonographWidget(Widget):
             size * -0.5,
             size * -1,
             size * 0.5,
-            icons.icons8_checkmark_50.GetBitmap(use_theme=False),
+            icons.icons8_checkmark.GetBitmap(use_theme=False),
             self.confirm,
         )
         accept_widget.background_brush = wx.WHITE_BRUSH
@@ -191,7 +190,7 @@ class HarmonographWidget(Widget):
             size * -2,
             size * 0.5,
             size * -1,
-            icons.icons8_next_page_20.GetBitmap(use_theme=False, resize=50),
+            icons.icons8_circled_right.GetBitmap(use_theme=False, resize=50),
             self.set_random_harmonograph,
         )
         random_widget.background_brush = wx.WHITE_BRUSH
@@ -203,7 +202,7 @@ class HarmonographWidget(Widget):
             size * -0.5,
             size * 2,
             size * 0.5,
-            icons.icons8_delete_50.GetBitmap(use_theme=False),
+            icons.icons8_delete.GetBitmap(use_theme=False),
             self.cancel,
         )
         remove_widget.background_brush = wx.WHITE_BRUSH
@@ -223,7 +222,7 @@ class HarmonographWidget(Widget):
             size * 1,
             size * 0,
             size * 2,
-            icons.icons8_rotate_left_50.GetBitmap(use_theme=False),
+            icons.icons8_rotate_left.GetBitmap(use_theme=False),
             delta_theta,
         )
         rotation_widget.background_brush = wx.WHITE_BRUSH
@@ -242,7 +241,7 @@ class HarmonographWidget(Widget):
             size * 1,
             size * 1,
             size * 2,
-            icons.icons8_fantasy_50.GetBitmap(use_theme=False),
+            icons.icon_magic_wand.GetBitmap(use_theme=False),
             delta_step,
         )
         step_handle.background_brush = wx.WHITE_BRUSH
@@ -259,7 +258,7 @@ class HarmonographWidget(Widget):
             size * 2,
             size * 0,
             size * 3,
-            icons.icons8_roll_50.GetBitmap(use_theme=False),
+            icons.icon_rotary.GetBitmap(use_theme=False),
             delta_rotations,
         )
         rotate_widget.background_brush = wx.WHITE_BRUSH
@@ -278,7 +277,7 @@ class HarmonographWidget(Widget):
                 -1,
                 CurveWidget(
                     scene,
-                    icons.icons8_computer_support_50.GetBitmap(use_theme=False),
+                    icons.icons8_computer_support.GetBitmap(use_theme=False),
                     c,
                 ),
             )

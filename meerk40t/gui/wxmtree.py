@@ -6,54 +6,85 @@ from meerk40t.core.elements.element_types import op_nodes
 from ..core.units import Length
 from ..kernel import signal_listener
 from ..svgelements import Color
+from .basicops import BasicOpPanel
 from .icons import (
     get_default_scale_factor,
+    icon_bell,
+    icon_bmap_text,
+    icon_canvas,
+    icon_close_window,
+    icon_console,
+    icon_effect_hatch,
+    icon_effect_wobble,
+    icon_external,
+    icon_internal,
+    icon_line,
     icon_meerk40t,
-    icons8_bell_20,
-    icons8_canvas_20,
-    icons8_close_window_20,
-    icons8_diagonal_20,
-    icons8_direction_20,
-    icons8_file_20,
-    icons8_ghost_20,
-    icons8_group_objects_20,
-    icons8_home_20,
-    icons8_home_location_20,
-    icons8_image_20,
-    icons8_input_20,
-    icons8_journey_20,
-    icons8_laser_beam_20,
-    icons8_line_20,
-    icons8_lock_50,
-    icons8_output_20,
-    icons8_oval_20,
-    icons8_polyline_50,
-    icons8_prototype_20,
+    icon_mk_ellipse,
+    icon_mk_polyline,
+    icon_mk_rectangular,
+    icon_path,
+    icon_points,
+    icon_regmarks,
+    icon_return,
+    icon_round_stop,
+    icon_timer,
+    icon_tree,
+    icon_warning,
+    icons8_direction,
+    icons8_file,
+    icons8_ghost,
+    icons8_group_objects,
+    icons8_home_filled,
+    icons8_image,
+    icons8_laser_beam,
+    icons8_laserbeam_weak,
+    icons8_lock,
     icons8_r_white,
-    icons8_rectangular_20,
-    icons8_return_20,
-    icons8_scatter_plot_20,
-    icons8_small_beam_20,
-    icons8_smartphone_ram_50,
-    icons8_stop_gesture_20,
-    icons8_system_task_20,
-    icons8_timer_20,
-    icons8_type_50,
-    icons8_warning_shield_20,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
-from .wxutils import create_menu, get_key_name, is_navigation_key
+from .wxutils import (
+    StaticBoxSizer,
+    create_menu,
+    dip_size,
+    get_key_name,
+    is_navigation_key,
+)
 
 _ = wx.GetTranslation
 
 
 def register_panel_tree(window, context):
+    lastpage = context.root.setting(int, "tree_panel_page", 1)
+    if lastpage is None or lastpage < 0 or lastpage > 2:
+        lastpage = 0
+
+    def on_panel_change(context):
+        def handler(event):
+            mycontext.root.setting(int, "tree_panel_page", 0)
+            pagenum = notetab.GetSelection()
+            setattr(mycontext.root, "tree_panel_page", pagenum)
+            return
+
+        mycontext = context
+        return handler
+
+    notetab = wx.aui.AuiNotebook(
+        window,
+        wx.ID_ANY,
+        style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
+        | wx.aui.AUI_NB_SCROLL_BUTTONS
+        | wx.aui.AUI_NB_TAB_SPLIT
+        | wx.aui.AUI_NB_TAB_MOVE,
+    )
+
+    basic_op = BasicOpPanel(window, wx.ID_ANY, context=context)
     wxtree = TreePanel(window, wx.ID_ANY, context=context)
     pane = (
         aui.AuiPaneInfo()
         .Name("tree")
-        .Left()
+        .Right()
         .MinSize(200, 180)
         .BestSize(300, 270)
         .FloatingSize(300, 270)
@@ -64,8 +95,13 @@ def register_panel_tree(window, context):
         .CaptionVisible(not context.pane_lock)
         .TopDockable(False)
     )
+
+    notetab.AddPage(basic_op, _("Burn-Operation"))
+    notetab.AddPage(wxtree, _("Details"))
+    notetab.SetSelection(lastpage)
+    notetab.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, on_panel_change(context))
     pane.dock_proportion = 500
-    pane.control = wxtree
+    pane.control = notetab
     window.on_pane_create(pane)
     context.register("pane/tree", pane)
 
@@ -84,11 +120,22 @@ class TreePanel(wx.Panel):
             | wx.TR_HIDE_ROOT
             | wx.TR_LINES_AT_ROOT,
         )
-        if wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127:
+        # try:
+        #     res = wx.SystemSettings().GetAppearance().IsDark()
+        # except AttributeError:
+        #     res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        self.SetHelpText(
+            "tree"
+        )  # That will be used for all controls in this window, unless stated differently
+        res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        if res:
             self.wxtree.SetBackgroundColour(wx.Colour(50, 50, 50))
+
+        self.setup_warn_panel()
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         main_sizer.Add(self.wxtree, 1, wx.EXPAND, 0)
+        main_sizer.Add(self.warn_panel, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         self.__set_tree()
         self.wxtree.Bind(wx.EVT_KEY_UP, self.on_key_up)
@@ -96,6 +143,95 @@ class TreePanel(wx.Panel):
         self._keybind_channel = self.context.channel("keybinds")
 
         self.context.signal("rebuild_tree")
+
+    def setup_warn_panel(self):
+        def fix_unassigned_create(event):
+            previous = self.context.elements.classify_autogenerate
+            self.context.elements.classify_autogenerate = True
+            target_list = list(self.context.elements.unassigned_elements())
+            self.context.elements.classify(target_list)
+            self.context.elements.classify_autogenerate = previous
+            self.context.elements.signal("refresh_tree")
+
+        def fix_unassigned_used(event):
+            previous = self.context.elements.classify_autogenerate
+            self.context.elements.classify_autogenerate = False
+            target_list = list(self.context.elements.unassigned_elements())
+            self.context.elements.classify(target_list)
+            self.context.elements.classify_autogenerate = previous
+            self.context.elements.signal("refresh_tree")
+
+        def fix_unburnt(event):
+            for node in self.context.elements.elems():
+                will_be_burnt = False
+                first_op = None
+                for refnode in node._references:
+                    op = refnode.parent
+                    if op is not None:
+                        try:
+                            if op.output:
+                                will_be_burnt = True
+                                break
+                            else:
+                                if first_op is None:
+                                    first_op = op
+                        except AttributeError:
+                            pass
+                if not will_be_burnt and first_op is not None:
+                    try:
+                        first_op.output = True
+                        self.context.elements.signal(
+                            "element_property_update", first_op
+                        )
+                        self.context.elements.signal("warn_state_update")
+                    except AttributeError:
+                        pass
+
+        self.warn_panel = wx.BoxSizer(wx.HORIZONTAL)
+        unassigned_frame = StaticBoxSizer(self, wx.ID_ANY, "Unassigned", wx.HORIZONTAL)
+        unburnt_frame = StaticBoxSizer(self, wx.ID_ANY, "Non-burnt", wx.HORIZONTAL)
+        self.btn_fix_assign_create = wx.Button(self, wx.ID_ANY, "Assign (+new)")
+        self.btn_fix_assign_existing = wx.Button(self, wx.ID_ANY, "Assign")
+        self.btn_fix_unburnt = wx.Button(self, wx.ID_ANY, "Enable")
+        self.btn_fix_assign_create.SetToolTip(
+            _("Classify unassigned elements and create operations if necessary")
+        )
+        self.btn_fix_assign_existing.SetToolTip(
+            _("Classify unassigned elements and use only existing operations")
+        )
+        self.btn_fix_unburnt.SetToolTip(
+            _("Reactivate disabled operations that prevent elements from being burnt")
+        )
+
+        unassigned_frame.Add(self.btn_fix_assign_create, 0, wx.EXPAND, 0)
+        unassigned_frame.Add(self.btn_fix_assign_existing, 0, wx.EXPAND, 0)
+        unburnt_frame.Add(self.btn_fix_unburnt, 0, wx.EXPAND, 0)
+        self.warn_panel.Add(unassigned_frame, 1, wx.EXPAND, 0)
+        self.warn_panel.Add(unburnt_frame, 1, wx.EXPAND, 0)
+        self._last_issue = None
+        self.warn_panel.Show(False)
+        self.warn_panel.ShowItems(False)
+        self.Bind(wx.EVT_BUTTON, fix_unassigned_create, self.btn_fix_assign_create)
+        self.Bind(wx.EVT_BUTTON, fix_unassigned_used, self.btn_fix_assign_existing)
+        self.Bind(wx.EVT_BUTTON, fix_unburnt, self.btn_fix_unburnt)
+        # self.Show(False)
+
+    def check_for_issues(self):
+        non_assigned, non_burn = self.context.elements.have_unburnable_elements()
+        self.btn_fix_assign_create.Enable(non_assigned)
+        self.btn_fix_assign_existing.Enable(non_assigned)
+        self.btn_fix_unburnt.Enable(non_burn)
+        new_issue = non_assigned or non_burn
+        if self._last_issue == new_issue:
+            return
+        self._last_issue = new_issue
+        if new_issue:
+            self.warn_panel.Show(True)
+            self.warn_panel.ShowItems(True)
+        else:
+            self.warn_panel.Show(False)
+            self.warn_panel.ShowItems(False)
+        self.Layout()
 
     def __set_tree(self):
         self.shadow_tree = ShadowTree(
@@ -181,6 +317,16 @@ class TreePanel(wx.Panel):
     def pane_hide(self):
         pass
 
+    @signal_listener("warn_state_update")
+    def on_warn_state_update(self, origin, *args):
+        # Updates the warning state, using signal to avoid unnecessary calls
+        self.shadow_tree.update_warn_sign()
+        self.check_for_issues()
+
+    @signal_listener("update_group_labels")
+    def on_group_update(self, origin, *args):
+        self.shadow_tree.update_group_labels("signal")
+
     @signal_listener("select_emphasized_tree")
     def on_shadow_select_emphasized_tree(self, origin, *args):
         self.shadow_tree.select_in_tree_by_emphasis(origin, *args)
@@ -205,7 +351,12 @@ class TreePanel(wx.Panel):
         @return:
         """
         if self.shadow_tree is not None:
+            stop_updates = not self.shadow_tree._freeze
+            if stop_updates:
+                self.shadow_tree.freeze_tree(True)
             self.shadow_tree.on_element_update(*args)
+            if stop_updates:
+                self.shadow_tree.freeze_tree(False)
 
     @signal_listener("element_property_reload")
     def on_force_element_update(self, origin, *args):
@@ -217,9 +368,22 @@ class TreePanel(wx.Panel):
         @return:
         """
         if self.shadow_tree is not None:
+            stop_updates = not self.shadow_tree._freeze
+            if stop_updates:
+                self.shadow_tree.freeze_tree(True)
             self.shadow_tree.on_force_element_update(*args)
+            if stop_updates:
+                self.shadow_tree.freeze_tree(False)
 
     @signal_listener("activate;device")
+    def on_activate_device(self, origin, target=None, *args):
+        self.shadow_tree.reset_formatter_cache()
+        self.shadow_tree.refresh_tree(source="device")
+
+    @signal_listener("reset_formatter")
+    def on_reset_formatter(self, origin, target=None, *args):
+        self.shadow_tree.reset_formatter_cache()
+
     @signal_listener("rebuild_tree")
     def on_rebuild_tree_signal(self, origin, target=None, *args):
         """
@@ -249,7 +413,7 @@ class TreePanel(wx.Panel):
         #     self.shadow_tree.wxtree.Expand(startnode)
         # else:
         #     self.shadow_tree.rebuild_tree()
-        self.shadow_tree.rebuild_tree()
+        self.shadow_tree.rebuild_tree("signal")
 
     @signal_listener("refresh_tree")
     def on_refresh_tree_signal(self, origin, nodes=None, *args):
@@ -306,10 +470,25 @@ class TreePanel(wx.Panel):
 
     @signal_listener("updateop_tree")
     def on_update_op_labels_tree(self, origin, *args):
+        stop_updates = not self.shadow_tree._freeze
+        if stop_updates:
+            self.shadow_tree.freeze_tree(True)
         self.shadow_tree.update_op_labels()
         opitem = self.context.elements.get(type="branch ops")._item
+        if opitem is None:
+            return
         tree = self.shadow_tree.wxtree
         tree.Expand(opitem)
+        if stop_updates:
+            self.shadow_tree.freeze_tree(False)
+
+    @signal_listener("updateelem_tree")
+    def on_update_elem_tree(self, origin, *args):
+        elitem = self.context.elements.get(type="branch elems")._item
+        if elitem is None:
+            return
+        tree = self.shadow_tree.wxtree
+        tree.Expand(elitem)
 
 
 class ElementsTree(MWindow):
@@ -317,11 +496,13 @@ class ElementsTree(MWindow):
         super().__init__(423, 131, *args, **kwds)
 
         self.panel = TreePanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_smartphone_ram_50.GetBitmap())
+        _icon.CopyFromBitmap(icon_tree.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Tree"))
+        self.restore_aspect()
 
     def window_open(self):
         try:
@@ -354,50 +535,59 @@ class ShadowTree:
         self.tree_images = None
         self.name = "Project"
         self._freeze = False
-        self.iconsize = 20
+        testsize = dip_size(self, 20, 20)
+        self.iconsize = testsize[1]
         self.iconstates = {}
-        fact = get_default_scale_factor()
-        if fact > 1.0:
-            self.iconsize = int(self.iconsize * fact)
+        self.last_call = 0
+
+        # fact = get_default_scale_factor()
+        # if fact > 1.0:
+        #    self.iconsize = int(self.iconsize * fact)
 
         self.do_not_select = False
         self.was_already_expanded = []
         service.add_service_delegate(self)
         self.setup_state_images()
         self.default_images = {
-            "console home -f": icons8_home_20,
-            "console move_abs": icons8_return_20,
-            "console beep": icons8_bell_20,
-            "console interrupt": icons8_stop_gesture_20,
-            "console quit": icons8_close_window_20,
-            "util wait": icons8_timer_20,
-            "util home": icons8_home_20,
-            "util goto": icons8_return_20,
-            "util output": icons8_output_20,
-            "util input": icons8_input_20,
-            "util console": icons8_system_task_20,
-            "op engrave": icons8_small_beam_20,
-            "op cut": icons8_laser_beam_20,
-            "op image": icons8_image_20,
-            "op raster": icons8_direction_20,
-            "op hatch": icons8_diagonal_20,
-            "op dots": icons8_scatter_plot_20,
-            "place current": icons8_home_location_20,
-            "place point": icons8_home_location_20,
-            "elem point": icons8_scatter_plot_20,
-            "file": icons8_file_20,
-            "group": icons8_group_objects_20,
-            "elem rect": icons8_rectangular_20,
-            "elem ellipse": icons8_oval_20,
-            "elem image": icons8_image_20,
-            "elem path": icons8_journey_20,
-            "elem line": icons8_line_20,
-            "elem polyline": icons8_polyline_50,
-            "elem text": icons8_type_50,
+            "console home -f": icons8_home_filled,
+            "console move_abs": icon_return,
+            "console beep": icon_bell,
+            "console interrupt": icon_round_stop,
+            "console quit": icon_close_window,
+            "util wait": icon_timer,
+            "util home": icons8_home_filled,
+            "util goto": icon_return,
+            "util output": icon_external,
+            "util input": icon_internal,
+            "util console": icon_console,
+            "op engrave": icons8_laserbeam_weak,
+            "op cut": icons8_laser_beam,
+            "op image": icons8_image,
+            "op raster": icons8_direction,
+            "op dots": icon_points,
+            "effect hatch": icon_effect_hatch,
+            "effect wobble": icon_effect_wobble,
+            "effect warp": icon_effect_wobble,
+            "place current": icons8_home_filled,
+            "place point": icons8_home_filled,
+            "elem point": icon_points,
+            "file": icons8_file,
+            "group": icons8_group_objects,
+            "elem rect": icon_mk_rectangular,
+            "elem ellipse": icon_mk_ellipse,
+            "elem image": icons8_image,
+            "elem path": icon_path,
+            "elem line": icon_line,
+            "elem polyline": icon_mk_polyline,
+            "elem text": icon_bmap_text,
+            "image raster": icons8_image,
+            "blob": icons8_file,
         }
         self.image_cache = []
         self.cache_hits = 0
         self.cache_requests = 0
+        self.color_cache = dict()
+        self.formatter_cache = dict()
         self._too_big = False
         self.refresh_tree_counter = 0
         self._last_hover_item = None
@@ -412,23 +602,31 @@ class ShadowTree:
         self.state_images = wx.ImageList()
         self.iconstates = {}
         self.state_images.Create(width=self.iconsize, height=self.iconsize)
-        image = icons8_lock_50.GetBitmap(
-            resize=(self.iconsize, self.iconsize), noadjustment=True
+        image = icons8_lock.GetBitmap(
+            resize=(self.iconsize, self.iconsize),
+            noadjustment=True,
+            buffer=1,
         )
         image_id = self.state_images.Add(bitmap=image)
         self.iconstates["lock"] = image_id
         image = icons8_r_white.GetBitmap(
-            resize=(self.iconsize, self.iconsize), noadjustment=True
+            resize=(self.iconsize, self.iconsize),
+            noadjustment=True,
+            buffer=1,
         )
         image_id = self.state_images.Add(bitmap=image)
         self.iconstates["refobject"] = image_id
-        image = icons8_warning_shield_20.GetBitmap(
-            resize=(self.iconsize, self.iconsize), noadjustment=True
+        image = icon_warning.GetBitmap(
+            resize=(self.iconsize, self.iconsize),
+            noadjustment=True,
+            buffer=1,
         )
         image_id = self.state_images.Add(bitmap=image)
         self.iconstates["warning"] = image_id
-        image = icons8_ghost_20.GetBitmap(
-            resize=(self.iconsize, self.iconsize), noadjustment=True
+        image = icons8_ghost.GetBitmap(
+            resize=(self.iconsize, self.iconsize),
+            noadjustment=True,
+            buffer=1,
         )
         image_id = self.state_images.Add(bitmap=image)
         self.iconstates["ghost"] = image_id
@@ -455,6 +653,7 @@ class ShadowTree:
         if self._freeze or self.context.elements.suppress_updates:
             return
         self.elements.signal("modified")
+        self.elements.signal("warn_state_update")
 
     def node_detached(self, node, **kwargs):
         """
@@ -495,9 +694,10 @@ class ShadowTree:
     def check_validity(self, item):
         if item is None or not item.IsOk():
             # raise ValueError("Bad Item")
-            self.rebuild_tree()
+            self.rebuild_tree("validity")
             self.elements.signal("refresh_scene", "Scene")
-            return
+            return False
+        return True
 
     def selected(self, node):
         """
@@ -671,7 +871,11 @@ class ShadowTree:
         @param node:
         @return:
         """
+        if node is None:
+            return
         item = node._item
+        if item is None:
+            return
         self.check_validity(item)
         # Special treatment for branches, they only collapse fully,
         # if all their childrens were collapsed already
@@ -696,7 +900,7 @@ class ShadowTree:
         @param node:
         @return:
         """
-        self.rebuild_tree()
+        self.rebuild_tree("reorder")
 
     def update(self, node):
         """
@@ -797,6 +1001,8 @@ class ShadowTree:
 
         # if node is None:
         #     return
+        self.context.elements.set_start_time("refresh_tree")
+        self.freeze_tree(True)
         self.update_op_labels()
         if node is not None:
             if isinstance(node, (tuple, list)):
@@ -815,26 +1021,60 @@ class ShadowTree:
                     # A timer can update after the tree closes.
                     return
 
-        self.wxtree._freeze = False
-        self.wxtree.Expand(self.elements.get(type="branch elems")._item)
-        self.wxtree.Expand(self.elements.get(type="branch reg")._item)
+        branch_elems_item = self.elements.get(type="branch elems")._item
+        if branch_elems_item:
+            self.wxtree.Expand(branch_elems_item)
+        branch_reg_item = self.elements.get(type="branch reg")._item
+        if branch_reg_item:
+            self.wxtree.Expand(branch_reg_item)
+        self.context.elements.signal("warn_state_update")
+        self.freeze_tree(False)
+        self.context.elements.set_end_time("full_load", display=True, delete=True)
+        self.context.elements.set_end_time("refresh_tree", display=True)
+
+    def update_warn_sign(self):
+        # from time import perf_counter
+        # this_call =  perf_counter()
+        # print (f"Update warn was called, time since last: {this_call-self.last_call:.3f}sec")
+        # self.last_call = this_call
         op_node = self.elements.get(type="branch ops")
+        if op_node is None:
+            return
         op_item = op_node._item
+
+        status = ""
+        if op_item is None:
+            return
+
         self.wxtree.Expand(op_item)
-        if self.elements.have_unassigned_elements():
+        unassigned, unburnt = self.elements.have_unburnable_elements()
+        if unassigned or unburnt:
             self.wxtree.SetItemState(op_item, self.iconstates["warning"])
-            op_node._tooltip = _("You have unassigned elements, that won't be burned")
-            op_node._tooltip_translated = True
+            s1 = _("You have elements in disabled operations, that won't be burned")
+            s2 = _("You have unassigned elements, that won't be burned")
+            if unassigned and unburnt:
+                status = s1 + "\n" + s2
+            elif unburnt:
+                status = s1
+            elif unassigned:
+                status = s2
         else:
             self.wxtree.SetItemState(op_item, wx.TREE_ITEMSTATE_NONE)
-            op_node._tooltip = ""
-        self.context.elements.set_end_time("full_load", display=True, delete=True)
+            status = ""
+        op_node._tooltip = status
+        op_node._tooltip_translated = True
 
     def freeze_tree(self, status=None):
         if status is None:
             status = not self._freeze
-        self._freeze = status
-        self.wxtree.Enable(not self._freeze)
+        if self._freeze != status:
+            self._freeze = status
+            self.wxtree.Enable(not self._freeze)
+            if status:
+                self.wxtree.Freeze()
+            else:
+                self.wxtree.Thaw()
+                self.wxtree.Refresh()
 
     def was_expanded(self, node, level):
         txt = self.wxtree.GetItemText(node)
@@ -890,15 +1130,19 @@ class ShadowTree:
     def reset_expanded(self):
         self.was_already_expanded = []
 
-    def rebuild_tree(self):
+    def rebuild_tree(self, source):
         """
         Tree requires being deleted and completely rebuilt.
 
         @return:
         """
+        # print (f"Rebuild called from {source}")
         # let's try to remember which branches were expanded:
-        self._freeze = True
+        self.context.elements.set_start_time("rebuild_tree")
+        self.freeze_tree(True)
+        #
         self.reset_expanded()
+
         # Safety net - if we have too many elements it will
         # take too long to create all preview icons...
         count = self.elements.count_elems() + self.elements.count_op()
@@ -926,7 +1170,10 @@ class ShadowTree:
         self.set_icon(
             elemtree,
             icon_meerk40t.GetBitmap(
-                False, resize=(self.iconsize, self.iconsize), noadjustment=True
+                False,
+                resize=(self.iconsize, self.iconsize),
+                noadjustment=True,
+                buffer=1,
             ),
         )
         self.register_children(elemtree)
@@ -934,8 +1181,10 @@ class ShadowTree:
         node_operations = elemtree.get(type="branch ops")
         self.set_icon(
             node_operations,
-            icons8_laser_beam_20.GetBitmap(
-                resize=(self.iconsize, self.iconsize), noadjustment=True
+            icons8_laser_beam.GetBitmap(
+                resize=(self.iconsize, self.iconsize),
+                noadjustment=True,
+                buffer=1,
             ),
         )
 
@@ -945,34 +1194,38 @@ class ShadowTree:
         node_elements = elemtree.get(type="branch elems")
         self.set_icon(
             node_elements,
-            icons8_canvas_20.GetBitmap(
-                resize=(self.iconsize, self.iconsize), noadjustment=True
+            icon_canvas.GetBitmap(
+                resize=(self.iconsize, self.iconsize),
+                noadjustment=True,
+                buffer=1,
             ),
         )
 
         node_registration = elemtree.get(type="branch reg")
         self.set_icon(
             node_registration,
-            icons8_prototype_20.GetBitmap(
-                resize=(self.iconsize, self.iconsize), noadjustment=True
+            icon_regmarks.GetBitmap(
+                resize=(self.iconsize, self.iconsize),
+                noadjustment=True,
+                buffer=1,
             ),
         )
         self.update_op_labels()
+        self.update_group_labels("rebuild_tree")
         # Expand Ops, Element, and Regmarks nodes only
         self.wxtree.CollapseAll()
         self.wxtree.Expand(node_operations._item)
         self.wxtree.Expand(node_elements._item)
         self.wxtree.Expand(node_registration._item)
-        if self.elements.have_unassigned_elements():
-            self.wxtree.SetItemState(node_operations._item, self.iconstates["warning"])
-        else:
-            self.wxtree.SetItemState(node_operations._item, wx.TREE_ITEMSTATE_NONE)
+        self.elements.signal("warn_state_update")
 
         # Restore emphasis
         for e in emphasized_list:
             e.emphasized = True
         self.restore_tree(self.wxtree.GetRootItem(), 0)
-        self._freeze = False
+        self.freeze_tree(False)
+        self.context.elements.set_end_time("rebuild_tree", display=True)
+        # print(f"Rebuild done for {source}")
 
     def register_children(self, node):
         """
@@ -1010,31 +1263,37 @@ class ShadowTree:
             raise ValueError("Item was None for node " + repr(node))
         self.check_validity(item)
         # We might need to update the decorations for all parent objects
-        e = node.parent
-        while e is not None:
-            if e.type in ("group", "file"):
-                self.update_decorations(e, force=True)
-            else:
-                break
-            e = e.parent
+        informed = list()
+        if not self._freeze:
+            parent = node._parent
+            while parent is not None and not parent.type.startswith("branch "):
+                informed.append(parent)
+                parent = parent._parent
 
         node.unregister_object()
         self.wxtree.Delete(node._item)
+        if len(informed) > 0:
+            self.context.signal("element_property_update", informed)
         for i in self.wxtree.GetSelections():
             self.wxtree.SelectItem(i, False)
 
     def safe_color(self, color_to_set):
-        back_color = self.wxtree.GetBackgroundColour()
-        rgb = back_color.Get()
-        default_color = wx.Colour(
-            red=255 - rgb[0], green=255 - rgb[1], blue=255 - rgb[2], alpha=128
-        )
-        if color_to_set is not None and color_to_set.argb is not None:
-            mycolor = wx.Colour(swizzlecolor(color_to_set.argb))
-            if mycolor.Get() == rgb:
+        hash = str(color_to_set)
+        if hash not in self.color_cache:
+            back_color = self.wxtree.GetBackgroundColour()
+            rgb = back_color.Get()
+            default_color = wx.Colour(
+                red=255 - rgb[0], green=255 - rgb[1], blue=255 - rgb[2], alpha=128
+            )
+            if color_to_set is not None and color_to_set.argb is not None:
+                mycolor = wx.Colour(swizzlecolor(color_to_set.argb))
+                if mycolor.Get() == rgb:
+                    mycolor = default_color
+            else:
                 mycolor = default_color
+            self.color_cache[hash] = mycolor
         else:
-            mycolor = default_color
+            mycolor = self.color_cache[hash]
         return mycolor
 
     def node_register(self, node, pos=None, **kwargs):
@@ -1048,6 +1307,9 @@ class ShadowTree:
         """
         parent = node.parent
         parent_item = parent._item
+        if parent_item is None:
+            # We are appending items in tree before registration.
+            return
         tree = self.wxtree
         if pos is None:
             node._item = tree.AppendItem(parent_item, self.name)
@@ -1076,18 +1338,22 @@ class ShadowTree:
                 else:
                     textcolor = c2
                 wxcolor = wx.Colour(swizzlecolor(textcolor))
-        try:
-            tree.SetItemTextColour(node._item, wxcolor)
-        except (AttributeError, KeyError, TypeError):
-            pass
+        if self.context.root.tree_colored:
+            try:
+                tree.SetItemTextColour(node._item, wxcolor)
+            except (AttributeError, KeyError, TypeError):
+                pass
         # We might need to update the decorations for all parent objects
-        e = node.parent
-        while e is not None:
-            if e.type in ("group", "file"):
-                self.update_decorations(e, force=True)
-            else:
-                break
-            e = e.parent
+        if not self._freeze:
+            informed = list()
+            parent = node._parent
+            while parent is not None and not parent.type.startswith("branch "):
+                informed.append(parent)
+                parent = parent._parent
+            if len(informed) > 0:
+                self.context.signal("element_property_update", informed)
+
+        # self.context.signal("update_group_labels")
 
     def set_enhancements(self, node):
         """
@@ -1120,6 +1386,8 @@ class ShadowTree:
         @param color: Color to be set.
         @return:
         """
+        if not self.context.root.tree_colored:
+            return
         item = node._item
         if item is None:
             return
@@ -1187,7 +1455,7 @@ class ShadowTree:
                     and node.fill.argb is not None
                 ):
                     c = node.fill
-            elif node.type.startswith("elem "):
+            elif node.type.startswith("elem ") or node.type.startswith("effect "):
                 if (
                     hasattr(node, "stroke")
                     and node.stroke is not None
@@ -1228,6 +1496,7 @@ class ShadowTree:
                         color=c,
                         resize=(self.iconsize, self.iconsize),
                         noadjustment=True,
+                        buffer=1,
                     )
                     cached_id = self.tree_images.Add(bitmap=image)
                     # print(f"Store id {cached_id} for {c} - {found}")
@@ -1311,11 +1580,31 @@ class ShadowTree:
 
     def update_op_labels(self):
         startnode = self.elements.get(type="branch ops")._item
+        if startnode is None:
+            # Branch op never populated the tree, we cannot update sublayer.
+            return
         child, cookie = self.wxtree.GetFirstChild(startnode)
         while child.IsOk():
             node = self.wxtree.GetItemData(child)  # Make sure the map is updated...
             self.update_decorations(node=node, force=True)
             child, cookie = self.wxtree.GetNextChild(startnode, cookie)
+
+    def update_group_labels(self, src):
+        # print(f"group_labels: {src}")
+        stop_updates = not self._freeze
+        if stop_updates:
+            self.freeze_tree(True)
+        for e in self.context.elements.elems_nodes():
+            if e.type == "group":
+                self.update_decorations(e)
+        for e in self.context.elements.regmarks_nodes():
+            if e.type == "group":
+                self.update_decorations(e)
+        if stop_updates:
+            self.freeze_tree(False)
+
+    def reset_formatter_cache(self):
+        self.formatter_cache.clear()
 
     def update_decorations(self, node, force=False):
         """
@@ -1335,6 +1624,21 @@ class ShadowTree:
             # Just for the optical impression (who understands what a "Rect: None" means),
             # lets replace some of the more obvious ones...
             mymap = node.default_map()
+            # We change power to either ppi or percent
+            if "power" in mymap and "ppi" in mymap and "percent" in mymap:
+                self.context.device.setting(
+                    bool, "use_percent_for_power_display", False
+                )
+                if self.context.device.use_percent_for_power_display:
+                    mymap["power"] = mymap["percent"]
+            if "speed" in mymap and "speed_mm_min" in mymap:
+                self.context.device.setting(bool, "use_mm_min_for_speed_display", False)
+                if self.context.device.use_mm_min_for_speed_display:
+                    text = text.replace("mm/s", "mm/min")
+                    mymap["speed"] = mymap["speed_mm_min"]
+                    mymap["speed_unit"] = "mm/min"
+                else:
+                    mymap["speed_unit"] = "mm/s"
             for key in mymap:
                 if hasattr(node, key) and key in mymap and mymap[key] == "None":
                     if getattr(node, key) is None:
@@ -1361,23 +1665,25 @@ class ShadowTree:
             return res
 
         def get_formatter(nodetype):
-            default = self.context.elements.lookup(f"format/{nodetype}")
-            lbl = nodetype.replace(" ", "_")
-            check_string = f"formatter_{lbl}_active"
-            pattern_string = f"formatter_{lbl}"
-            self.context.device.setting(bool, check_string, False)
-            self.context.device.setting(str, pattern_string, default)
-            bespoke = getattr(self.context.device, check_string, False)
-            pattern = getattr(self.context.device, pattern_string, "")
-            if bespoke and pattern is not None and pattern != "":
-                default = pattern
-            return default
+            if nodetype not in self.formatter_cache:
+                default = self.context.elements.lookup(f"format/{nodetype}")
+                lbl = nodetype.replace(" ", "_")
+                check_string = f"formatter_{lbl}_active"
+                pattern_string = f"formatter_{lbl}"
+                self.context.device.setting(bool, check_string, False)
+                self.context.device.setting(str, pattern_string, default)
+                bespoke = getattr(self.context.device, check_string, False)
+                pattern = getattr(self.context.device, pattern_string, "")
+                if bespoke and pattern is not None and pattern != "":
+                    default = pattern
+                self.formatter_cache[nodetype] = default
+            return self.formatter_cache[nodetype]
 
         if force is None:
             force = False
         if node._item is None:
             # This node is not registered the tree has desynced.
-            self.rebuild_tree()
+            self.rebuild_tree("desync")
             return
 
         self.set_icon(node, force=force)
@@ -1489,14 +1795,16 @@ class ShadowTree:
                 else:
                     textcolor = c2
                 wxcolor = wx.Colour(swizzlecolor(textcolor))
-        try:
-            self.wxtree.SetItemTextColour(node._item, wxcolor)
-        except (AttributeError, KeyError, TypeError):
-            pass
+        if self.context.root.tree_colored:
+            try:
+                self.wxtree.SetItemTextColour(node._item, wxcolor)
+            except (AttributeError, KeyError, TypeError):
+                pass
 
         state_num = -1
         if node is self.elements.get(type="branch ops"):
-            if self.elements.have_unassigned_elements():
+            unassigned, unburnt = self.elements.have_unburnable_elements()
+            if unassigned or unburnt:
                 state_num = self.iconstates["warning"]
         else:
             # Has the node a lock attribute?
@@ -1607,6 +1915,18 @@ class ShadowTree:
             self.wxtree.Expand(drop_item)
             self.wxtree.EnsureVisible(drop_item)
             self.refresh_tree(source="drag end")
+            # Do the dragging_nodes contain an operation?
+            # Let's give an indication of that, as this may
+            # have led to the creation of a new reference
+            # node. For whatever reason this is not recognised
+            # otherwise...
+            if not self.dragging_nodes:
+                # Dragging nodes were cleared (we must have rebuilt the entire tree)
+                return
+            for node in self.dragging_nodes:
+                if node.type.startswith("op"):
+                    self.context.signal("tree_changed")
+                    break
             # self.rebuild_tree()
         self.dragging_nodes = None
 
@@ -1641,11 +1961,6 @@ class ShadowTree:
                         ttip = _(
                             "This will engrave the elements contained,\n"
                             + "following the vector-paths of the data."
-                        )
-                    elif node.type == "op hatch":
-                        ttip = _(
-                            "This is an operation that will engrave a vector shape\n"
-                            + "filled with a set of vector-patterns like lines"
                         )
                     elif node.type == "op image":
                         ttip = _(
@@ -1696,23 +2011,23 @@ class ShadowTree:
                         if bb is not None:
                             ww = Length(amount=bb[2] - bb[0], digits=1)
                             hh = Length(amount=bb[3] - bb[1], digits=1)
-                            ll = Length(amount=node.shape.length(), digits=1)
+                            ll = Length(amount=node.length(), digits=1)
                             ttip = f"{ww.length_mm} x {hh.length_mm}, L={ll.length_mm}"
                     elif node.type == "elem rect":
                         bb = node.bounds
                         if bb is not None:
                             ww = Length(amount=bb[2] - bb[0], digits=1)
                             hh = Length(amount=bb[3] - bb[1], digits=1)
-                            ll = Length(amount=node.shape.length(), digits=1)
+                            ll = Length(amount=node.length(), digits=1)
                             ttip = f"{ww.length_mm} x {hh.length_mm}, L={ll.length_mm}"
                     elif node.type == "elem polyline":
                         bb = node.bounds
                         if bb is not None:
                             ww = Length(amount=bb[2] - bb[0], digits=1)
                             hh = Length(amount=bb[3] - bb[1], digits=1)
-                            ll = Length(amount=node.shape.length(), digits=1)
+                            ll = Length(amount=node.length(), digits=1)
                             ttip = f"{ww.length_mm} x {hh.length_mm}, L={ll.length_mm}"
-                            ttip += f"\n{len(node.shape.points)} pts"
+                            ttip += f"\n{len(node)} pts"
                     elif node.type == "elem ellipse":
                         bb = node.bounds
                         if bb is not None:
@@ -1742,6 +2057,44 @@ class ShadowTree:
                             "This will define an origin from where all the elements in this scene\n"
                             + "will be plotted. You can have multiple such job start points"
                         )
+                    elif node.type == "effect hatch":
+                        ttip = _(
+                            "This is a special node that will consume any other closed path\n"
+                            + "you drag onto it and will fill the shape with a line pattern.\n"
+                            + "To activate / deactivate this effect please use the context menu."
+                        )
+                    if node.type in op_nodes:
+                        if hasattr(node, "label") and node.label is not None:
+                            ttip += f"\n{node.id + ': ' if node.id is not None else ''}{node.label}"
+                        ps_info = ""
+                        if hasattr(node, "power") and node.power is not None:
+                            if self.context.device.use_percent_for_power_display:
+                                ps_info += (
+                                    f"{', ' if ps_info else ''}{node.power / 10:.1f}%"
+                                )
+                            else:
+                                ps_info += (
+                                    f"{', ' if ps_info else ''}{node.power:.0f}ppi"
+                                )
+
+                        if hasattr(node, "speed") and node.speed is not None:
+                            if self.context.device.use_mm_min_for_speed_display:
+                                ps_info += f"{', ' if ps_info else ''}{node.speed * 60.0:.0f}mm/min"
+                            else:
+                                ps_info += (
+                                    f"{', ' if ps_info else ''}{node.speed:.0f}mm/s"
+                                )
+
+                        if hasattr(self.context.device, "default_frequency"):
+                            if (
+                                hasattr(node, "frequency")
+                                and node.frequency is not None
+                            ):
+                                ps_info += (
+                                    f"{', ' if ps_info else ''}{node.frequency:.0f}kHz"
+                                )
+                        if ps_info:
+                            ttip += f"\n{ps_info}"
         self._last_hover_item = item
         if ttip != self.wxtree.GetToolTipText():
             self.wxtree.SetToolTip(ttip)

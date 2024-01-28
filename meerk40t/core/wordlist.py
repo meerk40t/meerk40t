@@ -173,6 +173,8 @@ class Wordlist:
         else:
             wordlists.extend(list(skey.split(",")))
         for wkey in wordlists:
+            if wkey not in self.content:
+                continue
             wordlist = self.content[wkey]
             if (
                 wordlist[0] in (0, 1) and wkey not in self.prohibited
@@ -472,7 +474,6 @@ class Wordlist:
                 # 0
                 newpattern = f"{{{key}}}"
             if newpattern != bracketed_key:
-
                 item = [relative, bracketed_key, newpattern]
                 toreplace.append(item)
 

@@ -137,7 +137,6 @@ def min_circle_trivial(P):
     # by 2 points only
     for i in range(3):
         for j in range(i + 1, 3):
-
             center, radius = circle_from1(P[i], P[j])
             if is_valid_circle(center, radius, P):
                 return center, radius
@@ -251,6 +250,8 @@ def generate_hull_shape_hull(data):
         try:
             path = node.as_path()
             p = path.first_point
+            if p is None:
+                continue
             pts.append(p)
             for segment in path:
                 pts.append(segment.end)
@@ -399,6 +400,13 @@ def init_commands(kernel):
         type=int,
         help=_("0=immediate, 1=User interaction, 2=wait for 5 seconds"),
     )
+    @self.console_option(
+        "force",
+        "f",
+        type=bool,
+        action="store_true",
+        help=_("force the inclusion of non-assigned/non-active elements"),
+    )
     @self.console_command(
         "trace",
         help=_("trace the given elements"),
@@ -411,11 +419,14 @@ def init_commands(kernel):
         method=None,
         resolution=None,
         start=None,
+        force=None,
         data=None,
         **kwargs,
     ):
         if method is None:
             method = "quick"
+        if force is None:
+            force = False
         method = method.lower()
         if method not in ("segment", "quick", "hull", "complex", "circle"):
             channel(
@@ -431,16 +442,48 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No elements bounds to trace"))
             return
+        # Let's see whether there are non-burnable elements
+        target_data = []
+        if force:
+            target_data = [e for e in data]
+        else:
+            unused = 0
+            for node in data:
+                if len(node._references) == 0 and node.type not in ("file", "group"):
+                    unused += 1
+                else:
+                    will_be_burnt = False
+                    for refnode in node._references:
+                        op = refnode.parent
+                        if op is not None:
+                            try:
+                                if op.output:
+                                    will_be_burnt = True
+                                    break
+                            except AttributeError:
+                                pass
+                    if will_be_burnt:
+                        target_data.append(node)
+                    else:
+                        unused += 1
+            if unused > 0:
+                msg = _(
+                    f"There are {unused} elements, that will not be burnt as they are not "
+                    + "contained in ops or are in disabled operations.\n"
+                    + "These will not be considered in the hull!\n"
+                    + "You can force their inclusion with the --force option"
+                ).format(unused=unused)
+                channel(msg)
         if method == "segment":
-            hull = generate_hull_shape_segment(data)
+            hull = generate_hull_shape_segment(target_data)
         elif method == "quick":
-            hull = generate_hull_shape_quick(data)
+            hull = generate_hull_shape_quick(target_data)
         elif method == "hull":
-            hull = generate_hull_shape_hull(data)
+            hull = generate_hull_shape_hull(target_data)
         elif method == "complex":
-            hull = generate_hull_shape_complex(data, resolution)
+            hull = generate_hull_shape_complex(target_data, resolution)
         elif method == "circle":
-            hull = generate_hull_shape_circle(data)
+            hull = generate_hull_shape_circle(target_data)
         else:
             raise ValueError
         if start is None:
@@ -535,7 +578,6 @@ def init_commands(kernel):
         else:
             raise ValueError
         if shape_type == "elem polyline":
-
             if len(hull) == 0:
                 channel(_("No elements bounds to trace."))
                 return

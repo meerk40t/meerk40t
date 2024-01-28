@@ -13,9 +13,31 @@ from meerk40t.core.units import ACCEPTED_UNITS, Angle, Length
 _ = wx.GetTranslation
 
 
+##############
+# DYNAMIC CHOICE
+# NODE MENU
+##############
+
+
+def matrix_scale(matrix):
+    # We usually use the value_scale_x to establish a pixel size
+    # by counteracting the scene matrix, linewidth = 1 / matrix.value_scale_x()
+    # For a rotated scene this crashes, so we need to take
+    # that into consideration, so let's look at the
+    # distance from (1, 0) to (0, 0) and call this our scale
+    from math import sqrt
+
+    x0, y0 = matrix.point_in_matrix_space((0, 0))
+    x1, y1 = matrix.point_in_matrix_space((1, 0))
+    res = sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2)
+    if res < 1e-8:
+        res = 1
+    return res
+
+
 def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
     """
-    Creates a menu for a given choices table
+    Creates a menu for a given choices table.
 
     Processes submenus, references, radio_state as needed.
     """
@@ -52,12 +74,12 @@ def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
         choice = c
         submenu_name = get("submenu")
         submenu = None
-        if submenu_name in submenus:
+        if submenu_name and submenu_name in submenus:
             submenu = submenus[submenu_name]
         else:
             if get("separate_before", default=False):
                 menu.AppendSeparator()
-            if submenu_name is not None:
+            if submenu_name:
                 submenu = wx.Menu()
                 menu.AppendSubMenu(submenu, submenu_name)
                 submenus[submenu_name] = submenu
@@ -92,6 +114,13 @@ def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
 
 
 def create_choices_for_node(node, elements) -> List[dict]:
+    """
+    Converts a node tree operation menu to a choices dictionary to display the menu items in a choice panel.
+
+    @param node:
+    @param elements:
+    @return:
+    """
     choices = []
     from meerk40t.core.treeop import get_tree_operation_for_node
 
@@ -121,6 +150,9 @@ def create_menu_for_node_TEST(gui, node, elements) -> wx.Menu:
     """
     Test code towards unifying choices and tree nodes into choices that parse to menus.
 
+    This is unused experimental code. Testing the potential inter-relationships between choices for the choice panels
+    and dynamic node menus.
+
     @param gui:
     @param node:
     @param elements:
@@ -128,6 +160,11 @@ def create_menu_for_node_TEST(gui, node, elements) -> wx.Menu:
     """
     choices = create_choices_for_node(node, elements)
     return create_menu_for_choices(gui, choices)
+
+
+##############
+# DYNAMIC NODE MENU
+##############
 
 
 def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu:
@@ -148,11 +185,54 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
 
         def specific(event=None):
             prompts = f.user_prompt
-            for prompt in prompts:
-                response = elements.kernel.prompt(prompt["type"], prompt["prompt"])
-                if response is None:
-                    return
-                func_dict[prompt["attr"]] = response
+            if len(prompts) > 0:
+                with wx.Dialog(
+                    None,
+                    wx.ID_ANY,
+                    _("Parameters"),
+                    style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
+                ) as dlg:
+                    sizer = wx.BoxSizer(wx.VERTICAL)
+                    fields = []
+                    for prompt in prompts:
+                        label = wx.StaticText(dlg, wx.ID_ANY, prompt["prompt"])
+                        sizer.Add(label, 0, wx.EXPAND, 0)
+                        dtype = prompt["type"]
+                        if dtype == bool:
+                            control = wx.CheckBox(dlg, wx.ID_ANY)
+                        else:
+                            control = wx.TextCtrl(dlg, wx.ID_ANY)
+                            control.SetMaxSize(dip_size(dlg, 75, -1))
+                        fields.append(control)
+                        sizer.Add(control, 0, wx.EXPAND, 0)
+                        sizer.AddSpacer(23)
+                    b_sizer = wx.BoxSizer(wx.HORIZONTAL)
+                    button_OK = wx.Button(dlg, wx.ID_OK, _("OK"))
+                    button_CANCEL = wx.Button(dlg, wx.ID_CANCEL, _("Cancel"))
+                    # dlg.SetAffirmativeId(button_OK.GetId())
+                    # dlg.SetEscapeId(button_CANCEL.GetId())
+                    b_sizer.Add(button_OK, 0, wx.EXPAND, 0)
+                    b_sizer.Add(button_CANCEL, 0, wx.EXPAND, 0)
+                    sizer.Add(b_sizer, 0, wx.EXPAND, 0)
+                    sizer.Fit(dlg)
+                    dlg.SetSizer(sizer)
+                    dlg.Layout()
+
+                    response = dlg.ShowModal()
+                    if response != wx.ID_OK:
+                        return
+                    for prompt, control in zip(prompts, fields):
+                        dtype = prompt["type"]
+                        try:
+                            value = dtype(control.GetValue())
+                        except ValueError:
+                            return
+                        func_dict[prompt["attr"]] = value
+            # for prompt in prompts:
+            #     response = elements.kernel.prompt(prompt["type"], prompt["prompt"])
+            #     if response is None:
+            #         return
+            # func_dict[prompt["attr"]] = response
             f(node, **func_dict)
 
         return specific
@@ -165,15 +245,28 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
         for func in tree_operations_for_node(optional_2nd_node):
             submenu_name = func.submenu
             submenu = None
-            if submenu_name in submenus:
+            if submenu_name and submenu_name in submenus:
                 submenu = submenus[submenu_name]
             else:
-                if submenu_name is not None:
+                if submenu_name:
                     last_was_separator = False
-                    submenu = wx.Menu()
-                    menu.AppendSubMenu(submenu, submenu_name, func.help)
-                    submenus[submenu_name] = submenu
-
+                    subs = submenu_name.split("|")
+                    common = ""
+                    parent_menu = menu
+                    for sname in subs:
+                        if sname == "":
+                            continue
+                        if common:
+                            common += "|"
+                        common += sname
+                        if common in submenus:
+                            submenu = submenus[common]
+                            parent_menu = submenu
+                        else:
+                            submenu = wx.Menu()
+                            parent_menu.AppendSubMenu(submenu, sname, func.help)
+                            submenus[common] = submenu
+                            parent_menu = submenu
             menu_context = submenu if submenu is not None else menu
             if func.separate_before:
                 last_was_separator = True
@@ -237,13 +330,28 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
     for func in tree_operations_for_node(node):
         submenu_name = func.submenu
         submenu = None
-        if submenu_name in submenus:
+        if submenu_name and submenu_name in submenus:
             submenu = submenus[submenu_name]
         else:
-            if submenu_name is not None:
-                submenu = wx.Menu()
-                menu.AppendSubMenu(submenu, submenu_name, func.help)
-                submenus[submenu_name] = submenu
+            if submenu_name:
+                last_was_separator = False
+                subs = submenu_name.split("|")
+                common = ""
+                parent_menu = menu
+                for sname in subs:
+                    if sname == "":
+                        continue
+                    if common:
+                        common += "|"
+                    common += sname
+                    if common in submenus:
+                        submenu = submenus[common]
+                        parent_menu = submenu
+                    else:
+                        submenu = wx.Menu()
+                        parent_menu.AppendSubMenu(submenu, sname, func.help)
+                        submenus[common] = submenu
+                        parent_menu = submenu
 
         menu_context = submenu if submenu is not None else menu
         if func.separate_before:
@@ -293,8 +401,15 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                 radio_check_not_needed.append(menu_context)
         if not submenu and func.separate_after:
             menu.AppendSeparator()
-
     for submenu in submenus.values():
+        plain = True
+        for item in submenu.GetMenuItems():
+            if not (item.IsSeparator() or item.IsSubMenu() or not item.IsEnabled()):
+                plain = False
+                break
+        if plain and submenu not in radio_check_not_needed:
+            radio_check_not_needed.append(submenu)
+
         if submenu not in radio_check_not_needed:
             item = submenu.Append(
                 wx.ID_ANY,
@@ -329,9 +444,18 @@ def create_menu(gui, node, elements):
         menu.Destroy()
 
 
+##############
+# GUI CONTROL OVERRIDES
+##############
+
+
 class TextCtrl(wx.TextCtrl):
-    # Just to add someof the more common things we need, i.e. smaller default size...
-    #
+    """
+    Just to add some of the more common things we need, i.e. smaller default size...
+
+    Allow text boxes of specific types so that we can have consistent options for dealing with them.
+    """
+
     def __init__(
         self,
         parent,
@@ -406,7 +530,8 @@ class TextCtrl(wx.TextCtrl):
         self._last_valid_value = None
         self._event_generated = None
         self._action_routine = None
-        # You can set this to False, i you don't want logic to interfere with text input
+
+        # You can set this to False, if you don't want logic to interfere with text input
         self.execute_action_on_change = True
 
         if self._check is not None and self._check != "":
@@ -417,15 +542,30 @@ class TextCtrl(wx.TextCtrl):
         if self._style & wx.TE_PROCESS_ENTER != 0:
             self.Bind(wx.EVT_TEXT_ENTER, self.on_enter)
         _MIN_WIDTH, _MAX_WIDTH = self.validate_widths()
-        self.SetMinSize(wx.Size(_MIN_WIDTH, -1))
+        self.SetMinSize(dip_size(self, _MIN_WIDTH, -1))
         if limited:
-            self.SetMaxSize(wx.Size(_MAX_WIDTH, -1))
+            self.SetMaxSize(dip_size(self, _MAX_WIDTH, -1))
 
     def validate_widths(self):
         minw = 35
         maxw = 100
         minpattern = "0000"
         maxpattern = "999999999.99mm"
+        if self._check == "length":
+            minpattern = "0000"
+            maxpattern = "999999999.99mm"
+        elif self._check == "percent":
+            minpattern = "0000"
+            maxpattern = "99.99%"
+        elif self._check == "float":
+            minpattern = "0000"
+            maxpattern = "99999.99"
+        elif self._check == "angle":
+            minpattern = "0000"
+            maxpattern = "9999.99deg"
+        elif self._check == "int":
+            minpattern = "0000"
+            maxpattern = "-999999"
         # Let's be a bit more specific: what is the minimum size of the textcontrol fonts
         # to hold these patterns
         tfont = self.GetFont()
@@ -633,21 +773,26 @@ class TextCtrl(wx.TextCtrl):
 
     def on_char(self, event):
         proceed = True
-        if self.charpattern != "":
+        # The French azerty keyboard generates numbers by pressing Shift + some key
+        # Under Linux this is not properly translated by GetUnicodeKey and
+        # is hence leading to a 'wrong' character being recognised (the original key).
+        # So we can't rely on a proper representation if the Shift-Key
+        # is held down, sigh.
+        if self.charpattern != "" and not event.ShiftDown():
             keyc = event.GetUnicodeKey()
             special = False
             if event.RawControlDown() or event.ControlDown() or event.AltDown():
+                # GetUnicodeKey ignores all special keys, so we need to acknowledge that
                 special = True
             if keyc == 127:  # delete
                 special = True
-            # GetUnicodeKey ignores all special keys in the first
             if keyc != wx.WXK_NONE and not special:
                 # a 'real' character?
                 if keyc >= ord(" "):
                     char = chr(keyc).lower()
                     if char not in self.charpattern:
                         proceed = False
-                        # print (f"Ignored: {keyc} - {char}")
+                        # print(f"Ignored: {keyc} - {char}")
         if proceed:
             event.DoAllowNextEvent()
             event.Skip()
@@ -717,6 +862,11 @@ class TextCtrl(wx.TextCtrl):
 
 
 class CheckBox(wx.CheckBox):
+    """
+    This checkbox replaces wx.Checkbox and creates a series of mouse over tool tips to permit Linux tooltips that
+    otherwise do not show.
+    """
+
     def __init__(
         self,
         *args,
@@ -750,7 +900,7 @@ class StaticBoxSizer(wx.StaticBoxSizer):
         **kwargs,
     ):
         self.sbox = wx.StaticBox(parent, id, label=label)
-        self.sbox.SetMinSize(wx.Size(50, 50))
+        self.sbox.SetMinSize(dip_size(self, 50, 50))
         super().__init__(self.sbox, orientation)
 
     def Show(self, show=True):
@@ -788,6 +938,76 @@ class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         listmix.TextEditMixin.__init__(self)
 
+
+class HoverButton(wx.Button):
+    """
+    Provide a button with Hover-Color changing ability.
+    """
+
+    def __init__(self, parent, ID, label):
+        super().__init__(parent, ID, label)
+        self._focus_color = None
+        self._disable_color = None
+        self._foreground_color = self.GetForegroundColour()
+        self._background_color = self.GetBackgroundColour()
+        self.Bind(wx.EVT_ENTER_WINDOW, self.on_enter)
+        self.Bind(wx.EVT_LEAVE_WINDOW, self.on_leave)
+        # self.Bind(wx.EVT_MOUSE_EVENTS, self.on_mouse)
+
+    def SetFocusColour(self, color):
+        self._focus_color = wx.Colour(color)
+
+    def SetDisabledBackgroundColour(self, color):
+        self._disable_color = wx.Colour(color)
+
+    def SetForegroundColour(self, color):
+        self._foreground_color = wx.Colour(color)
+        super().SetForegroundColour(color)
+
+    def SetBackgroundColour(self, color):
+        self._background_color = wx.Colour(color)
+        super().SetBackgroundColour(color)
+
+    def GetFocusColour(self, color):
+        return self._focus_color
+
+    def Enable(self, value):
+        if value:
+            super().SetBackgroundColour(self._background_color)
+        else:
+            if self._disable_color is None:
+                r, g, b, a = self._background_color.Get()
+                color = wx.Colour(
+                    min(255, int(1.5 * r)),
+                    min(255, int(1.5 * g)),
+                    min(255, int(1.5 * b)),
+                )
+            else:
+                color = self._disable_color
+            super().SetBackgroundColour(color)
+        super().Enable(value)
+        self.Refresh()
+
+    def on_enter(self, event):
+        if self._focus_color is not None:
+            super().SetForegroundColour(self._focus_color)
+            self.Refresh()
+        event.Skip()
+
+    def on_leave(self, event):
+        super().SetForegroundColour(self._foreground_color)
+        self.Refresh()
+        event.Skip()
+
+    # def on_mouse(self, event):
+    #     if event.Leaving():
+    #         self.on_leave(event)
+    #     event.Skip()
+
+
+##############
+# GUI KEYSTROKE FUNCTIONS
+##############
 
 WX_METAKEYS = [
     wx.WXK_START,
@@ -961,3 +1181,13 @@ def set_ctrl_value(ctrl, value):
     if ctrl.GetValue() != value:
         ctrl.SetValue(value)
         ctrl.SetInsertionPoint(min(len(value), cursor))
+
+
+def dip_size(frame, x, y):
+    # wx.Window.FromDIP was introduced with wxPython 4.1, so not all distros may have this
+    wxsize = wx.Size(x, y)
+    try:
+        dipsize = frame.FromDIP(wxsize)
+        return dipsize
+    except AttributeError:
+        return wxsize

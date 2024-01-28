@@ -8,10 +8,10 @@ def plugin(service, lifecycle):
         return "provider/device/moshi"
     if lifecycle == "added":
         from meerk40t.gui.icons import (
-            icons8_computer_support_50,
-            icons8_connected_50,
-            icons8_emergency_stop_button_50,
-            icons8_pause_50,
+            icons8_computer_support,
+            icons8_connected,
+            icons8_emergency_stop_button,
+            icons8_pause,
         )
         from meerk40t.moshi.gui.moshicontrollergui import MoshiControllerGui
         from meerk40t.moshi.gui.moshidrivergui import MoshiDriverGui
@@ -28,7 +28,7 @@ def plugin(service, lifecycle):
             "button/control/Controller",
             {
                 "label": _("Controller"),
-                "icon": icons8_connected_50,
+                "icon": icons8_connected,
                 "tip": _("Opens Controller Window"),
                 "action": lambda e: service("window toggle Controller\n"),
             },
@@ -37,8 +37,8 @@ def plugin(service, lifecycle):
             "button/device/Configuration",
             {
                 "label": _("Config"),
-                "icon": icons8_computer_support_50,
-                "tip": _("Opens device-specfic configuration window"),
+                "icon": icons8_computer_support,
+                "tip": _("Opens device-specific configuration window"),
                 "action": lambda v: service("window toggle Configuration\n"),
             },
         )
@@ -46,7 +46,7 @@ def plugin(service, lifecycle):
             "button/control/Pause",
             {
                 "label": _("Pause"),
-                "icon": icons8_emergency_stop_button_50,
+                "icon": icons8_emergency_stop_button,
                 "tip": _("Pause the laser"),
                 "action": lambda v: service("pause\n"),
             },
@@ -56,7 +56,7 @@ def plugin(service, lifecycle):
             "button/control/Stop",
             {
                 "label": _("Stop"),
-                "icon": icons8_pause_50,
+                "icon": icons8_pause,
                 "tip": _("Emergency stop the laser"),
                 "action": lambda v: service("estop\n"),
             },

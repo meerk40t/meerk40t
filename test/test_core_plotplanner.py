@@ -171,7 +171,7 @@ class TestPlotplanner(unittest.TestCase):
             # print(x, y, on)
             last_x = cx
             last_y = cy
-            print(f"Moving to {x} {y}")
+            # print(f"Moving to {x} {y}")
 
     def test_plotplanner_constant_xy_end(self):
         """
@@ -306,7 +306,7 @@ class TestPlotplanner(unittest.TestCase):
             # print(x, y, on)
             last_x = cx
             last_y = cy
-            print(f"Moving to {x} {y}")
+            # print(f"Moving to {x} {y}")
 
     def test_plotplanner_flush(self):
         """

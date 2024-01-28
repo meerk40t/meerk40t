@@ -19,6 +19,7 @@ from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
+from meerk40t.tools.geomstr import Geomstr
 
 
 class BalorDriver:
@@ -74,6 +75,8 @@ class BalorDriver:
     #############
     # DRIVER COMMANDS
     #############
+    def job_start(self, job):
+        self._aborting = False
 
     def hold_work(self, priority):
         """
@@ -100,7 +103,7 @@ class BalorDriver:
         """
         Required.
 
-        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
+        Sets a laser parameter this could be speed, power, number_of_unicorns, or any unknown parameters for
         yet to be written drivers.
 
         @param key:
@@ -134,6 +137,135 @@ class BalorDriver:
         @return:
         """
         self.laser = True
+
+    def geometry(self, geom):
+        """
+        Called at the end of plot commands to ensure the driver can deal with them all as a group.
+
+        @return:
+        """
+        con = self.connection
+        con._light_speed = None
+        con._dark_speed = None
+        con._goto_speed = None
+        con.program_mode()
+        self._list_bits = con._port_bits
+        g = Geomstr()
+        for segment_type, start, c1, c2, end, sets in geom.as_lines():
+            con.set_settings(sets)
+            # LOOP CHECKS
+            if self._aborting:
+                con.abort()
+                self._aborting = False
+                return
+            if segment_type == "line":
+                last_x, last_y = con.get_last_xy()
+                x, y = start.real, start.imag
+                if last_x != x or last_y != y:
+                    con.goto(x, y)
+                con.mark(end.real, end.imag)
+            elif segment_type == "end":
+                pass
+            elif segment_type == "quad":
+                last_x, last_y = con.get_last_xy()
+                x, y = start.real, start.imag
+                if last_x != x or last_y != y:
+                    con.goto(x, y)
+                interp = self.service.interp
+
+                g.clear()
+                g.quad(start, c1, end)
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    # LOOP CHECKS
+                    if self._aborting:
+                        con.abort()
+                        self._aborting = False
+                        return
+                    while self.paused:
+                        time.sleep(0.05)
+                    con.mark(p.real, p.imag)
+            elif segment_type == "cubic":
+                last_x, last_y = con.get_last_xy()
+                x, y = start.real, start.imag
+                if last_x != x or last_y != y:
+                    con.goto(x, y)
+                interp = self.service.interp
+
+                g.clear()
+                g.cubic(start, c1, c2, end)
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    # LOOP CHECKS
+                    if self._aborting:
+                        con.abort()
+                        self._aborting = False
+                        return
+                    while self.paused:
+                        time.sleep(0.05)
+                    con.mark(p.real, p.imag)
+            elif segment_type == "arc":
+                last_x, last_y = con.get_last_xy()
+                x, y = start.real, start.imag
+                if last_x != x or last_y != y:
+                    con.goto(x, y)
+                interp = self.service.interp
+
+                g.clear()
+                g.arc(start, c1, end)
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    # LOOP CHECKS
+                    if self._aborting:
+                        con.abort()
+                        self._aborting = False
+                        return
+                    while self.paused:
+                        time.sleep(0.05)
+                    con.mark(p.real, p.imag)
+            elif segment_type == "point":
+                function = sets.get("function")
+                if function == "dwell":
+                    con.goto(start.real, start.imag)
+                    dwell_time = (
+                        sets.get("dwell_time") * 100
+                    )  # Dwell time in ms units in 10 us
+                    while dwell_time > 0:
+                        d = min(dwell_time, 60000)
+                        con.list_laser_on_point(int(d))
+                        dwell_time -= d
+                    con.list_delay_time(int(self.service.delay_end / 10.0))
+                elif function == "wait":
+                    dwell_time = (
+                        sets.get("dwell_time") * 100
+                    )  # Dwell time in ms units in 10 us
+                    while dwell_time > 0:
+                        d = min(dwell_time, 60000)
+                        con.list_delay_time(int(d))
+                        dwell_time -= d
+                elif function == "home":
+                    con.goto(0x8000, 0x8000)
+                elif function == "goto":
+                    con.goto(start.real, start.imag)
+                elif function == "input":
+                    if self.service.input_operation_hardware:
+                        con.list_wait_for_input(sets.get("input_mask"), 0)
+                    else:
+                        con.rapid_mode()
+                        self._wait_for_input_protocol(
+                            sets.get("input_mask"), sets.get("input_value")
+                        )
+                        con.program_mode()
+                elif function == "output":
+                    con.port_set(sets.get("output_mask"), sets.get("output_value"))
+                    con.list_write_port()
+        con.list_delay_time(int(self.service.delay_end / 10.0))
+        self._list_bits = None
+        con.rapid_mode()
+
+        if self.service.redlight_preferred:
+            con.light_on()
+            con.write_port()
+        else:
+            con.light_off()
+            con.write_port()
 
     def plot(self, plot):
         """
@@ -184,7 +316,6 @@ class BalorDriver:
         con.program_mode()
         self._list_bits = con._port_bits
         last_on = None
-        con.set_wobble(None)
         queue = self.queue
         self.queue = list()
         for q in queue:
@@ -196,7 +327,6 @@ class BalorDriver:
                 except KeyError:
                     self.value_penbox = None
             con.set_settings(settings)
-            con.set_wobble(settings)
             # LOOP CHECKS
             if self._aborting:
                 con.abort()
@@ -208,15 +338,16 @@ class BalorDriver:
                 if last_x != x or last_y != y:
                     con.goto(x, y)
                 con.mark(*q.end)
-            elif isinstance(q, (QuadCut, CubicCut)):
+            elif isinstance(q, QuadCut):
                 last_x, last_y = con.get_last_xy()
                 x, y = q.start
                 if last_x != x or last_y != y:
                     con.goto(x, y)
-                interp = self.service.interpolate
-                step_size = 1.0 / float(interp)
-                t = step_size
-                for p in range(int(interp)):
+                interp = self.service.interp
+
+                g = Geomstr()
+                g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     # LOOP CHECKS
                     if self._aborting:
                         con.abort()
@@ -224,10 +355,30 @@ class BalorDriver:
                         return
                     while self.paused:
                         time.sleep(0.05)
+                    con.mark(p.real, p.imag)
+            elif isinstance(q, CubicCut):
+                last_x, last_y = con.get_last_xy()
+                x, y = q.start
+                if last_x != x or last_y != y:
+                    con.goto(x, y)
+                interp = self.service.interp
 
-                    p = q.point(t)
-                    con.mark(*p)
-                    t += step_size
+                g = Geomstr()
+                g.cubic(
+                    complex(*q.start),
+                    complex(*q.c1()),
+                    complex(*q.c2()),
+                    complex(*q.end),
+                )
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    # LOOP CHECKS
+                    if self._aborting:
+                        con.abort()
+                        self._aborting = False
+                        return
+                    while self.paused:
+                        time.sleep(0.05)
+                    con.mark(p.real, p.imag)
             elif isinstance(q, PlotCut):
                 last_x, last_y = con.get_last_xy()
                 x, y = q.start
@@ -321,7 +472,6 @@ class BalorDriver:
                                 except KeyError:
                                     self.value_penbox = None
                             con.set_settings(settings)
-                            con.set_wobble(settings)
                         elif on & (
                             PLOT_RAPID | PLOT_JOG
                         ):  # Plot planner requests position change.
@@ -378,10 +528,8 @@ class BalorDriver:
         @param y:
         @return:
         """
-        if self.service.swap_xy:
-            x, y = y, x
         old_current = self.service.current
-        self.native_x, self.native_y = self.service.physical_to_device_position(x, y)
+        self.native_x, self.native_y = self.service.view.position(x, y)
         if self.native_x > 0xFFFF:
             self.native_x = 0xFFFF
         if self.native_x < 0:
@@ -406,10 +554,8 @@ class BalorDriver:
         @param dy:
         @return:
         """
-        if self.service.swap_xy:
-            dx, dy = dy, dx
         old_current = self.service.current
-        unit_dx, unit_dy = self.service.physical_to_device_length(dx, dy)
+        unit_dx, unit_dy = self.service.view.position(dx, dy, vector=True)
         self.native_x += unit_dx
         self.native_y += unit_dy
 
@@ -435,7 +581,7 @@ class BalorDriver:
 
         @return:
         """
-        if self.service.rotary_active and self.service.rotary_supress_home:
+        if self.service.rotary.active and self.service.rotary.suppress_home:
             return
         self.move_abs("50%", "50%")
 
@@ -535,6 +681,7 @@ class BalorDriver:
             return
         self.paused = True
         self.connection.pause()
+        self.service.signal("pause")
 
     def resume(self):
         """
@@ -547,6 +694,7 @@ class BalorDriver:
         """
         self.paused = False
         self.connection.resume()
+        self.service.signal("pause")
 
     def reset(self):
         """
@@ -554,7 +702,9 @@ class BalorDriver:
 
         @return:
         """
+        self.paused = False
         self.connection.abort()
+        self.service.signal("pause")
 
     def dwell(self, time_in_ms):
         """

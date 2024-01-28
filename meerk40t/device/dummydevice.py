@@ -1,7 +1,8 @@
 from meerk40t.core.spoolers import Spooler
-from meerk40t.kernel import Service
+from meerk40t.core.view import View
+from meerk40t.kernel import Service, signal_listener
 
-from ..core.units import UNITS_PER_MIL, ViewPort
+from .mixins import Status
 
 
 def plugin(kernel, lifecycle=None):
@@ -26,7 +27,7 @@ def plugin(kernel, lifecycle=None):
         )
 
 
-class DummyDevice(Service, ViewPort):
+class DummyDevice(Service, Status):
     """
     DummyDevice is a mock device service. It provides no actual device.
 
@@ -35,6 +36,7 @@ class DummyDevice(Service, ViewPort):
 
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
+        Status.__init__(self)
         self.name = "Dummy Device"
         if choices is not None:
             for c in choices:
@@ -109,22 +111,45 @@ class DummyDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        ViewPort.__init__(
-            self,
-            width=self.bedwidth,
-            height=self.bedheight,
-            native_scale_x=UNITS_PER_MIL,
-            native_scale_y=UNITS_PER_MIL,
-            origin_x=0.0,
-            origin_y=0.0,
+        self.view = View(self.bedwidth, self.bedheight)
+
+    @property
+    def safe_label(self):
+        """
+        Provides a safe label without spaces or / which could cause issues when used in timer or other names.
+        @return:
+        """
+        if not hasattr(self, "label"):
+            return self.name
+        name = self.label.replace(" ", "-")
+        return name.replace("/", "-")
+
+    @signal_listener("bedwidth")
+    @signal_listener("bedheight")
+    @signal_listener("scale_x")
+    @signal_listener("scale_y")
+    def realize(self, origin=None, *args):
+        """
+        We implement realize which always calls `view;realized` signal.
+        @param origin:
+        @param args:
+        @return:
+        """
+        if origin is not None and origin != self.path:
+            return
+        self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.transform(
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
         )
+        self.signal("view;realized")
 
     @property
     def current(self):
         """
-        @return: the location in nm for the current known x value.
+        @return: the location in units for the current known position.
         """
-        return self.device_to_scene_position(self.native_x, self.native_y)
+        return self.view.iposition(self.native_x, self.native_y)
 
     @property
     def native(self):

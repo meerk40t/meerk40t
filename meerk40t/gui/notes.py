@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from .icons import STD_ICON_SIZE, icons8_comments_50
+from .icons import STD_ICON_SIZE, icons8_comments
 from .mwindow import MWindow
 
 _ = wx.GetTranslation
@@ -33,6 +33,7 @@ class NotePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("notes")
         self.pane = pane
         if not self.pane:
             self.check_auto_open_notes = wx.CheckBox(
@@ -110,15 +111,17 @@ class NotePanel(wx.Panel):
 
 class Notes(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(730, 621, *args, **kwds)
+        super().__init__(450, 350, *args, **kwds)
 
         self.panel = NotePanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_comments_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_comments.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Notes"))
         self.Children[0].SetFocus()
+        self.restore_aspect(honor_initial_values=True)
 
     @staticmethod
     def sub_register(kernel):
@@ -127,8 +130,9 @@ class Notes(MWindow):
             "button/project/Notes",
             {
                 "label": _("Notes"),
-                "icon": icons8_comments_50,
+                "icon": icons8_comments,
                 "tip": _("Open Notes Window"),
+                "help": "notes",
                 "action": lambda v: kernel.console("window toggle Notes\n"),
                 "size": STD_ICON_SIZE,
             },

@@ -1,3 +1,7 @@
+"""
+Somewhat related to laserpath widget, this draws the colored reticle circles for the current location of the laser.
+"""
+
 import wx
 
 from meerk40t.gui.laserrender import DRAW_MODE_RETICLE
@@ -24,6 +28,7 @@ class ReticleWidget(Widget):
         """
         context.listen("driver;position", self.on_update_driver)
         context.listen("emulator;position", self.on_update_emulator)
+        context.listen("status;position", self.on_update_status)
 
     def final(self, context):
         """
@@ -31,6 +36,7 @@ class ReticleWidget(Widget):
         """
         context.unlisten("driver;position", self.on_update_driver)
         context.unlisten("emulator;position", self.on_update_emulator)
+        context.unlisten("status;position", self.on_update_status)
 
     def on_update_driver(self, origin, pos):
         """
@@ -44,6 +50,13 @@ class ReticleWidget(Widget):
         Update of emulator adds and ensures the location of the e+origin position
         """
         self.reticles["e" + origin] = pos[2], pos[3]
+        self.scene.request_refresh_for_animation()
+
+    def on_update_status(self, origin, pos):
+        """
+        Update of emulator adds and ensures the location of the e+origin position
+        """
+        self.reticles["s" + origin] = pos[2], pos[3]
         self.scene.request_refresh_for_animation()
 
     def process_draw(self, gc):

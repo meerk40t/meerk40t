@@ -16,19 +16,21 @@ class CutOpNode(Node, Parameters):
     This is a Node of type "op cut".
     """
 
-    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
-        Node.__init__(self, type="op cut", id=id, label=label, lock=lock)
-        Parameters.__init__(self, None, **kwargs)
-        self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
-        self.kerf = 0
+    def __init__(self, settings=None, **kwargs):
+        if settings is not None:
+            settings = dict(settings)
+        Parameters.__init__(self, settings, **kwargs)
+        # Is this op out of useful bounds?
+        self.dangerous = False
+
+        self.label = "Cut"
+        # Set this to a float!
+        # A simple  self.kerf = 0 will lead to an interpretation as an int and
+        # will not be loaded properly via read_persistent.
+        # int("2180.534") throws a value error.
+        self.kerf = 0.0
         self._device_factor = 1.0
 
-        if len(args) == 1:
-            obj = args[0]
-            if hasattr(obj, "settings"):
-                self.settings = dict(obj.settings)
-            elif isinstance(obj, dict):
-                self.settings.update(obj)
         # Which elements can be added to an operation (manually via DND)?
         self._allowed_elements_dnd = (
             "elem ellipse",
@@ -36,6 +38,9 @@ class CutOpNode(Node, Parameters):
             "elem polyline",
             "elem rect",
             "elem line",
+            "effect hatch",
+            "effect wobble",
+            "effect warp",
         )
         # Which elements do we consider for automatic classification?
         self._allowed_elements = (
@@ -44,31 +49,25 @@ class CutOpNode(Node, Parameters):
             "elem polyline",
             "elem rect",
             "elem line",
+            "effect hatch",
+            "effect wobble",
+            "effect warp",
         )
         # To which attributes responds the classification color check
         self.allowed_attributes = [
             "stroke",
         ]
-        # Is this op out of useful bounds?
-        self.dangerous = False
-        if label is None:
-            self.label = "Cut"
-        else:
-            self.label = label
+        super().__init__(type="op cut", **kwargs)
+        self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
 
     def __repr__(self):
         return "CutOpNode()"
 
-    def __copy__(self):
-        return CutOpNode(self)
-
-    # def is_dangerous(self, minpower, maxspeed):
-    #     result = False
-    #     if maxspeed is not None and self.speed > maxspeed:
-    #         result = True
-    #     if minpower is not None and self.power < minpower:
-    #         result = True
-    #     self.dangerous = result
+    def offset_routine(self, path, offset_value=0):
+        # This is a placeholder that will be overloaded by plugin routines
+        # at runtime. It will return a new path with an offset to a given path
+        # As we don't have any logic, we just return the original path
+        return path
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
@@ -104,11 +103,20 @@ class CutOpNode(Node, Parameters):
         default_map["opstop"] = "(stop)" if self.stopop else ""
         default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
+        default_map["percent"] = "100%"
+        default_map["ppi"] = "default"
+        if self.power is not None:
+            default_map["percent"] = f"{self.power / 10.0:.0f}%"
+            default_map["ppi"] = f"{self.power:.0f}"
+        default_map["speed_mm_min"] = (
+            "" if self.speed is None else f"{self.speed * 60:.0f}"
+        )
+
         return default_map
 
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
-        if drag_node.type.startswith("elem"):
+        if hasattr(drag_node, "as_geometry"):
             if (
                 drag_node.type not in self._allowed_elements_dnd
                 or drag_node._parent.type == "branch reg"
@@ -218,26 +226,22 @@ class CutOpNode(Node, Parameters):
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
-        update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        self.settings.update(update_dict)
-        self.validate()
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
         self.updated()
 
     def save(self, settings, section):
+        # Sync certain properties with self.settings
+        for attr in ("label", "lock", "id"):
+            if hasattr(self, attr) and attr in self.settings:
+                self.settings[attr] = getattr(self, attr)
+        if "hex_color" in self.settings:
+            self.settings["hex_color"] = self.color.hexa
+
         settings.write_persistent_attributes(section, self)
         settings.write_persistent(section, "hex_color", self.color.hexa)
         settings.write_persistent_dict(section, self.settings)
-
-    def copy_children(self, obj):
-        for node in obj.children:
-            self.add_reference(node)
-
-    def copy_children_as_real(self, copy_node):
-        for node in copy_node.children:
-            self.add_node(copy(node.node))
 
     def time_estimate(self):
         estimate = 0
@@ -282,7 +286,7 @@ class CutOpNode(Node, Parameters):
                 pass
         native_mm = abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
         if self.kerf is None:
-            self.kerf = 0
+            self.kerf = 0.0
         self.settings["native_mm"] = native_mm
         self.settings["native_speed"] = self.speed * native_mm
         self.settings["native_rapid_speed"] = self.rapid_speed * native_mm
@@ -290,7 +294,7 @@ class CutOpNode(Node, Parameters):
         # as kerf is given in scene space but needs to be passed on in device space
         device = context.device
         self._device_factor = 1 / abs(
-            complex(device.native_scale_x, device.native_scale_y)
+            complex(device.view.native_scale_x, device.view.native_scale_y)
         )
 
     def as_cutobjects(self, closed_distance=15, passes=1):
@@ -312,6 +316,8 @@ class CutOpNode(Node, Parameters):
             elif node.type == "elem path":
                 path = abs(node.path)
                 path.approximate_arcs_with_cubics()
+            elif node.type.startswith("effect"):
+                path = node.as_geometry().as_path()
             elif node.type not in self._allowed_elements_dnd:
                 # These aren't valid.
                 continue
@@ -331,4 +337,5 @@ class CutOpNode(Node, Parameters):
                 original_op=self.type,
                 color=stroke,
                 kerf=self.kerf * self._device_factor,
+                offset_routine=self.offset_routine,
             )

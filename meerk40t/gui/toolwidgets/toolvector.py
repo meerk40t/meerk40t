@@ -16,7 +16,7 @@ class VectorTool(ToolWidget):
     Adds Path with click and drag.
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, mode=None):
         ToolWidget.__init__(self, scene)
         self.start_position = None
         self.path = None
@@ -102,7 +102,10 @@ class VectorTool(ToolWidget):
                     self.pen.SetWidth(int(elements.default_strokewidth))
                 self.path = Path()
                 if nearest_snap is None:
-                    self.path.move((space_pos[0], space_pos[1]))
+                    sx, sy = self.scene.get_snap_point(
+                        space_pos[0], space_pos[1], modifiers
+                    )
+                    self.path.move((sx, sy))
                 else:
                     self.path.move((nearest_snap[0], nearest_snap[1]))
             else:
@@ -126,7 +129,10 @@ class VectorTool(ToolWidget):
         elif event_type == "leftdown":
             self.scene.pane.tool_active = True
             if nearest_snap is None:
-                pos = (space_pos[0], space_pos[1])
+                sx, sy = self.scene.get_snap_point(
+                    space_pos[0], space_pos[1], modifiers
+                )
+                pos = (sx, sy)
             else:
                 pos = (nearest_snap[0], nearest_snap[1])
             pos = self.angled(pos)

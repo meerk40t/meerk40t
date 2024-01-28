@@ -1,3 +1,7 @@
+"""
+Grid widget is primarily tasked with drawing the grid in the scene. This is the size and shape of the desired bedsize.
+"""
+
 from math import atan2, cos, sin, sqrt, tau
 from platform import system
 
@@ -10,7 +14,7 @@ from meerk40t.gui.scene.widget import Widget
 
 class GridWidget(Widget):
     """
-    Interface Widget
+    Scene Widget
     """
 
     def __init__(self, scene, name=None, suppress_labels=False):
@@ -69,6 +73,7 @@ class GridWidget(Widget):
         self.grid_secondary_cy = None
         self.grid_secondary_scale_x = 1
         self.grid_secondary_scale_y = 1
+        self.set_secondary_axis_scales()
         # Circular grid
         self.draw_grid_circular = False
         self.grid_circular_cx = None
@@ -82,11 +87,27 @@ class GridWidget(Widget):
 
         self.set_colors()
 
+    def set_secondary_axis_scales(self):
+        sx = 1.0
+        sy = 1.0
+        if hasattr(self.scene.context.device, "rotary"):
+            if self.scene.context.device.rotary.scale_x is not None:
+                sx = self.scene.context.device.rotary.scale_x
+            if self.scene.context.device.rotary.scale_y is not None:
+                sy = self.scene.context.device.rotary.scale_y
+
+        self.grid_secondary_scale_x = sx
+        self.grid_secondary_scale_y = sy
+
     @property
     def scene_scale(self):
         matrix = self.scene.widget_root.scene_widget.matrix
         try:
-            return sqrt(abs(matrix.determinant))
+            scene_scale = sqrt(abs(matrix.determinant))
+            if scene_scale < 1e-8:
+                matrix.reset()
+                return 1.0
+            return scene_scale
         except (OverflowError, ValueError, ZeroDivisionError):
             matrix.reset()
         return 1.0
@@ -190,6 +211,7 @@ class GridWidget(Widget):
         Based on the current matrix calculate the grid within the bed-space.
         """
         d = self.scene.context
+        self.set_secondary_axis_scales()
         self.zero_x, self.zero_y = d.space.origin_zero()
         self._calc_primary_grid_lines()
         self._calc_secondary_grid_lines()
@@ -200,13 +222,7 @@ class GridWidget(Widget):
 
     @property
     def scaled_conversion(self):
-        return (
-            self.scene.context.device.length(
-                f"1{self.scene.context.units_name}",
-                as_float=True,
-            )
-            * self.scene_scale
-        )
+        return float(Length(f"1{self.scene.context.units_name}")) * self.scene_scale
 
     def calculate_tickdistance(self, w, h):
         # Establish the delta for about 15 ticks
@@ -288,8 +304,8 @@ class GridWidget(Widget):
 
         self.min_x = max(0, self.min_x)
         self.min_y = max(0, self.min_y)
-        self.max_x = min(float(self.scene.context.device.unit_width), self.max_x)
-        self.max_y = min(float(self.scene.context.device.unit_height), self.max_y)
+        self.max_x = min(self.scene.context.space.width, self.max_x)
+        self.max_y = min(self.scene.context.space.height, self.max_y)
 
     def calculate_tick_length(self):
         tick_length = float(
@@ -488,7 +504,9 @@ class GridWidget(Widget):
         y = start_y
         # mx, my = self.scene.convert_scene_to_window([x, y])
         self.grid_points.append([x, y])
-        max_r = abs(complex(p.device.unit_width, p.device.unit_height))  # hypot
+        max_r = abs(
+            complex(p.device.view.unit_width, p.device.view.unit_height)
+        )  # hypot
         tick_length = (self.primary_tick_length_x + self.primary_tick_length_y) / 2
         r_fourth = max_r // (4 * tick_length) * tick_length
         segments = 48
@@ -619,8 +637,8 @@ class GridWidget(Widget):
 
     def _draw_grid_circular(self, gc):
         gc.SetPen(self.circular_grid_line_pen)
-        u_width = float(self.scene.context.device.unit_width)
-        u_height = float(self.scene.context.device.unit_height)
+        u_width = float(self.scene.context.device.view.unit_width)
+        u_height = float(self.scene.context.device.view.unit_height)
         gc.Clip(0, 0, u_width, u_height)
         siz = sqrt(u_width * u_width + u_height * u_height)
         sox = self.circular_grid_center_x / u_width

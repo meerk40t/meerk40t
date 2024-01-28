@@ -17,12 +17,13 @@ CutPlan handles the various complicated algorithms to optimising the sequence of
 from copy import copy
 from math import isinf
 from os import times
-from time import time
+from time import perf_counter, time
 from typing import Optional
 
 import numpy as np
 
 from ..svgelements import Group, Polygon
+from ..tools.geomstr import Geomstr
 from ..tools.pathtools import VectorMontonizer
 from .cutcode.cutcode import CutCode
 from .cutcode.cutgroup import CutGroup
@@ -123,7 +124,7 @@ class CutPlan:
         """
         device = self.context.device
 
-        scene_to_device_matrix = device.scene_to_device_matrix()
+        scene_to_device_matrix = device.view.matrix
 
         # ==========
         # Determine the jobs bounds.
@@ -141,10 +142,10 @@ class CutPlan:
                 self.outline = None
             else:
                 self.outline = (
-                    device.device_position(min_x, min_y),
-                    device.device_position(max_x, min_y),
-                    device.device_position(max_x, max_y),
-                    device.device_position(min_x, max_y),
+                    device.view.position(min_x, min_y),
+                    device.view.position(max_x, min_y),
+                    device.view.position(max_x, max_y),
+                    device.view.position(min_x, max_y),
                 )
 
         # ==========
@@ -169,37 +170,51 @@ class CutPlan:
             # Absolute coordinates.
             placements.append(scene_to_device_matrix)
 
-        # TODO: Correct rotary.
-        # rotary = self.context.rotary
-        # if rotary.rotary_enabled:
-        #     axis = rotary.axis
-
         original_ops = copy(self.plan)
+        if self.context.opt_raster_optimisation and self.context.do_optimization:
+            try:
+                margin = float(Length(self.context.opt_raster_opt_margin, "0"))
+            except (AttributeError, ValueError):
+                margin = 0
+            self.optimize_rasters(original_ops, "op raster", margin)
+            # We could do this as well, but images are burnt separately anyway...
+            # self.optimize_rasters(original_ops, "op image", margin)
         self.plan.clear()
+
         idx = 0
         self.context.elements.mywordlist.push()
 
+        perform_simplify = (
+            self.context.opt_reduce_details and self.context.do_optimization
+        )
+        tolerance = self.context.opt_reduce_tolerance
         for placement in placements:
             # Adjust wordlist
             if idx > 0:
                 self.context.elements.mywordlist.move_all_indices(1)
 
             for original_op in original_ops:
-                op = copy(original_op)
+                try:
+                    op = original_op.copy_with_reified_tree()
+                except AttributeError:
+                    op = original_op
                 if not hasattr(op, "type") or op.type is None:
                     self.plan.append(op)
                     continue
                 if op.type.startswith("place "):
                     continue
                 self.plan.append(op)
-                if op.type.startswith("op"):
-                    for child in original_op.children:
-                        op.add_node(copy(child))
+                if op.type.startswith("op") or op.type.startswith("util"):
+                    # Call preprocess on any op or util ops in our list.
                     if hasattr(op, "preprocess"):
                         op.preprocess(self.context, placement, self)
+                if op.type.startswith("op"):
                     for node in op.flat():
                         if node is op:
                             continue
+                        if hasattr(node, "geometry") and perform_simplify:
+                            # We are still in scene reolution and not yet at device level
+                            node.geometry = node.geometry.simplify(tolerance=tolerance)
                         if hasattr(node, "mktext") and hasattr(node, "_cache"):
                             newtext = self.context.elements.wordlist_translate(
                                 node.mktext, elemnode=node, increment=False
@@ -236,6 +251,9 @@ class CutPlan:
                 if hasattr(c, "type") and c.type is not None
                 else type(c).__name__
             )
+            if c_type.startswith("effect"):
+                # Effects should not be used here.
+                continue
             if last_type is not None:
                 if c_type.startswith("op") != last_type.startswith("op"):
                     # This cannot merge
@@ -304,10 +322,6 @@ class CutPlan:
                     or op.type == "util console"
                 ):
                     yield op
-                    continue
-                if op.type == "op hatch":
-                    # hatch passes duplicated sub-objects, while pre-processing
-                    yield from self._blob_convert(op, copies=1, passes=1)
                     continue
                 passes = op.implicit_passes
                 if context.opt_merge_passes and (
@@ -433,6 +447,58 @@ class CutPlan:
             return False
         return True  # No reason these should not be merged.
 
+    def geometry(self):
+        """
+        Geometry converts User operations to naked geomstr objects.
+        """
+
+        if not self.plan:
+            return
+
+        plan = list(self.plan)
+        self.plan.clear()
+        g = Geomstr()
+        settings_index = 0
+        for c in plan:
+            c_type = (
+                c.type
+                if hasattr(c, "type") and c.type is not None
+                else type(c).__name__
+            )
+            settings_index += 1
+            if hasattr(c, "settings"):
+                settings = dict(c.settings)
+            else:
+                settings = dict(c.__dict__)
+            g.settings(settings_index, settings)
+
+            if c_type in ("op cut", "op engrave"):
+                for elem in c.children:
+                    if hasattr(elem, "as_geometry"):
+                        start_index = g.index
+                        g.append(elem.as_geometry())
+                        end_index = g.index
+                        g.flag_settings(settings_index, start_index, end_index)
+            elif c_type in ("op raster", "op image"):
+                for elem in c.children:
+                    if hasattr(elem, "as_image"):
+                        settings["raster"] = True
+                        image, box = elem.as_image()
+                        m = elem.matrix
+                        start_index = g.index
+                        image_geom = Geomstr.image(image)
+                        image_geom.transform(m)
+                        g.append(image_geom)
+                        end_index = g.index
+                        g.flag_settings(settings_index, start_index, end_index)
+            else:
+                if g:
+                    self.plan.append(g)
+                    g = Geomstr()
+                self.plan.append(c)
+        if g:
+            self.plan.append(g)
+
     def blob(self):
         """
         Blob converts User operations to CutCode objects.
@@ -511,7 +577,9 @@ class CutPlan:
         channel = self.context.channel("optimize", timestamp=True)
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
-                self.plan[i] = short_travel_cutcode_2opt(self.plan[i], channel=channel)
+                self.plan[i] = short_travel_cutcode_2opt(
+                    self.plan[i], kernel=self.context.kernel, channel=channel
+                )
 
     def optimize_cuts(self):
         """
@@ -532,8 +600,8 @@ class CutPlan:
                     float(Length(stol))
                     * 2
                     / (
-                        self.context.device.native_scale_x
-                        + self.context.device.native_scale_y
+                        self.context.device.view.native_scale_x
+                        + self.context.device.view.native_scale_y
                     )
                 )
             except ValueError:
@@ -551,7 +619,10 @@ class CutPlan:
             if isinstance(c, CutCode):
                 if c.constrained:
                     self.plan[i] = inner_first_ident(
-                        c, channel=channel, tolerance=tolerance
+                        c,
+                        kernel=self.context.kernel,
+                        channel=channel,
+                        tolerance=tolerance,
                     )
                     c = self.plan[i]
                 self.plan[i] = inner_selection_cutcode(
@@ -583,8 +654,8 @@ class CutPlan:
                     float(Length(stol))
                     * 2
                     / (
-                        self.context.device.native_scale_x
-                        + self.context.device.native_scale_y
+                        self.context.device.view.native_scale_x
+                        + self.context.device.view.native_scale_y
                     )
                 )
             except ValueError:
@@ -603,13 +674,17 @@ class CutPlan:
             if isinstance(c, CutCode):
                 if c.constrained:
                     self.plan[i] = inner_first_ident(
-                        c, channel=channel, tolerance=tolerance
+                        c,
+                        kernel=self.context.kernel,
+                        channel=channel,
+                        tolerance=tolerance,
                     )
                     c = self.plan[i]
                 if last is not None:
                     c._start_x, c._start_y = last
                 self.plan[i] = short_travel_cutcode(
                     c,
+                    kernel=self.context.kernel,
                     channel=channel,
                     complete_path=self.context.opt_complete_subpaths,
                     grouped_inner=grouped_inner,
@@ -637,6 +712,122 @@ class CutPlan:
         self._previous_bounds = None
         self.plan.clear()
         self.commands.clear()
+
+    def optimize_rasters(self, operation_list, op_type, margin):
+        def generate_clusters(operation):
+            def overlapping(bounds1, bounds2, margin):
+                # The rectangles don't overlap if
+                # one rectangle's minimum in some dimension
+                # is greater than the other's maximum in
+                # that dimension.
+                flagx = (bounds1[0] > bounds2[2] + margin) or (
+                    bounds2[0] > bounds1[2] + margin
+                )
+                flagy = (bounds1[1] > bounds2[3] + margin) or (
+                    bounds2[1] > bounds1[3] + margin
+                )
+                return bool(not (flagx or flagy))
+
+            clusters = list()
+            cluster_bounds = list()
+            for node in operation.children:
+                try:
+                    if node.type == "reference":
+                        node = node.node
+                    bb = node.paint_bounds
+                except AttributeError:
+                    # Either no element node or does not have bounds
+                    continue
+                clusters.append([node])
+                cluster_bounds.append(
+                    (
+                        bb[0],
+                        bb[1],
+                        bb[2],
+                        bb[3],
+                    )
+                )
+
+            def detail_overlap(index1, index2):
+                # But is there a real overlap, or just one with the union bounds?
+                for outer_node in clusters[index1]:
+                    try:
+                        bb_outer = outer_node.paint_bounds
+                    except AttributeError:
+                        continue
+                    for inner_node in clusters[index2]:
+                        try:
+                            bb_inner = inner_node.paint_bounds
+                        except AttributeError:
+                            continue
+                        if overlapping(bb_outer, bb_inner, margin):
+                            return True
+                # We did not find anything...
+                return False
+
+            needs_repeat = True
+            while needs_repeat:
+                needs_repeat = False
+                for outer_idx in range(len(clusters) - 1, -1, -1):
+                    # Loop downwards as we are manipulating the arrays
+                    bb = cluster_bounds[outer_idx]
+                    for inner_idx in range(outer_idx - 1, -1, -1):
+                        cc = cluster_bounds[inner_idx]
+                        if not overlapping(bb, cc, margin):
+                            continue
+                        # Overlap!
+                        # print (f"Reuse cluster {inner_idx} for {outer_idx}")
+                        real_overlap = detail_overlap(outer_idx, inner_idx)
+                        if real_overlap:
+                            needs_repeat = True
+                            # We need to extend the inner cluster by the outer
+                            clusters[inner_idx].extend(clusters[outer_idx])
+                            cluster_bounds[inner_idx] = (
+                                min(bb[0], cc[0]),
+                                min(bb[1], cc[1]),
+                                max(bb[2], cc[2]),
+                                max(bb[3], cc[3]),
+                            )
+                            clusters.pop(outer_idx)
+                            cluster_bounds.pop(outer_idx)
+                            # We are done with the inner loop, as we effectively
+                            # destroyed the cluster element we compared
+                            break
+
+            return clusters
+
+        stime = perf_counter()
+        scount = 0
+        ecount = 0
+        for idx in range(len(operation_list) - 1, -1, -1):
+            op = operation_list[idx]
+            if (
+                not hasattr(op, "type")
+                or not hasattr(op, "children")
+                or op.type != op_type
+            ):
+                # That's not what we are looking for
+                continue
+            scount += 1
+            clusters = generate_clusters(op)
+            ecount += len(clusters)
+            if len(clusters) > 0:
+                # Create cluster copies of the raster op
+                for entry in clusters:
+                    newop = copy(op)
+                    newop._references.clear()
+                    for node in entry:
+                        newop.add_reference(node)
+                    newop.set_dirty_bounds()
+                    operation_list.insert(idx + 1, newop)
+
+                # And remove the original one...
+                operation_list.pop(idx)
+        etime = perf_counter()
+        if self.channel:
+            self.channel(
+                f"Optimise {op_type} finished after {etime-stime:.2f} seconds, inflated {scount} operations to {ecount}"
+            )
 
 
 def is_inside(inner, outer, tolerance=0):
@@ -787,7 +978,7 @@ def correct_empty(context: CutGroup):
             del context[index]
 
 
-def inner_first_ident(context: CutGroup, channel=None, tolerance=0):
+def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0):
     """
     Identifies closed CutGroups and then identifies any other CutGroups which
     are entirely inside.
@@ -805,16 +996,34 @@ def inner_first_ident(context: CutGroup, channel=None, tolerance=0):
 
     groups = [cut for cut in context if isinstance(cut, (CutGroup, RasterCut))]
     closed_groups = [g for g in groups if isinstance(g, CutGroup) and g.closed]
+    total_pass = len(groups) * len(closed_groups)
     context.contains = closed_groups
+    if channel:
+        channel(
+            f"Compare {len(groups)} groups against {len(closed_groups)} closed groups"
+        )
 
     constrained = False
+    current_pass = 0
+    if kernel:
+        busy = kernel.busyinfo
+        _ = kernel.translation
+    else:
+        busy = None
     for outer in closed_groups:
         for inner in groups:
+            current_pass += 1
             if outer is inner:
                 continue
             # if outer is inside inner, then inner cannot be inside outer
             if inner.contains and outer in inner.contains:
                 continue
+            if current_pass % 50 == 0 and busy and busy.shown:
+                message = _("Pass {cpass}/{tpass}").format(
+                    cpass=current_pass, tpass=total_pass
+                )
+                busy.change(msg=message, keep=2)
+                busy.show()
 
             if is_inside(inner, outer, tolerance):
                 constrained = True
@@ -843,7 +1052,7 @@ def inner_first_ident(context: CutGroup, channel=None, tolerance=0):
     if channel:
         end_times = times()
         channel(
-            f"Inner paths identified in {time() - start_time:.3f} elapsed seconds "
+            f"Inner paths identified in {time() - start_time:.3f} elapsed seconds: {constrained} "
             f"using {end_times[0] - start_times[0]:.3f} seconds CPU"
         )
     return context
@@ -851,6 +1060,7 @@ def inner_first_ident(context: CutGroup, channel=None, tolerance=0):
 
 def short_travel_cutcode(
     context: CutCode,
+    kernel=None,
     channel=None,
     complete_path: Optional[bool] = False,
     grouped_inner: Optional[bool] = False,
@@ -879,11 +1089,30 @@ def short_travel_cutcode(
     else:
         curr = complex(curr[0], curr[1])
 
+    cutcode_len = 0
     for c in context.flat():
+        cutcode_len += 1
         c.burns_done = 0
 
     ordered = CutCode()
+    current_pass = 0
+    if kernel:
+        busy = kernel.busyinfo
+        _ = kernel.translation
+    else:
+        busy = None
+    # print (f"Cutcode-Len={cutcode_len}")
     while True:
+        current_pass += 1
+        if current_pass % 50 == 0 and busy and busy.shown:
+            # That may not be a fully correct approximation
+            # in terms of the total passes required, but it
+            # should give an idea...
+            message = _("Pass {cpass}/{tpass}").format(
+                cpass=current_pass, tpass=cutcode_len
+            )
+            busy.change(msg=message, keep=2)
+            busy.show()
         closest = None
         backwards = False
         distance = float("inf")
@@ -1007,7 +1236,9 @@ def short_travel_cutcode(
     return ordered
 
 
-def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
+def short_travel_cutcode_2opt(
+    context: CutCode, kernel=None, passes: int = 50, channel=None
+):
     """
     This implements 2-opt algorithm using numpy.
 
@@ -1065,6 +1296,17 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
         channel(
             f"optimize: laser-off distance is {dist_sum}. {100 * pos / length:.02f}% done with pass {current_pass}/{passes}"
         )
+        if kernel:
+            busy = kernel.busyinfo
+            _ = kernel.translation
+            if busy.shown:
+                busy.change(
+                    msg=_("Pass {cpass}/{tpass").format(
+                        cpass=current_pass, tpass=passes
+                    ),
+                    keep=2,
+                )
+                busy.show()
 
     improved = True
     while improved:
@@ -1176,11 +1418,12 @@ def inner_selection_cutcode(
     if channel:
         end_times = times()
         end_length = ordered.length_travel(True)
-        channel(
-            f"Length at end: {end_length:.0f} steps "
-            f"({(end_length - start_length) / start_length:+.0%}), "
-            f"optimized in {time() - start_time:.3f} "
-            f"elapsed seconds using {end_times[0] - start_times[0]:.3f} "
-            f"seconds CPU in {iterations} iterations"
-        )
+        msg = f"Length at end: {end_length:.0f} steps "
+        if start_length != 0:
+            msg += f"({(end_length - start_length) / start_length:+.0%}), "
+        msg += f"optimized in {time() - start_time:.3f} "
+        msg += f"elapsed seconds using {end_times[0] - start_times[0]:.3f} "
+        msg += f"seconds CPU in {iterations} iterations"
+
+        channel(msg)
     return ordered

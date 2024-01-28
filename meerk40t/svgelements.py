@@ -199,7 +199,7 @@ PATTERN_TRANSFORM_UNITS = (
 )
 
 REGEX_IRI = re.compile(r"url\(#?(.*)\)")
-REGEX_DATA_URL = re.compile(r"^data:([^,]*),(.*)")
+REGEX_DATA_URL = re.compile(r"^data:([^,]*),")
 REGEX_FLOAT = re.compile(PATTERN_FLOAT)
 REGEX_COORD_PAIR = re.compile(
     "(%s)%s(%s)" % (PATTERN_FLOAT, PATTERN_COMMA, PATTERN_FLOAT)
@@ -3995,7 +3995,7 @@ class PathSegment:
 
     These segments define a 1:1 relationship with the path_d or path data attribute, denoted in
     SVG by the 'd' attribute. These are moveto, closepath, lineto, and the curves which are cubic
-    Bézier curves, quadratic Bézier curves, and elliptical arc. These are classed as Move, Close,
+    B?zier curves, quadratic B?zier curves, and elliptical arc. These are classed as Move, Close,
     Line, CubicBezier, QuadraticBezier, and Arc. And in path_d are denoted as M, Z, L, C, Q, A.
 
     There are lowercase versions of these commands. And for C, and Q there are S and T which are
@@ -4254,7 +4254,6 @@ class PathSegment:
         tb_hit = qb[hits] / denom[hits]
 
         for i, hit in enumerate(where_hit):
-
             at = ta[0] + float(hit[1]) * step_a  # Zoomed min+segment intersected.
             bt = tb[0] + float(hit[0]) * step_b
             a_fractional = (
@@ -4515,7 +4514,7 @@ class Line(Linear):
 
 
 class QuadraticBezier(Curve):
-    """Represents Quadratic Bézier commands."""
+    """Represents Quadratic B?zier commands."""
 
     def __init__(self, start, control, end, **kwargs):
         Curve.__init__(self, start, end, **kwargs)
@@ -4605,7 +4604,7 @@ class QuadraticBezier(Curve):
 
     def bbox(self):
         """
-        Returns the bounding box for the quadratic Bézier curve.
+        Returns the bounding box for the quadratic B?zier curve.
         """
         n = self.start.x - self.control.x
         d = self.start.x - 2 * self.control.x + self.end.x
@@ -4697,7 +4696,7 @@ class QuadraticBezier(Curve):
 
 
 class CubicBezier(Curve):
-    """Represents Cubic Bézier commands."""
+    """Represents Cubic B?zier commands."""
 
     def __init__(self, start, control1, control2, end, **kwargs):
         Curve.__init__(self, start, end, **kwargs)
@@ -4802,7 +4801,7 @@ class CubicBezier(Curve):
             return [Point(*_compute_point(position)) for position in positions]
 
     def bbox(self):
-        """returns the tight-fitting bounding box of the Bézier curve.
+        """returns the tight-fitting bounding box of the B?zier curve.
         Code by:
         https://github.com/mathandy/svgpathtools
         """
@@ -5332,7 +5331,7 @@ class Arc(Curve):
     def length(self, error=ERROR, min_depth=MIN_DEPTH):
         """The length of an elliptical arc segment requires numerical
         integration, and in that case it's simpler to just do a geometric
-        approximation, as for cubic Bézier curves.
+        approximation, as for cubic B?zier curves.
         """
         if self.sweep == 0:
             return 0
@@ -6032,7 +6031,8 @@ class Path(Shape, MutableSequence):
     @property
     def first_point(self):
         """First point along the Path. This is the start point of the first segment unless it starts
-        with a Move command with a None start in which case first point is that Move's destination."""
+        with a Move command with a None start in which case first point is that Move's destination.
+        """
         if len(self._segments) == 0:
             return None
         if self._segments[0].start is not None:
@@ -6498,7 +6498,7 @@ class Path(Shape, MutableSequence):
 
     def approximate_arcs_with_cubics(self, error=0.1):
         """
-        Iterates through this path and replaces any Arcs with cubic Bézier curves.
+        Iterates through this path and replaces any Arcs with cubic B?zier curves.
         """
         sweep_limit = tau * error
         for s in range(len(self) - 1, -1, -1):
@@ -6509,7 +6509,7 @@ class Path(Shape, MutableSequence):
 
     def approximate_arcs_with_quads(self, error=0.1):
         """
-        Iterates through this path and replaces any Arcs with quadratic Bézier curves.
+        Iterates through this path and replaces any Arcs with quadratic B?zier curves.
         """
         sweep_limit = tau * error
         for s in range(len(self) - 1, -1, -1):
@@ -6520,7 +6520,7 @@ class Path(Shape, MutableSequence):
 
     def approximate_bezier_with_circular_arcs(self, error=0.01):
         """
-        Iterates through this path and replaces any Bézier curves with circular arcs.
+        Iterates through this path and replaces any B?zier curves with circular arcs.
         """
         for s in range(len(self) - 1, -1, -1):
             segment = self[s]
@@ -8531,7 +8531,7 @@ class Image(SVGElement, GraphicObject, Transformable):
             if match:
                 # Data URL
                 self.media_type = match.group(1).split(";")
-                self.data = match.group(2)
+                self.data = self.url[match.end(1) + 1 :]
                 if "base64" in self.media_type:
                     from base64 import b64decode
 

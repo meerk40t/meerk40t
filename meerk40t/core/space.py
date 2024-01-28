@@ -31,7 +31,7 @@ class CoordinateSystem(Service):
                 "type": float,
                 "label": _("Origin Y"),
                 "tip": _(
-                    "Value between 0-1 for the location of the origin x parameter"
+                    "Value between 0-1 for the location of the origin y parameter"
                 ),
             },
             {
@@ -94,6 +94,10 @@ class CoordinateSystem(Service):
     def update(self, origin, *args):
         self.update_bounds(self.x, self.y, self.width, self.height)
 
+    @signal_listener("view;realized")
+    def update_realize(self, origin, *args):
+        self.update_bounds(0, 0, self.device.view.width, self.device.view.height)
+
     def origin_zero(self):
         return self.origin_x * self.width, self.origin_y * self.height
 
@@ -106,8 +110,6 @@ class CoordinateSystem(Service):
             self.width, self.height, dpi_x=UNITS_PER_INCH, dpi_y=UNITS_PER_INCH
         )
         self.display.transform(
-            origin_x=self.origin_x,
-            origin_y=self.origin_y,
             flip_x=not self.right_positive,
             flip_y=not self.bottom_positive,
             swap_xy=self.swap_xy,

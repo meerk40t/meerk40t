@@ -1,14 +1,14 @@
 import wx
 
 from meerk40t.gui.icons import (
-    icons8_diagonal_20,
-    icons8_direction_20,
-    icons8_image_20,
-    icons8_laser_beam_20,
-    icons8_scatter_plot_20,
-    icons8_small_beam_20,
+    icon_effect_hatch,
+    icon_points,
+    icons8_direction,
+    icons8_image,
+    icons8_laser_beam,
+    icons8_laserbeam_weak,
 )
-from meerk40t.gui.wxutils import TextCtrl
+from meerk40t.gui.wxutils import TextCtrl, dip_size
 
 _ = wx.GetTranslation
 
@@ -24,16 +24,18 @@ class WarningPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("warning")
+
         self.op_id = ("cut", "engrave", "raster", "image", "dots", "hatch")
         self.data = {}
 
         self.images = {
-            "cut": icons8_laser_beam_20,
-            "engrave": icons8_small_beam_20,
-            "raster": icons8_direction_20,
-            "image": icons8_image_20,
-            "dots": icons8_scatter_plot_20,
-            "hatch": icons8_diagonal_20,
+            "cut": icons8_laser_beam,
+            "engrave": icons8_laserbeam_weak,
+            "raster": icons8_direction,
+            "image": icons8_image,
+            "dots": icon_points,
+            "hatch": icon_effect_hatch,
         }
         self.checkboxes = []
         self.limits = []
@@ -56,7 +58,7 @@ class WarningPanel(wx.Panel):
                 }
                 self.data[opatt_id] = xdata
 
-        hsizer = wx.FlexGridSizer(cols=9, gap=wx.Size(2, 0))
+        hsizer = wx.FlexGridSizer(cols=9, gap=dip_size(self, 2, 0))
         # hsizer.SetCols(9)
         idx = -1
         for key in self.data:
@@ -85,7 +87,7 @@ class WarningPanel(wx.Panel):
                 limited=True,
                 check="float",
             )
-            ctrl1.SetMinSize(wx.Size(60, -1))
+            ctrl1.SetMinSize(dip_size(self, 60, -1))
             ctrl1.SetToolTip(
                 _("Warn level for minimum {unit}").format(unit=_(entry["attr"]))
             )
@@ -106,7 +108,7 @@ class WarningPanel(wx.Panel):
                 limited=True,
                 check="float",
             )
-            ctrl2.SetMinSize(wx.Size(60, -1))
+            ctrl2.SetMinSize(dip_size(self, 60, -1))
             ctrl2.SetToolTip(
                 _("Warn level for maximum {unit}").format(unit=_(entry["attr"]))
             )

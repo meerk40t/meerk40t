@@ -16,6 +16,7 @@ class BalorOperationPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("baloroperation")
         self.parent = args[0]
         self.operation = node
         params = Parameters(self.operation.settings)
@@ -91,52 +92,6 @@ class BalorOperationPanel(ScrolledPanel):
                 "conditional": (params, "timing_enabled"),
                 "label": _("Polygon Delay"),
                 "tip": _("Delay amount between different points in the path travel."),
-            },
-            {
-                "attr": "wobble_enabled",
-                "object": params,
-                "default": False,
-                "type": bool,
-                "label": _("Enable Wobble"),
-                "tip": _("Enable wobble for this particular cut"),
-            },
-            {
-                "attr": "wobble_radius",
-                "object": params,
-                "default": "1.5mm",
-                "type": Length,
-                "conditional": (params, "wobble_enabled"),
-                "label": _("Radius of wobble"),
-                "tip": _("Radius of the wobble for this cut, if wobble is enabled."),
-            },
-            {
-                "attr": "wobble_interval",
-                "object": params,
-                "default": "0.2mm",
-                "type": Length,
-                "conditional": (params, "wobble_enabled"),
-                "label": _("Wobble Sampling Interval"),
-                "tip": _("Sample interval for the wobble of this cut"),
-            },
-            {
-                "attr": "wobble_speed",
-                "object": params,
-                "default": 50.0,
-                "type": float,
-                "conditional": (params, "wobble_enabled"),
-                "label": _("Wobble Speed Multiplier"),
-                "tip": _("Wobble rotation speed multiplier"),
-            },
-            {
-                "attr": "wobble_type",
-                "object": params,
-                "default": "circle",
-                "type": str,
-                "style": "combo",
-                "choices": list(self.context.match("wobble", suffix=True)),
-                "conditional": (params, "wobble_enabled"),
-                "label": _("Wobble Pattern Type"),
-                "tip": _("Pattern type for the given wobble."),
             },
         ]
 

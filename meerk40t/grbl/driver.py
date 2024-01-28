@@ -13,6 +13,7 @@ from meerk40t.core.cutcode.homecut import HomeCut
 from meerk40t.core.cutcode.inputcut import InputCut
 from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.cutcode.outputcut import OutputCut
+from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.waitcut import WaitCut
 
@@ -21,6 +22,7 @@ from ..core.plotplanner import PlotPlanner
 from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM
 from ..device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from ..kernel import signal_listener
+from ..tools.geomstr import Geomstr
 
 
 class GRBLDriver(Parameters):
@@ -33,6 +35,15 @@ class GRBLDriver(Parameters):
         self.paused = False
         self.native_x = 0
         self.native_y = 0
+
+        self.mpos_x = 0
+        self.mpos_y = 0
+        self.mpos_z = 0
+
+        self.wpos_x = 0
+        self.wpos_y = 0
+        self.wpos_z = 0
+
         self.stepper_step_size = UNITS_PER_MIL
 
         self.plot_planner = PlotPlanner(
@@ -52,12 +63,12 @@ class GRBLDriver(Parameters):
         self._absolute = True
         self.feed_mode = None
         self.feed_convert = None
-        self._g94_feedrate()  # G93 DEFAULT, mm mode
+        self._g94_feedrate()  # G94 DEFAULT, mm mode
 
         self.unit_scale = None
         self.units = None
         self._g21_units_mm()
-        self._g91_absolute()
+        self._g90_absolute()
 
         self.out_pipe = None
         self.out_real = None
@@ -146,12 +157,10 @@ class GRBLDriver(Parameters):
         @param y:
         @return:
         """
-        if self.service.swap_xy:
-            x, y = y, x
-        self._g91_absolute()
+        self._g90_absolute()
         self._clean()
         old_current = self.service.current
-        x, y = self.service.physical_to_device_position(x, y)
+        x, y = self.service.view.position(x, y)
         self._move(x, y)
         new_current = self.service.current
         self.service.signal(
@@ -167,14 +176,21 @@ class GRBLDriver(Parameters):
         @param dy:
         @return:
         """
-        if self.service.swap_xy:
-            dx, dy = dy, dx
-        self._g90_relative()
+        # self._g90_absolute()
+        # self._clean()
+        # old_current = self.service.current
+        # x, y = old_current
+        # x += dx
+        # y += dy
+        # x, y = self.service.view.position(x, y)
+        # self._move(x, y)
+
+        self._g91_relative()
         self._clean()
         old_current = self.service.current
 
-        dx, dy = self.service.physical_to_device_length(dx, dy)
-        self._move(dx, dy)
+        unit_dx, unit_dy = self.service.view.position(dx, dy, vector=True)
+        self._move(unit_dx, unit_dy)
 
         new_current = self.service.current
         self.service.signal(
@@ -232,6 +248,122 @@ class GRBLDriver(Parameters):
             self.speed_dirty = False
         self(f"M3{spower}{self.line_end}{sspeed}")
 
+    def geometry(self, geom):
+        """
+        Called at the end of plot commands to ensure the driver can deal with them all as a group.
+
+        @return:
+        """
+        # TODO: estop cannot clear the geom.
+        self.signal("grbl_red_dot", False)  # We are not using red-dot if we're cutting.
+        self.clear_states()
+        self._g90_absolute()
+        self._g94_feedrate()
+        self._clean()
+        if self.service.use_m3:
+            self(f"M3{self.line_end}")
+        else:
+            self(f"M4{self.line_end}")
+        first = True
+        g = Geomstr()
+        for segment_type, start, c1, c2, end, sets in geom.as_lines():
+            while self.hold_work(0):
+                if self.service.kernel.is_shutdown:
+                    return
+                time.sleep(0.05)
+            x = self.native_x
+            y = self.native_y
+            start_x, start_y = start.real, start.imag
+            if x != start_x or y != start_y or first:
+                self.on_value = 0
+                self.power_dirty = True
+                self.move_mode = 0
+                first = False
+                self._move(start_x, start_y)
+            if self.on_value != 1.0:
+                self.power_dirty = True
+            self.on_value = 1.0
+            # Default-Values?!
+            qpower = sets.get("power", self.power)
+            qspeed = sets.get("speed", self.speed)
+            qraster_step_x = sets.get("raster_step_x")
+            qraster_step_y = sets.get("raster_step_y")
+            if qpower != self.power:
+                self.set("power", qpower)
+            if (
+                qspeed != self.speed
+                or qraster_step_x != self.raster_step_x
+                or qraster_step_y != self.raster_step_y
+            ):
+                self.set("speed", qspeed)
+            self.settings.update(sets)
+            if segment_type == "line":
+                self.move_mode = 1
+                self._move(end.real, end.imag)
+            elif segment_type == "end":
+                self.on_value = 0
+                self.power_dirty = True
+                self.move_mode = 0
+                first = False
+            elif segment_type == "quad":
+                self.move_mode = 1
+                interp = self.service.interp
+                g.clear()
+                g.quad(complex(start), complex(c1), complex(end))
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    while self.paused:
+                        time.sleep(0.05)
+                    self._move(p.real, p.imag)
+            elif segment_type == "cubic":
+                self.move_mode = 1
+                interp = self.service.interp
+                g.clear()
+                g.cubic(
+                    complex(start),
+                    complex(c1),
+                    complex(c2),
+                    complex(end),
+                )
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    while self.paused:
+                        time.sleep(0.05)
+                    self._move(p.real, p.imag)
+            elif segment_type == "arc":
+                # TODO: Allow arcs to be directly executed by GRBL which can actually use them.
+                self.move_mode = 1
+                interp = self.service.interp
+                g.clear()
+                g.arc(
+                    complex(start),
+                    complex(c1),
+                    complex(end),
+                )
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    while self.paused:
+                        time.sleep(0.05)
+                    self._move(p.real, p.imag)
+            elif segment_type == "point":
+                function = sets.get("function")
+                if function == "dwell":
+                    self.dwell(sets.get("dwell_time"))
+                elif function == "wait":
+                    self.wait(sets.get("dwell_time"))
+                elif function == "home":
+                    self.home()
+                elif function == "goto":
+                    self._move(start.real, start.imag)
+                elif function == "input":
+                    # GRBL has no core GPIO functionality
+                    pass
+                elif function == "output":
+                    # GRBL has no core GPIO functionality
+                    pass
+        self(f"G1 S0{self.line_end}")
+        self(f"M5{self.line_end}")
+        self.clear_states()
+        self.wait_finish()
+        return False
+
     def plot(self, plot):
         """
         Gives the driver a bit of cutcode that should be plotted.
@@ -248,23 +380,27 @@ class GRBLDriver(Parameters):
         """
         self.signal("grbl_red_dot", False)  # We are not using red-dot if we're cutting.
         self.clear_states()
-        self._g91_absolute()
+        self._g90_absolute()
         self._g94_feedrate()
         self._clean()
         if self.service.use_m3:
             self(f"M3{self.line_end}")
         else:
             self(f"M4{self.line_end}")
+        first = True
         for q in self.queue:
             while self.hold_work(0):
+                if self.service.kernel.is_shutdown:
+                    return
                 time.sleep(0.05)
             x = self.native_x
             y = self.native_y
             start_x, start_y = q.start
-            if x != start_x or y != start_y:
+            if x != start_x or y != start_y or first:
                 self.on_value = 0
                 self.power_dirty = True
                 self.move_mode = 0
+                first = False
                 self._move(start_x, start_y)
             if self.on_value != 1.0:
                 self.power_dirty = True
@@ -286,18 +422,29 @@ class GRBLDriver(Parameters):
             if isinstance(q, LineCut):
                 self.move_mode = 1
                 self._move(*q.end)
-            elif isinstance(q, (QuadCut, CubicCut)):
+            elif isinstance(q, QuadCut):
                 self.move_mode = 1
-                interp = self.service.interpolate
-                step_size = 1.0 / float(interp)
-                t = step_size
-                for p in range(int(interp)):
+                interp = self.service.inter
+                g = Geomstr()
+                g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
                     while self.paused:
                         time.sleep(0.05)
-                    self._move(*q.point(t))
-                    t += step_size
-                last_x, last_y = q.end
-                self._move(last_x, last_y)
+                    self._move(p.real, p.imag)
+            elif isinstance(q, CubicCut):
+                self.move_mode = 1
+                interp = self.service.interp
+                g = Geomstr()
+                g.cubic(
+                    complex(*q.start),
+                    complex(*q.c1()),
+                    complex(*q.c2()),
+                    complex(*q.end),
+                )
+                for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
+                    while self.paused:
+                        time.sleep(0.05)
+                    self._move(p.real, p.imag)
             elif isinstance(q, WaitCut):
                 self.wait(q.dwell_time)
             elif isinstance(q, HomeCut):
@@ -310,8 +457,19 @@ class GRBLDriver(Parameters):
             elif isinstance(q, (InputCut, OutputCut)):
                 # GRBL has no core GPIO functionality
                 pass
+            elif isinstance(q, PlotCut):
+                self.move_mode = 1
+                self.set("power", 1000)
+                for ox, oy, on, x, y in q.plot:
+                    while self.hold_work(0):
+                        time.sleep(0.05)
+                    # q.plot can have different on values, these are parsed
+                    if self.on_value != on:
+                        self.power_dirty = True
+                    self.on_value = on
+                    self._move(x, y)
             else:
-                #  Rastercut, PlotCut
+                #  Rastercut
                 self.plot_planner.push(q)
                 self.move_mode = 1
                 for x, y, on in self.plot_planner.gen():
@@ -366,12 +524,11 @@ class GRBLDriver(Parameters):
         """
         if data_type != "grbl":
             return
-        for line in data:
-            grbl = bytes.decode(line, "utf-8")
-            for split in grbl.split("\r"):
-                g = split.strip()
-                if g:
-                    self(f"{g}{self.line_end}")
+        grbl = bytes.decode(data, "latin-1")
+        for split in grbl.split("\r"):
+            g = split.strip()
+            if g:
+                self(f"{g}{self.line_end}")
 
     def physical_home(self):
         """
@@ -400,7 +557,7 @@ class GRBLDriver(Parameters):
         """
         self.native_x = 0
         self.native_y = 0
-        if self.service.rotary_active and self.service.rotary_supress_home:
+        if self.service.rotary.active and self.service.rotary.suppress_home:
             return
         self(f"G28{self.line_end}")
 
@@ -510,6 +667,7 @@ class GRBLDriver(Parameters):
         """
         self.paused = True
         self(f"!{self.line_end}", real=True)
+        self.service.signal("pause")
 
     def resume(self, *args):
         """
@@ -522,6 +680,7 @@ class GRBLDriver(Parameters):
         """
         self.paused = False
         self(f"~{self.line_end}", real=True)
+        self.service.signal("pause")
 
     def clear_states(self):
         self.power_dirty = True
@@ -544,7 +703,18 @@ class GRBLDriver(Parameters):
         self.queue.clear()
         self.plot_planner.clear()
         self(f"\x18{self.line_end}", real=True)
+        self._g94_feedrate()
+        self._g21_units_mm()
+        self._g90_absolute()
+
+        self.power_dirty = True
+        self.speed_dirty = True
+        self.absolute_dirty = True
+        self.feedrate_dirty = True
+        self.units_dirty = True
+
         self.paused = False
+        self.service.signal("pause")
 
     def clear_alarm(self):
         """
@@ -553,6 +723,33 @@ class GRBLDriver(Parameters):
         @return:
         """
         self(f"$X{self.line_end}", real=True)
+        if self.service.extended_alarm_clear:
+            self.reset()
+
+    def declare_modals(self, modals):
+        self.move_mode = 0 if "G0" in modals else 1
+        if "G90" in modals:
+            self._g90_absolute()
+            self.absolute_dirty = False
+        if "G91" in modals:
+            self._g91_relative()
+            self.absolute_dirty = False
+        if "G94" in modals:
+            self._g94_feedrate()
+            self.feedrate_dirty = False
+        if "G93" in modals:
+            self._g93_feedrate()
+            self.feedrate_dirty = False
+        if "G20" in modals:
+            self._g20_units_inch()
+            self.units_dirty = False
+        if "G21" in modals:
+            self._g21_units_mm()
+            self.units_dirty = False
+
+    def declare_position(self, x, y):
+        self.native_x = x * self.unit_scale
+        self.native_y = y * self.unit_scale
 
     ####################
     # PROTECTED DRIVER CODE
@@ -589,7 +786,7 @@ class GRBLDriver(Parameters):
             (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
 
-    def _clean(self):
+    def _clean_motion(self):
         if self.absolute_dirty:
             if self._absolute:
                 self(f"G90{self.line_end}")
@@ -597,6 +794,7 @@ class GRBLDriver(Parameters):
                 self(f"G91{self.line_end}")
         self.absolute_dirty = False
 
+    def _clean_feed_mode(self):
         if self.feedrate_dirty:
             if self.feed_mode == 94:
                 self(f"G94{self.line_end}")
@@ -604,6 +802,7 @@ class GRBLDriver(Parameters):
                 self(f"G93{self.line_end}")
         self.feedrate_dirty = False
 
+    def _clean_units(self):
         if self.units_dirty:
             if self.units == 20:
                 self(f"G20{self.line_end}")
@@ -611,13 +810,18 @@ class GRBLDriver(Parameters):
                 self(f"G21{self.line_end}")
         self.units_dirty = False
 
-    def _g90_relative(self):
+    def _clean(self):
+        self._clean_motion()
+        self._clean_feed_mode()
+        self._clean_units()
+
+    def _g91_relative(self):
         if not self._absolute:
             return
         self._absolute = False
         self.absolute_dirty = True
 
-    def _g91_absolute(self):
+    def _g90_absolute(self):
         if self._absolute:
             return
         self._absolute = True

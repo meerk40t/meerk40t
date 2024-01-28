@@ -54,6 +54,7 @@ def plugin(kernel, lifecycle):
 
         _ = kernel.translation
         kernel.register("provider/device/newly", NewlyDevice)
+        kernel.register("provider/friendly/newly", ("Older CO2-Laser (NewlyDraw)", 5))
         kernel.register(
             "dev_info/g3v8-raylaser",
             {
@@ -1241,6 +1242,6 @@ def plugin(kernel, lifecycle):
         )
 
     elif lifecycle == "preboot":
-        suffix = "newly"
-        for d in kernel.settings.derivable(suffix):
-            kernel.root(f"service device start -p {d} {suffix}\n")
+        prefix = "newly"
+        for d in kernel.settings.section_startswith(prefix):
+            kernel.root(f"service device start -p {d} {prefix}\n")

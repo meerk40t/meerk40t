@@ -6,54 +6,55 @@ import wx
 from wx import aui
 
 from meerk40t.core.node.node import Node
-from meerk40t.core.units import UNITS_PER_PIXEL, Length
+from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
 from meerk40t.gui.icons import (
+    STD_ICON_SIZE,
     EmptyIcon,
     get_default_icon_size,
+    icon_circled_1,
     icon_corner1,
     icon_corner2,
     icon_corner3,
     icon_corner4,
-    icons8_center_of_gravity_50,
-    icons8_compress_50,
-    icons8_constraint_50,
-    icons8_delete_50,
+    icon_fence_closed,
+    icon_fence_open,
+    icons8_caret_down,
+    icons8_caret_left,
+    icons8_caret_right,
+    icons8_caret_up,
+    icons8_center_of_gravity,
+    icons8_compress,
+    icons8_delete,
     icons8_down,
-    icons8_down_50,
-    icons8_down_left_50,
-    icons8_down_right_50,
-    icons8_enlarge_50,
-    icons8_expansion_50,
-    icons8_home_filled_50,
-    icons8_laser_beam_52,
+    icons8_down_left,
+    icons8_down_right,
+    icons8_enlarge,
+    icons8_home_filled,
+    icons8_laser_beam,
     icons8_left,
-    icons8_left_50,
-    icons8_level_1_50,
-    icons8_lock_50,
-    icons8_move_50,
-    icons8_padlock_50,
-    icons8_pentagon_50,
-    icons8_pentagon_square_50,
+    icons8_lock,
+    icons8_move,
+    icons8_pentagon,
+    icons8_pentagon_squared,
     icons8_right,
-    icons8_right_50,
-    icons8_rotate_left_50,
-    icons8_rotate_right_50,
-    icons8_square_border_50,
-    icons8_up_50,
-    icons8_up_left_50,
-    icons8_up_right_50,
-    icons8up,
+    icons8_rotate_left,
+    icons8_rotate_right,
+    icons8_square_border,
+    icons8_unlock,
+    icons8_up,
+    icons8_up_left,
+    icons8_up_right,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.position import PositionPanel
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
-from meerk40t.svgelements import Angle
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
 
 def register_panel_navigation(window, context):
-    panel = Drag(window, wx.ID_ANY, context=context)
+    dragpanel = Drag(window, wx.ID_ANY, context=context)
     iconsize = get_default_icon_size()
     if platform.system() == "Windows":
         dx = 24
@@ -74,12 +75,18 @@ def register_panel_navigation(window, context):
         .Hide()
     )
     pane.dock_proportion = 3 * iconsize + dx
-    pane.control = panel
+    pane.control = dragpanel
+
+    def on_drag_resize(event):
+        panelsize = event.GetSize()
+        dragpanel.set_icons(dimension=panelsize)
+
+    dragpanel.Bind(wx.EVT_SIZE, on_drag_resize)
     pane.submenu = "_20_" + _("Navigation")
 
     window.on_pane_create(pane)
     context.register("pane/drag", pane)
-    panel = Jog(window, wx.ID_ANY, context=context)
+    jogpanel = Jog(window, wx.ID_ANY, context=context)
     pane = (
         aui.AuiPaneInfo()
         .Right()
@@ -93,7 +100,13 @@ def register_panel_navigation(window, context):
         .CaptionVisible(not context.pane_lock)
     )
     pane.dock_proportion = 3 * iconsize + dx
-    pane.control = panel
+    pane.control = jogpanel
+
+    def on_jog_resize(event):
+        panelsize = event.GetSize()
+        jogpanel.set_icons(dimension=panelsize)
+
+    jogpanel.Bind(wx.EVT_SIZE, on_jog_resize)
     pane.submenu = "_20_" + _("Navigation")
 
     window.on_pane_create(pane)
@@ -199,10 +212,10 @@ def register_panel_navigation(window, context):
     context.register("pane/jogdist", pane)
 
 
-_confined = True
+def get_movement(context, dx, dy):
+    device = context.device
+    _confined = context.confined
 
-
-def get_movement(device, dx, dy):
     try:
         current_x, current_y = device.current
     except AttributeError:
@@ -214,9 +227,9 @@ def get_movement(device, dx, dy):
     newx = float(Length(dx))
     newy = float(Length(dy))
     min_x = 0
-    max_x = float(Length(device.width))
+    max_x = float(Length(device.view.width))
     min_y = 0
-    max_y = float(Length(device.height))
+    max_y = float(Length(device.view.height))
     # print ("Delta:", newx, newy)
     # print ("Current:", current_x, current_y)
     if newx + current_x > max_x:
@@ -371,50 +384,32 @@ class TimerButtons:
 
 
 class Drag(wx.Panel):
-    def __init__(self, *args, context=None, icon_size=None, **kwds):
+    def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: Drag.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.button_align_corner_top_left = wx.BitmapButton(
-            self, wx.ID_ANY, icon_corner1.GetBitmap(resize=icon_size)
-        )
-        self.button_align_drag_up = wx.BitmapButton(
-            self, wx.ID_ANY, icons8up.GetBitmap(resize=icon_size)
-        )
-        self.button_align_corner_top_right = wx.BitmapButton(
-            self, wx.ID_ANY, icon_corner2.GetBitmap(resize=icon_size)
-        )
-        self.button_align_drag_left = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_left.GetBitmap(resize=icon_size)
-        )
-        self.button_align_center = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_square_border_50.GetBitmap(resize=icon_size)
-        )
-        self.button_align_drag_right = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_right.GetBitmap(resize=icon_size)
-        )
-        self.button_align_corner_bottom_left = wx.BitmapButton(
-            self, wx.ID_ANY, icon_corner4.GetBitmap(resize=icon_size)
-        )
-        self.button_align_drag_down = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_down.GetBitmap(resize=icon_size)
-        )
-        self.button_align_corner_bottom_right = wx.BitmapButton(
-            self, wx.ID_ANY, icon_corner3.GetBitmap(resize=icon_size)
-        )
-        self.button_align_first_position = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_level_1_50.GetBitmap(resize=icon_size)
-        )
-        self.button_align_trace_hull = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_pentagon_50.GetBitmap(resize=icon_size)
-        )
-        self.button_align_trace_quick = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_pentagon_square_50.GetBitmap(resize=icon_size)
-        )
+        self.context.setting(bool, "confined", True)
+        self.SetHelpText("drag")
+        self.icon_size = None
+        self.resize_factor = None
+        self.resolution = 5
+        self.button_align_corner_top_left = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_align_drag_up = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_align_corner_top_right = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_align_drag_left = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_align_center = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_align_drag_right = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_align_corner_bottom_left = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_align_drag_down = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_align_corner_bottom_right = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_align_first_position = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_align_trace_hull = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_align_trace_quick = wx.BitmapButton(self, wx.ID_ANY)
         self.bg_color = self.button_align_corner_top_left.BackgroundColour
         self.__set_properties()
         self.__do_layout()
+        # self.set_icons(iconsize=25)
 
         self.timer = TimerButtons(self)
         self.timer.add_button(self.button_align_drag_left, self.drag_left)
@@ -472,6 +467,9 @@ class Drag(wx.Panel):
             wx.EVT_RIGHT_DOWN, self.on_button_lock_br
         )
         self.button_align_center.Bind(wx.EVT_RIGHT_DOWN, self.on_button_lock_center)
+        self.button_align_first_position.Bind(
+            wx.EVT_BUTTON, self.on_button_align_first_position
+        )
 
         # end wxGlade
         self.elements = None
@@ -551,6 +549,7 @@ class Drag(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: Drag.__do_layout
+        self.navigation_sizer = wx.BoxSizer(wx.VERTICAL)
         align_sizer = wx.FlexGridSizer(4, 3, 0, 0)
         align_sizer.Add(self.button_align_corner_top_left, 0, 0, 0)
         align_sizer.Add(self.button_align_drag_up, 0, 0, 0)
@@ -564,10 +563,89 @@ class Drag(wx.Panel):
         align_sizer.Add(self.button_align_first_position, 0, 0, 0)
         align_sizer.Add(self.button_align_trace_hull, 0, 0, 0)
         align_sizer.Add(self.button_align_trace_quick, 0, 0, 0)
-        self.SetSizer(align_sizer)
-        align_sizer.Fit(self)
+        self.navigation_sizer.Add(align_sizer, 1, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        self.SetSizer(self.navigation_sizer)
+        self.navigation_sizer.Fit(self)
         self.Layout()
         # end wxGlade
+
+    def set_icons(self, iconsize=None, dimension=None):
+        if iconsize is None and dimension is not None:
+            dim_x = int(dimension[0] / 3) - 8
+            dim_y = int(dimension[1] / 4) - 8
+            iconsize = max(15, min(dim_x, dim_y))
+        self.icon_size = iconsize
+        # This is a bug within wxPython! It seems to appear only here at very high scale factors under windows
+        bmp = icon_corner1.GetBitmap(resize=self.icon_size, resolution=self.resolution)
+        s = bmp.Size
+        self.button_align_corner_top_left.SetBitmap(bmp)
+        t = self.button_align_corner_top_left.GetBitmap().Size
+        # print(f"Was asking for {best_size}x{best_size}, got {s[0]}x{s[1]}, button has {t[0]}x{t[1]}")
+        scale_x = s[0] / t[0]
+        scale_y = s[1] / t[1]
+        self.resize_factor = (self.icon_size * scale_x, self.icon_size * scale_y)
+        self.button_align_corner_top_left.SetBitmap(
+            icon_corner1.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_align_drag_up.SetBitmap(
+            icons8_caret_up.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_align_corner_top_right.SetBitmap(
+            icon_corner2.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_align_drag_left.SetBitmap(
+            icons8_caret_left.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_align_center.SetBitmap(
+            icons8_square_border.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_align_drag_right.SetBitmap(
+            icons8_caret_right.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_align_corner_bottom_left.SetBitmap(
+            icon_corner4.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_align_drag_down.SetBitmap(
+            icons8_caret_down.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_align_corner_bottom_right.SetBitmap(
+            icon_corner3.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_align_first_position.SetBitmap(
+            icon_circled_1.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_align_trace_hull.SetBitmap(
+            icons8_pentagon.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_align_trace_quick.SetBitmap(
+            icons8_pentagon_squared.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.navigation_sizer.Layout()
+        self.Layout()
 
     @property
     def lockmode(self):
@@ -676,11 +754,11 @@ class Drag(wx.Panel):
                 return
         else:
             return
-        if _confined:
+        if self.context.confined:
             min_x = 0
-            max_x = float(Length(self.context.device.width))
+            max_x = float(Length(self.context.device.view.width))
             min_y = 0
-            max_y = float(Length(self.context.device.height))
+            max_y = float(Length(self.context.device.view.height))
             if x < min_x or x > max_x or y < min_y or y > max_y:
                 dlg = wx.MessageDialog(
                     None,
@@ -717,26 +795,42 @@ class Drag(wx.Panel):
         self.align_per_pos(4)
 
     def drag_relative(self, dx, dy):
-        nx, ny = get_movement(self.context.device, dx, dy)
+        nx, ny = get_movement(self.context, dx, dy)
         self.context(f"move_relative {nx} {ny}\ntranslate {nx} {ny}\n")
 
     def on_button_align_first_position(self, event=None):
+        first_node = None
         elements = self.context.elements
         e = list(elements.elems(emphasized=True))
-        first_node = e[0]
-        if first_node.type == "elem path":
-            try:
-                pos = first_node.path.first_point * first_node.matrix
-            except (IndexError, AttributeError):
-                return
+        if len(e) == 0:
+            for n in elements.elems():
+                first_node = n
+                break
+        else:
+            first_node = e[0]
+        if first_node is None:
+            return
+        if hasattr(first_node, "as_geometry"):
+            g = first_node.as_geometry()
+            pt = g.first_point
+            pos = (pt.real, pt.imag)
+            # try:
+            #     g = first_node.as_geometry()
+            #     pos = g.first_point
+            # except (IndexError, AttributeError):
+            #     return
         elif first_node.type == "elem image":
-            try:
-                pos = (
-                    first_node.matrix.value_trans_x(),
-                    first_node.matrix.value_trans_y(),
-                )
-            except (IndexError, AttributeError):
-                return
+            pos = (
+                first_node.matrix.value_trans_x(),
+                first_node.matrix.value_trans_y(),
+            )
+            # try:
+            #     pos = (
+            #         first_node.matrix.value_trans_x(),
+            #         first_node.matrix.value_trans_y(),
+            #     )
+            # except (IndexError, AttributeError):
+            #     return
         else:
             return
         self.context(
@@ -818,49 +912,32 @@ class Drag(wx.Panel):
 
 
 class Jog(wx.Panel):
-    def __init__(self, *args, context=None, icon_size=None, **kwds):
+    def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: Jog.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
 
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("jog")
+        context.setting(float, "button_repeat", 0.5)
+        context.setting(bool, "button_accelerate", True)
         context.setting(str, "jog_amount", "10mm")
-        self.button_navigate_up_left = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_up_left_50.GetBitmap(resize=icon_size)
-        )
-        self.button_navigate_up = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_up_50.GetBitmap(resize=icon_size)
-        )
-        self.button_navigate_up_right = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_up_right_50.GetBitmap(resize=icon_size)
-        )
-        self.button_navigate_left = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_left_50.GetBitmap(resize=icon_size)
-        )
-        self.button_navigate_home = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_home_filled_50.GetBitmap(resize=icon_size)
-        )
-        self.button_navigate_right = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_right_50.GetBitmap(resize=icon_size)
-        )
-        self.button_navigate_down_left = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_down_left_50.GetBitmap(resize=icon_size)
-        )
-        self.button_navigate_down = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_down_50.GetBitmap(resize=icon_size)
-        )
-        self.button_navigate_down_right = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_down_right_50.GetBitmap(resize=icon_size)
-        )
-        self.button_navigate_unlock = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_padlock_50.GetBitmap(resize=icon_size)
-        )
-        self.button_navigate_lock = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_lock_50.GetBitmap(resize=icon_size)
-        )
-        self.button_confine = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_constraint_50.GetBitmap(resize=icon_size)
-        )
+        context.setting(bool, "confined", True)
+        self.icon_size = None
+        self.resize_factor = None
+        self.resolution = 5
+        self.button_navigate_up_left = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_navigate_up = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_navigate_up_right = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_navigate_left = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_navigate_home = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_navigate_right = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_navigate_down_left = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_navigate_down = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_navigate_down_right = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_navigate_unlock = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_navigate_lock = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_confine = wx.BitmapButton(self, wx.ID_ANY)
         self.__set_properties()
         self.__do_layout()
 
@@ -939,23 +1016,98 @@ class Jog(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: Jog.__do_layout
-        navigation_sizer = wx.FlexGridSizer(4, 3, 0, 0)
-        navigation_sizer.Add(self.button_navigate_up_left, 0, 0, 0)
-        navigation_sizer.Add(self.button_navigate_up, 0, 0, 0)
-        navigation_sizer.Add(self.button_navigate_up_right, 0, 0, 0)
-        navigation_sizer.Add(self.button_navigate_left, 0, 0, 0)
-        navigation_sizer.Add(self.button_navigate_home, 0, 0, 0)
-        navigation_sizer.Add(self.button_navigate_right, 0, 0, 0)
-        navigation_sizer.Add(self.button_navigate_down_left, 0, 0, 0)
-        navigation_sizer.Add(self.button_navigate_down, 0, 0, 0)
-        navigation_sizer.Add(self.button_navigate_down_right, 0, 0, 0)
-        navigation_sizer.Add(self.button_navigate_unlock, 0, 0, 0)
-        navigation_sizer.Add(self.button_confine, 0, 0, 0)
-        navigation_sizer.Add(self.button_navigate_lock, 0, 0, 0)
-        self.SetSizer(navigation_sizer)
-        navigation_sizer.Fit(self)
+        self.navigation_sizer = wx.BoxSizer(wx.VERTICAL)
+        button_sizer = wx.FlexGridSizer(4, 3, 0, 0)
+        button_sizer.Add(self.button_navigate_up_left, 0, 0, 0)
+        button_sizer.Add(self.button_navigate_up, 0, 0, 0)
+        button_sizer.Add(self.button_navigate_up_right, 0, 0, 0)
+        button_sizer.Add(self.button_navigate_left, 0, 0, 0)
+        button_sizer.Add(self.button_navigate_home, 0, 0, 0)
+        button_sizer.Add(self.button_navigate_right, 0, 0, 0)
+        button_sizer.Add(self.button_navigate_down_left, 0, 0, 0)
+        button_sizer.Add(self.button_navigate_down, 0, 0, 0)
+        button_sizer.Add(self.button_navigate_down_right, 0, 0, 0)
+        button_sizer.Add(self.button_navigate_unlock, 0, 0, 0)
+        button_sizer.Add(self.button_confine, 0, 0, 0)
+        button_sizer.Add(self.button_navigate_lock, 0, 0, 0)
+        self.navigation_sizer.Add(button_sizer, 1, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        self.SetSizer(self.navigation_sizer)
+        self.navigation_sizer.Fit(self)
         self.Layout()
-        # end wxGlade
+
+    def set_icons(self, iconsize=None, dimension=None):
+        if iconsize is None and dimension is not None:
+            dim_x = int(dimension[0] / 3) - 8
+            dim_y = int(dimension[1] / 4) - 8
+            iconsize = max(15, min(dim_x, dim_y))
+        self.icon_size = iconsize
+        # This is a bug within wxPython! It seems to appear only here at very high scale factors under windows
+        bmp = icons8_up_left.GetBitmap(
+            resize=self.icon_size, resolution=self.resolution
+        )
+        s = bmp.Size
+        self.button_navigate_up_left.SetBitmap(bmp)
+        t = self.button_navigate_up_left.GetBitmap().Size
+        # print(f"Was asking for {best_size}x{best_size}, got {s[0]}x{s[1]}, button has {t[0]}x{t[1]}")
+        scale_x = s[0] / t[0]
+        scale_y = s[1] / t[1]
+        self.resize_factor = (self.icon_size * scale_x, self.icon_size * scale_y)
+        self.button_navigate_up_left.SetBitmap(
+            icons8_up_left.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_navigate_up.SetBitmap(
+            icons8_up.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+        )
+        self.button_navigate_up_right.SetBitmap(
+            icons8_up_right.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_navigate_left.SetBitmap(
+            icons8_left.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+        )
+        self.button_navigate_home.SetBitmap(
+            icons8_home_filled.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_navigate_right.SetBitmap(
+            icons8_right.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_navigate_down_left.SetBitmap(
+            icons8_down_left.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_navigate_down.SetBitmap(
+            icons8_down.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+        )
+        self.button_navigate_down_right.SetBitmap(
+            icons8_down_right.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_navigate_unlock.SetBitmap(
+            icons8_unlock.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_navigate_lock.SetBitmap(
+            icons8_lock.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+        )
+        if self.context.confined:
+            btn_icon = icon_fence_closed
+        else:
+            btn_icon = icon_fence_open
+        self.button_confine.SetBitmap(
+            btn_icon.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+        )
+        self.navigation_sizer.Layout()
+        self.Layout()
 
     def jog_left(self):
         p1 = f"-{self.context.jog_amount}"
@@ -998,42 +1150,48 @@ class Jog(wx.Panel):
         self.move_rel(p1, p2)
 
     @property
-    def confined(self):
-        global _confined
-        return _confined
+    def is_confined(self):
+        return self.context.confined
 
-    @confined.setter
-    def confined(self, value):
-        global _confined
+    @is_confined.setter
+    def is_confined(self, value):
         # Let's see whether the device has a current option...
         try:
-            dummyx, dummy = self.context.device.current
+            dummy_x, dummy_y = self.context.device.current
         except AttributeError:
             value = False
 
-        _confined = value
+        self.context.confined = value
         if value == 0:
-            self.button_confine.SetBitmap(icons8_expansion_50.GetBitmap())
+            self.button_confine.SetBitmap(
+                icon_fence_open.GetBitmap(
+                    resize=self.resize_factor, resolution=self.resolution
+                )
+            )
             self.button_confine.SetToolTip(
                 _("Caution: allow laser movement outside bed size")
             )
             # self.context("confine 0")
         else:
-            self.button_confine.SetBitmap(icons8_constraint_50.GetBitmap())
+            self.button_confine.SetBitmap(
+                icon_fence_closed.GetBitmap(
+                    resize=self.resize_factor, resolution=self.resolution
+                )
+            )
             self.button_confine.SetToolTip(_("Limit laser movement to bed size"))
             # self.context("confine 1")
 
     def on_button_confinement(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.confined = not self.confined
+        self.is_confined = not self.is_confined
         try:
             current_x, current_y = self.context.device.current
         except AttributeError:
-            self.confined = False
-        if self.confined:
+            self.is_confined = False
+        if self.is_confined:
             min_x = 0
-            max_x = float(Length(self.context.device.width))
+            max_x = float(Length(self.context.device.view.width))
             min_y = 0
-            max_y = float(Length(self.context.device.height))
+            max_y = float(Length(self.context.device.view.height))
             # Are we outside? Then lets move back to the edge...
             new_x = min(max_x, max(min_x, current_x))
             new_y = min(max_y, max(min_y, current_y))
@@ -1043,7 +1201,7 @@ class Jog(wx.Panel):
                 )
 
     def move_rel(self, dx, dy):
-        nx, ny = get_movement(self.context.device, dx, dy)
+        nx, ny = get_movement(self.context, dx, dy)
         self.context(f".move_relative {nx} {ny}\n")
 
     def on_button_navigate_home(
@@ -1112,8 +1270,10 @@ class MovePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("move")
+        iconsize = 0.5 * get_default_icon_size()
         self.button_navigate_move_to = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_center_of_gravity_50.GetBitmap(resize=32)
+            self, wx.ID_ANY, icons8_center_of_gravity.GetBitmap(resize=iconsize)
         )
         units = self.context.units_name
         if units in ("inch", "inches"):
@@ -1136,10 +1296,15 @@ class MovePanel(wx.Panel):
             style=wx.TE_PROCESS_ENTER,
         )
         self.small_buttons = []
+        def_dim = int(2 / 3 * self.text_position_x.Size[1])
+        def_pt = self.text_position_x.GetFont().GetPointSize()
+        def_size = wx.Size(def_dim + 5, def_dim + 5)
         for idx in range(9):
-            btn = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(25, 25))
-            icon = EmptyIcon(size=20, msg=str(idx + 1), ptsize=12, color=wx.LIGHT_GREY)
-            btn.SetBitmap(icon.GetBitmap(resize=20))
+            btn = wx.StaticBitmap(self, wx.ID_ANY, size=def_size)
+            icon = EmptyIcon(
+                size=def_dim, msg=str(idx + 1), ptsize=def_pt, color=wx.LIGHT_GREY
+            )
+            btn.SetBitmap(icon.GetBitmap(resize=def_dim))
             self.small_buttons.append(btn)
             btn.Bind(wx.EVT_RIGHT_DOWN, self.on_right(idx))
             btn.Bind(wx.EVT_LEFT_DOWN, self.on_left(idx))
@@ -1156,7 +1321,7 @@ class MovePanel(wx.Panel):
             else:
                 y = Length(self.context.elements.length_y("0%"))
             self.context.root.setting(
-                str, f"MovePos{idx}", f"{x.length_mm}|{y.length_mm}"
+                str, f"movepos{idx}", f"{x.length_mm}|{y.length_mm}"
             )
             label = _(
                 "Left click to go to saved position\nRight click to save coordinates"
@@ -1211,8 +1376,8 @@ class MovePanel(wx.Panel):
         button_info_sizer.Add(self.label_pos, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
         main_sizer.Add(button_info_sizer, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         label_9 = wx.StaticText(self, wx.ID_ANY, "X:")
-        self.text_position_x.SetMinSize((45, 23))
-        self.text_position_y.SetMinSize((45, 23))
+        self.text_position_x.SetMinSize(dip_size(self, 45, -1))
+        self.text_position_y.SetMinSize(dip_size(self, 45, -1))
         h_x_sizer.Add(label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         h_x_sizer.Add(self.text_position_x, 1, wx.EXPAND, 0)
         v_main_sizer.Add(h_x_sizer, 0, wx.EXPAND, 0)
@@ -1221,9 +1386,20 @@ class MovePanel(wx.Panel):
         h_y_sizer.Add(self.text_position_y, 1, wx.EXPAND, 0)
         v_main_sizer.Add(h_y_sizer, 0, wx.EXPAND, 0)
         main_sizer.Add(v_main_sizer, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.btn_sizer = wx.GridSizer(3, 3, 2, 2)
-        for idx in range(9):
-            self.btn_sizer.Add(self.small_buttons[idx], 0, 0, 0)
+        # self.btn_sizer = wx.GridSizer(3, 3, 2, 2)
+        # for idx in range(9):
+        #     self.btn_sizer.Add(self.small_buttons[idx], 0, 0, 0)
+        self.btn_sizer = wx.BoxSizer(wx.VERTICAL)
+        row1 = wx.BoxSizer(wx.HORIZONTAL)
+        row2 = wx.BoxSizer(wx.HORIZONTAL)
+        row3 = wx.BoxSizer(wx.HORIZONTAL)
+        for idx in range(3):
+            row1.Add(self.small_buttons[idx])
+            row2.Add(self.small_buttons[idx + 3])
+            row3.Add(self.small_buttons[idx + 6])
+        self.btn_sizer.Add(row1, 0, 0, 0)
+        self.btn_sizer.Add(row2, 0, 0, 0)
+        self.btn_sizer.Add(row3, 0, 0, 0)
         main_sizer.Add(self.btn_sizer, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.SetSizer(main_sizer)
         main_sizer.Fit(self)
@@ -1249,7 +1425,7 @@ class MovePanel(wx.Panel):
 
     def on_left(self, index):
         def handler(event):
-            gotostr = getattr(self.context.root, f"MovePos{index}", "")
+            gotostr = getattr(self.context.root, f"movepos{index}", "")
             if gotostr:
                 substr = gotostr.split("|")
                 if len(substr) < 2:
@@ -1273,7 +1449,7 @@ class MovePanel(wx.Panel):
                 ylen = Length(self.text_position_y.GetValue())
                 setattr(
                     self.context.root,
-                    f"MovePos{index}",
+                    f"movepos{index}",
                     f"{xlen.length_mm}|{ylen.length_mm}",
                 )
                 label = _(
@@ -1295,7 +1471,19 @@ class MovePanel(wx.Panel):
         try:
             x = self.text_position_x.GetValue()
             y = self.text_position_y.GetValue()
-            if not self.context.device.contains(x, y):
+            pos_x = Length(
+                x,
+                relative_length=self.context.space.display.width,
+                unitless=UNITS_PER_PIXEL,
+                preferred_units=self.context.units_name,
+            )
+            pos_y = Length(
+                y,
+                relative_length=self.context.space.display.height,
+                unitless=UNITS_PER_PIXEL,
+                preferred_units=self.context.units_name,
+            )
+            if not self.context.device.view.source_contains(float(pos_x), float(pos_y)):
                 dlg = wx.MessageDialog(
                     None,
                     _("Cannot move outside bed dimensions"),
@@ -1305,18 +1493,6 @@ class MovePanel(wx.Panel):
                 dlg.ShowModal()
                 dlg.Destroy()
                 return
-            pos_x = self.context.device.length(
-                self.text_position_x.GetValue(),
-                axis=0,
-                new_units=self.context.units_name,
-                unitless=UNITS_PER_PIXEL,
-            )
-            pos_y = self.context.device.length(
-                self.text_position_y.GetValue(),
-                axis=1,
-                new_units=self.context.units_name,
-                unitless=UNITS_PER_PIXEL,
-            )
             self.context(f"move {pos_x} {pos_y}\n")
         except ValueError:
             return
@@ -1362,8 +1538,10 @@ class PulsePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("pulse")
+        iconsize = 0.5 * get_default_icon_size()
         self.button_navigate_pulse = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_laser_beam_52.GetBitmap(resize=32)
+            self, wx.ID_ANY, icons8_laser_beam.GetBitmap(resize=iconsize)
         )
         self.spin_pulse_duration = wx.SpinCtrl(
             self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="50", min=1, max=1000
@@ -1386,7 +1564,7 @@ class PulsePanel(wx.Panel):
         # begin wxGlade: PulsePanel.__set_properties
         self.button_navigate_pulse.SetToolTip(_("Fire a short laser pulse"))
         self.button_navigate_pulse.SetSize(self.button_navigate_pulse.GetBestSize())
-        self.spin_pulse_duration.SetMinSize((40, 23))
+        self.spin_pulse_duration.SetMinSize(dip_size(self, 40, -1))
         self.spin_pulse_duration.SetToolTip(_("Set the duration of the laser pulse"))
         # end wxGlade
 
@@ -1429,7 +1607,7 @@ class PulsePanel(wx.Panel):
 #             self, wx.ID_ANY, _("Object Dimensions"), wx.HORIZONTAL
 #         )
 #         self.button_navigate_resize = wx.BitmapButton(
-#             self, wx.ID_ANY, icons8_compress_50.GetBitmap(resize=32)
+#             self, wx.ID_ANY, icons8_compress.GetBitmap(resize=32)
 #         )
 #         self.label_9 = wx.StaticText(self, wx.ID_ANY, _("Width:"))
 #         self.label_10 = wx.StaticText(self, wx.ID_ANY, _("Height:"))
@@ -1451,8 +1629,8 @@ class PulsePanel(wx.Panel):
 #             nonzero=True,
 #         )
 #         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
-#         self.bitmap_locked = icons8_lock_50.GetBitmap(resize=25, use_theme=False)
-#         self.bitmap_unlocked = icons8_padlock_50.GetBitmap(resize=25, use_theme=False)
+#         self.bitmap_locked = icons8_lock.GetBitmap(resize=STD_ICON_SIZE/2, use_theme=False)
+#         self.bitmap_unlocked = icons8_unlock.GetBitmap(resize=STD_ICON_SIZE/2, use_theme=False)
 
 #         # No change of fields during input
 #         # self.text_height.execute_action_on_change = False
@@ -1474,7 +1652,7 @@ class PulsePanel(wx.Panel):
 #         self.button_navigate_resize.SetSize(self.button_navigate_resize.GetBestSize())
 #         self.text_width.SetToolTip(_("Define width of selected object"))
 #         self.text_height.SetToolTip(_("Define height of selected object"))
-#         self.btn_lock_ratio.SetMinSize((32, 32))
+#         self.btn_lock_ratio.SetMinSize(dip_size(self, 32, 32))
 #         self.btn_lock_ratio.SetToolTip(
 #             _("Lock the ratio of width / height to the original values")
 #         )
@@ -1492,8 +1670,8 @@ class PulsePanel(wx.Panel):
 #         sizer_label = wx.BoxSizer(wx.VERTICAL)
 #         fieldsizer1 = wx.BoxSizer(wx.HORIZONTAL)
 #         fieldsizer2 = wx.BoxSizer(wx.HORIZONTAL)
-#         self.label_9.SetMinSize(wx.Size(45, -1))
-#         self.label_10.SetMinSize(wx.Size(45, -1))
+#         self.label_9.SetMinSize(dip_size(self, 45, -1))
+#         self.label_10.SetMinSize(dip_size(self, 45, -1))
 #         fieldsizer1.Add(self.label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 #         fieldsizer1.Add(self.text_width, 1, wx.EXPAND, 0)
 
@@ -1664,33 +1842,19 @@ class Transform(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.button_scale_down = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_compress_50.GetBitmap()
-        )
-        self.button_translate_up = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_up_50.GetBitmap()
-        )
-        self.button_scale_up = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_enlarge_50.GetBitmap()
-        )
-        self.button_translate_left = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_left_50.GetBitmap()
-        )
-        self.button_reset = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_delete_50.GetBitmap()
-        )
-        self.button_translate_right = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_right_50.GetBitmap()
-        )
-        self.button_rotate_ccw = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_rotate_left_50.GetBitmap()
-        )
-        self.button_translate_down = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_down_50.GetBitmap()
-        )
-        self.button_rotate_cw = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_rotate_right_50.GetBitmap()
-        )
+        self.SetHelpText("transform")
+        self.icon_size = None
+        self.resize_factor = None
+        self.resolution = 5
+        self.button_scale_down = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_translate_up = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_scale_up = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_translate_left = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_reset = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_translate_right = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_rotate_ccw = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_translate_down = wx.BitmapButton(self, wx.ID_ANY)
+        self.button_rotate_cw = wx.BitmapButton(self, wx.ID_ANY)
         self.text_a = TextCtrl(
             self,
             wx.ID_ANY,
@@ -1808,21 +1972,21 @@ class Transform(wx.Panel):
         self.button_rotate_cw.SetToolTip(
             _("Rotate Clockwise by 5° / by 90° on left / right click")
         )
-        self.text_a.SetMinSize((55, -1))
+        self.text_a.SetMinSize(dip_size(self, 55, -1))
         self.text_a.SetToolTip(
             _(
                 "Scale X - scales the element by this factor in the X-Direction, i.e. 2.0 means 200% of the original scale. "
                 "You may enter either this factor directly or state the scale as a %-value, so 0.5 or 50% will both cut the scale in half."
             )
         )
-        self.text_d.SetMinSize((55, -1))
+        self.text_d.SetMinSize(dip_size(self, 55, -1))
         self.text_d.SetToolTip(
             _(
                 "Scale Y - scales the element by this factor in the Y-Direction, i.e. 2.0 means 200% of the original scale. "
                 "You may enter either this factor directly or state the scale as a %-value, so 0.5 or 50% will both cut the scale in half."
             )
         )
-        self.text_c.SetMinSize((55, -1))
+        self.text_c.SetMinSize(dip_size(self, 55, -1))
         self.text_c.SetToolTip(
             _(
                 "Skew X - to skew the element in X-direction by alpha° you need either \n"
@@ -1831,7 +1995,7 @@ class Transform(wx.Panel):
                 "In any case this value will then be represented as tan(alpha)"
             )
         )
-        self.text_b.SetMinSize((55, -1))
+        self.text_b.SetMinSize(dip_size(self, 55, -1))
         self.text_b.SetToolTip(
             _(
                 "Skew Y - to skew the element in Y-direction by alpha° you need either \n"
@@ -1840,14 +2004,14 @@ class Transform(wx.Panel):
                 "In any case this value will then be represented as tan(alpha)"
             )
         )
-        self.text_e.SetMinSize((40, -1))
+        self.text_e.SetMinSize(dip_size(self, 40, -1))
         self.text_e.SetToolTip(
             _(
                 "Translate X - moves the element by this amount of mils in the X-direction; "
                 "you may use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"
             )
         )
-        self.text_f.SetMinSize((40, -1))
+        self.text_f.SetMinSize(dip_size(self, 40, -1))
         self.text_f.SetToolTip(
             _(
                 "Translate Y - moves the element by this amount of mils in the Y-direction; "
@@ -1904,6 +2068,65 @@ class Transform(wx.Panel):
         self.Layout()
         # end wxGlade
 
+    def set_icons(self, iconsize=None, dimension=None):
+        if iconsize is None and dimension is not None:
+            dim_x = int(dimension[0] / 3) - 8
+            dim_y = int(dimension[1] / 4) - 8
+            iconsize = max(15, min(dim_x, dim_y))
+        self.icon_size = iconsize
+        # This is a bug within wxPython! It seems to appear only here at very high scale factors under windows
+        bmp = icons8_compress.GetBitmap(
+            resize=self.icon_size, resolution=self.resolution
+        )
+        s = bmp.Size
+        self.button_scale_down.SetBitmap(bmp)
+        t = self.button_scale_down.GetBitmap().Size
+        # print(f"Was asking for {best_size}x{best_size}, got {s[0]}x{s[1]}, button has {t[0]}x{t[1]}")
+        scale_x = s[0] / t[0]
+        scale_y = s[1] / t[1]
+        self.resize_factor = (self.icon_size * scale_x, self.icon_size * scale_y)
+
+        self.button_scale_down.SetBitmap(
+            icons8_compress.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_translate_up.SetBitmap(
+            icons8_up.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+        )
+        self.button_scale_up.SetBitmap(
+            icons8_enlarge.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_translate_left.SetBitmap(
+            icons8_left.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+        )
+        self.button_reset.SetBitmap(
+            icons8_delete.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_translate_right.SetBitmap(
+            icons8_right.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_rotate_ccw.SetBitmap(
+            icons8_rotate_left.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.button_translate_down.SetBitmap(
+            icons8_down.GetBitmap(resize=self.resize_factor, resolution=self.resolution)
+        )
+        self.button_rotate_cw.SetBitmap(
+            icons8_rotate_right.GetBitmap(
+                resize=self.resize_factor, resolution=self.resolution
+            )
+        )
+        self.Layout()
+
     def pane_show(self, *args):
         self.context.listen("emphasized", self.on_emphasized_elements_changed)
         self.context.listen("modified", self.on_modified_element)
@@ -1914,6 +2137,17 @@ class Transform(wx.Panel):
         self.context.unlisten("emphasized", self.on_emphasized_elements_changed)
         self.context.unlisten("modified", self.on_modified_element)
         self.context.unlisten("button-repeat", self.on_button_repeat)
+
+    # To get updates about translation / scaling of selected elements
+    # we need to attach to some signals...
+    @signal_listener("refresh_scene")
+    def on_refresh_scene(self, origin, scene_name=None, *args):
+        if scene_name == "Scene":
+            self.update_matrix_text()
+
+    @signal_listener("modified_by_tool")
+    def on_modified(self, *args):
+        self.update_matrix_text()
 
     def set_timer_options(self):
         interval = self.context.button_repeat
@@ -1933,7 +2167,7 @@ class Transform(wx.Panel):
     def on_modified_element(self, origin, *args):
         self.update_matrix_text()
 
-    def on_emphasized_elements_changed(self, origin, elements):
+    def on_emphasized_elements_changed(self, origin, *args):
         self.select_ready(self.context.elements.has_emphasis())
         self.update_matrix_text()
 
@@ -2013,20 +2247,22 @@ class Transform(wx.Panel):
         self.matrix_updated()
 
     def _translate(self, dx, dy, scale):
-        dx = self.context.device.length(
+        dx = Length(
             dx,
-            0,
-            scale=scale,
-            new_units=self.context.units_name,
+            relative_length=self.context.space.display.width,
             unitless=UNITS_PER_PIXEL,
+            preferred_units=self.context.units_name,
         )
-        dy = self.context.device.length(
+        dx *= scale
+
+        dy = Length(
             dy,
-            1,
-            scale=scale,
-            new_units=self.context.units_name,
+            relative_length=self.context.space.display.height,
             unitless=UNITS_PER_PIXEL,
+            preferred_units=self.context.units_name,
         )
+        dy *= scale
+
         self.context(f"translate {dx} {dy}\n")
         self.context.elements.signal("ext-modified")
         self.matrix_updated()
@@ -2109,7 +2345,7 @@ class Transform(wx.Panel):
 
     @staticmethod
     def skewed_value(stxt):
-        return Angle.parse(stxt).as_radians
+        return Angle(stxt).radians
 
     @staticmethod
     def scaled_value(stxt):
@@ -2159,6 +2395,7 @@ class JogDistancePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.SetHelpText("jog")
         self.text_jog_amount = TextCtrl(
             self,
             wx.ID_ANY,
@@ -2189,11 +2426,11 @@ class JogDistancePanel(wx.Panel):
 
     def on_text_jog_amount(self):  # wxGlade: Navigation.<event_handler>
         try:
-            jog = self.context.device.length(
+            jog = Length(
                 self.text_jog_amount.GetValue(),
-                new_units=self.context.units_name,
                 unitless=UNITS_PER_PIXEL,
-            )
+                preferred_units=self.context.units_name,
+            ).preferred_length
         except ValueError:
             return
         self.context.jog_amount = str(jog)
@@ -2214,15 +2451,15 @@ class NavigationPanel(wx.Panel):
         jogdistancepanel = JogDistancePanel(self, wx.ID_ANY, context=self.context)
         main_sizer.Add(jogdistancepanel, 0, wx.EXPAND, 0)
 
-        navigationpanel = Jog(self, wx.ID_ANY, context=self.context)
-        main_panels_sizer.Add(navigationpanel, 1, wx.EXPAND, 0)
+        jogpanel = Jog(self, wx.ID_ANY, context=self.context)
+        main_panels_sizer.Add(jogpanel, 1, wx.EXPAND, 0)
 
-        alignpanel = Drag(self, wx.ID_ANY, context=self.context)
-        main_panels_sizer.Add(alignpanel, 1, wx.EXPAND, 0)
+        dragpanel = Drag(self, wx.ID_ANY, context=self.context)
+        main_panels_sizer.Add(dragpanel, 1, wx.EXPAND, 0)
 
         transformpanel = Transform(self, wx.ID_ANY, context=self.context)
 
-        main_panels_sizer.Add(transformpanel, 0, 0, 0)
+        main_panels_sizer.Add(transformpanel, 1, wx.EXPAND, 0)
         main_sizer.Add(main_panels_sizer, 0, wx.EXPAND, 0)
 
         short_pulse = PulsePanel(self, wx.ID_ANY, context=self.context)
@@ -2236,17 +2473,30 @@ class NavigationPanel(wx.Panel):
 
         main_sizer.Add(pulse_and_move_sizer, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
+        main_sizer.Fit(self)
         self.Layout()
         self.panels = [
             jogdistancepanel,
-            navigationpanel,
-            alignpanel,
+            jogpanel,
+            dragpanel,
             transformpanel,
             short_pulse,
             move_panel,
             size_panel,
         ]
-        # end wxGlade
+        self.Bind(wx.EVT_SIZE, self.on_resize)
+
+    def on_resize(self, event):
+        wb_size = event.GetSize()
+        if platform.system() == "Linux":
+            # They don't resize well
+            panel_size = (max(20, wb_size[0] / 3 - 60), wb_size[1])
+        else:
+            panel_size = (wb_size[0] / 3, wb_size[1])
+        for panel in self.panels:
+            if hasattr(panel, "set_icons"):
+                panel.set_icons(dimension=panel_size)
+        self.Layout()
 
     def pane_show(self):
         for p in self.panels:
@@ -2265,30 +2515,31 @@ class NavigationPanel(wx.Panel):
 
 class Navigation(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(598, 429, *args, **kwds)
+        super().__init__(650, 450, *args, **kwds)
 
         self.panel = NavigationPanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
-        iconsize = get_default_icon_size()
+        iconsize = int(0.75 * get_default_icon_size())
         minw = (3 + 3 + 3) * iconsize + 150
         minh = (4 + 1) * iconsize + 170
         super().SetSizeHints(minW=minw, minH=minh)
 
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_move_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_move.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Navigation.__set_properties
         self.SetTitle(_("Navigation"))
+        self.restore_aspect(honor_initial_values=True)
 
     @staticmethod
     def sub_register(kernel):
-
         kernel.register("wxpane/Navigation", register_panel_navigation)
         kernel.register(
             "button/preparation/Navigation",
             {
                 "label": _("Navigation"),
-                "icon": icons8_move_50,
+                "icon": icons8_move,
                 "tip": _("Opens Navigation Window"),
                 "action": lambda v: kernel.console("window toggle Navigation\n"),
                 "priority": 1,

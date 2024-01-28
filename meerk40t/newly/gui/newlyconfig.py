@@ -4,7 +4,7 @@ from meerk40t.device.gui.defaultactions import DefaultActionPanel
 from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
-from meerk40t.gui.icons import icons8_administrative_tools_50
+from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
 
 _ = wx.GetTranslation
@@ -14,8 +14,9 @@ class NewlyConfiguration(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(420, 570, *args, **kwds)
         self.context = self.context.device
+        self.SetHelpText("newlyconfig")
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_administrative_tools.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Newly-Configuration"))
 
@@ -27,6 +28,7 @@ class NewlyConfiguration(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
 
         options = (
             ("newly", _("Newly")),
@@ -63,6 +65,8 @@ class NewlyConfiguration(MWindow):
         self.notebook_main.AddPage(newpanel, _("Display Options"))
 
         self.Layout()
+        self.restore_aspect()
+
         for panel in self.panels:
             self.add_module_delegate(panel)
 

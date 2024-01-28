@@ -1,8 +1,7 @@
-import math
 from copy import copy
-from math import cos, sin
+from math import cos, sin, sqrt, tau
 
-from meerk40t.core.node.mixins import Stroked
+from meerk40t.core.node.mixins import FunctionalParameter, Stroked
 from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -14,7 +13,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class EllipseNode(Node, Stroked):
+class EllipseNode(Node, Stroked, FunctionalParameter):
     """
     EllipseNode is the bootstrapped node type for the 'elem ellipse' type.
     """
@@ -67,6 +66,30 @@ class EllipseNode(Node, Stroked):
             self.ry = 0
         if self.matrix is None:
             self.matrix = Matrix()
+        if self.rx == self.ry:
+            self.functional_parameter = (
+                "circle",
+                0,
+                self.cx,
+                self.cy,
+                0,
+                self.cx + cos(tau * 7 / 8) * self.rx,
+                self.cy + sin(tau * 7 / 8) * self.ry,
+            )
+        else:
+            # store two extreme points
+            self.functional_parameter = (
+                "ellipse",
+                0,
+                self.cx + self.rx,
+                self.cy,
+                0,
+                self.cx,
+                self.cy + self.ry,
+            )
+            # print(
+            #     f"Old: ({self.cx:.0f}, {self.cy:.0f}), rx={self.rx:.0f}, ry={self.ry:.0f}"
+            # )
 
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
@@ -109,7 +132,7 @@ class EllipseNode(Node, Stroked):
         """
         return complex(self.cx + self.rx * cos(t), self.cy + self.ry * sin(t))
 
-    def as_geometry(self):
+    def as_geometry(self, **kws):
         path = Geomstr.ellipse(self.rx, self.ry, self.cx, self.cy, 0, 12)
         path.transform(self.matrix)
         return path
@@ -150,11 +173,6 @@ class EllipseNode(Node, Stroked):
         self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
     def bbox(self, transformed=True, with_stroke=False):
-        # self._sync_svg()
-        # bounds = self.shape.bbox(transformed=transformed, with_stroke=False)
-        # if bounds is None:
-        #     # degenerate paths can have no bounds.
-        #     return None
         geometry = self.as_geometry()
         if transformed:
             bounds = geometry.bbox(mx=self.matrix)
@@ -171,6 +189,20 @@ class EllipseNode(Node, Stroked):
             )
         return xmin, ymin, xmax, ymax
 
+    def length(self):
+        """
+        The calculation of the length of an ellipse using the Ramanujan approximation
+        @return:
+        """
+        a = abs(complex(*self.matrix.transform_vector([self.rx, 0])))
+        b = abs(complex(*self.matrix.transform_vector([0, self.ry])))
+        if a == b:
+            return tau * self.rx
+        if b > a:
+            a, b = b, a
+        h = ((a - b) * (a - b)) / ((a + b) * (a + b))
+        return tau / 2 * (a + b) * (1 + (3 * h / (10 + sqrt(4 - 3 * h))))
+
     def preprocess(self, context, matrix, plan):
         self.stroke_scaled = False
         self.stroke_scaled = True
@@ -186,10 +218,14 @@ class EllipseNode(Node, Stroked):
 
     def drop(self, drag_node, modify=True):
         # Dragging element into element.
-        if drag_node.type.startswith("elem"):
+        if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             if modify:
                 self.insert_sibling(drag_node)
             return True
+        elif drag_node.type.startswith("op"):
+            # If we drag an operation to this node,
+            # then we will reverse the game
+            return drag_node.drop(self, modify=modify)
         return False
 
     def revalidate_points(self):
@@ -240,3 +276,48 @@ class EllipseNode(Node, Stroked):
             SVG_VALUE_NON_SCALING_STROKE if not self.stroke_scale else ""
         )
         return path
+
+    @property
+    def functional_parameter(self):
+        return self.mkparam
+
+    @functional_parameter.setter
+    def functional_parameter(self, value):
+        def getit(data, idx, default):
+            if idx < len(data):
+                return data[idx]
+            else:
+                return default
+
+        if isinstance(value, (list, tuple)):
+            self.mkparam = value
+            if self.mkparam:
+                method = self.mkparam[0]
+                if method == "circle":
+                    ncx = getit(self.mkparam, 2, self.cx)
+                    ncy = getit(self.mkparam, 3, self.cy)
+                    ptx = getit(self.mkparam, 5, self.cx + self.rx)
+                    pty = getit(self.mkparam, 6, self.cy)
+                    radius = sqrt((ncx - ptx) ** 2 + (ncy - pty) ** 2)
+                    if radius > 0:
+                        self.cx = ncx
+                        self.cy = ncy
+                        self.rx = radius
+                        self.ry = radius
+                        self.altered()
+                elif method == "ellipse":
+                    pt1x = getit(self.mkparam, 2, self.cx + self.rx)
+                    pt1y = getit(self.mkparam, 3, self.cy)
+                    pt2x = getit(self.mkparam, 5, self.cx)
+                    pt2y = getit(self.mkparam, 6, self.cy + self.ry)
+                    rx = pt1x - pt2x
+                    ry = pt2y - pt1y
+                    ncx = pt1x - rx
+                    ncy = pt2y - ry
+                    rx = abs(rx)
+                    ry = abs(ry)
+                    self.cx = ncx
+                    self.cy = ncy
+                    self.rx = rx
+                    self.ry = ry
+                    self.altered()
