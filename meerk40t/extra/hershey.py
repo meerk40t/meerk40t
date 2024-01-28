@@ -1,20 +1,20 @@
+import os
+import platform
 from functools import lru_cache
 from glob import glob
-import platform
-import os
 from os.path import basename, exists, join, realpath, splitext
 
-# import numpy as np
-
-from meerk40t.core.node.node import Fillrule
 from meerk40t.core.node.elem_path import PathNode
+from meerk40t.core.node.node import Fillrule
 from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
-from meerk40t.kernel import get_safe_path, signal_listener
+from meerk40t.kernel import get_safe_path
 from meerk40t.svgelements import Color
 from meerk40t.tools.geomstr import BeamTable, Geomstr
 from meerk40t.tools.jhfparser import JhfFont
 from meerk40t.tools.shxparser import ShxFont, ShxFontParseError
 from meerk40t.tools.ttfparser import TrueTypeFont
+
+# import numpy as np
 
 
 class FontPath:
@@ -283,7 +283,7 @@ class Meerk40tFonts:
         align = None
         if hasattr(node, "mkalign"):
             align = node.mkalign
-        if align is None or align not in("start", "middle", "end"):
+        if align is None or align not in ("start", "middle", "end"):
             align = "start"
 
         weld = None
@@ -320,7 +320,9 @@ class Meerk40tFonts:
         # print (f"Path={path}, text={remainder}, font-size={font_size}")
         horizontal = True
         mytext = self.context.elements.wordlist_translate(newtext)
-        cfont.render(path, mytext, horizontal, float(fontsize), h_spacing, v_spacing, align)
+        cfont.render(
+            path, mytext, horizontal, float(fontsize), h_spacing, v_spacing, align
+        )
         # _t2 = perf_counter()
         olda = node.matrix.a
         oldb = node.matrix.b
@@ -349,7 +351,6 @@ class Meerk40tFonts:
     def create_linetext_node(
         self, x, y, text, font=None, font_size=None, font_spacing=1.0
     ):
-
         if font_size is None:
             font_size = Length("20px")
         if font_spacing is None:
@@ -423,7 +424,7 @@ class Meerk40tFonts:
         path_node = PathNode(
             geometry=path.geometry,
             stroke=Color("black"),
-            fillrule = Fillrule.FILLRULE_NONZERO,
+            fillrule=Fillrule.FILLRULE_NONZERO,
         )
         path_node.matrix.post_translate(x, y)
         path_node.mkfont = font
@@ -513,6 +514,7 @@ class Meerk40tFonts:
 
         # Return a tuple of two values
         from time import perf_counter
+
         _ = self.context.kernel.translation
         t0 = perf_counter()
         self._available_fonts = []
@@ -583,7 +585,15 @@ class Meerk40tFonts:
                                     else:
                                         entry = font_types[p]
                                         font_family = entry[0]
-                                    self._available_fonts.append((full_name, face_name, font_family, font_subfamily, systemfont))
+                                    self._available_fonts.append(
+                                        (
+                                            full_name,
+                                            face_name,
+                                            font_family,
+                                            font_subfamily,
+                                            systemfont,
+                                        )
+                                    )
                                     # print (face_name, font_family, font_subfamily, full_name)
                                     filelist.append(filename)
                                     found[p] += 1
@@ -602,6 +612,7 @@ class Meerk40tFonts:
         busy.end()
         # print (f"Ready, took {t1 - t0:.2f}sec")
         return self._available_fonts
+
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
@@ -649,7 +660,6 @@ def plugin(kernel, lifecycle):
                 "allow_deletion": True,
                 "allow_duplication": True,
                 "tip": _("Places where MeerK40t will look for fonts."),
-
             },
         ]
         kernel.register_choices("preferences", choices)
@@ -657,7 +667,9 @@ def plugin(kernel, lifecycle):
 
         # Register update routine for linetext
         kernel.register("path_updater/linetext", context.fonts.update)
-        for idx, attrib in enumerate(("mkfontsize", "mkfontweld", "mkfontspacing", "mklinegap", "mkalign")):
+        for idx, attrib in enumerate(
+            ("mkfontsize", "mkfontweld", "mkfontspacing", "mklinegap", "mkalign")
+        ):
             kernel.register(f"registered_mk_svg_parameters/font{idx}", attrib)
 
         @context.console_option("font", "f", type=str, help=_("SHX font file."))

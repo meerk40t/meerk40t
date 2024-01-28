@@ -1,5 +1,7 @@
-import wx
 from copy import copy
+
+import wx
+
 from meerk40t.core.units import Angle, Length
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.wxutils import (
@@ -984,9 +986,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             )
                             for column_id, column in enumerate(columns):
                                 # c_attr = column.get("attr")
-                                ctrl.SetItem(
-                                    row_id, column_id, dataline[column_id]
-                                )
+                                ctrl.SetItem(row_id, column_id, dataline[column_id])
 
                 fill_ctrl(chart, obj, attr, l_columns)
 
@@ -1028,13 +1028,16 @@ class ChoicePropertyPanel(ScrolledPanel):
                     return chart_stop
 
                 chart.Bind(
-                    wx.EVT_LIST_END_LABEL_EDIT, on_chart_stop(l_columns, attr, chart, obj)
+                    wx.EVT_LIST_END_LABEL_EDIT,
+                    on_chart_stop(l_columns, attr, chart, obj),
                 )
 
                 allow_deletion = c.get("allow_deletion", False)
                 allow_duplication = c.get("allow_duplication", False)
 
-                def on_chart_contextmenu(columns, param, ctrl, local_obj, allow_del, allow_dup, default):
+                def on_chart_contextmenu(
+                    columns, param, ctrl, local_obj, allow_del, allow_dup, default
+                ):
                     def chart_menu(event=None):
                         row_id = event.GetIndex()  # Get the current row
                         if row_id < 0:
@@ -1115,11 +1118,27 @@ class ChoicePropertyPanel(ScrolledPanel):
                 default = c.get("default", [])
                 chart.Bind(
                     wx.EVT_LIST_ITEM_RIGHT_CLICK,
-                    on_chart_contextmenu(l_columns, attr, chart, obj, allow_deletion, allow_duplication, default),
+                    on_chart_contextmenu(
+                        l_columns,
+                        attr,
+                        chart,
+                        obj,
+                        allow_deletion,
+                        allow_duplication,
+                        default,
+                    ),
                 )
                 chart.Bind(
                     wx.EVT_LIST_COL_RIGHT_CLICK,
-                    on_chart_contextmenu(l_columns, attr, chart, obj, allow_deletion, allow_duplication, default),
+                    on_chart_contextmenu(
+                        l_columns,
+                        attr,
+                        chart,
+                        obj,
+                        allow_deletion,
+                        allow_duplication,
+                        default,
+                    ),
                 )
                 current_sizer.Add(chart, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type in (str, int, float):

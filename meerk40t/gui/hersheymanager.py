@@ -48,7 +48,9 @@ class LineTextPropertyPanel(wx.Panel):
         main_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Vector-Text"), wx.VERTICAL)
 
         sizer_text = StaticBoxSizer(self, wx.ID_ANY, _("Content"), wx.HORIZONTAL)
-        self.text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER|wx.TE_MULTILINE)
+        self.text_text = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_MULTILINE
+        )
         sizer_text.Add(self.text_text, 1, wx.EXPAND, 0)
 
         text_all_options = wx.BoxSizer(wx.HORIZONTAL)
@@ -64,13 +66,10 @@ class LineTextPropertyPanel(wx.Panel):
             len(align_options),
             wx.RA_SPECIFY_COLS | wx.BORDER_NONE,
         )
-        self.rb_align.SetToolTip(
-            _("Textalignment for multi-lines")
-        )
+        self.rb_align.SetToolTip(_("Textalignment for multi-lines"))
         text_all_options.Add(self.rb_align, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         text_options = StaticBoxSizer(self, wx.ID_ANY, "", wx.HORIZONTAL)
         text_all_options.Add(text_options, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-
 
         self.btn_bigger = wx.Button(self, wx.ID_ANY, "++")
         self.btn_bigger.SetToolTip(_("Increase the font-size"))
@@ -97,7 +96,12 @@ class LineTextPropertyPanel(wx.Panel):
         text_options.Add(self.btn_attrib_lineplus, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         text_options.Add(self.btn_attrib_lineminus, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        msg = "\n" + _("- Hold shift/ctrl-Key down for bigger change") + "\n" + _("- Right click will reset value to default")
+        msg = (
+            "\n"
+            + _("- Hold shift/ctrl-Key down for bigger change")
+            + "\n"
+            + _("- Right click will reset value to default")
+        )
         self.btn_attrib_lineplus.SetToolTip(_("Increase line distance") + msg)
         self.btn_attrib_lineminus.SetToolTip(_("Reduce line distance") + msg)
         self.check_weld = wx.CheckBox(self, wx.ID_ANY, "")
@@ -290,7 +294,6 @@ class LineTextPropertyPanel(wx.Panel):
             return
         index = self.list_fonts.GetSelection()
         if index >= 0:
-
             fontinfo = self.fonts[index]
             fontname = os.path.basename(fontinfo[0])
             self.node.mkfont = fontname
