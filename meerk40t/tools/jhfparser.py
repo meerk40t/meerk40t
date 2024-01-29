@@ -58,6 +58,7 @@ class JhfFont:
         tempstr = os.path.basename(filename)
         fname, fext = os.path.splitext(tempstr)
         self.valid = False
+        self.active = True
         self.font_name = fname
         self._parse(filename)
 
@@ -173,7 +174,7 @@ class JhfFont:
                     self.bottom = struct["bottom"]
             cidx += 1
 
-    def render(self, path, text, horizontal=True, font_size=12.0, spacing=1.0):
+    def render(self, path, vtext, horizontal=True, font_size=12.0, h_spacing=1.0, v_spacing=1.1, align="start"):
         """
         From https://emergent.unpythonic.net/software/hershey
         The structure is basically as follows: each character consists of a number 1->4000 (not all used) in column 0:4,
@@ -223,74 +224,105 @@ class JhfFont:
                     - Highways
                     - Etc...
         """
-        offsetx = 0
-        offsety = 0
-        cidx = 0
-        if text is None or text == "":
-            return
-        scale = font_size / 21.0
-        replacer = []
-        for tchar in text:
-            to_replace = None
-            # Yes, I am German :-)
-            if tchar not in self.glyphs:
-                if tchar == "ä":
-                    to_replace = (tchar, "ae")
-                elif tchar == "ö":
-                    to_replace = (tchar, "ue")
-                elif tchar == "ü":
-                    to_replace = (tchar, "ue")
-                elif tchar == "Ä":
-                    to_replace = (tchar, "Ae")
-                elif tchar == "Ö":
-                    to_replace = (tchar, "Oe")
-                elif tchar == "Ü":
-                    to_replace = (tchar, "Ue")
-                elif tchar == "ß":
-                    to_replace = (tchar, "ss")
-            if to_replace is not None and to_replace not in replacer:
-                replacer.append(to_replace)
-        for to_replace in replacer:
-            # print (f"Replace all '{to_replace[0]}' with '{to_replace[1]}'")
-            text = text.replace(to_replace[0], to_replace[1])
-        # print (f"Top: {self.top}, bottom={self.bottom}")
-        offsety = -1 * self.top  # Negative !
-        for tchar in text:
-            if tchar in self.glyphs:
-                # print(f"Char '{tchar}' (ord={ord(tchar)}), offsetx={offsetx}")
-                # if cidx > 0:
-                #     path.new_path()
-                struct = self.glyphs[tchar]
-                nverts = struct["nverts"]
-                vertices = struct["vertices"]
-                offsetx += abs(struct["left"]) * spacing
-                # offsetx += abs(struct["realleft"] - 1)
-                idx = 0
-                penup = True
-                lastx = 0
-                lasty = 0
-                while idx < nverts:
-                    leftchar = vertices[2 * idx]
-                    rightchar = vertices[2 * idx + 1]
-                    if leftchar == " " and rightchar == "R":
-                        # pen up
+        def _do_render(to_render, offsets):
+            cidx = 0
+            scale = font_size / 21.0
+            replacer = []
+            for tchar in to_render:
+                to_replace = None
+                # Yes, I am German :-)
+                if tchar == "\n":
+                    continue
+                if tchar not in self.glyphs:
+                    if tchar == "ä":
+                        to_replace = (tchar, "ae")
+                    elif tchar == "ö":
+                        to_replace = (tchar, "ue")
+                    elif tchar == "ü":
+                        to_replace = (tchar, "ue")
+                    elif tchar == "Ä":
+                        to_replace = (tchar, "Ae")
+                    elif tchar == "Ö":
+                        to_replace = (tchar, "Oe")
+                    elif tchar == "Ü":
+                        to_replace = (tchar, "Ue")
+                    elif tchar == "ß":
+                        to_replace = (tchar, "ss")
+                if to_replace is not None and to_replace not in replacer:
+                    replacer.append(to_replace)
+            for to_replace in replacer:
+                # print (f"Replace all '{to_replace[0]}' with '{to_replace[1]}'")
+                to_render = to_render.replace(to_replace[0], to_replace[1])
+            # print (f"Top: {self.top}, bottom={self.bottom}")
+            lines = to_render.split("\n")
+            if offsets is None:
+                offsets = [0 for text in lines]
+            line_lens = []
+
+            offsety = -1 * self.top  # Negative !
+            for text, offs in zip(lines, offsets):
+                offsetx = offs
+                for tchar in text:
+                    if tchar in self.glyphs:
+                        # print(f"Char '{tchar}' (ord={ord(tchar)}), offsetx={offsetx}")
+                        # if cidx > 0:
+                        #     path.new_path()
+                        struct = self.glyphs[tchar]
+                        nverts = struct["nverts"]
+                        vertices = struct["vertices"]
+                        offsetx += abs(struct["left"]) * h_spacing
+                        # offsetx += abs(struct["realleft"] - 1)
+                        idx = 0
                         penup = True
+                        lastx = 0
+                        lasty = 0
+                        while idx < nverts:
+                            leftchar = vertices[2 * idx]
+                            rightchar = vertices[2 * idx + 1]
+                            if leftchar == " " and rightchar == "R":
+                                # pen up
+                                penup = True
+                            else:
+                                leftval = scale * (offsetx + self.hershey_val(leftchar))
+                                rightval = scale * (offsety - self.hershey_val(rightchar))
+                                if penup:
+                                    if self.active:
+                                        path.move(leftval, rightval)
+                                    penup = False
+                                else:
+                                    if self.active:
+                                        path.line(lastx, lasty, leftval, rightval)
+                                lastx = leftval
+                                lasty = rightval
+                            idx += 1
+                        cidx += 1
+                        offsetx += struct["right"] * h_spacing
+                        if self.active:
+                            path.character_end()
+                        # offsetx += struct["realright"] + 1
                     else:
-                        leftval = scale * (offsetx + self.hershey_val(leftchar))
-                        rightval = scale * (offsety - self.hershey_val(rightchar))
-                        if penup:
-                            path.move(leftval, rightval)
-                            penup = False
-                        else:
-                            path.line(lastx, lasty, leftval, rightval)
-                        lastx = leftval
-                        lasty = rightval
-                    idx += 1
-                cidx += 1
-                offsetx += struct["right"] * spacing
-                path.character_end()
-                # offsetx += struct["realright"] + 1
+                        # print(f"Char '{tchar}' (ord={ord(tchar)}) not in font...")
+                        pass
+                line_lens.append(offsetx)
+                offsety += v_spacing * (self.top - self.bottom)
+            return line_lens
+
+        if vtext is None or vtext == "":
+            return
+        self.active = False
+        line_lengths = _do_render(vtext, None)
+        max_len = max(line_lengths)
+        offsets = []
+        for ll in line_lengths:
+            # NB anchor not only defines the alignment of the individual
+            # lines to another but as well of the whole block relative
+            # to the origin
+            if align=="middle":
+                offs = -max_len / 2 + (max_len - ll) / 2
+            elif align=="end":
+                offs = -ll
             else:
-                # print(f"Char '{tchar}' (ord={ord(tchar)}) not in font...")
-                pass
-        return
+                offs = 0
+            offsets.append(offs)
+        self.active = True
+        line_lengths = _do_render(vtext, offsets)

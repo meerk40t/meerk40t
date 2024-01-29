@@ -6,89 +6,12 @@ from math import isinf
 import wx
 
 from meerk40t.core.units import UNITS_PER_INCH, Length
-from meerk40t.extra.hershey import (
-    create_linetext_node,
-    fonts_registered,
-    get_font_information,
-    update_linetext,
-    validate_node,
-)
 from meerk40t.gui.icons import STD_ICON_SIZE, get_default_icon_size, icons8_choose_font
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 from meerk40t.kernel import get_safe_path
 
 _ = wx.GetTranslation
-
-
-def create_preview_image(context, fontfile):
-    simplefont = os.path.basename(fontfile)
-    base, ext = os.path.splitext(fontfile)
-    bmpfile = base + ".png"
-    pattern = "The quick brown fox..."
-    try:
-        node = create_linetext_node(
-            context, 0, 0, pattern, font=simplefont, font_size=Length("12pt")
-        )
-    except:
-        # We may encounter an IndexError, a ValueError or an error thrown by struct
-        # The latter cannot be named? So a global except...
-        return False
-    if node is None:
-        return False
-    if node.bounds is None:
-        return False
-    make_raster = context.elements.lookup("render-op/make_raster")
-    if make_raster is None:
-        return False
-    xmin, ymin, xmax, ymax = node.bounds
-    if isinf(xmin):
-        # No bounds for selected elements
-        return False
-    width = xmax - xmin
-    height = ymax - ymin
-    dpi = 150
-    dots_per_units = dpi / UNITS_PER_INCH
-    new_width = width * dots_per_units
-    new_height = height * dots_per_units
-    new_height = max(new_height, 1)
-    new_width = max(new_width, 1)
-    try:
-        bitmap = make_raster(
-            [node],
-            bounds=node.bounds,
-            width=new_width,
-            height=new_height,
-            bitmap=True,
-        )
-    except:
-        # Invalid path or whatever...
-        return False
-    try:
-        bitmap.SaveFile(bmpfile, wx.BITMAP_TYPE_PNG)
-    except (OSError, RuntimeError, PermissionError, FileNotFoundError):
-        return False
-    return True
-
-
-def load_create_preview_file(context, fontfile):
-    bitmap = None
-    base, ext = os.path.splitext(fontfile)
-    bmpfile = base + ".png"
-    if not os.path.exists(bmpfile):
-        __ = create_preview_image(context, fontfile)
-    if os.path.exists(bmpfile):
-        bitmap = wx.Bitmap()
-        bitmap.LoadFile(bmpfile, wx.BITMAP_TYPE_PNG)
-    return bitmap
-
-
-def fontdirectory(context):
-    fontdir = ""
-    safe_dir = os.path.realpath(get_safe_path(context.kernel.name))
-    context.setting(str, "font_directory", safe_dir)
-    fontdir = context.font_directory
-    return fontdir
 
 
 def remove_fontfile(fontfile):
@@ -121,41 +44,81 @@ class LineTextPropertyPanel(wx.Panel):
         self.context = context
         self.node = node
         self.fonts = []
-        self.font_desc = []
 
         main_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Vector-Text"), wx.VERTICAL)
 
         sizer_text = StaticBoxSizer(self, wx.ID_ANY, _("Content"), wx.HORIZONTAL)
-        self.text_text = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_text = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_MULTILINE
+        )
         sizer_text.Add(self.text_text, 1, wx.EXPAND, 0)
+
+        text_all_options = wx.BoxSizer(wx.HORIZONTAL)
+
+        align_options = [_("Left"), _("Center"), _("Right")]
+        self.rb_align = wx.RadioBox(
+            self,
+            wx.ID_ANY,
+            "",
+            wx.DefaultPosition,
+            wx.DefaultSize,
+            align_options,
+            len(align_options),
+            wx.RA_SPECIFY_COLS | wx.BORDER_NONE,
+        )
+        self.rb_align.SetToolTip(_("Textalignment for multi-lines"))
+        text_all_options.Add(self.rb_align, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        text_options = StaticBoxSizer(self, wx.ID_ANY, "", wx.HORIZONTAL)
+        text_all_options.Add(text_options, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_bigger = wx.Button(self, wx.ID_ANY, "++")
         self.btn_bigger.SetToolTip(_("Increase the font-size"))
-        sizer_text.Add(self.btn_bigger, 0, wx.EXPAND, 0)
+        text_options.Add(self.btn_bigger, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_smaller = wx.Button(self, wx.ID_ANY, "--")
         self.btn_smaller.SetToolTip(_("Decrease the font-size"))
-        sizer_text.Add(self.btn_smaller, 0, wx.EXPAND, 0)
+        text_options.Add(self.btn_smaller, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        text_options.AddSpacer(25)
+
+        msg = (
+            "\n"
+            + _("- Hold shift/ctrl-Key down for bigger change")
+            + "\n"
+            + _("- Right click will reset value to default")
+        )
 
         self.btn_bigger_spacing = wx.Button(self, wx.ID_ANY, "+")
-        self.btn_bigger_spacing.SetToolTip(_("Increase the character-gap"))
-        sizer_text.Add(self.btn_bigger_spacing, 0, wx.EXPAND, 0)
+        self.btn_bigger_spacing.SetToolTip(_("Increase the character-gap") + msg)
+        text_options.Add(self.btn_bigger_spacing, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_smaller_spacing = wx.Button(self, wx.ID_ANY, "-")
-        self.btn_smaller_spacing.SetToolTip(_("Decrease the character-gap"))
-        sizer_text.Add(self.btn_smaller_spacing, 0, wx.EXPAND, 0)
+        self.btn_smaller_spacing.SetToolTip(_("Decrease the character-gap") + msg)
+        text_options.Add(self.btn_smaller_spacing, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
+        text_options.AddSpacer(25)
+
+        self.btn_attrib_lineplus = wx.Button(self, id=wx.ID_ANY, label="v")
+        self.btn_attrib_lineminus = wx.Button(self, id=wx.ID_ANY, label="^")
+        text_options.Add(self.btn_attrib_lineplus, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        text_options.Add(self.btn_attrib_lineminus, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.btn_attrib_lineplus.SetToolTip(_("Increase line distance") + msg)
+        self.btn_attrib_lineminus.SetToolTip(_("Reduce line distance") + msg)
         self.check_weld = wx.CheckBox(self, wx.ID_ANY, "")
         self.check_weld.SetToolTip(_("Weld overlapping characters together?"))
-        sizer_text.Add(self.check_weld, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        text_options.AddSpacer(25)
+        text_options.Add(self.check_weld, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         for btn in (
             self.btn_bigger,
             self.btn_smaller,
             self.btn_bigger_spacing,
             self.btn_smaller_spacing,
+            self.btn_attrib_lineminus,
+            self.btn_attrib_lineplus,
         ):
-            btn.SetMinSize(dip_size(self, 35, -1))
+            btn.SetMinSize(dip_size(self, 35, 35))
 
         sizer_fonts = StaticBoxSizer(
             self, wx.ID_ANY, _("Fonts (double-click to use)"), wx.VERTICAL
@@ -169,10 +132,11 @@ class LineTextPropertyPanel(wx.Panel):
         sizer_fonts.Add(self.list_fonts, 0, wx.EXPAND, 0)
 
         self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
-        self.bmp_preview.SetMinSize(dip_size(self, -1, 70))
+        self.bmp_preview.SetMinSize(dip_size(self, -1, 50))
         sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
 
         main_sizer.Add(sizer_text, 0, wx.EXPAND, 0)
+        main_sizer.Add(text_all_options, 0, wx.EXPAND, 0)
         main_sizer.Add(sizer_fonts, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         self.Layout()
@@ -183,7 +147,12 @@ class LineTextPropertyPanel(wx.Panel):
         self.btn_smaller_spacing.Bind(wx.EVT_BUTTON, self.on_button_smaller_spacing)
         self.btn_bigger_spacing.Bind(wx.EVT_RIGHT_DOWN, self.on_button_reset_spacing)
         self.btn_smaller_spacing.Bind(wx.EVT_RIGHT_DOWN, self.on_button_reset_spacing)
+        self.Bind(wx.EVT_BUTTON, self.on_linegap_bigger, self.btn_attrib_lineplus)
+        self.Bind(wx.EVT_BUTTON, self.on_linegap_smaller, self.btn_attrib_lineminus)
+        self.btn_attrib_lineplus.Bind(wx.EVT_RIGHT_DOWN, self.on_linegap_reset)
+        self.btn_attrib_lineminus.Bind(wx.EVT_RIGHT_DOWN, self.on_linegap_reset)
         self.check_weld.Bind(wx.EVT_CHECKBOX, self.on_weld)
+        self.rb_align.Bind(wx.EVT_RADIOBOX, self.on_radio_box)
 
         self.text_text.Bind(wx.EVT_TEXT, self.on_text_change)
         self.list_fonts.Bind(wx.EVT_LISTBOX, self.on_list_font)
@@ -203,7 +172,7 @@ class LineTextPropertyPanel(wx.Panel):
             and hasattr(node, "mktext")
         ):
             # Let's take the opportunity to check for incorrect types and fix them...
-            validate_node(node)
+            self.context.fonts.validate_node(node)
             return True
         else:
             return False
@@ -216,52 +185,83 @@ class LineTextPropertyPanel(wx.Panel):
             return
         if not hasattr(self.node, "mkfontspacing") or self.node.mkfontspacing is None:
             self.node.mkfontspacing = 1.0
+        if not hasattr(self.node, "mklinegap") or self.node.mklinegap is None:
+            self.node.mklinegap = 1.1
         if not hasattr(self.node, "mkfontweld") or self.node.mkfontweld is None:
             self.node.mkfontweld = False
         self.check_weld.SetValue(self.node.mkfontweld)
-        fontdir = fontdirectory(self.context)
-        self.load_directory(fontdir)
+        if not hasattr(self.node, "mkalign") or self.node.mkalign is None:
+            self.node.mkalign = "start"
+        vals = ("start", "middle", "end")
+        try:
+            idx = vals.index(self.node.mkalign)
+        except IndexError:
+            idx = 0
+        self.rb_align.SetSelection(idx)
+
+        self.load_directory()
         self.text_text.SetValue(str(node.mktext))
         self.Show()
 
-    def load_directory(self, fontdir):
-        self.fonts.clear()
-        self.font_desc.clear()
+    def load_directory(self):
         self.list_fonts.Clear()
-        if os.path.exists(fontdir):
-            self.context.font_directory = fontdir
-            fontinfo = fonts_registered()
-            for extension in fontinfo:
-                ext = "*." + extension
-                for p in glob(os.path.join(fontdir, ext.lower())):
-                    fn = os.path.basename(p)
-                    if fn not in self.fonts:
-                        self.fonts.append(fn)
-                        extended = fn
-                        info = get_font_information(p)
-                        if info:
-                            # Tuple with font_family, font_subfamily, font_name
-                            extended = info[2]
-                        self.font_desc.append(extended)
-                for p in glob(os.path.join(fontdir, ext.upper())):
-                    fn = os.path.basename(p)
-                    if fn not in self.fonts:
-                        self.fonts.append(fn)
-                        extended = fn
-                        info = get_font_information(p)
-                        if info:
-                            # Tuple with font_family, font_subfamily, font_name
-                            extended = info[2]
-                        self.font_desc.append(extended)
-        self.list_fonts.SetItems(self.font_desc)
+        self.fonts = self.context.fonts.available_fonts()
+        font_desc = [e[1] for e in self.fonts]
+        self.list_fonts.SetItems(font_desc)
         # index = -1
         # lookfor = getattr(self.context, "sxh_preferred", "")
 
     def update_node(self):
         vtext = self.text_text.GetValue()
-        update_linetext(self.context, self.node, vtext)
+        self.context.fonts.update_linetext(self.node, vtext)
         self.context.signal("element_property_reload", self.node)
         self.context.signal("refresh_scene", "Scene")
+
+    def on_linegap_reset(self, event):
+        if self.node is None:
+            return
+        self.node.mklinegap = 1.1
+        self.update_node()
+
+    def on_linegap_bigger(self, event):
+        if self.node is None:
+            return
+        gap = 0.01
+        if wx.GetKeyState(wx.WXK_SHIFT):
+            gap = 0.1
+        if wx.GetKeyState(wx.WXK_CONTROL):
+            gap = 0.25
+        if self.node.mklinegap is None:
+            self.node.mklinegap = 1.1
+        else:
+            self.node.mklinegap += gap
+        self.update_node()
+
+    def on_linegap_smaller(self, event):
+        if self.node is None:
+            return
+        gap = 0.01
+        if wx.GetKeyState(wx.WXK_SHIFT):
+            gap = 0.1
+        if wx.GetKeyState(wx.WXK_CONTROL):
+            gap = 0.25
+        if self.node.mklinegap is None:
+            self.node.mklinegap = 1.1
+        else:
+            self.node.mklinegap -= gap
+        if self.node.mklinegap < 0:
+            self.node.mklinegap = 0
+        self.update_node()
+
+    def on_radio_box(self, event):
+        new_anchor = event.GetInt()
+        if new_anchor == 0:
+            self.node.mkalign = "start"
+        elif new_anchor == 1:
+            self.node.mkalign = "middle"
+        elif new_anchor == 2:
+            self.node.mkalign = "end"
+        self.update_node()
 
     def on_weld(self, event):
         if self.node is None:
@@ -289,13 +289,23 @@ class LineTextPropertyPanel(wx.Panel):
     def on_button_bigger_spacing(self, event):
         if self.node is None:
             return
-        self.node.mkfontspacing += 0.01
+        gap = 0.01
+        if wx.GetKeyState(wx.WXK_SHIFT):
+            gap = 0.1
+        if wx.GetKeyState(wx.WXK_CONTROL):
+            gap = 0.25
+        self.node.mkfontspacing += gap
         self.update_node()
 
     def on_button_smaller_spacing(self, event):
         if self.node is None:
             return
-        self.node.mkfontspacing -= 0.01
+        gap = 0.01
+        if wx.GetKeyState(wx.WXK_SHIFT):
+            gap = 0.1
+        if wx.GetKeyState(wx.WXK_CONTROL):
+            gap = 0.25
+        self.node.mkfontspacing -= gap
         self.update_node()
 
     def on_text_change(self, event):
@@ -306,16 +316,16 @@ class LineTextPropertyPanel(wx.Panel):
             return
         index = self.list_fonts.GetSelection()
         if index >= 0:
-            fontname = self.fonts[index]
+            fontinfo = self.fonts[index]
+            fontname = os.path.basename(fontinfo[0])
             self.node.mkfont = fontname
             self.update_node()
 
     def on_list_font(self, event):
         if self.list_fonts.GetSelection() >= 0:
-            fontdir = fontdirectory(self.context)
-            font_file = self.fonts[self.list_fonts.GetSelection()]
-            full_font_file = os.path.join(fontdir, font_file)
-            bmp = load_create_preview_file(self.context, full_font_file)
+            font_info = self.fonts[self.list_fonts.GetSelection()]
+            full_font_file = font_info[0]
+            bmp = self.context.fonts.preview_file(full_font_file)
             # if bmp is not None:
             #     bmap_bundle = wx.BitmapBundle().FromBitmap(bmp)
             # else:
@@ -341,10 +351,9 @@ class PanelFontSelect(wx.Panel):
 
         self.all_fonts = []
         self.fonts = []
-        self.font_desc = []
         self.font_checks = {}
 
-        fontinfo = fonts_registered()
+        fontinfo = self.context.fonts.fonts_registered
         sizer_checker = wx.BoxSizer(wx.HORIZONTAL)
         for extension in fontinfo:
             info = fontinfo[extension]
@@ -397,55 +406,27 @@ class PanelFontSelect(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_btn_smaller, self.btn_smaller)
 
         # end wxGlade
-        fontdir = fontdirectory(self.context)
-        self.load_directory(fontdir)
+        self.load_directory()
 
-    def load_directory(self, fontdir):
-        self.all_fonts.clear
+    def load_directory(self):
+        self.all_fonts = self.context.fonts.available_fonts()
         self.list_fonts.Clear()
-        if os.path.exists(fontdir):
-            self.context.font_directory = fontdir
-            fontinfo = fonts_registered()
-            for extension in fontinfo:
-                ext = "*." + extension
-                for p in glob(os.path.join(fontdir, ext.lower())):
-                    fn = os.path.basename(p)
-                    if fn not in self.all_fonts:
-                        self.all_fonts.append(fn)
-                        extended = fn
-                        info = get_font_information(p)
-                        if info:
-                            # Tuple with font_family, font_subfamily, font_name
-                            extended = info[2]
-                        self.font_desc.append(extended)
-
-                for p in glob(os.path.join(fontdir, ext.upper())):
-                    fn = os.path.basename(p)
-                    if fn not in self.all_fonts:
-                        self.all_fonts.append(fn)
-                        extended = fn
-                        info = get_font_information(p)
-                        if info:
-                            # Tuple with font_family, font_subfamily, font_name
-                            extended = info[2]
-                        self.font_desc.append(extended)
         self.populate_list_box()
-        # index = -1
-        # lookfor = getattr(self.context, "sxh_preferred", "")
 
     def populate_list_box(self):
         self.fonts.clear()
         font_desc = []
-        for entry, desc in zip(self.all_fonts, self.font_desc):
-            parts = os.path.splitext(entry)
+        for entry in self.all_fonts:
+            # 0 basename, 1 full_path, 2 facename
+            parts = os.path.splitext(entry[0])
             if len(parts) > 1:
                 extension = parts[1][1:].lower()
                 if extension in self.font_checks:
                     if not self.font_checks[extension][1]:
                         entry = None
             if entry is not None:
-                self.fonts.append(entry)
-                font_desc.append(desc)
+                self.fonts.append(entry[0])
+                font_desc.append(entry[1])
 
         self.list_fonts.SetItems(font_desc)
 
@@ -471,9 +452,8 @@ class PanelFontSelect(wx.Panel):
 
     def on_list_font(self, event):
         if self.list_fonts.GetSelection() >= 0:
-            font_file = self.fonts[self.list_fonts.GetSelection()]
-            full_font_file = os.path.join(self.context.font_directory, font_file)
-            bmp = load_create_preview_file(self.context, full_font_file)
+            full_font_file = self.fonts[self.list_fonts.GetSelection()]
+            bmp = self.context.fonts.preview_file(full_font_file)
             # if bmp is not None:
             #     bmap_bundle = wx.BitmapBundle().FromBitmap(bmp)
             # else:
@@ -531,8 +511,7 @@ class PanelFontManager(wx.Panel):
 
         mainsizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.fonts = []
-        self.font_desc = []
+        self.font_infos = []
 
         self.text_info = wx.TextCtrl(
             self,
@@ -558,6 +537,7 @@ class PanelFontManager(wx.Panel):
 
         self.text_fontdir = wx.TextCtrl(self, wx.ID_ANY, "")
         sizer_directory.Add(self.text_fontdir, 1, wx.EXPAND, 0)
+        self.text_fontdir.SetToolTip(_("Additional directory for userdefined fonts (also used to store some cache files)"))
 
         self.btn_dirselect = wx.Button(self, wx.ID_ANY, "...")
         sizer_directory.Add(self.btn_dirselect, 0, wx.EXPAND, 0)
@@ -584,6 +564,9 @@ class PanelFontManager(wx.Panel):
         lbl_spacer = wx.StaticText(self, wx.ID_ANY, "")
         sizer_buttons.Add(lbl_spacer, 1, 0, 0)
 
+        self.btn_refresh = wx.Button(self, wx.ID_ANY, _("Refresh"))
+        sizer_buttons.Add(self.btn_refresh, 0, wx.EXPAND, 0)
+
         self.webresources = [
             "https://github.com/kamalmostafa/hershey-fonts/tree/master/hershey-fonts",
             "http://iki.fi/sol/hershey/index.html",
@@ -595,10 +578,6 @@ class PanelFontManager(wx.Panel):
             _("Hershey Fonts - #2"),
             _("Autocad-SHX-Fonts"),
         ]
-        system = platform.system()
-        if system == "Windows":
-            choices.append(_("Windows-Font-Directory"))
-            self.webresources.append(os.path.join(os.environ["WINDIR"], "fonts"))
         self.combo_webget = wx.ComboBox(
             self,
             wx.ID_ANY,
@@ -618,42 +597,25 @@ class PanelFontManager(wx.Panel):
         self.Bind(wx.EVT_LISTBOX_DCLICK, self.on_list_font_dclick, self.list_fonts)
         self.Bind(wx.EVT_BUTTON, self.on_btn_import, self.btn_add)
         self.Bind(wx.EVT_BUTTON, self.on_btn_delete, self.btn_delete)
+        self.Bind(wx.EVT_BUTTON, self.on_btn_refresh, self.btn_refresh)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_webget, self.combo_webget)
+        self.list_fonts.Bind(wx.EVT_MOTION, self.on_list_hover)
         # end wxGlade
-        fontdir = fontdirectory(self.context)
+        fontdir = self.context.fonts.font_directory
         self.text_fontdir.SetValue(fontdir)
 
     def on_text_directory(self, event):
         fontdir = self.text_fontdir.GetValue()
-        self.fonts.clear()
-        self.font_desc.clear()
+        self.font_infos.clear()
+        font_desc = []
         self.list_fonts.Clear()
         if os.path.exists(fontdir):
-            self.context.font_directory = fontdir
-            fontinfo = fonts_registered()
-            for extension in fontinfo:
-                ext = "*." + extension
-                for p in glob(os.path.join(fontdir, ext.lower())):
-                    fn = os.path.basename(p)
-                    if fn not in self.fonts:
-                        self.fonts.append(fn)
-                        extended = fn
-                        info = get_font_information(p)
-                        if info:
-                            # Tuple with font_family, font_subfamily, font_name
-                            extended = info[2]
-                        self.font_desc.append(extended)
-                for p in glob(os.path.join(fontdir, ext.upper())):
-                    fn = os.path.basename(p)
-                    if fn not in self.fonts:
-                        self.fonts.append(fn)
-                        extended = fn
-                        info = get_font_information(p)
-                        if info:
-                            # Tuple with font_family, font_subfamily, font_name
-                            extended = info[2]
-                        self.font_desc.append(extended)
-        self.list_fonts.SetItems(self.font_desc)
+            self.context.fonts.font_directory = fontdir
+        self.font_infos = self.context.fonts.available_fonts()
+
+        for info in self.font_infos:
+            font_desc.append(info[1])
+        self.list_fonts.SetItems(font_desc)
         # Let the world know we have fonts
         self.context.signal("icons")
 
@@ -673,18 +635,17 @@ class PanelFontManager(wx.Panel):
 
     def on_list_font_dclick(self, event):
         if self.list_fonts.GetSelection() >= 0:
-            font_file = self.fonts[self.list_fonts.GetSelection()]
-            self.context.setting(str, "shx_preferred", None)
-            self.context.shx_preferred = font_file
-
-            # full_font_file = os.path.join(self.context.font_directory, font_file)
-        #  print(f"Fontfile: {font_file}, full: {full_font_file}")
+            font_file = self.font_infos[self.list_fonts.GetSelection()][0]
+            self.context.setting(str, "last_font", None)
+            self.context.last_font = font_file
 
     def on_list_font(self, event):
         if self.list_fonts.GetSelection() >= 0:
-            font_file = self.fonts[self.list_fonts.GetSelection()]
-            full_font_file = os.path.join(self.context.font_directory, font_file)
-            bmp = load_create_preview_file(self.context, full_font_file)
+            info = self.font_infos[self.list_fonts.GetSelection()]
+            full_font_file = info[0]
+            is_system = info[4]
+            self.btn_delete.Enable(not is_system)
+            bmp = self.context.fonts.preview_file(full_font_file)
             # if bmp is not None:
             #     bmap_bundle = wx.BitmapBundle().FromBitmap(bmp)
             # else:
@@ -693,9 +654,22 @@ class PanelFontManager(wx.Panel):
             if bmp is None:
                 bmp = wx.NullBitmap
             self.bmp_preview.SetBitmap(bmp)
+    
+    def on_list_hover(self, event):
+        event.Skip()
+        pt = event.GetPosition()
+        item = self.list_fonts.HitTest(pt)
+        ttip = _("List of available fonts")
+        if item >= 0:
+            try:
+                info = self.font_infos[item]
+                ttip = f"{info[1]}\nFamily: {info[2]}\nSubfamily: {info[3]}\n{info[0]}"
+            except IndexError:
+                pass
+        self.list_fonts.SetToolTip(ttip)
 
     def on_btn_import(self, event, defaultdirectory=None, defaultextension=None):
-        fontinfo = fonts_registered()
+        fontinfo = self.context.fonts.fonts_registered
         wildcard = "Vector-Fonts"
         idx = 0
         filterindex = 0
@@ -718,7 +692,7 @@ class PanelFontManager(wx.Panel):
             ext = "*." + extension
             info = fontinfo[extension]
             wildcard += f"|{info[0]}-Fonts|{ext.lower()};{ext.upper()}"
-        wildcard += "|All files|*.*"
+        wildcard += "|" + _("All files") + "|*.*"
         if defaultdirectory is None:
             defdir = ""
         else:
@@ -728,7 +702,7 @@ class PanelFontManager(wx.Panel):
             self,
             message=_(
                 "Select a font-file to be imported into the the font-directory {fontdir}"
-            ).format(fontdir=self.context.font_directory),
+            ).format(fontdir=self.context.fonts.font_directory),
             defaultDir=defdir,
             defaultFile="",
             wildcard=wildcard,
@@ -761,7 +735,7 @@ class PanelFontManager(wx.Panel):
         )
         for idx, sourcefile in enumerate(font_files):
             basename = os.path.basename(sourcefile)
-            destfile = os.path.join(self.context.font_directory, basename)
+            destfile = os.path.join(self.context.fonts.font_directory, basename)
             # print (f"Source File: {sourcefile}\nTarget: {destfile}")
             try:
                 with open(sourcefile, "rb") as f, open(destfile, "wb") as g:
@@ -770,8 +744,8 @@ class PanelFontManager(wx.Panel):
                         if not block:  # end of file
                             break
                         g.write(block)
-                isokay = create_preview_image(self.context, destfile)
-                if isokay:
+                bmp = self.context.fonts.preview_file(destfile)
+                if bmp is not None:
                     stats[0] += 1
                 else:
                     # We delete this file again...
@@ -796,10 +770,17 @@ class PanelFontManager(wx.Panel):
         # Reload....
         self.on_text_directory(None)
 
+    def on_btn_refresh(self, event):
+        self.context.fonts.reset_cache()
+        self.on_text_directory(None)
+
     def on_btn_delete(self, event):
         if self.list_fonts.GetSelection() >= 0:
-            font_file = self.fonts[self.list_fonts.GetSelection()]
-            full_font_file = os.path.join(self.context.font_directory, font_file)
+            info = self.font_infos[self.list_fonts.GetSelection()]
+            full_font_file = info[0]
+            font_file = os.path.basename(full_font_file)
+            if self.context.fonts.is_system_font(full_font_file):
+                return
             if (
                 wx.MessageBox(
                     _("Do you really want to delete this font: {font}").format(
@@ -862,7 +843,7 @@ class PanelFontManager(wx.Panel):
         )
         for idx, sourcefile in enumerate(font_files):
             basename = os.path.basename(sourcefile)
-            destfile = os.path.join(self.context.font_directory, basename)
+            destfile = os.path.join(self.context.fonts.font_directory, basename)
             if os.path.exists(destfile):
                 continue
             # print (f"Source File: {sourcefile}\nTarget: {destfile}")
@@ -873,8 +854,8 @@ class PanelFontManager(wx.Panel):
                         if not block:  # end of file
                             break
                         g.write(block)
-                isokay = create_preview_image(self.context, destfile)
-                if isokay:
+                bmp = self.context.fonts.preview_file(destfile)
+                if bmp is not None:
                     stats[0] += 1
                 else:
                     # We delete this file again...
