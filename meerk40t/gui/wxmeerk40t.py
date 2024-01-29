@@ -922,6 +922,10 @@ class wxMeerK40t(wx.App, Module):
 
         kernel.register("wxpane/wordlist", register_panel_wordlist)
 
+        from meerk40t.gui.commonproperty import register_panel_common_properties
+
+        kernel.register("wxpane/common_property", register_panel_common_properties)
+
         # from meerk40t.gui.auitoolbars import register_toolbars
 
         # kernel.register("wxpane/Toolbars", register_toolbars)
