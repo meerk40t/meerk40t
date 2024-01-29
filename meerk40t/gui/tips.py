@@ -200,7 +200,7 @@ class TipPanel(wx.Panel):
         try:
             with urllib.request.urlopen(uri) as file:
                 content = file.read()
-        except (urllib.error.URLError, urllib.error.HTTPError) as e:
+        except Exception as e:
             # print (f"Error: {e}")
             return False
         # If the file object is successfully opened, read its content as a string
@@ -420,7 +420,7 @@ class TipPanel(wx.Panel):
                 with urllib.request.urlopen(url + locale + "/tips.txt") as file:
                     content = file.read().decode("utf-8")
                     successful = True
-            except (urllib.error.URLError, urllib.error.HTTPError):
+            except Exception:
                 pass
 
         # if we don't have anything localized then let's use the english master
@@ -429,7 +429,7 @@ class TipPanel(wx.Panel):
                 with urllib.request.urlopen(url + "tips.txt") as file:
                     content = file.read().decode("utf-8")
                     successful = True
-            except (urllib.error.URLError, urllib.error.HTTPError) as e:
+            except Exception as e:
                 # print (f"Error: {e}")
                 pass
 
