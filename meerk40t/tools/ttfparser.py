@@ -52,10 +52,11 @@ class TrueTypeFont:
         self.font_family = None
         self.font_subfamily = None
         self.font_name = None
-
         self._character_map = {}
         self._glyph_offsets = None
         self.horizontal_metrics = None
+
+        self.is_okay = False
         self.parse_ttf(filename)
         self.parse_head()
         self.parse_hhea()
@@ -216,6 +217,8 @@ class TrueTypeFont:
                 offset_y -= v_spacing * self.units_per_em
             return line_lens
 
+        if not self.is_okay:
+            return
         self.active = False
         line_lengths = _do_render(vtext,  None)
         max_len = max(line_lengths)
@@ -293,8 +296,10 @@ class TrueTypeFont:
             if p in cmaps:
                 data.seek(cmaps[p])
                 self._parse_cmap_table(data)
+                self.is_okay = True
                 return
-        raise ValueError("Could not locate an acceptable cmap.")
+        self.is_okay = False
+        # raise ValueError("Could not locate an acceptable cmap.")
 
     def _parse_cmap_table(self, data):
         format = struct.unpack(">H", data.read(2))[0]
