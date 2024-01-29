@@ -3,7 +3,6 @@ from time import time
 import wx
 
 from meerk40t.core.units import Length
-from meerk40t.extra.hershey import create_linetext_node, update_linetext
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
@@ -125,7 +124,7 @@ class LineTextTool(ToolWidget):
                 x = self.p1.real
                 y = self.p1.imag
                 self.vtext = "Text"
-                self.node = create_linetext_node(self.scene.context, x, y, self.vtext)
+                self.node = self.scene.context.fonts.create_linetext_node(x, y, self.vtext)
                 if self.node is not None:
                     self.node.stroke = self.color
                     self.node.stroke_width = elements.default_strokewidth
@@ -171,13 +170,8 @@ class LineTextTool(ToolWidget):
                 to_add = ""
                 if keycode is not None:
                     to_add = keycode
-                # if modifiers.startswith("shift+") and modifiers != "shift+":
-                #     to_add = modifiers[-1].upper()
-                # elif len(modifiers) == 1:
-                #     to_add = modifiers
-                # elif modifiers == "space":
-                #     to_add = " "
-                # elif modifiers == "back":
+                elif keycode is None and modifiers=="ctrl+return":
+                    to_add = "\n"
                 if modifiers == "back":
                     to_add = ""
                     if len(self.vtext) > 0:
@@ -188,11 +182,9 @@ class LineTextTool(ToolWidget):
                 if self.node is None:
                     x = self.p1.real
                     y = self.p1.imag
-                    self.node = create_linetext_node(
-                        self.scene.context, x, y, self.vtext
-                    )
+                    self.node = self.scene.context.fonts.create_linetext_node(x, y, self.vtext)
                 else:
-                    update_linetext(self.scene.context, self.node, self.vtext)
+                    self.scene.context.fonts.update_linetext(self.node, self.vtext)
                 # self.node.stroke = self.color
                 # self.node.modified()
                 if self.node is not None:
@@ -219,18 +211,19 @@ class LineTextTool(ToolWidget):
             return
         if signal == "linetext" and args[0] == "bigger":
             self.node.mkfontsize *= 1.2
-            update_linetext(self.scene.context, self.node, self.node.mktext)
+            self.scene.context.fonts.update_linetext(self.node, self.node.mktext)
             self.node.emphasized = False
             self.scene.request_refresh()
         elif signal == "linetext" and args[0] == "smaller":
             self.node.mkfontsize /= 1.2
-            update_linetext(self.scene.context, self.node, self.node.mktext)
+            self.scene.context.fonts.update_linetext(self.node, self.node.mktext)
             self.node.emphasized = False
             self.scene.request_refresh()
         elif signal == "linetext" and args[0] == "font":
             if len(args) > 1:
                 font = args[1]
-                self.node.mkfont = font
-                update_linetext(self.scene.context, self.node, self.node.mktext)
+                from os.path import basename
+                self.node.mkfont = basename(font)
+                self.scene.context.fonts.update_linetext(self.node, self.node.mktext)
                 self.node.emphasized = False
                 self.scene.request_refresh()

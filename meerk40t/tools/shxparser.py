@@ -204,6 +204,7 @@ class ShxFont:
         self._last_y = 0
         self._scale = 1
         self._stack = []
+        self.active = True
 
         self._parse(filename)
 
@@ -347,63 +348,101 @@ class ShxFont:
         except IndexError as e:
             raise ShxFontParseError("No codes to pop()") from e
 
-    def render(self, path, text, horizontal=True, font_size=12.0, spacing=1.0):
-        if self.above is None:
-            self.above = 1
-        self._scale = font_size / self.above
-        self._horizontal = horizontal
-        self._path = path
-        self._x = 0
-        self._y = 0
-        self._last_x = 0
-        self._last_y = 0
-        replacer = []
-        for tchar in text:
-            to_replace = None
-            # Yes, I am German :-)
-            if ord(tchar) not in self.glyphs:
-                if tchar == "ä":
-                    to_replace = (tchar, "ae")
-                elif tchar == "ö":
-                    to_replace = (tchar, "ue")
-                elif tchar == "ü":
-                    to_replace = (tchar, "ue")
-                elif tchar == "Ä":
-                    to_replace = (tchar, "Ae")
-                elif tchar == "Ö":
-                    to_replace = (tchar, "Oe")
-                elif tchar == "Ü":
-                    to_replace = (tchar, "Ue")
-                elif tchar == "ß":
-                    to_replace = (tchar, "ss")
-            if to_replace is not None and to_replace not in replacer:
-                replacer.append(to_replace)
-        for to_replace in replacer:
-            # print (f"Replace all '{to_replace[0]}' with '{to_replace[1]}'")
-            text = text.replace(to_replace[0], to_replace[1])
-        for letter in text:
-            last_letter_x = self._last_x
-            last_letter_y = self._last_y
-            self._letter = letter
-            try:
-                self._code = bytearray(reversed(self.glyphs[ord(letter)]))
-            except KeyError:
-                # Letter is not found.
-                continue
-            self._pen = True
-            while self._code:
-                try:
-                    self._parse_code()
-                except IndexError as e:
-                    raise ShxFontParseError("Stack Error during render.") from e
-            self._skip = False
-            if spacing != 1.0:
-                dx = (spacing - 1) * (self._last_x - last_letter_x)
-                self._last_x += dx
-                self._x += dx
-            path.character_end()
-        if self._debug:
-            print(f"Render Complete.\n\n\n")
+    def render(self, path, vtext, horizontal=True, font_size=12.0, h_spacing=1.0, v_spacing=1.1, align="start"):
+        def _do_render(to_render, offsets):
+            if self.above is None:
+                self.above = 1
+            if self.below is None:
+                self.below = 0
+            self._scale = font_size / self.above
+            self._horizontal = horizontal
+            self._path = path
+            replacer = []
+            for tchar in to_render:
+                to_replace = None
+                if tchar == "\n":
+                    continue
+                # Yes, I am German :-)
+                if ord(tchar) not in self.glyphs:
+                    if tchar == "ä":
+                        to_replace = (tchar, "ae")
+                    elif tchar == "ö":
+                        to_replace = (tchar, "ue")
+                    elif tchar == "ü":
+                        to_replace = (tchar, "ue")
+                    elif tchar == "Ä":
+                        to_replace = (tchar, "Ae")
+                    elif tchar == "Ö":
+                        to_replace = (tchar, "Oe")
+                    elif tchar == "Ü":
+                        to_replace = (tchar, "Ue")
+                    elif tchar == "ß":
+                        to_replace = (tchar, "ss")
+                if to_replace is not None and to_replace not in replacer:
+                    replacer.append(to_replace)
+            for to_replace in replacer:
+                # print (f"Replace all '{to_replace[0]}' with '{to_replace[1]}'")
+                to_render = to_render.replace(to_replace[0], to_replace[1])
+            lines = to_render.split("\n")
+            offset_y = 0
+            if offsets is None:
+                offsets = [0 for text in lines]
+            line_lens = []
+            for text, offs in zip(lines, offsets):
+                self._y = offset_y * self._scale
+                self._last_y = self._y
+                self._x = offs
+                self._last_x = offs
+                maxx = offs
+                for letter in text:
+                    last_letter_x = self._last_x
+                    last_letter_y = self._last_y
+                    self._letter = letter
+                    try:
+                        self._code = bytearray(reversed(self.glyphs[ord(letter)]))
+                    except KeyError:
+                        # Letter is not found.
+                        continue
+                    self._pen = True
+                    while self._code:
+                        try:
+                            self._parse_code()
+                        except IndexError as e:
+                            raise ShxFontParseError("Stack Error during render.") from e
+                    self._skip = False
+                    if h_spacing != 1.0:
+                        dx = (h_spacing - 1) * (self._last_x - last_letter_x)
+                        self._last_x += dx
+                        self._x += dx
+                    maxx = max(maxx, self._x)
+                    if self.active:
+                        path.character_end()
+                line_lens.append(maxx)
+                offset_y -= v_spacing * (self.above + self.below)
+
+            if self._debug:
+                print(f"Render Complete.\n\n\n")
+            return line_lens
+
+        if vtext is None or vtext == "":
+            return
+        self.active = False
+        line_lengths = _do_render(vtext, None)
+        max_len = max(line_lengths)
+        offsets = []
+        for ll in line_lengths:
+            # NB anchor not only defines the alignment of the individual
+            # lines to another but as well of the whole block relative
+            # to the origin
+            if align=="middle":
+                offs = -max_len / 2 + (max_len - ll) / 2
+            elif align=="end":
+                offs = -ll
+            else:
+                offs = 0
+            offsets.append(offs)
+        self.active = True
+        line_lengths = _do_render(vtext, offsets)
 
     def _parse_code(self):
         b = self.pop()
@@ -453,10 +492,11 @@ class ShxFont:
             dy = -1.0
         self._x += dx * length * self._scale
         self._y += dy * length * self._scale
-        if self._pen:
-            self._path.line(self._last_x, self._last_y, self._x, self._y)
-        else:
-            self._path.move(self._x, self._y)
+        if self.active:
+            if self._pen:
+                self._path.line(self._last_x, self._last_y, self._x, self._y)
+            else:
+                self._path.move(self._x, self._y)
         self._last_x, self._last_y = self._x, self._y
 
     def _parse_code_special(self, special):
@@ -506,7 +546,8 @@ class ShxFont:
         if self._skip:
             self._skip = False
             return
-        self._path.new_path()
+        if self.active:
+            self._path.new_path()
 
     def _pen_down(self):
         """
@@ -519,7 +560,8 @@ class ShxFont:
             self._skip = False
             return
         self._pen = True
-        self._path.move(self._x, self._y)
+        if self.active:
+            self._path.move(self._x, self._y)
 
     def _pen_up(self):
         """
@@ -606,7 +648,8 @@ class ShxFont:
             self._x, self._y = self._stack.pop()
         except IndexError:
             raise IndexError(f"Position stack underflow in shape {self._letter}")
-        self._path.move(self._x, self._y)
+        if self.active:
+            self._path.move(self._x, self._y)
         self._last_x, self._last_y = self._x, self._y
 
     def _draw_subshape_shapes(self):
@@ -695,10 +738,11 @@ class ShxFont:
             return
         self._x += dx
         self._y += dy
-        if self._pen:
-            self._path.line(self._last_x, self._last_y, self._x, self._y)
-        else:
-            self._path.move(self._x, self._y)
+        if self.active:
+            if self._pen:
+                self._path.line(self._last_x, self._last_y, self._x, self._y)
+            else:
+                self._path.move(self._x, self._y)
         self._last_x, self._last_y = self._x, self._y
 
     def _poly_xy_displacement(self):
@@ -721,10 +765,11 @@ class ShxFont:
                 continue
             self._x += dx
             self._y += dy
-            if self._pen:
-                self._path.line(self._last_x, self._last_y, self._x, self._y)
-            else:
-                self._path.move(self._x, self._y)
+            if self.active:
+                if self._pen:
+                    self._path.line(self._last_x, self._last_y, self._x, self._y)
+                else:
+                    self._path.move(self._x, self._y)
             self._last_x, self._last_y = self._x, self._y
         if self._skip:
             self._skip = False
@@ -770,10 +815,11 @@ class ShxFont:
         my = cy + radius * sin(mid_angle)
         self._x = cx + radius * cos(end_angle)
         self._y = cy + radius * sin(end_angle)
-        if self._pen:
-            self._path.arc(self._last_x, self._last_y, mx, my, self._x, self._y)
-        else:
-            self._path.move(self._x, self._y)
+        if self.active:
+            if self._pen:
+                self._path.arc(self._last_x, self._last_y, mx, my, self._x, self._y)
+            else:
+                self._path.move(self._x, self._y)
         self._last_x, self._last_y = self._x, self._y
 
     def _fractional_arc(self):
@@ -815,10 +861,11 @@ class ShxFont:
         my = cy + radius * sin(mid_angle)
         self._x = cx + radius * cos(end_angle)
         self._y = cy + radius * sin(end_angle)
-        if self._pen:
-            self._path.arc(self._last_x, self._last_y, mx, my, self._x, self._y)
-        else:
-            self._path.move(self._x, self._y)
+        if self.active:
+            if self._pen:
+                self._path.arc(self._last_x, self._last_y, mx, my, self._x, self._y)
+            else:
+                self._path.move(self._x, self._y)
         self._last_x, self._last_y = self._x, self._y
 
     def _bulge_arc(self):
@@ -849,13 +896,14 @@ class ShxFont:
         my = by + r * bulge * sin(bulge_angle)
         self._x += dx
         self._y += dy
-        if self._pen:
-            if bulge == 0:
-                self._path.line(self._last_x, self._last_y, self._x, self._y)
+        if self.active:
+            if self._pen:
+                if bulge == 0:
+                    self._path.line(self._last_x, self._last_y, self._x, self._y)
+                else:
+                    self._path.arc(self._last_x, self._last_y, mx, my, self._x, self._y)
             else:
-                self._path.arc(self._last_x, self._last_y, mx, my, self._x, self._y)
-        else:
-            self._path.move(self._x, self._y)
+                self._path.move(self._x, self._y)
         self._last_x, self._last_y = self._x, self._y
 
     def _poly_bulge_arc(self):
@@ -887,13 +935,14 @@ class ShxFont:
             my = by + r * bulge * sin(bulge_angle)
             self._x += dx
             self._y += dy
-            if self._pen:
-                if bulge == 0:
-                    self._path.line(self._last_x, self._last_y, self._x, self._y)
+            if self.active:
+                if self._pen:
+                    if bulge == 0:
+                        self._path.line(self._last_x, self._last_y, self._x, self._y)
+                    else:
+                        self._path.arc(self._last_x, self._last_y, mx, my, self._x, self._y)
                 else:
-                    self._path.arc(self._last_x, self._last_y, mx, my, self._x, self._y)
-            else:
-                self._path.move(self._x, self._y)
+                    self._path.move(self._x, self._y)
             self._last_x, self._last_y = self._x, self._y
         if self._skip:
             self._skip = False

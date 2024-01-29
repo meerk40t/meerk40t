@@ -26,6 +26,7 @@ class TrueTypeFont:
         self.units_per_em = None
         self.created = None
         self.modified = None
+        self.active = True
         self.x_min = None
         self.y_min = None
         self.x_max = None
@@ -138,64 +139,100 @@ class TrueTypeFont:
             print (f"Error while reading: {e}")
             return None
 
-    def render(self, path, text, horizontal=True, font_size=12.0, spacing=1.0):
-        # Letter spacing
-        scale = font_size / self.units_per_em
-        offset_x = 0
-        offset_y = 0
-        for c in text:
-            index = self._character_map.get(c, 0)
-            advance_x = self.horizontal_metrics[index][0] * spacing
-            advance_y = 0
-            glyph = self.glyphs[index]
-            path.new_path()
-            for contour in glyph:
-                if len(contour) == 0:
-                    continue
-                contour = list(contour)
-                curr = contour[-1]
-                next = contour[0]
-                if curr[2] & ON_CURVE_POINT:
-                    path.move(
-                        (offset_x + curr[0]) * scale, (offset_y + curr[1]) * scale
-                    )
-                else:
-                    if next[2] & ON_CURVE_POINT:
-                        path.move(
-                            (offset_x + next[0]) * scale, (offset_y + next[1]) * scale
-                        )
-                    else:
-                        path.move(
-                            (offset_x + (curr[0] + next[0]) / 2) * scale,
-                            (offset_y + (curr[1] + next[1]) / 2) * scale,
-                        )
-                for i in range(len(contour)):
-                    prev = curr
-                    curr = next
-                    next = contour[(i + 1) % len(contour)]
-                    if curr[2] & ON_CURVE_POINT:
-                        path.line(
-                            None,
-                            None,
-                            (offset_x + curr[0]) * scale,
-                            (offset_y + curr[1]) * scale,
-                        )
-                    else:
-                        next2 = next
-                        if not next[2] & ON_CURVE_POINT:
-                            next2 = (curr[0] + next[0]) / 2, (curr[1] + next[1]) / 2
-                        path.quad(
-                            None,
-                            None,
-                            (offset_x + curr[0]) * scale,
-                            (offset_y + curr[1]) * scale,
-                            (offset_x + next2[0]) * scale,
-                            (offset_y + next2[1]) * scale,
-                        )
-                path.close()
-            offset_x += advance_x
-            offset_y += advance_y
-            path.character_end()
+    def render(self, path, vtext, horizontal=True, font_size=12.0, h_spacing=1.0, v_spacing=1.1, align="start"):
+        def _do_render(to_render, offsets):
+            # Letter spacing
+            scale = font_size / self.units_per_em
+            offset_y = 0
+            lines = to_render.split("\n")
+            if offsets is None:
+                offsets = [0 for text in lines]
+            line_lens = []
+            for text, offs in zip(lines, offsets):
+                offset_x = offs
+                # print (f"{offset_x}, {offset_y}: '{text}', fs={font_size}, em:{self.units_per_em}")
+                for c in text:
+                    index = self._character_map.get(c, 0)
+                    advance_x = self.horizontal_metrics[index][0] * h_spacing
+                    advance_y = 0
+                    glyph = self.glyphs[index]
+                    if self.active:
+                        path.new_path()
+                    for contour in glyph:
+                        if len(contour) == 0:
+                            continue
+                        contour = list(contour)
+                        curr = contour[-1]
+                        next = contour[0]
+                        if curr[2] & ON_CURVE_POINT:
+                            if self.active:
+                                path.move(
+                                    (offset_x + curr[0]) * scale, (offset_y + curr[1]) * scale
+                                )
+                        else:
+                            if next[2] & ON_CURVE_POINT:
+                                if self.active:
+                                    path.move(
+                                        (offset_x + next[0]) * scale, (offset_y + next[1]) * scale
+                                    )
+                            else:
+                                if self.active:
+                                    path.move(
+                                        (offset_x + (curr[0] + next[0]) / 2) * scale,
+                                        (offset_y + (curr[1] + next[1]) / 2) * scale,
+                                    )
+                        for i in range(len(contour)):
+                            prev = curr
+                            curr = next
+                            next = contour[(i + 1) % len(contour)]
+                            if curr[2] & ON_CURVE_POINT:
+                                if self.active:
+                                    path.line(
+                                        None,
+                                        None,
+                                        (offset_x + curr[0]) * scale,
+                                        (offset_y + curr[1]) * scale,
+                                    )
+                            else:
+                                next2 = next
+                                if not next[2] & ON_CURVE_POINT:
+                                    next2 = (curr[0] + next[0]) / 2, (curr[1] + next[1]) / 2
+                                if self.active:
+                                    path.quad(
+                                        None,
+                                        None,
+                                        (offset_x + curr[0]) * scale,
+                                        (offset_y + curr[1]) * scale,
+                                        (offset_x + next2[0]) * scale,
+                                        (offset_y + next2[1]) * scale,
+                                    )
+                        if self.active:
+                            path.close()
+                    offset_x += advance_x
+                    offset_y += advance_y
+                    if self.active:
+                        path.character_end()
+                line_lens.append(offset_x)
+                offset_y -= v_spacing * self.units_per_em
+            return line_lens
+
+        self.active = False
+        line_lengths = _do_render(vtext,  None)
+        max_len = max(line_lengths)
+        offsets = []
+        for ll in line_lengths:
+            # NB anchor not only defines the alignment of the individual
+            # lines to another but as well of the whole block relative
+            # to the origin
+            if align=="middle":
+                offs = -max_len / 2 + (max_len - ll) / 2
+            elif align=="end":
+                offs = -ll
+            else:
+                offs = 0
+            offsets.append(offs)
+        self.active = True
+        line_lengths = _do_render(vtext, offsets)
 
     def parse_ttf(self, font_path, require_checksum=True):
         with open(font_path, "rb") as f:
