@@ -1301,7 +1301,7 @@ def short_travel_cutcode_2opt(
             _ = kernel.translation
             if busy.shown:
                 busy.change(
-                    msg=_("Pass {cpass}/{tpass").format(
+                    msg=_("Pass {cpass}/{tpass}").format(
                         cpass=current_pass, tpass=passes
                     ),
                     keep=2,
