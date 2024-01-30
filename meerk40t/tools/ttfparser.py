@@ -137,7 +137,7 @@ class TrueTypeFont:
                         break
                 return font_family, font_subfamily, font_name
         except (OSError, FileNotFoundError, PermissionError) as e:
-            print (f"Error while reading: {e}")
+            # print (f"Error while reading: {e}")
             return None
 
     def render(self, path, vtext, horizontal=True, font_size=12.0, h_spacing=1.0, v_spacing=1.1, align="start"):
