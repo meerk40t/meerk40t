@@ -6,7 +6,7 @@ from os.path import basename, exists, join, realpath, splitext
 
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.node.node import Fillrule
-from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
+from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MIL, Length
 from meerk40t.kernel import get_safe_path
 from meerk40t.svgelements import Color
 from meerk40t.tools.geomstr import BeamTable, Geomstr
@@ -488,7 +488,7 @@ class Meerk40tFonts:
         path_node._translated_text = mytext
         path_node.mkcoordx = x
         path_node.mkcoordy = y
-        path_node.stroke_width = UNITS_PER_PIXEL
+        path_node.stroke_width = UNITS_PER_MIL
 
         return path_node
 
