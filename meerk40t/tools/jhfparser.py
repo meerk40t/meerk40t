@@ -53,6 +53,7 @@ class JhfFont:
     """
 
     def __init__(self, filename):
+        self.STROKE_BASED = True
         self.type = "Hershey"
         self.glyphs = dict()  # Glyph dictionary
         tempstr = os.path.basename(filename)
