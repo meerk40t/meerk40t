@@ -213,11 +213,13 @@ class LineTextTool(ToolWidget):
             self.scene.context.fonts.update_linetext(self.node, self.node.mktext)
             self.node.emphasized = False
             self.scene.request_refresh()
+            self.scene.gui.scene_panel.SetFocus()
         elif signal == "linetext" and args[0] == "smaller":
             self.node.mkfontsize /= 1.2
             self.scene.context.fonts.update_linetext(self.node, self.node.mktext)
             self.node.emphasized = False
             self.scene.request_refresh()
+            self.scene.gui.scene_panel.SetFocus()
         elif signal == "linetext" and args[0] == "font":
             if len(args) > 1:
                 font = args[1]
@@ -226,3 +228,4 @@ class LineTextTool(ToolWidget):
                 self.scene.context.fonts.update_linetext(self.node, self.node.mktext)
                 self.node.emphasized = False
                 self.scene.request_refresh()
+                self.scene.gui.scene_panel.SetFocus()
