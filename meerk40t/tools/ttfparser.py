@@ -306,7 +306,7 @@ class TrueTypeFont:
             struct.unpack(">HHI", data.read(8)) for _ in range(subtables)
         ]:
             cmaps[(platform_id, platform_specific_id)] = offset
-        for p in ((3, 10), (0, 6), (0, 4), (3, 1), (0, 3), (0, 2), (0, 1), (0, 0)):
+        for p in ((3, 10), (0, 6), (0, 4), (3, 1), (0, 3), (0, 2), (0, 1), (0, 0), (3, 0)):
             if p in cmaps:
                 data.seek(cmaps[p])
                 parsed = self._parse_cmap_table(data)
