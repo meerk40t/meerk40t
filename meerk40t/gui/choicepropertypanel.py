@@ -1039,7 +1039,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                     columns, param, ctrl, local_obj, allow_del, allow_dup, default
                 ):
                     def chart_menu(event=None):
-                        row_id = event.GetIndex()  # Get the current row
+                        # row_id = event.GetIndex()  # Get the current row
+                        
+                        x, y = event.GetPosition()
+                        row_id, flags = ctrl.HitTest((x, y))
                         if row_id < 0:
                             l_allow_del = False
                             l_allow_dup = False
@@ -1116,20 +1119,32 @@ class ChoicePropertyPanel(ScrolledPanel):
                     return chart_menu
 
                 default = c.get("default", [])
+                # chart.Bind(
+                #     wx.EVT_LIST_ITEM_RIGHT_CLICK,
+                #     on_chart_contextmenu(
+                #         l_columns,
+                #         attr,
+                #         chart,
+                #         obj,
+                #         allow_deletion,
+                #         allow_duplication,
+                #         default,
+                #     ),
+                # )
+                # chart.Bind(
+                #     wx.EVT_LIST_COL_RIGHT_CLICK,
+                #     on_chart_contextmenu(
+                #         l_columns,
+                #         attr,
+                #         chart,
+                #         obj,
+                #         allow_deletion,
+                #         allow_duplication,
+                #         default,
+                #     ),
+                # )
                 chart.Bind(
-                    wx.EVT_LIST_ITEM_RIGHT_CLICK,
-                    on_chart_contextmenu(
-                        l_columns,
-                        attr,
-                        chart,
-                        obj,
-                        allow_deletion,
-                        allow_duplication,
-                        default,
-                    ),
-                )
-                chart.Bind(
-                    wx.EVT_LIST_COL_RIGHT_CLICK,
+                    wx.EVT_RIGHT_DOWN,
                     on_chart_contextmenu(
                         l_columns,
                         attr,
