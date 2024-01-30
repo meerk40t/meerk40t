@@ -1513,6 +1513,17 @@ def init_tree(kernel):
         self.classify_autogenerate = previous
         self.signal("refresh_tree", list(self.flat(types="reference")))
 
+    @tree_submenu(_("Classification"))
+    @tree_separator_before()
+    @tree_operation(
+        _("Clear all assignments"),
+        node_type=("branch ops", "branch elems"),
+        help="",
+    )
+    def do_classification_clear(node, **kwargs):
+        self.remove_elements_from_operations(list(self.elems()))
+        self.signal("refresh_tree")
+
     @tree_conditional(lambda cond: self.have_unassigned_elements())
     @tree_operation(
         _("Select unassigned elements"),
