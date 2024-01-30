@@ -64,7 +64,11 @@ class TrueTypeFont:
         self.parse_loca()
         self.parse_cmap()
         self.parse_name()
-        self.glyphs = list(self.parse_glyf())
+        self.glyph_data = list(self.parse_glyf())
+
+    @property
+    def glyphs(self):
+        return list(self._character_map.keys())
 
     @staticmethod
     def query_name(filename):
@@ -154,11 +158,11 @@ class TrueTypeFont:
                 # print (f"{offset_x}, {offset_y}: '{text}', fs={font_size}, em:{self.units_per_em}")
                 for c in text:
                     index = self._character_map.get(c, 0)
-                    if index >= len(self.glyphs):
+                    if index >= len(self.glyph_data):
                         continue
                     advance_x = self.horizontal_metrics[index][0] * h_spacing
                     advance_y = 0
-                    glyph = self.glyphs[index]
+                    glyph = self.glyph_data[index]
                     if self.active:
                         path.new_path()
                     for contour in glyph:
