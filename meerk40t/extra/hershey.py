@@ -120,10 +120,17 @@ class Meerk40tFonts:
         safe_dir = realpath(get_safe_path(self.context.kernel.name))
         self.context.setting(str, "font_directory", safe_dir)
         fontdir = self.context.font_directory
+        if not exists(fontdir):
+            # Fallback, something strange happened...
+            fontdir = safe_dir
+            self.context.font_directory = fontdir
         return fontdir
 
     @font_directory.setter
     def font_directory(self, value):
+        if not exists(value):
+            # We cant allow a non valid directory
+            value = realpath(get_safe_path(self.context.kernel.name))
         self.context.setting(str, "font_directory", value)
         self.context.font_directory = value
         self._available_fonts = None
@@ -161,6 +168,13 @@ class Meerk40tFonts:
         return None
 
     def _get_full_info(self, short):
+        if not isinstance(short, str):
+            # That's strange...
+            print (f"gfi, Short is a {type(short).__name__}: {short}")
+            if isinstance(short, (list, tuple)):
+                short = short[0]
+            else:
+                return None
         s_lower = short.lower()
         p = self.available_fonts()
         for info in p:
@@ -177,6 +191,13 @@ class Meerk40tFonts:
         return True
 
     def face_to_full_name(self, short):
+        if not isinstance(short, str):
+            # That's strange...
+            print (f"f2f, Short is a {type(short).__name__}: {short}")
+            if isinstance(short, (list, tuple)):
+                short = short[0]
+            else:
+                return None
         s_lower = short.lower()
         p = self.available_fonts()
         for info in p:
@@ -194,6 +215,13 @@ class Meerk40tFonts:
         return None
 
     def short_name(self, fullname):
+        if not isinstance(fullname, str):
+            # That's strange...
+            print (f"2n, fullname is a {type(fullname).__name__}: {fullname}")
+            if isinstance(fullname, (list, tuple)):
+                short = fullname[0]
+            else:
+                return None
         return basename(fullname)
 
     @lru_cache(maxsize=128)
@@ -605,9 +633,12 @@ class Meerk40tFonts:
             #     print(f"{key}: {value} - {fontpath}")
 
         self._available_fonts.sort(key=lambda e: e[1])
-        with open(cache, "w", encoding="utf-8") as f:
-            for p in self._available_fonts:
-                f.write(f"{p[0]}|{p[1]}|{p[2]}|{p[3]}|{p[4]}\n")
+        try:
+            with open(cache, "w", encoding="utf-8") as f:
+                for p in self._available_fonts:
+                    f.write(f"{p[0]}|{p[1]}|{p[2]}|{p[3]}|{p[4]}\n")
+        except (OSError, FileNotFoundError, PermissionError):
+            pass
 
         t1 = perf_counter()
         busy.end()
