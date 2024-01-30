@@ -297,42 +297,45 @@ class TrueTypeFont:
         for p in ((3, 10), (0, 6), (0, 4), (3, 1), (0, 3), (0, 2), (0, 1), (0, 0)):
             if p in cmaps:
                 data.seek(cmaps[p])
-                self._parse_cmap_table(data)
-                self.is_okay = True
-                return
+                parsed = self._parse_cmap_table(data)
+                if parsed:
+                    self.is_okay = True
+                    return
         self.is_okay = False
         # raise ValueError("Could not locate an acceptable cmap.")
 
     def _parse_cmap_table(self, data):
         format = struct.unpack(">H", data.read(2))[0]
         if format == 0:
-            self._parse_cmap_format_0(data)
+            return self._parse_cmap_format_0(data)
         elif format == 2:
-            self._parse_cmap_format_2(data)
+            return self._parse_cmap_format_2(data)
         elif format == 4:
-            self._parse_cmap_format_4(data)
+            return self._parse_cmap_format_4(data)
         elif format == 6:
-            self._parse_cmap_format_6(data)
+            return self._parse_cmap_format_6(data)
         elif format == 8:
-            self._parse_cmap_format_8(data)
+            return self._parse_cmap_format_8(data)
         elif format == 10:
-            self._parse_cmap_format_10(data)
+            return self._parse_cmap_format_10(data)
         elif format == 12:
-            self._parse_cmap_format_12(data)
+            return self._parse_cmap_format_12(data)
         elif format == 13:
-            self._parse_cmap_format_13(data)
+            return self._parse_cmap_format_13(data)
         elif format == 14:
-            self._parse_cmap_format_14(data)
+            return self._parse_cmap_format_14(data)
+        return False
 
     def _parse_cmap_format_0(self, data):
         length, language = struct.unpack(">HH", data.read(4))
         for i, c in enumerate(data.read(256)):
             self._character_map[chr(i + 1)] = c
+        return True
 
     def _parse_cmap_format_2(self, data):
         length, language = struct.unpack(">HH", data.read(4))
         subheader_keys = struct.unpack(">256H", data.read(256 * 2))
-        pass
+        return False
 
     def _parse_cmap_format_4(self, data):
         (
@@ -365,6 +368,7 @@ class TrueTypeFont:
                     if glyph_index != 0:
                         glyph_index = (glyph_index + delta) & 0xFFFF
                     self._character_map[chr(c)] = glyph_index
+        return True
 
     def _parse_cmap_format_6(self, data):
         (
@@ -375,21 +379,52 @@ class TrueTypeFont:
         ) = struct.unpack(">HHHHHH", data.read(12))
         for i, c in struct.unpack(f">{entry_count}H", data.read(entry_count * 2)):
             self._character_map[chr(i + 1 + first_code)] = c
+        return True
 
     def _parse_cmap_format_8(self, data):
-        pass
+        return False
 
     def _parse_cmap_format_10(self, data):
-        pass
+        return False
 
     def _parse_cmap_format_12(self, data):
-        pass
+        (
+            reserved,
+            length,
+            language,
+            n_groups,
+        ) = struct.unpack(">HIII", data.read(14))
+        for seg in range(n_groups):
+            (
+                start_char_code,
+                end_char_code,
+                start_glyph_code
+            ) = struct.unpack(">III", data.read(12))
+
+            for i, c in enumerate(range(start_char_code, end_char_code)):
+                self._character_map[chr(c)] = start_glyph_code + i
+        return True
 
     def _parse_cmap_format_13(self, data):
-        pass
+        (
+            reserved,
+            length,
+            language,
+            n_groups,
+        ) = struct.unpack(">HIII", data.read(14))
+        for seg in range(n_groups):
+            (
+                start_char_code,
+                end_char_code,
+                glyph_code
+            ) = struct.unpack(">III", data.read(12))
+
+            for c in enumerate(range(start_char_code, end_char_code)):
+                self._character_map[chr(c)] = glyph_code
+        return True
 
     def _parse_cmap_format_14(self, data):
-        pass
+        return False
 
     def parse_hhea(self):
         data = self._raw_tables[b"hhea"]
