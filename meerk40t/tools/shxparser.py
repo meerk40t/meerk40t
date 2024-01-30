@@ -180,6 +180,7 @@ class ShxFont:
     """
 
     def __init__(self, filename, debug=False):
+        self.STROKE_BASED = True
         self.format = None  # format (usually AutoCAD-86)
         self.type = None  # Font type: shapes, bigfont, unifont
         self.version = None  # Font file version (usually 1.0).

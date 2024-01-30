@@ -6,7 +6,7 @@ from os.path import basename, exists, join, realpath, splitext
 
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.node.node import Fillrule
-from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
+from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MIL, Length
 from meerk40t.kernel import get_safe_path
 from meerk40t.svgelements import Color
 from meerk40t.tools.geomstr import BeamTable, Geomstr
@@ -120,10 +120,17 @@ class Meerk40tFonts:
         safe_dir = realpath(get_safe_path(self.context.kernel.name))
         self.context.setting(str, "font_directory", safe_dir)
         fontdir = self.context.font_directory
+        if not exists(fontdir):
+            # Fallback, something strange happened...
+            fontdir = safe_dir
+            self.context.font_directory = fontdir
         return fontdir
 
     @font_directory.setter
     def font_directory(self, value):
+        if not exists(value):
+            # We cant allow a non valid directory
+            value = realpath(get_safe_path(self.context.kernel.name))
         self.context.setting(str, "font_directory", value)
         self.context.font_directory = value
         self._available_fonts = None
@@ -161,6 +168,13 @@ class Meerk40tFonts:
         return None
 
     def _get_full_info(self, short):
+        if not isinstance(short, str):
+            # That's strange...
+            print (f"gfi, Short is a {type(short).__name__}: {short}")
+            if isinstance(short, (list, tuple)):
+                short = short[0]
+            else:
+                return None
         s_lower = short.lower()
         p = self.available_fonts()
         for info in p:
@@ -177,6 +191,13 @@ class Meerk40tFonts:
         return True
 
     def face_to_full_name(self, short):
+        if not isinstance(short, str):
+            # That's strange...
+            print (f"f2f, Short is a {type(short).__name__}: {short}")
+            if isinstance(short, (list, tuple)):
+                short = short[0]
+            else:
+                return None
         s_lower = short.lower()
         p = self.available_fonts()
         for info in p:
@@ -194,6 +215,13 @@ class Meerk40tFonts:
         return None
 
     def short_name(self, fullname):
+        if not isinstance(fullname, str):
+            # That's strange...
+            print (f"2n, fullname is a {type(fullname).__name__}: {fullname}")
+            if isinstance(fullname, (list, tuple)):
+                short = fullname[0]
+            else:
+                return None
         return basename(fullname)
 
     @lru_cache(maxsize=128)
@@ -378,11 +406,12 @@ class Meerk40tFonts:
             font = ""
             # No preferred font set, let's try a couple of candidates...
             candidates = (
+                "arial.ttf",
+                "opensans_regular.ttf",
                 "timesr.jhf",
                 "romant.shx",
                 "rowmans.jhf",
                 "FUTURA.SHX",
-                "arial.ttf",
             )
             for fname in candidates:
                 dummy = self.full_name(fname)
@@ -391,12 +420,29 @@ class Meerk40tFonts:
                     font = dummy
                     self.context.last_font = font
                     break
+            if font:
+                # Let's check whether it's valid...
+                font_path = self.full_name(font)
+                try:
+                    cfont = self.cached_fontclass(font_path)
+                except Exception as e:
+                    font = ""
+                    # print (f"Encountered error {e} for {font_path}")
             if font == "":
                 # You know, I take anything at this point...
                 if self.available_fonts():
-                    font = self._available_fonts[0]
-                    # print (f"Fallback to first file found: {font}")
-                    self.context.last_font = font
+                    idx = 0
+                    while not font and idx < len(self._available_fonts):
+                        candidate = self._available_fonts[idx]
+                        try:
+                            cfont = self.cached_fontclass(candidate)
+                            font = candidate
+                            # print (f"Fallback to first file found: {font}")
+                            self.context.last_font = font
+                            break
+                        except Exception:
+                            pass
+                        idx += 1
 
         if font is None or font == "":
             # print ("Font was empty")
@@ -404,7 +450,11 @@ class Meerk40tFonts:
         font_path = self.full_name(font)
         font = self.short_name(font)
         horizontal = True
-        cfont = self.cached_fontclass(font_path)
+        try:
+            cfont = self.cached_fontclass(font_path)
+        except Exception as e:
+            # print (f"Encountered error {e} for {font_path}")
+            cfont = None
         if cfont is None:
             # This font does not exist in our environment
             return
@@ -438,7 +488,7 @@ class Meerk40tFonts:
         path_node._translated_text = mytext
         path_node.mkcoordx = x
         path_node.mkcoordy = y
-        path_node.stroke_width = UNITS_PER_PIXEL
+        path_node.stroke_width = UNITS_PER_MIL
 
         return path_node
 
@@ -514,10 +564,10 @@ class Meerk40tFonts:
             return self._available_fonts
 
         # Return a tuple of two values
-        from time import perf_counter
+        # from time import perf_counter
 
         _ = self.context.kernel.translation
-        t0 = perf_counter()
+        # t0 = perf_counter()
         self._available_fonts = []
 
         cache = self.cache_file
@@ -546,7 +596,7 @@ class Meerk40tFonts:
             except (OSError, FileNotFoundError, PermissionError):
                 self._available_fonts = []
             if len(self._available_fonts):
-                t1 = perf_counter()
+                # t1 = perf_counter()
                 # print (f"Cached, took {t1 - t0:.2f}sec")
                 return self._available_fonts
 
@@ -605,12 +655,15 @@ class Meerk40tFonts:
             #     print(f"{key}: {value} - {fontpath}")
 
         self._available_fonts.sort(key=lambda e: e[1])
-        with open(cache, "w", encoding="utf-8") as f:
-            for p in self._available_fonts:
-                f.write(f"{p[0]}|{p[1]}|{p[2]}|{p[3]}|{p[4]}\n")
+        try:
+            with open(cache, "w", encoding="utf-8") as f:
+                for p in self._available_fonts:
+                    f.write(f"{p[0]}|{p[1]}|{p[2]}|{p[3]}|{p[4]}\n")
+        except (OSError, FileNotFoundError, PermissionError):
+            pass
 
-        t1 = perf_counter()
         busy.end()
+        # t1 = perf_counter()
         # print (f"Ready, took {t1 - t0:.2f}sec")
         return self._available_fonts
 
@@ -643,7 +696,7 @@ def plugin(kernel, lifecycle):
                 "attr": "system_font_directories",
                 "object": context,
                 "page": "_95_Fonts",
-                "section": "_95_Font locations",
+                "section": "_95_System font locations",
                 "default": directories,
                 "type": list,
                 "columns": [

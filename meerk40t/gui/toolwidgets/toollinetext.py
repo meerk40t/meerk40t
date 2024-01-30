@@ -127,7 +127,6 @@ class LineTextTool(ToolWidget):
                 self.node = self.scene.context.fonts.create_linetext_node(x, y, self.vtext)
                 if self.node is not None:
                     self.node.stroke = self.color
-                    self.node.stroke_width = elements.default_strokewidth
                     elements.elem_branch.add_node(self.node)
                     self.scene.context.signal("element_added", self.node)
                     self.scene.context.signal(
@@ -214,11 +213,13 @@ class LineTextTool(ToolWidget):
             self.scene.context.fonts.update_linetext(self.node, self.node.mktext)
             self.node.emphasized = False
             self.scene.request_refresh()
+            self.scene.gui.scene_panel.SetFocus()
         elif signal == "linetext" and args[0] == "smaller":
             self.node.mkfontsize /= 1.2
             self.scene.context.fonts.update_linetext(self.node, self.node.mktext)
             self.node.emphasized = False
             self.scene.request_refresh()
+            self.scene.gui.scene_panel.SetFocus()
         elif signal == "linetext" and args[0] == "font":
             if len(args) > 1:
                 font = args[1]
@@ -227,3 +228,4 @@ class LineTextTool(ToolWidget):
                 self.scene.context.fonts.update_linetext(self.node, self.node.mktext)
                 self.node.emphasized = False
                 self.scene.request_refresh()
+                self.scene.gui.scene_panel.SetFocus()
