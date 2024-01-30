@@ -563,10 +563,10 @@ class Meerk40tFonts:
             return self._available_fonts
 
         # Return a tuple of two values
-        from time import perf_counter
+        # from time import perf_counter
 
         _ = self.context.kernel.translation
-        t0 = perf_counter()
+        # t0 = perf_counter()
         self._available_fonts = []
 
         cache = self.cache_file
@@ -595,7 +595,7 @@ class Meerk40tFonts:
             except (OSError, FileNotFoundError, PermissionError):
                 self._available_fonts = []
             if len(self._available_fonts):
-                t1 = perf_counter()
+                # t1 = perf_counter()
                 # print (f"Cached, took {t1 - t0:.2f}sec")
                 return self._available_fonts
 
@@ -661,8 +661,8 @@ class Meerk40tFonts:
         except (OSError, FileNotFoundError, PermissionError):
             pass
 
-        t1 = perf_counter()
         busy.end()
+        # t1 = perf_counter()
         # print (f"Ready, took {t1 - t0:.2f}sec")
         return self._available_fonts
 
