@@ -404,7 +404,22 @@ class TrueTypeFont:
         return True
 
     def _parse_cmap_format_13(self, data):
-        return False
+        (
+            reserved,
+            length,
+            language,
+            n_groups,
+        ) = struct.unpack(">HIII", data.read(14))
+        for seg in range(n_groups):
+            (
+                start_char_code,
+                end_char_code,
+                glyph_code
+            ) = struct.unpack(">III", data.read(12))
+
+            for c in enumerate(range(start_char_code, end_char_code)):
+                self._character_map[chr(c)] = glyph_code
+        return True
 
     def _parse_cmap_format_14(self, data):
         return False
