@@ -3,14 +3,16 @@ A small pane to display and amend common properties of emphasized elements
 """
 import wx
 from wx import aui
-from meerk40t.kernel.kernel import signal_listener
+
 from meerk40t.gui.laserrender import swizzlecolor
+from meerk40t.kernel.kernel import signal_listener
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
 
 UNDEF = "_undefined_"
 NONEQ = "_different_"
+
 
 def set_value(context, nodes, attributes, value):
     changed = list()
@@ -50,7 +52,7 @@ class PropertyColor(wx.BoxSizer):
         self.common_fill = UNDEF
         # kwds["orientation"] = wx.HORIZONTAL
         super().__init__(wx.HORIZONTAL)
-        self.color_list=(
+        self.color_list = (
             None,
             Color("black"),
             Color("white"),
@@ -72,12 +74,16 @@ class PropertyColor(wx.BoxSizer):
             _("Magenta"),
             _("Cyan"),
         )
-        self.col_stroke = wx.ComboBox(self.parent, wx.ID_ANY, choices=choices, style=wx.CB_READONLY|wx.CB_SIMPLE)
+        self.col_stroke = wx.ComboBox(
+            self.parent, wx.ID_ANY, choices=choices, style=wx.CB_READONLY | wx.CB_SIMPLE
+        )
         self.col_stroke.SetBackgroundColour(wx.Colour(0, 0, 0))
         COLOR_TOOLTIP = _("Change/View the {type}-color of the selected elements.")
         self.col_stroke.SetToolTip(COLOR_TOOLTIP.format(type=_("stroke")))
 
-        self.col_fill = wx.ComboBox(self.parent, wx.ID_ANY, choices=choices, style=wx.CB_READONLY|wx.CB_SIMPLE)
+        self.col_fill = wx.ComboBox(
+            self.parent, wx.ID_ANY, choices=choices, style=wx.CB_READONLY | wx.CB_SIMPLE
+        )
         self.col_fill.SetBackgroundColour(wx.Colour(0, 0, 0))
         self.col_fill.SetToolTip(COLOR_TOOLTIP.format(type=_("fill")))
 
@@ -90,6 +96,7 @@ class PropertyColor(wx.BoxSizer):
     def set_control_color(self, ctrl, color):
         def color_distance(c1, c2):
             from math import sqrt
+
             red_mean = int((c1.red + c2.red) / 2.0)
             r = c1.red - c2.red
             g = c1.green - c2.green
@@ -206,6 +213,7 @@ class PropertyColor(wx.BoxSizer):
         else:
             self.ShowItems(False)
 
+
 class PropertyFont(wx.BoxSizer):
     def __init__(self, parent, *args, **kwds):
         self.parent = parent
@@ -215,7 +223,9 @@ class PropertyFont(wx.BoxSizer):
         # kwds["orientation"] = wx.HORIZONTAL
         super().__init__(wx.HORIZONTAL)
         self.font_list = []
-        self.font_facename = wx.ComboBox(self.parent, wx.ID_ANY, style=wx.CB_READONLY|wx.CB_SIMPLE)
+        self.font_facename = wx.ComboBox(
+            self.parent, wx.ID_ANY, style=wx.CB_READONLY | wx.CB_SIMPLE
+        )
         self.font_facename.SetBackgroundColour(wx.Colour(0, 0, 0))
         ttip = _("Change/View the font of the selected elements.")
         self.font_facename.SetToolTip(ttip)
@@ -226,8 +236,12 @@ class PropertyFont(wx.BoxSizer):
             _("Center"),
             _("Right"),
         )
-        self.font_anchor = wx.ComboBox(self.parent, wx.ID_ANY, choices=choices, style=wx.CB_READONLY|wx.CB_SIMPLE)
-        self.font_anchor.SetToolTip(_("Sets the text alignment for the selected elements"))
+        self.font_anchor = wx.ComboBox(
+            self.parent, wx.ID_ANY, choices=choices, style=wx.CB_READONLY | wx.CB_SIMPLE
+        )
+        self.font_anchor.SetToolTip(
+            _("Sets the text alignment for the selected elements")
+        )
         self.Add(self.font_facename, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.Add(self.font_anchor, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -278,7 +292,10 @@ class PropertyFont(wx.BoxSizer):
             nodes = []
 
         for e in nodes:
-            if not (e.type == "elem text" or (e.type == "elem path" and hasattr(e, "mkfont"))):
+            if not (
+                e.type == "elem text"
+                or (e.type == "elem path" and hasattr(e, "mkfont"))
+            ):
                 continue
             has_font = True
             self.nodes.append(e)
@@ -364,6 +381,7 @@ class PropertyHolder(wx.Panel):
             handler.set_widgets(nodes)
         self.Layout()
         self.Thaw()
+
 
 def register_panel_common_properties(window, context):
     pane = (
