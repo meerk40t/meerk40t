@@ -154,6 +154,8 @@ class TrueTypeFont:
                 # print (f"{offset_x}, {offset_y}: '{text}', fs={font_size}, em:{self.units_per_em}")
                 for c in text:
                     index = self._character_map.get(c, 0)
+                    if index >= len(self.glyphs):
+                        continue
                     advance_x = self.horizontal_metrics[index][0] * h_spacing
                     advance_y = 0
                     glyph = self.glyphs[index]
@@ -428,7 +430,11 @@ class TrueTypeFont:
             self.horizontal_metrics.extend((last_advance, left_bearing))
 
     def parse_loca(self):
-        data = self._raw_tables[b"loca"]
+        try:
+            data = self._raw_tables[b"loca"]
+        except KeyError:
+            self._glyph_offsets = []
+            return
         if self.index_to_loc_format == 0:
             n = int(len(data) / 2)
             self._glyph_offsets = [g * 2 for g in struct.unpack(f">{n}H", data)]
