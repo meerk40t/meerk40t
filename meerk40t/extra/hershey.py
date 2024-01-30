@@ -419,12 +419,29 @@ class Meerk40tFonts:
                     font = dummy
                     self.context.last_font = font
                     break
+            if font:
+                # Let's check whether it's valid...
+                font_path = self.full_name(font)
+                try:
+                    cfont = self.cached_fontclass(font_path)
+                except Exception as e:
+                    font = ""
+                    # print (f"Encountered error {e} for {font_path}")
             if font == "":
                 # You know, I take anything at this point...
                 if self.available_fonts():
-                    font = self._available_fonts[0]
-                    # print (f"Fallback to first file found: {font}")
-                    self.context.last_font = font
+                    idx = 0
+                    while not font and idx < len(self._available_fonts):
+                        candidate = self._available_fonts[idx]
+                        try:
+                            cfont = self.cached_fontclass(candidate)
+                            font = candidate
+                            # print (f"Fallback to first file found: {font}")
+                            self.context.last_font = font
+                            break
+                        except Exception:
+                            pass
+                        idx += 1
 
         if font is None or font == "":
             # print ("Font was empty")
@@ -432,7 +449,11 @@ class Meerk40tFonts:
         font_path = self.full_name(font)
         font = self.short_name(font)
         horizontal = True
-        cfont = self.cached_fontclass(font_path)
+        try:
+            cfont = self.cached_fontclass(font_path)
+        except Exception as e:
+            # print (f"Encountered error {e} for {font_path}")
+            cfont = None
         if cfont is None:
             # This font does not exist in our environment
             return
