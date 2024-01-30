@@ -6,10 +6,10 @@ from math import isinf
 import wx
 
 from meerk40t.core.units import UNITS_PER_INCH, Length
+from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import STD_ICON_SIZE, get_default_icon_size, icons8_choose_font
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
-from meerk40t.kernel import get_safe_path
 
 _ = wx.GetTranslation
 
@@ -531,7 +531,7 @@ class PanelFontManager(wx.Panel):
         sizer_info.Add(self.text_info, 1, wx.EXPAND, 0)
 
         sizer_directory = StaticBoxSizer(
-            self, wx.ID_ANY, _("Font-Directory"), wx.HORIZONTAL
+            self, wx.ID_ANY, _("Font-Work-Directory"), wx.HORIZONTAL
         )
         mainsizer.Add(sizer_directory, 0, wx.EXPAND, 0)
 
@@ -542,6 +542,19 @@ class PanelFontManager(wx.Panel):
         self.btn_dirselect = wx.Button(self, wx.ID_ANY, "...")
         sizer_directory.Add(self.btn_dirselect, 0, wx.EXPAND, 0)
 
+        choices = []
+        prechoices = context.lookup("choices/preferences")
+        for info in prechoices:
+            if info["attr"] == "system_font_directories":
+                cinfo = dict(info)
+                cinfo["page"]=""
+                choices.append(cinfo)
+                break
+
+        self.sysdirs = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False
+        )
+        mainsizer.Add(self.sysdirs, 0, wx.EXPAND, 0)
         sizer_fonts = StaticBoxSizer(self, wx.ID_ANY, _("Fonts"), wx.VERTICAL)
         mainsizer.Add(sizer_fonts, 1, wx.EXPAND, 0)
 
@@ -611,6 +624,18 @@ class PanelFontManager(wx.Panel):
         self.list_fonts.Clear()
         if os.path.exists(fontdir):
             self.context.fonts.font_directory = fontdir
+            self.text_fontdir.SetBackgroundColour(wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW))
+            self.text_fontdir.SetToolTip(_("Additional directory for userdefined fonts (also used to store some cache files)"))
+        else:
+            self.text_fontdir.SetBackgroundColour(wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT))
+            self.text_fontdir.SetToolTip(_("Invalid directory! Will not be used, please provide a valid path."))
+            return
+            # resp = wx.MessageBox(_("This is an invalid directory, do you want to use the default directory?"),_("Invalid directory"), style=wx.YES_NO|wx.ICON_WARNING)
+            # if resp==wx.YES:
+            #     fontdir = self.context.fonts.font_directory
+            #     self.text_fontdir.SetValue(fontdir)
+            # else:
+            #     return
         self.font_infos = self.context.fonts.available_fonts()
 
         for info in self.font_infos:
