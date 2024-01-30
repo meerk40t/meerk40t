@@ -406,11 +406,12 @@ class Meerk40tFonts:
             font = ""
             # No preferred font set, let's try a couple of candidates...
             candidates = (
+                "arial.ttf",
+                "opensans_regular.ttf",
                 "timesr.jhf",
                 "romant.shx",
                 "rowmans.jhf",
                 "FUTURA.SHX",
-                "arial.ttf",
             )
             for fname in candidates:
                 dummy = self.full_name(fname)
