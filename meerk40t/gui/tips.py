@@ -170,13 +170,14 @@ class TipPanel(wx.Panel):
         else:
             self.button_try.Show(False)
             self.tip_command = ""
+        have_img = False
         if my_tip[2]:
-            self.set_tip_image(
+            have_img = self.set_tip_image(
                 my_tip[2], self._current_tip, self.context.tip_access_consent
             )
-        else:
+        if not have_img:
             # Let's use the default image...
-            self.set_tip_image(
+            have_img = self.set_tip_image(
                 icons8_light_on.GetBitmap(resize=200), self._current_tip, self.context.tip_access_consent
             )
 
@@ -224,25 +225,25 @@ class TipPanel(wx.Panel):
         if isinstance(path, wx.Bitmap):
             self.image_tip.SetBitmap(path)
             self.image_tip.Show(True)
-            return
+            return True
 
         # self.image_tip.SetBitmap(wx.NullBitmap)
         self.image_tip.Show(False)
         self.tip_image = path
         if not path or not self.cache_dir:
             # Path was not established
-            return
+            return False
 
         parts = path.split("/")
         if len(parts) <= 0:
             # Malformed path.
-            return
+            return False
 
         # basename = f"_{counter}_{parts[-1]}"
         basename = hex(hash(path))
         local_path = os.path.join(self.cache_dir, basename)
         if not local_path:
-            return
+            return False
         # Is this file already on the disk? If not load it...
         if not os.path.exists(local_path):
             if automatic_download:
@@ -253,14 +254,14 @@ class TipPanel(wx.Panel):
         if not os.path.exists(local_path):
             # File still does not exist.
             self.no_image_message.Show(True)
-            return
+            return False
 
         bmp = wx.Bitmap()
         res = bmp.LoadFile(local_path)
         if not res:
             # Bitmap failed to load.
             self.no_image_message.Show(True)
-            return
+            return False
         new_x, new_y = bmp.Size
         img_size = self.image_tip.GetSize()
         # print(f"bmp: {int(new_x)}x{int(new_y)}, space: {img_size[0]}x{img_size[1]}")
@@ -285,7 +286,8 @@ class TipPanel(wx.Panel):
             pass
         self.image_tip.SetBitmap(bmp)
         self.image_tip.Show(True)
-
+        return True
+    
     def on_button_try(self, event):
         if self.tip_command:
             if self.tip_command.startswith("http"):
