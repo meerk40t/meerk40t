@@ -2499,6 +2499,7 @@ class Elemental(Service):
             # add_op_function = self.add_op
             add_op_function = self.add_classify_op
         for node in elements:
+            node_desc = f"[{node.type}]{'' if node.id is None else node.id + '-'}{'<none>' if node.label is None else node.label}"
             # Following lines added to handle 0.7 special ops added to ops list
             if hasattr(node, "operation"):
                 add_op_function(node)
@@ -2509,9 +2510,11 @@ class Elemental(Service):
                 fuzzy_param = (False, True)
             else:
                 fuzzy_param = (False,)
+            do_stroke = True
+            do_fill = True
             for tempfuzzy in fuzzy_param:
                 if debug:
-                    debug(f"Pass 1 (fuzzy={tempfuzzy}): check {node.type}")
+                    debug(f"Pass 1 (fuzzy={tempfuzzy}): checks, s:{do_stroke}, f:{do_fill}, node:{node_desc}")
                 was_classified = False
                 should_break = False
 
@@ -2519,6 +2522,10 @@ class Elemental(Service):
                     # One special case: is this a rasterop and the stroke
                     # color is black and the option 'classify_black_as_raster'
                     # is not set? Then skip...
+                    if not do_stroke and op.type in ("op engrave", "op cut", "op dots"):
+                        continue
+                    if not do_fill and op.type in ("op raster", "op image"):
+                        continue
                     is_black = False
                     whisperer = True
                     if (
@@ -2578,18 +2585,29 @@ class Elemental(Service):
                             sfill = ""
                         if debug:
                             debug(
-                                f"Was classified: {sstroke} {sfill} matching operation: {type(op).__name__}, break={should_break}"
+                                f"{node_desc} was classified: {sstroke} {sfill} matching operation: {type(op).__name__}, break={should_break}"
                             )
                     if should_break:
                         break
+                # end of operation loop, let's make sure we don't do stuff again if we were successful
+                if classif_info[0]:
+                    do_stroke = False
+                if classif_info[1]:
+                    do_fill = False
+
                 # So we are the end of the first pass, if there was already a classification
                 # then we call it a day and don't call the fuzzy part
                 if was_classified or should_break:
                     break
+            # - End of fuzzy loop
 
             ######################
             # NON-CLASSIFIED ELEMENTS
             ######################
+            if not do_stroke:
+                classif_info[0] = True
+            if not do_fill:
+                classif_info[1] = True
             if was_classified and debug:
                 debug(f"Classified, stroke={classif_info[0]}, fill={classif_info[1]}")
             # Let's make sure we only consider relevant, ie existing attributes...
@@ -2597,7 +2615,7 @@ class Elemental(Service):
                 if node.stroke is None or node.stroke.argb is None:
                     classif_info[0] = True
                 if node.type == "elem text":
-                    # even if it has, we are not going to something with it
+                    # even if it has, we are not going to do something with it
                     classif_info[0] = True
             else:
                 classif_info[0] = True
@@ -2612,11 +2630,17 @@ class Elemental(Service):
             ):
                 # Not fully classified on both stroke and fill
                 was_classified = False
+                if debug:
+                    debug(f"{node_desc} was not fully classified on stroke and fill (s:{classif_info[0]}, f:{classif_info[1]})")
             if not was_classified and usedefault:
                 # let's iterate through the default ops and add them
                 if debug:
                     debug("Pass 2 (wasn't classified), looking for default ops")
                 for op in operations:
+                    if classif_info[0] and op.type in ("op engrave", "op cut", "op dots"):
+                        continue
+                    if classif_info[1] and op.type in ("op raster", "op image"):
+                        continue
                     is_black = False
                     whisperer = True
                     if (
@@ -2958,7 +2982,13 @@ class Elemental(Service):
                         operations.append(op)
                         new_operations_added = True
                         already_found = True
-                    op.add_reference(node)
+                    # Don't add a node more than once!
+                    existing = False
+                    if hasattr(op, "is_referenced"):
+                        existing = op.is_referenced(node)
+
+                    if not existing:
+                        op.add_reference(node)
 
         self.remove_unused_default_copies()
         if new_operations_added:
