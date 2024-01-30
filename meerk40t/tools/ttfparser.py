@@ -160,7 +160,15 @@ class TrueTypeFont:
                     index = self._character_map.get(c, 0)
                     if index >= len(self.glyph_data):
                         continue
-                    advance_x = self.horizontal_metrics[index][0] * h_spacing
+                    if index >= len(self.horizontal_metrics):
+                        # print (f"Horizontal metrics has {len(self.horizontal_metrics)} elements, requested index {index}")
+                        advance_x = self.units_per_em * h_spacing
+                    else:
+                        hm = self.horizontal_metrics[index]
+                        if isinstance(hm, (list, tuple)):
+                            advance_x = hm[0] * h_spacing
+                        else:
+                            advance_x = hm * h_spacing
                     advance_y = 0
                     glyph = self.glyph_data[index]
                     if self.active:
