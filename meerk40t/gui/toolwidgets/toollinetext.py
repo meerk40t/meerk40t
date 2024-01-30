@@ -127,7 +127,6 @@ class LineTextTool(ToolWidget):
                 self.node = self.scene.context.fonts.create_linetext_node(x, y, self.vtext)
                 if self.node is not None:
                     self.node.stroke = self.color
-                    self.node.stroke_width = elements.default_strokewidth
                     elements.elem_branch.add_node(self.node)
                     self.scene.context.signal("element_added", self.node)
                     self.scene.context.signal(
