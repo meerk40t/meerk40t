@@ -509,7 +509,9 @@ class Elemental(Service):
         self.undo = Undo(self, self._tree)
         self.do_undo = True
         self.suppress_updates = False
-
+        # We need to setup these as the settings stuff will only be done
+        # on postboot after Elemental has already been created
+        self.setting(bool, "classify_new", True)
         self.setting(bool, "classify_reverse", False)
         self.setting(bool, "legacy_classification", False)
         self.setting(bool, "classify_fuzzy", False)
@@ -1350,7 +1352,7 @@ class Elemental(Service):
                 op_tree[parent].add_node(op_tree[section])
         return op_list, op_info
 
-    def load_persistent_operations(self, name, classify=True, clear=True):
+    def load_persistent_operations(self, name, classify=None, clear=True):
         """
         Load oplist section to replace current op_branch data.
 
@@ -1366,6 +1368,8 @@ class Elemental(Service):
         oplist, opinfo = self.load_persistent_op_list(name, use_settings=settings)
         for op in oplist:
             operation_branch.add_node(op)
+        if classify is None:
+            classify = self.classify_new
         if not classify:
             return
         if len(list(self.elems())) > 0:
