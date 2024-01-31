@@ -1248,7 +1248,8 @@ def short_travel_cutcode_2opt(
     Uses code I wrote for vpype:
     https://github.com/abey79/vpype/commit/7b1fad6bd0fcfc267473fdb8ba2166821c80d9cd
 
-    @param context:cutcode: cutcode to be optimized
+    @param context: cutcode to be optimized
+    @param kernel: kernel value
     @param passes: max passes to perform 2-opt
     @param channel: Channel to send data about the optimization process.
     @return:
