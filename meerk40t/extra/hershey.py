@@ -170,7 +170,7 @@ class Meerk40tFonts:
     def _get_full_info(self, short):
         if not isinstance(short, str):
             # That's strange...
-            print(f"gfi, Short is a {type(short).__name__}: {short}")
+            # print(f"gfi, Short is a {type(short).__name__}: {short}")
             if isinstance(short, (list, tuple)):
                 short = short[0]
             else:
@@ -193,7 +193,7 @@ class Meerk40tFonts:
     def face_to_full_name(self, short):
         if not isinstance(short, str):
             # That's strange...
-            print(f"f2f, Short is a {type(short).__name__}: {short}")
+            # print(f"f2f, Short is a {type(short).__name__}: {short}")
             if isinstance(short, (list, tuple)):
                 short = short[0]
             else:
@@ -217,7 +217,7 @@ class Meerk40tFonts:
     def short_name(self, fullname):
         if not isinstance(fullname, str):
             # That's strange...
-            print(f"2n, fullname is a {type(fullname).__name__}: {fullname}")
+            # print(f"2n, fullname is a {type(fullname).__name__}: {fullname}")
             if isinstance(fullname, (list, tuple)):
                 short = fullname[0]
             else:
