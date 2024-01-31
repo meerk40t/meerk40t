@@ -553,7 +553,7 @@ class NewlyDevice(Service, Status):
             "pulse",
             help=_("pulse <time>: Pulse the laser in place."),
         )
-        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwargs):
+        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwgs):
             if time is None:
                 channel(_("Must specify a pulse time in milliseconds."))
                 return
@@ -590,12 +590,12 @@ class NewlyDevice(Service, Status):
             self.spooler.command("disconnect", priority=1)
 
         @self.console_command("usb_abort", help=_("Stops USB retries"))
-        def usb_abort(command, channel, _, **kwargs):
+        def usb_abort(command, channel, _, **kwgs):
             self.spooler.command("abort_retry", priority=1)
 
         @self.console_argument("filename", type=str)
         @self.console_command("save_job", help=_("save job export"), input_type="plan")
-        def newly_save(channel, _, filename, data=None, **kwargs):
+        def newly_save(channel, _, filename, data=None, **kwgs):
             if filename is None:
                 raise CommandSyntaxError
             try:
@@ -645,7 +645,7 @@ class NewlyDevice(Service, Status):
             help=_("sends the newly move_frame command"),
             all_arguments_required=True,
         )
-        def move_rect(file_index, **kwargs):
+        def move_rect(file_index, **kwgs):
             try:
                 self.driver.connection.move_frame(file_index)
             except ConnectionRefusedError:
@@ -661,7 +661,7 @@ class NewlyDevice(Service, Status):
             help=_("sends the newly draw_frame command"),
             all_arguments_required=True,
         )
-        def draw_rect(file_index, **kwargs):
+        def draw_rect(file_index, **kwgs):
             try:
                 self.driver.connection.draw_frame(file_index)
             except ConnectionRefusedError:
@@ -677,7 +677,7 @@ class NewlyDevice(Service, Status):
             help=_("sends the file replay command"),
             all_arguments_required=True,
         )
-        def replay(file_index, **kwargs):
+        def replay(file_index, **kwgs):
             try:
                 self.driver.connection.replay(file_index)
             except ConnectionRefusedError:

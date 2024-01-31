@@ -22,7 +22,7 @@ class RuidaDevice(Service):
     RuidaDevice is driver for the Ruida Controllers
     """
 
-    def __init__(self, kernel, path, *args, choices=None, **kwargs):
+    def __init__(self, kernel, path, *args, choices=None, **kwgs):
         Service.__init__(self, kernel, path)
         Status.__init__(self)
         self.name = "RuidaDevice"

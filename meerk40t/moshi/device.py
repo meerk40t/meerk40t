@@ -21,7 +21,7 @@ class MoshiDevice(Service, Status):
     MoshiDevice is driver for the Moshiboard boards.
     """
 
-    def __init__(self, kernel, path, *args, choices=None, **kwargs):
+    def __init__(self, kernel, path, *args, choices=None, **kwgs):
         Service.__init__(self, kernel, path)
         Status.__init__(self)
         self.name = "MoshiDevice"

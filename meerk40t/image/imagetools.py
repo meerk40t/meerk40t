@@ -329,10 +329,10 @@ def plugin(kernel, lifecycle=None):
             raise CommandSyntaxError(_("Must specify a color"))
         distance_sq = distance * distance
 
-        def dist(pixel):
-            r = color.red - pixel[0]
-            g = color.green - pixel[1]
-            b = color.blue - pixel[2]
+        def dist(px):
+            r = color.red - px[0]
+            g = color.green - px[1]
+            b = color.blue - px[2]
             return r * r + g * g + b * b <= distance_sq
 
         for inode in data:
@@ -1197,15 +1197,15 @@ def plugin(kernel, lifecycle=None):
                 raise CommandSyntaxError(
                     _("Lower margin is higher than the upper margin.")
                 )
-            image_pop = img.crop((left, upper, right, lower))
+            image_popped = img.crop((left, upper, right, lower))
             image_remain = img.copy()
 
             if not remain:
-                image_blank = Image.new("L", image_pop.size, 255)
+                image_blank = Image.new("L", image_popped.size, 255)
                 image_remain.paste(image_blank, (left, upper))
 
             inode_pop = copy(inode)
-            inode_pop.image = image_pop
+            inode_pop.image = image_popped
 
             inode_pop.transform.pre_translate(left, upper)
 

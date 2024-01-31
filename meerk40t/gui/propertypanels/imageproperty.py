@@ -530,7 +530,7 @@ class ImageModificationPanel(ScrolledPanel):
 
             return check
 
-        index = self.list_operations.GetFirstSelected()
+        selected = self.list_operations.GetFirstSelected()
 
         possible_ops = [
             {"name": "crop", "enable": True, "bounds": None},
@@ -572,12 +572,12 @@ class ImageModificationPanel(ScrolledPanel):
         ]
         devmode = self.context.root.setting(bool, "developer_mode", False)
         menu = wx.Menu()
-        if index >= 0:
+        if selected >= 0:
             # Edit-Part
             menuitem = menu.Append(
                 wx.ID_ANY, _("Delete item"), _("Will delete the current entry")
             )
-            self.Bind(wx.EVT_MENU, on_delete(index), id=menuitem.GetId())
+            self.Bind(wx.EVT_MENU, on_delete(selected), id=menuitem.GetId())
 
             menuitem = menu.Append(
                 wx.ID_ANY,
@@ -585,8 +585,8 @@ class ImageModificationPanel(ScrolledPanel):
                 _("Toggles enable-status of operation"),
                 kind=wx.ITEM_CHECK,
             )
-            menuitem.Check(self.node.operations[index]["enable"])
-            self.Bind(wx.EVT_MENU, on_enable(index), id=menuitem.GetId())
+            menuitem.Check(self.node.operations[selected]["enable"])
+            self.Bind(wx.EVT_MENU, on_enable(selected), id=menuitem.GetId())
             if devmode:
                 menu.AppendSeparator()
                 for op in possible_ops:
@@ -595,7 +595,7 @@ class ImageModificationPanel(ScrolledPanel):
                         _("Insert {op}").format(op=op["name"]),
                         _("Will insert this operation before the current entry"),
                     )
-                    self.Bind(wx.EVT_MENU, on_op_insert(index, op), id=menuitem.GetId())
+                    self.Bind(wx.EVT_MENU, on_op_insert(selected, op), id=menuitem.GetId())
                 menu.AppendSeparator()
         if devmode:
             for op in possible_ops:
@@ -604,7 +604,7 @@ class ImageModificationPanel(ScrolledPanel):
                     _("Append {op}").format(op=op["name"]),
                     _("Will append this operation to the end of the list"),
                 )
-                self.Bind(wx.EVT_MENU, on_op_append(index, op), id=menuitem.GetId())
+                self.Bind(wx.EVT_MENU, on_op_append(selected, op), id=menuitem.GetId())
 
         if menu.MenuItemCount != 0:
             self.PopupMenu(menu)

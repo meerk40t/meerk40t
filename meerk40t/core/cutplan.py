@@ -723,15 +723,15 @@ class CutPlan:
 
             clusters = list()
             cluster_bounds = list()
-            for node in operation.children:
+            for child in operation.children:
                 try:
-                    if node.type == "reference":
-                        node = node.node
-                    bb = node.paint_bounds
+                    if child.type == "reference":
+                        child = child.node
+                    bb = child.paint_bounds
                 except AttributeError:
                     # Either no element node or does not have bounds
                     continue
-                clusters.append([node])
+                clusters.append([child])
                 cluster_bounds.append(
                     (
                         bb[0],
@@ -901,21 +901,21 @@ def is_inside(inner, outer, tolerance=0):
     #             return False
     #     return True
 
-    def sb_code(outer, outer_path, inner, inner_path):
+    def sb_code(out_cut, out_path, in_cut, in_path):
         from ..tools.geomstr import Polygon as Gpoly
         from ..tools.geomstr import Scanbeam
 
-        if not hasattr(outer, "sb"):
-            pg = outer_path.npoint(np.linspace(0, 1, 1001), error=1e4)
+        if not hasattr(out_cut, "sb"):
+            pg = out_path.npoint(np.linspace(0, 1, 1001), error=1e4)
             pg = pg[:, 0] + pg[:, 1] * 1j
 
-            outer_path = Gpoly(*pg)
-            sb = Scanbeam(outer_path.geomstr)
-            outer.sb = sb
-        p = inner_path.npoint(np.linspace(0, 1, 101), error=1e4)
+            out_path = Gpoly(*pg)
+            sb = Scanbeam(out_path.geomstr)
+            out_cut.sb = sb
+        p = in_path.npoint(np.linspace(0, 1, 101), error=1e4)
         points = p[:, 0] + p[:, 1] * 1j
 
-        q = outer.sb.points_in_polygon(points)
+        q = out_cut.sb.points_in_polygon(points)
         return q.all()
 
     return sb_code(outer, outer_path, inner, inner_path)

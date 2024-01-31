@@ -1501,7 +1501,7 @@ def init_commands(kernel):
         if not isinstance(data, list):
             data = list(data)
         elements_nodes = []
-        elements = []
+        elems = []
         for node in data:
             node_attributes = []
             for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
@@ -1520,9 +1520,9 @@ def init_commands(kernel):
                 subnode = group_node.add(geometry=subpath, type="elem path")
                 for item in node_attributes:
                     setattr(subnode, item[0], item[1])
-                elements.append(subnode)
+                elems.append(subnode)
             elements_nodes.append(group_node)
-        post.append(classify_new(elements))
+        post.append(classify_new(elems))
         return "elements", elements_nodes
 
     # --------------------------- END COMMANDS ------------------------------

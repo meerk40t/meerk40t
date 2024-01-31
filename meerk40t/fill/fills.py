@@ -156,11 +156,11 @@ def scanline_fill(settings, outlines, matrix, limit=None):
 
     def as_polylines():
         pos = 0
-        for i in range(len(outlines)):
-            p = outlines[i]
+        for idx in range(len(outlines)):
+            p = outlines[idx]
             if p is None:
-                yield outlines[pos:i]
-                pos = i + 1
+                yield outlines[pos:idx]
+                pos = idx + 1
                 continue
         if pos != len(outlines):
             yield outlines[pos:]
