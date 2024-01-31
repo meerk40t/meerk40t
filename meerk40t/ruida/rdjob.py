@@ -1663,6 +1663,7 @@ class RDJob:
         Enable External IO.
 
         @param value:
+        @param output:
         @return:
         """
         self(EN_EX_IO, encode_index(value), output=output)

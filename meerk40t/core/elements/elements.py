@@ -1212,6 +1212,9 @@ class Elemental(Service):
 
         @param name:
         @param oplist:
+        @param inform:
+        @param use_settings:
+        @param flush:
         @return:
         """
         name = self.safe_section_name(name)
@@ -1281,7 +1284,8 @@ class Elemental(Service):
         Clear operations for the derivables of the given name.
 
         @param name: name of operation.
-        @param flush: Optionally permit non-flushed to disk.
+        @param flush: Optionally permit non-flushed to disk
+        @param use_settings:
         @return:
         """
         name = self.safe_section_name(name)
@@ -1359,6 +1363,8 @@ class Elemental(Service):
         Performs an optional classification.
 
         @param name:
+        @param classify:
+        @param clear:
         @return:
         """
         settings = self.op_data

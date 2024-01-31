@@ -164,6 +164,7 @@ class Button:
         @param label: button label
         @param icon: icon used for this button
         @param tip: tool tip for the button
+        @param help: help information for aspect
         @param group: Group the button exists in for radio-toggles
         @param toggle_attr: The attribute that should be changed on toggle.
         @param identifier: Identifier in the group or toggle
@@ -382,8 +383,6 @@ class Button:
         Drop down of a hybrid button was clicked.
 
         We make a menu popup and fill it with the data about the multi-button
-
-        @param event:
         @return:
         """
         if self.toggle:
@@ -411,7 +410,6 @@ class Button:
         """
         Creates menu_item_click processors for the various menus created for a drop-click
 
-        @param button:
         @param v:
         @return:
         """
@@ -691,7 +689,6 @@ class RibbonPanel:
 
         We make a menu popup and fill it with the overflow commands.
 
-        @param event:
         @return:
         """
         # print (f"Overflow click called for {self.label}")
@@ -1171,7 +1168,7 @@ class RibbonBarPanel(wx.Control):
     def remove_page(self, pageid):
         """
         Remove a page from the ribbonbar.
-        @param id:
+        @param pageid:
         @return:
         """
         for pidx, page in enumerate(self.pages):
@@ -1666,7 +1663,7 @@ class Art:
         Performs the layout of the page. This is determined to be the size of the ribbon minus any edge buffering.
 
         @param dc:
-        @param art:
+        @param ribbon:
         @return:
         """
         ribbon_width, ribbon_height = dc.Size
@@ -1842,7 +1839,7 @@ class Art:
         contains.
 
         @param dc:
-        @param art:
+        @param page:
         @return:
         """
         x, y, max_x, max_y = page.position
