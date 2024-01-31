@@ -690,6 +690,7 @@ def plugin(kernel, lifecycle):
             directories.append("/usr/local/share/fonts")
             directories.append("~/.local/share/fonts")
         elif systype == "Darwin":
+            directories.append("/System/Library/Fonts")
             directories.append("/Library/Fonts")
             directories.append("~/Library/Fonts")
         choices = [
