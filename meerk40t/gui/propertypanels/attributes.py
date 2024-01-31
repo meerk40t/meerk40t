@@ -580,12 +580,10 @@ class StrokeWidthPanel(wx.Panel):
             enable = True
             self.chk_scale.SetValue(self.node.stroke_scaled)
             # Let's establish which unit might be the best to represent the display
-            found_something = False
-            if self.node.stroke_width is None or self.node.stroke_width == 0:
-                value = 0
-                idxunit = 0  # px
-                found_something = True
-            else:
+            value = 0
+            idxunit = 0  # px
+            if self.node.stroke_width is not None and self.node.stroke_width != 0:
+                found_something = False
                 best_post = 99999999
                 delta = 0.99999999
                 best_pre = 0
