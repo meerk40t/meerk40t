@@ -885,21 +885,21 @@ def is_inside(inner, outer, tolerance=0):
     # i.e. larger bboxes need more points and
     # tighter curves need more points (i.e. compare vector directions)
 
-    def vm_code(outer, outer_path, inner, inner_path):
-        if not hasattr(outer, "vm"):
-            outer_path = Polygon(
-                [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
-            )
-            vm = VectorMontonizer()
-            vm.add_polyline(outer_path)
-            outer.vm = vm
-        for i in range(101):
-            p = inner_path.point(
-                i / 100.0, error=1e4
-            )  # Point(4633.110682926033,1788.413481872459)
-            if not outer.vm.is_point_inside(p.x, p.y, tolerance=tolerance):
-                return False
-        return True
+    # def vm_code(outer, outer_path, inner, inner_path):
+    #     if not hasattr(outer, "vm"):
+    #         outer_path = Polygon(
+    #             [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
+    #         )
+    #         vm = VectorMontonizer()
+    #         vm.add_polyline(outer_path)
+    #         outer.vm = vm
+    #     for i in range(101):
+    #         p = inner_path.point(
+    #             i / 100.0, error=1e4
+    #         )  # Point(4633.110682926033,1788.413481872459)
+    #         if not outer.vm.is_point_inside(p.x, p.y, tolerance=tolerance):
+    #             return False
+    #     return True
 
     def sb_code(outer, outer_path, inner, inner_path):
         from ..tools.geomstr import Polygon as Gpoly
