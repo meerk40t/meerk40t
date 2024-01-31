@@ -124,7 +124,9 @@ class LineTextTool(ToolWidget):
                 x = self.p1.real
                 y = self.p1.imag
                 self.vtext = "Text"
-                self.node = self.scene.context.fonts.create_linetext_node(x, y, self.vtext)
+                self.node = self.scene.context.fonts.create_linetext_node(
+                    x, y, self.vtext
+                )
                 if self.node is not None:
                     self.node.stroke = self.color
                     elements.elem_branch.add_node(self.node)
@@ -169,7 +171,7 @@ class LineTextTool(ToolWidget):
                 to_add = ""
                 if keycode is not None:
                     to_add = keycode
-                elif keycode is None and modifiers=="ctrl+return":
+                elif keycode is None and modifiers == "ctrl+return":
                     to_add = "\n"
                 if modifiers == "back":
                     to_add = ""
@@ -181,7 +183,9 @@ class LineTextTool(ToolWidget):
                 if self.node is None:
                     x = self.p1.real
                     y = self.p1.imag
-                    self.node = self.scene.context.fonts.create_linetext_node(x, y, self.vtext)
+                    self.node = self.scene.context.fonts.create_linetext_node(
+                        x, y, self.vtext
+                    )
                 else:
                     self.scene.context.fonts.update_linetext(self.node, self.vtext)
                 # self.node.stroke = self.color
@@ -224,6 +228,7 @@ class LineTextTool(ToolWidget):
             if len(args) > 1:
                 font = args[1]
                 from os.path import basename
+
                 self.node.mkfont = basename(font)
                 self.scene.context.fonts.update_linetext(self.node, self.node.mktext)
                 self.node.emphasized = False

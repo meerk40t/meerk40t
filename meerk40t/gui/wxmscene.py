@@ -228,7 +228,6 @@ class MeerK40tScenePanel(wx.Panel):
         bsize_normal = STD_ICON_SIZE
 
         def proxy_linetext():
-
             if context.fonts.have_hershey_fonts():
                 context.kernel.elements("tool linetext\n")
             else:

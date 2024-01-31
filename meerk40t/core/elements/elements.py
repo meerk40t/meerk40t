@@ -2514,7 +2514,9 @@ class Elemental(Service):
             do_fill = True
             for tempfuzzy in fuzzy_param:
                 if debug:
-                    debug(f"Pass 1 (fuzzy={tempfuzzy}): checks, s:{do_stroke}, f:{do_fill}, node:{node_desc}")
+                    debug(
+                        f"Pass 1 (fuzzy={tempfuzzy}): checks, s:{do_stroke}, f:{do_fill}, node:{node_desc}"
+                    )
                 was_classified = False
                 should_break = False
 
@@ -2631,13 +2633,19 @@ class Elemental(Service):
                 # Not fully classified on both stroke and fill
                 was_classified = False
                 if debug:
-                    debug(f"{node_desc} was not fully classified on stroke and fill (s:{classif_info[0]}, f:{classif_info[1]})")
+                    debug(
+                        f"{node_desc} was not fully classified on stroke and fill (s:{classif_info[0]}, f:{classif_info[1]})"
+                    )
             if not was_classified and usedefault:
                 # let's iterate through the default ops and add them
                 if debug:
                     debug("Pass 2 (wasn't classified), looking for default ops")
                 for op in operations:
-                    if classif_info[0] and op.type in ("op engrave", "op cut", "op dots"):
+                    if classif_info[0] and op.type in (
+                        "op engrave",
+                        "op cut",
+                        "op dots",
+                    ):
                         continue
                     if classif_info[1] and op.type in ("op raster", "op image"):
                         continue

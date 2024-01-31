@@ -245,7 +245,9 @@ class FontGlyphPicker(wx.Dialog):
                 final_icon_height = 1
             if final_icon_width <= 0:
                 final_icon_width = 1
-            bmp = prepare_bitmap(geom, final_icon_width, final_icon_height, as_stroke=as_stroke)
+            bmp = prepare_bitmap(
+                geom, final_icon_width, final_icon_height, as_stroke=as_stroke
+            )
             return bmp
 
         self.list_glyphs.DeleteAllItems()

@@ -10,7 +10,7 @@ import os.path
 from copy import copy
 
 from meerk40t.core.node.elem_image import ImageNode
-from meerk40t.core.node.node import Node, Fillrule
+from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.core.treeop import (
     get_tree_operation,
     tree_calc,
@@ -2764,7 +2764,7 @@ def init_tree(kernel):
     )
     def convert_to_vectext(node, **kwargs):
         data = []
-        nodelist = list(self.flat(emphasized=True, types=("elem text", )))
+        nodelist = list(self.flat(emphasized=True, types=("elem text",)))
         for e in nodelist:
             if e is None or not hasattr(e, "wxfont"):
                 # print (f"Invalid node: {e.type}")
@@ -2805,15 +2805,17 @@ def init_tree(kernel):
             # node_args["mkcoordx"] = p0.x
             # node_args["mkcoordy"] = p1.y
 
-            node_args["geometry"] = Geomstr.rect(x = p0.x, y=p1.y, width=p1.x - p0.x, height=p1.y - p0.y)
+            node_args["geometry"] = Geomstr.rect(
+                x=p0.x, y=p1.y, width=p1.x - p0.x, height=p1.y - p0.y
+            )
             if e.label is None:
                 x = text.split("\n")
                 node_args["label"] = f"Text: {x[0]}"
             newnode = e.replace_node(**node_args)
             newnode.matrix = old_matrix
-            newnode.matrix.pre_translate_y (p1.y - p0.y)
+            newnode.matrix.pre_translate_y(p1.y - p0.y)
             if anchor != "start":
-                newnode.matrix.pre_translate_x (-1 * (p1.x - p0.x) / 2)
+                newnode.matrix.pre_translate_x(-1 * (p1.x - p0.x) / 2)
 
             # Now we need to render it...
             # newnode.set_dirty_bounds()

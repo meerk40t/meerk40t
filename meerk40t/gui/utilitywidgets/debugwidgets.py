@@ -1,9 +1,9 @@
 import wx
 
-from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, HITCHAIN_HIT
+from meerk40t.gui import icons
+from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui import icons
 
 
 def register_widget_icon(context):

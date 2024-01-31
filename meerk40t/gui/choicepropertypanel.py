@@ -1040,7 +1040,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 ):
                     def chart_menu(event=None):
                         # row_id = event.GetIndex()  # Get the current row
-                        
+
                         x, y = event.GetPosition()
                         row_id, flags = ctrl.HitTest((x, y))
                         if row_id < 0:

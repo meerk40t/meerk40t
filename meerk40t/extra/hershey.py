@@ -13,7 +13,6 @@ from meerk40t.tools.jhfparser import JhfFont
 from meerk40t.tools.shxparser import ShxFont, ShxFontParseError
 from meerk40t.tools.ttfparser import TrueTypeFont, TTFParsingError
 
-
 # import numpy as np
 
 
