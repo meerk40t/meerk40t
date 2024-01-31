@@ -37,6 +37,7 @@ class DefaultActionPanel(wx.Panel):
         self.standards = (
             ("Home", "util home", ""),
             ("Goto Origin", "util goto", "0,0"),
+            ("Goto 0,0", "util goto", "0,0,True"),
             ("Beep", "util console", "beep"),
             ("Interrupt", "util console", 'interrupt "Spooling was interrupted"'),
             ("Console", "util console", ""),

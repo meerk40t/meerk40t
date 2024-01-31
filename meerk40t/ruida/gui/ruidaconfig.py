@@ -160,6 +160,7 @@ class RuidaConfiguration(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
 
         options = (("bed_dim", "Ruida"),)
         self.panels = []

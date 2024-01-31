@@ -441,7 +441,9 @@ class DebugIconPanel(wx.Panel):
         for entry in dir(mkicons):
             # print (entry)
             if entry.startswith("icon"):
-                self.icon_list.append(entry)
+                s = getattr(mkicons, entry)
+                if isinstance(s, (mkicons.VectorIcon, mkicons.PyEmbeddedImage)):
+                    self.icon_list.append(entry)
         self.combo_icons = wx.ComboBox(
             self,
             wx.ID_ANY,

@@ -14,17 +14,19 @@ from ..core.node.node import Node
 from ..kernel.kernel import get_safe_path
 from ..kernel.settings import Settings
 from .icons import (
+    icon_hatch,
     icon_library,
     icon_points,
     icons8_caret_down,
     icons8_caret_up,
+    icons8_console,
     icons8_direction,
     icons8_image,
     icons8_laser_beam,
     icons8_laserbeam_weak,
 )
 from .mwindow import MWindow
-from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size
+from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size, get_key_name
 
 _ = wx.GetTranslation
 
@@ -375,6 +377,9 @@ class MaterialPanel(ScrolledPanel):
         )
         self.list_preview.AppendColumn(_("Power"), format=wx.LIST_FORMAT_LEFT, width=50)
         self.list_preview.AppendColumn(_("Speed"), format=wx.LIST_FORMAT_LEFT, width=50)
+        self.list_preview.AppendColumn(
+            _("Frequency"), format=wx.LIST_FORMAT_LEFT, width=50
+        )
         self.list_preview.SetToolTip(_("Click to select / Right click for actions"))
         self.opinfo = {
             "op cut": ("Cut", icons8_laser_beam, 0),
@@ -382,6 +387,8 @@ class MaterialPanel(ScrolledPanel):
             "op image": ("Image", icons8_image, 0),
             "op engrave": ("Engrave", icons8_laserbeam_weak, 0),
             "op dots": ("Dots", icon_points, 0),
+            "op hatch": ("Hatch", icon_hatch, 0),
+            "generic": ("Generic", icons8_console, 0),
         }
         self.state_images = wx.ImageList()
         self.state_images.Create(width=25, height=25)
@@ -610,6 +617,7 @@ class MaterialPanel(ScrolledPanel):
         self.active_material = None
         self.expanded_info = False
         self.Layout()
+        self.on_resize(None)
         self.on_reset(None)
 
     @property
@@ -657,6 +665,15 @@ class MaterialPanel(ScrolledPanel):
         self.list_preview.Enable(active)
         self.fill_preview()
 
+    @property
+    def is_balor(self):
+        if self.active_material is None:
+            return False
+        # a) laser-settings are set to fibre = 3
+        # b) laser-settings are set to general and we have a defined fibre laser
+        # Will be updated in fill_preview
+        return self._balor
+
     def retrieve_material_list(
         self,
         filtername=None,
@@ -680,7 +697,7 @@ class MaterialPanel(ScrolledPanel):
                 for subsection in self.op_data.derivable(secname):
                     if subsection.endswith(" info"):
                         secdesc = self.op_data.read_persistent(
-                            str, subsection, "material", secname
+                            str, subsection, "material", ""
                         )
                         sectitle = self.op_data.read_persistent(
                             str, subsection, "title", ""
@@ -695,7 +712,7 @@ class MaterialPanel(ScrolledPanel):
                     else:
                         count += 1
                 if not sectitle:
-                    sectitle = secdesc
+                    sectitle = secname.replace("_", " ")
                 entry = {
                     "section": secname,
                     "material": secdesc,
@@ -766,11 +783,11 @@ class MaterialPanel(ScrolledPanel):
             if sort_key_primary == "laser":  # laser
                 this_category_primary = info
             else:
-                this_category_primary = entry[sort_key_primary]
+                this_category_primary = entry[sort_key_primary].replace("_", " ")
             if sort_key_secondary == 3:  # laser
                 this_category_secondary = info
             else:
-                this_category_secondary = entry[sort_key_secondary]
+                this_category_secondary = entry[sort_key_secondary].replace("_", " ")
             if not this_category_primary:
                 this_category_primary = "No " + sort_key_primary
             key = entry["section"]
@@ -1767,6 +1784,12 @@ class MaterialPanel(ScrolledPanel):
             return
 
     def fill_preview(self):
+        self._balor = False
+        for obj, name, sname in self.context.find("dev_info"):
+            if obj is not None and "balor" in sname.lower():
+                self._balor = True
+                break
+
         self.list_preview.Freeze()
         self.list_preview.DeleteAllItems()
         self.operation_list.clear()
@@ -1778,7 +1801,7 @@ class MaterialPanel(ScrolledPanel):
         note = ""
         ltype = 0
         if self.active_material is not None:
-            secdesc = self.active_material
+            secdesc = ""
             idx = 0
             for subsection in self.op_data.derivable(self.active_material):
                 if subsection.endswith(" info"):
@@ -1792,7 +1815,7 @@ class MaterialPanel(ScrolledPanel):
                         str, subsection, "lens", ""
                     )
                     secdesc = self.op_data.read_persistent(
-                        str, subsection, "material", secdesc
+                        str, subsection, "material", ""
                     )
                     thickness = self.op_data.read_persistent(
                         str, subsection, "thickness", ""
@@ -1801,6 +1824,10 @@ class MaterialPanel(ScrolledPanel):
                     note = self.op_data.read_persistent(str, subsection, "note", "")
                     # We need to replace stored linebreaks with real linebreaks
                     note = note.replace("\\n", "\n")
+                    if ltype == 3:
+                        self._balor = True
+                    elif ltype != 0:
+                        self._balor = False
                     continue
                 optype = self.op_data.read_persistent(str, subsection, "type", "")
                 if optype is None or optype == "":
@@ -1810,6 +1837,12 @@ class MaterialPanel(ScrolledPanel):
                 oplabel = self.op_data.read_persistent(str, subsection, "label", "")
                 speed = self.op_data.read_persistent(str, subsection, "speed", "")
                 power = self.op_data.read_persistent(str, subsection, "power", "")
+                frequency = self.op_data.read_persistent(
+                    str, subsection, "frequency", ""
+                )
+                if not self.is_balor:
+                    frequency = ""
+                command = self.op_data.read_persistent(str, subsection, "command", "")
                 if power == "" and optype.startswith("op "):
                     power = "1000"
                 list_id = self.list_preview.InsertItem(
@@ -1818,23 +1851,32 @@ class MaterialPanel(ScrolledPanel):
                 try:
                     info = self.opinfo[optype]
                 except KeyError:
-                    continue
-
+                    info = self.opinfo["generic"]
+                    info = (optype, info[1], info[2])
+                if command:
+                    if oplabel:
+                        oplabel += " "
+                    else:
+                        oplabel = ""
+                    oplabel += f"({command})"
                 self.list_preview.SetItem(list_id, 1, info[0])
                 self.list_preview.SetItem(list_id, 2, opid)
                 self.list_preview.SetItem(list_id, 3, oplabel)
                 self.list_preview.SetItem(list_id, 4, power)
                 self.list_preview.SetItem(list_id, 5, speed)
+                self.list_preview.SetItem(list_id, 6, frequency)
                 self.list_preview.SetItemImage(list_id, info[2])
                 self.list_preview.SetItemData(list_id, idx - 1)
                 self.operation_list[subsection] = (optype, opid, oplabel, power, speed)
-
         self.list_preview.Thaw()
         self.list_preview.Refresh()
         if self.active_material is None:
             actval = ""
         else:
             actval = self.active_material
+        # print (f"id: '{actval}'\ntitle: '{info_title}'\nmaterial: '{secdesc}'")
+        if not info_title:
+            info_title = actval.replace("_", " ")
         self.txt_entry_section.SetValue(actval)
         self.txt_entry_material.SetValue(secdesc)
         self.txt_entry_thickness.SetValue(thickness)
@@ -1843,9 +1885,21 @@ class MaterialPanel(ScrolledPanel):
         self.txt_entry_lens.SetValue(info_lens)
         self.txt_entry_note.SetValue(note)
         self.combo_entry_type.SetSelection(ltype)
+        wd4 = self.list_preview.GetColumnWidth(4)
+        wd5 = self.list_preview.GetColumnWidth(5)
+        wd6 = self.list_preview.GetColumnWidth(6)
+        if self.is_balor and wd6 == 0:
+            wd = int((wd4 + wd5) / 3)
+            for col in range(4, 7):
+                self.list_preview.SetColumnWidth(col, wd)
+        elif not self.is_balor and wd6 != 0:
+            self.list_preview.SetColumnWidth(6, 0)
+            wd = int((wd4 + wd5 + wd6) / 2)
+            for col in range(4, 6):
+                self.list_preview.SetColumnWidth(col, wd)
 
     def on_preview_selection(self, event):
-        pass
+        event.Skip()
 
     def on_library_rightclick(self, event):
         event.Skip()
@@ -1962,12 +2016,40 @@ class MaterialPanel(ScrolledPanel):
         menu.Destroy()
 
     def on_preview_rightclick(self, event):
+        # A couple of basic operations
+        def max_keynum(secname):
+            maxfound = 0
+            for subsection in self.op_data.derivable(secname):
+                parts = subsection.split(" ")
+                number = parts[-1]
+                try:
+                    nr = int(number)
+                    if nr > maxfound:
+                        maxfound = nr
+                except ValueError:
+                    pass
+            return maxfound
+
+        def newkey():
+            sect = self.active_material
+            # fetch all section names...
+            sect_num = max_keynum(sect) + 1
+            section_name = f"{sect} {sect_num:0>6}"
+            return section_name
+
         event.Skip()
         if self.active_material is None:
             return
-        listindex = event.Index
-        index = self.list_preview.GetItemData(listindex)
-        key = self.get_nth_operation(index)
+        key = None
+        try:
+            # main click
+            listindex = event.Index
+            if listindex >= 0:
+                index = self.list_preview.GetItemData(listindex)
+                key = self.get_nth_operation(index)
+        except AttributeError:
+            # Column click
+            pass
 
         menu = wx.Menu()
 
@@ -1981,16 +2063,70 @@ class MaterialPanel(ScrolledPanel):
             sect = op_section
             return remove_handler
 
+        def on_menu_popup_duplicate(op_section):
+            def dup_handler(*args):
+                settings = self.op_data
+                # print (f"Remove {sect}")
+                nkey = newkey()
+                for info in settings.keylist(sect):
+                    secdesc = settings.read_persistent(
+                        str, sect, info, ""
+                    )
+                    if info == "id":
+                        continue
+                    elif info == "label":
+                        idx = 0
+                        if secdesc.endswith(")") and secdesc[-2] in (str(i) for i in range(0,10)):
+                            i = secdesc.rfind("(")
+                            if i >= 0:
+                                try:
+                                    s = secdesc[i+1:]
+                                    t = secdesc[:i]
+                                    idx = int(s[:-1])
+                                    secdesc = t
+                                except ValueError:
+                                    pass
+                        secdesc += f"({idx + 1})"
+                    settings.write_persistent(nkey, info, secdesc)
+
+                on_menu_popup_missing()
+                settings.write_configuration()
+                self.fill_preview()
+
+            sect = op_section
+            return dup_handler
+
+        def on_menu_popup_newop(op_dict):
+            def add_handler(*args):
+                settings = self.op_data
+                # print (f"Remove {sect}")
+                nkey = newkey()
+                for key, value in opd.items():
+                    settings.write_persistent(nkey, key, value)
+
+                on_menu_popup_missing()
+                settings.write_configuration()
+                self.fill_preview()
+
+            opd = op_dict
+            return add_handler
+
         def on_menu_popup_apply_to_tree(op_section):
             def apply_to_tree_handler(*args):
                 settings = self.op_data
                 op_type = settings.read_persistent(str, sect, "type")
+                op_attr = dict()
+                for key in settings.keylist(sect):
+                    if key == "type":
+                        # We need to ignore it to avoid double attribute issues.
+                        continue
+                    content = settings.read_persistent(str, sect, key)
+                    op_attr[key] = content
                 try:
-                    targetop = Node().create(type=op_type)
+                    targetop = Node().create(type=op_type, **op_attr)
                 except ValueError:
                     # Attempted to create a non-bootstrapped node type.
                     return
-                targetop.load(settings, sect)
                 op_id = targetop.id
                 if op_id is None:
                     # WTF, that should not be the case
@@ -2001,7 +2137,8 @@ class MaterialPanel(ScrolledPanel):
                     # Already existing?
                     if op.id == targetop.id:
                         newone = False
-                        self.context.elements.op_branch.replace_node(targetop)
+                        op_attr["type"] = targetop.type
+                        op.replace_node(keep_children=True, **op_attr)
                         break
                 if newone:
                     try:
@@ -2021,12 +2158,18 @@ class MaterialPanel(ScrolledPanel):
             def apply_to_tree_handler(*args):
                 settings = self.op_data
                 op_type = settings.read_persistent(str, sect, "type")
+                op_attr = dict()
+                for key in settings.keylist(sect):
+                    if key == "type":
+                        # We need to ignore it to avoid double attribute issues.
+                        continue
+                    content = settings.read_persistent(str, sect, key)
+                    op_attr[key] = content
                 try:
-                    targetop = Node().create(type=op_type)
+                    targetop = Node().create(type=op_type, **op_attr)
                 except ValueError:
-                    # Attempted to create a non-boostrapped node type.
+                    # Attempted to create a non-bootstrapped node type.
                     return
-                targetop.load(settings, sect)
                 op_id = targetop.id
                 if op_id is None:
                     # WTF, that should not be the case
@@ -2046,21 +2189,6 @@ class MaterialPanel(ScrolledPanel):
             sect = op_section
             return apply_to_tree_handler
 
-        if key:
-            item = menu.Append(wx.ID_ANY, _("Remove"), "", wx.ITEM_NORMAL)
-            self.Bind(wx.EVT_MENU, on_menu_popup_delete(key), item)
-
-            menu.AppendSeparator()
-
-            item = menu.Append(wx.ID_ANY, _("Load into Tree"), "", wx.ITEM_NORMAL)
-            self.Bind(wx.EVT_MENU, on_menu_popup_apply_to_tree(key), item)
-
-            item = menu.Append(wx.ID_ANY, _("Use for statusbar"), "", wx.ITEM_NORMAL)
-            menu.Enable(item.GetId(), bool(self.active_material is not None))
-            self.Bind(wx.EVT_MENU, on_menu_popup_apply_to_statusbar(key), item)
-
-        menu.AppendSeparator()
-
         def on_menu_popup_missing(*args):
             if self.active_material is None:
                 return
@@ -2072,10 +2200,17 @@ class MaterialPanel(ScrolledPanel):
                 return
             changes = False
             # Which ones do we have already?
+            replace_mk_pattern = True
+            mkpattern = "meerk40t:"
             uid = list()
-            for op in enumerate(op_list):
-                if hasattr(op, "id") and op.id is not None:
-                    list.append(op.id)
+            for op in op_list:
+                if not hasattr(op, "id"):
+                    continue
+                if not op.id:
+                    continue
+                if replace_mk_pattern and op.id.startswith(mkpattern):
+                    continue
+                uid.append(op.id)
             for op in op_list:
                 if hasattr(op, "label") and op.label is None:
                     pattern = op.type
@@ -2096,16 +2231,29 @@ class MaterialPanel(ScrolledPanel):
                         pattern += f" ({s1}{', ' if s1 and s2 else ''}{s2})"
                     op.label = pattern
                     changes = True
-                if hasattr(op, "id") and op.id is None:
+                replace_id = True
+                if not hasattr(op, "id"):
+                    oldid = "unknown"
+                    replace_id = False
+                else:
+                    oldid = op.id
+                    if op.id and not (
+                        replace_mk_pattern and op.id.startswith(mkpattern)
+                    ):
+                        replace_id = False
+                # print (oldid, replace_id)
+                if replace_id:
+                    oldid = op.id
                     changes = True
                     if op.type.startswith("op "):
                         pattern = op.type[3].upper()
                     else:
-                        pattern = op.type[0:1].upper()
+                        pattern = op.type[0:2].upper()
                     idx = 1
                     while f"{pattern}{idx}" in uid:
                         idx += 1
                     op.id = f"{pattern}{idx}"
+                    # print (f"{oldid} -> {op.id}")
                     uid.append(op.id)
 
             if changes:
@@ -2119,36 +2267,126 @@ class MaterialPanel(ScrolledPanel):
                 self.op_data.write_configuration()
                 self.fill_preview()
 
-        item = menu.Append(wx.ID_ANY, _("Fill missing ids/label"), "", wx.ITEM_NORMAL)
-        self.Bind(wx.EVT_MENU, on_menu_popup_missing, item)
+        op_dict = {
+            "type": "op raster",
+            "speed": "140",
+            "power": "1000",
+            "label": "Raster",
+            "color": "#000000"
+        }
+        if self.is_balor:
+            op_dict["frequency"] = "35"
+        item = menu.Append(wx.ID_ANY, _("Add Raster"), "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, on_menu_popup_newop(op_dict), item)
+        op_dict = {
+            "type": "op engrave",
+            "speed": "50",
+            "power": "1000",
+            "label": "Engrave",
+            "color": "#0000FF"
+        }
+        if self.is_balor:
+            op_dict["frequency"] = "35"
+        item = menu.Append(wx.ID_ANY, _("Add Engrave"), "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, on_menu_popup_newop(op_dict), item)
+        op_dict = {
+            "type": "op cut",
+            "speed": "5",
+            "power": "1000",
+            "label": "Cut",
+            "color": "#FF0000"
+        }
+        if self.is_balor:
+            op_dict["frequency"] = "35"
+        item = menu.Append(wx.ID_ANY, _("Add Cut"), "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, on_menu_popup_newop(op_dict), item)
+
+        if key:
+            menu.AppendSeparator()
+            item = menu.Append(wx.ID_ANY, _("Duplicate"), "", wx.ITEM_NORMAL)
+            self.Bind(wx.EVT_MENU, on_menu_popup_duplicate(key), item)
+            item = menu.Append(wx.ID_ANY, _("Delete"), "", wx.ITEM_NORMAL)
+            self.Bind(wx.EVT_MENU, on_menu_popup_delete(key), item)
+
+            menu.AppendSeparator()
+
+            item = menu.Append(wx.ID_ANY, _("Load into Tree"), "", wx.ITEM_NORMAL)
+            self.Bind(wx.EVT_MENU, on_menu_popup_apply_to_tree(key), item)
+
+            settings = self.op_data
+            op_type = settings.read_persistent(str, key, "type")
+            if op_type.startswith("op "):
+                item = menu.Append(
+                    wx.ID_ANY, _("Use for statusbar"), "", wx.ITEM_NORMAL
+                )
+                menu.Enable(item.GetId(), bool(self.active_material is not None))
+                self.Bind(wx.EVT_MENU, on_menu_popup_apply_to_statusbar(key), item)
+
+        if self.list_preview.GetItemCount() > 0:
+            menu.AppendSeparator()
+
+            item = menu.Append(wx.ID_ANY, _("Fill missing ids/label"), "", wx.ITEM_NORMAL)
+            self.Bind(wx.EVT_MENU, on_menu_popup_missing, item)
 
         self.PopupMenu(menu)
         menu.Destroy()
 
     def on_resize(self, event):
+        size = self.GetClientSize()
+        if size[0] != 0 and size[1] != 0:
+            self.tree_library.SetMaxSize(wx.Size(-1, int(0.4 * size[1])))
+            self.list_preview.SetMaxSize(wx.Size(-1, int(0.4 * size[1])))
+
         # Resize the columns in the listctrl
         size = self.list_preview.GetSize()
         if size[0] == 0 or size[1] == 0:
             return
-        remaining = size[0]
+        remaining = size[0] * 0.8
         # 0 "#"
         # 1 "Operation"
         # 2 "Id"
         # 3 "Label"
         # 4 "Power"
         # 5 "Speed"
-
-        self.list_preview.SetColumnWidth(0, int(0.10 * remaining))
-        self.list_preview.SetColumnWidth(1, int(0.15 * remaining))
-        self.list_preview.SetColumnWidth(2, int(0.15 * remaining))
-        self.list_preview.SetColumnWidth(3, int(0.40 * remaining))
-        self.list_preview.SetColumnWidth(4, int(0.10 * remaining))
-        self.list_preview.SetColumnWidth(5, int(0.10 * remaining))
+        # 6 "Frequency"
+        if self.is_balor:
+            p1 = 0.15
+            p2 = 0.35
+            p3 = (1.0 - p1 - p2) / 4
+            p4 = p3
+        else:
+            p1 = 0.15
+            p2 = 0.40
+            p3 = (1.0 - p1 - p2) / 3
+            p4 = 0
+        self.list_preview.SetColumnWidth(0, int(p3 * remaining))
+        self.list_preview.SetColumnWidth(1, int(p1 * remaining))
+        self.list_preview.SetColumnWidth(2, int(p1 * remaining))
+        self.list_preview.SetColumnWidth(3, int(p2 * remaining))
+        self.list_preview.SetColumnWidth(4, int(p3 * remaining))
+        self.list_preview.SetColumnWidth(5, int(p3 * remaining))
+        self.list_preview.SetColumnWidth(6, int(p4 * remaining))
 
     def before_operation_update(self, event):
         list_id = event.GetIndex()  # Get the current row
+        if list_id < 0:
+            event.Veto()
+            return
         col_id = event.GetColumn()  # Get the current column
-        if col_id in (2, 3, 4, 5):
+        ok = True
+        try:
+            index = self.list_preview.GetItemData(list_id)
+            key = self.get_nth_operation(index)
+            entry = self.operation_list[key]
+            if not entry[0].startswith("op "):
+                ok = False
+        except (AttributeError, KeyError):
+            ok = False
+        if col_id not in range(2, 7):
+            ok = False
+        if col_id == 6 and not self.is_balor:
+            ok = False
+        if ok:
             event.Allow()
         else:
             event.Veto()
@@ -2160,7 +2398,7 @@ class MaterialPanel(ScrolledPanel):
         index = self.list_preview.GetItemData(list_id)
         key = self.get_nth_operation(index)
 
-        if list_id >= 0 and col_id in (2, 3, 4, 5):
+        if list_id >= 0 and col_id in range(2, 7):
             if col_id == 2:
                 # id
                 self.op_data.write_persistent(key, "id", new_data)
@@ -2173,6 +2411,9 @@ class MaterialPanel(ScrolledPanel):
             elif col_id == 5:
                 # speed
                 self.op_data.write_persistent(key, "speed", new_data)
+            elif col_id == 6:
+                # speed
+                self.op_data.write_persistent(key, "frequency", new_data)
             # Set the new data in the listctrl
             self.op_data.write_configuration()
 
@@ -2259,6 +2500,7 @@ class MaterialManager(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.notebook_main.AddPage(self.panel_library, _("Library"))
         # self.notebook_main.AddPage(self.panel_import, _("Import"))
         self.notebook_main.AddPage(self.panel_about, _("How to use"))
@@ -2266,6 +2508,7 @@ class MaterialManager(MWindow):
         self.DragAcceptFiles(True)
         self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
         self.SetTitle(_("Material Library"))
+        self.restore_aspect(honor_initial_values=True)
 
     def on_drop_file(self, event):
         """

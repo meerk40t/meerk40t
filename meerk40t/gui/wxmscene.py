@@ -7,12 +7,7 @@ from wx import aui
 
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
-from meerk40t.gui.icons import (
-    STD_ICON_SIZE,
-    icon_meerk40t,
-    icons8_r_white,
-    icons8_text,
-)
+from meerk40t.gui.icons import STD_ICON_SIZE, icon_meerk40t, icons8_r_white, icons8_text
 from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scenepanel import ScenePanel
@@ -233,9 +228,8 @@ class MeerK40tScenePanel(wx.Panel):
         bsize_normal = STD_ICON_SIZE
 
         def proxy_linetext():
-            from meerk40t.extra.hershey import have_hershey_fonts
 
-            if have_hershey_fonts(context):
+            if context.fonts.have_hershey_fonts():
                 context.kernel.elements("tool linetext\n")
             else:
                 context.kernel.elements("window open HersheyFontManager\n")
@@ -1125,6 +1119,8 @@ class MeerK40tScenePanel(wx.Panel):
                 self.grid.draw_grid_secondary = not self.grid.draw_grid_secondary
             elif gridtype == "circular":
                 self.grid.draw_grid_circular = not self.grid.draw_grid_circular
+            self.scene.signal("guide")
+            self.scene.signal("grid")
             self.widget_scene.reset_snap_attraction()
             self.request_refresh()
 
@@ -1463,12 +1459,14 @@ class SceneWindow(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(1280, 800, *args, **kwds)
         self.panel = MeerK40tScenePanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Scene"))
         self.Layout()
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

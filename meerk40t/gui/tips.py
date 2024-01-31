@@ -20,6 +20,7 @@ from .icons import (
     icons8_console,
     icons8_detective,
     icons8_light_on,
+    icons8_manager,
 )
 from .mwindow import MWindow
 from .wxutils import dip_size
@@ -58,7 +59,7 @@ class TipPanel(wx.Panel):
         # Main Sizer
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.image_tip = wx.StaticBitmap(self, wx.ID_ANY, style=wx.SB_FLAT)
-        self.image_tip.SetMinSize(wx.Size(250, -1))
+        self.image_tip.SetMinSize(dip_size(self, 250, -1))
         self.no_image_message = wx.TextCtrl(self, wx.ID_ANY, _("Image missing!"))
         self.no_image_message.SetToolTip(
             _(
@@ -169,12 +170,18 @@ class TipPanel(wx.Panel):
         else:
             self.button_try.Show(False)
             self.tip_command = ""
+        have_img = False
         if my_tip[2]:
-            self.set_tip_image(
+            have_img = self.set_tip_image(
                 my_tip[2], self._current_tip, self.context.tip_access_consent
             )
-        else:
-            self.set_tip_image("", self._current_tip, self.context.tip_access_consent)
+        if not have_img:
+            # Let's use the default image...
+            have_img = self.set_tip_image(
+                icons8_light_on.GetBitmap(resize=200), self._current_tip, self.context.tip_access_consent
+            )
+
+            # self.set_tip_image("", self._current_tip, self.context.tip_access_consent)
         self.label_position.SetLabel(
             _("Tip {idx}/{maxidx}").format(
                 idx=self._current_tip + 1, maxidx=len(self.tips)
@@ -194,7 +201,7 @@ class TipPanel(wx.Panel):
         try:
             with urllib.request.urlopen(uri) as file:
                 content = file.read()
-        except (urllib.error.URLError, urllib.error.HTTPError) as e:
+        except Exception as e:
             # print (f"Error: {e}")
             return False
         # If the file object is successfully opened, read its content as a string
@@ -218,25 +225,25 @@ class TipPanel(wx.Panel):
         if isinstance(path, wx.Bitmap):
             self.image_tip.SetBitmap(path)
             self.image_tip.Show(True)
-            return
+            return True
 
         # self.image_tip.SetBitmap(wx.NullBitmap)
         self.image_tip.Show(False)
         self.tip_image = path
         if not path or not self.cache_dir:
             # Path was not established
-            return
+            return False
 
         parts = path.split("/")
         if len(parts) <= 0:
             # Malformed path.
-            return
+            return False
 
         # basename = f"_{counter}_{parts[-1]}"
         basename = hex(hash(path))
         local_path = os.path.join(self.cache_dir, basename)
         if not local_path:
-            return
+            return False
         # Is this file already on the disk? If not load it...
         if not os.path.exists(local_path):
             if automatic_download:
@@ -247,14 +254,14 @@ class TipPanel(wx.Panel):
         if not os.path.exists(local_path):
             # File still does not exist.
             self.no_image_message.Show(True)
-            return
+            return False
 
         bmp = wx.Bitmap()
         res = bmp.LoadFile(local_path)
         if not res:
             # Bitmap failed to load.
             self.no_image_message.Show(True)
-            return
+            return False
         new_x, new_y = bmp.Size
         img_size = self.image_tip.GetSize()
         # print(f"bmp: {int(new_x)}x{int(new_y)}, space: {img_size[0]}x{img_size[1]}")
@@ -279,7 +286,8 @@ class TipPanel(wx.Panel):
             pass
         self.image_tip.SetBitmap(bmp)
         self.image_tip.Show(True)
-
+        return True
+    
     def on_button_try(self, event):
         if self.tip_command:
             if self.tip_command.startswith("http"):
@@ -317,7 +325,7 @@ class TipPanel(wx.Panel):
                     + "Just place your mouse over a window or an UI-element and press F11."
                 ),
                 "",
-                "",
+                icons8_light_on.GetBitmap(resize=200),
             )
         )
         self.tips.append(
@@ -325,11 +333,11 @@ class TipPanel(wx.Panel):
                 _(
                     "MeerK40t supports more than 'just' a K40 laser.\n"
                     + "You can add more devices in the Device-Manager.\n"
-                    + "And you can even add multiple instances for the same physical device,\n"
+                    + "And you can even add multiple instances for the same physical device, "
                     + "where you can have different configuration settings (eg regular and rotary)."
                 ),
                 "window open DeviceManager",
-                "",
+                icons8_manager.GetBitmap(resize=200),
             ),
         )
         self.tips.append(
@@ -414,7 +422,7 @@ class TipPanel(wx.Panel):
                 with urllib.request.urlopen(url + locale + "/tips.txt") as file:
                     content = file.read().decode("utf-8")
                     successful = True
-            except (urllib.error.URLError, urllib.error.HTTPError):
+            except Exception:
                 pass
 
         # if we don't have anything localized then let's use the english master
@@ -423,7 +431,7 @@ class TipPanel(wx.Panel):
                 with urllib.request.urlopen(url + "tips.txt") as file:
                     content = file.read().decode("utf-8")
                     successful = True
-            except (urllib.error.URLError, urllib.error.HTTPError) as e:
+            except Exception as e:
                 # print (f"Error: {e}")
                 pass
 
@@ -535,16 +543,20 @@ class TipPanel(wx.Panel):
 
 class Tips(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(400, 350, *args, **kwds)
+        super().__init__(550, 350, *args, **kwds)
+        sizer = wx.BoxSizer(wx.VERTICAL)
         self.panel = TipPanel(
             self,
             wx.ID_ANY,
             context=self.context,
         )
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_detective.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Tips"))
+        self.Layout()
+        self.restore_aspect(honor_initial_values=True)
 
     def window_open(self):
         self.panel.pane_show()

@@ -216,7 +216,7 @@ class BorderWidget(Widget):
         center_x = (self.left + self.right) / 2.0
         center_y = (self.top + self.bottom) / 2.0
         gc.SetPen(self.master.selection_pen)
-        # Won't be display when rotating...
+        # Won't be displayed when rotating...
         if self.master.show_border:
             gc.StrokeLine(center_x, 0, center_x, self.top)
             gc.StrokeLine(0, center_y, self.left, center_y)
@@ -455,6 +455,7 @@ class RotationWidget(Widget):
             self.master.last_angle = None
             self.master.start_angle = None
             self.master.rotated_angle = 0
+            self.scene.pane.modif_active = False
             self.scene.context.signal("modified_by_tool")
         elif event == -1:
             self.scene.pane.modif_active = True
@@ -1214,6 +1215,7 @@ class SkewWidget(Widget):
                     images.append(e)
             for e in images:
                 e.update(self.scene.context)
+            self.scene.pane.modif_active = False
             self.scene.context.signal("modified_by_tool")
         elif event == -1:
             self.scene.pane.modif_active = True
@@ -1712,8 +1714,8 @@ class MoveWidget(Widget):
             #     # .translated will set the scene emphasized bounds dirty, that's not needed, so...
             #     elements.update_bounds([bx0, by0, bx1, by1])
 
-            self.scene.context.signal("modified_by_tool")
             self.scene.pane.modif_active = False
+            self.scene.context.signal("modified_by_tool")
         elif event == -1:  # start
             if "alt" in modifiers:
                 self.create_duplicate()

@@ -441,11 +441,13 @@ class MoshiControllerGui(MWindow):
         # ==========
 
         self.panel = MoshiControllerPanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Moshiboard-Controller"))
+        self.restore_aspect()
 
     def create_menu(self, append):
         wxglade_tmp_menu = wx.Menu()

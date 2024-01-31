@@ -402,19 +402,23 @@ class BasicOpPanel(wx.Panel):
         check_filtered = wx.CheckBox(self.op_panel, wx.ID_ANY)
         check_filtered.SetToolTip(_("Suppress non-used operations"))
         check_filtered.SetValue(self.filtered)
-        check_filtered.SetMinSize(dip_size(self, 50, -1))
-        check_filtered.SetMaxSize(dip_size(self, 90, -1))
+        check_filtered.SetMinSize(
+            dip_size(self, 25, -1)
+        )  # 20 from button + 5 from spacer
+        check_filtered.SetMaxSize(dip_size(self, 25, -1))
         info_sizer.Add(check_filtered, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         check_filtered.Bind(wx.EVT_CHECKBOX, on_check_filtered)
 
-        header = wx.StaticText(self.op_panel, wx.ID_ANY, label=_("Active"))
-        header.SetMinSize(dip_size(self, 30, -1))
-        header.SetMaxSize(dip_size(self, 50, -1))
+        header = wx.StaticText(self.op_panel, wx.ID_ANY, label="A")
+        header.SetMinSize(dip_size(self, 20, -1))
+        header.SetMaxSize(dip_size(self, 20, -1))
+        header.SetToolTip(_("Active"))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        header = wx.StaticText(self.op_panel, wx.ID_ANY, label=_("Show"))
-        header.SetMinSize(dip_size(self, 30, -1))
-        header.SetMaxSize(dip_size(self, 50, -1))
+        header = wx.StaticText(self.op_panel, wx.ID_ANY, label="S")
+        header.SetMinSize(dip_size(self, 20, -1))
+        header.SetMaxSize(dip_size(self, 20, -1))
+        header.SetToolTip(_("Show"))
         info_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         if self.use_percent:
             unit = " [%]"
@@ -440,6 +444,9 @@ class BasicOpPanel(wx.Panel):
             if self.filtered and len(op.children) == 0:
                 continue
             if op.type.startswith("op "):
+                info = op.type[3:].capitalize()
+                if op.label is not None:
+                    info = info[0] + ": " + op.label
                 op_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 self.operation_sizer.Add(op_sizer, 0, wx.EXPAND, 0)
                 btn = wx.StaticBitmap(
@@ -461,7 +468,7 @@ class BasicOpPanel(wx.Panel):
                     btn.SetBitmap(image)
 
                 btn.SetToolTip(
-                    str(op)
+                    info
                     + "\n"
                     + _("Assign the selected elements to the operation.")
                     + "\n"
@@ -469,37 +476,18 @@ class BasicOpPanel(wx.Panel):
                 )
                 btn.SetMinSize(dip_size(self, 20, -1))
                 btn.SetMaxSize(dip_size(self, 20, -1))
-
                 # btn.Bind(wx.EVT_ENTER_WINDOW, self.on_mouse_over)
                 # btn.Bind(wx.EVT_LEAVE_WINDOW, self.on_mouse_leave)
                 btn.Bind(wx.EVT_LEFT_DOWN, on_button_left(op))
                 btn.Bind(wx.EVT_RIGHT_DOWN, on_button_right(op))
                 # btn.Bind(wx.EVT_LEFT_DCLICK, on_button_doubleclick(op))
                 op_sizer.Add(btn, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-                info = op.type[3:].capitalize()
-                if op.label is not None:
-                    info = info[0] + ": " + op.label
-                header = wx.StaticText(
-                    self.op_panel, wx.ID_ANY, label=info, style=wx.ST_ELLIPSIZE_END
-                )
-                header.SetToolTip(
-                    _("Click to select all contained elements on the scene.")
-                    + "\n"
-                    + _("Double click to open the property dialog for the operation")
-                )
-                header.SetMinSize(dip_size(self, 30, -1))
-                header.SetMaxSize(dip_size(self, 70, -1))
-                op_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-                if self.std_color_back is None:
-                    self.std_color_back = wx.Colour(header.GetBackgroundColour())
-                    self.std_color_fore = wx.Colour(header.GetForegroundColour())
-                self.op_ctrl_list.append((op, header))
-                header.Bind(wx.EVT_LEFT_DOWN, on_label_single(op))
-                header.Bind(wx.EVT_LEFT_DCLICK, on_label_double(op))
+
+                op_sizer.AddSpacer(5)
 
                 c_out = wx.CheckBox(self.op_panel, id=wx.ID_ANY)
-                c_out.SetMinSize(dip_size(self, 30, -1))
-                c_out.SetMaxSize(dip_size(self, 50, -1))
+                c_out.SetMinSize(dip_size(self, 20, -1))
+                c_out.SetMaxSize(dip_size(self, 20, -1))
 
                 if hasattr(op, "output"):
                     flag = bool(op.output)
@@ -509,14 +497,18 @@ class BasicOpPanel(wx.Panel):
                     c_out.Enable(False)
                     showflag = False
                 c_out.SetToolTip(
-                    _("Enable this operation for inclusion in Execute Job.")
+                    info
+                    + "\n"
+                    + _("Enable this operation for inclusion in Execute Job.")
                 )
                 op_sizer.Add(c_out, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
                 c_show = wx.CheckBox(self.op_panel, id=wx.ID_ANY)
-                c_show.SetMinSize(dip_size(self, 30, -1))
-                c_show.SetMaxSize(dip_size(self, 50, -1))
-                c_show.SetToolTip(_("Hide all contained elements on scene if not set."))
+                c_show.SetMinSize(dip_size(self, 20, -1))
+                c_show.SetMaxSize(dip_size(self, 20, -1))
+                c_show.SetToolTip(
+                    info + "\n" + _("Hide all contained elements on scene if not set.")
+                )
 
                 self.op_panel.Bind(wx.EVT_CHECKBOX, on_check_output(op, c_show), c_out)
                 self.op_panel.Bind(wx.EVT_CHECKBOX, on_check_show(op), c_show)
@@ -552,7 +544,9 @@ class BasicOpPanel(wx.Panel):
                     else:
                         t_power.SetValue(f"{sval:.0f}")
                         unit = "ppi"
-                    t_power.SetToolTip(_("Power ({unit})").format(unit=unit))
+                    t_power.SetToolTip(
+                        info + "\n" + _("Power ({unit})").format(unit=unit)
+                    )
                 else:
                     t_power.Enable(False)
                 t_power.SetActionRoutine(on_power(op, t_power))
@@ -580,10 +574,32 @@ class BasicOpPanel(wx.Panel):
                     else:
                         t_speed.SetValue(f"{sval:.1f}")
                         unit = "mm/s"
-                    t_speed.SetToolTip(_("Speed ({unit})").format(unit=unit))
+                    t_speed.SetToolTip(
+                        info + "\n" + _("Speed ({unit})").format(unit=unit)
+                    )
                 else:
                     t_speed.Enable(False)
                 t_speed.SetActionRoutine(on_speed(op, t_speed))
+
+                header = wx.StaticText(
+                    self.op_panel, wx.ID_ANY, label=info, style=wx.ST_ELLIPSIZE_END
+                )
+                header.SetToolTip(
+                    info
+                    + "\n"
+                    + _("Click to select all contained elements on the scene.")
+                    + "\n"
+                    + _("Double click to open the property dialog for the operation")
+                )
+                header.SetMinSize(dip_size(self, 30, -1))
+                header.SetMaxSize(dip_size(self, 170, -1))
+                op_sizer.Add(header, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+                if self.std_color_back is None:
+                    self.std_color_back = wx.Colour(header.GetBackgroundColour())
+                    self.std_color_fore = wx.Colour(header.GetForegroundColour())
+                self.op_ctrl_list.append((op, header))
+                header.Bind(wx.EVT_LEFT_DOWN, on_label_single(op))
+                header.Bind(wx.EVT_LEFT_DCLICK, on_label_double(op))
 
         self.op_panel.SetupScrolling()
         self.operation_sizer.Layout()
@@ -649,6 +665,7 @@ class BasicOpPanel(wx.Panel):
     @signal_listener("tree_changed")
     @signal_listener("operation_removed")
     @signal_listener("add_operation")
+    @signal_listener("warn_state_update")
     def signal_handler_rebuild(self, origin, *args, **kwargs):
         # print (f"Signal rebuild called {args} / {kwargs} / {len(list(self.context.elements.ops()))}")
         self.ask_for_refill()

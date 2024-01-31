@@ -31,6 +31,31 @@ def tree_calc(value_name, calc_func):
     return decor
 
 
+def tree_submenu_list(submenus):
+    """
+    Add a list of submenu information to be used for tree_values
+    tree_values will look for the corresponding index in value_submenues
+    to establish whether this item shall be put in a submenu structure
+    start defines the root menu hierarchy (tree_submenu will be ignored!)
+    You can specify a multi-level hierarchy by spearating the hierarchy
+    levels by  pipe symbol '|'.
+    so "File|Preferences|Devices"
+    would have
+    File
+       +-Preferences
+          +- Devices
+               - Value 1
+               - Value 2
+               - Value 3
+    """
+
+    def decor(func):
+        func.submenu_generator = submenus
+        return func
+
+    return decor
+
+
 def tree_values(value_name, values):
     """
     Append explicit list of values and value_name to the function.
@@ -282,6 +307,7 @@ def tree_operation(
 
         # List of accepted values.
         inner.values = [0]
+        inner.submenu_generator = None
 
         # Function enabled/disabled
         inner.enabled = enable
@@ -391,10 +417,27 @@ def tree_operations_for_node(registration, node):
             except TypeError:
                 pass
 
+        value_submenus = []
+        if func.submenu_generator:
+            if isinstance(func.submenu_generator, (list, tuple)):
+                value_submenus = func.submenu_generator
+            else:
+                try:
+                    value_submenus = func.submenu_generator()
+                except (AttributeError, TypeError) as e:
+                    print(f"Error while generating submenus: {e}")
+                    pass
+        # print(value_submenus)
         for i, value in enumerate(iterator):
             # Every value in the func.values gets an operation for the node.
             func_dict["iterator"] = i
             func_dict["value"] = value
+            if len(value_submenus) > 0:
+                try:
+                    func.submenu = value_submenus[i]
+                except IndexError:
+                    print(f"Wrong index...")
+                    pass
             try:
                 func_dict[func.value_name] = value
             except AttributeError:

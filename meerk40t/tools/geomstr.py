@@ -4645,7 +4645,8 @@ class Geomstr:
             :return: Points distance to the line.
             """
             line = end - start
-            if (line_length := np.linalg.norm(line)) == 0:
+            line_length = np.linalg.norm(line)
+            if line_length == 0:
                 return np.linalg.norm(points - start, axis=-1)
             if line.size == 2:
                 return abs(np.cross(line, start - points)) / line_length  # 2D case

@@ -101,7 +101,9 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/util console", "{enabled}{command}")
         kernel.register("format/util wait", "{enabled}{element_type} {wait}")
         kernel.register("format/util home", "{enabled}{element_type}")
-        kernel.register("format/util goto", "{enabled}{element_type} {adjust}")
+        kernel.register(
+            "format/util goto", "{enabled}{element_type} {absolute}{adjust}"
+        )
         kernel.register("format/util output", "{enabled}{element_type} {bits}")
         kernel.register("format/util input", "{enabled}{element_type} {bits}")
         kernel.register("format/layer", "{element_type} {name}")
@@ -507,7 +509,9 @@ class Elemental(Service):
         self.undo = Undo(self, self._tree)
         self.do_undo = True
         self.suppress_updates = False
-
+        # We need to setup these as the settings stuff will only be done
+        # on postboot after Elemental has already been created
+        self.setting(bool, "classify_new", True)
         self.setting(bool, "classify_reverse", False)
         self.setting(bool, "legacy_classification", False)
         self.setting(bool, "classify_fuzzy", False)
@@ -1195,7 +1199,13 @@ class Elemental(Service):
         return res
 
     def save_persistent_operations_list(
-        self, name, oplist=None, opinfo=None, inform=True, use_settings=None
+        self,
+        name,
+        oplist=None,
+        opinfo=None,
+        inform=True,
+        use_settings=None,
+        flush=True,
     ):
         """
         Saves a given list of operations to the op_data:Settings
@@ -1220,7 +1230,7 @@ class Elemental(Service):
             for key, value in opinfo.items():
                 settings.write_persistent(section, key, value)
 
-        self._save_persistent_operation_tree(name, oplist, flush=True, inform=True)
+        self._save_persistent_operation_tree(name, oplist, flush=flush, inform=True)
 
     # Operations uniform
     save_persistent_operations = save_persistent_operations_list
@@ -1342,7 +1352,7 @@ class Elemental(Service):
                 op_tree[parent].add_node(op_tree[section])
         return op_list, op_info
 
-    def load_persistent_operations(self, name, classify=True, clear=True):
+    def load_persistent_operations(self, name, classify=None, clear=True):
         """
         Load oplist section to replace current op_branch data.
 
@@ -1358,6 +1368,8 @@ class Elemental(Service):
         oplist, opinfo = self.load_persistent_op_list(name, use_settings=settings)
         for op in oplist:
             operation_branch.add_node(op)
+        if classify is None:
+            classify = self.classify_new
         if not classify:
             return
         if len(list(self.elems())) > 0:

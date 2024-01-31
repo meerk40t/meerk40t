@@ -495,7 +495,10 @@ class Planner(Service):
                                             y = float(Length(params[1]))
                                         except ValueError:
                                             y = 0
-                                    addop = GotoOperation(x=x, y=y)
+                                    absolute = False
+                                    if len(params) > 2:
+                                        absolute = params[2] not in ("False", "0")
+                                    addop = GotoOperation(x=x, y=y, absolute=absolute)
                             elif optype == "util wait":
                                 if opparam is not None:
                                     try:
