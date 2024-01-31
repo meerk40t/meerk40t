@@ -86,13 +86,13 @@ class OpInfoPanel(ScrolledPanel):
         lcount = self.list_operations.GetItemCount()
         for index in range(lcount):
             info = "---"
-            id = self.list_operations.GetItemData(index)
-            if id < 0:
+            _id = self.list_operations.GetItemData(index)
+            if _id < 0:
                 continue
-            myop = self.ops[id]
+            myop = self.ops[_id]
             if hasattr(myop, "time_estimate"):
                 info = myop.time_estimate()
-            self.list_operations.SetItem(id, 4, info)
+            self.list_operations.SetItem(_id, 4, info)
 
     def refresh_data(self):
         def mklabel(value):
@@ -238,11 +238,11 @@ class OpInfoPanel(ScrolledPanel):
 
         index = event.Index
         try:
-            id = self.list_operations.GetItemData(index)
+            _id = self.list_operations.GetItemData(index)
         except (KeyError, IndexError):
             return
         menu = wx.Menu()
-        if id < 0:
+        if _id < 0:
             # elem xxx Type:
             listitem = self.list_operations.GetItem(index, 2)
             elemtype = listitem.GetText()
@@ -261,7 +261,7 @@ class OpInfoPanel(ScrolledPanel):
             )
             self.Bind(wx.EVT_MENU, self.on_tree_popup_mark_elem(""), item)
         else:
-            opnode = self.ops[id]
+            opnode = self.ops[_id]
             s = mklabel(opnode.label)
             if s == "":
                 s = opnode.type

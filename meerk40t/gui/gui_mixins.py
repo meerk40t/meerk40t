@@ -135,7 +135,7 @@ class FormatPainter:
             return
         elif self.state == PASTING:
             try:
-                id = self.template.id
+                _id = self.template.id
             except (RuntimeError, AttributeError):
                 # No longer existing or invalid?
                 self.state = INACTIVE

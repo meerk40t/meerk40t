@@ -1277,8 +1277,8 @@ class ShadowTree:
             self.wxtree.SelectItem(i, False)
 
     def safe_color(self, color_to_set):
-        hash = str(color_to_set)
-        if hash not in self.color_cache:
+        _hash = str(color_to_set)
+        if _hash not in self.color_cache:
             back_color = self.wxtree.GetBackgroundColour()
             rgb = back_color.Get()
             default_color = wx.Colour(
@@ -1290,9 +1290,9 @@ class ShadowTree:
                     mycolor = default_color
             else:
                 mycolor = default_color
-            self.color_cache[hash] = mycolor
+            self.color_cache[_hash] = mycolor
         else:
-            mycolor = self.color_cache[hash]
+            mycolor = self.color_cache[_hash]
         return mycolor
 
     def node_register(self, node, pos=None, **kwargs):

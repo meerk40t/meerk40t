@@ -30,7 +30,7 @@ class ZinglPlotter:
         arc_required = int(ceil(abs(arc.sweep) / sweep_limit))
         if arc_required == 0:
             return
-        slice = arc.sweep / float(arc_required)
+        arc_slice = arc.sweep / float(arc_required)
 
         theta = arc.get_rotation()
         rx = arc.rx
@@ -43,9 +43,9 @@ class ZinglPlotter:
         sin_theta = sin(theta)
 
         for i in range(0, arc_required):
-            next_t = current_t + slice
+            next_t = current_t + arc_slice
 
-            alpha = sin(slice) * (sqrt(4 + 3 * pow(tan(slice / 2.0), 2)) - 1) / 3.0
+            alpha = sin(arc_slice) * (sqrt(4 + 3 * pow(tan(arc_slice / 2.0), 2)) - 1) / 3.0
 
             cos_start_t = cos(current_t)
             sin_start_t = sin(current_t)

@@ -413,9 +413,9 @@ class LinePropPanel(wx.Panel):
     def on_cap(self, event):
         if self.node is None or self.node.lock:
             return
-        id = self.combo_cap.GetSelection()
+        _id = self.combo_cap.GetSelection()
         try:
-            self.node.linecap = id
+            self.node.linecap = _id
             self.context.signal("element_property_update", self.node)
             self.context.signal("refresh_scene", "Scene")
         except AttributeError:
@@ -424,9 +424,9 @@ class LinePropPanel(wx.Panel):
     def on_join(self, event):
         if self.node is None or self.node.lock:
             return
-        id = self.combo_join.GetSelection()
+        _id = self.combo_join.GetSelection()
         try:
-            self.node.linejoin = id
+            self.node.linejoin = _id
             self.context.signal("element_property_update", self.node)
             self.context.signal("refresh_scene", "Scene")
         except AttributeError:
@@ -435,9 +435,9 @@ class LinePropPanel(wx.Panel):
     def on_fill(self, event):
         if self.node is None or self.node.lock:
             return
-        id = self.combo_fill.GetSelection()
+        _id = self.combo_fill.GetSelection()
         try:
-            self.node.fillrule = id
+            self.node.fillrule = _id
             self.context.signal("element_property_update", self.node)
             self.context.signal("refresh_scene", "Scene")
         except AttributeError:

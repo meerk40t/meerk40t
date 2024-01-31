@@ -354,24 +354,24 @@ class TrueTypeFont:
         # raise ValueError("Could not locate an acceptable cmap.")
 
     def _parse_cmap_table(self, data):
-        format = struct.unpack(">H", data.read(2))[0]
-        if format == 0:
+        _fmt = struct.unpack(">H", data.read(2))[0]
+        if _fmt == 0:
             return self._parse_cmap_format_0(data)
-        elif format == 2:
+        elif _fmt == 2:
             return self._parse_cmap_format_2(data)
-        elif format == 4:
+        elif _fmt == 4:
             return self._parse_cmap_format_4(data)
-        elif format == 6:
+        elif _fmt == 6:
             return self._parse_cmap_format_6(data)
-        elif format == 8:
+        elif _fmt == 8:
             return self._parse_cmap_format_8(data)
-        elif format == 10:
+        elif _fmt == 10:
             return self._parse_cmap_format_10(data)
-        elif format == 12:
+        elif _fmt == 12:
             return self._parse_cmap_format_12(data)
-        elif format == 13:
+        elif _fmt == 13:
             return self._parse_cmap_format_13(data)
-        elif format == 14:
+        elif _fmt == 14:
             return self._parse_cmap_format_14(data)
         return False
 

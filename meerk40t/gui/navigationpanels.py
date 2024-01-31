@@ -305,8 +305,8 @@ class TimerButtons:
         self._interval = value
 
     def add_button(self, button, routine):
-        id = button.GetId()
-        self.timer_buttons[id] = (button, routine)
+        _id = button.GetId()
+        self.timer_buttons[_id] = (button, routine)
         button.Bind(wx.EVT_LEFT_DOWN, self.on_button_down)
         button.Bind(wx.EVT_LEFT_UP, self.on_button_up)
         button.Bind(wx.EVT_LEAVE_WINDOW, self.on_button_lost)
@@ -315,10 +315,10 @@ class TimerButtons:
     def execute(self, button):
         if button is None:
             return
-        id = button.GetId()
-        if id not in self.timer_buttons:
+        _id = button.GetId()
+        if _id not in self.timer_buttons:
             return
-        action = self.timer_buttons[id][1]
+        action = self.timer_buttons[_id][1]
         if action is None:
             return
         action()

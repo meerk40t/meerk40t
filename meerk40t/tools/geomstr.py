@@ -4466,17 +4466,17 @@ class Geomstr:
     #######################
 
     def as_path(self):
-        open = True
+        _open = True
         path = Path()
         for p in self.segments[: self.index]:
             s, c0, i, c1, e = p
             if np.real(i) == TYPE_END:
-                open = True
+                _open = True
                 continue
 
-            if open or len(path) == 0 or path.current_point != s:
+            if _open or len(path) == 0 or path.current_point != s:
                 path.move(s)
-                open = False
+                _open = False
             if np.real(i) == TYPE_LINE:
                 path.line(e)
             elif np.real(i) == TYPE_QUAD:
