@@ -6,13 +6,13 @@ from os.path import basename, exists, join, realpath, splitext
 
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.node.node import Fillrule
-from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MIL, Length
+from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.kernel import get_safe_path
-from meerk40t.svgelements import Color
 from meerk40t.tools.geomstr import BeamTable, Geomstr
 from meerk40t.tools.jhfparser import JhfFont
 from meerk40t.tools.shxparser import ShxFont, ShxFontParseError
-from meerk40t.tools.ttfparser import TrueTypeFont
+from meerk40t.tools.ttfparser import TrueTypeFont, TTFParsingError
+
 
 # import numpy as np
 
@@ -170,7 +170,7 @@ class Meerk40tFonts:
     def _get_full_info(self, short):
         if not isinstance(short, str):
             # That's strange...
-            print (f"gfi, Short is a {type(short).__name__}: {short}")
+            # print(f"gfi, Short is a {type(short).__name__}: {short}")
             if isinstance(short, (list, tuple)):
                 short = short[0]
             else:
@@ -193,7 +193,7 @@ class Meerk40tFonts:
     def face_to_full_name(self, short):
         if not isinstance(short, str):
             # That's strange...
-            print (f"f2f, Short is a {type(short).__name__}: {short}")
+            # print(f"f2f, Short is a {type(short).__name__}: {short}")
             if isinstance(short, (list, tuple)):
                 short = short[0]
             else:
@@ -217,7 +217,7 @@ class Meerk40tFonts:
     def short_name(self, fullname):
         if not isinstance(fullname, str):
             # That's strange...
-            print (f"2n, fullname is a {type(fullname).__name__}: {fullname}")
+            # print(f"2n, fullname is a {type(fullname).__name__}: {fullname}")
             if isinstance(fullname, (list, tuple)):
                 short = fullname[0]
             else:
@@ -241,8 +241,10 @@ class Meerk40tFonts:
             # print ("unknown fonttype, exit")
             return
         # print("Nearly there, all fonts checked...")
-        cfont = fontclass(fontname)
-
+        try:
+            cfont = fontclass(fontname)
+        except (TTFParsingError, ShxFontParseError):
+            return None
         return cfont
 
     def validate_node(self, node):
@@ -377,6 +379,51 @@ class Meerk40tFonts:
         # _t4 = perf_counter()
         # print (f"Readfont: {_t1 -_t0:.2f}s, render: {_t2 -_t1:.2f}s, path: {_t3 -_t2:.2f}s, alter: {_t4 -_t3:.2f}s, total={_t4 -_t0:.2f}s")
 
+    def _validate_font(self, font):
+        """
+        Check if the given font value is valid.
+
+        @param font:
+        @return:
+        """
+        if not font:
+            return False
+        # Let's check whether it's valid...
+        font_path = self.full_name(font)
+        if not font_path:
+            # Font isn't found as processed.
+            return False
+        try:
+            self.cached_fontclass(font_path)
+        except TTFParsingError:
+            # Font could not parse.
+            return False
+        return True
+
+    def _try_candidates(self):
+        # No preferred font set, let's try a couple of candidates...
+        candidates = (
+            "arial.ttf",
+            "opensans_regular.ttf",
+            "timesr.jhf",
+            "romant.shx",
+            "rowmans.jhf",
+            "FUTURA.SHX",
+        )
+        for fname in candidates:
+            if self._validate_font(fname):
+                return self.full_name(fname)
+        return None
+
+    def _try_availible(self):
+        if not self.available_fonts():
+            return None
+        for i, font in enumerate(self._available_fonts):
+            candidate = font[0]
+            if self._validate_font(candidate):
+                return candidate
+        return None
+
     def create_linetext_node(
         self, x, y, text, font=None, font_size=None, font_spacing=1.0
     ):
@@ -385,96 +432,49 @@ class Meerk40tFonts:
         if font_spacing is None:
             font_spacing = 1
         self.context.setting(str, "last_font", "")
-        # Check whether the default is still valid
-        if self.context.last_font:
-            dummy = self.full_name(self.context.last_font)
-            if dummy is None:
-                self.context.last_font = None
-        # Valid font?
-        if font:
-            dummy = self.full_name(font)
-            if dummy is None:
+        if not self._validate_font(font):
+            # Is the given font valid?
+            font = None
+        if not font:
+            # No valid font, try last font.
+            font = self.context.last_font
+            if not self._validate_font(font):
                 font = None
-        if font is not None:
-            self.context.last_font = font
-        else:
-            if self.context.last_font is not None:
-                #  print (f"Fallback to {context.last_font}")
-                font = self.context.last_font
-        # Still not valid?
-        if font is None or font == "":
-            font = ""
-            # No preferred font set, let's try a couple of candidates...
-            candidates = (
-                "arial.ttf",
-                "opensans_regular.ttf",
-                "timesr.jhf",
-                "romant.shx",
-                "rowmans.jhf",
-                "FUTURA.SHX",
-            )
-            for fname in candidates:
-                dummy = self.full_name(fname)
-                if dummy is not None:
-                    # print (f"Taking font {fname} instead")
-                    font = dummy
-                    self.context.last_font = font
-                    break
-            if font:
-                # Let's check whether it's valid...
-                font_path = self.full_name(font)
-                try:
-                    cfont = self.cached_fontclass(font_path)
-                except Exception as e:
-                    font = ""
-                    # print (f"Encountered error {e} for {font_path}")
-            if font == "":
-                # You know, I take anything at this point...
-                if self.available_fonts():
-                    idx = 0
-                    while not font and idx < len(self._available_fonts):
-                        candidate = self._available_fonts[idx]
-                        try:
-                            cfont = self.cached_fontclass(candidate)
-                            font = candidate
-                            # print (f"Fallback to first file found: {font}")
-                            self.context.last_font = font
-                            break
-                        except Exception:
-                            pass
-                        idx += 1
+        if not font:
+            # Still not valid? Try preselected candidates.
+            font = self._try_candidates()
+        if not font:
+            # You know, I take anything at this point...
+            font = self._try_availible()
+        # We tried everything if there is a font, set it to last_font.
+        self.context.last_font = font
 
-        if font is None or font == "":
-            # print ("Font was empty")
+        if not font:
+            # No font could be located.
             return None
+
+        # We have our valid font.
         font_path = self.full_name(font)
         font = self.short_name(font)
         horizontal = True
-        try:
-            cfont = self.cached_fontclass(font_path)
-        except Exception as e:
-            # print (f"Encountered error {e} for {font_path}")
-            cfont = None
-        if cfont is None:
-            # This font does not exist in our environment
-            return
+        cfont = self.cached_fontclass(font_path)
         weld = False
+
+        # Render the font.
         try:
             path = FontPath(weld)
             # print (f"Path={path}, text={remainder}, font-size={font_size}")
             mytext = self.context.elements.wordlist_translate(text)
             cfont.render(path, mytext, horizontal, float(font_size), font_spacing)
         except ShxFontParseError as e:
-            # print(f"FontParseError {e.args}")
             return
-        #  print (f"Pathlen={len(path.path)}")
-        # if len(path.path) == 0:
-        #     print("Empty path...")
-        #     return None
 
+        # Create the node.
         path_node = PathNode(
             geometry=path.geometry,
-            stroke=Color("black"),
+            stroke=self.context.elements.default_stroke,
+            stroke_width=self.context.elements.default_strokewidth,
+            fill=self.context.elements.default_fill,
             fillrule=Fillrule.FILLRULE_NONZERO,
         )
         path_node.matrix.post_translate(x, y)
@@ -488,7 +488,6 @@ class Meerk40tFonts:
         path_node._translated_text = mytext
         path_node.mkcoordx = x
         path_node.mkcoordy = y
-        path_node.stroke_width = UNITS_PER_MIL
 
         return path_node
 
@@ -689,6 +688,7 @@ def plugin(kernel, lifecycle):
             directories.append("/usr/local/share/fonts")
             directories.append("~/.local/share/fonts")
         elif systype == "Darwin":
+            directories.append("/System/Library/Fonts")
             directories.append("/Library/Fonts")
             directories.append("~/Library/Fonts")
         choices = [

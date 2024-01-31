@@ -14,9 +14,12 @@ WE_HAVE_INSTRUCTIONS = 1 << 8
 USE_MY_METRICS = 1 << 9
 OVERLAP_COMPOUND = 1 << 10
 
+class TTFParsingError(ValueError):
+    """Parsing error"""
+
 
 class TrueTypeFont:
-    def __init__(self, filename):
+    def __init__(self, filename, require_checksum=False):
         self._raw_tables = {}
         self.version = None
         self.font_revision = None
@@ -57,7 +60,9 @@ class TrueTypeFont:
         self.horizontal_metrics = None
 
         self.is_okay = False
-        self.parse_ttf(filename)
+        self.parse_ttf(filename, require_checksum=require_checksum)
+        if b"CFF " in self._raw_tables and b"glyf" not in self._raw_tables and b"loca" not in self._raw_tables:
+            raise TTFParsingError("Format CFF font file is not supported.")
         self.parse_head()
         self.parse_hhea()
         self.parse_hmtx()
@@ -160,7 +165,15 @@ class TrueTypeFont:
                     index = self._character_map.get(c, 0)
                     if index >= len(self.glyph_data):
                         continue
-                    advance_x = self.horizontal_metrics[index][0] * h_spacing
+                    if index >= len(self.horizontal_metrics):
+                        # print (f"Horizontal metrics has {len(self.horizontal_metrics)} elements, requested index {index}")
+                        advance_x = self.units_per_em * h_spacing
+                    else:
+                        hm = self.horizontal_metrics[index]
+                        if isinstance(hm, (list, tuple)):
+                            advance_x = hm[0] * h_spacing
+                        else:
+                            advance_x = hm * h_spacing
                     advance_y = 0
                     glyph = self.glyph_data[index]
                     if self.active:
@@ -262,7 +275,9 @@ class TrueTypeFont:
                 if require_checksum:
                     for b, byte in enumerate(data):
                         checksum -= byte << 24 - (8 * (b % 4))
-                    assert tag == b"head" or checksum % (1 << 32) == 0
+                    if tag == b"head":
+                        if checksum % (1 << 32) != 0:
+                            raise TTFParsingError(f"invalid checksum: {checksum % (1 << 32)} != 0")
                 self._raw_tables[tag] = data
 
     def parse_head(self):
@@ -298,7 +313,7 @@ class TrueTypeFont:
             struct.unpack(">HHI", data.read(8)) for _ in range(subtables)
         ]:
             cmaps[(platform_id, platform_specific_id)] = offset
-        for p in ((3, 10), (0, 6), (0, 4), (3, 1), (0, 3), (0, 2), (0, 1), (0, 0)):
+        for p in ((3, 10), (0, 6), (0, 4), (3, 1), (0, 3), (0, 2), (0, 1), (0, 0), (3, 0)):
             if p in cmaps:
                 data.seek(cmaps[p])
                 parsed = self._parse_cmap_table(data)
@@ -362,6 +377,8 @@ class TrueTypeFont:
             start = starts[seg]
             delta = deltas[seg]
             offset = offsets[seg]
+            if start == end and end == 0xFFFF:
+                break
 
             for c in range(start, end + 1):
                 if offset == 0:
