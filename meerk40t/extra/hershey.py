@@ -401,6 +401,14 @@ class Meerk40tFonts:
             if self.context.last_font is not None:
                 #  print (f"Fallback to {context.last_font}")
                 font = self.context.last_font
+        if font:
+            # Let's check whether it's valid...
+            font_path = self.full_name(font)
+            try:
+                cfont = self.cached_fontclass(font_path)
+            except Exception as e:
+                font = ""
+                # print (f"Encountered error {e} for {font_path}")
         # Still not valid?
         if font is None or font == "":
             font = ""
