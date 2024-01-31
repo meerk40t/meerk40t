@@ -64,7 +64,10 @@ class PointMoveTool(ToolWidget):
             Indicator how to proceed with this event after its execution (consume, chain etc)
         """
         try:
-            pos = complex(*space_pos[:2])
+            if nearest_snap is None:
+                pos = complex(*space_pos[:2])
+            else:
+                pos = complex(*nearest_snap[:2])
         except TypeError:
             return RESPONSE_CONSUME
         self.current_pos = pos
@@ -72,6 +75,8 @@ class PointMoveTool(ToolWidget):
         if event_type == "leftdown":
             if not self.points:
                 return RESPONSE_DROP
+            self.scene.pane.tool_active = True
+            self.scene.pane.modif_active = True
             offset = self.pt_offset
             s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
             offset /= s

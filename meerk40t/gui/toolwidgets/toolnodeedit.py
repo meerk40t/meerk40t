@@ -1913,8 +1913,12 @@ class EditTool(ToolWidget):
                     return RESPONSE_CONSUME
                 current = self.nodes[self.selected_index]
                 pt = current["point"]
+                if nearest_snap is None:
+                    spt = Point(space_pos[0], space_pos[1])
+                else:
+                    spt = Point(nearest_snap[0], nearest_snap[1])
 
-                m = self.element.matrix.point_in_inverse_space(space_pos[:2])
+                m = self.element.matrix.point_in_inverse_space(spt)
                 # Special treatment for the virtual midpoint:
                 if current["type"] == "midpoint" and self.node_type == "path":
                     self.scene.context.signal(
