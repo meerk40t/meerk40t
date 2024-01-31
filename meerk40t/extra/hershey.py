@@ -433,8 +433,8 @@ class Meerk40tFonts:
                 if self.available_fonts():
                     idx = 0
                     while not font and idx < len(self._available_fonts):
-                        candidate = self._available_fonts[idx]
                         try:
+                            candidate = self._available_fonts[idx][0]
                             cfont = self.cached_fontclass(candidate)
                             font = candidate
                             # print (f"Fallback to first file found: {font}")
