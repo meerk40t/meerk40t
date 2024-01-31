@@ -1,5 +1,3 @@
-import re
-
 import wx
 
 from meerk40t.device.gui.defaultactions import DefaultActionPanel

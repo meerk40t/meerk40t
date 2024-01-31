@@ -8,7 +8,6 @@ import wx.lib.mixins.listctrl as listmix
 from wx import aui
 
 from meerk40t.gui.icons import (
-    STD_ICON_SIZE,
     get_default_icon_size,
     icons8_emergency_stop_button,
     icons8_pause,

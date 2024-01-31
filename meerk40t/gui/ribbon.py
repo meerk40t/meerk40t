@@ -41,13 +41,12 @@ The action is a function which is run when the button is pressed.
 """
 
 import copy
-import math
 import platform
 import threading
 
 import wx
 
-from meerk40t.gui.icons import STD_ICON_SIZE, PyEmbeddedImage
+from meerk40t.gui.icons import STD_ICON_SIZE
 from meerk40t.kernel import Job
 from meerk40t.svgelements import Color
 

@@ -16,6 +16,7 @@ from .linecut import LineCut
 from .plotcut import PlotCut
 from .quadcut import QuadCut
 
+
 class CutCode(CutGroup):
     def __init__(self, seq=(), settings=None):
         CutGroup.__init__(self, None, seq, settings=settings)

@@ -6,7 +6,6 @@ from wx import aui
 
 from ..kernel import signal_listener
 from .icons import (
-    STD_ICON_SIZE,
     get_default_icon_size,
     icon_add_new,
     icon_edit,

@@ -8,7 +8,6 @@ from ..kernel import signal_listener
 from ..svgelements import Color
 from .basicops import BasicOpPanel
 from .icons import (
-    get_default_scale_factor,
     icon_bell,
     icon_bmap_text,
     icon_canvas,

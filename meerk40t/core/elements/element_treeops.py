@@ -26,7 +26,7 @@ from meerk40t.core.treeop import (
     tree_submenu_list,
     tree_values,
 )
-from meerk40t.core.units import UNITS_PER_INCH, Length
+from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Matrix, Point
 from meerk40t.tools.geomstr import Geomstr

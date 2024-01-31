@@ -1,7 +1,6 @@
 import wx
 
 from meerk40t.gui.icons import (
-    icon_effect_hatch,
     icon_points,
     icons8_computer_support,
     icons8_direction,

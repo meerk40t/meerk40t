@@ -1,11 +1,7 @@
 import os
-import platform
-from glob import glob
-from math import isinf
 
 import wx
 
-from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import STD_ICON_SIZE, get_default_icon_size, icons8_choose_font
 from meerk40t.gui.mwindow import MWindow
