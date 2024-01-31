@@ -15,8 +15,12 @@ USE_MY_METRICS = 1 << 9
 OVERLAP_COMPOUND = 1 << 10
 
 
+class TTFParsingError(ValueError):
+    """Parsing error"""
+
+
 class TrueTypeFont:
-    def __init__(self, filename):
+    def __init__(self, filename, require_checksum=False):
         self._raw_tables = {}
         self.version = None
         self.font_revision = None
@@ -57,14 +61,24 @@ class TrueTypeFont:
         self.horizontal_metrics = None
 
         self.is_okay = False
-        self.parse_ttf(filename)
+        self.parse_ttf(filename, require_checksum=require_checksum)
+        if (
+            b"CFF " in self._raw_tables
+            and b"glyf" not in self._raw_tables
+            and b"loca" not in self._raw_tables
+        ):
+            raise TTFParsingError("Format CFF font file is not supported.")
         self.parse_head()
         self.parse_hhea()
         self.parse_hmtx()
         self.parse_loca()
         self.parse_cmap()
         self.parse_name()
-        self.glyphs = list(self.parse_glyf())
+        self.glyph_data = list(self.parse_glyf())
+
+    @property
+    def glyphs(self):
+        return list(self._character_map.keys())
 
     @staticmethod
     def query_name(filename):
@@ -137,10 +151,19 @@ class TrueTypeFont:
                         break
                 return font_family, font_subfamily, font_name
         except (OSError, FileNotFoundError, PermissionError) as e:
-            print (f"Error while reading: {e}")
+            # print (f"Error while reading: {e}")
             return None
 
-    def render(self, path, vtext, horizontal=True, font_size=12.0, h_spacing=1.0, v_spacing=1.1, align="start"):
+    def render(
+        self,
+        path,
+        vtext,
+        horizontal=True,
+        font_size=12.0,
+        h_spacing=1.0,
+        v_spacing=1.1,
+        align="start",
+    ):
         def _do_render(to_render, offsets):
             # Letter spacing
             scale = font_size / self.units_per_em
@@ -154,9 +177,19 @@ class TrueTypeFont:
                 # print (f"{offset_x}, {offset_y}: '{text}', fs={font_size}, em:{self.units_per_em}")
                 for c in text:
                     index = self._character_map.get(c, 0)
-                    advance_x = self.horizontal_metrics[index][0] * h_spacing
+                    if index >= len(self.glyph_data):
+                        continue
+                    if index >= len(self.horizontal_metrics):
+                        # print (f"Horizontal metrics has {len(self.horizontal_metrics)} elements, requested index {index}")
+                        advance_x = self.units_per_em * h_spacing
+                    else:
+                        hm = self.horizontal_metrics[index]
+                        if isinstance(hm, (list, tuple)):
+                            advance_x = hm[0] * h_spacing
+                        else:
+                            advance_x = hm * h_spacing
                     advance_y = 0
-                    glyph = self.glyphs[index]
+                    glyph = self.glyph_data[index]
                     if self.active:
                         path.new_path()
                     for contour in glyph:
@@ -168,13 +201,15 @@ class TrueTypeFont:
                         if curr[2] & ON_CURVE_POINT:
                             if self.active:
                                 path.move(
-                                    (offset_x + curr[0]) * scale, (offset_y + curr[1]) * scale
+                                    (offset_x + curr[0]) * scale,
+                                    (offset_y + curr[1]) * scale,
                                 )
                         else:
                             if next[2] & ON_CURVE_POINT:
                                 if self.active:
                                     path.move(
-                                        (offset_x + next[0]) * scale, (offset_y + next[1]) * scale
+                                        (offset_x + next[0]) * scale,
+                                        (offset_y + next[1]) * scale,
                                     )
                             else:
                                 if self.active:
@@ -197,7 +232,9 @@ class TrueTypeFont:
                             else:
                                 next2 = next
                                 if not next[2] & ON_CURVE_POINT:
-                                    next2 = (curr[0] + next[0]) / 2, (curr[1] + next[1]) / 2
+                                    next2 = (curr[0] + next[0]) / 2, (
+                                        curr[1] + next[1]
+                                    ) / 2
                                 if self.active:
                                     path.quad(
                                         None,
@@ -220,16 +257,16 @@ class TrueTypeFont:
         if not self.is_okay:
             return
         self.active = False
-        line_lengths = _do_render(vtext,  None)
+        line_lengths = _do_render(vtext, None)
         max_len = max(line_lengths)
         offsets = []
         for ll in line_lengths:
             # NB anchor not only defines the alignment of the individual
             # lines to another but as well of the whole block relative
             # to the origin
-            if align=="middle":
+            if align == "middle":
                 offs = -max_len / 2 + (max_len - ll) / 2
-            elif align=="end":
+            elif align == "end":
                 offs = -ll
             else:
                 offs = 0
@@ -256,7 +293,11 @@ class TrueTypeFont:
                 if require_checksum:
                     for b, byte in enumerate(data):
                         checksum -= byte << 24 - (8 * (b % 4))
-                    assert tag == b"head" or checksum % (1 << 32) == 0
+                    if tag == b"head":
+                        if checksum % (1 << 32) != 0:
+                            raise TTFParsingError(
+                                f"invalid checksum: {checksum % (1 << 32)} != 0"
+                            )
                 self._raw_tables[tag] = data
 
     def parse_head(self):
@@ -292,7 +333,17 @@ class TrueTypeFont:
             struct.unpack(">HHI", data.read(8)) for _ in range(subtables)
         ]:
             cmaps[(platform_id, platform_specific_id)] = offset
-        for p in ((3, 10), (0, 6), (0, 4), (3, 1), (0, 3), (0, 2), (0, 1), (0, 0)):
+        for p in (
+            (3, 10),
+            (0, 6),
+            (0, 4),
+            (3, 1),
+            (0, 3),
+            (0, 2),
+            (0, 1),
+            (0, 0),
+            (3, 0),
+        ):
             if p in cmaps:
                 data.seek(cmaps[p])
                 parsed = self._parse_cmap_table(data)
@@ -356,6 +407,8 @@ class TrueTypeFont:
             start = starts[seg]
             delta = deltas[seg]
             offset = offsets[seg]
+            if start == end and end == 0xFFFF:
+                break
 
             for c in range(start, end + 1):
                 if offset == 0:
@@ -393,11 +446,9 @@ class TrueTypeFont:
             n_groups,
         ) = struct.unpack(">HIII", data.read(14))
         for seg in range(n_groups):
-            (
-                start_char_code,
-                end_char_code,
-                start_glyph_code
-            ) = struct.unpack(">III", data.read(12))
+            (start_char_code, end_char_code, start_glyph_code) = struct.unpack(
+                ">III", data.read(12)
+            )
 
             for i, c in enumerate(range(start_char_code, end_char_code)):
                 self._character_map[chr(c)] = start_glyph_code + i
@@ -411,11 +462,9 @@ class TrueTypeFont:
             n_groups,
         ) = struct.unpack(">HIII", data.read(14))
         for seg in range(n_groups):
-            (
-                start_char_code,
-                end_char_code,
-                glyph_code
-            ) = struct.unpack(">III", data.read(12))
+            (start_char_code, end_char_code, glyph_code) = struct.unpack(
+                ">III", data.read(12)
+            )
 
             for c in enumerate(range(start_char_code, end_char_code)):
                 self._character_map[chr(c)] = glyph_code
@@ -463,7 +512,11 @@ class TrueTypeFont:
             self.horizontal_metrics.extend((last_advance, left_bearing))
 
     def parse_loca(self):
-        data = self._raw_tables[b"loca"]
+        try:
+            data = self._raw_tables[b"loca"]
+        except KeyError:
+            self._glyph_offsets = []
+            return
         if self.index_to_loc_format == 0:
             n = int(len(data) / 2)
             self._glyph_offsets = [g * 2 for g in struct.unpack(f">{n}H", data)]

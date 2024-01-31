@@ -178,7 +178,9 @@ class TipPanel(wx.Panel):
         if not have_img:
             # Let's use the default image...
             have_img = self.set_tip_image(
-                icons8_light_on.GetBitmap(resize=200), self._current_tip, self.context.tip_access_consent
+                icons8_light_on.GetBitmap(resize=200),
+                self._current_tip,
+                self.context.tip_access_consent,
             )
 
             # self.set_tip_image("", self._current_tip, self.context.tip_access_consent)
@@ -287,7 +289,7 @@ class TipPanel(wx.Panel):
         self.image_tip.SetBitmap(bmp)
         self.image_tip.Show(True)
         return True
-    
+
     def on_button_try(self, event):
         if self.tip_command:
             if self.tip_command.startswith("http"):

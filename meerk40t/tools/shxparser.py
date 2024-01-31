@@ -180,6 +180,7 @@ class ShxFont:
     """
 
     def __init__(self, filename, debug=False):
+        self.STROKE_BASED = True
         self.format = None  # format (usually AutoCAD-86)
         self.type = None  # Font type: shapes, bigfont, unifont
         self.version = None  # Font file version (usually 1.0).
@@ -348,7 +349,16 @@ class ShxFont:
         except IndexError as e:
             raise ShxFontParseError("No codes to pop()") from e
 
-    def render(self, path, vtext, horizontal=True, font_size=12.0, h_spacing=1.0, v_spacing=1.1, align="start"):
+    def render(
+        self,
+        path,
+        vtext,
+        horizontal=True,
+        font_size=12.0,
+        h_spacing=1.0,
+        v_spacing=1.1,
+        align="start",
+    ):
         def _do_render(to_render, offsets):
             if self.above is None:
                 self.above = 1
@@ -434,9 +444,9 @@ class ShxFont:
             # NB anchor not only defines the alignment of the individual
             # lines to another but as well of the whole block relative
             # to the origin
-            if align=="middle":
+            if align == "middle":
                 offs = -max_len / 2 + (max_len - ll) / 2
-            elif align=="end":
+            elif align == "end":
                 offs = -ll
             else:
                 offs = 0
@@ -940,7 +950,9 @@ class ShxFont:
                     if bulge == 0:
                         self._path.line(self._last_x, self._last_y, self._x, self._y)
                     else:
-                        self._path.arc(self._last_x, self._last_y, mx, my, self._x, self._y)
+                        self._path.arc(
+                            self._last_x, self._last_y, mx, my, self._x, self._y
+                        )
                 else:
                     self._path.move(self._x, self._y)
             self._last_x, self._last_y = self._x, self._y

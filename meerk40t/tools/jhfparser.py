@@ -53,6 +53,7 @@ class JhfFont:
     """
 
     def __init__(self, filename):
+        self.STROKE_BASED = True
         self.type = "Hershey"
         self.glyphs = dict()  # Glyph dictionary
         tempstr = os.path.basename(filename)
@@ -174,7 +175,16 @@ class JhfFont:
                     self.bottom = struct["bottom"]
             cidx += 1
 
-    def render(self, path, vtext, horizontal=True, font_size=12.0, h_spacing=1.0, v_spacing=1.1, align="start"):
+    def render(
+        self,
+        path,
+        vtext,
+        horizontal=True,
+        font_size=12.0,
+        h_spacing=1.0,
+        v_spacing=1.1,
+        align="start",
+    ):
         """
         From https://emergent.unpythonic.net/software/hershey
         The structure is basically as follows: each character consists of a number 1->4000 (not all used) in column 0:4,
@@ -224,6 +234,7 @@ class JhfFont:
                     - Highways
                     - Etc...
         """
+
         def _do_render(to_render, offsets):
             cidx = 0
             scale = font_size / 21.0
@@ -284,7 +295,9 @@ class JhfFont:
                                 penup = True
                             else:
                                 leftval = scale * (offsetx + self.hershey_val(leftchar))
-                                rightval = scale * (offsety - self.hershey_val(rightchar))
+                                rightval = scale * (
+                                    offsety - self.hershey_val(rightchar)
+                                )
                                 if penup:
                                     if self.active:
                                         path.move(leftval, rightval)
@@ -317,9 +330,9 @@ class JhfFont:
             # NB anchor not only defines the alignment of the individual
             # lines to another but as well of the whole block relative
             # to the origin
-            if align=="middle":
+            if align == "middle":
                 offs = -max_len / 2 + (max_len - ll) / 2
-            elif align=="end":
+            elif align == "end":
                 offs = -ll
             else:
                 offs = 0

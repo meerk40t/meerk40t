@@ -277,6 +277,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
     def set_color_according_to_state(self, stateval, control):
         def color_distance(c1, c2):
             from math import sqrt
+
             red_mean = int((c1.red + c2.red) / 2.0)
             r = c1.red - c2.red
             g = c1.green - c2.green
@@ -290,7 +291,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
 
         state_colors = {
             "STATE_CONNECTION_FAILED": wx.Colour("#dfdf00"),
-            "STATE_FAILED_RETRYING":  wx.Colour("#df0000"),
+            "STATE_FAILED_RETRYING": wx.Colour("#df0000"),
             "STATE_FAILED_SUSPENDED": wx.Colour("#0000df"),
             "STATE_DRIVER_NO_BACKEND": wx.Colour("#dfdf00"),
             "STATE_UNINITIALIZED": wx.Colour("#ffff00"),

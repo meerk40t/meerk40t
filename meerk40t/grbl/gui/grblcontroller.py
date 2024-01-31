@@ -206,6 +206,7 @@ class GRBLControllerPanel(wx.Panel):
     def set_color_according_to_state(self, stateval, control):
         def color_distance(c1, c2):
             from math import sqrt
+
             red_mean = int((c1.red + c2.red) / 2.0)
             r = c1.red - c2.red
             g = c1.green - c2.green
@@ -216,12 +217,13 @@ class GRBLControllerPanel(wx.Panel):
                 + (((767 - red_mean) * b * b) >> 8)
             )
             return sqrt(distance_sq)
+
         if stateval is None:
-            stateval =  "UNINITIALIZED"
+            stateval = "UNINITIALIZED"
         stateval = stateval.upper()
         state_colors = {
             "UNINITIALIZED": wx.Colour("#ffff00"),
-            "DISCONNECTED":  wx.Colour("#ffff00"),
+            "DISCONNECTED": wx.Colour("#ffff00"),
             "CONNECTED": wx.Colour("#00ff00"),
             "STATE_DRIVER_NO_BACKEND": wx.Colour("#dfdf00"),
             "STATE_UNINITIALIZED": wx.Colour("#ffff00"),

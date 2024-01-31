@@ -179,6 +179,14 @@ class RasterOpNode(Node, Parameters):
     def has_attributes(self):
         return "stroke" in self.allowed_attributes or "fill" in self.allowed_attributes
 
+    def is_referenced(self, node):
+        for e in self.children:
+            if e is node:
+                return True
+            if hasattr(e, "node") and e.node is node:
+                return True
+        return False
+
     def valid_node_for_reference(self, node):
         if node.type in self._allowed_elements_dnd:
             return True
@@ -202,6 +210,10 @@ class RasterOpNode(Node, Parameters):
                 else:
                     result = col1 == col2
             return result
+
+        if self.is_referenced(node):
+            # No need to add it again...
+            return False, False, None
 
         feedback = []
         if node.type in self._allowed_elements:

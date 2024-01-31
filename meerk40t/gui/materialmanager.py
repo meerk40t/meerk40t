@@ -2069,18 +2069,18 @@ class MaterialPanel(ScrolledPanel):
                 # print (f"Remove {sect}")
                 nkey = newkey()
                 for info in settings.keylist(sect):
-                    secdesc = settings.read_persistent(
-                        str, sect, info, ""
-                    )
+                    secdesc = settings.read_persistent(str, sect, info, "")
                     if info == "id":
                         continue
                     elif info == "label":
                         idx = 0
-                        if secdesc.endswith(")") and secdesc[-2] in (str(i) for i in range(0,10)):
+                        if secdesc.endswith(")") and secdesc[-2] in (
+                            str(i) for i in range(0, 10)
+                        ):
                             i = secdesc.rfind("(")
                             if i >= 0:
                                 try:
-                                    s = secdesc[i+1:]
+                                    s = secdesc[i + 1 :]
                                     t = secdesc[:i]
                                     idx = int(s[:-1])
                                     secdesc = t
@@ -2272,7 +2272,7 @@ class MaterialPanel(ScrolledPanel):
             "speed": "140",
             "power": "1000",
             "label": "Raster",
-            "color": "#000000"
+            "color": "#000000",
         }
         if self.is_balor:
             op_dict["frequency"] = "35"
@@ -2283,7 +2283,7 @@ class MaterialPanel(ScrolledPanel):
             "speed": "50",
             "power": "1000",
             "label": "Engrave",
-            "color": "#0000FF"
+            "color": "#0000FF",
         }
         if self.is_balor:
             op_dict["frequency"] = "35"
@@ -2294,7 +2294,7 @@ class MaterialPanel(ScrolledPanel):
             "speed": "5",
             "power": "1000",
             "label": "Cut",
-            "color": "#FF0000"
+            "color": "#FF0000",
         }
         if self.is_balor:
             op_dict["frequency"] = "35"
@@ -2325,7 +2325,9 @@ class MaterialPanel(ScrolledPanel):
         if self.list_preview.GetItemCount() > 0:
             menu.AppendSeparator()
 
-            item = menu.Append(wx.ID_ANY, _("Fill missing ids/label"), "", wx.ITEM_NORMAL)
+            item = menu.Append(
+                wx.ID_ANY, _("Fill missing ids/label"), "", wx.ITEM_NORMAL
+            )
             self.Bind(wx.EVT_MENU, on_menu_popup_missing, item)
 
         self.PopupMenu(menu)

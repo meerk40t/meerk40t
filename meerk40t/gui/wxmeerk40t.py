@@ -952,6 +952,10 @@ class wxMeerK40t(wx.App, Module):
             kernel.register("wxpane/debug_icons", register_panel_icon)
             kernel.register("wxpane/debug_shutdown", register_panel_crash)
 
+            from meerk40t.gui.utilitywidgets.debugwidgets import register_widget_icon
+
+            register_widget_icon(kernel.root)
+
         @context.console_argument("sure", type=str, help="Are you sure? 'yes'?")
         @context.console_command("nuke_settings", hidden=True)
         def nuke_settings(command, channel, _, sure=None, **kwargs):
