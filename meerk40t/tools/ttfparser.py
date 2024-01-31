@@ -20,7 +20,7 @@ class TTFParsingError(ValueError):
 
 
 class TrueTypeFont:
-    def __init__(self, filename):
+    def __init__(self, filename, require_checksum=False):
         self._raw_tables = {}
         self.version = None
         self.font_revision = None
@@ -61,7 +61,7 @@ class TrueTypeFont:
         self.horizontal_metrics = None
 
         self.is_okay = False
-        self.parse_ttf(filename)
+        self.parse_ttf(filename, require_checksum=require_checksum)
         self.parse_head()
         self.parse_hhea()
         self.parse_hmtx()
