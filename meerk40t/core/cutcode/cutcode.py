@@ -1,11 +1,3 @@
-from ...svgelements import Color, Path, Point
-from .cubiccut import CubicCut
-from .cutgroup import CutGroup
-from .dwellcut import DwellCut
-from .linecut import LineCut
-from .plotcut import PlotCut
-from .quadcut import QuadCut
-
 """
 Cutcode is a list of cut objects. These are line, quad, cubic, arc, and raster. And anything else that should be
 considered a laser primitive. These are disjointed objects. If the distance between one and the next exist the laser
@@ -17,6 +9,12 @@ properties for that cuts may need or use. Or which may be used by the CutPlanner
 are references to settings which may be shared by all CutObjects created by a LaserOperation.
 """
 
+from ...svgelements import Color, Path, Point
+from .cubiccut import CubicCut
+from .cutgroup import CutGroup
+from .linecut import LineCut
+from .plotcut import PlotCut
+from .quadcut import QuadCut
 
 class CutCode(CutGroup):
     def __init__(self, seq=(), settings=None):
