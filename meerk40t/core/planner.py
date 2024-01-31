@@ -479,7 +479,7 @@ class Planner(Service):
                                         except ValueError:
                                             setvalue = 0
                                     if mask != 0 or setvalue != 0:
-                                        addop = OutputOperation(mask, setvalue)
+                                        addop = OutputOperation(output_mask=mask, output_value=setvalue)
                             elif optype == "util goto":
                                 if opparam is not None:
                                     params = opparam.split(",")
