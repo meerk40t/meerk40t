@@ -2,6 +2,7 @@
 Routines to check for issues in the design and to give some
 warnings to the user
 """
+from copy import copy
 
 import wx
 
