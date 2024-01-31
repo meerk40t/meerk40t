@@ -18,7 +18,6 @@ from ..svgelements import (
     SVG_ATTR_CENTER_X,
     SVG_ATTR_CENTER_Y,
     SVG_ATTR_DATA,
-    SVG_ATTR_DISPLAY,
     SVG_ATTR_FILL,
     SVG_ATTR_FILL_OPACITY,
     SVG_ATTR_FONT_FAMILY,

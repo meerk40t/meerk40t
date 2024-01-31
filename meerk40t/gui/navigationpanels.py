@@ -8,7 +8,6 @@ from wx import aui
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
 from meerk40t.gui.icons import (
-    STD_ICON_SIZE,
     EmptyIcon,
     get_default_icon_size,
     icon_circled_1,

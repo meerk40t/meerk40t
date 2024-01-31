@@ -1,7 +1,6 @@
 import wx
 
 from meerk40t.gui.icons import (
-    STD_ICON_SIZE,
     icon_bell,
     icon_close_window,
     icon_console,

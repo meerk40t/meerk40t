@@ -11,9 +11,6 @@ from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
-from meerk40t.core.node.util_input import InputOperation
-from meerk40t.core.node.util_output import OutputOperation
-from meerk40t.core.node.util_wait import WaitOperation
 from meerk40t.core.units import Angle, Length
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Color, Matrix

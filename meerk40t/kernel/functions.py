@@ -389,7 +389,7 @@ def _cmd_cli_parser(
     """
     Parser for console command events.
 
-    @param text:
+    @param argv:
     @return:
     """
     for text in argv:

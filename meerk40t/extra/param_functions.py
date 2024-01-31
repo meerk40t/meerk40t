@@ -3,7 +3,6 @@ This module exposes a couple of routines to create shapes,
 that have additional functional parameters set to allow
 parametric editing
 """
-import copy
 import math
 
 from meerk40t.core.units import Angle, Length

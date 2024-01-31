@@ -2,7 +2,6 @@ import datetime
 import os
 import platform
 import sys
-from copy import copy
 from functools import partial
 
 import wx
@@ -30,17 +29,10 @@ from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
 from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
 from meerk40t.kernel import lookup_listener, signal_listener
 
-from ..core.units import (
-    DEFAULT_PPI,
-    UNITS_PER_INCH,
-    UNITS_PER_MM,
-    UNITS_PER_PIXEL,
-    Length,
-)
+from ..core.units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from ..svgelements import Color, Matrix, Path
 from .icons import (  # icon_duplicate,; icon_nohatch,
     STD_ICON_SIZE,
-    PyEmbeddedImage,
     icon_bmap_text,
     icon_cag_common,
     icon_cag_subtract,
@@ -64,10 +56,7 @@ from .icons import (  # icon_duplicate,; icon_nohatch,
     icon_mk_rectangular,
     icon_mk_redo,
     icon_mk_undo,
-    icon_paint_brush,
-    icon_paint_brush_green,
     icon_power_button,
-    icon_warning,
     icons8_centerh,
     icons8_centerv,
     icons8_circled_left,
