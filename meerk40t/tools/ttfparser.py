@@ -62,6 +62,8 @@ class TrueTypeFont:
 
         self.is_okay = False
         self.parse_ttf(filename, require_checksum=require_checksum)
+        if b"CFF " in self._raw_tables and b"glyf" not in self._raw_tables and b"loca" not in self._raw_tables:
+            raise TTFParsingError("Format CFF font file is not supported.")
         self.parse_head()
         self.parse_hhea()
         self.parse_hmtx()
