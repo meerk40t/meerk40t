@@ -188,6 +188,7 @@ class RuidaControl:
         Opens a Lightburn Bridge LB2RD Protocol connection at port 5005.
 
         @param jog:
+        @param verbose:
         @return:
         """
 
@@ -247,6 +248,7 @@ class RuidaControl:
         @param verbose:
         @param man_in_the_middle:
         @param jog: Should open jog udp ports too.
+        @param bridge: use bridging mode
         @return:
         """
         self.verbose = verbose

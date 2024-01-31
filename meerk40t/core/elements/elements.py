@@ -1212,6 +1212,7 @@ class Elemental(Service):
 
         @param name:
         @param oplist:
+        @param opinfo:
         @param inform:
         @param use_settings:
         @param flush:
