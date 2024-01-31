@@ -647,8 +647,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if data is not None:
                     if data_type == str:
                         control.SetSelection(0)
-                        for i, c in enumerate(choice_list):
-                            if c == data:
+                        for _c in choice_list:
+                            if _c == data:
                                 control.SetSelection(i)
                     else:
                         control.SetSelection(int(data))
