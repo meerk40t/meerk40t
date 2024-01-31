@@ -1247,11 +1247,6 @@ def short_travel_cutcode_2opt(
     @param channel: Channel to send data about the optimization process.
     @return:
     """
-    try:
-        import numpy as np
-    except ImportError:
-        return context
-
     if channel:
         start_length = context.length_travel(True)
         start_time = time()
