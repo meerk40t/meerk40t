@@ -370,6 +370,8 @@ class TrueTypeFont:
             start = starts[seg]
             delta = deltas[seg]
             offset = offsets[seg]
+            if start == end and end == 0xFFFF:
+                break
 
             for c in range(start, end + 1):
                 if offset == 0:
