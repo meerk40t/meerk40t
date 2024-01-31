@@ -15,8 +15,7 @@ USE_MY_METRICS = 1 << 9
 OVERLAP_COMPOUND = 1 << 10
 
 class TTFParsingError(ValueError):
-    def __init__(self, *args):
-        ValueError.__init__(*args)
+    """Parsing error"""
 
 
 class TrueTypeFont:
