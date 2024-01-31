@@ -475,6 +475,7 @@ class Meerk40tFonts:
         path_node = PathNode(
             geometry=path.geometry,
             stroke=Color("black"),
+            stroke_width=self.context.elements.default_strokewidth,
             fillrule=Fillrule.FILLRULE_NONZERO,
         )
         path_node.matrix.post_translate(x, y)
@@ -488,7 +489,6 @@ class Meerk40tFonts:
         path_node._translated_text = mytext
         path_node.mkcoordx = x
         path_node.mkcoordy = y
-        path_node.stroke_width = UNITS_PER_MIL
 
         return path_node
 
