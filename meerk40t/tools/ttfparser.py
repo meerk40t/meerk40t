@@ -14,6 +14,10 @@ WE_HAVE_INSTRUCTIONS = 1 << 8
 USE_MY_METRICS = 1 << 9
 OVERLAP_COMPOUND = 1 << 10
 
+class TTFParsingError(ValueError):
+    def __init__(self):
+        pass
+
 
 class TrueTypeFont:
     def __init__(self, filename):
@@ -270,7 +274,9 @@ class TrueTypeFont:
                 if require_checksum:
                     for b, byte in enumerate(data):
                         checksum -= byte << 24 - (8 * (b % 4))
-                    assert tag == b"head" or checksum % (1 << 32) == 0
+                    if tag == b"head":
+                        if checksum % (1 << 32) != 0:
+                            raise TTFParsingError(f"invalid checksum: {checksum % (1 << 32)} != 0")
                 self._raw_tables[tag] = data
 
     def parse_head(self):
