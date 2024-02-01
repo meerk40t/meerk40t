@@ -705,7 +705,7 @@ class Elemental(Service):
                 yield e
 
     def have_unassigned_elements(self):
-        for node in self.unassigned_elements():
+        for _ in self.unassigned_elements():
             return True
         return False
 
@@ -1936,7 +1936,7 @@ class Elemental(Service):
         """
         Returns whether any element is emphasized
         """
-        for e in self.elems_nodes(emphasized=True):
+        for _ in self.elems_nodes(emphasized=True):
             return True
         return False
 

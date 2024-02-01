@@ -126,8 +126,8 @@ class Camera(Service):
         N_OK = len(self._object_points)
         K = np.zeros((3, 3))
         D = np.zeros((4, 1))
-        rvecs = [np.zeros((1, 1, 3), dtype=np.float64) for i in range(N_OK)]
-        tvecs = [np.zeros((1, 1, 3), dtype=np.float64) for i in range(N_OK)]
+        rvecs = [np.zeros((1, 1, 3), dtype=np.float64) for _i in range(N_OK)]
+        tvecs = [np.zeros((1, 1, 3), dtype=np.float64) for _i in range(N_OK)]
         try:
             rms, a, b, c, d = cv2.fisheye.calibrate(
                 self._object_points,

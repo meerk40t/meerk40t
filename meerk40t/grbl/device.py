@@ -734,12 +734,6 @@ class GRBLDevice(Service, Status):
                 except IndexError:
                     return
 
-            def timed_fire():
-                yield "wait_finish"
-                yield "laser_on"
-                yield "wait", time
-                yield "laser_off"
-
             if self.spooler.is_idle:
                 self.driver.laser_on(power=1000, speed=1000)
                 sleep(time / 1000)

@@ -255,7 +255,7 @@ class WarpEffectNode(Node, FunctionalParameter):
             return
         self.mkparam = value
         if self.mkparam:
-            method = self.mkparam[0]
+            # method = self.mkparam[0]
 
             n1 = self.p1 + self.d1
             n2 = self.p2 + self.d2

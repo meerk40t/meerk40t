@@ -99,7 +99,6 @@ def hardware_settings(code):
 
 
 def grbl_error_code(code):
-    long = ""
     short = f"Error #{code}"
     if code == 1:
         long = "GCode Command letter was not found."
@@ -656,7 +655,7 @@ class GrblController:
                 try:
                     cmd_issued = self.get_forward_command()
                     cmd_issued = cmd_issued.decode(encoding="latin-1")
-                except ValueError as e:
+                except ValueError:
                     # We got an ok. But, had not sent anything.
                     self.log(
                         f"Response: {response}, but this was unexpected", type="event"
@@ -679,7 +678,7 @@ class GrblController:
                 try:
                     cmd_issued = self.get_forward_command()
                     cmd_issued = cmd_issued.decode(encoding="latin-1")
-                except ValueError as e:
+                except ValueError:
                     cmd_issued = ""
                 try:
                     error_num = int(response[6:])
