@@ -387,6 +387,8 @@ class RotationWidget(Widget):
         elif self.index == 3:  # bl
             signx = -1
             signy = +1
+        else:
+            raise ValueError("Selection location was not valid.")
 
         # Well, I would have liked to draw a proper arc via dc.DrawArc but the DeviceContext is not available here(?)
         segment = []

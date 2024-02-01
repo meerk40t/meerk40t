@@ -241,7 +241,8 @@ class MeerK40t(MWindow):
             command = "check_for_updates --verbosity 2\n"
         elif self.context.update_check == 2:
             command = "check_for_updates --beta --verbosity 2\n"
-        doit = True
+        else:
+            raise ValueError("Invalid check setting")
         lastdate = None
         lastcall = self.context.setting(int, "last_update_check", None)
         if lastcall is not None:
@@ -255,13 +256,12 @@ class MeerK40t(MWindow):
             # print (f"Delta: {delta.days}, lastdate={lastdate}, interval={self.context.update_frequency}")
             if self.context.update_frequency == 2 and delta.days <= 6:
                 # Weekly
-                doit = False
+                return
             elif self.context.update_frequency == 1 and delta.days <= 0:
                 # Daily
-                doit = False
-        if doit:
-            self.context.last_update_check = now.toordinal()
-            self.context(command)
+                return
+        self.context.last_update_check = now.toordinal()
+        self.context(command)
 
     def setup_statusbar_panels(self, combine):
         # if not self.context.show_colorbar:
@@ -2947,6 +2947,7 @@ class MeerK40t(MWindow):
             if not window.window_menu(None):
                 continue
             win_caption = ""
+            submenu_name = None
             try:
                 returnvalue = window.submenu()
                 if isinstance(returnvalue, str):

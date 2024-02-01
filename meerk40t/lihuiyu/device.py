@@ -529,9 +529,7 @@ class LihuiyuDevice(Service, Status):
         )
         @self.console_argument("speed", type=str, help=_("Set the driver speed."))
         @self.console_command("device_speed", help=_("Set current speed of driver."))
-        def speed(
-            command, channel, _, data=None, speed=None, difference=False, **kwgs
-        ):
+        def speed(command, channel, _, data=None, speed=None, difference=False, **kwgs):
             driver = self.device.driver
 
             if speed is None:
@@ -961,9 +959,10 @@ class LihuiyuDevice(Service, Status):
         if origin is not None and origin != self.path:
             return
         corner = self.setting(str, "home_corner")
+        home_dx = 0
+        home_dy = 0
         if corner == "auto":
-            home_dx = 0
-            home_dy = 0
+            pass
         elif corner == "top-left":
             home_dx = 1 if self.flip_x else 0
             home_dy = 1 if self.flip_y else 0

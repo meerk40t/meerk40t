@@ -1012,6 +1012,7 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
             if inner.contains and outer in inner.contains:
                 continue
             if current_pass % 50 == 0 and busy and busy.shown:
+                # Can't execute without kernel, reference before assignment is safe.
                 message = _("Pass {cpass}/{tpass}").format(
                     cpass=current_pass, tpass=total_pass
                 )

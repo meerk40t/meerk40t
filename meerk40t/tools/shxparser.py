@@ -62,8 +62,8 @@ def read_int_32le(stream):
 
 
 def read_string(stream):
+    bb = bytearray()
     try:
-        bb = bytearray()
         while True:
             b = stream.read(1)
             if b == b"":

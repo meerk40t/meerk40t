@@ -901,6 +901,8 @@ class Drag(wx.Panel):
         elif self.lockmode == 5:  # center
             orgx = (bb[0] + bb[2]) / 2
             orgy = (bb[1] + bb[3]) / 2
+        else:
+            raise ValueError("Invalid Lockmode.")
         dx = pos[2] - orgx
         dy = pos[3] - orgy
 
@@ -1186,18 +1188,20 @@ class Jog(wx.Panel):
             current_x, current_y = self.context.device.current
         except AttributeError:
             self.is_confined = False
-        if self.is_confined:
-            min_x = 0
-            max_x = float(Length(self.context.device.view.width))
-            min_y = 0
-            max_y = float(Length(self.context.device.view.height))
-            # Are we outside? Then lets move back to the edge...
-            new_x = min(max_x, max(min_x, current_x))
-            new_y = min(max_y, max(min_y, current_y))
-            if new_x != current_x or new_y != current_y:
-                self.context(
-                    f".move_absolute {Length(amount=new_x).mm:.3f}mm {Length(amount=new_y).mm:.3f}mm\n"
-                )
+            return
+        if not self.is_confined:
+            return
+        min_x = 0
+        max_x = float(Length(self.context.device.view.width))
+        min_y = 0
+        max_y = float(Length(self.context.device.view.height))
+        # Are we outside? Then lets move back to the edge...
+        new_x = min(max_x, max(min_x, current_x))
+        new_y = min(max_y, max(min_y, current_y))
+        if new_x != current_x or new_y != current_y:
+            self.context(
+                f".move_absolute {Length(amount=new_x).mm:.3f}mm {Length(amount=new_y).mm:.3f}mm\n"
+            )
 
     def move_rel(self, dx, dy):
         nx, ny = get_movement(self.context, dx, dy)
