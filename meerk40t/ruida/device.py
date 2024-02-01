@@ -22,7 +22,7 @@ class RuidaDevice(Service):
     RuidaDevice is driver for the Ruida Controllers
     """
 
-    def __init__(self, kernel, path, *args, choices=None, **kwargs):
+    def __init__(self, kernel, path, *args, choices=None, **kwgs):
         Service.__init__(self, kernel, path)
         Status.__init__(self)
         self.name = "RuidaDevice"
@@ -408,9 +408,10 @@ class RuidaDevice(Service):
         if origin is not None and origin != self.path:
             return
         corner = self.setting(str, "home_corner")
+        home_dx = 0
+        home_dy = 0
         if corner == "auto":
-            home_dx = 0
-            home_dy = 0
+            pass
         elif corner == "top-left":
             home_dx = 1 if self.flip_x else 0
             home_dy = 1 if self.flip_y else 0

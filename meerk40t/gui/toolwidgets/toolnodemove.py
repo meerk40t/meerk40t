@@ -1,5 +1,3 @@
-import math
-
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,

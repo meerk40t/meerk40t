@@ -1947,57 +1947,58 @@ class SimulationTravelWidget(Widget):
     def process_draw(self, gc: wx.GraphicsContext):
         if not self.display:
             return
-        if len(self.pos):
-            residual = 0
-            if self.sim.progress < self.sim.max:
-                idx, residual = self.sim.progress_to_idx(self.sim.progress)
-                pos = self.pos[idx]
-                # print(f"TravelWidget, idx={idx}, residual={residual:.3f}, pos={pos}")
-            else:
-                pos = self.pos[-1]
-            if pos >= 0:
-                starts = self.starts[:pos]
-                ends = self.ends[:pos]
-                if residual > 0 and idx > 0:
-                    p1 = self.sim.cutcode[idx - 1].end
-                    p2 = self.sim.cutcode[idx - 1].start
-                    # progress = time
-                    t1 = self.sim.statistics[idx - 1]
-                    t2 = self.sim.statistics[idx]
-                    end_time = t1["time_at_end_of_travel"]
-                    # Time after travel.
-                    new_time = t2["time_at_end_of_travel"]
-                    if (
-                        t1["total_time_travel"] != t2["total_time_travel"]
-                    ):  # Travel time
-                        fact = (min(self.sim.progress, new_time) - end_time) / (
-                            new_time - end_time
-                        )
-                        newstart = wx.Point2D(p1[0], p1[1])
-                        newend = wx.Point2D(
-                            p1[0] + fact * (p2[0] - p1[0]),
-                            p1[1] + fact * (p2[1] - p1[1]),
-                        )
-                        mystarts = list()
-                        myends = list()
-                        mystarts.append(newstart)
-                        myends.append(newend)
-                        interim_pen = wx.Pen(wx.GREEN, 1, wx.PENSTYLE_DOT)
-                        gc.SetPen(interim_pen)
-                        gc.StrokeLineSegments(mystarts, myends)
-                gc.SetPen(wx.BLACK_DASHED_PEN)
-                gc.StrokeLineSegments(starts, ends)
-                # for idx, pt_start in enumerate(starts):
-                #     pt_end = ends[idx]
-                #     print (f"#{idx}: ({pt_start[0]:.0f}, {pt_start[1]:.0f}) - ({pt_end[0]:.0f}, {pt_end[1]:.0f})")
-                # starts = list()
-                # ends = list()
-                # starts.append(wx.Point2D(0, 0))
-                # ends.append(wx.Point2D(10000, 10000))
-                # starts.append(wx.Point2D(0, 10000))
-                # ends.append(wx.Point2D(10000, 0))
-                # gc.SetPen(wx.CYAN_PEN)
-                # gc.StrokeLineSegments(starts, ends)
+        if not len(self.pos):
+            return
+        residual = 0
+        idx = 0
+        if self.sim.progress < self.sim.max:
+            idx, residual = self.sim.progress_to_idx(self.sim.progress)
+            pos = self.pos[idx]
+            # print(f"TravelWidget, idx={idx}, residual={residual:.3f}, pos={pos}")
+        else:
+            pos = self.pos[-1]
+        if pos < 0:
+            return
+        starts = self.starts[:pos]
+        ends = self.ends[:pos]
+        if residual > 0 and idx > 0:
+            p1 = self.sim.cutcode[idx - 1].end
+            p2 = self.sim.cutcode[idx - 1].start
+            # progress = time
+            t1 = self.sim.statistics[idx - 1]
+            t2 = self.sim.statistics[idx]
+            end_time = t1["time_at_end_of_travel"]
+            # Time after travel.
+            new_time = t2["time_at_end_of_travel"]
+            if t1["total_time_travel"] != t2["total_time_travel"]:  # Travel time
+                fact = (min(self.sim.progress, new_time) - end_time) / (
+                    new_time - end_time
+                )
+                newstart = wx.Point2D(p1[0], p1[1])
+                newend = wx.Point2D(
+                    p1[0] + fact * (p2[0] - p1[0]),
+                    p1[1] + fact * (p2[1] - p1[1]),
+                )
+                mystarts = list()
+                myends = list()
+                mystarts.append(newstart)
+                myends.append(newend)
+                interim_pen = wx.Pen(wx.GREEN, 1, wx.PENSTYLE_DOT)
+                gc.SetPen(interim_pen)
+                gc.StrokeLineSegments(mystarts, myends)
+        gc.SetPen(wx.BLACK_DASHED_PEN)
+        gc.StrokeLineSegments(starts, ends)
+        # for idx, pt_start in enumerate(starts):
+        #     pt_end = ends[idx]
+        #     print (f"#{idx}: ({pt_start[0]:.0f}, {pt_start[1]:.0f}) - ({pt_end[0]:.0f}, {pt_end[1]:.0f})")
+        # starts = list()
+        # ends = list()
+        # starts.append(wx.Point2D(0, 0))
+        # ends.append(wx.Point2D(10000, 10000))
+        # starts.append(wx.Point2D(0, 10000))
+        # ends.append(wx.Point2D(10000, 0))
+        # gc.SetPen(wx.CYAN_PEN)
+        # gc.StrokeLineSegments(starts, ends)
 
 
 class SimReticleWidget(Widget):

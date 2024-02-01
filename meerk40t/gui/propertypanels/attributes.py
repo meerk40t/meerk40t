@@ -413,9 +413,9 @@ class LinePropPanel(wx.Panel):
     def on_cap(self, event):
         if self.node is None or self.node.lock:
             return
-        id = self.combo_cap.GetSelection()
+        _id = self.combo_cap.GetSelection()
         try:
-            self.node.linecap = id
+            self.node.linecap = _id
             self.context.signal("element_property_update", self.node)
             self.context.signal("refresh_scene", "Scene")
         except AttributeError:
@@ -424,9 +424,9 @@ class LinePropPanel(wx.Panel):
     def on_join(self, event):
         if self.node is None or self.node.lock:
             return
-        id = self.combo_join.GetSelection()
+        _id = self.combo_join.GetSelection()
         try:
-            self.node.linejoin = id
+            self.node.linejoin = _id
             self.context.signal("element_property_update", self.node)
             self.context.signal("refresh_scene", "Scene")
         except AttributeError:
@@ -435,9 +435,9 @@ class LinePropPanel(wx.Panel):
     def on_fill(self, event):
         if self.node is None or self.node.lock:
             return
-        id = self.combo_fill.GetSelection()
+        _id = self.combo_fill.GetSelection()
         try:
-            self.node.fillrule = id
+            self.node.fillrule = _id
             self.context.signal("element_property_update", self.node)
             self.context.signal("refresh_scene", "Scene")
         except AttributeError:
@@ -580,12 +580,10 @@ class StrokeWidthPanel(wx.Panel):
             enable = True
             self.chk_scale.SetValue(self.node.stroke_scaled)
             # Let's establish which unit might be the best to represent the display
-            found_something = False
-            if self.node.stroke_width is None or self.node.stroke_width == 0:
-                value = 0
-                idxunit = 0  # px
-                found_something = True
-            else:
+            value = 0
+            idxunit = 0  # px
+            if self.node.stroke_width is not None and self.node.stroke_width != 0:
+                found_something = False
                 best_post = 99999999
                 delta = 0.99999999
                 best_pre = 0

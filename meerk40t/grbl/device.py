@@ -718,7 +718,7 @@ class GRBLDevice(Service, Status):
             "pulse",
             help=_("pulse <time>: Pulse the laser in place."),
         )
-        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwargs):
+        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwgs):
             if time is None:
                 channel(_("Must specify a pulse time in milliseconds."))
                 return
@@ -752,7 +752,7 @@ class GRBLDevice(Service, Status):
 
         @self.console_argument("filename", type=str)
         @self.console_command("save_job", help=_("save job export"), input_type="plan")
-        def gcode_save(channel, _, filename, data=None, **kwargs):
+        def gcode_save(channel, _, filename, data=None, **kwgs):
             if filename is None:
                 raise CommandSyntaxError
             try:
@@ -770,7 +770,7 @@ class GRBLDevice(Service, Status):
         @self.console_command(
             "grblinterpreter", help=_("activate the grbl interpreter.")
         )
-        def lhyemulator(channel, _, **kwargs):
+        def grblinterpreter(channel, _, **kwgs):
             try:
                 self.open_as("interpreter/grbl", "grblinterpreter")
                 channel(
@@ -857,9 +857,10 @@ class GRBLDevice(Service, Status):
         if origin is not None and origin != self.path:
             return
         corner = self.setting(str, "home_corner")
+        home_dx = 0
+        home_dy = 0
         if corner == "auto":
-            home_dx = 0
-            home_dy = 0
+            pass
         elif corner == "top-left":
             home_dx = 1 if self.flip_x else 0
             home_dy = 1 if self.flip_y else 0

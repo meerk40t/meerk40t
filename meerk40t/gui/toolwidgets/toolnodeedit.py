@@ -26,7 +26,6 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.gui.wxutils import matrix_scale
-from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import (
     Arc,
     Close,

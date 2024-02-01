@@ -722,7 +722,7 @@ class EZText(EZObject):
         ]  # 2 is first button, 1 is right to left.
         (count,) = struct.unpack("<i", file.read(4))
         for i in range(count):
-            (type,) = struct.unpack("<H", file.read(2))
+            (_type,) = struct.unpack("<H", file.read(2))
             # type, 7 file. 1 Text. 2 Serial
             extradata = _parse_struct(file)
             _construct(extradata)

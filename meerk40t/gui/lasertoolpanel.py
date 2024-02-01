@@ -499,12 +499,11 @@ class LaserToolPanel(wx.Panel):
         if sqr_of_r < 0:
             result = False
         else:
-            r = round(sqrt(sqr_of_r), 5)
+            radius = round(sqrt(sqr_of_r), 5)
 
         # print("Centre = (", h, ", ", k, ")")
         # print("Radius = ", r)
         center = (h, k)
-        radius = r
         return result, center, radius
 
     def calculate_square(self):

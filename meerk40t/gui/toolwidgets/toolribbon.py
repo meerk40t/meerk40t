@@ -251,6 +251,8 @@ class DrawSequence:
         This is one path, [] and each is in a 4 tick sequence. The first sequence is 0 the second 0, third 1 and then 1
         So this draws between element 0, then element 0, then element 1, then element 1. Performing a zig-zag.
         @param ribbon:
+        @param zig:
+        @param zag:
         @return:
         """
         return cls(ribbon, sequences=[[[zig], [zig], [zag], [zag]]])

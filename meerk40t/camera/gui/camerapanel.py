@@ -825,10 +825,7 @@ class CameraInterface(MWindow):
         camera = kernel.get_context("camera")
 
         def camera_click(index=None):
-            s = index
-
             def specific(event=None):
-                index = s
                 camera.default = index
                 v = camera.default
                 if v is None:
@@ -907,15 +904,15 @@ class CameraInterface(MWindow):
                 return
 
             # Max range to look at
-            camera = kernel.get_context("camera")
-            camera.setting(int, "search_range", 5)
-            camera.setting(list, "uris", [])
+            cam_context = kernel.get_context("camera")
+            cam_context.setting(int, "search_range", 5)
+            cam_context.setting(list, "uris", [])
             # Reset stuff...
             for _index in range(5):
-                if _index in camera.uris:
-                    camera.uris.remove(_index)
+                if _index in cam_context.uris:
+                    cam_context.uris.remove(_index)
 
-            max_range = camera.search_range
+            max_range = cam_context.search_range
             if max_range is None or max_range < 1:
                 max_range = 5
             found = 0
@@ -939,7 +936,7 @@ class CameraInterface(MWindow):
                     if cap.read()[0]:
                         if first_found < 0:
                             first_found = index
-                        camera.uris.append(index)
+                        cam_context.uris.append(index)
                         cap.release()
                         found += 1
                 except:

@@ -1,4 +1,3 @@
-import math
 from copy import copy
 
 from meerk40t.core.node.mixins import FunctionalParameter, Stroked

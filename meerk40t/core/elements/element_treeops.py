@@ -26,7 +26,7 @@ from meerk40t.core.treeop import (
     tree_submenu_list,
     tree_values,
 )
-from meerk40t.core.units import UNITS_PER_INCH, Length
+from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Matrix, Point
 from meerk40t.tools.geomstr import Geomstr
@@ -1582,23 +1582,23 @@ def init_tree(kernel):
         if material == "previous":
             return _("<Previous set>")
         oplist, opinfo = self.load_persistent_op_list(material)
-        material_name = opinfo.get("material", "")
-        material_title = opinfo.get("title", "")
+        mat_name = opinfo.get("material", "")
+        mat_title = opinfo.get("title", "")
         material_thickness = opinfo.get("thickness", "")
-        if material_title == "":
-            if material_name:
-                material_title = material_name
+        if mat_title == "":
+            if mat_name:
+                mat_title = mat_name
             else:
                 if material == "_default":
-                    material_title = "Generic Defaults"
+                    mat_title = "Generic Defaults"
                 elif material.startswith("_default_"):
-                    material_title = f"Default for {material[9:]}"
+                    mat_title = f"Default for {material[9:]}"
                 else:
-                    material_title = material.replace("_", " ")
+                    mat_title = material.replace("_", " ")
         name = ""
         # if material_name:
         #     name += f"[{material_name}] "
-        name += material_title
+        name += mat_title
         # if material_thickness:
         #     name += f" {material_thickness}"
         return name
@@ -2552,13 +2552,13 @@ def init_tree(kernel):
                         )
 
         copy_nodes = list()
-        dx = self.length_x("3mm")
-        dy = self.length_y("3mm")
+        _dx = self.length_x("3mm")
+        _dy = self.length_y("3mm")
         alldata = list(self.elems(emphasized=True))
         minimaldata = self.condense_elements(alldata, expand_at_end=False)
         for e in minimaldata:
             parent = e.parent
-            copy_single_node(e, parent, copies, dx, dy)
+            copy_single_node(e, parent, copies, _dx, _dy)
 
         if self.classify_new:
             self.classify(copy_nodes)

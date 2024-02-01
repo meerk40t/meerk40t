@@ -2,7 +2,6 @@ import datetime
 import os
 import platform
 import sys
-from copy import copy
 from functools import partial
 
 import wx
@@ -30,17 +29,10 @@ from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
 from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
 from meerk40t.kernel import lookup_listener, signal_listener
 
-from ..core.units import (
-    DEFAULT_PPI,
-    UNITS_PER_INCH,
-    UNITS_PER_MM,
-    UNITS_PER_PIXEL,
-    Length,
-)
+from ..core.units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from ..svgelements import Color, Matrix, Path
 from .icons import (  # icon_duplicate,; icon_nohatch,
     STD_ICON_SIZE,
-    PyEmbeddedImage,
     icon_bmap_text,
     icon_cag_common,
     icon_cag_subtract,
@@ -64,10 +56,7 @@ from .icons import (  # icon_duplicate,; icon_nohatch,
     icon_mk_rectangular,
     icon_mk_redo,
     icon_mk_undo,
-    icon_paint_brush,
-    icon_paint_brush_green,
     icon_power_button,
-    icon_warning,
     icons8_centerh,
     icons8_centerv,
     icons8_circled_left,
@@ -252,7 +241,8 @@ class MeerK40t(MWindow):
             command = "check_for_updates --verbosity 2\n"
         elif self.context.update_check == 2:
             command = "check_for_updates --beta --verbosity 2\n"
-        doit = True
+        else:
+            raise ValueError("Invalid check setting")
         lastdate = None
         lastcall = self.context.setting(int, "last_update_check", None)
         if lastcall is not None:
@@ -266,13 +256,12 @@ class MeerK40t(MWindow):
             # print (f"Delta: {delta.days}, lastdate={lastdate}, interval={self.context.update_frequency}")
             if self.context.update_frequency == 2 and delta.days <= 6:
                 # Weekly
-                doit = False
+                return
             elif self.context.update_frequency == 1 and delta.days <= 0:
                 # Daily
-                doit = False
-        if doit:
-            self.context.last_update_check = now.toordinal()
-            self.context(command)
+                return
+        self.context.last_update_check = now.toordinal()
+        self.context(command)
 
     def setup_statusbar_panels(self, combine):
         # if not self.context.show_colorbar:
@@ -2958,6 +2947,7 @@ class MeerK40t(MWindow):
             if not window.window_menu(None):
                 continue
             win_caption = ""
+            submenu_name = None
             try:
                 returnvalue = window.submenu()
                 if isinstance(returnvalue, str):

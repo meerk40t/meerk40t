@@ -7,12 +7,8 @@ import wx
 
 from meerk40t.gui.icons import (
     get_default_icon_size,
-    icons8_circled_play,
     icons8_connected,
     icons8_disconnected,
-    icons8_emergency_stop_button,
-    icons8_laser_beam_hazard,
-    icons8_pause,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size

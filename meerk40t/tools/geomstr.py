@@ -159,7 +159,6 @@ class Clip:
         """
         Modifies subject to only contain the segments found inside the given clip.
         @param subject:
-        @param clip:
         @return:
         """
         clip = self.clipping_shape
@@ -3019,6 +3018,7 @@ class Geomstr:
 
         @param e:
         @param t: position(s) to split at (numpy ok)
+        @param breaks: include breaks/ends between contours
         @return:
         """
         line = self.segments[e]
@@ -4466,17 +4466,17 @@ class Geomstr:
     #######################
 
     def as_path(self):
-        open = True
+        _open = True
         path = Path()
         for p in self.segments[: self.index]:
             s, c0, i, c1, e = p
             if np.real(i) == TYPE_END:
-                open = True
+                _open = True
                 continue
 
-            if open or len(path) == 0 or path.current_point != s:
+            if _open or len(path) == 0 or path.current_point != s:
                 path.move(s)
-                open = False
+                _open = False
             if np.real(i) == TYPE_LINE:
                 path.line(e)
             elif np.real(i) == TYPE_QUAD:
@@ -4791,6 +4791,7 @@ class Geomstr:
         """
         Perform two-opt optimization to minimize travel distances.
         @param max_passes: Max number of passes to attempt
+        @param chunk: Chunk check value
         @return:
         """
         self._trim()

@@ -145,6 +145,7 @@ class PyEmbeddedImage(py_embedded_image):
         @param rotate:
         @param noadjustment: Disables size adjustment based on global factor
         @param keepalpha: maintain the alpha from the original asset
+        @param force_darkmode:
         @return:
         """
 
@@ -160,13 +161,13 @@ class PyEmbeddedImage(py_embedded_image):
             if not c2.IsOk():
                 return 0
             red_mean = int((c1.red + c2.red) / 2.0)
-            r = c1.red - c2.red
-            g = c1.green - c2.green
-            b = c1.blue - c2.blue
+            _r = c1.red - c2.red
+            _g = c1.green - c2.green
+            _b = c1.blue - c2.blue
             distance_sq = (
-                (((512 + red_mean) * r * r) >> 8)
-                + (4 * g * g)
-                + (((767 - red_mean) * b * b) >> 8)
+                (((512 + red_mean) * _r * _r) >> 8)
+                + (4 * _g * _g)
+                + (((767 - red_mean) * _b * _b) >> 8)
             )
             return sqrt(distance_sq)
 
@@ -570,36 +571,39 @@ class VectorIcon:
         min_x = min_y = max_x = max_y = None
 
         def get_color(info_color, info_bright, default_color):
-            color = None
+            wx_color = None
             if info_color is not None:
                 try:
-                    color = wx.Colour(info_color)
+                    wx_color = wx.Colour(info_color)
                 except AttributeError:
                     pass
             if info_bright is not None:
-                if color is None:
-                    color = default_color
+                if wx_color is None:
+                    wx_color = default_color
                 # brightness is a percentage values below 100 indicate darker
                 # values beyond 100 indicate lighter
                 # no change = 100
                 # What about black? This is a special case, so we only consider
                 ialpha = info_bright / 100.0
-                if color.red == color.green == color.blue == 0 and info_bright > 100:
+                if (
+                    wx_color.red == wx_color.green == wx_color.blue == 0
+                    and info_bright > 100
+                ):
                     ialpha = (info_bright - 100) / 100.0
                     cr = int(255 * ialpha)
                     cg = int(255 * ialpha)
                     cb = int(255 * ialpha)
                 else:
-                    cr = int(color.red * ialpha)
-                    cg = int(color.green * ialpha)
-                    cb = int(color.blue * ialpha)
+                    cr = int(wx_color.red * ialpha)
+                    cg = int(wx_color.green * ialpha)
+                    cb = int(wx_color.blue * ialpha)
 
                 # Make sure the stay with 0..255
                 cr = max(0, min(255, cr))
                 cg = max(0, min(255, cg))
                 cb = max(0, min(255, cb))
-                color = wx.Colour(cr, cg, cb)
-            return color
+                wx_color = wx.Colour(cr, cg, cb)
+            return wx_color
 
         def_col = self._brush.GetColour()
         for s_entry in self.list_fill:

@@ -26,7 +26,7 @@ from .icons import (
     icons8_laserbeam_weak,
 )
 from .mwindow import MWindow
-from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size, get_key_name
+from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size
 
 _ = wx.GetTranslation
 
