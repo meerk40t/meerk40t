@@ -1511,7 +1511,8 @@ class Elemental(Service):
             opinfo["author"] = "MeerK40t"
             needs_save = True
         # Ensure we have an id for everything
-        needs_save = self.validate_ids(nodelist=oplist, generic=False)
+        if self.validate_ids(nodelist=oplist, generic=False):
+            needs_save = True
         if needs_save:
             self.save_persistent_operations_list(
                 std_list, oplist=oplist, opinfo=opinfo, inform=False
