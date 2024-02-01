@@ -358,7 +358,6 @@ class MKRibbonBarPanel(RibbonBarPanel):
                 continue
             if "panels" not in page_entry:
                 continue
-            pageobj = page_entry["_object"]
             for panel_entry in page_entry["panels"]:
                 if "_object" not in panel_entry:
                     continue

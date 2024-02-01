@@ -191,7 +191,6 @@ class ColorPanel(wx.Panel):
                 self.btn_color[self.last_col_idx].SetForegroundColour(
                     countercolor(self.bgcolors[self.last_col_idx])
                 )
-                s = ""
                 try:
                     s = nodecol.GetAsString(wx.C2S_NAME)
                 except AssertionError:

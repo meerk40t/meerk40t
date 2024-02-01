@@ -267,7 +267,7 @@ class JhfFont:
             # print (f"Top: {self.top}, bottom={self.bottom}")
             lines = to_render.split("\n")
             if offsets is None:
-                offsets = [0 for text in lines]
+                offsets = [0] * len(lines)
             line_lens = []
 
             offsety = -1 * self.top  # Negative !
@@ -338,4 +338,4 @@ class JhfFont:
                 offs = 0
             offsets.append(offs)
         self.active = True
-        line_lengths = _do_render(vtext, offsets)
+        _do_render(vtext, offsets)

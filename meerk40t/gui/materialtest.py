@@ -134,7 +134,6 @@ class SaveLoadPanel(wx.Panel):
         self.on_text_change(None)
 
     def on_listbox_click(self, event):
-        info = ""
         idx = self.list_slots.GetSelection()
         # print (f"Click with {idx}")
         if idx >= 0:
@@ -143,7 +142,6 @@ class SaveLoadPanel(wx.Panel):
         self.on_text_change(None)
 
     def on_listbox_double_click(self, event):
-        info = ""
         idx = self.list_slots.GetSelection()
         # print (f"DClick with {idx}")
         if idx >= 0:

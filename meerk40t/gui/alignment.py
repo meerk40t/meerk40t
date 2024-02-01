@@ -119,7 +119,6 @@ class InfoPanel(wx.Panel):
         count = 0
         first_node = None
         last_node = None
-        msg = ""
         if has_emph:
             xdata = list(self.context.elements.elems_nodes(emphasized=True))
             data = []
@@ -330,11 +329,6 @@ class AlignmentPanel(wx.Panel):
         if idx < 0:
             idx = 0
         ypos = self.xyparam[idx]
-
-        idx = self.rbox_align_y.GetSelection()
-        if idx < 0:
-            idx = 0
-        mode = self.xyparam[idx]
 
         idx = self.rbox_relation.GetSelection()
         if idx < 0:
@@ -566,7 +560,6 @@ class DistributionPanel(wx.Panel):
             ymode = self.xy_param[idx]
             idx = max(0, self.rbox_sort.GetSelection())
             esort = self.sort_param[idx]
-            rotate_elem = self.check_rotate.GetValue()
 
             # Have we just selected the treatment? Then set something useful
             if obj == self.rbox_treatment and xmode == "none" and ymode == "none":
@@ -634,13 +627,13 @@ class DistributionPanel(wx.Panel):
                     total_wd = right_edge - left_edge
                     data_wd = 0
                     firstwd = None
-                    lastwd = None
+                    # lastwd = None
                     for node in data:
                         bb = node.bounds
                         wd = bb[2] - bb[0]
                         if firstwd is None:
                             firstwd = wd
-                        lastwd = wd
+                        # lastwd = wd
                         data_wd += wd
                     # Reduce by first and last half width
                     # data_wd -= (firstwd + lastwd) / 2
@@ -674,13 +667,13 @@ class DistributionPanel(wx.Panel):
                     total_ht = bottom_edge - top_edge
                     data_ht = 0
                     firstht = None
-                    lastht = None
+                    # lastht = None
                     for node in data:
                         bb = node.bounds
                         ht = bb[3] - bb[1]
                         if firstht is None:
                             firstht = ht
-                        lastht = ht
+                        # lastht = ht
                         data_ht += ht
                     # Reduce by first and last half height
                     # data_ht -= (firstht + lastht) / 2
@@ -992,26 +985,26 @@ class DistributionPanel(wx.Panel):
                 continue
             if not node.can_move(self.context.elements.lock_allows_move):
                 continue
-            else:
-                try:
-                    cx = (node.bounds[2] + node.bounds[0]) / 2 + dx
-                    cy = (node.bounds[3] + node.bounds[1]) / 2 + dy
-                    change = 0
-                    if dx != 0 or dy != 0:
-                        node.matrix.post_translate(dx, dy)
-                        change = 1
-                    # Do we have a rotation to take into account?
-                    if ptangle != 0:
-                        node.matrix.post_rotate(ptangle, cx, cy)
-                        change = 2
-                    if change == 1:
-                        node.translated(dx, dy)
-                    elif change == 2:
-                        node.modified()
 
-                    modified += 1
-                except AttributeError:
-                    continue
+            try:
+                cx = (node.bounds[2] + node.bounds[0]) / 2 + dx
+                cy = (node.bounds[3] + node.bounds[1]) / 2 + dy
+                change = 0
+                if dx != 0 or dy != 0:
+                    node.matrix.post_translate(dx, dy)
+                    change = 1
+                # Do we have a rotation to take into account?
+                if ptangle != 0:
+                    node.matrix.post_rotate(ptangle, cx, cy)
+                    change = 2
+                if change == 1:
+                    node.translated(dx, dy)
+                elif change == 2:
+                    node.modified()
+
+                modified += 1
+            except AttributeError:
+                pass
         # print(f"Modified: {modified}")
 
     def on_button_dist(self, event):
@@ -1288,24 +1281,24 @@ class ArrangementPanel(wx.Panel):
             if self.count < 2 or self.count > num_cols * num_rows:
                 # print(f"Too small: {self.count} vs. {num_cols}x{num_rows}")
                 active = False
-            idx = self.rbox_selection.GetSelection()
-            if idx < 0:
-                idx = 0
-            esort = self.selectparam[idx]
+            # idx = self.rbox_selection.GetSelection()
+            # if idx < 0:
+            #     idx = 0
+            # esort = self.selectparam[idx]
             idx = self.rbox_relation.GetSelection()
             if idx < 0:
                 idx = 0
             relat = self.relparam[idx]
             self.txt_gap_x.Enable(relat == "distance")
             self.txt_gap_y.Enable(relat == "distance")
-            idx = self.rbox_align_x.GetSelection()
-            if idx < 0:
-                idx = 0
-            xpos = self.xyparam[idx]
-            idx = self.rbox_align_y.GetSelection()
-            if idx < 0:
-                idx = 0
-            ypos = self.xyparam[idx]
+            # idx = self.rbox_align_x.GetSelection()
+            # if idx < 0:
+            #     idx = 0
+            # xpos = self.xyparam[idx]
+            # idx = self.rbox_align_y.GetSelection()
+            # if idx < 0:
+            #     idx = 0
+            # ypos = self.xyparam[idx]
             try:
                 gapx = float(Length(self.txt_gap_x.GetValue()))
             except ValueError:
@@ -1442,7 +1435,7 @@ class ArrangementPanel(wx.Panel):
                             pass
 
         num_cols = self.arrange_x.GetValue()
-        num_rows = self.arrange_y.GetValue()
+        # num_rows = self.arrange_y.GetValue()
         same_x = self.check_same_x.GetValue()
         same_y = self.check_same_y.GetValue()
         idx = self.rbox_selection.GetSelection()

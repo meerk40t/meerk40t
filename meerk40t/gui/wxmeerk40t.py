@@ -182,7 +182,6 @@ class ActionPanel(wx.Panel):
                 resize=(best_size * scale_x, best_size * scale_y),
                 buffer=border,
             )
-            s = bmp.Size
             self.button_go.SetBitmap(bmp)
             bmp = self.icon.GetBitmap(
                 resize=(best_size * scale_x, best_size * scale_y), buffer=border

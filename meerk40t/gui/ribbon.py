@@ -1984,7 +1984,6 @@ class Art:
         panel._overflow_position = None
         lastbutton = None
         for b, button in enumerate(list(panel.visible_buttons())):
-            found = False
             bitmapsize = button.max_size
             while bitmapsize > button.min_size:
                 if bitmapsize <= button_height and bitmapsize <= button_width:

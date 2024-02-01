@@ -1423,7 +1423,6 @@ class RasterSettingsPanel(wx.Panel):
             pass
 
     def on_text_overscan(self):
-        start_text = self.text_overscan.GetValue()
         try:
             v = Length(
                 self.text_overscan.GetValue(),
@@ -1435,7 +1434,7 @@ class RasterSettingsPanel(wx.Panel):
             return
         # print ("Start overscan=%s - target=%s" % (start_text, str(v.preferred_length)))
         value = v.preferred_length
-        if v._amount < 0.0000000001:
+        if v._amount < 1e-10:
             value = 0
         if self.operation.overscan != value:
             self.operation.overscan = value

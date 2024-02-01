@@ -109,7 +109,7 @@ class Settings:
                     RuntimeError,
                     FileExistsError,
                     FileNotFoundError,
-                ) as e:
+                ):
                     # print (f"Error happened: {e}")
                     pass
             with open(targetfile, "w", encoding="utf-8") as fp:

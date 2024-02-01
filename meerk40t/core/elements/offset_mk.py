@@ -349,7 +349,7 @@ def intersect_line_segments(w, z, x, y):
     s = 1 / deter * (d * (w.x - x.x) + -b * (w.y - x.y))
     t = 1 / deter * (-c * (w.x - x.x) + a * (w.y - x.y))
     p1 = w + t * (z - w)
-    p2 = x + s * (y - x)
+    # p2 = x + s * (y - x)
     # print (f"p1 = ({p1.x:.3f}, {p1.y:.3f})")
     # print (f"p2 = ({p2.x:.3f}, {p2.y:.3f})")
     p = p1
@@ -404,7 +404,6 @@ def path_offset(
         seg2 = stitchpath._segments[right_start]
 
         #  print (f"Stitch {left_end}: {type(seg1).__name__}, {right_start}: {type(seg2).__name__} - max={len(stitchpath._segments)}")
-        needs_connector = False
         if isinstance(seg1, Close):
             # Close will be dealt with differently...
             return point_added
@@ -625,11 +624,11 @@ def path_offset(
                 sub_path._segments.insert(lastidx + 1, segment)
                 # print ("Fallback case, just create  line")
 
-    def dis(pt):
-        if pt is None:
-            return "None"
-        else:
-            return f"({pt.x:.0f}, {pt.y:.0f})"
+    # def dis(pt):
+    #     if pt is None:
+    #         return "None"
+    #     else:
+    #         return f"({pt.x:.0f}, {pt.y:.0f})"
 
     results = []
     # This needs to be a continuous path
@@ -650,8 +649,8 @@ def path_offset(
         is_closed = False
         # Lets check the first and last valid point. If they are identical
         # we consider this to be a closed path even if it has no closed indicator.
-        firstp_start = None
-        lastp = None
+        # firstp_start = None
+        # lastp = None
         idx = 0
         while (idx < len(p)) and not isinstance(
             p._segments[idx], (Arc, Line, QuadraticBezier, CubicBezier)

@@ -120,7 +120,6 @@ class PathPropertyPanel(ScrolledPanel):
         make_raster = self.context.root.lookup("render-op/make_raster")
         if nodes is None or len(nodes) == 0 or not make_raster:
             return 0, 0
-        ratio = 0
         dpi = 300
         dots_per_units = dpi / UNITS_PER_INCH
         _mm = float(Length("1mm"))
@@ -156,9 +155,6 @@ class PathPropertyPanel(ScrolledPanel):
                 new_height = 0
             # print(f"Width: {width:.0f} -> {new_width}")
             # print(f"Height: {height:.0f} -> {new_height}")
-            keep_ratio = True
-            ratio = 0
-
             all_pixel = new_height * new_width
             if all_pixel > 0:
                 image = make_raster(
@@ -166,7 +162,7 @@ class PathPropertyPanel(ScrolledPanel):
                     bounds=bounds,
                     width=new_width,
                     height=new_height,
-                    keep_ratio=keep_ratio,
+                    keep_ratio=True,
                 )
                 white_pixel = sum(
                     image.point(lambda x: 255 if x else 0)
@@ -199,12 +195,12 @@ class PathPropertyPanel(ScrolledPanel):
         return area_with_stroke, area_without_stroke
 
     def on_btn_get_infos(self, event):
-        def closed_path(path):
-            p1 = path.first_point
-            p2 = path.current_point
-            # print (p1, p2)
-            # print (type(p1).__name__, type(p2).__name__)
-            return p1 == p2
+        # def closed_path(path):
+        #     p1 = path.first_point
+        #     p2 = path.current_point
+        #     # print (p1, p2)
+        #     # print (type(p1).__name__, type(p2).__name__)
+        #     return p1 == p2
 
         def calc_points(node):
             from meerk40t.svgelements import (
@@ -262,8 +258,6 @@ class PathPropertyPanel(ScrolledPanel):
 
         elements = self.context.elements
         _mm = float(Length("1mm"))
-        total_area = 0
-        total_length = 0
         if hasattr(self.node, "as_path"):
             path = self.node.as_path()
             total_length = path.length(error=1e-2)
