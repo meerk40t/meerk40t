@@ -672,7 +672,6 @@ class GrblController:
                 )
                 self._assembled_response = []
                 self._send_resume()
-                continue
             elif response.startswith("error"):
                 # Indicates that the command line received contained an error, with an error code x, and was purged.
                 try:
@@ -702,7 +701,6 @@ class GrblController:
                     self.validate_stop("$$")
                     self._validation_stage = 3
                 self._process_settings_message(response)
-                continue
             elif response.startswith("ALARM"):
                 try:
                     error_num = int(response[6:])

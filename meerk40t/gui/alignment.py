@@ -985,26 +985,26 @@ class DistributionPanel(wx.Panel):
                 continue
             if not node.can_move(self.context.elements.lock_allows_move):
                 continue
-            else:
-                try:
-                    cx = (node.bounds[2] + node.bounds[0]) / 2 + dx
-                    cy = (node.bounds[3] + node.bounds[1]) / 2 + dy
-                    change = 0
-                    if dx != 0 or dy != 0:
-                        node.matrix.post_translate(dx, dy)
-                        change = 1
-                    # Do we have a rotation to take into account?
-                    if ptangle != 0:
-                        node.matrix.post_rotate(ptangle, cx, cy)
-                        change = 2
-                    if change == 1:
-                        node.translated(dx, dy)
-                    elif change == 2:
-                        node.modified()
 
-                    modified += 1
-                except AttributeError:
-                    continue
+            try:
+                cx = (node.bounds[2] + node.bounds[0]) / 2 + dx
+                cy = (node.bounds[3] + node.bounds[1]) / 2 + dy
+                change = 0
+                if dx != 0 or dy != 0:
+                    node.matrix.post_translate(dx, dy)
+                    change = 1
+                # Do we have a rotation to take into account?
+                if ptangle != 0:
+                    node.matrix.post_rotate(ptangle, cx, cy)
+                    change = 2
+                if change == 1:
+                    node.translated(dx, dy)
+                elif change == 2:
+                    node.modified()
+
+                modified += 1
+            except AttributeError:
+                pass
         # print(f"Modified: {modified}")
 
     def on_button_dist(self, event):

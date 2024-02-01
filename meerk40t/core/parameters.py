@@ -106,7 +106,6 @@ class Parameters:
         for v in settings:
             if v in COLOR_PARAMETERS:
                 settings[v] = Color(settings[v])
-                continue
             elif v in FLOAT_PARAMETERS:
                 settings[v] = float(settings[v])
             elif v in INT_PARAMETERS:

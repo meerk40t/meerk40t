@@ -94,9 +94,8 @@ class MidpointNode(RibbonNode):
             if pos is None:
                 count -= 1
                 continue
-            else:
-                xs += pos[0]
-                ys += pos[1]
+            xs += pos[0]
+            ys += pos[1]
         if count == 0:
             self.position = None
             return

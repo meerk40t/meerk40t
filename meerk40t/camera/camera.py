@@ -274,8 +274,7 @@ class Camera(Service):
                 channel(f"Grab Failed, trying Reconnect: {str(uri)}")
                 if self._attempt_recovery():
                     continue
-                else:
-                    return
+                return
 
             for i in range(self.max_tries_frame):
                 if self.quit_thread:
@@ -295,8 +294,7 @@ class Camera(Service):
                 channel(f"Frame Failed, trying Reconnect: {str(uri)}")
                 if self._attempt_recovery():
                     continue  # Recovery was successful.
-                else:
-                    return
+                return
             channel(f"Frame Success: {str(uri)}")
             self.connection_attempts = 0
 

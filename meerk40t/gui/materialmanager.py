@@ -2070,7 +2070,7 @@ class MaterialPanel(ScrolledPanel):
                     secdesc = settings.read_persistent(str, sect, info, "")
                     if info == "id":
                         continue
-                    elif info == "label":
+                    if info == "label":
                         idx = 0
                         if secdesc.endswith(")") and secdesc[-2] in (
                             str(i) for i in range(0, 10)
