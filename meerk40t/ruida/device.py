@@ -6,8 +6,6 @@ ruida files (*.rd) and turn them likewise into cutcode.
 """
 from meerk40t.core.view import View
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
-from .serial_connection import SerialConnection
-from .tcp_connection import TCPConnection
 
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
@@ -15,6 +13,8 @@ from ..core.units import Length, uM_PER_INCH
 from ..device.mixins import Status
 from .driver import RuidaDriver
 from .mock_connection import MockConnection
+from .serial_connection import SerialConnection
+from .tcp_connection import TCPConnection
 from .udp_connection import UDPConnection
 
 

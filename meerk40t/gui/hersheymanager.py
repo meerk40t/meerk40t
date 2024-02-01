@@ -1112,9 +1112,7 @@ class PanelFontManager(wx.Panel):
                     remove_fontfile(destfile)
                     stats[1] += 1
 
-                progress.Update(
-                    idx + 1, progress_string.format(count=idx + 1)
-                )
+                progress.Update(idx + 1, progress_string.format(count=idx + 1))
                 if progress.WasCancelled():
                     break
             except (OSError, RuntimeError, PermissionError, FileNotFoundError):
@@ -1222,9 +1220,7 @@ class PanelFontManager(wx.Panel):
                     remove_fontfile(destfile)
                     stats[1] += 1
 
-                progress.Update(
-                    idx + 1, progress_string.format(count=idx + 1)
-                )
+                progress.Update(idx + 1, progress_string.format(count=idx + 1))
                 if progress.WasCancelled():
                     break
             except (OSError, RuntimeError, PermissionError, FileNotFoundError):

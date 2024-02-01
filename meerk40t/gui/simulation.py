@@ -1750,12 +1750,8 @@ class SimulationWidget(Widget):
             image = cut.image
             gc.PushState()
             matrix = Matrix.scale(cut.step_x, cut.step_y)
-            matrix.post_translate(
-                cut.offset_x + x, cut.offset_y + y
-            )  # Adjust image xy
-            gc.ConcatTransform(
-                wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix))
-            )
+            matrix.post_translate(cut.offset_x + x, cut.offset_y + y)  # Adjust image xy
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
             try:
                 cache = cut._cache
                 cache_id = cut._cache_id
@@ -1769,9 +1765,7 @@ class SimulationWidget(Widget):
                 # No valid cache. Generate.
                 cut._cache_width, cut._cache_height = image.size
                 try:
-                    cut._cache = self.renderer.make_thumbnail(
-                        image, maximum=5000
-                    )
+                    cut._cache = self.renderer.make_thumbnail(image, maximum=5000)
                 except (MemoryError, RuntimeError):
                     cut._cache = None
                 cut._cache_id = id(image)
@@ -1810,9 +1804,7 @@ class SimulationWidget(Widget):
             gc.Clip(clip_x, clip_y, clip_w, clip_h)
             if cut._cache is not None:
                 # Cache exists and is valid.
-                gc.DrawBitmap(
-                    cut._cache, 0, 0, cut._cache_width, cut._cache_height
-                )
+                gc.DrawBitmap(cut._cache, 0, 0, cut._cache_width, cut._cache_height)
                 # gc.SetBrush(wx.RED_BRUSH)
                 # gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
             else:

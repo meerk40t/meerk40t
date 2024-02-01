@@ -1,4 +1,4 @@
-from math import cos, sin, sqrt, tau, atan2
+from math import atan2, cos, sin, sqrt, tau
 
 import wx
 

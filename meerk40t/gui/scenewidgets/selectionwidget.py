@@ -15,7 +15,6 @@ LockWidget: Widget to lock and unlock the given object.
 
 
 import math
-# from time import perf_counter
 
 import numpy as np
 import wx
@@ -34,6 +33,10 @@ from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import StaticBoxSizer, create_menu_for_node, matrix_scale
 from meerk40t.svgelements import Point
 from meerk40t.tools.geomstr import TYPE_END
+
+# from time import perf_counter
+
+
 
 NEARLY_ZERO = 1.0e-6
 
