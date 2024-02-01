@@ -530,7 +530,7 @@ class ImageModificationPanel(ScrolledPanel):
 
             return check
 
-        index = self.list_operations.GetFirstSelected()
+        selected = self.list_operations.GetFirstSelected()
 
         possible_ops = [
             {"name": "crop", "enable": True, "bounds": None},
@@ -572,12 +572,12 @@ class ImageModificationPanel(ScrolledPanel):
         ]
         devmode = self.context.root.setting(bool, "developer_mode", False)
         menu = wx.Menu()
-        if index >= 0:
+        if selected >= 0:
             # Edit-Part
             menuitem = menu.Append(
                 wx.ID_ANY, _("Delete item"), _("Will delete the current entry")
             )
-            self.Bind(wx.EVT_MENU, on_delete(index), id=menuitem.GetId())
+            self.Bind(wx.EVT_MENU, on_delete(selected), id=menuitem.GetId())
 
             menuitem = menu.Append(
                 wx.ID_ANY,
@@ -585,8 +585,8 @@ class ImageModificationPanel(ScrolledPanel):
                 _("Toggles enable-status of operation"),
                 kind=wx.ITEM_CHECK,
             )
-            menuitem.Check(self.node.operations[index]["enable"])
-            self.Bind(wx.EVT_MENU, on_enable(index), id=menuitem.GetId())
+            menuitem.Check(self.node.operations[selected]["enable"])
+            self.Bind(wx.EVT_MENU, on_enable(selected), id=menuitem.GetId())
             if devmode:
                 menu.AppendSeparator()
                 for op in possible_ops:
@@ -595,7 +595,9 @@ class ImageModificationPanel(ScrolledPanel):
                         _("Insert {op}").format(op=op["name"]),
                         _("Will insert this operation before the current entry"),
                     )
-                    self.Bind(wx.EVT_MENU, on_op_insert(index, op), id=menuitem.GetId())
+                    self.Bind(
+                        wx.EVT_MENU, on_op_insert(selected, op), id=menuitem.GetId()
+                    )
                 menu.AppendSeparator()
         if devmode:
             for op in possible_ops:
@@ -604,7 +606,7 @@ class ImageModificationPanel(ScrolledPanel):
                     _("Append {op}").format(op=op["name"]),
                     _("Will append this operation to the end of the list"),
                 )
-                self.Bind(wx.EVT_MENU, on_op_append(index, op), id=menuitem.GetId())
+                self.Bind(wx.EVT_MENU, on_op_append(selected, op), id=menuitem.GetId())
 
         if menu.MenuItemCount != 0:
             self.PopupMenu(menu)
@@ -1350,70 +1352,3 @@ class ImagePropertyPanel(ScrolledPanel):
         )
         self.text_grayscale_lightness.SetValue(str(self.node.lightness))
         self.node_update()
-
-    # def on_combo_operation(self, event):
-    #     idx = self.combo_operations.GetSelection()
-    #     if idx <= 0:
-    #         return
-    #     elif idx == 1:
-    #         self.node.operations = []
-    #     else:
-    #         script = self.image_ops[idx - 2]
-    #         raster_script = self.context.lookup(f"raster_script/{script}")
-    #         if raster_script is None:
-    #             return
-    #         self.node.operations = raster_script
-    #     self.node.update(self.context)
-    #     self.context.signal("element_property_reload", self.node)
-    #     self.context.signal("propupdate", self.node)
-
-
-# class ImageProperty(MWindow):
-#     def __init__(self, *args, node=None, **kwds):
-#         super().__init__(276, 218, *args, **kwds)
-#         self.panels = []
-#         main_sizer = wx.BoxSizer(wx.VERTICAL)
-#         panel_main = ImagePropertyPanel(
-#             self, wx.ID_ANY, context=self.context, node=node
-#         )
-#         panel_modify = ImageModificationPanel(
-#             self, wx.ID_ANY, context=self.context, node=node
-#         )
-#         panel_vector = ImageVectorisationPanel(
-#             self, wx.ID_ANY, context=self.context, node=node
-#         )
-#         notebook_main = wx.aui.AuiNotebook(
-#             self,
-#             -1,
-#             style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
-#             | wx.aui.AUI_NB_SCROLL_BUTTONS
-#             | wx.aui.AUI_NB_TAB_SPLIT
-#             | wx.aui.AUI_NB_TAB_MOVE,
-#         )
-#         notebook_main.AddPage(panel_main, _("Properties"))
-#         notebook_main.AddPage(panel_modify, _("Modification"))
-#         notebook_main.AddPage(panel_vector, _("Vectorisation"))
-
-#         self.panels.append(panel_main)
-#         self.panels.append(panel_modify)
-#         self.panels.append(panel_vector)
-#         for panel in self.panels:
-#             self.add_module_delegate(panel)
-#         # begin wxGlade: ImageProperty.__set_properties
-#         _icon = wx.NullIcon
-#         _icon.CopyFromBitmap(icons8_image.GetBitmap())
-#         self.SetIcon(_icon)
-#         self.SetTitle(_("Image Properties"))
-#         main_sizer.Add(notebook_main, 1, wx.EXPAND, 0)
-#         self.SetSizer(main_sizer)
-#         self.Layout()
-
-#     def restore(self, *args, node=None, **kwds):
-#         for panel in self.panels:
-#             panel.set_widgets(node)
-
-#     def window_preserve(self):
-#         return False
-
-#     def window_menu(self):
-#         return False

@@ -285,9 +285,18 @@ class GRBLDevice(Service, Status):
                 ),
             },
             {
-                "attr": "interpolate",
+                "attr": "extended_alarm_clear",
                 "object": self,
-                "default": 50,
+                "default": False,
+                "type": bool,
+                "label": _("Reset on 'Clear Alarm'"),
+                "section": "_5_Config",
+                "tip": _("Reset the controller too on a 'Clear Alarm' command"),
+            },
+            {
+                "attr": "interp",
+                "object": self,
+                "default": 5,
                 "type": int,
                 "label": _("Curve Interpolation"),
                 "section": "_5_Config",
@@ -332,6 +341,34 @@ class GRBLDevice(Service, Status):
                 ),
                 "conditional": (self, "use_red_dot"),
                 "section": "_10_Red Dot",
+            },
+            {
+                "attr": "max_vector_speed",
+                "object": self,
+                "default": 140,
+                "type": float,
+                "label": _("Max vector speed"),
+                "trailer": "mm/s",
+                "tip": _(
+                    "What is the highest reliable speed your laser is able to perform vector operations, ie engraving or cutting.\n"
+                    "You can finetune this in the Warning Sections of this configuration dialog."
+                ),
+                "section": "_20_" + _("Maximum speeds"),
+                "subsection": "_10_",
+            },
+            {
+                "attr": "max_raster_speed",
+                "object": self,
+                "default": 750,
+                "type": float,
+                "label": _("Max raster speed"),
+                "trailer": "mm/s",
+                "tip": _(
+                    "What is the highest reliable speed your laser is able to perform raster or image operations.\n"
+                    "You can finetune this in the Warning Sections of this configuration dialog."
+                ),
+                "section": "_20_" + _("Maximum speeds"),
+                "subsection": "_10_",
             },
             {
                 "attr": "limit_buffer",
@@ -681,7 +718,7 @@ class GRBLDevice(Service, Status):
             "pulse",
             help=_("pulse <time>: Pulse the laser in place."),
         )
-        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwargs):
+        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwgs):
             if time is None:
                 channel(_("Must specify a pulse time in milliseconds."))
                 return
@@ -715,7 +752,7 @@ class GRBLDevice(Service, Status):
 
         @self.console_argument("filename", type=str)
         @self.console_command("save_job", help=_("save job export"), input_type="plan")
-        def gcode_save(channel, _, filename, data=None, **kwargs):
+        def gcode_save(channel, _, filename, data=None, **kwgs):
             if filename is None:
                 raise CommandSyntaxError
             try:
@@ -733,7 +770,7 @@ class GRBLDevice(Service, Status):
         @self.console_command(
             "grblinterpreter", help=_("activate the grbl interpreter.")
         )
-        def lhyemulator(channel, _, **kwargs):
+        def grblinterpreter(channel, _, **kwgs):
             try:
                 self.open_as("interpreter/grbl", "grblinterpreter")
                 channel(
@@ -742,6 +779,17 @@ class GRBLDevice(Service, Status):
             except KeyError:
                 channel(_("Interpreter cannot be attached to any device."))
             return
+
+    @property
+    def safe_label(self):
+        """
+        Provides a safe label without spaces or / which could cause issues when used in timer or other names.
+        @return:
+        """
+        if not hasattr(self, "label"):
+            return self.name
+        name = self.label.replace(" ", "-")
+        return name.replace("/", "-")
 
     def _register_console_serial(self):
         _ = self.kernel.translation
@@ -809,9 +857,10 @@ class GRBLDevice(Service, Status):
         if origin is not None and origin != self.path:
             return
         corner = self.setting(str, "home_corner")
+        home_dx = 0
+        home_dy = 0
         if corner == "auto":
-            home_dx = 0
-            home_dy = 0
+            pass
         elif corner == "top-left":
             home_dx = 1 if self.flip_x else 0
             home_dy = 1 if self.flip_y else 0

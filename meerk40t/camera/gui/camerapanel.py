@@ -291,6 +291,19 @@ class CameraPanel(wx.Panel, Job):
         @return:
         """
         self.camera(f"camera{self.index} perspective reset\n")
+        if self.camera.perspective is None:
+            width = self.camera.width
+            height = self.camera.height
+            self.camera.perspective = [
+                [0, 0],
+                [width, 0],
+                [width, height],
+                [0, height],
+            ]
+        for v in self.widget_scene.widget_root.scene_widget:
+            if hasattr(v, "update"):
+                v.update()
+        self.widget_scene.request_refresh()
 
     def reset_fisheye(self, event=None):
         """
@@ -300,6 +313,7 @@ class CameraPanel(wx.Panel, Job):
         @return:
         """
         self.camera(f"camera{self.index} fisheye reset\n")
+        self.widget_scene.request_refresh()
 
     def on_check_perspective(self, event=None):
         """
@@ -550,14 +564,27 @@ class CamInterfaceWidget(Widget):
             def check_perspect(event=None):
                 self.cam.camera.correction_perspective = perspect.IsChecked()
 
+            def reset_perspect(event=None):
+                self.cam.camera(f"camera{self.cam.index} perspective reset\n")
+                if self.cam.camera.perspective is None:
+                    width = self.cam.camera.width
+                    height = self.cam.camera.height
+                    self.cam.camera.perspective = [
+                        [0, 0],
+                        [width, 0],
+                        [width, height],
+                        [0, height],
+                    ]
+                for v in self.scene.widget_root.scene_widget:
+                    if hasattr(v, "update"):
+                        v.update()
+
             self.cam.Bind(wx.EVT_MENU, check_perspect, perspect)
             menu.AppendSeparator()
             item = menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
             self.cam.Bind(
                 wx.EVT_MENU,
-                lambda e: self.cam.camera(
-                    f"camera{self.cam.index} perspective reset\n"
-                ),
+                reset_perspect,
                 id=item.GetId(),
             )
             item = menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
@@ -693,6 +720,11 @@ class CamSceneWidget(Widget):
             if len(self):
                 self.remove_all_widgets()
 
+    def update(self):
+        for v in self:
+            if hasattr(v, "update"):
+                v.update()
+
 
 class CamImageWidget(Widget):
     def __init__(self, scene, camera):
@@ -719,6 +751,7 @@ class CameraInterface(MWindow):
         super().__init__(640, 480, context, path, parent, **kwds)
         self.camera = self.context.get_context(f"camera/{index}")
         self.panel = CameraPanel(self, wx.ID_ANY, context=self.camera, index=index)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
 
         # ==========
@@ -737,6 +770,7 @@ class CameraInterface(MWindow):
         self.SetIcon(_icon)
         self.SetTitle(_("CameraInterface {index}").format(index=index))
         self.Layout()
+        self.restore_aspect()
 
     def create_menu(self, append):
         def identify_cameras(event=None):
@@ -791,10 +825,7 @@ class CameraInterface(MWindow):
         camera = kernel.get_context("camera")
 
         def camera_click(index=None):
-            s = index
-
             def specific(event=None):
-                index = s
                 camera.default = index
                 v = camera.default
                 if v is None:
@@ -873,15 +904,15 @@ class CameraInterface(MWindow):
                 return
 
             # Max range to look at
-            camera = kernel.get_context("camera")
-            camera.setting(int, "search_range", 5)
-            camera.setting(list, "uris", [])
+            cam_context = kernel.get_context("camera")
+            cam_context.setting(int, "search_range", 5)
+            cam_context.setting(list, "uris", [])
             # Reset stuff...
             for _index in range(5):
-                if _index in camera.uris:
-                    camera.uris.remove(_index)
+                if _index in cam_context.uris:
+                    cam_context.uris.remove(_index)
 
-            max_range = camera.search_range
+            max_range = cam_context.search_range
             if max_range is None or max_range < 1:
                 max_range = 5
             found = 0
@@ -905,7 +936,7 @@ class CameraInterface(MWindow):
                     if cap.read()[0]:
                         if first_found < 0:
                             first_found = index
-                        camera.uris.append(index)
+                        cam_context.uris.append(index)
                         cap.release()
                         found += 1
                 except:
@@ -1079,13 +1110,14 @@ class CameraURIPanel(wx.Panel):
 class CameraURI(MWindow):
     def __init__(self, *args, index=None, **kwds):
         super().__init__(437, 530, *args, **kwds)
-
         self.panel = CameraURIPanel(self, wx.ID_ANY, context=self.context, index=index)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_camera.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: CameraURI.__set_properties
         self.SetTitle(_("URI Manager"))
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

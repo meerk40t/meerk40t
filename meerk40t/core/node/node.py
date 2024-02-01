@@ -718,17 +718,29 @@ class Node:
                 node = self
             self._parent.notify_modified(node=node, **kwargs)
 
-    def notify_translated(self, node=None, dx=0, dy=0, **kwargs):
+    def notify_translated(self, node=None, dx=0, dy=0, invalidate=False, **kwargs):
+        if invalidate:
+            self.set_dirty_bounds()
         if self._parent is not None:
             if node is None:
                 node = self
-            self._parent.notify_translated(node=node, dx=dx, dy=dy, **kwargs)
+            # Any change to position / size needs a recalculation of the bounds
+            self._parent.notify_translated(
+                node=node, dx=dx, dy=dy, invalidate=True, **kwargs
+            )
 
-    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, **kwargs):
+    def notify_scaled(
+        self, node=None, sx=1, sy=1, ox=0, oy=0, invalidate=False, **kwargs
+    ):
+        if invalidate:
+            self.set_dirty_bounds()
         if self._parent is not None:
             if node is None:
                 node = self
-            self._parent.notify_scaled(node=node, sx=sx, sy=sy, ox=ox, oy=oy, **kwargs)
+            # Any change to position / size needs a recalculation of the bounds
+            self._parent.notify_scaled(
+                node=node, sx=sx, sy=sy, ox=ox, oy=oy, invalidate=True, **kwargs
+            )
 
     def notify_altered(self, node=None, **kwargs):
         if self._parent is not None:
@@ -835,7 +847,6 @@ class Node:
         #     for pt in self._points:
         #         pt[0] += dx
         #         pt[1] += dy
-
         self.notify_translated(self, dx=dx, dy=dy)
 
     def scaled(self, sx, sy, ox, oy):
@@ -1044,6 +1055,7 @@ class Node:
         @param emphasized: match only emphasized nodes.
         @param targeted: match only targeted nodes
         @param highlighted: match only highlighted nodes
+        @param lock: match locked nodes
         @return:
         """
         node = self

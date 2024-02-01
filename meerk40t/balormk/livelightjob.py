@@ -74,6 +74,7 @@ class LiveLightJob:
         if self.stopped:
             return True
         self.service.listen("emphasized", self.on_emphasis_changed)
+        self.service.listen("modified_by_tool", self.on_emphasis_changed)
         self.service.listen("view;realized", self.on_emphasis_changed)
         self.time_started = time.time()
         self.started = True
@@ -88,6 +89,7 @@ class LiveLightJob:
         self.stopped = True
         self.runtime += time.time() - self.time_started
         self.service.unlisten("emphasized", self.on_emphasis_changed)
+        self.service.unlisten("modified_by_tool", self.on_emphasis_changed)
         self.service.unlisten("view;realized", self.on_emphasis_changed)
         self.service.signal("light_simulate", False)
         if self.service.redlight_preferred:
@@ -225,7 +227,6 @@ class LiveLightJob:
         Light the bounds geometry. Sends to light geometry.
 
         @param con:
-        @param bounds:
         @return:
         """
         bounds = self._last_bounds

@@ -210,13 +210,13 @@ def init_commands(kernel):
         for node in self.elems():
             if hasattr(node, "text"):
                 if node.text:
-                    bracketed_key = list(brackets.findall(node.text))
+                    bracketed_key = list(brackets.findall(str(node.text)))
                     if len(bracketed_key) > 0:
                         usage = True
                         break
             elif hasattr(node, "mktext"):
                 if node.mktext:
-                    bracketed_key = list(brackets.findall(node.mktext))
+                    bracketed_key = list(brackets.findall(str(node.mktext)))
                     if len(bracketed_key) > 0:
                         usage = True
                         break

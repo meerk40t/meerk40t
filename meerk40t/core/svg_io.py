@@ -390,7 +390,6 @@ class SVGWriter:
             decor = decor.strip()
             if decor:
                 subelement.set("text-decoration", decor)
-            element = c
         elif c.type == "group":
             # This is a structural group node of elements. Recurse call to write values.
             group_element = SubElement(xml_tree, SVG_TAG_GROUP)
@@ -416,11 +415,13 @@ class SVGWriter:
                 SVGWriter._write_elements(group_element, c, version)
             return
         else:
-            if version != "plain":
-                # This is a non-standard element. Save custom.
-                subelement = SubElement(xml_tree, "element")
-                SVGWriter._write_custom(subelement, c)
+            if version == "plain":
+                # Plain does not save custom.
                 return
+            # This is a non-standard element. Save custom.
+            subelement = SubElement(xml_tree, "element")
+            SVGWriter._write_custom(subelement, c)
+            return
 
         ###############
         # GENERIC SAVING STANDARD ELEMENT
@@ -442,12 +443,12 @@ class SVGWriter:
             ):
                 subelement.set(key, str(value))
 
-        ###############
-        # SAVE STROKE
-        ###############
-        if hasattr(c, "stroke_scaled"):
-            if not c.stroke_scaled:
-                subelement.set(SVG_ATTR_VECTOR_EFFECT, SVG_VALUE_NON_SCALING_STROKE)
+        # ###########################
+        # # SAVE SVG STROKE-SCALING
+        # ###########################
+        # if hasattr(c, "stroke_scaled"):
+        #     if not c.stroke_scaled:
+        #         subelement.set(SVG_ATTR_VECTOR_EFFECT, SVG_VALUE_NON_SCALING_STROKE)
 
         ###############
         # SAVE CAP/JOIN/FILL-RULE
@@ -665,6 +666,11 @@ class SVGProcessor:
         self.operations_replaced = False
         self.pathname = None
         self.load_operations = load_operations
+        self.mk_params = list(
+            self.elements.kernel.lookup_all("registered_mk_svg_parameters")
+        )
+        # Append barcode from external plugin
+        self.mk_params.append("mkbcparam")
 
         # Setting this is bringing as much benefit as anticipated
         # Both the time to load the file (unexpectedly) and the time
@@ -743,10 +749,10 @@ class SVGProcessor:
                             node.functional_parameter = value
                         except (ValueError, SyntaxError):
                             pass
-                    elif prop == "mkbcparam":
+                    elif prop in self.mk_params:
                         try:
                             value = ast.literal_eval(lc)
-                            node.mkbcparam = value
+                            setattr(node, prop, value)
                         except (ValueError, SyntaxError):
                             pass
 
@@ -844,23 +850,16 @@ class SVGProcessor:
             local_dict = element.values["attributes"]
         else:
             local_dict = element.values
+        if local_dict is None:
+            return None
         ink_tag = "inkscape:label"
-        try:
-            inkscape = element.values.get("inkscape")
-            if inkscape is not None and inkscape != "":
-                ink_tag = "{" + inkscape + "}label"
-        except (AttributeError, KeyError):
-            pass
-        try:
-            tag_label = local_dict.get(ink_tag)
-            if tag_label == "":
-                tag_label = None
-        except (AttributeError, KeyError):
-            # Label might simply be "label"
-            pass
-        if tag_label is None:
-            tag_label = local_dict.get("label")
-        return tag_label
+        inkscape = element.values.get("inkscape")
+        if inkscape:
+            ink_tag = "{" + inkscape + "}label"
+        tag_label = local_dict.get(ink_tag)
+        if tag_label:
+            return tag_label
+        return local_dict.get("label")
 
     def _parse_text(self, element, ident, label, lock, context_node, e_list):
         """
@@ -1114,16 +1113,17 @@ class SVGProcessor:
         """
         try:
             element.load(os.path.dirname(self.pathname))
-            try:
-                from PIL import ImageOps
+            if element.image is not None:
+                try:
+                    from PIL import ImageOps
 
-                element.image = ImageOps.exif_transpose(element.image)
-            except ImportError:
-                pass
-            try:
-                operations = ast.literal_eval(element.values["operations"])
-            except (ValueError, SyntaxError, KeyError):
-                operations = None
+                    element.image = ImageOps.exif_transpose(element.image)
+                except ImportError:
+                    pass
+                try:
+                    operations = ast.literal_eval(element.values["operations"])
+                except (ValueError, SyntaxError, KeyError):
+                    operations = None
 
             if element.image is not None:
                 try:
@@ -1333,8 +1333,13 @@ class SVGProcessor:
         @param uselabel:
         @return:
         """
-
-        if element.values.get("visibility") == "hidden":
+        display = ""
+        if "display" in element.values:
+            display = element.values.get("display").lower()
+            if display == "none":
+                if branch not in ("elements", "regmarks"):
+                    return
+        if element.values.get("visibility") == "hidden" or display == "none":
             if branch != "regmarks":
                 self.parse(
                     element,
@@ -1499,6 +1504,7 @@ class SVGLoader:
                 height=height,
                 ppi=ppi,
                 color="black",
+                parse_display_none=True,
                 transform=f"scale({scale_factor})",
             )
         except ParseError as e:

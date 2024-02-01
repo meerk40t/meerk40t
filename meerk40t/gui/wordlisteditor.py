@@ -6,7 +6,6 @@ from wx import aui
 
 from ..kernel import signal_listener
 from .icons import (
-    STD_ICON_SIZE,
     get_default_icon_size,
     icon_add_new,
     icon_edit,
@@ -90,13 +89,14 @@ class WordlistMiniPanel(wx.Panel):
             sample = ""
             if node.type == "elem text":
                 if node.text is not None:
-                    sample = node.text
+                    sample = str(node.text)
             elif node.type == "elem path" and hasattr(node, "mktext"):
                 if node.mktext is not None:
-                    sample = node.mktext
+                    sample = str(node.mktext)
             if sample == "":
                 continue
-            # we can be rather agnostic on the individual variable, we are interested in the highest {variable#+offset} pattern
+            # we can be rather agnostic on the individual variable,
+            # we are interested in the highest {variable#+offset} pattern
             brackets = re.compile(r"\{[^}]+\}")
             for bracketed_key in brackets.findall(sample):
                 #            print(f"Key found: {bracketed_key}")
@@ -199,7 +199,7 @@ class WordlistPanel(wx.Panel):
         sizer_index_left.Add(
             sizer_edit_wordlist_buttons, 0, wx.ALIGN_CENTER_VERTICAL, 0
         )
-        testsize = dip_size(self, 22, 22)
+        testsize = dip_size(self, 20, 20)
         icon_size = testsize[0]
 
         self.btn_edit_wordlist_del = wx.StaticBitmap(
@@ -220,6 +220,13 @@ class WordlistPanel(wx.Panel):
         self.btn_edit_content_paste = wx.StaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 25, 25)
         )
+        # Circumvent a WXPython bug at high resolutions under Windows
+        bmp = icon_trash.GetBitmap(resize=icon_size, buffer=1)
+        self.btn_edit_wordlist_del.SetBitmap(bmp)
+        testsize = self.btn_edit_wordlist_del.GetBitmap().Size
+        if testsize[0] != icon_size:
+            icon_size = int(icon_size * icon_size / testsize[0])
+
         self.btn_edit_wordlist_del.SetBitmap(
             icon_trash.GetBitmap(resize=icon_size, buffer=1)
         )
@@ -454,17 +461,19 @@ class WordlistPanel(wx.Panel):
         if skey is None:
             return
         text_data = wx.TextDataObject()
+        success = False
         if wx.TheClipboard.Open():
             success = wx.TheClipboard.GetData(text_data)
             wx.TheClipboard.Close()
-        if success:
-            msg = text_data.GetText()
-            if msg is not None and len(msg) > 0:
-                lines = msg.splitlines()
-                for entry in lines:
-                    self.wlist.add_value(skey, entry, 0)
-                self.refresh_grid_content(skey, 0)
-                self.autosave()
+        if not success:
+            return
+        msg = text_data.GetText()
+        if msg is not None and len(msg) > 0:
+            lines = msg.splitlines()
+            for entry in lines:
+                self.wlist.add_value(skey, entry, 0)
+            self.refresh_grid_content(skey, 0)
+            self.autosave()
 
     def refresh_grid_wordlist(self):
         self.current_entry = None
@@ -881,6 +890,7 @@ class WordlistEditor(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.notebook_main.AddPage(self.panel_editor, _("Editing"))
         self.notebook_main.AddPage(self.panel_import, _("Import/Export"))
         self.notebook_main.AddPage(self.panel_about, _("How to use"))
@@ -888,6 +898,7 @@ class WordlistEditor(MWindow):
         self.DragAcceptFiles(True)
         self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
         self.SetTitle(_("Wordlist Editor"))
+        self.restore_aspect()
 
     def on_drop_file(self, event):
         """

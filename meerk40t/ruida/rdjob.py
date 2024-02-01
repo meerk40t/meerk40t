@@ -1038,8 +1038,8 @@ class RDJob:
                 # len 3
                 desc = "Document Data End"
             elif array[1] == 0x05:
-                sum = decodeu35(array[2:7])
-                desc = f"Set File Sum {sum}"
+                _sum = decodeu35(array[2:7])
+                desc = f"Set File Sum {_sum}"
 
         elif array[0] == 0xE6:
             if array[1] == 0x01:
@@ -1679,6 +1679,7 @@ class RDJob:
         Enable External IO.
 
         @param value:
+        @param output:
         @return:
         """
         self(EN_EX_IO, encode_index(value), output=output)

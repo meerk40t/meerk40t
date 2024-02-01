@@ -53,7 +53,7 @@ class InfoPanel(wx.Panel):
         sizer_main.Add(sizer_last, 0, wx.EXPAND, 0)
         self.make_raster = None
         self.SetSizer(sizer_main)
-        self.Layout
+        self.Layout()
 
     def show_stuff(self, has_emph):
         def create_image_from_node(node, iconsize):
@@ -450,6 +450,7 @@ class RenderSplit(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.scene = getattr(self.context.root, "mainscene", None)
         # Hide Arrangement until ready...
         self.panel_split = SplitterPanel(
@@ -462,6 +463,7 @@ class RenderSplit(MWindow):
         self.notebook_main.AddPage(self.panel_keyhole, _("Keyhole operation"))
 
         self.Layout()
+        self.restore_aspect()
 
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_split_image.GetBitmap())

@@ -7,12 +7,8 @@ import wx
 
 from meerk40t.gui.icons import (
     get_default_icon_size,
-    icons8_circled_play,
     icons8_connected,
     icons8_disconnected,
-    icons8_emergency_stop_button,
-    icons8_laser_beam_hazard,
-    icons8_pause,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
@@ -80,6 +76,10 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_show_usb_log, self.checkbox_show_usb_log
         )
+        # Test the color combos...
+        # self.Bind(wx.EVT_RIGHT_DOWN, self.debug_colors)
+        # self._debug_counter = 0
+
         self.last_control_state = None
         self.retries = 0
         self._buffer = ""
@@ -87,6 +87,24 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.set_widgets()
         self.SetupScrolling()
         self._channel_watching = None
+
+    # def debug_colors(self, event):
+    #     states = (
+    #         "STATE_CONNECTION_FAILED",
+    #         "STATE_FAILED_RETRYING",
+    #         "STATE_FAILED_SUSPENDED",
+    #         "STATE_DRIVER_NO_BACKEND",
+    #         "STATE_UNINITIALIZED",
+    #         "STATE_USB_DISCONNECTED",
+    #         "STATE_USB_SET_DISCONNECTING",
+    #         "STATE_USB_CONNECTED",
+    #         "STATE_CONNECTED",
+    #         "STATE_CONNECTING",
+    #     )
+    #     if self._debug_counter >= len(states):
+    #         self._debug_counter = 0
+    #     self.context.signal("pipe;state", states[self._debug_counter])
+    #     self._debug_counter += 1
 
     def __set_properties(self):
         self.SetFont(
@@ -99,8 +117,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
                 "Segoe UI",
             )
         )
-        self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
-        self.button_device_connect.SetForegroundColour(wx.BLACK)
+        self.set_color_according_to_state("", self.button_device_connect)
         self.button_device_connect.SetFont(
             wx.Font(
                 11,
@@ -249,8 +266,50 @@ class LihuiyuControllerPanel(ScrolledPanel):
         sizer_main.Add(sizer_main_vertical, 1, 0, 0)
         sizer_main.Add(self.text_usb_log, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_main)
+        sizer_main.Fit(self)
         self.Layout()
         # end wxGlade
+
+    def set_color_according_to_state(self, stateval, control):
+        def color_distance(c1, c2):
+            from math import sqrt
+
+            red_mean = int((c1.red + c2.red) / 2.0)
+            r = c1.red - c2.red
+            g = c1.green - c2.green
+            b = c1.blue - c2.blue
+            distance_sq = (
+                (((512 + red_mean) * r * r) >> 8)
+                + (4 * g * g)
+                + (((767 - red_mean) * b * b) >> 8)
+            )
+            return sqrt(distance_sq)
+
+        state_colors = {
+            "STATE_CONNECTION_FAILED": wx.Colour("#dfdf00"),
+            "STATE_FAILED_RETRYING": wx.Colour("#df0000"),
+            "STATE_FAILED_SUSPENDED": wx.Colour("#0000df"),
+            "STATE_DRIVER_NO_BACKEND": wx.Colour("#dfdf00"),
+            "STATE_UNINITIALIZED": wx.Colour("#ffff00"),
+            "STATE_USB_DISCONNECTED": wx.Colour("#ffff00"),
+            "STATE_USB_SET_DISCONNECTING": wx.Colour("#ffff00"),
+            "STATE_USB_CONNECTED": wx.Colour("#00ff00"),
+            "STATE_CONNECTED": wx.Colour("#00ff00"),
+            "STATE_CONNECTING": wx.Colour("#ffff00"),
+        }
+        if stateval in state_colors:
+            bgcol = state_colors[stateval]
+        else:
+            bgcol = wx.Colour("#66ff66")
+        d1 = color_distance(bgcol, wx.BLACK)
+        d2 = color_distance(bgcol, wx.WHITE)
+        # print(f"state={stateval}, to black={d1}, to_white={d2}")
+        if d1 <= d2:
+            fgcol = wx.WHITE
+        else:
+            fgcol = wx.BLACK
+        control.SetBackgroundColour(bgcol)
+        control.SetForegroundColour(fgcol)
 
     def module_open(self, *args, **kwargs):
         self.pane_show()
@@ -260,7 +319,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
 
     def pane_show(self):
         # Channel watching is to make sure we unwatch the channel we watched even if label changes.
-        self._channel_watching = f"{self.context.label}/usb"
+        self._channel_watching = f"{self.context.safe_label}/usb"
         self.context.channel(self._channel_watching, buffer_size=500).watch(
             self.update_text
         )
@@ -362,8 +421,8 @@ class LihuiyuControllerPanel(ScrolledPanel):
     def on_connection_state_change(self, origin, state):
         if origin != self.context._path:
             return
+        self.set_color_according_to_state(state, self.button_device_connect)
         if state == "STATE_CONNECTION_FAILED":
-            self.button_device_connect.SetBackgroundColour("#dfdf00")
             origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("Connect failed"))
             self.button_device_connect.SetBitmap(
@@ -373,7 +432,6 @@ class LihuiyuControllerPanel(ScrolledPanel):
             )
             self.button_device_connect.Enable()
         elif state == "STATE_FAILED_RETRYING":
-            self.button_device_connect.SetBackgroundColour("#df0000")
             origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("Retrying..."))
             self.button_device_connect.SetBitmap(
@@ -383,7 +441,6 @@ class LihuiyuControllerPanel(ScrolledPanel):
             )
             self.button_device_connect.Enable()
         elif state == "STATE_FAILED_SUSPENDED":
-            self.button_device_connect.SetBackgroundColour("#0000df")
             origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("Suspended Retrying"))
             self.button_device_connect.SetBitmap(
@@ -393,7 +450,6 @@ class LihuiyuControllerPanel(ScrolledPanel):
             )
             self.button_device_connect.Enable()
         elif state == "STATE_DRIVER_NO_BACKEND":
-            self.button_device_connect.SetBackgroundColour("#dfdf00")
             origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("No Backend"))
             self.button_device_connect.SetBitmap(
@@ -403,7 +459,6 @@ class LihuiyuControllerPanel(ScrolledPanel):
             )
             self.button_device_connect.Enable()
         elif state == "STATE_UNINITIALIZED" or state == "STATE_USB_DISCONNECTED":
-            self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connect"))
             self.button_device_connect.SetBitmap(
                 icons8_connected.GetBitmap(
@@ -412,7 +467,6 @@ class LihuiyuControllerPanel(ScrolledPanel):
             )
             self.button_device_connect.Enable()
         elif state == "STATE_USB_SET_DISCONNECTING":
-            self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Disconnecting..."))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(
@@ -421,7 +475,6 @@ class LihuiyuControllerPanel(ScrolledPanel):
             )
             self.button_device_connect.Disable()
         elif state == "STATE_USB_CONNECTED" or state == "STATE_CONNECTED":
-            self.button_device_connect.SetBackgroundColour("#00ff00")
             self.button_device_connect.SetLabel(_("Disconnect"))
             self.button_device_connect.SetBitmap(
                 icons8_connected.GetBitmap(
@@ -430,7 +483,6 @@ class LihuiyuControllerPanel(ScrolledPanel):
             )
             self.button_device_connect.Enable()
         elif state == "STATE_CONNECTING":
-            self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connecting..."))
             self.button_device_connect.SetBitmap(
                 icons8_connected.GetBitmap(
@@ -582,7 +634,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
 
 class LihuiyuControllerGui(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(_advanced_width, _default_height, *args, **kwds)
+        super().__init__(_simple_width, _default_height, *args, **kwds)
 
         # ==========
         # MENU BAR
@@ -596,15 +648,14 @@ class LihuiyuControllerGui(MWindow):
         # ==========
         # MENUBAR END
         # ==========
+        self.restore_aspect(honor_initial_values=True)
         self.panel = LihuiyuControllerPanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Lihuiyu-Controller"))
-        mainsizer = wx.BoxSizer(wx.VERTICAL)
-        mainsizer.Add(self.panel, 1, wx.EXPAND, 0)
-        self.SetSizer(mainsizer)
         self.Layout()
 
     def create_menu(self, append):

@@ -334,8 +334,7 @@ class GrblController:
             w(data, type=type)
 
     def _channel_log(self, data, type=None):
-        name = self.service.label.replace(" ", "-")
-        name = name.replace("/", "-")
+        name = self.service.safe_label
         if type == "send":
             if not hasattr(self, "_grbl_send"):
                 self._grbl_send = self.service.channel(f"send-{name}", pure=True)
@@ -437,7 +436,7 @@ class GrblController:
         if self._channel_log not in self._watchers:
             self.add_watcher(self._channel_log)
 
-        if self._sending_thread is None:
+        if self._sending_thread is None or not self._sending_thread.is_alive():
             self._sending_thread = True  # Avoid race condition.
             self._sending_thread = self.service.threaded(
                 self._sending,
@@ -445,7 +444,7 @@ class GrblController:
                 result=self.stop,
                 daemon=True,
             )
-        if self._recving_thread is None:
+        if self._recving_thread is None or not self._recving_thread.is_alive():
             self._recving_thread = True  # Avoid race condition.
             self._recving_thread = self.service.threaded(
                 self._recving,
@@ -463,8 +462,7 @@ class GrblController:
             delay = self.service.connect_delay / 1000
         else:
             delay = 0
-        name = self.service.label.replace(" ", "-")
-        name = name.replace("/", "-")
+        name = self.service.safe_label
         if delay:
             self.service(f".timer 1 {delay} .gcode_realtime {cmd}")
             self.service(
@@ -475,8 +473,7 @@ class GrblController:
             self.service(f".timer-{name}{cmd} 0 1 gcode_realtime {cmd}")
 
     def validate_stop(self, cmd):
-        name = self.service.label.replace(" ", "-")
-        name = name.replace("/", "-")
+        name = self.service.safe_label
         if cmd == "*":
             self.service(f".timer-{name}* -q --off")
             return

@@ -343,16 +343,24 @@ class MoshiBuilder:
         self.data.clear()
         self._stage = 0
 
-    def pipe_int8(self, value):
+    def pipe_uint8(self, value):
         """
         Write an 8 bit into to the current program.
         """
-        self.write(struct.pack("b", value))
+        if value > 255:
+            value = 255
+        if value < 0:
+            value = 0
+        self.write(struct.pack("B", value))
 
     def pipe_int16le(self, value):
         """
         Write a 16 bit little-endian value to the current program.
         """
+        if value < -32768:
+            value = -32768
+        elif value > 32767:
+            value = 32767
         self.write(struct.pack("<h", value))
 
     def write(self, bytes_to_write):
@@ -385,8 +393,8 @@ class MoshiBuilder:
             speed_mms = 256
         if speed_mms < 1:
             speed_mms = 1
-        self.pipe_int8(speed_mms - 1)
-        self.pipe_int8(normal_speed_mms - 1)
+        self.pipe_uint8(speed_mms - 1)
+        self.pipe_uint8(normal_speed_mms - 1)
 
     def raster_speed(self, speed_mms):
         """
@@ -400,7 +408,7 @@ class MoshiBuilder:
         speed_cms = int(round(speed_mms / 10))
         if speed_cms == 0:
             speed_cms = 1
-        self.pipe_int8(speed_cms - 1)
+        self.pipe_uint8(speed_cms - 1)
         self._vector = False
 
     def set_offset(self, z, x, y):
@@ -673,7 +681,6 @@ class MoshiBuilder:
             else:
                 output("UNKNOWN COMMAND: %d" % cmd)
                 raise ValueError
-                break
 
     @staticmethod
     def is_estop(data):

@@ -554,6 +554,8 @@ class DistributionPanel(wx.Panel):
         if event is not None:
             event.Skip()
             obj = event.GetEventObject()
+        xmode = None
+        ymode = None
         if self.context.elements.has_emphasis():
             active = True
             idx = max(0, self.rbox_treatment.GetSelection())
@@ -811,6 +813,7 @@ class DistributionPanel(wx.Panel):
             mydelta = poly_length / segcount
             lastx = 0
             lasty = 0
+            last_angle = None
             lastlen = 0
             segadded = 0
             # print(f"Expected segcount= {segcount}")
@@ -1561,8 +1564,9 @@ class Alignment(MWindow):
             self, wx.ID_ANY, context=self.context, scene=self.scene
         )
         self.notebook_main.AddPage(self.panel_arrange, _("Arrange"))
-
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         self.Layout()
+        self.restore_aspect()
 
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_arrange.GetBitmap())

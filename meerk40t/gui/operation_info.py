@@ -1,7 +1,6 @@
 import wx
 
 from meerk40t.gui.icons import (
-    icon_effect_hatch,
     icon_points,
     icons8_computer_support,
     icons8_direction,
@@ -87,13 +86,13 @@ class OpInfoPanel(ScrolledPanel):
         lcount = self.list_operations.GetItemCount()
         for index in range(lcount):
             info = "---"
-            id = self.list_operations.GetItemData(index)
-            if id < 0:
+            _id = self.list_operations.GetItemData(index)
+            if _id < 0:
                 continue
-            myop = self.ops[id]
+            myop = self.ops[_id]
             if hasattr(myop, "time_estimate"):
                 info = myop.time_estimate()
-            self.list_operations.SetItem(id, 4, info)
+            self.list_operations.SetItem(_id, 4, info)
 
     def refresh_data(self):
         def mklabel(value):
@@ -239,11 +238,11 @@ class OpInfoPanel(ScrolledPanel):
 
         index = event.Index
         try:
-            id = self.list_operations.GetItemData(index)
+            _id = self.list_operations.GetItemData(index)
         except (KeyError, IndexError):
             return
         menu = wx.Menu()
-        if id < 0:
+        if _id < 0:
             # elem xxx Type:
             listitem = self.list_operations.GetItem(index, 2)
             elemtype = listitem.GetText()
@@ -262,7 +261,7 @@ class OpInfoPanel(ScrolledPanel):
             )
             self.Bind(wx.EVT_MENU, self.on_tree_popup_mark_elem(""), item)
         else:
-            opnode = self.ops[id]
+            opnode = self.ops[_id]
             s = mklabel(opnode.label)
             if s == "":
                 s = opnode.type
@@ -284,11 +283,13 @@ class OperationInformation(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(551, 234, submenu="Operations", *args, **kwds)
         self.panel = OpInfoPanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_computer_support.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Operation Information"))
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

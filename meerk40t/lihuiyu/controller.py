@@ -140,8 +140,8 @@ class LihuiyuController:
     log, providing information about the connecting and error status of the USB device.
     """
 
-    def __init__(self, context, *args, **kwargs):
-        self.context = context
+    def __init__(self, service, *args, **kwargs):
+        self.context = service
         self.state = "unknown"
         self.is_shutdown = False
         self.serial_confirmed = None
@@ -176,12 +176,12 @@ class LihuiyuController:
 
         self.abort_waiting = False
 
-        name = self.context.label
-        self.pipe_channel = context.channel(f"{name}/events")
-        self.usb_log = context.channel(f"{name}/usb", buffer_size=500)
-        self.usb_send_channel = context.channel(f"{name}/usb_send")
-        self.recv_channel = context.channel(f"{name}/recv")
-        self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
+        name = service.safe_label
+        self.pipe_channel = service.channel(f"{name}/events")
+        self.usb_log = service.channel(f"{name}/usb", buffer_size=500)
+        self.usb_send_channel = service.channel(f"{name}/usb_send")
+        self.recv_channel = service.channel(f"{name}/recv")
+        self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
         self.reset()
 
     @property

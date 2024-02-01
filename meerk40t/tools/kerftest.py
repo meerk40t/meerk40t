@@ -334,16 +334,16 @@ class KerfPanel(wx.Panel):
             self.context.elements.clear_elements(fast=True)
 
         def shortened(value, digits):
-            result = str(round(value, digits))
-            if "." in result:
-                while result.endswith("0"):
-                    result = result[:-1]
-            if result.endswith("."):
-                if result == ".":
-                    result = "0"
+            _result = str(round(value, digits))
+            if "." in _result:
+                while _result.endswith("0"):
+                    _result = _result[:-1]
+            if _result.endswith("."):
+                if _result == ".":
+                    _result = "0"
                 else:
-                    result = result[:-1]
-            return result
+                    _result = _result[:-1]
+            return _result
 
         def create_operations():
             kerf = minv
@@ -870,7 +870,9 @@ class KerfTool(MWindow):
         _icon.CopyFromBitmap(icon_kerf.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Kerf-Test"))
+        self.sizer.Add(self.panel_template, 1, wx.EXPAND, 0)
         self.Layout()
+        self.restore_aspect()
 
     def window_open(self):
         self.panel_template.pane_show()

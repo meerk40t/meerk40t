@@ -98,11 +98,13 @@ class GroupProperty(MWindow):
         self.panel = GroupPropertiesPanel(
             self, wx.ID_ANY, context=self.context, node=node
         )
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_group_objects.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Group Properties"))
+        self.restore_aspect()
 
     def restore(self, *args, node=None, **kwds):
         self.panel.set_widgets(node)
@@ -160,12 +162,11 @@ class FilePropertiesPanel(ScrolledPanel):
     def set_widgets(self, node):
         self.node = node
         self.panel_ct.set_widgets(node)
-        if self.node is None:
-            text1 = ""
-            text2 = ""
-            text3 = ""
-            text4 = ""
-        else:
+        text1 = ""
+        text2 = ""
+        text3 = ""
+        text4 = ""
+        if self.node is not None:
             fname = self.node.filepath
             if fname is not None:
                 try:
@@ -201,11 +202,13 @@ class FileProperty(MWindow):
         self.panel = FilePropertiesPanel(
             self, wx.ID_ANY, context=self.context, node=node
         )
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_group_objects.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("File Properties"))
+        self.restore_aspect()
 
     def restore(self, *args, node=None, **kwds):
         self.panel.set_widgets(node)

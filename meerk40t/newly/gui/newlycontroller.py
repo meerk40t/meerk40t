@@ -149,9 +149,8 @@ class NewlyControllerPanel(wx.ScrolledWindow):
             self.context("usb_connect\n")
 
     def pane_show(self):
-        name = self.service.label.replace(" ", "-")
-        name = name.replace("/", "-")
-        self.context.channel(f"{name}/usb").watch(self.update_text)
+        self._channel_watching = f"{self.service.safe_label}/usb"
+        self.context.channel(self._channel_watching).watch(self.update_text)
         try:
             connected = self.service.driver.connected
             if connected:
@@ -162,21 +161,21 @@ class NewlyControllerPanel(wx.ScrolledWindow):
             pass
 
     def pane_hide(self):
-        name = self.service.label.replace(" ", "-")
-        name = name.replace("/", "-")
-        self.context.channel(f"{name}/usb").unwatch(self.update_text)
+        self.context.channel(self._channel_watching).unwatch(self.update_text)
 
 
 class NewlyController(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(499, 170, *args, **kwds)
         self.panel = NewlyControllerPanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         self.SetTitle(_("Newly-Controller"))
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)
         self.Layout()
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

@@ -21,7 +21,7 @@ class MoshiDevice(Service, Status):
     MoshiDevice is driver for the Moshiboard boards.
     """
 
-    def __init__(self, kernel, path, *args, choices=None, **kwargs):
+    def __init__(self, kernel, path, *args, choices=None, **kwgs):
         Service.__init__(self, kernel, path)
         Status.__init__(self)
         self.name = "MoshiDevice"
@@ -158,9 +158,9 @@ class MoshiDevice(Service, Status):
                 "subsection": "_30_" + _("Home position"),
             },
             {
-                "attr": "interpolate",
+                "attr": "interp",
                 "object": self,
-                "default": 50,
+                "default": 5,
                 "type": int,
                 "label": _("Curve Interpolation"),
                 "tip": _("Distance of the curve interpolation in mils"),
@@ -318,6 +318,17 @@ class MoshiDevice(Service, Status):
             except (PermissionError, OSError):
                 channel(_("Could not save: {filename}").format(filename=filename))
 
+    @property
+    def safe_label(self):
+        """
+        Provides a safe label without spaces or / which could cause issues when used in timer or other names.
+        @return:
+        """
+        if not hasattr(self, "label"):
+            return self.name
+        name = self.label.replace(" ", "-")
+        return name.replace("/", "-")
+
     def service_attach(self, *args, **kwargs):
         self.realize()
 
@@ -351,9 +362,10 @@ class MoshiDevice(Service, Status):
         if origin is not None and origin != self.path:
             return
         corner = self.setting(str, "home_corner")
+        home_dx = 0
+        home_dy = 0
         if corner == "auto":
-            home_dx = 0
-            home_dy = 0
+            pass
         elif corner == "top-left":
             home_dx = 1 if self.flip_x else 0
             home_dy = 1 if self.flip_y else 0

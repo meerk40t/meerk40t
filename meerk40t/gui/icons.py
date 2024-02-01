@@ -7,25 +7,39 @@ from wx.lib.embeddedimage import PyEmbeddedImage as py_embedded_image
 from meerk40t.tools.geomstr import TYPE_ARC, TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, Geomstr
 
 """
-icons serves as a central repository for icons and other assets. These are all processed as PyEmbeddedImages which is
-extended from the wx.lib utility of the same name. We allow several additional modifications to these assets. For
-example we allow resizing and inverting this allows us to easily reuse the icons and to use the icons for dark themed
-guis. We permit rotation of the icons, so as to permit reusing these icons and coloring the icons to match a particular
-colored object, for example the icons in the tree for operations using color specific matching.
+icons serves as a central repository for icons and other assets. These come in two flavors:
+A)  Bitmap based icons - they are processed as PyEmbeddedImages which is extended from
+    the wx.lib utility of the same name.
+B)  Vector icons - they are using the SVG syntax and are processed via the VectorIcon class.
 
-----
-The icons are from Icon8 and typically IOS Glyph, IOS or Windows Metro in style.
+We allow several additional modifications to these assets. For example we allow resizing
+and inverting this allows us to easily reuse the icons and to use the icons for dark themed
+guis. We permit rotation of the icons, so as to permit reusing these icons and coloring
+the icons to match a particular colored object, for example the icons in the tree for operations
+using color specific matching.
 
-https://icons8.com/icons
+Origin of icons and addition of new ones
+----------------------------------------
+A)  The bitmapped icons are from Icon8 and typically IOS Glyph, IOS or Windows Metro in style.
 
-Find the desired icon and download in 50x50. We use the free license.
+    https://icons8.com/icons
 
-Put the icon file in the Pycharm working directory.
-Using Local Terminal, with wxPython installed.
+    Find the desired icon and download in 50x50. We use the free license.
 
-img2py -a icons8-icon-name-50.png icons.py
+    Put the icon file in the Pycharm working directory.
+    Using Local Terminal, with wxPython installed.
 
-Paste the icon8_icon_name PyEmbeddedImage() block into icons.py
+    img2py -a icons8-icon-name-50.png icons.py
+
+    Paste the icon8_icon_name PyEmbeddedImage() block into icons.py
+B)  VectorIcons may come as well from the Icon8 library, in this case we have named
+    them icon8_xxxxx, but a lot of the other icons have been designed by the
+    MeerK40t team, either by creating them from scratch or by vectorizing some other
+    freely available images.
+    You can add a VectorIcon by changing into meerk40t source directory and issiuing
+
+    python ./meerk40t/gui/icons.py <fully qualified filename of a svg-file>
+
 """
 
 DARKMODE = False
@@ -131,6 +145,7 @@ class PyEmbeddedImage(py_embedded_image):
         @param rotate:
         @param noadjustment: Disables size adjustment based on global factor
         @param keepalpha: maintain the alpha from the original asset
+        @param force_darkmode:
         @return:
         """
 
@@ -146,13 +161,13 @@ class PyEmbeddedImage(py_embedded_image):
             if not c2.IsOk():
                 return 0
             red_mean = int((c1.red + c2.red) / 2.0)
-            r = c1.red - c2.red
-            g = c1.green - c2.green
-            b = c1.blue - c2.blue
+            _r = c1.red - c2.red
+            _g = c1.green - c2.green
+            _b = c1.blue - c2.blue
             distance_sq = (
-                (((512 + red_mean) * r * r) >> 8)
-                + (4 * g * g)
-                + (((767 - red_mean) * b * b) >> 8)
+                (((512 + red_mean) * _r * _r) >> 8)
+                + (4 * _g * _g)
+                + (((767 - red_mean) * _b * _b) >> 8)
             )
             return sqrt(distance_sq)
 
@@ -440,7 +455,8 @@ class VectorIcon:
         if strokewidth is None:
             self.strokewidth = 2
         else:
-            self.strokewidth = strokewidth
+            self.strokewidth = int(strokewidth)
+
         if not fill:
             pass
         elif isinstance(fill, str):
@@ -555,36 +571,39 @@ class VectorIcon:
         min_x = min_y = max_x = max_y = None
 
         def get_color(info_color, info_bright, default_color):
-            color = None
+            wx_color = None
             if info_color is not None:
                 try:
-                    color = wx.Colour(info_color)
+                    wx_color = wx.Colour(info_color)
                 except AttributeError:
                     pass
             if info_bright is not None:
-                if color is None:
-                    color = default_color
+                if wx_color is None:
+                    wx_color = default_color
                 # brightness is a percentage values below 100 indicate darker
                 # values beyond 100 indicate lighter
                 # no change = 100
                 # What about black? This is a special case, so we only consider
                 ialpha = info_bright / 100.0
-                if color.red == color.green == color.blue == 0 and info_bright > 100:
+                if (
+                    wx_color.red == wx_color.green == wx_color.blue == 0
+                    and info_bright > 100
+                ):
                     ialpha = (info_bright - 100) / 100.0
                     cr = int(255 * ialpha)
                     cg = int(255 * ialpha)
                     cb = int(255 * ialpha)
                 else:
-                    cr = int(color.red * ialpha)
-                    cg = int(color.green * ialpha)
-                    cb = int(color.blue * ialpha)
+                    cr = int(wx_color.red * ialpha)
+                    cg = int(wx_color.green * ialpha)
+                    cb = int(wx_color.blue * ialpha)
 
                 # Make sure the stay with 0..255
                 cr = max(0, min(255, cr))
                 cg = max(0, min(255, cg))
                 cb = max(0, min(255, cb))
-                color = wx.Colour(cr, cg, cb)
-            return color
+                wx_color = wx.Colour(cr, cg, cb)
+            return wx_color
 
         def_col = self._brush.GetColour()
         for s_entry in self.list_fill:
@@ -772,7 +791,7 @@ class VectorIcon:
             final_icon_height = resize
         if resolution > 1:
             # We don't need to have a one pixel resolution=size
-            # It#s good enough to have one every resolution pixel
+            # It's good enough to have one every resolution pixel
             final_icon_height = int(final_icon_height / resolution) * resolution
             final_icon_width = int(final_icon_width / resolution) * resolution
 
@@ -1286,6 +1305,7 @@ icons8_save = VectorIcon(
 icon_fractal = VectorIcon(
     fill="",
     stroke="M 0,0 L 4095,0 L 6143,-3547 L 4095,-7094 L 6143,-10641 L 10239,-10641 L 12287,-7094 M 12287,-7094 L 10239,-3547 L 12287,0 L 16383,0 M 16383,0 L 18431,-3547 L 22527,-3547 L 24575,0 L 28671,0 L 30719,-3547 L 28671,-7094 L 24575,-7094 L 22527,-10641 L 24575,-14188 M 24575,-14188 L 22527,-17735 L 18431,-17735 L 16383,-14188 M 16383,-14188 L 12287,-14188 L 10239,-17735 L 12287,-21283 L 16383,-21283 L 18431,-24830 L 16383,-28377 M 16383,-28377 L 18431,-31924 L 22527,-31924 L 24575,-28377 L 28671,-28377 L 30719,-31924 L 28671,-35471 L 24575,-35471 L 22527,-39019 L 24575,-42566 L 28671,-42566 L 30719,-46113 L 28671,-49660 L 30719,-53207 L 34815,-53207 L 36863,-49660 L 34815,-46113 L 36863,-42566 L 40959,-42566 L 43007,-39019 L 40959,-35471 L 36863,-35471 L 34815,-31924 L 36863,-28377 L 40959,-28377 L 43007,-31924 L 47103,-31924 L 49151,-28377 L 47103,-24830 L 49151,-21283 L 53247,-21283 L 55295,-17735 L 53247,-14188 L 49151,-14188 L 47103,-17735 L 43007,-17735 L 40959,-14188 L 43007,-10641 L 40959,-7094 L 36863,-7094 L 34815,-3547 L 36863,0 L 40959,0 M 40959,0 L 43007,-3547 L 47103,-3547 L 49151,0 M 49151,0 L 53247,0 L 55295,-3547 L 53247,-7094 L 55295,-10641 L 59391,-10641 L 61439,-7094 L 59391,-3547 L 61439,0 L 65535,0",
+    strokewidth=100,
 )
 
 icon_mk_circle = VectorIcon(fill="", stroke="M 15, 15 a 15,15 0 1,0 1,0 z")
@@ -2598,6 +2618,7 @@ icon_internal = VectorIcon(
 
 icon_warning = VectorIcon(
     fill=(
+        "[yellow]M 32, 9 l 23, 45 h -46 l 23, -45 Z",
         "[red]M32.427,7.987c2.183,0.124 4,1.165 5.096,3.281l17.936,36.208c1.739,3.66 -0.954,8.585 -5.373,8.656l-36.119,0c-4.022,-0.064 -7.322,-4.631 -5.352,-8.696l18.271,-36.207c0.342,-0.65 0.498,-0.838 0.793,-1.179c1.186,-1.375 2.483,-2.111 4.748,-2.063Zm-0.295,3.997c-0.687,0.034 -1.316,0.419 -1.659,1.017c-6.312,11.979 -12.397,24.081 -18.301,36.267c-0.546,1.225 0.391,2.797 1.762,2.863c12.06,0.195 24.125,0.195 36.185,0c1.325,-0.064 2.321,-1.584 1.769,-2.85c-5.793,-12.184 -11.765,-24.286 -17.966,-36.267c-0.366,-0.651 -0.903,-1.042 -1.79,-1.03Z",
         "[red]M33.631,40.581l-3.348,0l-0.368,-16.449l4.1,0l-0.384,16.449Zm-3.828,5.03c0,-0.609 0.197,-1.113 0.592,-1.514c0.396,-0.4 0.935,-0.601 1.618,-0.601c0.684,0 1.223,0.201 1.618,0.601c0.395,0.401 0.593,0.905 0.593,1.514c0,0.587 -0.193,1.078 -0.577,1.473c-0.385,0.395 -0.929,0.593 -1.634,0.593c-0.705,0 -1.249,-0.198 -1.634,-0.593c-0.384,-0.395 -0.576,-0.886 -0.576,-1.473Z",
     ),
@@ -2868,16 +2889,16 @@ icon_balor_bounds = VectorIcon(
 icon_outline = VectorIcon(
     fill=(),
     stroke=(
-        "M 258011,154807 h 51602 v 51602 h -51602 z",
-        "M 283812,180608 h 51602 v 51602 h -51602 z",
-        "[red]M 287542,237895 L 281972,237816 L 281216,237445 C 280223,236957 279324,236064 278687,234932 L 278171,234015 L 278126,223169 L 278081,212322 L 268820,212318"
-        "C 258062,212312 256450,212241 255342,211716 C 254389,211266 253517,210400 252897,209291 L 252416,208431 L 252418,180722 L 252421,153013 L 252849,152184"
-        "C 253662,150612 254989,149585 256605,149279 C 257567,149096 310049,149097 311019,149280 C 312695,149595 314073,150692 314867,152341"
-        "L 315329,153303 L 315329,164049 L 315329,174794 L 325913,174874 C 336003,174950 336536,174966 337338,175216"
-        "C 338936,175714 340096,176785 340827,178439 L 341157,179185 L 341121,206469 L 341084,233752"
-        "L 340790,234473 C 340181,235967 338996,237116 337519,237644 C 336763,237914 336647,237916 314936,237945 C 302933,237962 290606,237939 287542,237895 L 287542,237895",
+        "M 258.011,154.807 h 51.602 v 51.602 h -51.602 z",
+        "M 283.812,180.608 h 51.602 v 51.602 h -51.602 z",
+        "[red]M 287.542,237.895 L 281.972,237.816 L 281.216,237.445 C 280.223,236.957 279.324,236.064 278.687,234.932 L 278.171,234.015 L 278.126,223.169 L 278.081,212.322 L 268.820,212.318"
+        "C 258.062,212.312 256.450,212.241 255.342,211.716 C 254.389,211.266 253.517,210.400 252.897,209.291 L 252.416,208.431 L 252.418,180.722 L 252.421,153.013 L 252.849,152.184"
+        "C 253.662,150.612 254.989,149.585 256.605,149.279 C 257.567,149.096 310.049,149.097 311.019,149.280 C 312.695,149.595 314.073,150.692 314.867,152.341"
+        "L 315.329,153.303 L 315.329,164.049 L 315.329,174.794 L 325.913,174.874 C 336.003,174.950 336.536,174.966 337.338,175.216"
+        "C 338.936,175.714 340.096,176.785 340.827,178.439 L 341.157,179.185 L 341.121,206.469 L 341.084,233.752"
+        "L 340.790,234.473 C 340.181,235.967 338.996,237.116 337.519,237.644 C 336.763,237.914 336.647,237.916 314.936,237.945 C 302.933,237.962 290.606,237.939 287.542,237.895 L 287.542,237.895",
     ),
-    edge=5000,
+    edge=5,
 )
 icon_library = VectorIcon(
     stroke=(
@@ -2888,4 +2909,32 @@ icon_library = VectorIcon(
     ),
     fill=(),
     strokewidth=1,
+)
+
+icon_paint_brush = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 223.754,317.144 L 295.271,245.627 L 233.971,184.326 L 285.055,133.243 L 468.956,317.144 L 417.873,368.228 L 356.572,306.927 L 285.055,378.445 L 244.188,378.445 L 223.754,358.011 L 223.754,317.144",
+        "M 280.194,337.386 C 280.194,334.311 279.384,331.291 277.847,328.628 C 276.310,325.966 274.098,323.754 271.436,322.217 C 268.773,320.680 265.753,319.871 262.678,319.871 C 259.604,319.871 256.583,320.680 253.921,322.217 C 251.258,323.754 249.047,325.966 247.510,328.628 C 245.972,331.291 245.163,334.311 245.163,337.386 C 245.163,340.460 245.972,343.481 247.510,346.143 C 249.047,348.806 251.258,351.017 253.921,352.554 C 256.583,354.092 259.604,354.901 262.678,354.901 C 265.753,354.901 268.773,354.092 271.436,352.554 C 274.098,351.017 276.310,348.806 277.847,346.143 C 279.384,343.481 280.194,340.460 280.194,337.386",
+        "M 305.488,153.676 L 407.656,51.509 L 478.575,122.823 L 433.996,193.918 L 525.230,168.520 L 550.690,194.543 L 448.523,296.711",
+        "M 551.629,216.730 C 542.599,231.173 520.205,258.130 515.507,274.503 C 513.977,279.838 513.384,291.574 515.507,296.701 C 518.370,303.612 529.753,314.995 536.663,317.857 C 543.576,320.721 559.682,320.721 566.595,317.857 C 573.505,314.995 584.888,303.612 587.751,296.701 C 589.874,291.574 589.281,279.838 587.751,274.503 C 583.053,258.130 560.659,231.173 551.629,216.730",
+        "M 525.230,168.520 L 450.372,247.589",
+        "M 431.325,75.576 L 356.466,154.645",
+        "M 457.526,102.244 L 382.667,181.313",
+    ),
+    strokewidth=10,
+)
+
+icon_paint_brush_green = VectorIcon(
+    fill=(),
+    stroke=(
+        "[green]M 223.754,317.144 L 295.271,245.627 L 233.971,184.326 L 285.055,133.243 L 468.956,317.144 L 417.873,368.228 L 356.572,306.927 L 285.055,378.445 L 244.188,378.445 L 223.754,358.011 L 223.754,317.144",
+        "[green]M 280.194,337.386 C 280.194,334.311 279.384,331.291 277.847,328.628 C 276.310,325.966 274.098,323.754 271.436,322.217 C 268.773,320.680 265.753,319.871 262.678,319.871 C 259.604,319.871 256.583,320.680 253.921,322.217 C 251.258,323.754 249.047,325.966 247.510,328.628 C 245.972,331.291 245.163,334.311 245.163,337.386 C 245.163,340.460 245.972,343.481 247.510,346.143 C 249.047,348.806 251.258,351.017 253.921,352.554 C 256.583,354.092 259.604,354.901 262.678,354.901 C 265.753,354.901 268.773,354.092 271.436,352.554 C 274.098,351.017 276.310,348.806 277.847,346.143 C 279.384,343.481 280.194,340.460 280.194,337.386",
+        "[green]M 305.488,153.676 L 407.656,51.509 L 478.575,122.823 L 433.996,193.918 L 525.230,168.520 L 550.690,194.543 L 448.523,296.711",
+        "[green]M 551.629,216.730 C 542.599,231.173 520.205,258.130 515.507,274.503 C 513.977,279.838 513.384,291.574 515.507,296.701 C 518.370,303.612 529.753,314.995 536.663,317.857 C 543.576,320.721 559.682,320.721 566.595,317.857 C 573.505,314.995 584.888,303.612 587.751,296.701 C 589.874,291.574 589.281,279.838 587.751,274.503 C 583.053,258.130 560.659,231.173 551.629,216.730",
+        "[green]M 525.230,168.520 L 450.372,247.589",
+        "[green]M 431.325,75.576 L 356.466,154.645",
+        "[green]M 457.526,102.244 L 382.667,181.313",
+    ),
+    strokewidth=10,
 )

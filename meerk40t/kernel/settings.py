@@ -1,4 +1,5 @@
 import ast
+import os
 from configparser import ConfigParser, MissingSectionHeaderError, NoSectionError
 from pathlib import Path
 from typing import Any, Dict, Generator, Optional, Union
@@ -19,11 +20,12 @@ class Settings:
     `write_configuration` is called.
     """
 
-    def __init__(self, directory, filename, ignore_settings=False):
+    def __init__(self, directory, filename, ignore_settings=False, create_backup=False):
         self._config_file = Path(get_safe_path(directory, create=True)).joinpath(
             filename
         )
         self._config_dict = {}
+        self.create_backup = create_backup
         if not ignore_settings:
             self.read_configuration()
 
@@ -81,6 +83,35 @@ class Settings:
                     except NoSectionError:
                         parser.add_section(section_key)
                         parser.set(section_key, key, value)
+            if self.create_backup:
+                VERSIONS = 5
+                try:
+                    if os.path.exists(targetfile):
+                        base_name, base_ext = os.path.splitext(targetfile)
+                        for history in range(VERSIONS - 1, -1, -1):
+                            if history == 0:
+                                v0 = ".bak"
+                            else:
+                                v0 = f".ba{history}"
+                            v1 = f".ba{history + 1}"
+                            v0_file = base_name + v0
+                            v1_file = base_name + v1
+                            if os.path.exists(v0_file):
+                                if os.path.exists(v1_file):
+                                    os.remove(v1_file)
+                                os.rename(v0_file, v1_file)
+
+                        v1_file = base_name + ".bak"
+                        os.rename(targetfile, v1_file)
+                except (
+                    PermissionError,
+                    OSError,
+                    RuntimeError,
+                    FileExistsError,
+                    FileNotFoundError,
+                ) as e:
+                    # print (f"Error happened: {e}")
+                    pass
             with open(targetfile, "w", encoding="utf-8") as fp:
                 parser.write(fp)
         except (PermissionError, FileNotFoundError):

@@ -101,7 +101,9 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/util console", "{enabled}{command}")
         kernel.register("format/util wait", "{enabled}{element_type} {wait}")
         kernel.register("format/util home", "{enabled}{element_type}")
-        kernel.register("format/util goto", "{enabled}{element_type} {adjust}")
+        kernel.register(
+            "format/util goto", "{enabled}{element_type} {absolute}{adjust}"
+        )
         kernel.register("format/util output", "{enabled}{element_type} {bits}")
         kernel.register("format/util input", "{enabled}{element_type} {bits}")
         kernel.register("format/layer", "{element_type} {name}")
@@ -140,7 +142,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/place current", "{enabled}{element_type}")
         kernel.register(
             "format/place point",
-            "{enabled}{loops}{element_type} {corner} {x} {y} {rotation}",
+            "{enabled}{loops}{element_type}{grid} {corner} {x} {y} {rotation}",
         )
     elif lifecycle == "register":
         kernel.add_service("elements", Elemental(kernel))
@@ -507,7 +509,9 @@ class Elemental(Service):
         self.undo = Undo(self, self._tree)
         self.do_undo = True
         self.suppress_updates = False
-
+        # We need to setup these as the settings stuff will only be done
+        # on postboot after Elemental has already been created
+        self.setting(bool, "classify_new", True)
         self.setting(bool, "classify_reverse", False)
         self.setting(bool, "legacy_classification", False)
         self.setting(bool, "classify_fuzzy", False)
@@ -526,7 +530,9 @@ class Elemental(Service):
         self.setting(float, "svg_ppi", 96.0)
         self.setting(bool, "operation_default_empty", True)
 
-        self.op_data = Settings(self.kernel.name, "operations.cfg")
+        self.op_data = Settings(
+            self.kernel.name, "operations.cfg", create_backup=True
+        )  # keep backup
 
         self.wordlists = {"version": [1, self.kernel.version]}
 
@@ -586,7 +592,7 @@ class Elemental(Service):
     @contextlib.contextmanager
     def static(self, source):
         try:
-            self.stop_updates(source)
+            self.stop_updates(source, False)
             yield self
         finally:
             self.resume_updates(source)
@@ -599,14 +605,16 @@ class Elemental(Service):
         finally:
             self.do_undo = True
 
-    def stop_updates(self, source):
+    def stop_updates(self, source, stop_notify=False):
         # print (f"Stop update called from {source}")
+        self._tree.pause_notify = stop_notify
         self.suppress_updates = True
         self.signal("freeze_tree", True)
 
     def resume_updates(self, source, force_an_update=True):
         # print (f"Resume update called from {source}")
         self.suppress_updates = False
+        self._tree.pause_notify = False
         self.signal("freeze_tree", False)
         if force_an_update:
             self.signal("tree_changed")
@@ -777,8 +785,9 @@ class Elemental(Service):
         #                 element attrib (ie stroke or fill)
         #               - anything else: leave all colors unchanged
         # attrib:       one of 'stroke', 'fill' to establish the source color
-        #               ('auto' is an option too that will pick the color from the
-        #               operation settings)
+        #               ('auto' is an option too, that will pick the color from the
+        #               operation settings) - if we talk about an engrave or cut operation
+        #               and if 'stroke' or 'auto' have been set, 'fill' will be set None
         # similar:      will use attrib (see above) to establish similar elements (having (nearly) the same
         #               color) and assign those as well
         # exclusive:    will delete all other assignments of the source elements in other operations if True
@@ -876,6 +885,9 @@ class Elemental(Service):
                     data.append(n)
 
         needs_refresh = False
+        set_fill_to_none = (
+            op_assign.type in ("op engrave", "op cut") and attrib == "stroke"
+        )
         for n in data:
             if op_assign.drop(n, modify=False):
                 if exclusive:
@@ -885,6 +897,8 @@ class Elemental(Service):
                 if impose == "to_elem" and target_color is not None:
                     if hasattr(n, attrib):
                         setattr(n, attrib, target_color)
+                        if set_fill_to_none and hasattr(n, "fill"):
+                            n.fill = None
                         needs_refresh = True
         # Refresh the operation so any changes like color materialize...
         self.signal("element_property_reload", op_assign)
@@ -899,6 +913,8 @@ class Elemental(Service):
         it in the sense that if all elements of a given hierarchy
         (ie group or file) are in this set, then they will be
         replaced and represented by this parent element
+        NB: we will set the emphasized_time of the parent element
+        to the minimum time of all children
         """
 
         def remove_children_from_list(list_to_deal, parent_node):
@@ -909,6 +925,12 @@ class Elemental(Service):
                     list_to_deal[idx] = None
                     if len(node.children) > 0:
                         remove_children_from_list(list_to_deal, node)
+                    t1 = parent_node._emphasized_time
+                    t2 = node._emphasized_time
+                    if t2 is None:
+                        continue
+                    if t1 is None or t2 < t1:
+                        parent_node._emphasized_time = t2
 
         align_data = [e for e in data]
         needs_repetition = True
@@ -1005,10 +1027,12 @@ class Elemental(Service):
             except AttributeError:
                 pass
 
-    def align_elements(self, data, alignbounds, positionx, positiony, as_group):
+    def align_elements(
+        self, data_to_align, alignbounds, positionx, positiony, as_group
+    ):
         """
 
-        @param data: elements to align
+        @param data_to_align: elements to align
         @param alignbounds: boundary tuple (left, top, right, bottom)
                             to which data needs to be aligned to
         @param positionx:   one of "min", "max", "center"
@@ -1040,7 +1064,6 @@ class Elemental(Service):
                 ) / 2
             return dx, dy
 
-        data_to_align = self.condense_elements(data)
         # Selection boundaries
         boundary_points = []
         for node in data_to_align:
@@ -1079,6 +1102,7 @@ class Elemental(Service):
             else:
                 dx = groupdx
                 dy = groupdy
+            # print (f"Translating {q.type} by {dx:.0f}, {dy:.0f}")
             self.translate_node(q, dx, dy)
         self.signal("refresh_scene", "Scene")
 
@@ -1168,16 +1192,33 @@ class Elemental(Service):
         for e in self.flat():
             e.unregister()
 
+    def safe_section_name(self, name):
+        res = name
+        for forbidden in " []":
+            res = res.replace(forbidden, "_")
+        return res
+
     def save_persistent_operations_list(
-        self, name, oplist=None, opinfo=None, inform=True, use_settings=None
+        self,
+        name,
+        oplist=None,
+        opinfo=None,
+        inform=True,
+        use_settings=None,
+        flush=True,
     ):
         """
         Saves a given list of operations to the op_data:Settings
 
         @param name:
         @param oplist:
+        @param opinfo:
+        @param inform:
+        @param use_settings:
+        @param flush:
         @return:
         """
+        name = self.safe_section_name(name)
         if oplist is None:
             oplist = self.op_branch.children
         if opinfo is None:
@@ -1193,7 +1234,7 @@ class Elemental(Service):
             for key, value in opinfo.items():
                 settings.write_persistent(section, key, value)
 
-        self._save_persistent_operation_tree(name, oplist, flush=True, inform=True)
+        self._save_persistent_operation_tree(name, oplist, flush=flush, inform=True)
 
     # Operations uniform
     save_persistent_operations = save_persistent_operations_list
@@ -1211,6 +1252,7 @@ class Elemental(Service):
                 then we will let everyone know
         @return:
         """
+        name = self.safe_section_name(name)
         if use_settings is None:
             settings = self.op_data
         else:
@@ -1243,9 +1285,11 @@ class Elemental(Service):
         Clear operations for the derivables of the given name.
 
         @param name: name of operation.
-        @param flush: Optionally permit non-flushed to disk.
+        @param flush: Optionally permit non-flushed to disk
+        @param use_settings:
         @return:
         """
+        name = self.safe_section_name(name)
         if use_settings is None:
             settings = self.op_data
         else:
@@ -1257,6 +1301,7 @@ class Elemental(Service):
         settings.write_configuration()
 
     def load_persistent_op_info(self, name, use_settings=None):
+        name = self.safe_section_name(name)
         if use_settings is None:
             settings = self.op_data
         else:
@@ -1272,6 +1317,7 @@ class Elemental(Service):
         return op_info
 
     def load_persistent_op_list(self, name, use_settings=None):
+        name = self.safe_section_name(name)
         if use_settings is None:
             settings = self.op_data
         else:
@@ -1288,12 +1334,19 @@ class Elemental(Service):
                 continue
 
             op_type = settings.read_persistent(str, section, "type")
+            op_attr = dict()
+            for key in settings.keylist(section):
+                if key == "type":
+                    # We need to ignore it to avoid double attribute issues.
+                    continue
+                content = settings.read_persistent(str, section, key)
+                op_attr[key] = content
             try:
-                op = Node().create(type=op_type)
+                op = Node().create(type=op_type, **op_attr)
             except ValueError:
-                # Attempted to create a non-boostrapped node type.
+                # Attempted to create a non-bootstrapped node type.
                 continue
-            op.load(settings, section)
+            # op.load(settings, section)
             op_tree[section] = op
         op_list = list()
         for section in op_tree:
@@ -1304,13 +1357,15 @@ class Elemental(Service):
                 op_tree[parent].add_node(op_tree[section])
         return op_list, op_info
 
-    def load_persistent_operations(self, name, classify=True, clear=True):
+    def load_persistent_operations(self, name, classify=None, clear=True):
         """
         Load oplist section to replace current op_branch data.
 
         Performs an optional classification.
 
         @param name:
+        @param classify:
+        @param clear:
         @return:
         """
         settings = self.op_data
@@ -1320,6 +1375,8 @@ class Elemental(Service):
         oplist, opinfo = self.load_persistent_op_list(name, use_settings=settings)
         for op in oplist:
             operation_branch.add_node(op)
+        if classify is None:
+            classify = self.classify_new
         if not classify:
             return
         if len(list(self.elems())) > 0:
@@ -1450,7 +1507,7 @@ class Elemental(Service):
             create_raster(oplist)
             create_image(oplist)
             opinfo.clear()
-            opinfo["name"] = "Default"
+            opinfo["material"] = "Default"
             opinfo["author"] = "MeerK40t"
             needs_save = True
         # Ensure we have an id for everything
@@ -1522,6 +1579,7 @@ class Elemental(Service):
             for e in emph_data:
                 e.emphasized = True
         self.signal("element_property_reload", data)
+        self.signal("warn_state_update")
 
     def remove_unused_default_copies(self):
         # Let's clean non-used operations that come from defaults...
@@ -2368,6 +2426,7 @@ class Elemental(Service):
             self._emphasized_bounds = bounds
             self._emphasized_bounds_painted = bounds_painted
             self.set_emphasis(e_list)
+            self.signal("element_clicked")
         else:
             self._emphasized_bounds = None
             self._emphasized_bounds_painted = None
@@ -2447,6 +2506,7 @@ class Elemental(Service):
             # add_op_function = self.add_op
             add_op_function = self.add_classify_op
         for node in elements:
+            node_desc = f"[{node.type}]{'' if node.id is None else node.id + '-'}{'<none>' if node.label is None else node.label}"
             # Following lines added to handle 0.7 special ops added to ops list
             if hasattr(node, "operation"):
                 add_op_function(node)
@@ -2457,9 +2517,13 @@ class Elemental(Service):
                 fuzzy_param = (False, True)
             else:
                 fuzzy_param = (False,)
+            do_stroke = True
+            do_fill = True
             for tempfuzzy in fuzzy_param:
                 if debug:
-                    debug(f"Pass 1 (fuzzy={tempfuzzy}): check {node.type}")
+                    debug(
+                        f"Pass 1 (fuzzy={tempfuzzy}): checks, s:{do_stroke}, f:{do_fill}, node:{node_desc}"
+                    )
                 was_classified = False
                 should_break = False
 
@@ -2467,6 +2531,10 @@ class Elemental(Service):
                     # One special case: is this a rasterop and the stroke
                     # color is black and the option 'classify_black_as_raster'
                     # is not set? Then skip...
+                    if not do_stroke and op.type in ("op engrave", "op cut", "op dots"):
+                        continue
+                    if not do_fill and op.type in ("op raster", "op image"):
+                        continue
                     is_black = False
                     whisperer = True
                     if (
@@ -2526,18 +2594,29 @@ class Elemental(Service):
                             sfill = ""
                         if debug:
                             debug(
-                                f"Was classified: {sstroke} {sfill} matching operation: {type(op).__name__}, break={should_break}"
+                                f"{node_desc} was classified: {sstroke} {sfill} matching operation: {type(op).__name__}, break={should_break}"
                             )
                     if should_break:
                         break
+                # end of operation loop, let's make sure we don't do stuff again if we were successful
+                if classif_info[0]:
+                    do_stroke = False
+                if classif_info[1]:
+                    do_fill = False
+
                 # So we are the end of the first pass, if there was already a classification
                 # then we call it a day and don't call the fuzzy part
                 if was_classified or should_break:
                     break
+            # - End of fuzzy loop
 
             ######################
             # NON-CLASSIFIED ELEMENTS
             ######################
+            if not do_stroke:
+                classif_info[0] = True
+            if not do_fill:
+                classif_info[1] = True
             if was_classified and debug:
                 debug(f"Classified, stroke={classif_info[0]}, fill={classif_info[1]}")
             # Let's make sure we only consider relevant, ie existing attributes...
@@ -2545,7 +2624,7 @@ class Elemental(Service):
                 if node.stroke is None or node.stroke.argb is None:
                     classif_info[0] = True
                 if node.type == "elem text":
-                    # even if it has, we are not going to something with it
+                    # even if it has, we are not going to do something with it
                     classif_info[0] = True
             else:
                 classif_info[0] = True
@@ -2560,11 +2639,23 @@ class Elemental(Service):
             ):
                 # Not fully classified on both stroke and fill
                 was_classified = False
+                if debug:
+                    debug(
+                        f"{node_desc} was not fully classified on stroke and fill (s:{classif_info[0]}, f:{classif_info[1]})"
+                    )
             if not was_classified and usedefault:
                 # let's iterate through the default ops and add them
                 if debug:
                     debug("Pass 2 (wasn't classified), looking for default ops")
                 for op in operations:
+                    if classif_info[0] and op.type in (
+                        "op engrave",
+                        "op cut",
+                        "op dots",
+                    ):
+                        continue
+                    if classif_info[1] and op.type in ("op raster", "op image"):
+                        continue
                     is_black = False
                     whisperer = True
                     if (
@@ -2906,7 +2997,13 @@ class Elemental(Service):
                         operations.append(op)
                         new_operations_added = True
                         already_found = True
-                    op.add_reference(node)
+                    # Don't add a node more than once!
+                    existing = False
+                    if hasattr(op, "is_referenced"):
+                        existing = op.is_referenced(node)
+
+                    if not existing:
+                        op.add_reference(node)
 
         self.remove_unused_default_copies()
         if new_operations_added:
@@ -3637,14 +3734,32 @@ class Elemental(Service):
         return False
 
     def remove_empty_groups(self):
-        something_was_deleted = True
-        while something_was_deleted:
-            something_was_deleted = False
-            for node in self.elems_nodes():
-                if node.type in ("file", "group"):
-                    if len(node.children) == 0:
-                        node.remove_node()
-                        something_was_deleted = True
+        def descend_group(gnode):
+            gres = 0
+            gdel = 0
+            to_be_deleted = list()
+            for cnode in gnode.children:
+                if cnode.type in ("file", "group"):
+                    cres, cdel = descend_group(cnode)
+                    if cres == 0:
+                        # Empty, so remove it
+                        to_be_deleted.append(cnode)
+                        gdel += cdel + 1
+                    else:
+                        gres += cres
+                        gdel += cdel
+                else:
+                    gres += 1
+            for cnode in to_be_deleted:
+                cnode.remove_node(fast=True)
+            return gres, gdel
+
+        self.set_start_time("empty_groups")
+        l1, d1 = descend_group(self.elem_branch)
+        l2, d2 = descend_group(self.reg_branch)
+        self.set_end_time("empty_groups", display=True, message=f"{l1} / {l2}")
+        if d1 != 0 or d2 != 0:
+            self.signal("rebuild_tree")
 
     @staticmethod
     def element_classify_color(element: SVGElement):
@@ -3783,10 +3898,11 @@ class Elemental(Service):
             g = node.as_geometry()
         except AttributeError:
             return
-        changed, before, after = g.simplify()
-        if changed:
-            # Replace node geometry with simplified geometry.
-            node.geometry = g
+        before = g.index
+        node.geometry = g.simplify()
+        after = node.geometry.index
+        changed = True
+
         return changed, before, after
 
 

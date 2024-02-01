@@ -8,8 +8,8 @@ class ImageCutTool(PointListTool):
     Draws a line with click and drag, uses that line to slice an image.
     """
 
-    def __init__(self, scene):
-        PointListTool.__init__(self, scene)
+    def __init__(self, scene, mode=None):
+        PointListTool.__init__(self, scene, mode=mode)
 
     def create_node(self):
         if len(self.point_series) > 1:

@@ -499,12 +499,11 @@ class LaserToolPanel(wx.Panel):
         if sqr_of_r < 0:
             result = False
         else:
-            r = round(sqrt(sqr_of_r), 5)
+            radius = round(sqrt(sqr_of_r), 5)
 
         # print("Centre = (", h, ", ", k, ")")
         # print("Radius = ", r)
         center = (h, k)
-        radius = r
         return result, center, radius
 
     def calculate_square(self):
@@ -775,10 +774,12 @@ class LaserTool(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(551, 234, submenu="Operations", *args, **kwds)
         self.panel = LaserToolPanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         _icon = wx.NullIcon
         # _icon.CopyFromBitmap(icons8_computer_support.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Place Template"))
+        self.restore_aspect()
 
     def window_open(self):
         pass

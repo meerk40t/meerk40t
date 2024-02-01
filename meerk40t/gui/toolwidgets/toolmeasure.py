@@ -3,6 +3,7 @@ from math import atan, cos, sin, sqrt, tau
 import wx
 
 from meerk40t.core.units import Length
+from meerk40t.gui.wxutils import matrix_scale
 
 from .toolpointlistbuilder import PointListTool
 
@@ -17,8 +18,8 @@ class MeasureTool(PointListTool):
     and after 3 points the covered area as well
     """
 
-    def __init__(self, scene):
-        PointListTool.__init__(self, scene)
+    def __init__(self, scene, mode=None):
+        PointListTool.__init__(self, scene, mode=mode)
         self.line_pen = wx.Pen()
         self.line_pen.SetColour(self.scene.colors.color_measure_line)
         self.line_pen.SetStyle(wx.PENSTYLE_DOT)
@@ -36,11 +37,14 @@ class MeasureTool(PointListTool):
         if not self.point_series:
             return
         matrix = gc.GetTransform().Get()
+        # mat.a mat.d
+        mat_fact = matrix[0]
         try:
-            font_size = 10.0 / matrix[0]
+            font_size = 10.0 / mat_fact
         except ZeroDivisionError:
             font_size = 5000
-            return
+        if font_size > 1e8:
+            font_size = 5000
         # print ("Fontsize=%.3f, " % self.font_size)
         if font_size < 1.0:
             font_size = 1.0  # Mac does not allow values lower than 1.
@@ -61,7 +65,7 @@ class MeasureTool(PointListTool):
         gc.SetFont(font, self.scene.colors.color_measure_text)
 
         matrix = self.parent.matrix
-        linewidth = 2.0 / matrix.value_scale_x()
+        linewidth = 2.0 / matrix_scale(matrix)
         if linewidth < 1:
             linewidth = 1
         try:

@@ -9,6 +9,7 @@ from PIL import Image
 from wx import aui
 
 from meerk40t.core.exceptions import BadFileError
+from meerk40t.gui.gui_mixins import FormatPainter, Warnings
 from meerk40t.gui.statusbarwidgets.defaultoperations import DefaultOperationWidget
 from meerk40t.gui.statusbarwidgets.infowidget import (
     BurnProgressPanel,
@@ -32,7 +33,6 @@ from ..core.units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from ..svgelements import Color, Matrix, Path
 from .icons import (  # icon_duplicate,; icon_nohatch,
     STD_ICON_SIZE,
-    PyEmbeddedImage,
     icon_bmap_text,
     icon_cag_common,
     icon_cag_subtract,
@@ -122,6 +122,8 @@ class MeerK40t(MWindow):
         width, height = wx.DisplaySize()
 
         super().__init__(int(width * 0.9), int(height * 0.9), *args, **kwds)
+        # We do this very early to allow resizing events to do their thing...
+        self.restore_aspect(honor_initial_values=True)
         try:
             self.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE | wx.TOUCH_PAN_GESTURES)
         except AttributeError:
@@ -239,7 +241,8 @@ class MeerK40t(MWindow):
             command = "check_for_updates --verbosity 2\n"
         elif self.context.update_check == 2:
             command = "check_for_updates --beta --verbosity 2\n"
-        doit = True
+        else:
+            raise ValueError("Invalid check setting")
         lastdate = None
         lastcall = self.context.setting(int, "last_update_check", None)
         if lastcall is not None:
@@ -253,13 +256,12 @@ class MeerK40t(MWindow):
             # print (f"Delta: {delta.days}, lastdate={lastdate}, interval={self.context.update_frequency}")
             if self.context.update_frequency == 2 and delta.days <= 6:
                 # Weekly
-                doit = False
+                return
             elif self.context.update_frequency == 1 and delta.days <= 0:
                 # Daily
-                doit = False
-        if doit:
-            self.context.last_update_check = now.toordinal()
-            self.context(command)
+                return
+        self.context.last_update_check = now.toordinal()
+        self.context(command)
 
     def setup_statusbar_panels(self, combine):
         # if not self.context.show_colorbar:
@@ -698,6 +700,10 @@ class MeerK40t(MWindow):
         self.context.signal("draw_mode", self.context.draw_mode)
         self.context.signal("refresh_scene", "Scene")
 
+    @signal_listener("system_font_directories")
+    def font_sources_changed(self, origin, signal, *args):
+        self.context.fonts.reset_cache()
+
     # --- Listen to external events to update the bar
     # @signal_listener("show_colorbar")
     # def on_colobar_signal(self, origin, *args):
@@ -733,6 +739,9 @@ class MeerK40t(MWindow):
             self.main_statusbar.Signal("rebuild_tree")
 
     # --------- Events for status bar
+    @signal_listener("element_clicked")
+    def on_element_clicked(self, origin, *args):
+        self.format_painter.on_emphasis(args)
 
     @signal_listener("emphasized")
     def on_update_statusbar(self, origin, *args):
@@ -1143,6 +1152,11 @@ class MeerK40t(MWindow):
         else:
             set_icon_appearance(1.0, 0)
 
+        self.format_painter = FormatPainter(
+            self.context, "button/extended_tools/Paint", "editpaint"
+        )
+        self.warning_routine = Warnings(self.context, "button/jobstart/Warning")
+
     def open_property_window_for_node(self, node):
         """
         Activate the node in question.
@@ -1229,7 +1243,10 @@ class MeerK40t(MWindow):
         def contains_a_param():
             result = False
             for e in kernel.elements.elems(emphasized=True):
-                if e.functional_parameter is not None:
+                if (
+                    hasattr(e, "functional_parameter")
+                    and e.functional_parameter is not None
+                ):
                     result = True
                     break
             return result
@@ -1371,7 +1388,7 @@ class MeerK40t(MWindow):
             cmd = hatch[0]
             if first_hatch is None:
                 first_hatch = cmd
-            tip = hatch[1] + rightmsg
+            tip = _(hatch[1]) + rightmsg
             icon = hatch[2]
             if icon is None:
                 icon = icon_hatch
@@ -1381,7 +1398,7 @@ class MeerK40t(MWindow):
                 "identifier": f"hatch_{idx}",
                 "label": _(label),
                 "icon": icon,
-                "tip": _(tip),
+                "tip": tip,
                 "help": "hatches",
                 "action": action(cmd),
                 "action_right": lambda v: kernel.elements("effect-remove\n"),
@@ -1661,6 +1678,7 @@ class MeerK40t(MWindow):
                 "rule_enabled": lambda cond: clipboard_filled(),
             },
         )
+
         # kernel.register(
         #     "button/basicediting/Duplicate",
         #     {
@@ -2929,6 +2947,7 @@ class MeerK40t(MWindow):
             if not window.window_menu(None):
                 continue
             win_caption = ""
+            submenu_name = None
             try:
                 returnvalue = window.submenu()
                 if isinstance(returnvalue, str):
@@ -3831,6 +3850,15 @@ class MeerK40t(MWindow):
             #     m.Enable(False)
         self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
+    @signal_listener("warn_state_update")
+    @signal_listener("updateop_tree")
+    @signal_listener("tree_changed")
+    @signal_listener("modified_by_tool")
+    @signal_listener("device;renamed")
+    @signal_listener("service/device/active")
+    def warning_indicator(self, *args):
+        self.warning_routine.warning_indicator()
+
     @signal_listener("restart")
     def on_restart_required(self, *args):
         self.context.kernel.register(
@@ -3851,6 +3879,7 @@ class MeerK40t(MWindow):
     @lookup_listener("service/device/active")
     def on_active_change(self, *args):
         self.__set_titlebar()
+        self.context.signal("update_group_labels")
 
     def window_close_veto(self):
         if self.any_device_running:
@@ -4266,6 +4295,7 @@ class MeerK40t(MWindow):
         kernel.busyinfo.end()
         self.context(".tool none\n")
         context.elements.undo.mark("blank")
+        self.context.signal("selected")
 
     def clear_and_open(self, pathname, preferred_loader=None):
         self.clear_project(ops_too=False)

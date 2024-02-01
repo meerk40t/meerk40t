@@ -462,23 +462,23 @@ class ConsolePanel(wx.ScrolledWindow):
             pass
 
     def load_log(self):
-        def tail(f, window=1):
+        def tail(fs, window=1):
             """
             Returns the last `window` lines of file `f` as a list of bytes.
             """
             if window == 0:
                 return b""
             BUFSIZE = 1024
-            f.seek(0, 2)
-            end = f.tell()
+            fs.seek(0, 2)
+            end = fs.tell()
             nlines = window + 1
             data = []
             while nlines > 0 and end > 0:
                 i = max(0, end - BUFSIZE)
                 nread = min(end, BUFSIZE)
 
-                f.seek(i)
-                chunk = f.read(nread)
+                fs.seek(i)
+                chunk = fs.read(nread)
                 data.append(chunk)
                 nlines -= chunk.count(b"\n")
                 end -= nread
@@ -512,14 +512,16 @@ class ConsolePanel(wx.ScrolledWindow):
 
 class Console(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(581, 410, *args, **kwds)
+        super().__init__(550, 450, *args, **kwds)
         self.panel = ConsolePanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_console.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Console"))
         self.Layout()
+        self.restore_aspect(honor_initial_values=True)
 
     @staticmethod
     def sub_register(kernel):

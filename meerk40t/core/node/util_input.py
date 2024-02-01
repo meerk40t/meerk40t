@@ -97,6 +97,6 @@ class InputOperation(Node):
 
         The preference for raster shapes is to use the settings set on this operation rather than on the image-node.
         """
-        input = InputCut(self.input_mask, self.input_value, self.input_message)
-        input.original_op = self.type
-        yield input
+        _input = InputCut(self.input_mask, self.input_value, self.input_message)
+        _input.original_op = self.type
+        yield _input

@@ -38,6 +38,13 @@ class DefaultOperationWidget(StatusBarWidget):
             slabel = f"Image ({node.power/10:.0f}%, {node.speed}mm/s)"
         else:
             slabel = ""
+        slabel = (
+            _("Assign the selection to:")
+            + "\n"
+            + slabel
+            + "\n"
+            + _("Right click for options")
+        )
         return slabel
 
     def GenerateControls(self, parent, panelidx, identifier, context):
@@ -127,14 +134,14 @@ class DefaultOperationWidget(StatusBarWidget):
             opid = op.id
             if opid is None:
                 opid = ""
-            fontsize = 12
+            fontsize = 10
             if len(opid) > 2:
-                fontsize = 10
-            elif len(opid) > 3:
                 fontsize = 8
+            elif len(opid) > 3:
+                fontsize = 7
             elif len(opid) > 4:
                 fontsize = 6
-            # use_theme=False is needed as othewise colors will get reversed
+            # use_theme=False is needed as otherwise colors will get reversed
             icon = EmptyIcon(
                 size=(self.iconsize, min(self.iconsize, self.height)),
                 color=wx.Colour(swizzlecolor(op.color)),
@@ -142,10 +149,7 @@ class DefaultOperationWidget(StatusBarWidget):
                 ptsize=fontsize,
             ).GetBitmap(noadjustment=True, use_theme=False)
             btn.SetBitmap(icon)
-            op_label = op.label
-            if op_label is None:
-                op_label = str(op)
-            btn.SetToolTip(op_label)
+            btn.SetToolTip(self.node_label(op))
             size_it(btn, self.buttonsize_x, self.buttonsize_y)
             self.assign_buttons.append(btn)
             self.assign_operations.append(op)
@@ -212,50 +216,118 @@ class DefaultOperationWidget(StatusBarWidget):
 
         def on_menu_material(matname):
             def handler(*args):
-                oplist, opinfo = self.context.elements.load_persistent_op_list(
-                    stored_mat
-                )
+                elements = self.context.elements
+                oplist, opinfo = elements.load_persistent_op_list(stored_mat)
                 if oplist is not None and len(oplist) > 0:
-                    self.context.elements.default_operations = oplist
+                    elements.default_operations = list(oplist)
                     self.Signal("default_operations")
 
             stored_mat = matname
             return handler
 
+        # def on_update_button_from_tree(idx, operation):
+        #     def handler(*args):
+        #         self.assign_operations[stored_idx] = self.context.elements.create_usable_copy(stored_op)
+        #
+        #     stored_idx = idx
+        #     stored_op = operation
+        #     return handler
+        #
+        # # Check if the id of this entry is already existing (and the types match too)
+        # button = event.GetEventObject()
+        # node_index = -1
+        # node = None
+        # idx = 0
+        # while idx < len(self.assign_buttons):
+        #     if button is self.assign_buttons[idx]:
+        #         node_index = idx
+        #         node = self.assign_operations[idx]
+        #         break
+        #     idx += 1
+        # foundop = None
+        # if node_index >= 0 and node.id is not None:
+        #     for op in self.context.elements.ops():
+        #         if op.type == node.type and op.id == node.id:
+        #             foundop = op
+        #             break
+        # if node is not None and foundop is not None:
+        #     self.parent.Bind(
+        #         wx.EVT_MENU,
+        #         on_update_button_from_tree(node_index, foundop),
+        #         menu.Append(wx.ID_ANY, _("Use settings from tree for this button"), ""),
+        #     )
+        #     menu.AppendSeparator()
+
+        entries = []
         for material in self.context.elements.op_data.section_set():
             if material == "previous":
                 continue
-            if matcount == 0:
-                item = menu.Append(wx.ID_ANY, _("Load materials/operations"), "")
-                item.Enable(False)
-            oplist, opinfo = self.context.elements.load_persistent_op_list(material)
-            if "name" in opinfo:
-                name = opinfo["name"]
-            elif material == "_default":
-                name = "Generic Defaults"
-            elif material.startswith("_default_"):
-                name = f"Default for {material[9:]}"
-            else:
-                name = material.replace("_", " ")
-            if "thickness" in opinfo:
-                if opinfo["thickness"]:
-                    name += ", " + opinfo["thickness"]
-            matcount += 1
-
-            self.parent.Bind(
-                wx.EVT_MENU,
-                on_menu_material(material),
-                menu.Append(wx.ID_ANY, name, ""),
+            opinfo = self.context.elements.load_persistent_op_info(material)
+            material_name = opinfo.get("material", "")
+            material_title = opinfo.get("title", "")
+            material_thickness = opinfo.get("thickness", "")
+            if material_title == "":
+                if material_name:
+                    material_title = material_name
+                else:
+                    if material == "_default":
+                        material_title = "Generic Defaults"
+                    elif material.startswith("_default_"):
+                        material_title = f"Default for {material[9:]}"
+                    else:
+                        material_title = material.replace("_", " ")
+            entries.append(
+                (material_name, material_thickness, material_title, material)
             )
-
-        if matcount > 0:
-            menu.AppendSeparator()
+            matcount += 1
+        # Let's sort them
+        entries.sort(
+            key=lambda e: (
+                e[0],
+                e[1],
+                e[2],
+            )
+        )
 
         self.parent.Bind(
             wx.EVT_MENU,
             lambda e: self.context("window open MatManager\n"),
             menu.Append(wx.ID_ANY, _("Material Library"), ""),
         )
+
+        if matcount > 0:
+            menu.AppendSeparator()
+            item = menu.Append(wx.ID_ANY, _("Load materials/operations"), "")
+            item.Enable(False)
+            menu_root = menu
+            menu_primary = menu
+            menu_secondary = menu
+            last_material = None
+            last_thick = None
+            for mat in entries:
+                material = mat[3]
+                if mat[0] != last_material:
+                    last_material = mat[0]
+                    last_thick = None
+                    if mat[0]:
+                        menu_primary = wx.Menu()
+                        item = menu_root.AppendSubMenu(menu_primary, mat[0])
+                    else:
+                        menu_primary = menu_root
+                    menu_secondary = menu_primary
+                if mat[1] != last_thick:
+                    last_thick = mat[1]
+                    if mat[1]:
+                        menu_secondary = wx.Menu()
+                        item = menu_primary.AppendSubMenu(menu_secondary, mat[1])
+                    else:
+                        menu_secondary = menu_primary
+
+                self.parent.Bind(
+                    wx.EVT_MENU,
+                    on_menu_material(material),
+                    menu_secondary.Append(wx.ID_ANY, mat[2], ""),
+                )
 
         self.parent.PopupMenu(menu)
 
@@ -373,6 +445,9 @@ class DefaultOperationWidget(StatusBarWidget):
                         break
 
     def Signal(self, signal, *args):
+        if len(self.context.elements.default_operations) != len(self.assign_buttons):
+            # desync !
+            signal = "default_operations"
         if signal in ("rebuild_tree",):
             self.reset_tooltips()
         elif signal == "element_property_update":

@@ -19,14 +19,13 @@ from meerk40t.gui.icons import (
     icon_node_symmetric,
 )
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
     RESPONSE_DROP,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.kernel import signal_listener
+from meerk40t.gui.wxutils import matrix_scale
 from meerk40t.svgelements import (
     Arc,
     Close,
@@ -51,7 +50,7 @@ class EditTool(ToolWidget):
     polylines / polygons and paths.
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, mode=None):
         ToolWidget.__init__(self, scene)
         self._listener_active = False
         self.nodes = []
@@ -332,7 +331,7 @@ class EditTool(ToolWidget):
                 pass  # Exceeds 32 bit signed integer.
 
         matrix = self.scene.widget_root.scene_widget.matrix
-        linewidth = 1.0 / matrix.value_scale_x()
+        linewidth = 1.0 / matrix_scale(matrix)
         if linewidth < 1:
             linewidth = 1
         set_width_pen(self.pen, linewidth)
@@ -1913,8 +1912,12 @@ class EditTool(ToolWidget):
                     return RESPONSE_CONSUME
                 current = self.nodes[self.selected_index]
                 pt = current["point"]
+                if nearest_snap is None:
+                    spt = Point(space_pos[0], space_pos[1])
+                else:
+                    spt = Point(nearest_snap[0], nearest_snap[1])
 
-                m = self.element.matrix.point_in_inverse_space(space_pos[:2])
+                m = self.element.matrix.point_in_inverse_space(spt)
                 # Special treatment for the virtual midpoint:
                 if current["type"] == "midpoint" and self.node_type == "path":
                     self.scene.context.signal(

@@ -139,12 +139,11 @@ class RuidaControllerPanel(wx.ScrolledWindow):
             self.context("ruida_connect\n")
 
     def pane_show(self):
-        name = self.service.label.replace(" ", "-")
-        name = name.replace("/", "-")
-        self.context.channel(f"{name}/recv", pure=True).watch(self.update_text)
-        self.context.channel(f"{name}/send", pure=True).watch(self.update_text)
-        self.context.channel(f"{name}/real", pure=True).watch(self.update_text)
-        self.context.channel(f"{name}/events").watch(self.update_text)
+        self._name = self.service.safe_label
+        self.context.channel(f"{self._name}/recv", pure=True).watch(self.update_text)
+        self.context.channel(f"{self._name}/send", pure=True).watch(self.update_text)
+        self.context.channel(f"{self._name}/real", pure=True).watch(self.update_text)
+        self.context.channel(f"{self._name}/events").watch(self.update_text)
 
         connected = self.service.connected
         if connected:
@@ -153,24 +152,24 @@ class RuidaControllerPanel(wx.ScrolledWindow):
             self.set_button_disconnected()
 
     def pane_hide(self):
-        name = self.service.label.replace(" ", "-")
-        name = name.replace("/", "-")
-        self.context.channel(f"{name}/recv").unwatch(self.update_text)
-        self.context.channel(f"{name}/send").unwatch(self.update_text)
-        self.context.channel(f"{name}/real").unwatch(self.update_text)
-        self.context.channel(f"{name}/events").unwatch(self.update_text)
+        self.context.channel(f"{self._name}/recv").unwatch(self.update_text)
+        self.context.channel(f"{self._name}/send").unwatch(self.update_text)
+        self.context.channel(f"{self._name}/real").unwatch(self.update_text)
+        self.context.channel(f"{self._name}/events").unwatch(self.update_text)
 
 
 class RuidaController(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(499, 170, *args, **kwds)
         self.panel = RuidaControllerPanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         self.SetTitle(_("Ruida-Controller"))
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)
         self.Layout()
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

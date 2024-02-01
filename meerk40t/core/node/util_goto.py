@@ -14,8 +14,9 @@ class GotoOperation(Node):
         self.output = True
         self.x = 0.0
         self.y = 0.0
+        self.absolute = False
         super().__init__(type="util goto", **kwargs)
-        self._formatter = "{enabled}{element_type} {x} {y}"
+        self._formatter = "{enabled}{element_type} {absolute}{x} {y} "
 
     def __repr__(self):
         return f"GotoOperation('{self.x}, {self.y}')"
@@ -34,6 +35,7 @@ class GotoOperation(Node):
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["adjust"] = f" ({self.x}, {self.y})" if not origin else ""
         default_map.update(self.__dict__)
+        default_map["absolute"] = "=" if self.absolute else ""
         return default_map
 
     def drop(self, drag_node, modify=True):
@@ -48,6 +50,23 @@ class GotoOperation(Node):
                 drop_node.append_child(drag_node)
             return True
         return False
+
+    def preprocess(self, context, matrix, plan):
+        """
+        Preprocess util goto
+
+        @param context:
+        @param matrix:
+        @param plan: Plan value during preprocessor call
+        @return:
+        """
+        self.x, self.y = context.space.display.position(
+            self.x, self.y, vector=not self.absolute
+        )
+        if self.absolute:
+            self.x, self.y = matrix.point_in_matrix_space((self.x, self.y))
+        else:
+            self.x, self.y = matrix.transform_vector([self.x, self.y])
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """

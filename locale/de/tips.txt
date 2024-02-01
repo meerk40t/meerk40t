@@ -1,0 +1,78 @@
+# This file contains tips to be displayed at program start. Every entry has up to 3 lines:
+#   tip=xxxx Tip to be displayed
+#   version=x.x.x (optional) Minimum version to apply, you can just omit that line to allow it for any version
+#   cmd=xxxx Command to execute for the 'Try it out' button
+# NB: Every tip= will reset cmd and version, so please use the sequence tip, cmd, version
+#
+# Example:
+# tip=Did you know, these tips can be maintained and extended online.\nWow, that's great.
+# cmd=
+# version=0.9.3
+#
+# tip=That won't be visible for a while
+# version=1.0
+
+tip=MeerK40t kann einen Umriss um ein Element zeichnen.
+Das gewünschte Element auswählen, mit der rechten Maustaste das Kontext-Menu öffnen und das 'Umrande Elemente...'-Menu nutzen"
+cmd=rect 2cm 2cm 4cm 4cm fill black outline 2mm --steps 4 --outer stroke red
+
+tip=MeerK40t hat eine Vielzahl von Kommandos, die es erlauben, per Script Elemente anzulegen, zu verändern und vieles mehr...
+Einfach die Konsole öffnen und 'help' eingeben.
+cmd=pane show console\nhelp
+
+tip=MeerK40t kann das Hintergrundgitter oder Element-Punkte zum Einschnappen/Einrasten nutzen:
+Nach Auswahl eines Elements und dem Start einer Aktion (Verschieben, Größe ändern etc.), werden relevante Punkte von Interesse (Gitterpunkte, Punkte von anderen Elementen) angezeigt und hervorgehoben falls diese ein Fangpunkt wären.
+Hinweis: dieses Verhalten kann durch Drücken der Shift-Taste übersteuert werden, dann wird die aktuelle Mausposition berücksichtigt.
+cmd=pane show snapoptions
+img=https://user-images.githubusercontent.com/2670784/162396185-0008ab2e-a432-46c7-af59-ea1e1c3fee95.png
+
+tip=Das Simulations-Fenster erlaubt nicht nur die Vorschau auf das Ergebnis am Laser, sondern erlaubt auch, die unterschiedlichen Optimierungs-Optionen zu verändern und so deren Auswirkungen auf das Ergebnis zu sehen.
+Einfach auf das '<' Symbol an der rechten Seite klicken und nach Auswahl der Optionen "Neuberechnen" lassen.
+img=https://user-images.githubusercontent.com/2670784/284278551-3324df5a-3910-4f94-a54f-2aaae9e82881.png
+cmd=window open Simulation z 0
+
+tip=MeerK40t hat mehrere Gittertypen die zur Designhilfe genutzt werden können, darunter auch ein kreisförmiges Gitter...
+img=https://user-images.githubusercontent.com/2670784/285282132-62a39254-bfe3-4000-87dc-328c75bdc78d.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Grids
+
+tip=Müde vom Ausrichten von Objekten? Das Magnet-Linien-Feature ist eventuell eine nützliche Ergänzung, einfach auf das X- oder Y-Lineal doppelklicken, um eine Magnet-Linie zu erzeugen.
+Dann einfach ein Objekt in die Nähe der Linie verschieben und sehen was passiert...
+Mit einem Rechtsklick auf die Achsen-Lineale erhält man zusätzliche Optionen.
+img=https://user-images.githubusercontent.com/2670784/161030963-fb73907c-bdb0-47dc-b0da-b9b207025dbe.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Magnets
+
+tip=Es wird schnell eine Kopie eines Elements benötigt? Es gibt mehrere Optionen:
+a) Element auswählen, die Alt-Taste drücken und das Element verschieben: schon hat man die gewünschte Kopie
+b) Rechts-Click: 'Element duplizieren' aus dem Kontext-Menu wählen
+c) Die 'Kopieren' und 'Einfügen' Knöpfe in der Symbolleiste nutzen
+
+tip=MeerK40t hat eine Reihe von oft verwendeten Fenstern, die sogenannten Panels: z.B. das Laserkontroll-Panel oder das Baumdiagramm mit den verwendeten Elementen und Arbeitsvorgängen.
+Diese Panels können wie jedes andere Fenster frei auf dem Meerk40t-Arbeitsbereich verschoben werden, können aber auch den Rändern andocken: Beim Bewegen eines solchen Panels in den Randbereich zeigt Meerk40t mit einer Schattierung an, ob und wo das Panel angedockt würde.
+img=https://github.com/meerk40t/meerk40t/assets/2670784/3b01d8c8-5239-4696-8967-724f41285132
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-GUI#Panels
+
+tip=Mal einen Rechts-Click auf den obersten Arbeitsvorgang-Eintrag im Baum-Diagramm versuchen: damit werden generelle Eigenschaften für die Arbeitsvorgänge zugänglich
+img=https://user-images.githubusercontent.com/2670784/285616467-75cf67db-d329-4fcc-9a5a-e9635d9aa4e1.png
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Operations
+
+tip=MeerK40t hat Registriermarken, eine spezielle Kategorie von Elements, die nicht gelasert werden, die aber als visuelle Orientierung für das Platzieren von Elementen genutzt werden können.
+Elemente können in den Registriermarken-Bereich bzw. auch wieder daraus mittels der Maus verschoben werden.
+Dran denken: Elemente im Registrier-Marken können nicht verändert oder verschoben werden, dazu diese zuerst in den normalen Element-Bereich verschieben, manipulieren und dann wieder zurück in die Registriermarken.
+cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Regmarks
+
+tip=Ein Objekt soll ganz genau auf dem Laser-Bett platziert werden? Eine USB-Kamera leistet hier wertvolle Dienste.
+MeerK40t kann mehrere solcher Kameras nutzen, um das Kamerbild auf dem Arbeitsbereich-Hintergrund einzublenden - damit wird das Platzieren von zu brennenden Elementen auf Gegenständen kinderleicht.
+Auf das Kamera-Symbol in der Symbolleiste klicken und einmalig das Kamerabild kalibrieren.
+cmd=camdetect\n
+img=https://github.com/meerk40t/meerk40t/assets/2670784/53207cbb-dfbc-4bce-841d-dedc305118e7
+
+tip=Die individuellen Einstellungen zum Gravieren/Schneiden von Materialien (wie Plexiglas, 4mm Sperrholz usw.) können einfach gespeichert und wiederverwendet werden.
+Verwende die Material-Bibliothek, um die Einstellungen für die unterschiedlichen Materialien zu verwalten.
+cmd=window open MatManager
+img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+
+tip=Man kann seine perfekten Einstellungen für ein Material übrigens mit anderen Nutzern teilen und gleichfalls auf die Ergebnisse von Anderen aus der MeerK40t Community zugreifen.
+Die Material-Bibliothek verwenden, um Einstellungen zu teilen, oder welche aus der Community abzurufen.
+cmd=window open MatManager
+img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
+version=1.0

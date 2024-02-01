@@ -23,7 +23,7 @@ class RuidaDevice(Service):
     RuidaDevice is driver for the Ruida Controllers
     """
 
-    def __init__(self, kernel, path, *args, choices=None, **kwargs):
+    def __init__(self, kernel, path, *args, choices=None, **kwgs):
         Service.__init__(self, kernel, path)
         Status.__init__(self)
         self.name = "RuidaDevice"
@@ -474,6 +474,17 @@ class RuidaDevice(Service):
                 channel(_("Could not save: {filename}").format(filename=filename))
 
     @property
+    def safe_label(self):
+        """
+        Provides a safe label without spaces or / which could cause issues when used in timer or other names.
+        @return:
+        """
+        if not hasattr(self, "label"):
+            return self.name
+        name = self.label.replace(" ", "-")
+        return name.replace("/", "-")
+
+    @property
     def has_endstops(self):
         return True
 
@@ -516,9 +527,10 @@ class RuidaDevice(Service):
         if origin is not None and origin != self.path:
             return
         corner = self.setting(str, "home_corner")
+        home_dx = 0
+        home_dy = 0
         if corner == "auto":
-            home_dx = 0
-            home_dy = 0
+            pass
         elif corner == "top-left":
             home_dx = 1 if self.flip_x else 0
             home_dy = 1 if self.flip_y else 0

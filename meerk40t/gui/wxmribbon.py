@@ -18,18 +18,11 @@ dynamic buttons. When the service changes because of a switch in the device (for
 listeners which will update their contents, triggering the update within this control.
 """
 
-import copy
-import math
-import platform
-import threading
-
 import wx
 from wx import aui
 
 from meerk40t.gui.icons import (
-    STD_ICON_SIZE,
     get_default_icon_size,
-    icon_add_new,
     icon_trash,
     icons8_down,
     icons8_opened_folder,
@@ -138,7 +131,9 @@ class MKRibbonBarPanel(RibbonBarPanel):
             self.context._ribbons = dict()
         self.context._ribbons[self.identifier] = self
 
-        self.storage = Settings(self.context.kernel.name, f"ribbon_{identifier}.cfg")
+        self.storage = Settings(
+            self.context.kernel.name, f"ribbon_{identifier}.cfg", create_backup=True
+        )  # keep backup
         self.storage.read_configuration()
 
         self.allow_labels = bool(show_labels is None or show_labels)
@@ -627,11 +622,16 @@ class RibbonEditor(wx.Panel):
         self.button_down_page = wx.StaticBitmap(
             self, wx.ID_ANY, size=dip_size(self, 30, 20)
         )
+
         testsize = dip_size(self, 20, 20)
         iconsize = testsize[0]
-        self.button_add_page.SetBitmap(
-            icon_add_new.GetBitmap(resize=iconsize, buffer=1)
-        )
+        # Circumvent a WXPython bug at high resolutions under Windows
+        bmp = icon_trash.GetBitmap(resize=iconsize, buffer=1)
+        self.button_del_page.SetBitmap(bmp)
+        testsize = self.button_del_page.GetBitmap().Size
+        if testsize[0] != iconsize:
+            iconsize = int(iconsize * iconsize / testsize[0])
+
         self.button_del_page.SetBitmap(icon_trash.GetBitmap(resize=iconsize, buffer=1))
         self.button_up_page.SetBitmap(icons8_up.GetBitmap(resize=iconsize, buffer=1))
         self.button_down_page.SetBitmap(

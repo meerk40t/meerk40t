@@ -171,7 +171,7 @@ class BalorDriver:
                 x, y = start.real, start.imag
                 if last_x != x or last_y != y:
                     con.goto(x, y)
-                interp = self.service.interpolate
+                interp = self.service.interp
 
                 g.clear()
                 g.quad(start, c1, end)
@@ -189,7 +189,7 @@ class BalorDriver:
                 x, y = start.real, start.imag
                 if last_x != x or last_y != y:
                     con.goto(x, y)
-                interp = self.service.interpolate
+                interp = self.service.interp
 
                 g.clear()
                 g.cubic(start, c1, c2, end)
@@ -207,7 +207,7 @@ class BalorDriver:
                 x, y = start.real, start.imag
                 if last_x != x or last_y != y:
                     con.goto(x, y)
-                interp = self.service.interpolate
+                interp = self.service.interp
 
                 g.clear()
                 g.arc(start, c1, end)
@@ -343,7 +343,7 @@ class BalorDriver:
                 x, y = q.start
                 if last_x != x or last_y != y:
                     con.goto(x, y)
-                interp = self.service.interpolate
+                interp = self.service.interp
 
                 g = Geomstr()
                 g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
@@ -361,7 +361,7 @@ class BalorDriver:
                 x, y = q.start
                 if last_x != x or last_y != y:
                     con.goto(x, y)
-                interp = self.service.interpolate
+                interp = self.service.interp
 
                 g = Geomstr()
                 g.cubic(
@@ -581,7 +581,7 @@ class BalorDriver:
 
         @return:
         """
-        if self.service.rotary.active and self.service.rotary.supress_home:
+        if self.service.rotary.active and self.service.rotary.suppress_home:
             return
         self.move_abs("50%", "50%")
 

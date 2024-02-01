@@ -41,13 +41,12 @@ The action is a function which is run when the button is pressed.
 """
 
 import copy
-import math
 import platform
 import threading
 
 import wx
 
-from meerk40t.gui.icons import STD_ICON_SIZE, PyEmbeddedImage
+from meerk40t.gui.icons import STD_ICON_SIZE
 from meerk40t.kernel import Job
 from meerk40t.svgelements import Color
 
@@ -164,6 +163,7 @@ class Button:
         @param label: button label
         @param icon: icon used for this button
         @param tip: tool tip for the button
+        @param help: help information for aspect
         @param group: Group the button exists in for radio-toggles
         @param toggle_attr: The attribute that should be changed on toggle.
         @param identifier: Identifier in the group or toggle
@@ -382,8 +382,6 @@ class Button:
         Drop down of a hybrid button was clicked.
 
         We make a menu popup and fill it with the data about the multi-button
-
-        @param event:
         @return:
         """
         if self.toggle:
@@ -411,7 +409,6 @@ class Button:
         """
         Creates menu_item_click processors for the various menus created for a drop-click
 
-        @param button:
         @param v:
         @return:
         """
@@ -691,7 +688,6 @@ class RibbonPanel:
 
         We make a menu popup and fill it with the overflow commands.
 
-        @param event:
         @return:
         """
         # print (f"Overflow click called for {self.label}")
@@ -1171,7 +1167,7 @@ class RibbonBarPanel(wx.Control):
     def remove_page(self, pageid):
         """
         Remove a page from the ribbonbar.
-        @param id:
+        @param pageid:
         @return:
         """
         for pidx, page in enumerate(self.pages):
@@ -1329,7 +1325,8 @@ class Art:
         try:
             wxsize = wx.Size(ptdefault, ptdefault)
             dipsize = self.parent.FromDIP(wxsize)
-            ptsize = int(dipsize[0])
+            ptsize = int(wxsize[0] + 0.5 * (dipsize[0] - wxsize[0]))
+            # print(ptdefault, wxsize[0], ptsize, dipsize[0])
         except AttributeError:
             ptsize = ptdefault
         self.default_font = wx.Font(
@@ -1472,10 +1469,9 @@ class Art:
         lp_y = int(cy)
         dp_x = int(cx)
         dp_y = int(cy + r)
-        points = [(lp_x, lp_y), (dp_x, dp_y), (2 * dp_x - lp_x, lp_y)]
         dc.SetPen(wx.Pen(self.black_color))
         dc.SetBrush(wx.Brush(self.inactive_background))
-        dc.DrawRectangle(points)
+        dc.DrawRectangle(lp_x, lp_y, dp_x, dp_y)
 
     def _paint_dropdown(self, dc: wx.DC, dropdown: DropDown):
         """
@@ -1666,7 +1662,7 @@ class Art:
         Performs the layout of the page. This is determined to be the size of the ribbon minus any edge buffering.
 
         @param dc:
-        @param art:
+        @param ribbon:
         @return:
         """
         ribbon_width, ribbon_height = dc.Size
@@ -1842,7 +1838,7 @@ class Art:
         contains.
 
         @param dc:
-        @param art:
+        @param page:
         @return:
         """
         x, y, max_x, max_y = page.position

@@ -19,6 +19,22 @@ _ = wx.GetTranslation
 ##############
 
 
+def matrix_scale(matrix):
+    # We usually use the value_scale_x to establish a pixel size
+    # by counteracting the scene matrix, linewidth = 1 / matrix.value_scale_x()
+    # For a rotated scene this crashes, so we need to take
+    # that into consideration, so let's look at the
+    # distance from (1, 0) to (0, 0) and call this our scale
+    from math import sqrt
+
+    x0, y0 = matrix.point_in_matrix_space((0, 0))
+    x1, y1 = matrix.point_in_matrix_space((1, 0))
+    res = sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2)
+    if res < 1e-8:
+        res = 1
+    return res
+
+
 def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
     """
     Creates a menu for a given choices table.
@@ -58,12 +74,12 @@ def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
         choice = c
         submenu_name = get("submenu")
         submenu = None
-        if submenu_name in submenus:
+        if submenu_name and submenu_name in submenus:
             submenu = submenus[submenu_name]
         else:
             if get("separate_before", default=False):
                 menu.AppendSeparator()
-            if submenu_name is not None:
+            if submenu_name:
                 submenu = wx.Menu()
                 menu.AppendSubMenu(submenu, submenu_name)
                 submenus[submenu_name] = submenu
@@ -169,11 +185,54 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
 
         def specific(event=None):
             prompts = f.user_prompt
-            for prompt in prompts:
-                response = elements.kernel.prompt(prompt["type"], prompt["prompt"])
-                if response is None:
-                    return
-                func_dict[prompt["attr"]] = response
+            if len(prompts) > 0:
+                with wx.Dialog(
+                    None,
+                    wx.ID_ANY,
+                    _("Parameters"),
+                    style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
+                ) as dlg:
+                    sizer = wx.BoxSizer(wx.VERTICAL)
+                    fields = []
+                    for prompt in prompts:
+                        label = wx.StaticText(dlg, wx.ID_ANY, prompt["prompt"])
+                        sizer.Add(label, 0, wx.EXPAND, 0)
+                        dtype = prompt["type"]
+                        if dtype == bool:
+                            control = wx.CheckBox(dlg, wx.ID_ANY)
+                        else:
+                            control = wx.TextCtrl(dlg, wx.ID_ANY)
+                            control.SetMaxSize(dip_size(dlg, 75, -1))
+                        fields.append(control)
+                        sizer.Add(control, 0, wx.EXPAND, 0)
+                        sizer.AddSpacer(23)
+                    b_sizer = wx.BoxSizer(wx.HORIZONTAL)
+                    button_OK = wx.Button(dlg, wx.ID_OK, _("OK"))
+                    button_CANCEL = wx.Button(dlg, wx.ID_CANCEL, _("Cancel"))
+                    # dlg.SetAffirmativeId(button_OK.GetId())
+                    # dlg.SetEscapeId(button_CANCEL.GetId())
+                    b_sizer.Add(button_OK, 0, wx.EXPAND, 0)
+                    b_sizer.Add(button_CANCEL, 0, wx.EXPAND, 0)
+                    sizer.Add(b_sizer, 0, wx.EXPAND, 0)
+                    sizer.Fit(dlg)
+                    dlg.SetSizer(sizer)
+                    dlg.Layout()
+
+                    response = dlg.ShowModal()
+                    if response != wx.ID_OK:
+                        return
+                    for prompt, control in zip(prompts, fields):
+                        dtype = prompt["type"]
+                        try:
+                            value = dtype(control.GetValue())
+                        except ValueError:
+                            return
+                        func_dict[prompt["attr"]] = value
+            # for prompt in prompts:
+            #     response = elements.kernel.prompt(prompt["type"], prompt["prompt"])
+            #     if response is None:
+            #         return
+            # func_dict[prompt["attr"]] = response
             f(node, **func_dict)
 
         return specific
@@ -186,15 +245,28 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
         for func in tree_operations_for_node(optional_2nd_node):
             submenu_name = func.submenu
             submenu = None
-            if submenu_name in submenus:
+            if submenu_name and submenu_name in submenus:
                 submenu = submenus[submenu_name]
             else:
-                if submenu_name is not None:
+                if submenu_name:
                     last_was_separator = False
-                    submenu = wx.Menu()
-                    menu.AppendSubMenu(submenu, submenu_name, func.help)
-                    submenus[submenu_name] = submenu
-
+                    subs = submenu_name.split("|")
+                    common = ""
+                    parent_menu = menu
+                    for sname in subs:
+                        if sname == "":
+                            continue
+                        if common:
+                            common += "|"
+                        common += sname
+                        if common in submenus:
+                            submenu = submenus[common]
+                            parent_menu = submenu
+                        else:
+                            submenu = wx.Menu()
+                            parent_menu.AppendSubMenu(submenu, sname, func.help)
+                            submenus[common] = submenu
+                            parent_menu = submenu
             menu_context = submenu if submenu is not None else menu
             if func.separate_before:
                 last_was_separator = True
@@ -258,13 +330,28 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
     for func in tree_operations_for_node(node):
         submenu_name = func.submenu
         submenu = None
-        if submenu_name in submenus:
+        if submenu_name and submenu_name in submenus:
             submenu = submenus[submenu_name]
         else:
-            if submenu_name is not None:
-                submenu = wx.Menu()
-                menu.AppendSubMenu(submenu, submenu_name, func.help)
-                submenus[submenu_name] = submenu
+            if submenu_name:
+                last_was_separator = False
+                subs = submenu_name.split("|")
+                common = ""
+                parent_menu = menu
+                for sname in subs:
+                    if sname == "":
+                        continue
+                    if common:
+                        common += "|"
+                    common += sname
+                    if common in submenus:
+                        submenu = submenus[common]
+                        parent_menu = submenu
+                    else:
+                        submenu = wx.Menu()
+                        parent_menu.AppendSubMenu(submenu, sname, func.help)
+                        submenus[common] = submenu
+                        parent_menu = submenu
 
         menu_context = submenu if submenu is not None else menu
         if func.separate_before:
@@ -314,8 +401,15 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                 radio_check_not_needed.append(menu_context)
         if not submenu and func.separate_after:
             menu.AppendSeparator()
-
     for submenu in submenus.values():
+        plain = True
+        for item in submenu.GetMenuItems():
+            if not (item.IsSeparator() or item.IsSubMenu() or not item.IsEnabled()):
+                plain = False
+                break
+        if plain and submenu not in radio_check_not_needed:
+            radio_check_not_needed.append(submenu)
+
         if submenu not in radio_check_not_needed:
             item = submenu.Append(
                 wx.ID_ANY,

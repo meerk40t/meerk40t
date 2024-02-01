@@ -73,12 +73,14 @@ class UsbConnect(MWindow):
         super().__init__(915, 424, *args, **kwds)
 
         self.panel = UsbConnectPanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_usb_connector.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Terminal.__set_properties
         self.SetTitle(_("UsbConnect"))
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

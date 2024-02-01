@@ -10,7 +10,7 @@ import os.path
 from copy import copy
 
 from meerk40t.core.node.elem_image import ImageNode
-from meerk40t.core.node.node import Node
+from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.core.treeop import (
     get_tree_operation,
     tree_calc,
@@ -23,9 +23,10 @@ from meerk40t.core.treeop import (
     tree_separator_after,
     tree_separator_before,
     tree_submenu,
+    tree_submenu_list,
     tree_values,
 )
-from meerk40t.core.units import UNITS_PER_INCH, Length
+from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Matrix, Point
 from meerk40t.tools.geomstr import Geomstr
@@ -484,7 +485,8 @@ def init_tree(kernel):
             stroke_width=self.default_strokewidth,
             matrix=m,
         )
-        self.classify([n])
+        if self.classify_new:
+            self.classify([n])
 
     @tree_submenu(_("Convert to Path"))
     @tree_operation(_("Vertical"), node_type="elem image", help="")
@@ -498,7 +500,8 @@ def init_tree(kernel):
             stroke_width=self.default_strokewidth,
             matrix=m,
         )
-        self.classify([n])
+        if self.classify_new:
+            self.classify([n])
 
     def radio_match_speed(node, speed=0, **kwargs):
         return node.speed == float(speed)
@@ -611,7 +614,7 @@ def init_tree(kernel):
     @tree_submenu(_("Set placement loops"))
     @tree_radio(radio_match_loops)
     @tree_iterate("loopvalue", 1, 10)
-    @tree_operation(_("Loops {loopvalue}"), node_type=place_nodes, help="")
+    @tree_operation(_("Loops {loopvalue}"), node_type="place point", help="")
     def set_n_loops(node, loopvalue=1, **kwargs):
         data = list()
         for n in list(self.ops(selected=True)):
@@ -623,137 +626,52 @@ def init_tree(kernel):
             self.signal("element_property_update", data)
             self.signal("refresh_scene", "Scene")
 
-    @tree_submenu(_("Layout"))
-    @tree_prompt("dx", _("Distance between placements?"))
-    @tree_prompt(
-        "nx",
-        _(
-            "How many additional placements on the X-Axis?\n(0 = as many as fit on the bed)"
-        ),
-    )
-    @tree_operation(
-        _("Create placements horizontally"), node_type="place point", help=""
-    )
-    def copies_horizontally(node, dx, nx, pos=None, **kwargs):
-        #
-        if dx is None or dx == "":
-            return
-        try:
-            len_dx = Length(dx)
-            dx_val = float(len_dx)
-        except ValueError:
-            return
-        if nx is None or nx == "":
-            return
-        try:
-            nx = int(nx)
-        except ValueError:
-            return
-        if nx < 0:
-            # Nothing to do
-            return
-        data = []
-        max_x = self.device.view.width
-        for n in list(self.ops(selected=True)):
-            if n.type == "place point":
-                data.append(n)
-        if len(data) == 0:
-            return
-        pos = None
-        for pnode in data:
-            startx = pnode.x + dx_val
-            starty = pnode.y
-            corner = pnode.corner
-            rotation = pnode.rotation
-            if nx == 0:
-                while startx < max_x:
-                    self.op_branch.add(
-                        type="place point",
-                        pos=pos,
-                        x=startx,
-                        y=starty,
-                        rotation=rotation,
-                        corner=corner,
-                    )
-                    startx += dx_val
-            else:
-                for idx in range(nx):
-                    self.op_branch.add(
-                        type="place point",
-                        pos=pos,
-                        x=startx,
-                        y=starty,
-                        rotation=rotation,
-                        corner=corner,
-                    )
-                    startx += dx_val
-        self.signal("updateop_tree")
-        self.signal("refresh_scene", "Scene")
+    # @tree_submenu(_("Layout"))
+    # @tree_prompt("dx", _("Distance between placements?"))
+    # @tree_prompt(
+    #     "nx",
+    #     _(
+    #         "How many placements on the X-Axis?\n(0 = as many as fit on the bed)"
+    #     ),
+    # )
+    # @tree_operation(
+    #     _("Create placements horizontally"), node_type="place point", help=""
+    # )
+    # def copies_horizontally(node, dx, nx, pos=None, **kwargs):
+    #     self(f"placement_grid {nx} {dx} 1 0\n")
 
-    @tree_submenu(_("Layout"))
-    @tree_prompt("dy", _("Distance between placements?"))
-    @tree_prompt(
-        "ny",
-        _(
-            "How many additional placements on the Y-Axis?\n(0 = as many as fit on the bed)"
-        ),
-    )
-    @tree_operation(_("Create placements vertically"), node_type="place point", help="")
-    def copies_vertically(node, dy, ny, pos=None, **kwargs):
-        #
-        if dy is None or dy == "":
-            return
-        try:
-            len_dy = Length(dy)
-            dy_val = float(len_dy)
-        except ValueError:
-            return
-        if ny is None or ny == "":
-            return
-        try:
-            ny = int(ny)
-        except ValueError:
-            return
-        if ny < 0:
-            # Nothing to do
-            return
-        data = []
-        max_y = self.device.view.height
-        for n in list(self.ops(selected=True)):
-            if n.type == "place point":
-                data.append(n)
-        if len(data) == 0:
-            return
-        pos = None
-        for pnode in data:
-            startx = pnode.x
-            starty = pnode.y + dy_val
-            corner = pnode.corner
-            rotation = pnode.rotation
-            if ny == 0:
-                while starty < max_y:
-                    self.op_branch.add(
-                        type="place point",
-                        pos=pos,
-                        x=startx,
-                        y=starty,
-                        rotation=rotation,
-                        corner=corner,
-                    )
-                    starty += dy_val
-            else:
-                for idx in range(ny):
-                    self.op_branch.add(
-                        type="place point",
-                        pos=pos,
-                        x=startx,
-                        y=starty,
-                        rotation=rotation,
-                        corner=corner,
-                    )
-                    starty += dy_val
-        self.signal("updateop_tree")
-        self.signal("refresh_scene", "Scene")
+    # @tree_submenu(_("Layout"))
+    # @tree_prompt("dy", _("Distance between placements?"))
+    # @tree_prompt(
+    #     "ny",
+    #     _(
+    #         "How many placements on the Y-Axis?\n(0 = as many as fit on the bed)"
+    #     ),
+    # )
+    # @tree_operation(_("Create placements vertically"), node_type="place point", help="")
+    # def copies_vertically(node, dy, ny, pos=None, **kwargs):
+    #     self(f"placement_grid 1 0 {ny} {dy}\n")
+
+    # @tree_submenu(_("Layout"))
+    # @tree_prompt("dx", _("Horizontal distance between placements?"))
+    # @tree_prompt(
+    #     "nx",
+    #     _(
+    #         "How many placements on the X-Axis?\n(0 = as many as fit on the bed)"
+    #     ),
+    # )
+    # @tree_prompt("dy", _("Vertical distance between placements?"))
+    # @tree_prompt(
+    #     "ny",
+    #     _(
+    #         "How many placements on the Y-Axis?\n(0 = as many as fit on the bed)"
+    #     ),
+    # )
+    # @tree_operation(
+    #     _("Create grid of placements"), node_type="place point", help=""
+    # )
+    # def copies_grid(node, dx, nx, dy, ny, pos=None, **kwargs):
+    #     self(f"placement_grid {nx} {dx} {ny} {dy}\n")
 
     # ---- Burn Direction
     def get_direction_values():
@@ -1352,24 +1270,41 @@ def init_tree(kernel):
         help="",
     )
     def make_polygon_regular(node, **kwargs):
+        def norm_angle(angle):
+            while angle < 0:
+                angle += math.tau
+            while angle >= math.tau:
+                angle -= math.tau
+            return angle
+
         if node is None or node.type != "elem polyline":
             return
         pts = list(node.geometry.as_points())
         vertex_count = len(pts) - 1
         baseline = abs(pts[1] - pts[0])
         circumradius = baseline / (2 * math.sin(math.tau / (2 * vertex_count)))
-        # apothem = baseline / (2 * math.tan(math.tau / (2 * vertex_count)))
-        # midpoint = (pts[0] - pts[1]) / 2
-
+        apothem = baseline / (2 * math.tan(math.tau / (2 * vertex_count)))
+        midpoint = (pts[0] + pts[1]) / 2
+        angle0 = Geomstr.angle(None, pts[0], pts[1])
+        angle1 = norm_angle(angle0 + math.tau / 4)
+        angle2 = norm_angle(angle0 - math.tau / 4)
+        pt1 = Geomstr.polar(None, midpoint, angle1, apothem)
+        pt2 = Geomstr.polar(None, midpoint, angle2, apothem)
         # The arithmetic center (ax, ay) indicates to which
         # 'side' of the baseline the polygon needs to be constructed
         arithmetic_center = sum(pts[:-1]) / vertex_count
+        if Geomstr.distance(None, pt1, arithmetic_center) < Geomstr.distance(
+            None, pt2, arithmetic_center
+        ):
+            center_point = pt1
+        else:
+            center_point = pt2
 
-        start_angle = Geomstr.angle(None, arithmetic_center, pts[0])
+        start_angle = Geomstr.angle(None, center_point, pts[0])
 
         node.geometry = Geomstr.regular_polygon(
             vertex_count,
-            arithmetic_center,
+            center_point,
             radius=circumradius,
             radius_inner=circumradius,
             start_angle=start_angle,
@@ -1578,6 +1513,17 @@ def init_tree(kernel):
         self.classify_autogenerate = previous
         self.signal("refresh_tree", list(self.flat(types="reference")))
 
+    @tree_submenu(_("Classification"))
+    @tree_separator_before()
+    @tree_operation(
+        _("Clear all assignments"),
+        node_type=("branch ops", "branch elems"),
+        help="",
+    )
+    def do_classification_clear(node, **kwargs):
+        self.remove_elements_from_operations(list(self.elems()))
+        self.signal("refresh_tree")
+
     @tree_conditional(lambda cond: self.have_unassigned_elements())
     @tree_operation(
         _("Select unassigned elements"),
@@ -1624,7 +1570,6 @@ def init_tree(kernel):
     #     return difference
 
     @tree_separator_before()
-    @tree_separator_after()
     @tree_operation(
         _("Material Manager"),
         node_type="branch ops",
@@ -1633,27 +1578,117 @@ def init_tree(kernel):
     def load_matman(node, **kwargs):
         self("window open MatManager\n")
 
-    # def material_name(material):
-    #     oplist, opinfo = self.load_persistent_op_list(material)
-    #     if "name" in opinfo:
-    #         name = opinfo["name"]
-    #     elif material == "_default":
-    #         name = "Generic Defaults"
-    #     elif material.startswith("_default_"):
-    #         name = f"Default for {material[9:]}"
-    #     else:
-    #         name = material.replace("_", " ")
-    #     if "thickness" in opinfo:
-    #         if opinfo["thickness"]:
-    #             name += ", " + opinfo["thickness"]
-    #     return name
+    def material_name(material):
+        if material == "previous":
+            return _("<Previous set>")
+        oplist, opinfo = self.load_persistent_op_list(material)
+        mat_name = opinfo.get("material", "")
+        mat_title = opinfo.get("title", "")
+        material_thickness = opinfo.get("thickness", "")
+        if mat_title == "":
+            if mat_name:
+                mat_title = mat_name
+            else:
+                if material == "_default":
+                    mat_title = "Generic Defaults"
+                elif material.startswith("_default_"):
+                    mat_title = f"Default for {material[9:]}"
+                else:
+                    mat_title = material.replace("_", " ")
+        name = ""
+        # if material_name:
+        #     name += f"[{material_name}] "
+        name += mat_title
+        # if material_thickness:
+        #     name += f" {material_thickness}"
+        return name
 
-    # @tree_submenu(_("Load"))
-    # @tree_values("opname", values=self.op_data.section_set)
-    # @tree_calc("material", lambda opname: material_name(opname) )
-    # @tree_operation("{material}", node_type="branch ops", help="")
-    # def load_ops(node, opname, **kwargs):
-    #     self(f"material load {opname}\n")
+    def material_menus():
+        was_previous = False
+        entries = list()
+        self.op_data.read_configuration()
+        for material in self.op_data.section_set():
+            if material == "previous":
+                was_previous = True
+                continue
+            opinfo = self.load_persistent_op_info(material)
+            material_name = opinfo.get("material", "")
+            material_title = opinfo.get("title", "")
+            material_thickness = opinfo.get("thickness", "")
+            if material_title == "":
+                if material_name:
+                    material_title = material_name
+                else:
+                    if material == "_default":
+                        material_title = "Generic Defaults"
+                    elif material.startswith("_default_"):
+                        material_title = f"Default for {material[9:]}"
+                    else:
+                        material_title = material.replace("_", " ")
+            submenu = _("Materials")
+            if material_name:
+                submenu += f"{'|' if submenu else ''}{material_name}"
+            if material_thickness:
+                submenu += f"{'|' if submenu else ''}{material_thickness}"
+            entries.append((material_name, material_thickness, material_title, submenu))
+        # Let's sort them
+        entries.sort(
+            key=lambda e: (
+                e[0],
+                e[1],
+                e[2],
+            )
+        )
+        submenus = [e[3] for e in entries]
+        if was_previous:
+            submenus.insert(0, _("Materials"))
+        return submenus
+
+    def material_ids():
+        was_previous = False
+        entries = list()
+        for material in self.op_data.section_set():
+            if material == "previous":
+                was_previous = True
+                continue
+            opinfo = self.load_persistent_op_info(material)
+            material_name = opinfo.get("material", "")
+            material_title = opinfo.get("title", "")
+            material_thickness = opinfo.get("thickness", "")
+            if material_title == "":
+                if material_name:
+                    material_title = material_name
+                else:
+                    if material == "_default":
+                        material_title = "Generic Defaults"
+                    elif material.startswith("_default_"):
+                        material_title = f"Default for {material[9:]}"
+                    else:
+                        material_title = material.replace("_", " ")
+            entries.append(
+                (material_name, material_thickness, material_title, material)
+            )
+        # Let's sort them
+        entries.sort(
+            key=lambda e: (
+                e[0],
+                e[1],
+                e[2],
+            )
+        )
+        res = [e[3] for e in entries]
+        if was_previous:
+            res.insert(0, "previous")
+        return res
+
+    @tree_separator_after()
+    @tree_submenu(_("Load"))
+    @tree_values("opname", values=material_ids)
+    @tree_submenu_list(material_menus)
+    @tree_calc("material", lambda opname: material_name(opname))
+    @tree_operation("{material}", node_type="branch ops", help="")
+    def load_ops(node, opname, **kwargs):
+        self(f"material load {opname}\n")
 
     # @tree_separator_before()
     # @tree_submenu(_("Load"))
@@ -1734,6 +1769,23 @@ def init_tree(kernel):
     @tree_operation(_("Append Return to Origin"), node_type="branch ops", help="")
     def append_operation_goto(node, pos=None, **kwargs):
         self.op_branch.add(type="util goto", pos=pos, x=0, y=0)
+        self.signal("updateop_tree")
+
+    @tree_submenu(_("Append special operation(s)"))
+    @tree_prompt("y", _("Y-Coordinate of Goto?"))
+    @tree_prompt("x", _("X-Coordinate of Goto?"))
+    @tree_operation(
+        _("Append Goto Location"),
+        node_type="branch ops",
+        help=_("Send laser to specific location."),
+    )
+    def append_operation_goto_location(node, y, x, pos=None, **kwargs):
+        self.op_branch.add(
+            type="util goto",
+            pos=pos,
+            x=x,
+            y=y,
+        )
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))
@@ -1831,8 +1883,12 @@ def init_tree(kernel):
     @tree_submenu(_("Append special operation(s)"))
     @tree_prompt("y", _("Y-Coordinate for placement to append?"))
     @tree_prompt("x", _("X-Coordinate for placement to append?"))
-    @tree_operation(_("Append Placement"), node_type="branch ops", help="")
-    def append_operation_placement(node, y, x, pos=None, **kwargs):
+    @tree_operation(
+        _("Append absolute placement"),
+        node_type="branch ops",
+        help=_("Start job at specicic location"),
+    )
+    def append_absolute_placement(node, y, x, pos=None, **kwargs):
         self.op_branch.add(
             type="place point",
             pos=pos,
@@ -1840,6 +1896,18 @@ def init_tree(kernel):
             y=y,
             rotation=0,
             corner=0,
+        )
+        self.signal("updateop_tree")
+
+    @tree_submenu(_("Append special operation(s)"))
+    @tree_operation(
+        _("Append relative placement"),
+        node_type="branch ops",
+        help=_("Start job at current laserposition"),
+    )
+    def append_relative_placement(node, **kwargs):
+        self.op_branch.add(
+            type="place current",
         )
         self.signal("updateop_tree")
 
@@ -2484,13 +2552,13 @@ def init_tree(kernel):
                         )
 
         copy_nodes = list()
-        dx = self.length_x("3mm")
-        dy = self.length_y("3mm")
+        _dx = self.length_x("3mm")
+        _dy = self.length_y("3mm")
         alldata = list(self.elems(emphasized=True))
         minimaldata = self.condense_elements(alldata, expand_at_end=False)
         for e in minimaldata:
             parent = e.parent
-            copy_single_node(e, parent, copies, dx, dy)
+            copy_single_node(e, parent, copies, _dx, _dy)
 
         if self.classify_new:
             self.classify(copy_nodes)
@@ -2573,6 +2641,103 @@ def init_tree(kernel):
         self(f"outline {offset}mm\n")
         self.signal("refresh_tree")
 
+    def mergeable(node):
+        elems = list(self.elems(emphasized=True))
+        if len(elems) < 2:
+            return False
+        result = True
+        for e in elems:
+            if e.type not in (
+                "elem ellipse",
+                "elem path",
+                "elem polyline",
+                "elem rect",
+                "elem line",
+            ):
+                result = False
+            break
+        return result
+
+    @tree_conditional(lambda node: mergeable(node))
+    @tree_operation(
+        _("Merge elements"),
+        node_type=(
+            "elem ellipse",
+            "elem path",
+            "elem polyline",
+            "elem rect",
+            "elem line",
+        ),
+        help=_("Merge two or more elements together into a single path"),
+    )
+    def elem_merge(singlenode, **kwargs):
+        def get_common_parent_node(data):
+            def _get_common_parent(node1, node2):
+                top = self.elem_branch
+                list1 = [node1]
+                list2 = [node2]
+                n = node1
+                while n is not top:
+                    n = n.parent
+                    list1.append(n)
+                n = node2
+                while n is not top:
+                    n = n.parent
+                    list2.append(n)
+                # Both lists contain the node itself and the top node
+                for n in list1:
+                    if n in list2:
+                        return n
+                # That should not be the case...
+                return top
+
+            root = self.elem_branch
+            par = None
+            for e in data:
+                if par is None:
+                    par = e
+                else:
+                    par = _get_common_parent(par, e)
+                if par is root:
+                    break
+            return par
+
+        data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            return
+        parent = get_common_parent_node(data)
+        node = parent.add(type="elem path")
+        for e in data:
+            try:
+                path = e.as_geometry()
+            except AttributeError:
+                continue
+            try:
+                if node.stroke is None:
+                    node.stroke = e.stroke
+            except AttributeError:
+                pass
+            try:
+                if node.fill is None:
+                    node.fill = e.fill
+            except AttributeError:
+                pass
+            try:
+                if node.stroke_width is None:
+                    node.stroke_width = e.stroke_width
+            except AttributeError:
+                pass
+            node.geometry.append(path)
+        self.remove_elements(data)
+        # Newly created! Classification needed?
+        data = [node]
+        if self.classify_new:
+            self.classify(data)
+        self.set_node_emphasis(node, True)
+        self.signal("refresh_scene", "Scene")
+        self.signal("rebuild_tree")
+        node.focus()
+
     def has_vectorize(node):
         result = False
         make_vector = self.lookup("render-op/make_vector")
@@ -2591,6 +2756,84 @@ def init_tree(kernel):
     )
     def trace_bitmap(node, **kwargs):
         self("vectorize\n")
+
+    @tree_operation(
+        _("Convert to vector text"),
+        node_type="elem text",
+        help=_("Convert bitmap text to vector text"),
+    )
+    def convert_to_vectext(node, **kwargs):
+        data = []
+        nodelist = list(self.flat(emphasized=True, types=("elem text",)))
+        for e in nodelist:
+            if e is None or not hasattr(e, "wxfont"):
+                # print (f"Invalid node: {e.type}")
+                continue
+            text = e.text
+            facename = e.wxfont.GetFaceName()
+            # print (f"Facename: {facename}, svg: {getattr(e, 'font_family', '')}")
+            fontfile = self.kernel.root.fonts.face_to_full_name(facename)
+            if fontfile is None:
+                # print (f"could not find a font for {facename}")
+                return
+            fontname = self.kernel.root.fonts.short_name(fontfile)
+            # print (f"{facename} -> {fontname}, {fontfile}")
+            node_args = dict()
+            node_args["type"] = "elem path"
+            node_args["stroke"] = e.stroke
+            node_args["fill"] = e.fill
+            node_args["stroke_width"] = 500
+            node_args["fillrule"] = Fillrule.FILLRULE_NONZERO
+            node_args["mktext"] = text
+            fsize = e.font_size
+            if fsize is None:
+                fsize = 12
+            fsize *= 4 / 3
+            node_args["mkfontsize"] = fsize
+            node_args["mkfont"] = fontname
+            anchor = e.anchor
+            if anchor is None:
+                anchor = "start"
+            node_args["mkalign"] = anchor
+            # print (f"{text} aligns in the {anchor}")
+
+            old_matrix = Matrix(e.matrix)
+            cc = e.bounds
+            p0 = old_matrix.point_in_inverse_space((cc[0], cc[1]))
+            p1 = old_matrix.point_in_inverse_space((cc[2], cc[3]))
+
+            # node_args["mkcoordx"] = p0.x
+            # node_args["mkcoordy"] = p1.y
+
+            node_args["geometry"] = Geomstr.rect(
+                x=p0.x, y=p1.y, width=p1.x - p0.x, height=p1.y - p0.y
+            )
+            if e.label is None:
+                x = text.split("\n")
+                node_args["label"] = f"Text: {x[0]}"
+            newnode = e.replace_node(**node_args)
+            newnode.matrix = old_matrix
+            newnode.matrix.pre_translate_y(p1.y - p0.y)
+            if anchor != "start":
+                newnode.matrix.pre_translate_x(-1 * (p1.x - p0.x) / 2)
+
+            # Now we need to render it...
+            # newnode.set_dirty_bounds()
+            # newtext = self.wordlist_translate(text, elemnode=newnode, increment=False)
+            # newnode._translated_text = newtext
+
+            kernel = self.kernel
+            for property_op in kernel.lookup_all("path_updater/.*"):
+                property_op(kernel.root, newnode)
+            if hasattr(newnode, "_cache"):
+                newnode._cache = None
+
+            data.append(newnode)
+        if len(data):
+            if self.classify_new:
+                self.classify(data)
+            self.signal("rebuild_tree")
+            self.signal("refresh_scene", "Scene")
 
     @tree_conditional(
         lambda node: not is_regmark(node)
@@ -2811,6 +3054,8 @@ def init_tree(kernel):
             for item in list(self.regmarks()):
                 if item.selected:
                     data.append(item)
+            if len(data) == 0:
+                data.append(node)
             for item in data:
                 drop_node.drop(item)
                 signal_needed = True

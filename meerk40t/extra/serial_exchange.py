@@ -109,6 +109,8 @@ def plugin(kernel, lifecycle=None):
                         kernel.root(failure_command)
             except serial.SerialException as e:
                 channel(f"Error: {e}")
+                # Error is a failure condition.
+                kernel.root(failure_command)
             finally:
                 # Close the serial port, if opened
                 if serial_device is not None and serial_device.is_open:

@@ -50,7 +50,7 @@ class Themes(Service):
         # tp["button"] = wx.Button
         tp["pause_bg"] = wx.Colour(200, 200, 0)
         # wx.Colour("ORANGE") if self._dark else wx.Colour("YELLOW")
-        tp["pause_fg"] = wx.Colour("WHITE") if self._dark else wx.Colour("BLACK")
+        tp["pause_fg"] = wx.Colour("BLACK")
         # Start Button
         tp["start_bg"] = wx.Colour(0, 127, 0)
         tp["start_fg"] = wx.Colour("WHITE")
@@ -76,3 +76,4 @@ class Themes(Service):
                 if isinstance(item, wx.Colour):
                     # System default
                     tp[key] = None
+            tp["pause_fg"] = wx.Colour("BLACK")

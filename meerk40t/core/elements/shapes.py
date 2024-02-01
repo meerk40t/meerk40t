@@ -740,36 +740,53 @@ def init_commands(kernel):
         self.signal("refresh_scene", "Scene")
         self.validate_selected_area()
 
+    @self.console_option(
+        "tolerance",
+        "t",
+        type=float,
+        help=_("simplification tolerance"),
+    )
     @self.console_command(
         "simplify", input_type=("elements", None), output_type="elements"
     )
-    def simplify_path(command, channel, _, data=None, post=None, **kwargs):
+    def simplify_path(
+        command, channel, _, data=None, tolerance=None, post=None, **kwargs
+    ):
         if data is None:
             data = list(self.elems(emphasized=True))
         data_changed = list()
         if len(data) == 0:
             channel("Requires a selected polygon")
             return None
+        if tolerance is None:
+            tolerance = 25  # About 1/1000 mil
         for node in data:
             try:
                 sub_before = len(list(node.as_geometry().as_subpaths()))
             except AttributeError:
                 sub_before = 0
-
-            changed, before, after = self.simplify_node(node)
-            if changed:
+            if hasattr(node, "geometry"):
+                geom = node.geometry
+                seg_before = node.geometry.index
+                node.geometry = geom.simplify(tolerance)
                 node.altered()
+                seg_after = node.geometry.index
                 try:
                     sub_after = len(list(node.as_geometry().as_subpaths()))
                 except AttributeError:
                     sub_after = 0
                 channel(
-                    f"Simplified {node.type} ({node.label}): from {before} to {after}"
+                    f"Simplified {node.type} ({node.label}), tolerance: {tolerance}={Length(tolerance, digits=4).length_mm})"
                 )
+                if seg_before:
+                    saving = f"({(seg_before - seg_after)/seg_before*100:.1f}%)"
+                else:
+                    saving = ""
                 channel(f"Subpaths before: {sub_before} to {sub_after}")
+                channel(f"Segments before: {seg_before} to {seg_after} {saving}")
                 data_changed.append(node)
             else:
-                channel(f"Could not simplify {node.type} ({node.label})")
+                channel(f"Invalid node for simplify {node.type} ({node.label})")
         if len(data_changed) > 0:
             self.signal("element_property_update", data_changed)
             self.signal("refresh_scene", "Scene")
@@ -1885,6 +1902,7 @@ def init_commands(kernel):
             raise CommandSyntaxError
         if changes:
             self.signal("refresh_scene", "Scene")
+            self.signal("modified_by_tool")
         return "elements", data
 
     @self.console_argument("tx", type=self.length_x, help=_("New x value"))
@@ -1921,6 +1939,7 @@ def init_commands(kernel):
                 changes = True
         if changes:
             self.signal("refresh_scene", "Scene")
+            self.signal("modified_by_tool")
         return "elements", data
 
     @self.console_command(

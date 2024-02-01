@@ -184,6 +184,10 @@ class CutPlan:
         idx = 0
         self.context.elements.mywordlist.push()
 
+        perform_simplify = (
+            self.context.opt_reduce_details and self.context.do_optimization
+        )
+        tolerance = self.context.opt_reduce_tolerance
         for placement in placements:
             # Adjust wordlist
             if idx > 0:
@@ -200,12 +204,17 @@ class CutPlan:
                 if op.type.startswith("place "):
                     continue
                 self.plan.append(op)
-                if op.type.startswith("op"):
+                if op.type.startswith("op") or op.type.startswith("util"):
+                    # Call preprocess on any op or util ops in our list.
                     if hasattr(op, "preprocess"):
                         op.preprocess(self.context, placement, self)
+                if op.type.startswith("op"):
                     for node in op.flat():
                         if node is op:
                             continue
+                        if hasattr(node, "geometry") and perform_simplify:
+                            # We are still in scene reolution and not yet at device level
+                            node.geometry = node.geometry.simplify(tolerance=tolerance)
                         if hasattr(node, "mktext") and hasattr(node, "_cache"):
                             newtext = self.context.elements.wordlist_translate(
                                 node.mktext, elemnode=node, increment=False
@@ -538,14 +547,7 @@ class CutPlan:
             if context.opt_nearest_neighbor:
                 self.commands.append(self.optimize_travel)
             if context.opt_2opt and not context.opt_inner_first:
-                try:
-                    # Check for numpy before adding additional 2opt
-                    # pylint: disable=unused-import
-                    import numpy as np
-
-                    self.commands.append(self.optimize_travel_2opt)
-                except ImportError:
-                    pass
+                self.commands.append(self.optimize_travel_2opt)
 
         elif context.opt_inner_first:
             self.commands.append(self.optimize_cuts)
@@ -721,15 +723,15 @@ class CutPlan:
 
             clusters = list()
             cluster_bounds = list()
-            for node in operation.children:
+            for child in operation.children:
                 try:
-                    if node.type == "reference":
-                        node = node.node
-                    bb = node.paint_bounds
+                    if child.type == "reference":
+                        child = child.node
+                    bb = child.paint_bounds
                 except AttributeError:
                     # Either no element node or does not have bounds
                     continue
-                clusters.append([node])
+                clusters.append([child])
                 cluster_bounds.append(
                     (
                         bb[0],
@@ -883,37 +885,37 @@ def is_inside(inner, outer, tolerance=0):
     # i.e. larger bboxes need more points and
     # tighter curves need more points (i.e. compare vector directions)
 
-    def vm_code(outer, outer_path, inner, inner_path):
-        if not hasattr(outer, "vm"):
-            outer_path = Polygon(
-                [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
-            )
-            vm = VectorMontonizer()
-            vm.add_polyline(outer_path)
-            outer.vm = vm
-        for i in range(101):
-            p = inner_path.point(
-                i / 100.0, error=1e4
-            )  # Point(4633.110682926033,1788.413481872459)
-            if not outer.vm.is_point_inside(p.x, p.y, tolerance=tolerance):
-                return False
-        return True
+    # def vm_code(outer, outer_path, inner, inner_path):
+    #     if not hasattr(outer, "vm"):
+    #         outer_path = Polygon(
+    #             [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
+    #         )
+    #         vm = VectorMontonizer()
+    #         vm.add_polyline(outer_path)
+    #         outer.vm = vm
+    #     for i in range(101):
+    #         p = inner_path.point(
+    #             i / 100.0, error=1e4
+    #         )  # Point(4633.110682926033,1788.413481872459)
+    #         if not outer.vm.is_point_inside(p.x, p.y, tolerance=tolerance):
+    #             return False
+    #     return True
 
-    def sb_code(outer, outer_path, inner, inner_path):
+    def sb_code(out_cut, out_path, in_cut, in_path):
         from ..tools.geomstr import Polygon as Gpoly
         from ..tools.geomstr import Scanbeam
 
-        if not hasattr(outer, "sb"):
-            pg = outer_path.npoint(np.linspace(0, 1, 1001), error=1e4)
+        if not hasattr(out_cut, "sb"):
+            pg = out_path.npoint(np.linspace(0, 1, 1001), error=1e4)
             pg = pg[:, 0] + pg[:, 1] * 1j
 
-            outer_path = Gpoly(*pg)
-            sb = Scanbeam(outer_path.geomstr)
-            outer.sb = sb
-        p = inner_path.npoint(np.linspace(0, 1, 101), error=1e4)
+            out_path = Gpoly(*pg)
+            sb = Scanbeam(out_path.geomstr)
+            out_cut.sb = sb
+        p = in_path.npoint(np.linspace(0, 1, 101), error=1e4)
         points = p[:, 0] + p[:, 1] * 1j
 
-        q = outer.sb.points_in_polygon(points)
+        q = out_cut.sb.points_in_polygon(points)
         return q.all()
 
     return sb_code(outer, outer_path, inner, inner_path)
@@ -987,7 +989,7 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
 
     groups = [cut for cut in context if isinstance(cut, (CutGroup, RasterCut))]
     closed_groups = [g for g in groups if isinstance(g, CutGroup) and g.closed]
-    total_pass = len(groups) + len(closed_groups)
+    total_pass = len(groups) * len(closed_groups)
     context.contains = closed_groups
     if channel:
         channel(
@@ -1010,6 +1012,7 @@ def inner_first_ident(context: CutGroup, kernel=None, channel=None, tolerance=0)
             if inner.contains and outer in inner.contains:
                 continue
             if current_pass % 50 == 0 and busy and busy.shown:
+                # Can't execute without kernel, reference before assignment is safe.
                 message = _("Pass {cpass}/{tpass}").format(
                     cpass=current_pass, tpass=total_pass
                 )
@@ -1239,16 +1242,12 @@ def short_travel_cutcode_2opt(
     Uses code I wrote for vpype:
     https://github.com/abey79/vpype/commit/7b1fad6bd0fcfc267473fdb8ba2166821c80d9cd
 
-    @param context:cutcode: cutcode to be optimized
+    @param context: cutcode to be optimized
+    @param kernel: kernel value
     @param passes: max passes to perform 2-opt
     @param channel: Channel to send data about the optimization process.
     @return:
     """
-    try:
-        import numpy as np
-    except ImportError:
-        return context
-
     if channel:
         start_length = context.length_travel(True)
         start_time = time()
@@ -1292,7 +1291,7 @@ def short_travel_cutcode_2opt(
             _ = kernel.translation
             if busy.shown:
                 busy.change(
-                    msg=_("Pass {cpass}/{tpass").format(
+                    msg=_("Pass {cpass}/{tpass}").format(
                         cpass=current_pass, tpass=passes
                     ),
                     keep=2,

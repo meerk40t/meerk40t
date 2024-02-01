@@ -255,6 +255,43 @@ def plugin(kernel, lifecycle=None):
                 "section": "_20_Reducing Movements",
                 "hidden": True,
             },
+            {
+                "attr": "opt_reduce_details",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "label": _("Reduce polyline details"),
+                "tip": _(
+                    "Active: reduce the details of polyline elements,\n"
+                    + "so that less information needs to be sent to the laser."
+                )
+                + "\n"
+                + _(
+                    "This can reduce the processing and laser time but can as well\n"
+                    + "compromise the quality at higher levels, so use with care and preview in simulation."
+                ),
+                "page": "Optimisations",
+                "section": "_30_Details",
+                "subsection": "_10_",
+            },
+            {
+                "attr": "opt_reduce_tolerance",
+                "object": context,
+                "default": 10,
+                "type": int,
+                "label": _("Level"),
+                "style": "option",
+                "choices": (1, 10, 50, 100),
+                "display": (_("Minimal"), _("Fine"), _("Medium"), _("Coarse")),
+                "tip": _(
+                    "This can reduce the processing and laser time but can as well\n"
+                    + "compromise the quality at higher levels, so use with care and preview in simulation."
+                ),
+                "page": "Optimisations",
+                "section": "_30_Details",
+                "subsection": "_10_",
+                "conditional": (context, "opt_reduce_details"),
+            },
         ]
         for c in choices:
             c["help"] = "optimisation"
@@ -442,7 +479,9 @@ class Planner(Service):
                                         except ValueError:
                                             setvalue = 0
                                     if mask != 0 or setvalue != 0:
-                                        addop = OutputOperation(mask, setvalue)
+                                        addop = OutputOperation(
+                                            output_mask=mask, output_value=setvalue
+                                        )
                             elif optype == "util goto":
                                 if opparam is not None:
                                     params = opparam.split(",")
@@ -458,7 +497,10 @@ class Planner(Service):
                                             y = float(Length(params[1]))
                                         except ValueError:
                                             y = 0
-                                    addop = GotoOperation(x=x, y=y)
+                                    absolute = False
+                                    if len(params) > 2:
+                                        absolute = params[2] not in ("False", "0")
+                                    addop = GotoOperation(x=x, y=y, absolute=absolute)
                             elif optype == "util wait":
                                 if opparam is not None:
                                     try:

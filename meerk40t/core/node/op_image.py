@@ -1,4 +1,3 @@
-from copy import copy
 from math import isnan
 
 from meerk40t.core.cutcode.rastercut import RasterCut
@@ -117,6 +116,14 @@ class ImageOpNode(Node, Parameters):
             return some_nodes
         return False
 
+    def is_referenced(self, node):
+        for e in self.children:
+            if e is node:
+                return True
+            if hasattr(e, "node") and e.node is node:
+                return True
+        return False
+
     def valid_node_for_reference(self, node):
         if hasattr(node, "as_image"):
             return True
@@ -124,6 +131,10 @@ class ImageOpNode(Node, Parameters):
             return False
 
     def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
+        if self.is_referenced(node):
+            # No need to add it again...
+            return False, False, None
+
         feedback = []
         if hasattr(node, "as_image"):
             self.add_reference(node)

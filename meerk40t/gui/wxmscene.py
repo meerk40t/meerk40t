@@ -1,4 +1,3 @@
-import math
 import platform
 import random
 import time
@@ -8,17 +7,12 @@ from wx import aui
 
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
-from meerk40t.gui.icons import (
-    STD_ICON_SIZE,
-    icon_meerk40t,
-    icons8_menu,
-    icons8_r_white,
-    icons8_text,
-)
+from meerk40t.gui.icons import STD_ICON_SIZE, icon_meerk40t, icons8_r_white, icons8_text
 from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scenepanel import ScenePanel
-from meerk40t.gui.scenewidgets.affinemover import AffineMover
+
+# from meerk40t.gui.scenewidgets.affinemover import AffineMover
 from meerk40t.gui.scenewidgets.attractionwidget import AttractionWidget
 from meerk40t.gui.scenewidgets.bedwidget import BedWidget
 from meerk40t.gui.scenewidgets.elementswidget import ElementsWidget
@@ -26,10 +20,12 @@ from meerk40t.gui.scenewidgets.gridwidget import GridWidget
 from meerk40t.gui.scenewidgets.guidewidget import GuideWidget
 from meerk40t.gui.scenewidgets.laserpathwidget import LaserPathWidget
 from meerk40t.gui.scenewidgets.machineoriginwidget import MachineOriginWidget
-from meerk40t.gui.scenewidgets.nodeselector import NodeSelector
+
+# from meerk40t.gui.scenewidgets.nodeselector import NodeSelector
 from meerk40t.gui.scenewidgets.rectselectwidget import RectSelectWidget
 from meerk40t.gui.scenewidgets.reticlewidget import ReticleWidget
-from meerk40t.gui.scenewidgets.selectionwidget import SelectionWidget
+
+# from meerk40t.gui.scenewidgets.selectionwidget import SelectionWidget
 from meerk40t.gui.toolwidgets.toolcircle import CircleTool
 from meerk40t.gui.toolwidgets.toolcontainer import ToolContainer
 from meerk40t.gui.toolwidgets.tooldraw import DrawTool
@@ -55,7 +51,6 @@ from meerk40t.gui.utilitywidgets.checkboxwidget import CheckboxWidget
 from meerk40t.gui.utilitywidgets.cyclocycloidwidget import CyclocycloidWidget
 from meerk40t.gui.utilitywidgets.harmonograph import HarmonographWidget
 from meerk40t.gui.utilitywidgets.seekbarwidget import SeekbarWidget
-from meerk40t.gui.utilitywidgets.togglewidget import ToggleWidget
 from meerk40t.gui.wxutils import get_key_name, is_navigation_key
 from meerk40t.kernel import CommandSyntaxError, signal_listener
 from meerk40t.svgelements import Color
@@ -232,9 +227,7 @@ class MeerK40tScenePanel(wx.Panel):
         bsize_normal = STD_ICON_SIZE
 
         def proxy_linetext():
-            from meerk40t.extra.hershey import have_hershey_fonts
-
-            if have_hershey_fonts(context):
+            if context.fonts.have_hershey_fonts():
                 context.kernel.elements("tool linetext\n")
             else:
                 context.kernel.elements("window open HersheyFontManager\n")
@@ -374,7 +367,7 @@ class MeerK40tScenePanel(wx.Panel):
 
         @context.console_argument("tool", help=_("tool to use."))
         @context.console_command("tool", help=_("sets a particular tool for the scene"))
-        def tool_base(command, channel, _, tool=None, **kwgs):
+        def tool_base(command, channel, _, tool=None, remainder=None, **kwgs):
             if tool is None:
                 channel(_("Tools:"))
                 channel("none")
@@ -393,12 +386,14 @@ class MeerK40tScenePanel(wx.Panel):
                 toolbar.modified()
             try:
                 if tool == "none":
-                    success, response = self.tool_container.set_tool(None)
+                    success, response = self.tool_container.set_tool(None, remainder)
                     channel(response)
                     if not success:
                         return
                 else:
-                    success, response = self.tool_container.set_tool(tool.lower())
+                    success, response = self.tool_container.set_tool(
+                        tool.lower(), remainder
+                    )
                     channel(response)
                     if not success:
                         return
@@ -747,6 +742,7 @@ class MeerK40tScenePanel(wx.Panel):
                     )
                     self.scene.signal("guide")
                     self.scene.signal("grid")
+                    self.widget_scene.reset_snap_attraction()
                     self.request_refresh()
                 elif target[0] == "s":
                     self.grid.draw_grid_secondary = not self.grid.draw_grid_secondary
@@ -770,7 +766,7 @@ class MeerK40tScenePanel(wx.Panel):
                                 )
                             )
                         if scalex is None:
-                            rot = self.scene.context.rotary
+                            rot = self.scene.context.device.rotary
                             if rot.active:
                                 scalex = rot.scale_x
                                 scaley = rot.scale_y
@@ -890,7 +886,7 @@ class MeerK40tScenePanel(wx.Panel):
                     f.write(f"x={Length(x, preferred_units='mm').preferred_length}\n")
                 for y in self.magnet_y:
                     f.write(f"y={Length(y, preferred_units='mm').preferred_length}\n")
-        except ValueError:  # ( PermissionError, OSError, FileNotFoundError ):
+        except (ValueError, PermissionError, OSError, FileNotFoundError):
             return
 
     def load_magnets(self):
@@ -1070,6 +1066,12 @@ class MeerK40tScenePanel(wx.Panel):
 
     @signal_listener("scene_right_click")
     def on_scene_right(self, origin, *args):
+        def zoom_in(event=None):
+            self.context(f"scene zoom {1.5 / 1.0}\n")
+
+        def zoom_out(event=None):
+            self.context(f"scene zoom {1.0 / 1.5}\n")
+
         def zoom_to_bed(event=None):
             zoom = self.context.zoom_margin
             self.context(f"scene focus -a {-zoom}% {-zoom}% {zoom+100}% {zoom+100}%\n")
@@ -1115,6 +1117,9 @@ class MeerK40tScenePanel(wx.Panel):
                 self.grid.draw_grid_secondary = not self.grid.draw_grid_secondary
             elif gridtype == "circular":
                 self.grid.draw_grid_circular = not self.grid.draw_grid_circular
+            self.scene.signal("guide")
+            self.scene.signal("grid")
+            self.widget_scene.reset_snap_attraction()
             self.request_refresh()
 
         def toggle_grid_p(event=None):
@@ -1195,6 +1200,24 @@ class MeerK40tScenePanel(wx.Panel):
                 ),
             )
         menu.AppendSeparator()
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: zoom_out(),
+            menu.Append(
+                wx.ID_ANY,
+                _("Zoom Out"),
+                _("Make the scene smaller"),
+            ),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: zoom_in(),
+            menu.Append(
+                wx.ID_ANY,
+                _("Zoom In"),
+                _("Make the scene larger"),
+            ),
+        )
         self.Bind(
             wx.EVT_MENU,
             lambda e: zoom_to_bed(),
@@ -1322,9 +1345,9 @@ class MeerK40tScenePanel(wx.Panel):
         # self.scene.signal('guide')
         self.request_refresh(origin)
 
-    @signal_listener("tool_modified")
+    @signal_listener("modified_by_tool")
     def on_modification_by_tool(self, origin, *args):
-        self.scene.signal("tool_modified")
+        self.scene.signal("modified_by_tool")
 
     @signal_listener("emphasized")
     def on_emphasized_elements_changed(self, origin, *args):
@@ -1434,12 +1457,14 @@ class SceneWindow(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(1280, 800, *args, **kwds)
         self.panel = MeerK40tScenePanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Scene"))
         self.Layout()
+        self.restore_aspect()
 
     def window_open(self):
         self.panel.pane_show()

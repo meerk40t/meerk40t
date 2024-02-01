@@ -247,16 +247,17 @@ class MoshiControllerPanel(wx.Panel):
         # end wxGlade
 
     def pane_show(self):
-        active = self.context.path.split("/")[-1]
-        self.context.channel(f"{active}/usb", buffer_size=500).watch(self.update_text)
+        self._channel_watch = f"{self.context.safe_label}/usb"
+        self.context.channel(self._channel_watch, buffer_size=500).watch(
+            self.update_text
+        )
         self.context.listen("pipe;status", self.update_status)
         self.context.listen("pipe;usb_status", self.on_connection_status_change)
         self.context.listen("pipe;state", self.on_connection_state_change)
         self.context.listen("active", self.on_active_change)
 
     def pane_hide(self):
-        active = self.context.path.split("/")[-1]
-        self.context.channel(f"{active}/usb").unwatch(self.update_text)
+        self.context.channel(self._channel_watch).unwatch(self.update_text)
         self.context.unlisten("pipe;status", self.update_status)
         self.context.unlisten("pipe;usb_status", self.on_connection_status_change)
         self.context.unlisten("pipe;state", self.on_connection_state_change)
@@ -440,11 +441,13 @@ class MoshiControllerGui(MWindow):
         # ==========
 
         self.panel = MoshiControllerPanel(self, wx.ID_ANY, context=self.context)
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Moshiboard-Controller"))
+        self.restore_aspect()
 
     def create_menu(self, append):
         wxglade_tmp_menu = wx.Menu()

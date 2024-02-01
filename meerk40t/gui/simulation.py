@@ -1212,6 +1212,18 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.widget_scene.request_refresh()
 
+    def zoom_in(self):
+        matrix = self.widget_scene.widget_root.matrix
+        zoomfactor = 1.5 / 1.0
+        matrix.post_scale(zoomfactor)
+        self.widget_scene.request_refresh()
+
+    def zoom_out(self):
+        matrix = self.widget_scene.widget_root.matrix
+        zoomfactor = 1.0 / 1.5
+        matrix.post_scale(zoomfactor)
+        self.widget_scene.request_refresh()
+
     def fit_scene_to_panel(self):
         bbox = self.context.device.view.source_bbox()
         self.widget_scene.widget_root.focus_viewport_scene(
@@ -1336,6 +1348,25 @@ class SimulationPanel(wx.Panel, Job):
         self.Bind(wx.EVT_MENU, self.toggle_travel_display, id=id6.GetId())
         menu.Check(id6.GetId(), self.display_travel)
 
+        menu.AppendSeparator()
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.zoom_out(),
+            menu.Append(
+                wx.ID_ANY,
+                _("Zoom Out"),
+                _("Make the scene smaller"),
+            ),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.zoom_in(),
+            menu.Append(
+                wx.ID_ANY,
+                _("Zoom In"),
+                _("Make the scene larger"),
+            ),
+        )
         self.Bind(
             wx.EVT_MENU,
             lambda e: self.fit_scene_to_panel(),
@@ -1916,57 +1947,58 @@ class SimulationTravelWidget(Widget):
     def process_draw(self, gc: wx.GraphicsContext):
         if not self.display:
             return
-        if len(self.pos):
-            residual = 0
-            if self.sim.progress < self.sim.max:
-                idx, residual = self.sim.progress_to_idx(self.sim.progress)
-                pos = self.pos[idx]
-                # print(f"TravelWidget, idx={idx}, residual={residual:.3f}, pos={pos}")
-            else:
-                pos = self.pos[-1]
-            if pos >= 0:
-                starts = self.starts[:pos]
-                ends = self.ends[:pos]
-                if residual > 0 and idx > 0:
-                    p1 = self.sim.cutcode[idx - 1].end
-                    p2 = self.sim.cutcode[idx - 1].start
-                    # progress = time
-                    t1 = self.sim.statistics[idx - 1]
-                    t2 = self.sim.statistics[idx]
-                    end_time = t1["time_at_end_of_travel"]
-                    # Time after travel.
-                    new_time = t2["time_at_end_of_travel"]
-                    if (
-                        t1["total_time_travel"] != t2["total_time_travel"]
-                    ):  # Travel time
-                        fact = (min(self.sim.progress, new_time) - end_time) / (
-                            new_time - end_time
-                        )
-                        newstart = wx.Point2D(p1[0], p1[1])
-                        newend = wx.Point2D(
-                            p1[0] + fact * (p2[0] - p1[0]),
-                            p1[1] + fact * (p2[1] - p1[1]),
-                        )
-                        mystarts = list()
-                        myends = list()
-                        mystarts.append(newstart)
-                        myends.append(newend)
-                        interim_pen = wx.Pen(wx.GREEN, 1, wx.PENSTYLE_DOT)
-                        gc.SetPen(interim_pen)
-                        gc.StrokeLineSegments(mystarts, myends)
-                gc.SetPen(wx.BLACK_DASHED_PEN)
-                gc.StrokeLineSegments(starts, ends)
-                # for idx, pt_start in enumerate(starts):
-                #     pt_end = ends[idx]
-                #     print (f"#{idx}: ({pt_start[0]:.0f}, {pt_start[1]:.0f}) - ({pt_end[0]:.0f}, {pt_end[1]:.0f})")
-                # starts = list()
-                # ends = list()
-                # starts.append(wx.Point2D(0, 0))
-                # ends.append(wx.Point2D(10000, 10000))
-                # starts.append(wx.Point2D(0, 10000))
-                # ends.append(wx.Point2D(10000, 0))
-                # gc.SetPen(wx.CYAN_PEN)
-                # gc.StrokeLineSegments(starts, ends)
+        if not len(self.pos):
+            return
+        residual = 0
+        idx = 0
+        if self.sim.progress < self.sim.max:
+            idx, residual = self.sim.progress_to_idx(self.sim.progress)
+            pos = self.pos[idx]
+            # print(f"TravelWidget, idx={idx}, residual={residual:.3f}, pos={pos}")
+        else:
+            pos = self.pos[-1]
+        if pos < 0:
+            return
+        starts = self.starts[:pos]
+        ends = self.ends[:pos]
+        if residual > 0 and idx > 0:
+            p1 = self.sim.cutcode[idx - 1].end
+            p2 = self.sim.cutcode[idx - 1].start
+            # progress = time
+            t1 = self.sim.statistics[idx - 1]
+            t2 = self.sim.statistics[idx]
+            end_time = t1["time_at_end_of_travel"]
+            # Time after travel.
+            new_time = t2["time_at_end_of_travel"]
+            if t1["total_time_travel"] != t2["total_time_travel"]:  # Travel time
+                fact = (min(self.sim.progress, new_time) - end_time) / (
+                    new_time - end_time
+                )
+                newstart = wx.Point2D(p1[0], p1[1])
+                newend = wx.Point2D(
+                    p1[0] + fact * (p2[0] - p1[0]),
+                    p1[1] + fact * (p2[1] - p1[1]),
+                )
+                mystarts = list()
+                myends = list()
+                mystarts.append(newstart)
+                myends.append(newend)
+                interim_pen = wx.Pen(wx.GREEN, 1, wx.PENSTYLE_DOT)
+                gc.SetPen(interim_pen)
+                gc.StrokeLineSegments(mystarts, myends)
+        gc.SetPen(wx.BLACK_DASHED_PEN)
+        gc.StrokeLineSegments(starts, ends)
+        # for idx, pt_start in enumerate(starts):
+        #     pt_end = ends[idx]
+        #     print (f"#{idx}: ({pt_start[0]:.0f}, {pt_start[1]:.0f}) - ({pt_end[0]:.0f}, {pt_end[1]:.0f})")
+        # starts = list()
+        # ends = list()
+        # starts.append(wx.Point2D(0, 0))
+        # ends.append(wx.Point2D(10000, 10000))
+        # starts.append(wx.Point2D(0, 10000))
+        # ends.append(wx.Point2D(10000, 0))
+        # gc.SetPen(wx.CYAN_PEN)
+        # gc.StrokeLineSegments(starts, ends)
 
 
 class SimReticleWidget(Widget):
@@ -2048,6 +2080,8 @@ class SimReticleWidget(Widget):
 class Simulation(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(706, 755, *args, **kwds)
+        # We do this very early to allow resizing events to do their thing...
+        self.restore_aspect(honor_initial_values=True)
         if len(args) > 3:
             plan_name = args[3]
         else:
@@ -2069,6 +2103,7 @@ class Simulation(MWindow):
             auto_clear=auto_clear,
             optimise_at_start=optimise,
         )
+        self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_hazard.GetBitmap())
         self.SetIcon(_icon)

@@ -15,7 +15,9 @@ LockWidget: Widget to lock and unlock the given object.
 
 
 import math
+from time import perf_counter
 
+import numpy as np
 import wx
 
 from meerk40t.core.elements.element_types import *
@@ -29,8 +31,9 @@ from meerk40t.gui.scene.scene import (
 )
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import StaticBoxSizer, create_menu_for_node
+from meerk40t.gui.wxutils import StaticBoxSizer, create_menu_for_node, matrix_scale
 from meerk40t.svgelements import Point
+from meerk40t.tools.geomstr import TYPE_END
 
 NEARLY_ZERO = 1.0e-6
 
@@ -213,7 +216,7 @@ class BorderWidget(Widget):
         center_x = (self.left + self.right) / 2.0
         center_y = (self.top + self.bottom) / 2.0
         gc.SetPen(self.master.selection_pen)
-        # Won't be display when rotating...
+        # Won't be displayed when rotating...
         if self.master.show_border:
             gc.StrokeLine(center_x, 0, center_x, self.top)
             gc.StrokeLine(0, center_y, self.left, center_y)
@@ -384,6 +387,8 @@ class RotationWidget(Widget):
         elif self.index == 3:  # bl
             signx = -1
             signy = +1
+        else:
+            raise ValueError("Selection location was not valid.")
 
         # Well, I would have liked to draw a proper arc via dc.DrawArc but the DeviceContext is not available here(?)
         segment = []
@@ -452,7 +457,8 @@ class RotationWidget(Widget):
             self.master.last_angle = None
             self.master.start_angle = None
             self.master.rotated_angle = 0
-            self.scene.context.signal("tool_modified")
+            self.scene.pane.modif_active = False
+            self.scene.context.signal("modified_by_tool")
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
@@ -734,7 +740,7 @@ class CornerWidget(Widget):
             for e in images:
                 e.update(self.scene.context)
             self.scene.pane.modif_active = False
-            self.scene.context.signal("tool_modified")
+            self.scene.context.signal("modified_by_tool")
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
@@ -983,7 +989,7 @@ class SideWidget(Widget):
             for e in images:
                 e.update(self.scene.context)
             self.scene.pane.modif_active = False
-            self.scene.context.signal("tool_modified")
+            self.scene.context.signal("modified_by_tool")
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
@@ -1211,7 +1217,8 @@ class SkewWidget(Widget):
                     images.append(e)
             for e in images:
                 e.update(self.scene.context)
-            self.scene.context.signal("tool_modified")
+            self.scene.pane.modif_active = False
+            self.scene.context.signal("modified_by_tool")
         elif event == -1:
             self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
@@ -1556,11 +1563,146 @@ class MoveWidget(Widget):
             # )
 
         if event == 1:  # end
-            if nearest_snap is None:
-                move_to(lastdx, lastdy)
-            else:
-                move_to(lastdx - self.master.offset_x, lastdy - self.master.offset_y)
-            self.check_for_magnets()
+            # Cleanup - we check for:
+            # a) Would a point of the selection snap to a point of the non-selected elements? If yes we are done
+            # b) Use the distance of the 4 corners and the center to a grid point -> take smallest distance
+            # c) Regular snap-check
+            # d) Use magnet lines
+
+            def shortest_distance(p1, p2, tuplemode):
+                """
+                Calculates the shortest distance between two arrays of 2-dimensional points.
+                """
+                # Calculate the Euclidean distance between each point in p1 and p2
+                if tuplemode:
+                    # For an array of tuples:
+                    dist = np.sqrt(np.sum((p1[:, np.newaxis] - p2) ** 2, axis=2))
+                else:
+                    # For an array of complex numbers
+                    dist = np.abs(p1[:, np.newaxis] - p2[np.newaxis, :])
+                # Find the minimum distance and its corresponding indices
+                min_dist = np.min(dist)
+                min_indices = np.argwhere(dist == min_dist)
+
+                # Return the coordinates of the two points
+                return min_dist, p1[min_indices[0][0]], p2[min_indices[0][1]]
+
+            b = elements._emphasized_bounds
+            if b is None:
+                b = elements.selected_area()
+            matrix = self.scene.widget_root.scene_widget.matrix
+            did_snap_to_point = False
+            if (
+                self.scene.context.snap_points
+                and not "shift" in modifiers
+                and b is not None
+            ):
+                gap = self.scene.context.action_attract_len / matrix_scale(matrix)
+                # We gather all points of non-selected elements,
+                # but only those that lie within the boundaries
+                # of the selected area
+                # We compare every point of the selected elements
+                # with the points of the non-selected elements (provided they
+                # lie within the selection area plus boundary) and look for
+                # the closest distance.
+
+                t1 = perf_counter()
+                other_points = []
+                selected_points = []
+                for e in self.scene.context.elements.elems():
+                    if e.emphasized:
+                        target = selected_points
+                    else:
+                        target = other_points
+                    if not hasattr(e, "as_geometry"):
+                        continue
+                    geom = e.as_geometry()
+                    last = None
+                    for seg in geom.segments[: geom.index]:
+                        start = seg[0]
+                        seg_type = int(seg[2].real)
+                        end = seg[4]
+                        if seg_type != TYPE_END:
+                            if start != last:
+                                xx = start.real
+                                yy = start.imag
+                                ignore = (
+                                    xx < b[0] - gap
+                                    or xx > b[2] + gap
+                                    or yy < b[1] - gap
+                                    or yy > b[3] + gap
+                                )
+                                if not ignore:
+                                    target.append(start)
+                            xx = end.real
+                            yy = end.imag
+                            ignore = (
+                                xx < b[0] - gap
+                                or xx > b[2] + gap
+                                or yy < b[1] - gap
+                                or yy > b[3] + gap
+                            )
+                            if not ignore:
+                                target.append(end)
+                            last = end
+                t2 = perf_counter()
+                if len(other_points) > 0 and len(selected_points) > 0:
+                    np_other = np.asarray(other_points)
+                    np_selected = np.asarray(selected_points)
+                    dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
+
+                    if dist < gap:
+                        did_snap_to_point = True
+                        dx = pt1.real - pt2.real
+                        dy = pt1.imag - pt2.imag
+                        self.total_dx = 0
+                        self.total_dy = 0
+                        move_to(dx, dy)
+                t3 = perf_counter()
+                # print (f"Snap, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t3-t1:.2f}sec, Generation: {t2-t1:.2f}sec, shortest: {t3-t2:.2f}sec")
+            if (
+                self.scene.context.snap_grid
+                and not "shift" in modifiers
+                and b is not None
+                and not did_snap_to_point
+            ):
+                t1 = perf_counter()
+                gap = self.scene.context.grid_attract_len / matrix_scale(matrix)
+                # Check for corner points + center:
+                selected_points = (
+                    (b[0], b[1]),
+                    (b[2], b[1]),
+                    (b[0], b[3]),
+                    (b[2], b[3]),
+                    ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
+                )
+                other_points = self.scene.pane.grid.grid_points
+                if len(other_points) > 0 and len(selected_points) > 0:
+                    np_other = np.asarray(other_points)
+                    np_selected = np.asarray(selected_points)
+                    dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
+                    if dist < gap:
+                        did_snap_to_point = True
+                        dx = pt1[0] - pt2[0]
+                        dy = pt1[1] - pt2[1]
+                        self.total_dx = 0
+                        self.total_dy = 0
+                        move_to(dx, dy)
+
+                t2 = perf_counter()
+                # print (f"Corner-points, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t2-t1:.2f}sec")
+                if did_snap_to_point:
+                    # Even then magnets win!
+                    self.check_for_magnets()
+
+            if not did_snap_to_point:
+                if nearest_snap is None:
+                    move_to(lastdx, lastdy)
+                else:
+                    move_to(
+                        lastdx - self.master.offset_x, lastdy - self.master.offset_y
+                    )
+                self.check_for_magnets()
             # if abs(self.total_dx) + abs(self.total_dy) > 1e-3:
             #     # Did we actually move?
             #     # Remember this, it is still okay
@@ -1574,8 +1716,8 @@ class MoveWidget(Widget):
             #     # .translated will set the scene emphasized bounds dirty, that's not needed, so...
             #     elements.update_bounds([bx0, by0, bx1, by1])
 
-            self.scene.context.signal("tool_modified")
             self.scene.pane.modif_active = False
+            self.scene.context.signal("modified_by_tool")
         elif event == -1:  # start
             if "alt" in modifiers:
                 self.create_duplicate()

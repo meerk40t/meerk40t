@@ -6,14 +6,14 @@ from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.kernel import signal_listener
+from meerk40t.kernel import Job, signal_listener
 
 _ = wx.GetTranslation
 
 
 class BalorConfiguration(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(420, 570, *args, **kwds)
+        super().__init__(550, 700, *args, **kwds)
         self.context = self.context.device
         self.SetHelpText("balorconfig")
         _icon = wx.NullIcon
@@ -29,7 +29,7 @@ class BalorConfiguration(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
-
+        self.sizer.Add(self.notebook_main, 1, wx.EXPAND, 0)
         options = (
             ("balor", "Balor"),
             ("balor-redlight", "Redlight"),
@@ -37,6 +37,7 @@ class BalorConfiguration(MWindow):
             ("balor-global-timing", "Timings"),
             ("balor-extra", "Extras"),
         )
+        self.test_bits = ""
         injector = (
             {
                 "attr": "test_pin",
@@ -46,6 +47,16 @@ class BalorConfiguration(MWindow):
                 "style": "button",
                 "label": _("Test"),
                 "tip": _("Turn red dot on for test purposes"),
+                "section": "_10_Parameters",
+                "subsection": "_30_Pin-Index",
+            },
+            {
+                "attr": "test_bits",
+                "object": self,
+                "default": "",
+                "type": str,
+                "enabled": False,
+                "label": _("Bits"),
                 "section": "_10_Parameters",
                 "subsection": "_30_Pin-Index",
             },
@@ -84,6 +95,13 @@ class BalorConfiguration(MWindow):
         self.Layout()
         for panel in self.panels:
             self.add_module_delegate(panel)
+        self.timer = Job(
+            process=self.update_bit_info,
+            job_name="balor-bit",
+            interval=1.0,
+            run_main=True,
+        )
+        self.restore_aspect()
 
     @property
     def test_pin(self):
@@ -97,13 +115,37 @@ class BalorConfiguration(MWindow):
         else:
             self.context("red off\n")
 
+    def update_bit_info(self, *args):
+        if not self.context.driver.connected:
+            status = "busy"
+        else:
+            port_list = self.context.driver.connection.read_port()
+            ports = port_list[1]
+            status = ""
+            line1 = ""
+            line2 = ""
+            for bit in range(16):
+                line1 += f"{bit // 10}"
+                line2 += f"{bit % 10}"
+                if bool((1 << bit) & ports):
+                    status += "x"
+                else:
+                    status += "-"
+            # print (line1)
+            # print (line2)
+            # print (status)
+        self.test_bits = status
+        self.context.root.signal("test_bits", status, self)
+
     def window_close(self):
         for panel in self.panels:
             panel.pane_hide()
+        self.context.kernel.unschedule(self.timer)
 
     def window_open(self):
         for panel in self.panels:
             panel.pane_show()
+        self.context.kernel.schedule(self.timer)
 
     @signal_listener("balorpin")
     def on_pin_change(self, origina, *args):
