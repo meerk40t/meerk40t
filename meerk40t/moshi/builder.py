@@ -681,7 +681,6 @@ class MoshiBuilder:
             else:
                 output("UNKNOWN COMMAND: %d" % cmd)
                 raise ValueError
-                break
 
     @staticmethod
     def is_estop(data):
