@@ -281,7 +281,6 @@ class FontGlyphPicker(wx.Dialog):
                 self.list_glyphs.SetItem(item, 3, str(e))
                 okay = False
             # path contains now the geometry...
-            okay = True
             if okay:
                 geo = path.geometry
                 # print (f"Length {geo.index} after rendering: {ord(c)} / '{hexa}'")
