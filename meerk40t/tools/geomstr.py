@@ -2531,7 +2531,7 @@ class Geomstr:
         if infor == TYPE_ARC:
             return "arc"
         if infor == TYPE_POINT:
-            return "arc"
+            return "point"
         if infor == TYPE_VERTEX:
             return "vertex"
         if infor == TYPE_END:
