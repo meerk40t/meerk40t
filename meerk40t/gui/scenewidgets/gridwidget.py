@@ -640,11 +640,11 @@ class GridWidget(Widget):
         u_width = float(self.scene.context.device.view.unit_width)
         u_height = float(self.scene.context.device.view.unit_height)
         gc.Clip(0, 0, u_width, u_height)
-        siz = sqrt(u_width * u_width + u_height * u_height)
+        # siz = sqrt(u_width * u_width + u_height * u_height)
         sox = self.circular_grid_center_x / u_width
         soy = self.circular_grid_center_y / u_height
         step = self.primary_tick_length_x
-        factor = max(2 * (1 - sox), 2 * (1 - soy))
+        # factor = max(2 * (1 - sox), 2 * (1 - soy))
         # Initially I drew a complete circle, which is a waste in most situations,
         # so let's create a path
         circle_path = gc.CreatePath()

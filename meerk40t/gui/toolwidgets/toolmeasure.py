@@ -1,4 +1,4 @@
-from math import atan, cos, sin, sqrt, tau
+from math import cos, sin, sqrt, tau, atan2
 
 import wx
 
@@ -112,11 +112,9 @@ class MeasureTool(PointListTool):
                 dx = pt[0] - first_point[0]
                 dy = pt[1] - first_point[1]
                 if dx == 0:
-                    slope = 0
                     slope_angle = tau / 4
                 else:
-                    slope = dy / dx
-                    slope_angle = -1 * atan(slope)
+                    slope_angle = -1 * atan2(dy, dx)
                 dlen = sqrt(dx * dx + dy * dy)
                 cx = (pt[0] + first_point[0]) / 2
                 cy = (pt[1] + first_point[1]) / 2

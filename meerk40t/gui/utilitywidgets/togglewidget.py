@@ -124,7 +124,7 @@ class ToggleWidget(Widget):
 
         for button in buttons:
             button_size = self.width
-            resize_param = button.get("size")
+            # resize_param = button.get("size")
             icon = button["icon"].GetBitmap(resize=button_size, use_theme=False)
             self.add_widget(
                 -1,

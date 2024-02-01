@@ -156,7 +156,6 @@ class PointMoveTool(ToolWidget):
         self.scene.context("tool none\n")
 
     def tool_change(self):
-        offset = 5000
         self.points.clear()
         for node in self.scene.context.elements.flat(emphasized=True):
             if not hasattr(node, "as_geometry"):

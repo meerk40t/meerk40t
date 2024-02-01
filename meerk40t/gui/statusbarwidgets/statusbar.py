@@ -209,7 +209,6 @@ class CustomStatusBar(wx.StatusBar):
             panelrect = self.GetFieldRect(pidx)
             # Establish the amount of 'choosable' sizers
             ct = 0
-            sizer = None
             for key in self.widgets:
                 entry = self.widgets[key]
                 # print ("%s = %s" %(key, entry) )

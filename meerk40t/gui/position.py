@@ -305,7 +305,7 @@ class PositionPanel(wx.Panel):
     def update_position(self, reset):
         more_than_one = False
         ct = 0
-        for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+        for _e in self.context.elements.flat(types=elem_nodes, emphasized=True):
             ct += 1
             if ct > 1:
                 more_than_one = True

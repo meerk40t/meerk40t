@@ -19,13 +19,8 @@ from meerk40t.svgelements import Color, Matrix, Path, Polygon
 
 
 def plugin(kernel, lifecycle):
-    if lifecycle == "boot":
-        context = kernel.root
-    elif lifecycle == "register":
+    if lifecycle == "register":
         kernel.register("load/EZDLoader", EZDLoader)
-        pass
-    elif lifecycle == "shutdown":
-        pass
 
 
 def _parse_struct(file):

@@ -1499,7 +1499,7 @@ def plugin(kernel, lifecycle=None):
             for contour in large_contours:
                 # Each individual contour is a Numpy array of (x, y) coordinates of boundary points of the object
                 x, y, w, h = cv2.boundingRect(contour)
-                rx, ry = getpoint(x, y)
+                # rx, ry = getpoint(x, y)
                 rw, rh = getpoint(w, h)
                 rw -= ox
                 rh -= oy
@@ -1617,7 +1617,7 @@ def plugin(kernel, lifecycle=None):
                 for idx1, c in enumerate(linecandidates):
                     if c[0] < 0:
                         continue
-                    cx = c[0] + c[1] / 2
+                    # cx = c[0] + c[1] / 2
                     for idx2, d in enumerate(linecandidates):
                         if idx1 == idx2 or d[0] < 0:
                             continue

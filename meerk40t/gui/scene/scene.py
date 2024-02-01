@@ -825,8 +825,6 @@ class Scene(Module, Job):
                     new_y_space = params[1]
                     new_x = window_pos[0]
                     new_y = window_pos[1]
-                    snap_x = None
-                    snap_y = None
 
                     sdx = new_x_space - space_pos[0]
                     if current_matrix is not None and not current_matrix.is_identity():
@@ -838,8 +836,8 @@ class Scene(Module, Job):
                     # print("Shift x by %.1f pixel (%.1f), Shift y by %.1f pixel (%.1f)" % (sdx, odx, sdy, ody))
                     snap_y = window_pos[1] + sdy
 
-                    dx = new_x - self.last_position[0]
-                    dy = new_y - self.last_position[1]
+                    # dx = new_x - self.last_position[0]
+                    # dy = new_y - self.last_position[1]
                     if snap_x is None:
                         nearest_snap = None
                     else:
@@ -854,8 +852,6 @@ class Scene(Module, Job):
                             snap_y,
                         )
                         self.pane.last_snap = nearest_snap
-            else:
-                params = None
 
             if response == RESPONSE_ABORT:
                 self.hit_chain.clear()

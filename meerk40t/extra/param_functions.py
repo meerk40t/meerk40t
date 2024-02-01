@@ -370,7 +370,6 @@ def plugin(kernel, lifecycle):
                     while len(basepattern) and basepattern[0] in "0123456789":
                         previous += basepattern[0]
                         basepattern = basepattern[1:]
-                    prev_len = 1
                     if previous:
                         try:
                             prev_len = int(previous)
@@ -379,7 +378,7 @@ def plugin(kernel, lifecycle):
                         # Need add 1 to the length as the connector symbol
                         # is not present after the last repetition
                         if (len(basepattern) + 1) % prev_len == 0:
-                            old = basepattern
+                            # old = basepattern
                             basepattern = basepattern[
                                 0 : int(len(basepattern) / prev_len)
                             ]
@@ -850,7 +849,7 @@ def plugin(kernel, lifecycle):
             density,
         ):
             geom = Geomstr()
-            center = Point(cx, cy)
+            # center = Point(cx, cy)
             if startangle is None:
                 startangle = 0
 
@@ -1310,7 +1309,7 @@ def plugin(kernel, lifecycle):
                 opposite_angle -= math.tau
             while opposite_angle < 0:
                 opposite_angle += math.tau
-            pt2 = Point.polar(pt0, opposite_angle, sidelen * ratio_in_percent)
+            # pt2 = Point.polar(pt0, opposite_angle, sidelen * ratio_in_percent)
             node.functional_parameter = (
                 "growingshape",
                 0,

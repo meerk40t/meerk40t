@@ -902,7 +902,7 @@ class ImageVectorisationPanel(ScrolledPanel):
 
         if self.node is not None and self.node.image is not None:
             matrix = self.node.matrix
-            image = self.node.opaque_image
+            # image = self.node.opaque_image
             ipolicy = self.combo_turnpolicy.GetSelection()
             # turnpolicy = self.turn_choices[ipolicy].lower()
             # slider 0 .. 10 translate to 0 .. 10
@@ -973,14 +973,14 @@ class ImageVectorisationPanel(ScrolledPanel):
             if bounds is None:
                 return
             pw, ph = self.vector_preview.GetSize()
-            iw, ih = self.node.image.size
-            wfac = pw / iw
-            hfac = ph / ih
+            # iw, ih = self.node.image.size
+            # wfac = pw / iw
+            # hfac = ph / ih
             # The smaller of the two decide how to scale the picture
-            if wfac < hfac:
-                factor = wfac
-            else:
-                factor = hfac
+            # if wfac < hfac:
+            #     factor = wfac
+            # else:
+            #     factor = hfac
             image = make_raster(
                 dummynode,
                 bounds,
@@ -988,7 +988,7 @@ class ImageVectorisationPanel(ScrolledPanel):
                 height=ph,
                 keep_ratio=True,
             )
-            rw, rh = image.size
+            # rw, rh = image.size
             # print (f"Area={pw}x{ph}, Org={iw}x{ih}, Raster={rw}x{rh}")
             # if factor < 1.0:
             #     image = image.resize((int(iw * factor), int(ih * factor)))
@@ -1211,8 +1211,6 @@ class ImagePropertyPanel(ScrolledPanel):
     def __do_layout(self):
         # begin wxGlade: ImageProperty.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_dim = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_xy = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(self.panel_id, 0, wx.EXPAND, 0)
         sizer_main.Add(self.panel_crop, 0, wx.EXPAND, 0)
 

@@ -664,7 +664,7 @@ class EditTool(ToolWidget):
                 else:
                     p.AddLineToPoint(ptx, pty)
         else:
-            path = self.path
+            # path = self.path
             init = False
             for idx, entry in enumerate(self.nodes):
                 if not entry["type"] == "point":
@@ -976,8 +976,8 @@ class EditTool(ToolWidget):
                         if dist < 1:
                             lastidx -= 1
                             is_closed = True
-                    else:
-                        dist = 1e6
+                    # else:
+                    #     dist = 1e6
                     if is_closed:
                         # it's enough just to delete it...
                         del self.path[lastidx + 1]
@@ -1633,8 +1633,8 @@ class EditTool(ToolWidget):
                         continue
                     segment = entry["segment"]
 
-                    def pt_info(pt):
-                        return f"({pt.x:.0f}, {pt.y:.0f})"
+                    # def pt_info(pt):
+                    #     return f"({pt.x:.0f}, {pt.y:.0f})"
 
                     if entry["segtype"] == "L":
                         # Line
@@ -1991,10 +1991,10 @@ class EditTool(ToolWidget):
                 self.done()
                 return RESPONSE_CONSUME
             # print(f"Key: '{keycode}'")
-            if not self.selected_index is None:
-                entry = self.nodes[self.selected_index]
-            else:
-                entry = None
+            # if self.selected_index is not None:
+            #     entry = self.nodes[self.selected_index]
+            # else:
+            #     entry = None
             self.perform_action(keycode)
 
             return RESPONSE_CONSUME

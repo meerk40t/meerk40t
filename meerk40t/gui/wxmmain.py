@@ -408,38 +408,34 @@ class MeerK40t(MWindow):
                 self.context.elements.set_emphasis([node])
 
             # Read the image
-            success = False
-            if wx.TheClipboard.Open():
-                # Let's see what we have:
-                if wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_BITMAP)):
-                    bmap_data = wx.BitmapDataObject()
-                    success = wx.TheClipboard.GetData(bmap_data)
-                    if success:
-                        bmp = bmap_data.GetBitmap()
-                        paste_image(bmp)
+            if not wx.TheClipboard.Open():
+                return
+            # Let's see what we have:
+            if wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_BITMAP)):
+                bmap_data = wx.BitmapDataObject()
+                if wx.TheClipboard.GetData(bmap_data):
+                    bmp = bmap_data.GetBitmap()
+                    paste_image(bmp)
 
-                elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_FILENAME)):
-                    fname_data = wx.FileDataObject()
-                    success = wx.TheClipboard.GetData(fname_data)
-                    if success:
-                        files = fname_data.GetFilenames()
-                        paste_files(files)
+            elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_FILENAME)):
+                fname_data = wx.FileDataObject()
+                if wx.TheClipboard.GetData(fname_data):
+                    files = fname_data.GetFilenames()
+                    paste_files(files)
 
-                elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_TEXT)):
-                    text_data = wx.TextDataObject()
-                    success = wx.TheClipboard.GetData(text_data)
-                    if success:
-                        txt = text_data.GetText()
-                        paste_text(txt)
+            elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_TEXT)):
+                text_data = wx.TextDataObject()
+                if wx.TheClipboard.GetData(text_data):
+                    txt = text_data.GetText()
+                    paste_text(txt)
 
-                elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_UNICODETEXT)):
-                    text_data = wx.TextDataObject()
-                    success = wx.TheClipboard.GetData(text_data)
-                    if success:
-                        txt = text_data.GetText().decode("utf-8")
-                        paste_text(txt)
+            elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_UNICODETEXT)):
+                text_data = wx.TextDataObject()
+                if wx.TheClipboard.GetData(text_data):
+                    txt = text_data.GetText().decode("utf-8")
+                    paste_text(txt)
 
-                wx.TheClipboard.Close()
+            wx.TheClipboard.Close()
 
         def on_click_sel_all():
             self.context("element* select\n")
@@ -1301,7 +1297,7 @@ class MeerK40t(MWindow):
         )
 
         # Default Size for tool buttons - none: use icon size
-        buttonsize = STD_ICON_SIZE
+        # buttonsize = STD_ICON_SIZE
 
         kernel.register(
             "button/select/Scene",
@@ -1738,7 +1734,7 @@ class MeerK40t(MWindow):
         )
 
         # Default Size for smaller buttons
-        buttonsize = STD_ICON_SIZE / 2
+        # buttonsize = STD_ICON_SIZE / 2
 
         kernel.register(
             "button/modify/Flip",
@@ -1902,7 +1898,7 @@ class MeerK40t(MWindow):
                     kernel.signal("element_property_reload", "Scene", group_node)
 
         # Default Size for normal buttons
-        buttonsize = STD_ICON_SIZE
+        # buttonsize = STD_ICON_SIZE
         kernel.register(
             "button/group/Group",
             {
@@ -2034,7 +2030,7 @@ class MeerK40t(MWindow):
         )
 
         # Default Size for small buttons
-        buttonsize = STD_ICON_SIZE / 2
+        # buttonsize = STD_ICON_SIZE / 2
 
         kernel.register(
             "button/align/AlignRight",
@@ -3197,18 +3193,19 @@ class MeerK40t(MWindow):
     def _update_status_menu(self, menu, choices, *args):
         def handler(event):
             for entry in local_choices:
-                if "label" in entry and "enabled" in entry:
-                    flag = True
-                    label = entry["label"]
-                    try:
-                        flag = bool(entry["enabled"]())
-                    except AttributeError:
-                        flag = True
-                    if label:
-                        menu_id = local_menu.FindItem(label)
-                        if menu_id != wx.NOT_FOUND:
-                            menu_item = local_menu.FindItemById(menu_id)
-                            menu_item.Enable(flag)
+                if "label" not in entry or "enabled" not in entry:
+                    continue
+                label = entry["label"]
+                if not label:
+                    continue
+                menu_id = local_menu.FindItem(label)
+                if menu_id == wx.NOT_FOUND:
+                    continue
+                menu_item = local_menu.FindItemById(menu_id)
+                try:
+                    menu_item.Enable(bool(entry["enabled"]()))
+                except AttributeError:
+                    menu_item.Enable(True)
             if event:
                 event.Skip()
 

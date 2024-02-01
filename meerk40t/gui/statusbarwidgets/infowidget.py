@@ -163,7 +163,6 @@ class InformationWidget(SimpleInfoWidget):
         make_raster = self.context.root.lookup("render-op/make_raster")
         if nodes is None or len(nodes) == 0 or not make_raster:
             return 0, 0
-        ratio = 0
         dpi = 300
         dots_per_units = dpi / UNITS_PER_INCH
         _mm = float(Length("1mm"))
@@ -197,7 +196,6 @@ class InformationWidget(SimpleInfoWidget):
             # print(f"Width: {width:.0f} -> {new_width}")
             # print(f"Height: {height:.0f} -> {new_height}")
             keep_ratio = True
-            ratio = 0
 
             all_pixel = new_height * new_width
             if all_pixel > 0:
@@ -243,7 +241,6 @@ class InformationWidget(SimpleInfoWidget):
         if self._info_active:
             elements = self.context.elements
             ct = 0
-            total_area = 0
             total_length = 0
             _mm = float(Length("1mm"))
             mydata = list(elements.flat(types=elem_nodes, emphasized=True))

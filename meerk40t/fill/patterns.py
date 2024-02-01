@@ -371,13 +371,11 @@ def set_shape(a, b, *args, outershape=None, **kwargs):
     #     f"geometric center master: {geometric_center_x:.1f}, {geometric_center_y:.1f}"
     # )
     # print(f"boundaries: {minx:.1f}, {miny:.1f} - {maxx:.1f}, {maxy:.1f}")
-    dx = 0
-    dy = 0
+    # dx = 0
+    # dy = 0
     regular = False
     ratio = 1.0
     dx = 1.0 / (amount + 1)
-
-    ratio = 1
     for num in range(amount):
         ratio -= dx
         regular = not regular

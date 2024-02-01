@@ -884,8 +884,6 @@ class Drag(wx.Panel):
 
         if bb is None or self.lockmode == 0:
             return
-        dx = 0
-        dy = 0
         if self.lockmode == 1:  # tl
             orgx = bb[0]
             orgy = bb[1]

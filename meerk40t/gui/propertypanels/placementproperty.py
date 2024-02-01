@@ -873,10 +873,10 @@ class PlacementPanel(wx.Panel):
             flag = False
         s = self.text_dimension.GetValue()
         if s:
-            try:
-                val = float(Length(s))
-            except ValueError:
-                val = 0
+            # try:
+            #     val = float(Length(s))
+            # except ValueError:
+            #     val = 0
             if flag <= 0:
                 flag = False
         else:

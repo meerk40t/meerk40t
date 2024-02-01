@@ -2824,7 +2824,6 @@ class Elemental(Service):
                                 f"Pass 3-stroke, fuzzy={tempfuzzy}): check {node.type}"
                             )
                         for op_candidate in self.default_operations:
-                            classified = False
                             if isinstance(op_candidate, (CutOpNode, EngraveOpNode)):
                                 if tempfuzzy:
                                     classified = (
@@ -2857,7 +2856,6 @@ class Elemental(Service):
                     and node.stroke is not None
                     and node.stroke.argb is not None
                 ):
-                    is_cut = False
                     if fuzzy:
                         is_cut = (
                             Color.distance(abs(node.stroke), "red") <= fuzzydistance

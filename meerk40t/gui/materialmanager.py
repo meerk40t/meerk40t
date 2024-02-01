@@ -1565,8 +1565,6 @@ class MaterialPanel(ScrolledPanel):
         self.context.signal("rebuild_tree")
 
     def on_new(self, event):
-        section = None
-        op_info = None
         entry_txt = self.txt_material.GetValue()
         if entry_txt == "":
             entry_txt = "material"
@@ -1578,9 +1576,9 @@ class MaterialPanel(ScrolledPanel):
                 if pattern not in self.material_list:
                     break
             entry_txt = pattern
-        entry_type = self.combo_entry_type.GetSelection()
-        if entry_type < 0:
-            entry_type = 0
+        # entry_type = self.combo_entry_type.GetSelection()
+        # if entry_type < 0:
+        #     entry_type = 0
         # We need to create a new one...
         op_info = dict()
         op_info["material"] = "New material"
@@ -1644,9 +1642,9 @@ class MaterialPanel(ScrolledPanel):
                     if pattern not in self.material_list:
                         break
                 entry_txt = pattern
-            entry_type = self.combo_entry_type.GetSelection()
-            if entry_type < 0:
-                entry_type = 0
+            # entry_type = self.combo_entry_type.GetSelection()
+            # if entry_type < 0:
+            #     entry_type = 0
             # We need to create a new one...
             op_info = dict()
             op_info["material"] = "New material"
@@ -2216,7 +2214,6 @@ class MaterialPanel(ScrolledPanel):
                     pattern = op.type
                     if pattern.startswith("op "):
                         pattern = pattern[3].upper() + pattern[4:]
-                    info = False
                     s1 = ""
                     s2 = ""
                     if hasattr(op, "power"):
@@ -2233,17 +2230,17 @@ class MaterialPanel(ScrolledPanel):
                     changes = True
                 replace_id = True
                 if not hasattr(op, "id"):
-                    oldid = "unknown"
+                    # oldid = "unknown"
                     replace_id = False
                 else:
-                    oldid = op.id
+                    # oldid = op.id
                     if op.id and not (
                         replace_mk_pattern and op.id.startswith(mkpattern)
                     ):
                         replace_id = False
                 # print (oldid, replace_id)
                 if replace_id:
-                    oldid = op.id
+                    # oldid = op.id
                     changes = True
                     if op.type.startswith("op "):
                         pattern = op.type[3].upper()

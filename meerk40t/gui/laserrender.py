@@ -1039,10 +1039,8 @@ class LaserRender:
             while True:
                 try:
                     fsize = use_font.GetFractionalPointSize()
-                    fsize_org = node.wxfont.GetFractionalPointSize()
                 except AttributeError:
                     fsize = use_font.GetPointSize()
-                    fsize_org = node.wxfont.GetPointSize()
                 # print (f"Revised bounds: {dimension_x} x {dimension_y}, font_size={fsize} (original={fsize_org}")
                 if fsize < 100 or dimension_x < 2000 or dimension_y < 1000:
                     break

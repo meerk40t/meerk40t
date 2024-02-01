@@ -115,7 +115,6 @@ class Meerk40tFonts:
 
     @property
     def font_directory(self):
-        fontdir = ""
         safe_dir = realpath(get_safe_path(self.context.kernel.name))
         self.context.setting(str, "font_directory", safe_dir)
         fontdir = self.context.font_directory
@@ -326,7 +325,7 @@ class Meerk40tFonts:
             weld = False
         # from time import perf_counter
         # _t0 = perf_counter()
-        oldtext = getattr(node, "_translated_text", "")
+        # oldtext = getattr(node, "_translated_text", "")
         fontname = node.mkfont
         fontsize = node.mkfontsize
         # old_color = node.stroke
@@ -465,7 +464,7 @@ class Meerk40tFonts:
             # print (f"Path={path}, text={remainder}, font-size={font_size}")
             mytext = self.context.elements.wordlist_translate(text)
             cfont.render(path, mytext, horizontal, float(font_size), font_spacing)
-        except ShxFontParseError as e:
+        except ShxFontParseError:
             return
 
         # Create the node.
@@ -500,7 +499,7 @@ class Meerk40tFonts:
                 node = self.create_linetext_node(
                     0, 0, pattern, font=simplefont, font_size=Length("12pt")
                 )
-            except Exception as e:
+            except Exception:
                 # We may encounter an IndexError, a ValueError or an error thrown by struct
                 # The latter cannot be named? So a global except...
                 # print (f"Node creation failed: {e}")
@@ -532,13 +531,13 @@ class Meerk40tFonts:
                     height=new_height,
                     bitmap=True,
                 )
-            except Exception as e:
+            except Exception:
                 # print (f"Raster failed: {e}")
                 # Invalid path or whatever...
                 return False
             try:
                 bitmap.SaveFile(bmpfile, bitmap_format)
-            except (OSError, RuntimeError, PermissionError, FileNotFoundError) as e:
+            except (OSError, RuntimeError, PermissionError, FileNotFoundError):
                 # print (f"Save failed: {e}")
                 return False
             return True
