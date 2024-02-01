@@ -451,7 +451,6 @@ class TipPanel(wx.Panel):
             """
             Return a comparable sequence from a version string
             """
-            ending = ""
             result = list()
             if version is not None:
                 if version.startswith("v"):
@@ -496,10 +495,9 @@ class TipPanel(wx.Panel):
                         # Store previous
                         add_tip(tip, cmd, img, ver, myversion)
                         ver = ""
-                        tip = ""
+                        tip = cline[len("tip=") :]
                         cmd = ""
                         img = ""
-                        tip = cline[len("tip=") :]
                     elif cline.startswith("version="):
                         lastline_was_tip = False
                         ver = cline[len("version=") :]

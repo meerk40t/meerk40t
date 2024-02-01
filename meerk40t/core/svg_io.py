@@ -390,7 +390,6 @@ class SVGWriter:
             decor = decor.strip()
             if decor:
                 subelement.set("text-decoration", decor)
-            element = c
         elif c.type == "group":
             # This is a structural group node of elements. Recurse call to write values.
             group_element = SubElement(xml_tree, SVG_TAG_GROUP)
@@ -416,11 +415,13 @@ class SVGWriter:
                 SVGWriter._write_elements(group_element, c, version)
             return
         else:
-            if version != "plain":
-                # This is a non-standard element. Save custom.
-                subelement = SubElement(xml_tree, "element")
-                SVGWriter._write_custom(subelement, c)
+            if version == "plain":
+                # Plain does not save custom.
                 return
+            # This is a non-standard element. Save custom.
+            subelement = SubElement(xml_tree, "element")
+            SVGWriter._write_custom(subelement, c)
+            return
 
         ###############
         # GENERIC SAVING STANDARD ELEMENT
@@ -849,23 +850,16 @@ class SVGProcessor:
             local_dict = element.values["attributes"]
         else:
             local_dict = element.values
+        if local_dict is None:
+            return None
         ink_tag = "inkscape:label"
-        try:
-            inkscape = element.values.get("inkscape")
-            if inkscape is not None and inkscape != "":
-                ink_tag = "{" + inkscape + "}label"
-        except (AttributeError, KeyError):
-            pass
-        try:
-            tag_label = local_dict.get(ink_tag)
-            if tag_label == "":
-                tag_label = None
-        except (AttributeError, KeyError):
-            # Label might simply be "label"
-            pass
-        if tag_label is None:
-            tag_label = local_dict.get("label")
-        return tag_label
+        inkscape = element.values.get("inkscape")
+        if inkscape:
+            ink_tag = "{" + inkscape + "}label"
+        tag_label = local_dict.get(ink_tag)
+        if tag_label:
+            return tag_label
+        return local_dict.get("label")
 
     def _parse_text(self, element, ident, label, lock, context_node, e_list):
         """

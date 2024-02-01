@@ -1075,7 +1075,6 @@ class PanelFontManager(wx.Panel):
         except AttributeError:
             pass
         font_files = None
-        paths = None
         if dlg.ShowModal() == wx.ID_OK:
             font_files = dlg.GetPaths()
         # Only destroy a dialog after you're done with it.
@@ -1112,9 +1111,7 @@ class PanelFontManager(wx.Panel):
                     remove_fontfile(destfile)
                     stats[1] += 1
 
-                keepgoing = progress.Update(
-                    idx + 1, progress_string.format(count=idx + 1)
-                )
+                progress.Update(idx + 1, progress_string.format(count=idx + 1))
                 if progress.WasCancelled():
                     break
             except (OSError, RuntimeError, PermissionError, FileNotFoundError):
@@ -1222,9 +1219,7 @@ class PanelFontManager(wx.Panel):
                     remove_fontfile(destfile)
                     stats[1] += 1
 
-                keepgoing = progress.Update(
-                    idx + 1, progress_string.format(count=idx + 1)
-                )
+                progress.Update(idx + 1, progress_string.format(count=idx + 1))
                 if progress.WasCancelled():
                     break
             except (OSError, RuntimeError, PermissionError, FileNotFoundError):

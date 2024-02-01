@@ -1207,7 +1207,6 @@ class Geomstr:
             if match is None:
                 break  # No more matches.
             kind = match.lastgroup
-            start = pos
             pos = match.end()
             if kind == "SKIP":
                 continue
@@ -4537,7 +4536,6 @@ class Geomstr:
         Will look at interrupted segments that don't have an 'end' between them
         and inserts one if necessary
         """
-        last = 0
         idx = 1
         while idx < self.index:
             seg1 = self.segments[idx]

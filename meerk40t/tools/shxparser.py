@@ -62,8 +62,8 @@ def read_int_32le(stream):
 
 
 def read_string(stream):
+    bb = bytearray()
     try:
-        bb = bytearray()
         while True:
             b = stream.read(1)
             if b == b"":
@@ -396,7 +396,7 @@ class ShxFont:
             lines = to_render.split("\n")
             offset_y = 0
             if offsets is None:
-                offsets = [0 for text in lines]
+                offsets = [0] * len(lines)
             line_lens = []
             for text, offs in zip(lines, offsets):
                 self._y = offset_y * self._scale

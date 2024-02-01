@@ -520,6 +520,7 @@ class SpoolerPanel(wx.Panel):
         item.Enable(False)
         can_enable = False
         action = _("Remove")
+        remove_mode = "remove"
         if element.status == "Running":
             action = _("Stop")
             remove_mode = "stop"

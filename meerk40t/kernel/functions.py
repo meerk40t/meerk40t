@@ -403,7 +403,7 @@ def _cmd_cli_parser(
             start = pos
             pos = match.end()
             if kind == "SKIP":
-                continue
+                pass
             elif kind == "PARAM":
                 value = match.group()
                 yield kind, value, start, pos

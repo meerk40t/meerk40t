@@ -363,7 +363,7 @@ class RectSelectWidget(Widget):
                         np_selected = np.asarray(selected_points)
                         dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
                         if dist < gap:
-                            did_snap_to_point = True
+                            # did_snap_to_point = True
                             dx = pt1[0] - pt2[0]
                             dy = pt1[1] - pt2[1]
                             move_to(dx, dy)

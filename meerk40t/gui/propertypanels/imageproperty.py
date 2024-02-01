@@ -530,7 +530,7 @@ class ImageModificationPanel(ScrolledPanel):
 
             return check
 
-        index = self.list_operations.GetFirstSelected()
+        selected = self.list_operations.GetFirstSelected()
 
         possible_ops = [
             {"name": "crop", "enable": True, "bounds": None},
@@ -572,12 +572,12 @@ class ImageModificationPanel(ScrolledPanel):
         ]
         devmode = self.context.root.setting(bool, "developer_mode", False)
         menu = wx.Menu()
-        if index >= 0:
+        if selected >= 0:
             # Edit-Part
             menuitem = menu.Append(
                 wx.ID_ANY, _("Delete item"), _("Will delete the current entry")
             )
-            self.Bind(wx.EVT_MENU, on_delete(index), id=menuitem.GetId())
+            self.Bind(wx.EVT_MENU, on_delete(selected), id=menuitem.GetId())
 
             menuitem = menu.Append(
                 wx.ID_ANY,
@@ -585,8 +585,8 @@ class ImageModificationPanel(ScrolledPanel):
                 _("Toggles enable-status of operation"),
                 kind=wx.ITEM_CHECK,
             )
-            menuitem.Check(self.node.operations[index]["enable"])
-            self.Bind(wx.EVT_MENU, on_enable(index), id=menuitem.GetId())
+            menuitem.Check(self.node.operations[selected]["enable"])
+            self.Bind(wx.EVT_MENU, on_enable(selected), id=menuitem.GetId())
             if devmode:
                 menu.AppendSeparator()
                 for op in possible_ops:
@@ -595,7 +595,9 @@ class ImageModificationPanel(ScrolledPanel):
                         _("Insert {op}").format(op=op["name"]),
                         _("Will insert this operation before the current entry"),
                     )
-                    self.Bind(wx.EVT_MENU, on_op_insert(index, op), id=menuitem.GetId())
+                    self.Bind(
+                        wx.EVT_MENU, on_op_insert(selected, op), id=menuitem.GetId()
+                    )
                 menu.AppendSeparator()
         if devmode:
             for op in possible_ops:
@@ -604,7 +606,7 @@ class ImageModificationPanel(ScrolledPanel):
                     _("Append {op}").format(op=op["name"]),
                     _("Will append this operation to the end of the list"),
                 )
-                self.Bind(wx.EVT_MENU, on_op_append(index, op), id=menuitem.GetId())
+                self.Bind(wx.EVT_MENU, on_op_append(selected, op), id=menuitem.GetId())
 
         if menu.MenuItemCount != 0:
             self.PopupMenu(menu)
@@ -900,7 +902,7 @@ class ImageVectorisationPanel(ScrolledPanel):
 
         if self.node is not None and self.node.image is not None:
             matrix = self.node.matrix
-            image = self.node.opaque_image
+            # image = self.node.opaque_image
             ipolicy = self.combo_turnpolicy.GetSelection()
             # turnpolicy = self.turn_choices[ipolicy].lower()
             # slider 0 .. 10 translate to 0 .. 10
@@ -971,14 +973,14 @@ class ImageVectorisationPanel(ScrolledPanel):
             if bounds is None:
                 return
             pw, ph = self.vector_preview.GetSize()
-            iw, ih = self.node.image.size
-            wfac = pw / iw
-            hfac = ph / ih
+            # iw, ih = self.node.image.size
+            # wfac = pw / iw
+            # hfac = ph / ih
             # The smaller of the two decide how to scale the picture
-            if wfac < hfac:
-                factor = wfac
-            else:
-                factor = hfac
+            # if wfac < hfac:
+            #     factor = wfac
+            # else:
+            #     factor = hfac
             image = make_raster(
                 dummynode,
                 bounds,
@@ -986,7 +988,7 @@ class ImageVectorisationPanel(ScrolledPanel):
                 height=ph,
                 keep_ratio=True,
             )
-            rw, rh = image.size
+            # rw, rh = image.size
             # print (f"Area={pw}x{ph}, Org={iw}x{ih}, Raster={rw}x{rh}")
             # if factor < 1.0:
             #     image = image.resize((int(iw * factor), int(ih * factor)))
@@ -1209,8 +1211,6 @@ class ImagePropertyPanel(ScrolledPanel):
     def __do_layout(self):
         # begin wxGlade: ImageProperty.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_dim = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_xy = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(self.panel_id, 0, wx.EXPAND, 0)
         sizer_main.Add(self.panel_crop, 0, wx.EXPAND, 0)
 

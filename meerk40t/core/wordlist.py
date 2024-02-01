@@ -434,12 +434,11 @@ class Wordlist:
         # Lets gather the {} first...
         brackets = re.compile(r"\{[^}]+\}")
         for bracketed_key in brackets.findall(str(orgtext)):
-            #            print(f"Key found: {bracketed_key}")
-            newpattern = ""
             key = bracketed_key[1:-1].lower().strip()
             relative = 0
             pos = key.find("#")
-            if pos > 0:  # Needs to be after first character
+            if pos > 0:
+                # Needs to be after first character
                 # Process offset modification.
                 index_string = key[pos + 1 :]
                 key = key[:pos].strip()

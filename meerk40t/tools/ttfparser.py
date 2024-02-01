@@ -150,8 +150,7 @@ class TrueTypeFont:
                     if font_family and font_subfamily and font_name:
                         break
                 return font_family, font_subfamily, font_name
-        except (OSError, FileNotFoundError, PermissionError) as e:
-            # print (f"Error while reading: {e}")
+        except (OSError, FileNotFoundError, PermissionError):
             return None
 
     def render(
@@ -170,7 +169,7 @@ class TrueTypeFont:
             offset_y = 0
             lines = to_render.split("\n")
             if offsets is None:
-                offsets = [0 for text in lines]
+                offsets = [0] * len(lines)
             line_lens = []
             for text, offs in zip(lines, offsets):
                 offset_x = offs
@@ -549,7 +548,6 @@ class TrueTypeFont:
     def _parse_compound_glyph(self, data):
         flags = MORE_COMPONENTS
         s = 1 << 14
-        last_contour = None
         while flags & MORE_COMPONENTS:
             a, b, c, d, e, f = (
                 1.0,
@@ -592,7 +590,6 @@ class TrueTypeFont:
             contours = list(self._parse_glyph_index(glyph_index))
             if src != -1 and dest != -1:
                 pass  # Not properly supported.
-            last_contour = contours
             if flags & ROUND_XY_TO_GRID:
                 for contour in contours:
                     yield [

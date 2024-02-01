@@ -119,9 +119,7 @@ class PlannerPanel(wx.Panel):
         if node_index == -1:
             return
         cutplan = self.context.planner.default_plan
-        obj = cutplan.plan[node_index]
         self.context.open("window/Properties", self)
-        # self.context.kernel.activate_instance(obj)
         event.Skip()
 
     def on_listbox_commands_click(self, event):  # wxGlade: JobInfo.<event_handler>
