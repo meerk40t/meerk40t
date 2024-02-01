@@ -595,7 +595,9 @@ class ImageModificationPanel(ScrolledPanel):
                         _("Insert {op}").format(op=op["name"]),
                         _("Will insert this operation before the current entry"),
                     )
-                    self.Bind(wx.EVT_MENU, on_op_insert(selected, op), id=menuitem.GetId())
+                    self.Bind(
+                        wx.EVT_MENU, on_op_insert(selected, op), id=menuitem.GetId()
+                    )
                 menu.AppendSeparator()
         if devmode:
             for op in possible_ops:

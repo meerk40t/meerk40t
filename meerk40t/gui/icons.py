@@ -585,7 +585,10 @@ class VectorIcon:
                 # no change = 100
                 # What about black? This is a special case, so we only consider
                 ialpha = info_bright / 100.0
-                if wx_color.red == wx_color.green == wx_color.blue == 0 and info_bright > 100:
+                if (
+                    wx_color.red == wx_color.green == wx_color.blue == 0
+                    and info_bright > 100
+                ):
                     ialpha = (info_bright - 100) / 100.0
                     cr = int(255 * ialpha)
                     cg = int(255 * ialpha)
