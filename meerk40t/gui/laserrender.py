@@ -261,12 +261,7 @@ class LaserRender:
         if hasattr(node, "output"):
             if not node.output:
                 return False
-
-        try:
-            # Try to draw node, assuming it already has a known render method.
-            node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
-            return True
-        except AttributeError:
+        if not hasattr(node, "draw"):
             # No known render method, we must define the function to draw nodes.
             if node.type in (
                 "elem path",
@@ -292,9 +287,9 @@ class LaserRender:
                 node.draw = self.draw_cutcode_node
             else:
                 return False
-            # We have now defined that function, draw it.
-            node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
-            return True
+        # We have now defined that function, draw it.
+        node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
+        return True
 
     def make_path(self, gc, path):
         """
