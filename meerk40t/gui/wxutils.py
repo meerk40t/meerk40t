@@ -334,7 +334,6 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
             submenu = submenus[submenu_name]
         else:
             if submenu_name:
-                last_was_separator = False
                 subs = submenu_name.split("|")
                 common = ""
                 parent_menu = menu
@@ -547,8 +546,6 @@ class TextCtrl(wx.TextCtrl):
             self.SetMaxSize(dip_size(self, _MAX_WIDTH, -1))
 
     def validate_widths(self):
-        minw = 35
-        maxw = 100
         minpattern = "0000"
         maxpattern = "999999999.99mm"
         if self._check == "length":

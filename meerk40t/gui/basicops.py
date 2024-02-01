@@ -6,7 +6,7 @@ a simpler interface to operations
 
 import wx
 
-from meerk40t.core.elements.element_types import elem_nodes, op_nodes
+from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.gui.laserrender import swizzlecolor
 
 from ..kernel import Job, lookup_listener, signal_listener
@@ -226,15 +226,14 @@ class BasicOpPanel(wx.Panel):
             def handler(event):
                 # print(f"Output for {mynode.type}")
                 cb = event.GetEventObject()
-                flag = False
                 if hasattr(mynode, "output"):
-                    flag = not mynode.output
+                    flag_out = not mynode.output
                     try:
-                        mynode.output = flag
+                        mynode.output = flag_out
                         mynode.updated()
                     except AttributeError:
                         pass
-                    if flag:
+                    if flag_out:
                         myshow.SetValue(True)
                         myshow.Enable(False)
                     else:
@@ -244,7 +243,7 @@ class BasicOpPanel(wx.Panel):
                     self.context.elements.signal("element_property_update", ops)
                     self.context.elements.signal("warn_state_update", "")
                     self.context.elements.signal("refresh_scene", "Scene")
-                    cb.SetValue(flag)
+                    cb.SetValue(flag_out)
 
             mynode = node
             myshow = showctrl

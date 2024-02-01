@@ -8,7 +8,7 @@ class BasicHSizer:
     you have fully under control... (required for a Linux environment)
     """
 
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         self.windows = []
         self.proportions = []
         self.flags = []

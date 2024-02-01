@@ -7,12 +7,8 @@ import wx
 
 from meerk40t.gui.icons import (
     get_default_icon_size,
-    icons8_circled_play,
     icons8_connected,
     icons8_disconnected,
-    icons8_emergency_stop_button,
-    icons8_laser_beam_hazard,
-    icons8_pause,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
@@ -205,15 +201,15 @@ class LihuiyuControllerPanel(ScrolledPanel):
         sizer_count_packets = StaticBoxSizer(
             self, wx.ID_ANY, _("Packet Count"), wx.VERTICAL
         )
-        sizer_controller = StaticBoxSizer(self, wx.ID_ANY, _("Controller"), wx.VERTICAL)
-        sizer_usb_settings = StaticBoxSizer(
-            self, wx.ID_ANY, _("USB Settings"), wx.VERTICAL
-        )
-        sizer_23 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_12 = StaticBoxSizer(self, wx.ID_ANY, _("Chip Version"), wx.HORIZONTAL)
-        sizer_11 = StaticBoxSizer(self, wx.ID_ANY, _("Device Bus:"), wx.HORIZONTAL)
-        sizer_10 = StaticBoxSizer(self, wx.ID_ANY, _("Device Address:"), wx.HORIZONTAL)
-        sizer_3 = StaticBoxSizer(self, wx.ID_ANY, _("Device Index:"), wx.HORIZONTAL)
+        # sizer_controller = StaticBoxSizer(self, wx.ID_ANY, _("Controller"), wx.VERTICAL)
+        # sizer_usb_settings = StaticBoxSizer(
+        #     self, wx.ID_ANY, _("USB Settings"), wx.VERTICAL
+        # )
+        # sizer_23 = wx.BoxSizer(wx.HORIZONTAL)
+        # sizer_12 = StaticBoxSizer(self, wx.ID_ANY, _("Chip Version"), wx.HORIZONTAL)
+        # sizer_11 = StaticBoxSizer(self, wx.ID_ANY, _("Device Bus:"), wx.HORIZONTAL)
+        # sizer_10 = StaticBoxSizer(self, wx.ID_ANY, _("Device Address:"), wx.HORIZONTAL)
+        # sizer_3 = StaticBoxSizer(self, wx.ID_ANY, _("Device Index:"), wx.HORIZONTAL)
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer_usb_connect = StaticBoxSizer(
             self, wx.ID_ANY, _("USB Connection"), wx.VERTICAL
@@ -427,7 +423,6 @@ class LihuiyuControllerPanel(ScrolledPanel):
             return
         self.set_color_according_to_state(state, self.button_device_connect)
         if state == "STATE_CONNECTION_FAILED":
-            origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("Connect failed"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(
@@ -436,7 +431,6 @@ class LihuiyuControllerPanel(ScrolledPanel):
             )
             self.button_device_connect.Enable()
         elif state == "STATE_FAILED_RETRYING":
-            origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("Retrying..."))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(
@@ -445,7 +439,6 @@ class LihuiyuControllerPanel(ScrolledPanel):
             )
             self.button_device_connect.Enable()
         elif state == "STATE_FAILED_SUSPENDED":
-            origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("Suspended Retrying"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(
@@ -454,7 +447,6 @@ class LihuiyuControllerPanel(ScrolledPanel):
             )
             self.button_device_connect.Enable()
         elif state == "STATE_DRIVER_NO_BACKEND":
-            origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("No Backend"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(

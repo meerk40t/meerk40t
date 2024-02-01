@@ -2,7 +2,6 @@ import unittest
 from copy import copy
 from test import bootstrap
 
-from meerk40t.core.node.branch_ops import BranchOperationsNode
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_image import ImageOpNode

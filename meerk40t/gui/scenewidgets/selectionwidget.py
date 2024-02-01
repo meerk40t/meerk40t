@@ -15,7 +15,6 @@ LockWidget: Widget to lock and unlock the given object.
 
 
 import math
-from time import perf_counter
 
 import numpy as np
 import wx
@@ -34,6 +33,10 @@ from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import StaticBoxSizer, create_menu_for_node, matrix_scale
 from meerk40t.svgelements import Point
 from meerk40t.tools.geomstr import TYPE_END
+
+# from time import perf_counter
+
+
 
 NEARLY_ZERO = 1.0e-6
 
@@ -340,8 +343,8 @@ class RotationWidget(Widget):
         self.update()
 
     def update(self):
-        mid_x = (self.master.right + self.master.left) / 2
-        mid_y = (self.master.bottom + self.master.top) / 2
+        # mid_x = (self.master.right + self.master.left) / 2
+        # mid_y = (self.master.bottom + self.master.top) / 2
         # Selection very small ? Relocate Handle
         inner_wd_half = (self.master.right - self.master.left) / 2
         inner_ht_half = (self.master.bottom - self.master.top) / 2
@@ -387,6 +390,8 @@ class RotationWidget(Widget):
         elif self.index == 3:  # bl
             signx = -1
             signy = +1
+        else:
+            raise ValueError("Selection location was not valid.")
 
         # Well, I would have liked to draw a proper arc via dc.DrawArc but the DeviceContext is not available here(?)
         segment = []
@@ -439,10 +444,9 @@ class RotationWidget(Widget):
             position[1] = nearest_snap[1]
             position[4] = position[0] - position[2]
             position[5] = position[1] - position[3]
-            dx = position[4]
-            dy = position[5]
+            # dx = position[4]
+            # dy = position[5]
 
-        rot_angle = 0
         elements = self.scene.context.elements
         if event == 1:
             images = []
@@ -667,8 +671,8 @@ class CornerWidget(Widget):
         self.update()
 
     def update(self):
-        mid_x = (self.master.right + self.master.left) / 2
-        mid_y = (self.master.bottom + self.master.top) / 2
+        # mid_x = (self.master.right + self.master.left) / 2
+        # mid_y = (self.master.bottom + self.master.top) / 2
         # Selection very small ? Relocate Handle
         inner_wd_half = (self.master.right - self.master.left) / 2
         inner_ht_half = (self.master.bottom - self.master.top) / 2
@@ -722,8 +726,8 @@ class CornerWidget(Widget):
             position[1] = nearest_snap[1]
             position[4] = position[0] - position[2]
             position[5] = position[1] - position[3]
-            dx = position[4]
-            dy = position[5]
+            # dx = position[4]
+            # dy = position[5]
 
         if event == 1:
             images = []
@@ -747,17 +751,6 @@ class CornerWidget(Widget):
             elements.prepare_undo()
             return
         elif event == 0:
-            # Establish origin
-            if "n" in self.method:
-                orgy = self.master.bottom
-            else:
-                orgy = self.master.top
-
-            if "e" in self.method:
-                orgx = self.master.right
-            else:
-                orgx = self.master.left
-
             # Establish scales
             scalex = 1
             scaley = 1
@@ -793,6 +786,8 @@ class CornerWidget(Widget):
             b = elements._emphasized_bounds
             if b is None:
                 return
+
+            # Establish origin
             if "n" in self.method:
                 orgy = self.master.bottom
             else:
@@ -971,8 +966,8 @@ class SideWidget(Widget):
             position[1] = nearest_snap[1]
             position[4] = position[0] - position[2]
             position[5] = position[1] - position[3]
-            dx = position[4]
-            dy = position[5]
+            # dx = position[4]
+            # dy = position[5]
 
         if event == 1:
             images = []
@@ -996,22 +991,11 @@ class SideWidget(Widget):
             elements.prepare_undo()
             return
         elif event == 0:
-            # Establish origin
-            if "n" in self.method:
-                orgy = self.master.bottom
-            else:
-                orgy = self.master.top
-
-            if "e" in self.method:
-                orgx = self.master.right
-            else:
-                orgx = self.master.left
-
             # Establish scales
             scalex = 1
             scaley = 1
-            deltax = 0
-            deltay = 0
+            # deltax = 0
+            # deltay = 0
             if "n" in self.method:
                 try:
                     scaley = (self.master.bottom - position[1]) / self.save_height
@@ -1045,6 +1029,7 @@ class SideWidget(Widget):
                 b = elements.selected_area()
                 if b is None:
                     return
+            # Establish origin
             if "n" in self.method:
                 orgy = self.master.bottom
             else:
@@ -1226,11 +1211,9 @@ class SkewWidget(Widget):
             return
         elif event == 0:  # move
             if self.is_x:
-                dd = dx
                 this_side = self.master.total_delta_x
                 other_side = self.master.height
             else:
-                dd = dy
                 this_side = self.master.total_delta_y
                 other_side = self.master.width
 
@@ -1604,7 +1587,7 @@ class MoveWidget(Widget):
                 # lie within the selection area plus boundary) and look for
                 # the closest distance.
 
-                t1 = perf_counter()
+                # t1 = perf_counter()
                 other_points = []
                 selected_points = []
                 for e in self.scene.context.elements.elems():
@@ -1643,7 +1626,7 @@ class MoveWidget(Widget):
                             if not ignore:
                                 target.append(end)
                             last = end
-                t2 = perf_counter()
+                # t2 = perf_counter()
                 if len(other_points) > 0 and len(selected_points) > 0:
                     np_other = np.asarray(other_points)
                     np_selected = np.asarray(selected_points)
@@ -1656,7 +1639,7 @@ class MoveWidget(Widget):
                         self.total_dx = 0
                         self.total_dy = 0
                         move_to(dx, dy)
-                t3 = perf_counter()
+                # t3 = perf_counter()
                 # print (f"Snap, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t3-t1:.2f}sec, Generation: {t2-t1:.2f}sec, shortest: {t3-t2:.2f}sec")
             if (
                 self.scene.context.snap_grid
@@ -1664,7 +1647,7 @@ class MoveWidget(Widget):
                 and b is not None
                 and not did_snap_to_point
             ):
-                t1 = perf_counter()
+                # t1 = perf_counter()
                 gap = self.scene.context.grid_attract_len / matrix_scale(matrix)
                 # Check for corner points + center:
                 selected_points = (
@@ -1687,7 +1670,7 @@ class MoveWidget(Widget):
                         self.total_dy = 0
                         move_to(dx, dy)
 
-                t2 = perf_counter()
+                # t2 = perf_counter()
                 # print (f"Corner-points, compared {len(selected_points)} pts to {len(other_points)} pts. Total time: {t2-t1:.2f}sec")
                 if did_snap_to_point:
                     # Even then magnets win!
@@ -1793,8 +1776,6 @@ class MoveRotationOriginWidget(Widget):
         # This one gets painted always.
 
         self.update()  # make sure coords are valid
-        pen = wx.Pen()
-        # pen.SetColour(wx.RED)
         gc.SetPen(self.master.handle_pen)
         gc.SetBrush(wx.TRANSPARENT_BRUSH)
         gc.StrokeLine(
@@ -1820,7 +1801,6 @@ class MoveRotationOriginWidget(Widget):
         if nearest_snap is None:
             # print ("Took last snap instead...")
             nearest_snap = self.scene.pane.last_snap
-        elements = self.scene.context.elements
         if nearest_snap is not None:
             # Position is space_pos:
             # 0, 1: current x, y
@@ -1909,10 +1889,10 @@ class ReferenceWidget(Widget):
     def update(self):
         if self.master.handle_outside:
             offset_x = self.half
-            offset_y = self.half
+            # offset_y = self.half
         else:
             offset_x = 0
-            offset_y = 0
+            # offset_y = 0
         pos_x = self.master.left - offset_x
         pos_y = self.master.top + 1 / 4 * (self.master.bottom - self.master.top)
         self.set_position(pos_x - self.half, pos_y - self.half)
@@ -2045,10 +2025,10 @@ class LockWidget(Widget):
     def update(self):
         if self.master.handle_outside:
             offset_x = self.half
-            offset_y = self.half
+            # offset_y = self.half
         else:
             offset_x = 0
-            offset_y = 0
+            # offset_y = 0
         pos_x = self.master.right - offset_x
         pos_y = self.master.top + 1 / 4 * (self.master.bottom - self.master.top)
         self.set_position(pos_x - self.half, pos_y - self.half)
@@ -2420,8 +2400,6 @@ class SelectionWidget(Widget):
         if refob is None:
             return
         alignbounds = refob.bounds
-        posx = ""
-        posy = ""
         if "l" in pos:
             posx = "min"
         elif "r" in pos:
@@ -2524,7 +2502,6 @@ class SelectionWidget(Widget):
             # print ("I would need to align to: %s and scale to: %s" % (opt_pos, opt_scale))
         dlgRefAlign.Destroy()
         if opt_pos is not None:
-            elements = self.scene.context.elements
             self.rotate_elements_if_needed(opt_rotate)
             self.scale_selection_to_ref(opt_scale)
             self.move_selection_to_ref(opt_pos)
@@ -2733,7 +2710,6 @@ class SelectionWidget(Widget):
             self.use_handle_size = True
             self.use_handle_move = True
 
-        draw_mode = context.draw_mode
         elements = self.scene.context.elements
         bounds = elements.selected_area()
         matrix = self.scene.widget_root.scene_widget.matrix

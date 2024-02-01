@@ -1,11 +1,7 @@
 import os
-import platform
-from glob import glob
-from math import isinf
 
 import wx
 
-from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import STD_ICON_SIZE, get_default_icon_size, icons8_choose_font
 from meerk40t.gui.mwindow import MWindow
@@ -1080,7 +1076,6 @@ class PanelFontManager(wx.Panel):
         except AttributeError:
             pass
         font_files = None
-        paths = None
         if dlg.ShowModal() == wx.ID_OK:
             font_files = dlg.GetPaths()
         # Only destroy a dialog after you're done with it.
@@ -1117,9 +1112,7 @@ class PanelFontManager(wx.Panel):
                     remove_fontfile(destfile)
                     stats[1] += 1
 
-                keepgoing = progress.Update(
-                    idx + 1, progress_string.format(count=idx + 1)
-                )
+                progress.Update(idx + 1, progress_string.format(count=idx + 1))
                 if progress.WasCancelled():
                     break
             except (OSError, RuntimeError, PermissionError, FileNotFoundError):
@@ -1227,9 +1220,7 @@ class PanelFontManager(wx.Panel):
                     remove_fontfile(destfile)
                     stats[1] += 1
 
-                keepgoing = progress.Update(
-                    idx + 1, progress_string.format(count=idx + 1)
-                )
+                progress.Update(idx + 1, progress_string.format(count=idx + 1))
                 if progress.WasCancelled():
                     break
             except (OSError, RuntimeError, PermissionError, FileNotFoundError):

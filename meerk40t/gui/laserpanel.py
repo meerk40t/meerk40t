@@ -5,7 +5,6 @@ from wx import aui
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
-    DARKMODE,
     get_default_icon_size,
     icon_closed_door,
     icon_open_door,

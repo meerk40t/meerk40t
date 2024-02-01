@@ -120,7 +120,6 @@ def plugin(kernel, lifecycle):
                 Beta is derived from Release by default if release > 100 and last two digits != 0
                 """
                 src = beta = False
-                orgversion = version
                 ending = ""
                 result = list()
                 if version is not None:

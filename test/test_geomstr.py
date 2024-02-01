@@ -1827,7 +1827,7 @@ class TestGeomstr(unittest.TestCase):
 
     def test_scan_table_random_brute(self):
         print("\n\n")
-        for c in range(5):
+        for _c in range(5):
             g = Geomstr()
             for i in range(100):
                 random_segment(

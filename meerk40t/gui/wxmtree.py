@@ -8,7 +8,6 @@ from ..kernel import signal_listener
 from ..svgelements import Color
 from .basicops import BasicOpPanel
 from .icons import (
-    get_default_scale_factor,
     icon_bell,
     icon_bmap_text,
     icon_canvas,
@@ -785,20 +784,20 @@ class ShadowTree:
         """
         if self._freeze or self.context.elements.suppress_updates:
             return
-        okay = False
-        item = None
-        if node is not None and hasattr(node, "_item"):
-            item = node._item
-            if item is not None and item.IsOk():
-                okay = True
-        # print (f"Modified: {node}\nItem: {item}, Status={okay}")
-        if not okay:
+
+        if node is None or not hasattr(node, "_item"):
             return
+
+        item = node._item
+        if item is None or not item.IsOk():
+            return
+
         try:
             self.update_decorations(node, force=True)
         except RuntimeError:
             # A timer can update after the tree closes.
             return
+
         try:
             c = node.color
             self.set_color(node, c)
@@ -1278,8 +1277,8 @@ class ShadowTree:
             self.wxtree.SelectItem(i, False)
 
     def safe_color(self, color_to_set):
-        hash = str(color_to_set)
-        if hash not in self.color_cache:
+        _hash = str(color_to_set)
+        if _hash not in self.color_cache:
             back_color = self.wxtree.GetBackgroundColour()
             rgb = back_color.Get()
             default_color = wx.Colour(
@@ -1291,9 +1290,9 @@ class ShadowTree:
                     mycolor = default_color
             else:
                 mycolor = default_color
-            self.color_cache[hash] = mycolor
+            self.color_cache[_hash] = mycolor
         else:
-            mycolor = self.color_cache[hash]
+            mycolor = self.color_cache[_hash]
         return mycolor
 
     def node_register(self, node, pos=None, **kwargs):
@@ -1465,7 +1464,6 @@ class ShadowTree:
 
         # Have we already established an image, if no let's use the default
         if image is None:
-            img_obj = None
             found = ""
             tofind = node.type
             if tofind == "util console":
@@ -1904,30 +1902,30 @@ class ShadowTree:
         if drop_node is None:
             event.Skip()
             return
-        skip = True
         # We extend the logic by calling the appropriate elems routine
         skip = not self.elements.drag_and_drop(self.dragging_nodes, drop_node)
         if skip:
             event.Skip()
-        else:
-            event.Allow()
-            # Make sure that the drop node is visible
-            self.wxtree.Expand(drop_item)
-            self.wxtree.EnsureVisible(drop_item)
-            self.refresh_tree(source="drag end")
-            # Do the dragging_nodes contain an operation?
-            # Let's give an indication of that, as this may
-            # have led to the creation of a new reference
-            # node. For whatever reason this is not recognised
-            # otherwise...
-            if not self.dragging_nodes:
-                # Dragging nodes were cleared (we must have rebuilt the entire tree)
-                return
-            for node in self.dragging_nodes:
-                if node.type.startswith("op"):
-                    self.context.signal("tree_changed")
-                    break
-            # self.rebuild_tree()
+            self.dragging_nodes = None
+            return
+        event.Allow()
+        # Make sure that the drop node is visible
+        self.wxtree.Expand(drop_item)
+        self.wxtree.EnsureVisible(drop_item)
+        self.refresh_tree(source="drag end")
+        # Do the dragging_nodes contain an operation?
+        # Let's give an indication of that, as this may
+        # have led to the creation of a new reference
+        # node. For whatever reason this is not recognised
+        # otherwise...
+        if not self.dragging_nodes:
+            # Dragging nodes were cleared (we must have rebuilt the entire tree)
+            return
+        for node in self.dragging_nodes:
+            if node.type.startswith("op"):
+                self.context.signal("tree_changed")
+                break
+        # self.rebuild_tree()
         self.dragging_nodes = None
 
     def on_mouse_over(self, event):

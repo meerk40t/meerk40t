@@ -713,12 +713,12 @@ def plugin(service, lifecycle):
     def galvo_on(command, channel, _, off=None, remainder=None, **kwgs):
         try:
             if off == "off":
-                reply = service.driver.connection.light_off()
+                service.driver.connection.light_off()
                 service.driver.connection.write_port()
                 service.redlight_preferred = False
                 channel("Turning off redlight.")
             else:
-                reply = service.driver.connection.light_on()
+                service.driver.connection.light_on()
                 service.driver.connection.write_port()
                 channel("Turning on redlight.")
                 service.redlight_preferred = True

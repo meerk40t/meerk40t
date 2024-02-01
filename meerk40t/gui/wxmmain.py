@@ -2,7 +2,6 @@ import datetime
 import os
 import platform
 import sys
-from copy import copy
 from functools import partial
 
 import wx
@@ -30,17 +29,10 @@ from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
 from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
 from meerk40t.kernel import lookup_listener, signal_listener
 
-from ..core.units import (
-    DEFAULT_PPI,
-    UNITS_PER_INCH,
-    UNITS_PER_MM,
-    UNITS_PER_PIXEL,
-    Length,
-)
+from ..core.units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from ..svgelements import Color, Matrix, Path
 from .icons import (  # icon_duplicate,; icon_nohatch,
     STD_ICON_SIZE,
-    PyEmbeddedImage,
     icon_bmap_text,
     icon_cag_common,
     icon_cag_subtract,
@@ -64,10 +56,7 @@ from .icons import (  # icon_duplicate,; icon_nohatch,
     icon_mk_rectangular,
     icon_mk_redo,
     icon_mk_undo,
-    icon_paint_brush,
-    icon_paint_brush_green,
     icon_power_button,
-    icon_warning,
     icons8_centerh,
     icons8_centerv,
     icons8_circled_left,
@@ -252,7 +241,8 @@ class MeerK40t(MWindow):
             command = "check_for_updates --verbosity 2\n"
         elif self.context.update_check == 2:
             command = "check_for_updates --beta --verbosity 2\n"
-        doit = True
+        else:
+            raise ValueError("Invalid check setting")
         lastdate = None
         lastcall = self.context.setting(int, "last_update_check", None)
         if lastcall is not None:
@@ -266,13 +256,12 @@ class MeerK40t(MWindow):
             # print (f"Delta: {delta.days}, lastdate={lastdate}, interval={self.context.update_frequency}")
             if self.context.update_frequency == 2 and delta.days <= 6:
                 # Weekly
-                doit = False
+                return
             elif self.context.update_frequency == 1 and delta.days <= 0:
                 # Daily
-                doit = False
-        if doit:
-            self.context.last_update_check = now.toordinal()
-            self.context(command)
+                return
+        self.context.last_update_check = now.toordinal()
+        self.context(command)
 
     def setup_statusbar_panels(self, combine):
         # if not self.context.show_colorbar:
@@ -419,38 +408,34 @@ class MeerK40t(MWindow):
                 self.context.elements.set_emphasis([node])
 
             # Read the image
-            success = False
-            if wx.TheClipboard.Open():
-                # Let's see what we have:
-                if wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_BITMAP)):
-                    bmap_data = wx.BitmapDataObject()
-                    success = wx.TheClipboard.GetData(bmap_data)
-                    if success:
-                        bmp = bmap_data.GetBitmap()
-                        paste_image(bmp)
+            if not wx.TheClipboard.Open():
+                return
+            # Let's see what we have:
+            if wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_BITMAP)):
+                bmap_data = wx.BitmapDataObject()
+                if wx.TheClipboard.GetData(bmap_data):
+                    bmp = bmap_data.GetBitmap()
+                    paste_image(bmp)
 
-                elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_FILENAME)):
-                    fname_data = wx.FileDataObject()
-                    success = wx.TheClipboard.GetData(fname_data)
-                    if success:
-                        files = fname_data.GetFilenames()
-                        paste_files(files)
+            elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_FILENAME)):
+                fname_data = wx.FileDataObject()
+                if wx.TheClipboard.GetData(fname_data):
+                    files = fname_data.GetFilenames()
+                    paste_files(files)
 
-                elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_TEXT)):
-                    text_data = wx.TextDataObject()
-                    success = wx.TheClipboard.GetData(text_data)
-                    if success:
-                        txt = text_data.GetText()
-                        paste_text(txt)
+            elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_TEXT)):
+                text_data = wx.TextDataObject()
+                if wx.TheClipboard.GetData(text_data):
+                    txt = text_data.GetText()
+                    paste_text(txt)
 
-                elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_UNICODETEXT)):
-                    text_data = wx.TextDataObject()
-                    success = wx.TheClipboard.GetData(text_data)
-                    if success:
-                        txt = text_data.GetText().decode("utf-8")
-                        paste_text(txt)
+            elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_UNICODETEXT)):
+                text_data = wx.TextDataObject()
+                if wx.TheClipboard.GetData(text_data):
+                    txt = text_data.GetText().decode("utf-8")
+                    paste_text(txt)
 
-                wx.TheClipboard.Close()
+            wx.TheClipboard.Close()
 
         def on_click_sel_all():
             self.context("element* select\n")
@@ -1312,7 +1297,7 @@ class MeerK40t(MWindow):
         )
 
         # Default Size for tool buttons - none: use icon size
-        buttonsize = STD_ICON_SIZE
+        # buttonsize = STD_ICON_SIZE
 
         kernel.register(
             "button/select/Scene",
@@ -1749,7 +1734,7 @@ class MeerK40t(MWindow):
         )
 
         # Default Size for smaller buttons
-        buttonsize = STD_ICON_SIZE / 2
+        # buttonsize = STD_ICON_SIZE / 2
 
         kernel.register(
             "button/modify/Flip",
@@ -1913,7 +1898,7 @@ class MeerK40t(MWindow):
                     kernel.signal("element_property_reload", "Scene", group_node)
 
         # Default Size for normal buttons
-        buttonsize = STD_ICON_SIZE
+        # buttonsize = STD_ICON_SIZE
         kernel.register(
             "button/group/Group",
             {
@@ -2045,7 +2030,7 @@ class MeerK40t(MWindow):
         )
 
         # Default Size for small buttons
-        buttonsize = STD_ICON_SIZE / 2
+        # buttonsize = STD_ICON_SIZE / 2
 
         kernel.register(
             "button/align/AlignRight",
@@ -2958,6 +2943,7 @@ class MeerK40t(MWindow):
             if not window.window_menu(None):
                 continue
             win_caption = ""
+            submenu_name = None
             try:
                 returnvalue = window.submenu()
                 if isinstance(returnvalue, str):
@@ -3207,18 +3193,19 @@ class MeerK40t(MWindow):
     def _update_status_menu(self, menu, choices, *args):
         def handler(event):
             for entry in local_choices:
-                if "label" in entry and "enabled" in entry:
-                    flag = True
-                    label = entry["label"]
-                    try:
-                        flag = bool(entry["enabled"]())
-                    except AttributeError:
-                        flag = True
-                    if label:
-                        menu_id = local_menu.FindItem(label)
-                        if menu_id != wx.NOT_FOUND:
-                            menu_item = local_menu.FindItemById(menu_id)
-                            menu_item.Enable(flag)
+                if "label" not in entry or "enabled" not in entry:
+                    continue
+                label = entry["label"]
+                if not label:
+                    continue
+                menu_id = local_menu.FindItem(label)
+                if menu_id == wx.NOT_FOUND:
+                    continue
+                menu_item = local_menu.FindItemById(menu_id)
+                try:
+                    menu_item.Enable(bool(entry["enabled"]()))
+                except AttributeError:
+                    menu_item.Enable(True)
             if event:
                 event.Skip()
 

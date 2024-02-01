@@ -19,7 +19,7 @@ from meerk40t.gui.consolepanel import Console
 from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
-from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
+from meerk40t.kernel import CommandSyntaxError, Module, get_safe_path
 from meerk40t.kernel.kernel import Job
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
@@ -36,7 +36,6 @@ from .hersheymanager import (
     register_hershey_stuff,
 )
 from .icons import (
-    DARKMODE,
     icons8_emergency_stop_button,
     icons8_gas_industry,
     icons8_home_filled,
@@ -183,7 +182,6 @@ class ActionPanel(wx.Panel):
                 resize=(best_size * scale_x, best_size * scale_y),
                 buffer=border,
             )
-            s = bmp.Size
             self.button_go.SetBitmap(bmp)
             bmp = self.icon.GetBitmap(
                 resize=(best_size * scale_x, best_size * scale_y), buffer=border

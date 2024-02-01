@@ -1,7 +1,6 @@
 import wx
 
 from meerk40t.gui.icons import (
-    STD_ICON_SIZE,
     icon_bell,
     icon_close_window,
     icon_console,
@@ -229,7 +228,7 @@ class DefaultActionPanel(wx.Panel):
         idx = self.prepend_list.GetFirstSelected()
         if idx < 0 or idx >= len(self.prepend_ops):
             return
-        removed = self.prepend_ops.pop(idx)
+        self.prepend_ops.pop(idx)
         # print("Now", self.prepend_ops)
         # print("Deleted was", removed)
         self.save_data()
@@ -239,7 +238,7 @@ class DefaultActionPanel(wx.Panel):
         idx = self.append_list.GetFirstSelected()
         if idx < 0 or idx >= len(self.append_ops):
             return
-        removed = self.append_ops.pop(idx)
+        self.append_ops.pop(idx)
         self.save_data()
         self.fill_append_list()
 

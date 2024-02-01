@@ -11,7 +11,6 @@ from meerk40t.kernel.kernel import get_safe_path
 def get_inkscape(context, manual_candidate=None):
     root_context = context
     root_context.setting(str, "inkscape_path", "inkscape.exe")
-    inkscape = ""
     try:
         inkscape = root_context.inkscape_path
     except AttributeError:
@@ -53,7 +52,6 @@ def get_inkscape(context, manual_candidate=None):
 
 
 def run_command_and_log(command_array, logfile):
-    f = None
     timeout_value = None
     try:
         f = open(logfile, "w")
@@ -129,7 +127,6 @@ class MultiLoader:
         else:
             kernel = kernel_service
         _ = kernel.translation
-        safe_dir = os.path.realpath(get_safe_path(kernel.name))
 
         # Establish the standard svg-handler first
         handler = None
@@ -142,7 +139,6 @@ class MultiLoader:
         context_root = kernel.root
         safe_dir = os.path.realpath(get_safe_path(kernel.name))
         logfile = os.path.join(safe_dir, "inkscape.log")
-        timeout_value = None
 
         inkscape = get_inkscape(context_root)
         if not inkscape:
@@ -430,7 +426,6 @@ def plugin(kernel, lifecycle):
                                     needs_conversion = entry[2]
             context = kernel.root
             inkscape = get_inkscape(context)
-            timeout_value = None
             if needs_conversion == 0:
                 return pathname
             if len(inkscape) == 0:
@@ -490,7 +485,6 @@ def plugin(kernel, lifecycle):
             result, c = run_command_and_log([inkscape, "-V"], log_file)
             if not result:
                 return pathname
-            version = None
             try:
                 version = c.stdout.decode(encoding="utf-8", errors="surrogateescape")
             except UnicodeDecodeError:

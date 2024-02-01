@@ -26,7 +26,6 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.gui.wxutils import matrix_scale
-from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import (
     Arc,
     Close,
@@ -665,7 +664,7 @@ class EditTool(ToolWidget):
                 else:
                     p.AddLineToPoint(ptx, pty)
         else:
-            path = self.path
+            # path = self.path
             init = False
             for idx, entry in enumerate(self.nodes):
                 if not entry["type"] == "point":
@@ -977,8 +976,8 @@ class EditTool(ToolWidget):
                         if dist < 1:
                             lastidx -= 1
                             is_closed = True
-                    else:
-                        dist = 1e6
+                    # else:
+                    #     dist = 1e6
                     if is_closed:
                         # it's enough just to delete it...
                         del self.path[lastidx + 1]
@@ -1634,8 +1633,8 @@ class EditTool(ToolWidget):
                         continue
                     segment = entry["segment"]
 
-                    def pt_info(pt):
-                        return f"({pt.x:.0f}, {pt.y:.0f})"
+                    # def pt_info(pt):
+                    #     return f"({pt.x:.0f}, {pt.y:.0f})"
 
                     if entry["segtype"] == "L":
                         # Line
@@ -1913,8 +1912,12 @@ class EditTool(ToolWidget):
                     return RESPONSE_CONSUME
                 current = self.nodes[self.selected_index]
                 pt = current["point"]
+                if nearest_snap is None:
+                    spt = Point(space_pos[0], space_pos[1])
+                else:
+                    spt = Point(nearest_snap[0], nearest_snap[1])
 
-                m = self.element.matrix.point_in_inverse_space(space_pos[:2])
+                m = self.element.matrix.point_in_inverse_space(spt)
                 # Special treatment for the virtual midpoint:
                 if current["type"] == "midpoint" and self.node_type == "path":
                     self.scene.context.signal(
@@ -1988,10 +1991,10 @@ class EditTool(ToolWidget):
                 self.done()
                 return RESPONSE_CONSUME
             # print(f"Key: '{keycode}'")
-            if not self.selected_index is None:
-                entry = self.nodes[self.selected_index]
-            else:
-                entry = None
+            # if self.selected_index is not None:
+            #     entry = self.nodes[self.selected_index]
+            # else:
+            #     entry = None
             self.perform_action(keycode)
 
             return RESPONSE_CONSUME

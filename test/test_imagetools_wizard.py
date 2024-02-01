@@ -1,10 +1,11 @@
 import unittest
-from math import floor
-from test import bootstrap
 
-from PIL import Image, ImageDraw
-
-from meerk40t.svgelements import Matrix, SVGImage
+# from math import floor
+# from test import bootstrap
+#
+# from PIL import Image, ImageDraw
+#
+# from meerk40t.svgelements import Matrix, SVGImage
 
 
 class TestRasterWizard(unittest.TestCase):

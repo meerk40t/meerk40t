@@ -100,7 +100,7 @@ def init_commands(kernel):
         def interpolation(self, value):
             if value is None:
                 value = 500
-            self._interpolation = 500
+            self._interpolation = value
 
         @property
         def factor(self):
@@ -375,7 +375,7 @@ def init_commands(kernel):
         def interpolation(self, value):
             if value is None:
                 value = 500
-            self._interpolation = 500
+            self._interpolation = value
 
         @property
         def factor(self):

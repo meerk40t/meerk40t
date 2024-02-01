@@ -705,7 +705,7 @@ class Elemental(Service):
                 yield e
 
     def have_unassigned_elements(self):
-        for node in self.unassigned_elements():
+        for _ in self.unassigned_elements():
             return True
         return False
 
@@ -1212,6 +1212,10 @@ class Elemental(Service):
 
         @param name:
         @param oplist:
+        @param opinfo:
+        @param inform:
+        @param use_settings:
+        @param flush:
         @return:
         """
         name = self.safe_section_name(name)
@@ -1281,7 +1285,8 @@ class Elemental(Service):
         Clear operations for the derivables of the given name.
 
         @param name: name of operation.
-        @param flush: Optionally permit non-flushed to disk.
+        @param flush: Optionally permit non-flushed to disk
+        @param use_settings:
         @return:
         """
         name = self.safe_section_name(name)
@@ -1359,6 +1364,8 @@ class Elemental(Service):
         Performs an optional classification.
 
         @param name:
+        @param classify:
+        @param clear:
         @return:
         """
         settings = self.op_data
@@ -1504,7 +1511,8 @@ class Elemental(Service):
             opinfo["author"] = "MeerK40t"
             needs_save = True
         # Ensure we have an id for everything
-        needs_save = self.validate_ids(nodelist=oplist, generic=False)
+        if self.validate_ids(nodelist=oplist, generic=False):
+            needs_save = True
         if needs_save:
             self.save_persistent_operations_list(
                 std_list, oplist=oplist, opinfo=opinfo, inform=False
@@ -1928,7 +1936,7 @@ class Elemental(Service):
         """
         Returns whether any element is emphasized
         """
-        for e in self.elems_nodes(emphasized=True):
+        for _ in self.elems_nodes(emphasized=True):
             return True
         return False
 
@@ -2816,7 +2824,6 @@ class Elemental(Service):
                                 f"Pass 3-stroke, fuzzy={tempfuzzy}): check {node.type}"
                             )
                         for op_candidate in self.default_operations:
-                            classified = False
                             if isinstance(op_candidate, (CutOpNode, EngraveOpNode)):
                                 if tempfuzzy:
                                     classified = (
@@ -2849,7 +2856,6 @@ class Elemental(Service):
                     and node.stroke is not None
                     and node.stroke.argb is not None
                 ):
-                    is_cut = False
                     if fuzzy:
                         is_cut = (
                             Color.distance(abs(node.stroke), "red") <= fuzzydistance

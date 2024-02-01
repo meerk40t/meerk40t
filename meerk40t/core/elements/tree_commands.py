@@ -334,7 +334,7 @@ def init_commands(kernel):
             entry = 3
         if not single:
             if typecount[3] > 0:
-                # regmarks take precedence, the least dangereous delete
+                # regmarks take precedence, the least dangerous delete
                 entry = 3
             elif typecount[1] > 0:
                 # refs next
