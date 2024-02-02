@@ -127,7 +127,7 @@ class Meerk40tFonts:
     @font_directory.setter
     def font_directory(self, value):
         if not exists(value):
-            # We cant allow a non valid directory
+            # We cant allow a non-valid directory
             value = realpath(get_safe_path(self.context.kernel.name))
         self.context.setting(str, "font_directory", value)
         self.context.font_directory = value

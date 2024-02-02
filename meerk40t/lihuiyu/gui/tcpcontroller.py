@@ -61,7 +61,7 @@ class TCPController(MWindow):
         _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)
         # For whatever reason the windows backgroundcolor is a dark grey,
-        # not sure why but we just set it back to standard value
+        # not sure why but, we just set it back to standard value
         col = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
         self.SetBackgroundColour(col)
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
