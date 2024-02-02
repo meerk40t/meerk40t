@@ -261,7 +261,7 @@ class LaserRender:
         if hasattr(node, "output"):
             if not node.output:
                 return False
-        if not hasattr(node, "draw"):
+        if not hasattr(node, "draw") or not hasattr(node, "_make_cache"):
             # No known render method, we must define the function to draw nodes.
             if node.type in (
                 "elem path",
