@@ -319,7 +319,7 @@ def tree_operation(
             # Register tree/node/name for each node within the registration.
             p = f"tree/{_in}/{registered_name}"
             if p in registration._registered:
-                # We used the name so we may not have duplicate tree operations with the same name.
+                # We used the name, so we may not have duplicate tree operations with the same name.
                 raise NameError(f"A function of this name was already registered: {p}")
             registration.register(p, inner)
         return inner

@@ -582,7 +582,7 @@ class HingePanel(wx.Panel):
             stroke=Color("red"),
             type="elem path",
         )
-        # Lets simplify things...
+        # Let's simplify things...
         self.context.elements.simplify_node(node)
 
         if self.hinge_generator.outershape is not None:

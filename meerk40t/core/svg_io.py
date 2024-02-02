@@ -970,7 +970,7 @@ class SVGProcessor:
         self.check_for_fill_attributes(node, element)
         self.check_for_mk_path_attributes(node, element)
         if self.precalc_bbox:
-            # bounds will be done here, paintbounds wont...
+            # bounds will be done here, paintbounds won't...
             if element.transform.is_identity():
                 points = element.points
             else:
@@ -1034,7 +1034,7 @@ class SVGProcessor:
         )
         self.check_for_line_attributes(node, element)
         if self.precalc_bbox:
-            # bounds will be done here, paintbounds wont...
+            # bounds will be done here, paintbounds won't...
             points = (
                 Point(element.x, element.y),
                 Point(element.x + element.width, element.y),
@@ -1077,7 +1077,7 @@ class SVGProcessor:
         )
         self.check_for_line_attributes(node, element)
         if self.precalc_bbox:
-            # bounds will be done here, paintbounds wont...
+            # bounds will be done here, paintbounds won't...
             points = (
                 Point(element.x1, element.y1),
                 Point(element.x2, element.y2),
@@ -1415,7 +1415,7 @@ class SVGProcessor:
                 or e_type.startswith("place ")
                 or e_type.startswith("util ")
             ):
-                # This is an operations but we are not in operations context.
+                # This is an operations, but we are not in operations context.
                 if not self.load_operations:
                     # We don't do that.
                     return

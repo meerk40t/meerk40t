@@ -4331,7 +4331,7 @@ class Geomstr:
 
     def y_at_axis(self, e):
         """
-        y_intercept of the lines (e) at at x-axis (x=0)
+        y_intercept of the lines (e) at x-axis (x=0)
 
         @param e:
         @return:

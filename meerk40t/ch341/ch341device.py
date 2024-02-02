@@ -36,15 +36,15 @@ _stdcall_libraries = {}
 _stdcall_libraries["kernel32"] = WinDLL("kernel32")
 
 
-# some details of the windows API differ between 32 and 64 bit systems..
+# some details of the Windows API differ between 32 and 64-bit systems...
 def is_64bit():
-    """Returns true when running on a 64 bit system"""
+    """Returns true when running on a 64-bit system"""
     return sizeof(c_ulong) != sizeof(c_void_p)
 
 
-# ULONG_PTR is a an ordinary number, not a pointer and contrary to the name it
+# ULONG_PTR is an ordinary number, not a pointer and contrary to the name it
 # is either 32 or 64 bits, depending on the type of windows...
-# so test if this a 32 bit windows...
+# so test if this a 32-bit windows...
 if is_64bit():
     ULONG_PTR = c_int64
 else:

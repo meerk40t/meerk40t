@@ -81,7 +81,7 @@ class FormatterPanel(wx.Panel):
             try:
                 self.node_list.remove(node)
             except ValueError:
-                # wasnt in list...
+                # wasn't in list...
                 pass
 
         self.context.setting(bool, "use_percent_for_power_display", False)

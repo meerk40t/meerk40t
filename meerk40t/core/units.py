@@ -656,7 +656,7 @@ def viewbox_transform(
 ):
     """
     SVG 1.1 7.2, SVG 2.0 8.2 equivalent transform of an SVG viewport.
-    With regards to https://github.com/w3c/svgwg/issues/215 use 8.2 version.
+    Regarding https://github.com/w3c/svgwg/issues/215 use 8.2 version.
 
     It creates transform commands equal to that viewport expected.
 

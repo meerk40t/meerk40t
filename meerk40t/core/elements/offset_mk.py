@@ -433,7 +433,7 @@ def path_offset(
                         needs_connector = False
                         # print ("Used internal intersect")
                     elif not radial:
-                        # is the intersect too far away for our purposes?
+                        # is the intersection too far away for our purposes?
                         odist = orgintersect.distance_to(p)
                         if odist > abs(offset):
                             angle = orgintersect.angle_to(p)
@@ -647,7 +647,7 @@ def path_offset(
         #     offset = min(offset, bb[2] - bb[0])
         #     offset = min(offset, bb[3] - bb[1])
         is_closed = False
-        # Lets check the first and last valid point. If they are identical
+        # Let's check the first and last valid point. If they are identical
         # we consider this to be a closed path even if it has no closed indicator.
         # firstp_start = None
         # lastp = None
@@ -688,7 +688,7 @@ def path_offset(
             segment = p._segments[idx]
             # print (f"Deal with seg {idx}: {type(segment).__name__} - {first_point}, {last_point}, {is_closed}")
             if isinstance(segment, Close):
-                # Lets add an additional line and replace the closed segment by this new segment
+                # Let's add a line and replace the closed segment by this new segment
                 # Look for the last two valid segments
                 last_point = None
                 first_point = None
