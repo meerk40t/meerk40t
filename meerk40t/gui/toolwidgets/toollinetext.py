@@ -104,7 +104,7 @@ class LineTextTool(ToolWidget):
 
         response = RESPONSE_CHAIN
         # if event_type == "key_up":
-        #     print (f"Event {event_type}, Key: {keycode}, Modifiers: {modifiers}")
+        #     print (f"Event {event_type}, Key: {keycode}, Modifiers: {modifiers}, text so far: {self.vtext}")
         if event_type == "leftdown":
             if self.p1 is None:
                 self.scene.pane.tool_active = True
@@ -171,7 +171,7 @@ class LineTextTool(ToolWidget):
                 to_add = ""
                 if keycode is not None:
                     to_add = keycode
-                elif keycode is None and modifiers == "ctrl+return":
+                if modifiers == "ctrl+return":
                     to_add = "\n"
                 if modifiers == "back":
                     to_add = ""
@@ -186,14 +186,15 @@ class LineTextTool(ToolWidget):
                     self.node = self.scene.context.fonts.create_linetext_node(
                         x, y, self.vtext
                     )
+                    if self.node is not None:
+                        self.node.emphasized = False
+
+                    self.scene.request_refresh()
                 else:
-                    self.scene.context.fonts.update_linetext(self.node, self.vtext)
+                    self.node.mktext = self.vtext
+                    self.scene.context.signal("linetext", "text")
                 # self.node.stroke = self.color
                 # self.node.modified()
-                if self.node is not None:
-                    self.node.emphasized = False
-
-                self.scene.request_refresh()
             else:
                 response = RESPONSE_CHAIN
         return response
@@ -234,3 +235,8 @@ class LineTextTool(ToolWidget):
                 self.node.emphasized = False
                 self.scene.request_refresh()
                 self.scene.gui.scene_panel.SetFocus()
+        elif signal == "linetext" and args[0] == "text":
+            self.scene.context.fonts.update_linetext(self.node, self.node.mktext)
+            self.node.emphasized = False
+            self.scene.request_refresh()
+

@@ -107,14 +107,34 @@ class ScenePanel(wx.Panel):
             pass
         return modifiers
 
+    # We tap into every event about keystrokes
+    # which makes it a bit challenging to stitch 
+    # information bits together
+    # We want to send *one* event at the start of the keystroke
+    # and another at the end.
+    # We send modifiers, e.g. shift+s and keycode e.g. S (capital S)
+
     def on_key(self, evt):
-        # print (f"key: {chr(evt.GetKeyCode())} {chr(evt.GetUnicodeKey())}")
+        literal = get_key_name(evt, True)
         self.last_char = chr(evt.GetUnicodeKey())
+        if self.last_event == "key_down":
+            # Fine we deal with it
+            # print (f"on_key: {chr(evt.GetKeyCode())} {chr(evt.GetUnicodeKey())} - {literal}")
+            self.scene.event(
+                window_pos=self.scene.last_position,
+                event_type="key_up",
+                nearest_snap=None,
+                modifiers=literal,
+                keycode=self.last_char,
+            )
+            self.last_event = None
+            self.last_char = None
         evt.Skip()
 
     def on_key_down(self, evt):
         self.last_char = None
         literal = get_key_name(evt, True)
+        # print (f"on_down: {literal}")
         if (literal != self.last_key) or (self.last_event != "key_down"):
             self.last_key = literal
             self.last_event = "key_down"
@@ -130,17 +150,19 @@ class ScenePanel(wx.Panel):
 
     def on_key_up(self, evt):
         # Only key provides the right character representation
-        literal = get_key_name(evt, True)
-        self.scene.event(
-            window_pos=self.scene.last_position,
-            event_type="key_up",
-            nearest_snap=None,
-            modifiers=literal,
-            keycode=self.last_char,
-        )
-        # After consumption all is done
-        self.last_char = None
-        self.last_event = "key_up"
+        if self.last_event == "key_down":
+            literal = get_key_name(evt, True)
+            if literal or self.last_char:
+                self.scene.event(
+                    window_pos=self.scene.last_position,
+                    event_type="key_up",
+                    nearest_snap=None,
+                    modifiers=literal,
+                    keycode=self.last_char,
+                )
+                # After consumption all is done
+            self.last_char = None
+            self.last_event = "key_up"
         evt.Skip()
 
     def on_size(self, event=None):
