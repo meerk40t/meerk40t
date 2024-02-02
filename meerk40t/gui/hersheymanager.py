@@ -10,6 +10,7 @@ from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import STD_ICON_SIZE, get_default_icon_size, icons8_choose_font
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
+from meerk40t.kernel.kernel import signal_listener
 from meerk40t.tools.geomstr import TYPE_ARC, TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, Geomstr
 
 _ = wx.GetTranslation
@@ -821,6 +822,21 @@ class HersheyFontSelector(MWindow):
     def submenu():
         # Suppress = True
         return "", "Font-Selector", True
+
+    @signal_listener("tool_changed")
+    def on_tool_changed(self, origin, newtool=None, *args):
+        # Signal provides a tuple with (togglegroup, id)
+        needs_close = True
+        if newtool is not None:
+            if isinstance(newtool, (list, tuple)):
+                group = newtool[0].lower() if newtool[0] is not None else ""
+                identifier = newtool[1].lower() if newtool[1] is not None else ""
+            else:
+                group = newtool
+                identifier = ""
+            needs_close = identifier != "linetext"
+        if needs_close:
+            self.Close()
 
 
 class PanelFontManager(wx.Panel):
