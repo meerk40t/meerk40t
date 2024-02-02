@@ -228,15 +228,35 @@ class CropPanel(wx.Panel):
         self.activate_controls(flag)
 
     def on_slider_left(self, event=None):
+        if event:
+            # Wait until the user has stopped to move the slider
+            if wx.GetMouseState().LeftIsDown():
+                event.Skip()
+                return
         self.cropleft = self.slider_left.GetValue()
 
     def on_slider_right(self, event=None):
+        if event:
+            # Wait until the user has stopped to move the slider
+            if wx.GetMouseState().LeftIsDown():
+                event.Skip()
+                return
         self.cropright = self.slider_right.GetValue()
 
     def on_slider_top(self, event=None):
+        if event:
+            # Wait until the user has stopped to move the slider
+            if wx.GetMouseState().LeftIsDown():
+                event.Skip()
+                return
         self.croptop = self.slider_top.GetValue()
 
     def on_slider_bottom(self, event=None):
+        if event:
+            # Wait until the user has stopped to move the slider
+            if wx.GetMouseState().LeftIsDown():
+                event.Skip()
+                return
         self.cropbottom = self.slider_bottom.GetValue()
 
     def set_slider_limits(self, pattern, constraint=True):
@@ -1336,6 +1356,12 @@ class ImagePropertyPanel(ScrolledPanel):
     def on_slider_grayscale_component(
         self, event=None
     ):  # wxGlade: GrayscalePanel.<event_handler>
+        if event:
+            # Wait until the user has stopped to move the slider
+            if wx.GetMouseState().LeftIsDown():
+                event.Skip()
+                return
+
         self.node.red = float(int(self.slider_grayscale_red.GetValue()) / 500.0)
         self.text_grayscale_red.SetValue(str(self.node.red))
 
