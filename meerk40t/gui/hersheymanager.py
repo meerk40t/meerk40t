@@ -813,7 +813,8 @@ class HersheyFontSelector(MWindow):
         pass
 
     def window_close(self):
-        pass
+        # We don't need an automatic opening
+        self.window_context.open_on_start = False
 
     def delegates(self):
         yield self.panel
