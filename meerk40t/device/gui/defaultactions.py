@@ -75,10 +75,14 @@ class DefaultActionPanel(wx.Panel):
         self.button_add_prepend = wx.Button(self, wx.ID_ANY, _("Add to Job Start"))
         self.button_add_append = wx.Button(self, wx.ID_ANY, _("Add to Job End"))
 
-        self.prepend_list = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_LIST|wx.LC_SINGLE_SEL)
+        self.prepend_list = wx.ListCtrl(
+            self, wx.ID_ANY, style=wx.LC_LIST | wx.LC_SINGLE_SEL
+        )
         self.text_param_prepend = wx.TextCtrl(self, wx.ID_ANY)
 
-        self.append_list = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_LIST|wx.LC_SINGLE_SEL)
+        self.append_list = wx.ListCtrl(
+            self, wx.ID_ANY, style=wx.LC_LIST | wx.LC_SINGLE_SEL
+        )
         self.text_param_append = wx.TextCtrl(self, wx.ID_ANY)
         self.button_del_prepend = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
         self.button_up_prepend = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)

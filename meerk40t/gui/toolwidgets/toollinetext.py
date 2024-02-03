@@ -28,7 +28,7 @@ class LineTextTool(ToolWidget):
         self.vtext = ""
         self.anim_count = 0
         self.last_anim = 0
-        self.scene.context.setting(float, "last_font_size",  float(Length("20px")))
+        self.scene.context.setting(float, "last_font_size", float(Length("20px")))
 
     def process_draw(self, gc: wx.GraphicsContext):
         # We just draw a cursor rectangle...
@@ -154,7 +154,7 @@ class LineTextTool(ToolWidget):
                 self.vtext = "Text"
                 fsize = self.scene.context.last_font_size
                 self.node = self.scene.context.fonts.create_linetext_node(
-                    x, y, self.vtext, font_size = fsize
+                    x, y, self.vtext, font_size=fsize
                 )
                 if self.node is not None:
                     self.node.stroke = self.color
@@ -229,7 +229,10 @@ class LineTextTool(ToolWidget):
                     y = self.p1.imag
                     fsize = self.scene.context.last_font_size
                     self.node = self.scene.context.fonts.create_linetext_node(
-                        x, y, self.vtext, font_size = fsize,
+                        x,
+                        y,
+                        self.vtext,
+                        font_size=fsize,
                     )
                     if self.node is not None:
                         self.node.emphasized = False

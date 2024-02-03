@@ -149,7 +149,6 @@ class ScenePanel(wx.Panel):
             self.last_event = "key_up"
         evt.Skip()
 
-
     def on_key_up(self, evt):
         # Only key provides the right character representation
         literal = get_key_name(evt, True)

@@ -37,7 +37,6 @@ from meerk40t.tools.geomstr import TYPE_END
 # from time import perf_counter
 
 
-
 NEARLY_ZERO = 1.0e-6
 
 
