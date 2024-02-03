@@ -1783,11 +1783,11 @@ class Geomstr:
                 # Start point does not equal previous end point.
                 yield None
                 at_start = True
+            end = e[4]
+            if at_start:
                 if seg_type == TYPE_END:
                     # End segments, flag new start but should not be returned.
                     continue
-            end = e[4]
-            if at_start:
                 yield start
                 at_start = False
 
