@@ -1719,7 +1719,7 @@ class Geomstr:
             seg_type = int(e[2].real)
             set_type = int(e[2].imag)
             start = e[0]
-            if (end != start or set_type != settings) and not at_start:
+            if not at_start and (set_type != settings or abs(start - end) > 1e-8):
                 # Start point does not equal previous end point, or settings changed
                 yield None, settings
                 at_start = True
