@@ -1047,14 +1047,14 @@ class GalvoController:
     def list_laser_on_point(self, dwell_time):
         self._list_write(listLaserOnPoint, dwell_time)
 
-    def list_delay_time(self, time):
+    def list_delay_time(self, delay_time):
         """
         Delay time in 10 microseconds units
 
-        @param time:
+        @param delay_time:
         @return:
         """
-        self._list_write(listDelayTime, abs(time))
+        self._list_write(listDelayTime, abs(delay_time))
 
     def list_mark(self, x, y, angle=0):
         distance = int(abs(complex(x, y) - complex(self._last_x, self._last_y)))

@@ -94,9 +94,8 @@ class MidpointNode(RibbonNode):
             if pos is None:
                 count -= 1
                 continue
-            else:
-                xs += pos[0]
-                ys += pos[1]
+            xs += pos[0]
+            ys += pos[1]
         if count == 0:
             self.position = None
             return
@@ -249,8 +248,10 @@ class DrawSequence:
     def zig(cls, ribbon, zig=0, zag=1):
         """
         This is one path, [] and each is in a 4 tick sequence. The first sequence is 0 the second 0, third 1 and then 1
-        So this draws between element 0, then element 0, then element 1, then element 1. Performing a zig-zag.
+        So this draws between element 0, then element 0, then element 1, then element 1. Performing a zigzag.
         @param ribbon:
+        @param zig:
+        @param zag:
         @return:
         """
         return cls(ribbon, sequences=[[[zig], [zig], [zag], [zag]]])

@@ -132,7 +132,7 @@ class TestPlotplanner(unittest.TestCase):
 
     def test_plotplanner_constant_move_xy(self):
         """
-        With raster_smooth set to 1 we should smooth the x axis so that no y=0 occurs.
+        With raster_smooth set to 1 we should smooth the x-axis so that no y=0 occurs.
         @return:
         """
         settings = {"power": 1000, "_constant_move_x": True, "_constant_move_y": True}
@@ -175,7 +175,7 @@ class TestPlotplanner(unittest.TestCase):
 
     def test_plotplanner_constant_xy_end(self):
         """
-        With raster_smooth set to 1 we should smooth the x axis so that no y=0 occurs.
+        With raster_smooth set to 1 we should smooth the x-axis so that no y=0 occurs.
         @return:
         """
         for q in range(100):
@@ -273,7 +273,7 @@ class TestPlotplanner(unittest.TestCase):
 
     def test_plotplanner_constant_move_xy_rect(self):
         """
-        With raster_smooth set to 1 we should smooth the x axis so that no y=0 occurs.
+        With raster_smooth set to 1 we should smooth the x-axis so that no y=0 occurs.
         @return:
         """
         settings = {"power": 1000, "constant_move_x": True, "constant_move_y": True}

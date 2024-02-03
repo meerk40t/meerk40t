@@ -67,10 +67,8 @@ class View:
         @param native_scale_y:
         @return:
         """
-        if native_scale_x is not None:
-            dpi_x = UNITS_PER_INCH / native_scale_x
-        if native_scale_y is not None:
-            dpi_y = UNITS_PER_INCH / native_scale_y
+        dpi_x = UNITS_PER_INCH / native_scale_x
+        dpi_y = UNITS_PER_INCH / native_scale_y
         self.dpi_x = dpi_x
         self.dpi_y = dpi_y
         self.dpi = (dpi_x + dpi_y) / 2.0

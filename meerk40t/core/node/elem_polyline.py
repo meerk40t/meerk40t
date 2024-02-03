@@ -210,8 +210,8 @@ class PolylineNode(Node, Stroked, FunctionalParameter):
         if bounds is None:
             return
         self._points = []
-        cx = (bounds[0] + bounds[2]) / 2
-        cy = (bounds[1] + bounds[3]) / 2
+        # cx = (bounds[0] + bounds[2]) / 2
+        # cy = (bounds[1] + bounds[3]) / 2
         # self._points.append([bounds[0], bounds[1], "bounds top_left"])
         # self._points.append([bounds[2], bounds[1], "bounds top_right"])
         # self._points.append([bounds[0], bounds[3], "bounds bottom_left"])

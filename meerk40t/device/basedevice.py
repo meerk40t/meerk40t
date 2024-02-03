@@ -64,7 +64,7 @@ def plugin(kernel, lifecycle=None):
             input_type=None,
             output_type="device",
         )
-        def device_info(channel, _, remainder=None, **kwargs):
+        def device_info_cmd(channel, _, remainder=None, **kwargs):
             """
             Display device info.
             """

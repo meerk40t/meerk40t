@@ -19,7 +19,7 @@ from meerk40t.gui.consolepanel import Console
 from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
-from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
+from meerk40t.kernel import CommandSyntaxError, Module, get_safe_path
 from meerk40t.kernel.kernel import Job
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
@@ -36,7 +36,6 @@ from .hersheymanager import (
     register_hershey_stuff,
 )
 from .icons import (
-    DARKMODE,
     icons8_emergency_stop_button,
     icons8_gas_industry,
     icons8_home_filled,
@@ -183,7 +182,6 @@ class ActionPanel(wx.Panel):
                 resize=(best_size * scale_x, best_size * scale_y),
                 buffer=border,
             )
-            s = bmp.Size
             self.button_go.SetBitmap(bmp)
             bmp = self.icon.GetBitmap(
                 resize=(best_size * scale_x, best_size * scale_y), buffer=border
@@ -562,7 +560,7 @@ class wxMeerK40t(wx.App, Module):
             This also allows use of a -p flag that sets the context path for this window to operate at. This should
             often be restricted to where the windows are typically opened since their function and settings usually
             depend on the context used. Windows often cannot open multiple copies of the same window at the same context
-            The default root path is "/". Eg. "window -p / open Preferences"
+            The default root path is "/". E.g. "window -p / open Preferences"
             """
             context = kernel.root
             if path is None:
@@ -953,6 +951,10 @@ class wxMeerK40t(wx.App, Module):
             kernel.register("wxpane/debug_color", register_panel_color)
             kernel.register("wxpane/debug_icons", register_panel_icon)
             kernel.register("wxpane/debug_shutdown", register_panel_crash)
+
+            from meerk40t.gui.utilitywidgets.debugwidgets import register_widget_icon
+
+            register_widget_icon(kernel.root)
 
         @context.console_argument("sure", type=str, help="Are you sure? 'yes'?")
         @context.console_command("nuke_settings", hidden=True)

@@ -462,23 +462,23 @@ class ConsolePanel(wx.ScrolledWindow):
             pass
 
     def load_log(self):
-        def tail(f, window=1):
+        def tail(fs, window=1):
             """
             Returns the last `window` lines of file `f` as a list of bytes.
             """
             if window == 0:
                 return b""
             BUFSIZE = 1024
-            f.seek(0, 2)
-            end = f.tell()
+            fs.seek(0, 2)
+            end = fs.tell()
             nlines = window + 1
             data = []
             while nlines > 0 and end > 0:
                 i = max(0, end - BUFSIZE)
                 nread = min(end, BUFSIZE)
 
-                f.seek(i)
-                chunk = f.read(nread)
+                fs.seek(i)
+                chunk = fs.read(nread)
                 data.append(chunk)
                 nlines -= chunk.count(b"\n")
                 end -= nread

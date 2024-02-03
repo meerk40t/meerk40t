@@ -10,7 +10,7 @@ import os.path
 from copy import copy
 
 from meerk40t.core.node.elem_image import ImageNode
-from meerk40t.core.node.node import Node
+from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.core.treeop import (
     get_tree_operation,
     tree_calc,
@@ -26,7 +26,7 @@ from meerk40t.core.treeop import (
     tree_submenu_list,
     tree_values,
 )
-from meerk40t.core.units import UNITS_PER_INCH, Length
+from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Matrix, Point
 from meerk40t.tools.geomstr import Geomstr
@@ -318,11 +318,9 @@ def init_tree(kernel):
     def clear_all_op_entries(node, **kwargs):
         with self.static("clear_all_op"):
             data = list()
-            removed = False
             for item in list(self.flat(selected=True, cascade=False, types=op_nodes)):
                 data.append(item)
             for item in data:
-                removed = True
                 item.remove_all_children()
 
     @tree_conditional(lambda node: hasattr(node, "output"))
@@ -485,7 +483,8 @@ def init_tree(kernel):
             stroke_width=self.default_strokewidth,
             matrix=m,
         )
-        self.classify([n])
+        if self.classify_new:
+            self.classify([n])
 
     @tree_submenu(_("Convert to Path"))
     @tree_operation(_("Vertical"), node_type="elem image", help="")
@@ -499,7 +498,8 @@ def init_tree(kernel):
             stroke_width=self.default_strokewidth,
             matrix=m,
         )
-        self.classify([n])
+        if self.classify_new:
+            self.classify([n])
 
     def radio_match_speed(node, speed=0, **kwargs):
         return node.speed == float(speed)
@@ -1153,7 +1153,6 @@ def init_tree(kernel):
     )
     def remove_transparent(node, **kwargs):
         res = 0
-        to_remove = []
         for enode in self.flat(
             selected=True,
             cascade=True,
@@ -1511,6 +1510,17 @@ def init_tree(kernel):
         self.classify_autogenerate = previous
         self.signal("refresh_tree", list(self.flat(types="reference")))
 
+    @tree_submenu(_("Classification"))
+    @tree_separator_before()
+    @tree_operation(
+        _("Clear all assignments"),
+        node_type=("branch ops", "branch elems"),
+        help="",
+    )
+    def do_classification_clear(node, **kwargs):
+        self.remove_elements_from_operations(list(self.elems()))
+        self.signal("refresh_tree")
+
     @tree_conditional(lambda cond: self.have_unassigned_elements())
     @tree_operation(
         _("Select unassigned elements"),
@@ -1569,30 +1579,31 @@ def init_tree(kernel):
         if material == "previous":
             return _("<Previous set>")
         oplist, opinfo = self.load_persistent_op_list(material)
-        material_name = opinfo.get("material", "")
-        material_title = opinfo.get("title", "")
-        material_thickness = opinfo.get("thickness", "")
-        if material_title == "":
-            if material_name:
-                material_title = material_name
+        mat_name = opinfo.get("material", "")
+        mat_title = opinfo.get("title", "")
+        # material_thickness = opinfo.get("thickness", "")
+        if mat_title == "":
+            if mat_name:
+                mat_title = mat_name
             else:
                 if material == "_default":
-                    material_title = "Generic Defaults"
+                    mat_title = "Generic Defaults"
                 elif material.startswith("_default_"):
-                    material_title = f"Default for {material[9:]}"
+                    mat_title = f"Default for {material[9:]}"
                 else:
-                    material_title = material.replace("_", " ")
+                    mat_title = material.replace("_", " ")
         name = ""
-        if material_name:
-            name += f"[{material_name}] "
-        name += material_title
-        if material_thickness:
-            name += f" {material_thickness}"
+        # if material_name:
+        #     name += f"[{material_name}] "
+        name += mat_title
+        # if material_thickness:
+        #     name += f" {material_thickness}"
         return name
 
     def material_menus():
         was_previous = False
         entries = list()
+        self.op_data.read_configuration()
         for material in self.op_data.section_set():
             if material == "previous":
                 was_previous = True
@@ -1611,12 +1622,11 @@ def init_tree(kernel):
                         material_title = f"Default for {material[9:]}"
                     else:
                         material_title = material.replace("_", " ")
-            submenu = ""
+            submenu = _("Materials")
             if material_name:
                 submenu += f"{'|' if submenu else ''}{material_name}"
             if material_thickness:
                 submenu += f"{'|' if submenu else ''}{material_thickness}"
-
             entries.append((material_name, material_thickness, material_title, submenu))
         # Let's sort them
         entries.sort(
@@ -1628,7 +1638,7 @@ def init_tree(kernel):
         )
         submenus = [e[3] for e in entries]
         if was_previous:
-            submenus.insert(0, "")
+            submenus.insert(0, _("Materials"))
         return submenus
 
     def material_ids():
@@ -1670,8 +1680,8 @@ def init_tree(kernel):
 
     @tree_separator_after()
     @tree_submenu(_("Load"))
-    @tree_values("opname", values=material_ids())
-    @tree_submenu_list(_("Materials"), material_menus())
+    @tree_values("opname", values=material_ids)
+    @tree_submenu_list(material_menus)
     @tree_calc("material", lambda opname: material_name(opname))
     @tree_operation("{material}", node_type="branch ops", help="")
     def load_ops(node, opname, **kwargs):
@@ -2503,14 +2513,13 @@ def init_tree(kernel):
                 copy_node = copy(orgnode)
                 if hasattr(copy_node, "matrix"):
                     copy_node.matrix *= Matrix.translate((n + 1) * dx, (n + 1) * dy)
-                had_optional = False
                 # Need to add stroke and fill, as copy will take the
                 # default values for these attributes
                 options = ["fill", "stroke", "wxfont"]
                 for optional in options:
                     if hasattr(e, optional):
                         setattr(copy_node, optional, getattr(orgnode, optional))
-                hadoptional = False
+                had_optional = False
                 options = []
                 for prop in dir(e):
                     if prop.startswith("mk"):
@@ -2518,14 +2527,14 @@ def init_tree(kernel):
                 for optional in options:
                     if hasattr(e, optional):
                         setattr(copy_node, optional, getattr(orgnode, optional))
-                        hadoptional = True
+                        had_optional = True
 
                 if self.copy_increases_wordlist_references and hasattr(orgnode, "text"):
                     copy_node.text = self.wordlist_delta(orgnode.text, delta_wordlist)
                 elif self.copy_increases_wordlist_references and hasattr(e, "mktext"):
                     copy_node.mktext = self.wordlist_delta(e.mktext, delta_wordlist)
                 orgparent.add_node(copy_node)
-                if hadoptional:
+                if had_optional:
                     for property_op in self.kernel.lookup_all("path_updater/.*"):
                         property_op(self.kernel.root, copy_node)
 
@@ -2539,13 +2548,13 @@ def init_tree(kernel):
                         )
 
         copy_nodes = list()
-        dx = self.length_x("3mm")
-        dy = self.length_y("3mm")
+        _dx = self.length_x("3mm")
+        _dy = self.length_y("3mm")
         alldata = list(self.elems(emphasized=True))
         minimaldata = self.condense_elements(alldata, expand_at_end=False)
         for e in minimaldata:
             parent = e.parent
-            copy_single_node(e, parent, copies, dx, dy)
+            copy_single_node(e, parent, copies, _dx, _dy)
 
         if self.classify_new:
             self.classify(copy_nodes)
@@ -2743,6 +2752,84 @@ def init_tree(kernel):
     )
     def trace_bitmap(node, **kwargs):
         self("vectorize\n")
+
+    @tree_operation(
+        _("Convert to vector text"),
+        node_type="elem text",
+        help=_("Convert bitmap text to vector text"),
+    )
+    def convert_to_vectext(node, **kwargs):
+        data = []
+        nodelist = list(self.flat(emphasized=True, types=("elem text",)))
+        for e in nodelist:
+            if e is None or not hasattr(e, "wxfont"):
+                # print (f"Invalid node: {e.type}")
+                continue
+            text = e.text
+            facename = e.wxfont.GetFaceName()
+            # print (f"Facename: {facename}, svg: {getattr(e, 'font_family', '')}")
+            fontfile = self.kernel.root.fonts.face_to_full_name(facename)
+            if fontfile is None:
+                # print (f"could not find a font for {facename}")
+                return
+            fontname = self.kernel.root.fonts.short_name(fontfile)
+            # print (f"{facename} -> {fontname}, {fontfile}")
+            node_args = dict()
+            node_args["type"] = "elem path"
+            node_args["stroke"] = e.stroke
+            node_args["fill"] = e.fill
+            node_args["stroke_width"] = 500
+            node_args["fillrule"] = Fillrule.FILLRULE_NONZERO
+            node_args["mktext"] = text
+            fsize = e.font_size
+            if fsize is None:
+                fsize = 12
+            fsize *= 4 / 3
+            node_args["mkfontsize"] = fsize
+            node_args["mkfont"] = fontname
+            anchor = e.anchor
+            if anchor is None:
+                anchor = "start"
+            node_args["mkalign"] = anchor
+            # print (f"{text} aligns in the {anchor}")
+
+            old_matrix = Matrix(e.matrix)
+            cc = e.bounds
+            p0 = old_matrix.point_in_inverse_space((cc[0], cc[1]))
+            p1 = old_matrix.point_in_inverse_space((cc[2], cc[3]))
+
+            # node_args["mkcoordx"] = p0.x
+            # node_args["mkcoordy"] = p1.y
+
+            node_args["geometry"] = Geomstr.rect(
+                x=p0.x, y=p1.y, width=p1.x - p0.x, height=p1.y - p0.y
+            )
+            if e.label is None:
+                x = text.split("\n")
+                node_args["label"] = f"Text: {x[0]}"
+            newnode = e.replace_node(**node_args)
+            newnode.matrix = old_matrix
+            newnode.matrix.pre_translate_y(p1.y - p0.y)
+            if anchor != "start":
+                newnode.matrix.pre_translate_x(-1 * (p1.x - p0.x) / 2)
+
+            # Now we need to render it...
+            # newnode.set_dirty_bounds()
+            # newtext = self.wordlist_translate(text, elemnode=newnode, increment=False)
+            # newnode._translated_text = newtext
+
+            kernel = self.kernel
+            for property_op in kernel.lookup_all("path_updater/.*"):
+                property_op(kernel.root, newnode)
+            if hasattr(newnode, "_cache"):
+                newnode._cache = None
+
+            data.append(newnode)
+        if len(data):
+            if self.classify_new:
+                self.classify(data)
+            self.signal("rebuild_tree")
+            self.signal("refresh_scene", "Scene")
 
     @tree_conditional(
         lambda node: not is_regmark(node)
@@ -2957,7 +3044,6 @@ def init_tree(kernel):
     def move_back(node, **kwargs):
         # Drag and Drop
         with self.static("move_back"):
-            signal_needed = False
             drop_node = self.elem_branch
             data = list()
             for item in list(self.regmarks()):
@@ -2967,7 +3053,6 @@ def init_tree(kernel):
                 data.append(node)
             for item in data:
                 drop_node.drop(item)
-                signal_needed = True
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_separator_before()
@@ -2998,8 +3083,6 @@ def init_tree(kernel):
             return
         if bb is None:
             return
-        x = bb[0]
-        y = bb[1]
         corner = 0
         try:
             rotation = node.matrix.rotation.as_radians
@@ -3008,7 +3091,7 @@ def init_tree(kernel):
         pt = node.matrix.point_in_matrix_space(Point(bb[0], bb[1]))
         x = pt.x
         y = pt.y
-        place_node = self.op_branch.add(
+        self.op_branch.add(
             type="place point", x=x, y=y, corner=corner, rotation=rotation
         )
         self.signal("refresh_scene", "Scene")

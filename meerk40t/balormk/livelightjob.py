@@ -224,10 +224,9 @@ class LiveLightJob:
 
     def _bounds(self, con):
         """
-        Light the bounds geometry. Sends to light geometry.
+        Light the bound's geometry. Sends to light geometry.
 
         @param con:
-        @param bounds:
         @return:
         """
         bounds = self._last_bounds

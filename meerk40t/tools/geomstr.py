@@ -159,7 +159,6 @@ class Clip:
         """
         Modifies subject to only contain the segments found inside the given clip.
         @param subject:
-        @param clip:
         @return:
         """
         clip = self.clipping_shape
@@ -1208,7 +1207,6 @@ class Geomstr:
             if match is None:
                 break  # No more matches.
             kind = match.lastgroup
-            start = pos
             pos = match.end()
             if kind == "SKIP":
                 continue
@@ -1555,6 +1553,8 @@ class Geomstr:
         geometry = cls()
         if np.isinf(y_max):
             return geometry
+        if distance == 0:
+            return geometry
         while vm.current_is_valid_range():
             vm.scanline_to(vm.scanline + distance)
             y = vm.scanline
@@ -1721,7 +1721,7 @@ class Geomstr:
             seg_type = int(e[2].real)
             set_type = int(e[2].imag)
             start = e[0]
-            if (end != start or set_type != settings) and not at_start:
+            if not at_start and (set_type != settings or abs(start - end) > 1e-8):
                 # Start point does not equal previous end point, or settings changed
                 yield None, settings
                 at_start = True
@@ -1785,11 +1785,11 @@ class Geomstr:
                 # Start point does not equal previous end point.
                 yield None
                 at_start = True
+            end = e[4]
+            if at_start:
                 if seg_type == TYPE_END:
                     # End segments, flag new start but should not be returned.
                     continue
-            end = e[4]
-            if at_start:
                 yield start
                 at_start = False
 
@@ -2532,7 +2532,7 @@ class Geomstr:
         if infor == TYPE_ARC:
             return "arc"
         if infor == TYPE_POINT:
-            return "arc"
+            return "point"
         if infor == TYPE_VERTEX:
             return "vertex"
         if infor == TYPE_END:
@@ -3019,6 +3019,7 @@ class Geomstr:
 
         @param e:
         @param t: position(s) to split at (numpy ok)
+        @param breaks: include breaks/ends between contours
         @return:
         """
         line = self.segments[e]
@@ -4332,7 +4333,7 @@ class Geomstr:
 
     def y_at_axis(self, e):
         """
-        y_intercept of the lines (e) at at x-axis (x=0)
+        y_intercept of the lines (e) at x-axis (x=0)
 
         @param e:
         @return:
@@ -4466,17 +4467,17 @@ class Geomstr:
     #######################
 
     def as_path(self):
-        open = True
+        _open = True
         path = Path()
         for p in self.segments[: self.index]:
             s, c0, i, c1, e = p
             if np.real(i) == TYPE_END:
-                open = True
+                _open = True
                 continue
 
-            if open or len(path) == 0 or path.current_point != s:
+            if _open or len(path) == 0 or path.current_point != s:
                 path.move(s)
-                open = False
+                _open = False
             if np.real(i) == TYPE_LINE:
                 path.line(e)
             elif np.real(i) == TYPE_QUAD:
@@ -4537,7 +4538,6 @@ class Geomstr:
         Will look at interrupted segments that don't have an 'end' between them
         and inserts one if necessary
         """
-        last = 0
         idx = 1
         while idx < self.index:
             seg1 = self.segments[idx]
@@ -4745,6 +4745,27 @@ class Geomstr:
         pen_downs = valid_segments[indexes1, 0]
         return np.sum(np.abs(pen_ups - pen_downs))
 
+    def remove_0_length(self):
+        """
+        Determines the raw length of the geoms, drops any segments which are 0 distance.
+
+        @return:
+        """
+        segments = self.segments
+        index = self.index
+        infos = segments[:index, 2]
+        pen_downs = segments[:index, 0]
+        pen_ups = segments[:index, -1]
+        v = np.dstack(
+            (
+                (np.real(infos).astype(int) & 0b1001),
+                np.abs(pen_ups - pen_downs) == 0
+            )
+        ).all(axis=2)[0]
+        w = np.argwhere(~v)[...,0]
+        self.segments = self.segments[w,:]
+        self.index = len(self.segments)
+
     def greedy_distance(self, pt: complex = 0j, flips=True):
         """
         Perform greedy optimization to minimize travel distances.
@@ -4791,6 +4812,7 @@ class Geomstr:
         """
         Perform two-opt optimization to minimize travel distances.
         @param max_passes: Max number of passes to attempt
+        @param chunk: Chunk check value
         @return:
         """
         self._trim()

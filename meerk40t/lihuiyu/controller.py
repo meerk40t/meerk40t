@@ -731,7 +731,7 @@ class LihuiyuController:
                 if status == 0:
                     # We did not read a status.
                     continue
-                elif status == STATUS_OK:
+                if status == STATUS_OK:
                     # Packet was fine.
                     self.pre_ok = True
                     break

@@ -1,3 +1,5 @@
+from copy import copy
+
 import wx
 
 from meerk40t.core.units import Angle, Length
@@ -645,9 +647,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if data is not None:
                     if data_type == str:
                         control.SetSelection(0)
-                        for i, c in enumerate(choice_list):
-                            if c == data:
-                                control.SetSelection(i)
+                        for idx, _c in enumerate(choice_list):
+                            if _c == data:
+                                control.SetSelection(idx)
                     else:
                         control.SetSelection(int(data))
 
@@ -944,30 +946,51 @@ class ChoicePropertyPanel(ScrolledPanel):
                     wx.ID_ANY,
                     style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
                 )
-                columns = c.get("columns", [])
+                l_columns = c.get("columns", [])
 
-                def fill_ctrl():
-                    chart.ClearAll()
+                def fill_ctrl(ctrl, local_obj, param, columns):
+                    data = getattr(local_obj, param)
+                    ctrl.ClearAll()
                     for column in columns:
-                        chart.AppendColumn(
+                        wd = column.get("width", 150)
+                        if wd < 0:
+                            wd = ctrl.Size[0] - 10
+                        ctrl.AppendColumn(
                             column.get("label", ""),
                             format=wx.LIST_FORMAT_LEFT,
-                            width=column.get("width", 150),
+                            width=wd,
                         )
                     for dataline in data:
-                        row_id = chart.InsertItem(
-                            chart.GetItemCount(),
-                            dataline.get("speed", 0),  # TODO: Speed hardcoded
-                        )
-                        for column_id, column in enumerate(columns):
-                            c_attr = column.get("attr")
-                            chart.SetItem(
-                                row_id, column_id, str(dataline.get(c_attr, ""))
+                        if isinstance(dataline, dict):
+                            for kk in dataline.keys():
+                                key = kk
+                                break
+                            row_id = ctrl.InsertItem(
+                                ctrl.GetItemCount(),
+                                dataline.get(key, 0),
                             )
+                            for column_id, column in enumerate(columns):
+                                c_attr = column.get("attr")
+                                ctrl.SetItem(
+                                    row_id, column_id, str(dataline.get(c_attr, ""))
+                                )
+                        elif isinstance(dataline, str):
+                            row_id = ctrl.InsertItem(
+                                ctrl.GetItemCount(),
+                                dataline,
+                            )
+                        elif isinstance(dataline, (list, tuple)):
+                            row_id = ctrl.InsertItem(
+                                ctrl.GetItemCount(),
+                                dataline[0],
+                            )
+                            for column_id, column in enumerate(columns):
+                                # c_attr = column.get("attr")
+                                ctrl.SetItem(row_id, column_id, dataline[column_id])
 
-                fill_ctrl()
+                fill_ctrl(chart, obj, attr, l_columns)
 
-                def on_chart_start(columns, param, ctrl, obj):
+                def on_chart_start(columns, param, ctrl, local_obj):
                     def chart_start(event=None):
                         for column in columns:
                             if column.get("editable", False):
@@ -979,10 +1002,10 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 chart.Bind(
                     wx.EVT_LIST_BEGIN_LABEL_EDIT,
-                    on_chart_start(columns, attr, chart, obj),
+                    on_chart_start(l_columns, attr, chart, obj),
                 )
 
-                def on_chart_stop(columns, param, ctrl, obj):
+                def on_chart_stop(columns, param, ctrl, local_obj):
                     def chart_stop(event=None):
                         row_id = event.GetIndex()  # Get the current row
                         col_id = event.GetColumn()  # Get the current column
@@ -991,33 +1014,50 @@ class ChoicePropertyPanel(ScrolledPanel):
                         column = columns[col_id]
                         c_attr = column.get("attr")
                         c_type = column.get("type")
-                        values = getattr(obj, attr)
-                        values[row_id][c_attr] = c_type(new_data)
-                        self.context.signal(param, values, row_id, attr)
+                        values = getattr(local_obj, param)
+                        if isinstance(values[row_id], dict):
+                            values[row_id][c_attr] = c_type(new_data)
+                            self.context.signal(param, values, row_id, param)
+                        elif isinstance(values[row_id], str):
+                            values[row_id] = c_type(new_data)
+                            self.context.signal(param, values, row_id)
+                        else:
+                            values[row_id][col_id] = c_type(new_data)
+                            self.context.signal(param, values, row_id)
 
                     return chart_stop
 
                 chart.Bind(
-                    wx.EVT_LIST_END_LABEL_EDIT, on_chart_stop(columns, attr, chart, obj)
+                    wx.EVT_LIST_END_LABEL_EDIT,
+                    on_chart_stop(l_columns, attr, chart, obj),
                 )
 
                 allow_deletion = c.get("allow_deletion", False)
                 allow_duplication = c.get("allow_duplication", False)
 
-                def on_chart_contextmenu(columns, param, ctrl, obj):
+                def on_chart_contextmenu(
+                    columns, param, ctrl, local_obj, allow_del, allow_dup, default
+                ):
                     def chart_menu(event=None):
-                        row_id = event.GetIndex()  # Get the current row
+                        # row_id = event.GetIndex()  # Get the current row
+
+                        x, y = event.GetPosition()
+                        row_id, flags = ctrl.HitTest((x, y))
                         if row_id < 0:
-                            return
+                            l_allow_del = False
+                            l_allow_dup = False
+                        else:
+                            l_allow_del = allow_del
+                            l_allow_dup = allow_dup
                         menu = wx.Menu()
-                        if allow_deletion:
+                        if l_allow_del:
 
                             def on_delete(event):
-                                values = getattr(obj, attr)
+                                values = getattr(local_obj, param)
                                 # try:
                                 values.pop(row_id)
-                                self.context.signal(param, values, row_id, attr)
-                                fill_ctrl()
+                                self.context.signal(param, values, 0, param)
+                                fill_ctrl(ctrl, local_obj, param, columns)
                                 # except IndexError:
                                 #    pass
 
@@ -1029,18 +1069,21 @@ class ChoicePropertyPanel(ScrolledPanel):
                                 on_delete,
                                 id=menuitem.GetId(),
                             )
-                        if allow_duplication:
+                        if l_allow_dup:
 
                             def on_duplicate(event):
-                                values = getattr(obj, attr)
-                                newentry = dict()
-                                for key, content in values[row_id].items():
-                                    newentry[key] = content
+                                values = getattr(local_obj, param)
+                                if isinstance(values[row_id], dict):
+                                    newentry = dict()
+                                    for key, content in values[row_id].items():
+                                        newentry[key] = content
+                                else:
+                                    newentry = copy(values[row_id])
                                 values.append(newentry)
-                                self.context.signal(param, values, row_id, attr)
+                                self.context.signal(param, values, 0, param)
                                 # except IndexError:
                                 #    pass
-                                fill_ctrl()
+                                fill_ctrl(ctrl, local_obj, param, columns)
 
                             menuitem = menu.Append(
                                 wx.ID_ANY, _("Duplicate this entry"), ""
@@ -1052,14 +1095,13 @@ class ChoicePropertyPanel(ScrolledPanel):
                             )
 
                         def on_default(event):
-                            values = getattr(obj, attr)
-                            default = c.get("default", [])
+                            values = getattr(local_obj, param)
                             values.clear()
                             for e in default:
                                 values.append(e)
 
-                            self.context.signal(param, values, 0, attr)
-                            fill_ctrl()
+                            self.context.signal(param, values, 0, param)
+                            fill_ctrl(ctrl, obj, param, columns)
                             # except IndexError:
                             #    pass
 
@@ -1076,11 +1118,44 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                     return chart_menu
 
+                default = c.get("default", [])
+                # chart.Bind(
+                #     wx.EVT_LIST_ITEM_RIGHT_CLICK,
+                #     on_chart_contextmenu(
+                #         l_columns,
+                #         attr,
+                #         chart,
+                #         obj,
+                #         allow_deletion,
+                #         allow_duplication,
+                #         default,
+                #     ),
+                # )
+                # chart.Bind(
+                #     wx.EVT_LIST_COL_RIGHT_CLICK,
+                #     on_chart_contextmenu(
+                #         l_columns,
+                #         attr,
+                #         chart,
+                #         obj,
+                #         allow_deletion,
+                #         allow_duplication,
+                #         default,
+                #     ),
+                # )
                 chart.Bind(
-                    wx.EVT_LIST_ITEM_RIGHT_CLICK,
-                    on_chart_contextmenu(columns, attr, chart, obj),
+                    wx.EVT_RIGHT_DOWN,
+                    on_chart_contextmenu(
+                        l_columns,
+                        attr,
+                        chart,
+                        obj,
+                        allow_deletion,
+                        allow_duplication,
+                        default,
+                    ),
                 )
-                sizer_main.Add(chart, 0, wx.EXPAND, 0)
+                current_sizer.Add(chart, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type in (str, int, float):
                 # str, int, and float type objects get a TextCtrl setter.
                 if label != "":
@@ -1453,9 +1528,9 @@ class ChoicePropertyPanel(ScrolledPanel):
             if tip and not context.root.disable_tool_tips:
                 # Set the tool tip if 'tip' is available
                 control.SetToolTip(tip)
-            help = c.get("help")
-            if help:
-                control.SetHelpText(help)
+            _help = c.get("help")
+            if _help:
+                control.SetHelpText(_help)
             last_page = this_page
             last_section = this_section
             last_subsection = this_subsection

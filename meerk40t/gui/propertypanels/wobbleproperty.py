@@ -152,11 +152,11 @@ class WobblePropertyPanel(ScrolledPanel):
         self.combo_fill_style.SetSelection(i)
         set_ctrl_value(self.text_interval, str(self.node.wobble_interval))
         set_ctrl_value(self.text_radius, str(self.node.wobble_radius))
-        try:
-            h_angle = float(self.node.wobble_speed)
-            # self.slider_angle.SetValue(int(h_angle))
-        except ValueError:
-            pass
+        # try:
+        #     # h_angle = float(self.node.wobble_speed)
+        #     # self.slider_angle.SetValue(int(h_angle))
+        # except ValueError:
+        #     pass
         self.Show()
 
     def on_check_classify(self, event):

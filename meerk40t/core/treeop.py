@@ -31,7 +31,7 @@ def tree_calc(value_name, calc_func):
     return decor
 
 
-def tree_submenu_list(start, submenus):
+def tree_submenu_list(submenus):
     """
     Add a list of submenu information to be used for tree_values
     tree_values will look for the corresponding index in value_submenues
@@ -50,10 +50,7 @@ def tree_submenu_list(start, submenus):
     """
 
     def decor(func):
-        if submenus is None:
-            func.value_submenus.clear()
-        else:
-            func.value_submenus = [f"{start}|{e}" for e in submenus]
+        func.submenu_generator = submenus
         return func
 
     return decor
@@ -310,7 +307,7 @@ def tree_operation(
 
         # List of accepted values.
         inner.values = [0]
-        inner.value_submenus = list()
+        inner.submenu_generator = None
 
         # Function enabled/disabled
         inner.enabled = enable
@@ -322,7 +319,7 @@ def tree_operation(
             # Register tree/node/name for each node within the registration.
             p = f"tree/{_in}/{registered_name}"
             if p in registration._registered:
-                # We used the name so we may not have duplicate tree operations with the same name.
+                # We used the name, so we may not have duplicate tree operations with the same name.
                 raise NameError(f"A function of this name was already registered: {p}")
             registration.register(p, inner)
         return inner
@@ -420,14 +417,26 @@ def tree_operations_for_node(registration, node):
             except TypeError:
                 pass
 
+        value_submenus = []
+        if func.submenu_generator:
+            if isinstance(func.submenu_generator, (list, tuple)):
+                value_submenus = func.submenu_generator
+            else:
+                try:
+                    value_submenus = func.submenu_generator()
+                except (AttributeError, TypeError) as e:
+                    print(f"Error while generating submenus: {e}")
+                    pass
+        # print(value_submenus)
         for i, value in enumerate(iterator):
             # Every value in the func.values gets an operation for the node.
             func_dict["iterator"] = i
             func_dict["value"] = value
-            if func.value_submenus:
+            if len(value_submenus) > 0:
                 try:
-                    func.submenu = func.value_submenus[i]
+                    func.submenu = value_submenus[i]
                 except IndexError:
+                    print(f"Wrong index...")
                     pass
             try:
                 func_dict[func.value_name] = value

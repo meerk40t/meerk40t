@@ -3,7 +3,7 @@
 The MeerK40t development team try hard to be responsive to difficulties experienced by users,
 whether they are bugs or simply difficulties in using MeerK40t.
 
-However we do ask that you only use [Github Issues](/meerk40t/meerk40t/issues) to make formal bug reports
+However, we do ask that you only use [GitHub Issues](/meerk40t/meerk40t/issues) to make formal bug reports
 or make fully formed suggestions for improvements.
 
 If you are not ready to make a formal report, then do please come and discuss it with the MeerK40t team

@@ -6,7 +6,7 @@ MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed open-so
 * Provide developers with a highly extensible platform to help further their own ideas, and provide novel work to the laser community at large.
 
 ## Running
-MeerK40t is written in Python and precompiled versions are [available for download](https://github.com/meerk40t/meerk40t/releases) for Windows, Mac OSX, Linux and Raspberry Pi (more infos below). Due note this sometimes will give false postitives for various viruses (especially since Meerk40t isn't signed).
+MeerK40t is written in Python and precompiled versions are [available for download](https://github.com/meerk40t/meerk40t/releases) for Windows, Mac OSX, Linux and Raspberry Pi (more infos below). Do note this sometimes will give false postitives for various viruses (especially since Meerk40t isn't signed).
 
 ### Source
 
@@ -78,7 +78,7 @@ Open source projects live and die with their support. There are a lots of ways t
 *   Compile/Testers
 *   Beta testers
 *   Make helpful support content
-*   Make guides ("How to setup cameras?", etc)
+*   Make guides ("How to set up cameras?", etc.)
 *   Bounce ideas around
 
 ## Download
@@ -93,6 +93,6 @@ Currently, primary branches:
 Just download one of the files for Windows, Mac OSX, Linux and Raspberry Pi.
 
 ## Lightburn integration
-Meerk40t allows to act as an intermediary between your K40 laser and software that supports Ruida-controlled laser equipment - [Lightburn](https://lightburnsoftware.com/) is a relevant example of such a software product. You just need to issue the command ``ruidacontrol`` in MeerK40ts console window and you will then be able to add an emulated Ruida Laser inside Lightburn™. Laser jobs that are created inside Lightburn™ and sent to this laser will be picked up by MeerK40t and sent to your K40. See some more detailed instructions in this [video](https://www.youtube.com/watch?v=LUUfLf5Agu0). Please note `ruidacontrol` will require the DSP version of Lightburn™. (Present in all versions since 0.7)
+Meerk40t allows to act as an intermediary between your K40 laser and software that supports Ruida-controlled laser equipment - [Lightburn](https://lightburnsoftware.com/) is a relevant example of such a software product. You just need to issue the command ``ruidacontrol`` in MeerK40ts console window, and you will then be able to add an emulated Ruida Laser inside Lightburn™. Laser jobs that are created inside Lightburn™ and sent to this laser will be picked up by MeerK40t and sent to your K40. See some more detailed instructions in this [video](https://www.youtube.com/watch?v=LUUfLf5Agu0). Please note `ruidacontrol` will require the DSP version of Lightburn™. (Present in all versions since 0.7)
 
 With 0.9 another way of interacting with Lightburn was introduced, which will work as well with the standard version of LB: You just need to issue the command ``grblcontrol`` in MeerK40ts console window, and you will then be able to add an emulated remote GBRL-LPC laser inside Lightburn or any TCP GRBL control software.

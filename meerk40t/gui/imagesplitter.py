@@ -53,7 +53,7 @@ class InfoPanel(wx.Panel):
         sizer_main.Add(sizer_last, 0, wx.EXPAND, 0)
         self.make_raster = None
         self.SetSizer(sizer_main)
-        self.Layout
+        self.Layout()
 
     def show_stuff(self, has_emph):
         def create_image_from_node(node, iconsize):
@@ -86,7 +86,6 @@ class InfoPanel(wx.Panel):
             self.make_raster = self.context.elements.lookup("render-op/make_raster")
 
         count = 0
-        msg = ""
         if has_emph:
             data = list(self.context.elements.flat(emphasized=True))
             count = len(data)
@@ -221,12 +220,12 @@ class SplitterPanel(wx.Panel):
             event.Skip()
         if self.context.elements.has_emphasis():
             active = True
-            num_cols = self.split_x.GetValue()
-            num_rows = self.split_y.GetValue()
+            # num_cols = self.split_x.GetValue()
+            # num_rows = self.split_y.GetValue()
             idx = self.rbox_selection.GetSelection()
             if idx < 0:
                 idx = 0
-            esort = self.selectparam[idx]
+            # esort = self.selectparam[idx]
             try:
                 dpi = int(self.text_dpi.GetValue())
             except ValueError:
@@ -365,12 +364,12 @@ class KeyholePanel(wx.Panel):
             event.Skip()
         if self.context.elements.has_emphasis():
             active = True
-            invert = self.check_invert.GetValue()
-            outline = self.check_outline.GetValue()
+            # invert = self.check_invert.GetValue()
+            # outline = self.check_outline.GetValue()
             idx = self.rbox_selection.GetSelection()
             if idx < 0:
                 idx = 0
-            esort = self.selectparam[idx]
+            # esort = self.selectparam[idx]
             try:
                 dpi = int(self.text_dpi.GetValue())
             except ValueError:
@@ -484,7 +483,7 @@ class RenderSplit(MWindow):
     @staticmethod
     def sub_register(kernel):
         bsize_normal = STD_ICON_SIZE
-        bsize_small = int(STD_ICON_SIZE / 2)
+        # bsize_small = int(STD_ICON_SIZE / 2)
 
         kernel.register(
             "button/align/SplitImage",

@@ -95,7 +95,7 @@ class DialogOptions:
                     value = entry[3]
                     try:
                         if waspresent:
-                            value = setattr(e_object, e_attr, value)
+                            setattr(e_object, e_attr, value)
                         else:
                             # Was not there, so remove it
                             delattr(e_object, e_attr)

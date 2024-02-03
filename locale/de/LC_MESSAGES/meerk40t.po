@@ -3728,6 +3728,39 @@ msgstr ""
 "Wie nahe beieinander (in Gerätspezifischen Einheiten) müssen "
 "Endpunkte sein, damit sie als geschlossener Pfad gelten?"
 
+#: ./meerk40t\core\planner.py:263
+msgid "Reduce polyline details"
+msgstr "Reduziere Polyline Details"
+
+#: ./meerk40t\core\planner.py:267
+msgid "Active: reduce the details of polyline elements,\nso that less information needs to be sent to the laser."
+msgstr ""
+"Aktiv: reduziert die Details von Polyline-Elementen,\n"
+"so dass weniger Daten vom Laser empfangen und verarbeitet werden müssen."
+
+#: ./meerk40t\core\planner.py:272
+msgid "This can reduce the processing and laser time but can as well\ncompromise the quality at higher levels, so use with care and preview in simulation."
+msgstr ""
+"Dies kann sowohl die Verarbeitungs- und Brenndauer verringern, aber\n"
+"eventuell auch die Qualität beeinträchtigen, deswegen mit Bedacht\n"
+"einsetzen und die Auswirkungen in der Simulation vorab prüfen."
+
+#: ./meerk40t\core\planner.py:282
+msgid "Level"
+msgstr ""
+
+#: ./meerk40t\core\planner.py:285
+msgid "Fine"
+msgstr "Sehr fein"
+
+#: ./meerk40t\core\planner.py:285
+msgid "Medium"
+msgstr "Fein"
+
+#: ./meerk40t\core\planner.py:285
+msgid "Coarse"
+msgstr "Grob"
+
 #: meerk40t/core/planner.py:271
 msgid "plan<?> <command>"
 msgstr ""
@@ -15209,6 +15242,9 @@ msgstr "Zeichensätze"
 msgid "Font-Directory"
 msgstr "Verzeichnis für die Zeichensätze"
 
+msgid "Font-Work-Directory"
+msgstr "Verzeichnis für die Zeichensätze"
+
 msgid "Goto a font-source..."
 msgstr "Gehe zu Zeichensatz-Quelle..."
 
@@ -17146,6 +17182,10 @@ msgstr "Um Rahmen"
 msgid "At center"
 msgstr "Im Zentrum"
 
+#: ./meerk40t\core\elements\element_treeops.py:1519
+msgid "Clear all assignments"
+msgstr "Alle Zuweisungen entfernen"
+
 #: ./meerk40t\extra\param_functions.py:1355
 msgid "Growth in %"
 msgstr "Wachstum in %"
@@ -17909,12 +17949,12 @@ msgstr ""
 "Einfach mit der Maus über das relevante Element fahren und die F11-Taste drücken..."
 
 #: ./meerk40t\gui\tips.py:330
-msgid "MeerK40t supports more than 'just' a K40 laser.\nYou can add more devices in the Device-Manager.\nAnd you can even add multiple instances for the same physical device,\nwhere you can have different configuration settings (eg regular and rotary)."
+msgid "MeerK40t supports more than 'just' a K40 laser.\nYou can add more devices in the Device-Manager.\nAnd you can even add multiple instances for the same physical device, where you can have different configuration settings (eg regular and rotary)."
 msgstr ""
 "MeerK40t unterstützt mehr als 'nur' einen K40-Laser.\n"
 "Man kann weitere Geräte im Geräte-Manager hinzufügen.\n"
-"Und man kann auch weitere Instanzen desselben Geräts anlegen,\n"
-"bei denen unterschiedliche Konfigurationen verwendet werden\n"
+"Und man kann auch weitere Instanzen desselben Geräts anlegen, "
+"bei denen unterschiedliche Konfigurationen verwendet werden "
  "(etwa für normalen und Drehachsen-Betrieb)."
 
 #: ./meerk40t\gui\tips.py:340
@@ -18583,3 +18623,12 @@ msgstr "Tip: Mit Ctrl-Shift-F kann die aktuelle Anzeige fixiert werden."
 #: ./meerk40t\gui\helper.py:144
 msgid "Call online help-page"
 msgstr "Rufe Online-Hilfe-Seite auf"
+
+msgid "Splitting Rasters"
+msgstr "Raster getrennt behandeln"
+
+msgid "System font locations"
+msgstr "System-Verzeichnisse mit Zeichensätzen"
+
+msgid "Insert symbol"
+msgstr "Sonderzeichen einfügen"
