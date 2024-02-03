@@ -3,7 +3,16 @@ import os
 import wx
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
-from meerk40t.gui.icons import STD_ICON_SIZE, get_default_icon_size, icons8_choose_font
+from meerk40t.gui.icons import (
+    STD_ICON_SIZE,
+    get_default_icon_size,
+    icons8_choose_font,
+    icon_textalign_left,
+    icon_textalign_center,
+    icon_textalign_right,
+    icon_textsize_up,
+    icon_textsize_down,
+    )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 from meerk40t.kernel.kernel import signal_listener
@@ -707,25 +716,33 @@ class PanelFontSelect(wx.Panel):
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
         sizer_fonts.Add(sizer_buttons, 0, wx.EXPAND, 0)
 
-        self.btn_bigger = wx.Button(self, wx.ID_ANY, "++")
+        picsize = dip_size(self, 32, 32)
+        icon_size = picsize[0]
+
+        self.btn_bigger = wx.Button(self, wx.ID_ANY)
+        self.btn_bigger.SetBitmap(icon_textsize_up.GetBitmap(resize=icon_size))
         self.btn_bigger.SetToolTip(_("Increase the font-size"))
         sizer_buttons.Add(self.btn_bigger, 0, wx.EXPAND, 0)
 
-        self.btn_smaller = wx.Button(self, wx.ID_ANY, "--")
+        self.btn_smaller = wx.Button(self, wx.ID_ANY)
+        self.btn_smaller.SetBitmap(icon_textsize_down.GetBitmap(resize=icon_size))
         self.btn_smaller.SetToolTip(_("Decrease the font-size"))
         sizer_buttons.Add(self.btn_smaller, 0, wx.EXPAND, 0)
 
         sizer_buttons.AddSpacer(25)
 
-        self.btn_align_left = wx.Button(self, wx.ID_ANY, "<")
+        self.btn_align_left = wx.Button(self, wx.ID_ANY)
+        self.btn_align_left.SetBitmap(icon_textalign_left.GetBitmap(resize=icon_size))
         self.btn_align_left.SetToolTip(_("Align text on the left side"))
         sizer_buttons.Add(self.btn_align_left, 0, wx.EXPAND, 0)
 
-        self.btn_align_center = wx.Button(self, wx.ID_ANY, "|")
+        self.btn_align_center = wx.Button(self, wx.ID_ANY)
+        self.btn_align_center.SetBitmap(icon_textalign_center.GetBitmap(resize=icon_size))
         self.btn_align_center.SetToolTip(_("Align text around the center"))
         sizer_buttons.Add(self.btn_align_center, 0, wx.EXPAND, 0)
 
-        self.btn_align_right = wx.Button(self, wx.ID_ANY, "<")
+        self.btn_align_right = wx.Button(self, wx.ID_ANY)
+        self.btn_align_right.SetBitmap(icon_textalign_right.GetBitmap(resize=icon_size))
         self.btn_align_right.SetToolTip(_("Align text on the right side"))
         sizer_buttons.Add(self.btn_align_right, 0, wx.EXPAND, 0)
 
@@ -736,7 +753,7 @@ class PanelFontSelect(wx.Panel):
             self.btn_bigger,
             self.btn_smaller,
         ):
-            btn.SetMaxSize(dip_size(self, 32, -1))
+            btn.SetMaxSize(dip_size(self, icon_size + 4, -1))
 
         lbl_spacer = wx.StaticText(self, wx.ID_ANY, "")
         sizer_buttons.Add(lbl_spacer, 1, 0, 0)
