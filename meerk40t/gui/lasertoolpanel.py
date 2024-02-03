@@ -448,7 +448,6 @@ class LaserToolPanel(wx.Panel):
         2x_1a+2y_1b+c + x_1^2+y_1^2+=0\\2x_2a+2y_2b+c+x_2^2+y_2^2=0\\2x_3a+2y_3b+c+x_3^2+y_3^2=0
         """
         result = True
-        center = None
         radius = None
         x12 = self.coord_a[0] - self.coord_b[0]
         x13 = self.coord_a[0] - self.coord_c[0]
@@ -499,17 +498,15 @@ class LaserToolPanel(wx.Panel):
         if sqr_of_r < 0:
             result = False
         else:
-            r = round(sqrt(sqr_of_r), 5)
+            radius = round(sqrt(sqr_of_r), 5)
 
         # print("Centre = (", h, ", ", k, ")")
         # print("Radius = ", r)
         center = (h, k)
-        radius = r
         return result, center, radius
 
     def calculate_square(self):
         result = True
-        center = None
         angle = 0
         signx = 1
         signy = 1

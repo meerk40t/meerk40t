@@ -79,7 +79,6 @@ def plugin(kernel, lifecycle=None):
                 # Send data.
                 serial_device.write(send_data.encode("utf-8"))
 
-                within_time = False
                 end_time = time.time() + timeout
                 while end_time > time.time():
                     # Execute until timeout.
@@ -88,7 +87,6 @@ def plugin(kernel, lifecycle=None):
                     channel(response)
                     if success_message and success_message in response:
                         # Actively succeeded
-                        within_time = True
                         if success_command:
                             kernel.root(success_command)
                         return
@@ -101,12 +99,11 @@ def plugin(kernel, lifecycle=None):
                         # Not matching criteria, read buffer and exit.
                         return
 
-                if not within_time:
-                    # We timed out.
-                    channel(_("Timeout reached."))
-                    if failure_command:
-                        # Timeout is a failure condition.
-                        kernel.root(failure_command)
+                # We timed out.
+                channel(_("Timeout reached."))
+                if failure_command:
+                    # Timeout is a failure condition.
+                    kernel.root(failure_command)
             except serial.SerialException as e:
                 channel(f"Error: {e}")
                 # Error is a failure condition.

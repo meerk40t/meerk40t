@@ -191,7 +191,6 @@ class ColorPanel(wx.Panel):
                 self.btn_color[self.last_col_idx].SetForegroundColour(
                     countercolor(self.bgcolors[self.last_col_idx])
                 )
-                s = ""
                 try:
                     s = nodecol.GetAsString(wx.C2S_NAME)
                 except AssertionError:
@@ -413,9 +412,9 @@ class LinePropPanel(wx.Panel):
     def on_cap(self, event):
         if self.node is None or self.node.lock:
             return
-        id = self.combo_cap.GetSelection()
+        _id = self.combo_cap.GetSelection()
         try:
-            self.node.linecap = id
+            self.node.linecap = _id
             self.context.signal("element_property_update", self.node)
             self.context.signal("refresh_scene", "Scene")
         except AttributeError:
@@ -424,9 +423,9 @@ class LinePropPanel(wx.Panel):
     def on_join(self, event):
         if self.node is None or self.node.lock:
             return
-        id = self.combo_join.GetSelection()
+        _id = self.combo_join.GetSelection()
         try:
-            self.node.linejoin = id
+            self.node.linejoin = _id
             self.context.signal("element_property_update", self.node)
             self.context.signal("refresh_scene", "Scene")
         except AttributeError:
@@ -435,9 +434,9 @@ class LinePropPanel(wx.Panel):
     def on_fill(self, event):
         if self.node is None or self.node.lock:
             return
-        id = self.combo_fill.GetSelection()
+        _id = self.combo_fill.GetSelection()
         try:
-            self.node.fillrule = id
+            self.node.fillrule = _id
             self.context.signal("element_property_update", self.node)
             self.context.signal("refresh_scene", "Scene")
         except AttributeError:
@@ -580,12 +579,10 @@ class StrokeWidthPanel(wx.Panel):
             enable = True
             self.chk_scale.SetValue(self.node.stroke_scaled)
             # Let's establish which unit might be the best to represent the display
-            found_something = False
-            if self.node.stroke_width is None or self.node.stroke_width == 0:
-                value = 0
-                idxunit = 0  # px
-                found_something = True
-            else:
+            value = 0
+            idxunit = 0  # px
+            if self.node.stroke_width is not None and self.node.stroke_width != 0:
+                found_something = False
                 best_post = 99999999
                 delta = 0.99999999
                 best_pre = 0
@@ -1091,23 +1088,33 @@ class RoundedRectPanel(wx.Panel):
         sync = self.btn_lock_ratio.GetValue()
         width = self.node.width
         height = self.node.height
-        if axis == 0:  # x
+        rx = self.node.rx
+        ry = self.node.ry
+        if axis == 0:
             rx = value / 100 * width
-            self.node.rx = rx
             if sync:
-                self.node.ry = rx
-                max_val_y = self.slider_x.GetMax()
-                int_ry = int(100.0 * rx / height)
-                self.slider_y.SetValue(min(max_val_y, int_ry))
+                ry = rx
         else:
             ry = value / 100 * height
-            self.node.ry = ry
             if sync:
-                self.node.rx = ry
-                max_val_x = self.slider_x.GetMax()
-                int_rx = int(100.0 * ry / width)
-                self.slider_x.SetValue(min(max_val_x, int_rx))
-
+                rx = ry
+        # rx and ry can either both be 0 or both non-zero
+        if (rx == 0 or ry == 0) and rx != ry:
+            # totally fine
+            if rx == 0:
+                rx = 1 / 100 * width
+            if ry == 0:
+                ry = 1 / 100 * height
+        self.node.rx = rx
+        self.node.ry = ry
+        max_val_x = self.slider_x.GetMax()
+        max_val_y = self.slider_y.GetMax()
+        int_rx = int(100.0 * rx / width)
+        int_ry = int(100.0 * ry / height)
+        if self.slider_x.GetValue() != int_rx:
+            self.slider_x.SetValue(min(max_val_x, int_rx))
+        if self.slider_y.GetValue() != int_ry:
+            self.slider_y.SetValue(min(max_val_y, int_ry))
         self.node.altered()
         self.context.elements.signal("element_property_update", self.node)
         self.context.signal("refresh_scene", "Scene")

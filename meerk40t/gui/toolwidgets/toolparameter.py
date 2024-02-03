@@ -576,7 +576,10 @@ class ParameterTool(ToolWidget):
             self.is_moving = True
             if self.point_index >= 0:
                 # We need to reverse the point in the element matrix
-                pt = (space_pos[0], space_pos[1])
+                if nearest_snap is None:
+                    pt = (space_pos[0], space_pos[1])
+                else:
+                    pt = (nearest_snap[0], nearest_snap[1])
                 self.params[self.point_index] = pt
                 if self.update_parameter():
                     if self.mode in self._functions:

@@ -36,7 +36,7 @@ class ImageNode(Node):
         self.passthrough = False
         super().__init__(type="elem image", **kwargs)
         # kwargs can actually reset quite a lot of the properties to none
-        # so we need to revert these changes...
+        # so, we need to revert these changes...
         if self.red is None:
             self.red = 1.0
         if self.green is None:

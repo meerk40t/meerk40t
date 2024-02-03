@@ -3,7 +3,7 @@ This is a giant list of console commands that deal with and often implement the 
 """
 
 from copy import copy
-from math import cos, gcd, pi, sin, tau
+from math import cos, sin
 
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import Angle, Length
@@ -168,17 +168,14 @@ def init_commands(kernel):
         bounds = Node.union_bounds(data)
         if bounds is None:
             return
-        width = bounds[2] - bounds[0]
-
         data_out = list(data)
         if deltaangle is None:
             segment_len = (endangle - startangle) / repeats
         else:
             segment_len = deltaangle
+
         # Notabene: we are following the cartesian system here, but as the Y-Axis is top screen to bottom screen,
         # the perceived angle travel is CCW (which is counter-intuitive)
-        currentangle = startangle
-        # bounds = self._emphasized_bounds
         center_x = (bounds[2] + bounds[0]) / 2.0 - radius
         center_y = (bounds[3] + bounds[1]) / 2.0
 
@@ -192,8 +189,8 @@ def init_commands(kernel):
             add_elem = list(map(copy, data))
             for e in add_elem:
                 if rotate:
-                    x_pos = -1 * radius
-                    y_pos = 0
+                    # x_pos = -1 * radius
+                    # y_pos = 0
                     # e *= "translate(%f, %f)" % (x_pos, y_pos)
                     e.matrix *= f"rotate({currentangle.angle_preferred}, {center_x}, {center_y})"
                 else:
@@ -272,7 +269,7 @@ def init_commands(kernel):
         bounds = Node.union_bounds(data)
         if bounds is None:
             return
-        width = bounds[2] - bounds[0]
+        # width = bounds[2] - bounds[0]
 
         data_out = list(data)
         if deltaangle is None:

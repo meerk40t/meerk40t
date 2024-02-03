@@ -53,7 +53,7 @@ class DefaultOperationWidget(StatusBarWidget):
             ctrl.SetMaxSize(wx.Size(dimen_x, dimen_y))
 
         super().GenerateControls(parent, panelidx, identifier, context)
-        # How should be display the data?
+        # How should we display the data?
         display_mode = self.context.elements.setting(int, "default_ops_display_mode", 0)
 
         self.buttonsize_x = self.iconsize

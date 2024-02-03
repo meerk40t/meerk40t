@@ -16,13 +16,13 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "invalidate":
         try:
             import cv2
-        except ImportError as e:
+        except ImportError:
             print("OpenCV is not installed. Disabling Camera. Install with:")
             print("\tpip install opencv-python-headless")
             return True
         try:
             import numpy as np
-        except ImportError as e:
+        except ImportError:
             print("Numpy is not installed. Disabling Camera.")
             return True
 

@@ -8,7 +8,6 @@ import wx.lib.mixins.listctrl as listmix
 from wx import aui
 
 from meerk40t.gui.icons import (
-    STD_ICON_SIZE,
     get_default_icon_size,
     icons8_emergency_stop_button,
     icons8_pause,
@@ -521,6 +520,7 @@ class SpoolerPanel(wx.Panel):
         item.Enable(False)
         can_enable = False
         action = _("Remove")
+        remove_mode = "remove"
         if element.status == "Running":
             action = _("Stop")
             remove_mode = "stop"

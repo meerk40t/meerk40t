@@ -113,11 +113,11 @@ class PlacePointNode(Node):
             return value
 
         def _valid_int(field, minim=None, maxim=None):
-            if field is None:
-                if minim is None:
-                    value = 0
-                else:
-                    value = minim
+            # if field is None:
+            #     if minim is None:
+            #         value = 0
+            #     else:
+            #         value = minim
             try:
                 value = int(field)
                 if minim is not None and value < minim:
@@ -129,11 +129,11 @@ class PlacePointNode(Node):
             return value
 
         def _valid_float(field, minim=None, maxim=None):
-            if field is None:
-                if minim is None:
-                    value = 0
-                else:
-                    value = minim
+            # if field is None:
+            #     if minim is None:
+            #         value = 0
+            #     else:
+            #         value = minim
             try:
                 value = float(field)
                 if minim is not None and value < minim:

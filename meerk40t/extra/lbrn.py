@@ -191,7 +191,7 @@ class LbrnLoader:
                 siblings.append(node)
                 if elem.tag == "LightBurnProject":
                     app_version = elem.attrib.get("AppVersion")
-                    format = elem.attrib.get("FormatVersion")
+                    _format = elem.attrib.get("FormatVersion")
                     material_height = elem.attrib.get("MaterialHeight")
                     try:
                         cx = elements.space.width / 2

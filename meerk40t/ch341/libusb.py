@@ -146,7 +146,7 @@ class Ch341LibusbDriver:
                 )
             )
             # raise ConnectionRefusedError
-        except NotImplementedError as e:
+        except NotImplementedError:
             self.channel(
                 _(
                     "Config Set: Fail\nSet Configuration is not implemented on this platform. Pass."
@@ -581,7 +581,7 @@ class LibCH341Driver:
     def get_chip_version(self):
         """
         Gets the version of the CH341 chip being used.
-        @return: version. Eg. 48.
+        @return: version. E.g. 48.
         """
         if not self.is_connected():
             raise ConnectionError

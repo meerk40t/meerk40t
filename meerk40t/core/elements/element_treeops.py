@@ -26,7 +26,7 @@ from meerk40t.core.treeop import (
     tree_submenu_list,
     tree_values,
 )
-from meerk40t.core.units import UNITS_PER_INCH, Length
+from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Matrix, Point
 from meerk40t.tools.geomstr import Geomstr
@@ -318,11 +318,9 @@ def init_tree(kernel):
     def clear_all_op_entries(node, **kwargs):
         with self.static("clear_all_op"):
             data = list()
-            removed = False
             for item in list(self.flat(selected=True, cascade=False, types=op_nodes)):
                 data.append(item)
             for item in data:
-                removed = True
                 item.remove_all_children()
 
     @tree_conditional(lambda node: hasattr(node, "output"))
@@ -1155,7 +1153,6 @@ def init_tree(kernel):
     )
     def remove_transparent(node, **kwargs):
         res = 0
-        to_remove = []
         for enode in self.flat(
             selected=True,
             cascade=True,
@@ -1582,23 +1579,23 @@ def init_tree(kernel):
         if material == "previous":
             return _("<Previous set>")
         oplist, opinfo = self.load_persistent_op_list(material)
-        material_name = opinfo.get("material", "")
-        material_title = opinfo.get("title", "")
-        material_thickness = opinfo.get("thickness", "")
-        if material_title == "":
-            if material_name:
-                material_title = material_name
+        mat_name = opinfo.get("material", "")
+        mat_title = opinfo.get("title", "")
+        # material_thickness = opinfo.get("thickness", "")
+        if mat_title == "":
+            if mat_name:
+                mat_title = mat_name
             else:
                 if material == "_default":
-                    material_title = "Generic Defaults"
+                    mat_title = "Generic Defaults"
                 elif material.startswith("_default_"):
-                    material_title = f"Default for {material[9:]}"
+                    mat_title = f"Default for {material[9:]}"
                 else:
-                    material_title = material.replace("_", " ")
+                    mat_title = material.replace("_", " ")
         name = ""
         # if material_name:
         #     name += f"[{material_name}] "
-        name += material_title
+        name += mat_title
         # if material_thickness:
         #     name += f" {material_thickness}"
         return name
@@ -2516,14 +2513,13 @@ def init_tree(kernel):
                 copy_node = copy(orgnode)
                 if hasattr(copy_node, "matrix"):
                     copy_node.matrix *= Matrix.translate((n + 1) * dx, (n + 1) * dy)
-                had_optional = False
                 # Need to add stroke and fill, as copy will take the
                 # default values for these attributes
                 options = ["fill", "stroke", "wxfont"]
                 for optional in options:
                     if hasattr(e, optional):
                         setattr(copy_node, optional, getattr(orgnode, optional))
-                hadoptional = False
+                had_optional = False
                 options = []
                 for prop in dir(e):
                     if prop.startswith("mk"):
@@ -2531,14 +2527,14 @@ def init_tree(kernel):
                 for optional in options:
                     if hasattr(e, optional):
                         setattr(copy_node, optional, getattr(orgnode, optional))
-                        hadoptional = True
+                        had_optional = True
 
                 if self.copy_increases_wordlist_references and hasattr(orgnode, "text"):
                     copy_node.text = self.wordlist_delta(orgnode.text, delta_wordlist)
                 elif self.copy_increases_wordlist_references and hasattr(e, "mktext"):
                     copy_node.mktext = self.wordlist_delta(e.mktext, delta_wordlist)
                 orgparent.add_node(copy_node)
-                if hadoptional:
+                if had_optional:
                     for property_op in self.kernel.lookup_all("path_updater/.*"):
                         property_op(self.kernel.root, copy_node)
 
@@ -2552,13 +2548,13 @@ def init_tree(kernel):
                         )
 
         copy_nodes = list()
-        dx = self.length_x("3mm")
-        dy = self.length_y("3mm")
+        _dx = self.length_x("3mm")
+        _dy = self.length_y("3mm")
         alldata = list(self.elems(emphasized=True))
         minimaldata = self.condense_elements(alldata, expand_at_end=False)
         for e in minimaldata:
             parent = e.parent
-            copy_single_node(e, parent, copies, dx, dy)
+            copy_single_node(e, parent, copies, _dx, _dy)
 
         if self.classify_new:
             self.classify(copy_nodes)
@@ -3048,7 +3044,6 @@ def init_tree(kernel):
     def move_back(node, **kwargs):
         # Drag and Drop
         with self.static("move_back"):
-            signal_needed = False
             drop_node = self.elem_branch
             data = list()
             for item in list(self.regmarks()):
@@ -3058,7 +3053,6 @@ def init_tree(kernel):
                 data.append(node)
             for item in data:
                 drop_node.drop(item)
-                signal_needed = True
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_separator_before()
@@ -3089,8 +3083,6 @@ def init_tree(kernel):
             return
         if bb is None:
             return
-        x = bb[0]
-        y = bb[1]
         corner = 0
         try:
             rotation = node.matrix.rotation.as_radians
@@ -3099,7 +3091,7 @@ def init_tree(kernel):
         pt = node.matrix.point_in_matrix_space(Point(bb[0], bb[1]))
         x = pt.x
         y = pt.y
-        place_node = self.op_branch.add(
+        self.op_branch.add(
             type="place point", x=x, y=y, corner=corner, rotation=rotation
         )
         self.signal("refresh_scene", "Scene")

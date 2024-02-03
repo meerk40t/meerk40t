@@ -16,7 +16,7 @@ def plugins_pre_38():
 
     for entry_point in pkg_resources.iter_entry_points(MEERK40T_ENTRYPOINT):
         try:
-            plugin = entry_point.load()
+            ep_plugin = entry_point.load()
         except pkg_resources.DistributionNotFound:
             pass
         except pkg_resources.VersionConflict as e:
@@ -27,7 +27,7 @@ def plugins_pre_38():
             )
             print(e)
         else:
-            yield plugin
+            yield ep_plugin
 
 
 def plugins_importlib():

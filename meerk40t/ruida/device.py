@@ -14,6 +14,7 @@ from ..device.mixins import Status
 from .driver import RuidaDriver
 from .mock_connection import MockConnection
 from .serial_connection import SerialConnection
+from .tcp_connection import TCPConnection
 from .udp_connection import UDPConnection
 
 
@@ -22,7 +23,7 @@ class RuidaDevice(Service):
     RuidaDevice is driver for the Ruida Controllers
     """
 
-    def __init__(self, kernel, path, *args, choices=None, **kwargs):
+    def __init__(self, kernel, path, *args, choices=None, **kwgs):
         Service.__init__(self, kernel, path)
         Status.__init__(self)
         self.name = "RuidaDevice"
@@ -258,7 +259,7 @@ class RuidaDevice(Service):
 
         self.interface_mock = MockConnection(self)
         self.interface_udp = UDPConnection(self)
-        self.interface_tcp = MockConnection(self)
+        self.interface_tcp = TCPConnection(self)
         self.interface_usb = SerialConnection(self)
         self.active_interface = None
 
@@ -324,6 +325,124 @@ class RuidaDevice(Service):
         )
         def interface_update(**kwargs):
             self.driver.focusz()
+
+        @kernel.console_command(
+            "+xforward",
+            hidden=True,
+        )
+        def plus_x_forward(data, **kwgs):
+            pipe = self.driver.controller.write
+            job = self.driver.controller.job
+            job.keydown_x_right(pipe)
+
+        @kernel.console_command(
+            "-xforward",
+            hidden=True,
+        )
+        def minus_x_forward(data, **kwgs):
+            pipe = self.driver.controller.write
+            job = self.driver.controller.job
+            job.keyup_x_right(pipe)
+
+        @kernel.console_command(
+            "+xbackward",
+            hidden=True,
+        )
+        def plus_x_backward(data, **kwgs):
+            pipe = self.driver.controller.write
+            job = self.driver.controller.job
+            job.keydown_x_left(pipe)
+
+        @kernel.console_command(
+            "-xbackward",
+            hidden=True,
+        )
+        def minus_x_backward(data, **kwgs):
+            pipe = self.driver.controller.write
+            job = self.driver.controller.job
+            job.keyup_x_left(pipe)
+
+        @kernel.console_command(
+            "+yforward",
+            hidden=True,
+        )
+        def plus_y_forward(data, **kwgs):
+            pipe = self.driver.controller.write
+            job = self.driver.controller.job
+            job.keydown_y_bottom(pipe)
+
+        @kernel.console_command(
+            "-yforward",
+            hidden=True,
+        )
+        def minus_y_forward(data, **kwgs):
+            pipe = self.driver.controller.write
+            job = self.driver.controller.job
+            job.keyup_y_bottom(pipe)
+
+        @kernel.console_command(
+            "+ybackward",
+            hidden=True,
+        )
+        def plus_y_backward(data, **kwgs):
+            pipe = self.driver.controller.write
+            job = self.driver.controller.job
+            job.keydown_y_top(pipe)
+
+        @kernel.console_command(
+            "-ybackward",
+            hidden=True,
+        )
+        def minus_y_backward(data, **kwgs):
+            pipe = self.driver.controller.write
+            job = self.driver.controller.job
+            job.keyup_y_top(pipe)
+
+        @kernel.console_command(
+            "+zforward",
+            hidden=True,
+        )
+        def plus_z_forward(data, **kwgs):
+            pipe = self.driver.controller.write
+            job = self.driver.controller.job
+            job.keydown_z_down(pipe)
+
+        @kernel.console_command(
+            "-zforward",
+            hidden=True,
+        )
+        def minus_z_backward(data, **kwgs):
+            pipe = self.driver.controller.write
+            job = self.driver.controller.job
+            job.keyup_z_down(pipe)
+
+        @kernel.console_command(
+            "+zbackward",
+            hidden=True,
+        )
+        def plus_z_backward(data, **kwgs):
+            pipe = self.driver.controller.write
+            job = self.driver.controller.job
+            job.keydown_z_up(pipe)
+
+        @kernel.console_command(
+            "-zbackward",
+            hidden=True,
+        )
+        def minus_z_backward(data, **kwgs):
+            pipe = self.driver.controller.write
+            job = self.driver.controller.job
+            job.keyup_z_up(pipe)
+
+        @kernel.console_command(
+            "ruida_binds",
+            hidden=True,
+        )
+        def ruida_binds(data, **kwgs):
+            self("bind a +xbackward")
+            self("bind d +xforward")
+            self("bind s +ybackward")
+            self("bind w +yforward")
 
         @self.console_argument("filename", type=str)
         @self.console_option(
@@ -408,9 +527,10 @@ class RuidaDevice(Service):
         if origin is not None and origin != self.path:
             return
         corner = self.setting(str, "home_corner")
+        home_dx = 0
+        home_dy = 0
         if corner == "auto":
-            home_dx = 0
-            home_dy = 0
+            pass
         elif corner == "top-left":
             home_dx = 1 if self.flip_x else 0
             home_dy = 1 if self.flip_y else 0

@@ -1,4 +1,3 @@
-import sys
 import unittest
 
 state = 0

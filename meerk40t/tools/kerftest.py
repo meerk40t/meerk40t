@@ -309,7 +309,7 @@ class KerfPanel(wx.Panel):
             b = 0
             if maxidx < 8:
                 colrange = 8
-            if maxidx < 16:
+            elif maxidx < 16:
                 colrange = 16
             elif maxidx < 32:
                 colrange = 32
@@ -334,16 +334,16 @@ class KerfPanel(wx.Panel):
             self.context.elements.clear_elements(fast=True)
 
         def shortened(value, digits):
-            result = str(round(value, digits))
-            if "." in result:
-                while result.endswith("0"):
-                    result = result[:-1]
-            if result.endswith("."):
-                if result == ".":
-                    result = "0"
+            _result = str(round(value, digits))
+            if "." in _result:
+                while _result.endswith("0"):
+                    _result = _result[:-1]
+            if _result.endswith("."):
+                if _result == ".":
+                    _result = "0"
                 else:
-                    result = result[:-1]
-            return result
+                    _result = _result[:-1]
+            return _result
 
         def create_operations():
             kerf = minv
@@ -594,7 +594,6 @@ class KerfPanel(wx.Panel):
             x_val = x_offset + inner_border + (num_cuts - 1) * pattern_width
             y_val = y_offset + inner_border + pattern_size
             kerfval = 0
-            idx = 0
             ticklen = float(Length("4mm"))
             tickdist = float(Length("0.02mm"))
             xfactor = tickdist * num_cuts / 2.0

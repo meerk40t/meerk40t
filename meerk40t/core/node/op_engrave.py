@@ -1,4 +1,3 @@
-from copy import copy
 from math import isnan
 
 from meerk40t.core.elements.element_types import *
@@ -166,9 +165,9 @@ class EngraveOpNode(Node, Parameters):
 
     def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         def matching_color(col1, col2):
-            result = False
+            _result = False
             if col1 is None and col2 is None:
-                result = True
+                _result = True
             elif (
                 col1 is not None
                 and col1.argb is not None
@@ -177,10 +176,10 @@ class EngraveOpNode(Node, Parameters):
             ):
                 if fuzzy:
                     distance = Color.distance(col1, col2)
-                    result = distance < fuzzydistance
+                    _result = distance < fuzzydistance
                 else:
-                    result = col1 == col2
-            return result
+                    _result = col1 == col2
+            return _result
 
         if self.is_referenced(node):
             # No need to add it again...

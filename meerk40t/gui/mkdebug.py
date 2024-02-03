@@ -281,7 +281,6 @@ class DebugColorPanel(ScrolledPanel):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
-        from copy import copy
 
         self.context = context
 

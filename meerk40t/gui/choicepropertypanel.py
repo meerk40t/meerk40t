@@ -647,9 +647,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if data is not None:
                     if data_type == str:
                         control.SetSelection(0)
-                        for i, c in enumerate(choice_list):
-                            if c == data:
-                                control.SetSelection(i)
+                        for idx, _c in enumerate(choice_list):
+                            if _c == data:
+                                control.SetSelection(idx)
                     else:
                         control.SetSelection(int(data))
 
@@ -1528,9 +1528,9 @@ class ChoicePropertyPanel(ScrolledPanel):
             if tip and not context.root.disable_tool_tips:
                 # Set the tool tip if 'tip' is available
                 control.SetToolTip(tip)
-            help = c.get("help")
-            if help:
-                control.SetHelpText(help)
+            _help = c.get("help")
+            if _help:
+                control.SetHelpText(_help)
             last_page = this_page
             last_section = this_section
             last_subsection = this_subsection

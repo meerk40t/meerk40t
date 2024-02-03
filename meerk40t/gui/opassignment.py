@@ -3,7 +3,6 @@ from wx import aui
 
 from meerk40t.core.elements.element_types import op_nodes
 from meerk40t.gui.icons import (
-    icon_effect_hatch,
     icon_points,
     icons8_direction,
     icons8_image,

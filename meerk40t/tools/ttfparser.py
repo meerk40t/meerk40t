@@ -75,6 +75,10 @@ class TrueTypeFont:
         self.parse_cmap()
         self.parse_name()
         self.glyph_data = list(self.parse_glyf())
+        self._line_information = []
+
+    def line_information(self):
+        return self._line_information
 
     @property
     def glyphs(self):
@@ -150,8 +154,7 @@ class TrueTypeFont:
                     if font_family and font_subfamily and font_name:
                         break
                 return font_family, font_subfamily, font_name
-        except (OSError, FileNotFoundError, PermissionError) as e:
-            # print (f"Error while reading: {e}")
+        except (OSError, FileNotFoundError, PermissionError):
             return None
 
     def render(
@@ -170,9 +173,11 @@ class TrueTypeFont:
             offset_y = 0
             lines = to_render.split("\n")
             if offsets is None:
-                offsets = [0 for text in lines]
-            line_lens = []
+                offsets = [0] * len(lines)
+            self._line_information.clear()
             for text, offs in zip(lines, offsets):
+                line_start_x = offs * scale
+                line_start_y = offset_y * scale
                 offset_x = offs
                 # print (f"{offset_x}, {offset_y}: '{text}', fs={font_size}, em:{self.units_per_em}")
                 for c in text:
@@ -250,8 +255,18 @@ class TrueTypeFont:
                     offset_y += advance_y
                     if self.active:
                         path.character_end()
-                line_lens.append(offset_x)
+                # Store start point, nonscaled width plus scaled width and height of line
+                self._line_information.append(
+                    (
+                        line_start_x,
+                        line_start_y,
+                        offset_x,
+                        offset_x * scale - line_start_x,
+                        self.units_per_em * scale,
+                    )
+                )
                 offset_y -= v_spacing * self.units_per_em
+            line_lens = [e[2] for e in self._line_information]
             return line_lens
 
         if not self.is_okay:
@@ -354,24 +369,24 @@ class TrueTypeFont:
         # raise ValueError("Could not locate an acceptable cmap.")
 
     def _parse_cmap_table(self, data):
-        format = struct.unpack(">H", data.read(2))[0]
-        if format == 0:
+        _fmt = struct.unpack(">H", data.read(2))[0]
+        if _fmt == 0:
             return self._parse_cmap_format_0(data)
-        elif format == 2:
+        elif _fmt == 2:
             return self._parse_cmap_format_2(data)
-        elif format == 4:
+        elif _fmt == 4:
             return self._parse_cmap_format_4(data)
-        elif format == 6:
+        elif _fmt == 6:
             return self._parse_cmap_format_6(data)
-        elif format == 8:
+        elif _fmt == 8:
             return self._parse_cmap_format_8(data)
-        elif format == 10:
+        elif _fmt == 10:
             return self._parse_cmap_format_10(data)
-        elif format == 12:
+        elif _fmt == 12:
             return self._parse_cmap_format_12(data)
-        elif format == 13:
+        elif _fmt == 13:
             return self._parse_cmap_format_13(data)
-        elif format == 14:
+        elif _fmt == 14:
             return self._parse_cmap_format_14(data)
         return False
 
@@ -549,7 +564,6 @@ class TrueTypeFont:
     def _parse_compound_glyph(self, data):
         flags = MORE_COMPONENTS
         s = 1 << 14
-        last_contour = None
         while flags & MORE_COMPONENTS:
             a, b, c, d, e, f = (
                 1.0,
@@ -592,7 +606,6 @@ class TrueTypeFont:
             contours = list(self._parse_glyph_index(glyph_index))
             if src != -1 and dest != -1:
                 pass  # Not properly supported.
-            last_contour = contours
             if flags & ROUND_XY_TO_GRID:
                 for contour in contours:
                     yield [

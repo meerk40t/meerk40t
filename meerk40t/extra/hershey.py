@@ -117,7 +117,6 @@ class Meerk40tFonts:
 
     @property
     def font_directory(self):
-        fontdir = ""
         safe_dir = realpath(get_safe_path(self.context.kernel.name))
         self.context.setting(str, "font_directory", safe_dir)
         fontdir = self.context.font_directory
@@ -130,7 +129,7 @@ class Meerk40tFonts:
     @font_directory.setter
     def font_directory(self, value):
         if not exists(value):
-            # We cant allow a non valid directory
+            # We cant allow a non-valid directory
             value = realpath(get_safe_path(self.context.kernel.name))
         self.context.setting(str, "font_directory", value)
         self.context.font_directory = value
@@ -169,13 +168,6 @@ class Meerk40tFonts:
         return None
 
     def _get_full_info(self, short):
-        if not isinstance(short, str):
-            # That's strange...
-            # print(f"gfi, Short is a {type(short).__name__}: {short}")
-            if isinstance(short, (list, tuple)):
-                short = short[0]
-            else:
-                return None
         s_lower = short.lower()
         p = self.available_fonts()
         for info in p:
@@ -192,13 +184,6 @@ class Meerk40tFonts:
         return True
 
     def face_to_full_name(self, short):
-        if not isinstance(short, str):
-            # That's strange...
-            # print(f"f2f, Short is a {type(short).__name__}: {short}")
-            if isinstance(short, (list, tuple)):
-                short = short[0]
-            else:
-                return None
         s_lower = short.lower()
         p = self.available_fonts()
         for info in p:
@@ -216,13 +201,6 @@ class Meerk40tFonts:
         return None
 
     def short_name(self, fullname):
-        if not isinstance(fullname, str):
-            # That's strange...
-            # print(f"2n, fullname is a {type(fullname).__name__}: {fullname}")
-            if isinstance(fullname, (list, tuple)):
-                short = fullname[0]
-            else:
-                return None
         return basename(fullname)
 
     @lru_cache(maxsize=128)
@@ -328,7 +306,7 @@ class Meerk40tFonts:
             weld = False
         # from time import perf_counter
         # _t0 = perf_counter()
-        oldtext = getattr(node, "_translated_text", "")
+        # oldtext = getattr(node, "_translated_text", "")
         fontname = node.mkfont
         fontsize = node.mkfontsize
         # old_color = node.stroke
@@ -355,6 +333,10 @@ class Meerk40tFonts:
         cfont.render(
             path, mytext, horizontal, float(fontsize), h_spacing, v_spacing, align
         )
+        if hasattr(cfont, "line_information"):
+            # Store the relative start / end positions of the text lines
+            # for any interested party...
+            node._line_information = cfont.line_information()
         # _t2 = perf_counter()
         olda = node.matrix.a
         oldb = node.matrix.b
@@ -467,7 +449,7 @@ class Meerk40tFonts:
             # print (f"Path={path}, text={remainder}, font-size={font_size}")
             mytext = self.context.elements.wordlist_translate(text)
             cfont.render(path, mytext, horizontal, float(font_size), font_spacing)
-        except ShxFontParseError as e:
+        except ShxFontParseError:
             # Could not parse path.
             pass
 
@@ -490,6 +472,10 @@ class Meerk40tFonts:
         path_node._translated_text = mytext
         path_node.mkcoordx = x
         path_node.mkcoordy = y
+        if hasattr(cfont, "line_information"):
+            # Store the relative start / end positions of the text lines
+            # for any interested party...
+            path_node._line_information = cfont.line_information()
 
         return path_node
 
@@ -503,7 +489,7 @@ class Meerk40tFonts:
                 node = self.create_linetext_node(
                     0, 0, pattern, font=simplefont, font_size=Length("12pt")
                 )
-            except Exception as e:
+            except Exception:
                 # We may encounter an IndexError, a ValueError or an error thrown by struct
                 # The latter cannot be named? So a global except...
                 # print (f"Node creation failed: {e}")
@@ -535,13 +521,13 @@ class Meerk40tFonts:
                     height=new_height,
                     bitmap=True,
                 )
-            except Exception as e:
+            except Exception:
                 # print (f"Raster failed: {e}")
                 # Invalid path or whatever...
                 return False
             try:
                 bitmap.SaveFile(bmpfile, bitmap_format)
-            except (OSError, RuntimeError, PermissionError, FileNotFoundError) as e:
+            except (OSError, RuntimeError, PermissionError, FileNotFoundError):
                 # print (f"Save failed: {e}")
                 return False
             return True

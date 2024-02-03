@@ -164,7 +164,7 @@ class MockCH341Driver:
     def get_chip_version(self):
         """
         Gets the version of the CH341 chip being used.
-        @return: version. Eg. 48.
+        @return: version. E.g. 48.
         """
         if not self.is_connected():
             raise ConnectionError

@@ -509,7 +509,7 @@ class Elemental(Service):
         self.undo = Undo(self, self._tree)
         self.do_undo = True
         self.suppress_updates = False
-        # We need to setup these as the settings stuff will only be done
+        # We need to set up these as the settings stuff will only be done
         # on postboot after Elemental has already been created
         self.setting(bool, "classify_new", True)
         self.setting(bool, "classify_reverse", False)
@@ -705,7 +705,7 @@ class Elemental(Service):
                 yield e
 
     def have_unassigned_elements(self):
-        for node in self.unassigned_elements():
+        for _ in self.unassigned_elements():
             return True
         return False
 
@@ -1212,6 +1212,10 @@ class Elemental(Service):
 
         @param name:
         @param oplist:
+        @param opinfo:
+        @param inform:
+        @param use_settings:
+        @param flush:
         @return:
         """
         name = self.safe_section_name(name)
@@ -1281,7 +1285,8 @@ class Elemental(Service):
         Clear operations for the derivables of the given name.
 
         @param name: name of operation.
-        @param flush: Optionally permit non-flushed to disk.
+        @param flush: Optionally permit non-flushed to disk
+        @param use_settings:
         @return:
         """
         name = self.safe_section_name(name)
@@ -1359,6 +1364,8 @@ class Elemental(Service):
         Performs an optional classification.
 
         @param name:
+        @param classify:
+        @param clear:
         @return:
         """
         settings = self.op_data
@@ -1504,7 +1511,8 @@ class Elemental(Service):
             opinfo["author"] = "MeerK40t"
             needs_save = True
         # Ensure we have an id for everything
-        needs_save = self.validate_ids(nodelist=oplist, generic=False)
+        if self.validate_ids(nodelist=oplist, generic=False):
+            needs_save = True
         if needs_save:
             self.save_persistent_operations_list(
                 std_list, oplist=oplist, opinfo=opinfo, inform=False
@@ -1550,7 +1558,7 @@ class Elemental(Service):
             try:
                 self.op_branch.add_node(op_to_use)
             except ValueError:
-                # This happens when he have somehow lost sync with the node,
+                # This happens when we have somehow lost sync with the node,
                 # and we try to add a node that is already added...
                 # In principle this should be covered by the check
                 # above, but you never know
@@ -1928,7 +1936,7 @@ class Elemental(Service):
         """
         Returns whether any element is emphasized
         """
-        for e in self.elems_nodes(emphasized=True):
+        for _ in self.elems_nodes(emphasized=True):
             return True
         return False
 
@@ -2318,7 +2326,7 @@ class Elemental(Service):
 
     def update_bounds(self, b):
         self._emphasized_bounds = [b[0], b[1], b[2], b[3]]
-        # We dont know it better...
+        # We don't know it better...
         self._emphasized_bounds_painted = [b[0], b[1], b[2], b[3]]
         self._emphasized_bounds_dirty = False
         self.signal("selected_bounds", self._emphasized_bounds)
@@ -2816,7 +2824,6 @@ class Elemental(Service):
                                 f"Pass 3-stroke, fuzzy={tempfuzzy}): check {node.type}"
                             )
                         for op_candidate in self.default_operations:
-                            classified = False
                             if isinstance(op_candidate, (CutOpNode, EngraveOpNode)):
                                 if tempfuzzy:
                                     classified = (
@@ -2849,7 +2856,6 @@ class Elemental(Service):
                     and node.stroke is not None
                     and node.stroke.argb is not None
                 ):
-                    is_cut = False
                     if fuzzy:
                         is_cut = (
                             Color.distance(abs(node.stroke), "red") <= fuzzydistance

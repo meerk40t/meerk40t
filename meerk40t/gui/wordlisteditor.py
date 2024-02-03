@@ -6,7 +6,6 @@ from wx import aui
 
 from ..kernel import signal_listener
 from .icons import (
-    STD_ICON_SIZE,
     get_default_icon_size,
     icon_add_new,
     icon_edit,
@@ -462,17 +461,19 @@ class WordlistPanel(wx.Panel):
         if skey is None:
             return
         text_data = wx.TextDataObject()
+        success = False
         if wx.TheClipboard.Open():
             success = wx.TheClipboard.GetData(text_data)
             wx.TheClipboard.Close()
-        if success:
-            msg = text_data.GetText()
-            if msg is not None and len(msg) > 0:
-                lines = msg.splitlines()
-                for entry in lines:
-                    self.wlist.add_value(skey, entry, 0)
-                self.refresh_grid_content(skey, 0)
-                self.autosave()
+        if not success:
+            return
+        msg = text_data.GetText()
+        if msg is not None and len(msg) > 0:
+            lines = msg.splitlines()
+            for entry in lines:
+                self.wlist.add_value(skey, entry, 0)
+            self.refresh_grid_content(skey, 0)
+            self.autosave()
 
     def refresh_grid_wordlist(self):
         self.current_entry = None

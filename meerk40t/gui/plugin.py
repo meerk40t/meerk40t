@@ -329,16 +329,20 @@ and a wxpython version <= 4.1.1."""
                 return
 
             kernel.console("window open MeerK40t\n")
+            windows_to_ignore = ("HersheyFontSelector", "About", "Properties")
             for window in kernel.section_startswith("window/"):
                 wsplit = window.split(":")
                 window_name = wsplit[0]
                 window_index = wsplit[-1] if len(wsplit) > 1 else None
                 if kernel.read_persistent(bool, window, "open_on_start", False):
+                    win_name = window_name[7:]
+                    if win_name in windows_to_ignore:
+                        continue
                     if window_index is not None:
                         kernel.console(
-                            f"window open -m {window_index} {window_name[7:]} {window_index}\n"
+                            f"window open -m {window_index} {win_name} {window_index}\n"
                         )
                     else:
-                        kernel.console(f"window open {window_name[7:]}\n")
+                        kernel.console(f"window open {win_name}\n")
 
             meerk40tgui.MainLoop()
