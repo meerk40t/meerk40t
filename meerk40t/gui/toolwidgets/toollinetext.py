@@ -28,6 +28,7 @@ class LineTextTool(ToolWidget):
         self.vtext = ""
         self.anim_count = 0
         self.last_anim = 0
+        self.scene.context.setting(float, "last_font_size",  float(Length("20px")))
 
     def process_draw(self, gc: wx.GraphicsContext):
         # We just draw a cursor rectangle...
@@ -122,6 +123,8 @@ class LineTextTool(ToolWidget):
                 self.scene.pane.tool_active = False
                 self.scene.context.signal("element_property_update", [self.node])
                 self.scene.request_refresh()
+                self.scene.context.setting(float, "last_font_size")
+                self.scene.context.last_font_size = self.node.mkfontsize
             self.node = None
             self.scene.context("tool none\n")
             self.scene.context("window close HersheyFontSelector\n")
@@ -149,8 +152,9 @@ class LineTextTool(ToolWidget):
                 x = self.p1.real
                 y = self.p1.imag
                 self.vtext = "Text"
+                fsize = self.scene.context.last_font_size
                 self.node = self.scene.context.fonts.create_linetext_node(
-                    x, y, self.vtext
+                    x, y, self.vtext, font_size = fsize
                 )
                 if self.node is not None:
                     self.node.stroke = self.color
@@ -223,8 +227,9 @@ class LineTextTool(ToolWidget):
                 if self.node is None:
                     x = self.p1.real
                     y = self.p1.imag
+                    fsize = self.scene.context.last_font_size
                     self.node = self.scene.context.fonts.create_linetext_node(
-                        x, y, self.vtext
+                        x, y, self.vtext, font_size = fsize,
                     )
                     if self.node is not None:
                         self.node.emphasized = False
