@@ -175,7 +175,9 @@ class TextPropertyPanel(ScrolledPanel):
         self.renderer = LaserRender(self.context)
         self.SetHelpText("textproperty")
 
-        self.text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER|wx.TE_MULTILINE)
+        self.text_text = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_MULTILINE
+        )
         # self.text_text.SetSize(dip_size(self, -1, 100))
         self.node = node
         self.label_fonttest = wx.StaticText(
@@ -330,7 +332,7 @@ class TextPropertyPanel(ScrolledPanel):
             self.node = node
         try:
             if self.node.text is not None:
-                txt = self.node.text # .replace("\\n", "\n")
+                txt = self.node.text  # .replace("\\n", "\n")
                 self.text_text.SetValue(txt)
                 display_string = txt
                 if self.check_variable.GetValue():
@@ -351,12 +353,22 @@ class TextPropertyPanel(ScrolledPanel):
 
         self.button_attrib_lineplus.SetFont(
             wx.Font(
-                9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, ""
+                9,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+                0,
+                "",
             )
         )
         self.button_attrib_lineminus.SetFont(
             wx.Font(
-                9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, ""
+                9,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+                0,
+                "",
             )
         )
         self.button_attrib_bold.SetFont(
@@ -393,7 +405,12 @@ class TextPropertyPanel(ScrolledPanel):
         self.button_attrib_italic.SetToolTip(_("Toggle italic"))
         self.button_attrib_underline.SetToolTip(_("Toggle underline"))
         self.button_attrib_strikethrough.SetToolTip(_("Toggle strikethrough"))
-        msg = "\n" + _("- Hold shift/ctrl-Key down for bigger change") + "\n" + _("- Right click will reset value to default")
+        msg = (
+            "\n"
+            + _("- Hold shift/ctrl-Key down for bigger change")
+            + "\n"
+            + _("- Right click will reset value to default")
+        )
         self.button_attrib_lineplus.SetToolTip(_("Increase line distance") + msg)
         self.button_attrib_lineminus.SetToolTip(_("Reduce line distance") + msg)
 
@@ -434,12 +451,8 @@ class TextPropertyPanel(ScrolledPanel):
             self.button_attrib_strikethrough, 0, wx.ALIGN_CENTER_VERTICAL, 0
         )
         sizer_attrib.AddSpacer(25)
-        sizer_attrib.Add(
-            self.button_attrib_lineplus, 0, wx.ALIGN_CENTER_VERTICAL, 0
-        )
-        sizer_attrib.Add(
-            self.button_attrib_lineminus, 0, wx.ALIGN_CENTER_VERTICAL, 0
-        )
+        sizer_attrib.Add(self.button_attrib_lineplus, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_attrib.Add(self.button_attrib_lineminus, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_anchor = wx.BoxSizer(wx.HORIZONTAL)
         sizer_anchor.Add(self.rb_align, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -554,7 +567,7 @@ class TextPropertyPanel(ScrolledPanel):
         self.label_fonttest.SetWindowStyle(mystyle)
 
         self.rb_align.SetSelection(new_anchor)
-        display_string = self.node.text # .replace("\\n", "\n")
+        display_string = self.node.text  # .replace("\\n", "\n")
         if self.check_variable.GetValue():
             display_string = self.context.elements.wordlist_translate(
                 display_string,

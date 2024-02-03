@@ -1009,7 +1009,9 @@ class LaserRender:
         line_step = node.mklinegap - 1.0
         for line in textlines:
             dummy = "T" + line + "p"
-            t_width, t_height, f_descent, t_external_leading = gc.GetFullTextExtent(dummy)
+            t_width, t_height, f_descent, t_external_leading = gc.GetFullTextExtent(
+                dummy
+            )
             f_width = max(f_width, t_width + t_external_leading)
             if f_height != 0:
                 # spacing
@@ -1050,9 +1052,11 @@ class LaserRender:
         offset = overreach / 2 * fsize
         y = offset
         for line in textlines:
-            t_width, t_height, f_descent, t_external_leading = gc.GetFullTextExtent(line)
+            t_width, t_height, f_descent, t_external_leading = gc.GetFullTextExtent(
+                line
+            )
             if node.anchor == "middle":
-                x = (dimension_x - t_width)/2
+                x = (dimension_x - t_width) / 2
             elif node.anchor == "end":
                 x = dimension_x - t_width - offset
             else:
@@ -1107,7 +1111,9 @@ class LaserRender:
         dc.SelectObject(wx.NullBitmap)
         dc.Destroy()
         del dc
-        self.context.elements.set_end_time("create_text_image", display=True, message=msg)
+        self.context.elements.set_end_time(
+            "create_text_image", display=True, message=msg
+        )
 
     def validate_text_nodes(self, nodes, translate_variables):
         # self.context.elements.set_start_time("validate_text_nodes")

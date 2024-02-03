@@ -172,7 +172,6 @@ class TextNode(Node, Stroked, FunctionalParameter):
         newnode.mkascent = self.mkascent
         return newnode
 
-
     def set_magnification(self, value):
         if self._magnification != value:
             self._magnification = value
@@ -618,7 +617,9 @@ class TextNode(Node, Stroked, FunctionalParameter):
         xoffs = 0
         yoffs = 0
         x0, y0 = matrix.point_in_matrix_space((0 + xoffs, 0 + yoffs))
-        x1, y1 = matrix.point_in_matrix_space((image_width + xoffs, image_height + yoffs))
+        x1, y1 = matrix.point_in_matrix_space(
+            (image_width + xoffs, image_height + yoffs)
+        )
         x2, y2 = matrix.point_in_matrix_space((0 + xoffs, image_height + yoffs))
         x3, y3 = matrix.point_in_matrix_space((image_width + xoffs, 0 + yoffs))
         return (

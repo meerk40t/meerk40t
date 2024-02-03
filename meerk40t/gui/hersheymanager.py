@@ -729,7 +729,13 @@ class PanelFontSelect(wx.Panel):
         self.btn_align_right.SetToolTip(_("Align text on the right side"))
         sizer_buttons.Add(self.btn_align_right, 0, wx.EXPAND, 0)
 
-        for btn in (self.btn_align_center, self.btn_align_left, self.btn_align_right, self.btn_bigger, self.btn_smaller):
+        for btn in (
+            self.btn_align_center,
+            self.btn_align_left,
+            self.btn_align_right,
+            self.btn_bigger,
+            self.btn_smaller,
+        ):
             btn.SetMaxSize(dip_size(self, 32, -1))
 
         lbl_spacer = wx.StaticText(self, wx.ID_ANY, "")

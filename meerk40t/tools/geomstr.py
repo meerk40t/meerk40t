@@ -4757,13 +4757,10 @@ class Geomstr:
         pen_downs = segments[:index, 0]
         pen_ups = segments[:index, -1]
         v = np.dstack(
-            (
-                (np.real(infos).astype(int) & 0b1001),
-                np.abs(pen_ups - pen_downs) == 0
-            )
+            ((np.real(infos).astype(int) & 0b1001), np.abs(pen_ups - pen_downs) == 0)
         ).all(axis=2)[0]
-        w = np.argwhere(~v)[...,0]
-        self.segments = self.segments[w,:]
+        w = np.argwhere(~v)[..., 0]
+        self.segments = self.segments[w, :]
         self.index = len(self.segments)
 
     def greedy_distance(self, pt: complex = 0j, flips=True):
