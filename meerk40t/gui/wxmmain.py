@@ -3159,7 +3159,7 @@ class MeerK40t(MWindow):
 
         self.recent_file_menu = wx.Menu()
         if not getattr(sys, "frozen", False) or platform.system() != "Darwin":
-            self.file_menu.AppendSubMenu(self.recent_file_menu, _("&Recent"))
+            self.recent_file_menu_item = self.file_menu.AppendSubMenu(self.recent_file_menu, _("&Recent"))
         menu_item = self.file_menu.Append(
             wx.ID_ANY,
             _("&Import File"),
@@ -4252,6 +4252,7 @@ class MeerK40t(MWindow):
                 )
 
         if self.recent_file_menu.MenuItemCount != 0:
+            self.recent_file_menu_item.Enable(True)
             self.recent_file_menu.AppendSeparator()
             menuitem = self.recent_file_menu.Append(
                 wx.ID_ANY,
@@ -4259,6 +4260,8 @@ class MeerK40t(MWindow):
                 _("Delete the list of recent projects"),
             )
             self.Bind(wx.EVT_MENU, lambda e: self.clear_recent(), id=menuitem.GetId())
+        else:
+            self.recent_file_menu_item.Enable(False)
 
     def clear_recent(self):
         for i in range(20):
