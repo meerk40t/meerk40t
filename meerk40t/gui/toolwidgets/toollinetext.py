@@ -57,15 +57,40 @@ class LineTextTool(ToolWidget):
                     self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
             else:
                 self.color = self.node.stroke
-                offsetx = self.node.bounds[2] - self.node.bounds[0]
-                cursorheight = self.node.bounds[3] - self.node.bounds[1]
+                if (
+                    hasattr(self.node, "_line_information")
+                    and len(self.node._line_information) > 0
+                ):
+                    # This is a list of tuples with (startx, starty, length, height per line)
+                    (
+                        line_x,
+                        line_y,
+                        unscaled_w,
+                        line_w,
+                        line_h,
+                    ) = self.node._line_information[-1]
+                    # print (line_x, line_y, line_w, line_h)
+                    line_x_end = line_x + line_w
+                    line_y_end = line_y + line_h
+                    p_start = self.node.matrix.point_in_matrix_space((line_x, -line_y))
+                    p_end = self.node.matrix.point_in_matrix_space(
+                        (line_x_end, -line_y_end)
+                    )
+                    # print (f"x0={p_start.x:.0f}, y0={p_start.y:.0f}, b0.x={self.node.bounds[0]:.0f}, b0.y={self.node.bounds[1]:.0f}")
+                    # print (f"x1={p_end.x:.0f}, y1={p_end.y:.0f}, b1.x={self.node.bounds[2]:.0f}, b1.y={self.node.bounds[3]:.0f}")
+                    x0 = p_end.x
+                    y0 = p_start.y
+                    cursorheight = (p_end.y - p_start.y) * 0.75
+                else:
+                    # offsetx = self.node.bounds[2] - self.node.bounds[0]
+                    cursorheight = self.node.bounds[3] - self.node.bounds[1]
+                    x0 = self.node.bounds[2]
+                    y0 = self.node.bounds[1]
                 # if hasattr(self.node, "mkfont"):
                 #     fname = self.node.mkfont
                 #     if fname.lower().endswith(".jhf"):
                 #         offsety = 0.5 * cursorheight
                 self.pen.SetColour(wx.Colour(swizzlecolor(self.node.stroke)))
-                x0 = self.node.bounds[2]
-                y0 = self.node.bounds[1]
 
             mycol = wx.Colour(swizzlecolor(self.color))
             self.pen.SetColour(mycol)
@@ -171,6 +196,15 @@ class LineTextTool(ToolWidget):
                 to_add = ""
                 if keycode is not None:
                     to_add = keycode
+                if modifiers == "ctrl+alt+l":
+                    self.node.mkalign = "start"
+                    to_add = ""
+                if modifiers == "ctrl+alt+r":
+                    self.node.mkalign = "end"
+                    to_add = ""
+                if modifiers == "ctrl+alt+c":
+                    self.node.mkalign = "middle"
+                    to_add = ""
                 if modifiers == "ctrl+return":
                     to_add = "\n"
                 if modifiers == "back":
@@ -239,4 +273,3 @@ class LineTextTool(ToolWidget):
             self.scene.context.fonts.update_linetext(self.node, self.node.mktext)
             self.node.emphasized = False
             self.scene.request_refresh()
-
