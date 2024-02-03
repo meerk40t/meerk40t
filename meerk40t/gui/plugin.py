@@ -329,7 +329,7 @@ and a wxpython version <= 4.1.1."""
                 return
 
             kernel.console("window open MeerK40t\n")
-            windows_to_ignore = ("HersheyFontSelector", "About")
+            windows_to_ignore = ("HersheyFontSelector", "About", "Properties")
             for window in kernel.section_startswith("window/"):
                 wsplit = window.split(":")
                 window_name = wsplit[0]
