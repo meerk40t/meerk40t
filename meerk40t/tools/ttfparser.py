@@ -75,6 +75,10 @@ class TrueTypeFont:
         self.parse_cmap()
         self.parse_name()
         self.glyph_data = list(self.parse_glyf())
+        self._line_information = []
+
+    def line_information(self):
+        return self._line_information
 
     @property
     def glyphs(self):
@@ -170,8 +174,10 @@ class TrueTypeFont:
             lines = to_render.split("\n")
             if offsets is None:
                 offsets = [0] * len(lines)
-            line_lens = []
+            self._line_information.clear()
             for text, offs in zip(lines, offsets):
+                line_start_x = offs * scale
+                line_start_y = offset_y * scale
                 offset_x = offs
                 # print (f"{offset_x}, {offset_y}: '{text}', fs={font_size}, em:{self.units_per_em}")
                 for c in text:
@@ -249,8 +255,18 @@ class TrueTypeFont:
                     offset_y += advance_y
                     if self.active:
                         path.character_end()
-                line_lens.append(offset_x)
+                # Store start point, nonscaled width plus scaled width and height of line
+                self._line_information.append(
+                    (
+                        line_start_x,
+                        line_start_y,
+                        offset_x,
+                        offset_x * scale - line_start_x,
+                        self.units_per_em * scale,
+                    )
+                )
                 offset_y -= v_spacing * self.units_per_em
+            line_lens = [e[2] for e in self._line_information]
             return line_lens
 
         if not self.is_okay:

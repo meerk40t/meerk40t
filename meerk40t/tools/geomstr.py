@@ -1553,6 +1553,8 @@ class Geomstr:
         geometry = cls()
         if np.isinf(y_max):
             return geometry
+        if distance == 0:
+            return geometry
         while vm.current_is_valid_range():
             vm.scanline_to(vm.scanline + distance)
             y = vm.scanline
@@ -1719,7 +1721,7 @@ class Geomstr:
             seg_type = int(e[2].real)
             set_type = int(e[2].imag)
             start = e[0]
-            if (end != start or set_type != settings) and not at_start:
+            if not at_start and (set_type != settings or abs(start - end) > 1e-8):
                 # Start point does not equal previous end point, or settings changed
                 yield None, settings
                 at_start = True
@@ -1783,11 +1785,11 @@ class Geomstr:
                 # Start point does not equal previous end point.
                 yield None
                 at_start = True
+            end = e[4]
+            if at_start:
                 if seg_type == TYPE_END:
                     # End segments, flag new start but should not be returned.
                     continue
-            end = e[4]
-            if at_start:
                 yield start
                 at_start = False
 

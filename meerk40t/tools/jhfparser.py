@@ -61,10 +61,14 @@ class JhfFont:
         self.valid = False
         self.active = True
         self.font_name = fname
+        self._line_information = []
         self._parse(filename)
 
     def __str__(self):
         return f'{self.type}("{self.font_name}", glyphs: {len(self.glyphs)})'
+
+    def line_information(self):
+        return self._line_information
 
     @staticmethod
     def hershey_val(character):
@@ -268,10 +272,12 @@ class JhfFont:
             lines = to_render.split("\n")
             if offsets is None:
                 offsets = [0] * len(lines)
-            line_lens = []
+            self._line_information.clear()
 
             offsety = -1 * self.top  # Negative !
             for text, offs in zip(lines, offsets):
+                line_start_x = offs * scale
+                line_start_y = offsety * scale
                 offsetx = offs
                 for tchar in text:
                     if tchar in self.glyphs:
@@ -316,8 +322,18 @@ class JhfFont:
                     else:
                         # print(f"Char '{tchar}' (ord={ord(tchar)}) not in font...")
                         pass
-                line_lens.append(offsetx)
+                # Store start point, nonscaled width plus scaled width and height of line
+                self._line_information.append(
+                    (
+                        line_start_x,
+                        line_start_y - 0.5 * scale * (self.top - self.bottom),
+                        offsetx,
+                        scale * offsetx - line_start_x,
+                        scale * (self.top - self.bottom),
+                    )
+                )
                 offsety += v_spacing * (self.top - self.bottom)
+            line_lens = [e[2] for e in self._line_information]
             return line_lens
 
         if vtext is None or vtext == "":
