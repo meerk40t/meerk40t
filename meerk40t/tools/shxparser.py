@@ -206,11 +206,15 @@ class ShxFont:
         self._scale = 1
         self._stack = []
         self.active = True
+        self._line_information = []
 
         self._parse(filename)
 
     def __str__(self):
         return f'{self.type}("{self.font_name}", {self.version}, glyphs: {len(self.glyphs)})'
+
+    def line_information(self):
+        return self._line_information
 
     def _parse(self, filename):
         with open(filename, "br") as f:
@@ -397,13 +401,15 @@ class ShxFont:
             offset_y = 0
             if offsets is None:
                 offsets = [0] * len(lines)
-            line_lens = []
+            self._line_information.clear()
             for text, offs in zip(lines, offsets):
                 self._y = offset_y * self._scale
                 self._last_y = self._y
                 self._x = offs
                 self._last_x = offs
                 maxx = offs
+                line_start_x = self._x
+                line_start_y = self._y
                 for letter in text:
                     last_letter_x = self._last_x
                     last_letter_y = self._last_y
@@ -427,11 +433,21 @@ class ShxFont:
                     maxx = max(maxx, self._x)
                     if self.active:
                         path.character_end()
-                line_lens.append(maxx)
+                # Store start point, nonscaled width plus scaled width and height of line
+                self._line_information.append(
+                    (
+                        line_start_x,
+                        line_start_y,
+                        maxx,
+                        maxx - line_start_x,
+                        self._scale * (self.above + self.below),
+                    )
+                )
                 offset_y -= v_spacing * (self.above + self.below)
 
             if self._debug:
                 print(f"Render Complete.\n\n\n")
+            line_lens = [e[2] for e in self._line_information]
             return line_lens
 
         if vtext is None or vtext == "":

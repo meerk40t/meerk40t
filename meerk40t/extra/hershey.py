@@ -332,6 +332,10 @@ class Meerk40tFonts:
         cfont.render(
             path, mytext, horizontal, float(fontsize), h_spacing, v_spacing, align
         )
+        if hasattr(cfont, "line_information"):
+            # Store the relative start / end positions of the text lines
+            # for any interested party...
+            node._line_information = cfont.line_information()
         # _t2 = perf_counter()
         olda = node.matrix.a
         oldb = node.matrix.b
@@ -467,6 +471,10 @@ class Meerk40tFonts:
         path_node._translated_text = mytext
         path_node.mkcoordx = x
         path_node.mkcoordy = y
+        if hasattr(cfont, "line_information"):
+            # Store the relative start / end positions of the text lines
+            # for any interested party...
+            path_node._line_information = cfont.line_information()
 
         return path_node
 
