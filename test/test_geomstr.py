@@ -789,6 +789,24 @@ class TestGeomstr(unittest.TestCase):
         self.assertNotIn(complex(50, 50), pts)
         self.assertEqual(len(pts), 4)
 
+    def test_geomstr_0_length(self):
+        path = Geomstr()
+        path.polyline(
+            [
+                complex(0, 0),
+                complex(100, 0),
+                complex(50, 50),
+                complex(100, 100),
+                complex(100, 100),
+                complex(0, 100),
+                complex(0, 0),
+            ]
+        )
+        path.end()
+        self.assertEqual(len(path), 7)
+        path.remove_0_length()
+        self.assertEqual(len(path), 6)
+
     def test_geomstr_2opt(self):
         path = Geomstr()
         path.line(complex(0, 0), complex(50, 0))
