@@ -47,7 +47,7 @@ def create_image(make_raster, data, data_bounds, dpi, keep_ratio=True):
         return None, None
     xmin, ymin, xmax, ymax = data_bounds
     if isinf(xmin):
-        # No bounds for selected elements."))
+        # No bounds for selected elements.
         return None
     width = xmax - xmin
     height = ymax - ymin

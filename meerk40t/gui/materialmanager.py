@@ -2430,7 +2430,7 @@ class MaterialPanel(ScrolledPanel):
 
 class ImportPanel(wx.Panel):
     """
-    Displays a how to summary
+    Displays a how-to summary
     """
 
     def __init__(self, *args, context=None, **kwds):
@@ -2445,7 +2445,7 @@ class ImportPanel(wx.Panel):
 
 class AboutPanel(wx.Panel):
     """
-    Displays a how to summary
+    Displays a how-to summary
     """
 
     def __init__(self, *args, context=None, **kwds):

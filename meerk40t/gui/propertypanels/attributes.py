@@ -1088,23 +1088,33 @@ class RoundedRectPanel(wx.Panel):
         sync = self.btn_lock_ratio.GetValue()
         width = self.node.width
         height = self.node.height
-        if axis == 0:  # x
+        rx = self.node.rx
+        ry = self.node.ry
+        if axis == 0:
             rx = value / 100 * width
-            self.node.rx = rx
             if sync:
-                self.node.ry = rx
-                max_val_y = self.slider_x.GetMax()
-                int_ry = int(100.0 * rx / height)
-                self.slider_y.SetValue(min(max_val_y, int_ry))
+                ry = rx
         else:
             ry = value / 100 * height
-            self.node.ry = ry
             if sync:
-                self.node.rx = ry
-                max_val_x = self.slider_x.GetMax()
-                int_rx = int(100.0 * ry / width)
-                self.slider_x.SetValue(min(max_val_x, int_rx))
-
+                rx = ry
+        # rx and ry can either both be 0 or both non-zero
+        if (rx == 0 or ry == 0) and rx != ry:
+            # totally fine
+            if rx == 0:
+                rx = 1 / 100 * width
+            if ry == 0:
+                ry = 1 / 100 * height
+        self.node.rx = rx
+        self.node.ry = ry
+        max_val_x = self.slider_x.GetMax()
+        max_val_y = self.slider_y.GetMax()
+        int_rx = int(100.0 * rx / width)
+        int_ry = int(100.0 * ry / height)
+        if self.slider_x.GetValue() != int_rx:
+            self.slider_x.SetValue(min(max_val_x, int_rx))
+        if self.slider_y.GetValue() != int_ry:
+            self.slider_y.SetValue(min(max_val_y, int_ry))
         self.node.altered()
         self.context.elements.signal("element_property_update", self.node)
         self.context.signal("refresh_scene", "Scene")

@@ -359,7 +359,7 @@ def init_commands(kernel):
         altered stroke-widths and rendered and vectorized again.
 
         This two phase approach is required as not all nodes have
-        a proper stroke-width that can be adjusted (eg text or images...)
+        a proper stroke-width that can be adjusted (e.g. text or images...)
 
         The subvariant --outer requires one additional pass where we disassemble
         the first outline and fill the subpaths, This will effectively deal with

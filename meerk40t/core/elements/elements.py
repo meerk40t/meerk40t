@@ -509,7 +509,7 @@ class Elemental(Service):
         self.undo = Undo(self, self._tree)
         self.do_undo = True
         self.suppress_updates = False
-        # We need to setup these as the settings stuff will only be done
+        # We need to set up these as the settings stuff will only be done
         # on postboot after Elemental has already been created
         self.setting(bool, "classify_new", True)
         self.setting(bool, "classify_reverse", False)
@@ -1558,7 +1558,7 @@ class Elemental(Service):
             try:
                 self.op_branch.add_node(op_to_use)
             except ValueError:
-                # This happens when he have somehow lost sync with the node,
+                # This happens when we have somehow lost sync with the node,
                 # and we try to add a node that is already added...
                 # In principle this should be covered by the check
                 # above, but you never know
@@ -2326,7 +2326,7 @@ class Elemental(Service):
 
     def update_bounds(self, b):
         self._emphasized_bounds = [b[0], b[1], b[2], b[3]]
-        # We dont know it better...
+        # We don't know it better...
         self._emphasized_bounds_painted = [b[0], b[1], b[2], b[3]]
         self._emphasized_bounds_dirty = False
         self.signal("selected_bounds", self._emphasized_bounds)

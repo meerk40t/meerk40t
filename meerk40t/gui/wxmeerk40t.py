@@ -560,7 +560,7 @@ class wxMeerK40t(wx.App, Module):
             This also allows use of a -p flag that sets the context path for this window to operate at. This should
             often be restricted to where the windows are typically opened since their function and settings usually
             depend on the context used. Windows often cannot open multiple copies of the same window at the same context
-            The default root path is "/". Eg. "window -p / open Preferences"
+            The default root path is "/". E.g. "window -p / open Preferences"
             """
             context = kernel.root
             if path is None:

@@ -217,7 +217,7 @@ class JhfFont:
         Basic Glyph (symbol) data:
             Mathematical (227-229,232,727-779,732,737-740,1227-1270,2227-2270,
                             1294-1412,2294-2295,2401-2412)
-            Daggers (for footnotes, etc) (1276-1279, 2276-2279)
+            Daggers (for footnotes, etc.) (1276-1279, 2276-2279)
             Astronomical (1281-1293,2281-2293)
             Astrological (2301-2312)
             Musical (2317-2382)

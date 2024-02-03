@@ -2530,7 +2530,7 @@ class Geomstr:
         if infor == TYPE_ARC:
             return "arc"
         if infor == TYPE_POINT:
-            return "arc"
+            return "point"
         if infor == TYPE_VERTEX:
             return "vertex"
         if infor == TYPE_END:
@@ -4331,7 +4331,7 @@ class Geomstr:
 
     def y_at_axis(self, e):
         """
-        y_intercept of the lines (e) at at x-axis (x=0)
+        y_intercept of the lines (e) at x-axis (x=0)
 
         @param e:
         @return:
@@ -4742,6 +4742,27 @@ class Geomstr:
         pen_ups = valid_segments[indexes0, -1]
         pen_downs = valid_segments[indexes1, 0]
         return np.sum(np.abs(pen_ups - pen_downs))
+
+    def remove_0_length(self):
+        """
+        Determines the raw length of the geoms, drops any segments which are 0 distance.
+
+        @return:
+        """
+        segments = self.segments
+        index = self.index
+        infos = segments[:index, 2]
+        pen_downs = segments[:index, 0]
+        pen_ups = segments[:index, -1]
+        v = np.dstack(
+            (
+                (np.real(infos).astype(int) & 0b1001),
+                np.abs(pen_ups - pen_downs) == 0
+            )
+        ).all(axis=2)[0]
+        w = np.argwhere(~v)
+        self.segments = self.segments[w]
+        self.index = len(self.segments)
 
     def greedy_distance(self, pt: complex = 0j, flips=True):
         """

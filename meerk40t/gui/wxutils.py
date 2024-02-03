@@ -150,7 +150,7 @@ def create_menu_for_node_TEST(gui, node, elements) -> wx.Menu:
     """
     Test code towards unifying choices and tree nodes into choices that parse to menus.
 
-    This is unused experimental code. Testing the potential inter-relationships between choices for the choice panels
+    This is unused experimental code. Testing the potential interrelationships between choices for the choice panels
     and dynamic node menus.
 
     @param gui:

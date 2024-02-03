@@ -1090,44 +1090,46 @@ class ShadowTree:
         if not result:
             self.was_already_expanded.append(chk)
 
-    def parse_tree(self, startnode, level):
-        if startnode is None:
-            return
-        cookie = 0
-        try:
-            pnode, cookie = self.wxtree.GetFirstChild(startnode)
-        except:
-            return
-        while pnode.IsOk():
-            txt = self.wxtree.GetItemText(pnode)
-            # That is not working as advertised...
-            state = self.wxtree.IsExpanded(pnode)
-            state = False  # otherwise every thing gets expanded...
-            if state:
-                self.was_already_expanded.append(f"{level}-{txt}")
-            self.parse_tree(pnode, level + 1)
-            pnode, cookie = self.wxtree.GetNextChild(startnode, cookie)
+    # These routines were supposed to save and restore the expanded state of the tree
+    # But that did not work out as intended....
+    #
+    # def parse_tree(self, startnode, level):
+    #     if startnode is None:
+    #         return
+    #     cookie = 0
+    #     try:
+    #         pnode, cookie = self.wxtree.GetFirstChild(startnode)
+    #     except:
+    #         return
+    #     while pnode.IsOk():
+    #         txt = self.wxtree.GetItemText(pnode)
+    #         # That is not working as advertised...
+    #         state = self.wxtree.IsExpanded(pnode)
+    #         if state:
+    #             self.was_already_expanded.append(f"{level}-{txt}")
+    #         self.parse_tree(pnode, level + 1)
+    #         pnode, cookie = self.wxtree.GetNextChild(startnode, cookie)
 
-    def restore_tree(self, startnode, level):
-        if startnode is None:
-            return
-        cookie = 0
-        try:
-            pnode, cookie = self.wxtree.GetFirstChild(startnode)
-        except:
-            return
-        while pnode.IsOk():
-            txt = self.wxtree.GetItemText(pnode)
-            chk = f"{level}-{txt}"
-            for elem in self.was_already_expanded:
-                if chk == elem:
-                    self.wxtree.ExpandAllChildren(pnode)
-                    break
-            self.parse_tree(pnode, level + 1)
-            pnode, cookie = self.wxtree.GetNextChild(startnode, cookie)
-
-    def reset_expanded(self):
-        self.was_already_expanded = []
+    # def restore_tree(self, startnode, level):
+    #     if startnode is None:
+    #         return
+    #     cookie = 0
+    #     try:
+    #         pnode, cookie = self.wxtree.GetFirstChild(startnode)
+    #     except:
+    #         return
+    #     while pnode.IsOk():
+    #         txt = self.wxtree.GetItemText(pnode)
+    #         chk = f"{level}-{txt}"
+    #         for elem in self.was_already_expanded:
+    #             if chk == elem:
+    #                 self.wxtree.ExpandAllChildren(pnode)
+    #                 break
+    #         self.parse_tree(pnode, level + 1)
+    #         pnode, cookie = self.wxtree.GetNextChild(startnode, cookie)
+    #
+    # def reset_expanded(self):
+    #     self.was_already_expanded = []
 
     def rebuild_tree(self, source):
         """
@@ -1139,8 +1141,8 @@ class ShadowTree:
         # let's try to remember which branches were expanded:
         self.context.elements.set_start_time("rebuild_tree")
         self.freeze_tree(True)
-        #
-        self.reset_expanded()
+
+        # self.reset_expanded()
 
         # Safety net - if we have too many elements it will
         # take too long to create all preview icons...
@@ -1148,7 +1150,7 @@ class ShadowTree:
         self._too_big = bool(count > 1000)
         # print(f"Was too big?! {count} -> {self._too_big}")
 
-        self.parse_tree(self.wxtree.GetRootItem(), 0)
+        # self.parse_tree(self.wxtree.GetRootItem(), 0)
         # Rebuild tree destroys the emphasis, so let's store it...
         emphasized_list = list(self.elements.elems(emphasized=True))
         elemtree = self.elements._tree
@@ -1221,7 +1223,7 @@ class ShadowTree:
         # Restore emphasis
         for e in emphasized_list:
             e.emphasized = True
-        self.restore_tree(self.wxtree.GetRootItem(), 0)
+        # self.restore_tree(self.wxtree.GetRootItem(), 0)
         self.freeze_tree(False)
         self.context.elements.set_end_time("rebuild_tree", display=True)
         # print(f"Rebuild done for {source}")

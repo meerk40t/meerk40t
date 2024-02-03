@@ -1546,7 +1546,7 @@ class MoveWidget(Widget):
         if event == 1:  # end
             # Cleanup - we check for:
             # a) Would a point of the selection snap to a point of the non-selected elements? If yes we are done
-            # b) Use the distance of the 4 corners and the center to a grid point -> take smallest distance
+            # b) Use the distance of the 4 corners and the center to a grid point -> take the smallest distance
             # c) Regular snap-check
             # d) Use magnet lines
 

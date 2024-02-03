@@ -206,7 +206,7 @@ class PolygonTool(PointListTool):
         # and hand over to another tool to let the user refine it
         # We have now enough information to create a star shape
         # The first point is the center, the second point defines
-        # the start point, we just provide a good looking example
+        # the start point, we just provide a good-looking example
         # and hand over to another tool
         pt1 = Point(self.point_series[0])
         pt2 = Point(self.point_series[1])

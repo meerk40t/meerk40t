@@ -61,7 +61,7 @@ class PointMoveTool(ToolWidget):
             keycode (string): if available the keycode that was pressed
 
         Returns:
-            Indicator how to proceed with this event after its execution (consume, chain etc)
+            Indicator how to proceed with this event after its execution (consume, chain etc.)
         """
         try:
             if nearest_snap is None:

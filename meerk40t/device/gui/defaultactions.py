@@ -75,10 +75,10 @@ class DefaultActionPanel(wx.Panel):
         self.button_add_prepend = wx.Button(self, wx.ID_ANY, _("Add to Job Start"))
         self.button_add_append = wx.Button(self, wx.ID_ANY, _("Add to Job End"))
 
-        self.prepend_list = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_LIST)
+        self.prepend_list = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_LIST|wx.LC_SINGLE_SEL)
         self.text_param_prepend = wx.TextCtrl(self, wx.ID_ANY)
 
-        self.append_list = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_LIST)
+        self.append_list = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_LIST|wx.LC_SINGLE_SEL)
         self.text_param_append = wx.TextCtrl(self, wx.ID_ANY)
         self.button_del_prepend = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
         self.button_up_prepend = wx.StaticBitmap(self, wx.ID_ANY, size=iconsize)
@@ -260,16 +260,11 @@ class DefaultActionPanel(wx.Panel):
 
     def prepend_move_up(self, event):
         idx2 = self.prepend_list.GetFirstSelected()
-        if idx2 > len(self.prepend_ops):
-            idx1 = -1
-        idx1 = idx2 - 1
-        if (
-            idx1 < 0
-            or idx2 < 0
-            or idx1 >= len(self.prepend_ops)
-            or idx2 >= len(self.prepend_ops)
-        ):
+        # Either invalid or the first, so can't be moved up
+        if idx2 <= 0 or idx2 >= len(self.prepend_ops):
             return
+        # Previous Element
+        idx1 = idx2 - 1
         swap = self.prepend_ops[idx1][0]
         self.prepend_ops[idx1][0] = self.prepend_ops[idx2][0]
         self.prepend_ops[idx2][0] = swap
@@ -285,16 +280,11 @@ class DefaultActionPanel(wx.Panel):
 
     def prepend_move_down(self, event):
         idx2 = self.prepend_list.GetFirstSelected()
-        if idx2 > len(self.prepend_ops):
-            idx1 = -1
-        idx1 = idx2 + 1
-        if (
-            idx1 < 0
-            or idx2 < 0
-            or idx1 >= len(self.prepend_ops)
-            or idx2 >= len(self.prepend_ops)
-        ):
+        # Either invalid or the last, so can't be moved down
+        if idx2 < 0 or idx2 >= len(self.prepend_ops) - 1:
             return
+        # Next element
+        idx1 = idx2 + 1
         swap = self.prepend_ops[idx1][0]
         self.prepend_ops[idx1][0] = self.prepend_ops[idx2][0]
         self.prepend_ops[idx2][0] = swap
@@ -310,16 +300,11 @@ class DefaultActionPanel(wx.Panel):
 
     def append_move_up(self, event):
         idx2 = self.append_list.GetFirstSelected()
-        if idx2 > len(self.append_ops):
-            idx1 = -1
-        idx1 = idx2 - 1
-        if (
-            idx1 < 0
-            or idx2 < 0
-            or idx1 >= len(self.append_ops)
-            or idx2 >= len(self.append_ops)
-        ):
+        # Either invalid or the first, so can't be moved up
+        if idx2 <= 0 or idx2 >= len(self.append_ops):
             return
+        # Previous Element
+        idx1 = idx2 - 1
         swap = self.append_ops[idx1][0]
         self.append_ops[idx1][0] = self.append_ops[idx2][0]
         self.append_ops[idx2][0] = swap
@@ -335,8 +320,10 @@ class DefaultActionPanel(wx.Panel):
 
     def append_move_down(self, event):
         idx2 = self.append_list.GetFirstSelected()
-        if idx2 > len(self.append_ops):
-            idx1 = -1
+        # Either invalid or the last, so can't be moved down
+        if idx2 < 0 or idx2 >= len(self.append_ops) - 1:
+            return
+        # Next element
         idx1 = idx2 + 1
         if (
             idx1 < 0
@@ -396,24 +383,40 @@ class DefaultActionPanel(wx.Panel):
 
     ### Routines for addition of new entries
     def add_prepend_option(self, event):
-        idx = self.option_list.GetFirstSelected()
-        if idx < 0 or idx >= len(self.standards):
+        ct = self.option_list.GetSelectedItemCount()
+        if ct <= 0:
             return
-        operation = self.standards[idx][1]
-        content = self.text_param_option.GetValue()
-        entry = [operation, content]
-        self.prepend_ops.append(entry)
+        idx = self.option_list.GetFirstSelected()
+        while 0 <= idx < len(self.standards):
+            operation = self.standards[idx][1]
+            if ct == 1:
+                # Only one, so we take the displayed and potentially changed parameter
+                content = self.text_param_option.GetValue()
+            else:
+                # More than one, so we take the default as parameter
+                content = self.standards[idx][2]
+            entry = [operation, content]
+            self.prepend_ops.append(entry)
+            idx = self.option_list.GetNextSelected(idx)
         self.save_data()
         self.fill_prepend_list()
 
     def add_append_option(self, event):
-        idx = self.option_list.GetFirstSelected()
-        if idx < 0 or idx >= len(self.standards):
+        ct = self.option_list.GetSelectedItemCount()
+        if ct <= 0:
             return
-        operation = self.standards[idx][1]
-        content = self.text_param_option.GetValue()
-        entry = [operation, content]
-        self.append_ops.append(entry)
+        idx = self.option_list.GetFirstSelected()
+        while 0 <= idx < len(self.standards):
+            operation = self.standards[idx][1]
+            if ct == 1:
+                # Only one, so we take the displayed and potentially changed parameter
+                content = self.text_param_option.GetValue()
+            else:
+                # More than one, so we take the default as parameter
+                content = self.standards[idx][2]
+            entry = [operation, content]
+            self.append_ops.append(entry)
+            idx = self.option_list.GetNextSelected(idx)
         self.save_data()
         self.fill_append_list()
 

@@ -592,7 +592,7 @@ class RibbonPanel:
             * toggle, parent, group, identifier, toggle_identifier, action, right, rule_enabled
         * Multi-buttons have an identifier attr which is applied to the root context, or given "object".
         * The identifier is used to set the state of the object, the attr-identifier is set to the value-identifier
-        * Toggle buttons have a toggle_identifier, this is used to set the and retrieve the state of the toggle.
+        * Toggle buttons have a toggle_identifier, this is used to set and retrieve the state of the toggle.
 
 
         @param new_values: dictionary of button values to use.
@@ -1295,7 +1295,7 @@ class Art:
 
         if self.color_mode == COLOR_MODE_DARK:
             # This is rather crude, as a dark mode could also
-            # be based eg on a dark blue scheme
+            # be based e.g. on a dark blue scheme
             self.button_face = wx.BLACK
             self.ribbon_background = wx.BLACK
             self.text_color = wx.WHITE

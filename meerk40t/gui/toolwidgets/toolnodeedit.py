@@ -946,7 +946,7 @@ class EditTool(ToolWidget):
                 entry = self.nodes[idx]
                 if entry["selected"] and entry["type"] == "point":
                     # What's the index of the last selected element
-                    # Have we dealt with that before? ie not multiple toggles..
+                    # Have we dealt with that before? ie not multiple toggles.
                     segstart = entry["start"]
                     if segstart in dealt_with:
                         continue
@@ -1002,7 +1002,7 @@ class EditTool(ToolWidget):
     @staticmethod
     def get_bezier_point(segment, t):
         """
-        Provide a point on the cubic bezier curve for t (0 <= t <= 1)
+        Provide a point on the cubic Bézier curve for t (0 <= t <= 1)
         Args:
             segment (PathSegment): a cubic bezier
             t (float): (0 <= t <= 1)
@@ -1813,7 +1813,7 @@ class EditTool(ToolWidget):
             keycode (string): if available the keycode that was pressed
 
         Returns:
-            Indicator how to proceed with this event after its execution (consume, chain etc)
+            Indicator how to proceed with this event after its execution (consume, chain etc.)
         """
         if self.scene.pane.active_tool != "edit":
             return RESPONSE_CHAIN
