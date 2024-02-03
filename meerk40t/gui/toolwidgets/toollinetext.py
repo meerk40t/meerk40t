@@ -205,6 +205,12 @@ class LineTextTool(ToolWidget):
                 if modifiers == "ctrl+alt+c":
                     self.node.mkalign = "middle"
                     to_add = ""
+                if modifiers == "ctrl+alt+b":
+                    self.node.mkfontsize *= 1.2
+                    to_add = ""
+                if modifiers == "ctrl+alt+s":
+                    self.node.mkfontsize /= 1.2
+                    to_add = ""
                 if modifiers == "ctrl+return":
                     to_add = "\n"
                 if modifiers == "back":
