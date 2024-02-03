@@ -256,31 +256,32 @@ class LineTextTool(ToolWidget):
         return True
 
     def signal(self, signal, *args, **kwargs):
+        def update_node():
+            self.scene.context.fonts.update_linetext(self.node, self.node.mktext)
+            self.node.emphasized = False
+            self.scene.request_refresh()
+            self.scene.gui.scene_panel.SetFocus()
+
         if self.node is None:
             return
         if signal == "linetext" and args[0] == "bigger":
             self.node.mkfontsize *= 1.2
-            self.scene.context.fonts.update_linetext(self.node, self.node.mktext)
-            self.node.emphasized = False
-            self.scene.request_refresh()
-            self.scene.gui.scene_panel.SetFocus()
+            update_node()
         elif signal == "linetext" and args[0] == "smaller":
             self.node.mkfontsize /= 1.2
-            self.scene.context.fonts.update_linetext(self.node, self.node.mktext)
-            self.node.emphasized = False
-            self.scene.request_refresh()
-            self.scene.gui.scene_panel.SetFocus()
+            update_node()
+        elif signal == "linetext" and args[0] == "align":
+            if len(args) > 1:
+                align = args[1]
+                self.node.mkalign = align
+            update_node()
         elif signal == "linetext" and args[0] == "font":
             if len(args) > 1:
                 font = args[1]
                 from os.path import basename
 
                 self.node.mkfont = basename(font)
-                self.scene.context.fonts.update_linetext(self.node, self.node.mktext)
-                self.node.emphasized = False
-                self.scene.request_refresh()
-                self.scene.gui.scene_panel.SetFocus()
+            update_node()
         elif signal == "linetext" and args[0] == "text":
             self.scene.context.fonts.update_linetext(self.node, self.node.mktext)
-            self.node.emphasized = False
-            self.scene.request_refresh()
+            update_node()

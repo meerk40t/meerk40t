@@ -715,6 +715,23 @@ class PanelFontSelect(wx.Panel):
         self.btn_smaller.SetToolTip(_("Decrease the font-size"))
         sizer_buttons.Add(self.btn_smaller, 0, wx.EXPAND, 0)
 
+        sizer_buttons.AddSpacer(25)
+
+        self.btn_align_left = wx.Button(self, wx.ID_ANY, "<")
+        self.btn_align_left.SetToolTip(_("Align text on the left side"))
+        sizer_buttons.Add(self.btn_align_left, 0, wx.EXPAND, 0)
+
+        self.btn_align_center = wx.Button(self, wx.ID_ANY, "|")
+        self.btn_align_center.SetToolTip(_("Align text around the center"))
+        sizer_buttons.Add(self.btn_align_center, 0, wx.EXPAND, 0)
+
+        self.btn_align_right = wx.Button(self, wx.ID_ANY, "<")
+        self.btn_align_right.SetToolTip(_("Align text on the right side"))
+        sizer_buttons.Add(self.btn_align_right, 0, wx.EXPAND, 0)
+
+        for btn in (self.btn_align_center, self.btn_align_left, self.btn_align_right, self.btn_bigger, self.btn_smaller):
+            btn.SetMaxSize(dip_size(self, 32, -1))
+
         lbl_spacer = wx.StaticText(self, wx.ID_ANY, "")
         sizer_buttons.Add(lbl_spacer, 1, 0, 0)
 
@@ -726,6 +743,10 @@ class PanelFontSelect(wx.Panel):
         self.Bind(wx.EVT_LISTBOX_DCLICK, self.on_list_font_dclick, self.list_fonts)
         self.Bind(wx.EVT_BUTTON, self.on_btn_bigger, self.btn_bigger)
         self.Bind(wx.EVT_BUTTON, self.on_btn_smaller, self.btn_smaller)
+
+        self.Bind(wx.EVT_BUTTON, self.on_align("start"), self.btn_align_left)
+        self.Bind(wx.EVT_BUTTON, self.on_align("middle"), self.btn_align_center)
+        self.Bind(wx.EVT_BUTTON, self.on_align("end"), self.btn_align_right)
 
         # end wxGlade
         self.load_directory()
@@ -765,6 +786,13 @@ class PanelFontSelect(wx.Panel):
 
     def on_btn_smaller(self, event):
         self.context.signal("linetext", "smaller")
+
+    def on_align(self, alignment):
+        def handler(event):
+            self.context.signal("linetext", "align", local_alignment)
+
+        local_alignment = alignment
+        return handler
 
     def on_list_font_dclick(self, event):
         index = self.list_fonts.GetSelection()
