@@ -46,6 +46,7 @@ class FontPath:
             return self.total_geometry
         bt = BeamTable(self.total_geometry.simplify())
         union = bt.union(*list(range(self._index)))
+        # union.remove_0_length()
         union.greedy_distance()
         return union.simplify()
 
