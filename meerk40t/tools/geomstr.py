@@ -1553,6 +1553,8 @@ class Geomstr:
         geometry = cls()
         if np.isinf(y_max):
             return geometry
+        if distance == 0:
+            return geometry
         while vm.current_is_valid_range():
             vm.scanline_to(vm.scanline + distance)
             y = vm.scanline
