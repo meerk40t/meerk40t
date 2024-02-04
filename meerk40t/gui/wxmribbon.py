@@ -401,6 +401,11 @@ class MKRibbonBarPanel(RibbonBarPanel):
         if self.allow_labels:
             self.toggle_show_labels(value)
 
+    # Notabene: the lookup listener design will look for partial fits!
+    # So a listener to "button/tool" would get changes from
+    #  "button/tool", "button/tools" and "button/toolabcdefgh"
+    # So to add buttons of your own make sure you are using a distinct name!
+
     @lookup_listener("button/basicediting")
     def set_editing_buttons(self, new_values, old_values):
         self.set_panel_buttons("basicediting", new_values)
