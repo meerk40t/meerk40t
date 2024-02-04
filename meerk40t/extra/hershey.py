@@ -44,11 +44,11 @@ class FontPath:
     def geometry(self):
         if not self.weld:
             return self.total_geometry
-        from beamtable import union
+        from pybeamtable import union
         g = self.total_geometry.simplify()
         u = union(g.as_float_segments())
         g_union = Geomstr.from_float_segments(u)
-        g_union.greedy_distance()
+        # g_union.greedy_distance()
         return g_union.simplify()
 
     def new_path(self):
