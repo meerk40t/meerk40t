@@ -3046,13 +3046,13 @@ def init_tree(kernel):
         with self.static("move_back"):
             drop_node = self.elem_branch
             data = list()
-            for item in list(self.regmarks()):
-                if item.selected:
+            for item in list(self.regmarks_nodes()):
+                # print (item.type, item.emphasized, item.selected, item.highlighted)
+                if item.emphasized:
                     data.append(item)
             if len(data) == 0:
                 data.append(node)
-            for item in data:
-                drop_node.drop(item)
+            self.drag_and_drop(data, drop_node)
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_separator_before()

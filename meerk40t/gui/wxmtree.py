@@ -1842,6 +1842,10 @@ class ShadowTree:
                 result = "op"
             elif typename.startswith("elem "):
                 result = "elem"
+            elif typename.startswith("group"):
+                result = "elem"
+            elif typename.startswith("file"):
+                result = "elem"
             else:
                 result = typename
             return result
