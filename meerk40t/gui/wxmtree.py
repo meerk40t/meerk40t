@@ -295,8 +295,19 @@ class TreePanel(wx.Panel):
         @param event:
         @return:
         """
-        event.Skip()
         keyvalue = get_key_name(event)
+        # There is a menu entry in wxmain that should catch all 'delete' keys
+        # but that is not consistently so, every other key seems to slip through
+        # probably there is an issue there, but we use the opportunity not
+        # only to catch these but to establish a forced delete via ctrl-delete as well
+
+        if keyvalue == "delete":
+            self.context("tree selected delete\n")
+            return
+        if keyvalue == "ctrl+delete":
+            self.context("tree selected remove\n")
+            return
+        event.Skip()
         if is_navigation_key(keyvalue):
             if self._keybind_channel:
                 self._keybind_channel(
