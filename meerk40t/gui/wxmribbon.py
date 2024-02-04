@@ -449,7 +449,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
     def set_select_buttons(self, new_values, old_values):
         self.set_panel_buttons("select", new_values)
 
-    @lookup_listener("button/tool")
+    @lookup_listener("button/tools")
     def set_tool_buttons(self, new_values, old_values):
         self.set_panel_buttons("tool", new_values)
 
