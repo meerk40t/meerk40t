@@ -20,9 +20,6 @@ class HatchEffectNode(Node):
         self.stroke_scale = False
         self._stroke_zero = None
 
-        # Probably not as relevant as for wobble, but let's apply some sensible defaults anyway
-        self.linecap = Linecap.CAP_BUTT
-        self.linejoin = Linejoin.JOIN_BEVEL
         self.output = True
         self.hatch_distance = None
         self.hatch_angle = None

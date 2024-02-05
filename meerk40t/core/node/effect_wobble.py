@@ -20,8 +20,6 @@ class WobbleEffectNode(Node):
         self.stroke_width = 100.0
         self.stroke_scale = False
         self._stroke_zero = None
-        self.linecap = Linecap.CAP_BUTT
-        self.linejoin = Linejoin.JOIN_BEVEL
         self.output = True
         self.wobble_radius = "1.5mm"
         self.wobble_interval = "0.1mm"
