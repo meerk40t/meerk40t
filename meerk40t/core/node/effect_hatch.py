@@ -1,7 +1,7 @@
 from copy import copy
 from math import sqrt
 
-from meerk40t.core.node.node import Node, Linecap, Linejoin
+from meerk40t.core.node.node import Node
 from meerk40t.core.units import Angle, Length
 from meerk40t.svgelements import Color
 from meerk40t.tools.geomstr import Geomstr  # ,  Scanbeam
