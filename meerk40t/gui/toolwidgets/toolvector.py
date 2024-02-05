@@ -161,7 +161,10 @@ class VectorTool(ToolWidget):
             response = RESPONSE_CONSUME
         elif event_type == "hover":
             if nearest_snap is None:
-                self.mouse_position = space_pos[0], space_pos[1]
+                sx, sy = self.scene.get_snap_point(
+                    space_pos[0], space_pos[1], modifiers
+                )
+                self.mouse_position = sx, sy
             else:
                 self.mouse_position = nearest_snap[0], nearest_snap[1]
             if self.path:
