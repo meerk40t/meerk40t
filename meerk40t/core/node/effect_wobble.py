@@ -2,7 +2,7 @@ import math
 from copy import copy
 from math import sqrt
 
-from meerk40t.core.node.node import Node
+from meerk40t.core.node.node import Node, Linecap, Linejoin
 from meerk40t.core.units import Length
 from meerk40t.svgelements import Color
 from meerk40t.tools.geomstr import Geomstr  # ,  Scanbeam
@@ -17,9 +17,11 @@ class WobbleEffectNode(Node):
     def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
         self.fill = None
         self.stroke = Color("Blue")
-        self.stroke_width = 1000.0
+        self.stroke_width = 100.0
         self.stroke_scale = False
         self._stroke_zero = None
+        self.linecap = Linecap.CAP_BUTT
+        self.linejoin = Linejoin.JOIN_BEVEL
         self.output = True
         self.wobble_radius = "1.5mm"
         self.wobble_interval = "0.1mm"
@@ -35,7 +37,6 @@ class WobbleEffectNode(Node):
             self.label = "Wobble"
         else:
             self.label = label
-
         self.recalculate()
 
         self._total_count = 0
