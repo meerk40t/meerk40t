@@ -16,9 +16,10 @@ class HatchEffectNode(Node):
     def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
         self.fill = None
         self.stroke = Color("Blue")
-        self.stroke_width = 1000.0
+        self.stroke_width = 100.0
         self.stroke_scale = False
         self._stroke_zero = None
+
         self.output = True
         self.hatch_distance = None
         self.hatch_angle = None

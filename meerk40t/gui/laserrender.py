@@ -425,7 +425,9 @@ class LaserRender:
                 self.pen.SetCap(wx.CAP_ROUND)
 
     def _set_linejoin_by_node(self, node):
-        if not hasattr(node, "linejoin") or node.linejoin is None:
+        if not hasattr(node, "linejoin"):
+            self.pen.SetJoin(wx.JOIN_BEVEL)
+        elif node.linejoin is None:
             self.pen.SetJoin(wx.JOIN_MITER)
         else:
             if node.linejoin == Linejoin.JOIN_ARCS:
