@@ -71,15 +71,15 @@ class WobblePropertyPanel(ScrolledPanel):
         )
         main_sizer.Add(panel_stroke, 1, wx.EXPAND, 0)
 
+        option_sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer_radius = StaticBoxSizer(
             self, wx.ID_ANY, _("Wobble Radius:"), wx.HORIZONTAL
         )
-        main_sizer.Add(sizer_radius, 0, wx.EXPAND, 0)
 
         self.text_radius = TextCtrl(
             self,
             wx.ID_ANY,
-            str(node.wobble_radius),
+            str(node.radius),
             limited=True,
             check="length",
             style=wx.TE_PROCESS_ENTER,
@@ -89,17 +89,34 @@ class WobblePropertyPanel(ScrolledPanel):
         sizer_interval = StaticBoxSizer(
             self, wx.ID_ANY, _("Wobble Interval:"), wx.HORIZONTAL
         )
-        main_sizer.Add(sizer_interval, 0, wx.EXPAND, 0)
-
         self.text_interval = TextCtrl(
             self,
             wx.ID_ANY,
-            str(node.wobble_interval),
+            str(node.interval),
             limited=True,
             check="length",
             style=wx.TE_PROCESS_ENTER,
         )
         sizer_interval.Add(self.text_interval, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sizer_speed = StaticBoxSizer(
+            self, wx.ID_ANY, _("Wobble Speed:"), wx.HORIZONTAL
+        )
+        self.text_speed = TextCtrl(
+            self,
+            wx.ID_ANY,
+            str(node.speed),
+            limited=True,
+            check="int",
+            style=wx.TE_PROCESS_ENTER,
+        )
+        sizer_speed.Add(self.text_speed, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        option_sizer.Add(sizer_radius, 1, wx.EXPAND, 0)
+        option_sizer.Add(sizer_interval, 1, wx.EXPAND, 0)
+        option_sizer.Add(sizer_speed, 1, wx.EXPAND, 0)
+
+        main_sizer.Add(option_sizer, 0, wx.EXPAND, 0)
 
         sizer_fill = StaticBoxSizer(self, wx.ID_ANY, _("Fill Style"), wx.VERTICAL)
         main_sizer.Add(sizer_fill, 6, wx.EXPAND, 0)
@@ -120,6 +137,7 @@ class WobblePropertyPanel(ScrolledPanel):
 
         self.text_radius.SetActionRoutine(self.on_text_radius)
         self.text_interval.SetActionRoutine(self.on_text_interval)
+        self.text_speed.SetActionRoutine(self.on_text_speed)
 
         self.check_classify.Bind(wx.EVT_CHECKBOX, self.on_check_classify)
 
@@ -150,8 +168,9 @@ class WobblePropertyPanel(ScrolledPanel):
         if i == len(self.fills):
             i = 0
         self.combo_fill_style.SetSelection(i)
-        set_ctrl_value(self.text_interval, str(self.node.wobble_interval))
-        set_ctrl_value(self.text_radius, str(self.node.wobble_radius))
+        set_ctrl_value(self.text_interval, str(self.node.interval))
+        set_ctrl_value(self.text_radius, str(self.node.radius))
+        set_ctrl_value(self.text_speed, str(self.node.speed))
         # try:
         #     # h_angle = float(self.node.wobble_speed)
         #     # self.slider_angle.SetValue(int(h_angle))
@@ -194,6 +213,16 @@ class WobblePropertyPanel(ScrolledPanel):
             if dist == self.node.interval:
                 return
             self.node.interval = dist
+            self.node.modified()
+        except ValueError:
+            pass
+
+    def on_text_speed(self):
+        try:
+            spd = int(self.text_speed.GetValue())
+            if spd == self.node.speed:
+                return
+            self.node.speed = spd
             self.node.modified()
         except ValueError:
             pass

@@ -1928,6 +1928,15 @@ def init_tree(kernel):
         "elem polyline",
     )
 
+    wobbleable_elems = (
+        "elem path",
+        "elem rect",
+        "elem circle",
+        "elem ellipse",
+        "elem polyline",
+        "elem line",
+    )
+
     @tree_submenu(_("Apply special effect"))
     @tree_operation(_("Append Line-fill 0.1mm"), node_type=hatchable_elems, help="")
     def append_element_effect_eulerian(node, pos=None, **kwargs):
@@ -2024,7 +2033,7 @@ def init_tree(kernel):
         _("Append wobble {type} {radius} @{interval}").format(
             type="Circle", radius="0.5mm", interval="0.05mm"
         ),
-        node_type=hatchable_elems,
+        node_type=wobbleable_elems,
         help="",
     )
     def append_element_effect_wobble_c05(node, pos=None, **kwargs):
@@ -2047,7 +2056,7 @@ def init_tree(kernel):
         _("Append wobble {type} {radius} @{interval}").format(
             type="Circle", radius="1mm", interval="0.1mm"
         ),
-        node_type=hatchable_elems,
+        node_type=wobbleable_elems,
         help="",
     )
     def append_element_effect_wobble_c1(node, pos=None, **kwargs):
@@ -2070,7 +2079,7 @@ def init_tree(kernel):
         _("Append wobble {type} {radius} @{interval}").format(
             type="Circle", radius="3mm", interval="0.1mm"
         ),
-        node_type=hatchable_elems,
+        node_type=wobbleable_elems,
         help="",
     )
     def append_element_effect_wobble_c3(node, pos=None, **kwargs):
@@ -2079,6 +2088,29 @@ def init_tree(kernel):
             wobble_type="circle_right",
             wobble_radius="3mm",
             wobble_interval="0.1mm",
+            pos=pos,
+        )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
+
+        self.signal("updateelem_tree")
+
+    @tree_submenu(_("Apply special effect"))
+    @tree_operation(
+        _("Append {type} {radius} @{interval}").format(
+            type="Meander", radius="1mm", interval="1.25mm"
+        ),
+        node_type=wobbleable_elems,
+        help="",
+    )
+    def append_element_effect_wobble_m1(node, pos=None, **kwargs):
+        group_node = node.parent.add(
+            type="effect wobble",
+            wobble_type="meander_1",
+            wobble_radius="1mm",
+            wobble_interval="1.25mm",
             pos=pos,
         )
         for e in list(self.elems(emphasized=True)):
