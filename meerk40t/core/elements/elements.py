@@ -367,6 +367,20 @@ def plugin(kernel, lifecycle=None):
                 "page": "Scene",
                 "section": "Operation",
             },
+            {
+                "attr": "allow_reg_to_op_dragging",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Allow dragging of regmarks to operations"),
+                "tip": _(
+                    "Ticked: A drag operation of regmark nodes to an operation will move back these nodes to the element branch."
+                )
+                + "\n"
+                + _("Unticked: A drag operation of regmark nodes to an operation will be ignored."),
+                "page": "Scene",
+                "section": "Operation",
+            },
         ]
         for c in choices:
             c["help"] = "classification"
@@ -2098,10 +2112,15 @@ class Elemental(Service):
         #             # print ("Checked %s and will addit=%s" % (n.type, addit))
         #             if addit and n not in data:
         #                 data.append(n)
+        op_treatment = drop_node.type in op_parent_nodes and self.allow_reg_to_op_dragging
         for drag_node in data:
             if drop_node is drag_node:
                 # print(f"Drag {drag_node.type} to {drop_node.type} - Drop node was drag node")
                 continue
+            if op_treatment and drag_node.has_ancestor("branch reg"):
+                # We need to first relocate the drag_node to the elem branch
+                # print(f"Relocate {drag_node.type} to elem branch")
+                self.elem_branch.drop(drag_node)
             if drop_node.drop(drag_node, modify=False):
                 # Is the drag node coming from the regmarks branch?
                 # If yes then we might need to classify.

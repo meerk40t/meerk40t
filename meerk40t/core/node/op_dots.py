@@ -74,7 +74,7 @@ class DotsOpNode(Node, Parameters):
         if hasattr(drag_node, "as_geometry"):
             if (
                 drag_node.type not in self._allowed_elements_dnd
-                or drag_node._parent.type == "branch reg"
+                or drag_node.has_ancestor("branch reg")
             ):
                 return False
             # Dragging element onto operation adds that element to the op.
@@ -94,7 +94,10 @@ class DotsOpNode(Node, Parameters):
             if modify:
                 self.insert_sibling(drag_node)
             return True
-        elif drag_node.type in ("file", "group"):
+        elif (
+            drag_node.type in ("file", "group")
+            and not drag_node.has_ancestor("branch reg")
+        ):
             some_nodes = False
             for e in drag_node.flat(elem_nodes):
                 # Add element to operation
