@@ -85,14 +85,14 @@ class ImageOpNode(Node, Parameters):
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if hasattr(drag_node, "as_image"):
-            if drag_node._parent.type == "branch reg":
+            if drag_node.has_ancestor("branch reg"):
                 # We do not accept reg nodes.
                 return False
             # Dragging element onto operation adds that element to the op.
             if modify:
                 self.add_reference(drag_node, pos=0)
             return True
-        if drag_node.type == "reference":
+        elif drag_node.type == "reference":
             # Disallow drop of image refelems onto a Dot op.
             if not hasattr(drag_node.node, "as_image"):
                 return False
@@ -100,12 +100,15 @@ class ImageOpNode(Node, Parameters):
             if modify:
                 self.append_child(drag_node)
             return True
-        if drag_node.type in op_nodes:
+        elif drag_node.type in op_nodes:
             # Move operation to a different position.
             if modify:
                 self.insert_sibling(drag_node)
             return True
-        if drag_node.type in ("file", "group"):
+        elif (
+            drag_node.type in ("file", "group")
+            and not drag_node.has_ancestor("branch reg")
+        ):
             some_nodes = False
             for e in drag_node.flat(elem_nodes):
                 # Add element to operation
