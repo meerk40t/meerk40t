@@ -298,9 +298,18 @@ class WobbleEffectNode(Node):
                     speed=self.wobble_speed,
                 )
             )
-        elif self.wobble_type == "meander":
+        elif self.wobble_type == "meander_1":
             path.append(
-                Geomstr.wobble_meander(
+                Geomstr.wobble_meander_1(
+                    outlines,
+                    radius=self._radius,
+                    interval=self._interval,
+                    speed=self.wobble_speed,
+                )
+            )
+        elif self.wobble_type == "meander_2":
+            path.append(
+                Geomstr.wobble_meander_2(
                     outlines,
                     radius=self._radius,
                     interval=self._interval,

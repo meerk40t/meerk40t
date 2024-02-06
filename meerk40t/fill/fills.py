@@ -319,37 +319,17 @@ def slowtooth(wobble, x0, y0, x1, y1):
         yield tx + dx, ty + dy
 
 
-def meander(wobble, x0, y0, x1, y1):
+def _meander(wobble, pattern, max_x, max_y, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
         return
 
-    pattern1 = (
-        ("r", 6,),
-        ("u", 5,),
-        ("l", 4,),
-        ("d", 3,),
-        ("r", 2,),
-        ("u", 1,),
-        )
-    pattern2 = list((pattern1[i] for i in range(len(pattern1) - 1, -1, -1)))
-    transition1 = (
-        ("l", 1),
-    )
-    transition2 = (
-        ("d", 6),
-    )
     factors = {
         "l": (-1, 0),
         "r": (1, 0),
         "u": (0, -1),
         "d": (0, 1),
     }
-    max_x = 0
-    for p in pattern1:
-        max_x = max(max_x, p[1])
-    max_y = max_x
-    max_x += 1
 
     if int(wobble.speed) % 10 == 1:
         # position_x = "left"
@@ -389,34 +369,63 @@ def meander(wobble, x0, y0, x1, y1):
         dy = 0
         pt = mat.point_in_matrix_space((dx + offset_x, dy + offset_y))
         yield tx + pt.x, ty + pt.y
-        for p in pattern1:
+        for p in pattern:
             sx, sy = factors[p[0]]
             stepsize = step * p[1]
             dx += sx * stepsize
             dy += sy * stepsize
             pt = mat.point_in_matrix_space((dx + offset_x, dy + offset_y))
             yield tx + pt.x, ty + pt.y
-        for p in transition1:
-            sx, sy = factors[p[0]]
-            stepsize = step * p[1]
-            dx += sx * stepsize
-            dy += sy * stepsize
-            pt = mat.point_in_matrix_space((dx + offset_x, dy + offset_y))
-            yield tx + pt.x, ty + pt.y
-        for p in pattern2:
-            sx, sy = factors[p[0]]
-            stepsize = step * p[1]
-            dx += sx * stepsize
-            dy += sy * stepsize
-            pt = mat.point_in_matrix_space((dx + offset_x, dy + offset_y))
-            yield tx + pt.x, ty + pt.y
-        for p in transition2:
-            sx, sy = factors[p[0]]
-            stepsize = step * p[1]
-            dx += sx * stepsize
-            dy += sy * stepsize
-            pt = mat.point_in_matrix_space((dx + offset_x, dy + offset_y))
-            yield tx + pt.x, ty + pt.y
+
+def meander_1(wobble, x0, y0, x1, y1):
+    pattern = (
+        ("r", 6,),
+        ("u", 5,),
+        ("l", 4,),
+        ("d", 3,),
+        ("r", 2,),
+        ("u", 1,),
+        # transition
+        ("l", 1),
+        # reverse of upper part
+        ("u", 1,),
+        ("r", 2,),
+        ("d", 3,),
+        ("l", 4,),
+        ("u", 5,),
+        ("r", 6,),
+        # transition
+        ("d", 6),
+    )
+    max_x = 0
+    for p in pattern:
+        max_x = max(max_x, p[1])
+    max_y = max_x
+    max_x += 1
+    yield from _meander(wobble, pattern, max_x, max_y, x0, y0, x1, y1)
+
+def meander_2(wobble, x0, y0, x1, y1):
+    pattern = (
+        ("u", 3),
+        ("r", 3),
+        ("d", 2),
+        ("l", 1),
+        ("u", 1),
+        ("l", 1),
+        ("d", 2),
+        ("r", 5),
+        ("u", 2),
+        ("l", 1),
+        ("d", 1),
+        ("l", 1),
+        ("u", 2),
+        ("r", 3),
+        ("d", 3),
+    )
+    max_x = 8
+    max_y = 3
+
+    yield from _meander(wobble, pattern, max_x, max_y, x0, y0, x1, y1)
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
@@ -432,4 +441,5 @@ def plugin(kernel, lifecycle):
         context.register("wobble/jigsaw", jigsaw)
         context.register("wobble/gear", gear)
         context.register("wobble/slowtooth", slowtooth)
-        context.register("wobble/meander", meander)
+        context.register("wobble/meander_1", meander_1)
+        context.register("wobble/meander_2", meander_2)

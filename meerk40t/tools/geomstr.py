@@ -1653,8 +1653,14 @@ class Geomstr:
         return cls.wobble(algorithm, outer, radius, interval, speed)
 
     @classmethod
-    def wobble_meander(cls, outer, radius, interval, speed):
-        from meerk40t.fill.fills import meander as algorithm
+    def wobble_meander_1(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import meander_1 as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+    @classmethod
+    def wobble_meander_2(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import meander_2 as algorithm
 
         return cls.wobble(algorithm, outer, radius, interval, speed)
 
