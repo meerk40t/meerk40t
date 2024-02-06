@@ -316,6 +316,15 @@ class WobbleEffectNode(Node):
                     speed=self.wobble_speed,
                 )
             )
+        elif self.wobble_type == "meander_3":
+            path.append(
+                Geomstr.wobble_meander_3(
+                    outlines,
+                    radius=self._radius,
+                    interval=self._interval,
+                    speed=self.wobble_speed,
+                )
+            )
         return path
 
     def modified(self):

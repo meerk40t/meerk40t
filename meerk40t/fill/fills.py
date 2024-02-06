@@ -427,6 +427,34 @@ def meander_2(wobble, x0, y0, x1, y1):
 
     yield from _meander(wobble, pattern, max_x, max_y, x0, y0, x1, y1)
 
+def meander_3(wobble, x0, y0, x1, y1):
+    pattern = (
+        ("u", 4,),
+        ("r", 3,),
+        ("d", 3,),
+        ("l", 2,),
+        ("u", 2,),
+        ("r", 1,),
+        ("d", 1,),
+        # and now backwards...
+        # reverse of upper part
+        ("u", 1,),
+        ("l", 1,),
+        ("d", 2,),
+        ("r", 2,),
+        ("u", 3,),
+        ("l", 3,),
+        ("d", 4,),
+        # transition
+        ("r", 4),
+    )
+    max_x = 0
+    for p in pattern:
+        max_x = max(max_x, p[1])
+    max_y = max_x
+    max_x += 1
+    yield from _meander(wobble, pattern, max_x, max_y, x0, y0, x1, y1)
+
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
         _ = kernel.translation
@@ -443,3 +471,4 @@ def plugin(kernel, lifecycle):
         context.register("wobble/slowtooth", slowtooth)
         context.register("wobble/meander_1", meander_1)
         context.register("wobble/meander_2", meander_2)
+        context.register("wobble/meander_3", meander_3)
