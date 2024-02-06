@@ -1598,6 +1598,9 @@ class Geomstr:
                         ]
                     )
                 last = pt
+            if len(segments) > 1 and abs(segments[0] - segments[-1]) < 1e-5:
+                if abs(points[0] - points[1]) >= 1e-5:
+                    points.append(points[0])
             geometry.append(Geomstr.lines(*points))
         return geometry
 
