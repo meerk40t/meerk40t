@@ -323,6 +323,7 @@ def meander(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
         return
+
     pattern1 = (
         ("r", 6,),
         ("u", 5,),
@@ -344,6 +345,37 @@ def meander(wobble, x0, y0, x1, y1):
         "u": (0, -1),
         "d": (0, 1),
     }
+    max_x = 0
+    for p in pattern1:
+        max_x = max(max_x, p[1])
+    max_y = max_x
+    max_x += 1
+
+    if int(wobble.speed) % 10 == 1:
+        # position_x = "left"
+        offset_x = 0 * max_x
+    elif int(wobble.speed) % 10 == 2:
+        # position_x = "right"
+        offset_x = -1 * max_x
+    else:
+        # position_x = "center"
+        offset_x = -0.5 * max_x
+
+    if wobble.speed // 10 == 1:
+        # position_y = "top"
+        offset_y = 0 * max_y
+    elif wobble.speed // 10 == 2:
+        # position_y = "bottom"
+        offset_y = 1 * max_y
+    else:
+        # position_y = "center"
+        offset_y = 0.5 * max_y
+
+    step = wobble.radius / max_x
+
+    offset_x *= step
+    offset_y *= step
+
 
     angle = 0
     mat = Matrix()
@@ -355,36 +387,35 @@ def meander(wobble, x0, y0, x1, y1):
     for tx, ty in wobble.wobble(x0, y0, x1, y1):
         dx = 0
         dy = 0
-        pt = mat.point_in_matrix_space((dx, dy))
+        pt = mat.point_in_matrix_space((dx + offset_x, dy + offset_y))
         yield tx + pt.x, ty + pt.y
-        step = wobble.radius / 7
         for p in pattern1:
             sx, sy = factors[p[0]]
             stepsize = step * p[1]
             dx += sx * stepsize
             dy += sy * stepsize
-            pt = mat.point_in_matrix_space((dx, dy))
+            pt = mat.point_in_matrix_space((dx + offset_x, dy + offset_y))
             yield tx + pt.x, ty + pt.y
         for p in transition1:
             sx, sy = factors[p[0]]
             stepsize = step * p[1]
             dx += sx * stepsize
             dy += sy * stepsize
-            pt = mat.point_in_matrix_space((dx, dy))
+            pt = mat.point_in_matrix_space((dx + offset_x, dy + offset_y))
             yield tx + pt.x, ty + pt.y
         for p in pattern2:
             sx, sy = factors[p[0]]
             stepsize = step * p[1]
             dx += sx * stepsize
             dy += sy * stepsize
-            pt = mat.point_in_matrix_space((dx, dy))
+            pt = mat.point_in_matrix_space((dx + offset_x, dy + offset_y))
             yield tx + pt.x, ty + pt.y
         for p in transition2:
             sx, sy = factors[p[0]]
             stepsize = step * p[1]
             dx += sx * stepsize
             dy += sy * stepsize
-            pt = mat.point_in_matrix_space((dx, dy))
+            pt = mat.point_in_matrix_space((dx + offset_x, dy + offset_y))
             yield tx + pt.x, ty + pt.y
 
 def plugin(kernel, lifecycle):
