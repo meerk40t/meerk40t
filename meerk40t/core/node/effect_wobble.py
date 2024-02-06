@@ -102,8 +102,9 @@ class WobbleEffectNode(Node):
 
     @radius.setter
     def radius(self, value):
-        self.wobble_radius = value
-        self.recalculate()
+        if self.wobble_radius != value:
+            self.wobble_radius = value
+            self.recalculate()
 
     @property
     def interval(self):
@@ -111,12 +112,23 @@ class WobbleEffectNode(Node):
 
     @interval.setter
     def interval(self, value):
-        self.wobble_interval = value
-        self.recalculate()
+        if self.wobble_interval != value:
+            self.wobble_interval = value
+            self.recalculate()
+
+    @property
+    def speed(self):
+        return self.wobble_speed
+
+    @speed.setter
+    def speed(self, value):
+        if self.wobble_speed != value:
+            self.wobble_speed = value
+            self.recalculate()
 
     def recalculate(self):
         """
-        Ensure that the properties for distance, angle and angle_delta are in usable units.
+        Ensure that the properties for radius, interval and speed are in usable units.
         @return:
         """
         w_radius = self.wobble_radius
@@ -145,6 +157,7 @@ class WobbleEffectNode(Node):
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["radius"] = str(self.wobble_radius)
         default_map["interval"] = str(self.wobble_interval)
+        default_map["speed"] = str(self.wobble_speed)
 
         default_map["children"] = str(len(self.children))
         return default_map
@@ -279,6 +292,15 @@ class WobbleEffectNode(Node):
         elif self.wobble_type == "slowtooth":
             path.append(
                 Geomstr.wobble_slowtooth(
+                    outlines,
+                    radius=self._radius,
+                    interval=self._interval,
+                    speed=self.wobble_speed,
+                )
+            )
+        elif self.wobble_type == "meander":
+            path.append(
+                Geomstr.wobble_meander(
                     outlines,
                     radius=self._radius,
                     interval=self._interval,

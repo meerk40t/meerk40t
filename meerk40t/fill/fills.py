@@ -319,6 +319,74 @@ def slowtooth(wobble, x0, y0, x1, y1):
         yield tx + dx, ty + dy
 
 
+def meander(wobble, x0, y0, x1, y1):
+    if x1 is None or y1 is None:
+        yield x0, y0
+        return
+    pattern1 = (
+        ("r", 6,),
+        ("u", 5,),
+        ("l", 4,),
+        ("d", 3,),
+        ("r", 2,),
+        ("u", 1,),
+        )
+    pattern2 = list((pattern1[i] for i in range(len(pattern1) - 1, -1, -1)))
+    transition1 = (
+        ("l", 1),
+    )
+    transition2 = (
+        ("d", 6),
+    )
+    factors = {
+        "l": (-1, 0),
+        "r": (1, 0),
+        "u": (0, -1),
+        "d": (0, 1),
+    }
+
+    angle = 0
+    mat = Matrix()
+    if x1 is not None:
+        a_x = x1 - x0
+        a_y = y1 - y0
+        angle = math.atan2(a_y, a_x)
+        mat.post_rotate(angle)
+    for tx, ty in wobble.wobble(x0, y0, x1, y1):
+        dx = 0
+        dy = 0
+        pt = mat.point_in_matrix_space((dx, dy))
+        yield tx + pt.x, ty + pt.y
+        step = wobble.radius / 7
+        for p in pattern1:
+            sx, sy = factors[p[0]]
+            stepsize = step * p[1]
+            dx += sx * stepsize
+            dy += sy * stepsize
+            pt = mat.point_in_matrix_space((dx, dy))
+            yield tx + pt.x, ty + pt.y
+        for p in transition1:
+            sx, sy = factors[p[0]]
+            stepsize = step * p[1]
+            dx += sx * stepsize
+            dy += sy * stepsize
+            pt = mat.point_in_matrix_space((dx, dy))
+            yield tx + pt.x, ty + pt.y
+        for p in pattern2:
+            sx, sy = factors[p[0]]
+            stepsize = step * p[1]
+            dx += sx * stepsize
+            dy += sy * stepsize
+            pt = mat.point_in_matrix_space((dx, dy))
+            yield tx + pt.x, ty + pt.y
+        for p in transition2:
+            sx, sy = factors[p[0]]
+            stepsize = step * p[1]
+            dx += sx * stepsize
+            dy += sy * stepsize
+            pt = mat.point_in_matrix_space((dx, dy))
+            yield tx + pt.x, ty + pt.y
+
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
         _ = kernel.translation
@@ -333,3 +401,4 @@ def plugin(kernel, lifecycle):
         context.register("wobble/jigsaw", jigsaw)
         context.register("wobble/gear", gear)
         context.register("wobble/slowtooth", slowtooth)
+        context.register("wobble/meander", meander)
