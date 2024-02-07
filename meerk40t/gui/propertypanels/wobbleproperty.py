@@ -193,9 +193,13 @@ class WobblePropertyPanel(ScrolledPanel):
             wasemph = self.node.emphasized
             self.context("declassify\nclassify\n")
             self.context.elements.signal("tree_changed")
-            self.context.elements.signal("element_property_update", self.node)
+            self.context.elements.signal("element_property_reload", self.node)
             mynode.emphasized = wasemph
             self.set_widgets(mynode)
+
+    def update(self):
+        self.node.modified()
+        self.context.elements.signal("element_property_reload", self.node)
 
     def on_text_radius(self):
         try:
@@ -203,9 +207,9 @@ class WobblePropertyPanel(ScrolledPanel):
             if dist == self.node.radius:
                 return
             self.node.radius = dist
-            self.node.modified()
         except ValueError:
             pass
+        self.update()
 
     def on_text_interval(self):
         try:
@@ -213,9 +217,9 @@ class WobblePropertyPanel(ScrolledPanel):
             if dist == self.node.interval:
                 return
             self.node.interval = dist
-            self.node.modified()
         except ValueError:
             pass
+        self.update()
 
     def on_text_speed(self):
         try:
@@ -223,11 +227,11 @@ class WobblePropertyPanel(ScrolledPanel):
             if spd == self.node.speed:
                 return
             self.node.speed = spd
-            self.node.modified()
         except ValueError:
             pass
+        self.update()
 
     def on_combo_fill(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         wobble_type = self.fills[int(self.combo_fill_style.GetSelection())]
         self.node.wobble_type = wobble_type
-        self.node.modified()
+        self.update()
