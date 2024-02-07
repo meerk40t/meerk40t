@@ -482,6 +482,12 @@ class wxMeerK40t(wx.App, Module):
             pass
 
     def OnInit(self):
+        self.name = f"MeerK40t-{wx.GetUserId()}"
+        self.instance = wx.SingleInstanceChecker(self.name)
+
+        if self.instance.IsAnotherRunning():
+            wx.MessageBox("Another instance is running", "ERROR")
+            return False
         return True
 
     def InitLocale(self):
