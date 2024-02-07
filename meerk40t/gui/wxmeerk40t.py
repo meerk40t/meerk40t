@@ -407,6 +407,7 @@ class wxMeerK40t(wx.App, Module):
     """
 
     def __init__(self, context, path):
+        self.context = context
         wx.App.__init__(self, 0)
         # Is this a Windows machine? If yes:
         # Turn on high-DPI awareness to make sure rendering is sharp on big
@@ -484,8 +485,8 @@ class wxMeerK40t(wx.App, Module):
     def OnInit(self):
         self.name = f"MeerK40t-{wx.GetUserId()}"
         self.instance = wx.SingleInstanceChecker(self.name)
-
-        if self.instance.IsAnotherRunning():
+        self.context.setting(bool, "single_instance_only", True)
+        if self.context.single_instance_only and self.instance.IsAnotherRunning():
             wx.MessageBox("Another instance is running", "ERROR")
             return False
         return True
@@ -959,6 +960,19 @@ class wxMeerK40t(wx.App, Module):
             from meerk40t.gui.utilitywidgets.debugwidgets import register_widget_icon
 
             register_widget_icon(kernel.root)
+
+        choices = [
+            {
+                "attr": "single_instance_only",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Single Instance"),
+                "tip": _("Allow only a single instance of MeerK40t."),
+                "page": "Start",
+            },
+        ]
+        kernel.register_choices("preferences", choices)
 
         @context.console_argument("sure", type=str, help="Are you sure? 'yes'?")
         @context.console_command("nuke_settings", hidden=True)
