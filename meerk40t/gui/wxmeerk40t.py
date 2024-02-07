@@ -1141,13 +1141,31 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         info.SetValue(body)
         sizer.Add(info, 5, wx.EXPAND, 0)
         btnsizer = wx.StdDialogButtonSizer()
-        btn = wx.Button(dlg, wx.ID_OK)
-        btn.SetDefault()
-        btnsizer.AddButton(btn)
-        btn = wx.Button(dlg, wx.ID_CANCEL)
-        btnsizer.AddButton(btn)
+        btn_yes = wx.Button(dlg, wx.ID_YES)
+        btn_yes.SetDefault()
+        btnsizer.AddButton(btn_yes)
+        btn_no = wx.Button(dlg, wx.ID_NO)
+        btnsizer.AddButton(btn_no)
+        btn_cancel = wx.Button(dlg, wx.ID_CANCEL, _("Quit"))
+        btnsizer.AddButton(btn_cancel)
         btnsizer.Realize()
         sizer.Add(btnsizer, 0, wx.EXPAND, 0)
+        btnsizer.SetAffirmativeButton(btn_yes)
+        btnsizer.SetNegativeButton(btn_no)
+        btnsizer.SetCancelButton(btn_cancel)
+
+        def close_yes(event):
+            dlg.EndModal(wx.ID_YES)
+
+        def close_no(event):
+            dlg.EndModal(wx.ID_NO)
+
+        def close_cancel(event):
+            dlg.EndModal(wx.ID_CANCEL)
+
+        dlg.Bind(wx.EVT_BUTTON, close_yes, btn_yes)
+        dlg.Bind(wx.EVT_BUTTON, close_no, btn_no)
+        dlg.Bind(wx.EVT_BUTTON, close_cancel, btn_cancel)
         dlg.SetSizer(sizer)
         sizer.Fit(dlg)
         dlg.CenterOnScreen()
@@ -1223,7 +1241,9 @@ The good news is that you can help us fix this bug by anonymously sending us the
         dlg = _extended_dialog(caption, message, data)
         answer = dlg.ShowModal()
         dlg.Destroy()
-    except Exception:
+    except Exception as e:
         answer = wx.ID_NO
-    if answer in (wx.YES, wx.ID_YES, wx.ID_OK):
+    if answer in (wx.ID_YES, wx.ID_OK):
         send_data_to_developers(filename, data)
+    if answer == wx.ID_CANCEL:
+        wx.Abort()
