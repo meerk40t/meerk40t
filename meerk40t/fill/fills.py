@@ -214,8 +214,11 @@ def circle(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
         return
+    rad = wobble.radius
+    if rad == 0:
+        rad = 1
     for tx, ty in wobble.wobble(x0, y0, x1, y1):
-        t = wobble._total_distance / (math.tau * wobble.radius)
+        t = wobble._total_distance / (math.tau * rad)
         dx = wobble.radius * math.cos(t * wobble.speed)
         dy = wobble.radius * math.sin(t * wobble.speed)
         yield tx + dx, ty + dy
@@ -225,11 +228,14 @@ def circle_right(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
         return
+    rad = wobble.radius
+    if rad == 0:
+        rad = 1
     for tx, ty in wobble.wobble(x0, y0, x1, y1):
         angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
         dx = wobble.radius * math.cos(angle)
         dy = wobble.radius * math.sin(angle)
-        t = wobble._total_distance / (math.tau * wobble.radius)
+        t = wobble._total_distance / (math.tau * rad)
         dx += wobble.radius * math.cos(t * wobble.speed)
         dy += wobble.radius * math.sin(t * wobble.speed)
         yield tx + dx, ty + dy
@@ -239,11 +245,14 @@ def circle_left(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
         return
+    rad = wobble.radius
+    if rad == 0:
+        rad = 1
     for tx, ty in wobble.wobble(x0, y0, x1, y1):
         angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
         dx = -wobble.radius * math.cos(angle)
         dy = -wobble.radius * math.sin(angle)
-        t = wobble._total_distance / (math.tau * wobble.radius)
+        t = wobble._total_distance / (math.tau * rad)
         dx += wobble.radius * math.cos(t * wobble.speed)
         dy += wobble.radius * math.sin(t * wobble.speed)
         yield tx + dx, ty + dy
@@ -253,9 +262,12 @@ def sinewave(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
         return
+    spd = wobble.speed
+    if spd == 0:
+        spd = 1
     for tx, ty in wobble.wobble(x0, y0, x1, y1):
         angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
-        d = math.sin(wobble._total_distance / wobble.speed)
+        d = math.sin(wobble._total_distance / spd)
         dx = wobble.radius * d * math.cos(angle)
         dy = wobble.radius * d * math.sin(angle)
         yield tx + dx, ty + dy
@@ -277,10 +289,13 @@ def jigsaw(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
         return
+    spd = wobble.speed
+    if spd == 0:
+        spd = 1
     for tx, ty in wobble.wobble(x0, y0, x1, y1):
         angle = math.atan2(y1 - y0, x1 - x0)
         angle_perp = angle + math.tau / 4.0
-        d = math.sin(wobble._total_distance / wobble.speed)
+        d = math.sin(wobble._total_distance / spd)
         dx = wobble.radius * d * math.cos(angle_perp)
         dy = wobble.radius * d * math.sin(angle_perp)
 
@@ -306,11 +321,14 @@ def slowtooth(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
         return
+    spd = wobble.speed
+    if spd == 0:
+        spd = 1
     for tx, ty in wobble.wobble(x0, y0, x1, y1):
         angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
         if wobble.previous_angle is None:
             wobble.previous_angle = angle
-        amount = 1.0 / wobble.speed
+        amount = 1.0 / spd
         angle = amount * (angle - wobble.previous_angle) + wobble.previous_angle
         d = -1 if wobble._total_count % 2 else 1
         dx = wobble.radius * d * math.cos(angle)
