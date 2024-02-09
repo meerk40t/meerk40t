@@ -1438,6 +1438,19 @@ class SimulationPanel(wx.Panel, Job):
         self._set_slider_dimensions()
         self.sim_travel.initvars()
         self.update_fields()
+        bb = self.cutplan._previous_bounds
+        if bb is None or math.isinf(bb[0]):
+            self.parent.SetTitle(_("Simulation"))
+        else:
+            wd = bb[2] - bb[0]
+            ht = bb[3] - bb[1]
+            sdimx = Length(
+                wd, preferred_units=self.context.units_name, digits=2
+            ).preferred_length
+            sdimy = Length(
+                ht, preferred_units=self.context.units_name, digits=2
+            ).preferred_length
+            self.parent.SetTitle(_("Simulation") + f" ({sdimx}x{sdimy})")
         self.request_refresh()
 
     @signal_listener("plan")
