@@ -18632,3 +18632,10 @@ msgstr "System-Verzeichnisse mit Zeichensätzen"
 
 msgid "Insert symbol"
 msgstr "Sonderzeichen einfügen"
+
+msgid "Show Labels"
+msgstr "Labels anzeigen"
+
+#: ./meerk40t\gui\propertypanels\wobbleproperty.py:103
+msgid "Wobble Speed:"
+msgstr "Wobble Faktor"
