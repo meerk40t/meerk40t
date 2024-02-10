@@ -129,7 +129,7 @@ class ProjectPanel(wx.Panel):
         # This code should load just specific project files rather than all importable formats.
         files = self.context.elements.load_types()
         with wx.FileDialog(
-            self, _("Open"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+            self, _("Open"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW
         ) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return  # the user changed their mind

@@ -481,7 +481,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             self,
                             label,
                             wildcard=wildcard if wildcard else "*",
-                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
+                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW,
                         ) as fileDialog:
                             if fileDialog.ShowModal() == wx.ID_CANCEL:
                                 return  # the user changed their mind
