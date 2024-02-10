@@ -43,9 +43,9 @@ class LiveLightJob:
         elif self.mode == "crosshair":
             self.label = "Simple Crosshairs"
             self._mode_light = self._crosshairs
-        elif self.mode == "regmarks":
-            self.label = "Live Regmark Light Job"
-            self._mode_light = self._regmarks
+        # elif self.mode == "regmarks":
+        #     self.label = "Live Regmark Light Job"
+        #     self._mode_light = self._regmarks
         elif self.mode == "hull":
             self.label = "Live Hull Light Job"
             self._mode_light = self._hull
@@ -169,15 +169,17 @@ class LiveLightJob:
         # Calls light based on the set mode.
         return self._mode_light(con)
 
-    def _regmarks(self, con):
-        """
-        Mode light regmarks gets the elements for regmarks. Sends to light elements.
+    # def _regmarks(self, con):
+    #     """
+    #     Mode light regmarks gets the elements for regmarks. Sends to light elements.
 
-        @param con: connection
-        @return:
-        """
-        elements = list(self.service.elements.regmarks())
-        return self._light_elements(con, elements)
+    #     @param con: connection
+    #     @return:
+    #     """
+    #     elements = list(self.service.elements.regmarks(emphasized=True))
+    #     if len(elements) == 0:
+    #         elements = list(self.service.elements.regmarks())
+    #     return self._light_elements(con, elements)
 
     def _full(self, con):
         """
@@ -187,6 +189,10 @@ class LiveLightJob:
         """
         # Full was requested.
         elements = list(self.service.elements.elems(emphasized=True))
+        if len(elements) == 0:
+            elements = list(self.service.elements.regmarks(emphasized=True))
+        if len(elements) == 0:
+            elements = list(self.service.elements.elems())
         return self._light_elements(con, elements)
 
     def _hull(self, con):
@@ -197,6 +203,10 @@ class LiveLightJob:
         @return:
         """
         elements = list(self.service.elements.elems(emphasized=True))
+        if len(elements) == 0:
+            elements = list(self.service.elements.regmarks(emphasized=True))
+        if len(elements) == 0:
+            elements = list(self.service.elements.elems())
         return self._light_hull(con, elements)
 
     def _crosshairs(self, con, margin=5000):

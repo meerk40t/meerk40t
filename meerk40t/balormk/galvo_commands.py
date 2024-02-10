@@ -97,14 +97,14 @@ def plugin(service, lifecycle):
         service.job = LiveLightJob(service)
         service.spooler.send(service.job)
 
-    @service.console_command(
-        "regmark-light", help=_("Execute regmark live light idle job")
-    )
-    def reg_light(**kwargs):
-        if service.job is not None:
-            service.job.stop()
-        service.job = LiveLightJob(service, mode="regmarks")
-        service.spooler.send(service.job)
+    # @service.console_command(
+    #     "regmark-light", help=_("Execute regmark live light idle job")
+    # )
+    # def reg_light(**kwargs):
+    #     if service.job is not None:
+    #         service.job.stop()
+    #     service.job = LiveLightJob(service, mode="regmarks")
+    #     service.spooler.send(service.job)
 
     @service.console_command("hull-light", help=_("Execute convex hull light idle job"))
     def hull_light(**kwargs):
