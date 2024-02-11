@@ -1293,7 +1293,7 @@ The good news is that you can help us fix this bug by anonymously sending us the
         dlg.Destroy()
     except Exception as e:
         answer = wx.ID_NO
-    print (answer)
+    # print (answer)
     in_error_dialog = False
     if answer in (wx.ID_YES, wx.ID_OK):
         send_data_to_developers(filename, data)
