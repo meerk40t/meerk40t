@@ -1206,7 +1206,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
             dlg.EndModal(wx.ID_NO)
 
         def close_cancel(event):
-            dlg.EndModal(wx.ID_CANCEL)
+            wx.Abort()
 
         dlg.Bind(wx.EVT_BUTTON, close_yes, btn_yes)
         dlg.Bind(wx.EVT_BUTTON, close_no, btn_no)
@@ -1293,6 +1293,7 @@ The good news is that you can help us fix this bug by anonymously sending us the
         dlg.Destroy()
     except Exception as e:
         answer = wx.ID_NO
+    print (answer)
     in_error_dialog = False
     if answer in (wx.ID_YES, wx.ID_OK):
         send_data_to_developers(filename, data)
