@@ -6,11 +6,12 @@ when the elements change. It will show the updated job.
 
 This job works as a spoolerjob. Implementing all the regular calls for being a spooled job.
 """
-
+from math import isinf
 import time
 
 import numpy as np
 
+from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.svgelements import Matrix
 from meerk40t.tools.geomstr import Geomstr
@@ -34,6 +35,7 @@ class LiveLightJob:
         self.quantization = 50
         self.mode = mode
         self.points = None
+        self.source = "elements"
         if self.mode == "full":
             self.label = "Live Full Light Job"
             self._mode_light = self._full
@@ -145,6 +147,10 @@ class LiveLightJob:
         if self.stopped:
             return False
         bounds = self.service.elements.selected_area()
+        if bounds is None or isinf(bounds[0]):
+            bounds = Node.union_bounds(list(self.service.elements.regmarks(emphasized=True)))
+        if bounds is None or isinf(bounds[0]):
+            bounds = Node.union_bounds(list(self.service.elements.elems()))
         if self._last_bounds is not None and bounds != self._last_bounds:
             # Emphasis did not change but the bounds did. We dragged something.
             self.changed = True
@@ -181,6 +187,16 @@ class LiveLightJob:
     #         elements = list(self.service.elements.regmarks())
     #     return self._light_elements(con, elements)
 
+    def _gather_source(self):
+        self.source = "elements"
+        elements = list(self.service.elements.elems(emphasized=True))
+        if len(elements) == 0:
+            elements = list(self.service.elements.regmarks(emphasized=True))
+            self.source = "regmarks"
+        if len(elements) == 0:
+            elements = list(self.service.elements.elems())
+        return elements
+
     def _full(self, con):
         """
         Mode light full gets the elements from the emphasized primary elements. Sends to light elements.
@@ -188,11 +204,7 @@ class LiveLightJob:
         @return:
         """
         # Full was requested.
-        elements = list(self.service.elements.elems(emphasized=True))
-        if len(elements) == 0:
-            elements = list(self.service.elements.regmarks(emphasized=True))
-        if len(elements) == 0:
-            elements = list(self.service.elements.elems())
+        elements = self._gather_source()
         return self._light_elements(con, elements)
 
     def _hull(self, con):
@@ -202,11 +214,7 @@ class LiveLightJob:
         @param con: connection
         @return:
         """
-        elements = list(self.service.elements.elems(emphasized=True))
-        if len(elements) == 0:
-            elements = list(self.service.elements.regmarks(emphasized=True))
-        if len(elements) == 0:
-            elements = list(self.service.elements.elems())
+        elements = self._gather_source()
         return self._light_hull(con, elements)
 
     def _crosshairs(self, con, margin=5000):
