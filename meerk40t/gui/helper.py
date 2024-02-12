@@ -134,10 +134,10 @@ class HelperPanel(wx.Panel):
             + _(
                 "If inactive then no more updates will happen until you check this checkbox again"
             )
-            + "\n"
-            + _(
-                "Tip: Press Ctrl+Shift+F while hovering over a control to lock the content."
-            )
+            # + "\n"
+            # + _(
+            #     "Tip: Press Ctrl+Shift+L while hovering over a control to lock the content."
+            # )
         )
         # self.button_webhelp.SetToolTip(_("Call online help-page"))
 
