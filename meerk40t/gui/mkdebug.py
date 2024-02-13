@@ -3,6 +3,7 @@
     They will become visible if you type 'set debug_mode True' in the
     console and restart the program.
 """
+
 import time
 
 import wx
@@ -10,7 +11,16 @@ from wx import aui
 
 import meerk40t.gui.icons as mkicons
 from meerk40t.core.units import Angle, Length
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, wxButton, wxCheckBox, wxRadioBox, wxToggleButton, TextCtrl
+from meerk40t.gui.wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+    wxButton,
+    wxCheckBox,
+    wxRadioBox,
+    wxStaticBitmap,
+    wxToggleButton,
+)
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -86,6 +96,7 @@ def register_panel_crash(window, context):
     pane.submenu = "_ZZ_" + _("Debug")
     window.on_pane_create(pane)
     context.register("pane/debug_shutdown", pane)
+
 
 def register_panel_window(window, context):
     pane = (
@@ -496,6 +507,7 @@ class DebugIconPanel(wx.Panel):
     def pane_hide(self, *args):
         return
 
+
 class DebugWindowPanel(wx.Panel):
     """
     Displays and loads registered windows
@@ -532,18 +544,33 @@ class DebugWindowPanel(wx.Panel):
         sizer_main.Add(choose_sizer, 0, wx.EXPAND, 0)
         dummy_sizer = wx.BoxSizer(wx.HORIZONTAL)
         left_side = StaticBoxSizer(self, wx.ID_ANY, "Default Controls", wx.VERTICAL)
-        cb_left = wx.ComboBox(self, wx.ID_ANY, choices=("Option 1", "Option 2", "Option 3"), style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        cb_left = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=("Option 1", "Option 2", "Option 3"),
+            style=wx.CB_READONLY | wx.CB_DROPDOWN,
+        )
         text_left = wx.TextCtrl(self, wx.ID_ANY, "")
         check_left = wx.CheckBox(self, wx.ID_ANY, label="Checkbox")
         btn_left = wx.Button(self, wx.ID_ANY, "A button")
         toggle_left = wx.ToggleButton(self, wx.ID_ANY, "Toggle")
-        radio_left = wx.RadioBox(self, wx.ID_ANY, choices=("Yes", "No","Maybe"))
+        radio_left = wx.RadioBox(self, wx.ID_ANY, choices=("Yes", "No", "Maybe"))
+        btn_bmap_left = wx.BitmapButton(
+            self, wx.ID_ANY, mkicons.icon_bell.GetBitmap(resize=25)
+        )
+        slider_left = wx.Slider(self, wx.ID_ANY, value=0, minValue=0, maxValue=100)
+        static_left = wx.StaticBitmap(
+            self, wx.ID_ANY, mkicons.icon_closed_door.GetBitmap(resize=50)
+        )
         left_side.Add(cb_left, 0, 0, 0)
         left_side.Add(text_left, 0, 0, 0)
         left_side.Add(check_left, 0, 0, 0)
         left_side.Add(btn_left, 0, 0, 0)
         left_side.Add(toggle_left, 0, 0, 0)
         left_side.Add(radio_left, 0, 0, 0)
+        left_side.Add(btn_bmap_left, 0, 0, 0)
+        left_side.Add(slider_left, 0, 0, 0)
+        left_side.Add(static_left, 0, 0, 0)
         for c in left_side.GetChildren():
             if c.IsWindow():
                 w = c.GetWindow()
@@ -554,13 +581,17 @@ class DebugWindowPanel(wx.Panel):
         check_right = wxCheckBox(self, wx.ID_ANY, label="Checkbox")
         btn_right = wxButton(self, wx.ID_ANY, "A button")
         toggle_right = wxToggleButton(self, wx.ID_ANY, "Toggle")
-        radio_right = wxRadioBox(self, wx.ID_ANY, choices=("Yes", "No","Maybe"))
+        radio_right = wxRadioBox(self, wx.ID_ANY, choices=("Yes", "No", "Maybe"))
+        static_right = wxStaticBitmap(
+            self, wx.ID_ANY, mkicons.icon_closed_door.GetBitmap(resize=50)
+        )
         # right_side.Add(cb_right, 0, 0, 0)
         right_side.Add(text_right, 0, 0, 0)
         right_side.Add(check_right, 0, 0, 0)
         right_side.Add(btn_right, 0, 0, 0)
         right_side.Add(toggle_right, 0, 0, 0)
         right_side.Add(radio_right, 0, 0, 0)
+        right_side.Add(static_right, 0, 0, 0)
         for c in right_side.GetChildren():
             if c.IsWindow():
                 w = c.GetWindow()
