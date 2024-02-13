@@ -435,7 +435,9 @@ class GrblController:
         if self._channel_log not in self._watchers:
             self.add_watcher(self._channel_log)
 
-        if self._sending_thread is None or (self._sending_thread != True and not self._sending_thread.is_alive()):
+        if self._sending_thread is None or (
+            self._sending_thread != True and not self._sending_thread.is_alive()
+        ):
             self._sending_thread = True  # Avoid race condition.
             self._sending_thread = self.service.threaded(
                 self._sending,
@@ -443,7 +445,9 @@ class GrblController:
                 result=self.stop,
                 daemon=True,
             )
-        if self._recving_thread is None or (self._recving_thread != True and not self._recving_thread.is_alive()):
+        if self._recving_thread is None or (
+            self._recving_thread != True and not self._recving_thread.is_alive()
+        ):
             self._recving_thread = True  # Avoid race condition.
             self._recving_thread = self.service.threaded(
                 self._recving,
