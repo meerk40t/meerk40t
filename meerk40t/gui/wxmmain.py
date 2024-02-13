@@ -3742,7 +3742,8 @@ class MeerK40t(MWindow):
                 command = "check_for_updates --verbosity 3\n"
             elif self.context.update_check == 2:
                 command = "check_for_updates --beta --verbosity 3\n"
-
+            else:
+                return
             self.context(command)
             self.context.setting(int, "last_update_check", None)
             now = datetime.date.today()
