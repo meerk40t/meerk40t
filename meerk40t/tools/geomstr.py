@@ -459,12 +459,15 @@ class BeamTable:
         checked_swaps = {}
 
         def check_intersection(i, q, r, sl):
+            print(f"check intersections: {q}, {r}")
             if (q, r) in checked_swaps:
                 return
             for t1, t2 in g.intersections(q, r):
                 if t1 in (0, 1) and t2 in (0, 1):
                     continue
                 pt_intersect = g.position(q, t1)
+                print((sl.real, sl.imag) >= (pt_intersect.real, pt_intersect.imag))
+                print(pt_intersect)
                 if (sl.real, sl.imag) >= (pt_intersect.real, pt_intersect.imag):
                     continue
                 checked_swaps[(q, r)] = True
@@ -472,6 +475,7 @@ class BeamTable:
                 ip = bisect_events(events, x, lo=i)
                 events.insert(ip, x)
                 self.intersections.point(pt_intersect)
+                print("Intersection!")
 
         actives = []
 
@@ -482,22 +486,27 @@ class BeamTable:
 
         i = 0
         while i < len(events):
+
             event = events[i]
             pt, index, swap = event
+            print(f"{actives}, {pt}")
             try:
                 next, _, _ = events[i + 1]
             except IndexError:
                 next = complex(float("inf"), float("inf"))
 
             if swap is not None:
+                print(f"swapping: {swap[0]}, {swap[1]}")
                 s1 = actives.index(swap[0])
                 s2 = s1 + 1
+                print(f"{s1}, {s2} == {actives[s1]}, {actives[s2]}")
                 actives[s1], actives[s2] = actives[s2], actives[s1]
                 if s1 > 0:
                     check_intersection(i, actives[s1 - 1], actives[s1], pt)
                 if s2 < len(actives) - 1:
                     check_intersection(i, actives[s2], actives[s2 + 1], pt)
             elif index >= 0:
+                print(f"inserting: {index}")
                 ip = bisect_yint(actives, index, pt)
                 actives.insert(ip, index)
                 if ip > 0:
@@ -505,6 +514,7 @@ class BeamTable:
                 if ip < len(actives) - 1:
                     check_intersection(i, actives[ip], actives[ip + 1], pt)
             else:
+                print(f"removing: {index}")
                 rp = actives.index(~index)
                 del actives[rp]
                 if 0 < rp < len(actives):
