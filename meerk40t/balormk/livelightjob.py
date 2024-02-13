@@ -6,8 +6,8 @@ when the elements change. It will show the updated job.
 
 This job works as a spoolerjob. Implementing all the regular calls for being a spooled job.
 """
-from math import isinf
 import time
+from math import isinf
 
 import numpy as np
 
@@ -148,7 +148,9 @@ class LiveLightJob:
             return False
         bounds = self.service.elements.selected_area()
         if bounds is None or isinf(bounds[0]):
-            bounds = Node.union_bounds(list(self.service.elements.regmarks(emphasized=True)))
+            bounds = Node.union_bounds(
+                list(self.service.elements.regmarks(emphasized=True))
+            )
         if bounds is None or isinf(bounds[0]):
             bounds = Node.union_bounds(list(self.service.elements.elems()))
         if self._last_bounds is not None and bounds != self._last_bounds:

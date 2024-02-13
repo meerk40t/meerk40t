@@ -992,20 +992,20 @@ class wxMeerK40t(wx.App, Module):
             if crashtype is None:
                 crashtype = "dividebyzero"
             crashtype = crashtype.lower()
-            if crashtype=="dividebyzero":
+            if crashtype == "dividebyzero":
                 a = 0
                 b = 0
-                c= b/a
+                c = b / a
                 return
-            if crashtype=="key":
+            if crashtype == "key":
                 d = {"a": 0}
                 b = d["b"]
                 return
-            if crashtype=="index":
+            if crashtype == "index":
                 a = (0, 1, 2)
                 b = a[5]
                 return
-            if crashtype=="value":
+            if crashtype == "value":
                 a = "an invalid number 1"
                 b = float(a)
                 return
@@ -1156,7 +1156,9 @@ def send_data_to_developers(filename, data):
         dlg.ShowModal()
         dlg.Destroy()
 
+
 in_error_dialog = False
+
 
 def handleGUIException(exc_type, exc_value, exc_traceback):
     """

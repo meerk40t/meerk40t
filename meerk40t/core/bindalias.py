@@ -246,7 +246,10 @@ DEFAULT_KEYMAP = {
     ),
     "ctrl+alt+shift+home": ("bind default;alias default",),
     # That's not working, so we delete it...
-    "ctrl+shift+l": ("", "signal lock_helper",),
+    "ctrl+shift+l": (
+        "",
+        "signal lock_helper",
+    ),
 }
 DEFAULT_ALIAS = {
     "+scale_up": (".timerscale_up 0 0.1 .scale 1.02",),

@@ -2306,7 +2306,10 @@ class MeerK40t(MWindow):
             # This code should load just specific project files rather than all importable formats.
             files = context.elements.load_types()
             with wx.FileDialog(
-                gui, _("Open"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW
+                gui,
+                _("Open"),
+                wildcard=files,
+                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW,
             ) as fileDialog:
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
                     return  # the user changed their mind

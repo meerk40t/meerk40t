@@ -124,9 +124,8 @@ class EngraveOpNode(Node, Parameters):
             if modify:
                 self.insert_sibling(drag_node)
             return True
-        elif (
-            drag_node.type in ("file", "group")
-            and not drag_node.has_ancestor("branch reg")
+        elif drag_node.type in ("file", "group") and not drag_node.has_ancestor(
+            "branch reg"
         ):
             some_nodes = False
             for e in drag_node.flat(elem_nodes):

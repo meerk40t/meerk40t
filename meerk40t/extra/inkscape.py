@@ -81,7 +81,13 @@ def run_command_and_log(command_array, logfile):
             except (UnicodeEncodeError, UnicodeDecodeError):
                 pass
         result = True
-    except (FileNotFoundError, TimeoutExpired, UnicodeDecodeError, UnicodeEncodeError, OSError) as e:
+    except (
+        FileNotFoundError,
+        TimeoutExpired,
+        UnicodeDecodeError,
+        UnicodeEncodeError,
+        OSError,
+    ) as e:
         if f:
             f.write(f"Execution failed: {str(e)}\n")
     if f:

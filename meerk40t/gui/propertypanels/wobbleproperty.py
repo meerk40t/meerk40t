@@ -99,9 +99,7 @@ class WobblePropertyPanel(ScrolledPanel):
         )
         sizer_interval.Add(self.text_interval, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        sizer_speed = StaticBoxSizer(
-            self, wx.ID_ANY, _("Wobble Speed:"), wx.HORIZONTAL
-        )
+        sizer_speed = StaticBoxSizer(self, wx.ID_ANY, _("Wobble Speed:"), wx.HORIZONTAL)
         self.text_speed = TextCtrl(
             self,
             wx.ID_ANY,

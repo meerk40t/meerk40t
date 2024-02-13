@@ -6,13 +6,13 @@ from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
     get_default_icon_size,
-    icons8_choose_font,
-    icon_textalign_left,
     icon_textalign_center,
+    icon_textalign_left,
     icon_textalign_right,
-    icon_textsize_up,
     icon_textsize_down,
-    )
+    icon_textsize_up,
+    icons8_choose_font,
+)
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
 from meerk40t.kernel.kernel import signal_listener
@@ -737,7 +737,9 @@ class PanelFontSelect(wx.Panel):
         sizer_buttons.Add(self.btn_align_left, 0, wx.EXPAND, 0)
 
         self.btn_align_center = wx.Button(self, wx.ID_ANY)
-        self.btn_align_center.SetBitmap(icon_textalign_center.GetBitmap(resize=icon_size))
+        self.btn_align_center.SetBitmap(
+            icon_textalign_center.GetBitmap(resize=icon_size)
+        )
         self.btn_align_center.SetToolTip(_("Align text around the center"))
         sizer_buttons.Add(self.btn_align_center, 0, wx.EXPAND, 0)
 
