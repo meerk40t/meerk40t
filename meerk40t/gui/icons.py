@@ -2999,7 +2999,8 @@ icon_linegap_bigger = VectorIcon(
     fill=(),
     stroke=(
         "[width_bold]M 10, 30 l 10, -20 l 10, 20 M 15, 20 l 10, 0",
-        "[width_bold]M 12.5, 40 l 7.5, 20 l 7.5, -20" "M 35, 15 l 5, -5 l 5, 5",
+        "[width_bold]M 12.5, 40 l 7.5, 20 l 7.5, -20",
+        "M 35, 15 l 5, -5 l 5, 5",
         "M 40, 10 v 20 m 0, 10 v 20",
         "M 35, 55 l 5, 5 l 5, -5",
     ),
@@ -3009,7 +3010,8 @@ icon_linegap_smaller = VectorIcon(
     fill=(),
     stroke=(
         "[width_bold]M 10, 32.5 l 10, -20 l 10, 20 M 15, 22.5 l 10, 0",
-        "[width_bold]M 12.5, 37.5 l 7.5, 20 l 7.5, -20" "M 35, 25 l 5, 5 l 5, -5",
+        "[width_bold]M 12.5, 37.5 l 7.5, 20 l 7.5, -20",
+        "M 35, 25 l 5, 5 l 5, -5",
         "M 40, 10 v 20 m 0, 10 v 20",
         "M 35, 45 l 5, -5 l 5, 5",
     ),
