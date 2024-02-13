@@ -432,7 +432,7 @@ class MeerK40t(MWindow):
             elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_UNICODETEXT)):
                 text_data = wx.TextDataObject()
                 if wx.TheClipboard.GetData(text_data):
-                    txt = text_data.GetText().decode("utf-8")
+                    txt = text_data.GetText()
                     paste_text(txt)
 
             wx.TheClipboard.Close()
