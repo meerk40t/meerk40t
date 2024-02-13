@@ -19,7 +19,7 @@ from meerk40t.svgelements import (
 )
 
 from ..core.units import Length
-from ..gui.wxutils import StaticBoxSizer, TextCtrl, wxButton, wxCheckBox, dip_size
+from ..gui.wxutils import StaticBoxSizer, TextCtrl, wxButton, wxCheckBox, wxRadioBox, dip_size
 from ..kernel import signal_listener
 from .icons import STD_ICON_SIZE, get_default_icon_size, icons8_arrange
 from .mwindow import MWindow
@@ -198,7 +198,7 @@ class AlignmentPanel(wx.Panel):
         self.modeparam = ("default", "first", "last", "bed", "ref")
         self.xyparam = ("none", "min", "center", "max")
 
-        self.rbox_align_x = wx.RadioBox(
+        self.rbox_align_x = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Alignment relative to X-Axis:"),
@@ -213,7 +213,7 @@ class AlignmentPanel(wx.Panel):
             )
         )
 
-        self.rbox_align_y = wx.RadioBox(
+        self.rbox_align_y = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Alignment relative to Y-Axis:"),
@@ -228,7 +228,7 @@ class AlignmentPanel(wx.Panel):
             )
         )
 
-        self.rbox_relation = wx.RadioBox(
+        self.rbox_relation = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Relative to:"),
@@ -238,7 +238,7 @@ class AlignmentPanel(wx.Panel):
         )
         self.rbox_relation.SetSelection(0)
 
-        self.rbox_treatment = wx.RadioBox(
+        self.rbox_treatment = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Treatment:"),
@@ -409,7 +409,7 @@ class DistributionPanel(wx.Panel):
         self.xy_param = ("none", "min", "center", "max", "space")
         self.treat_param = ("default", "shape", "points", "bed", "ref")
 
-        self.rbox_dist_x = wx.RadioBox(
+        self.rbox_dist_x = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Position of element relative to point for X-Axis:"),
@@ -424,7 +424,7 @@ class DistributionPanel(wx.Panel):
             )
         )
 
-        self.rbox_dist_y = wx.RadioBox(
+        self.rbox_dist_y = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Position of element relative to point for Y-Axis:"),
@@ -452,7 +452,7 @@ class DistributionPanel(wx.Panel):
         self.check_rotate = wxCheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
         self.check_rotate.SetToolTip(_("Rotate elements parallel to the path"))
 
-        self.rbox_sort = wx.RadioBox(
+        self.rbox_sort = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Work-Sequence:"),
@@ -465,7 +465,7 @@ class DistributionPanel(wx.Panel):
             _("Defines the order in which the selection is being processed")
         )
 
-        self.rbox_treatment = wx.RadioBox(
+        self.rbox_treatment = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Treatment:"),
@@ -1114,7 +1114,7 @@ class ArrangementPanel(wx.Panel):
         self.ychoices = (_("Top"), _("Center"), _("Bottom"))
         self.xyparam = ("min", "center", "max")
 
-        self.rbox_align_x = wx.RadioBox(
+        self.rbox_align_x = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Alignment relative to X-Axis:"),
@@ -1124,7 +1124,7 @@ class ArrangementPanel(wx.Panel):
         )
         self.rbox_align_x.SetSelection(0)
 
-        self.rbox_align_y = wx.RadioBox(
+        self.rbox_align_y = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Alignment relative to Y-Axis:"),
@@ -1140,7 +1140,7 @@ class ArrangementPanel(wx.Panel):
         self.check_same_x = wxCheckBox(self, wx.ID_ANY, label=_("Same width"))
         self.check_same_y = wxCheckBox(self, wx.ID_ANY, label=_("Same height"))
 
-        self.rbox_relation = wx.RadioBox(
+        self.rbox_relation = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Arrangement inside grid:"),
@@ -1150,7 +1150,7 @@ class ArrangementPanel(wx.Panel):
         )
         self.rbox_relation.SetSelection(0)
 
-        self.rbox_selection = wx.RadioBox(
+        self.rbox_selection = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Order to process:"),

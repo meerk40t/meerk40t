@@ -11,7 +11,7 @@ from .choicepropertypanel import ChoicePropertyPanel
 from .icons import icons8_administrative_tools
 from .mwindow import MWindow
 from .wxmribbon import RibbonEditor
-from .wxutils import StaticBoxSizer, TextCtrl, wxButton
+from .wxutils import StaticBoxSizer, TextCtrl, wxButton, wxRadioBox
 
 _ = wx.GetTranslation
 
@@ -25,7 +25,7 @@ class PreferencesUnitsPanel(wx.Panel):
 
         sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.radio_units = wx.RadioBox(
+        self.radio_units = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Units"),

@@ -10,7 +10,7 @@ from wx import aui
 
 import meerk40t.gui.icons as mkicons
 from meerk40t.core.units import Angle, Length
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, wxButton, wxCheckBox, wxToggleButton, TextCtrl
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, wxButton, wxCheckBox, wxRadioBox, wxToggleButton, TextCtrl
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -537,11 +537,13 @@ class DebugWindowPanel(wx.Panel):
         check_left = wx.CheckBox(self, wx.ID_ANY, label="Checkbox")
         btn_left = wx.Button(self, wx.ID_ANY, "A button")
         toggle_left = wx.ToggleButton(self, wx.ID_ANY, "Toggle")
+        radio_left = wx.RadioBox(self, wx.ID_ANY, choices=("Yes", "No","Maybe"))
         left_side.Add(cb_left, 0, 0, 0)
         left_side.Add(text_left, 0, 0, 0)
         left_side.Add(check_left, 0, 0, 0)
         left_side.Add(btn_left, 0, 0, 0)
         left_side.Add(toggle_left, 0, 0, 0)
+        left_side.Add(radio_left, 0, 0, 0)
         for c in left_side.GetChildren():
             if c.IsWindow():
                 w = c.GetWindow()
@@ -552,18 +554,20 @@ class DebugWindowPanel(wx.Panel):
         check_right = wxCheckBox(self, wx.ID_ANY, label="Checkbox")
         btn_right = wxButton(self, wx.ID_ANY, "A button")
         toggle_right = wxToggleButton(self, wx.ID_ANY, "Toggle")
+        radio_right = wxRadioBox(self, wx.ID_ANY, choices=("Yes", "No","Maybe"))
         # right_side.Add(cb_right, 0, 0, 0)
         right_side.Add(text_right, 0, 0, 0)
         right_side.Add(check_right, 0, 0, 0)
         right_side.Add(btn_right, 0, 0, 0)
         right_side.Add(toggle_right, 0, 0, 0)
+        right_side.Add(radio_right, 0, 0, 0)
         for c in right_side.GetChildren():
             if c.IsWindow():
                 w = c.GetWindow()
                 w.SetToolTip(f"a tooltip for a custom {type(w).__name__}")
-        dummy_sizer.Add(left_side, 0, wx.EXPAND, 0)
-        dummy_sizer.Add(right_side, 0, wx.EXPAND, 0)
-        sizer_main.Add(dummy_sizer, 0, wx.EXPAND, 0)
+        dummy_sizer.Add(left_side, 1, wx.EXPAND, 0)
+        dummy_sizer.Add(right_side, 1, wx.EXPAND, 0)
+        sizer_main.Add(dummy_sizer, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
         self.combo_windows.Bind(wx.EVT_COMBOBOX, self.on_combo)

@@ -7,7 +7,7 @@ from meerk40t.gui.icons import (
     icon_split_image,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size, wxButton, wxCheckBox
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size, wxButton, wxCheckBox, wxRadioBox
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color
 
@@ -154,7 +154,7 @@ class SplitterPanel(wx.Panel):
         self.split_x = wx.SpinCtrl(self, wx.ID_ANY, initial=1, min=1, max=25)
         self.split_y = wx.SpinCtrl(self, wx.ID_ANY, initial=1, min=1, max=25)
 
-        self.rbox_selection = wx.RadioBox(
+        self.rbox_selection = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Order to process:"),
@@ -295,7 +295,7 @@ class KeyholePanel(wx.Panel):
         )
         self.selectparam = ("first", "last")
 
-        self.rbox_selection = wx.RadioBox(
+        self.rbox_selection = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Keyhole Object:"),

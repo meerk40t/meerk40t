@@ -16,7 +16,7 @@ from .icons import (
     icons8_paste,
 )
 from .mwindow import MWindow
-from .wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox
+from .wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox, wxRadioBox
 
 _ = wx.GetTranslation
 
@@ -732,7 +732,7 @@ class ImportPanel(wx.Panel):
         sizer_csv.Add(self.btn_import, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_header = wx.BoxSizer(wx.HORIZONTAL)
-        self.rbox_header = wx.RadioBox(
+        self.rbox_header = wxRadioBox(
             self,
             wx.ID_ANY,
             _("What does the first row contain:"),

@@ -1,12 +1,20 @@
 import wx
 
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
+from meerk40t.gui.wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+    wxButton,
+    wxCheckBox,
+    wxRadioBox,
+    dip_size,
+    set_ctrl_value,
+)
 from meerk40t.kernel import lookup_listener, signal_listener
 
 from ...core.units import UNITS_PER_MM, Length
 from ...svgelements import Color
 from ..laserrender import swizzlecolor
-from ..wxutils import TextCtrl, set_ctrl_value, wxButton, wxCheckBox
 from .attributes import IdPanel
 
 _ = wx.GetTranslation
@@ -1344,7 +1352,7 @@ class RasterSettingsPanel(wx.Panel):
         self.combo_raster_direction.SetSelection(0)
         sizer_4.Add(self.combo_raster_direction, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.radio_raster_swing = wx.RadioBox(
+        self.radio_raster_swing = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Directional Raster:"),

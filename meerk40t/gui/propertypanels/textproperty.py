@@ -4,7 +4,7 @@ import wx
 
 from meerk40t.gui.fonts import wxfont_to_svg
 from meerk40t.gui.laserrender import LaserRender
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size, wxButton, wxCheckBox, wxToggleButton
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size, wxButton, wxCheckBox, wxToggleButton, wxRadioBox
 
 from ...svgelements import Color
 from ..icons import STD_ICON_SIZE, icons8_choose_font, icons8_text
@@ -375,7 +375,7 @@ class TextPropertyPanel(ScrolledPanel):
         self.button_attrib_strikethrough.SetToolTip(_("Toggle strikethrough"))
 
         align_options = [_("Left"), _("Center"), _("Right")]
-        self.rb_align = wx.RadioBox(
+        self.rb_align = wxRadioBox(
             self,
             wx.ID_ANY,
             "",

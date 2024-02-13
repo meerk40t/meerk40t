@@ -7,6 +7,7 @@ from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.wxutils import (
     wxButton,
     wxCheckBox,
+    wxRadioBox,
     EditableListCtrl,
     ScrolledPanel,
     StaticBoxSizer,
@@ -637,7 +638,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             elif data_type in (str, int) and data_style == "radio":
                 control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 choice_list = list(map(str, c.get("choices", [c.get("default")])))
-                control = wx.RadioBox(
+                control = wxRadioBox(
                     self,
                     wx.ID_ANY,
                     label,
