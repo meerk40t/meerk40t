@@ -3,7 +3,7 @@ from wx import aui
 
 from meerk40t.gui.icons import icons8_manager
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
+from meerk40t.gui.wxutils import StaticBoxSizer, dip_size, wxButton
 from meerk40t.kernel import lookup_listener, signal_listener
 
 _ = wx.GetTranslation
@@ -77,11 +77,11 @@ class SelectDevice(wx.Dialog):
         sizer_2 = wx.StdDialogButtonSizer()
         sizer_main.Add(sizer_2, 0, wx.ALIGN_RIGHT | wx.ALL, 4)
 
-        self.button_OK = wx.Button(self, wx.ID_OK, "")
+        self.button_OK = wxButton(self, wx.ID_OK, "")
         self.button_OK.SetDefault()
         sizer_2.AddButton(self.button_OK)
 
-        self.button_CANCEL = wx.Button(self, wx.ID_CANCEL, "")
+        self.button_CANCEL = wxButton(self, wx.ID_CANCEL, "")
         sizer_2.AddButton(self.button_CANCEL)
 
         sizer_2.Realize()
@@ -202,19 +202,19 @@ class DevicePanel(wx.Panel):
         # Active item in list
         self.current_item = 0
 
-        self.button_create_device = wx.Button(self, wx.ID_ANY, _("Create New Device"))
+        self.button_create_device = wxButton(self, wx.ID_ANY, _("Create New Device"))
         sizer_3.Add(self.button_create_device, 0, 0, 0)
 
-        self.button_remove_device = wx.Button(self, wx.ID_ANY, _("Remove"))
+        self.button_remove_device = wxButton(self, wx.ID_ANY, _("Remove"))
         sizer_3.Add(self.button_remove_device, 0, 0, 0)
 
-        self.button_rename_device = wx.Button(self, wx.ID_ANY, _("Rename"))
+        self.button_rename_device = wxButton(self, wx.ID_ANY, _("Rename"))
         sizer_3.Add(self.button_rename_device, 0, 0, 0)
 
-        self.button_activate_device = wx.Button(self, wx.ID_ANY, _("Activate"))
+        self.button_activate_device = wxButton(self, wx.ID_ANY, _("Activate"))
         sizer_3.Add(self.button_activate_device, 0, 0, 0)
         sizer_3.AddStretchSpacer()
-        self.button_config_device = wx.Button(self, wx.ID_ANY, _("Config"))
+        self.button_config_device = wxButton(self, wx.ID_ANY, _("Config"))
         self.button_config_device.SetToolTip(
             _("Open the configuration window for the active device")
         )

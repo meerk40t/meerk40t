@@ -4,7 +4,7 @@ import wx
 
 from meerk40t.gui.fonts import wxfont_to_svg
 from meerk40t.gui.laserrender import LaserRender
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size, wxButton, wxCheckBox, wxToggleButton
 
 from ...svgelements import Color
 from ..icons import STD_ICON_SIZE, icons8_choose_font, icons8_text
@@ -248,26 +248,26 @@ class TextPropertyPanel(ScrolledPanel):
             mysize = 40
         else:
             mysize = 23
-        self.button_attrib_larger = wx.Button(
+        self.button_attrib_larger = wxButton(
             self, id=wx.ID_ANY, label="A", size=dip_size(self, mysize, mysize)
         )
-        self.button_attrib_smaller = wx.Button(
+        self.button_attrib_smaller = wxButton(
             self, id=wx.ID_ANY, label="a", size=dip_size(self, mysize, mysize)
         )
-        self.button_attrib_bold = wx.ToggleButton(
+        self.button_attrib_bold = wxToggleButton(
             self, id=wx.ID_ANY, label="b", size=dip_size(self, mysize, mysize)
         )
-        self.button_attrib_italic = wx.ToggleButton(
+        self.button_attrib_italic = wxToggleButton(
             self, id=wx.ID_ANY, label="i", size=dip_size(self, mysize, mysize)
         )
-        self.button_attrib_underline = wx.ToggleButton(
+        self.button_attrib_underline = wxToggleButton(
             self, id=wx.ID_ANY, label="u", size=dip_size(self, mysize, mysize)
         )
-        self.button_attrib_strikethrough = wx.ToggleButton(
+        self.button_attrib_strikethrough = wxToggleButton(
             self, id=wx.ID_ANY, label="s", size=dip_size(self, mysize, mysize)
         )
 
-        self.check_variable = wx.CheckBox(self, wx.ID_ANY, _(" Translate Variables"))
+        self.check_variable = wxCheckBox(self, wx.ID_ANY, _(" Translate Variables"))
         self.check_variable.SetToolTip(_("If active, preview will translate variables"))
         self.check_variable.SetValue(True)
         self.__set_properties()

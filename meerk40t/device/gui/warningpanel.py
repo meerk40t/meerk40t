@@ -8,7 +8,7 @@ from meerk40t.gui.icons import (
     icons8_laser_beam,
     icons8_laserbeam_weak,
 )
-from meerk40t.gui.wxutils import TextCtrl, dip_size
+from meerk40t.gui.wxutils import TextCtrl, dip_size, wxCheckBox
 
 _ = wx.GetTranslation
 
@@ -76,7 +76,7 @@ class WarningPanel(wx.Panel):
             )
 
             label3 = wx.StaticText(self, id=wx.ID_ANY, label="<")
-            chk1 = wx.CheckBox(self, id=wx.ID_ANY, label="")
+            chk1 = wxCheckBox(self, id=wx.ID_ANY, label="")
             chk1.SetToolTip(_("Enable/Disable the warning level"))
             entry["checkbox_min"] = chk1
 
@@ -97,7 +97,7 @@ class WarningPanel(wx.Panel):
             ctrl1.SetActionRoutine(self.on_text_limit(ctrl1, entry, False))
 
             label4 = wx.StaticText(self, id=wx.ID_ANY, label=">")
-            chk2 = wx.CheckBox(self, id=wx.ID_ANY, label="")
+            chk2 = wxCheckBox(self, id=wx.ID_ANY, label="")
             chk2.SetToolTip(_("Enable/Disable the warning level"))
             entry["checkbox_max"] = chk2
 

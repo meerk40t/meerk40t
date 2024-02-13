@@ -14,7 +14,7 @@ from meerk40t.gui.icons import (
     icons8_route,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import HoverButton
+from meerk40t.gui.wxutils import HoverButton, wxButton
 from meerk40t.kernel import Job, get_safe_path, signal_listener
 
 _ = wx.GetTranslation
@@ -105,7 +105,7 @@ class SpoolerPanel(wx.Panel):
             self.win_top, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
         self.combo_device.SetSelection(0)  # All by default...
-        self.button_pause = wx.Button(self.win_top, wx.ID_ANY, _("Pause"))
+        self.button_pause = wxButton(self.win_top, wx.ID_ANY, _("Pause"))
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
         self.button_pause.SetBitmap(
             icons8_pause.GetBitmap(resize=0.5 * get_default_icon_size())
@@ -135,7 +135,7 @@ class SpoolerPanel(wx.Panel):
         self.info_label = wx.StaticText(
             self.win_bottom, wx.ID_ANY, _("Completed jobs:")
         )
-        self.button_clear_history = wx.Button(
+        self.button_clear_history = wxButton(
             self.win_bottom, wx.ID_ANY, _("Clear History")
         )
         self.list_job_history = EditableListCtrl(

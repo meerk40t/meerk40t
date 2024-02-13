@@ -49,6 +49,7 @@ from .wxutils import (
     dip_size,
     get_key_name,
     is_navigation_key,
+    wxButton,
 )
 
 _ = wx.GetTranslation
@@ -189,9 +190,9 @@ class TreePanel(wx.Panel):
         self.warn_panel = wx.BoxSizer(wx.HORIZONTAL)
         unassigned_frame = StaticBoxSizer(self, wx.ID_ANY, "Unassigned", wx.HORIZONTAL)
         unburnt_frame = StaticBoxSizer(self, wx.ID_ANY, "Non-burnt", wx.HORIZONTAL)
-        self.btn_fix_assign_create = wx.Button(self, wx.ID_ANY, "Assign (+new)")
-        self.btn_fix_assign_existing = wx.Button(self, wx.ID_ANY, "Assign")
-        self.btn_fix_unburnt = wx.Button(self, wx.ID_ANY, "Enable")
+        self.btn_fix_assign_create = wxButton(self, wx.ID_ANY, "Assign (+new)")
+        self.btn_fix_assign_existing = wxButton(self, wx.ID_ANY, "Assign")
+        self.btn_fix_unburnt = wxButton(self, wx.ID_ANY, "Enable")
         self.btn_fix_assign_create.SetToolTip(
             _("Classify unassigned elements and create operations if necessary")
         )

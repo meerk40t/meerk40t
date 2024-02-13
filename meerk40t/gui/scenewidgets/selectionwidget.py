@@ -30,7 +30,7 @@ from meerk40t.gui.scene.scene import (
 )
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import StaticBoxSizer, create_menu_for_node, matrix_scale
+from meerk40t.gui.wxutils import StaticBoxSizer, create_menu_for_node, matrix_scale, wxButton, wxCheckBox
 from meerk40t.svgelements import Point
 from meerk40t.tools.geomstr import TYPE_END
 
@@ -2234,7 +2234,7 @@ class RefAlign(wx.Dialog):
         )
         sizer_scale.Add(self.radio_btn_12, 0, 0, 0)
 
-        self.chk_auto_rotate = wx.CheckBox(self, wx.ID_ANY, _("Autorotate"))
+        self.chk_auto_rotate = wxCheckBox(self, wx.ID_ANY, _("Autorotate"))
         self.chk_auto_rotate.SetToolTip(
             _("Rotate the object(s) if they would fit better")
         )
@@ -2243,12 +2243,12 @@ class RefAlign(wx.Dialog):
         sizer_buttons = wx.StdDialogButtonSizer()
         sizer_ref_align.Add(sizer_buttons, 0, wx.ALIGN_RIGHT | wx.ALL, 4)
 
-        self.button_OK = wx.Button(self, wx.ID_OK, "")
+        self.button_OK = wxButton(self, wx.ID_OK, "")
         self.button_OK.SetToolTip(_("Align and scale the elements"))
         self.button_OK.SetDefault()
         sizer_buttons.AddButton(self.button_OK)
 
-        self.button_CANCEL = wx.Button(self, wx.ID_CANCEL, "")
+        self.button_CANCEL = wxButton(self, wx.ID_CANCEL, "")
         self.button_CANCEL.SetToolTip(_("Close without applying any changes"))
         sizer_buttons.AddButton(self.button_CANCEL)
 

@@ -5,7 +5,7 @@ import wx
 import meerk40t.gui.icons as mkicons
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import CheckBox, StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size, wxButton, wxCheckBox, wxToggleButton
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -56,7 +56,7 @@ class ColorPanel(wx.Panel):
             self.underliner[i].SetBackgroundColour(wx.BLUE)
             self.underliner[i].SetMaxSize(dip_size(self, -1, 3))
             # self.lbl_color[i].SetMinSize(dip_size(self, -1, 20))
-            self.btn_color.append(wx.Button(self, wx.ID_ANY, ""))
+            self.btn_color.append(wxButton(self, wx.ID_ANY, ""))
             if i == 0:
                 self.btn_color[i].SetForegroundColour(wx.RED)
                 self.btn_color[i].SetLabel("X")
@@ -510,7 +510,7 @@ class StrokeWidthPanel(wx.Panel):
         self.combo_units.SetSelection(0)
         self.combo_units.SetMaxSize(dip_size(self, 100, -1))
 
-        self.chk_scale = wx.CheckBox(self, wx.ID_ANY, _("Scale"))
+        self.chk_scale = wxCheckBox(self, wx.ID_ANY, _("Scale"))
         self.chk_scale.SetToolTip(
             _("Toggle the behaviour of stroke-growth.")
             + "\n"
@@ -681,7 +681,7 @@ class PositionSizePanel(wx.Panel):
             check="length",
             nonzero=True,
         )
-        self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
+        self.btn_lock_ratio = wxToggleButton(self, wx.ID_ANY, "")
         self.btn_lock_ratio.SetValue(True)
         self.bitmap_locked = mkicons.icons8_lock.GetBitmap(
             resize=mkicons.STD_ICON_SIZE / 2, use_theme=False
@@ -914,7 +914,7 @@ class PreventChangePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.node = node
-        self.check_lock = CheckBox(self, wx.ID_ANY, _("Lock element"))
+        self.check_lock = wxCheckBox(self, wx.ID_ANY, _("Lock element"))
         self.__set_properties()
         self.__do_layout()
         self.check_lock.Bind(wx.EVT_CHECKBOX, self.on_check_lock)
@@ -1009,7 +1009,7 @@ class RoundedRectPanel(wx.Panel):
             style=wx.SL_LABELS | wx.SL_HORIZONTAL,
         )
         self.slider_y.SetToolTip(_("Ratio of Y-Radius compared to height (in %)"))
-        self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
+        self.btn_lock_ratio = wxToggleButton(self, wx.ID_ANY, "")
         self.btn_lock_ratio.SetValue(True)
         self.btn_lock_ratio.SetMinSize(dip_size(self, 32, 32))
         self.btn_lock_ratio.SetToolTip(_("Lock the radii of X- and Y-axis"))

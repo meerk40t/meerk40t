@@ -19,6 +19,7 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.scene.scenepanel import ScenePanel
 from meerk40t.gui.scene.widget import Widget
+from meerk40t.gui.wxutils import wxButton, wxCheckBox
 from meerk40t.kernel import Job, signal_listener
 from meerk40t.svgelements import Color
 
@@ -89,8 +90,8 @@ class CameraPanel(wx.Panel, Job):
                 wx.ID_ANY,
                 icons8_connected.GetBitmap(resize=get_default_icon_size()),
             )
-            self.check_fisheye = wx.CheckBox(self, wx.ID_ANY, _("Correct Fisheye"))
-            self.check_perspective = wx.CheckBox(
+            self.check_fisheye = wxCheckBox(self, wx.ID_ANY, _("Correct Fisheye"))
+            self.check_perspective = wxCheckBox(
                 self, wx.ID_ANY, _("Correct Perspective")
             )
             self.slider_fps = wx.Slider(
@@ -967,7 +968,7 @@ class CameraURIPanel(wx.Panel):
         self.list_uri = wx.ListCtrl(
             self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
         )
-        self.button_add = wx.Button(self, wx.ID_ANY, _("Add URI"))
+        self.button_add = wxButton(self, wx.ID_ANY, _("Add URI"))
         self.text_uri = wx.TextCtrl(self, wx.ID_ANY, "")
 
         self.__set_properties()

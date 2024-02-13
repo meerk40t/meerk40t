@@ -26,7 +26,7 @@ class RuidaControllerPanel(wx.ScrolledWindow):
             wx.FONTSTYLE_NORMAL,
             wx.FONTWEIGHT_NORMAL,
         )
-        self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
+        self.button_device_connect = wxButton(self, wx.ID_ANY, _("Connection"))
         self.service = self.context.device
         self._buffer = ""
         self._buffer_lock = threading.Lock()

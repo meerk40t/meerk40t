@@ -19,7 +19,7 @@ from meerk40t.svgelements import (
 )
 
 from ..core.units import Length
-from ..gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
+from ..gui.wxutils import StaticBoxSizer, TextCtrl, wxButton, wxCheckBox, dip_size
 from ..kernel import signal_listener
 from .icons import STD_ICON_SIZE, get_default_icon_size, icons8_arrange
 from .mwindow import MWindow
@@ -247,7 +247,7 @@ class AlignmentPanel(wx.Panel):
             style=wx.RA_SPECIFY_COLS,
         )
         self.rbox_treatment.SetSelection(0)
-        self.btn_align = wx.Button(self, wx.ID_ANY, "Align")
+        self.btn_align = wxButton(self, wx.ID_ANY, "Align")
         self.btn_align.SetBitmap(
             icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
         )
@@ -439,7 +439,7 @@ class DistributionPanel(wx.Panel):
             )
         )
 
-        self.check_inside_xy = wx.CheckBox(
+        self.check_inside_xy = wxCheckBox(
             self, id=wx.ID_ANY, label=_("Keep first + last inside")
         )
         self.check_inside_xy.SetValue(True)
@@ -449,7 +449,7 @@ class DistributionPanel(wx.Panel):
             )
         )
 
-        self.check_rotate = wx.CheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
+        self.check_rotate = wxCheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
         self.check_rotate.SetToolTip(_("Rotate elements parallel to the path"))
 
         self.rbox_sort = wx.RadioBox(
@@ -492,7 +492,7 @@ class DistributionPanel(wx.Panel):
             + _("- Ref-Object: along the boundaries of a reference-object")
         )
 
-        self.btn_dist = wx.Button(self, wx.ID_ANY, "Distribute")
+        self.btn_dist = wxButton(self, wx.ID_ANY, "Distribute")
         self.btn_dist.SetBitmap(
             icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
         )
@@ -1137,8 +1137,8 @@ class ArrangementPanel(wx.Panel):
         self.arrange_x = wx.SpinCtrl(self, wx.ID_ANY, initial=1, min=1, max=100)
         self.arrange_y = wx.SpinCtrl(self, wx.ID_ANY, initial=1, min=1, max=100)
 
-        self.check_same_x = wx.CheckBox(self, wx.ID_ANY, label=_("Same width"))
-        self.check_same_y = wx.CheckBox(self, wx.ID_ANY, label=_("Same height"))
+        self.check_same_x = wxCheckBox(self, wx.ID_ANY, label=_("Same width"))
+        self.check_same_y = wxCheckBox(self, wx.ID_ANY, label=_("Same height"))
 
         self.rbox_relation = wx.RadioBox(
             self,
@@ -1167,7 +1167,7 @@ class ArrangementPanel(wx.Panel):
             self, id=wx.ID_ANY, value="5mm", limited=True, check="length"
         )
 
-        self.btn_arrange = wx.Button(self, wx.ID_ANY, _("Arrange"))
+        self.btn_arrange = wxButton(self, wx.ID_ANY, _("Arrange"))
         self.btn_arrange.SetBitmap(
             icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
         )

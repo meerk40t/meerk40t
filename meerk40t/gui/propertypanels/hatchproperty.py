@@ -122,7 +122,7 @@ class HatchPropertyPanel(ScrolledPanel):
         self.display_panel = wx.Panel(self, wx.ID_ANY)
         sizer_fill.Add(self.display_panel, 6, wx.EXPAND, 0)
 
-        self.check_classify = wx.CheckBox(
+        self.check_classify = wxCheckBox(
             self, wx.ID_ANY, _("Immediately classify after colour change")
         )
         self.check_classify.SetValue(self.context._auto_classify)

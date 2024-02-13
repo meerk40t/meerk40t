@@ -10,7 +10,7 @@ from wx import aui
 
 import meerk40t.gui.icons as mkicons
 from meerk40t.core.units import Angle, Length
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, wxButton
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -87,10 +87,27 @@ def register_panel_crash(window, context):
     window.on_pane_create(pane)
     context.register("pane/debug_shutdown", pane)
 
+def register_panel_window(window, context):
+    pane = (
+        aui.AuiPaneInfo()
+        .Float()
+        .MinSize(225, 110)
+        .FloatingSize(400, 400)
+        .Caption(_("Window Test"))
+        .CaptionVisible(not context.pane_lock)
+        .Name("debug_window")
+        .Hide()
+    )
+    pane.dock_proportion = 225
+    pane.control = DebugWindowPanel(window, wx.ID_ANY, context=context)
+    pane.submenu = "_ZZ_" + _("Debug")
+    window.on_pane_create(pane)
+    context.register("pane/debug_window", pane)
+
 
 class ShutdownPanel(wx.Panel):
     """
-    Tries to create a scenario that has led to multipl runtime errors durign shutdown
+    Tries to create a scenario that has led to multiple runtime errors durign shutdown
     """
 
     def __init__(self, *args, context=None, **kwds):
@@ -108,9 +125,9 @@ class ShutdownPanel(wx.Panel):
                 + "So please save your work first, as it will be compromised!"
             ),
         )
-        self.btn_scenario_kernel_first = wx.Button(self, wx.ID_ANY, "Kill kernel first")
-        self.btn_scenario_gui_first = wx.Button(self, wx.ID_ANY, "Kill GUI first")
-        self.btn_scenario_only = wx.Button(self, wx.ID_ANY, "Just create the scenario")
+        self.btn_scenario_kernel_first = wxButton(self, wx.ID_ANY, "Kill kernel first")
+        self.btn_scenario_gui_first = wxButton(self, wx.ID_ANY, "Kill GUI first")
+        self.btn_scenario_only = wxButton(self, wx.ID_ANY, "Just create the scenario")
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         main_sizer.Add(info, 0, wx.EXPAND, 0)
         main_sizer.Add(self.btn_scenario_kernel_first, 0, wx.EXPAND, 0)
@@ -472,6 +489,64 @@ class DebugIconPanel(wx.Panel):
                     ms = min(imgs[0], imgs[1])
                     bmp = obj.GetBitmap(resize=ms)
                     self.icon_show.SetBitmap(bmp)
+
+    def pane_show(self, *args):
+        return
+
+    def pane_hide(self, *args):
+        return
+
+class DebugWindowPanel(wx.Panel):
+    """
+    Displays and loads registered windows
+    """
+
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: PositionPanel.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+
+        self.context = context
+        self.icon = None
+
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        choose_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        lbl = wx.StaticText(self, wx.ID_ANY, "Pick Window")
+
+        self.window_list = list()
+        for i, find in enumerate(self.context.kernel.find("window/")):
+            value, name, suffix = find
+            self.window_list.append(suffix)
+
+        self.combo_windows = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=self.window_list,
+            style=wx.CB_SORT | wx.CB_READONLY | wx.CB_DROPDOWN,
+        )
+        choose_sizer.Add(lbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        choose_sizer.Add(self.combo_windows, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.btn_show_all = wxButton(self, wx.ID_ANY, "Open all windows")
+        choose_sizer.Add(self.btn_show_all, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_main.Add(choose_sizer, 0, wx.EXPAND, 0)
+        self.SetSizer(sizer_main)
+        sizer_main.Fit(self)
+        self.combo_windows.Bind(wx.EVT_COMBOBOX, self.on_combo)
+        self.btn_show_all.Bind(wx.EVT_BUTTON, self.on_button)
+        self.Layout()
+
+    def on_combo(self, event):
+        idx = self.combo_windows.GetSelection()
+        if idx < 0:
+            return
+        s = self.combo_windows.GetString(idx)
+        if s:
+            self.context(f"window open {s}\n")
+    
+    def on_button(self, event):
+        for s in self.window_list:
+            self.context(f"window open {s}\n")
 
     def pane_show(self, *args):
         return

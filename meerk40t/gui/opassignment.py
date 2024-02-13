@@ -10,7 +10,7 @@ from meerk40t.gui.icons import (
     icons8_laserbeam_weak,
 )
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import dip_size
+from meerk40t.gui.wxutils import dip_size, wxButton, wxCheckBox
 from meerk40t.svgelements import Color
 
 from ..kernel import signal_listener
@@ -49,7 +49,7 @@ class OperationAssignPanel(wx.Panel):
         self.buttons = []
         self.op_nodes = []
         for idx in range(self.MAXBUTTONS):
-            btn = wx.Button(
+            btn = wxButton(
                 self,
                 id=wx.ID_ANY,
                 size=dip_size(self, self.buttonsize, self.buttonsize),
@@ -69,8 +69,8 @@ class OperationAssignPanel(wx.Panel):
             value=choices[0],
             style=wx.CB_READONLY | wx.CB_DROPDOWN,
         )
-        self.chk_all_similar = wx.CheckBox(self, wx.ID_ANY, _("Similar"))
-        self.chk_exclusive = wx.CheckBox(self, wx.ID_ANY, _("Exclusive"))
+        self.chk_all_similar = wxCheckBox(self, wx.ID_ANY, _("Similar"))
+        self.chk_exclusive = wxCheckBox(self, wx.ID_ANY, _("Exclusive"))
         self.cbo_apply_color.SetToolTip(
             _(
                 "Leave - neither the color of the operation nor of the elements will be changed"

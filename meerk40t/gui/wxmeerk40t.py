@@ -19,6 +19,7 @@ from meerk40t.gui.consolepanel import Console
 from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
+from meerk40t.gui.wxutils import wxButton
 from meerk40t.kernel import CommandSyntaxError, Module, get_safe_path
 from meerk40t.kernel.kernel import Job
 
@@ -117,7 +118,7 @@ class ActionPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
 
         self.context = context
-        self.button_go = wx.Button(self, wx.ID_ANY)
+        self.button_go = wxButton(self, wx.ID_ANY)
         self.icon = icon
         self.fgcolor = fgcolor
         self.resize_job = Job(
@@ -950,12 +951,14 @@ class wxMeerK40t(wx.App, Module):
                 register_panel_crash,
                 register_panel_debugger,
                 register_panel_icon,
+                register_panel_window,
             )
 
             kernel.register("wxpane/debug_tree", register_panel_debugger)
             kernel.register("wxpane/debug_color", register_panel_color)
             kernel.register("wxpane/debug_icons", register_panel_icon)
             kernel.register("wxpane/debug_shutdown", register_panel_crash)
+            kernel.register("wxpane/debug_window", register_panel_window)
 
             from meerk40t.gui.utilitywidgets.debugwidgets import register_widget_icon
 
@@ -1188,12 +1191,12 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         info.SetValue(body)
         sizer.Add(info, 5, wx.EXPAND, 0)
         btnsizer = wx.StdDialogButtonSizer()
-        btn_yes = wx.Button(dlg, wx.ID_YES)
+        btn_yes = wxButton(dlg, wx.ID_YES)
         btn_yes.SetDefault()
         btnsizer.AddButton(btn_yes)
-        btn_no = wx.Button(dlg, wx.ID_NO)
+        btn_no = wxButton(dlg, wx.ID_NO)
         btnsizer.AddButton(btn_no)
-        btn_cancel = wx.Button(dlg, wx.ID_CANCEL, _("Quit"))
+        btn_cancel = wxButton(dlg, wx.ID_CANCEL, _("Quit"))
         btnsizer.AddButton(btn_cancel)
         btnsizer.Realize()
         sizer.Add(btnsizer, 0, wx.EXPAND, 0)

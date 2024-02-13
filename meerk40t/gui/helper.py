@@ -12,6 +12,7 @@ import wx
 from wx import aui
 
 from meerk40t.kernel import Job, signal_listener
+from meerk40t.gui.wxutils import wxCheckBox  # , wxButton
 
 _ = wx.GetTranslation
 
@@ -50,10 +51,10 @@ class HelperPanel(wx.Panel):
         self.text_info = wx.TextCtrl(
             self, wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_READONLY
         )
-        self.check_allow = wx.CheckBox(
+        self.check_allow = wxCheckBox(
             self, wx.ID_ANY, _("Display control-information")
         )
-        # self.button_webhelp = wx.Button(self, wx.ID_ANY, _("Online-Help"))
+        # self.button_webhelp = wxButton(self, wx.ID_ANY, _("Online-Help"))
         # self.button_webhelp.SetBitmap(icons8_info.GetBitmap(resize = 0.5 * get_default_icon_size()))
         self.active = False
         self.__set_properties()
