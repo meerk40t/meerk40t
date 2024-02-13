@@ -449,17 +449,20 @@ class LaserRender:
                 return wx.ODDEVEN_RULE
             else:
                 return wx.WINDING_RULE
+    @staticmethod
+    def _penwidth(pen, width):
+            try:
+                if isnan(width):
+                    width = 1.0
+                try:
+                    pen.SetWidth(width)
+                except TypeError:
+                    pen.SetWidth(int(width))
+            except OverflowError:
+                pass  # Exceeds 32 bit signed integer.
 
     def _set_penwidth(self, width):
-        try:
-            if isnan(width):
-                width = 1.0
-            try:
-                self.pen.SetWidth(width)
-            except TypeError:
-                self.pen.SetWidth(int(width))
-        except OverflowError:
-            pass  # Exceeds 32 bit signed integer.
+        self._penwidth(self.pen, width)
 
     def set_pen(self, gc, stroke, alpha=None):
         c = stroke
@@ -763,8 +766,12 @@ class LaserRender:
             y_to = y_from + 2 * dif
             x_sign = 1
             y_sign = 1
+        width = 1.0 * zoomscale
         rpen = wx.Pen(wx.Colour(red=255, green=0, blue=0, alpha=alpha))
+        self._penwidth(rpen, width)
+
         gpen = wx.Pen(wx.Colour(red=0, green=255, blue=0, alpha=alpha))
+        self._penwidth(gpen, width)
         gc.SetPen(rpen)
         dif = 5 * zoomscale
         gc.StrokeLine(x_from, node.y, x_to, node.y)
