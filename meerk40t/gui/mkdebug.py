@@ -10,7 +10,7 @@ from wx import aui
 
 import meerk40t.gui.icons as mkicons
 from meerk40t.core.units import Angle, Length
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, wxButton
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, wxButton, wxCheckBox, wxToggleButton, TextCtrl
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -530,6 +530,40 @@ class DebugWindowPanel(wx.Panel):
         self.btn_show_all = wxButton(self, wx.ID_ANY, "Open all windows")
         choose_sizer.Add(self.btn_show_all, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_main.Add(choose_sizer, 0, wx.EXPAND, 0)
+        dummy_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        left_side = StaticBoxSizer(self, wx.ID_ANY, "Default Controls", wx.VERTICAL)
+        cb_left = wx.ComboBox(self, wx.ID_ANY, choices=("Option 1", "Option 2", "Option 3"), style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        text_left = wx.TextCtrl(self, wx.ID_ANY, "")
+        check_left = wx.CheckBox(self, wx.ID_ANY, label="Checkbox")
+        btn_left = wx.Button(self, wx.ID_ANY, "A button")
+        toggle_left = wx.ToggleButton(self, wx.ID_ANY, "Toggle")
+        left_side.Add(cb_left, 0, 0, 0)
+        left_side.Add(text_left, 0, 0, 0)
+        left_side.Add(check_left, 0, 0, 0)
+        left_side.Add(btn_left, 0, 0, 0)
+        left_side.Add(toggle_left, 0, 0, 0)
+        for c in left_side.GetChildren():
+            if c.IsWindow():
+                w = c.GetWindow()
+                w.SetToolTip(f"a tooltip for a default {type(w).__name__}")
+        # cb_right = wxComboBox(self, wx.ID_ANY, choices=("Option 1", "Option 2", "Option 3"), style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        right_side = StaticBoxSizer(self, wx.ID_ANY, "Custom Controls", wx.VERTICAL)
+        text_right = TextCtrl(self, wx.ID_ANY, "")
+        check_right = wxCheckBox(self, wx.ID_ANY, label="Checkbox")
+        btn_right = wxButton(self, wx.ID_ANY, "A button")
+        toggle_right = wxToggleButton(self, wx.ID_ANY, "Toggle")
+        # right_side.Add(cb_right, 0, 0, 0)
+        right_side.Add(text_right, 0, 0, 0)
+        right_side.Add(check_right, 0, 0, 0)
+        right_side.Add(btn_right, 0, 0, 0)
+        right_side.Add(toggle_right, 0, 0, 0)
+        for c in right_side.GetChildren():
+            if c.IsWindow():
+                w = c.GetWindow()
+                w.SetToolTip(f"a tooltip for a custom {type(w).__name__}")
+        dummy_sizer.Add(left_side, 0, wx.EXPAND, 0)
+        dummy_sizer.Add(right_side, 0, wx.EXPAND, 0)
+        sizer_main.Add(dummy_sizer, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
         self.combo_windows.Bind(wx.EVT_COMBOBOX, self.on_combo)
@@ -543,7 +577,7 @@ class DebugWindowPanel(wx.Panel):
         s = self.combo_windows.GetString(idx)
         if s:
             self.context(f"window open {s}\n")
-    
+
     def on_button(self, event):
         for s in self.window_list:
             self.context(f"window open {s}\n")
