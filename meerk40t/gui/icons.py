@@ -721,7 +721,12 @@ class VectorIcon:
             else:
                 spen = wx.Pen()
                 spen.SetColour(entry[1])
+
             spen.SetWidth(self.strokewidth)
+            if "width_bold" in attrib:
+                spen.SetWidth(2 * self.strokewidth)
+            if "width_narrow" in attrib:
+                spen.SetWidth(0.5 * self.strokewidth)
 
             spen.SetCap(wx.CAP_ROUND)
             if "cap_butt" in attrib:
@@ -2967,5 +2972,45 @@ icon_textalign_right = VectorIcon(
         "M 3 14 H 21",
         "M 8 18 H 21",
         "M 3 6 H 21",
+    ),
+)
+
+icon_kerning_bigger = VectorIcon(
+    fill=(),
+    stroke=(
+        "[width_bold]M 5, 30 l 10,-20 l 10, 20 M 10, 20 l 10, 0 M 30, 10 l 7.5, 20 l 7.5, -20",
+        "M 10, 35 l -5, 5 l 5, 5",
+        "M 5, 40 h 15 m 10, 0 h 15",
+        "M 40, 35 l 5, 5 l -5 5",
+    ),
+)
+
+icon_kerning_smaller = VectorIcon(
+    fill=(),
+    stroke=(
+        "[width_bold]M 7.5, 30 l 10,-20 l 10, 20 M 12.5, 20 l 10, 0 M 27.5, 10 l 7.5, 20 l 7.5, -20",
+        "M 15, 35 l 5, 5 l -5, 5",
+        "M 5, 40 h 15 m 10, 0 h 15",
+        "M 35, 35 l -5, 5 l 5 5",
+    ),
+)
+
+icon_linegap_bigger = VectorIcon(
+    fill=(),
+    stroke=(
+        "[width_bold]M 10, 30 l 10, -20 l 10, 20 M 15, 20 l 10, 0",
+        "[width_bold]M 12.5, 40 l 7.5, 20 l 7.5, -20" "M 35, 15 l 5, -5 l 5, 5",
+        "M 40, 10 v 20 m 0, 10 v 20",
+        "M 35, 55 l 5, 5 l 5, -5",
+    ),
+)
+
+icon_linegap_smaller = VectorIcon(
+    fill=(),
+    stroke=(
+        "[width_bold]M 10, 32.5 l 10, -20 l 10, 20 M 15, 22.5 l 10, 0",
+        "[width_bold]M 12.5, 37.5 l 7.5, 20 l 7.5, -20" "M 35, 25 l 5, 5 l 5, -5",
+        "M 40, 10 v 20 m 0, 10 v 20",
+        "M 35, 45 l 5, -5 l 5, 5",
     ),
 )

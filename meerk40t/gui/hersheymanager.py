@@ -6,6 +6,10 @@ from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
     get_default_icon_size,
+    icon_kerning_bigger,
+    icon_kerning_smaller,
+    icon_linegap_bigger,
+    icon_linegap_smaller,
     icon_textalign_center,
     icon_textalign_left,
     icon_textalign_right,
@@ -350,30 +354,32 @@ class LineTextPropertyPanel(wx.Panel):
         )
         sizer_text.Add(self.text_text, 1, wx.EXPAND, 0)
 
-        text_all_options = wx.BoxSizer(wx.HORIZONTAL)
-
-        align_options = [_("Left"), _("Center"), _("Right")]
-        self.rb_align = wx.RadioBox(
-            self,
-            wx.ID_ANY,
-            "",
-            wx.DefaultPosition,
-            wx.DefaultSize,
-            align_options,
-            len(align_options),
-            wx.RA_SPECIFY_COLS | wx.BORDER_NONE,
-        )
-        self.rb_align.SetToolTip(_("Textalignment for multi-lines"))
-        text_all_options.Add(self.rb_align, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         text_options = StaticBoxSizer(self, wx.ID_ANY, "", wx.HORIZONTAL)
-        text_all_options.Add(text_options, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.btn_bigger = wx.Button(self, wx.ID_ANY, "++")
+        iconsize = dip_size(self, 25, 25)[0]
+
+        align_options = (_("Left"), _("Center"), _("Right"))
+        align_icons = (icon_textalign_left, icon_textalign_center, icon_textalign_right)
+        self.rb_align = []
+        ttip_main = _("Textalignment for multi-lines")
+        for ttip_sub, icon in zip(align_options, align_icons):
+            btn = wx.ToggleButton(self, wx.ID_ANY)
+            btn.SetToolTip(f"{ttip_main}: {ttip_sub}")
+            btn.SetValue(False)
+            btn.SetBitmap(icon.GetBitmap(resize=iconsize))
+            self.rb_align.append(btn)
+            text_options.Add(btn, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        text_options.AddSpacer(25)
+
+        self.btn_bigger = wx.Button(self, wx.ID_ANY)
         self.btn_bigger.SetToolTip(_("Increase the font-size"))
+        self.btn_bigger.SetBitmap(icon_textsize_up.GetBitmap(resize=iconsize))
         text_options.Add(self.btn_bigger, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.btn_smaller = wx.Button(self, wx.ID_ANY, "--")
+        self.btn_smaller = wx.Button(self, wx.ID_ANY)
         self.btn_smaller.SetToolTip(_("Decrease the font-size"))
+        self.btn_smaller.SetBitmap(icon_textsize_down.GetBitmap(resize=iconsize))
         text_options.Add(self.btn_smaller, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         text_options.AddSpacer(25)
@@ -385,29 +391,44 @@ class LineTextPropertyPanel(wx.Panel):
             + _("- Right click will reset value to default")
         )
 
-        self.btn_bigger_spacing = wx.Button(self, wx.ID_ANY, "+")
+        self.btn_bigger_spacing = wx.Button(self, wx.ID_ANY)
         self.btn_bigger_spacing.SetToolTip(_("Increase the character-gap") + msg)
+        self.btn_bigger_spacing.SetBitmap(
+            icon_kerning_bigger.GetBitmap(resize=iconsize)
+        )
         text_options.Add(self.btn_bigger_spacing, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.btn_smaller_spacing = wx.Button(self, wx.ID_ANY, "-")
+        self.btn_smaller_spacing = wx.Button(self, wx.ID_ANY)
         self.btn_smaller_spacing.SetToolTip(_("Decrease the character-gap") + msg)
+        self.btn_smaller_spacing.SetBitmap(
+            icon_kerning_smaller.GetBitmap(resize=iconsize)
+        )
         text_options.Add(self.btn_smaller_spacing, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         text_options.AddSpacer(25)
 
-        self.btn_attrib_lineplus = wx.Button(self, id=wx.ID_ANY, label="v")
-        self.btn_attrib_lineminus = wx.Button(self, id=wx.ID_ANY, label="^")
+        self.btn_attrib_lineplus = wx.Button(self, id=wx.ID_ANY)
+        self.btn_attrib_lineminus = wx.Button(self, id=wx.ID_ANY)
         text_options.Add(self.btn_attrib_lineplus, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         text_options.Add(self.btn_attrib_lineminus, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_attrib_lineplus.SetToolTip(_("Increase line distance") + msg)
         self.btn_attrib_lineminus.SetToolTip(_("Reduce line distance") + msg)
+        self.btn_attrib_lineplus.SetBitmap(
+            icon_linegap_bigger.GetBitmap(resize=iconsize)
+        )
+        self.btn_attrib_lineminus.SetBitmap(
+            icon_linegap_smaller.GetBitmap(resize=iconsize)
+        )
         self.check_weld = wx.CheckBox(self, wx.ID_ANY, "")
         self.check_weld.SetToolTip(_("Weld overlapping characters together?"))
         text_options.AddSpacer(25)
         text_options.Add(self.check_weld, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         for btn in (
+            self.rb_align[0],
+            self.rb_align[1],
+            self.rb_align[2],
             self.btn_bigger,
             self.btn_smaller,
             self.btn_bigger_spacing,
@@ -433,7 +454,7 @@ class LineTextPropertyPanel(wx.Panel):
         sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
 
         main_sizer.Add(sizer_text, 0, wx.EXPAND, 0)
-        main_sizer.Add(text_all_options, 0, wx.EXPAND, 0)
+        main_sizer.Add(text_options, 0, wx.EXPAND, 0)
         main_sizer.Add(sizer_fonts, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         self.Layout()
@@ -449,7 +470,8 @@ class LineTextPropertyPanel(wx.Panel):
         self.btn_attrib_lineplus.Bind(wx.EVT_RIGHT_DOWN, self.on_linegap_reset)
         self.btn_attrib_lineminus.Bind(wx.EVT_RIGHT_DOWN, self.on_linegap_reset)
         self.check_weld.Bind(wx.EVT_CHECKBOX, self.on_weld)
-        self.rb_align.Bind(wx.EVT_RADIOBOX, self.on_radio_box)
+        for btn in self.rb_align:
+            btn.Bind(wx.EVT_TOGGLEBUTTON, self.on_radio_box)
         self.text_text.Bind(wx.EVT_TEXT, self.on_text_change)
         self.text_text.Bind(wx.EVT_RIGHT_DOWN, self.on_context_menu)
         self.list_fonts.Bind(wx.EVT_LISTBOX, self.on_list_font)
@@ -495,7 +517,8 @@ class LineTextPropertyPanel(wx.Panel):
             idx = vals.index(self.node.mkalign)
         except IndexError:
             idx = 0
-        self.rb_align.SetSelection(idx)
+        for b_idx, btn in enumerate(self.rb_align):
+            btn.SetValue(bool(idx == b_idx))
 
         self.load_directory()
         self.text_text.ChangeValue(str(node.mktext))
@@ -552,7 +575,13 @@ class LineTextPropertyPanel(wx.Panel):
         self.update_node()
 
     def on_radio_box(self, event):
-        new_anchor = event.GetInt()
+        evt_btn = event.GetEventObject()
+        for idx, btn in enumerate(self.rb_align):
+            if btn is evt_btn:
+                new_anchor = idx
+                btn.SetValue(True)
+            else:
+                btn.SetValue(False)
         if new_anchor == 0:
             self.node.mkalign = "start"
         elif new_anchor == 1:
