@@ -6,6 +6,7 @@ the initial mouse press then we assume a drag move.
 from time import perf_counter
 
 import numpy as np
+import platform
 import wx
 
 from meerk40t.core.elements.element_types import elem_nodes
@@ -80,6 +81,9 @@ class RectSelectWidget(Widget):
         self.scene.context.setting(bool, "delayed_move", True)
         self.mode = "select"
         self.can_drag_move = False
+
+        self.fake_dashes = platform.system() in ("Linux",)
+        # self.fake_dashes = True
 
     def hit(self):
         return HITCHAIN_HIT
@@ -412,6 +416,56 @@ class RectSelectWidget(Widget):
         self.can_drag_move = False
         self.scene.cursor("arrow")
 
+    def draw_dotted_line(self, gc, x0, y0, x1, y1, short=True):
+
+        if self.fake_dashes:
+            matrix = gc.GetTransform().Get()
+            pixel = 1.0 / matrix[0]
+            if short:
+                factor = 5
+            else:
+                factor = 10
+            pendown = True
+            if x0 == x1:
+                if y1 < y0:
+                    # Swap variables
+                    x1, x0 = x0, x1
+                    y1, y0 = y0, y1
+
+                a = x0
+                b = y0
+                while (b < y1):
+                    d = b + factor * pixel
+                    if d > y1:
+                        d = y1
+                    c = a
+                    if pendown:
+                        gc.StrokeLine(a, b, c, d)
+                    pendown = not pendown
+                    a = c
+                    b = d
+            else:
+                if x1 < x0:
+                    # Swap variables
+                    x1, x0 = x0, x1
+                    y1, y0 = y0, y1
+                m = (y1 - y0) / (x1 - x0)
+                a = x0
+                b = y0
+                while (a < x1):
+                    c = a + factor * pixel
+                    if c > x1:
+                        c = x1
+                    d = b + m * (c - a)
+                    if pendown:
+                        gc.StrokeLine(a, b, c, d)
+                    pendown = not pendown
+                    a = c
+                    b = d
+        else:
+            # All has been done with the penstyle
+            gc.StrokeLine(x0, y0, x1, y1)
+
     def draw_rectangle(self, gc, x0, y0, x1, y1, tcolor, tstyle):
         matrix = self.parent.matrix
         self.selection_pen.SetColour(tcolor)
@@ -424,11 +478,13 @@ class RectSelectWidget(Widget):
             self.selection_pen.SetWidth(linewidth)
         except TypeError:
             self.selection_pen.SetWidth(int(linewidth))
+        if self.fake_dashes:
+            self.selection_pen.SetStyle(wx.PENSTYLE_SOLID)
         gc.SetPen(self.selection_pen)
-        gc.StrokeLine(x0, y0, x1, y0)
-        gc.StrokeLine(x1, y0, x1, y1)
-        gc.StrokeLine(x1, y1, x0, y1)
-        gc.StrokeLine(x0, y1, x0, y0)
+        self.draw_dotted_line(gc, x0, y0, x1, y0)
+        self.draw_dotted_line(gc, x1, y0, x1, y1)
+        self.draw_dotted_line(gc, x1, y1, x0, y1)
+        self.draw_dotted_line(gc, x0, y1, x0, y0)
 
     def draw_tiny_indicator(self, gc, symbol, x0, y0, x1, y1, tcolor, tstyle):
         matrix = self.parent.matrix
