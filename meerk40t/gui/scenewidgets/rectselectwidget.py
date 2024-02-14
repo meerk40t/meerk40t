@@ -6,7 +6,6 @@ the initial mouse press then we assume a drag move.
 from time import perf_counter
 
 import numpy as np
-import platform
 import wx
 
 from meerk40t.core.elements.element_types import elem_nodes
@@ -81,9 +80,6 @@ class RectSelectWidget(Widget):
         self.scene.context.setting(bool, "delayed_move", True)
         self.mode = "select"
         self.can_drag_move = False
-
-        self.fake_dashes = platform.system() in ("Linux",)
-        # self.fake_dashes = True
 
     def hit(self):
         return HITCHAIN_HIT
