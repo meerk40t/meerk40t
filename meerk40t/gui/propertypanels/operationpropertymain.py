@@ -563,6 +563,7 @@ class SpeedPpiPanel(wx.Panel):
                 self.context.elements.signal(
                     "element_property_reload", self.operation, "text_speed"
                 )
+                self.context.elements.signal("updateop_tree")
         except ValueError:
             pass
 
@@ -601,6 +602,7 @@ class SpeedPpiPanel(wx.Panel):
                 self.context.elements.signal(
                     "element_property_reload", self.operation, "text_power"
                 )
+                self.context.elements.signal("updateop_tree")
         except ValueError:
             return
 
