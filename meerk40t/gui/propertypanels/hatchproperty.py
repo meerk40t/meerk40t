@@ -4,7 +4,7 @@ from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 
 from ...core.units import Angle, Length
 from ...svgelements import Matrix
-from ..wxutils import TextCtrl, set_ctrl_value
+from ..wxutils import TextCtrl, wxCheckBox, set_ctrl_value
 from .attributes import ColorPanel, IdPanel
 
 _ = wx.GetTranslation

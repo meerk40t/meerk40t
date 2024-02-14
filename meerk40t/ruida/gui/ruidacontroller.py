@@ -7,7 +7,7 @@ from meerk40t.gui.icons import (
     icons8_connected,
     icons8_disconnected,
 )
-from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.mwindow import MWindow, wxButton
 from meerk40t.gui.wxutils import dip_size
 from meerk40t.kernel import signal_listener
 
