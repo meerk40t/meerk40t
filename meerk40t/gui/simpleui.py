@@ -14,7 +14,7 @@ from ..core.exceptions import BadFileError
 from .icons import get_default_icon_size, icons8_computer_support, icons8_opened_folder
 from .mwindow import MWindow
 from .navigationpanels import Drag, Jog
-from .wxutils import StaticBoxSizer
+from .wxutils import StaticBoxSizer, wxButton
 
 _ = wx.GetTranslation
 
@@ -60,7 +60,7 @@ class ProjectPanel(wx.Panel):
 
         sizer_buttons = wx.BoxSizer(wx.VERTICAL)
 
-        self.button_load = wx.Button(self, wx.ID_ANY, _("Load Project"))
+        self.button_load = wxButton(self, wx.ID_ANY, _("Load Project"))
 
         self.button_load.SetBitmap(
             icons8_opened_folder.GetBitmap(resize=get_default_icon_size())

@@ -10,7 +10,7 @@ import wx
 from meerk40t.grbl.controller import hardware_settings
 from meerk40t.gui.icons import icons8_curly_brackets
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import EditableListCtrl, ScrolledPanel
+from meerk40t.gui.wxutils import EditableListCtrl, ScrolledPanel, wxButton
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -25,15 +25,15 @@ class GrblIoButtons(wx.Panel):
 
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.button_refresh = wx.Button(self, wx.ID_ANY, _("Refresh"))
+        self.button_refresh = wxButton(self, wx.ID_ANY, _("Refresh"))
         sizer_2.Add(self.button_refresh, 1, 0, 0)
         self.Bind(wx.EVT_BUTTON, self.on_button_refresh, self.button_refresh)
 
-        self.button_write = wx.Button(self, wx.ID_ANY, _("Write"))
+        self.button_write = wxButton(self, wx.ID_ANY, _("Write"))
         sizer_2.Add(self.button_write, 1, 0, 0)
         self.Bind(wx.EVT_BUTTON, self.on_button_write, self.button_write)
 
-        self.button_export = wx.Button(self, wx.ID_ANY, _("Export"))
+        self.button_export = wxButton(self, wx.ID_ANY, _("Export"))
         sizer_2.Add(self.button_export, 1, 0, 0)
         self.Bind(wx.EVT_BUTTON, self.on_button_export, self.button_export)
 

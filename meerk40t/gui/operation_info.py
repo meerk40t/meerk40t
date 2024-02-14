@@ -9,7 +9,7 @@ from meerk40t.gui.icons import (
     icons8_laserbeam_weak,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel
+from meerk40t.gui.wxutils import ScrolledPanel, wxButton
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -50,7 +50,7 @@ class OpInfoPanel(ScrolledPanel):
         self.list_operations.SetToolTip(
             _("Right-Click for more options for ops and unassigned elements")
         )
-        self.cmd_calc = wx.Button(self, wx.ID_ANY, _("Get Time Estimates"))
+        self.cmd_calc = wxButton(self, wx.ID_ANY, _("Get Time Estimates"))
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_main.Add(self.list_operations, 1, wx.EXPAND, 0)
         sizer_main.Add(self.cmd_calc, 0, wx.EXPAND, 0)

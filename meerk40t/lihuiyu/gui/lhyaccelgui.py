@@ -2,7 +2,7 @@ import wx
 
 from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size, wxCheckBox
 
 _ = wx.GetTranslation
 
@@ -12,17 +12,17 @@ class LihuiyuAccelerationChartPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context.device
-        self.checkbox_vector_accel_enable = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
+        self.checkbox_vector_accel_enable = wxCheckBox(self, wx.ID_ANY, _("Enable"))
         self.text_vector_accel_1 = wx.TextCtrl(self, wx.ID_ANY, "25.4")
         self.text_vector_accel_2 = wx.TextCtrl(self, wx.ID_ANY, "60")
         self.text_vector_accel_3 = wx.TextCtrl(self, wx.ID_ANY, "127")
         self.text_vector_accel_4 = wx.TextCtrl(self, wx.ID_ANY, _("infinity"))
-        self.checkbox_vraster_accel_enable = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
+        self.checkbox_vraster_accel_enable = wxCheckBox(self, wx.ID_ANY, _("Enable"))
         self.text_vraster_accel_1 = wx.TextCtrl(self, wx.ID_ANY, "25.4")
         self.text_vraster_accel_2 = wx.TextCtrl(self, wx.ID_ANY, "60")
         self.text_vraster_accel_3 = wx.TextCtrl(self, wx.ID_ANY, "127")
         self.text_vraster_accel_4 = wx.TextCtrl(self, wx.ID_ANY, _("infinity"))
-        self.checkbox_raster_accel_enable = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
+        self.checkbox_raster_accel_enable = wxCheckBox(self, wx.ID_ANY, _("Enable"))
         self.text_raster_accel_1 = wx.TextCtrl(self, wx.ID_ANY, "25.4")
         self.text_raster_accel_2 = wx.TextCtrl(self, wx.ID_ANY, "127")
         self.text_raster_accel_3 = wx.TextCtrl(self, wx.ID_ANY, "320")

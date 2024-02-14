@@ -5,7 +5,9 @@ import wx
 from meerk40t.core.units import Angle, Length
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.wxutils import (
-    CheckBox,
+    wxButton,
+    wxCheckBox,
+    wxRadioBox,
     EditableListCtrl,
     ScrolledPanel,
     StaticBoxSizer,
@@ -417,7 +419,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             elif data_type == bool and data_style == "button":
                 # This is just a signal to the outside world.
                 wants_listener = False
-                control = wx.Button(self, label=label)
+                control = wxButton(self, label=label)
 
                 def on_button(param, obj, addsig):
                     def check(event=None):
@@ -439,7 +441,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == bool:
                 # Bool type objects get a checkbox.
-                control = CheckBox(self, label=label)
+                control = wxCheckBox(self, label=label)
                 control.SetValue(data)
                 control.SetMinSize(dip_size(self, -1, 23))
 
@@ -468,7 +470,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     wx.ID_ANY,
                     style=wx.TE_PROCESS_ENTER,
                 )
-                control_btn = wx.Button(self, wx.ID_ANY, "...")
+                control_btn = wxButton(self, wx.ID_ANY, "...")
 
                 def set_file(filename: str):
                     # if not filename:
@@ -636,7 +638,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             elif data_type in (str, int) and data_style == "radio":
                 control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 choice_list = list(map(str, c.get("choices", [c.get("default")])))
-                control = wx.RadioBox(
+                control = wxRadioBox(
                     self,
                     wx.ID_ANY,
                     label,
@@ -853,7 +855,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     bit_sizer.Add(label_text, 0, wx.EXPAND, 0)
 
                     # value bit
-                    control = wx.CheckBox(self)
+                    control = wxCheckBox(self)
                     control.SetValue(bool((data >> b) & 1))
                     if mask:
                         control.Enable(bool((mask_bits >> b) & 1))
@@ -864,7 +866,7 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                     # mask bit
                     if mask:
-                        mask_ctrl = wx.CheckBox(self)
+                        mask_ctrl = wxCheckBox(self)
                         mask_ctrl.SetValue(bool((mask_bits >> b) & 1))
                         mask_ctrl.Bind(
                             wx.EVT_CHECKBOX,
@@ -886,7 +888,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             elif data_type == str and data_style == "color":
                 # str data_type with style "color" objects do get a button with the background.
                 control_sizer = wx.BoxSizer(wx.HORIZONTAL)
-                control = wx.Button(self, -1)
+                control = wxButton(self, -1)
 
                 def set_color(ctrl, color: Color):
                     ctrl.SetLabel(str(color.hex))
@@ -1307,7 +1309,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     )
                 else:
                     control_sizer = wx.BoxSizer(wx.HORIZONTAL)
-                control = wx.Button(self, -1)
+                control = wxButton(self, -1)
 
                 def set_color(ctrl, color: Color):
                     ctrl.SetLabel(str(color.hex))

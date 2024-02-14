@@ -29,7 +29,7 @@ from meerk40t.gui.icons import (
     icons8_up,
 )
 from meerk40t.gui.ribbon import RibbonBarPanel
-from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
+from meerk40t.gui.wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox
 from meerk40t.kernel import Settings, lookup_listener, signal_listener
 
 _ = wx.GetTranslation
@@ -606,7 +606,7 @@ class RibbonEditor(wx.Panel):
         self.combo_ribbons = wx.ComboBox(
             self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
-        self.check_labels = wx.CheckBox(self, wx.ID_ANY, _("Show the Ribbon Labels"))
+        self.check_labels = wxCheckBox(self, wx.ID_ANY, _("Show the Ribbon Labels"))
 
         sizer_ribbons.Add(self.combo_ribbons, 0, wx.EXPAND, 0)
         sizer_ribbons.Add(self.check_labels, 0, wx.EXPAND, 0)
@@ -658,9 +658,9 @@ class RibbonEditor(wx.Panel):
         )
 
         self.list_options = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
-        self.button_add_panel = wx.Button(self, wx.ID_ANY, _("Add to page"))
-        self.button_apply = wx.Button(self, wx.ID_ANY, _("Apply"))
-        self.button_reset = wx.Button(self, wx.ID_ANY, _("Reset to Default"))
+        self.button_add_panel = wxButton(self, wx.ID_ANY, _("Add to page"))
+        self.button_apply = wxButton(self, wx.ID_ANY, _("Apply"))
+        self.button_reset = wxButton(self, wx.ID_ANY, _("Reset to Default"))
 
         sizer_button = wx.BoxSizer(wx.VERTICAL)
         sizer_button.Add(self.button_add_panel, 1, wx.EXPAND, 0)

@@ -15,7 +15,7 @@ from meerk40t.gui.propertypanels.attributes import (
     RoundedRectPanel,
     StrokeWidthPanel,
 )
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, wxButton, wxCheckBox
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -93,8 +93,8 @@ class PathPropertyPanel(ScrolledPanel):
         self.lbl_info_points = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.lbl_info_length = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.lbl_info_area = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.btn_info_get = wx.Button(self, wx.ID_ANY, _("Retrieve"))
-        self.check_classify = wx.CheckBox(
+        self.btn_info_get = wxButton(self, wx.ID_ANY, _("Retrieve"))
+        self.check_classify = wxCheckBox(
             self, wx.ID_ANY, _("Immediately classify after colour change")
         )
         self.check_classify.SetValue(self.context._auto_classify)

@@ -3,7 +3,7 @@ from copy import deepcopy
 import wx
 
 from meerk40t.core.node.elem_image import ImageNode
-from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
+from meerk40t.gui.wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox
 
 _ = wx.GetTranslation
 
@@ -27,8 +27,8 @@ class ContrastPanel(wx.Panel):
         self.context = context
         self.node = node
 
-        self.check_enable_contrast = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
-        self.button_reset_contrast = wx.Button(self, wx.ID_ANY, _("Reset"))
+        self.check_enable_contrast = wxCheckBox(self, wx.ID_ANY, _("Enable"))
+        self.button_reset_contrast = wxButton(self, wx.ID_ANY, _("Reset"))
         self.slider_contrast_contrast = wx.Slider(
             self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
@@ -167,9 +167,9 @@ class HalftonePanel(wx.Panel):
         self.context = context
         self.node = node
 
-        self.check_enable_halftone = wx.CheckBox(self, wx.ID_ANY, "Enable")
-        self.button_reset_halftone = wx.Button(self, wx.ID_ANY, "Reset")
-        self.check_halftone_black = wx.CheckBox(self, wx.ID_ANY, "Black")
+        self.check_enable_halftone = wxCheckBox(self, wx.ID_ANY, "Enable")
+        self.button_reset_halftone = wxButton(self, wx.ID_ANY, "Reset")
+        self.check_halftone_black = wxCheckBox(self, wx.ID_ANY, "Black")
         self.slider_halftone_sample = wx.Slider(
             self, wx.ID_ANY, 10, 0, 50, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
@@ -349,8 +349,8 @@ class ToneCurvePanel(wx.Panel):
         self.node = node
 
         self._tone_panel_buffer = None
-        self.check_enable_tone = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
-        self.button_reset_tone = wx.Button(self, wx.ID_ANY, _("Reset"))
+        self.check_enable_tone = wxCheckBox(self, wx.ID_ANY, _("Enable"))
+        self.button_reset_tone = wxButton(self, wx.ID_ANY, _("Reset"))
         self.curve_panel = wx.Panel(self, wx.ID_ANY)
 
         self.__set_properties()
@@ -532,8 +532,8 @@ class SharpenPanel(wx.Panel):
         self.context = context
         self.node = node
 
-        self.check_enable_sharpen = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
-        self.button_reset_sharpen = wx.Button(self, wx.ID_ANY, _("Reset"))
+        self.check_enable_sharpen = wxCheckBox(self, wx.ID_ANY, _("Enable"))
+        self.button_reset_sharpen = wxButton(self, wx.ID_ANY, _("Reset"))
         self.slider_sharpen_percent = wx.Slider(
             self, wx.ID_ANY, 500, 0, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
@@ -715,8 +715,8 @@ class GammaPanel(wx.Panel):
         self.context = context
         self.node = node
 
-        self.check_enable_gamma = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
-        self.button_reset_gamma = wx.Button(self, wx.ID_ANY, _("Reset"))
+        self.check_enable_gamma = wxCheckBox(self, wx.ID_ANY, _("Enable"))
+        self.button_reset_gamma = wxButton(self, wx.ID_ANY, _("Reset"))
         self.slider_gamma_factor = wx.Slider(
             self, wx.ID_ANY, 100, 0, 500, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
         )
@@ -815,7 +815,7 @@ class EdgePanel(wx.Panel):
         self.context = context
         self.node = node
 
-        self.check_enable = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
+        self.check_enable = wxCheckBox(self, wx.ID_ANY, _("Enable"))
 
         self.__set_properties()
         self.__do_layout()
@@ -873,7 +873,7 @@ class AutoContrastPanel(wx.Panel):
         self.context = context
         self.node = node
 
-        self.check_enable = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
+        self.check_enable = wxCheckBox(self, wx.ID_ANY, _("Enable"))
 
         self.__set_properties()
         self.__do_layout()

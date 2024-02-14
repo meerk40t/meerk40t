@@ -277,8 +277,8 @@ class TimerButtons:
             print (f"Clicked with {p1} and {p2}")
 
         self.timer = TimerButton(self, interval=0.5)
-        button1 = wx.Button(self, wx.ID_ANY, "Click and hold me")
-        button2 = wx.Button(self, wx.ID_ANY, "Me too, please")
+        button1 = wxButton(self, wx.ID_ANY, "Click and hold me")
+        button2 = wxButton(self, wx.ID_ANY, "Me too, please")
         self.timer.add_button(button1, test1, None)
         self.timer.add_button(button2, test2, ('First', 'Second'))
     """
@@ -1629,7 +1629,7 @@ class PulsePanel(wx.Panel):
 #             check="length",
 #             nonzero=True,
 #         )
-#         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
+#         self.btn_lock_ratio = wxToggleButton(self, wx.ID_ANY, "")
 #         self.bitmap_locked = icons8_lock.GetBitmap(resize=STD_ICON_SIZE/2, use_theme=False)
 #         self.bitmap_unlocked = icons8_unlock.GetBitmap(resize=STD_ICON_SIZE/2, use_theme=False)
 
