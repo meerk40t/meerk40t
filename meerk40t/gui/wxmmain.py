@@ -4338,7 +4338,7 @@ class MeerK40t(MWindow):
                 preferred_loader=preferred_loader,
             )
             kernel.busyinfo.end()
-        except BadFileError as e:
+        except Exception as e:
             dlg = wx.MessageDialog(
                 None,
                 str(e),
