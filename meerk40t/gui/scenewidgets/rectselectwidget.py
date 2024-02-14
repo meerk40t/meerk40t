@@ -416,75 +416,27 @@ class RectSelectWidget(Widget):
         self.can_drag_move = False
         self.scene.cursor("arrow")
 
-    def draw_dotted_line(self, gc, x0, y0, x1, y1, short=True):
-
-        if self.fake_dashes:
-            matrix = gc.GetTransform().Get()
-            pixel = 1.0 / matrix[0]
-            if short:
-                factor = 5
-            else:
-                factor = 10
-            pendown = True
-            if x0 == x1:
-                if y1 < y0:
-                    # Swap variables
-                    x1, x0 = x0, x1
-                    y1, y0 = y0, y1
-
-                a = x0
-                b = y0
-                while (b < y1):
-                    d = b + factor * pixel
-                    if d > y1:
-                        d = y1
-                    c = a
-                    if pendown:
-                        gc.StrokeLine(a, b, c, d)
-                    pendown = not pendown
-                    a = c
-                    b = d
-            else:
-                if x1 < x0:
-                    # Swap variables
-                    x1, x0 = x0, x1
-                    y1, y0 = y0, y1
-                m = (y1 - y0) / (x1 - x0)
-                a = x0
-                b = y0
-                while (a < x1):
-                    c = a + factor * pixel
-                    if c > x1:
-                        c = x1
-                    d = b + m * (c - a)
-                    if pendown:
-                        gc.StrokeLine(a, b, c, d)
-                    pendown = not pendown
-                    a = c
-                    b = d
-        else:
-            # All has been done with the penstyle
-            gc.StrokeLine(x0, y0, x1, y1)
-
     def draw_rectangle(self, gc, x0, y0, x1, y1, tcolor, tstyle):
-        matrix = self.parent.matrix
+        gc.PushState()
+        gcmat = gc.GetTransform()
+        mat_param = gcmat.Get()
+        sx = mat_param[0]
+        sy = mat_param[3]
+        gc.Scale(1/sx, 1/sy)
         self.selection_pen.SetColour(tcolor)
         self.selection_pen.SetStyle(tstyle)
         gc.SetPen(self.selection_pen)
-        linewidth = 2.0 / matrix_scale(matrix)
-        if linewidth < 1:
-            linewidth = 1
+        linewidth = 1
         try:
             self.selection_pen.SetWidth(linewidth)
         except TypeError:
             self.selection_pen.SetWidth(int(linewidth))
-        if self.fake_dashes:
-            self.selection_pen.SetStyle(wx.PENSTYLE_SOLID)
         gc.SetPen(self.selection_pen)
-        self.draw_dotted_line(gc, x0, y0, x1, y0)
-        self.draw_dotted_line(gc, x1, y0, x1, y1)
-        self.draw_dotted_line(gc, x1, y1, x0, y1)
-        self.draw_dotted_line(gc, x0, y1, x0, y0)
+        gc.StrokeLine(x0 * sx, y0 * sy, x1 * sx, y0 * sy)
+        gc.StrokeLine(x1 * sx, y0 * sy, x1 * sx, y1 * sy)
+        gc.StrokeLine(x1 * sx, y1 * sy, x0 * sx, y1 * sy)
+        gc.StrokeLine(x0 * sx, y1 * sy, x0 * sx, y0 * sy)
+        gc.PopState()
 
     def draw_tiny_indicator(self, gc, symbol, x0, y0, x1, y1, tcolor, tstyle):
         matrix = self.parent.matrix
