@@ -449,17 +449,18 @@ class LaserRender:
                 return wx.ODDEVEN_RULE
             else:
                 return wx.WINDING_RULE
+
     @staticmethod
     def _penwidth(pen, width):
+        try:
+            if isnan(width):
+                width = 1.0
             try:
-                if isnan(width):
-                    width = 1.0
-                try:
-                    pen.SetWidth(width)
-                except TypeError:
-                    pen.SetWidth(int(width))
-            except OverflowError:
-                pass  # Exceeds 32 bit signed integer.
+                pen.SetWidth(width)
+            except TypeError:
+                pen.SetWidth(int(width))
+        except OverflowError:
+            pass  # Exceeds 32 bit signed integer.
 
     def _set_penwidth(self, width):
         self._penwidth(self.pen, width)
