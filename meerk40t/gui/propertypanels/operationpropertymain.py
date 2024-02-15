@@ -1,12 +1,20 @@
 import wx
 
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
+from meerk40t.gui.wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+    wxButton,
+    wxCheckBox,
+    wxRadioBox,
+    dip_size,
+    set_ctrl_value,
+)
 from meerk40t.kernel import lookup_listener, signal_listener
 
 from ...core.units import UNITS_PER_MM, Length
 from ...svgelements import Color
 from ..laserrender import swizzlecolor
-from ..wxutils import TextCtrl, set_ctrl_value
 from .attributes import IdPanel
 
 _ = wx.GetTranslation
@@ -30,7 +38,7 @@ class LayerSettingPanel(wx.Panel):
 
         layer_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Layer:"), wx.HORIZONTAL)
 
-        self.button_layer_color = wx.Button(self, wx.ID_ANY, "")
+        self.button_layer_color = wxButton(self, wx.ID_ANY, "")
         self.button_layer_color.SetBackgroundColour(wx.Colour(0, 0, 0))
         COLOR_TOOLTIP = _(
             "Change/View color of this layer. When Meerk40t classifies elements to operations,"
@@ -56,7 +64,7 @@ class LayerSettingPanel(wx.Panel):
             )
         try:
             self.has_stroke = self.operation.has_color_attribute("stroke")
-            self.checkbox_stroke = wx.CheckBox(self, wx.ID_ANY, _("Stroke"))
+            self.checkbox_stroke = wxCheckBox(self, wx.ID_ANY, _("Stroke"))
             self.checkbox_stroke.SetToolTip(
                 _("Look at the stroke color to restrict classification.")
                 + rastertooltip
@@ -69,7 +77,7 @@ class LayerSettingPanel(wx.Panel):
 
         try:
             self.has_fill = self.operation.has_color_attribute("fill")
-            self.checkbox_fill = wx.CheckBox(self, wx.ID_ANY, _("Fill"))
+            self.checkbox_fill = wxCheckBox(self, wx.ID_ANY, _("Fill"))
             self.checkbox_fill.SetToolTip(
                 _("Look at the fill color to restrict classification.") + rastertooltip
             )
@@ -79,7 +87,7 @@ class LayerSettingPanel(wx.Panel):
         except AttributeError:
             self.has_fill = None
 
-        self.checkbox_stop = wx.CheckBox(self, wx.ID_ANY, _("Stop"))
+        self.checkbox_stop = wxCheckBox(self, wx.ID_ANY, _("Stop"))
         self.checkbox_stop.SetToolTip(
             _("If active, then this op will prevent further classification")
             + "\n"
@@ -112,14 +120,14 @@ class LayerSettingPanel(wx.Panel):
         # self.combo_type.SetSelection(0)
         # layer_sizer.Add(self.combo_type, 1, 0, 0)
 
-        self.checkbox_output = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
+        self.checkbox_output = wxCheckBox(self, wx.ID_ANY, _("Enable"))
         self.checkbox_output.SetToolTip(
             _("Enable this operation for inclusion in Execute Job.")
         )
         self.checkbox_output.SetValue(1)
         h_property_sizer.Add(self.checkbox_output, 1, 0, 0)
 
-        self.checkbox_visible = wx.CheckBox(self, wx.ID_ANY, _("Visible"))
+        self.checkbox_visible = wxCheckBox(self, wx.ID_ANY, _("Visible"))
         self.checkbox_visible.SetToolTip(
             _("Hide all contained elements on scene if not set.")
         )
@@ -127,7 +135,7 @@ class LayerSettingPanel(wx.Panel):
         self.checkbox_visible.Enable(False)
         h_property_sizer.Add(self.checkbox_visible, 1, 0, 0)
 
-        self.checkbox_default = wx.CheckBox(self, wx.ID_ANY, _("Default"))
+        self.checkbox_default = wxCheckBox(self, wx.ID_ANY, _("Default"))
         OPERATION_DEFAULT_TOOLTIP = (
             _(
                 "When classifying elements, Default operations gain all appropriate elements "
@@ -563,6 +571,7 @@ class SpeedPpiPanel(wx.Panel):
                 self.context.elements.signal(
                     "element_property_reload", self.operation, "text_speed"
                 )
+                self.context.elements.signal("updateop_tree")
         except ValueError:
             pass
 
@@ -601,6 +610,7 @@ class SpeedPpiPanel(wx.Panel):
                 self.context.elements.signal(
                     "element_property_reload", self.operation, "text_power"
                 )
+                self.context.elements.signal("updateop_tree")
         except ValueError:
             return
 
@@ -644,7 +654,7 @@ class PassesPanel(wx.Panel):
 
         sizer_passes = StaticBoxSizer(self, wx.ID_ANY, _("Passes:"), wx.HORIZONTAL)
 
-        self.check_passes = wx.CheckBox(self, wx.ID_ANY, _("Passes"))
+        self.check_passes = wxCheckBox(self, wx.ID_ANY, _("Passes"))
         self.check_passes.SetToolTip(_("Enable Operation Passes"))
         sizer_passes.Add(self.check_passes, 0, wx.EXPAND, 0)
 
@@ -797,10 +807,10 @@ class InfoPanel(wx.Panel):
             _("How many elements does this operation contain")
         )
         self.text_time.SetToolTip(_("Estimated time for execution (hh:mm:ss)"))
-        self.btn_update = wx.Button(self, wx.ID_ANY, _("Calculate"))
+        self.btn_update = wxButton(self, wx.ID_ANY, _("Calculate"))
         self.btn_update.Bind(wx.EVT_BUTTON, self.on_button_calculate)
 
-        self.btn_recalc = wx.Button(self, wx.ID_ANY, _("Re-Classify"))
+        self.btn_recalc = wxButton(self, wx.ID_ANY, _("Re-Classify"))
         self.btn_recalc.Bind(wx.EVT_BUTTON, self.on_button_refresh)
 
         sizer_children.Add(self.text_children, 1, wx.EXPAND, 0)
@@ -1344,7 +1354,7 @@ class RasterSettingsPanel(wx.Panel):
         self.combo_raster_direction.SetSelection(0)
         sizer_4.Add(self.combo_raster_direction, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.radio_raster_swing = wx.RadioBox(
+        self.radio_raster_swing = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Directional Raster:"),

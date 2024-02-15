@@ -374,7 +374,6 @@ def _meander(wobble, pattern, max_x, max_y, x0, y0, x1, y1):
     offset_x *= step
     offset_y *= step
 
-
     angle = 0
     mat = Matrix()
     if x1 is not None:
@@ -395,23 +394,60 @@ def _meander(wobble, pattern, max_x, max_y, x0, y0, x1, y1):
             pt = mat.point_in_matrix_space((dx + offset_x, dy + offset_y))
             yield tx + pt.x, ty + pt.y
 
+
 def meander_1(wobble, x0, y0, x1, y1):
     pattern = (
-        ("r", 6,),
-        ("u", 5,),
-        ("l", 4,),
-        ("d", 3,),
-        ("r", 2,),
-        ("u", 1,),
+        (
+            "r",
+            6,
+        ),
+        (
+            "u",
+            5,
+        ),
+        (
+            "l",
+            4,
+        ),
+        (
+            "d",
+            3,
+        ),
+        (
+            "r",
+            2,
+        ),
+        (
+            "u",
+            1,
+        ),
         # transition
         ("l", 1),
         # reverse of upper part
-        ("u", 1,),
-        ("r", 2,),
-        ("d", 3,),
-        ("l", 4,),
-        ("u", 5,),
-        ("r", 6,),
+        (
+            "u",
+            1,
+        ),
+        (
+            "r",
+            2,
+        ),
+        (
+            "d",
+            3,
+        ),
+        (
+            "l",
+            4,
+        ),
+        (
+            "u",
+            5,
+        ),
+        (
+            "r",
+            6,
+        ),
         # transition
         ("d", 6),
     )
@@ -421,6 +457,7 @@ def meander_1(wobble, x0, y0, x1, y1):
     max_y = max_x
     max_x += 1
     yield from _meander(wobble, pattern, max_x, max_y, x0, y0, x1, y1)
+
 
 def meander_2(wobble, x0, y0, x1, y1):
     pattern = (
@@ -445,24 +482,67 @@ def meander_2(wobble, x0, y0, x1, y1):
 
     yield from _meander(wobble, pattern, max_x, max_y, x0, y0, x1, y1)
 
+
 def meander_3(wobble, x0, y0, x1, y1):
     pattern = (
-        ("u", 4,),
-        ("r", 3,),
-        ("d", 3,),
-        ("l", 2,),
-        ("u", 2,),
-        ("r", 1,),
-        ("d", 1,),
+        (
+            "u",
+            4,
+        ),
+        (
+            "r",
+            3,
+        ),
+        (
+            "d",
+            3,
+        ),
+        (
+            "l",
+            2,
+        ),
+        (
+            "u",
+            2,
+        ),
+        (
+            "r",
+            1,
+        ),
+        (
+            "d",
+            1,
+        ),
         # and now backwards...
         # reverse of upper part
-        ("u", 1,),
-        ("l", 1,),
-        ("d", 2,),
-        ("r", 2,),
-        ("u", 3,),
-        ("l", 3,),
-        ("d", 4,),
+        (
+            "u",
+            1,
+        ),
+        (
+            "l",
+            1,
+        ),
+        (
+            "d",
+            2,
+        ),
+        (
+            "r",
+            2,
+        ),
+        (
+            "u",
+            3,
+        ),
+        (
+            "l",
+            3,
+        ),
+        (
+            "d",
+            4,
+        ),
         # transition
         ("r", 4),
     )
@@ -472,6 +552,7 @@ def meander_3(wobble, x0, y0, x1, y1):
     max_y = max_x
     max_x += 1
     yield from _meander(wobble, pattern, max_x, max_y, x0, y0, x1, y1)
+
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":

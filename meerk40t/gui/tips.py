@@ -23,7 +23,7 @@ from .icons import (
     icons8_manager,
 )
 from .mwindow import MWindow
-from .wxutils import dip_size
+from .wxutils import dip_size, wxButton, wxCheckBox
 
 _ = wx.GetTranslation
 
@@ -79,7 +79,7 @@ class TipPanel(wx.Panel):
 
         sizer_main.Add(tip_area, 1, wx.EXPAND, 0)
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.button_prev = wx.Button(self, wx.ID_ANY, _("Previous tip"))
+        self.button_prev = wxButton(self, wx.ID_ANY, _("Previous tip"))
         self.button_prev.SetBitmap(icons8_circled_left.GetBitmap(resize=icon_size[0]))
         self.button_prev.SetToolTip(_("Jump back to the previously displayed tip"))
 
@@ -87,7 +87,7 @@ class TipPanel(wx.Panel):
             self, wx.ID_ANY, "", style=wx.ALIGN_CENTRE_HORIZONTAL
         )
 
-        self.button_next = wx.Button(self, wx.ID_ANY, _("Next tip"))
+        self.button_next = wxButton(self, wx.ID_ANY, _("Next tip"))
         self.button_next.SetBitmap(icons8_circled_right.GetBitmap(resize=icon_size[0]))
         self.button_next.SetToolTip(_("Jump to the next tip"))
 
@@ -96,7 +96,7 @@ class TipPanel(wx.Panel):
         button_sizer.Add(self.button_next, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_main.Add(button_sizer, 0, wx.EXPAND, 0)
 
-        self.check_startup = wx.CheckBox(self, wx.ID_ANY, _("Show tips at startup"))
+        self.check_startup = wxCheckBox(self, wx.ID_ANY, _("Show tips at startup"))
         self.check_startup.SetToolTip(
             _(
                 "Show tips at program start.\n"
@@ -106,7 +106,7 @@ class TipPanel(wx.Panel):
         self.check_startup.SetValue(self.context.show_tips)
 
         option_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.button_try = wx.Button(self, wx.ID_ANY, _("Try it out"))
+        self.button_try = wxButton(self, wx.ID_ANY, _("Try it out"))
         self.button_try.SetToolTip(
             _(
                 "Launch an example, please be aware that this might change your design,\n"
@@ -114,7 +114,7 @@ class TipPanel(wx.Panel):
             )
         )
         self.button_try.SetBitmap(icons8_detective.GetBitmap(resize=icon_size[0]))
-        self.checkbox_update = wx.CheckBox(self, wx.ID_ANY, _("Automatically Update"))
+        self.checkbox_update = wxCheckBox(self, wx.ID_ANY, _("Automatically Update"))
         self.checkbox_update.SetFont(
             wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         )

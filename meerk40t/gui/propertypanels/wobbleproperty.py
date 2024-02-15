@@ -3,7 +3,7 @@ import wx
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 
 from ...core.units import Length
-from ..wxutils import TextCtrl, set_ctrl_value
+from ..wxutils import TextCtrl, set_ctrl_value, wxCheckBox
 from .attributes import ColorPanel, IdPanel
 
 _ = wx.GetTranslation
@@ -99,9 +99,7 @@ class WobblePropertyPanel(ScrolledPanel):
         )
         sizer_interval.Add(self.text_interval, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        sizer_speed = StaticBoxSizer(
-            self, wx.ID_ANY, _("Wobble Speed:"), wx.HORIZONTAL
-        )
+        sizer_speed = StaticBoxSizer(self, wx.ID_ANY, _("Wobble Speed:"), wx.HORIZONTAL)
         self.text_speed = TextCtrl(
             self,
             wx.ID_ANY,
@@ -127,7 +125,7 @@ class WobblePropertyPanel(ScrolledPanel):
         )
         sizer_fill.Add(self.combo_fill_style, 0, wx.EXPAND, 0)
 
-        self.check_classify = wx.CheckBox(
+        self.check_classify = wxCheckBox(
             self, wx.ID_ANY, _("Immediately classify after colour change")
         )
         self.check_classify.SetValue(self.context._auto_classify)

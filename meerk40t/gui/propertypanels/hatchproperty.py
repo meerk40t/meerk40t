@@ -4,7 +4,7 @@ from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 
 from ...core.units import Angle, Length
 from ...svgelements import Matrix
-from ..wxutils import TextCtrl, set_ctrl_value
+from ..wxutils import TextCtrl, wxCheckBox, set_ctrl_value
 from .attributes import ColorPanel, IdPanel
 
 _ = wx.GetTranslation
@@ -122,7 +122,7 @@ class HatchPropertyPanel(ScrolledPanel):
         self.display_panel = wx.Panel(self, wx.ID_ANY)
         sizer_fill.Add(self.display_panel, 6, wx.EXPAND, 0)
 
-        self.check_classify = wx.CheckBox(
+        self.check_classify = wxCheckBox(
             self, wx.ID_ANY, _("Immediately classify after colour change")
         )
         self.check_classify.SetValue(self.context._auto_classify)

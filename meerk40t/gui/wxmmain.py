@@ -432,7 +432,7 @@ class MeerK40t(MWindow):
             elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_UNICODETEXT)):
                 text_data = wx.TextDataObject()
                 if wx.TheClipboard.GetData(text_data):
-                    txt = text_data.GetText().decode("utf-8")
+                    txt = text_data.GetText()
                     paste_text(txt)
 
             wx.TheClipboard.Close()
@@ -2306,7 +2306,10 @@ class MeerK40t(MWindow):
             # This code should load just specific project files rather than all importable formats.
             files = context.elements.load_types()
             with wx.FileDialog(
-                gui, _("Open"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW
+                gui,
+                _("Open"),
+                wildcard=files,
+                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW,
             ) as fileDialog:
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
                     return  # the user changed their mind
@@ -3739,7 +3742,8 @@ class MeerK40t(MWindow):
                 command = "check_for_updates --verbosity 3\n"
             elif self.context.update_check == 2:
                 command = "check_for_updates --beta --verbosity 3\n"
-
+            else:
+                return
             self.context(command)
             self.context.setting(int, "last_update_check", None)
             now = datetime.date.today()
@@ -4334,7 +4338,7 @@ class MeerK40t(MWindow):
                 preferred_loader=preferred_loader,
             )
             kernel.busyinfo.end()
-        except BadFileError as e:
+        except Exception as e:
             dlg = wx.MessageDialog(
                 None,
                 str(e),

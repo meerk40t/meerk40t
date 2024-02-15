@@ -48,7 +48,7 @@ from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.bedwidget import BedWidget
 from .scenewidgets.gridwidget import GridWidget
-from .wxutils import StaticBoxSizer, dip_size
+from .wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox
 from .zmatrix import ZMatrix
 
 _ = wx.GetTranslation
@@ -74,7 +74,7 @@ class OperationsPanel(wx.Panel):
         self.text_operation_param = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         )
-        self.check_decompile = wx.CheckBox(self, wx.ID_ANY, "D")
+        self.check_decompile = wxCheckBox(self, wx.ID_ANY, "D")
         self.check_decompile.SetToolTip(
             _("Decompile cutplan = make operations visible and editable again")
         )
@@ -800,7 +800,7 @@ class SimulationPanel(wx.Panel, Job):
         self.widget_scene = self.view_pane.scene
 
         # poor mans slide out
-        self.btn_slide_options = wx.Button(self, wx.ID_ANY, "<")
+        self.btn_slide_options = wxButton(self, wx.ID_ANY, "<")
         self.btn_slide_options.Bind(wx.EVT_BUTTON, self.slide_out)
         self.btn_slide_options.SetToolTip(
             _("Show/Hide optimization options for this job.")
@@ -831,10 +831,10 @@ class SimulationPanel(wx.Panel, Job):
         self.panel_optimize.AddPage(self.subpanel_optimize, _("Optimizations"))
         self.panel_optimize.AddPage(self.subpanel_operations, _("Operations"))
         self.panel_optimize.AddPage(self.subpanel_cutcode, _("Cutcode"))
-        self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
+        self.checkbox_optimize = wxCheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
         self.checkbox_optimize.SetValue(self.context.planner.do_optimization)
-        self.btn_redo_it = wx.Button(self, wx.ID_ANY, _("Recalculate"))
+        self.btn_redo_it = wxButton(self, wx.ID_ANY, _("Recalculate"))
         self.btn_redo_it.Bind(wx.EVT_BUTTON, self.on_redo_it)
         self.btn_redo_it.SetToolTip(_("Apply the settings and recalculate the cutplan"))
 
@@ -874,7 +874,7 @@ class SimulationPanel(wx.Panel, Job):
         self.text_time_total_step = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.button_play = wx.Button(self, wx.ID_ANY, "")
+        self.button_play = wxButton(self, wx.ID_ANY, "")
         self.button_play.SetToolTip(_("Start the simulation replay"))
         self.slider_playbackspeed = wx.Slider(self, wx.ID_ANY, 180, 0, 310)
         self.slider_playbackspeed.SetToolTip(_("Set the speed for the simulation"))
@@ -896,7 +896,7 @@ class SimulationPanel(wx.Panel, Job):
             _("Timed Playback-Mode: play will jump from one minute to next")
         )
 
-        self.button_spool = wx.Button(self, wx.ID_ANY, _("Send to Laser"))
+        self.button_spool = wxButton(self, wx.ID_ANY, _("Send to Laser"))
         self.button_spool.SetToolTip(_("Send the current cutplan to the laser."))
         self._slided_in = None
 

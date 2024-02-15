@@ -11,7 +11,7 @@ from meerk40t.gui.icons import (
     icons8_disconnected,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, dip_size, wxButton, wxCheckBox
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -28,7 +28,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.context = context.device
         self.SetHelpText("k40controller")
 
-        self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
+        self.button_device_connect = wxButton(self, wx.ID_ANY, _("Connection"))
         if self.context.mock:
             connectivity = "Mock-Device"
         elif self.context.networked:
@@ -38,7 +38,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.text_connection_status = wx.TextCtrl(
             self, wx.ID_ANY, connectivity, style=wx.TE_READONLY
         )
-        # self.button_controller_control = wx.Button(
+        # self.button_controller_control = wxButton(
         #     self, wx.ID_ANY, _("Start Controller")
         # )
         # self.button_controller_control.function = lambda: self.context("start\n")
@@ -57,11 +57,11 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.text_byte_3 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_byte_4 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_byte_5 = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.checkbox_show_usb_log = wx.CheckBox(self, wx.ID_ANY, _("Show USB Log"))
+        self.checkbox_show_usb_log = wxCheckBox(self, wx.ID_ANY, _("Show USB Log"))
         self.text_usb_log = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
         )
-        self.button_clear_stats = wx.Button(self, wx.ID_ANY, _("Reset\nstatistics"))
+        self.button_clear_stats = wxButton(self, wx.ID_ANY, _("Reset\nstatistics"))
 
         self.__set_properties()
         self.__do_layout()

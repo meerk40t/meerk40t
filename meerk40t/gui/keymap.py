@@ -4,7 +4,7 @@ import wx
 
 from .icons import icons8_keyboard
 from .mwindow import MWindow
-from .wxutils import get_key_name
+from .wxutils import get_key_name, wxButton
 
 _ = wx.GetTranslation
 
@@ -22,7 +22,7 @@ class KeymapPanel(wx.Panel):
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES,
         )
-        self.button_add = wx.Button(self, wx.ID_ANY, _("Add Hotkey"))
+        self.button_add = wxButton(self, wx.ID_ANY, _("Add Hotkey"))
         self.text_key_name = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_command_name = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER

@@ -14,7 +14,7 @@ from meerk40t.gui.icons import (
     icons8_home_filled,
     icons8_up,
 )
-from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
+from meerk40t.gui.wxutils import StaticBoxSizer, wxButton, dip_size
 
 _ = wx.GetTranslation
 
@@ -72,8 +72,8 @@ class DefaultActionPanel(wx.Panel):
 
         self.text_param_option = wx.TextCtrl(self, wx.ID_ANY)
 
-        self.button_add_prepend = wx.Button(self, wx.ID_ANY, _("Add to Job Start"))
-        self.button_add_append = wx.Button(self, wx.ID_ANY, _("Add to Job End"))
+        self.button_add_prepend = wxButton(self, wx.ID_ANY, _("Add to Job Start"))
+        self.button_add_append = wxButton(self, wx.ID_ANY, _("Add to Job End"))
 
         self.prepend_list = wx.ListCtrl(
             self, wx.ID_ANY, style=wx.LC_LIST | wx.LC_SINGLE_SEL

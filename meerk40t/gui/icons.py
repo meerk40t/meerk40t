@@ -721,7 +721,12 @@ class VectorIcon:
             else:
                 spen = wx.Pen()
                 spen.SetColour(entry[1])
+
             spen.SetWidth(self.strokewidth)
+            if "width_bold" in attrib:
+                spen.SetWidth(2 * self.strokewidth)
+            if "width_narrow" in attrib:
+                spen.SetWidth(0.5 * self.strokewidth)
 
             spen.SetCap(wx.CAP_ROUND)
             if "cap_butt" in attrib:
@@ -2926,8 +2931,7 @@ icon_paint_brush_green = VectorIcon(
 )
 
 icon_textsize_down = VectorIcon(
-    stroke = (
-    ),
+    stroke=(),
     fill=(
         "M 33.6585,44.381L 24.397,44.381L 22.0936,52.9919L 14.5596,52.9919L 24.397,21L 33.9944,21L 42.31,47.4041L 47.7438,29.9832L 54.7237,29.9832L 62.0513,53L 56.2942,53L 54.4794,46.7375L 47.7438,46.7375L 46.0686,53L 36.1538,52.9919L 33.6585,44.381 ZM 25.4527,39.1786L 32.6028,39.1786L 30.5873,32.3811L 29.7355,29.2915L 28.9557,26.2024L 28.8598,26.2024L 28.134,29.3193L 27.3722,32.4615L 25.4527,39.1786 ZM 48.5116,42.954L 53.7116,42.954L 52.2458,38.0104L 51.6264,35.7634L 51.0592,33.5168L 50.9894,33.5168L 50.4616,35.7836L 49.9075,38.0688L 48.5116,42.954 Z",
         "M 45,21L 57,21L 51,27L 45,21 Z",
@@ -2935,39 +2939,80 @@ icon_textsize_down = VectorIcon(
 )
 
 icon_textsize_up = VectorIcon(
-    stroke = (
-    ),
+    stroke=(),
     fill=(
         "M 33.6585,44.381L 24.397,44.381L 22.0936,52.9919L 14.5596,52.9919L 24.397,21L 33.9944,21L 42.31,47.4041L 47.7438,29.9832L 54.7237,29.9832L 62.0513,53L 56.2942,53L 54.4794,46.7375L 47.7438,46.7375L 46.0686,53L 36.1538,52.9919L 33.6585,44.381 ZM 25.4527,39.1786L 32.6028,39.1786L 30.5873,32.3811L 29.7355,29.2915L 28.9557,26.2024L 28.8598,26.2024L 28.134,29.3193L 27.3722,32.4615L 25.4527,39.1786 ZM 48.5116,42.954L 53.7116,42.954L 52.2458,38.0104L 51.6264,35.7634L 51.0592,33.5168L 50.9894,33.5168L 50.4616,35.7836L 49.9075,38.0688L 48.5116,42.954 Z",
         "M 45,27L 51,21L 57,27L 45,27 Z",
     ),
 )
 icon_textalign_left = VectorIcon(
-    fill = (),
-    stroke = (
+    fill=(),
+    stroke=(
         "M 3 10 H 16",
         "M 3 14 H 21",
         "M 3 18 H 16",
         "M 3 6 H 21",
-    )
+    ),
 )
 
 icon_textalign_center = VectorIcon(
-    fill = (),
-    stroke = (
+    fill=(),
+    stroke=(
         "M3 6 H 21",
         "M3 14 H 21",
         "M 17 10 H 7",
         "M 17 18 H 7",
-    )
+    ),
 )
 
 icon_textalign_right = VectorIcon(
-    fill = (),
-    stroke = (
+    fill=(),
+    stroke=(
         "M 8 10 H 21",
         "M 3 14 H 21",
         "M 8 18 H 21",
         "M 3 6 H 21",
-    )
+    ),
+)
+
+icon_kerning_bigger = VectorIcon(
+    fill=(),
+    stroke=(
+        "[width_bold]M 5, 30 l 10,-20 l 10, 20 M 10, 20 l 10, 0 M 30, 10 l 7.5, 20 l 7.5, -20",
+        "M 10, 35 l -5, 5 l 5, 5",
+        "M 5, 40 h 15 m 10, 0 h 15",
+        "M 40, 35 l 5, 5 l -5 5",
+    ),
+)
+
+icon_kerning_smaller = VectorIcon(
+    fill=(),
+    stroke=(
+        "[width_bold]M 7.5, 30 l 10,-20 l 10, 20 M 12.5, 20 l 10, 0 M 27.5, 10 l 7.5, 20 l 7.5, -20",
+        "M 15, 35 l 5, 5 l -5, 5",
+        "M 5, 40 h 15 m 10, 0 h 15",
+        "M 35, 35 l -5, 5 l 5 5",
+    ),
+)
+
+icon_linegap_bigger = VectorIcon(
+    fill=(),
+    stroke=(
+        "[width_bold]M 10, 30 l 10, -20 l 10, 20 M 15, 20 l 10, 0",
+        "[width_bold]M 12.5, 40 l 7.5, 20 l 7.5, -20",
+        "M 35, 15 l 5, -5 l 5, 5",
+        "M 40, 10 v 20 m 0, 10 v 20",
+        "M 35, 55 l 5, 5 l 5, -5",
+    ),
+)
+
+icon_linegap_smaller = VectorIcon(
+    fill=(),
+    stroke=(
+        "[width_bold]M 10, 32.5 l 10, -20 l 10, 20 M 15, 22.5 l 10, 0",
+        "[width_bold]M 12.5, 37.5 l 7.5, 20 l 7.5, -20",
+        "M 35, 25 l 5, 5 l 5, -5",
+        "M 40, 10 v 20 m 0, 10 v 20",
+        "M 35, 45 l 5, -5 l 5, 5",
+    ),
 )

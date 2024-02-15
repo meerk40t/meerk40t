@@ -12,7 +12,7 @@ from meerk40t.gui.propertypanels.attributes import (
     PositionSizePanel,
     PreventChangePanel,
 )
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size, wxButton, wxCheckBox
 from meerk40t.svgelements import Matrix
 
 _ = wx.GetTranslation
@@ -45,8 +45,8 @@ class CropPanel(wx.Panel):
         self.op = None
         self._no_update = False
 
-        self.check_enable_crop = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
-        self.button_reset = wx.Button(self, wx.ID_ANY, _("Reset"))
+        self.check_enable_crop = wxCheckBox(self, wx.ID_ANY, _("Enable"))
+        self.button_reset = wxButton(self, wx.ID_ANY, _("Reset"))
 
         self.label_info = wx.StaticText(self, wx.ID_ANY, "--")
 
@@ -417,11 +417,11 @@ class ImageModificationPanel(ScrolledPanel):
             self, wx.ID_ANY, choices=choices, style=wx.CB_READONLY | wx.CB_DROPDOWN
         )
         self.combo_scripts.SetSelection(0)
-        self.button_apply = wx.Button(self, wx.ID_ANY, _("Apply Script"))
+        self.button_apply = wxButton(self, wx.ID_ANY, _("Apply Script"))
         self.button_apply.SetToolTip(
             _("Apply image modification script\nRight click: append to existing script")
         )
-        self.button_clear = wx.Button(self, wx.ID_ANY, _("Clear"))
+        self.button_clear = wxButton(self, wx.ID_ANY, _("Clear"))
         self.button_clear.SetToolTip(_("Remove all image operations"))
         self.list_operations = wx.ListCtrl(
             self,
@@ -746,7 +746,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         label_opticurve.SetMinSize(dip_size(self, 70, -1))
         sizer_opticurve.Add(label_opticurve, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.check_opticurve = wx.CheckBox(self, wx.ID_ANY, "")
+        self.check_opticurve = wxCheckBox(self, wx.ID_ANY, "")
         self.check_opticurve.SetToolTip(
             _(
                 "Try to 'simplify' the final curve by reducing the number of Bezier curve segments."
@@ -787,13 +787,13 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
         sizer_options.Add(sizer_buttons, 1, wx.EXPAND, 0)
 
-        self.button_vector = wx.Button(self, wx.ID_ANY, _("Vectorize"))
+        self.button_vector = wxButton(self, wx.ID_ANY, _("Vectorize"))
         sizer_buttons.Add(self.button_vector, 0, 0, 0)
 
         label_spacer = wx.StaticText(self, wx.ID_ANY, " ")
         sizer_buttons.Add(label_spacer, 1, 0, 0)
 
-        self.button_generate = wx.Button(self, wx.ID_ANY, _("Preview"))
+        self.button_generate = wxButton(self, wx.ID_ANY, _("Preview"))
         self.button_generate.SetToolTip(_("Generate a preview of the result"))
         sizer_buttons.Add(self.button_generate, 0, 0, 0)
 
@@ -1058,7 +1058,7 @@ class ImagePropertyPanel(ScrolledPanel):
             limited=True,
             nonzero=True,
         )
-        self.check_prevent_crop = wx.CheckBox(self, wx.ID_ANY, _("No final crop"))
+        self.check_prevent_crop = wxCheckBox(self, wx.ID_ANY, _("No final crop"))
 
         self.panel_lock = PreventChangePanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
@@ -1070,7 +1070,7 @@ class ImagePropertyPanel(ScrolledPanel):
         self.panel_crop = CropPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
-        self.check_enable_dither = wx.CheckBox(self, wx.ID_ANY, _("Dither"))
+        self.check_enable_dither = wxCheckBox(self, wx.ID_ANY, _("Dither"))
         self.choices = [
             "Floyd-Steinberg",
             "Atkinson",
@@ -1102,8 +1102,8 @@ class ImagePropertyPanel(ScrolledPanel):
         #     style=wx.CB_DROPDOWN,
         # )
 
-        self.check_invert_grayscale = wx.CheckBox(self, wx.ID_ANY, _("Invert"))
-        self.btn_reset_grayscale = wx.Button(self, wx.ID_ANY, _("Reset"))
+        self.check_invert_grayscale = wxCheckBox(self, wx.ID_ANY, _("Invert"))
+        self.btn_reset_grayscale = wxButton(self, wx.ID_ANY, _("Reset"))
 
         self.slider_grayscale_red = wx.Slider(
             self, wx.ID_ANY, 0, -1000, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL

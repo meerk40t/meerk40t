@@ -18,7 +18,15 @@ from .icons import (
     icons8_laser_beam,
     icons8_laserbeam_weak,
 )
-from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, create_menu, dip_size
+from .wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+    create_menu,
+    dip_size,
+    wxCheckBox,
+    wxButton,
+)
 
 _ = wx.GetTranslation
 
@@ -57,8 +65,8 @@ class BasicOpPanel(wx.Panel):
             value=choices[0],
             style=wx.CB_READONLY | wx.CB_DROPDOWN,
         )
-        self.check_exclusive = wx.CheckBox(self, wx.ID_ANY, _("Exclusive"))
-        self.check_all_similar = wx.CheckBox(self, wx.ID_ANY, _("Similar"))
+        self.check_exclusive = wxCheckBox(self, wx.ID_ANY, _("Exclusive"))
+        self.check_all_similar = wxCheckBox(self, wx.ID_ANY, _("Similar"))
         self.combo_apply_color.SetToolTip(
             _(
                 "Leave - neither the color of the operation nor of the elements will be changed"
@@ -87,7 +95,7 @@ class BasicOpPanel(wx.Panel):
         self.check_all_similar.Bind(wx.EVT_CHECKBOX, self.on_check_allsimilar)
         self.combo_apply_color.Bind(wx.EVT_COMBOBOX, self.on_combo_color)
 
-        self.btn_config = wx.Button(self, wx.ID_ANY, "...")
+        self.btn_config = wxButton(self, wx.ID_ANY, "...")
         self.btn_config.SetMinSize(dip_size(self, 25, -1))
         self.btn_config.SetMaxSize(dip_size(self, 25, -1))
         self.btn_config.Bind(wx.EVT_BUTTON, self.on_config)
@@ -398,7 +406,7 @@ class BasicOpPanel(wx.Panel):
         self.op_ctrl_list.clear()
 
         info_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        check_filtered = wx.CheckBox(self.op_panel, wx.ID_ANY)
+        check_filtered = wxCheckBox(self.op_panel, wx.ID_ANY)
         check_filtered.SetToolTip(_("Suppress non-used operations"))
         check_filtered.SetValue(self.filtered)
         check_filtered.SetMinSize(
@@ -484,7 +492,7 @@ class BasicOpPanel(wx.Panel):
 
                 op_sizer.AddSpacer(5)
 
-                c_out = wx.CheckBox(self.op_panel, id=wx.ID_ANY)
+                c_out = wxCheckBox(self.op_panel, id=wx.ID_ANY)
                 c_out.SetMinSize(dip_size(self, 20, -1))
                 c_out.SetMaxSize(dip_size(self, 20, -1))
 
@@ -502,7 +510,7 @@ class BasicOpPanel(wx.Panel):
                 )
                 op_sizer.Add(c_out, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-                c_show = wx.CheckBox(self.op_panel, id=wx.ID_ANY)
+                c_show = wxCheckBox(self.op_panel, id=wx.ID_ANY)
                 c_show.SetMinSize(dip_size(self, 20, -1))
                 c_show.SetMaxSize(dip_size(self, 20, -1))
                 c_show.SetToolTip(

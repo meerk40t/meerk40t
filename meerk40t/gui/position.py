@@ -4,7 +4,7 @@ from wx import aui
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import get_default_icon_size, icons8_compress
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size, wxCheckBox
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -66,8 +66,8 @@ class PositionPanel(wx.Panel):
         self.text_y.SetMinSize(dip_size(self, 60, 23))
         self.text_w.SetMinSize(dip_size(self, 60, 23))
         self.text_h.SetMinSize(dip_size(self, 60, 23))
-        self.chk_individually = wx.CheckBox(self, wx.ID_ANY, _("Individ."))
-        self.chk_lock = wx.CheckBox(self, wx.ID_ANY, _("Keep ratio"))
+        self.chk_individually = wxCheckBox(self, wx.ID_ANY, _("Individ."))
+        self.chk_lock = wxCheckBox(self, wx.ID_ANY, _("Keep ratio"))
         if self.small:
             resize_param = 0.5 * get_default_icon_size()
         else:

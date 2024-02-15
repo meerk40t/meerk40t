@@ -424,6 +424,14 @@ class DefaultOperationWidget(StatusBarWidget):
         self.parent.Reposition(self.panelidx)
 
     def reset_tooltips(self):
+        # Desync?
+        if len(self.context.elements.default_operations) != len(self.assign_buttons):
+            # New default operations!
+            self.GenerateControls(
+                self.parent, self.panelidx, self.identifier, self.context
+            )
+            # Repaint
+            self.show_stuff(True)
         # First reset all
         for idx, node in enumerate(self.context.elements.default_operations):
             slabel = self.node_label(node)

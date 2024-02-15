@@ -1,10 +1,10 @@
 import wx
 
-from meerk40t.gui.wxutils import ScrolledPanel
+from meerk40t.gui.wxutils import ScrolledPanel, wxRadioBox
 
-from ...core.node.blobnode import BlobNode
-from ..icons import icons8_vector
-from ..mwindow import MWindow
+from meerk40t.core.node.blobnode import BlobNode
+from meerk40t.gui.icons import icons8_vector
+from meerk40t.gui.mwindow import MWindow
 from .attributes import IdPanel
 
 _ = wx.GetTranslation
@@ -24,7 +24,7 @@ class BlobPropertyPanel(ScrolledPanel):
         self.views = dict(node.views)
         self.views[_("Hexadecimal View")] = BlobNode.hex_view
         self.views[_("Plain-Text")] = BlobNode.ascii_view
-        self.option_view = wx.RadioBox(
+        self.option_view = wxRadioBox(
             self,
             wx.ID_ANY,
             label=_("View"),

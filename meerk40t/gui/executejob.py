@@ -5,7 +5,7 @@ from meerk40t.kernel import signal_listener
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import get_default_icon_size, icons8_laser_beam
 from .mwindow import MWindow
-from .wxutils import disable_window
+from .wxutils import disable_window, wxButton
 
 _ = wx.GetTranslation
 
@@ -39,7 +39,7 @@ class PlannerPanel(wx.Panel):
         self.panel_optimize = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False
         )
-        self.button_start = wx.Button(self, wx.ID_ANY, _("Start"))
+        self.button_start = wxButton(self, wx.ID_ANY, _("Start"))
 
         self.__set_properties()
         self.__do_layout()

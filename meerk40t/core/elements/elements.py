@@ -377,7 +377,9 @@ def plugin(kernel, lifecycle=None):
                     "Ticked: A drag operation of regmark nodes to an operation will move back these nodes to the element branch."
                 )
                 + "\n"
-                + _("Unticked: A drag operation of regmark nodes to an operation will be ignored."),
+                + _(
+                    "Unticked: A drag operation of regmark nodes to an operation will be ignored."
+                ),
                 "page": "Scene",
                 "section": "Operation",
             },
@@ -2112,7 +2114,9 @@ class Elemental(Service):
         #             # print ("Checked %s and will addit=%s" % (n.type, addit))
         #             if addit and n not in data:
         #                 data.append(n)
-        op_treatment = drop_node.type in op_parent_nodes and self.allow_reg_to_op_dragging
+        op_treatment = (
+            drop_node.type in op_parent_nodes and self.allow_reg_to_op_dragging
+        )
         for drag_node in data:
             if drop_node is drag_node:
                 # print(f"Drag {drag_node.type} to {drop_node.type} - Drop node was drag node")

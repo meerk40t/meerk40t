@@ -10,6 +10,7 @@ from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.gui.icons import icons8_up
 from meerk40t.gui.statusbarwidgets.statusbarwidget import StatusBarWidget
+from meerk40t.gui.wxutils import wxCheckBox
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -137,7 +138,7 @@ class InformationWidget(SimpleInfoWidget):
         self.context.setting(bool, "statusbar_auto_statistic", True)
         self._info_active = self.context.statusbar_auto_statistic
 
-        self.chk_active = wx.CheckBox(parent, wx.ID_ANY, "")
+        self.chk_active = wxCheckBox(parent, wx.ID_ANY, "")
         self.chk_active.SetToolTip(
             _("Uncheck if you don't want automatic statistic generation")
         )

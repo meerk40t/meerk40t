@@ -338,7 +338,12 @@ class Button:
         """
         if self.group:
             # Toggle radio buttons
-            self.toggle = not self.toggle
+            if self.state_pressed is None:
+                # Regular button
+                self.toggle = True
+            else:
+                # Real toggle button
+                self.toggle = not self.toggle
             if self.toggle:  # got toggled
                 button_group = self.parent.group_lookup.get(self.group, [])
 

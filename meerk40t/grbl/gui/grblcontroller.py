@@ -12,7 +12,7 @@ from meerk40t.gui.icons import (
     icons8_disconnected,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import dip_size
+from meerk40t.gui.wxutils import wxButton, dip_size
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -35,7 +35,7 @@ class GRBLControllerPanel(wx.Panel):
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         self.iconsize = 0.75 * get_default_icon_size()
         self.state = None
-        self.button_device_connect = wx.Button(
+        self.button_device_connect = wxButton(
             self, wx.ID_ANY, self.button_connect_string("Connection")
         )
 
@@ -91,7 +91,7 @@ class GRBLControllerPanel(wx.Panel):
             ]
         )
         for entry in self.gcode_commands:
-            btn = wx.Button(self, wx.ID_ANY, entry[1])
+            btn = wxButton(self, wx.ID_ANY, entry[1])
             btn.Bind(wx.EVT_BUTTON, self.send_gcode(entry[0]))
             btn.SetToolTip(entry[2])
             if entry[3] is not None:
@@ -101,7 +101,7 @@ class GRBLControllerPanel(wx.Panel):
                     )
                 )
             sizer_2.Add(btn, 1, wx.EXPAND, 0)
-        self.btn_clear = wx.Button(self, wx.ID_ANY, _("Clear"))
+        self.btn_clear = wxButton(self, wx.ID_ANY, _("Clear"))
         self.btn_clear.SetToolTip(_("Clear log window"))
         self.btn_clear.Bind(wx.EVT_BUTTON, self.on_clear_log)
         sizer_2.Add(self.btn_clear, 0, wx.EXPAND), 0

@@ -12,7 +12,7 @@ from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
 from meerk40t.gui.icons import get_default_icon_size, icons8_detective
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size, wxButton, wxCheckBox
 from meerk40t.kernel import Settings, lookup_listener, signal_listener
 from meerk40t.svgelements import Color, Matrix
 
@@ -37,9 +37,9 @@ class SaveLoadPanel(wx.Panel):
         sizer_name = wx.BoxSizer(wx.HORIZONTAL)
         lbl_info = wx.StaticText(self, wx.ID_ANY, _("Template-Name"))
         self.txt_name = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.btn_save = wx.Button(self, wx.ID_ANY, _("Save"))
-        self.btn_load = wx.Button(self, wx.ID_ANY, _("Load"))
-        self.btn_delete = wx.Button(self, wx.ID_ANY, _("Delete"))
+        self.btn_save = wxButton(self, wx.ID_ANY, _("Save"))
+        self.btn_load = wxButton(self, wx.ID_ANY, _("Load"))
+        self.btn_delete = wxButton(self, wx.ID_ANY, _("Delete"))
         self.btn_load.Enable(False)
         self.btn_save.Enable(False)
         self.btn_delete.Enable(False)
@@ -232,8 +232,8 @@ class TemplatePanel(wx.Panel):
             )
         )
         self.combo_images.SetSelection(0)
-        self.check_labels = wx.CheckBox(self, wx.ID_ANY, _("Labels"))
-        self.check_values = wx.CheckBox(self, wx.ID_ANY, _("Values"))
+        self.check_labels = wxCheckBox(self, wx.ID_ANY, _("Labels"))
+        self.check_values = wxCheckBox(self, wx.ID_ANY, _("Values"))
 
         self.combo_param_1 = wx.ComboBox(
             self, id=wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
@@ -256,7 +256,7 @@ class TemplatePanel(wx.Panel):
             choices=color_choices,
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
-        self.check_color_direction_1 = wx.CheckBox(self, wx.ID_ANY, _("Growing"))
+        self.check_color_direction_1 = wxCheckBox(self, wx.ID_ANY, _("Growing"))
 
         self.combo_param_2 = wx.ComboBox(
             self, id=wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
@@ -279,9 +279,9 @@ class TemplatePanel(wx.Panel):
             choices=color_choices,
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
-        self.check_color_direction_2 = wx.CheckBox(self, wx.ID_ANY, _("Growing"))
+        self.check_color_direction_2 = wxCheckBox(self, wx.ID_ANY, _("Growing"))
 
-        self.button_create = wx.Button(self, wx.ID_ANY, _("Create Pattern"))
+        self.button_create = wxButton(self, wx.ID_ANY, _("Create Pattern"))
         self.button_create.SetBitmap(
             icons8_detective.GetBitmap(resize=0.5 * get_default_icon_size())
         )
