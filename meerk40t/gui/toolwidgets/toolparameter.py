@@ -587,9 +587,7 @@ class ParameterTool(ToolWidget):
                         func = self._functions[self.mode][0]
                         if func is not None:
                             func(self.element)
-                            self.sync_parameter()
-                    else:
-                        self.sync_parameter()
+                    self.sync_parameter()
                     self.scene.refresh_scene()
             elif self.slider_index >= 0:
                 if self.active_slider is not None:
@@ -607,10 +605,7 @@ class ParameterTool(ToolWidget):
                             func = self._functions[self.mode][0]
                             if func is not None:
                                 func(self.element)
-                                self.sync_parameter()
-                        else:
-                            # print(f"No Routine for {self.mode}")
-                            self.sync_parameter()
+                        self.sync_parameter()
                         self.scene.refresh_scene()
             return RESPONSE_CONSUME
         elif event_type == "leftup":
