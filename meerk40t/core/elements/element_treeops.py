@@ -2842,8 +2842,6 @@ def init_tree(kernel):
             newnode = e.replace_node(**node_args)
             newnode.matrix = old_matrix
             newnode.matrix.pre_translate_y(p1.y - p0.y)
-            if anchor != "start":
-                newnode.matrix.pre_translate_x(-1 * (p1.x - p0.x) / 2)
 
             # Now we need to render it...
             # newnode.set_dirty_bounds()
@@ -2853,6 +2851,7 @@ def init_tree(kernel):
             kernel = self.kernel
             for property_op in kernel.lookup_all("path_updater/.*"):
                 property_op(kernel.root, newnode)
+
             if hasattr(newnode, "_cache"):
                 newnode._cache = None
 
