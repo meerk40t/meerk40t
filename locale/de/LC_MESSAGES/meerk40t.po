@@ -18624,7 +18624,7 @@ msgstr "Tip: Mit Ctrl-Shift-F kann die aktuelle Anzeige fixiert werden."
 msgid "Call online help-page"
 msgstr "Rufe Online-Hilfe-Seite auf"
 
-msgid "Splitting Rasters"
+msgid "Splitting rasters"
 msgstr "Raster getrennt behandeln"
 
 msgid "System font locations"
