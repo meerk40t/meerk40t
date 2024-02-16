@@ -1157,7 +1157,7 @@ class Geomstr:
         return self.segments
 
     def __bool__(self):
-        return self.index != 0
+        return bool(self.index != 0)
 
     def debug_me(self):
         # Provides information about the Geometry.
