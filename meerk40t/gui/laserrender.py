@@ -866,7 +866,12 @@ class LaserRender:
             return
         point = node.point
         gc.PushState()
-        gc.SetPen(wx.BLACK_PEN)
+        mypen=wx.Pen(wx.BLACK)
+        try:
+            mypen.SetWidth(zoomscale)
+        except TypeError:
+            mypen.SetWidth(int(zoomscale))
+        gc.SetPen(mypen)
         dif = 5 * zoomscale
         gc.StrokeLine(point.x - dif, point.y, point.x + dif, point.y)
         gc.StrokeLine(point.x, point.y - dif, point.x, point.y + dif)
