@@ -656,9 +656,7 @@ class ParameterTool(ToolWidget):
                             func = self._functions[self.mode][0]
                             if func is not None:
                                 func(self.element)
-                                self.sync_parameter()
-                        else:
-                            self.sync_parameter()
+                        self.sync_parameter()
                         self.scene.refresh_scene()
             self.is_moving = False
             return RESPONSE_CONSUME
