@@ -1971,6 +1971,13 @@ class SimulationTravelWidget(Widget):
             pos = self.pos[-1]
         if pos < 0:
             return
+        gcmat = gc.GetTransform()
+        mat_param = gcmat.Get()
+        gcscale = max(mat_param[0], mat_param[3])
+        if gcscale == 0:
+            gcscale = 0.01
+        linewidth = 1 / gcscale
+
         starts = self.starts[:pos]
         ends = self.ends[:pos]
         if residual > 0 and idx > 0:
@@ -1996,9 +2003,18 @@ class SimulationTravelWidget(Widget):
                 mystarts.append(newstart)
                 myends.append(newend)
                 interim_pen = wx.Pen(wx.GREEN, 1, wx.PENSTYLE_DOT)
+                try:
+                    interim_pen.SetWidth(linewidth)
+                except TypeError:
+                    interim_pen.SetWidth(int(linewidth))
                 gc.SetPen(interim_pen)
                 gc.StrokeLineSegments(mystarts, myends)
-        gc.SetPen(wx.BLACK_DASHED_PEN)
+        mypen = wx.Pen(wx.BLACK, 1, wx.PENSTYLE_LONG_DASH)
+        try:
+            mypen.SetWidth(linewidth)
+        except TypeError:
+            mypen.SetWidth(int(linewidth))
+        gc.SetPen(mypen)
         gc.StrokeLineSegments(starts, ends)
         # for idx, pt_start in enumerate(starts):
         #     pt_end = ends[idx]

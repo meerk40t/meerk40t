@@ -422,6 +422,10 @@ class RectSelectWidget(Widget):
         mat_param = gcmat.Get()
         sx = mat_param[0]
         sy = mat_param[3]
+        if sx==0:
+            sx = 0.01
+        if sy==0:
+            sy = 0.01
         gc.Scale(1/sx, 1/sy)
         self.selection_pen.SetColour(tcolor)
         self.selection_pen.SetStyle(tstyle)

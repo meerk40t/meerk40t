@@ -523,7 +523,6 @@ class LaserRender:
         gcscale = max(mat_param[0], mat_param[3])
         if gcscale == 0:
             gcscale = 0.01
-        print (gcscale, mat_param)
         highlight_color = Color("magenta")
         wx_color = wx.Colour(swizzlecolor(highlight_color))
         highlight_pen = wx.Pen(wx_color)
