@@ -443,10 +443,10 @@ class BeamTable:
                     hi = mid
                 elif value == x_test:
                     x_slope = g.slope(x)
-                    if np.isposinf(x_slope):
+                    if np.isneginf(x_slope):
                         x_slope *= -1
                     t_slope = g.slope(a[mid])
-                    if np.isposinf(t_slope):
+                    if np.isneginf(t_slope):
                         t_slope *= -1
                     if x_slope < t_slope:
                         hi = mid
