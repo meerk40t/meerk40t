@@ -220,8 +220,8 @@ class BorderWidget(Widget):
 
         # Won't be displayed when rotating...
         if self.master.show_border:
-            # Linux / Darwin do not recognize the GraphicsContext TransformationMatrix 
-            # when drawing dashed/dotted lines, so they always appear to be solid 
+            # Linux / Darwin do not recognize the GraphicsContext TransformationMatrix
+            # when drawing dashed/dotted lines, so they always appear to be solid
             # (even if they are dotted on a microscopic level)
             # To circumvent this issue, we scale the gc back
             gc.PushState()
@@ -2321,7 +2321,8 @@ class SelectionWidget(Widget):
         Widget.__init__(self, scene, all=False)
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(self.scene.colors.color_manipulation)
-        self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
+        # self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
+        self.selection_pen.SetStyle(wx.PENSTYLE_LONG_DASH)
         # want to have sharp edges
         self.selection_pen.SetJoin(wx.JOIN_MITER)
 
