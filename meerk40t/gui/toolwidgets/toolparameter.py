@@ -162,7 +162,21 @@ class SimpleSlider:
         gc.PushState()
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset = self.pt_offset / s
-        gc.SetPen(wx.LIGHT_GREY_PEN)
+
+        mypen = wx.Pen(wx.LIGHT_GREY)
+        gcmat = gc.GetTransform()
+        mat_param = gcmat.Get()
+        sx = mat_param[0]
+        sy = mat_param[3]
+        sx = max(sx, sy)
+        if sx==0:
+            sx = 1
+        linewidth = 1 / sx
+        try:
+            mypen.SetWidth(linewidth)
+        except TypeError:
+            mypen.SetWidth(int(linewidth))
+        gc.SetPen(mypen)
         gc.DrawLines(
             [(int(self.x), int(self.y)), (int(self.x + self.width), int(self.y))]
         )
