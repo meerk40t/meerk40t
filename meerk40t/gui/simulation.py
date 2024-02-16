@@ -969,6 +969,14 @@ class SimulationPanel(wx.Panel, Job):
         self.widget_scene.suppress_changes = False
 
         self.running = False
+        # Under Linux the SimulationPanel starts with the wrong zoom factor,
+        # so we send a signal to ourselves...
+        # No platform check, as this isn't huring generally
+        wx.CallLater(250, self.delayed_init)
+    
+    def delayed_init(self):
+        self.slided_in = True
+        self.fit_scene_to_panel()
 
     def __set_properties(self):
         self.text_distance_laser.SetToolTip(_("Distance Estimate: while Lasering"))
@@ -1451,6 +1459,7 @@ class SimulationPanel(wx.Panel, Job):
                 ht, preferred_units=self.context.units_name, digits=2
             ).preferred_length
             self.parent.SetTitle(_("Simulation") + f" ({sdimx}x{sdimy})")
+        self.fit_scene_to_panel()
         self.request_refresh()
 
     @signal_listener("plan")
@@ -1669,6 +1678,7 @@ class SimulationPanel(wx.Panel, Job):
         self.button_play.SetBitmap(
             icons8_pause.GetBitmap(resize=get_default_icon_size())
         )
+        self.button_play.SetToolTip(_("Stop the simulation replay"))
         self.context.schedule(self)
         self.running = True
 
@@ -1676,6 +1686,7 @@ class SimulationPanel(wx.Panel, Job):
         self.button_play.SetBitmap(
             icons8_circled_play.GetBitmap(resize=get_default_icon_size())
         )
+        self.button_play.SetToolTip(_("Start the simulation replay"))
         self.context.unschedule(self)
         self.running = False
 

@@ -5435,6 +5435,10 @@ msgstr "Utilizza le impostazioni per il ricalcolo del piano di taglio"
 msgid "Start the simulation replay"
 msgstr "Avvia la riproduzione della simulazione"
 
+#: ./meerk40t\gui\simulation.py:882
+msgid "Stop the simulation replay"
+msgstr "Arresto la riproduzione della simulazione"
+
 #: ./meerk40t\gui\simulation.py:884
 msgid "Set the speed for the simulation"
 msgstr "Imposta la velocità della simulazione"

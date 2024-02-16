@@ -5300,6 +5300,10 @@ msgstr "Nutze Einstellungen und berechne den Cutplan neu"
 msgid "Start the simulation replay"
 msgstr "Starte die Simulations-Wiedergabe"
 
+#: ./meerk40t\gui\simulation.py:882
+msgid "Stop the simulation replay"
+msgstr "Stoppe die Simulations-Wiedergabe"
+
 #: ./meerk40t\gui\simulation.py:884
 msgid "Set the speed for the simulation"
 msgstr "Setze Wiedergabegeschwindigkeit"
