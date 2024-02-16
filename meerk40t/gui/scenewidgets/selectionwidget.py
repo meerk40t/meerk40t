@@ -234,9 +234,12 @@ class BorderWidget(Widget):
             # Create a copy of the pen
             mypen = wx.Pen(self.master.selection_pen)
             mypen.SetWidth(1)
+            mypen.SetStyle(wx.PENSTYLE_LONG_DASH)
             gc.SetPen(mypen)
             gc.StrokeLine(sx * center_x, sy * 0, sx * center_x, sy * self.top)
             gc.StrokeLine(sx * 0, sy * center_y, sx * self.left, sy * center_y)
+            mypen.SetStyle(wx.PENSTYLE_DOT)
+            gc.SetPen(mypen)
             gc.StrokeLine(sx * self.left, sy * self.top, sx * self.right, sy * self.top)
             gc.StrokeLine(sx * self.right, sy * self.top, sx * self.right, sy * self.bottom)
             gc.StrokeLine(sx * self.right, sy * self.bottom, sx * self.left, sy * self.bottom)
