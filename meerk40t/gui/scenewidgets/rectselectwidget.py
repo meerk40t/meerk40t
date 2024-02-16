@@ -413,6 +413,10 @@ class RectSelectWidget(Widget):
         self.scene.cursor("arrow")
 
     def draw_rectangle(self, gc, x0, y0, x1, y1, tcolor, tstyle):
+        # Linux / Darwin do not recognize the GraphicsContext TransformationMatrix 
+        # when drawing dashed/dotted lines, so they always appear to be solid 
+        # (even if they are dotted on a microscopic level)
+        # To circumvent this issue, we scale the gc back
         gc.PushState()
         gcmat = gc.GetTransform()
         mat_param = gcmat.Get()
