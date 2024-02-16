@@ -972,7 +972,7 @@ class SimulationPanel(wx.Panel, Job):
         # Under Linux the SimulationPanel starts with the wrong zoom factor,
         # so we send a signal to ourselves...
         # No platform check, as this isn't huring generally
-        wx.CallLater(250, self.delayed_init)
+        wx.CallLater(500, self.delayed_init)
     
     def delayed_init(self):
         self.slided_in = True
