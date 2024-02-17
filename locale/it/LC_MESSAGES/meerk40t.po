@@ -18752,3 +18752,5 @@ msgstr "Esegui il lavoro inattivo leggero della contorno convesso"
 msgid "Could not contact Galvo laser."
 msgstr "Impossibile contattare il laser Galvo"
 
+msgid "Generating..."
+msgstr "​Generazione in corsa..."
