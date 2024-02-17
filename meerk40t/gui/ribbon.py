@@ -909,7 +909,7 @@ class RibbonBarPanel(wx.Control):
         try:
             buf = self._set_buffer()
             dc = wx.MemoryDC()
-        except RuntimeError:
+        except (RuntimeError, AssertionError):
             # Shutdown error
             return
         dc.SelectObject(buf)
