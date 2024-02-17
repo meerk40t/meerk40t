@@ -6,7 +6,13 @@ from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size, wxCheckBox
+from meerk40t.gui.wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxCheckBox,
+)
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation

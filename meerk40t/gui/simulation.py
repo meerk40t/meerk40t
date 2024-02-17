@@ -973,7 +973,7 @@ class SimulationPanel(wx.Panel, Job):
         # so we send a signal to ourselves...
         # No platform check, as this isn't huring generally
         wx.CallLater(500, self.delayed_init)
-    
+
     def delayed_init(self):
         self.slided_in = True
         self.fit_scene_to_panel()

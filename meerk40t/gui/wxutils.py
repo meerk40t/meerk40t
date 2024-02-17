@@ -885,6 +885,7 @@ class wxCheckBox(wx.CheckBox):
         self._tool_tip = tooltip
         super().SetToolTip(self._tool_tip)
 
+
 class wxButton(wx.Button):
     """
     This class wraps around wx.Button and creates a series of mouse over tool tips to permit Linux tooltips that
@@ -911,6 +912,7 @@ class wxButton(wx.Button):
     def SetToolTip(self, tooltip):
         self._tool_tip = tooltip
         super().SetToolTip(self._tool_tip)
+
 
 class wxToggleButton(wx.ToggleButton):
     """
@@ -939,6 +941,7 @@ class wxToggleButton(wx.ToggleButton):
         self._tool_tip = tooltip
         super().SetToolTip(self._tool_tip)
 
+
 class wxRadioBox(wx.RadioBox):
     """
     This class wraps around wx.RadioBox and creates a series of mouse over tool tips to permit Linux tooltips that
@@ -966,6 +969,7 @@ class wxRadioBox(wx.RadioBox):
         self._tool_tip = tooltip
         super().SetToolTip(self._tool_tip)
 
+
 class wxStaticBitmap(wx.StaticBitmap):
     """
     This class wraps around wx.RadioBox and creates a series of mouse over tool tips to permit Linux tooltips that
@@ -992,6 +996,7 @@ class wxStaticBitmap(wx.StaticBitmap):
     def SetToolTip(self, tooltip):
         self._tool_tip = tooltip
         super().SetToolTip(self._tool_tip)
+
 
 class StaticBoxSizer(wx.StaticBoxSizer):
     def __init__(

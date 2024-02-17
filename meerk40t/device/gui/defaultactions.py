@@ -14,7 +14,7 @@ from meerk40t.gui.icons import (
     icons8_home_filled,
     icons8_up,
 )
-from meerk40t.gui.wxutils import StaticBoxSizer, wxButton, dip_size
+from meerk40t.gui.wxutils import StaticBoxSizer, dip_size, wxButton
 
 _ = wx.GetTranslation
 

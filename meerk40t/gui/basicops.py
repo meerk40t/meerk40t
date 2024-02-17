@@ -24,8 +24,8 @@ from .wxutils import (
     TextCtrl,
     create_menu,
     dip_size,
-    wxCheckBox,
     wxButton,
+    wxCheckBox,
 )
 
 _ = wx.GetTranslation

@@ -176,7 +176,7 @@ class SimpleSlider:
         sx = mat_param[0]
         sy = mat_param[3]
         sx = max(sx, sy)
-        if sx==0:
+        if sx == 0:
             sx = 0.01
         linewidth = 1 / sx
         try:

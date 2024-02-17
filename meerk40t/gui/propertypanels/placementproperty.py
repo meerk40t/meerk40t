@@ -8,7 +8,14 @@ import wx
 
 from meerk40t.core.units import Angle, Length
 from meerk40t.gui.propertypanels.attributes import IdPanel
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, set_ctrl_value, wxButton, wxCheckBox
+from meerk40t.gui.wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+    set_ctrl_value,
+    wxButton,
+    wxCheckBox,
+)
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color
 from meerk40t.tools.geomstr import Geomstr

@@ -873,7 +873,7 @@ class LaserRender:
             return
         point = node.point
         gc.PushState()
-        mypen=wx.Pen(wx.BLACK)
+        mypen = wx.Pen(wx.BLACK)
         try:
             mypen.SetWidth(zoomscale)
         except TypeError:

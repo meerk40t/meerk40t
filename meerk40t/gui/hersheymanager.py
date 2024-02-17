@@ -18,7 +18,13 @@ from meerk40t.gui.icons import (
     icons8_choose_font,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox, wxToggleButton
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxToggleButton,
+)
 from meerk40t.kernel.kernel import signal_listener
 from meerk40t.tools.geomstr import TYPE_ARC, TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, Geomstr
 

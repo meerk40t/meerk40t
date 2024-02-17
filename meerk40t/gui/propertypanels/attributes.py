@@ -5,7 +5,14 @@ import wx
 import meerk40t.gui.icons as mkicons
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size, wxButton, wxCheckBox, wxToggleButton
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxToggleButton,
+)
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation

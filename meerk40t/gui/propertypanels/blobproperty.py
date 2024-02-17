@@ -1,10 +1,10 @@
 import wx
 
-from meerk40t.gui.wxutils import ScrolledPanel, wxRadioBox
-
 from meerk40t.core.node.blobnode import BlobNode
 from meerk40t.gui.icons import icons8_vector
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import ScrolledPanel, wxRadioBox
+
 from .attributes import IdPanel
 
 _ = wx.GetTranslation

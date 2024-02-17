@@ -4,11 +4,11 @@ from meerk40t.gui.wxutils import (
     ScrolledPanel,
     StaticBoxSizer,
     TextCtrl,
+    dip_size,
+    set_ctrl_value,
     wxButton,
     wxCheckBox,
     wxRadioBox,
-    dip_size,
-    set_ctrl_value,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
 
