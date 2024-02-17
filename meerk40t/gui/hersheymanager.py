@@ -420,10 +420,10 @@ class LineTextPropertyPanel(wx.Panel):
         self.btn_attrib_lineminus.SetBitmap(
             icon_linegap_smaller.GetBitmap(resize=iconsize)
         )
-        self.check_weld = wxCheckBox(self, wx.ID_ANY, "")
-        self.check_weld.SetToolTip(_("Weld overlapping characters together?"))
+        # self.check_weld = wxCheckBox(self, wx.ID_ANY, "")
+        # self.check_weld.SetToolTip(_("Weld overlapping characters together?"))
         text_options.AddSpacer(25)
-        text_options.Add(self.check_weld, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        # text_options.Add(self.check_weld, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         for btn in (
             self.rb_align[0],
@@ -469,7 +469,7 @@ class LineTextPropertyPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_linegap_smaller, self.btn_attrib_lineminus)
         self.btn_attrib_lineplus.Bind(wx.EVT_RIGHT_DOWN, self.on_linegap_reset)
         self.btn_attrib_lineminus.Bind(wx.EVT_RIGHT_DOWN, self.on_linegap_reset)
-        self.check_weld.Bind(wx.EVT_CHECKBOX, self.on_weld)
+        # self.check_weld.Bind(wx.EVT_CHECKBOX, self.on_weld)
         for btn in self.rb_align:
             btn.Bind(wx.EVT_TOGGLEBUTTON, self.on_radio_box)
         self.text_text.Bind(wx.EVT_TEXT, self.on_text_change)
@@ -509,7 +509,7 @@ class LineTextPropertyPanel(wx.Panel):
             self.node.mklinegap = 1.1
         if not hasattr(self.node, "mkfontweld") or self.node.mkfontweld is None:
             self.node.mkfontweld = False
-        self.check_weld.SetValue(self.node.mkfontweld)
+        # self.check_weld.SetValue(self.node.mkfontweld)
         if not hasattr(self.node, "mkalign") or self.node.mkalign is None:
             self.node.mkalign = "start"
         vals = ("start", "middle", "end")
@@ -590,11 +590,11 @@ class LineTextPropertyPanel(wx.Panel):
             self.node.mkalign = "end"
         self.update_node()
 
-    def on_weld(self, event):
-        if self.node is None:
-            return
-        self.node.mkfontweld = self.check_weld.GetValue()
-        self.update_node()
+    # def on_weld(self, event):
+    #     if self.node is None:
+    #         return
+    #     self.node.mkfontweld = self.check_weld.GetValue()
+    #     self.update_node()
 
     def on_button_bigger(self, event):
         if self.node is None:
