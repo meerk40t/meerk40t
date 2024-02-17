@@ -237,7 +237,7 @@ def init_commands(kernel):
         path.transform *= Matrix(matrix)
         node = self.elem_branch.add(
             path=abs(path),
-            stroke_width=0,
+            stroke_width=500,
             stroke_scaled=False,
             type="elem path",
             fillrule=Fillrule.FILLRULE_NONZERO,
@@ -504,7 +504,7 @@ def init_commands(kernel):
         path.transform *= Matrix(matrix)
         data_node = PathNode(
             path=abs(path),
-            stroke_width=1,
+            stroke_width=500,
             stroke=Color("black"),
             stroke_scaled=False,
             fill=None,
@@ -579,7 +579,7 @@ def init_commands(kernel):
             path_final = path_2
             data_node_2 = PathNode(
                 path=abs(path_2),
-                stroke_width=1,
+                stroke_width=500,
                 stroke=Color("black"),
                 stroke_scaled=False,
                 fill=None,
@@ -605,7 +605,7 @@ def init_commands(kernel):
                     subpath = Path(pasp)
                     data_node = PathNode(
                         path=abs(subpath),
-                        stroke_width=1,
+                        stroke_width=500,
                         stroke=Color("black"),
                         stroke_scaled=False,
                         fill=Color("black"),
@@ -667,7 +667,7 @@ def init_commands(kernel):
 
             outline_node = self.elem_branch.add(
                 path=abs(path_final),
-                stroke_width=1,
+                stroke_width=500,
                 stroke_scaled=False,
                 type="elem path",
                 fill=None,

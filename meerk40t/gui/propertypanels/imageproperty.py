@@ -990,7 +990,7 @@ class ImageVectorisationPanel(ScrolledPanel):
             path.transform *= Matrix(matrix)
             dummynode = PathNode(
                 path=abs(path),
-                stroke_width=0,
+                stroke_width=500,
                 stroke_scaled=False,
                 fillrule=0,  # Fillrule.FILLRULE_NONZERO
             )
