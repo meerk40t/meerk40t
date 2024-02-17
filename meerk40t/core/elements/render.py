@@ -379,6 +379,7 @@ def init_commands(kernel):
             return
         if debug is None:
             debug = False
+        kernel.busyinfo.start(msg=_("Generating..."))
         reverse = self.classify_reverse
         if reverse:
             data = list(reversed(data))
@@ -681,6 +682,7 @@ def init_commands(kernel):
         # Newly created! Classification needed?
         post.append(classify_new(outputdata))
         self.signal("refresh_scene", "Scene")
+        kernel.busyinfo.end()
         if len(outputdata) > 0:
             self.signal("element_property_update", outputdata)
         return "elements", outputdata
