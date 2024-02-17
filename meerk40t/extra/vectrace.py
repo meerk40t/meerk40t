@@ -28,7 +28,7 @@ def plugin(kernel, lifecycle=None):
                 paths.append(
                     elements.elem_branch.add(
                         path=abs(path),
-                        stroke_width=0,
+                        stroke_width=500,
                         stroke_scaled=False,
                         type="elem path",
                     )

@@ -205,6 +205,7 @@ def init_commands(kernel):
         if isinf(xmin):
             channel(_("No bounds for selected elements."))
             return
+        kernel.busyinfo.start(msg=_("Generating..."))
         width = xmax - xmin
         height = ymax - ymin
 
@@ -236,7 +237,7 @@ def init_commands(kernel):
         path.transform *= Matrix(matrix)
         node = self.elem_branch.add(
             path=abs(path),
-            stroke_width=0,
+            stroke_width=500,
             stroke_scaled=False,
             type="elem path",
             fillrule=Fillrule.FILLRULE_NONZERO,
@@ -246,7 +247,7 @@ def init_commands(kernel):
         data_out = [node]
         post.append(classify_new(data_out))
         self.signal("refresh_scene", "Scene")
-
+        kernel.busyinfo.end()
         return "elements", data_out
 
     @self.console_option(
@@ -378,6 +379,7 @@ def init_commands(kernel):
             return
         if debug is None:
             debug = False
+        kernel.busyinfo.start(msg=_("Generating..."))
         reverse = self.classify_reverse
         if reverse:
             data = list(reversed(data))
@@ -502,7 +504,7 @@ def init_commands(kernel):
         path.transform *= Matrix(matrix)
         data_node = PathNode(
             path=abs(path),
-            stroke_width=1,
+            stroke_width=500,
             stroke=Color("black"),
             stroke_scaled=False,
             fill=None,
@@ -577,7 +579,7 @@ def init_commands(kernel):
             path_final = path_2
             data_node_2 = PathNode(
                 path=abs(path_2),
-                stroke_width=1,
+                stroke_width=500,
                 stroke=Color("black"),
                 stroke_scaled=False,
                 fill=None,
@@ -603,7 +605,7 @@ def init_commands(kernel):
                     subpath = Path(pasp)
                     data_node = PathNode(
                         path=abs(subpath),
-                        stroke_width=1,
+                        stroke_width=500,
                         stroke=Color("black"),
                         stroke_scaled=False,
                         fill=Color("black"),
@@ -665,7 +667,7 @@ def init_commands(kernel):
 
             outline_node = self.elem_branch.add(
                 path=abs(path_final),
-                stroke_width=1,
+                stroke_width=500,
                 stroke_scaled=False,
                 type="elem path",
                 fill=None,
@@ -680,6 +682,7 @@ def init_commands(kernel):
         # Newly created! Classification needed?
         post.append(classify_new(outputdata))
         self.signal("refresh_scene", "Scene")
+        kernel.busyinfo.end()
         if len(outputdata) > 0:
             self.signal("element_property_update", outputdata)
         return "elements", outputdata
