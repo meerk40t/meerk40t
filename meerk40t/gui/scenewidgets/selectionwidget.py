@@ -30,7 +30,13 @@ from meerk40t.gui.scene.scene import (
 )
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import StaticBoxSizer, create_menu_for_node, matrix_scale, wxButton, wxCheckBox
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    create_menu_for_node,
+    matrix_scale,
+    wxButton,
+    wxCheckBox,
+)
 from meerk40t.svgelements import Point
 from meerk40t.tools.geomstr import TYPE_END
 
@@ -217,15 +223,47 @@ class BorderWidget(Widget):
 
         center_x = (self.left + self.right) / 2.0
         center_y = (self.top + self.bottom) / 2.0
-        gc.SetPen(self.master.selection_pen)
+
         # Won't be displayed when rotating...
         if self.master.show_border:
-            gc.StrokeLine(center_x, 0, center_x, self.top)
-            gc.StrokeLine(0, center_y, self.left, center_y)
-            gc.StrokeLine(self.left, self.top, self.right, self.top)
-            gc.StrokeLine(self.right, self.top, self.right, self.bottom)
-            gc.StrokeLine(self.right, self.bottom, self.left, self.bottom)
-            gc.StrokeLine(self.left, self.bottom, self.left, self.top)
+            # Linux / Darwin do not recognize the GraphicsContext TransformationMatrix
+            # when drawing dashed/dotted lines, so they always appear to be solid
+            # (even if they are dotted on a microscopic level)
+            # To circumvent this issue, we scale the gc back
+            gc.PushState()
+            gcmat = gc.GetTransform()
+            mat_param = gcmat.Get()
+            sx = mat_param[0]
+            sy = mat_param[3]
+            if sx == 0:
+                sx = 0.01
+            if sy == 0:
+                sy = 0.01
+            gc.Scale(1 / sx, 1 / sy)
+
+            # Create a copy of the pen
+            mypen = wx.Pen(self.master.selection_pen)
+            mypen.SetWidth(1)
+            mypen.SetStyle(wx.PENSTYLE_LONG_DASH)
+            gc.SetPen(mypen)
+            gc.StrokeLine(sx * center_x, sy * 0, sx * center_x, sy * self.top)
+            gc.StrokeLine(sx * 0, sy * center_y, sx * self.left, sy * center_y)
+            mypen.SetStyle(wx.PENSTYLE_DOT)
+            gc.SetPen(mypen)
+            gc.StrokeLine(sx * self.left, sy * self.top, sx * self.right, sy * self.top)
+            gc.StrokeLine(
+                sx * self.right, sy * self.top, sx * self.right, sy * self.bottom
+            )
+            gc.StrokeLine(
+                sx * self.right, sy * self.bottom, sx * self.left, sy * self.bottom
+            )
+            gc.StrokeLine(
+                sx * self.left, sy * self.bottom, sx * self.left, sy * self.top
+            )
+            # And back...
+            gc.PopState()
+            gc.SetPen(self.master.selection_pen)
+
             # print ("Inner Drawmode=%d (logic=%s)" % ( draw_mode ,(draw_mode & DRAW_MODE_SELECTION) ))
             # if draw_mode & DRAW_MODE_SELECTION == 0:
             units = context.units_name
@@ -1626,7 +1664,12 @@ class MoveWidget(Widget):
                                 target.append(end)
                             last = end
                 # t2 = perf_counter()
-                if other_points is not None and selected_points is not None and len(other_points) > 0 and len(selected_points) > 0:
+                if (
+                    other_points is not None
+                    and selected_points is not None
+                    and len(other_points) > 0
+                    and len(selected_points) > 0
+                ):
                     np_other = np.asarray(other_points)
                     np_selected = np.asarray(selected_points)
                     dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
@@ -1657,7 +1700,12 @@ class MoveWidget(Widget):
                     ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
                 )
                 other_points = self.scene.pane.grid.grid_points
-                if other_points is not None and selected_points is not None and len(other_points) > 0 and len(selected_points) > 0:
+                if (
+                    other_points is not None
+                    and selected_points is not None
+                    and len(other_points) > 0
+                    and len(selected_points) > 0
+                ):
                     np_other = np.asarray(other_points)
                     np_selected = np.asarray(selected_points)
                     dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
@@ -2302,7 +2350,8 @@ class SelectionWidget(Widget):
         Widget.__init__(self, scene, all=False)
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(self.scene.colors.color_manipulation)
-        self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
+        # self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
+        self.selection_pen.SetStyle(wx.PENSTYLE_LONG_DASH)
         # want to have sharp edges
         self.selection_pen.SetJoin(wx.JOIN_MITER)
 

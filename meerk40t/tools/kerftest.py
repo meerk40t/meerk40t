@@ -11,7 +11,13 @@ from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import STD_ICON_SIZE, icon_kerf, icons8_detective
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size, wxButton, wxRadioBox
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxRadioBox,
+)
 from meerk40t.kernel import lookup_listener, signal_listener
 from meerk40t.svgelements import Color, Matrix, Polyline
 

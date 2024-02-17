@@ -124,9 +124,7 @@ class LaserToolPanel(wx.Panel):
         )
         sizer_4.Add(self.btn_move_to_center, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.btn_create_circle = wxButton(
-            self.nb_circle, wx.ID_ANY, _("Create circle")
-        )
+        self.btn_create_circle = wxButton(self.nb_circle, wx.ID_ANY, _("Create circle"))
         sizer_4.Add(self.btn_create_circle, 0, wx.EXPAND, 0)
 
         # ------------------------ Rectangle with 2 points
@@ -293,9 +291,7 @@ class LaserToolPanel(wx.Panel):
         sizer_8 = wx.BoxSizer(wx.HORIZONTAL)
         self.sizer_square.Add(sizer_8, 0, wx.EXPAND, 0)
 
-        self.btn_create_square = wxButton(
-            self.nb_square, wx.ID_ANY, _("Create square")
-        )
+        self.btn_create_square = wxButton(self.nb_square, wx.ID_ANY, _("Create square"))
         sizer_8.Add(self.btn_create_square, 0, wx.EXPAND, 0)
 
         self.nb_square.SetSizer(self.sizer_square)

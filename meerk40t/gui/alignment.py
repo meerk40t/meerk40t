@@ -19,7 +19,14 @@ from meerk40t.svgelements import (
 )
 
 from ..core.units import Length
-from ..gui.wxutils import StaticBoxSizer, TextCtrl, wxButton, wxCheckBox, wxRadioBox, dip_size
+from ..gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxRadioBox,
+)
 from ..kernel import signal_listener
 from .icons import STD_ICON_SIZE, get_default_icon_size, icons8_arrange
 from .mwindow import MWindow

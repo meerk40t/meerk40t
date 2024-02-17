@@ -1,9 +1,9 @@
 import wx
 
 from meerk40t.core.elements.element_types import elem_nodes
-
 from meerk40t.core.units import Length
 from meerk40t.gui.wxutils import wxCheckBox
+
 from .statusbarwidget import StatusBarWidget
 
 _ = wx.GetTranslation

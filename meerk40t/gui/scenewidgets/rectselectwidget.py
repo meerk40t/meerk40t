@@ -327,7 +327,12 @@ class RectSelectWidget(Widget):
                                     target.append(end)
                                 last = end
                     # t2 = perf_counter()
-                    if other_points is not None and selected_points is not None and len(other_points) > 0 and len(selected_points) > 0:
+                    if (
+                        other_points is not None
+                        and selected_points is not None
+                        and len(other_points) > 0
+                        and len(selected_points) > 0
+                    ):
                         np_other = np.asarray(other_points)
                         np_selected = np.asarray(selected_points)
                         dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
@@ -358,7 +363,12 @@ class RectSelectWidget(Widget):
                         ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
                     )
                     other_points = self.scene.pane.grid.grid_points
-                    if other_points is not None and selected_points is not None and len(other_points) > 0 and len(selected_points) > 0:
+                    if (
+                        other_points is not None
+                        and selected_points is not None
+                        and len(other_points) > 0
+                        and len(selected_points) > 0
+                    ):
                         np_other = np.asarray(other_points)
                         np_selected = np.asarray(selected_points)
                         dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
@@ -413,12 +423,20 @@ class RectSelectWidget(Widget):
         self.scene.cursor("arrow")
 
     def draw_rectangle(self, gc, x0, y0, x1, y1, tcolor, tstyle):
+        # Linux / Darwin do not recognize the GraphicsContext TransformationMatrix
+        # when drawing dashed/dotted lines, so they always appear to be solid
+        # (even if they are dotted on a microscopic level)
+        # To circumvent this issue, we scale the gc back
         gc.PushState()
         gcmat = gc.GetTransform()
         mat_param = gcmat.Get()
         sx = mat_param[0]
         sy = mat_param[3]
-        gc.Scale(1/sx, 1/sy)
+        if sx == 0:
+            sx = 0.01
+        if sy == 0:
+            sy = 0.01
+        gc.Scale(1 / sx, 1 / sy)
         self.selection_pen.SetColour(tcolor)
         self.selection_pen.SetStyle(tstyle)
         gc.SetPen(self.selection_pen)

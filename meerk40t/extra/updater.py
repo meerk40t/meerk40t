@@ -490,7 +490,7 @@ def plugin(kernel, lifecycle):
                         import wx
 
                         from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
-                        from meerk40t.gui.wxutils import wxButton, dip_size
+                        from meerk40t.gui.wxutils import dip_size, wxButton
 
                         has_wx = True
                     except ImportError:

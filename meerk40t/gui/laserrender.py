@@ -518,9 +518,16 @@ class LaserRender:
         @param y: offset in y direction
         @return:
         """
+        gcmat = gc.GetTransform()
+        mat_param = gcmat.Get()
+        gcscale = max(mat_param[0], mat_param[3])
+        if gcscale == 0:
+            gcscale = 0.01
         highlight_color = Color("magenta")
         wx_color = wx.Colour(swizzlecolor(highlight_color))
-        highlight_pen = wx.Pen(wx_color, width=3, style=wx.PENSTYLE_SHORT_DASH)
+        highlight_pen = wx.Pen(wx_color)
+        highlight_pen.SetStyle(wx.PENSTYLE_SHORT_DASH)
+        self._penwidth(highlight_pen, 3 / gcscale)
         p = None
         last_point = None
         color = None
@@ -543,7 +550,7 @@ class LaserRender:
                     gc.StrokePath(p)
                     del p
                 p = gc.CreatePath()
-                self._set_penwidth(7.0)
+                self._penwidth(self.pen, 1 / gcscale)
                 self.set_pen(gc, c, alpha=127)
             start = cut.start
             end = cut.end
@@ -866,7 +873,12 @@ class LaserRender:
             return
         point = node.point
         gc.PushState()
-        gc.SetPen(wx.BLACK_PEN)
+        mypen = wx.Pen(wx.BLACK)
+        try:
+            mypen.SetWidth(zoomscale)
+        except TypeError:
+            mypen.SetWidth(int(zoomscale))
+        gc.SetPen(mypen)
         dif = 5 * zoomscale
         gc.StrokeLine(point.x - dif, point.y, point.x + dif, point.y)
         gc.StrokeLine(point.x, point.y - dif, point.x, point.y + dif)

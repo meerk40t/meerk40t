@@ -1,8 +1,8 @@
 import wx
 from wx import aui
 
-from meerk40t.kernel import signal_listener
 from meerk40t.gui.wxutils import wxCheckBox
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 

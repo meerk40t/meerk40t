@@ -7,7 +7,14 @@ from meerk40t.gui.icons import (
     icon_split_image,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size, wxButton, wxCheckBox, wxRadioBox
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxRadioBox,
+)
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color
 

@@ -22,10 +22,10 @@ from meerk40t.gui.wxutils import (
     HoverButton,
     ScrolledPanel,
     StaticBoxSizer,
-    wxButton,
-    wxCheckBox,
     dip_size,
     disable_window,
+    wxButton,
+    wxCheckBox,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
 

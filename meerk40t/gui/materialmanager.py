@@ -30,9 +30,9 @@ from .wxutils import (
     ScrolledPanel,
     StaticBoxSizer,
     TextCtrl,
-    wxCheckBox,
-    wxButton,
     dip_size,
+    wxButton,
+    wxCheckBox,
 )
 
 _ = wx.GetTranslation

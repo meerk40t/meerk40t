@@ -12,7 +12,14 @@ from meerk40t.gui.propertypanels.attributes import (
     PositionSizePanel,
     PreventChangePanel,
 )
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size, wxButton, wxCheckBox
+from meerk40t.gui.wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+)
 from meerk40t.svgelements import Matrix
 
 _ = wx.GetTranslation

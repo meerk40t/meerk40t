@@ -8,6 +8,7 @@ import wx
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icon_rotary
 from meerk40t.gui.mwindow import MWindow
+
 # from meerk40t.gui.wxutils import wxButton, wxCheckBox
 
 _ = wx.GetTranslation
