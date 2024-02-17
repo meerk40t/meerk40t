@@ -967,7 +967,8 @@ class SimulationPanel(wx.Panel, Job):
         self.on_radio_playback_mode(None)
         # Allow Scene update from now on (are suppressed by default during startup phase)
         self.widget_scene.suppress_changes = False
-
+        self.slided_in = True
+        self.fit_scene_to_panel()
         self.running = False
         # Under Linux the SimulationPanel starts with the wrong zoom factor,
         # so we send a signal to ourselves...
@@ -975,7 +976,6 @@ class SimulationPanel(wx.Panel, Job):
         wx.CallLater(500, self.delayed_init)
 
     def delayed_init(self):
-        self.slided_in = True
         self.fit_scene_to_panel()
 
     def __set_properties(self):
