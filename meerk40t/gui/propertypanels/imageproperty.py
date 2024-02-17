@@ -966,7 +966,7 @@ class ImageVectorisationPanel(ScrolledPanel):
             new_height = height * dots_per_units
             new_height = max(new_height, 1)
             new_width = max(new_width, 1)
-
+            self.context.kernel.busyinfo.start(msg=_("Generating..."))
             try:
                 image = make_raster(
                     self.node,
@@ -984,7 +984,9 @@ class ImageVectorisationPanel(ScrolledPanel):
                     blacklevel=blacklevel,
                 )
             except:
+                self.context.kernel.busyinfo.end()
                 return
+            self.context.kernel.busyinfo.end()
             path.transform *= Matrix(matrix)
             dummynode = PathNode(
                 path=abs(path),

@@ -205,6 +205,7 @@ def init_commands(kernel):
         if isinf(xmin):
             channel(_("No bounds for selected elements."))
             return
+        kernel.busyinfo.start(msg=_("Generating..."))
         width = xmax - xmin
         height = ymax - ymin
 
@@ -246,7 +247,7 @@ def init_commands(kernel):
         data_out = [node]
         post.append(classify_new(data_out))
         self.signal("refresh_scene", "Scene")
-
+        kernel.busyinfo.end()
         return "elements", data_out
 
     @self.console_option(
