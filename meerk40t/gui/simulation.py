@@ -967,16 +967,25 @@ class SimulationPanel(wx.Panel, Job):
         self.on_radio_playback_mode(None)
         # Allow Scene update from now on (are suppressed by default during startup phase)
         self.widget_scene.suppress_changes = False
+        self.running = False
+
+    def _startup(self):
         self.slided_in = True
         self.fit_scene_to_panel()
-        self.running = False
-        # Under Linux the SimulationPanel starts with the wrong zoom factor,
-        # so we send a signal to ourselves...
-        # No platform check, as this isn't huring generally
-        wx.CallLater(500, self.delayed_init)
 
-    def delayed_init(self):
-        self.fit_scene_to_panel()
+    def startup_panel(self):
+        # Under Linux the SimulationPanel starts with the wrong zoom factor,
+        # as the panel size has not been established during init, 
+        # so we do a delayed startup.
+        # No platform check, as this isn't hurting generally
+        _signal_job = Job(
+            process=self._startup,
+            job_name="simulation-helper",
+            interval=0.5,
+            times=1,
+            run_main=True,
+        )
+        self.context.schedule(_signal_job)        
 
     def __set_properties(self):
         self.text_distance_laser.SetToolTip(_("Distance Estimate: while Lasering"))
@@ -1230,8 +1239,11 @@ class SimulationPanel(wx.Panel, Job):
 
     def fit_scene_to_panel(self):
         bbox = self.context.device.view.source_bbox()
+        winsize = self.view_pane.Size
+        if winsize[0] == 0:
+            return
         self.widget_scene.widget_root.focus_viewport_scene(
-            bbox, self.view_pane.Size, 0.1
+            bbox, winsize, 0.1
         )
         self.widget_scene.request_refresh()
 
@@ -1459,7 +1471,7 @@ class SimulationPanel(wx.Panel, Job):
                 ht, preferred_units=self.context.units_name, digits=2
             ).preferred_length
             self.parent.SetTitle(_("Simulation") + f" ({sdimx}x{sdimy})")
-        self.fit_scene_to_panel()
+        self.startup_panel()
         self.request_refresh()
 
     @signal_listener("plan")
