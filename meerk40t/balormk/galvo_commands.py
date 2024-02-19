@@ -4,7 +4,6 @@ import struct
 import time
 
 from meerk40t.balormk.driver import BalorDriver
-from meerk40t.balormk.elementlightjob import ElementLightJob
 from meerk40t.balormk.livelightjob import LiveLightJob
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.kernel import CommandSyntaxError
@@ -68,15 +67,17 @@ def plugin(service, lifecycle):
         if data is None:
             channel("Nothing sent")
             return
-        service.job = ElementLightJob(
+        service.job = LiveLightJob(
             service,
-            data,
+            mode="geometry",
+            geometry=data,
             travel_speed=travel_speed,
             jump_delay=jump_delay,
-            simulation_speed=simulation_speed,
             quantization=quantization,
-            simulate=bool(command != "light"),
+            listen=False,
         )
+        if command != "light":
+            service.job.set_travel_speed(simulation_speed)
         service.spooler.send(service.job)
 
     @service.console_command("select-light", help=_("Execute selection light idle job"))

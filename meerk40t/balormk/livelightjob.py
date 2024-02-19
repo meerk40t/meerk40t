@@ -22,6 +22,12 @@ class LiveLightJob:
         self,
         service,
         mode="full",
+        geometry=None,
+        travel_speed=None,
+        jump_delay=None,
+        quantization=50,
+        listen=True,
+        raw=False,
     ):
         self.service = service
         self.stopped = False
@@ -32,7 +38,8 @@ class LiveLightJob:
         self.time_submitted = time.time()
         self.time_started = time.time()
         self.runtime = 0
-        self.quantization = 50
+
+        self.quantization = quantization
         self.mode = mode
         self.points = None
         self.source = "elements"
@@ -51,8 +58,17 @@ class LiveLightJob:
         elif self.mode == "hull":
             self.label = "Live Hull Light Job"
             self._mode_light = self._hull
+        elif self.mode == "geometry":
+            self.label = "Element Light Job"
+            self._mode_light = self._static
         else:
             raise ValueError("Invalid mode.")
+
+        self.listen = listen
+        self.raw = raw
+        self._geometry = geometry
+        self._travel_speed = travel_speed
+        self._jump_delay = jump_delay
 
     @property
     def status(self):
@@ -75,9 +91,10 @@ class LiveLightJob:
         """
         if self.stopped:
             return True
-        self.service.listen("emphasized", self.on_emphasis_changed)
-        self.service.listen("modified_by_tool", self.on_emphasis_changed)
-        self.service.listen("view;realized", self.on_emphasis_changed)
+        if self.listen:
+            self.service.listen("emphasized", self.on_emphasis_changed)
+            self.service.listen("modified_by_tool", self.on_emphasis_changed)
+            self.service.listen("view;realized", self.on_emphasis_changed)
         self.time_started = time.time()
         self.started = True
         connection = driver.connection
@@ -90,9 +107,10 @@ class LiveLightJob:
         connection.abort()
         self.stopped = True
         self.runtime += time.time() - self.time_started
-        self.service.unlisten("emphasized", self.on_emphasis_changed)
-        self.service.unlisten("modified_by_tool", self.on_emphasis_changed)
-        self.service.unlisten("view;realized", self.on_emphasis_changed)
+        if self.listen:
+            self.service.unlisten("emphasized", self.on_emphasis_changed)
+            self.service.unlisten("modified_by_tool", self.on_emphasis_changed)
+            self.service.unlisten("view;realized", self.on_emphasis_changed)
         self.service.signal("light_simulate", False)
         if self.service.redlight_preferred:
             connection.light_on()
@@ -101,6 +119,9 @@ class LiveLightJob:
             connection.light_off()
             connection.write_port()
         return True
+
+    def set_travel_speed(self, update_speed):
+        self._travel_speed = update_speed
 
     def stop(self):
         """
@@ -128,6 +149,10 @@ class LiveLightJob:
         """
         return 0
 
+    def update(self):
+        self.changed = True
+        self.points = None
+
     def on_emphasis_changed(self, *args):
         """
         During execute the emphasis signal will call this function.
@@ -135,8 +160,7 @@ class LiveLightJob:
         @param args:
         @return:
         """
-        self.changed = True
-        self.points = None
+        self.update()
 
     def process(self, con):
         """
@@ -146,33 +170,39 @@ class LiveLightJob:
         """
         if self.stopped:
             return False
-        bounds = self.service.elements.selected_area()
-        if bounds is None or isinf(bounds[0]):
-            bounds = Node.union_bounds(
-                list(self.service.elements.regmarks(emphasized=True))
-            )
-        if bounds is None or isinf(bounds[0]):
-            bounds = Node.union_bounds(list(self.service.elements.elems()))
-        if self._last_bounds is not None and bounds != self._last_bounds:
-            # Emphasis did not change but the bounds did. We dragged something.
-            self.changed = True
-            self.points = None
-        self._last_bounds = bounds
+        if self.listen:
+            # Watch for changes.
+            bounds = self.service.elements.selected_area()
+            if bounds is None or isinf(bounds[0]):
+                bounds = Node.union_bounds(
+                    list(self.service.elements.regmarks(emphasized=True))
+                )
+            if bounds is None or isinf(bounds[0]):
+                bounds = Node.union_bounds(list(self.service.elements.elems()))
+            if self._last_bounds is not None and bounds != self._last_bounds:
+                # Emphasis did not change but the bounds did. We dragged something.
+                self.changed = True
+                self.points = None
+            self._last_bounds = bounds
 
         if self.changed:
             # The emphasis selection has changed.
             self.changed = False
             con.abort()
             first_x, first_y = con.get_last_xy()
-            # first_x = 0x8000
-            # first_y = 0x8000
             con.light_off()
             con.write_port()
             con.goto_xy(first_x, first_y, distance=0xFFFF)
             con.light_mode()
-        con._light_speed = self.service.redlight_speed
-        con._dark_speed = self.service.redlight_speed
-        con._goto_speed = self.service.redlight_speed
+
+        if self._travel_speed is not None:
+            con._light_speed = self._travel_speed
+            con._dark_speed = self._travel_speed
+            con._goto_speed = self._travel_speed
+        else:
+            con._light_speed = self.service.redlight_speed
+            con._dark_speed = self.service.redlight_speed
+            con._goto_speed = self.service.redlight_speed
         con.light_mode()
         # Calls light based on the set mode.
         return self._mode_light(con)
@@ -242,6 +272,14 @@ class LiveLightJob:
 
         return self._light_geometry(con, geometry)
 
+    def _static(self, con):
+        geometry = Geomstr(self._geometry)
+        rotate = self._redlight_adjust_matrix()
+        if not self.raw:
+            geometry.transform(self.service.view.matrix)
+        geometry.transform(rotate)
+        return self._light_geometry(con, geometry)
+
     def _bounds(self, con):
         """
         Light the bound's geometry. Sends to light geometry.
@@ -262,7 +300,8 @@ class LiveLightJob:
             (xmin, ymin),
         )
         rotate = self._redlight_adjust_matrix()
-        geometry.transform(self.service.view.matrix)
+        if not self.raw:
+            geometry.transform(self.service.view.matrix)
         geometry.transform(rotate)
         return self._light_geometry(con, geometry, bounded=True)
 
@@ -341,6 +380,8 @@ class LiveLightJob:
                 move = False
                 continue
             con.light(x, y, long=delay_between, short=delay_between)
+        if con.light_off():
+            con.list_write_port()
         return True
 
     def _light_elements(self, con, elements):
@@ -369,7 +410,8 @@ class LiveLightJob:
             return True
 
         # Move to device space.
-        geometry.transform(self.service.view.matrix)
+        if not self.raw:
+            geometry.transform(self.service.view.matrix)
 
         # Add redlight adjustments within device space.
         geometry.transform(redlight_matrix)

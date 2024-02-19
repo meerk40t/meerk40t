@@ -343,7 +343,7 @@ class LaserRender:
                     )
         return p
 
-    def make_geomstr(self, gc, path, node=None):
+    def make_geomstr(self, gc, path, node=None, settings=None):
         """
         Takes a Geomstr path and converts it to a GraphicsContext.Graphics path
 
@@ -358,6 +358,9 @@ class LaserRender:
             end = None
             for e in subpath.segments:
                 seg_type = int(e[2].real)
+                if settings is not None:
+                    if settings != int(e[2].imag):
+                        continue
                 start = e[0]
                 if end != start:
                     # Start point does not equal previous end point.
