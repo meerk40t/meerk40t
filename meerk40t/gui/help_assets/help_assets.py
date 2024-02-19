@@ -211,7 +211,7 @@ def asset(context, asset):
     except KeyError:
         try:
             text = globals()["english_" + asset]
-        except KeyError as e:
+        except KeyError:
             pass
     if text and text[0] == "\n":
         return text[1:]

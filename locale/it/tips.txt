@@ -20,8 +20,8 @@ tip=MeerK40t dispone di una serie di comandi che consentono di creare e modifica
 È sufficiente aprire la console e digitare 'help'.
 cmd=pane show console\nhelp
 
-tip=MeerK40t può utilizzare la griglia di sfondo o i punti degli elementi per lo snap:
-Dopo aver selezionato un elemento e avviato un'azione (spostamento, ridimensionamento, ecc.), i punti di interesse (punti della griglia, punti di altri elementi) vengono visualizzati ed evidenziati se possono essere un punto di snap.
+tip=MeerK40t può utilizzare la griglia di sfondo o i punti degli elementi per l'aggancio:
+Dopo aver selezionato un elemento e avviato un'azione (spostamento, ridimensionamento, ecc.), i punti di interesse (punti della griglia, punti di altri elementi) vengono visualizzati ed evidenziati se possono essere un punto di aggancio.
 Nota: questo comportamento può essere annullato premendo il tasto Maiusc, nel qual caso viene presa in considerazione la posizione corrente del mouse.
 cmd=pane show snapoptions
 img=https://user-images.githubusercontent.com/2670784/162396185-0008ab2e-a432-46c7-af59-ea1e1c3fee95.png
@@ -35,36 +35,39 @@ tip=MeerK40t ha diversi tipi di griglia che possono essere usati come aiuto alla
 img=https://user-images.githubusercontent.com/2670784/285282132-62a39254-bfe3-4000-87dc-328c75bdc78d.png
 cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Grids
 
-tip=Stanco di allineare gli oggetti? 
-La funzione linea magnetica potrebbe essere un'aggiunta utile: basta fare doppio clic sul righello X o Y per creare una linea magnetica.
+tip=Stanco di allineare gli oggetti?
+La funzione linea magnetica potrebbe essere un'aggiunta utile:
+basta fare doppio clic sul righello X o Y per creare una linea magnetica.
 Poi basta spostare un oggetto vicino alla linea e vedere cosa succede...
 Fare clic con il tasto destro del mouse sui righelli degli assi per ottenere ulteriori opzioni.
 img=https://user-images.githubusercontent.com/2670784/161030963-fb73907c-bdb0-47dc-b0da-b9b207025dbe.png
 cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-SCENE#Magnets
 
-tip=È necessario copiare rapidamente un elemento? 
+tip=È necessario copiare rapidamente un elemento?
 Ci sono diverse opzioni:
 a) Selezionare l'elemento, premere il tasto Alt e spostarlo: si ottiene la copia desiderata.
 b) Fare clic con il tasto destro del mouse: selezionare "Duplica elemento" dal menu contestuale.
 c) Utilizzare i pulsanti 'Copia' e 'Incolla' nella barra degli strumenti
 
 tip=MeerK40t dispone di una serie di finestre di uso frequente, i cosiddetti pannelli: ad esempio il pannello di controllo del laser o il diagramma ad albero con gli elementi e le operazioni utilizzate.
-Questi pannelli possono essere spostati liberamente nell'area di lavoro di Meerk40t come qualsiasi altra finestra, ma possono anche essere agganciati ai bordi: Quando si sposta un pannello di questo tipo nell'area del bordo, Meerk40t indica con un'ombreggiatura se e dove il pannello sarà agganciato.
+Questi pannelli possono essere spostati liberamente nell'area di lavoro di Meerk40t come qualsiasi altra finestra, ma possono anche essere agganciati ai bordi:
+quando si sposta un pannello di questo tipo nell'area del bordo, Meerk40t indica con un'ombreggiatura se e dove il pannello sarà agganciato.
 img=https://github.com/meerk40t/meerk40t/assets/2670784/3b01d8c8-5239-4696-8967-724f41285132
 cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help:-GUI#Panels
 
-tip=Provare a cliccare con il tasto destro del mouse sulla voce del processo di lavoro più in alto nel diagramma ad albero: in questo modo si renderanno accessibili le proprietà generali dei processi di lavoro.
+tip=Prova a cliccare con il tasto destro del mouse sulla voce del processo di lavoro più in alto nel diagramma ad albero: in questo modo si renderanno accessibili le proprietà generali dei processi di lavoro.
 img=https://user-images.githubusercontent.com/2670784/285616467-75cf67db-d329-4fcc-9a5a-e9635d9aa4e1.png
 cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Operations
 
-tip=MeerK40t dispone disegni di registrazione, una categoria speciale di elementi che non sono laserati, ma che possono essere usati come orientamento visivo per posizionare gli elementi.
-Gli elementi possono essere spostati all'interno e all'esterno dell'area dei crocini di registrazione utilizzando il mouse.
-Ricordate: gli elementi nei crocini di registrazione non possono essere modificati o spostati, quindi spostateli prima nell'area degli elementi normali, manipolateli e poi spostateli di nuovo nei crocini di registrazione.
+tip=MeerK40t dispone di segni, 'crocini di registro' (regmark), una categoria speciale di elementi che non vengono 'laserati', ma che agiscono come una sorta di linea guida visiva per il posizionamento degli oggetti.
+È possibile spostare gli elementi fuori dalla zona dei crocini di registro trascinandoli dentro o fuori dall'area dei crocini di registro nell'albero.
+Gli elementi nell'area di crocini di registro fungono da sfondo e non è più possibile interagire direttamente con essi sulla Scena.
 cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Regmarks
 
-tip=Un oggetto deve essere posizionato con precisione sul letto laser? 
+tip=Un oggetto deve essere posizionato con precisione sull'area di lavoro?
 In questo caso, una telecamera USB offre un servizio prezioso.
-MeerK40t può utilizzare diverse telecamere di questo tipo per visualizzare l'immagine della telecamera sullo sfondo dell'area di lavoro: in questo modo è molto facile posizionare gli elementi da masterizzare sugli oggetti.
+MeerK40t può utilizzare diverse telecamere per visualizzare l'immagine della telecamera sullo sfondo dell'area di lavoro:
+in questo modo è molto facile posizionare gli elementi da masterizzare sugli oggetti.
 Fare clic sull'icona della telecamera nella barra degli strumenti e calibrare una volta l'immagine della telecamera.
 cmd=camdetect\n
 img=https://github.com/meerk40t/meerk40t/assets/2670784/53207cbb-dfbc-4bce-841d-dedc305118e7

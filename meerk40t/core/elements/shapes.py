@@ -510,8 +510,12 @@ def init_commands(kernel):
         return "elements", data
 
     def calculate_text_bounds(data):
-        # A render operation will use the LaserRender class
-        # and will re-calculate the element bounds
+        """
+        A render operation will use the LaserRender class
+        and will re-calculate the element bounds
+        @param data:
+        @return:
+        """
         make_raster = self.lookup("render-op/make_raster")
         if not make_raster:
             # No renderer is registered to perform render.

@@ -8,7 +8,6 @@ from wx import aui
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
 from meerk40t.gui.icons import (
-    STD_ICON_SIZE,
     EmptyIcon,
     get_default_icon_size,
     icon_circled_1,
@@ -278,8 +277,8 @@ class TimerButtons:
             print (f"Clicked with {p1} and {p2}")
 
         self.timer = TimerButton(self, interval=0.5)
-        button1 = wx.Button(self, wx.ID_ANY, "Click and hold me")
-        button2 = wx.Button(self, wx.ID_ANY, "Me too, please")
+        button1 = wxButton(self, wx.ID_ANY, "Click and hold me")
+        button2 = wxButton(self, wx.ID_ANY, "Me too, please")
         self.timer.add_button(button1, test1, None)
         self.timer.add_button(button2, test2, ('First', 'Second'))
     """
@@ -306,8 +305,8 @@ class TimerButtons:
         self._interval = value
 
     def add_button(self, button, routine):
-        id = button.GetId()
-        self.timer_buttons[id] = (button, routine)
+        _id = button.GetId()
+        self.timer_buttons[_id] = (button, routine)
         button.Bind(wx.EVT_LEFT_DOWN, self.on_button_down)
         button.Bind(wx.EVT_LEFT_UP, self.on_button_up)
         button.Bind(wx.EVT_LEAVE_WINDOW, self.on_button_lost)
@@ -316,10 +315,10 @@ class TimerButtons:
     def execute(self, button):
         if button is None:
             return
-        id = button.GetId()
-        if id not in self.timer_buttons:
+        _id = button.GetId()
+        if _id not in self.timer_buttons:
             return
-        action = self.timer_buttons[id][1]
+        action = self.timer_buttons[_id][1]
         if action is None:
             return
         action()
@@ -885,8 +884,6 @@ class Drag(wx.Panel):
 
         if bb is None or self.lockmode == 0:
             return
-        dx = 0
-        dy = 0
         if self.lockmode == 1:  # tl
             orgx = bb[0]
             orgy = bb[1]
@@ -902,6 +899,8 @@ class Drag(wx.Panel):
         elif self.lockmode == 5:  # center
             orgx = (bb[0] + bb[2]) / 2
             orgy = (bb[1] + bb[3]) / 2
+        else:
+            raise ValueError("Invalid Lockmode.")
         dx = pos[2] - orgx
         dy = pos[3] - orgy
 
@@ -1187,18 +1186,20 @@ class Jog(wx.Panel):
             current_x, current_y = self.context.device.current
         except AttributeError:
             self.is_confined = False
-        if self.is_confined:
-            min_x = 0
-            max_x = float(Length(self.context.device.view.width))
-            min_y = 0
-            max_y = float(Length(self.context.device.view.height))
-            # Are we outside? Then lets move back to the edge...
-            new_x = min(max_x, max(min_x, current_x))
-            new_y = min(max_y, max(min_y, current_y))
-            if new_x != current_x or new_y != current_y:
-                self.context(
-                    f".move_absolute {Length(amount=new_x).mm:.3f}mm {Length(amount=new_y).mm:.3f}mm\n"
-                )
+            return
+        if not self.is_confined:
+            return
+        min_x = 0
+        max_x = float(Length(self.context.device.view.width))
+        min_y = 0
+        max_y = float(Length(self.context.device.view.height))
+        # Are we outside? Then lets move back to the edge...
+        new_x = min(max_x, max(min_x, current_x))
+        new_y = min(max_y, max(min_y, current_y))
+        if new_x != current_x or new_y != current_y:
+            self.context(
+                f".move_absolute {Length(amount=new_x).mm:.3f}mm {Length(amount=new_y).mm:.3f}mm\n"
+            )
 
     def move_rel(self, dx, dy):
         nx, ny = get_movement(self.context, dx, dy)
@@ -1628,7 +1629,7 @@ class PulsePanel(wx.Panel):
 #             check="length",
 #             nonzero=True,
 #         )
-#         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
+#         self.btn_lock_ratio = wxToggleButton(self, wx.ID_ANY, "")
 #         self.bitmap_locked = icons8_lock.GetBitmap(resize=STD_ICON_SIZE/2, use_theme=False)
 #         self.bitmap_unlocked = icons8_unlock.GetBitmap(resize=STD_ICON_SIZE/2, use_theme=False)
 

@@ -42,13 +42,20 @@ class SimpleCheckbox:
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset = self.pt_offset / s
         gc.SetBrush(wx.TRANSPARENT_BRUSH)
-        gc.SetPen(wx.LIGHT_GREY_PEN)
+        mypen = wx.Pen(wx.LIGHT_GREY)
+        linewidth = 1 / s
+        try:
+            mypen.SetWidth(linewidth)
+        except TypeError:
+            mypen.SetWidth(int(linewidth))
+        gc.SetPen(mypen)
         gc.DrawRectangle(
             int(self.x - offset), int(self.y - offset), int(2 * offset), int(2 * offset)
         )
         if self._value:
             gc.SetBrush(wx.RED_BRUSH)
-            gc.SetPen(wx.RED_PEN)
+            mypen.SetColour(wx.RED)
+            gc.SetPen(mypen)
             # gc.DrawRectangle(
             #     int(self.x - 0.75 * offset),
             #     int(self.y - 0.75 * offset),
@@ -162,7 +169,21 @@ class SimpleSlider:
         gc.PushState()
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset = self.pt_offset / s
-        gc.SetPen(wx.LIGHT_GREY_PEN)
+
+        mypen = wx.Pen(wx.LIGHT_GREY)
+        gcmat = gc.GetTransform()
+        mat_param = gcmat.Get()
+        sx = mat_param[0]
+        sy = mat_param[3]
+        sx = max(sx, sy)
+        if sx == 0:
+            sx = 0.01
+        linewidth = 1 / sx
+        try:
+            mypen.SetWidth(linewidth)
+        except TypeError:
+            mypen.SetWidth(int(linewidth))
+        gc.SetPen(mypen)
         gc.DrawLines(
             [(int(self.x), int(self.y)), (int(self.x + self.width), int(self.y))]
         )
@@ -179,7 +200,8 @@ class SimpleSlider:
             ]
         )
         gc.SetBrush(wx.RED_BRUSH)
-        gc.SetPen(wx.RED_PEN)
+        mypen.SetColour(wx.RED)
+        gc.SetPen(mypen)
         gc.DrawEllipse(
             int(self.ptx - offset),
             int(self.pty - offset),
@@ -434,7 +456,13 @@ class ParameterTool(ToolWidget):
         gc.PushState()
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset = self.pt_offset / s
-        gc.SetPen(wx.RED_PEN)
+        mypen = wx.Pen(wx.RED)
+        linewidth = 1 / s
+        try:
+            mypen.SetWidth(linewidth)
+        except TypeError:
+            mypen.SetWidth(int(linewidth))
+        gc.SetPen(mypen)
         gc.SetBrush(wx.RED_BRUSH)
         for ptype, pdata in zip(self.paramtype, self.params):
             if ptype == 0:
@@ -576,7 +604,10 @@ class ParameterTool(ToolWidget):
             self.is_moving = True
             if self.point_index >= 0:
                 # We need to reverse the point in the element matrix
-                pt = (space_pos[0], space_pos[1])
+                if nearest_snap is None:
+                    pt = (space_pos[0], space_pos[1])
+                else:
+                    pt = (nearest_snap[0], nearest_snap[1])
                 self.params[self.point_index] = pt
                 if self.update_parameter():
                     if self.mode in self._functions:
@@ -584,9 +615,7 @@ class ParameterTool(ToolWidget):
                         func = self._functions[self.mode][0]
                         if func is not None:
                             func(self.element)
-                            self.sync_parameter()
-                    else:
-                        self.sync_parameter()
+                    self.sync_parameter()
                     self.scene.refresh_scene()
             elif self.slider_index >= 0:
                 if self.active_slider is not None:
@@ -604,10 +633,7 @@ class ParameterTool(ToolWidget):
                             func = self._functions[self.mode][0]
                             if func is not None:
                                 func(self.element)
-                                self.sync_parameter()
-                        else:
-                            # print(f"No Routine for {self.mode}")
-                            self.sync_parameter()
+                        self.sync_parameter()
                         self.scene.refresh_scene()
             return RESPONSE_CONSUME
         elif event_type == "leftup":
@@ -658,9 +684,7 @@ class ParameterTool(ToolWidget):
                             func = self._functions[self.mode][0]
                             if func is not None:
                                 func(self.element)
-                                self.sync_parameter()
-                        else:
-                            self.sync_parameter()
+                        self.sync_parameter()
                         self.scene.refresh_scene()
             self.is_moving = False
             return RESPONSE_CONSUME

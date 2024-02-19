@@ -18,25 +18,18 @@ dynamic buttons. When the service changes because of a switch in the device (for
 listeners which will update their contents, triggering the update within this control.
 """
 
-import copy
-import math
-import platform
-import threading
-
 import wx
 from wx import aui
 
 from meerk40t.gui.icons import (
-    STD_ICON_SIZE,
     get_default_icon_size,
-    icon_add_new,
     icon_trash,
     icons8_down,
     icons8_opened_folder,
     icons8_up,
 )
 from meerk40t.gui.ribbon import RibbonBarPanel
-from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
+from meerk40t.gui.wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox
 from meerk40t.kernel import Settings, lookup_listener, signal_listener
 
 _ = wx.GetTranslation
@@ -365,7 +358,6 @@ class MKRibbonBarPanel(RibbonBarPanel):
                 continue
             if "panels" not in page_entry:
                 continue
-            pageobj = page_entry["_object"]
             for panel_entry in page_entry["panels"]:
                 if "_object" not in panel_entry:
                     continue
@@ -408,6 +400,11 @@ class MKRibbonBarPanel(RibbonBarPanel):
     def on_show_labels_change(self, origin, value, *args):
         if self.allow_labels:
             self.toggle_show_labels(value)
+
+    # Notabene: the lookup listener design will look for partial fits!
+    # So a listener to "button/tool" would get changes from
+    #  "button/tool", "button/tools" and "button/toolabcdefgh"
+    # So to add buttons of your own make sure you are using a distinct name!
 
     @lookup_listener("button/basicediting")
     def set_editing_buttons(self, new_values, old_values):
@@ -457,7 +454,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
     def set_select_buttons(self, new_values, old_values):
         self.set_panel_buttons("select", new_values)
 
-    @lookup_listener("button/tool")
+    @lookup_listener("button/tools")
     def set_tool_buttons(self, new_values, old_values):
         self.set_panel_buttons("tool", new_values)
 
@@ -609,7 +606,7 @@ class RibbonEditor(wx.Panel):
         self.combo_ribbons = wx.ComboBox(
             self, wx.ID_ANY, choices=choices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
-        self.check_labels = wx.CheckBox(self, wx.ID_ANY, _("Show the Ribbon Labels"))
+        self.check_labels = wxCheckBox(self, wx.ID_ANY, _("Show the Ribbon Labels"))
 
         sizer_ribbons.Add(self.combo_ribbons, 0, wx.EXPAND, 0)
         sizer_ribbons.Add(self.check_labels, 0, wx.EXPAND, 0)
@@ -661,9 +658,9 @@ class RibbonEditor(wx.Panel):
         )
 
         self.list_options = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
-        self.button_add_panel = wx.Button(self, wx.ID_ANY, _("Add to page"))
-        self.button_apply = wx.Button(self, wx.ID_ANY, _("Apply"))
-        self.button_reset = wx.Button(self, wx.ID_ANY, _("Reset to Default"))
+        self.button_add_panel = wxButton(self, wx.ID_ANY, _("Add to page"))
+        self.button_apply = wxButton(self, wx.ID_ANY, _("Apply"))
+        self.button_reset = wxButton(self, wx.ID_ANY, _("Reset to Default"))
 
         sizer_button = wx.BoxSizer(wx.VERTICAL)
         sizer_button.Add(self.button_add_panel, 1, wx.EXPAND, 0)

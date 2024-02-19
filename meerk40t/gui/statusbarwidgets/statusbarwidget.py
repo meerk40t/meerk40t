@@ -8,7 +8,7 @@ class BasicHSizer:
     you have fully under control... (required for a Linux environment)
     """
 
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         self.windows = []
         self.proportions = []
         self.flags = []
@@ -222,7 +222,7 @@ class StatusBarWidget(BasicHSizer):
         # COPY:
         #   super().GenerateControls(parent, panelidx, identifier, context)
         # Now add your controls, make sure they are added with
-        #   self.btn = wx.Button(self.parent, wx.ID_ANY...)
+        #   self.btn = wxButton(self.parent, wx.ID_ANY...)
         #   self.add(self.btn, 1, wx.EXPAND, 0)
 
     def StartPopulation(self):

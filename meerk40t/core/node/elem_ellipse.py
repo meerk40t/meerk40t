@@ -81,6 +81,9 @@ class EllipseNode(Node, Stroked, FunctionalParameter):
             self.functional_parameter = (
                 "ellipse",
                 0,
+                self.cx,
+                self.cy,
+                0,
                 self.cx + self.rx,
                 self.cy,
                 0,
@@ -233,8 +236,8 @@ class EllipseNode(Node, Stroked, FunctionalParameter):
         if bounds is None:
             return
         self._points = []
-        cx = (bounds[0] + bounds[2]) / 2
-        cy = (bounds[1] + bounds[3]) / 2
+        # cx = (bounds[0] + bounds[2]) / 2
+        # cy = (bounds[1] + bounds[3]) / 2
         # self._points.append([bounds[0], bounds[1], "bounds top_left"])
         # self._points.append([bounds[2], bounds[1], "bounds top_right"])
         # self._points.append([bounds[0], bounds[3], "bounds bottom_left"])
@@ -306,18 +309,36 @@ class EllipseNode(Node, Stroked, FunctionalParameter):
                         self.ry = radius
                         self.altered()
                 elif method == "ellipse":
-                    pt1x = getit(self.mkparam, 2, self.cx + self.rx)
-                    pt1y = getit(self.mkparam, 3, self.cy)
-                    pt2x = getit(self.mkparam, 5, self.cx)
-                    pt2y = getit(self.mkparam, 6, self.cy + self.ry)
-                    rx = pt1x - pt2x
-                    ry = pt2y - pt1y
-                    ncx = pt1x - rx
-                    ncy = pt2y - ry
-                    rx = abs(rx)
-                    ry = abs(ry)
-                    self.cx = ncx
-                    self.cy = ncy
-                    self.rx = rx
-                    self.ry = ry
+                    ncx = getit(self.mkparam, 2, self.cx)
+                    ncy = getit(self.mkparam, 3, self.cy)
+                    pt1x = getit(self.mkparam, 5, self.cx + self.rx)
+                    pt1y = getit(self.mkparam, 6, self.cy)
+                    pt2x = getit(self.mkparam, 8, self.cx)
+                    pt2y = getit(self.mkparam, 9, self.cy + self.ry)
+                    if ncx != self.cx or ncy != self.cy:
+                        self.cx = ncx
+                        self.cy = ncy
+                    else:
+                        rx = pt1x - pt2x
+                        ry = pt2y - pt1y
+                        ncx = pt1x - rx
+                        ncy = pt2y - ry
+                        rx = abs(rx)
+                        ry = abs(ry)
+                        self.cx = ncx
+                        self.cy = ncy
+                        self.rx = rx
+                        self.ry = ry
+                    self.mkparam = (
+                        "ellipse",
+                        0,
+                        self.cx,
+                        self.cy,
+                        0,
+                        self.cx + self.rx,
+                        self.cy,
+                        0,
+                        self.cx,
+                        self.cy + self.ry,
+                    )
                     self.altered()

@@ -5,7 +5,6 @@ from wx import aui
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
-    DARKMODE,
     get_default_icon_size,
     icon_closed_door,
     icon_open_door,
@@ -25,6 +24,8 @@ from meerk40t.gui.wxutils import (
     StaticBoxSizer,
     dip_size,
     disable_window,
+    wxButton,
+    wxCheckBox,
 )
 from meerk40t.kernel import lookup_listener, signal_listener
 
@@ -134,7 +135,7 @@ class LaserPanel(wx.Panel):
         self.combo_devices.SetToolTip(
             _("Select device from list of configured devices")
         )
-        self.btn_config_laser = wx.Button(self, wx.ID_ANY, "*")
+        self.btn_config_laser = wxButton(self, wx.ID_ANY, "*")
         self.btn_config_laser.SetToolTip(
             _("Opens device-specific configuration window")
         )
@@ -220,7 +221,7 @@ class LaserPanel(wx.Panel):
 
         self.check_laser_arm()
 
-        self.button_outline = wx.Button(self, wx.ID_ANY, _("Outline"))
+        self.button_outline = wxButton(self, wx.ID_ANY, _("Outline"))
         self.button_outline.SetToolTip(_("Trace the outline the job"))
         self.button_outline.SetBitmap(
             icons8_pentagon.GetBitmap(
@@ -229,7 +230,7 @@ class LaserPanel(wx.Panel):
         )
         sizer_control_misc.Add(self.button_outline, 1, wx.EXPAND, 0)
 
-        self.button_simulate = wx.Button(self, wx.ID_ANY, _("Simulate"))
+        self.button_simulate = wxButton(self, wx.ID_ANY, _("Simulate"))
         self.button_simulate.SetToolTip(_("Simulate the Design"))
         self.button_simulate.SetBitmap(
             icons8_laser_beam_hazard.GetBitmap(
@@ -255,10 +256,10 @@ class LaserPanel(wx.Panel):
         sizer_source = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_source, 0, wx.EXPAND, 0)
 
-        self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
+        self.checkbox_optimize = wxCheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
         self.checkbox_optimize.SetValue(self.context.planner.do_optimization)
-        self.checkbox_adjust = wx.CheckBox(self, wx.ID_ANY, _("Override"))
+        self.checkbox_adjust = wxCheckBox(self, wx.ID_ANY, _("Override"))
         self.checkbox_adjust.SetToolTip(
             _("Allow ad-hoc adjustment of speed and power.")
             + "\n"
@@ -665,17 +666,17 @@ class JobPanel(wx.Panel):
         sizer_control_update = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control_update, 0, wx.EXPAND, 0)
 
-        self.button_clear = wx.Button(self, wx.ID_ANY, _("Clear"))
+        self.button_clear = wxButton(self, wx.ID_ANY, _("Clear"))
         self.button_clear.SetToolTip(_("Clear locally defined plan"))
         self.button_clear.SetBitmap(icons8_delete.GetBitmap(resize=self.icon_size))
         sizer_control_update.Add(self.button_clear, 1, 0, 0)
 
-        self.button_update = wx.Button(self, wx.ID_ANY, _("Update"))
+        self.button_update = wxButton(self, wx.ID_ANY, _("Update"))
         self.button_update.SetToolTip(_("Update the Plan"))
         self.button_update.SetBitmap(icon_update_plan.GetBitmap(resize=self.icon_size))
         sizer_control_update.Add(self.button_update, 1, 0, 0)
 
-        self.button_save_file = wx.Button(self, wx.ID_ANY, _("Save"))
+        self.button_save_file = wxButton(self, wx.ID_ANY, _("Save"))
         self.button_save_file.SetToolTip(_("Save the job"))
         self.button_save_file.SetBitmap(icons8_save.GetBitmap(resize=self.icon_size))
         sizer_control_update.Add(self.button_save_file, 1, 0, 0)
@@ -689,7 +690,7 @@ class JobPanel(wx.Panel):
         sizer_source.Add(self.text_plan, 2, 0, 0)
 
         self.context.setting(bool, "laserpane_hold", False)
-        self.checkbox_hold = wx.CheckBox(self, wx.ID_ANY, _("Hold"))
+        self.checkbox_hold = wxCheckBox(self, wx.ID_ANY, _("Hold"))
         self.checkbox_hold.SetToolTip(
             _("Preserve the job between running, rerunning, and execution")
         )
@@ -780,7 +781,7 @@ class OptimizePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
+        self.checkbox_optimize = wxCheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
         self.checkbox_optimize.SetValue(self.context.planner.do_optimization)
         prechoices = context.lookup("choices/optimize")

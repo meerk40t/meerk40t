@@ -51,7 +51,6 @@ from meerk40t.gui.utilitywidgets.checkboxwidget import CheckboxWidget
 from meerk40t.gui.utilitywidgets.cyclocycloidwidget import CyclocycloidWidget
 from meerk40t.gui.utilitywidgets.harmonograph import HarmonographWidget
 from meerk40t.gui.utilitywidgets.seekbarwidget import SeekbarWidget
-from meerk40t.gui.utilitywidgets.togglewidget import ToggleWidget
 from meerk40t.gui.wxutils import get_key_name, is_navigation_key
 from meerk40t.kernel import CommandSyntaxError, signal_listener
 from meerk40t.svgelements import Color
@@ -228,9 +227,7 @@ class MeerK40tScenePanel(wx.Panel):
         bsize_normal = STD_ICON_SIZE
 
         def proxy_linetext():
-            from meerk40t.extra.hershey import have_hershey_fonts
-
-            if have_hershey_fonts(context):
+            if context.fonts.have_hershey_fonts():
                 context.kernel.elements("tool linetext\n")
             else:
                 context.kernel.elements("window open HersheyFontManager\n")

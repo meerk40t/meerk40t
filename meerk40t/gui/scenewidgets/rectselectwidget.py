@@ -327,7 +327,12 @@ class RectSelectWidget(Widget):
                                     target.append(end)
                                 last = end
                     # t2 = perf_counter()
-                    if len(other_points) > 0 and len(selected_points) > 0:
+                    if (
+                        other_points is not None
+                        and selected_points is not None
+                        and len(other_points) > 0
+                        and len(selected_points) > 0
+                    ):
                         np_other = np.asarray(other_points)
                         np_selected = np.asarray(selected_points)
                         dist, pt1, pt2 = shortest_distance(np_other, np_selected, False)
@@ -358,12 +363,17 @@ class RectSelectWidget(Widget):
                         ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2),
                     )
                     other_points = self.scene.pane.grid.grid_points
-                    if len(other_points) > 0 and len(selected_points) > 0:
+                    if (
+                        other_points is not None
+                        and selected_points is not None
+                        and len(other_points) > 0
+                        and len(selected_points) > 0
+                    ):
                         np_other = np.asarray(other_points)
                         np_selected = np.asarray(selected_points)
                         dist, pt1, pt2 = shortest_distance(np_other, np_selected, True)
                         if dist < gap:
-                            did_snap_to_point = True
+                            # did_snap_to_point = True
                             dx = pt1[0] - pt2[0]
                             dy = pt1[1] - pt2[1]
                             move_to(dx, dy)
@@ -413,22 +423,34 @@ class RectSelectWidget(Widget):
         self.scene.cursor("arrow")
 
     def draw_rectangle(self, gc, x0, y0, x1, y1, tcolor, tstyle):
-        matrix = self.parent.matrix
+        # Linux / Darwin do not recognize the GraphicsContext TransformationMatrix
+        # when drawing dashed/dotted lines, so they always appear to be solid
+        # (even if they are dotted on a microscopic level)
+        # To circumvent this issue, we scale the gc back
+        gc.PushState()
+        gcmat = gc.GetTransform()
+        mat_param = gcmat.Get()
+        sx = mat_param[0]
+        sy = mat_param[3]
+        if sx == 0:
+            sx = 0.01
+        if sy == 0:
+            sy = 0.01
+        gc.Scale(1 / sx, 1 / sy)
         self.selection_pen.SetColour(tcolor)
         self.selection_pen.SetStyle(tstyle)
         gc.SetPen(self.selection_pen)
-        linewidth = 2.0 / matrix_scale(matrix)
-        if linewidth < 1:
-            linewidth = 1
+        linewidth = 1
         try:
             self.selection_pen.SetWidth(linewidth)
         except TypeError:
             self.selection_pen.SetWidth(int(linewidth))
         gc.SetPen(self.selection_pen)
-        gc.StrokeLine(x0, y0, x1, y0)
-        gc.StrokeLine(x1, y0, x1, y1)
-        gc.StrokeLine(x1, y1, x0, y1)
-        gc.StrokeLine(x0, y1, x0, y0)
+        gc.StrokeLine(x0 * sx, y0 * sy, x1 * sx, y0 * sy)
+        gc.StrokeLine(x1 * sx, y0 * sy, x1 * sx, y1 * sy)
+        gc.StrokeLine(x1 * sx, y1 * sy, x0 * sx, y1 * sy)
+        gc.StrokeLine(x0 * sx, y1 * sy, x0 * sx, y0 * sy)
+        gc.PopState()
 
     def draw_tiny_indicator(self, gc, symbol, x0, y0, x1, y1, tcolor, tstyle):
         matrix = self.parent.matrix

@@ -10,6 +10,7 @@ from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.gui.icons import icons8_up
 from meerk40t.gui.statusbarwidgets.statusbarwidget import StatusBarWidget
+from meerk40t.gui.wxutils import wxCheckBox
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -137,7 +138,7 @@ class InformationWidget(SimpleInfoWidget):
         self.context.setting(bool, "statusbar_auto_statistic", True)
         self._info_active = self.context.statusbar_auto_statistic
 
-        self.chk_active = wx.CheckBox(parent, wx.ID_ANY, "")
+        self.chk_active = wxCheckBox(parent, wx.ID_ANY, "")
         self.chk_active.SetToolTip(
             _("Uncheck if you don't want automatic statistic generation")
         )
@@ -163,7 +164,6 @@ class InformationWidget(SimpleInfoWidget):
         make_raster = self.context.root.lookup("render-op/make_raster")
         if nodes is None or len(nodes) == 0 or not make_raster:
             return 0, 0
-        ratio = 0
         dpi = 300
         dots_per_units = dpi / UNITS_PER_INCH
         _mm = float(Length("1mm"))
@@ -197,7 +197,6 @@ class InformationWidget(SimpleInfoWidget):
             # print(f"Width: {width:.0f} -> {new_width}")
             # print(f"Height: {height:.0f} -> {new_height}")
             keep_ratio = True
-            ratio = 0
 
             all_pixel = new_height * new_width
             if all_pixel > 0:
@@ -243,7 +242,6 @@ class InformationWidget(SimpleInfoWidget):
         if self._info_active:
             elements = self.context.elements
             ct = 0
-            total_area = 0
             total_length = 0
             _mm = float(Length("1mm"))
             mydata = list(elements.flat(types=elem_nodes, emphasized=True))

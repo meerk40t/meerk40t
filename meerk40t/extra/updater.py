@@ -120,7 +120,6 @@ def plugin(kernel, lifecycle):
                 Beta is derived from Release by default if release > 100 and last two digits != 0
                 """
                 src = beta = False
-                orgversion = version
                 ending = ""
                 result = list()
                 if version is not None:
@@ -491,7 +490,7 @@ def plugin(kernel, lifecycle):
                         import wx
 
                         from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
-                        from meerk40t.gui.wxutils import dip_size
+                        from meerk40t.gui.wxutils import dip_size, wxButton
 
                         has_wx = True
                     except ImportError:
@@ -522,10 +521,10 @@ def plugin(kernel, lifecycle):
                             label = wx.StaticText(dlg, wx.ID_ANY, footer)
                             sizer.Add(label, 0, wx.EXPAND, 0)
                             btnsizer = wx.StdDialogButtonSizer()
-                            btn = wx.Button(dlg, wx.ID_OK)
+                            btn = wxButton(dlg, wx.ID_OK)
                             btn.SetDefault()
                             btnsizer.AddButton(btn)
-                            btn = wx.Button(dlg, wx.ID_CANCEL)
+                            btn = wxButton(dlg, wx.ID_CANCEL)
                             btnsizer.AddButton(btn)
                             btnsizer.Realize()
                             sizer.Add(btnsizer, 0, wx.EXPAND, 0)

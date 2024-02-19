@@ -8,7 +8,6 @@ from ..kernel import signal_listener
 from ..svgelements import Color
 from .basicops import BasicOpPanel
 from .icons import (
-    get_default_scale_factor,
     icon_bell,
     icon_bmap_text,
     icon_canvas,
@@ -50,6 +49,7 @@ from .wxutils import (
     dip_size,
     get_key_name,
     is_navigation_key,
+    wxButton,
 )
 
 _ = wx.GetTranslation
@@ -190,9 +190,9 @@ class TreePanel(wx.Panel):
         self.warn_panel = wx.BoxSizer(wx.HORIZONTAL)
         unassigned_frame = StaticBoxSizer(self, wx.ID_ANY, "Unassigned", wx.HORIZONTAL)
         unburnt_frame = StaticBoxSizer(self, wx.ID_ANY, "Non-burnt", wx.HORIZONTAL)
-        self.btn_fix_assign_create = wx.Button(self, wx.ID_ANY, "Assign (+new)")
-        self.btn_fix_assign_existing = wx.Button(self, wx.ID_ANY, "Assign")
-        self.btn_fix_unburnt = wx.Button(self, wx.ID_ANY, "Enable")
+        self.btn_fix_assign_create = wxButton(self, wx.ID_ANY, "Assign (+new)")
+        self.btn_fix_assign_existing = wxButton(self, wx.ID_ANY, "Assign")
+        self.btn_fix_unburnt = wxButton(self, wx.ID_ANY, "Enable")
         self.btn_fix_assign_create.SetToolTip(
             _("Classify unassigned elements and create operations if necessary")
         )
@@ -296,8 +296,19 @@ class TreePanel(wx.Panel):
         @param event:
         @return:
         """
-        event.Skip()
         keyvalue = get_key_name(event)
+        # There is a menu entry in wxmain that should catch all 'delete' keys
+        # but that is not consistently so, every other key seems to slip through
+        # probably there is an issue there, but we use the opportunity not
+        # only to catch these but to establish a forced delete via ctrl-delete as well
+
+        if keyvalue == "delete":
+            self.context("tree selected delete\n")
+            return
+        if keyvalue == "ctrl+delete":
+            self.context("tree selected remove\n")
+            return
+        event.Skip()
         if is_navigation_key(keyvalue):
             if self._keybind_channel:
                 self._keybind_channel(
@@ -785,20 +796,20 @@ class ShadowTree:
         """
         if self._freeze or self.context.elements.suppress_updates:
             return
-        okay = False
-        item = None
-        if node is not None and hasattr(node, "_item"):
-            item = node._item
-            if item is not None and item.IsOk():
-                okay = True
-        # print (f"Modified: {node}\nItem: {item}, Status={okay}")
-        if not okay:
+
+        if node is None or not hasattr(node, "_item"):
             return
+
+        item = node._item
+        if item is None or not item.IsOk():
+            return
+
         try:
             self.update_decorations(node, force=True)
         except RuntimeError:
             # A timer can update after the tree closes.
             return
+
         try:
             c = node.color
             self.set_color(node, c)
@@ -1091,44 +1102,46 @@ class ShadowTree:
         if not result:
             self.was_already_expanded.append(chk)
 
-    def parse_tree(self, startnode, level):
-        if startnode is None:
-            return
-        cookie = 0
-        try:
-            pnode, cookie = self.wxtree.GetFirstChild(startnode)
-        except:
-            return
-        while pnode.IsOk():
-            txt = self.wxtree.GetItemText(pnode)
-            # That is not working as advertised...
-            state = self.wxtree.IsExpanded(pnode)
-            state = False  # otherwise every thing gets expanded...
-            if state:
-                self.was_already_expanded.append(f"{level}-{txt}")
-            self.parse_tree(pnode, level + 1)
-            pnode, cookie = self.wxtree.GetNextChild(startnode, cookie)
+    # These routines were supposed to save and restore the expanded state of the tree
+    # But that did not work out as intended....
+    #
+    # def parse_tree(self, startnode, level):
+    #     if startnode is None:
+    #         return
+    #     cookie = 0
+    #     try:
+    #         pnode, cookie = self.wxtree.GetFirstChild(startnode)
+    #     except:
+    #         return
+    #     while pnode.IsOk():
+    #         txt = self.wxtree.GetItemText(pnode)
+    #         # That is not working as advertised...
+    #         state = self.wxtree.IsExpanded(pnode)
+    #         if state:
+    #             self.was_already_expanded.append(f"{level}-{txt}")
+    #         self.parse_tree(pnode, level + 1)
+    #         pnode, cookie = self.wxtree.GetNextChild(startnode, cookie)
 
-    def restore_tree(self, startnode, level):
-        if startnode is None:
-            return
-        cookie = 0
-        try:
-            pnode, cookie = self.wxtree.GetFirstChild(startnode)
-        except:
-            return
-        while pnode.IsOk():
-            txt = self.wxtree.GetItemText(pnode)
-            chk = f"{level}-{txt}"
-            for elem in self.was_already_expanded:
-                if chk == elem:
-                    self.wxtree.ExpandAllChildren(pnode)
-                    break
-            self.parse_tree(pnode, level + 1)
-            pnode, cookie = self.wxtree.GetNextChild(startnode, cookie)
-
-    def reset_expanded(self):
-        self.was_already_expanded = []
+    # def restore_tree(self, startnode, level):
+    #     if startnode is None:
+    #         return
+    #     cookie = 0
+    #     try:
+    #         pnode, cookie = self.wxtree.GetFirstChild(startnode)
+    #     except:
+    #         return
+    #     while pnode.IsOk():
+    #         txt = self.wxtree.GetItemText(pnode)
+    #         chk = f"{level}-{txt}"
+    #         for elem in self.was_already_expanded:
+    #             if chk == elem:
+    #                 self.wxtree.ExpandAllChildren(pnode)
+    #                 break
+    #         self.parse_tree(pnode, level + 1)
+    #         pnode, cookie = self.wxtree.GetNextChild(startnode, cookie)
+    #
+    # def reset_expanded(self):
+    #     self.was_already_expanded = []
 
     def rebuild_tree(self, source):
         """
@@ -1140,8 +1153,8 @@ class ShadowTree:
         # let's try to remember which branches were expanded:
         self.context.elements.set_start_time("rebuild_tree")
         self.freeze_tree(True)
-        #
-        self.reset_expanded()
+
+        # self.reset_expanded()
 
         # Safety net - if we have too many elements it will
         # take too long to create all preview icons...
@@ -1149,7 +1162,7 @@ class ShadowTree:
         self._too_big = bool(count > 1000)
         # print(f"Was too big?! {count} -> {self._too_big}")
 
-        self.parse_tree(self.wxtree.GetRootItem(), 0)
+        # self.parse_tree(self.wxtree.GetRootItem(), 0)
         # Rebuild tree destroys the emphasis, so let's store it...
         emphasized_list = list(self.elements.elems(emphasized=True))
         elemtree = self.elements._tree
@@ -1222,7 +1235,7 @@ class ShadowTree:
         # Restore emphasis
         for e in emphasized_list:
             e.emphasized = True
-        self.restore_tree(self.wxtree.GetRootItem(), 0)
+        # self.restore_tree(self.wxtree.GetRootItem(), 0)
         self.freeze_tree(False)
         self.context.elements.set_end_time("rebuild_tree", display=True)
         # print(f"Rebuild done for {source}")
@@ -1278,8 +1291,8 @@ class ShadowTree:
             self.wxtree.SelectItem(i, False)
 
     def safe_color(self, color_to_set):
-        hash = str(color_to_set)
-        if hash not in self.color_cache:
+        _hash = str(color_to_set)
+        if _hash not in self.color_cache:
             back_color = self.wxtree.GetBackgroundColour()
             rgb = back_color.Get()
             default_color = wx.Colour(
@@ -1291,9 +1304,9 @@ class ShadowTree:
                     mycolor = default_color
             else:
                 mycolor = default_color
-            self.color_cache[hash] = mycolor
+            self.color_cache[_hash] = mycolor
         else:
-            mycolor = self.color_cache[hash]
+            mycolor = self.color_cache[_hash]
         return mycolor
 
     def node_register(self, node, pos=None, **kwargs):
@@ -1465,7 +1478,6 @@ class ShadowTree:
 
         # Have we already established an image, if no let's use the default
         if image is None:
-            img_obj = None
             found = ""
             tofind = node.type
             if tofind == "util console":
@@ -1842,6 +1854,10 @@ class ShadowTree:
                 result = "op"
             elif typename.startswith("elem "):
                 result = "elem"
+            elif typename.startswith("group"):
+                result = "elem"
+            elif typename.startswith("file"):
+                result = "elem"
             else:
                 result = typename
             return result
@@ -1904,30 +1920,30 @@ class ShadowTree:
         if drop_node is None:
             event.Skip()
             return
-        skip = True
         # We extend the logic by calling the appropriate elems routine
         skip = not self.elements.drag_and_drop(self.dragging_nodes, drop_node)
         if skip:
             event.Skip()
-        else:
-            event.Allow()
-            # Make sure that the drop node is visible
-            self.wxtree.Expand(drop_item)
-            self.wxtree.EnsureVisible(drop_item)
-            self.refresh_tree(source="drag end")
-            # Do the dragging_nodes contain an operation?
-            # Let's give an indication of that, as this may
-            # have led to the creation of a new reference
-            # node. For whatever reason this is not recognised
-            # otherwise...
-            if not self.dragging_nodes:
-                # Dragging nodes were cleared (we must have rebuilt the entire tree)
-                return
-            for node in self.dragging_nodes:
-                if node.type.startswith("op"):
-                    self.context.signal("tree_changed")
-                    break
-            # self.rebuild_tree()
+            self.dragging_nodes = None
+            return
+        event.Allow()
+        # Make sure that the drop node is visible
+        self.wxtree.Expand(drop_item)
+        self.wxtree.EnsureVisible(drop_item)
+        self.refresh_tree(source="drag end")
+        # Do the dragging_nodes contain an operation?
+        # Let's give an indication of that, as this may
+        # have led to the creation of a new reference
+        # node. For whatever reason this is not recognised
+        # otherwise...
+        if not self.dragging_nodes:
+            # Dragging nodes were cleared (we must have rebuilt the entire tree)
+            return
+        for node in self.dragging_nodes:
+            if node.type.startswith("op"):
+                self.context.signal("tree_changed")
+                break
+        # self.rebuild_tree()
         self.dragging_nodes = None
 
     def on_mouse_over(self, event):

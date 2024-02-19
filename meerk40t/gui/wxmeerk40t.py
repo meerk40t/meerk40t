@@ -19,7 +19,8 @@ from meerk40t.gui.consolepanel import Console
 from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
-from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
+from meerk40t.gui.wxutils import wxButton
+from meerk40t.kernel import CommandSyntaxError, Module, get_safe_path
 from meerk40t.kernel.kernel import Job
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
@@ -36,7 +37,6 @@ from .hersheymanager import (
     register_hershey_stuff,
 )
 from .icons import (
-    DARKMODE,
     icons8_emergency_stop_button,
     icons8_gas_industry,
     icons8_home_filled,
@@ -118,7 +118,7 @@ class ActionPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
 
         self.context = context
-        self.button_go = wx.Button(self, wx.ID_ANY)
+        self.button_go = wxButton(self, wx.ID_ANY)
         self.icon = icon
         self.fgcolor = fgcolor
         self.resize_job = Job(
@@ -183,7 +183,6 @@ class ActionPanel(wx.Panel):
                 resize=(best_size * scale_x, best_size * scale_y),
                 buffer=border,
             )
-            s = bmp.Size
             self.button_go.SetBitmap(bmp)
             bmp = self.icon.GetBitmap(
                 resize=(best_size * scale_x, best_size * scale_y), buffer=border
@@ -409,6 +408,7 @@ class wxMeerK40t(wx.App, Module):
     """
 
     def __init__(self, context, path):
+        self.context = context
         wx.App.__init__(self, 0)
         # Is this a Windows machine? If yes:
         # Turn on high-DPI awareness to make sure rendering is sharp on big
@@ -484,6 +484,12 @@ class wxMeerK40t(wx.App, Module):
             pass
 
     def OnInit(self):
+        self.name = f"MeerK40t-{wx.GetUserId()}"
+        self.instance = wx.SingleInstanceChecker(self.name)
+        self.context.setting(bool, "single_instance_only", True)
+        if self.context.single_instance_only and self.instance.IsAnotherRunning():
+            wx.MessageBox("Another instance is running", "ERROR")
+            return False
         return True
 
     def InitLocale(self):
@@ -562,7 +568,7 @@ class wxMeerK40t(wx.App, Module):
             This also allows use of a -p flag that sets the context path for this window to operate at. This should
             often be restricted to where the windows are typically opened since their function and settings usually
             depend on the context used. Windows often cannot open multiple copies of the same window at the same context
-            The default root path is "/". Eg. "window -p / open Preferences"
+            The default root path is "/". E.g. "window -p / open Preferences"
             """
             context = kernel.root
             if path is None:
@@ -945,12 +951,31 @@ class wxMeerK40t(wx.App, Module):
                 register_panel_crash,
                 register_panel_debugger,
                 register_panel_icon,
+                register_panel_window,
             )
 
             kernel.register("wxpane/debug_tree", register_panel_debugger)
             kernel.register("wxpane/debug_color", register_panel_color)
             kernel.register("wxpane/debug_icons", register_panel_icon)
             kernel.register("wxpane/debug_shutdown", register_panel_crash)
+            kernel.register("wxpane/debug_window", register_panel_window)
+
+            from meerk40t.gui.utilitywidgets.debugwidgets import register_widget_icon
+
+            register_widget_icon(kernel.root)
+
+        choices = [
+            {
+                "attr": "single_instance_only",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Single Instance"),
+                "tip": _("Allow only a single instance of MeerK40t."),
+                "page": "Start",
+            },
+        ]
+        kernel.register_choices("preferences", choices)
 
         @context.console_argument("sure", type=str, help="Are you sure? 'yes'?")
         @context.console_command("nuke_settings", hidden=True)
@@ -963,6 +988,30 @@ class wxMeerK40t(wx.App, Module):
                 channel(
                     'Argument "sure" is required. Requires typing: "nuke_settings yes"'
                 )
+
+        @context.console_argument("crashtype", type=str)
+        @context.console_command("crash_me_if_you_can", hidden=True)
+        def crash_mk(command, channel, _, crashtype=None, **kwargs):
+            if crashtype is None:
+                crashtype = "dividebyzero"
+            crashtype = crashtype.lower()
+            if crashtype == "dividebyzero":
+                a = 0
+                b = 0
+                c = b / a
+                return
+            if crashtype == "key":
+                d = {"a": 0}
+                b = d["b"]
+                return
+            if crashtype == "index":
+                a = (0, 1, 2)
+                b = a[5]
+                return
+            if crashtype == "value":
+                a = "an invalid number 1"
+                b = float(a)
+                return
 
     def update_language(self, lang):
         """
@@ -1111,6 +1160,9 @@ def send_data_to_developers(filename, data):
         dlg.Destroy()
 
 
+in_error_dialog = False
+
+
 def handleGUIException(exc_type, exc_value, exc_traceback):
     """
     Handler for errors. Save error to a file, and create dialog.
@@ -1139,13 +1191,31 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         info.SetValue(body)
         sizer.Add(info, 5, wx.EXPAND, 0)
         btnsizer = wx.StdDialogButtonSizer()
-        btn = wx.Button(dlg, wx.ID_OK)
-        btn.SetDefault()
-        btnsizer.AddButton(btn)
-        btn = wx.Button(dlg, wx.ID_CANCEL)
-        btnsizer.AddButton(btn)
+        btn_yes = wxButton(dlg, wx.ID_YES)
+        btn_yes.SetDefault()
+        btnsizer.AddButton(btn_yes)
+        btn_no = wxButton(dlg, wx.ID_NO)
+        btnsizer.AddButton(btn_no)
+        btn_cancel = wxButton(dlg, wx.ID_CANCEL, _("Quit"))
+        btnsizer.AddButton(btn_cancel)
         btnsizer.Realize()
         sizer.Add(btnsizer, 0, wx.EXPAND, 0)
+        btnsizer.SetAffirmativeButton(btn_yes)
+        btnsizer.SetNegativeButton(btn_no)
+        btnsizer.SetCancelButton(btn_cancel)
+
+        def close_yes(event):
+            dlg.EndModal(wx.ID_YES)
+
+        def close_no(event):
+            dlg.EndModal(wx.ID_NO)
+
+        def close_cancel(event):
+            wx.Abort()
+
+        dlg.Bind(wx.EVT_BUTTON, close_yes, btn_yes)
+        dlg.Bind(wx.EVT_BUTTON, close_no, btn_no)
+        dlg.Bind(wx.EVT_BUTTON, close_cancel, btn_cancel)
         dlg.SetSizer(sizer)
         sizer.Fit(dlg)
         dlg.CenterOnScreen()
@@ -1160,6 +1230,11 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
             formatted = formatted.replace("\n", "\n" + " " * total_indent)
             info += f"{label}{formatted}\n"
         return info
+
+    global in_error_dialog
+    if in_error_dialog:
+        return
+    in_error_dialog = True
 
     wxversion = "wx"
     try:
@@ -1221,7 +1296,11 @@ The good news is that you can help us fix this bug by anonymously sending us the
         dlg = _extended_dialog(caption, message, data)
         answer = dlg.ShowModal()
         dlg.Destroy()
-    except Exception:
+    except Exception as e:
         answer = wx.ID_NO
-    if answer in (wx.YES, wx.ID_YES, wx.ID_OK):
+    # print (answer)
+    in_error_dialog = False
+    if answer in (wx.ID_YES, wx.ID_OK):
         send_data_to_developers(filename, data)
+    if answer == wx.ID_CANCEL:
+        wx.Abort()

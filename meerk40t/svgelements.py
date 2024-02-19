@@ -340,6 +340,8 @@ class SVGLexicalParser:
         return position[0] + current_pos.x, position[1] + current_pos.y
 
     def parse(self, parser, pathd):
+        if pathd is None:
+            return
         self.parser = parser
         self.parser.start()
         self.pathd = pathd
@@ -3083,6 +3085,10 @@ class Matrix:
         @param p2:
         @param p3:
         @param p4:
+        @param p5:
+        @param p6:
+        @param p7:
+        @param p8:
         @return:
         """
         m1 = Matrix.perspective(p1, p2, p3, p4)
@@ -7858,6 +7864,7 @@ class Group(SVGElement, Transformable, list):
         """
         Returns the union of the bounding boxes for the elements within the iterator.
 
+        :param elements: different path nodes
         :param transformed: Should the children of this object be properly transformed.
         :param with_stroke: should the stroke-width be included in the bounds of the elements
         :return: union of all bounding boxes of elements within the iterable.
@@ -7973,6 +7980,7 @@ class Use(SVGElement, Transformable, list):
         """
         Returns the union of the bounding boxes for the elements within the iterator.
 
+        :param elements: different path nodes
         :param transformed: Should the children of this object be properly transformed.
         :param with_stroke: should the stroke-width be included in the bounds of the elements
         :return: union of all bounding boxes of elements within the iterable.

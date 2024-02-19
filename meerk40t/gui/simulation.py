@@ -48,7 +48,7 @@ from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.bedwidget import BedWidget
 from .scenewidgets.gridwidget import GridWidget
-from .wxutils import StaticBoxSizer, dip_size
+from .wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox
 from .zmatrix import ZMatrix
 
 _ = wx.GetTranslation
@@ -74,7 +74,7 @@ class OperationsPanel(wx.Panel):
         self.text_operation_param = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         )
-        self.check_decompile = wx.CheckBox(self, wx.ID_ANY, "D")
+        self.check_decompile = wxCheckBox(self, wx.ID_ANY, "D")
         self.check_decompile.SetToolTip(
             _("Decompile cutplan = make operations visible and editable again")
         )
@@ -266,41 +266,38 @@ class OperationsPanel(wx.Panel):
         content = self.text_operation_param.GetValue()
         idx = self.list_operations.GetFirstSelected()
         flag = False
-        if idx >= 0:
-            op = self.cutplan.plan[idx]
-            if isinstance(op, ConsoleOperation):
-                op.command = content
-                flag = True
-            elif isinstance(op, GotoOperation):
-                params = content.split(",")
-                x = 0
-                y = 0
-                if len(params) > 0:
-                    try:
-                        x = float(Length(params[0]))
-                    except ValueError:
-                        return
-                if len(params) > 1:
-                    try:
-                        y = float(Length(params[1]))
-                    except ValueError:
-                        return
-                op.x = x
-                op.y = y
-                flag = True
-            elif isinstance(op, WaitOperation):
+        if idx < 0:
+            return
+        op = self.cutplan.plan[idx]
+        if isinstance(op, ConsoleOperation):
+            op.command = content
+        elif isinstance(op, GotoOperation):
+            params = content.split(",")
+            x = 0
+            y = 0
+            if len(params) > 0:
                 try:
-                    duration = float(content)
-                    op.wait = duration
-                    flag = True
+                    x = float(Length(params[0]))
                 except ValueError:
                     return
-                else:
-                    op.x = None
-                    op.y = None
-                    flag = True
-        if flag:
-            self.context.signal("plan", self.plan_name, 1)
+            if len(params) > 1:
+                try:
+                    y = float(Length(params[1]))
+                except ValueError:
+                    return
+            op.x = x
+            op.y = y
+        elif isinstance(op, WaitOperation):
+            try:
+                duration = float(content)
+                op.wait = duration
+            except ValueError:
+                return
+            op.x = None
+            op.y = None
+        else:
+            return
+        self.context.signal("plan", self.plan_name, 1)
 
     def on_listbox_operation_select(self, event):
         flag = False
@@ -496,7 +493,6 @@ class CutcodePanel(wx.Panel):
 
     def set_cutcode_entry(self, cutcode, plan_name):
         def name_str(e):
-            res = ""
             if isinstance(e, RasterCut):
                 res = f"Raster: {e.width} x {e.height}"
             elif isinstance(e, CubicCut):
@@ -804,7 +800,7 @@ class SimulationPanel(wx.Panel, Job):
         self.widget_scene = self.view_pane.scene
 
         # poor mans slide out
-        self.btn_slide_options = wx.Button(self, wx.ID_ANY, "<")
+        self.btn_slide_options = wxButton(self, wx.ID_ANY, "<")
         self.btn_slide_options.Bind(wx.EVT_BUTTON, self.slide_out)
         self.btn_slide_options.SetToolTip(
             _("Show/Hide optimization options for this job.")
@@ -835,10 +831,10 @@ class SimulationPanel(wx.Panel, Job):
         self.panel_optimize.AddPage(self.subpanel_optimize, _("Optimizations"))
         self.panel_optimize.AddPage(self.subpanel_operations, _("Operations"))
         self.panel_optimize.AddPage(self.subpanel_cutcode, _("Cutcode"))
-        self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
+        self.checkbox_optimize = wxCheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
         self.checkbox_optimize.SetValue(self.context.planner.do_optimization)
-        self.btn_redo_it = wx.Button(self, wx.ID_ANY, _("Recalculate"))
+        self.btn_redo_it = wxButton(self, wx.ID_ANY, _("Recalculate"))
         self.btn_redo_it.Bind(wx.EVT_BUTTON, self.on_redo_it)
         self.btn_redo_it.SetToolTip(_("Apply the settings and recalculate the cutplan"))
 
@@ -878,7 +874,7 @@ class SimulationPanel(wx.Panel, Job):
         self.text_time_total_step = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.button_play = wx.Button(self, wx.ID_ANY, "")
+        self.button_play = wxButton(self, wx.ID_ANY, "")
         self.button_play.SetToolTip(_("Start the simulation replay"))
         self.slider_playbackspeed = wx.Slider(self, wx.ID_ANY, 180, 0, 310)
         self.slider_playbackspeed.SetToolTip(_("Set the speed for the simulation"))
@@ -900,7 +896,7 @@ class SimulationPanel(wx.Panel, Job):
             _("Timed Playback-Mode: play will jump from one minute to next")
         )
 
-        self.button_spool = wx.Button(self, wx.ID_ANY, _("Send to Laser"))
+        self.button_spool = wxButton(self, wx.ID_ANY, _("Send to Laser"))
         self.button_spool.SetToolTip(_("Send the current cutplan to the laser."))
         self._slided_in = None
 
@@ -971,8 +967,25 @@ class SimulationPanel(wx.Panel, Job):
         self.on_radio_playback_mode(None)
         # Allow Scene update from now on (are suppressed by default during startup phase)
         self.widget_scene.suppress_changes = False
-
         self.running = False
+
+    def _startup(self):
+        self.slided_in = True
+        self.fit_scene_to_panel()
+
+    def startup_panel(self):
+        # Under Linux the SimulationPanel starts with the wrong zoom factor,
+        # as the panel size has not been established during init, 
+        # so we do a delayed startup.
+        # No platform check, as this isn't hurting generally
+        _signal_job = Job(
+            process=self._startup,
+            job_name="simulation-helper",
+            interval=0.5,
+            times=1,
+            run_main=True,
+        )
+        self.context.schedule(_signal_job)        
 
     def __set_properties(self):
         self.text_distance_laser.SetToolTip(_("Distance Estimate: while Lasering"))
@@ -1226,8 +1239,11 @@ class SimulationPanel(wx.Panel, Job):
 
     def fit_scene_to_panel(self):
         bbox = self.context.device.view.source_bbox()
+        winsize = self.view_pane.Size
+        if winsize[0] == 0:
+            return
         self.widget_scene.widget_root.focus_viewport_scene(
-            bbox, self.view_pane.Size, 0.1
+            bbox, winsize, 0.1
         )
         self.widget_scene.request_refresh()
 
@@ -1442,6 +1458,20 @@ class SimulationPanel(wx.Panel, Job):
         self._set_slider_dimensions()
         self.sim_travel.initvars()
         self.update_fields()
+        bb = self.cutplan._previous_bounds
+        if bb is None or math.isinf(bb[0]):
+            self.parent.SetTitle(_("Simulation"))
+        else:
+            wd = bb[2] - bb[0]
+            ht = bb[3] - bb[1]
+            sdimx = Length(
+                wd, preferred_units=self.context.units_name, digits=2
+            ).preferred_length
+            sdimy = Length(
+                ht, preferred_units=self.context.units_name, digits=2
+            ).preferred_length
+            self.parent.SetTitle(_("Simulation") + f" ({sdimx}x{sdimy})")
+        self.startup_panel()
         self.request_refresh()
 
     @signal_listener("plan")
@@ -1538,7 +1568,6 @@ class SimulationPanel(wx.Panel, Job):
             self.text_time_extra_step.SetValue(
                 f"{int(t_hours)}:{int(t_mins):02d}:{int(t_seconds):02d}"
             )
-            time_total = time_travel + time_cuts + extra
             if self._playback_cuts:
                 time_total = time_travel + time_cuts + extra
             else:
@@ -1661,6 +1690,7 @@ class SimulationPanel(wx.Panel, Job):
         self.button_play.SetBitmap(
             icons8_pause.GetBitmap(resize=get_default_icon_size())
         )
+        self.button_play.SetToolTip(_("Stop the simulation replay"))
         self.context.schedule(self)
         self.running = True
 
@@ -1668,6 +1698,7 @@ class SimulationPanel(wx.Panel, Job):
         self.button_play.SetBitmap(
             icons8_circled_play.GetBitmap(resize=get_default_icon_size())
         )
+        self.button_play.SetToolTip(_("Start the simulation replay"))
         self.context.unschedule(self)
         self.running = False
 
@@ -1729,158 +1760,151 @@ class SimulationWidget(Widget):
         self.last_msg = None
 
     def process_draw(self, gc: wx.GraphicsContext):
-        if self.sim.progress >= 0:
-            residual = 0
-            idx = 0
-            if self.sim.progress < self.sim.max:
-                idx, residual = self.sim.progress_to_idx(self.sim.progress)
-                # print(f"SimWidget, idx={idx}, residual={residual:.3f}")
-                sim_cut = self.sim.cutcode[:idx]
-            else:
-                sim_cut = self.sim.cutcode
-            self.renderer.draw_cutcode(sim_cut, gc, 0, 0)
-            if residual > 0:
-                # We draw interpolated lines to acknowledge we are in the middle of a cut operation
-                starts = []
-                ends = []
-                cutstart = wx.Point2D(*self.sim.cutcode[idx].start)
-                cutend = wx.Point2D(*self.sim.cutcode[idx].end)
-                if self.sim.statistics[idx]["type"] == "RasterCut":
-                    # Rastercut object.
-                    x = 0
-                    y = 0
-                    cut = self.sim.cutcode[idx]
-                    image = cut.image
-                    gc.PushState()
-                    matrix = Matrix.scale(cut.step_x, cut.step_y)
-                    matrix.post_translate(
-                        cut.offset_x + x, cut.offset_y + y
-                    )  # Adjust image xy
-                    gc.ConcatTransform(
-                        wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix))
-                    )
-                    try:
-                        cache = cut._cache
-                        cache_id = cut._cache_id
-                    except AttributeError:
-                        cache = None
-                        cache_id = -1
-                    if cache_id != id(image):
-                        # Cached image is invalid.
-                        cache = None
-                    if cache is None:
-                        # No valid cache. Generate.
-                        cut._cache_width, cut._cache_height = image.size
-                        try:
-                            cut._cache = self.renderer.make_thumbnail(
-                                image, maximum=5000
-                            )
-                        except (MemoryError, RuntimeError):
-                            cut._cache = None
-                        cut._cache_id = id(image)
-                    # Set draw - constraint
-                    if cut.horizontal:
-                        if cut.start_minimum_y:
-                            # mode = "T2B"
-                            clip_w = cut._cache_width
-                            clip_h = int(residual * cut._cache_height)
-                            clip_x = 0
-                            clip_y = 0
-                        else:
-                            # mode = "B2T"
-                            clip_w = cut._cache_width
-                            clip_h = int(residual * cut._cache_height)
-                            clip_x = 0
-                            clip_y = cut._cache_height - clip_h
-                    else:
-                        if cut.start_minimum_x:
-                            # mode = "L2R"
-                            clip_w = int(residual * cut._cache_width)
-                            clip_h = cut._cache_height
-                            clip_x = 0
-                            clip_y = 0
-                        else:
-                            # mode = "R2L"
-                            clip_w = int(residual * cut._cache_width)
-                            clip_h = cut._cache_height
-                            clip_x = cut._cache_width - clip_w
-                            clip_y = 0
-
-                    # msg = f"Mode: {mode}, Horiz: {cut.horizontal}, from left: {cut.start_on_left}, from top: {cut.start_on_top}"
-                    # if msg != self.last_msg:
-                    #     print (msg)
-                    #     self.last_msg = msg
-                    gc.Clip(clip_x, clip_y, clip_w, clip_h)
-                    if cut._cache is not None:
-                        # Cache exists and is valid.
-                        gc.DrawBitmap(
-                            cut._cache, 0, 0, cut._cache_width, cut._cache_height
-                        )
-                        # gc.SetBrush(wx.RED_BRUSH)
-                        # gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
-                    else:
-                        # Image was too large to cache, draw a red rectangle instead.
-                        gc.SetBrush(wx.RED_BRUSH)
-                        gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
-                        gc.DrawBitmap(
-                            icons8_image.GetBitmap(),
-                            0,
-                            0,
-                            cut._cache_width,
-                            cut._cache_height,
-                        )
-                    gc.ResetClip()
-                    gc.PopState()
-
-                    # # We draw a rectangle covering the raster area
-                    # spath = str(self.sim.cutcode[idx].path)
-                    # sparse = re.compile(" ([0-9,\.]*) ")
-                    # min_x = None
-                    # max_x = None
-                    # path_width = 0
-                    # for numpair in sparse.findall(spath):
-                    #     comma_idx = numpair.find(",")
-                    #     if comma_idx >= 0:
-                    #         left_num = numpair[:comma_idx]
-                    #         right_num = numpair[comma_idx + 1 :]
-                    #         # print (f"'{numpair}' -> '{left_num}', '{right_num}'")
-                    #         try:
-                    #             c_x = float(left_num)
-                    #             c_y = float(right_num)
-                    #             if min_x is None:
-                    #                 min_x = c_x
-                    #                 max_x = c_x
-                    #             else:
-                    #                 if c_x < min_x:
-                    #                     min_x = c_x
-                    #                 if c_x > max_x:
-                    #                     max_x = c_x
-                    #                 path_width = max_x - min_x
-                    #         except ValueError:
-                    #             pass
-                    # print(f"path={self.sim.cutcode[idx].path}")
-                    # print(f"Raster: ({cutstart[0]}, {cutstart[1]}) - ({cutend[0]}, {cutend[1]})")
-                    # print(f"w={abs(cutend[0] - cutstart[0])}, w-cutop = {2*self.sim.cutcode[idx].width}, w_path={path_width}")
-                    # c_vars = vars(self.sim.cutcode[idx])
-                    # for cv in c_vars:
-                    #     print(f"{cv}={c_vars[cv]}")
-                    # rect_y = cutstart[1]
-                    # rect_x = self.sim.cutcode[idx].offset_x
-                    # rect_w = max(2 * self.sim.cutcode[idx].width, path_width)
-                    rect_h = residual * (cutend[1] - cutstart[1])
-                    # interim_pen = wx.Pen(wx.GREEN, 1, wx.PENSTYLE_SOLID)
-                    # gc.SetPen(interim_pen)
-                    # gc.DrawRectangle(rect_x, rect_y, rect_w, rect_h)
+        if self.sim.progress < 0:
+            return
+        residual = 0
+        idx = 0
+        if self.sim.progress < self.sim.max:
+            idx, residual = self.sim.progress_to_idx(self.sim.progress)
+            # print(f"SimWidget, idx={idx}, residual={residual:.3f}")
+            sim_cut = self.sim.cutcode[:idx]
+        else:
+            sim_cut = self.sim.cutcode
+        self.renderer.draw_cutcode(sim_cut, gc, 0, 0)
+        if residual <= 0:
+            return
+        # We draw interpolated lines to acknowledge we are in the middle of a cut operation
+        starts = []
+        ends = []
+        cutstart = wx.Point2D(*self.sim.cutcode[idx].start)
+        cutend = wx.Point2D(*self.sim.cutcode[idx].end)
+        if self.sim.statistics[idx]["type"] == "RasterCut":
+            # Rastercut object.
+            x = 0
+            y = 0
+            cut = self.sim.cutcode[idx]
+            image = cut.image
+            gc.PushState()
+            matrix = Matrix.scale(cut.step_x, cut.step_y)
+            matrix.post_translate(cut.offset_x + x, cut.offset_y + y)  # Adjust image xy
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+            try:
+                cache = cut._cache
+                cache_id = cut._cache_id
+            except AttributeError:
+                cache = None
+                cache_id = -1
+            if cache_id != id(image):
+                # Cached image is invalid.
+                cache = None
+            if cache is None:
+                # No valid cache. Generate.
+                cut._cache_width, cut._cache_height = image.size
+                try:
+                    cut._cache = self.renderer.make_thumbnail(image, maximum=5000)
+                except (MemoryError, RuntimeError):
+                    cut._cache = None
+                cut._cache_id = id(image)
+            # Set draw - constraint
+            if cut.horizontal:
+                if cut.start_minimum_y:
+                    # mode = "T2B"
+                    clip_w = cut._cache_width
+                    clip_h = int(residual * cut._cache_height)
+                    clip_x = 0
+                    clip_y = 0
                 else:
-                    end = wx.Point2D(
-                        cutstart[0] + residual * (cutend[0] - cutstart[0]),
-                        cutstart[1] + residual * (cutend[1] - cutstart[1]),
-                    )
-                    starts.append(cutstart)
-                    ends.append(end)
-                    interim_pen = wx.Pen(wx.GREEN, 1, wx.PENSTYLE_SOLID)
-                    gc.SetPen(interim_pen)
-                    gc.StrokeLineSegments(starts, ends)
+                    # mode = "B2T"
+                    clip_w = cut._cache_width
+                    clip_h = int(residual * cut._cache_height)
+                    clip_x = 0
+                    clip_y = cut._cache_height - clip_h
+            else:
+                if cut.start_minimum_x:
+                    # mode = "L2R"
+                    clip_w = int(residual * cut._cache_width)
+                    clip_h = cut._cache_height
+                    clip_x = 0
+                    clip_y = 0
+                else:
+                    # mode = "R2L"
+                    clip_w = int(residual * cut._cache_width)
+                    clip_h = cut._cache_height
+                    clip_x = cut._cache_width - clip_w
+                    clip_y = 0
+
+            # msg = f"Mode: {mode}, Horiz: {cut.horizontal}, from left: {cut.start_on_left}, from top: {cut.start_on_top}"
+            # if msg != self.last_msg:
+            #     print (msg)
+            #     self.last_msg = msg
+            gc.Clip(clip_x, clip_y, clip_w, clip_h)
+            if cut._cache is not None:
+                # Cache exists and is valid.
+                gc.DrawBitmap(cut._cache, 0, 0, cut._cache_width, cut._cache_height)
+                # gc.SetBrush(wx.RED_BRUSH)
+                # gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
+            else:
+                # Image was too large to cache, draw a red rectangle instead.
+                gc.SetBrush(wx.RED_BRUSH)
+                gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
+                gc.DrawBitmap(
+                    icons8_image.GetBitmap(),
+                    0,
+                    0,
+                    cut._cache_width,
+                    cut._cache_height,
+                )
+            gc.ResetClip()
+            gc.PopState()
+            return
+            # # We draw a rectangle covering the raster area
+            # spath = str(self.sim.cutcode[idx].path)
+            # sparse = re.compile(" ([0-9,\.]*) ")
+            # min_x = None
+            # max_x = None
+            # path_width = 0
+            # for numpair in sparse.findall(spath):
+            #     comma_idx = numpair.find(",")
+            #     if comma_idx >= 0:
+            #         left_num = numpair[:comma_idx]
+            #         right_num = numpair[comma_idx + 1 :]
+            #         # print (f"'{numpair}' -> '{left_num}', '{right_num}'")
+            #         try:
+            #             c_x = float(left_num)
+            #             c_y = float(right_num)
+            #             if min_x is None:
+            #                 min_x = c_x
+            #                 max_x = c_x
+            #             else:
+            #                 if c_x < min_x:
+            #                     min_x = c_x
+            #                 if c_x > max_x:
+            #                     max_x = c_x
+            #                 path_width = max_x - min_x
+            #         except ValueError:
+            #             pass
+            # print(f"path={self.sim.cutcode[idx].path}")
+            # print(f"Raster: ({cutstart[0]}, {cutstart[1]}) - ({cutend[0]}, {cutend[1]})")
+            # print(f"w={abs(cutend[0] - cutstart[0])}, w-cutop = {2*self.sim.cutcode[idx].width}, w_path={path_width}")
+            # c_vars = vars(self.sim.cutcode[idx])
+            # for cv in c_vars:
+            #     print(f"{cv}={c_vars[cv]}")
+            # rect_y = cutstart[1]
+            # rect_x = self.sim.cutcode[idx].offset_x
+            # rect_w = max(2 * self.sim.cutcode[idx].width, path_width)
+            # rect_h = residual * (cutend[1] - cutstart[1])
+            # interim_pen = wx.Pen(wx.GREEN, 1, wx.PENSTYLE_SOLID)
+            # gc.SetPen(interim_pen)
+            # gc.DrawRectangle(rect_x, rect_y, rect_w, rect_h)
+        end = wx.Point2D(
+            cutstart[0] + residual * (cutend[0] - cutstart[0]),
+            cutstart[1] + residual * (cutend[1] - cutstart[1]),
+        )
+        starts.append(cutstart)
+        ends.append(end)
+        interim_pen = wx.Pen(wx.GREEN, 1, wx.PENSTYLE_SOLID)
+        gc.SetPen(interim_pen)
+        gc.StrokeLineSegments(starts, ends)
 
 
 class SimulationTravelWidget(Widget):
@@ -1947,57 +1971,74 @@ class SimulationTravelWidget(Widget):
     def process_draw(self, gc: wx.GraphicsContext):
         if not self.display:
             return
-        if len(self.pos):
-            residual = 0
-            if self.sim.progress < self.sim.max:
-                idx, residual = self.sim.progress_to_idx(self.sim.progress)
-                pos = self.pos[idx]
-                # print(f"TravelWidget, idx={idx}, residual={residual:.3f}, pos={pos}")
-            else:
-                pos = self.pos[-1]
-            if pos >= 0:
-                starts = self.starts[:pos]
-                ends = self.ends[:pos]
-                if residual > 0 and idx > 0:
-                    p1 = self.sim.cutcode[idx - 1].end
-                    p2 = self.sim.cutcode[idx - 1].start
-                    # progress = time
-                    t1 = self.sim.statistics[idx - 1]
-                    t2 = self.sim.statistics[idx]
-                    end_time = t1["time_at_end_of_travel"]
-                    # Time after travel.
-                    new_time = t2["time_at_end_of_travel"]
-                    if (
-                        t1["total_time_travel"] != t2["total_time_travel"]
-                    ):  # Travel time
-                        fact = (min(self.sim.progress, new_time) - end_time) / (
-                            new_time - end_time
-                        )
-                        newstart = wx.Point2D(p1[0], p1[1])
-                        newend = wx.Point2D(
-                            p1[0] + fact * (p2[0] - p1[0]),
-                            p1[1] + fact * (p2[1] - p1[1]),
-                        )
-                        mystarts = list()
-                        myends = list()
-                        mystarts.append(newstart)
-                        myends.append(newend)
-                        interim_pen = wx.Pen(wx.GREEN, 1, wx.PENSTYLE_DOT)
-                        gc.SetPen(interim_pen)
-                        gc.StrokeLineSegments(mystarts, myends)
-                gc.SetPen(wx.BLACK_DASHED_PEN)
-                gc.StrokeLineSegments(starts, ends)
-                # for idx, pt_start in enumerate(starts):
-                #     pt_end = ends[idx]
-                #     print (f"#{idx}: ({pt_start[0]:.0f}, {pt_start[1]:.0f}) - ({pt_end[0]:.0f}, {pt_end[1]:.0f})")
-                # starts = list()
-                # ends = list()
-                # starts.append(wx.Point2D(0, 0))
-                # ends.append(wx.Point2D(10000, 10000))
-                # starts.append(wx.Point2D(0, 10000))
-                # ends.append(wx.Point2D(10000, 0))
-                # gc.SetPen(wx.CYAN_PEN)
-                # gc.StrokeLineSegments(starts, ends)
+        if not len(self.pos):
+            return
+        residual = 0
+        idx = 0
+        if self.sim.progress < self.sim.max:
+            idx, residual = self.sim.progress_to_idx(self.sim.progress)
+            pos = self.pos[idx]
+            # print(f"TravelWidget, idx={idx}, residual={residual:.3f}, pos={pos}")
+        else:
+            pos = self.pos[-1]
+        if pos < 0:
+            return
+        gcmat = gc.GetTransform()
+        mat_param = gcmat.Get()
+        gcscale = max(mat_param[0], mat_param[3])
+        if gcscale == 0:
+            gcscale = 0.01
+        linewidth = 1 / gcscale
+
+        starts = self.starts[:pos]
+        ends = self.ends[:pos]
+        if residual > 0 and idx > 0:
+            p1 = self.sim.cutcode[idx - 1].end
+            p2 = self.sim.cutcode[idx - 1].start
+            # progress = time
+            t1 = self.sim.statistics[idx - 1]
+            t2 = self.sim.statistics[idx]
+            end_time = t1["time_at_end_of_travel"]
+            # Time after travel.
+            new_time = t2["time_at_end_of_travel"]
+            if t1["total_time_travel"] != t2["total_time_travel"]:  # Travel time
+                fact = (min(self.sim.progress, new_time) - end_time) / (
+                    new_time - end_time
+                )
+                newstart = wx.Point2D(p1[0], p1[1])
+                newend = wx.Point2D(
+                    p1[0] + fact * (p2[0] - p1[0]),
+                    p1[1] + fact * (p2[1] - p1[1]),
+                )
+                mystarts = list()
+                myends = list()
+                mystarts.append(newstart)
+                myends.append(newend)
+                interim_pen = wx.Pen(wx.GREEN, 1, wx.PENSTYLE_DOT)
+                try:
+                    interim_pen.SetWidth(linewidth)
+                except TypeError:
+                    interim_pen.SetWidth(int(linewidth))
+                gc.SetPen(interim_pen)
+                gc.StrokeLineSegments(mystarts, myends)
+        mypen = wx.Pen(wx.BLACK, 1, wx.PENSTYLE_LONG_DASH)
+        try:
+            mypen.SetWidth(linewidth)
+        except TypeError:
+            mypen.SetWidth(int(linewidth))
+        gc.SetPen(mypen)
+        gc.StrokeLineSegments(starts, ends)
+        # for idx, pt_start in enumerate(starts):
+        #     pt_end = ends[idx]
+        #     print (f"#{idx}: ({pt_start[0]:.0f}, {pt_start[1]:.0f}) - ({pt_end[0]:.0f}, {pt_end[1]:.0f})")
+        # starts = list()
+        # ends = list()
+        # starts.append(wx.Point2D(0, 0))
+        # ends.append(wx.Point2D(10000, 10000))
+        # starts.append(wx.Point2D(0, 10000))
+        # ends.append(wx.Point2D(10000, 0))
+        # gc.SetPen(wx.CYAN_PEN)
+        # gc.StrokeLineSegments(starts, ends)
 
 
 class SimReticleWidget(Widget):

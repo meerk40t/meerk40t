@@ -156,11 +156,11 @@ def scanline_fill(settings, outlines, matrix, limit=None):
 
     def as_polylines():
         pos = 0
-        for i in range(len(outlines)):
-            p = outlines[i]
+        for idx in range(len(outlines)):
+            p = outlines[idx]
             if p is None:
-                yield outlines[pos:i]
-                pos = i + 1
+                yield outlines[pos:idx]
+                pos = idx + 1
                 continue
         if pos != len(outlines):
             yield outlines[pos:]
@@ -214,8 +214,11 @@ def circle(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
         return
+    rad = wobble.radius
+    if rad == 0:
+        rad = 1
     for tx, ty in wobble.wobble(x0, y0, x1, y1):
-        t = wobble._total_distance / (math.tau * wobble.radius)
+        t = wobble._total_distance / (math.tau * rad)
         dx = wobble.radius * math.cos(t * wobble.speed)
         dy = wobble.radius * math.sin(t * wobble.speed)
         yield tx + dx, ty + dy
@@ -225,11 +228,14 @@ def circle_right(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
         return
+    rad = wobble.radius
+    if rad == 0:
+        rad = 1
     for tx, ty in wobble.wobble(x0, y0, x1, y1):
         angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
         dx = wobble.radius * math.cos(angle)
         dy = wobble.radius * math.sin(angle)
-        t = wobble._total_distance / (math.tau * wobble.radius)
+        t = wobble._total_distance / (math.tau * rad)
         dx += wobble.radius * math.cos(t * wobble.speed)
         dy += wobble.radius * math.sin(t * wobble.speed)
         yield tx + dx, ty + dy
@@ -239,11 +245,14 @@ def circle_left(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
         return
+    rad = wobble.radius
+    if rad == 0:
+        rad = 1
     for tx, ty in wobble.wobble(x0, y0, x1, y1):
         angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
         dx = -wobble.radius * math.cos(angle)
         dy = -wobble.radius * math.sin(angle)
-        t = wobble._total_distance / (math.tau * wobble.radius)
+        t = wobble._total_distance / (math.tau * rad)
         dx += wobble.radius * math.cos(t * wobble.speed)
         dy += wobble.radius * math.sin(t * wobble.speed)
         yield tx + dx, ty + dy
@@ -253,9 +262,12 @@ def sinewave(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
         return
+    spd = wobble.speed
+    if spd == 0:
+        spd = 1
     for tx, ty in wobble.wobble(x0, y0, x1, y1):
         angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
-        d = math.sin(wobble._total_distance / wobble.speed)
+        d = math.sin(wobble._total_distance / spd)
         dx = wobble.radius * d * math.cos(angle)
         dy = wobble.radius * d * math.sin(angle)
         yield tx + dx, ty + dy
@@ -277,10 +289,13 @@ def jigsaw(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
         return
+    spd = wobble.speed
+    if spd == 0:
+        spd = 1
     for tx, ty in wobble.wobble(x0, y0, x1, y1):
         angle = math.atan2(y1 - y0, x1 - x0)
         angle_perp = angle + math.tau / 4.0
-        d = math.sin(wobble._total_distance / wobble.speed)
+        d = math.sin(wobble._total_distance / spd)
         dx = wobble.radius * d * math.cos(angle_perp)
         dy = wobble.radius * d * math.sin(angle_perp)
 
@@ -306,17 +321,237 @@ def slowtooth(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
         return
+    spd = wobble.speed
+    if spd == 0:
+        spd = 1
     for tx, ty in wobble.wobble(x0, y0, x1, y1):
         angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
         if wobble.previous_angle is None:
             wobble.previous_angle = angle
-        amount = 1.0 / wobble.speed
+        amount = 1.0 / spd
         angle = amount * (angle - wobble.previous_angle) + wobble.previous_angle
         d = -1 if wobble._total_count % 2 else 1
         dx = wobble.radius * d * math.cos(angle)
         dy = wobble.radius * d * math.sin(angle)
         wobble.previous_angle = angle
         yield tx + dx, ty + dy
+
+
+def _meander(wobble, pattern, max_x, max_y, x0, y0, x1, y1):
+    if x1 is None or y1 is None:
+        yield x0, y0
+        return
+
+    factors = {
+        "l": (-1, 0),
+        "r": (1, 0),
+        "u": (0, -1),
+        "d": (0, 1),
+    }
+
+    if int(wobble.speed) % 10 == 1:
+        # position_x = "left"
+        offset_x = 0 * max_x
+    elif int(wobble.speed) % 10 == 2:
+        # position_x = "right"
+        offset_x = -1 * max_x
+    else:
+        # position_x = "center"
+        offset_x = -0.5 * max_x
+
+    if wobble.speed // 10 == 1:
+        # position_y = "top"
+        offset_y = 0 * max_y
+    elif wobble.speed // 10 == 2:
+        # position_y = "bottom"
+        offset_y = 1 * max_y
+    else:
+        # position_y = "center"
+        offset_y = 0.5 * max_y
+
+    step = wobble.radius / max_x
+
+    offset_x *= step
+    offset_y *= step
+
+    angle = 0
+    mat = Matrix()
+    if x1 is not None:
+        a_x = x1 - x0
+        a_y = y1 - y0
+        angle = math.atan2(a_y, a_x)
+        mat.post_rotate(angle)
+    for tx, ty in wobble.wobble(x0, y0, x1, y1):
+        dx = 0
+        dy = 0
+        pt = mat.point_in_matrix_space((dx + offset_x, dy + offset_y))
+        yield tx + pt.x, ty + pt.y
+        for p in pattern:
+            sx, sy = factors[p[0]]
+            stepsize = step * p[1]
+            dx += sx * stepsize
+            dy += sy * stepsize
+            pt = mat.point_in_matrix_space((dx + offset_x, dy + offset_y))
+            yield tx + pt.x, ty + pt.y
+
+
+def meander_1(wobble, x0, y0, x1, y1):
+    pattern = (
+        (
+            "r",
+            6,
+        ),
+        (
+            "u",
+            5,
+        ),
+        (
+            "l",
+            4,
+        ),
+        (
+            "d",
+            3,
+        ),
+        (
+            "r",
+            2,
+        ),
+        (
+            "u",
+            1,
+        ),
+        # transition
+        ("l", 1),
+        # reverse of upper part
+        (
+            "u",
+            1,
+        ),
+        (
+            "r",
+            2,
+        ),
+        (
+            "d",
+            3,
+        ),
+        (
+            "l",
+            4,
+        ),
+        (
+            "u",
+            5,
+        ),
+        (
+            "r",
+            6,
+        ),
+        # transition
+        ("d", 6),
+    )
+    max_x = 0
+    for p in pattern:
+        max_x = max(max_x, p[1])
+    max_y = max_x
+    max_x += 1
+    yield from _meander(wobble, pattern, max_x, max_y, x0, y0, x1, y1)
+
+
+def meander_2(wobble, x0, y0, x1, y1):
+    pattern = (
+        ("u", 3),
+        ("r", 3),
+        ("d", 2),
+        ("l", 1),
+        ("u", 1),
+        ("l", 1),
+        ("d", 2),
+        ("r", 5),
+        ("u", 2),
+        ("l", 1),
+        ("d", 1),
+        ("l", 1),
+        ("u", 2),
+        ("r", 3),
+        ("d", 3),
+    )
+    max_x = 8
+    max_y = 3
+
+    yield from _meander(wobble, pattern, max_x, max_y, x0, y0, x1, y1)
+
+
+def meander_3(wobble, x0, y0, x1, y1):
+    pattern = (
+        (
+            "u",
+            4,
+        ),
+        (
+            "r",
+            3,
+        ),
+        (
+            "d",
+            3,
+        ),
+        (
+            "l",
+            2,
+        ),
+        (
+            "u",
+            2,
+        ),
+        (
+            "r",
+            1,
+        ),
+        (
+            "d",
+            1,
+        ),
+        # and now backwards...
+        # reverse of upper part
+        (
+            "u",
+            1,
+        ),
+        (
+            "l",
+            1,
+        ),
+        (
+            "d",
+            2,
+        ),
+        (
+            "r",
+            2,
+        ),
+        (
+            "u",
+            3,
+        ),
+        (
+            "l",
+            3,
+        ),
+        (
+            "d",
+            4,
+        ),
+        # transition
+        ("r", 4),
+    )
+    max_x = 0
+    for p in pattern:
+        max_x = max(max_x, p[1])
+    max_y = max_x
+    max_x += 1
+    yield from _meander(wobble, pattern, max_x, max_y, x0, y0, x1, y1)
 
 
 def plugin(kernel, lifecycle):
@@ -333,3 +568,6 @@ def plugin(kernel, lifecycle):
         context.register("wobble/jigsaw", jigsaw)
         context.register("wobble/gear", gear)
         context.register("wobble/slowtooth", slowtooth)
+        context.register("wobble/meander_1", meander_1)
+        context.register("wobble/meander_2", meander_2)
+        context.register("wobble/meander_3", meander_3)

@@ -241,7 +241,7 @@ class NewlyController:
         """
         Move mode is done for any major movements usually starting out an execution.
 
-        eg.
+        e.g.
         VP100;VK100;SP2;SP2;VQ15;VJ24;VS10;DA0;
         @return:
         """
@@ -265,7 +265,7 @@ class NewlyController:
         Goto mode is done for minor between movements, where we don't need to set the power to 0, since we will be
         using PU; commands.
 
-        eg.
+        e.g.
         SP2;SP2;VQ15;VJ24;VS10;PR;PU2083,-5494;
 
         @return:
@@ -278,7 +278,7 @@ class NewlyController:
     def _set_frame_mode(self):
         """
         Frame mode is the standard framing operation settings.
-        eg.
+        e.g.
         SP0;VS20;PR;PD9891,0;PD0,-19704;PD-9891,0;PD0,19704;ZED;
 
         @return:
@@ -298,7 +298,7 @@ class NewlyController:
         """
         Vector mode typically is just the PD commands for a vector.
 
-        eg.
+        e.g.
         PR;SP1;DA65;VS187;PD0,-2534;PD1099,0;PD0,2534;PD-1099,0;
         @return:
         """
@@ -346,7 +346,7 @@ class NewlyController:
             for pt in outline:
                 self.frame(*pt)
             self.frame(*outline[0])
-            self.goto(x, y)  # Return to initial x, y if different than outline.
+            self.goto(x, y)  # Return to initial x, y if different from outline.
             self._clear_settings()
             self("ZED")
 

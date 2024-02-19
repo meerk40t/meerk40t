@@ -17614,8 +17614,8 @@ msgid "Do you want to get extended information about a feature in MeerK40t?\nJus
 msgstr "¿Quieres obtener información detallada sobre una función en MeerK40t?\nSimplemente coloca el ratón sobre una ventana o un elemento de la interfaz de usuario y presiona F11."
 
 #: ./meerk40t\gui\tips.py:330
-msgid "MeerK40t supports more than 'just' a K40 laser.\nYou can add more devices in the Device-Manager.\nAnd you can even add multiple instances for the same physical device,\nwhere you can have different configuration settings (eg regular and rotary)."
-msgstr "MeerK40t admite más que solo una cortadora láser K40.\nPuedes agregar más dispositivos en el Administrador de dispositivos.\nIncluso puedes agregar múltiples instancias para el mismo dispositivo físico,\ndonde puedes tener diferentes configuraciones (por ejemplo, regulares y rotativas)."
+msgid "MeerK40t supports more than 'just' a K40 laser.\nYou can add more devices in the Device-Manager.\nAnd you can even add multiple instances for the same physical device, where you can have different configuration settings (eg regular and rotary)."
+msgstr "MeerK40t admite más que solo una cortadora láser K40.\nPuedes agregar más dispositivos en el Administrador de dispositivos.\nIncluso puedes agregar múltiples instancias para el mismo dispositivo físico, donde puedes tener diferentes configuraciones (por ejemplo, regulares y rotativas)."
 
 #: ./meerk40t\gui\tips.py:340
 msgid "There are a couple of YouTube-videos that deal with some specific functionalities and explain their usage:\nhttps://www.youtube.com/channel/UCsAUV23O2FyKxC0HN7nkAQQ"

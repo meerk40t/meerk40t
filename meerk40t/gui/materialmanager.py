@@ -26,7 +26,14 @@ from .icons import (
     icons8_laserbeam_weak,
 )
 from .mwindow import MWindow
-from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size, get_key_name
+from .wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+)
 
 _ = wx.GetTranslation
 
@@ -39,18 +46,18 @@ class ImportDialog(wx.Dialog):
         wx.Dialog.__init__(self, *args, **kwds)
         self.context = context
         self.txt_filename = wx.TextCtrl(self, wx.ID_ANY)
-        self.btn_file = wx.Button(self, wx.ID_ANY, "...")
-        self.check_consolidate = wx.CheckBox(
+        self.btn_file = wxButton(self, wx.ID_ANY, "...")
+        self.check_consolidate = wxCheckBox(
             self, wx.ID_ANY, _("Consolidate same thickness for material")
         )
-        self.check_lens = wx.CheckBox(self, wx.ID_ANY, _("Compensate Lens-Sizes"))
+        self.check_lens = wxCheckBox(self, wx.ID_ANY, _("Compensate Lens-Sizes"))
         self.txt_lens_old = wx.TextCtrl(self, wx.ID_ANY)
         self.txt_lens_new = wx.TextCtrl(self, wx.ID_ANY)
-        self.check_wattage = wx.CheckBox(self, wx.ID_ANY, _("Compensate Power-Levels"))
+        self.check_wattage = wxCheckBox(self, wx.ID_ANY, _("Compensate Power-Levels"))
         self.txt_wattage_old = wx.TextCtrl(self, wx.ID_ANY)
         self.txt_wattage_new = wx.TextCtrl(self, wx.ID_ANY)
-        self.btn_ok = wx.Button(self, wx.ID_OK, _("OK"))
-        self.btn_cancel = wx.Button(self, wx.ID_CANCEL, _("Cancel"))
+        self.btn_ok = wxButton(self, wx.ID_OK, _("OK"))
+        self.btn_cancel = wxButton(self, wx.ID_CANCEL, _("Cancel"))
 
         self._define_layout()
         self.validate(None)
@@ -345,7 +352,7 @@ class MaterialPanel(ScrolledPanel):
 
         filter_box.Add(self.combo_lasertype, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.btn_reset = wx.Button(self, wx.ID_ANY, _("Reset Filter"))
+        self.btn_reset = wxButton(self, wx.ID_ANY, _("Reset Filter"))
         filter_box.Add(self.btn_reset, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         main_sizer.Add(filter_box, 0, wx.EXPAND, 0)
         result_box = StaticBoxSizer(
@@ -429,7 +436,7 @@ class MaterialPanel(ScrolledPanel):
         self.txt_entry_title = wx.TextCtrl(self, wx.ID_ANY, "")
         box1.Add(self.txt_entry_title, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.btn_set = wx.Button(self, wx.ID_ANY, _("Set"))
+        self.btn_set = wxButton(self, wx.ID_ANY, _("Set"))
         self.btn_set.SetToolTip(
             _(
                 "Change the name / lasertype of the current entry\nRight-Click: assign lasertype to all visible entries"
@@ -437,7 +444,7 @@ class MaterialPanel(ScrolledPanel):
         )
 
         box1.Add(self.btn_set, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.btn_expand = wx.Button(
+        self.btn_expand = wxButton(
             self,
             wx.ID_ANY,
         )
@@ -538,27 +545,27 @@ class MaterialPanel(ScrolledPanel):
 
         button_box = wx.BoxSizer(wx.VERTICAL)
 
-        self.btn_new = wx.Button(self, wx.ID_ANY, _("Add new"))
+        self.btn_new = wxButton(self, wx.ID_ANY, _("Add new"))
         self.btn_new.SetToolTip(_("Add a new library entry"))
-        self.btn_use_current = wx.Button(self, wx.ID_ANY, _("Get current"))
+        self.btn_use_current = wxButton(self, wx.ID_ANY, _("Get current"))
         self.btn_use_current.SetToolTip(_("Use the currently defined operations"))
-        self.btn_apply = wx.Button(self, wx.ID_ANY, _("Load into Tree"))
+        self.btn_apply = wxButton(self, wx.ID_ANY, _("Load into Tree"))
         self.btn_apply.SetToolTip(
             _("Apply the current library entry to the operations branch")
         )
-        self.btn_simple_apply = wx.Button(self, wx.ID_ANY, _("Use for statusbar"))
+        self.btn_simple_apply = wxButton(self, wx.ID_ANY, _("Use for statusbar"))
         self.btn_simple_apply.SetToolTip(
             _("Use the current library entry for the statusbar icons")
         )
-        self.btn_delete = wx.Button(self, wx.ID_ANY, _("Delete"))
+        self.btn_delete = wxButton(self, wx.ID_ANY, _("Delete"))
         self.btn_delete.SetToolTip(_("Delete the current library entry"))
-        self.btn_duplicate = wx.Button(self, wx.ID_ANY, _("Duplicate"))
+        self.btn_duplicate = wxButton(self, wx.ID_ANY, _("Duplicate"))
         self.btn_duplicate.SetToolTip(_("Duplicate the current library entry"))
-        self.btn_import = wx.Button(self, wx.ID_ANY, _("Import"))
+        self.btn_import = wxButton(self, wx.ID_ANY, _("Import"))
         self.btn_import.SetToolTip(
             _("Import a material library from ezcad or LightBurn")
         )
-        self.btn_share = wx.Button(self, wx.ID_ANY, _("Share"))
+        self.btn_share = wxButton(self, wx.ID_ANY, _("Share"))
         self.btn_share.SetToolTip(
             _("Share the current library entry with the MeerK40t community")
         )
@@ -1565,8 +1572,6 @@ class MaterialPanel(ScrolledPanel):
         self.context.signal("rebuild_tree")
 
     def on_new(self, event):
-        section = None
-        op_info = None
         entry_txt = self.txt_material.GetValue()
         if entry_txt == "":
             entry_txt = "material"
@@ -1578,9 +1583,9 @@ class MaterialPanel(ScrolledPanel):
                 if pattern not in self.material_list:
                     break
             entry_txt = pattern
-        entry_type = self.combo_entry_type.GetSelection()
-        if entry_type < 0:
-            entry_type = 0
+        # entry_type = self.combo_entry_type.GetSelection()
+        # if entry_type < 0:
+        #     entry_type = 0
         # We need to create a new one...
         op_info = dict()
         op_info["material"] = "New material"
@@ -1644,9 +1649,9 @@ class MaterialPanel(ScrolledPanel):
                     if pattern not in self.material_list:
                         break
                 entry_txt = pattern
-            entry_type = self.combo_entry_type.GetSelection()
-            if entry_type < 0:
-                entry_type = 0
+            # entry_type = self.combo_entry_type.GetSelection()
+            # if entry_type < 0:
+            #     entry_type = 0
             # We need to create a new one...
             op_info = dict()
             op_info["material"] = "New material"
@@ -2069,18 +2074,18 @@ class MaterialPanel(ScrolledPanel):
                 # print (f"Remove {sect}")
                 nkey = newkey()
                 for info in settings.keylist(sect):
-                    secdesc = settings.read_persistent(
-                        str, sect, info, ""
-                    )
+                    secdesc = settings.read_persistent(str, sect, info, "")
                     if info == "id":
                         continue
-                    elif info == "label":
+                    if info == "label":
                         idx = 0
-                        if secdesc.endswith(")") and secdesc[-2] in (str(i) for i in range(0,10)):
+                        if secdesc.endswith(")") and secdesc[-2] in (
+                            str(i) for i in range(0, 10)
+                        ):
                             i = secdesc.rfind("(")
                             if i >= 0:
                                 try:
-                                    s = secdesc[i+1:]
+                                    s = secdesc[i + 1 :]
                                     t = secdesc[:i]
                                     idx = int(s[:-1])
                                     secdesc = t
@@ -2216,7 +2221,6 @@ class MaterialPanel(ScrolledPanel):
                     pattern = op.type
                     if pattern.startswith("op "):
                         pattern = pattern[3].upper() + pattern[4:]
-                    info = False
                     s1 = ""
                     s2 = ""
                     if hasattr(op, "power"):
@@ -2233,17 +2237,17 @@ class MaterialPanel(ScrolledPanel):
                     changes = True
                 replace_id = True
                 if not hasattr(op, "id"):
-                    oldid = "unknown"
+                    # oldid = "unknown"
                     replace_id = False
                 else:
-                    oldid = op.id
+                    # oldid = op.id
                     if op.id and not (
                         replace_mk_pattern and op.id.startswith(mkpattern)
                     ):
                         replace_id = False
                 # print (oldid, replace_id)
                 if replace_id:
-                    oldid = op.id
+                    # oldid = op.id
                     changes = True
                     if op.type.startswith("op "):
                         pattern = op.type[3].upper()
@@ -2272,7 +2276,7 @@ class MaterialPanel(ScrolledPanel):
             "speed": "140",
             "power": "1000",
             "label": "Raster",
-            "color": "#000000"
+            "color": "#000000",
         }
         if self.is_balor:
             op_dict["frequency"] = "35"
@@ -2283,7 +2287,7 @@ class MaterialPanel(ScrolledPanel):
             "speed": "50",
             "power": "1000",
             "label": "Engrave",
-            "color": "#0000FF"
+            "color": "#0000FF",
         }
         if self.is_balor:
             op_dict["frequency"] = "35"
@@ -2294,7 +2298,7 @@ class MaterialPanel(ScrolledPanel):
             "speed": "5",
             "power": "1000",
             "label": "Cut",
-            "color": "#FF0000"
+            "color": "#FF0000",
         }
         if self.is_balor:
             op_dict["frequency"] = "35"
@@ -2325,7 +2329,9 @@ class MaterialPanel(ScrolledPanel):
         if self.list_preview.GetItemCount() > 0:
             menu.AppendSeparator()
 
-            item = menu.Append(wx.ID_ANY, _("Fill missing ids/label"), "", wx.ITEM_NORMAL)
+            item = menu.Append(
+                wx.ID_ANY, _("Fill missing ids/label"), "", wx.ITEM_NORMAL
+            )
             self.Bind(wx.EVT_MENU, on_menu_popup_missing, item)
 
         self.PopupMenu(menu)
@@ -2431,7 +2437,7 @@ class MaterialPanel(ScrolledPanel):
 
 class ImportPanel(wx.Panel):
     """
-    Displays a how to summary
+    Displays a how-to summary
     """
 
     def __init__(self, *args, context=None, **kwds):
@@ -2446,7 +2452,7 @@ class ImportPanel(wx.Panel):
 
 class AboutPanel(wx.Panel):
     """
-    Displays a how to summary
+    Displays a how-to summary
     """
 
     def __init__(self, *args, context=None, **kwds):

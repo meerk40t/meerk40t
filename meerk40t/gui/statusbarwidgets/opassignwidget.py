@@ -2,7 +2,6 @@ import wx
 
 from meerk40t.core.elements.element_types import op_nodes
 from meerk40t.gui.icons import (
-    icon_effect_hatch,
     icon_points,
     icons8_direction,
     icons8_image,
@@ -10,6 +9,7 @@ from meerk40t.gui.icons import (
     icons8_laserbeam_weak,
 )
 from meerk40t.gui.laserrender import swizzlecolor
+from meerk40t.gui.wxutils import wxCheckBox
 from meerk40t.svgelements import Color
 
 from .statusbarwidget import StatusBarWidget
@@ -39,8 +39,8 @@ class OperationAssignOptionWidget(StatusBarWidget):
             value=choices[0],
             style=wx.CB_READONLY | wx.CB_DROPDOWN,
         )
-        self.check_all_similar = wx.CheckBox(self.parent, wx.ID_ANY, _("Similar"))
-        self.check_exclusive = wx.CheckBox(self.parent, wx.ID_ANY, _("Exclusive"))
+        self.check_all_similar = wxCheckBox(self.parent, wx.ID_ANY, _("Similar"))
+        self.check_exclusive = wxCheckBox(self.parent, wx.ID_ANY, _("Exclusive"))
         self.combo_apply_color.SetToolTip(
             _(
                 "Leave - neither the color of the operation nor of the elements will be changed"

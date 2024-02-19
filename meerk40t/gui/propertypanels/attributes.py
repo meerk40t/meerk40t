@@ -5,7 +5,14 @@ import wx
 import meerk40t.gui.icons as mkicons
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import CheckBox, StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxToggleButton,
+)
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -56,7 +63,7 @@ class ColorPanel(wx.Panel):
             self.underliner[i].SetBackgroundColour(wx.BLUE)
             self.underliner[i].SetMaxSize(dip_size(self, -1, 3))
             # self.lbl_color[i].SetMinSize(dip_size(self, -1, 20))
-            self.btn_color.append(wx.Button(self, wx.ID_ANY, ""))
+            self.btn_color.append(wxButton(self, wx.ID_ANY, ""))
             if i == 0:
                 self.btn_color[i].SetForegroundColour(wx.RED)
                 self.btn_color[i].SetLabel("X")
@@ -191,7 +198,6 @@ class ColorPanel(wx.Panel):
                 self.btn_color[self.last_col_idx].SetForegroundColour(
                     countercolor(self.bgcolors[self.last_col_idx])
                 )
-                s = ""
                 try:
                     s = nodecol.GetAsString(wx.C2S_NAME)
                 except AssertionError:
@@ -413,9 +419,9 @@ class LinePropPanel(wx.Panel):
     def on_cap(self, event):
         if self.node is None or self.node.lock:
             return
-        id = self.combo_cap.GetSelection()
+        _id = self.combo_cap.GetSelection()
         try:
-            self.node.linecap = id
+            self.node.linecap = _id
             self.context.signal("element_property_update", self.node)
             self.context.signal("refresh_scene", "Scene")
         except AttributeError:
@@ -424,9 +430,9 @@ class LinePropPanel(wx.Panel):
     def on_join(self, event):
         if self.node is None or self.node.lock:
             return
-        id = self.combo_join.GetSelection()
+        _id = self.combo_join.GetSelection()
         try:
-            self.node.linejoin = id
+            self.node.linejoin = _id
             self.context.signal("element_property_update", self.node)
             self.context.signal("refresh_scene", "Scene")
         except AttributeError:
@@ -435,9 +441,9 @@ class LinePropPanel(wx.Panel):
     def on_fill(self, event):
         if self.node is None or self.node.lock:
             return
-        id = self.combo_fill.GetSelection()
+        _id = self.combo_fill.GetSelection()
         try:
-            self.node.fillrule = id
+            self.node.fillrule = _id
             self.context.signal("element_property_update", self.node)
             self.context.signal("refresh_scene", "Scene")
         except AttributeError:
@@ -511,7 +517,7 @@ class StrokeWidthPanel(wx.Panel):
         self.combo_units.SetSelection(0)
         self.combo_units.SetMaxSize(dip_size(self, 100, -1))
 
-        self.chk_scale = wx.CheckBox(self, wx.ID_ANY, _("Scale"))
+        self.chk_scale = wxCheckBox(self, wx.ID_ANY, _("Scale"))
         self.chk_scale.SetToolTip(
             _("Toggle the behaviour of stroke-growth.")
             + "\n"
@@ -580,12 +586,10 @@ class StrokeWidthPanel(wx.Panel):
             enable = True
             self.chk_scale.SetValue(self.node.stroke_scaled)
             # Let's establish which unit might be the best to represent the display
-            found_something = False
-            if self.node.stroke_width is None or self.node.stroke_width == 0:
-                value = 0
-                idxunit = 0  # px
-                found_something = True
-            else:
+            value = 0
+            idxunit = 0  # px
+            if self.node.stroke_width is not None and self.node.stroke_width != 0:
+                found_something = False
                 best_post = 99999999
                 delta = 0.99999999
                 best_pre = 0
@@ -684,7 +688,7 @@ class PositionSizePanel(wx.Panel):
             check="length",
             nonzero=True,
         )
-        self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
+        self.btn_lock_ratio = wxToggleButton(self, wx.ID_ANY, "")
         self.btn_lock_ratio.SetValue(True)
         self.bitmap_locked = mkicons.icons8_lock.GetBitmap(
             resize=mkicons.STD_ICON_SIZE / 2, use_theme=False
@@ -917,7 +921,7 @@ class PreventChangePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.node = node
-        self.check_lock = CheckBox(self, wx.ID_ANY, _("Lock element"))
+        self.check_lock = wxCheckBox(self, wx.ID_ANY, _("Lock element"))
         self.__set_properties()
         self.__do_layout()
         self.check_lock.Bind(wx.EVT_CHECKBOX, self.on_check_lock)
@@ -1012,7 +1016,7 @@ class RoundedRectPanel(wx.Panel):
             style=wx.SL_LABELS | wx.SL_HORIZONTAL,
         )
         self.slider_y.SetToolTip(_("Ratio of Y-Radius compared to height (in %)"))
-        self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
+        self.btn_lock_ratio = wxToggleButton(self, wx.ID_ANY, "")
         self.btn_lock_ratio.SetValue(True)
         self.btn_lock_ratio.SetMinSize(dip_size(self, 32, 32))
         self.btn_lock_ratio.SetToolTip(_("Lock the radii of X- and Y-axis"))
@@ -1091,23 +1095,33 @@ class RoundedRectPanel(wx.Panel):
         sync = self.btn_lock_ratio.GetValue()
         width = self.node.width
         height = self.node.height
-        if axis == 0:  # x
+        rx = self.node.rx
+        ry = self.node.ry
+        if axis == 0:
             rx = value / 100 * width
-            self.node.rx = rx
             if sync:
-                self.node.ry = rx
-                max_val_y = self.slider_x.GetMax()
-                int_ry = int(100.0 * rx / height)
-                self.slider_y.SetValue(min(max_val_y, int_ry))
+                ry = rx
         else:
             ry = value / 100 * height
-            self.node.ry = ry
             if sync:
-                self.node.rx = ry
-                max_val_x = self.slider_x.GetMax()
-                int_rx = int(100.0 * ry / width)
-                self.slider_x.SetValue(min(max_val_x, int_rx))
-
+                rx = ry
+        # rx and ry can either both be 0 or both non-zero
+        if (rx == 0 or ry == 0) and rx != ry:
+            # totally fine
+            if rx == 0:
+                rx = 1 / 100 * width
+            if ry == 0:
+                ry = 1 / 100 * height
+        self.node.rx = rx
+        self.node.ry = ry
+        max_val_x = self.slider_x.GetMax()
+        max_val_y = self.slider_y.GetMax()
+        int_rx = int(100.0 * rx / width)
+        int_ry = int(100.0 * ry / height)
+        if self.slider_x.GetValue() != int_rx:
+            self.slider_x.SetValue(min(max_val_x, int_rx))
+        if self.slider_y.GetValue() != int_ry:
+            self.slider_y.SetValue(min(max_val_y, int_ry))
         self.node.altered()
         self.context.elements.signal("element_property_update", self.node)
         self.context.signal("refresh_scene", "Scene")

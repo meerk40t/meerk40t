@@ -245,7 +245,11 @@ DEFAULT_KEYMAP = {
         "reset_bind_alias",
     ),
     "ctrl+alt+shift+home": ("bind default;alias default",),
-    "ctrl+shift+l": ("signal lock_helper",),
+    # That's not working, so we delete it...
+    "ctrl+shift+l": (
+        "",
+        "signal lock_helper",
+    ),
 }
 DEFAULT_ALIAS = {
     "+scale_up": (".timerscale_up 0 0.1 .scale 1.02",),
@@ -431,7 +435,7 @@ class Alias(Service):
         @self.console_command(
             "alias", help=_("alias <alias> <console commands[;console command]*>")
         )
-        def alias(command, channel, _, alias=None, remainder=None, **kwgs):
+        def alias_command(command, channel, _, alias=None, remainder=None, **kwgs):
             _ = self._
             if alias is None:
                 reverse_keymap = {v: k for k, v in self.bind.keymap.items()}

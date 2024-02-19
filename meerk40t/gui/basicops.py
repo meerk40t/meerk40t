@@ -6,7 +6,7 @@ a simpler interface to operations
 
 import wx
 
-from meerk40t.core.elements.element_types import elem_nodes, op_nodes
+from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.gui.laserrender import swizzlecolor
 
 from ..kernel import Job, lookup_listener, signal_listener
@@ -18,7 +18,15 @@ from .icons import (
     icons8_laser_beam,
     icons8_laserbeam_weak,
 )
-from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, create_menu, dip_size
+from .wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+    create_menu,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+)
 
 _ = wx.GetTranslation
 
@@ -57,8 +65,8 @@ class BasicOpPanel(wx.Panel):
             value=choices[0],
             style=wx.CB_READONLY | wx.CB_DROPDOWN,
         )
-        self.check_exclusive = wx.CheckBox(self, wx.ID_ANY, _("Exclusive"))
-        self.check_all_similar = wx.CheckBox(self, wx.ID_ANY, _("Similar"))
+        self.check_exclusive = wxCheckBox(self, wx.ID_ANY, _("Exclusive"))
+        self.check_all_similar = wxCheckBox(self, wx.ID_ANY, _("Similar"))
         self.combo_apply_color.SetToolTip(
             _(
                 "Leave - neither the color of the operation nor of the elements will be changed"
@@ -87,7 +95,7 @@ class BasicOpPanel(wx.Panel):
         self.check_all_similar.Bind(wx.EVT_CHECKBOX, self.on_check_allsimilar)
         self.combo_apply_color.Bind(wx.EVT_COMBOBOX, self.on_combo_color)
 
-        self.btn_config = wx.Button(self, wx.ID_ANY, "...")
+        self.btn_config = wxButton(self, wx.ID_ANY, "...")
         self.btn_config.SetMinSize(dip_size(self, 25, -1))
         self.btn_config.SetMaxSize(dip_size(self, 25, -1))
         self.btn_config.Bind(wx.EVT_BUTTON, self.on_config)
@@ -226,15 +234,14 @@ class BasicOpPanel(wx.Panel):
             def handler(event):
                 # print(f"Output for {mynode.type}")
                 cb = event.GetEventObject()
-                flag = False
                 if hasattr(mynode, "output"):
-                    flag = not mynode.output
+                    flag_out = not mynode.output
                     try:
-                        mynode.output = flag
+                        mynode.output = flag_out
                         mynode.updated()
                     except AttributeError:
                         pass
-                    if flag:
+                    if flag_out:
                         myshow.SetValue(True)
                         myshow.Enable(False)
                     else:
@@ -244,7 +251,7 @@ class BasicOpPanel(wx.Panel):
                     self.context.elements.signal("element_property_update", ops)
                     self.context.elements.signal("warn_state_update", "")
                     self.context.elements.signal("refresh_scene", "Scene")
-                    cb.SetValue(flag)
+                    cb.SetValue(flag_out)
 
             mynode = node
             myshow = showctrl
@@ -399,7 +406,7 @@ class BasicOpPanel(wx.Panel):
         self.op_ctrl_list.clear()
 
         info_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        check_filtered = wx.CheckBox(self.op_panel, wx.ID_ANY)
+        check_filtered = wxCheckBox(self.op_panel, wx.ID_ANY)
         check_filtered.SetToolTip(_("Suppress non-used operations"))
         check_filtered.SetValue(self.filtered)
         check_filtered.SetMinSize(
@@ -485,7 +492,7 @@ class BasicOpPanel(wx.Panel):
 
                 op_sizer.AddSpacer(5)
 
-                c_out = wx.CheckBox(self.op_panel, id=wx.ID_ANY)
+                c_out = wxCheckBox(self.op_panel, id=wx.ID_ANY)
                 c_out.SetMinSize(dip_size(self, 20, -1))
                 c_out.SetMaxSize(dip_size(self, 20, -1))
 
@@ -503,7 +510,7 @@ class BasicOpPanel(wx.Panel):
                 )
                 op_sizer.Add(c_out, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-                c_show = wx.CheckBox(self.op_panel, id=wx.ID_ANY)
+                c_show = wxCheckBox(self.op_panel, id=wx.ID_ANY)
                 c_show.SetMinSize(dip_size(self, 20, -1))
                 c_show.SetMaxSize(dip_size(self, 20, -1))
                 c_show.SetToolTip(

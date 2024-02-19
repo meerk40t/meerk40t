@@ -7,7 +7,7 @@ from meerk40t.fill.patterns import LivingHinges
 from meerk40t.gui.icons import STD_ICON_SIZE, icon_hinges
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
+from meerk40t.gui.wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color, Matrix, Path
 
@@ -63,7 +63,7 @@ class HingePanel(wx.Panel):
         self.combo_style = wx.ComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
         )
-        self.button_default = wx.Button(self, wx.ID_ANY, "D")
+        self.button_default = wxButton(self, wx.ID_ANY, "D")
         _default = 200
         self.slider_width = wx.Slider(
             self,
@@ -146,20 +146,20 @@ class HingePanel(wx.Panel):
             +50,
             style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
         )
-        self.button_generate = wx.Button(self, wx.ID_ANY, _("Generate"))
-        self.button_close = wx.Button(self, wx.ID_ANY, _("Close"))
+        self.button_generate = wxButton(self, wx.ID_ANY, _("Generate"))
+        self.button_close = wxButton(self, wx.ID_ANY, _("Close"))
         self.context.setting(bool, "hinge_preview_pattern", True)
         self.context.setting(bool, "hinge_preview_shape", True)
-        self.check_preview_show_pattern = wx.CheckBox(
+        self.check_preview_show_pattern = wxCheckBox(
             self, wx.ID_ANY, _("Preview Pattern")
         )
         self.check_preview_show_pattern.SetValue(
             bool(self.context.hinge_preview_pattern)
         )
-        self.check_preview_show_shape = wx.CheckBox(self, wx.ID_ANY, _("Preview Shape"))
+        self.check_preview_show_shape = wxCheckBox(self, wx.ID_ANY, _("Preview Shape"))
         self.check_preview_show_shape.SetValue(bool(self.context.hinge_preview_shape))
 
-        #  self.check_debug_outline = wx.CheckBox(self, wx.ID_ANY, "Show outline")
+        #  self.check_debug_outline = wxCheckBox(self, wx.ID_ANY, "Show outline")
 
         self.patterns = list()
         self.defaults = list()
@@ -582,7 +582,7 @@ class HingePanel(wx.Panel):
             stroke=Color("red"),
             type="elem path",
         )
-        # Lets simplify things...
+        # Let's simplify things...
         self.context.elements.simplify_node(node)
 
         if self.hinge_generator.outershape is not None:
@@ -698,7 +698,11 @@ class HingePanel(wx.Panel):
                 self.slider_offy_label.SetLabel(f"{py/_FACTOR:.1%}")
 
     def on_option_update(self, event):
-        # Generic update within a pattern
+        """
+        Generic update within a pattern
+        @param event:
+        @return:
+        """
         if event is not None:
             event.Skip()
         if self.in_change_event:
@@ -747,33 +751,29 @@ class HingePanel(wx.Panel):
             or origin is self.text_cell_offset_y
         ):
             sync_direction = False
-        flag = True
+
         try:
             wd = float(Length(self.text_width.GetValue()))
             if wd > 0:
                 self.hinge_width = self.text_width.GetValue()
         except ValueError:
-            wd = 0
-            flag = False
+            pass
         try:
             ht = float(Length(self.text_height.GetValue()))
             if ht > 0:
                 self.hinge_height = self.text_height.GetValue()
         except ValueError:
-            ht = 0
-            flag = False
+            pass
         try:
             x = float(Length(self.text_origin_x.GetValue()))
             self.hinge_origin_x = self.text_origin_x.GetValue()
         except ValueError:
-            x = 0
-            flag = False
+            pass
         try:
             y = float(Length(self.text_origin_y.GetValue()))
             self.hinge_origin_y = self.text_origin_y.GetValue()
         except ValueError:
-            y = 0
-            flag = False
+            pass
         cell_x = self.slider_width.GetValue()
         cell_y = self.slider_height.GetValue()
         self.hinge_cells_x = cell_x
@@ -928,14 +928,12 @@ class HingePanel(wx.Panel):
         self.Layout()
 
     def pane_show(self):
-        first_selected = None
         units = self.context.units_name
         flag = True
         for node in self.context.elements.elems(emphasized=True):
             if hasattr(node, "as_path"):
-                first_selected = node
                 bounds = node.bbox()
-                self.hinge_generator.set_hinge_shape(first_selected)
+                self.hinge_generator.set_hinge_shape(node)
                 flag = False
                 self.button_generate.Enable(True)
                 break

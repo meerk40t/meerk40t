@@ -19,7 +19,14 @@ from meerk40t.svgelements import (
 )
 
 from ..core.units import Length
-from ..gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
+from ..gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxRadioBox,
+)
 from ..kernel import signal_listener
 from .icons import STD_ICON_SIZE, get_default_icon_size, icons8_arrange
 from .mwindow import MWindow
@@ -119,7 +126,6 @@ class InfoPanel(wx.Panel):
         count = 0
         first_node = None
         last_node = None
-        msg = ""
         if has_emph:
             xdata = list(self.context.elements.elems_nodes(emphasized=True))
             data = []
@@ -199,7 +205,7 @@ class AlignmentPanel(wx.Panel):
         self.modeparam = ("default", "first", "last", "bed", "ref")
         self.xyparam = ("none", "min", "center", "max")
 
-        self.rbox_align_x = wx.RadioBox(
+        self.rbox_align_x = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Alignment relative to X-Axis:"),
@@ -214,7 +220,7 @@ class AlignmentPanel(wx.Panel):
             )
         )
 
-        self.rbox_align_y = wx.RadioBox(
+        self.rbox_align_y = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Alignment relative to Y-Axis:"),
@@ -229,7 +235,7 @@ class AlignmentPanel(wx.Panel):
             )
         )
 
-        self.rbox_relation = wx.RadioBox(
+        self.rbox_relation = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Relative to:"),
@@ -239,7 +245,7 @@ class AlignmentPanel(wx.Panel):
         )
         self.rbox_relation.SetSelection(0)
 
-        self.rbox_treatment = wx.RadioBox(
+        self.rbox_treatment = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Treatment:"),
@@ -248,7 +254,7 @@ class AlignmentPanel(wx.Panel):
             style=wx.RA_SPECIFY_COLS,
         )
         self.rbox_treatment.SetSelection(0)
-        self.btn_align = wx.Button(self, wx.ID_ANY, "Align")
+        self.btn_align = wxButton(self, wx.ID_ANY, "Align")
         self.btn_align.SetBitmap(
             icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
         )
@@ -331,11 +337,6 @@ class AlignmentPanel(wx.Panel):
             idx = 0
         ypos = self.xyparam[idx]
 
-        idx = self.rbox_align_y.GetSelection()
-        if idx < 0:
-            idx = 0
-        mode = self.xyparam[idx]
-
         idx = self.rbox_relation.GetSelection()
         if idx < 0:
             idx = 0
@@ -415,7 +416,7 @@ class DistributionPanel(wx.Panel):
         self.xy_param = ("none", "min", "center", "max", "space")
         self.treat_param = ("default", "shape", "points", "bed", "ref")
 
-        self.rbox_dist_x = wx.RadioBox(
+        self.rbox_dist_x = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Position of element relative to point for X-Axis:"),
@@ -430,7 +431,7 @@ class DistributionPanel(wx.Panel):
             )
         )
 
-        self.rbox_dist_y = wx.RadioBox(
+        self.rbox_dist_y = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Position of element relative to point for Y-Axis:"),
@@ -445,7 +446,7 @@ class DistributionPanel(wx.Panel):
             )
         )
 
-        self.check_inside_xy = wx.CheckBox(
+        self.check_inside_xy = wxCheckBox(
             self, id=wx.ID_ANY, label=_("Keep first + last inside")
         )
         self.check_inside_xy.SetValue(True)
@@ -455,10 +456,10 @@ class DistributionPanel(wx.Panel):
             )
         )
 
-        self.check_rotate = wx.CheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
+        self.check_rotate = wxCheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
         self.check_rotate.SetToolTip(_("Rotate elements parallel to the path"))
 
-        self.rbox_sort = wx.RadioBox(
+        self.rbox_sort = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Work-Sequence:"),
@@ -471,7 +472,7 @@ class DistributionPanel(wx.Panel):
             _("Defines the order in which the selection is being processed")
         )
 
-        self.rbox_treatment = wx.RadioBox(
+        self.rbox_treatment = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Treatment:"),
@@ -498,7 +499,7 @@ class DistributionPanel(wx.Panel):
             + _("- Ref-Object: along the boundaries of a reference-object")
         )
 
-        self.btn_dist = wx.Button(self, wx.ID_ANY, "Distribute")
+        self.btn_dist = wxButton(self, wx.ID_ANY, "Distribute")
         self.btn_dist.SetBitmap(
             icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
         )
@@ -554,6 +555,8 @@ class DistributionPanel(wx.Panel):
         if event is not None:
             event.Skip()
             obj = event.GetEventObject()
+        xmode = None
+        ymode = None
         if self.context.elements.has_emphasis():
             active = True
             idx = max(0, self.rbox_treatment.GetSelection())
@@ -564,7 +567,6 @@ class DistributionPanel(wx.Panel):
             ymode = self.xy_param[idx]
             idx = max(0, self.rbox_sort.GetSelection())
             esort = self.sort_param[idx]
-            rotate_elem = self.check_rotate.GetValue()
 
             # Have we just selected the treatment? Then set something useful
             if obj == self.rbox_treatment and xmode == "none" and ymode == "none":
@@ -632,13 +634,13 @@ class DistributionPanel(wx.Panel):
                     total_wd = right_edge - left_edge
                     data_wd = 0
                     firstwd = None
-                    lastwd = None
+                    # lastwd = None
                     for node in data:
                         bb = node.bounds
                         wd = bb[2] - bb[0]
                         if firstwd is None:
                             firstwd = wd
-                        lastwd = wd
+                        # lastwd = wd
                         data_wd += wd
                     # Reduce by first and last half width
                     # data_wd -= (firstwd + lastwd) / 2
@@ -672,13 +674,13 @@ class DistributionPanel(wx.Panel):
                     total_ht = bottom_edge - top_edge
                     data_ht = 0
                     firstht = None
-                    lastht = None
+                    # lastht = None
                     for node in data:
                         bb = node.bounds
                         ht = bb[3] - bb[1]
                         if firstht is None:
                             firstht = ht
-                        lastht = ht
+                        # lastht = ht
                         data_ht += ht
                     # Reduce by first and last half height
                     # data_ht -= (firstht + lastht) / 2
@@ -811,6 +813,7 @@ class DistributionPanel(wx.Panel):
             mydelta = poly_length / segcount
             lastx = 0
             lasty = 0
+            last_angle = None
             lastlen = 0
             segadded = 0
             # print(f"Expected segcount= {segcount}")
@@ -989,26 +992,26 @@ class DistributionPanel(wx.Panel):
                 continue
             if not node.can_move(self.context.elements.lock_allows_move):
                 continue
-            else:
-                try:
-                    cx = (node.bounds[2] + node.bounds[0]) / 2 + dx
-                    cy = (node.bounds[3] + node.bounds[1]) / 2 + dy
-                    change = 0
-                    if dx != 0 or dy != 0:
-                        node.matrix.post_translate(dx, dy)
-                        change = 1
-                    # Do we have a rotation to take into account?
-                    if ptangle != 0:
-                        node.matrix.post_rotate(ptangle, cx, cy)
-                        change = 2
-                    if change == 1:
-                        node.translated(dx, dy)
-                    elif change == 2:
-                        node.modified()
 
-                    modified += 1
-                except AttributeError:
-                    continue
+            try:
+                cx = (node.bounds[2] + node.bounds[0]) / 2 + dx
+                cy = (node.bounds[3] + node.bounds[1]) / 2 + dy
+                change = 0
+                if dx != 0 or dy != 0:
+                    node.matrix.post_translate(dx, dy)
+                    change = 1
+                # Do we have a rotation to take into account?
+                if ptangle != 0:
+                    node.matrix.post_rotate(ptangle, cx, cy)
+                    change = 2
+                if change == 1:
+                    node.translated(dx, dy)
+                elif change == 2:
+                    node.modified()
+
+                modified += 1
+            except AttributeError:
+                pass
         # print(f"Modified: {modified}")
 
     def on_button_dist(self, event):
@@ -1118,7 +1121,7 @@ class ArrangementPanel(wx.Panel):
         self.ychoices = (_("Top"), _("Center"), _("Bottom"))
         self.xyparam = ("min", "center", "max")
 
-        self.rbox_align_x = wx.RadioBox(
+        self.rbox_align_x = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Alignment relative to X-Axis:"),
@@ -1128,7 +1131,7 @@ class ArrangementPanel(wx.Panel):
         )
         self.rbox_align_x.SetSelection(0)
 
-        self.rbox_align_y = wx.RadioBox(
+        self.rbox_align_y = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Alignment relative to Y-Axis:"),
@@ -1141,10 +1144,10 @@ class ArrangementPanel(wx.Panel):
         self.arrange_x = wx.SpinCtrl(self, wx.ID_ANY, initial=1, min=1, max=100)
         self.arrange_y = wx.SpinCtrl(self, wx.ID_ANY, initial=1, min=1, max=100)
 
-        self.check_same_x = wx.CheckBox(self, wx.ID_ANY, label=_("Same width"))
-        self.check_same_y = wx.CheckBox(self, wx.ID_ANY, label=_("Same height"))
+        self.check_same_x = wxCheckBox(self, wx.ID_ANY, label=_("Same width"))
+        self.check_same_y = wxCheckBox(self, wx.ID_ANY, label=_("Same height"))
 
-        self.rbox_relation = wx.RadioBox(
+        self.rbox_relation = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Arrangement inside grid:"),
@@ -1154,7 +1157,7 @@ class ArrangementPanel(wx.Panel):
         )
         self.rbox_relation.SetSelection(0)
 
-        self.rbox_selection = wx.RadioBox(
+        self.rbox_selection = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Order to process:"),
@@ -1171,7 +1174,7 @@ class ArrangementPanel(wx.Panel):
             self, id=wx.ID_ANY, value="5mm", limited=True, check="length"
         )
 
-        self.btn_arrange = wx.Button(self, wx.ID_ANY, _("Arrange"))
+        self.btn_arrange = wxButton(self, wx.ID_ANY, _("Arrange"))
         self.btn_arrange.SetBitmap(
             icons8_arrange.GetBitmap(resize=0.5 * get_default_icon_size())
         )
@@ -1285,24 +1288,24 @@ class ArrangementPanel(wx.Panel):
             if self.count < 2 or self.count > num_cols * num_rows:
                 # print(f"Too small: {self.count} vs. {num_cols}x{num_rows}")
                 active = False
-            idx = self.rbox_selection.GetSelection()
-            if idx < 0:
-                idx = 0
-            esort = self.selectparam[idx]
+            # idx = self.rbox_selection.GetSelection()
+            # if idx < 0:
+            #     idx = 0
+            # esort = self.selectparam[idx]
             idx = self.rbox_relation.GetSelection()
             if idx < 0:
                 idx = 0
             relat = self.relparam[idx]
             self.txt_gap_x.Enable(relat == "distance")
             self.txt_gap_y.Enable(relat == "distance")
-            idx = self.rbox_align_x.GetSelection()
-            if idx < 0:
-                idx = 0
-            xpos = self.xyparam[idx]
-            idx = self.rbox_align_y.GetSelection()
-            if idx < 0:
-                idx = 0
-            ypos = self.xyparam[idx]
+            # idx = self.rbox_align_x.GetSelection()
+            # if idx < 0:
+            #     idx = 0
+            # xpos = self.xyparam[idx]
+            # idx = self.rbox_align_y.GetSelection()
+            # if idx < 0:
+            #     idx = 0
+            # ypos = self.xyparam[idx]
             try:
                 gapx = float(Length(self.txt_gap_x.GetValue()))
             except ValueError:
@@ -1439,7 +1442,7 @@ class ArrangementPanel(wx.Panel):
                             pass
 
         num_cols = self.arrange_x.GetValue()
-        num_rows = self.arrange_y.GetValue()
+        # num_rows = self.arrange_y.GetValue()
         same_x = self.check_same_x.GetValue()
         same_y = self.check_same_y.GetValue()
         idx = self.rbox_selection.GetSelection()

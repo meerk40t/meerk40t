@@ -1,4 +1,3 @@
-from copy import copy
 from math import isnan
 
 from meerk40t.core.cutcode.rastercut import RasterCut
@@ -86,14 +85,14 @@ class ImageOpNode(Node, Parameters):
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if hasattr(drag_node, "as_image"):
-            if drag_node._parent.type == "branch reg":
+            if drag_node.has_ancestor("branch reg"):
                 # We do not accept reg nodes.
                 return False
             # Dragging element onto operation adds that element to the op.
             if modify:
                 self.add_reference(drag_node, pos=0)
             return True
-        if drag_node.type == "reference":
+        elif drag_node.type == "reference":
             # Disallow drop of image refelems onto a Dot op.
             if not hasattr(drag_node.node, "as_image"):
                 return False
@@ -101,12 +100,14 @@ class ImageOpNode(Node, Parameters):
             if modify:
                 self.append_child(drag_node)
             return True
-        if drag_node.type in op_nodes:
+        elif drag_node.type in op_nodes:
             # Move operation to a different position.
             if modify:
                 self.insert_sibling(drag_node)
             return True
-        if drag_node.type in ("file", "group"):
+        elif drag_node.type in ("file", "group") and not drag_node.has_ancestor(
+            "branch reg"
+        ):
             some_nodes = False
             for e in drag_node.flat(elem_nodes):
                 # Add element to operation
@@ -117,6 +118,14 @@ class ImageOpNode(Node, Parameters):
             return some_nodes
         return False
 
+    def is_referenced(self, node):
+        for e in self.children:
+            if e is node:
+                return True
+            if hasattr(e, "node") and e.node is node:
+                return True
+        return False
+
     def valid_node_for_reference(self, node):
         if hasattr(node, "as_image"):
             return True
@@ -124,6 +133,10 @@ class ImageOpNode(Node, Parameters):
             return False
 
     def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
+        if self.is_referenced(node):
+            # No need to add it again...
+            return False, False, None
+
         feedback = []
         if hasattr(node, "as_image"):
             self.add_reference(node)

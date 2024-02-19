@@ -12,7 +12,14 @@ from meerk40t.gui.propertypanels.attributes import (
     PositionSizePanel,
     PreventChangePanel,
 )
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.gui.wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+)
 from meerk40t.svgelements import Matrix
 
 _ = wx.GetTranslation
@@ -45,8 +52,8 @@ class CropPanel(wx.Panel):
         self.op = None
         self._no_update = False
 
-        self.check_enable_crop = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
-        self.button_reset = wx.Button(self, wx.ID_ANY, _("Reset"))
+        self.check_enable_crop = wxCheckBox(self, wx.ID_ANY, _("Enable"))
+        self.button_reset = wxButton(self, wx.ID_ANY, _("Reset"))
 
         self.label_info = wx.StaticText(self, wx.ID_ANY, "--")
 
@@ -228,15 +235,35 @@ class CropPanel(wx.Panel):
         self.activate_controls(flag)
 
     def on_slider_left(self, event=None):
+        if event:
+            # Wait until the user has stopped to move the slider
+            if wx.GetMouseState().LeftIsDown():
+                event.Skip()
+                return
         self.cropleft = self.slider_left.GetValue()
 
     def on_slider_right(self, event=None):
+        if event:
+            # Wait until the user has stopped to move the slider
+            if wx.GetMouseState().LeftIsDown():
+                event.Skip()
+                return
         self.cropright = self.slider_right.GetValue()
 
     def on_slider_top(self, event=None):
+        if event:
+            # Wait until the user has stopped to move the slider
+            if wx.GetMouseState().LeftIsDown():
+                event.Skip()
+                return
         self.croptop = self.slider_top.GetValue()
 
     def on_slider_bottom(self, event=None):
+        if event:
+            # Wait until the user has stopped to move the slider
+            if wx.GetMouseState().LeftIsDown():
+                event.Skip()
+                return
         self.cropbottom = self.slider_bottom.GetValue()
 
     def set_slider_limits(self, pattern, constraint=True):
@@ -397,11 +424,11 @@ class ImageModificationPanel(ScrolledPanel):
             self, wx.ID_ANY, choices=choices, style=wx.CB_READONLY | wx.CB_DROPDOWN
         )
         self.combo_scripts.SetSelection(0)
-        self.button_apply = wx.Button(self, wx.ID_ANY, _("Apply Script"))
+        self.button_apply = wxButton(self, wx.ID_ANY, _("Apply Script"))
         self.button_apply.SetToolTip(
             _("Apply image modification script\nRight click: append to existing script")
         )
-        self.button_clear = wx.Button(self, wx.ID_ANY, _("Clear"))
+        self.button_clear = wxButton(self, wx.ID_ANY, _("Clear"))
         self.button_clear.SetToolTip(_("Remove all image operations"))
         self.list_operations = wx.ListCtrl(
             self,
@@ -530,7 +557,7 @@ class ImageModificationPanel(ScrolledPanel):
 
             return check
 
-        index = self.list_operations.GetFirstSelected()
+        selected = self.list_operations.GetFirstSelected()
 
         possible_ops = [
             {"name": "crop", "enable": True, "bounds": None},
@@ -572,12 +599,12 @@ class ImageModificationPanel(ScrolledPanel):
         ]
         devmode = self.context.root.setting(bool, "developer_mode", False)
         menu = wx.Menu()
-        if index >= 0:
+        if selected >= 0:
             # Edit-Part
             menuitem = menu.Append(
                 wx.ID_ANY, _("Delete item"), _("Will delete the current entry")
             )
-            self.Bind(wx.EVT_MENU, on_delete(index), id=menuitem.GetId())
+            self.Bind(wx.EVT_MENU, on_delete(selected), id=menuitem.GetId())
 
             menuitem = menu.Append(
                 wx.ID_ANY,
@@ -585,8 +612,8 @@ class ImageModificationPanel(ScrolledPanel):
                 _("Toggles enable-status of operation"),
                 kind=wx.ITEM_CHECK,
             )
-            menuitem.Check(self.node.operations[index]["enable"])
-            self.Bind(wx.EVT_MENU, on_enable(index), id=menuitem.GetId())
+            menuitem.Check(self.node.operations[selected]["enable"])
+            self.Bind(wx.EVT_MENU, on_enable(selected), id=menuitem.GetId())
             if devmode:
                 menu.AppendSeparator()
                 for op in possible_ops:
@@ -595,7 +622,9 @@ class ImageModificationPanel(ScrolledPanel):
                         _("Insert {op}").format(op=op["name"]),
                         _("Will insert this operation before the current entry"),
                     )
-                    self.Bind(wx.EVT_MENU, on_op_insert(index, op), id=menuitem.GetId())
+                    self.Bind(
+                        wx.EVT_MENU, on_op_insert(selected, op), id=menuitem.GetId()
+                    )
                 menu.AppendSeparator()
         if devmode:
             for op in possible_ops:
@@ -604,7 +633,7 @@ class ImageModificationPanel(ScrolledPanel):
                     _("Append {op}").format(op=op["name"]),
                     _("Will append this operation to the end of the list"),
                 )
-                self.Bind(wx.EVT_MENU, on_op_append(index, op), id=menuitem.GetId())
+                self.Bind(wx.EVT_MENU, on_op_append(selected, op), id=menuitem.GetId())
 
         if menu.MenuItemCount != 0:
             self.PopupMenu(menu)
@@ -724,7 +753,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         label_opticurve.SetMinSize(dip_size(self, 70, -1))
         sizer_opticurve.Add(label_opticurve, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.check_opticurve = wx.CheckBox(self, wx.ID_ANY, "")
+        self.check_opticurve = wxCheckBox(self, wx.ID_ANY, "")
         self.check_opticurve.SetToolTip(
             _(
                 "Try to 'simplify' the final curve by reducing the number of Bezier curve segments."
@@ -765,13 +794,13 @@ class ImageVectorisationPanel(ScrolledPanel):
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
         sizer_options.Add(sizer_buttons, 1, wx.EXPAND, 0)
 
-        self.button_vector = wx.Button(self, wx.ID_ANY, _("Vectorize"))
+        self.button_vector = wxButton(self, wx.ID_ANY, _("Vectorize"))
         sizer_buttons.Add(self.button_vector, 0, 0, 0)
 
         label_spacer = wx.StaticText(self, wx.ID_ANY, " ")
         sizer_buttons.Add(label_spacer, 1, 0, 0)
 
-        self.button_generate = wx.Button(self, wx.ID_ANY, _("Preview"))
+        self.button_generate = wxButton(self, wx.ID_ANY, _("Preview"))
         self.button_generate.SetToolTip(_("Generate a preview of the result"))
         sizer_buttons.Add(self.button_generate, 0, 0, 0)
 
@@ -900,7 +929,7 @@ class ImageVectorisationPanel(ScrolledPanel):
 
         if self.node is not None and self.node.image is not None:
             matrix = self.node.matrix
-            image = self.node.opaque_image
+            # image = self.node.opaque_image
             ipolicy = self.combo_turnpolicy.GetSelection()
             # turnpolicy = self.turn_choices[ipolicy].lower()
             # slider 0 .. 10 translate to 0 .. 10
@@ -937,7 +966,7 @@ class ImageVectorisationPanel(ScrolledPanel):
             new_height = height * dots_per_units
             new_height = max(new_height, 1)
             new_width = max(new_width, 1)
-
+            self.context.kernel.busyinfo.start(msg=_("Generating..."))
             try:
                 image = make_raster(
                     self.node,
@@ -955,11 +984,13 @@ class ImageVectorisationPanel(ScrolledPanel):
                     blacklevel=blacklevel,
                 )
             except:
+                self.context.kernel.busyinfo.end()
                 return
+            self.context.kernel.busyinfo.end()
             path.transform *= Matrix(matrix)
             dummynode = PathNode(
                 path=abs(path),
-                stroke_width=0,
+                stroke_width=500,
                 stroke_scaled=False,
                 fillrule=0,  # Fillrule.FILLRULE_NONZERO
             )
@@ -971,14 +1002,14 @@ class ImageVectorisationPanel(ScrolledPanel):
             if bounds is None:
                 return
             pw, ph = self.vector_preview.GetSize()
-            iw, ih = self.node.image.size
-            wfac = pw / iw
-            hfac = ph / ih
+            # iw, ih = self.node.image.size
+            # wfac = pw / iw
+            # hfac = ph / ih
             # The smaller of the two decide how to scale the picture
-            if wfac < hfac:
-                factor = wfac
-            else:
-                factor = hfac
+            # if wfac < hfac:
+            #     factor = wfac
+            # else:
+            #     factor = hfac
             image = make_raster(
                 dummynode,
                 bounds,
@@ -986,7 +1017,7 @@ class ImageVectorisationPanel(ScrolledPanel):
                 height=ph,
                 keep_ratio=True,
             )
-            rw, rh = image.size
+            # rw, rh = image.size
             # print (f"Area={pw}x{ph}, Org={iw}x{ih}, Raster={rw}x{rh}")
             # if factor < 1.0:
             #     image = image.resize((int(iw * factor), int(ih * factor)))
@@ -1036,7 +1067,7 @@ class ImagePropertyPanel(ScrolledPanel):
             limited=True,
             nonzero=True,
         )
-        self.check_prevent_crop = wx.CheckBox(self, wx.ID_ANY, _("No final crop"))
+        self.check_prevent_crop = wxCheckBox(self, wx.ID_ANY, _("No final crop"))
 
         self.panel_lock = PreventChangePanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
@@ -1048,7 +1079,7 @@ class ImagePropertyPanel(ScrolledPanel):
         self.panel_crop = CropPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
-        self.check_enable_dither = wx.CheckBox(self, wx.ID_ANY, _("Dither"))
+        self.check_enable_dither = wxCheckBox(self, wx.ID_ANY, _("Dither"))
         self.choices = [
             "Floyd-Steinberg",
             "Atkinson",
@@ -1080,8 +1111,8 @@ class ImagePropertyPanel(ScrolledPanel):
         #     style=wx.CB_DROPDOWN,
         # )
 
-        self.check_invert_grayscale = wx.CheckBox(self, wx.ID_ANY, _("Invert"))
-        self.btn_reset_grayscale = wx.Button(self, wx.ID_ANY, _("Reset"))
+        self.check_invert_grayscale = wxCheckBox(self, wx.ID_ANY, _("Invert"))
+        self.btn_reset_grayscale = wxButton(self, wx.ID_ANY, _("Reset"))
 
         self.slider_grayscale_red = wx.Slider(
             self, wx.ID_ANY, 0, -1000, 1000, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
@@ -1209,8 +1240,6 @@ class ImagePropertyPanel(ScrolledPanel):
     def __do_layout(self):
         # begin wxGlade: ImageProperty.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_dim = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_xy = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(self.panel_id, 0, wx.EXPAND, 0)
         sizer_main.Add(self.panel_crop, 0, wx.EXPAND, 0)
 
@@ -1336,6 +1365,12 @@ class ImagePropertyPanel(ScrolledPanel):
     def on_slider_grayscale_component(
         self, event=None
     ):  # wxGlade: GrayscalePanel.<event_handler>
+        if event:
+            # Wait until the user has stopped to move the slider
+            if wx.GetMouseState().LeftIsDown():
+                event.Skip()
+                return
+
         self.node.red = float(int(self.slider_grayscale_red.GetValue()) / 500.0)
         self.text_grayscale_red.SetValue(str(self.node.red))
 

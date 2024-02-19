@@ -238,7 +238,6 @@ class NewlyDriver:
 
         @return:
         """
-        last_on = None
         con = self.connection
         queue = self.queue
         self.queue = list()

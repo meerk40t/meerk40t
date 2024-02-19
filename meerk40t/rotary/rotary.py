@@ -1,4 +1,4 @@
-from meerk40t.kernel import Service, lookup_listener, signal_listener
+from meerk40t.kernel import lookup_listener, signal_listener
 from meerk40t.svgelements import Matrix
 
 

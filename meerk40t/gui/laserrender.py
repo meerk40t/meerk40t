@@ -261,12 +261,7 @@ class LaserRender:
         if hasattr(node, "output"):
             if not node.output:
                 return False
-
-        try:
-            # Try to draw node, assuming it already has a known render method.
-            node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
-            return True
-        except AttributeError:
+        if not hasattr(node, "draw") or not hasattr(node, "_make_cache"):
             # No known render method, we must define the function to draw nodes.
             if node.type in (
                 "elem path",
@@ -292,9 +287,9 @@ class LaserRender:
                 node.draw = self.draw_cutcode_node
             else:
                 return False
-            # We have now defined that function, draw it.
-            node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
-            return True
+        # We have now defined that function, draw it.
+        node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
+        return True
 
     def make_path(self, gc, path):
         """
@@ -433,7 +428,9 @@ class LaserRender:
                 self.pen.SetCap(wx.CAP_ROUND)
 
     def _set_linejoin_by_node(self, node):
-        if not hasattr(node, "linejoin") or node.linejoin is None:
+        if not hasattr(node, "linejoin"):
+            self.pen.SetJoin(wx.JOIN_BEVEL)
+        elif node.linejoin is None:
             self.pen.SetJoin(wx.JOIN_MITER)
         else:
             if node.linejoin == Linejoin.JOIN_ARCS:
@@ -456,16 +453,20 @@ class LaserRender:
             else:
                 return wx.WINDING_RULE
 
-    def _set_penwidth(self, width):
+    @staticmethod
+    def _penwidth(pen, width):
         try:
             if isnan(width):
                 width = 1.0
             try:
-                self.pen.SetWidth(width)
+                pen.SetWidth(width)
             except TypeError:
-                self.pen.SetWidth(int(width))
+                pen.SetWidth(int(width))
         except OverflowError:
             pass  # Exceeds 32 bit signed integer.
+
+    def _set_penwidth(self, width):
+        self._penwidth(self.pen, width)
 
     def set_pen(self, gc, stroke, alpha=None):
         c = stroke
@@ -520,9 +521,16 @@ class LaserRender:
         @param y: offset in y direction
         @return:
         """
+        gcmat = gc.GetTransform()
+        mat_param = gcmat.Get()
+        gcscale = max(mat_param[0], mat_param[3])
+        if gcscale == 0:
+            gcscale = 0.01
         highlight_color = Color("magenta")
         wx_color = wx.Colour(swizzlecolor(highlight_color))
-        highlight_pen = wx.Pen(wx_color, width=3, style=wx.PENSTYLE_SHORT_DASH)
+        highlight_pen = wx.Pen(wx_color)
+        highlight_pen.SetStyle(wx.PENSTYLE_SHORT_DASH)
+        self._penwidth(highlight_pen, 3 / gcscale)
         p = None
         last_point = None
         color = None
@@ -545,7 +553,7 @@ class LaserRender:
                     gc.StrokePath(p)
                     del p
                 p = gc.CreatePath()
-                self._set_penwidth(7.0)
+                self._penwidth(self.pen, 1 / gcscale)
                 self.set_pen(gc, c, alpha=127)
             start = cut.start
             end = cut.end
@@ -769,8 +777,12 @@ class LaserRender:
             y_to = y_from + 2 * dif
             x_sign = 1
             y_sign = 1
+        width = 1.0 * zoomscale
         rpen = wx.Pen(wx.Colour(red=255, green=0, blue=0, alpha=alpha))
+        self._penwidth(rpen, width)
+
         gpen = wx.Pen(wx.Colour(red=0, green=255, blue=0, alpha=alpha))
+        self._penwidth(gpen, width)
         gc.SetPen(rpen)
         dif = 5 * zoomscale
         gc.StrokeLine(x_from, node.y, x_to, node.y)
@@ -864,7 +876,12 @@ class LaserRender:
             return
         point = node.point
         gc.PushState()
-        gc.SetPen(wx.BLACK_PEN)
+        mypen = wx.Pen(wx.BLACK)
+        try:
+            mypen.SetWidth(zoomscale)
+        except TypeError:
+            mypen.SetWidth(int(zoomscale))
+        gc.SetPen(mypen)
         dif = 5 * zoomscale
         gc.StrokeLine(point.x - dif, point.y, point.x + dif, point.y)
         gc.StrokeLine(point.x, point.y - dif, point.x, point.y + dif)
@@ -1042,10 +1059,8 @@ class LaserRender:
             while True:
                 try:
                     fsize = use_font.GetFractionalPointSize()
-                    fsize_org = node.wxfont.GetFractionalPointSize()
                 except AttributeError:
                     fsize = use_font.GetPointSize()
-                    fsize_org = node.wxfont.GetPointSize()
                 # print (f"Revised bounds: {dimension_x} x {dimension_y}, font_size={fsize} (original={fsize_org}")
                 if fsize < 100 or dimension_x < 2000 or dimension_y < 1000:
                     break

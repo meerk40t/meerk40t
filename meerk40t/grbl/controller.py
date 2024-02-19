@@ -99,7 +99,6 @@ def hardware_settings(code):
 
 
 def grbl_error_code(code):
-    long = ""
     short = f"Error #{code}"
     if code == 1:
         long = "GCode Command letter was not found."
@@ -436,7 +435,9 @@ class GrblController:
         if self._channel_log not in self._watchers:
             self.add_watcher(self._channel_log)
 
-        if self._sending_thread is None or not self._sending_thread.is_alive():
+        if self._sending_thread is None or (
+            self._sending_thread != True and not self._sending_thread.is_alive()
+        ):
             self._sending_thread = True  # Avoid race condition.
             self._sending_thread = self.service.threaded(
                 self._sending,
@@ -444,7 +445,9 @@ class GrblController:
                 result=self.stop,
                 daemon=True,
             )
-        if self._recving_thread is None or not self._recving_thread.is_alive():
+        if self._recving_thread is None or (
+            self._recving_thread != True and not self._recving_thread.is_alive()
+        ):
             self._recving_thread = True  # Avoid race condition.
             self._recving_thread = self.service.threaded(
                 self._recving,
@@ -656,7 +659,7 @@ class GrblController:
                 try:
                     cmd_issued = self.get_forward_command()
                     cmd_issued = cmd_issued.decode(encoding="latin-1")
-                except ValueError as e:
+                except ValueError:
                     # We got an ok. But, had not sent anything.
                     self.log(
                         f"Response: {response}, but this was unexpected", type="event"
@@ -673,13 +676,12 @@ class GrblController:
                 )
                 self._assembled_response = []
                 self._send_resume()
-                continue
             elif response.startswith("error"):
                 # Indicates that the command line received contained an error, with an error code x, and was purged.
                 try:
                     cmd_issued = self.get_forward_command()
                     cmd_issued = cmd_issued.decode(encoding="latin-1")
-                except ValueError as e:
+                except ValueError:
                     cmd_issued = ""
                 try:
                     error_num = int(response[6:])
@@ -703,7 +705,6 @@ class GrblController:
                     self.validate_stop("$$")
                     self._validation_stage = 3
                 self._process_settings_message(response)
-                continue
             elif response.startswith("ALARM"):
                 try:
                     error_num = int(response[6:])

@@ -3,7 +3,7 @@ from math import sqrt
 
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import Angle, Length
-from meerk40t.svgelements import Color, Matrix
+from meerk40t.svgelements import Color
 from meerk40t.tools.geomstr import Geomstr  # ,  Scanbeam
 
 
@@ -16,9 +16,10 @@ class HatchEffectNode(Node):
     def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
         self.fill = None
         self.stroke = Color("Blue")
-        self.stroke_width = 1000.0
+        self.stroke_width = 100.0
         self.stroke_scale = False
         self._stroke_zero = None
+
         self.output = True
         self.hatch_distance = None
         self.hatch_angle = None

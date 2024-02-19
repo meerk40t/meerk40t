@@ -6,7 +6,13 @@ from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.gui.wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxCheckBox,
+)
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -72,7 +78,7 @@ class ConfigurationUsb(wx.Panel):
         )
         sizer_usb_restrict.Add(sizer_serial, 0, wx.EXPAND, 0)
 
-        self.check_serial_number = wx.CheckBox(self, wx.ID_ANY, _("Serial Number"))
+        self.check_serial_number = wxCheckBox(self, wx.ID_ANY, _("Serial Number"))
         self.check_serial_number.SetToolTip(
             _("Require a serial number match for this board")
         )
@@ -92,7 +98,7 @@ class ConfigurationUsb(wx.Panel):
         sizer_buffer = StaticBoxSizer(self, wx.ID_ANY, _("Write Buffer"), wx.HORIZONTAL)
         sizer_usb_settings.Add(sizer_buffer, 0, wx.EXPAND, 0)
 
-        self.checkbox_limit_buffer = wx.CheckBox(
+        self.checkbox_limit_buffer = wxCheckBox(
             self, wx.ID_ANY, _("Limit Write Buffer")
         )
         self.checkbox_limit_buffer.SetToolTip(

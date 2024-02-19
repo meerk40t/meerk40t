@@ -53,7 +53,7 @@ class DefaultOperationWidget(StatusBarWidget):
             ctrl.SetMaxSize(wx.Size(dimen_x, dimen_y))
 
         super().GenerateControls(parent, panelidx, identifier, context)
-        # How should be display the data?
+        # How should we display the data?
         display_mode = self.context.elements.setting(int, "default_ops_display_mode", 0)
 
         self.buttonsize_x = self.iconsize
@@ -424,6 +424,14 @@ class DefaultOperationWidget(StatusBarWidget):
         self.parent.Reposition(self.panelidx)
 
     def reset_tooltips(self):
+        # Desync?
+        if len(self.context.elements.default_operations) != len(self.assign_buttons):
+            # New default operations!
+            self.GenerateControls(
+                self.parent, self.panelidx, self.identifier, self.context
+            )
+            # Repaint
+            self.show_stuff(True)
         # First reset all
         for idx, node in enumerate(self.context.elements.default_operations):
             slabel = self.node_label(node)

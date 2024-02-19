@@ -12,7 +12,7 @@ from meerk40t.gui.icons import (
     icons8_disconnected,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import dip_size
+from meerk40t.gui.wxutils import dip_size, wxButton
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -35,10 +35,10 @@ class GRBLControllerPanel(wx.Panel):
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         self.iconsize = 0.75 * get_default_icon_size()
         self.state = None
-        self.button_device_connect = wx.Button(
+        self.button_device_connect = wxButton(
             self, wx.ID_ANY, self.button_connect_string("Connection")
         )
-        self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
+
         self.button_device_connect.SetFont(
             wx.Font(
                 12,
@@ -91,7 +91,7 @@ class GRBLControllerPanel(wx.Panel):
             ]
         )
         for entry in self.gcode_commands:
-            btn = wx.Button(self, wx.ID_ANY, entry[1])
+            btn = wxButton(self, wx.ID_ANY, entry[1])
             btn.Bind(wx.EVT_BUTTON, self.send_gcode(entry[0]))
             btn.SetToolTip(entry[2])
             if entry[3] is not None:
@@ -101,7 +101,7 @@ class GRBLControllerPanel(wx.Panel):
                     )
                 )
             sizer_2.Add(btn, 1, wx.EXPAND, 0)
-        self.btn_clear = wx.Button(self, wx.ID_ANY, _("Clear"))
+        self.btn_clear = wxButton(self, wx.ID_ANY, _("Clear"))
         self.btn_clear.SetToolTip(_("Clear log window"))
         self.btn_clear.Bind(wx.EVT_BUTTON, self.on_clear_log)
         sizer_2.Add(self.btn_clear, 0, wx.EXPAND), 0
@@ -123,6 +123,7 @@ class GRBLControllerPanel(wx.Panel):
         self._buffer = ""
         self._buffer_lock = threading.Lock()
         # end wxGlade
+        self.set_color_according_to_state(self.state, self.button_device_connect)
 
     def button_connect_string(self, pattern):
         res = _(pattern)
@@ -202,17 +203,61 @@ class GRBLControllerPanel(wx.Panel):
             self._buffer = ""
         self.data_exchange.AppendText(buffer)
 
+    def set_color_according_to_state(self, stateval, control):
+        def color_distance(c1, c2):
+            from math import sqrt
+
+            red_mean = int((c1.red + c2.red) / 2.0)
+            r = c1.red - c2.red
+            g = c1.green - c2.green
+            b = c1.blue - c2.blue
+            distance_sq = (
+                (((512 + red_mean) * r * r) >> 8)
+                + (4 * g * g)
+                + (((767 - red_mean) * b * b) >> 8)
+            )
+            return sqrt(distance_sq)
+
+        if stateval is None:
+            stateval = "UNINITIALIZED"
+        stateval = stateval.upper()
+        state_colors = {
+            "UNINITIALIZED": wx.Colour("#ffff00"),
+            "DISCONNECTED": wx.Colour("#ffff00"),
+            "CONNECTED": wx.Colour("#00ff00"),
+            "STATE_DRIVER_NO_BACKEND": wx.Colour("#dfdf00"),
+            "STATE_UNINITIALIZED": wx.Colour("#ffff00"),
+            "STATE_USB_DISCONNECTED": wx.Colour("#ffff00"),
+            "STATE_USB_SET_DISCONNECTING": wx.Colour("#ffff00"),
+            "STATE_USB_CONNECTED": wx.Colour("#00ff00"),
+            "STATE_CONNECTED": wx.Colour("#00ff00"),
+            "STATE_CONNECTING": wx.Colour("#ffff00"),
+            "CONNECTION ERROR": wx.Colour("#dfdf00"),
+        }
+        if stateval in state_colors:
+            bgcol = state_colors[stateval]
+        else:
+            bgcol = state_colors["UNINITIALIZED"]
+        d1 = color_distance(bgcol, wx.BLACK)
+        d2 = color_distance(bgcol, wx.WHITE)
+        # print(f"state={stateval}, to black={d1}, to_white={d2}")
+        if d1 <= d2:
+            fgcol = wx.WHITE
+        else:
+            fgcol = wx.BLACK
+        control.SetBackgroundColour(bgcol)
+        control.SetForegroundColour(fgcol)
+
     def on_status(self, origin, state):
         self.state = state
+        self.set_color_according_to_state(state, self.button_device_connect)
         if state == "uninitialized" or state == "disconnected":
-            self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(self.button_connect_string("Connect"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(use_theme=False, resize=self.iconsize)
             )
             self.button_device_connect.Enable()
         elif state == "connected":
-            self.button_device_connect.SetBackgroundColour("#00ff00")
             self.button_device_connect.SetLabel(
                 self.button_connect_string("Disconnect")
             )
@@ -227,14 +272,14 @@ class GRBLControllerPanel(wx.Panel):
             or self.state == "uninitialized"
             or self.state == "disconnected"
         ):
-            self.button_device_connect.SetBackgroundColour("#ffff00")
+            self.set_color_according_to_state(self.state, self.button_device_connect)
             self.button_device_connect.SetLabel(self.button_connect_string("Connect"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(use_theme=False, resize=self.iconsize)
             )
             self.button_device_connect.Enable()
         elif self.state == "connected":
-            self.button_device_connect.SetBackgroundColour("#00ff00")
+            self.set_color_according_to_state(self.state, self.button_device_connect)
             self.button_device_connect.SetLabel(
                 self.button_connect_string("Disconnect")
             )

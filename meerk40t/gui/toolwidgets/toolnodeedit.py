@@ -26,7 +26,6 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.gui.wxutils import matrix_scale
-from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import (
     Arc,
     Close,
@@ -665,7 +664,7 @@ class EditTool(ToolWidget):
                 else:
                     p.AddLineToPoint(ptx, pty)
         else:
-            path = self.path
+            # path = self.path
             init = False
             for idx, entry in enumerate(self.nodes):
                 if not entry["type"] == "point":
@@ -796,6 +795,7 @@ class EditTool(ToolWidget):
         """
         self.scene.pane.tool_active = False
         self.scene.pane.modif_active = False
+        self.scene.pane.suppress_selection = False
         self.p1 = None
         self.p2 = None
         self.move_type = "node"
@@ -947,7 +947,7 @@ class EditTool(ToolWidget):
                 entry = self.nodes[idx]
                 if entry["selected"] and entry["type"] == "point":
                     # What's the index of the last selected element
-                    # Have we dealt with that before? ie not multiple toggles..
+                    # Have we dealt with that before? ie not multiple toggles.
                     segstart = entry["start"]
                     if segstart in dealt_with:
                         continue
@@ -977,8 +977,8 @@ class EditTool(ToolWidget):
                         if dist < 1:
                             lastidx -= 1
                             is_closed = True
-                    else:
-                        dist = 1e6
+                    # else:
+                    #     dist = 1e6
                     if is_closed:
                         # it's enough just to delete it...
                         del self.path[lastidx + 1]
@@ -1003,7 +1003,7 @@ class EditTool(ToolWidget):
     @staticmethod
     def get_bezier_point(segment, t):
         """
-        Provide a point on the cubic bezier curve for t (0 <= t <= 1)
+        Provide a point on the cubic Bézier curve for t (0 <= t <= 1)
         Args:
             segment (PathSegment): a cubic bezier
             t (float): (0 <= t <= 1)
@@ -1634,8 +1634,8 @@ class EditTool(ToolWidget):
                         continue
                     segment = entry["segment"]
 
-                    def pt_info(pt):
-                        return f"({pt.x:.0f}, {pt.y:.0f})"
+                    # def pt_info(pt):
+                    #     return f"({pt.x:.0f}, {pt.y:.0f})"
 
                     if entry["segtype"] == "L":
                         # Line
@@ -1814,7 +1814,7 @@ class EditTool(ToolWidget):
             keycode (string): if available the keycode that was pressed
 
         Returns:
-            Indicator how to proceed with this event after its execution (consume, chain etc)
+            Indicator how to proceed with this event after its execution (consume, chain etc.)
         """
         if self.scene.pane.active_tool != "edit":
             return RESPONSE_CHAIN
@@ -1913,8 +1913,12 @@ class EditTool(ToolWidget):
                     return RESPONSE_CONSUME
                 current = self.nodes[self.selected_index]
                 pt = current["point"]
+                if nearest_snap is None:
+                    spt = Point(space_pos[0], space_pos[1])
+                else:
+                    spt = Point(nearest_snap[0], nearest_snap[1])
 
-                m = self.element.matrix.point_in_inverse_space(space_pos[:2])
+                m = self.element.matrix.point_in_inverse_space(spt)
                 # Special treatment for the virtual midpoint:
                 if current["type"] == "midpoint" and self.node_type == "path":
                     self.scene.context.signal(
@@ -1988,10 +1992,10 @@ class EditTool(ToolWidget):
                 self.done()
                 return RESPONSE_CONSUME
             # print(f"Key: '{keycode}'")
-            if not self.selected_index is None:
-                entry = self.nodes[self.selected_index]
-            else:
-                entry = None
+            # if self.selected_index is not None:
+            #     entry = self.nodes[self.selected_index]
+            # else:
+            #     entry = None
             self.perform_action(keycode)
 
             return RESPONSE_CONSUME
@@ -2047,6 +2051,21 @@ class EditTool(ToolWidget):
             # print(f"Execute {action[1]}")
             action[0]()
 
+    def _tool_change(self):
+        selected_node = None
+        elements = self.scene.context.elements.elem_branch
+        for node in elements.flat(emphasized=True):
+            if node.type in ("elem path", "elem polyline"):
+                selected_node = node
+                break
+        self.scene.pane.suppress_selection = selected_node is not None
+        if selected_node is None:
+            self.done()
+        else:
+            self.calculate_points(selected_node)
+            self.enable_rules()
+        self.scene.request_refresh()
+
     def signal(self, signal, *args, **kwargs):
         """
         Signal routine for stuff that's passed along within a scene,
@@ -2055,21 +2074,11 @@ class EditTool(ToolWidget):
         # print(f"Signal: {signal}")
         if signal == "tool_changed":
             if len(args) > 0 and len(args[0]) > 1 and args[0][1] == "edit":
-                selected_node = self.scene.context.elements.first_element(
-                    emphasized=True
-                )
-                if selected_node is not None:
-                    self.calculate_points(selected_node)
-                    self.scene.request_refresh()
-                    self.enable_rules()
+                self._tool_change()
             return
         elif signal == "rebuild_tree":
-            selected_node = self.scene.context.elements.first_element(emphasized=True)
-            if selected_node is None:
-                self.done()
-            else:
-                self.calculate_points(selected_node)
-                self.enable_rules()
-            self.scene.request_refresh()
+            self._tool_change()
+        elif signal == "emphasized":
+            self._tool_change()
         if self.element is None:
             return

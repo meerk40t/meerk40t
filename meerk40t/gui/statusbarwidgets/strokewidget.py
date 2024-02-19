@@ -1,8 +1,9 @@
 import wx
 
 from meerk40t.core.elements.element_types import elem_nodes
+from meerk40t.core.units import Length
+from meerk40t.gui.wxutils import wxCheckBox
 
-from ...core.units import Length
 from .statusbarwidget import StatusBarWidget
 
 _ = wx.GetTranslation
@@ -164,7 +165,7 @@ class StrokeWidget(StatusBarWidget):
             self.context.strokewidth_default_units = 0
         self.combo_units.SetSelection(self.context.strokewidth_default_units)
 
-        self.chk_scale = wx.CheckBox(self.parent, wx.ID_ANY, _("Scale"))
+        self.chk_scale = wxCheckBox(self.parent, wx.ID_ANY, _("Scale"))
         self.chk_scale.SetToolTip(
             _("Toggle the behaviour of stroke-growth.")
             + "\n"

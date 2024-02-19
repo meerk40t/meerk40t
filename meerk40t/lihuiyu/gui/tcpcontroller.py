@@ -6,7 +6,7 @@ from meerk40t.gui.icons import (
     icons8_disconnected,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size, wxButton
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -17,12 +17,13 @@ class TCPController(MWindow):
         super().__init__(500, 200, *args, **kwds)
         self.SetHelpText("k40tcp")
 
-        self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
+        self.button_device_connect = wxButton(self, wx.ID_ANY, _("Connection"))
         self.service = self.context.device
         self.text_status = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_ip_host = TextCtrl(
-            self, wx.ID_ANY, "", limited=True, style=wx.TE_PROCESS_ENTER, check="empty"
+            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, check="empty"
         )
+        self.text_ip_host.SetMinSize(dip_size(self, 125, -1))
         self.text_port = TextCtrl(
             self, wx.ID_ANY, "", check="int", limited=True, style=wx.TE_PROCESS_ENTER
         )
@@ -59,7 +60,10 @@ class TCPController(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)
-        self.SetBackgroundColour(None)
+        # For whatever reason the windows backgroundcolor is a dark grey,
+        # not sure why but, we just set it back to standard value
+        col = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
+        self.SetBackgroundColour(col)
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_device_connect.SetForegroundColour(wx.BLACK)
         self.button_device_connect.SetFont(

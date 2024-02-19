@@ -367,6 +367,22 @@ def plugin(kernel, lifecycle=None):
                 "page": "Scene",
                 "section": "Operation",
             },
+            {
+                "attr": "allow_reg_to_op_dragging",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Allow dragging of regmarks to operations"),
+                "tip": _(
+                    "Ticked: A drag operation of regmark nodes to an operation will move back these nodes to the element branch."
+                )
+                + "\n"
+                + _(
+                    "Unticked: A drag operation of regmark nodes to an operation will be ignored."
+                ),
+                "page": "Scene",
+                "section": "Operation",
+            },
         ]
         for c in choices:
             c["help"] = "classification"
@@ -509,7 +525,9 @@ class Elemental(Service):
         self.undo = Undo(self, self._tree)
         self.do_undo = True
         self.suppress_updates = False
-
+        # We need to set up these as the settings stuff will only be done
+        # on postboot after Elemental has already been created
+        self.setting(bool, "classify_new", True)
         self.setting(bool, "classify_reverse", False)
         self.setting(bool, "legacy_classification", False)
         self.setting(bool, "classify_fuzzy", False)
@@ -703,7 +721,7 @@ class Elemental(Service):
                 yield e
 
     def have_unassigned_elements(self):
-        for node in self.unassigned_elements():
+        for _ in self.unassigned_elements():
             return True
         return False
 
@@ -1210,6 +1228,10 @@ class Elemental(Service):
 
         @param name:
         @param oplist:
+        @param opinfo:
+        @param inform:
+        @param use_settings:
+        @param flush:
         @return:
         """
         name = self.safe_section_name(name)
@@ -1279,7 +1301,8 @@ class Elemental(Service):
         Clear operations for the derivables of the given name.
 
         @param name: name of operation.
-        @param flush: Optionally permit non-flushed to disk.
+        @param flush: Optionally permit non-flushed to disk
+        @param use_settings:
         @return:
         """
         name = self.safe_section_name(name)
@@ -1350,13 +1373,15 @@ class Elemental(Service):
                 op_tree[parent].add_node(op_tree[section])
         return op_list, op_info
 
-    def load_persistent_operations(self, name, classify=True, clear=True):
+    def load_persistent_operations(self, name, classify=None, clear=True):
         """
         Load oplist section to replace current op_branch data.
 
         Performs an optional classification.
 
         @param name:
+        @param classify:
+        @param clear:
         @return:
         """
         settings = self.op_data
@@ -1366,6 +1391,8 @@ class Elemental(Service):
         oplist, opinfo = self.load_persistent_op_list(name, use_settings=settings)
         for op in oplist:
             operation_branch.add_node(op)
+        if classify is None:
+            classify = self.classify_new
         if not classify:
             return
         if len(list(self.elems())) > 0:
@@ -1500,7 +1527,8 @@ class Elemental(Service):
             opinfo["author"] = "MeerK40t"
             needs_save = True
         # Ensure we have an id for everything
-        needs_save = self.validate_ids(nodelist=oplist, generic=False)
+        if self.validate_ids(nodelist=oplist, generic=False):
+            needs_save = True
         if needs_save:
             self.save_persistent_operations_list(
                 std_list, oplist=oplist, opinfo=opinfo, inform=False
@@ -1546,7 +1574,7 @@ class Elemental(Service):
             try:
                 self.op_branch.add_node(op_to_use)
             except ValueError:
-                # This happens when he have somehow lost sync with the node,
+                # This happens when we have somehow lost sync with the node,
                 # and we try to add a node that is already added...
                 # In principle this should be covered by the check
                 # above, but you never know
@@ -1924,7 +1952,7 @@ class Elemental(Service):
         """
         Returns whether any element is emphasized
         """
-        for e in self.elems_nodes(emphasized=True):
+        for _ in self.elems_nodes(emphasized=True):
             return True
         return False
 
@@ -2086,10 +2114,17 @@ class Elemental(Service):
         #             # print ("Checked %s and will addit=%s" % (n.type, addit))
         #             if addit and n not in data:
         #                 data.append(n)
+        op_treatment = (
+            drop_node.type in op_parent_nodes and self.allow_reg_to_op_dragging
+        )
         for drag_node in data:
             if drop_node is drag_node:
                 # print(f"Drag {drag_node.type} to {drop_node.type} - Drop node was drag node")
                 continue
+            if op_treatment and drag_node.has_ancestor("branch reg"):
+                # We need to first relocate the drag_node to the elem branch
+                # print(f"Relocate {drag_node.type} to elem branch")
+                self.elem_branch.drop(drag_node)
             if drop_node.drop(drag_node, modify=False):
                 # Is the drag node coming from the regmarks branch?
                 # If yes then we might need to classify.
@@ -2314,7 +2349,7 @@ class Elemental(Service):
 
     def update_bounds(self, b):
         self._emphasized_bounds = [b[0], b[1], b[2], b[3]]
-        # We dont know it better...
+        # We don't know it better...
         self._emphasized_bounds_painted = [b[0], b[1], b[2], b[3]]
         self._emphasized_bounds_dirty = False
         self.signal("selected_bounds", self._emphasized_bounds)
@@ -2495,6 +2530,7 @@ class Elemental(Service):
             # add_op_function = self.add_op
             add_op_function = self.add_classify_op
         for node in elements:
+            node_desc = f"[{node.type}]{'' if node.id is None else node.id + '-'}{'<none>' if node.label is None else node.label}"
             # Following lines added to handle 0.7 special ops added to ops list
             if hasattr(node, "operation"):
                 add_op_function(node)
@@ -2505,9 +2541,13 @@ class Elemental(Service):
                 fuzzy_param = (False, True)
             else:
                 fuzzy_param = (False,)
+            do_stroke = True
+            do_fill = True
             for tempfuzzy in fuzzy_param:
                 if debug:
-                    debug(f"Pass 1 (fuzzy={tempfuzzy}): check {node.type}")
+                    debug(
+                        f"Pass 1 (fuzzy={tempfuzzy}): checks, s:{do_stroke}, f:{do_fill}, node:{node_desc}"
+                    )
                 was_classified = False
                 should_break = False
 
@@ -2515,6 +2555,10 @@ class Elemental(Service):
                     # One special case: is this a rasterop and the stroke
                     # color is black and the option 'classify_black_as_raster'
                     # is not set? Then skip...
+                    if not do_stroke and op.type in ("op engrave", "op cut", "op dots"):
+                        continue
+                    if not do_fill and op.type in ("op raster", "op image"):
+                        continue
                     is_black = False
                     whisperer = True
                     if (
@@ -2574,18 +2618,29 @@ class Elemental(Service):
                             sfill = ""
                         if debug:
                             debug(
-                                f"Was classified: {sstroke} {sfill} matching operation: {type(op).__name__}, break={should_break}"
+                                f"{node_desc} was classified: {sstroke} {sfill} matching operation: {type(op).__name__}, break={should_break}"
                             )
                     if should_break:
                         break
+                # end of operation loop, let's make sure we don't do stuff again if we were successful
+                if classif_info[0]:
+                    do_stroke = False
+                if classif_info[1]:
+                    do_fill = False
+
                 # So we are the end of the first pass, if there was already a classification
                 # then we call it a day and don't call the fuzzy part
                 if was_classified or should_break:
                     break
+            # - End of fuzzy loop
 
             ######################
             # NON-CLASSIFIED ELEMENTS
             ######################
+            if not do_stroke:
+                classif_info[0] = True
+            if not do_fill:
+                classif_info[1] = True
             if was_classified and debug:
                 debug(f"Classified, stroke={classif_info[0]}, fill={classif_info[1]}")
             # Let's make sure we only consider relevant, ie existing attributes...
@@ -2593,7 +2648,7 @@ class Elemental(Service):
                 if node.stroke is None or node.stroke.argb is None:
                     classif_info[0] = True
                 if node.type == "elem text":
-                    # even if it has, we are not going to something with it
+                    # even if it has, we are not going to do something with it
                     classif_info[0] = True
             else:
                 classif_info[0] = True
@@ -2608,11 +2663,23 @@ class Elemental(Service):
             ):
                 # Not fully classified on both stroke and fill
                 was_classified = False
+                if debug:
+                    debug(
+                        f"{node_desc} was not fully classified on stroke and fill (s:{classif_info[0]}, f:{classif_info[1]})"
+                    )
             if not was_classified and usedefault:
                 # let's iterate through the default ops and add them
                 if debug:
                     debug("Pass 2 (wasn't classified), looking for default ops")
                 for op in operations:
+                    if classif_info[0] and op.type in (
+                        "op engrave",
+                        "op cut",
+                        "op dots",
+                    ):
+                        continue
+                    if classif_info[1] and op.type in ("op raster", "op image"):
+                        continue
                     is_black = False
                     whisperer = True
                     if (
@@ -2780,7 +2847,6 @@ class Elemental(Service):
                                 f"Pass 3-stroke, fuzzy={tempfuzzy}): check {node.type}"
                             )
                         for op_candidate in self.default_operations:
-                            classified = False
                             if isinstance(op_candidate, (CutOpNode, EngraveOpNode)):
                                 if tempfuzzy:
                                     classified = (
@@ -2813,7 +2879,6 @@ class Elemental(Service):
                     and node.stroke is not None
                     and node.stroke.argb is not None
                 ):
-                    is_cut = False
                     if fuzzy:
                         is_cut = (
                             Color.distance(abs(node.stroke), "red") <= fuzzydistance
@@ -2954,7 +3019,13 @@ class Elemental(Service):
                         operations.append(op)
                         new_operations_added = True
                         already_found = True
-                    op.add_reference(node)
+                    # Don't add a node more than once!
+                    existing = False
+                    if hasattr(op, "is_referenced"):
+                        existing = op.is_referenced(node)
+
+                    if not existing:
+                        op.add_reference(node)
 
         self.remove_unused_default_copies()
         if new_operations_added:

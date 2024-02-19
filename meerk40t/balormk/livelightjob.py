@@ -6,11 +6,12 @@ when the elements change. It will show the updated job.
 
 This job works as a spoolerjob. Implementing all the regular calls for being a spooled job.
 """
-
 import time
+from math import isinf
 
 import numpy as np
 
+from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.svgelements import Matrix
 from meerk40t.tools.geomstr import Geomstr
@@ -41,6 +42,7 @@ class LiveLightJob:
         self.quantization = quantization
         self.mode = mode
         self.points = None
+        self.source = "elements"
         if self.mode == "full":
             self.label = "Live Full Light Job"
             self._mode_light = self._full
@@ -50,9 +52,9 @@ class LiveLightJob:
         elif self.mode == "crosshair":
             self.label = "Simple Crosshairs"
             self._mode_light = self._crosshairs
-        elif self.mode == "regmarks":
-            self.label = "Live Regmark Light Job"
-            self._mode_light = self._regmarks
+        # elif self.mode == "regmarks":
+        #     self.label = "Live Regmark Light Job"
+        #     self._mode_light = self._regmarks
         elif self.mode == "hull":
             self.label = "Live Hull Light Job"
             self._mode_light = self._hull
@@ -171,6 +173,12 @@ class LiveLightJob:
         if self.listen:
             # Watch for changes.
             bounds = self.service.elements.selected_area()
+            if bounds is None or isinf(bounds[0]):
+                bounds = Node.union_bounds(
+                    list(self.service.elements.regmarks(emphasized=True))
+                )
+            if bounds is None or isinf(bounds[0]):
+                bounds = Node.union_bounds(list(self.service.elements.elems()))
             if self._last_bounds is not None and bounds != self._last_bounds:
                 # Emphasis did not change but the bounds did. We dragged something.
                 self.changed = True
@@ -199,15 +207,27 @@ class LiveLightJob:
         # Calls light based on the set mode.
         return self._mode_light(con)
 
-    def _regmarks(self, con):
-        """
-        Mode light regmarks gets the elements for regmarks. Sends to light elements.
+    # def _regmarks(self, con):
+    #     """
+    #     Mode light regmarks gets the elements for regmarks. Sends to light elements.
 
-        @param con: connection
-        @return:
-        """
-        elements = list(self.service.elements.regmarks())
-        return self._light_elements(con, elements)
+    #     @param con: connection
+    #     @return:
+    #     """
+    #     elements = list(self.service.elements.regmarks(emphasized=True))
+    #     if len(elements) == 0:
+    #         elements = list(self.service.elements.regmarks())
+    #     return self._light_elements(con, elements)
+
+    def _gather_source(self):
+        self.source = "elements"
+        elements = list(self.service.elements.elems(emphasized=True))
+        if len(elements) == 0:
+            elements = list(self.service.elements.regmarks(emphasized=True))
+            self.source = "regmarks"
+        if len(elements) == 0:
+            elements = list(self.service.elements.elems())
+        return elements
 
     def _full(self, con):
         """
@@ -216,7 +236,7 @@ class LiveLightJob:
         @return:
         """
         # Full was requested.
-        elements = list(self.service.elements.elems(emphasized=True))
+        elements = self._gather_source()
         return self._light_elements(con, elements)
 
     def _hull(self, con):
@@ -226,7 +246,7 @@ class LiveLightJob:
         @param con: connection
         @return:
         """
-        elements = list(self.service.elements.elems(emphasized=True))
+        elements = self._gather_source()
         return self._light_hull(con, elements)
 
     def _crosshairs(self, con, margin=5000):
@@ -262,10 +282,9 @@ class LiveLightJob:
 
     def _bounds(self, con):
         """
-        Light the bounds geometry. Sends to light geometry.
+        Light the bound's geometry. Sends to light geometry.
 
         @param con:
-        @param bounds:
         @return:
         """
         bounds = self._last_bounds

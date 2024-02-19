@@ -11,7 +11,7 @@ from .choicepropertypanel import ChoicePropertyPanel
 from .icons import icons8_administrative_tools
 from .mwindow import MWindow
 from .wxmribbon import RibbonEditor
-from .wxutils import StaticBoxSizer, TextCtrl
+from .wxutils import StaticBoxSizer, TextCtrl, wxButton, wxRadioBox
 
 _ = wx.GetTranslation
 
@@ -25,7 +25,7 @@ class PreferencesUnitsPanel(wx.Panel):
 
         sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.radio_units = wx.RadioBox(
+        self.radio_units = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Units"),
@@ -141,13 +141,13 @@ class PreferencesSavingPanel(wx.Panel):
         self.context = context
 
         main_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Management"), wx.HORIZONTAL)
-        self.button_save = wx.Button(self, wx.ID_ANY, _("Save"))
+        self.button_save = wxButton(self, wx.ID_ANY, _("Save"))
         self.button_save.SetToolTip(_("Immediately save the settings to disk"))
-        self.button_export = wx.Button(self, wx.ID_ANY, _("Export"))
+        self.button_export = wxButton(self, wx.ID_ANY, _("Export"))
         self.button_export.SetToolTip(
             _("Export the current settings to a different location")
         )
-        self.button_import = wx.Button(self, wx.ID_ANY, _("Import"))
+        self.button_import = wxButton(self, wx.ID_ANY, _("Import"))
         self.button_import.SetToolTip(_("Import a previously saved setting file"))
         main_sizer.Add(self.button_save, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.Bind(wx.EVT_BUTTON, self.on_button_save, self.button_save)

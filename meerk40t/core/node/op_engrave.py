@@ -1,4 +1,3 @@
-from copy import copy
 from math import isnan
 
 from meerk40t.core.elements.element_types import *
@@ -105,7 +104,7 @@ class EngraveOpNode(Node, Parameters):
         if hasattr(drag_node, "as_geometry"):
             if (
                 drag_node.type not in self._allowed_elements_dnd
-                or drag_node._parent.type == "branch reg"
+                or drag_node.has_ancestor("branch reg")
             ):
                 return False
             # Dragging element onto operation adds that element to the op.
@@ -125,7 +124,9 @@ class EngraveOpNode(Node, Parameters):
             if modify:
                 self.insert_sibling(drag_node)
             return True
-        elif drag_node.type in ("file", "group"):
+        elif drag_node.type in ("file", "group") and not drag_node.has_ancestor(
+            "branch reg"
+        ):
             some_nodes = False
             for e in drag_node.flat(elem_nodes):
                 # Add element to operation
@@ -150,6 +151,14 @@ class EngraveOpNode(Node, Parameters):
     def has_attributes(self):
         return "stroke" in self.allowed_attributes or "fill" in self.allowed_attributes
 
+    def is_referenced(self, node):
+        for e in self.children:
+            if e is node:
+                return True
+            if hasattr(e, "node") and e.node is node:
+                return True
+        return False
+
     def valid_node_for_reference(self, node):
         if node.type in self._allowed_elements_dnd:
             return True
@@ -158,9 +167,9 @@ class EngraveOpNode(Node, Parameters):
 
     def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         def matching_color(col1, col2):
-            result = False
+            _result = False
             if col1 is None and col2 is None:
-                result = True
+                _result = True
             elif (
                 col1 is not None
                 and col1.argb is not None
@@ -169,11 +178,14 @@ class EngraveOpNode(Node, Parameters):
             ):
                 if fuzzy:
                     distance = Color.distance(col1, col2)
-                    result = distance < fuzzydistance
+                    _result = distance < fuzzydistance
                 else:
-                    result = col1 == col2
-            return result
+                    _result = col1 == col2
+            return _result
 
+        if self.is_referenced(node):
+            # No need to add it again...
+            return False, False, None
         feedback = []
         if node.type in self._allowed_elements:
             if not self.default:

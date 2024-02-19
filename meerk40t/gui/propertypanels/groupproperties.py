@@ -162,12 +162,11 @@ class FilePropertiesPanel(ScrolledPanel):
     def set_widgets(self, node):
         self.node = node
         self.panel_ct.set_widgets(node)
-        if self.node is None:
-            text1 = ""
-            text2 = ""
-            text3 = ""
-            text4 = ""
-        else:
+        text1 = ""
+        text2 = ""
+        text3 = ""
+        text4 = ""
+        if self.node is not None:
             fname = self.node.filepath
             if fname is not None:
                 try:

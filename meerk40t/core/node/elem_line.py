@@ -214,8 +214,8 @@ class LineNode(Node, Stroked, FunctionalParameter):
         if bounds is None:
             return
         self._points = []
-        cx = (bounds[0] + bounds[2]) / 2
-        cy = (bounds[1] + bounds[3]) / 2
+        # cx = (bounds[0] + bounds[2]) / 2
+        # cy = (bounds[1] + bounds[3]) / 2
         # self._points.append([bounds[0], bounds[1], "bounds top_left"])
         # self._points.append([bounds[2], bounds[1], "bounds top_right"])
         # self._points.append([bounds[0], bounds[3], "bounds bottom_left"])
@@ -269,7 +269,7 @@ class LineNode(Node, Stroked, FunctionalParameter):
         if isinstance(value, (list, tuple)):
             self.mkparam = value
             if self.mkparam:
-                method = self.mkparam[0]
+                # method = self.mkparam[0]
 
                 cx = (self.x1 + self.x2) / 2
                 cy = (self.y1 + self.y2) / 2

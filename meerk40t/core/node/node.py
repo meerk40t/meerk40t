@@ -1055,6 +1055,7 @@ class Node:
         @param emphasized: match only emphasized nodes.
         @param targeted: match only targeted nodes
         @param highlighted: match only highlighted nodes
+        @param lock: match locked nodes
         @return:
         """
         node = self

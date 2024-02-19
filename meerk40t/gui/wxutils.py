@@ -150,7 +150,7 @@ def create_menu_for_node_TEST(gui, node, elements) -> wx.Menu:
     """
     Test code towards unifying choices and tree nodes into choices that parse to menus.
 
-    This is unused experimental code. Testing the potential inter-relationships between choices for the choice panels
+    This is unused experimental code. Testing the potential interrelationships between choices for the choice panels
     and dynamic node menus.
 
     @param gui:
@@ -199,7 +199,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                         sizer.Add(label, 0, wx.EXPAND, 0)
                         dtype = prompt["type"]
                         if dtype == bool:
-                            control = wx.CheckBox(dlg, wx.ID_ANY)
+                            control = wxCheckBox(dlg, wx.ID_ANY)
                         else:
                             control = wx.TextCtrl(dlg, wx.ID_ANY)
                             control.SetMaxSize(dip_size(dlg, 75, -1))
@@ -207,8 +207,8 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                         sizer.Add(control, 0, wx.EXPAND, 0)
                         sizer.AddSpacer(23)
                     b_sizer = wx.BoxSizer(wx.HORIZONTAL)
-                    button_OK = wx.Button(dlg, wx.ID_OK, _("OK"))
-                    button_CANCEL = wx.Button(dlg, wx.ID_CANCEL, _("Cancel"))
+                    button_OK = wxButton(dlg, wx.ID_OK, _("OK"))
+                    button_CANCEL = wxButton(dlg, wx.ID_CANCEL, _("Cancel"))
                     # dlg.SetAffirmativeId(button_OK.GetId())
                     # dlg.SetEscapeId(button_CANCEL.GetId())
                     b_sizer.Add(button_OK, 0, wx.EXPAND, 0)
@@ -334,7 +334,6 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
             submenu = submenus[submenu_name]
         else:
             if submenu_name:
-                last_was_separator = False
                 subs = submenu_name.split("|")
                 common = ""
                 parent_menu = menu
@@ -547,8 +546,6 @@ class TextCtrl(wx.TextCtrl):
             self.SetMaxSize(dip_size(self, _MAX_WIDTH, -1))
 
     def validate_widths(self):
-        minw = 35
-        maxw = 100
         minpattern = "0000"
         maxpattern = "999999999.99mm"
         if self._check == "length":
@@ -861,9 +858,121 @@ class TextCtrl(wx.TextCtrl):
         return result
 
 
-class CheckBox(wx.CheckBox):
+class wxCheckBox(wx.CheckBox):
     """
-    This checkbox replaces wx.Checkbox and creates a series of mouse over tool tips to permit Linux tooltips that
+    This calss wraps around  wx.CheckBox and creates a series of mouse over tool tips to permit Linux tooltips that
+    otherwise do not show.
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        self._tool_tip = None
+        super().__init__(*args, **kwargs)
+        if platform.system() == "Linux":
+
+            def on_mouse_over_check(ctrl):
+                def mouse(event=None):
+                    ctrl.SetToolTip(self._tool_tip)
+
+                return mouse
+
+            self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        super().SetToolTip(self._tool_tip)
+
+
+class wxButton(wx.Button):
+    """
+    This class wraps around wx.Button and creates a series of mouse over tool tips to permit Linux tooltips that
+    otherwise do not show.
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        self._tool_tip = None
+        super().__init__(*args, **kwargs)
+        if platform.system() == "Linux":
+
+            def on_mouse_over_check(ctrl):
+                def mouse(event=None):
+                    ctrl.SetToolTip(self._tool_tip)
+
+                return mouse
+
+            self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        super().SetToolTip(self._tool_tip)
+
+
+class wxToggleButton(wx.ToggleButton):
+    """
+    This class wraps around wx.ToggleButton and creates a series of mouse over tool tips to permit Linux tooltips that
+    otherwise do not show.
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        self._tool_tip = None
+        super().__init__(*args, **kwargs)
+        if platform.system() == "Linux":
+
+            def on_mouse_over_check(ctrl):
+                def mouse(event=None):
+                    ctrl.SetToolTip(self._tool_tip)
+
+                return mouse
+
+            self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        super().SetToolTip(self._tool_tip)
+
+
+class wxRadioBox(wx.RadioBox):
+    """
+    This class wraps around wx.RadioBox and creates a series of mouse over tool tips to permit Linux tooltips that
+    otherwise do not show.
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        self._tool_tip = None
+        super().__init__(*args, **kwargs)
+        if platform.system() == "Linux":
+
+            def on_mouse_over_check(ctrl):
+                def mouse(event=None):
+                    ctrl.SetToolTip(self._tool_tip)
+
+                return mouse
+
+            self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        super().SetToolTip(self._tool_tip)
+
+
+class wxStaticBitmap(wx.StaticBitmap):
+    """
+    This class wraps around wx.RadioBox and creates a series of mouse over tool tips to permit Linux tooltips that
     otherwise do not show.
     """
 
@@ -939,7 +1048,7 @@ class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
         listmix.TextEditMixin.__init__(self)
 
 
-class HoverButton(wx.Button):
+class HoverButton(wxButton):
     """
     Provide a button with Hover-Color changing ability.
     """
