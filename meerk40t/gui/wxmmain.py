@@ -3160,8 +3160,8 @@ class MeerK40t(MWindow):
         )
         self.Bind(wx.EVT_MENU, self.on_click_open, id=wx.ID_OPEN)
 
-        self.recent_file_menu = wx.Menu()
         if not getattr(sys, "frozen", False) or platform.system() != "Darwin":
+            self.recent_file_menu = wx.Menu()
             self.recent_file_menu_item = self.file_menu.AppendSubMenu(
                 self.recent_file_menu, _("&Recent")
             )
