@@ -1172,7 +1172,7 @@ class Geomstr:
             c2 = seg[3]
             end = seg[4]
             seg_info = self.segment_type(idx)
-            if seg_type != TYPE_END:
+            if seg_type not in(TYPE_END, TYPE_NOP):
                 seg_info += f", Start: {cplx_info(start)}, End: {cplx_info(end)}"
             if seg_type == TYPE_QUAD:
                 seg_info += f", C: {cplx_info(c1)}"
@@ -1741,6 +1741,8 @@ class Geomstr:
         for e in self.segments[start_pos:end_pos]:
             seg_type = int(e[2].real)
             set_type = int(e[2].imag)
+            if seg_type == TYPE_NOP:
+                continue
             start = e[0]
             if not at_start and (set_type != settings or abs(start - end) > 1e-8):
                 # Start point does not equal previous end point, or settings changed
@@ -1801,6 +1803,8 @@ class Geomstr:
         end = None
         for e in self.segments[: self.index]:
             seg_type = int(e[2].real)
+            if seg_type == TYPE_NOP:
+                continue
             start = e[0]
             if end != start and not at_start:
                 # Start point does not equal previous end point.
@@ -1900,6 +1904,8 @@ class Geomstr:
         end = None
         for e in self.segments[: self.index]:
             seg_type = int(e[2].real)
+            if seg_type == TYPE_NOP:
+                continue
             start = e[0]
             if end != start and not at_start:
                 # Start point does not equal previous end point.
@@ -3385,6 +3391,10 @@ class Geomstr:
         if info.real == TYPE_END:
             return
         if oinfo.real == TYPE_END:
+            return
+        if info.real == TYPE_NOP:
+            return
+        if oinfo.real == TYPE_NOP:
             return
         if info.real == TYPE_LINE:
             if oinfo.real == TYPE_LINE:
