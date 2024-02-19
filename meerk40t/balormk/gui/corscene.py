@@ -13,15 +13,12 @@ from math import tau
 
 import wx
 
-from meerk40t.gui.laserrender import LaserRender
-from meerk40t.gui.scene.sceneconst import (
-    RESPONSE_CHAIN,
-    HITCHAIN_HIT,
-)
-from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui import icons
 from meerk40t.gui.icons import icons8_detective
+from meerk40t.gui.laserrender import LaserRender
+from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
+from meerk40t.gui.scene.widget import Widget
 from meerk40t.tools.geomstr import Geomstr
 from meerk40t.tools.pmatrix import PMatrix
 
@@ -57,16 +54,18 @@ def cor_file_geometry(s=0x6666):
     path.line(c(0.95, -0.85), c(0.85, -0.75))
     path.line(c(0.85, -0.75), c(0.75, -0.85))
     path.line(c(0.75, -0.85), c(0.85, -0.95))
-    path.settings(0, {
-        "power": 1000,
-        "delay_laser_on": 100,
-        "delay_laser_off": 100,
-        "delay_laser_polygon": 100,
-        "speed": 255,
-        "rapid_speed": 255,
-        "timing_enabled": True,
-
-    })
+    path.settings(
+        0,
+        {
+            "power": 1000,
+            "delay_laser_on": 100,
+            "delay_laser_off": 100,
+            "delay_laser_polygon": 100,
+            "speed": 255,
+            "rapid_speed": 255,
+            "timing_enabled": True,
+        },
+    )
     return path
 
 

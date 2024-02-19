@@ -975,7 +975,7 @@ class SimulationPanel(wx.Panel, Job):
 
     def startup_panel(self):
         # Under Linux the SimulationPanel starts with the wrong zoom factor,
-        # as the panel size has not been established during init, 
+        # as the panel size has not been established during init,
         # so we do a delayed startup.
         # No platform check, as this isn't hurting generally
         _signal_job = Job(
@@ -985,7 +985,7 @@ class SimulationPanel(wx.Panel, Job):
             times=1,
             run_main=True,
         )
-        self.context.schedule(_signal_job)        
+        self.context.schedule(_signal_job)
 
     def __set_properties(self):
         self.text_distance_laser.SetToolTip(_("Distance Estimate: while Lasering"))
@@ -1242,9 +1242,7 @@ class SimulationPanel(wx.Panel, Job):
         winsize = self.view_pane.Size
         if winsize[0] == 0:
             return
-        self.widget_scene.widget_root.focus_viewport_scene(
-            bbox, winsize, 0.1
-        )
+        self.widget_scene.widget_root.focus_viewport_scene(bbox, winsize, 0.1)
         self.widget_scene.request_refresh()
 
     def set_cutcode_entry(self, cutcode):

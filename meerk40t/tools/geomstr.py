@@ -1172,7 +1172,7 @@ class Geomstr:
             c2 = seg[3]
             end = seg[4]
             seg_info = self.segment_type(idx)
-            if seg_type not in(TYPE_END, TYPE_NOP):
+            if seg_type not in (TYPE_END, TYPE_NOP):
                 seg_info += f", Start: {cplx_info(start)}, End: {cplx_info(end)}"
             if seg_type == TYPE_QUAD:
                 seg_info += f", C: {cplx_info(c1)}"
