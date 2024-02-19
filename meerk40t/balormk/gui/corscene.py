@@ -100,16 +100,16 @@ def cor_file_line_associated(s=0x6666):
 def register_scene(service):
     _ = service.kernel.translation
 
-    service.register(
-        "button/control/cor_file",
-        {
-            "label": _("cor_file"),
-            "icon": icons8_detective,
-            "tip": _("Create CorFile"),
-            "help": "devicebalor",
-            "action": lambda v: service("widget_corfile\n"),
-        },
-    )
+    # service.register(
+    #     "button/control/cor_file",
+    #     {
+    #         "label": _("cor_file"),
+    #         "icon": icons8_detective,
+    #         "tip": _("Create CorFile"),
+    #         "help": "devicebalor",
+    #         "action": lambda v: service("widget_corfile\n"),
+    #     },
+    # )
 
     @service.console_command(
         "widget_corfile",
