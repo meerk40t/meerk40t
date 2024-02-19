@@ -443,8 +443,9 @@ class LiveLightJob:
                 geometry.append(e)
 
             # Convert to hull.
-            hull = Geomstr.hull(geometry)
-            hull.transform(self.service.view.matrix)
+            hull = Geomstr.hull(geometry, distance=500)
+            if not self.raw:
+                hull.transform(self.service.view.matrix)
             hull.transform(self._redlight_adjust_matrix())
             self.points = hull
 

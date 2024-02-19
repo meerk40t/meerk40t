@@ -1474,8 +1474,8 @@ class Geomstr:
         return path
 
     @classmethod
-    def hull(cls, geom):
-        ipts = list(geom.as_equal_interpolated_points(distance=50))
+    def hull(cls, geom, distance=50):
+        ipts = list(geom.as_equal_interpolated_points(distance=distance))
         pts = list(Geomstr.convex_hull(None, ipts))
         if pts:
             pts.append(pts[0])
