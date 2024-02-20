@@ -40,7 +40,9 @@ class TCPConnection:
             return
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.connect((self.service.address, self.service.port))
+            # Make sure port is in a valid range...
+            port = min(65535, max(0, self.service.port))
+            self.socket.connect((self.service.address, port))
             self.service.signal("tcp;status", "connected")
             name = self.service.label.replace(" ", "-")
             name = name.replace("/", "-")
@@ -58,7 +60,7 @@ class TCPConnection:
         except ConnectionError:
             self.close()
             self.service.signal("tcp;status", "connection error")
-        except socket.gaierror as e:
+        except (socket.gaierror, OverflowError) as e:
             self.close()
             self.service.signal("tcp;status", "address resolve error")
         except socket.herror as e:

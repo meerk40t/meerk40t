@@ -243,6 +243,11 @@ class ConfigurationTcp(wx.Panel):
             check="int",
             style=wx.TE_PROCESS_ENTER,
         )
+        self.text_port.lower_limit = 0
+        self.text_port.upper_limit = 65535
+        self.text_port.lower_limit_err = 0
+        self.text_port.upper_limit_err = 65535
+
         self.text_port.SetToolTip(_("Port for tcp connection on the server computer"))
         sizer_port.Add(self.text_port, 1, wx.EXPAND, 0)
 
@@ -267,7 +272,7 @@ class ConfigurationTcp(wx.Panel):
 
     def on_text_port(self):  # wxGlade: ConfigurationTcp.<event_handler>
         try:
-            self.context.port = int(self.text_port.GetValue())
+            self.context.port = max(0, min(65535, int(self.text_port.GetValue())))
         except ValueError:
             pass
 
