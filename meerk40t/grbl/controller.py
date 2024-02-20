@@ -316,6 +316,10 @@ class GrblController:
             from meerk40t.grbl.tcp_connection import TCPOutput
 
             self.connection = TCPOutput(self.service, self)
+        elif self.service.permit_ws and self.service.interface == "ws":
+            from meerk40t.grbl.ws_connection import WSOutput
+
+            self.connection = WSOutput(self.service, self)
         else:
             # Mock
             from .mock_connection import MockConnection
