@@ -406,7 +406,6 @@ class BeamTable:
         gs = g.segments
         events = []
 
-
         def bisect_events(a, x, lo):
             x = x.real, x.imag
             hi = len(a)
@@ -427,6 +426,12 @@ class BeamTable:
             return lo - 1
 
         def brute_events(a, pos):
+            """
+            Brute iterate events to find the correct placement for the required events.
+            @param a:
+            @param pos:
+            @return:
+            """
             pos = pos.real, pos.imag
             for i in range(len(a)):
                 q = a[i]
@@ -450,13 +455,19 @@ class BeamTable:
             return ~len(a)
 
         def get_or_insert_event(x):
+            """
+            Get event at position, x. Or create event at the given position.
+
+            @param x:
+            @return:
+            """
             ip1 = brute_events(events, x)
             if ip1 >= 0:
-                event1 = events[ip1]
+                evt = events[ip1]
             else:
-                event1 = (x, [], [])
-                events.insert(~ip1, event1)
-            return event1
+                evt = (x, [], [])
+                events.insert(~ip1, evt)
+            return evt
 
         # Add start and end events.
         for i in range(g.index):
@@ -473,6 +484,13 @@ class BeamTable:
                 event2[1].append(i)
 
         def bisect_yint(a, x, scanline):
+            """
+            Bisect into the y-intersects of the list (a) to at position x, for scanline value scaneline.
+            @param a:
+            @param x:
+            @param scanline:
+            @return:
+            """
             value = float(g.y_intercept(x, scanline.real, scanline.imag))
             lo = 0
             hi = len(a)
