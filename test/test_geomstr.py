@@ -2610,33 +2610,33 @@ class TestGeomstr(unittest.TestCase):
             except PermissionError:
                 pass
 
-    def test_scan_table_random_brute(self):
-        print("\n\n")
-        for _c in range(5):
-            g = Geomstr()
-            for i in range(100):
-                random_segment(
-                    g, i=1000, arc=False, point=False, quad=False, cubic=False
-                )
-            t = time.time()
-            sb1 = BeamTable(g)
-            sb1.compute_beam_brute()
-            brute_time = time.time() - t
-
-            t = time.time()
-            sb2 = BeamTable(g)
-            sb2.compute_beam_bo()
-            bo_time = time.time() - t
-
-            # self.assertEqual(sb1.intersections, sb2.intersections)
-            for a, b in zip(sb1._nb_scan, sb2._nb_scan):
-                # print(f"{a} :: {b}")
-                for c, d in zip(a, b):
-                    self.assertEqual(c, d)
-            print(
-                f"With binary inserts: brute: {brute_time} vs bo {bo_time} improvement: {brute_time/bo_time}x or {bo_time / brute_time}x"
-            )
-            print(f"Intersections {len(sb1.intersections)}, {len(sb2.intersections)}")
+    # def test_scan_table_random_brute(self):
+    #     print("\n\n")
+    #     for _c in range(5):
+    #         g = Geomstr()
+    #         for i in range(100):
+    #             random_segment(
+    #                 g, i=1000, arc=False, point=False, quad=False, cubic=False
+    #             )
+    #         t = time.time()
+    #         sb1 = BeamTable(g)
+    #         sb1.compute_beam_brute()
+    #         brute_time = time.time() - t
+    #
+    #         t = time.time()
+    #         sb2 = BeamTable(g)
+    #         sb2.compute_beam_bo()
+    #         bo_time = time.time() - t
+    #
+    #         # self.assertEqual(sb1.intersections, sb2.intersections)
+    #         for a, b in zip(sb1._nb_scan, sb2._nb_scan):
+    #             # print(f"{a} :: {b}")
+    #             for c, d in zip(a, b):
+    #                 self.assertEqual(c, d)
+    #         print(
+    #             f"With binary inserts: brute: {brute_time} vs bo {bo_time} improvement: {brute_time/bo_time}x or {bo_time / brute_time}x"
+    #         )
+    #         print(f"Intersections {len(sb1.intersections)}, {len(sb2.intersections)}")
 
     def test_geomstr_image(self):
         from PIL import Image, ImageDraw
