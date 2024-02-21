@@ -399,38 +399,78 @@ class BeamTable:
         return e[0].real, e[0].imag, ~e[1]
 
     def compute_beam(self):
-        self.compute_beam_brute()
+        self.compute_beam_bo()
 
     def compute_beam_bo(self):
         g = self.geometry
         gs = g.segments
         events = []
+
+
+        def bisect_events(a, x, lo):
+            x = x.real, x.imag
+            hi = len(a)
+            q = None
+            while lo < hi:
+                mid = (lo + hi) // 2
+                q = a[mid]
+                if x < (q[0].real, q[0].imag):
+                    hi = mid
+                else:
+                    lo = mid + 1
+            if q is None:
+                return ~lo
+            if abs(x[0] - q[0].real) > 1e-8:
+                return ~lo
+            if abs(x[1] - q[0].imag) > 1e-8:
+                return ~lo
+            return lo - 1
+
+        def brute_events(a, pos):
+            pos = pos.real, pos.imag
+            for i in range(len(a)):
+                q = a[i]
+                x = pos[0] - q[0].real
+                if x > 1e-8:
+                    # x is still greater.
+                    continue
+                if x < -1e-8:
+                    # x is now less than.
+                    return ~i
+                y = pos[1] - q[0].imag
+                # x is equal.
+                if y > 1e-8:
+                    # y is still greater
+                    continue
+                if y < -1e-8:
+                    # y is now less than.
+                    return ~i
+                # both x and y are equal.
+                return i
+            return ~len(a)
+
+        def get_or_insert_event(x):
+            ip1 = brute_events(events, x)
+            if ip1 >= 0:
+                event1 = events[ip1]
+            else:
+                event1 = (x, [], [])
+                events.insert(~ip1, event1)
+            return event1
+
         # Add start and end events.
         for i in range(g.index):
             if np.real(gs[i][2]) != TYPE_LINE:
                 continue
+            event1 = get_or_insert_event(g.segments[i][0])
+            event2 = get_or_insert_event(g.segments[i][-1])
+
             if (gs[i][0].real, gs[i][0].imag) < (gs[i][-1].real, gs[i][-1].imag):
-                events.append((g.segments[i][0], i, None))
-                events.append((g.segments[i][-1], ~i, None))
+                event1[1].append(i)
+                event2[2].append(i)
             else:
-                events.append((g.segments[i][0], ~i, None))
-                events.append((g.segments[i][-1], i, None))
-
-        # Sort start, end events.
-        events.sort(key=lambda e: (e[0].real, e[0].imag, ~e[1]))
-
-        def bisect_events(a, x, lo):
-            x = (x[0].real, x[0].imag, ~x[1])
-            hi = len(a)
-            while lo < hi:
-                mid = (lo + hi) // 2
-                q = a[mid]
-
-                if x < (q[0].real, q[0].imag, ~q[1]):
-                    hi = mid
-                else:
-                    lo = mid + 1
-            return lo
+                event1[2].append(i)
+                event2[1].append(i)
 
         def bisect_yint(a, x, scanline):
             value = float(g.y_intercept(x, scanline.real, scanline.imag))
@@ -468,9 +508,9 @@ class BeamTable:
                 if (sl.real, sl.imag) >= (pt_intersect.real, pt_intersect.imag):
                     continue
                 checked_swaps[(q, r)] = True
-                x = pt_intersect, 0, (q, r)
-                ip = bisect_events(events, x, lo=i)
-                events.insert(ip, x)
+                event_intersect = get_or_insert_event(pt_intersect)
+                event_intersect[1].extend((q, r))
+                event_intersect[2].extend((q, r))
                 self.intersections.point(pt_intersect)
 
         actives = []
@@ -483,32 +523,24 @@ class BeamTable:
         i = 0
         while i < len(events):
             event = events[i]
-            pt, index, swap = event
+            pt, adds, removes = event
             try:
                 next, _, _ = events[i + 1]
             except IndexError:
                 next = complex(float("inf"), float("inf"))
 
-            if swap is not None:
-                s1 = actives.index(swap[0])
-                s2 = s1 + 1
-                actives[s1], actives[s2] = actives[s2], actives[s1]
-                if s1 > 0:
-                    check_intersection(i, actives[s1 - 1], actives[s1], pt)
-                if s2 < len(actives) - 1:
-                    check_intersection(i, actives[s2], actives[s2 + 1], pt)
-            elif index >= 0:
+            for index in set(removes):
+                rp = actives.index(index)
+                del actives[rp]
+                if 0 < rp < len(actives):
+                    check_intersection(i, actives[rp - 1], actives[rp], pt)
+            for index in set(adds):
                 ip = bisect_yint(actives, index, pt)
                 actives.insert(ip, index)
                 if ip > 0:
                     check_intersection(i, actives[ip - 1], actives[ip], pt)
                 if ip < len(actives) - 1:
                     check_intersection(i, actives[ip], actives[ip + 1], pt)
-            else:
-                rp = actives.index(~index)
-                del actives[rp]
-                if 0 < rp < len(actives):
-                    check_intersection(i, actives[rp - 1], actives[rp], pt)
             i += 1
             if pt == next:
                 continue
