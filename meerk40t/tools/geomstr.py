@@ -406,24 +406,40 @@ class BeamTable:
         gs = g.segments
         events = []
 
-        def bisect_events(a, x, lo):
-            x = x.real, x.imag
+        def bisect_events(a, pos, lo=0):
+            """
+            Brute iterate events to find the correct placement for the required events.
+            @param a:
+            @param pos:
+            @return:
+            """
+            pos = pos.real, pos.imag
             hi = len(a)
-            q = None
             while lo < hi:
                 mid = (lo + hi) // 2
                 q = a[mid]
-                if x < (q[0].real, q[0].imag):
-                    hi = mid
-                else:
+                x = pos[0] - q[0].real
+                if x > 1e-8:
+                    # x is still greater
                     lo = mid + 1
-            if q is None:
-                return ~lo
-            if abs(x[0] - q[0].real) > 1e-8:
-                return ~lo
-            if abs(x[1] - q[0].imag) > 1e-8:
-                return ~lo
-            return lo - 1
+                    continue
+                if x < -1e-8:
+                    # x is now less than
+                    hi = mid
+                    continue
+                # x is equal.
+                y = pos[1] - q[0].imag
+                if y > 1e-8:
+                    lo = mid + 1
+                    # y is still greater
+                    continue
+                if y < -1e-8:
+                    # y is now less than.
+                    hi = mid
+                    continue
+                # both x and y are equal.
+                return mid
+            return ~lo
 
         def brute_events(a, pos):
             """
@@ -461,7 +477,10 @@ class BeamTable:
             @param x:
             @return:
             """
-            ip1 = brute_events(events, x)
+            ip1 = bisect_events(events, x)
+            ip2 = brute_events(events, x)
+            assert(ip1 == ip2)
+
             if ip1 >= 0:
                 evt = events[ip1]
             else:
