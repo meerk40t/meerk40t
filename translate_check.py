@@ -49,7 +49,7 @@ def read_source():
             if not fname.endswith(".py"):
                 continue
             # debugit = fname.endswith("translate_check.py")
-            with open(fname, mode="r", encoding="utf8", errors="surrogateescape") as f:
+            with open(fname, mode="r", encoding="utf-8", errors="surrogateescape") as f:
                 filecount += 1
                 localline = 0
                 msgid_mode = False
@@ -163,7 +163,7 @@ def read_po(locale):
     linecount = 0
     for po_file in po_files:
         fname = po_dir + po_file
-        with open(fname, "r") as f:
+        with open(fname, "r", encoding="utf-8", errors="surrogateescape") as f:
             msgid_mode = False
             id_str = ""
             while True:
@@ -219,7 +219,7 @@ def read_po(locale):
 
 def compare(locale, id_strings, id_strings_source, id_usage):
     counts = [0, 0, 0]
-    with open(f"./delta_{locale}.po", "w") as outp:
+    with open(f"./delta_{locale}.po", "w", encoding="utf-8") as outp:
         for idx, key in enumerate(id_strings_source):
             counts[0] += 1
             if key in id_strings:
