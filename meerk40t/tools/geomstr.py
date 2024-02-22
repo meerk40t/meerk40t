@@ -465,7 +465,7 @@ class BeamTable:
             if ip1 >= 0:
                 evt = events[ip1]
             else:
-                evt = (x, [], [])
+                evt = (x, [], [], [])
                 events.insert(~ip1, evt)
             return evt
 
@@ -482,6 +482,12 @@ class BeamTable:
             else:
                 event1[2].append(i)
                 event2[1].append(i)
+
+        wh, p, ta, tb = g.brute_line_intersections()
+        for w, pos in zip(wh, p):
+            event = get_or_insert_event(pos)
+            event[3].extend(w)
+            self.intersections.point(pos)
 
         def bisect_yint(a, x, scanline):
             """
@@ -516,20 +522,20 @@ class BeamTable:
 
         checked_swaps = {}
 
-        def check_intersection(i, q, r, sl):
-            if (q, r) in checked_swaps:
-                return
-            for t1, t2 in g.intersections(q, r):
-                if t1 in (0, 1) and t2 in (0, 1):
-                    continue
-                pt_intersect = g.position(q, t1)
-                if (sl.real, sl.imag) >= (pt_intersect.real, pt_intersect.imag):
-                    continue
-                checked_swaps[(q, r)] = True
-                event_intersect = get_or_insert_event(pt_intersect)
-                event_intersect[1].extend((q, r))
-                event_intersect[2].extend((q, r))
-                self.intersections.point(pt_intersect)
+        # def check_intersection(i, q, r, sl):
+        #     if (q, r) in checked_swaps:
+        #         return
+        #     for t1, t2 in g.intersections(q, r):
+        #         if t1 in (0, 1) and t2 in (0, 1):
+        #             continue
+        #         pt_intersect = g.position(q, t1)
+        #         if (sl.real, sl.imag) >= (pt_intersect.real, pt_intersect.imag):
+        #             continue
+        #         checked_swaps[(q, r)] = True
+        #         event_intersect = get_or_insert_event(pt_intersect)
+        #         event_intersect[1].extend((q, r))
+        #         event_intersect[2].extend((q, r))
+        #         self.intersections.point(pt_intersect)
 
         actives = []
 
@@ -541,24 +547,33 @@ class BeamTable:
         i = 0
         while i < len(events):
             event = events[i]
-            pt, adds, removes = event
+            pt, adds, removes, sorts = event
             try:
-                next, _, _ = events[i + 1]
+                next, _, _, _ = events[i + 1]
             except IndexError:
                 next = complex(float("inf"), float("inf"))
 
-            for index in set(removes):
+            for index in removes:
                 rp = actives.index(index)
                 del actives[rp]
-                if 0 < rp < len(actives):
-                    check_intersection(i, actives[rp - 1], actives[rp], pt)
-            for index in set(adds):
+                # if 0 < rp < len(actives):
+                #     check_intersection(i, actives[rp - 1], actives[rp], pt)
+            for index in adds:
                 ip = bisect_yint(actives, index, pt)
                 actives.insert(ip, index)
-                if ip > 0:
-                    check_intersection(i, actives[ip - 1], actives[ip], pt)
-                if ip < len(actives) - 1:
-                    check_intersection(i, actives[ip], actives[ip + 1], pt)
+                # if ip > 0:
+                #     check_intersection(i, actives[ip - 1], actives[ip], pt)
+                # if ip < len(actives) - 1:
+                #     check_intersection(i, actives[ip], actives[ip + 1], pt)
+            for index in sorts:
+                try:
+                    rp = actives.index(index)
+                    del actives[rp]
+                    ip = bisect_yint(actives, index, pt)
+                    actives.insert(ip, index)
+                except ValueError:
+                    # was removed
+                    pass
             i += 1
             if pt == next:
                 continue
