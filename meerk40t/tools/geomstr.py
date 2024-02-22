@@ -441,35 +441,6 @@ class BeamTable:
                 return mid
             return ~lo
 
-        def brute_events(a, pos):
-            """
-            Brute iterate events to find the correct placement for the required events.
-            @param a:
-            @param pos:
-            @return:
-            """
-            pos = pos.real, pos.imag
-            for i in range(len(a)):
-                q = a[i]
-                x = pos[0] - q[0].real
-                if x > 1e-8:
-                    # x is still greater.
-                    continue
-                if x < -1e-8:
-                    # x is now less than.
-                    return ~i
-                y = pos[1] - q[0].imag
-                # x is equal.
-                if y > 1e-8:
-                    # y is still greater
-                    continue
-                if y < -1e-8:
-                    # y is now less than.
-                    return ~i
-                # both x and y are equal.
-                return i
-            return ~len(a)
-
         def get_or_insert_event(x):
             """
             Get event at position, x. Or create event at the given position.
@@ -478,8 +449,6 @@ class BeamTable:
             @return:
             """
             ip1 = bisect_events(events, x)
-            ip2 = brute_events(events, x)
-            assert(ip1 == ip2)
 
             if ip1 >= 0:
                 evt = events[ip1]
