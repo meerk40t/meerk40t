@@ -317,7 +317,7 @@ msgstr "Velocità di taglio"
 
 #: meerk40t/balormk/device.py:332 meerk40t/newly/device.py:361
 msgid "How fast do we cut?"
-msgstr "A quale velocità tagliamo?"
+msgstr "Valore della velocità di taglio"
 
 #: meerk40t/balormk/device.py:340
 msgid "Q Switch Frequency"
@@ -14562,7 +14562,7 @@ msgstr ""
 "questo è necessario per alcuni firmware speciali come FluidNC"
 
 msgid "What power level do we cut at?"
-msgstr "Quale potenza laser utilizzare per il taglio?"
+msgstr "Valore della potenza di taglio"
 
 msgid "Delays"
 msgstr "Ritardi"
@@ -15555,15 +15555,15 @@ msgstr "Velocità <="
 
 #: ./meerk40t\newly\device.py:78
 msgid "Acceleration Length"
-msgstr "Pista di accelerazione"
+msgstr "Rampa di accelerazione"
 
 #: ./meerk40t\newly\device.py:85
 msgid "Backlash"
-msgstr "Gioco meccanico"
+msgstr "'Gioco' meccanico"
 
 #: ./meerk40t\newly\device.py:92
 msgid "Corner Speed"
-msgstr "Velocità d'angolo"
+msgstr "Velocità angolare"
 
 #: ./meerk40t\newly\device.py:99
 msgid "Speed Chart"
@@ -15622,7 +15622,7 @@ msgstr "Orizzontale"
 
 #: ./meerk40t\newly\device.py:276
 msgid "Backlash amount for the laser."
-msgstr "Quantità di gioco del laser"
+msgstr "Quantità di 'gioco' del laser"
 
 #: ./meerk40t\newly\device.py:286
 msgid "Vertical Backlash"
@@ -15642,7 +15642,7 @@ msgstr "Potenza massima dell'impulso"
 
 #: ./meerk40t\newly\device.py:312
 msgid "What max power level should pulses be fired at?"
-msgstr "Potenza massima a cui vengono sparati gli impulsi"
+msgstr "Potenza massima a cui vengono generati gli impulsi"
 
 #: ./meerk40t\newly\device.py:321
 msgid "PWM Power"
@@ -15694,7 +15694,7 @@ msgstr "Ritardo di accensione"
 
 #: ./meerk40t\newly\device.py:405
 msgid "Delay for laser on?"
-msgstr "Quanto tempo devo aspettare prima di accendere il laser?"
+msgstr "Quanto tempo deve attendere prima di accendere il laser"
 
 #: ./meerk40t\newly\device.py:414
 msgid "Off Delay"
@@ -15702,7 +15702,7 @@ msgstr "Ritardo di spegnimento"
 
 #: ./meerk40t\newly\device.py:415
 msgid "Delay for laser off?"
-msgstr "Quanto tempo devo aspettare prima di spegnere il laser?"
+msgstr "Quanto tempo deve attendere prima di spegnere il laser"
 
 #: ./meerk40t\newly\device.py:424
 msgid "Raster Speed"
@@ -15710,7 +15710,7 @@ msgstr "Velocità del raster"
 
 #: ./meerk40t\newly\device.py:425
 msgid "How fast do we raster?"
-msgstr "A che velocità deve avvenire il raster?"
+msgstr "Valore della velocità di esecuzione del Raster"
 
 #: ./meerk40t\newly\device.py:433
 msgid "Raster Power"
@@ -15718,7 +15718,7 @@ msgstr "Potenza del raster"
 
 #: ./meerk40t\newly\device.py:435
 msgid "At what power level do we raster?"
-msgstr " Quanto deve essere alta la potenza per il raster?"
+msgstr "Valore della potenza di esecuzione del Raster"
 
 #: ./meerk40t\newly\device.py:444
 msgid "Moving Speed"
@@ -15726,15 +15726,15 @@ msgstr "Velocità di movimento"
 
 #: ./meerk40t\newly\device.py:445
 msgid "Moving speed while not cutting?"
-msgstr "A che velocità deve viaggiare il laser se non sta tagliando?"
+msgstr "Valore della velocità a cui viaggia il laser se non sta tagliando"
 
 #: ./meerk40t\newly\device.py:455
 msgid "Speed to move from acceleration corner to corner?"
-msgstr "A che velocità si deve guidare da una curva all'altra quando si accelera?"
+msgstr "Valore della velocità di spostamento da una curva all'altra quando si accelera"
 
 #: ./meerk40t\newly\device.py:464
 msgid "Acceleration Distance"
-msgstr "Sezione di accelerazione"
+msgstr "Distanza di accelerazione"
 
 #: ./meerk40t\newly\device.py:465
 msgid "Distance to use to ramp up to speed for movement?"
@@ -15753,7 +15753,7 @@ msgstr "Velocità"
 
 #: ./meerk40t\newly\device.py:475
 msgid "Speed to perform frame trace?"
-msgstr "Quanto velocemente devono essere percorsi i contorni?"
+msgstr "Valore di velocità per i percorsi lungo i contorni"
 
 #: ./meerk40t\newly\device.py:484
 msgid "Rect Power"
@@ -15761,7 +15761,7 @@ msgstr "Potenza"
 
 #: ./meerk40t\newly\device.py:485
 msgid "Power usage for draw frame operation?"
-msgstr "Quale potenza si deve utilizzare quando si viaggia lungo i contorni?"
+msgstr "Valore della potenza per i percorsi lungo i contorni?"
 
 #: ./meerk40t\core\elements\element_treeops.py:958
 msgid "Delete %s selected items from %s (Ref=%s)"
@@ -18754,3 +18754,12 @@ msgstr "Impossibile contattare il laser Galvo"
 
 msgid "Generating..."
 msgstr "​Generazione in corsa..."
+
+msgid "Axis DPI"
+msgstr "Assi DPI​"
+
+msgid "Current"
+msgstr "Corrente​"
+
+msgid "Timings"
+msgstr "Tempi​"
