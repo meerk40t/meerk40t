@@ -487,6 +487,8 @@ class wxMeerK40t(wx.App, Module):
         self.name = f"MeerK40t-{wx.GetUserId()}"
         self.instance = wx.SingleInstanceChecker(self.name)
         self.context.setting(bool, "single_instance_only", True)
+        if self.context.kernel._was_restarted:
+            return True
         if self.context.single_instance_only and self.instance.IsAnotherRunning():
             wx.MessageBox("Another instance is running", "ERROR")
             return False

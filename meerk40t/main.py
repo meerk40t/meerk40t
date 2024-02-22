@@ -5,6 +5,7 @@ MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed
 open-source laser cutting software. See https://github.com/meerk40t/meerk40t
 for full details.
 """
+
 import argparse
 import os.path
 import sys
@@ -161,16 +162,18 @@ def run():
 
         profiler = cProfile.Profile()
         profiler.enable()
-        while _exe(args):
-            pass
+        _run = _exe(False, args)
+        while _run:
+            _run = _exe(True, args)
         profiler.disable()
         profiler.dump_stats(args.profiler)
         return
-    while _exe(args):
-        pass
+    _run = _exe(False, args)
+    while _run:
+        _run = _exe(True, args)
 
 
-def _exe(args):
+def _exe(restarted, args):
     from meerk40t.external_plugins import plugin as external_plugins
     from meerk40t.internal_plugins import plugin as internal_plugins
     from meerk40t.kernel import Kernel
@@ -182,6 +185,7 @@ def _exe(args):
         ansi=not args.disable_ansi,
         ignore_settings=args.nuke_settings,
         language=args.language,
+        restarted=restarted,
     )
     kernel.args = args
     kernel.add_plugin(internal_plugins)
