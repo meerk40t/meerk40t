@@ -496,7 +496,7 @@ class TemplatePanel(wx.Panel):
         )
         self.combo_color_1.SetToolTip(
             _(
-                "Choose the color aspect for the second parameter. NB: the colors for both parameters will be combined"
+                "Choose the color aspect for the first parameter. NB: the colors for both parameters will be combined"
             )
         )
         self.combo_color_2.SetToolTip(
