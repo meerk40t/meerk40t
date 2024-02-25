@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+Meerk40t.exe
 
 # C extensions
 *.so
