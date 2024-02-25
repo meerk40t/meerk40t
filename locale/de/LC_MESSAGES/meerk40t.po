@@ -3182,7 +3182,6 @@ msgstr "Einen weiteren Durchlauf anfügen"
 msgid "add another loop to this job"
 msgstr "Einen weiteren Durchlauf für diesen Job anfügen"
 
-
 #: meerk40t/core/elements.py:7369
 msgid "Add {copies} passes"
 msgstr "Füge {copies} Duchgänge hinzu"
@@ -4047,6 +4046,16 @@ msgstr "DXF Datei einpassen"
 #: meerk40t/dxf/plugin.py:26
 msgid "Fit (scale down if necessary) and center a DXF file within the bed"
 msgstr "Zentriere die DXF-Datei auf dem Druckbett (und verkleinere falls nötig)"
+
+#: ./meerk40t\dxf\plugin.py:39
+msgid "DXF: Try to read 3D-polylines"
+msgstr "DXF: Versuche 3D-Polylines einzulesen"
+
+#: ./meerk40t\dxf\plugin.py:42
+msgid "Tries to use dxf 3D-polylines, disable it if the file contains meshes or other 3D data"
+msgstr ""
+"Versucht DXF 3D-Polylines zu nutzen, sollte deaktiviert werden,\n"
+"falls die Datei Meshes oder andere 3D-Daten enthält."
 
 #: meerk40t/extra/cag.py:20
 msgid "Constructive Additive Geometry: Add"
@@ -7008,8 +7017,8 @@ msgstr "Wortliste"
 #: meerk40t/gui/wordlisteditor.py:623
 msgid "Manages Wordlist-Entries"
 msgstr "Wortlisten-Einträge ändern/erstellen"
-#: ./meerk40t\gui\wordlisteditor.py:55
 
+#: ./meerk40t\gui\wordlisteditor.py:55
 msgid "Wordlist: go to next page (right-click to next entry)"
 msgstr "Wortliste: springe zum letzten Eintrag (Rechts-Click: zum nächsten Eintrag)"
 
@@ -7238,7 +7247,6 @@ msgstr ""
 "Falls aktiv, werden keine Labels unter den Icons in der Toolbar angezeigt\n"
 "a) erst nach Neustart wirksam\n"
 "b) werden immer unterdrückt, wenn die System-Benutzeroberfläche im Dark Mode ist"
-
 
 #: meerk40t/gui/wxmmain.py:384
 msgid "Default zoom margin:"
@@ -10383,6 +10391,7 @@ msgstr "GRBL-Konfiguration"
 #: meerk40t/grbl/gui/grblconfiguration.py:47
 msgid "Dimensions"
 msgstr "Abmessungen"
+
 # ./meerk40t\grbl\gui\grblconfiguration.py:65166
 msgid "Select this if you have a GRBL device running through a serial connection."
 msgstr "Falls der GRBL-Laser direkt an einer seriellen Schnittstelle angeschlossen ist"
@@ -10852,7 +10861,6 @@ msgstr "aber ist deutlich umständlicher wenn es darum geht die Anzahl der Durch
 
 msgid "because you need to add and delete the duplicates one by one."
 msgstr "da jede Kopie einzeln angelegt und verändert werden muss."
-
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:64
 msgid "In a raster engrave, the step size is the distance between raster lines in 1/1000\" "
@@ -12379,7 +12387,6 @@ msgstr ""
 "Diagonal-Bewegung anstelle eines rechtwinkligen Schritts durchzuführen. "
 "(0.261 Standard)"
 
-
 #: meerk40t/lihuiyu/gui/lhyoperationproperties.py:26
 msgid ""
 "For Cut/Engrave operations, when using PPI, Dot Length sets the minimum "
@@ -12534,166 +12541,11 @@ msgstr "Baumdiagramm ausblenden"
 msgid "Do Not Refresh"
 msgstr "Nicht aktualisieren"
 
-#~ msgid ""
-#~ "MeerK40t is a free MIT Licensed "
-#~ "open source project for lasering on "
-#~ "K40 Devices.\n"
-#~ "\n"
-#~ msgstr ""
-#~ "Meerk40t ist ein kostenloses, auf der"
-#~ " MIT Lizenz basierendes Open-Source "
-#~ "Projekt, um auf K40 Geräten zu "
-#~ "lasern\n"
-
-#~ msgid ""
-#~ "Participation in the project is highly"
-#~ " encouraged. Past participation, and \n"
-#~ msgstr ""
-#~ "Mithilfe bei diesem Projekt ist "
-#~ "jederzeit willkommen. Vielen Dank für "
-#~ "die \n"
-
-#~ msgid ""
-#~ "continuing participation is graciously "
-#~ "thanked. This program is mostly the\n\n"
-#~ msgstr ""
-#~ "vergangene und aktuelle Hilfe. Dieses "
-#~ "Programm ist im Wesentlichen das Werk"
-#~ " \n"
-
-#~ msgid ""
-#~ "brainchild of Tatarize, who sincerely "
-#~ "hopes his contributions will be but"
-#~ " \n"
-#~ msgstr ""
-#~ "von Tartarize, der hofft, dass seine "
-#~ "Arbeit am Ende ein kleiner Teil "
-#~ "eines \n"
-
-#~ msgid "the barest trickle that becomes a raging river."
-#~ msgstr "viel größeren Werks sein wird."
-
-#~ msgid ""
-#~ "* All the MeerKittens, Sophist-UK,  "
-#~ "tiger12506, frogmaster, inspectionsbybob. \n"
-#~ msgstr ""
-#~ "* Allen Unterstützern von MeerK40t, "
-#~ "Sophist-UK,  tiger12506, frogmaster, "
-#~ "inspectionsbybob. \n"
-
-#~ msgid "Export EGV"
-#~ msgstr "Exportiere EGV"
-
-#~ msgid "Export Engrave Data"
-#~ msgstr "Exportiere Gravur-Daten"
-
-#~ msgid "Import EGV"
-#~ msgstr "Importiere EGV"
-
-#~ msgid "Import Engrave Data"
-#~ msgstr "Importiere Gravur-Daten"
-
-#~ msgid "Set URI"
-#~ msgstr "Definiere URI"
-
-#~ msgid "USB %d"
-#~ msgstr "USB %d"
-
-#~ msgid "CameraInterface %d"
-#~ msgstr "Kamera-Interface %d"
-
-#~ msgid "Detect Distortions/Calibration"
-#~ msgstr "Verzerrungen erkennen/ Kalibrierung"
-
-#~ msgid "Fetching Frame..."
-#~ msgstr "Hole Bild..."
-
-#~ msgid "Preserve: %s"
-#~ msgstr "Behalte: %s"
-
-#~ msgid "Remove %s"
-#~ msgstr "%s entfernen"
-
-#~ msgid ""
-#~ "The output of the selected device "
-#~ "is not a controller, or provides "
-#~ "no graphical user interface."
-#~ msgstr ""
-#~ "Die Ausgabe des gewählten Geräts ist "
-#~ "kein Controller, bzw. liefert kein "
-#~ "Benutzer-Interface."
-
 msgid "Device Manager"
 msgstr "Geräte-Manager"
 
-#~ msgid "Driver/Input"
-#~ msgstr "Treiber/Input"
-
 msgid "Output"
 msgstr "Ausgabe"
-
-#~ msgid "Registered"
-#~ msgstr "Registriert"
-
-#~ msgid "Add a new device"
-#~ msgstr "Neues Gerät hinzufügen"
-
-#~ msgid "Remove selected device"
-#~ msgstr "Ausgewähltes Gerät entfernen"
-
-#~ msgid "Where does the device output data?"
-#~ msgstr "Wohin schreibt dieses Gerät Daten?"
-
-#~ msgid "Output Type"
-#~ msgstr "Output-Typ"
-
-#~ msgid "What filename does this device output to?"
-#~ msgstr "In welche Datei schreibt das Gerät Daten?"
-
-#~ msgid "What network address does this device output to?"
-#~ msgstr "Auf welche Netzwerk-Adresse schreibt das Gerät Daten?"
-
-#~ msgid "What network port does this device output to?"
-#~ msgstr "Auf welchen Netzwerk-Port schreibt das Gerät Daten?"
-
-#~ msgid "Automatically add a home command before all jobs"
-#~ msgstr "Füge automatisch ein 'Home'-Kommando zu Beginn eines Jobs hinzu"
-
-#~ msgid "Physical Home"
-#~ msgstr "Hartes 'Home'"
-
-#~ msgid "Automatically add a physical home command before all jobs"
-#~ msgstr "Füge automatisch ein 'Hartes-Home'-Kommando zu Beginn eines Jobs hinzu"
-
-#~ msgid "Before"
-#~ msgstr "Bevor"
-
-#~ msgid "Automatically add a home command after all jobs"
-#~ msgstr "Füge automatisch ein 'Home'-Kommando am Ende eines Jobs hinzu"
-
-#~ msgid "Automatically add a physical home command after all jobs"
-#~ msgstr "Füge automatisch ein 'Hartes-Home'-Kommando am Ende eines Jobs hinzu"
-
-#~ msgid "Return to Origin"
-#~ msgstr "Zurück zum Startpunkt"
-
-#~ msgid "Automatically return to origin after a job"
-#~ msgstr "Kehre am Ende eines Jobs automatisch zu den Start-Koordinaten zurück"
-
-#~ msgid "Unlock"
-#~ msgstr "Entriegeln"
-
-#~ msgid "Automatically unlock the rail after all jobs"
-#~ msgstr "Entriegele nach Ende eines Jobs die Achsen"
-
-#~ msgid "Beep"
-#~ msgstr "Signalton"
-
-#~ msgid "Automatically add a beep after all jobs"
-#~ msgstr "Spiele einen Ton nach jedem Job ab"
-
-#~ msgid "Automatically add an interrupt after all jobs"
-#~ msgstr "Füge ein 'Anhalten' am Ende jedes Jobs an"
 
 msgid "Presets"
 msgstr "Voreinstellungen"
@@ -12714,77 +12566,6 @@ msgstr ""
 "Setze Optionen so, dass sie weitgehende manuelle Kontrolle "
 "über die Klassifizierung erlauben"
 
-#~ msgid "Add a home"
-#~ msgstr "Füge 'Home' hinzu"
-
-#~ msgid "Add a physicalhome"
-#~ msgstr "Füge 'Hartes-Home' hinzu"
-
-#~ msgid "Wait"
-#~ msgstr "Warten"
-
-#~ msgid "Add a wait"
-#~ msgstr "Füge 'Warten' hinzu"
-
-#~ msgid "Add a beep"
-#~ msgstr "Füge Signalton hinzu"
-
-#~ msgid "Add an interrupt"
-#~ msgstr "Füge 'Anhalten' hinzu"
-
-#~ msgid "Add"
-#~ msgstr "Hinzufügen"
-
-#~ msgid "Return to Operations"
-#~ msgstr "Zurück zu Arbeitsgängen"
-
-#~ msgid "Return the current Plan to Operations"
-#~ msgstr "Nutze den aktuellen Plan für die Arbeitsgang-Liste"
-
-#~ msgid "Step Repeat"
-#~ msgstr "Schritt-Wiederholung"
-
-#~ msgid "Execute Step Repeat"
-#~ msgstr "Wiederhole den Schritt"
-
-#~ msgid "Cut Inner First"
-#~ msgstr "Innere Bereiche zuerst ausschneiden"
-
-#~ msgid "Combine passes into the same optimization"
-#~ msgstr "Füge Durchläufe in dieselbe Optimierung zusammen"
-
-#~ msgid "Combine operations into the same optimization"
-#~ msgstr "Füge Arbeitsgänge in dieselbe Optimierung zusammen"
-
-#~ msgid ""
-#~ "Travel between objects (laser off) at"
-#~ " the default/rapid speed rather than "
-#~ "at the current laser-on speed"
-#~ msgstr ""
-#~ "Bewegung zwischen Objekten (Laser aus) "
-#~ "mit Standard-/schneller Geschwindigkeit statt "
-#~ "mit der aktuellen Geschwindigkeit, die "
-#~ "beim aktuellen Arbeitsgang eingestellt ist"
-
-#~ msgid "Reduce the travel time by optimizing the order of the elements"
-#~ msgstr ""
-#~ "Verringere die Zeit für Bewegungen durch"
-#~ " optimierte Neuanordnung der Elemente"
-
-#~ msgid ""
-#~ "Ensure that inside burns are done "
-#~ "before an outside cut which might "
-#~ "result in the cut piece shifting "
-#~ "or dropping out of the material, "
-#~ "while still requiring additonal cuts."
-#~ msgstr ""
-#~ "Stelle sicher, dass innenliegende Gravuren "
-#~ "vor einem umgebenden Schnitt gemacht "
-#~ "werden, da ansonsten ausgeschnittene Teile "
-#~ "verrutschen oder sich aus dem TrÃ¤ger"
-#~ " lösen könnten und somit das Ergebnis"
-#~ " beeinträchtigen würden."
-
 msgid "Optimizations"
 msgstr "Optimierungen"
 
@@ -12796,119 +12577,6 @@ msgstr "Zusammenfassen"
 
 msgid "Bed"
 msgstr "Laserbett"
-
-#~ msgid "How many copies wide?"
-#~ msgstr "Wieviele Kopien horizontal?"
-
-#~ msgid "Enter Columns"
-#~ msgstr "Anzahl der Spalten"
-
-#~ msgid "How many copies high?"
-#~ msgstr "Wieviele Kopien vertikal?"
-
-#~ msgid "Enter Rows"
-#~ msgstr "Anzahl der Zeilen"
-
-#~ msgid "How far apart are these copies width-wise? eg. 2in, 3cm, 50mm, 10%"
-#~ msgstr ""
-#~ "Wie weit sind die Kopien horizontal "
-#~ "voneinander entfernt? Z.B. 3cm, 50mm, "
-#~ "10%, 2in"
-
-#~ msgid "Enter X Gap"
-#~ msgstr "Abstand in X-Richtung"
-
-#~ msgid "How far apart are these copies height-wise? eg. 2in, 3cm, 50mm, 10%"
-#~ msgstr ""
-#~ "Wie weit sind die Kopien vertikal "
-#~ "voneinander entfernt? Z.B. 3cm, 50mm, "
-#~ "10%, 2in"
-
-#~ msgid "Enter Y Gap"
-#~ msgstr "Abstand in Y-Richtung"
-
-#~ msgid "Scan gap / step size image native value."
-#~ msgstr "Scan-Gap/Schrittgröße Bild."
-
-#~ msgid "X property of image"
-#~ msgstr "X-Koordinate des Bildes"
-
-#~ msgid "Y property of image"
-#~ msgstr "Y-Koordinate des Bildes"
-
-#~ msgid "Width property of image"
-#~ msgstr "Breite des Bildes"
-
-#~ msgid "Height property of image"
-#~ msgstr "Höhe des Bildes"
-
-#~ msgid "DPP"
-#~ msgstr "DPP"
-
-#~ msgid "Dots Per Pixel"
-#~ msgstr "Punkte pro Pixel"
-
-#~ msgid "Settings"
-#~ msgstr "Einstellungen"
-
-#~ msgid "%.1fmm/s"
-#~ msgstr "%.1fmm/s"
-
-#~ msgid "power=%g"
-#~ msgstr "Leistung = %g"
-
-#~ msgid "step=%d"
-#~ msgstr "Schritt = %d"
-
-#~ msgid "overscan=%d"
-#~ msgstr "Overscan = %d"
-
-#~ msgid "Reset Default"
-#~ msgstr "Auf Standard zurücksetzen"
-
-#~ msgid "Set Jog Distance in mils (1/1000th of an inch)"
-#~ msgstr "Schrittweite in mils (1/1000 Zoll) einstellen"
-
-#~ msgid "Set Jog Distance in mm"
-#~ msgstr "Schrittweite in mm einstellen"
-
-#~ msgid "Set Jog Distance in cm"
-#~ msgstr "Schrittweite in cm einstellen"
-
-#~ msgid "Set Jog Distance in inch"
-#~ msgstr "Schrittweite in Zoll einstellen"
-
-#~ msgid ""
-#~ "Scale X - scales the element by"
-#~ " this factor in the X-Direction, i.e."
-#~ " 2.0 means 200% of the original "
-#~ "scaleYou may enter either this factor"
-#~ " directly or state the scale as "
-#~ "a %-value, so 0.5 or 50% will "
-#~ "both cut the scale in half."
-#~ msgstr ""
-#~ "Skaliert das Element um diesen Faktor"
-#~ " in X-Richtung, so bedeutet etwa 2.0"
-#~ " einen Faktor von 200%.Die Änderung "
-#~ "kann entweder direkt als Zahl, "
-#~ "alternativ auch als %-Wert angegeben "
-#~ "werden, 0.5 oder 50% haben den "
-#~ "gleichen Effekt."
-
-#~ msgid "Move To:"
-#~ msgstr "Bewegen zu"
-
-#~ msgid "mils"
-#~ msgstr "mils"
-
-#~ msgid " mm"
-#~ msgstr " mm"
-
-#~ msgid "cm"
-#~ msgstr "cm"
-
-#~ msgid "inch"
-#~ msgstr "inch/zoll"
 
 msgid "Top To Bottom"
 msgstr "Von oben nach unten"
@@ -12943,580 +12611,11 @@ msgstr "Beschleunigung"
 msgid "Dot Length"
 msgstr "Punktlänge"
 
-#~ msgid "Operation Properties"
-#~ msgstr "Eigenschaften"
-
-#~ msgid "Operation Type"
-#~ msgstr "Typ des Arbeitsgangs"
-
-#~ msgid ""
-#~ "Cut & Engrave are vector operations, "
-#~ "Raster and Image are raster operations."
-#~ msgstr ""
-#~ "Schneiden und Gravieren sind Vektor-"
-#~ "Arbeitsgänge, Rastern und Bild sind "
-#~ "Raster-Arbeitsgänge."
-
-#~ msgid ""
-#~ "Cut and Engrave operations are "
-#~ "essentially the same except that for "
-#~ "a Cut operation with Cut Outer "
-#~ "Paths last, only closed Paths in "
-#~ "Cut operations are considered as being"
-#~ " Outer-most."
-#~ msgstr ""
-#~ "Schneiden und Gravieren sind im "
-#~ "wesentlichen gleich, mit dem Unterschied, "
-#~ "dass bei einem Schneiden-Arbeitsgang mit"
-#~ " der 'Schneide Umriss zuletzt'-Option nur"
-#~ " geschlossene Pfade als Umriss genutzt "
-#~ "werden."
-
-#~ msgid "Raster operations created automatically by Meerkat "
-#~ msgstr "Raster-Arbeitsgänge, die automatisch von Meerk40t angelegt wurden "
-
-#~ msgid "Speed at which the head moves in {unit}."
-#~ msgstr "Geschwindigkeit, mit der sich der Kopf bewegt, in {unit}."
-
-#~ msgid ""
-#~ "For Cut/Engrave vector operations, this "
-#~ "is the speed of the head "
-#~ "regardless of direction i.e. the "
-#~ "separate x/y speeds vary according to"
-#~ " the direction."
-#~ msgstr ""
-#~ "Bei Schneiden/Gravieren-Arbeitsgängen ist das"
-#~ " Geschwindigkeit des Laserkopfes ohne "
-#~ "Berücksichtigung der Richtung, d.h. die "
-#~ "separaten X/Y-Geschwindigkeiten hängen von der"
-#~ " Richtung ab."
-
-#~ msgid ""
-#~ "For Raster/Image operations, this is the"
-#~ " speed of the head as it sweeps"
-#~ " backwards and forwards."
-#~ msgstr ""
-#~ "Bei Raster/Bild Arbeitsgängen entspricht das"
-#~ " der Geschwindigkeit des Laserkopfes, mit"
-#~ " der er sich vor und zurück "
-#~ "bewegt."
-
-
-#~ msgid ""
-#~ "In a raster engrave, the step size"
-#~ " is the distance between raster lines"
-#~ " in 1/1000\" and also the number "
-#~ "of raster dots that get combined "
-#~ "together."
-#~ msgstr ""
-#~ "Bei einer Raster-Gravur entspricht die"
-#~ " Schrittgröße dem Abstand zwischen den "
-#~ "Rasterlinien in 1/1000 Zoll und auch "
-#~ "der Zahl der Rasterpunkte, die "
-#~ "zusammengefasst werden."
-
-#~ msgid ""
-#~ "Because the laser dot is >> "
-#~ "1/1000\" in diameter, at step 1 "
-#~ "the raster lines overlap a lot, "
-#~ "and consequently  you can raster with"
-#~ " steps > 1 without leaving gaps "
-#~ "between the lines."
-#~ msgstr ""
-#~ "Da der Laserstrahl einen Durchmesser von"
-#~ " weit mehr als 1/1000 Zoll hat, "
-#~ "überlappen die Rasterzeilen stark. Deswegen"
-#~ " kann eine Rasterung mit einer "
-#~ "Schrittweite > 1 durchgeführt werden, "
-#~ "ohne dass Lücken zwischen den Zeilen "
-#~ "enstehen."
-
-#~ msgid ""
-#~ "The step size before you get gaps"
-#~ " will depend on your focus and "
-#~ "the size of your laser dot."
-#~ msgstr ""
-#~ "Die maximal mögliche Schritt-Größe bei"
-#~ " der noch keine Lücken enstehen hängt"
-#~ " vom Fokus des Laserstrahles und dem"
-#~ " Strahldurchmesser ab - also einfach "
-#~ "Ausprobieren :-)"
-
-#~ msgid ""
-#~ "Step size > 1 reduces the laser"
-#~ " energy delivered by the same factor,"
-#~ " so you may need to increase "
-#~ "power equivalently with a higher "
-#~ "front-panel power, a higher PPI or"
-#~ " by rastering at a slower speed."
-#~ msgstr ""
-#~ "Ein Schrittgröße > 1 verringert die "
-#~ "Laserenergie um denselben Faktor, wenn "
-#~ "die Energie also zu gering ist, um"
-#~ " ein zufriedenstellendes Ergebnis zu "
-#~ "erzeugen, muss entweder die Laseleitung "
-#~ "am Bedien-Panel erhöht werden, ein "
-#~ "höherer PPI-Wert gewählt werden oder "
-#~ "mit geringerer Geschwindigkeit gerastert "
-#~ "werden."
-
-#~ msgid ""
-#~ "Step size > 1 also turns the "
-#~ "laser on and off fewer times, and"
-#~ " combined with a slower speed this"
-#~ " can prevent your laser from "
-#~ "stuttering."
-#~ msgstr ""
-#~ "Ein Schrittgröße > 1 bewirkt auch, "
-#~ "das der Laser weniger oft ein- und"
-#~ " augeschalter werden muss, dies kombiniert"
-#~ " mit einer niedrigen Geschwindigkeit "
-#~ "verhindert ein 'Stottern' des Lasers."
-
-#~ msgid "Overscan amount - BETTER EXPLANATION TO BE ADDED"
-#~ msgstr ""
-
-#~ msgid "Direction to perform a raster"
-#~ msgstr "Richtung zum Ausführen des Rasters"
-
-#~ msgid ""
-#~ "Normally you would raster in an "
-#~ "X-direction and select Top-to-Bottom "
-#~ "(T2B) or Bottom-to-Top (B2T)."
-#~ msgstr ""
-
-#~ msgid ""
-#~ "This is because rastering in the "
-#~ "X-direction involve moving only the "
-#~ "laser head which is relatively low "
-#~ "mass."
-#~ msgstr ""
-
-#~ msgid ""
-#~ "Rastering in the Y-direction (Left-"
-#~ "to-Right or Right-to-Left) involves"
-#~ " moving not only the laser head "
-#~ "but additionally the entire x-axis "
-#~ "gantry assembly including the stepper "
-#~ "motor, mirror and the gantry itself."
-#~ msgstr ""
-
-#~ msgid ""
-#~ "This total mass is much greater, "
-#~ "acceleration therefore needs to be much"
-#~ " slower, and allow for space at "
-#~ "each end of the raster to reverse"
-#~ " direction the speed has to be "
-#~ "much slower."
-#~ msgstr ""
-
-#~ msgid "Crosshatch - DESCRIPTION needed."
-#~ msgstr "Fadenkreuz - Beschreibung benötigt."
-
-#~ msgid "Raster on forward and backswing or only forward swing?"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "Rastering only on forward swings will"
-#~ " double the time required to complete"
-#~ " the raster."
-#~ msgstr ""
-
-#~ msgid ""
-#~ "It seems doubtful that there will "
-#~ "be significant quality benefits from "
-#~ "rastering in one direction."
-#~ msgstr ""
-
-#~ msgid "Show advanced options?"
-#~ msgstr "Erweiterte Optionen zeigen?"
-
-#~ msgid "Enables the ability to modify the diagonal ratio."
-#~ msgstr "Ermöglicht das Diagonalverhältnis zu ändern."
-
 msgid "Enables acceleration override"
 msgstr "Ermöglicht eigene Werte für Beschleunigung"
 
-#~ msgid ""
-#~ "The m2-nano controller has four "
-#~ "acceleration settings, and automatically "
-#~ "selects the appropriate setting for the"
-#~ " Cut or Raster speed."
-#~ msgstr ""
-
-#~ msgid ""
-#~ "This setting allows you to override "
-#~ "the automoatic selection and specify "
-#~ "your own. The default settings are "
-#~ "as follows:"
-#~ msgstr ""
-#~ "Diese Einstellung ermöglicht die Änderung "
-#~ "der Standardwerte für Verktor- und "
-#~ "Raster-Operationen. Die Standard-Werte "
-#~ "sind:"
-
-#~ msgid "VECTOR"
-#~ msgstr "Vektor-Operationen"
-
-#~ msgid "1: 0mm/s - 25.4mm/s"
-#~ msgstr ""
-
-#~ msgid "2: 25.4mm/s - 60mm/s"
-#~ msgstr ""
-
-#~ msgid "3: 60mm/s - 127mm/s"
-#~ msgstr ""
-
-#~ msgid "4: 127mm/s+"
-#~ msgstr ""
-
-#~ msgid "RASTER"
-#~ msgstr "Raster-Operationen"
-
-#~ msgid "2: 25.4mm/s - 127mm/s"
-#~ msgstr ""
-
-#~ msgid "3: 127mm/s - 320mm/s"
-#~ msgstr ""
-
-#~ msgid "4: 320mm/s+"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "This setting might be particularly "
-#~ "useful if you want to raster L2R"
-#~ " or R2L or possibly crosshatch to "
-#~ "try to maximise speed whilst avoiding"
-#~ " losing position."
-#~ msgstr ""
-
 msgid "Enable Dot Length"
 msgstr "Benutzerdefinierte Punkt-Länge"
-
-#~ msgid ""
-#~ "For Cut/Engrave operations, when using "
-#~ "PPI, Dot Length sets the minimum "
-#~ "length for the laser to be on "
-#~ "in order to change a continuous "
-#~ "lower power burn into a series of"
-#~ " dashes."
-#~ msgstr ""
-#~ "Bei Schneid-/Gravur-Operationen (bei Nutzung"
-#~ " der PPI-Optionen), bestimmt die "
-#~ "Punkt-Länge die minimale Länge bei "
-#~ "der der Laser eingeschaltet sein muss,"
-#~ " damit eine stetiger Low-Power-Strahl"
-#~ " zu einer Reihe von Strichen wird."
-
-#~ msgid ""
-#~ "When this is set, the PPI "
-#~ "effectively becomes the ratio of dashes"
-#~ " to gaps. For example:"
-#~ msgstr ""
-#~ "Wenn dies aktiv ist, wird der "
-#~ "PPI-Wert quasi zum Verhältnis von "
-#~ "Strichen zu Lücken. Beispiel:"
-
-#~ msgid ""
-#~ "If you set Dot Length to 500 "
-#~ "= 1/2\", a PPI of 500 would "
-#~ "result in 1/2\" dashes and 1/2\" "
-#~ "gaps."
-#~ msgstr ""
-#~ "Wenn die Punkt-Länge auf 500 = "
-#~ "1/2 Zoll gesetzt wird, so führt "
-#~ "ein PPI von 500 zu 1/2 Zoll "
-#~ "Strichen und 1/2 Zoll Lücken."
-
-#~ msgid ""
-#~ "If you set Dot Length to 250 "
-#~ "= 1/4\", a PPI of 250 would "
-#~ "result in 1/4\" dashes and 3/4\" "
-#~ "gaps."
-#~ msgstr ""
-#~ "Wenn die Punkt-Länge auf 250 = "
-#~ "1/4 Zoll gesetzt wird, so führt "
-#~ "ein PPI von 250 zu 1/4 Zoll "
-#~ "Strichen und 3/4 Zoll Lücken."
-
-#~ msgid ""
-#~ "This setting is an operation-by-"
-#~ "operation equivalent to the Pulse "
-#~ "Grouping option in Device Config."
-#~ msgstr ""
-#~ "Diese Einstellung ist das Arbeitsgang-"
-#~ "spezifische-Äquivalent zur Puls-Gruppierung-"
-#~ "Option in den Geräte-Einstellungen."
-
-#~ msgid "How many times to repeat this operation?"
-#~ msgstr "Wie oft soll diese Operation wiederholt werden?"
-
-#~ msgid ""
-#~ "Setting e.g. passes to 2 is "
-#~ "essentially equivalent to Duplicating the "
-#~ "operation, creating a second identical "
-#~ "operation with the same settings and "
-#~ "same elements."
-#~ msgstr ""
-#~ "Das Setzen der Durchläufe auf bspsw. "
-#~ "2 ist im Wesentlich identisch zur "
-#~ "Verdoppelung der Operation, also der "
-#~ "erzeugen einer zweiten identischen Operation"
-#~ " mit den gleichen Einstellungen und "
-#~ "den selben Elementen."
-
-#~ msgid ""
-#~ "The number of Operation Passes can "
-#~ "be changed extremely easily, but you "
-#~ "cannot change any of the other "
-#~ "settings."
-#~ msgstr ""
-#~ "Die Anzahl der Durchläufe kann so "
-#~ "sehr einfach verändert werden, aber ohne"
-#~ " die Möglichkeit, eine andere Einstellung"
-#~ " zu verändern."
-
-#~ msgid ""
-#~ "Duplicating the Operation gives more "
-#~ "flexibility for changing settings, but "
-#~ "is far more cumbersome to change "
-#~ "the number of duplications because you"
-#~ " need to add and delete the "
-#~ "duplicates one by one."
-#~ msgstr ""
-#~ "Das Verdoppeln der Operation gibt mehr"
-#~ " Flexibilität beim Ändern der "
-#~ "Einstellungen, ist aber deutlich umständlicher"
-#~ " wenn mehr Durchläufe gewünscht sind, "
-#~ "da jeder Durchlauf einzeln hnzugefügt "
-#~ "bzw. später gelöscht werden muss."
-
-#~ msgid "Advanced PPI"
-#~ msgstr "PPI (erweitert)"
-
-#~ msgid "Speedcode Advanced"
-#~ msgstr "Speedcode (erweitert)"
-
-#~ msgid "Start Preference"
-#~ msgstr "Einstellungen starten"
-
-#~ msgid "Layer"
-#~ msgstr "Ebene"
-
-#~ msgid "Raster Step (mils)"
-#~ msgstr "Rasterschritt (mils)"
-
-#~ msgid "Overscan (mils)"
-#~ msgstr "Overscan (mils)"
-
-#~ msgid "Raster Direction"
-#~ msgstr "Rasterrichtung"
-
-#~ msgid "Pass Through"
-#~ msgstr "Pass Trough"
-
-#~ msgid "None"
-#~ msgstr "Keiner"
-
-#~ msgid "\"none\" defined value"
-#~ msgstr "Definierter Wert \"none\""
-
-#~ msgid "#FF0000 defined values."
-#~ msgstr "#FF0000 vordefinierte Werte."
-
-#~ msgid "#00FF00 defined values."
-#~ msgstr "#00FF00 vordefinierte Werte."
-
-#~ msgid "#FF00FF defined values."
-#~ msgstr "#FF00FF vordefinierte Werte."
-
-#~ msgid "#00FFFF defined values."
-#~ msgstr "#00FFFF vordefinierte Werte."
-
-#~ msgid "#FFFF00 defined values."
-#~ msgstr "#FFFF00 vordefinierte Werte."
-
-#~ msgid "#000000 defined values."
-#~ msgstr "#000000 vordefinierte Werte."
-
-#~ msgid "Fill Color"
-#~ msgstr "Füllfarbe"
-
-#~ msgid "Stroke Color"
-#~ msgstr "Linienfarbe"
-
-#~ msgid ""
-#~ "The input/driver properties of the "
-#~ "selected device provides no graphical "
-#~ "user interface."
-#~ msgstr ""
-#~ "Die Einstellungen des gewählten Gerätes "
-#~ "können nicht in der GUI verändert "
-#~ "werden."
-
-#~ msgid "name"
-#~ msgstr ""
-
-#~ msgid "Raster Wizard"
-#~ msgstr "Raster-Assistent"
-
-#~ msgid "Processed image preview"
-#~ msgstr "Ergebnis-Bildvorschau"
-
-#~ msgid "Image operations applied in order to generate a raster image."
-#~ msgstr ""
-#~ "Bildoperationen, die abgearbeitet werden, um"
-#~ " ein Rasterbild zu generieren."
-
-#~ msgid "Process Image and Export"
-#~ msgstr "Bild verarbeiten und exportieren"
-
-#~ msgid "Processing..."
-#~ msgstr "Wird bearbeitet..."
-
-#~ msgid "No image..."
-#~ msgstr "Bild fehlt..."
-
-#~ msgid "Raster Script"
-#~ msgstr "Rasterskript"
-
-#~ msgid "Enable Cropping"
-#~ msgstr "Zuschneiden aktivieren"
-
-#~ msgid "Reset Cropping"
-#~ msgstr "Zuschneiden aufheben"
-
-#~ msgid "Crop field"
-#~ msgstr "Markiertes zuschneiden"
-
-#~ msgid "Crop"
-#~ msgstr "Zuschneiden"
-
-#~ msgid "Maintain Aspect Ratio"
-#~ msgstr "Seitenverhältnis beibehalten"
-
-#~ msgid "pixels"
-#~ msgstr "Pixel"
-
-#~ msgid "percent"
-#~ msgstr "Prozent"
-
-#~ msgid "inches"
-#~ msgstr "Zoll"
-
-#~ msgid "mm"
-#~ msgstr "mm"
-
-#~ msgid "Enable Resampling"
-#~ msgstr "Resampling aktivieren"
-
-#~ msgid "Image Width"
-#~ msgstr "Bildbreite"
-
-#~ msgid "Maintain Aspect Ratio for Resample"
-#~ msgstr "Seitenverhältnis für Resample beibehalten"
-
-#~ msgid "Image Height"
-#~ msgstr "Bildhöhe"
-
-#~ msgid "Image resample step"
-#~ msgstr "Bild-Resample-Schritt"
-
-#~ msgid "Image resample DPI at given step"
-#~ msgstr "Bild-Resample DPI bei gegebenem Schritt"
-
-#~ msgid "Resample"
-#~ msgstr ""
-
-#~ msgid "pixels/in"
-#~ msgstr "Pixel/Zoll"
-
-#~ msgid "%d x %d pixels"
-#~ msgstr "%d x %d Pixel"
-
-#~ msgid "Enable Grayscale Convert"
-#~ msgstr "Aktiviere die Graustufenkonvertierung"
-
-#~ msgid "Replace Image"
-#~ msgstr "Bild ersetzen"
-
-#~ msgid "Enable Output"
-#~ msgstr "Ausgabe aktivieren"
-
-#~ msgid "Replace image with this output"
-#~ msgstr "Ersetzen Sie das Bild durch diese Ausgabe"
-
-#~ msgid "Enable %s"
-#~ msgstr "%s aktivieren"
-
-#~ msgid "Field Loop"
-#~ msgstr "Feldschleife"
-
-#~ msgid "Uses Roller"
-#~ msgstr "Rotationswalzen verwenden"
-
-#~ msgid "Steps required for a full rotation"
-#~ msgstr "Schrittanzahl für volle Drehung"
-
-#~ msgid "Circumference of roller"
-#~ msgstr "Umfang der Walze"
-
-#~ msgid "Circumference of object in rotary"
-#~ msgstr "Umfang des Objekts im Gravurmodul"
-
-#~ msgid "Object Circumference"
-#~ msgstr "Objektumfang"
-
-#~ msgid "Roller Circumference"
-#~ msgstr "Rollenumfang"
-
-#~ msgid "Rotation Steps"
-#~ msgstr "Drehschritte"
-
-#~ msgid "Scale X"
-#~ msgstr "Skaliere X"
-
-#~ msgid "Scale Y"
-#~ msgstr "Skaliere Y"
-
-#~ msgid "steps"
-#~ msgstr "Schritte"
-
-#~ msgid "SVG Uniform Save"
-#~ msgstr "SVG Uniform speichern"
-
-#~ msgid "Do not treat overwriting SVG differently if they are MeerK40t files"
-#~ msgstr ""
-#~ "Behandle das Überschreiben von SVG nicht"
-#~ " anders, wenn diese von Meerk40t "
-#~ "stammen"
-
-#~ msgid "DXF Centering"
-#~ msgstr "DXF Zentrierung"
-
-#~ msgid "Set minimal set of operations if none defined"
-#~ msgstr "Minimal-Set laden bei leerem Vorrat"
-
-#~ msgid ""
-#~ "If there are no operations defined, "
-#~ "then a minimal set of operations "
-#~ "Other/Red/Blue will be loaded."
-#~ msgstr ""
-#~ "Setze die Arbeitsabläufe auf "
-#~ "Sonstiges/Rot/Blau falls keine Anweisungen "
-#~ "spezifiziert sind."
-
-#~ msgid "Default Operation Empty"
-#~ msgstr "Kein automatisches Laden von Operationen"
-
-#~ msgid ""
-#~ "Use the legacy classification algorithm "
-#~ "rather than the modern classification "
-#~ "algorithm."
-#~ msgstr "Nutze für die Zuordnung der Elemente den 'alten' Algorithmus."
-
-#~ msgid "Select the desired language to use."
-#~ msgstr "Wählen Sie die gewünschte Sprache aus."
 
 msgid "Scale factor for the X-axis. Board units to actual physical units."
 msgstr ""
@@ -13528,1147 +12627,11 @@ msgstr ""
 "Skalierungsfaktor für die Y-Achse. Geräte-spezifische Einheiten zu echten physikalischen Einheiten.\n"
 "Normalerweise 1.0 kann aber bei Genauigkeitsproblemen angepasst werden."
 
-#~ msgid ""
-#~ "Scale factor for the Y-axis. This "
-#~ "defines the ratio of mils to "
-#~ "steps. This is usually at 1:1 "
-#~ "steps/mils but due to functional issues"
-#~ " it can deviate and needs to be"
-#~ " accounted for"
-#~ msgstr ""
-#~ "Skalierungsfaktor für die Y-Achse. Dies "
-#~ "bestimmt das Verhältnis von mils pro "
-#~ "Schrittmotor-Drehung. Dies ist normalerweise"
-#~ " 1:2 Schritte / mils kann aber "
-#~ "bei Genauigkeits-Problemen angepasst werden"
-
-#~ msgid "Bed Dimensions:"
-#~ msgstr "Bettabmessungen"
-
-#~ msgid "Y Scale Factor:"
-#~ msgstr "Y Skalierung"
-
-#~ msgid "X Scale Factor:"
-#~ msgstr "X Skalierung"
-
-#~ msgid "SVG Pixels Per Inch:"
-#~ msgstr "SVG Pixel pro Zoll"
-
-#~ msgid "Camera %d"
-#~ msgstr "Kamera %d"
-
-#~ msgid "Spooling Interrupted. Press OK to Continue."
-#~ msgstr "Vorgang angehalten. Drücken Sie OK, um fortzufahren."
-
-#~ msgid "E&xecute Job"
-#~ msgstr "&Job ausführen"
-
-#~ msgid "&Simulate"
-#~ msgstr "&Simulieren"
-
-#~ msgid "&RasterWizard"
-#~ msgstr "&Raster-Assistent"
-
-#~ msgid "&Notes"
-#~ msgstr "&Notizen"
-
-#~ msgid "&Console"
-#~ msgstr "&Konsole"
-
-#~ msgid "N&avigation"
-#~ msgstr "N&avigation"
-
-#~ msgid "C&amera"
-#~ msgstr "K&amera"
-
-#~ msgid "S&pooler"
-#~ msgstr "S&pooler"
-
-#~ msgid "C&ontroller"
-#~ msgstr "C&ontroller"
-
-#~ msgid "&Devices"
-#~ msgstr "&Geräte"
-
-#~ msgid "Confi&g"
-#~ msgstr "Konfi&guration"
-
-#~ msgid "&Keymap"
-#~ msgstr "&Tastaturbelegung"
-
-#~ msgid "Rotar&y"
-#~ msgstr "Drehachse"
-
-#~ msgid "&USB"
-#~ msgstr "&USB"
-
-#~ msgid "&IRC"
-#~ msgstr "&IRC"
-
-#~ msgid "&About"
-#~ msgstr "Ü&ber"
-
-#~ msgid "Usb: %s"
-#~ msgstr "USB: %s"
-
-#~ msgid "Controller: %s"
-#~ msgstr "Controller: %s"
-
-#~ msgid "Spooler: %s"
-#~ msgstr "Spooler: %s"
-
-#~ msgid "%s v%s      (%s -> %s -> %s)"
-#~ msgstr ""
-
-#~ msgid "%s v%s"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "Some files were unrecognized:\n"
-#~ "%s"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "Material must be jigged at 0,0 either home or home offset.\n"
-#~ "How wide is your material (give units: in, mm, cm, px, etc)?"
-#~ msgstr ""
-
-#~ msgid "Saving File..."
-#~ msgstr "Speichere Datei..."
-
 msgid "Other"
 msgstr "Sonstiges"
 
-#~ msgid "Loaded Windows in Context %s:"
-#~ msgstr ""
-
-#~ msgid "Loaded Windows in Device %s:"
-#~ msgstr ""
-
-#~ msgid "Load Driver Specific Window"
-#~ msgstr ""
-
-#~ msgid "Load Output Specific Window"
-#~ msgstr ""
-
-#~ msgid "Specify source window type"
-#~ msgstr ""
-
-#~ msgid "Device not found."
-#~ msgstr ""
-
-#~ msgid "Window Opened."
-#~ msgstr ""
-
-#~ msgid "No such window as %s"
-#~ msgstr ""
-
-#~ msgid "Window Closed."
-#~ msgstr ""
-
-#~ msgid ""
-#~ "\n"
-#~ "    Good news MeerK40t User! MeerK40t encountered an crash!\n"
-#~ "\n"
-#~ "    You now have the ability to"
-#~ " help meerk40t's development by sending "
-#~ "us the log.\n"
-#~ "\n"
-#~ "    Send the following data to the MeerK40t team?\n"
-#~ "    ------\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "    Es tut uns leid, MeerK40t ist abgestürzt!\n"
-#~ "    Die gute Nachricht: Sie können "
-#~ "nun die Merrk40t-Entwicklung unterstützen, "
-#~ "in dem Sie uns das Fehlerprotokoll "
-#~ "schicken.\n"
-#~ "\n"
-#~ "    Sollen die folgenden Daten an das Meerk40t-Team geschickt werden?\n"
-#~ "    ------\n"
-#~ "    "
-
-#~ msgid "File Overwrite"
-#~ msgstr "Datei überschreiben"
-
-#~ msgid "File Append"
-#~ msgstr "An Datei anhängen"
-
-#~ msgid "File Increment"
-#~ msgstr ""
-
-#~ msgid "FileOutput"
-#~ msgstr ""
-
-#~ msgid "Output filename"
-#~ msgstr ""
-
-#~ msgid "Filename"
-#~ msgstr "Dateiname"
-
-#~ msgid "Upper limit for accel level %d"
-#~ msgstr "Oberes Limit für Beschleunigung %d"
-
-#~ msgid "Lhystudios-Controller"
-#~ msgstr ""
-
-#~ msgid "Kernel Force Event"
-#~ msgstr "Kernel Force Event"
-
-#~ msgid "Set Current"
-#~ msgstr "Position übernehmen"
-
-#~ msgid "Randomize PPI"
-#~ msgstr "Zufälliges PPI"
-
-#~ msgid "Leave rail locked after burn"
-#~ msgstr "Achsen nach Ende des Jobs automatisch verriegeln"
-
-#~ msgid "Lhystudios-Configuration"
-#~ msgstr "Hardware-Einstellungen (Lhystudios)"
-
-#~ msgid "Strict Programmed Speed Mode"
-#~ msgstr "Erzwinge Geschwindigkeitsmodus"
-
-#~ msgid ""
-#~ "Forces the device to enter and "
-#~ "exit programmed speed mode from the "
-#~ "same direction. This may prevent devices"
-#~ " like the M2-V4 and earlier from "
-#~ "having issues. Not typically needed."
-#~ msgstr ""
-#~ "Zwingt das Gerät den programmierten "
-#~ "Geschwindigkeitsmodus aus der gleichen "
-#~ "Richtung zu starten bzw. zu verlassen."
-#~ " Das kann Probleme auf Boards wie "
-#~ "dem M2-V4 und älteren beheben. Wird "
-#~ "normalerweise nicht benötigt."
-
-#~ msgid ""
-#~ "Lhystudios speeds are approximately 92% "
-#~ "of the speed requested. This option "
-#~ "applies a correcting factor so that "
-#~ "actual burn speeds are the same as"
-#~ " in the Operation. "
-#~ msgstr ""
-#~ "Die Geschwindigkeit der Lhystudio-Boards "
-#~ "ist etwa 92% der angeforderten "
-#~ "Geschwindigkeit. Diese Option wendet einen "
-#~ "Korrekturfaktor an, damit die reale "
-#~ "Brenngeschwindigkeit mit der in den "
-#~ "Arbeitsabläufen angegebenen übereinstimmt. "
-
-#~ msgid "Translate Home X"
-#~ msgstr "Verschiebe Home X"
-
-#~ msgid "Translate Home Y"
-#~ msgstr "Verschiebe Home Y"
-
-#~ msgid "Set Home Position based on the current position"
-#~ msgstr "Home-Position basierend auf aktueller Position einstellen"
-
-#~ msgid ""
-#~ "The Pulse Grouping option in Operations"
-#~ " are set for that operation before"
-#~ " the job is spooled and cannot "
-#~ "be changed during the burn, however "
-#~ "this global Pulse Grouping option is "
-#~ "checked as instructions are sent to "
-#~ "the laser and can turned on and"
-#~ " off during the burn process if "
-#~ "needed."
-#~ msgstr ""
-#~ "Während die Puls-Gruppen-Option in "
-#~ "den Arbeitsabläufen vor dem Job-Ablauf"
-#~ " eingestellt wird, und nicht on-"
-#~ "the-fly verändert werden kann, wird "
-#~ "diese globale Plus-Gruppen-Option beim"
-#~ " Senden zum Laser geprüft, und kann"
-#~ " somit während des Brennvorgangs verändert"
-#~ " werden."
-
-#~ msgid ""
-#~ "Because the changes are believed to "
-#~ "be small enough to be undetectable, "
-#~ "you may wish to leave this "
-#~ "permanently checked."
-#~ msgstr ""
-#~ "Es wird empfohlen diese Option dauerhaft"
-#~ " eingeschaltet zu lassen, da die "
-#~ "Veränderungen nur minimal sind."
-
-#~ msgid "Rather than orderly PPI, we perform PPI based on a randomized average"
-#~ msgstr ""
-#~ "PPI wird mit einem zufälligen Muster "
-#~ "statt eines regelmäßigen Muster durchgeführt"
-
-#~ msgid ""
-#~ "Leave the steppers energised and the "
-#~ "rail locked after the burn has "
-#~ "finished. By default, if this option "
-#~ "is not selected, the rail is "
-#~ "unlocked at the end of the burn."
-#~ msgstr ""
-#~ "Achsen bleiben nach Job-Abschluss "
-#~ "verriegelt. Wenn die Option abgewählt "
-#~ "ist, werden die Achsen am Ende des"
-#~ " Jobs entriegelt."
-
-#~ msgid "General Options:"
-#~ msgstr "Allgemeine Optionen"
-
-#~ msgid "Write Buffer:"
-#~ msgstr "Schreib-Puffer"
-
-#~ msgid "Pulse Planner:"
-#~ msgstr "Puls-Einstellungen"
-
-#~ msgid "Shift Home Position:"
-#~ msgstr "Home-Position verschieben"
-
-#~ msgid "Configuration:"
-#~ msgstr "Konfiguration"
-
-#~ msgid "Board Setup:"
-#~ msgstr "Verwendetes Board"
-
-#~ msgid "mil"
-#~ msgstr "mil"
-
-#~ msgid "Moshiboard-Prefererences"
-#~ msgstr "Moshiboard-Einstellungen"
-
-#~ msgid "URI: %s"
-#~ msgstr ""
-
-#~ msgid "Align Left"
-#~ msgstr "Ausrichten links"
-
-#~ msgid "Align Right"
-#~ msgstr "Ausrichten rechts"
-
-#~ msgid "Align Top"
-#~ msgstr "Ausrichten oben"
-
-#~ msgid "Align Bottom"
-#~ msgstr "Ausrichten unten"
-
-#~ msgid "Align Center"
-#~ msgstr "Ausrichten Mitte"
-
-#~ msgid "Space Vertical"
-#~ msgstr "Vertikaler Abstand"
-
-#~ msgid "Space Horizontal"
-#~ msgstr "Horizontaler Abstand"
-
-#~ msgid "Toolbars"
-#~ msgstr ""
-
-#~ msgid "Opens Devices Windo"
-#~ msgstr "Öffnet Geräte-Manager"
-
-#~ msgid "Opens Device Manager"
-#~ msgstr "Öffnet Geräte-Manager"
-
-#~ msgid "Opens Configuration Window"
-#~ msgstr "Öffnet Hardware-Konfiguration"
-
-#~ msgid "Opens Settings Window"
-#~ msgstr "Öffnet allgemeine Einstellungen"
-
-#~ msgid "Run RasterWizard"
-#~ msgstr "Starte Raster-Assistent"
-
-#~ msgid "Suspended Signal: %s for %s"
-#~ msgstr "Angehaltenes Signal: %s für %s"
-
-#~ msgid "%s: Finalizing Module %s: %s"
-#~ msgstr ""
-
-#~ msgid "%s: Detaching %s: %s"
-#~ msgstr ""
-
-#~ msgid "Saving Context State: '%s'"
-#~ msgstr ""
-
-#~ msgid "Context Shutdown Finished: '%s'"
-#~ msgstr ""
-
-#~ msgid "Thread %s exited safely"
-#~ msgstr ""
-
-#~ msgid "WARNING: Dead thread %s still registered to %s."
-#~ msgstr "WARNUNG: Toter Thread %s ist immer noch bei %s registriert."
-
-#~ msgid "Finishing Thread %s for %s"
-#~ msgstr "Finishing Thread %s für %s"
-
-#~ msgid "Waiting for thread %s: %s"
-#~ msgstr "Warten auf Thread %s: %s"
-
-#~ msgid "Thread %s has finished. %s"
-#~ msgstr ""
-
-#~ msgid "Thread %s is daemon. It will die automatically: %s"
-#~ msgstr ""
-
-#~ msgid "WARNING: Listener '%s' still registered to %s."
-#~ msgstr "WARNUNG: Listener '%s' ist immer noch bei %s registriert."
-
-#~ msgid "Thread: %s already exists. Waiting..."
-#~ msgstr ""
-
-#~ msgid "Thread: %s, Initialized"
-#~ msgstr ""
-
-#~ msgid "Thread: %s, Set"
-#~ msgstr ""
-
-#~ msgid "Thread: %s, Start"
-#~ msgstr ""
-
-#~ msgid "Thread: %s, End "
-#~ msgstr ""
-
-#~ msgid "Thread: %s, Exception-End"
-#~ msgstr ""
-
-#~ msgid "Thread: %s, Unset"
-#~ msgstr ""
-
-#~ msgid "Syntax Error (%s): %s"
-#~ msgstr ""
-
-#~ msgid "%s is not a registered command in this context: %s"
-#~ msgstr ""
-
-#~ msgid "\tArgument: %s '%s'%s"
-#~ msgstr ""
-
-#~ msgid "\tOption: %s ('--%s', '-%s')%s"
-#~ msgstr ""
-
-#~ msgid "No extended help for: %s"
-#~ msgstr ""
-
-#~ msgid "--- %s Commands ---"
-#~ msgstr ""
-
-#~ msgid "loop <command>"
-#~ msgstr ""
-
-#~ msgid "end <commmand>"
-#~ msgstr ""
-
-#~ msgid "%d times,"
-#~ msgstr "%d-mal"
-
-#~ msgid "each %f seconds"
-#~ msgstr "alle %f Sekunden"
-
-#~ msgid "Timer '%s' canceled."
-#~ msgstr " Timer '%s' gestoppt."
-
-#~ msgid "Timer '%s' does not exist."
-#~ msgstr "Timer '%s' existiert nicht."
-
-#~ msgid "%d: %s type of %s"
-#~ msgstr ""
-
-#~ msgid "control [<executive>]"
-#~ msgstr ""
-
-#~ msgid "Executed '%s'"
-#~ msgstr ""
-
-#~ msgid "Control '%s' not found."
-#~ msgstr ""
-
-#~ msgid "Loaded Modules in Context %s:"
-#~ msgstr ""
-
-#~ msgid "%d: %s as type of %s"
-#~ msgstr ""
-
-#~ msgid "Module '%s' not found."
-#~ msgstr ""
-
-#~ msgid "modifier [(open|close) <module_name>]"
-#~ msgstr ""
-
-#~ msgid "Modifiers Registered:"
-#~ msgstr ""
-
-#~ msgid "Loaded Modifiers in Context %s:"
-#~ msgstr ""
-
-#~ msgid "Loaded Modifiers in Device %s:"
-#~ msgstr ""
-
-#~ msgid "Modifier '%s' not found."
-#~ msgstr ""
-
-#~ msgid "Watching Channel: %s"
-#~ msgstr ""
-
-#~ msgid "No Longer Watching Channel: %s"
-#~ msgstr ""
-
-#~ msgid "Channel %s is not opened."
-#~ msgstr ""
-
-#~ msgid "Printing Channel: %s"
-#~ msgstr ""
-
-#~ msgid "Opening file: %s"
-#~ msgstr ""
-
-#~ msgid "Recording Channel: %s to file %s"
-#~ msgstr ""
-
-#~ msgid "Path that should be flushed to disk."
-#~ msgstr ""
-
-#~ msgid "No relevant context found."
-#~ msgstr ""
-
-#~ msgid "quits meerk40t shutting down all processes"
-#~ msgstr ""
-
-#~ msgid "%s %s Telnet Console.\r\n"
-#~ msgstr ""
-
-#~ msgid "%s %s console server on port: %d"
-#~ msgstr ""
-
-#~ msgid "Server failed on port: %d"
-#~ msgstr ""
-
-#~ msgid "UDP Socket(%d) Listening."
-#~ msgstr ""
-
-#~ msgid "Listening %s on port %d..."
-#~ msgstr ""
-
-#~ msgid "Socket Connected: %s"
-#~ msgstr ""
-
-#~ msgid "Socket was killed: %s"
-#~ msgstr ""
-
-#~ msgid "Connection to %s timed out."
-#~ msgstr ""
-
-#~ msgid "Connection to %s was closed."
-#~ msgstr ""
-
-#~ msgid "%d: key %s %s"
-#~ msgstr ""
-
-#~ msgid "Set default keymap."
-#~ msgstr ""
-
-#~ msgid "Unbound %s"
-#~ msgstr ""
-
-#~ msgid "Aliases:"
-#~ msgstr ""
-
-#~ msgid "Set default aliases."
-#~ msgstr ""
-
-#~ msgid "new driver type"
-#~ msgstr ""
-
-#~ msgid "driver<?> <command>"
-#~ msgstr ""
-
-#~ msgid "Driver:"
-#~ msgstr ""
-
-#~ msgid "Driver %s:"
-#~ msgstr ""
-
-#~ msgid "driver<?> list"
-#~ msgstr ""
-
-#~ msgid "list driver types"
-#~ msgstr ""
-
-#~ msgid "Drivers permitted:"
-#~ msgstr ""
-
-#~ msgid "driver<?> reset"
-#~ msgstr ""
-
-#~ msgid "index %d out of range"
-#~ msgstr ""
-
-#~ msgid "Name to save the operation under"
-#~ msgstr ""
-
-#~ msgid "Save current operations to persistent settings"
-#~ msgstr ""
-
-#~ msgid "Name to load the operation from"
-#~ msgstr ""
-
-#~ msgid "Load operations from persistent settings"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "<cut/engrave/raster/imageop/dots> - group the "
-#~ "elements into this operation"
-#~ msgstr ""
-
-#~ msgid "raster step size"
-#~ msgstr ""
-
-#~ msgid "step <raster-step-size>"
-#~ msgstr ""
-
-#~ msgid "Step for %s is currently: %d"
-#~ msgstr "Schrittanzahl für '%s': %d"
-
-#~ msgid "Speed for '%s' is currently: %f"
-#~ msgstr ""
-
-#~ msgid "Speed for '%s' updated %f -> %f"
-#~ msgstr ""
-
-#~ msgid "Power for '%s' is currently: %d"
-#~ msgstr "Leistung für '%s' ist aktuell: %d"
-
-#~ msgid "Power for '%s' updated %d -> %d"
-#~ msgstr "Leistung für '%s' geändert: %d -> %d"
-
-#~ msgid "Passes for '%s' is currently: %d"
-#~ msgstr "Wiederholungen für %s: %d"
-
-#~ msgid "Passes for '%s' updated %d -> %d"
-#~ msgstr "Wiederholungen für '%s' geändert: %d -> %d"
-
-#~ msgid "Operation '%s' disabled."
-#~ msgstr "Arbeitsgang '%s' deaktiviert."
-
-#~ msgid "Operation '%s' enabled."
-#~ msgstr "Arbeitsgang '%s' aktiviert."
-
-#~ msgid "Deletingâ€¦"
-#~ msgstr "Lösche..."
-
-#~ msgid "element step size"
-#~ msgstr ""
-
-#~ msgid "step <element step-size>"
-#~ msgstr ""
-
-#~ msgid "Image step for %s is currently: %s"
-#~ msgstr ""
-
-#~ msgid "No image element selected."
-#~ msgstr "Kein Bild-Element ausgewählt."
-
-#~ msgid "Alignment position"
-#~ msgstr "Ausrichten an"
-
-#~ msgid "align elements"
-#~ msgstr "Elemente ausrichten"
-
-#~ msgid "Nothing to align."
-#~ msgstr "Nichts zum Ausrichten vorhanden."
-
-#~ msgid "Aligning: %s"
-#~ msgstr "Ausrichten: %s"
-
-#~ msgid "Cannot spacial align fewer than 2 elements."
-#~ msgstr "Es können nicht weniger als 2 Elemente verteilt werden."
-
-#~ msgid "grid <columns> <rows> <x_distance> <y_distance>"
-#~ msgstr ""
-
-#~ msgid "circle <x> <y> <r> or circle <r>"
-#~ msgstr ""
-
-#~ msgid "polygon (float float)*"
-#~ msgstr ""
-
-#~ msgid "Must be a list of spaced delimited floating point numbers values."
-#~ msgstr ""
-
-#~ msgid "polyline (float float)*"
-#~ msgstr ""
-
-#~ msgid "%d: stroke = none - %s"
-#~ msgstr ""
-
-#~ msgid "%d: stroke = %s - %s"
-#~ msgstr ""
-
-#~ msgid "%d: fill = none - %s"
-#~ msgstr ""
-
-#~ msgid "%d: fill = %s - %s"
-#~ msgstr ""
-
-#~ msgid "%d: rotate(%fturn) - %s"
-#~ msgstr ""
-
-#~ msgid "%d: translate(%f, %f) - %s"
-#~ msgstr ""
-
-#~ msgid "matrix <sx> <kx> <sy> <ky> <tx> <ty>"
-#~ msgstr ""
-
-#~ msgid "reset - %s"
-#~ msgstr ""
-
-#~ msgid "trace the convex hull of current elements"
-#~ msgstr "Genaues Abfahren des Umrisses für die aktuellen Elemente"
-
-#~ msgid "quick trace the bounding box of current elements"
-#~ msgstr "Schnelles Abfahren des umhüllenden Rechtecks für die aktuellen Elemente"
-
-#~ msgid "Speed %smm/s"
-#~ msgstr "Geschwindigkeit %smm/s"
-
-#~ msgid "Step"
-#~ msgstr "Schritt"
-
-#~ msgid "Step %s"
-#~ msgstr "Schritt %s"
-
-#~ msgid "Change raster step values of operation"
-#~ msgstr ""
-
-#~ msgid "Passes %s"
-#~ msgstr "Durchläufe %s"
-
-#~ msgid "Remove %s selected items"
-#~ msgstr "Lösche %s markierte Elemente"
-
-#~ msgid "Remove '%s'"
-#~ msgstr "Lösche '%s'"
-
-#~ msgid "Remove %s operations"
-#~ msgstr "Lösche %s markierte Arbeitsabläufe"
-
-#~ msgid "Remove %s elements"
-#~ msgstr "Lösche %s Elemente"
-
-#~ msgid "Make %s copies"
-#~ msgstr "Erzeuge %s Kopien"
-
-#~ msgid "Use"
-#~ msgstr "Nutze"
-
-#~ msgid "Load: %s"
-#~ msgstr "Lade: %s"
-
-#~ msgid "Add operation"
-#~ msgstr "Arbeitsgang hinzufügen"
-
-#~ msgid "Special operations"
-#~ msgstr "Spezielle Aktionen"
-
-#~ msgid "Add Shutdown"
-#~ msgstr "Füge 'Shutdown' hinzu"
-
-#~ msgid "Add %s passes"
-#~ msgstr "Füge %s Durchgänge hinzu"
-
-#~ msgid "Duplicate elements %s times"
-#~ msgstr "Dupliziere Elemente %s-mal"
-
-#~ msgid "Reload '%s'"
-#~ msgstr "Lade alte Version von '%s'"
-
-#~ msgid "Scale %s%%"
-#~ msgstr "Skaliere %s%%"
-
-#~ msgid "Divide into %s images"
-#~ msgstr "Zerlege in %s Bilder"
-
-#~ msgid "RasterWizard: %s"
-#~ msgstr "Raster-Assistent: %s"
-
-#~ msgid "Apply raster script"
-#~ msgstr "Raster-Script anwenden"
-
-#~ msgid "Apply: %s"
-#~ msgstr "Übernehmen: %s"
-
-#~ msgid "Convert to SVG"
-#~ msgstr "In SVG wandeln"
-
-#~ msgid "Process as Operation"
-#~ msgstr "Als Arbeitsgang ausführen"
-
-#~ msgid "Element"
-#~ msgstr "Element"
-
-#~ msgid "new input type"
-#~ msgstr "Neuer Eingabe-Typ"
-
-#~ msgid "input<?> <command>"
-#~ msgstr ""
-
-#~ msgid "Input:"
-#~ msgstr ""
-
-#~ msgid "Input %s: %s"
-#~ msgstr ""
-
-#~ msgid "input<?> list, list current inputs"
-#~ msgstr ""
-
-#~ msgid "list input types"
-#~ msgstr "Eingabe-Typen auflisten"
-
-#~ msgid "Input types:"
-#~ msgstr "Eingabe-Type:"
-
-#~ msgid "Port of TCPOutput to change."
-#~ msgstr ""
-
-#~ msgid "change the port of the tcpdevice"
-#~ msgstr ""
-
-#~ msgid "TCP port changed: %s -> %s"
-#~ msgstr ""
-
-#~ msgid "new output type"
-#~ msgstr ""
-
-#~ msgid "output<?> <command>"
-#~ msgstr ""
-
-#~ msgid "outfile filename"
-#~ msgstr ""
-
-#~ msgid "tcp address"
-#~ msgstr ""
-
-#~ msgid "tcp/ip port"
-#~ msgstr ""
-
-#~ msgid "network <address> <port>"
-#~ msgstr ""
-
-#~ msgid "No address/port specified"
-#~ msgstr ""
-
-#~ msgid "output<?> list, list current outputs"
-#~ msgstr ""
-
-#~ msgid "Output:"
-#~ msgstr ""
-
-#~ msgid "Output %s: %s"
-#~ msgstr ""
-
-#~ msgid "list output types"
-#~ msgstr ""
-
-#~ msgid "Output types:"
-#~ msgstr ""
-
-#~ msgid "plan command name to alias"
-#~ msgstr ""
-
-#~ msgid "Define a spoolable console command"
-#~ msgstr "Definiere ein Konsolen-Kommando als spoolbar"
-
-#~ msgid "You may not overwrite an already used alias."
-#~ msgstr "Bereits verwendete Bezeichnungen können nicht überschrieben werden."
-
-#~ msgid "Plan %s:"
-#~ msgstr "Plan %s:"
-
-#~ msgid "Commands %s:"
-#~ msgstr "Befehle %s:"
-
-#~ msgid "plan<?> list"
-#~ msgstr ""
-
-#~ msgid "plan<?> classify"
-#~ msgstr ""
-
-#~ msgid "unlock, origin, home, etc."
-#~ msgstr ""
-
-#~ msgid "Plan Commands:"
-#~ msgstr ""
-
-#~ msgid "plan<?> append <op>"
-#~ msgstr ""
-
-#~ msgid "plan<?> prepend <op>"
-#~ msgstr ""
-
-#~ msgid "Physical Home Before: Disabled (Rotary On)"
-#~ msgstr "Hartes Home zu Beginn: Deaktiviert (Rotary On)"
-
-#~ msgid "Home Before: Disabled (Rotary On)"
-#~ msgstr "Home zu Beginn: Deaktiviert (Rotary On)"
-
-#~ msgid "Home After: Disabled (Rotary On)"
-#~ msgstr "Home am Ende: Deaktiviert (Rotary On)"
-
-#~ msgid "Physical Home After: Disabled (Rotary On)"
-#~ msgstr "Hartes Home am Ende: Deaktiviert (Rotary On)"
-
-#~ msgid "columns for the grid"
-#~ msgstr ""
-
-#~ msgid "rows for the grid"
-#~ msgstr ""
-
-#~ msgid "x_distance each column step"
-#~ msgstr ""
-
-#~ msgid "y_distance each row step"
-#~ msgstr ""
-
-#~ msgid "plan<?> step_repeat"
-#~ msgstr ""
-
-#~ msgid "Register this device"
-#~ msgstr ""
-
-#~ msgid "spool<?> <command>"
-#~ msgstr ""
-
-#~ msgid "Spooler %s:"
-#~ msgstr ""
-
-#~ msgid "Position moved: %d %d"
-#~ msgstr ""
-
-#~ msgid "x offset"
-#~ msgstr ""
-
-#~ msgid "match on output rather than driver"
-#~ msgstr ""
-
-#~ msgid "delegate commands to currently selected device by input/driver"
-#~ msgstr ""
-
-#~ msgid "Device %s, %s, %s"
-#~ msgstr ""
-
-#~ msgid "No device selected."
-#~ msgstr "Kein Gerät ausgewählt."
-
-#~ msgid "No matching command."
-#~ msgstr "Kein passendes Kommando vorhanden."
-
-#~ msgid "Index of device being activated"
-#~ msgstr ""
-
-#~ msgid "delegate commands to currently selected device"
-#~ msgstr ""
-
-#~ msgid "Activated device %s at index %d."
-#~ msgstr ""
-
 msgid "Device"
 msgstr "Gerät"
-
-#~ msgid "Devices:"
-#~ msgstr "Geräte:"
-
-#~ msgid "list devices"
-#~ msgstr ""
-
-#~ msgid "Index of device deleted"
-#~ msgstr ""
-
-#~ msgid "delete <index>"
-#~ msgstr ""
-
-#~ msgid "Invalid device-string index."
-#~ msgstr ""
-
-#~ msgid "CH341 Chip Version: %d"
-#~ msgstr "CH341 Chip Version: %d"
-
-#~ msgid "Driver Detected: %s"
-#~ msgstr "Treiber gefunden: %s"
-
-#~ msgid "run grbl-emulator on given port."
-#~ msgstr ""
-
-#~ msgid "adjust grbl home_x position"
-#~ msgstr ""
-
-#~ msgid "adjust grbl home_y position"
-#~ msgstr ""
-
-#~ msgid "TCP Server for GRBL Emulator on port: %d"
-#~ msgstr ""
-
-#~ msgid "\"%s\" exceeds 1 second limit to fire a standing laser."
-#~ msgstr ""
-
-#~ msgid "Pulse laser for %f milliseconds"
-#~ msgstr ""
-
-#~ msgid "Speed set at: %f mm/s"
-#~ msgstr ""
-
-#~ msgid "Power set at: %d pulses per inch"
-#~ msgstr ""
-
-#~ msgid "Acceleration: %d"
-#~ msgstr ""
-
-#~ msgid "update movement codes for the drivers"
-#~ msgstr ""
-
-#~ msgid "Lhystudios Channel Aborted."
-#~ msgstr ""
-
-#~ msgid "Rapid Limit: %f, %f"
-#~ msgstr ""
-
-#~ msgid "Lhystudios Engrave Buffer Import. egv_import <egv_file>"
-#~ msgstr ""
-
-#~ msgid "Lhystudios Engrave Buffer Export. egv_export <egv_file>"
-#~ msgstr ""
-
-#~ msgid "Could not save: %s"
-#~ msgstr ""
-
-#~ msgid "Lhystudios Engrave Code Sender. egv <lhymicro-gl>"
-#~ msgstr ""
-
-#~ msgid "Lhystudios Channel Started."
-#~ msgstr ""
-
-#~ msgid "Lhystudios Channel Resumed."
-#~ msgstr "Lhystudios Kanal fortgesetzt."
-
-#~ msgid "CH341 Opened."
-#~ msgstr "CH341 geöffnet."
-
-#~ msgid "Output for device %s does not exist. Lhyserver cannot attach."
-#~ msgstr ""
-
-#~ msgid "TCP Server for Lhystudios on port: %d"
-#~ msgstr ""
-
-#~ msgid "Attached: %s"
-#~ msgstr ""
-
-#~ msgid "Lhystudios Emulator attached to %s"
-#~ msgstr ""
-
-#~ msgid "Ruida Data Server opened on port %d."
-#~ msgstr ""
-
-#~ msgid "Ruida Jog Server opened on port %d."
-#~ msgstr ""
-
-#~ msgid "Must run with a correct active device"
-#~ msgstr ""
-
-#~ msgid "Success"
-#~ msgstr "Erfolg"
-
-#~ msgid "Fail"
-#~ msgstr "Fehler"
-
-#~ msgid "Searching: %s -- Result: %s"
-#~ msgstr ""
-
-#~ msgid "Travel Optimizing: %f"
-#~ msgstr "Bewegungs-Optimierung: %f"
-
-#~ msgid "Optimized: %f"
-#~ msgstr "Optimiert: %f"
-
-#~ msgid "Cut Travel Initial: %f"
-#~ msgstr "Bewegung beim Schneiden zu Beginn: %f"
-
-#~ msgid "Cut Travel Optimized: %f"
-#~ msgstr "Bewegung beim Schneiden nach Optimierung: %f"
-
-#~ msgid "Raster Script: %s"
-#~ msgstr ""
-
-#~ msgid "Raster Script %s is not registered."
-#~ msgstr ""
-
-#~ msgid "Element was not locked: %s"
-#~ msgstr "Element war nicht gesperrt: %s"
-
-#~ msgid "Resample image"
-#~ msgstr ""
-
-#~ msgid "Image Contrast Factor: %f"
-#~ msgstr ""
-
-#~ msgid "Image Brightness Factor: %f"
-#~ msgstr ""
-
-#~ msgid "Image Color Factor: %f"
-#~ msgstr ""
-
-#~ msgid "Image Sharpness Factor: %f"
-#~ msgstr ""
-
-#~ msgid "Image Quantized to %d colors."
-#~ msgstr ""
-
-#~ msgid "Image Solarized at %d gray."
-#~ msgstr ""
-
-#~ msgid "Image type cannot be converted. %s"
-#~ msgstr ""
-
-#~ msgid "Slice image for more efficient rastering"
-#~ msgstr ""
-
-#~ msgid "Image sliced at position %d"
-#~ msgstr ""
-
-#~ msgid "Saved: %s"
-#~ msgstr ""
-
-#~ msgid "Export Snapsnot"
-#~ msgstr "Standbild exportieren"
-
-#~ msgid "Rotate %s°"
-#~ msgstr "Drehe um %s°"
-
-#~ msgid "Object Circumference:"
-#~ msgstr "Objekt-Umfang:"
-
-#~ msgid "Roller Circumference:"
-#~ msgstr "Drehachsen-Umfang:"
-
-#~ msgid "Rotation Steps:"
-#~ msgstr "Schritte für Rotation:"
-
-#~ msgid "How close (mils) do endpoints need to be to count as closed?"
-#~ msgstr ""
-#~ "Wie nahe beieinander (in mils) müssen"
-#~ " Endpunkte sein, damit sie als "
-#~ "'closed' gelten?"
-
-#~ msgid ""
-#~ "Distance (mils) at which a gap "
-#~ "should be rapid-jog rather than "
-#~ "moved at current speed."
-#~ msgstr ""
-#~ "Abstand (in mils), ab dem der "
-#~ "Laser eine Lücke beschleunigt überbrückt "
-#~ "anstatt mit der normalen Brenn-"
-#~ "Geschwindigkeit weiterzufahren."
 
 msgid "Select all elements the selection rectangle touches."
 msgstr "Wähle die Elemente aus, die die Auswahl berührt."
@@ -14684,42 +12647,6 @@ msgstr " Die jetzige Auswahl bleibt erhalten!"
 
 msgid " Invert selection state of elements!"
 msgstr " Der Status wird dabei umgekehrt!"
-
-#~ msgid "This is not a valid length"
-#~ msgstr "Das ist keine gültige Längenangabe"
-
-#~ msgid "Move element"
-#~ msgstr "Element verschieben"
-
-#~ msgid "Scale element in X-direction"
-#~ msgstr "Größe des Elements verändern (nur X-Wert)"
-
-#~ msgid "Scale element in Y-direction"
-#~ msgstr "Größe des Elements verändern (nur Y-Wert)"
-
-#~ msgid "Skew element in X-direction"
-#~ msgstr "Element in X-Richtung scheren"
-
-#~ msgid "Skew element in Y-direction"
-#~ msgstr "Element in Y-Richtung scheren"
-
-#~ msgid "Rotate around center"
-#~ msgstr "Element um Mittelpunkt drehen"
-
-#~ msgid "Rotate around bottom-right-corner"
-#~ msgstr "Element um Ecke rechts unten drehen"
-
-#~ msgid "Rotate around bottom-left-corner"
-#~ msgstr "Element um Ecke links unten drehen"
-
-#~ msgid "Rotate around top-right-corner"
-#~ msgstr "Element um Ecke rechts oben drehen"
-
-#~ msgid "Rotate around top-left-corner"
-#~ msgstr "Element um Ecke links oben drehen"
-
-#~ msgid "Handle"
-#~ msgstr "Größe"
 
 msgid "Bed"
 msgstr "Laserbett"
@@ -18560,7 +16487,6 @@ msgstr "Deaktivieren"
 msgid "Paint format"
 msgstr "Format kopieren"
 
-
 #: ./meerk40t\gui\wxmmain.py:1307
 msgid "Click again to disable the paint mode"
 msgstr "Nochmals kopieren, um den Format-Kopiermodus zu beenden"
@@ -18651,3 +16577,134 @@ msgstr "Wobble Faktor"
 
 msgid "Generating..."
 msgstr "Generierung läuft..."
+
+#: ./meerk40t\core\elements\elements.py:375
+msgid "Allow dragging of regmarks to operations"
+msgstr "Erlaube Drag+Drop von Registriermarken auf Arbeitsabläufe"
+
+#: ./meerk40t\core\elements\elements.py:378
+msgid "Ticked: A drag operation of regmark nodes to an operation will move back these nodes to the element branch."
+msgstr ""
+"Aktiv: Beim Ziehen + Ablegen von Registriermarken-Elementen auf einen\n"
+"Arbeitsablauf wird dieses Element automatisch zurück in den\n"
+"Arbeitsbereich verschoben."
+
+#: ./meerk40t\core\elements\elements.py:382
+msgid "Unticked: A drag operation of regmark nodes to an operation will be ignored."
+msgstr ""
+"Inaktiv: Das Ziehen + Ablegen von Registriermarken-Elementen auf einen Arbeitsablauf wird ignoriert."
+
+#: ./meerk40t\core\elements\element_treeops.py:2789
+msgid "Convert to vector text"
+msgstr "In Vektor-Text umwandeln"
+
+#: ./meerk40t\core\elements\element_treeops.py:2791
+msgid "Convert bitmap text to vector text"
+msgstr "Wandelt Bitmap-Text in Vektor-Text um"
+
+#: ./meerk40t\extra\hershey.py:599
+msgid "Reading system fonts..."
+msgstr "Lese System-Zeichensätze"
+
+#: ./meerk40t\extra\hershey.py:702
+msgid "Directory"
+msgstr "Verzeichnis"
+
+#: ./meerk40t\extra\hershey.py:712
+msgid "Places where MeerK40t will look for fonts."
+msgstr "Orte, an denen MeerK40t nach Zeichensätzen sucht"
+
+#: ./meerk40t\grbl\plugin.py:35
+msgid "Generic (GRBL-Controller)"
+msgstr "Generisch (GRBL-Controller)"
+
+#: ./meerk40t\grbl\plugin.py:56
+msgid "GRBL-FluidNC (FluidNC-Controller)"
+msgstr "GRBL-FluidNC (FluidNC-Controller)"
+
+#: ./meerk40t\grbl\plugin.py:59
+msgid "Any of a variety of ESP32 based FluidNC drivers that implement GRBL as a protocol"
+msgstr "ESP32 basierte FluidNC-Boards, die GRBL as Protokoll verwenden"
+
+#: ./meerk40t\grbl\plugin.py:87
+msgid "K40 (GRBL-Controller)"
+msgstr "K40 (mit GRBL-Controller)"
+
+#: ./meerk40t\grbl\plugin.py:124
+msgid "Diode-Laser (GRBL-Controller)"
+msgstr "Dioden-Laser (GRBL-Controller)"
+
+#: ./meerk40t\grbl\plugin.py:151
+msgid "Ortur Laser Master 2 (GRBL)"
+msgstr "Ortur Laser Master 2 (GRBL)"
+
+#: ./meerk40t\grbl\plugin.py:152
+msgid "Ortur-branded self-assembled grbl diode lasers"
+msgstr "Dioden-Laser-Bausätze der Firma Ortur"
+
+#: ./meerk40t\gui\about.py:271
+msgid "Component"
+msgstr "Komponente"
+
+#: ./meerk40t\gui\about.py:274
+msgid "Version"
+msgstr "Version"
+
+#: ./meerk40t\gui\about.py:280
+msgid "Source"
+msgstr "Quelle"
+
+#: ./meerk40t\gui\about.py:305
+msgid "Present"
+msgstr "Aktiv"
+
+#: ./meerk40t\gui\about.py:313
+msgid "Old"
+msgstr "Alt"
+
+#: ./meerk40t\gui\about.py:335
+msgid "Missing"
+msgstr "Fehlt"
+
+#: ./meerk40t\gui\about.py:363
+msgid "Present (fast)"
+msgstr "Aktiv (schnell)"
+
+#: ./meerk40t\gui\about.py:368
+msgid "Present (slow)"
+msgstr "Aktiv (langsam)"
+
+#: ./meerk40t\gui\about.py:597
+msgid "MeerK40t-Components"
+msgstr "MeerK40t-Komponenten"
+
+#: ./meerk40t\gui\simulation.py:1371
+msgid "Zoom Out"
+msgstr "Herauszoomen"
+
+#: ./meerk40t\gui\simulation.py:1380
+msgid "Zoom In"
+msgstr "Hineinzoomen"
+
+#: ./meerk40t\gui\wxmeerk40t.py:975
+msgid "Single Instance"
+msgstr "Nur 1 Kopie"
+
+#: ./meerk40t\gui\wxmeerk40t.py:976
+msgid "Allow only a single instance of MeerK40t."
+msgstr "Erlaubt nur einzige Kopie von MeerK40t"
+
+#: ./meerk40t\gui\wxmeerk40t.py:1201
+msgid "Quit"
+msgstr "Verlassen"
+
+#: ./meerk40t\gui\wxmmain.py:790
+msgid "Ribbon-Size:"
+msgstr "Toolbar-Größe"
+
+#: ./meerk40t\gui\wxmmain.py:3643
+msgid "&Help\tF1"
+msgstr "&Hilfe\tF1"
+
+msgid "Default operations"
+msgstr "Standard Arbeitsabläufe"
