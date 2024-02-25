@@ -1169,12 +1169,19 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if data_type == int:
                     check_flag = "int"
                     limit = True
+                    lower_range = c.get("lower", None)
+                    upper_range = c.get("upper", None)
                 elif data_type == float:
                     check_flag = "float"
                     limit = True
+                    lower_range = c.get("lower", None)
+                    upper_range = c.get("upper", None)
                 else:
                     check_flag = ""
                     limit = False
+                    lower_range = None
+                    upper_range = None
+
                 control = TextCtrl(
                     self,
                     wx.ID_ANY,
@@ -1182,6 +1189,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                     limited=limit,
                     check=check_flag,
                 )
+                if lower_range is not None:
+                    control.lower_limit = lower_range
+                    control.lower_limit_err = lower_range
+                if upper_range is not None:
+                    control.upper_limit = upper_range
+                    control.upper_limit_err = upper_range
                 ctrl_width = c.get("width", 0)
                 if ctrl_width > 0:
                     control.SetMaxSize(dip_size(self, ctrl_width, -1))

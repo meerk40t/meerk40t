@@ -75,6 +75,7 @@ class Kernel(Settings):
         ignore_settings: bool = False,
         delay: float = 0.05,  # 20 ticks per second
         language: str = None,
+        restarted: bool = False,
     ):
         """
         Initialize the Kernel. This sets core attributes of the ecosystem that are accessible to all modules.
@@ -102,6 +103,7 @@ class Kernel(Settings):
         self._booted = False
         self._shutdown = False
         self._quit = False
+        self._was_restarted = restarted
 
         # Store the plugins for the kernel. During lifecycle events all plugins will be called with the new lifecycle
         self._kernel_plugins = []

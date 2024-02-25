@@ -5507,6 +5507,13 @@ msgstr "Escolha o primeiro parâmetro que você deseja testar"
 msgid "Choose the second parameter that you want to be tested"
 msgstr "Escolha o segundo parâmetro que você deseja testar"
 
+#: meerk40t/gui/materialtest.py:318
+msgid ""
+"Choose the color aspect for the first parameter. NB: the colors for both parameters will be combined"
+msgstr ""
+"Escolha o aspecto de cor para o primeiro parâmetro. Obs: as cores de ambos"
+" os parâmetros serão combinadas"
+
 #: meerk40t/gui/materialtest.py:276 meerk40t/gui/materialtest.py:281
 msgid ""
 "Choose the color aspect for the second parameter. NB: the colors for both"

@@ -27,6 +27,10 @@ class TCPController(MWindow):
         self.text_port = TextCtrl(
             self, wx.ID_ANY, "", check="int", limited=True, style=wx.TE_PROCESS_ENTER
         )
+        self.text_port.lower_limit = 0
+        self.text_port.upper_limit = 65535
+        self.text_port.lower_limit_err = 0
+        self.text_port.upper_limit_err = 65535
         self.gauge_buffer = wx.Gauge(self, wx.ID_ANY, 10)
         self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_buffer_max = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
@@ -47,7 +51,7 @@ class TCPController(MWindow):
 
     def on_port_change(self):
         try:
-            self.service.port = int(self.text_port.GetValue())
+            self.service.port = max(0, min(65535, int(self.text_port.GetValue())))
         except ValueError:
             pass
 

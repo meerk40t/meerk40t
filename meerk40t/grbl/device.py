@@ -4,6 +4,7 @@ GRBL Device
 Defines the interactions between the device service and the meerk40t's viewport.
 Registers relevant commands and options.
 """
+
 from time import sleep
 
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
@@ -252,6 +253,8 @@ class GRBLDevice(Service, Status):
                 "type": int,
                 "label": _("Port"),
                 "tip": _("TCP Port of the GRBL device"),
+                "lower": 0,
+                "upper": 65535,
             },
         ]
         if self.permit_tcp:
