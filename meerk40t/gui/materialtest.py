@@ -205,6 +205,8 @@ class TemplatePanel(wx.Panel):
         self.parameters = []
         color_choices = [_("Red"), _("Green"), _("Blue")]
 
+        LABEL_WIDTH = 115
+
         self.combo_ops = wx.ComboBox(
             self, id=wx.ID_ANY, choices=opchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
@@ -253,8 +255,6 @@ class TemplatePanel(wx.Panel):
         self.text_delta_1.set_range(0, 50)
         self.unit_param_1a = wx.StaticText(self, wx.ID_ANY, "")
         self.unit_param_1b = wx.StaticText(self, wx.ID_ANY, "")
-        size_it(self.unit_param_1a, 85)
-        size_it(self.unit_param_1b, 85)
 
         self.combo_color_1 = wx.ComboBox(
             self,
@@ -276,8 +276,6 @@ class TemplatePanel(wx.Panel):
         self.text_delta_2.set_range(0, 50)
         self.unit_param_2a = wx.StaticText(self, wx.ID_ANY, "")
         self.unit_param_2b = wx.StaticText(self, wx.ID_ANY, "")
-        size_it(self.unit_param_2a, 85)
-        size_it(self.unit_param_2b, 85)
 
         self.combo_color_2 = wx.ComboBox(
             self,
@@ -299,7 +297,7 @@ class TemplatePanel(wx.Panel):
             self, wx.ID_ANY, _("Operation to test"), wx.VERTICAL
         )
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Operation:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         h1 = wx.BoxSizer(wx.HORIZONTAL)
         h1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         h1.Add(self.combo_ops, 1, wx.EXPAND, 0)
@@ -322,13 +320,13 @@ class TemplatePanel(wx.Panel):
 
         hline_param_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Parameter:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_param_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_param_1.Add(self.combo_param_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_count_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Count:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         self.info_delta_1 = wx.StaticText(self, wx.ID_ANY, "")
 
         hline_count_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -337,21 +335,21 @@ class TemplatePanel(wx.Panel):
 
         hline_min_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Minimum:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_min_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_min_1.Add(self.text_min_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_min_1.Add(self.unit_param_1a, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_max_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Maximum:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_max_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_max_1.Add(self.text_max_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_max_1.Add(self.unit_param_1b, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_dim_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Width:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_dim_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_dim_1.Add(self.text_dim_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
@@ -359,7 +357,7 @@ class TemplatePanel(wx.Panel):
 
         hline_delta_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Delta:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_delta_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_delta_1.Add(self.text_delta_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
@@ -367,7 +365,7 @@ class TemplatePanel(wx.Panel):
 
         hline_color_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Color:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_color_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_color_1.Add(self.combo_color_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_color_1.Add(self.check_color_direction_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -386,13 +384,13 @@ class TemplatePanel(wx.Panel):
 
         hline_param_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Parameter:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_param_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_param_2.Add(self.combo_param_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_count_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Count:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         self.info_delta_2 = wx.StaticText(self, wx.ID_ANY, "")
         hline_count_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_count_2.Add(self.spin_count_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -400,21 +398,21 @@ class TemplatePanel(wx.Panel):
 
         hline_min_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Minimum:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_min_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_min_2.Add(self.text_min_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_min_2.Add(self.unit_param_2a, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_max_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Maximum:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_max_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_max_2.Add(self.text_max_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_max_2.Add(self.unit_param_2b, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_dim_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Height:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_dim_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_dim_2.Add(self.text_dim_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
@@ -422,7 +420,7 @@ class TemplatePanel(wx.Panel):
 
         hline_delta_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Delta:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_delta_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_delta_2.Add(self.text_delta_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
@@ -430,7 +428,7 @@ class TemplatePanel(wx.Panel):
 
         hline_color_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Color:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_color_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_color_2.Add(self.combo_color_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_color_2.Add(self.check_color_direction_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
