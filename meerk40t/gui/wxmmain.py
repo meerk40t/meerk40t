@@ -165,6 +165,9 @@ class MeerK40t(MWindow):
         self.ui_visible = True
         self.hidden_panes = []
 
+        # We need to store the pane-captions as
+        # aui seems to reset them at a later time?!
+        self._pane_captions = dict()
         # notify AUI which frame to use
         self._mgr.SetManagedWindow(self)
 
@@ -2670,6 +2673,9 @@ class MeerK40t(MWindow):
         for pane in self._mgr.GetAllPanes():
             window = pane.window
             if pane.IsShown():
+                if pane.name in self._pane_captions:
+                    pane.Caption(self._pane_captions[pane.name])
+
                 if hasattr(window, "pane_show"):
                     window.pane_show()
                 if isinstance(window, wx.aui.AuiNotebook):
@@ -2713,11 +2719,15 @@ class MeerK40t(MWindow):
             self.add_module_delegate(control)
         paneinfo.manager = self._mgr
         self.on_pane_show(paneinfo)
+        # Store the (already translated) caption for later retrieval
+        self._pane_captions[paneinfo.name] = paneinfo.caption
 
     def on_pane_show(self, paneinfo: aui.AuiPaneInfo):
         pane = self._mgr.GetPane(paneinfo.name)
         if len(pane.name):
             if not pane.IsShown():
+                if pane.name in self._pane_captions:
+                    pane.Caption(self._pane_captions[pane.name])
                 pane.Show()
                 pane.CaptionVisible(not self.context.pane_lock)
                 if hasattr(pane.window, "pane_show"):
