@@ -298,7 +298,7 @@ class GRBLController(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(499, 357, *args, **kwds)
         self.service = self.context.device
-        self.SetTitle("GRBL Controller")
+        self.SetTitle(_("GRBL Controller"))
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)

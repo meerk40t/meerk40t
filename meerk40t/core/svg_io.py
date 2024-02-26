@@ -1465,6 +1465,17 @@ class SVGProcessor:
         else:
             self._parse_element(element, ident, _label, _lock, context_node, e_list)
 
+    def cleanup(self):
+        # Make a couple of structural fixes that would be to cumbersome to integrate at parse level
+        # 1) Fix regmark grouping.
+        # Regmarks nodes are saved under a group with visibility=False set
+        # So let's flatten this top group
+        regmark = self.elements.reg_branch
+        for c in regmark.children:
+            if c.type == "group" and (c.id == "regmarks" or c.label == "regmarks"):
+                for n in list(c.children):
+                    c.insert_sibling(n)
+                c.remove_node()  # Removing group/file node.
 
 class SVGLoader:
     """
@@ -1511,6 +1522,7 @@ class SVGLoader:
             raise BadFileError(str(e)) from e
         svg_processor = SVGProcessor(elements_service, True)
         svg_processor.process(svg, pathname)
+        svg_processor.cleanup()
         return True
 
 
@@ -1558,4 +1570,5 @@ class SVGLoaderPlain:
             raise BadFileError(str(e)) from e
         svg_processor = SVGProcessor(elements_service, False)
         svg_processor.process(svg, pathname)
+        svg_processor.cleanup()
         return True
