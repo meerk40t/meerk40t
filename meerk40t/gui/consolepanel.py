@@ -209,6 +209,15 @@ class ConsolePanel(wx.ScrolledWindow):
         }
         self._buffer = ""
         self._buffer_lock = threading.Lock()
+        self.command_list = list(self.context.kernel.match("command/.*/.*"))
+        self.command_list.sort()
+        self.command_context = list()
+        for command_name in self.command_list:
+            parts = command_name.split("/")
+            context_item = parts[1]
+            if context_item != "None" and context_item not in self.command_context:
+                self.command_context.append(context_item)
+
 
     def style_normal(self, style):
         return self.style
@@ -431,33 +440,59 @@ class ConsolePanel(wx.ScrolledWindow):
                     self.text_entry.SetInsertionPointEnd()
                 self.command_position -= 1
             elif key == wx.WXK_TAB:
+                # Lets try some autocompletion or at least show possible candidates
                 content = self.text_entry.GetValue()
                 words = content.split(" ")
                 if len(words):
-                    s = words[0]
-                    if len(s):
+                    short_check = words[0]
+                    context_str = ""
+                    if len(short_check):
+                        if len(words) > 1 and short_check in self.command_context:
+                            context_str = short_check + " "
+                            short_check = words[1]
+                        long_check = context_str + short_check
                         full_match = False
                         found = 0
                         candidate = ""
-                        matches = list(self.context.kernel.match("command/.*/.*"))
-                        matches.sort()
-                        for command_name in matches:
+                        for command_name in self.command_list:
                             parts = command_name.split("/")
                             command_item = parts[2]
+                            full_item = command_item
+                            if parts[1] != "None":
+                                full_item = parts[1] + " " + full_item
                             # print (f"Compare {s} to {command_item}")
-                            if command_item == s:
-                                candidate = command_item
-                                full_match = True
-                            elif s in command_item:
-                                candidate = command_item
-                                found += 1
-
-                        self.context(f"?? {s}\n")
+                            if context_str == "":
+                                if command_item == short_check:
+                                    candidate = command_item
+                                    full_match = True
+                                elif short_check in command_item:
+                                    candidate = command_item
+                                    found += 1
+                            else:
+                                if full_item == long_check:
+                                    candidate = command_item
+                                    full_match = True
+                                elif long_check in full_item:
+                                    candidate = command_item
+                                    found += 1
+                        self.context(f"?? {long_check}\n")
                         if full_match or found == 1:
                             self.context(f"help {candidate}\n")
-                        if found == 1:
-                            self.text_entry.SetValue(candidate)
-                            self.text_entry.SetInsertionPointEnd()
+                        if found == 0 and context_str == "":
+                            context_candidate = ""
+                            for context_name in self.command_context:
+                                if context_name.startswith(short_check):
+                                    found += 1
+                                    context_candidate = context_name
+                            # Only set if we did not provide  parameters already
+                            if found == 1 and len(words) == 1:
+                                self.text_entry.SetValue(f"{context_candidate} ")
+                                self.text_entry.SetInsertionPointEnd()
+                        elif found == 1:
+                            # Only set if we did not provide  parameters already
+                            if len(words) == 1 or (len(words) == 2 and context_str != ""):
+                                self.text_entry.SetValue(f"{context_str}{candidate}")
+                                self.text_entry.SetInsertionPointEnd()
                 # We are consuming the key...
             else:
                 event.Skip()
