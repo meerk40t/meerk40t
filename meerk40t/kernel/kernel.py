@@ -2550,14 +2550,14 @@ class Kernel(Settings):
                 else:
                     channel(command_name.split("/")[-1])
 
-        @self.console_argument("substr", type=str)
         @self.console_command(("find", "??"), hidden=False, help=_("find <substr>"))
-        def find_command(channel, _, substr, **kwargs):
+        def find_command(channel, _, remainder=None, **kwargs):
             """
             'find' will display the list of accepted commands that contain a given substr.
             """
             allcommands = []
             allparams = []
+            substr = remainder
             if substr is not None:
                 found = False
 
@@ -2572,6 +2572,9 @@ class Kernel(Settings):
                     else:
                         s = input_type + " " + command_item
                     if substr in command_item:
+                        allcommands.append(s)
+                        found = True
+                    elif substr in s:
                         allcommands.append(s)
                         found = True
                     func = self.lookup(command_name)

@@ -1494,6 +1494,9 @@ def plugin(kernel, lifecycle=None):
             # Filter contours based on area, rectangle of at least x%
 
             large_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > minarea]
+            if len(large_contours) == 0:
+                channel(f"Could not identify any relevant white areas in the image '{inode.create_label('{desc}')}'")
+                continue
 
             # Create some rectangles around the white areas
             for contour in large_contours:
