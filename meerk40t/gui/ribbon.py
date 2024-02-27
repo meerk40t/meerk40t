@@ -1537,6 +1537,7 @@ class Art:
             dc.SetPen(wx.Pen(self.black_color))
 
         x, y, x1, y1 = button.position
+        start_y = y
         w = int(round(x1 - x, 2))
         h = int(round(y1 - y, 2))
         img_h = h
@@ -1566,10 +1567,15 @@ class Art:
         )
 
         dc.DrawBitmap(bitmap, int(x + (w - bitmap_width) / 2), int(y))
+
+        # # For debug purposes: draw rectangle around bitmap
+        # dc.SetBrush(wx.TRANSPARENT_BRUSH)
+        # dc.SetPen(wx.RED_PEN)
+        # dc.DrawRectangle(int(x + (w - bitmap_width) / 2), int(y), bitmap_width, bitmap_height)
+
         y += bitmap_height
 
         text_edge = self.bitmap_text_buffer
-
         if button.label and self.show_labels:
             show_text = True
             label_text = list(button.label.split(" "))
@@ -1578,6 +1584,7 @@ class Art:
             # before we try to reduce the fontsize
             wouldfit = False
             while not wouldfit:
+                total_text_height = 0
                 testfont = wx.Font(
                     ptsize,
                     wx.FONTFAMILY_SWISS,
@@ -1610,6 +1617,7 @@ class Art:
                         wouldfit = False
                         break
                     test_y += text_height
+                    total_text_height += text_height
                     if test_y > y1:
                         wouldfit = False
                         text_edge = 0
@@ -1630,6 +1638,9 @@ class Art:
             show_text = False
             label_text = list()
         if show_text:
+            # if it wasn't a full fit, the new textsize might still be okay to be drawn at the intended position
+            text_edge = min(max(0, start_y + h - y - total_text_height), self.bitmap_text_buffer)
+
             y += text_edge
             dc.SetFont(font)
             i = 0
