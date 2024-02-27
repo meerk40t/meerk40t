@@ -430,6 +430,35 @@ class ConsolePanel(wx.ScrolledWindow):
                 else:
                     self.text_entry.SetInsertionPointEnd()
                 self.command_position -= 1
+            elif key == wx.WXK_TAB:
+                content = self.text_entry.GetValue()
+                words = content.split(" ")
+                if len(words):
+                    s = words[0]
+                    if len(s):
+                        full_match = False
+                        found = 0
+                        candidate = ""
+                        matches = list(self.context.kernel.match("command/.*/.*"))
+                        matches.sort()
+                        for command_name in matches:
+                            parts = command_name.split("/")
+                            command_item = parts[2]
+                            # print (f"Compare {s} to {command_item}")
+                            if command_item == s:
+                                candidate = command_item
+                                full_match = True
+                            elif s in command_item:
+                                candidate = command_item
+                                found += 1
+
+                        self.context(f"?? {s}\n")
+                        if full_match or found == 1:
+                            self.context(f"help {candidate}\n")
+                        if found == 1:
+                            self.text_entry.SetValue(candidate)
+                            self.text_entry.SetInsertionPointEnd()
+                # We are consuming the key...
             else:
                 event.Skip()
         except IndexError:
