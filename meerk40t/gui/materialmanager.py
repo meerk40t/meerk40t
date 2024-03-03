@@ -109,9 +109,9 @@ class ImportDialog(wx.Dialog):
         )
 
         wattage_param_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        label_old = wx.StaticText(self, wx.ID_ANY, "Old:")
+        label_old = wx.StaticText(self, wx.ID_ANY, _("Old:"))
         unit_old = wx.StaticText(self, wx.ID_ANY, "W")
-        label_new = wx.StaticText(self, wx.ID_ANY, "New:")
+        label_new = wx.StaticText(self, wx.ID_ANY, _("New:"))
         unit_new = wx.StaticText(self, wx.ID_ANY, "W")
         wattage_param_sizer.Add(label_old, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         wattage_param_sizer.Add(self.txt_wattage_old, 0, 0, 0)
@@ -796,7 +796,10 @@ class MaterialPanel(ScrolledPanel):
             else:
                 this_category_secondary = entry[sort_key_secondary].replace("_", " ")
             if not this_category_primary:
-                this_category_primary = "No " + sort_key_primary
+                # _("No laser")
+                # _("No material")
+                # _("No thickness")
+                this_category_primary = _("No " + sort_key_primary)
             key = entry["section"]
             if (
                 filtername is not None
@@ -1588,10 +1591,10 @@ class MaterialPanel(ScrolledPanel):
         #     entry_type = 0
         # We need to create a new one...
         op_info = dict()
-        op_info["material"] = "New material"
+        op_info["material"] = _("New material")
         op_info["laser"] = 0
         op_info["thickness"] = "4mm"
-        op_info["note"] = "You can put additional operation instructions here."
+        op_info["note"] = _("You can put additional operation instructions here.")
         section = entry_txt
 
         if len(list(self.context.elements.ops())) == 0:
@@ -1654,7 +1657,7 @@ class MaterialPanel(ScrolledPanel):
             #     entry_type = 0
             # We need to create a new one...
             op_info = dict()
-            op_info["material"] = "New material"
+            op_info["material"] = _("New material")
             op_info["laser"] = 0
             section = entry_txt
 

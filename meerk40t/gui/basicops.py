@@ -451,7 +451,7 @@ class BasicOpPanel(wx.Panel):
             if self.filtered and len(op.children) == 0:
                 continue
             if op.type.startswith("op "):
-                info = op.type[3:].capitalize()
+                info = _(op.type[3:].capitalize())
                 if op.label is not None:
                     info = info[0] + ": " + op.label
                 op_sizer = wx.BoxSizer(wx.HORIZONTAL)
