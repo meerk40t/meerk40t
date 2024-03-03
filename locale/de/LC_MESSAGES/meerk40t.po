@@ -16708,3 +16708,39 @@ msgstr "&Hilfe\tF1"
 
 msgid "Default operations"
 msgstr "Standard Arbeitsabläufe"
+
+#: meerk40t/core/elements/elements.py:1418
+msgid "Cut ({power}%, {speed}mm/s)"
+msgstr "Schneiden ({power}%, {speed}mm/s)"
+
+#: meerk40t/core/elements/elements.py:1421
+msgid "Engrave ({power}%, {speed}mm/s)"
+msgstr "Gravieren ({power}%, {speed}mm/s)"
+
+#: meerk40t/core/elements/elements.py:1424
+msgid "Raster ({power}%, {speed}mm/s)"
+msgstr "Raster ({power}%, {speed}mm/s)"
+
+#: meerk40t/core/elements/elements.py:1427
+msgid "Image ({power}%, {speed}mm/s)"
+msgstr "Bild ({power}%, {speed}mm/s)"
+
+#: meerk40t/gui/materialmanager.py:799
+msgid "No laser"
+msgstr "Ohne Laserangabe"
+
+#: meerk40t/gui/materialmanager.py:800
+msgid "No material"
+msgstr "Ohne Materialname"
+
+#: meerk40t/gui/materialmanager.py:801
+msgid "No thickness"
+msgstr "Ohne Dickenangabe"
+
+#: meerk40t/gui/materialmanager.py:1594 meerk40t/gui/materialmanager.py:1660
+msgid "New material"
+msgstr "Neues Material"
+
+#: meerk40t/gui/materialmanager.py:1597
+msgid "You can put additional operation instructions here."
+msgstr "Hier können zusätzliche Informationen eingetragen werden."
