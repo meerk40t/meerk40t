@@ -1,7 +1,7 @@
 import wx
 
 from meerk40t.gui.wxutils import get_key_name
-
+from meerk40t.gui.scene.scene import RESPONSE_ABORT, RESPONSE_CONSUME, RESPONSE_DROP
 
 class ScenePanel(wx.Panel):
     """
@@ -122,14 +122,16 @@ class ScenePanel(wx.Panel):
         if (literal != self.last_key) or (self.last_event != "key_down"):
             self.last_key = literal
             self.last_event = "key_down"
-            self.scene.event(
+            rc = self.scene.event(
                 window_pos=self.scene.last_position,
                 event_type="key_down",
                 nearest_snap=None,
                 modifiers=literal,
                 keycode=None,
             )
+            # print (f"on_key_down: {literal}")
         self.last_event = "key_down"
+        # We need to skip the event to make sure the keypress is recognized properly
         evt.Skip()
         self.SetFocus()
 
@@ -137,8 +139,7 @@ class ScenePanel(wx.Panel):
         literal = get_key_name(evt, True)
         self.last_char = chr(evt.GetUnicodeKey())
         if self.last_event != "key_up":
-            # Fine we deal with it
-            # print (f"on_key: {chr(evt.GetKeyCode())} {chr(evt.GetUnicodeKey())} - {literal}")
+            # Fine, we deal with it
             self.scene.event(
                 window_pos=self.scene.last_position,
                 event_type="key_up",
@@ -146,15 +147,16 @@ class ScenePanel(wx.Panel):
                 modifiers=literal,
                 keycode=self.last_char,
             )
+            # print (f"on_key: {chr(evt.GetKeyCode())} {chr(evt.GetUnicodeKey())} - {literal}")
             self.last_event = "key_up"
-        evt.Skip()
+            # self.SetFocus()
+        # No evt.Skip(), as we need to consume the key
 
     def on_key_up(self, evt):
         # Only key provides the right character representation
         literal = get_key_name(evt, True)
         if self.last_event != "key_up":
             if literal or self.last_char:
-                # print (f"on_key_up: {literal}")
                 self.scene.event(
                     window_pos=self.scene.last_position,
                     event_type="key_up",
@@ -162,12 +164,13 @@ class ScenePanel(wx.Panel):
                     modifiers=literal,
                     keycode=None,
                 )
+                # print (f"on_key_up: {literal}")
                 # After consumption all is done
             self.last_char = None
         # else:
         #     print (f"up: someone dealt with it ({literal}, {chr(evt.GetUnicodeKey())}, {self.last_char})")
         self.last_event = None
-        evt.Skip()
+        # No evt.Skip(), as we need to consume the key
 
     def on_size(self, event=None):
         if self.context is None:
