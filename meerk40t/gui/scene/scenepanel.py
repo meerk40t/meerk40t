@@ -212,7 +212,10 @@ class ScenePanel(wx.Panel):
                         )
                     else:
                         self._keybind_channel(f"Scene key_up: {literal} unfound.")
-
+        try:
+            del self.context.bind.triggered[literal]
+        except KeyError:
+            pass
         if not consumed:
             evt.Skip()
 
