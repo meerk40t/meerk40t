@@ -124,7 +124,7 @@ class ScenePanel(wx.Panel):
         if (literal != self.last_key) or (self.last_event != "key_down"):
             self.last_key = literal
             self.last_event = "key_down"
-            print (f"on_key_down: {literal}")
+            # print (f"on_key_down: {literal}")
             consumed = self.scene.event(
                 window_pos=self.scene.last_position,
                 event_type="key_down",
@@ -182,7 +182,7 @@ class ScenePanel(wx.Panel):
         literal = get_key_name(evt, True)
         if self.last_event != "key_up":
             if literal or self.last_char:
-                print (f"on_key_up: {literal}")
+                # print (f"on_key_up: {literal}")
                 consumed = self.scene.event(
                     window_pos=self.scene.last_position,
                     event_type="key_up",
