@@ -372,11 +372,14 @@ class Bind(Service):
                 for cmd in cmds:
                     self(f"{cmd}\n")
                 return True
+            else:
+                print ("Trigger was already set")
         return False
 
     def untrigger(self, keyvalue):
         keymap = self.keymap
         fnd, keyvalue = self.is_found(keyvalue, self.keymap)
+        print (f"untrigger-result {fnd}, {keyvalue}")
         if fnd:
             fnd, keyvalue = self.is_found(keyvalue, self.triggered)
             if fnd:
