@@ -52,6 +52,7 @@ class ScenePanel(wx.Panel):
         self.last_key = None
         self.last_event = None
         self.last_char = None
+        self._keybind_channel = self.context.channel("keybinds")
 
         try:
             self.scene_panel.Bind(wx.EVT_MAGNIFY, self.on_magnify_mouse)
@@ -129,6 +130,8 @@ class ScenePanel(wx.Panel):
                 modifiers=literal,
                 keycode=None,
             )
+            if self._keybind_channel:
+                self._keybind_channel(f"scenepanel-on_key_down: {literal}")
             # print (f"on_key_down: {literal}")
         self.last_event = "key_down"
         # We need to skip the event to make sure the keypress is recognized properly
@@ -147,7 +150,8 @@ class ScenePanel(wx.Panel):
                 modifiers=literal,
                 keycode=self.last_char,
             )
-            # print (f"on_key: {chr(evt.GetKeyCode())} {chr(evt.GetUnicodeKey())} - {literal}")
+            if self._keybind_channel:
+                self._keybind_channel(f"scenepanel-on_key: {literal}, Char: {chr(evt.GetKeyCode())}, Unicode: {chr(evt.GetUnicodeKey())}")
             self.last_event = "key_up"
             # self.SetFocus()
         # No evt.Skip(), as we need to consume the key
@@ -164,7 +168,8 @@ class ScenePanel(wx.Panel):
                     modifiers=literal,
                     keycode=None,
                 )
-                # print (f"on_key_up: {literal}")
+                if self._keybind_channel:
+                    self._keybind_channel(f"scenepanel-on_key_up: {literal}, last_char: {self.last_char}")
                 # After consumption all is done
             self.last_char = None
         # else:
