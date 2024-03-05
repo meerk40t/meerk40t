@@ -230,7 +230,7 @@ class SceneSpaceWidget(Widget):
             pan_factor_y = -(space_pos[1] - self._placement_event[1]) / 10
             self.scene_widget.matrix.post_translate(pan_factor_x, pan_factor_y)
             self.scene.request_refresh()
-        return RESPONSE_CONSUME
+        return RESPONSE_CHAIN
 
     def set_view(self, x, y, w, h, preserve_aspect=None):
         self._view = Viewbox(f"{x} {y} {w} {h}", preserve_aspect)
