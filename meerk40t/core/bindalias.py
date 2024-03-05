@@ -176,7 +176,7 @@ DEFAULT_KEYMAP = {
         "",
         "dialog_fill",
     ),
-    "ctrl+i": ("element* select^",),
+    "ctrl+i": ("", "element* select^",),
     "ctrl+d": ("element copy",),
     "ctrl+g": (
         "",
@@ -360,7 +360,9 @@ class Bind(Service):
         return value, keyvalue
 
     def trigger(self, keyvalue):
+        print (f"trigger with {keyvalue}")
         fnd, keyvalue = self.is_found(keyvalue, self.keymap)
+        print (f"trigger-result {fnd}, {keyvalue}")
         if fnd:
             fnd, keyvalue = self.is_found(keyvalue, self.triggered)
             if not fnd:
