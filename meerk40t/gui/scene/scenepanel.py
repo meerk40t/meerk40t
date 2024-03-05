@@ -123,6 +123,7 @@ class ScenePanel(wx.Panel):
         if (literal != self.last_key) or (self.last_event != "key_down"):
             self.last_key = literal
             self.last_event = "key_down"
+            print (f"on_key_down: {literal}")
             rc = self.scene.event(
                 window_pos=self.scene.last_position,
                 event_type="key_down",
@@ -131,19 +132,19 @@ class ScenePanel(wx.Panel):
                 keycode=None,
             )
             if self._keybind_channel:
-                self._keybind_channel(f"scenepanel-on_key_down: {literal}")
-            # print (f"on_key_down: {literal}")
+                self._keybind_channel(f"scenepanel-on_key_down (rc={rc}): {literal}")
         self.last_event = "key_down"
         # We need to skip the event to make sure the keypress is recognized properly
         evt.Skip()
         self.SetFocus()
 
     def on_key(self, evt):
+        rc = True
         literal = get_key_name(evt, True)
         self.last_char = chr(evt.GetUnicodeKey())
         if self.last_event != "key_up":
             # Fine, we deal with it
-            self.scene.event(
+            rc = self.scene.event(
                 window_pos=self.scene.last_position,
                 event_type="key_up",
                 nearest_snap=None,
@@ -151,17 +152,20 @@ class ScenePanel(wx.Panel):
                 keycode=self.last_char,
             )
             if self._keybind_channel:
-                self._keybind_channel(f"scenepanel-on_key: {literal}, Char: {chr(evt.GetKeyCode())}, Unicode: {chr(evt.GetUnicodeKey())}")
+                self._keybind_channel(f"scenepanel-on_key (rc={rc}): {literal}, Char: {chr(evt.GetKeyCode())}, Unicode: {chr(evt.GetUnicodeKey())}")
             self.last_event = "key_up"
             # self.SetFocus()
-        # No evt.Skip(), as we need to consume the key
+        if not rc:
+            evt.Skip()
 
     def on_key_up(self, evt):
         # Only key provides the right character representation
+        rc = True
         literal = get_key_name(evt, True)
         if self.last_event != "key_up":
             if literal or self.last_char:
-                self.scene.event(
+                print (f"on_key_up: {literal}")
+                rc = self.scene.event(
                     window_pos=self.scene.last_position,
                     event_type="key_up",
                     nearest_snap=None,
@@ -169,13 +173,14 @@ class ScenePanel(wx.Panel):
                     keycode=None,
                 )
                 if self._keybind_channel:
-                    self._keybind_channel(f"scenepanel-on_key_up: {literal}, last_char: {self.last_char}")
+                    self._keybind_channel(f"scenepanel-on_key_up (rc={rc}): {literal}, last_char: {self.last_char}")
                 # After consumption all is done
             self.last_char = None
         # else:
         #     print (f"up: someone dealt with it ({literal}, {chr(evt.GetUnicodeKey())}, {self.last_char})")
         self.last_event = None
-        # No evt.Skip(), as we need to consume the key
+        if not rc:
+            evt.Skip()
 
     def on_size(self, event=None):
         if self.context is None:

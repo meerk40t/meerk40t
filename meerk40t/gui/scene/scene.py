@@ -618,6 +618,8 @@ class Scene(Module, Job):
         RESPONSE_CHAIN: Permit the event to move to the next event in the hitchain
         RESPONSE_DROP: Remove this item from the hitchain and continue to process the events. Future events will not
         consider the dropped element within the hitchain.
+
+        Returns a flag whether the event was consumed by someone
         """
         if self.log_events:
             self.log_events(
@@ -637,7 +639,7 @@ class Scene(Module, Job):
                     nearest_snap=None,
                     modifiers=None,
                 )
-            return
+            return False
         if self.last_position is None:
             self.last_position = window_pos
         dx = window_pos[0] - self.last_position[0]
@@ -695,12 +697,14 @@ class Scene(Module, Job):
 
                 if response == RESPONSE_ABORT:
                     self.hit_chain.clear()
-                    return
+                    # print (f"Response abort of {event_type}, {keycode}/{modifiers} by {current_widget}")
+                    return True
                 elif response == RESPONSE_CONSUME:
                     # if event_type in ("leftdown", "middledown", "middleup", "leftup", "move", "leftclick"):
                     #      widgetname = type(current_widget).__name__
                     #      print("Event %s was consumed by %s" % (event_type, widgetname))
-                    return
+                    # print (f"Response consume of {event_type}, {keycode}/{modifiers} by {current_widget}")
+                    return True
                 elif response == RESPONSE_CHAIN:
                     continue
                 elif response == RESPONSE_DROP:
@@ -709,7 +713,7 @@ class Scene(Module, Job):
                 #
                 # if response == RESPONSE_ABORT:
                 #     self.hit_chain.clear()
-            return
+            return False
 
         if event_type in (
             "leftdown",
@@ -855,12 +859,12 @@ class Scene(Module, Job):
 
             if response == RESPONSE_ABORT:
                 self.hit_chain.clear()
-                return
+                return True
             elif response == RESPONSE_CONSUME:
                 # if event_type in ("leftdown", "middledown", "middleup", "leftup", "move", "leftclick"):
                 #      widgetname = type(current_widget).__name__
                 #      print("Event %s was consumed by %s" % (event_type, widgetname))
-                return
+                return True
             elif response == RESPONSE_CHAIN:
                 continue
             elif response == RESPONSE_DROP:
@@ -868,6 +872,7 @@ class Scene(Module, Job):
                 continue
             else:
                 break
+        return False
 
     def cursor(self, cursor, always=False):
         """
