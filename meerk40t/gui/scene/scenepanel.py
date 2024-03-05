@@ -118,8 +118,22 @@ class ScenePanel(wx.Panel):
     # while printable characters will issue both
 
     def on_key_down(self, evt):
-        self.last_char = None
         literal = get_key_name(evt, True)
+        ignore = self.scene.pane.tool_active
+        if self._keybind_channel:
+            self._keybind_channel(f"Scene key_down: {literal}.")
+        if not ignore and self.context.bind.trigger(literal):
+            if self._keybind_channel:
+                self._keybind_channel(f"Scene key_down: {literal} executed.")
+        else:
+            if self._keybind_channel:
+                if ignore:
+                    self._keybind_channel(
+                        f"Scene key_down: {literal} was ignored as tool active."
+                    )
+                else:
+                    self._keybind_channel(f"Scene key_down: {literal} unfound.")
+        self.last_char = None
         if (literal != self.last_key) or (self.last_event != "key_down"):
             self.last_key = literal
             self.last_event = "key_down"
@@ -160,8 +174,22 @@ class ScenePanel(wx.Panel):
 
     def on_key_up(self, evt):
         # Only key provides the right character representation
-        rc = True
         literal = get_key_name(evt, True)
+        ignore = self.scene.pane.tool_active
+        if self._keybind_channel:
+            self._keybind_channel(f"Scene key_up: {literal}.")
+        if not ignore and self.context.bind.untrigger(literal):
+            if self._keybind_channel:
+                self._keybind_channel(f"Scene key_up: {literal} executed.")
+        else:
+            if self._keybind_channel:
+                if ignore:
+                    self._keybind_channel(
+                        f"Scene key_up: {literal} was ignored as tool active."
+                    )
+                else:
+                    self._keybind_channel(f"Scene key_up: {literal} unfound.")
+        rc = True
         if self.last_event != "key_up":
             if literal or self.last_char:
                 print (f"on_key_up: {literal}")

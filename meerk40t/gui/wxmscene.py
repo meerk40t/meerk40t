@@ -196,8 +196,6 @@ class MeerK40tScenePanel(wx.Panel):
             self.scene.Bind(wx.EVT_CHAR_HOOK, charhook)
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-        self.scene.scene_panel.Bind(wx.EVT_KEY_UP, self.on_key_up_sub)
-        self.scene.scene_panel.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
         self.Bind(wx.EVT_SIZE, self.on_size)
 
@@ -1450,24 +1448,6 @@ class MeerK40tScenePanel(wx.Panel):
                     )
                 else:
                     self._keybind_channel(f"Scene key_up: {keyvalue} unfound.")
-        event.Skip()
-
-    def on_key_up_sub(self, event, log=True):
-        keyvalue = get_key_name(event)
-        ignore = self.tool_active
-        if self._keybind_channel:
-            self._keybind_channel(f"Scene subanel key_up: {keyvalue}.")
-        if not ignore and self.context.bind.untrigger(keyvalue):
-            if self._keybind_channel:
-                self._keybind_channel(f"Scene subpanel key_up: {keyvalue} executed.")
-        else:
-            if self._keybind_channel:
-                if ignore:
-                    self._keybind_channel(
-                        f"Scene subpanel key_up: {keyvalue} was ignored as tool active."
-                    )
-                else:
-                    self._keybind_channel(f"Scene subpanel key_up: {keyvalue} unfound.")
         event.Skip()
 
 class SceneWindow(MWindow):
