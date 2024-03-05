@@ -196,8 +196,6 @@ class MeerK40tScenePanel(wx.Panel):
             self.scene.Bind(wx.EVT_CHAR_HOOK, charhook)
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-        self.scene.scene_panel.Bind(wx.EVT_KEY_UP, self.on_key_up)
-        self.scene.scene_panel.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
         self.Bind(wx.EVT_SIZE, self.on_size)
 
@@ -1451,7 +1449,6 @@ class MeerK40tScenePanel(wx.Panel):
                 else:
                     self._keybind_channel(f"Scene key_up: {keyvalue} unfound.")
         event.Skip()
-
 
 class SceneWindow(MWindow):
     def __init__(self, *args, **kwds):

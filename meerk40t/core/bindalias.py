@@ -176,7 +176,7 @@ DEFAULT_KEYMAP = {
         "",
         "dialog_fill",
     ),
-    "ctrl+i": ("element* select^",),
+    "ctrl+i": ("", "element* select^",),
     "ctrl+d": ("element copy",),
     "ctrl+g": (
         "",
@@ -360,6 +360,7 @@ class Bind(Service):
         return value, keyvalue
 
     def trigger(self, keyvalue):
+        # print (f"trigger for {keyvalue} started with {self.triggered}")
         fnd, keyvalue = self.is_found(keyvalue, self.keymap)
         if fnd:
             fnd, keyvalue = self.is_found(keyvalue, self.triggered)
@@ -369,10 +370,11 @@ class Bind(Service):
                 cmds = (action,) if action[0] in "+-" else action.split(";")
                 for cmd in cmds:
                     self(f"{cmd}\n")
-                return True
+            return True
         return False
 
     def untrigger(self, keyvalue):
+        # print (f"untrigger for {keyvalue} started with {self.triggered}")
         keymap = self.keymap
         fnd, keyvalue = self.is_found(keyvalue, self.keymap)
         if fnd:
@@ -384,7 +386,7 @@ class Bind(Service):
                 # Keyup commands only trigger if the down command started with +
                 action = "-" + action[1:]
                 self(action + "\n")
-                return True
+            return True
         return False
 
     def shutdown(self, *args, **kwargs):
