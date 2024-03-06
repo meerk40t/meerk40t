@@ -1124,7 +1124,7 @@ def send_data_to_developers(filename, data):
 
             # Receive and print the response
             response = client_socket.recv(4096)
-            response = response.decode("utf-8")
+            response = response.decode("utf-8", errors="ignore")
     except Exception:
         response = ""
 

@@ -83,7 +83,7 @@ def plugin(kernel, lifecycle=None):
                 while end_time > time.time():
                     # Execute until timeout.
 
-                    response = serial_device.readline().decode("utf-8").strip()
+                    response = serial_device.readline().decode("utf-8", errors="ignore").strip()
                     channel(response)
                     if success_message and success_message in response:
                         # Actively succeeded

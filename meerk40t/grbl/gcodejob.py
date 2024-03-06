@@ -226,7 +226,7 @@ class GcodeJob:
 
     def write_blob(self, data):
         self.write_all(
-            [r for r in re.split("[\n|\r]", data.decode("utf-8")) if r.strip()]
+            [r for r in re.split("[\n|\r]", data.decode("utf-8", errors="ignore")) if r.strip()]
         )
 
     def execute(self, driver=None):

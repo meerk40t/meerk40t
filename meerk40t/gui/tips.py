@@ -422,7 +422,7 @@ class TipPanel(wx.Panel):
         if locale and locale != "en":
             try:
                 with urllib.request.urlopen(url + locale + "/tips.txt") as file:
-                    content = file.read().decode("utf-8")
+                    content = file.read().decode("utf-8", errors="ignore")
                     successful = True
             except Exception:
                 pass
@@ -431,7 +431,7 @@ class TipPanel(wx.Panel):
         if not successful:
             try:
                 with urllib.request.urlopen(url + "tips.txt") as file:
-                    content = file.read().decode("utf-8")
+                    content = file.read().decode("utf-8", errors="ignore")
                     successful = True
             except Exception as e:
                 # print (f"Error: {e}")

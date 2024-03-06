@@ -561,7 +561,7 @@ class ConsolePanel(wx.ScrolledWindow):
             result = []
             try:
                 with open(fname, "rb") as f:
-                    result = tail(f, 3 * limit).decode("utf-8").splitlines()
+                    result = tail(f, 3 * limit).decode("utf-8", errors="ignore").splitlines()
             except (PermissionError, OSError):
                 # Could not load
                 pass
