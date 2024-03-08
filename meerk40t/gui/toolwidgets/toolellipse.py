@@ -208,5 +208,7 @@ class EllipseTool(ToolWidget):
             self.scene.context.signal("statusmsg", "")
         elif update_required:
             self.scene.request_refresh()
-            response = RESPONSE_CONSUME
+            # Have we clicked already?
+            if self.p1 is not None:
+                response = RESPONSE_CONSUME
         return response

@@ -183,7 +183,9 @@ class VectorTool(ToolWidget):
             self.path = None
         elif update_required:
             self.scene.request_refresh()
-            response = RESPONSE_CONSUME
+            # Have we clicked already?
+            if self.path:
+                response = RESPONSE_CONSUME
         return response
 
     def end_tool(self):
