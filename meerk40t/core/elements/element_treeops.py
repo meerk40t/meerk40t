@@ -390,6 +390,67 @@ def init_tree(kernel):
                 oplist.append(n)
         set_op_output(oplist, False)
 
+
+    def move_op(node, relative: str):
+
+        try:
+            idx = self.op_branch._children.index(node)
+        except IndexError as e:
+            # print (f"threw an error: {e}")
+            return
+        # print (f"Index was {idx}")
+        if relative == "top":
+            # to the top
+            self.op_branch._children.pop(idx)
+            self.op_branch._children.insert(0, node)
+        elif relative == "up":
+            # one up
+            self.op_branch._children.pop(idx)
+            self.op_branch._children.insert(idx - 1, node)
+        elif relative == "down":
+            # one down
+            self.op_branch._children.pop(idx)
+            self.op_branch._children.insert(idx + 1, node)
+        elif relative == "bottom":
+            # to the end
+            self.op_branch._children.pop(idx)
+            self.op_branch._children.append(node)
+        # try:
+        #     idx = self.op_branch._children.index(node)
+        # except IndexError as e:
+        #     print (f"threw an error: {e}")
+        #     return
+        # print (f"Index is now {idx}")
+        self.signal("rebuild_tree")
+
+    @tree_submenu(_("Burning sequence"))
+    @tree_operation(
+        _("Dragging works as well..."), node_type=op_parent_nodes, help="You can as well just rearrange the operations by dragging them to a new place", enable=False
+    )
+    def burn_label(node, **kwargs):
+        return
+
+    @tree_submenu(_("Burning sequence"))
+    @tree_operation(_("Burn first"), node_type=op_parent_nodes, help="")
+    def burn_first(node, **kwargs):
+        move_op(node, "top")
+
+    @tree_submenu(_("Burning sequence"))
+    @tree_operation(_("Burn earlier"), node_type=op_parent_nodes, help="")
+    def burn_earlier(node, **kwargs):
+        move_op(node, "up")
+
+    @tree_submenu(_("Burning sequence"))
+    @tree_operation(_("Burn later"), node_type=op_parent_nodes, help="")
+    def burn_later(node, **kwargs):
+        move_op(node, "down")
+
+    @tree_submenu(_("Burning sequence"))
+    @tree_operation(_("Burn last"), node_type=op_parent_nodes, help="")
+    def burn_last(node, **kwargs):
+        move_op(node, "bottom")
+
+
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Image"), node_type=op_parent_nodes, help="")
     def convert_operation_image(node, **kwargs):
