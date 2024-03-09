@@ -16744,3 +16744,31 @@ msgstr "Neues Material"
 #: meerk40t/gui/materialmanager.py:1597
 msgid "You can put additional operation instructions here."
 msgstr "Hier können zusätzliche Informationen eingetragen werden."
+
+#: meerk40t/core/elements/element_treeops.py:171 meerk40t/core/elements/element_treeops.py:182
+msgid "Remove effect"
+msgstr "Effekt entfernen"
+
+#: meerk40t/core/elements/element_treeops.py:426 meerk40t/core/elements/element_treeops.py:433 meerk40t/core/elements/element_treeops.py:438 meerk40t/core/elements/element_treeops.py:443 meerk40t/core/elements/element_treeops.py:448
+msgid "Burning sequence"
+msgstr "Brenn-Reihenfolge"
+
+#: meerk40t/core/elements/element_treeops.py:428
+msgid "Dragging works as well..."
+msgstr "Direktes Verschieben der Element geht auch..."
+
+#: meerk40t/core/elements/element_treeops.py:434
+msgid "Burn first"
+msgstr "Brenne zuerst"
+
+#: meerk40t/core/elements/element_treeops.py:439
+msgid "Burn earlier"
+msgstr "Brenne früher"
+
+#: meerk40t/core/elements/element_treeops.py:444
+msgid "Burn later"
+msgstr "Brenne später"
+
+#: meerk40t/core/elements/element_treeops.py:449
+msgid "Burn last"
+msgstr "Brenne zuletzt"
