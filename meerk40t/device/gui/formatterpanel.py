@@ -213,6 +213,9 @@ class FormatterPanel(wx.Panel):
         from meerk40t.core.node.util_input import InputOperation
         from meerk40t.core.node.util_output import OutputOperation
         from meerk40t.core.node.util_wait import WaitOperation
+        from meerk40t.core.node.effect_hatch import HatchEffectNode
+        from meerk40t.core.node.effect_warp import WarpEffectNode
+        from meerk40t.core.node.effect_wobble import WobbleEffectNode
 
         bootstrap = {
             "op cut": CutOpNode,
@@ -238,6 +241,9 @@ class FormatterPanel(wx.Panel):
             # "image raster": ImageRasterNode,
             "reference": ReferenceNode,
             "file": FileNode,
+            "effect hatch": HatchEffectNode,
+            "effect warp": WarpEffectNode,
+            "effect wobble": WobbleEffectNode,
         }
         node = None
         available = ""
