@@ -1196,7 +1196,7 @@ def plugin(service, lifecycle):
             result[group[0]] = group[1]
         return result
 
-    @service.console_options("source_dir", "d", type=str, help="Directory where you have placed the drivers to install")
+    @service.console_option("source_dir", "d", type=str, help="Directory where you have placed the drivers to install")
     @service.console_command(
         "driver_install",
         help=_("install driver"),
