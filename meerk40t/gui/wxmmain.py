@@ -2988,7 +2988,7 @@ class MeerK40t(MWindow):
             if suppress:
                 continue
             menudata.append([submenu_name, caption, name, window, suffix_path])
-        # Now that we have everything lets sort...
+        # Now that we have everything let's sort...
         menudata.sort(key=lambda row: row[0])
 
         for submenu_name, caption, name, window, suffix_path in menudata:

@@ -539,7 +539,7 @@ class DXFProcessor:
             except ImportError:
                 pass
             self.check_for_attributes(node, entity)
-            # We don't seem to get the position right, so lets' look
+            # We don't seem to get the position right, so let's look
             # at our bottom_left position again and fix the gap
             bb = node.bounds
             dx = targetpos.x - bb[0]

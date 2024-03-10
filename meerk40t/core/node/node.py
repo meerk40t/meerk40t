@@ -470,7 +470,7 @@ class Node:
         if text is None:
             text = "{element_type}:{id}"
         # Just for the optical impression (who understands what a "Rect: None" means),
-        # lets replace some of the more obvious ones...
+        # let's replace some of the more obvious ones...
         mymap = self.default_map()
         for key in mymap:
             if hasattr(self, key) and mymap[key] == "None":

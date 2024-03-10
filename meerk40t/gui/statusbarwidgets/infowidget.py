@@ -125,7 +125,7 @@ class InformationWidget(SimpleInfoWidget):
         super().__init__(**kwargs)
         self.fontsize = 7
         self._needs_generation = False
-        # We dont have a context yet...
+        # We don't have a context yet...
         self._info_active = True
 
     def Show(self, showit=True):

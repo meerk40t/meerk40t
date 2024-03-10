@@ -440,7 +440,7 @@ class ConsolePanel(wx.ScrolledWindow):
                     self.text_entry.SetInsertionPointEnd()
                 self.command_position -= 1
             elif key == wx.WXK_TAB:
-                # Lets try some autocompletion or at least show possible candidates
+                # Let's try some autocompletion or at least show possible candidates
                 content = self.text_entry.GetValue()
                 words = content.split(" ")
                 if len(words):

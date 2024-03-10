@@ -1634,7 +1634,7 @@ class ShadowTree:
                 except AttributeError:
                     text = "{element_type}:{id}"
             # Just for the optical impression (who understands what a "Rect: None" means),
-            # lets replace some of the more obvious ones...
+            # let's replace some of the more obvious ones...
             mymap = node.default_map()
             # We change power to either ppi or percent
             if "power" in mymap and "ppi" in mymap and "percent" in mymap:

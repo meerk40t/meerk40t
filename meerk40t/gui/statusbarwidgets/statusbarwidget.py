@@ -97,7 +97,7 @@ class BasicHSizer:
         #     "Total proportions: %.1f, width=%.1f, remaining=%.1f"
         #     % (total_proportions, self.width, availw)
         # )
-        # Now that we have established the minsize lets see what we have left
+        # Now that we have established the minsize let's see what we have left
         # First iteration, check for maxSize
         if total_proportions > 0:
             for idx, wind in enumerate(self.windows):
@@ -132,7 +132,7 @@ class BasicHSizer:
                     )
                     self.myw[idx] = testsize
 
-        # And now lets move the windows...
+        # And now let's move the windows...
         newx = self.start_x + self.x
         for idx, wind in enumerate(self.windows):
             # print(f"{idx}, vis={self.activectrl[idx]}, x={newx}")

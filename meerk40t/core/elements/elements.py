@@ -873,7 +873,7 @@ class Elemental(Service):
         # print ("Firstcolor=%s, targetcolor=%s" % (first_color, target_color) )
         # print ("Similar=%s, # data=%d" % (similar, len(data)) )
         if similar:
-            # Now that we have the colors lets iterate through all elements
+            # Now that we have the colors let's iterate through all elements
             fuzzy = self.classify_fuzzy
             fuzzydistance = self.classify_fuzzydistance
             for n in self.flat(types=elem_nodes):
@@ -2098,7 +2098,7 @@ class Elemental(Service):
         #                     drop_node.remove_color_attribute("fill")
         #             drop_node.color = col
 
-        #         # Now that we have the colors lets iterate through all elements
+        #         # Now that we have the colors let's iterate through all elements
         #         fuzzy = self.classify_fuzzy
         #         fuzzydistance = self.classify_fuzzydistance
         #         for n in self.flat(types=elem_nodes):

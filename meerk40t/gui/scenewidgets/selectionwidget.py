@@ -2584,7 +2584,7 @@ class SelectionWidget(Widget):
         # Now check whether we have a reference object
         reference_object = self.scene.pane.reference_object
         if reference_object is not None:
-            # Okay, just lets make sure we are not doing this on the refobject itself...
+            # Okay, just let's make sure we are not doing this on the refobject itself...
             for e in self.scene.context.elements.flat(
                 types=elem_nodes, emphasized=True
             ):

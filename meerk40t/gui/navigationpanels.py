@@ -1193,7 +1193,7 @@ class Jog(wx.Panel):
         max_x = float(Length(self.context.device.view.width))
         min_y = 0
         max_y = float(Length(self.context.device.view.height))
-        # Are we outside? Then lets move back to the edge...
+        # Are we outside? Then let's move back to the edge...
         new_x = min(max_x, max(min_x, current_x))
         new_y = min(max_y, max(min_y, current_y))
         if new_x != current_x or new_y != current_y:

@@ -444,7 +444,7 @@
 #                         else:
 #                             ignored += 1
 #                     else:
-#                         # regular line, so lets establish x0 x1
+#                         # regular line, so let's establish x0 x1
 #                         # could still be an outward pointing line....
 #                         new_cx = min(max(new_cx, xmin), xmax)
 #                         new_ex = min(max(new_ex, xmin), xmax)
@@ -556,7 +556,7 @@
 #                                 add_move(newpath, Point(new_cx, new_cy))
 #                             newpath.line(Point(new_ex, new_ey))
 #                     else:
-#                         # regular line, so lets establish x0 x1
+#                         # regular line, so let#s establish x0 x1
 #                         # could still be an outward pointing line....
 #                         new_cx = min(max(new_cx, xmin), xmax)
 #                         new_ex = min(max(new_ex, xmin), xmax)

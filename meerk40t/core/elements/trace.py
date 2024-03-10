@@ -487,7 +487,7 @@ def init_commands(kernel):
         else:
             raise ValueError
         if start is None:
-            # Lets take system default
+            # Let's take system default
             start = self.trace_start_method
         if start < 0 or start > 2:
             start = 0
