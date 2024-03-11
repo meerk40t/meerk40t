@@ -7,7 +7,14 @@ from meerk40t.gui.icons import (
     icon_split_image,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxRadioBox,
+)
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color
 
@@ -154,7 +161,7 @@ class SplitterPanel(wx.Panel):
         self.split_x = wx.SpinCtrl(self, wx.ID_ANY, initial=1, min=1, max=25)
         self.split_y = wx.SpinCtrl(self, wx.ID_ANY, initial=1, min=1, max=25)
 
-        self.rbox_selection = wx.RadioBox(
+        self.rbox_selection = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Order to process:"),
@@ -166,7 +173,7 @@ class SplitterPanel(wx.Panel):
         self.text_dpi = TextCtrl(self, wx.ID_ANY, limited=True, check="int")
         self.text_dpi.SetValue("500")
         self.lbl_info = wx.StaticText(self, wx.ID_ANY, "")
-        self.btn_align = wx.Button(self, wx.ID_ANY, _("Create split images"))
+        self.btn_align = wxButton(self, wx.ID_ANY, _("Create split images"))
         self.btn_align.SetBitmap(
             icon_split_image.GetBitmap(resize=0.5 * get_default_icon_size())
         )
@@ -295,7 +302,7 @@ class KeyholePanel(wx.Panel):
         )
         self.selectparam = ("first", "last")
 
-        self.rbox_selection = wx.RadioBox(
+        self.rbox_selection = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Keyhole Object:"),
@@ -308,7 +315,7 @@ class KeyholePanel(wx.Panel):
         self.text_dpi.SetValue("500")
         self.info_panel = InfoPanel(self, wx.ID_ANY, context=self.context)
 
-        self.btn_align = wx.Button(self, wx.ID_ANY, _("Create keyhole image"))
+        self.btn_align = wxButton(self, wx.ID_ANY, _("Create keyhole image"))
         self.btn_align.SetBitmap(
             icon_keyhole.GetBitmap(resize=0.5 * get_default_icon_size())
         )
@@ -327,8 +334,8 @@ class KeyholePanel(wx.Panel):
         sizer_check_outline = StaticBoxSizer(
             self, wx.ID_ANY, _("Trace Keyhole:"), wx.HORIZONTAL
         )
-        self.check_invert = wx.CheckBox(self, wx.ID_ANY, "Invert")
-        self.check_outline = wx.CheckBox(self, wx.ID_ANY, "Trace")
+        self.check_invert = wxCheckBox(self, wx.ID_ANY, "Invert")
+        self.check_outline = wxCheckBox(self, wx.ID_ANY, "Trace")
 
         sizer_check_invert.Add(self.check_invert, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_check_outline.Add(self.check_outline, 0, wx.ALIGN_CENTER_VERTICAL, 0)

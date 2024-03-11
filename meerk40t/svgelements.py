@@ -340,6 +340,8 @@ class SVGLexicalParser:
         return position[0] + current_pos.x, position[1] + current_pos.y
 
     def parse(self, parser, pathd):
+        if pathd is None:
+            return
         self.parser = parser
         self.parser.start()
         self.pathd = pathd

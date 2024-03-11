@@ -399,49 +399,99 @@ class BeamTable:
         return e[0].real, e[0].imag, ~e[1]
 
     def compute_beam(self):
-        self.compute_beam_brute()
+        self.compute_beam_bo()
 
     def compute_beam_bo(self):
         g = self.geometry
         gs = g.segments
         events = []
-        # Add start and end events.
-        for i in range(g.index):
-            if np.real(gs[i][2]) != TYPE_LINE:
-                continue
-            if (gs[i][0].real, gs[i][0].imag) < (gs[i][-1].real, gs[i][-1].imag):
-                events.append((g.segments[i][0], i, None))
-                events.append((g.segments[i][-1], ~i, None))
-            else:
-                events.append((g.segments[i][0], ~i, None))
-                events.append((g.segments[i][-1], i, None))
 
-        # Sort start, end events.
-        events.sort(key=lambda e: (e[0].real, e[0].imag, ~e[1]))
-
-        def bisect_events(a, x, lo):
-            x = (x[0].real, x[0].imag, ~x[1])
+        def bisect_events(a, pos, lo=0):
+            """
+            Brute iterate events to find the correct placement for the required events.
+            @param a:
+            @param pos:
+            @return:
+            """
+            pos = pos.real, pos.imag
             hi = len(a)
             while lo < hi:
                 mid = (lo + hi) // 2
                 q = a[mid]
-
-                if x < (q[0].real, q[0].imag, ~q[1]):
-                    hi = mid
-                else:
+                x = pos[0] - q[0].real
+                if x > 1e-8:
+                    # x is still greater
                     lo = mid + 1
-            return lo
+                    continue
+                if x < -1e-8:
+                    # x is now less than
+                    hi = mid
+                    continue
+                # x is equal.
+                y = pos[1] - q[0].imag
+                if y > 1e-8:
+                    lo = mid + 1
+                    # y is still greater
+                    continue
+                if y < -1e-8:
+                    # y is now less than.
+                    hi = mid
+                    continue
+                # both x and y are equal.
+                return mid
+            return ~lo
+
+        def get_or_insert_event(x):
+            """
+            Get event at position, x. Or create event at the given position.
+
+            @param x:
+            @return:
+            """
+            ip1 = bisect_events(events, x)
+
+            if ip1 >= 0:
+                evt = events[ip1]
+            else:
+                evt = (x, [], [], [])
+                events.insert(~ip1, evt)
+            return evt
+
+        # Add start and end events.
+        for i in range(g.index):
+            if np.real(gs[i][2]) != TYPE_LINE:
+                continue
+            event1 = get_or_insert_event(g.segments[i][0])
+            event2 = get_or_insert_event(g.segments[i][-1])
+
+            if (gs[i][0].real, gs[i][0].imag) < (gs[i][-1].real, gs[i][-1].imag):
+                event1[1].append(i)
+                event2[2].append(i)
+            else:
+                event1[2].append(i)
+                event2[1].append(i)
+
+        wh, p, ta, tb = g.brute_line_intersections()
+        for w, pos in zip(wh, p):
+            event = get_or_insert_event(pos)
+            event[3].extend(w)
+            self.intersections.point(pos)
 
         def bisect_yint(a, x, scanline):
+            """
+            Bisect into the y-intersects of the list (a) to at position x, for scanline value scaneline.
+            @param a:
+            @param x:
+            @param scanline:
+            @return:
+            """
             value = float(g.y_intercept(x, scanline.real, scanline.imag))
             lo = 0
             hi = len(a)
             while lo < hi:
                 mid = (lo + hi) // 2
                 x_test = float(g.y_intercept(a[mid], scanline.real, scanline.imag))
-                if value < x_test:
-                    hi = mid
-                elif value == x_test:
+                if abs(value - x_test) < 1e-8:
                     x_slope = g.slope(x)
                     if np.isneginf(x_slope):
                         x_slope *= -1
@@ -452,30 +502,28 @@ class BeamTable:
                         hi = mid
                     else:
                         lo = mid + 1
+                elif value < x_test:
+                    hi = mid
                 else:
                     lo = mid + 1
             return lo
 
         checked_swaps = {}
 
-        def check_intersection(i, q, r, sl):
-            print(f"check intersections: {q}, {r}")
-            if (q, r) in checked_swaps:
-                return
-            for t1, t2 in g.intersections(q, r):
-                if t1 in (0, 1) and t2 in (0, 1):
-                    continue
-                pt_intersect = g.position(q, t1)
-                print((sl.real, sl.imag) >= (pt_intersect.real, pt_intersect.imag))
-                print(pt_intersect)
-                if (sl.real, sl.imag) >= (pt_intersect.real, pt_intersect.imag):
-                    continue
-                checked_swaps[(q, r)] = True
-                x = pt_intersect, 0, (q, r)
-                ip = bisect_events(events, x, lo=i)
-                events.insert(ip, x)
-                self.intersections.point(pt_intersect)
-                print("Intersection!")
+        # def check_intersection(i, q, r, sl):
+        #     if (q, r) in checked_swaps:
+        #         return
+        #     for t1, t2 in g.intersections(q, r):
+        #         if t1 in (0, 1) and t2 in (0, 1):
+        #             continue
+        #         pt_intersect = g.position(q, t1)
+        #         if (sl.real, sl.imag) >= (pt_intersect.real, pt_intersect.imag):
+        #             continue
+        #         checked_swaps[(q, r)] = True
+        #         event_intersect = get_or_insert_event(pt_intersect)
+        #         event_intersect[1].extend((q, r))
+        #         event_intersect[2].extend((q, r))
+        #         self.intersections.point(pt_intersect)
 
         actives = []
 
@@ -486,39 +534,34 @@ class BeamTable:
 
         i = 0
         while i < len(events):
-
             event = events[i]
-            pt, index, swap = event
-            print(f"{actives}, {pt}")
+            pt, adds, removes, sorts = event
             try:
-                next, _, _ = events[i + 1]
+                next, _, _, _ = events[i + 1]
             except IndexError:
                 next = complex(float("inf"), float("inf"))
 
-            if swap is not None:
-                print(f"swapping: {swap[0]}, {swap[1]}")
-                s1 = actives.index(swap[0])
-                s2 = s1 + 1
-                print(f"{s1}, {s2} == {actives[s1]}, {actives[s2]}")
-                actives[s1], actives[s2] = actives[s2], actives[s1]
-                if s1 > 0:
-                    check_intersection(i, actives[s1 - 1], actives[s1], pt)
-                if s2 < len(actives) - 1:
-                    check_intersection(i, actives[s2], actives[s2 + 1], pt)
-            elif index >= 0:
-                print(f"inserting: {index}")
+            for index in removes:
+                rp = actives.index(index)
+                del actives[rp]
+                # if 0 < rp < len(actives):
+                #     check_intersection(i, actives[rp - 1], actives[rp], pt)
+            for index in adds:
                 ip = bisect_yint(actives, index, pt)
                 actives.insert(ip, index)
-                if ip > 0:
-                    check_intersection(i, actives[ip - 1], actives[ip], pt)
-                if ip < len(actives) - 1:
-                    check_intersection(i, actives[ip], actives[ip + 1], pt)
-            else:
-                print(f"removing: {index}")
-                rp = actives.index(~index)
-                del actives[rp]
-                if 0 < rp < len(actives):
-                    check_intersection(i, actives[rp - 1], actives[rp], pt)
+                # if ip > 0:
+                #     check_intersection(i, actives[ip - 1], actives[ip], pt)
+                # if ip < len(actives) - 1:
+                #     check_intersection(i, actives[ip], actives[ip + 1], pt)
+            for index in sorts:
+                try:
+                    rp = actives.index(index)
+                    del actives[rp]
+                    ip = bisect_yint(actives, index, pt)
+                    actives.insert(ip, index)
+                except ValueError:
+                    # was removed
+                    pass
             i += 1
             if pt == next:
                 continue
@@ -1167,7 +1210,7 @@ class Geomstr:
         return self.segments
 
     def __bool__(self):
-        return self.index != 0
+        return bool(self.index != 0)
 
     def debug_me(self):
         # Provides information about the Geometry.
@@ -1182,7 +1225,7 @@ class Geomstr:
             c2 = seg[3]
             end = seg[4]
             seg_info = self.segment_type(idx)
-            if seg_type != TYPE_END:
+            if seg_type not in (TYPE_END, TYPE_NOP):
                 seg_info += f", Start: {cplx_info(start)}, End: {cplx_info(end)}"
             if seg_type == TYPE_QUAD:
                 seg_info += f", C: {cplx_info(c1)}"
@@ -1484,8 +1527,8 @@ class Geomstr:
         return path
 
     @classmethod
-    def hull(cls, geom):
-        ipts = list(geom.as_equal_interpolated_points(distance=50))
+    def hull(cls, geom, distance=50):
+        ipts = list(geom.as_equal_interpolated_points(distance=distance))
         pts = list(Geomstr.convex_hull(None, ipts))
         if pts:
             pts.append(pts[0])
@@ -1608,6 +1651,9 @@ class Geomstr:
                         ]
                     )
                 last = pt
+            if len(segments) > 1 and abs(segments[0] - segments[-1]) < 1e-5:
+                if abs(points[0] - points[1]) >= 1e-5:
+                    points.append(points[0])
             geometry.append(Geomstr.lines(*points))
         return geometry
 
@@ -1656,6 +1702,24 @@ class Geomstr:
     @classmethod
     def wobble_circle(cls, outer, radius, interval, speed):
         from meerk40t.fill.fills import circle as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+    @classmethod
+    def wobble_meander_1(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import meander_1 as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+    @classmethod
+    def wobble_meander_2(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import meander_2 as algorithm
+
+        return cls.wobble(algorithm, outer, radius, interval, speed)
+
+    @classmethod
+    def wobble_meander_3(cls, outer, radius, interval, speed):
+        from meerk40t.fill.fills import meander_3 as algorithm
 
         return cls.wobble(algorithm, outer, radius, interval, speed)
 
@@ -1730,6 +1794,8 @@ class Geomstr:
         for e in self.segments[start_pos:end_pos]:
             seg_type = int(e[2].real)
             set_type = int(e[2].imag)
+            if seg_type == TYPE_NOP:
+                continue
             start = e[0]
             if not at_start and (set_type != settings or abs(start - end) > 1e-8):
                 # Start point does not equal previous end point, or settings changed
@@ -1790,6 +1856,8 @@ class Geomstr:
         end = None
         for e in self.segments[: self.index]:
             seg_type = int(e[2].real)
+            if seg_type == TYPE_NOP:
+                continue
             start = e[0]
             if end != start and not at_start:
                 # Start point does not equal previous end point.
@@ -1889,6 +1957,8 @@ class Geomstr:
         end = None
         for e in self.segments[: self.index]:
             seg_type = int(e[2].real)
+            if seg_type == TYPE_NOP:
+                continue
             start = e[0]
             if end != start and not at_start:
                 # Start point does not equal previous end point.
@@ -3374,6 +3444,10 @@ class Geomstr:
         if info.real == TYPE_END:
             return
         if oinfo.real == TYPE_END:
+            return
+        if info.real == TYPE_NOP:
+            return
+        if oinfo.real == TYPE_NOP:
             return
         if info.real == TYPE_LINE:
             if oinfo.real == TYPE_LINE:

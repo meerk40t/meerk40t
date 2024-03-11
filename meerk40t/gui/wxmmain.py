@@ -165,6 +165,9 @@ class MeerK40t(MWindow):
         self.ui_visible = True
         self.hidden_panes = []
 
+        # We need to store the pane-captions as
+        # aui seems to reset them at a later time?!
+        self._pane_captions = dict()
         # notify AUI which frame to use
         self._mgr.SetManagedWindow(self)
 
@@ -348,7 +351,7 @@ class MeerK40t(MWindow):
             def paste_image(bmp):
                 # Create an image element from the data in the *system* clipboard
                 def WxBitmapToWxImage(myBitmap):
-                    return wx.ImageFromBitmap(myBitmap)
+                    return myBitmap.ConvertToImage()
 
                 def imageToPil(myWxImage):
                     myPilImage = Image.new(
@@ -432,7 +435,7 @@ class MeerK40t(MWindow):
             elif wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_UNICODETEXT)):
                 text_data = wx.TextDataObject()
                 if wx.TheClipboard.GetData(text_data):
-                    txt = text_data.GetText().decode("utf-8")
+                    txt = text_data.GetText()
                     paste_text(txt)
 
             wx.TheClipboard.Close()
@@ -2306,7 +2309,10 @@ class MeerK40t(MWindow):
             # This code should load just specific project files rather than all importable formats.
             files = context.elements.load_types()
             with wx.FileDialog(
-                gui, _("Open"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+                gui,
+                _("Open"),
+                wildcard=files,
+                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW,
             ) as fileDialog:
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
                     return  # the user changed their mind
@@ -2329,7 +2335,7 @@ class MeerK40t(MWindow):
                 gui,
                 _("Import"),
                 wildcard=files,
-                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
+                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW,
             ) as fileDialog:
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
                     return  # the user changed their mind
@@ -2667,6 +2673,9 @@ class MeerK40t(MWindow):
         for pane in self._mgr.GetAllPanes():
             window = pane.window
             if pane.IsShown():
+                if pane.name in self._pane_captions:
+                    pane.Caption(self._pane_captions[pane.name])
+
                 if hasattr(window, "pane_show"):
                     window.pane_show()
                 if isinstance(window, wx.aui.AuiNotebook):
@@ -2710,11 +2719,15 @@ class MeerK40t(MWindow):
             self.add_module_delegate(control)
         paneinfo.manager = self._mgr
         self.on_pane_show(paneinfo)
+        # Store the (already translated) caption for later retrieval
+        self._pane_captions[paneinfo.name] = paneinfo.caption
 
     def on_pane_show(self, paneinfo: aui.AuiPaneInfo):
         pane = self._mgr.GetPane(paneinfo.name)
         if len(pane.name):
             if not pane.IsShown():
+                if pane.name in self._pane_captions:
+                    pane.Caption(self._pane_captions[pane.name])
                 pane.Show()
                 pane.CaptionVisible(not self.context.pane_lock)
                 if hasattr(pane.window, "pane_show"):
@@ -2975,7 +2988,7 @@ class MeerK40t(MWindow):
             if suppress:
                 continue
             menudata.append([submenu_name, caption, name, window, suffix_path])
-        # Now that we have everything lets sort...
+        # Now that we have everything let's sort...
         menudata.sort(key=lambda row: row[0])
 
         for submenu_name, caption, name, window, suffix_path in menudata:
@@ -3157,8 +3170,8 @@ class MeerK40t(MWindow):
         )
         self.Bind(wx.EVT_MENU, self.on_click_open, id=wx.ID_OPEN)
 
-        self.recent_file_menu = wx.Menu()
         if not getattr(sys, "frozen", False) or platform.system() != "Darwin":
+            self.recent_file_menu = wx.Menu()
             self.recent_file_menu_item = self.file_menu.AppendSubMenu(
                 self.recent_file_menu, _("&Recent")
             )
@@ -3739,7 +3752,8 @@ class MeerK40t(MWindow):
                 command = "check_for_updates --verbosity 3\n"
             elif self.context.update_check == 2:
                 command = "check_for_updates --beta --verbosity 3\n"
-
+            else:
+                return
             self.context(command)
             self.context.setting(int, "last_update_check", None)
             now = datetime.date.today()
@@ -4190,7 +4204,7 @@ class MeerK40t(MWindow):
             defaultDir=default_dir,
             defaultFile=default_file,
             wildcard=files,
-            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
+            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW,
         ) as fileDialog:
             fileDialog.SetFilename(default_file)
             if fileDialog.ShowModal() == wx.ID_CANCEL:
@@ -4334,7 +4348,7 @@ class MeerK40t(MWindow):
                 preferred_loader=preferred_loader,
             )
             kernel.busyinfo.end()
-        except BadFileError as e:
+        except Exception as e:
             dlg = wx.MessageDialog(
                 None,
                 str(e),

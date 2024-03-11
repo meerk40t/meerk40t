@@ -431,7 +431,7 @@ class Wordlist:
         newtext = str(orgtext)
         toreplace = []
         # list of tuples, (index found, old, new )
-        # Lets gather the {} first...
+        # Let's gather the {} first...
         brackets = re.compile(r"\{[^}]+\}")
         for bracketed_key in brackets.findall(str(orgtext)):
             key = bracketed_key[1:-1].lower().strip()

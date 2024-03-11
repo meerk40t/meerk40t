@@ -7,7 +7,7 @@ from meerk40t.fill.patterns import LivingHinges
 from meerk40t.gui.icons import STD_ICON_SIZE, icon_hinges
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
+from meerk40t.gui.wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color, Matrix, Path
 
@@ -63,7 +63,7 @@ class HingePanel(wx.Panel):
         self.combo_style = wx.ComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
         )
-        self.button_default = wx.Button(self, wx.ID_ANY, "D")
+        self.button_default = wxButton(self, wx.ID_ANY, "D")
         _default = 200
         self.slider_width = wx.Slider(
             self,
@@ -146,20 +146,20 @@ class HingePanel(wx.Panel):
             +50,
             style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
         )
-        self.button_generate = wx.Button(self, wx.ID_ANY, _("Generate"))
-        self.button_close = wx.Button(self, wx.ID_ANY, _("Close"))
+        self.button_generate = wxButton(self, wx.ID_ANY, _("Generate"))
+        self.button_close = wxButton(self, wx.ID_ANY, _("Close"))
         self.context.setting(bool, "hinge_preview_pattern", True)
         self.context.setting(bool, "hinge_preview_shape", True)
-        self.check_preview_show_pattern = wx.CheckBox(
+        self.check_preview_show_pattern = wxCheckBox(
             self, wx.ID_ANY, _("Preview Pattern")
         )
         self.check_preview_show_pattern.SetValue(
             bool(self.context.hinge_preview_pattern)
         )
-        self.check_preview_show_shape = wx.CheckBox(self, wx.ID_ANY, _("Preview Shape"))
+        self.check_preview_show_shape = wxCheckBox(self, wx.ID_ANY, _("Preview Shape"))
         self.check_preview_show_shape.SetValue(bool(self.context.hinge_preview_shape))
 
-        #  self.check_debug_outline = wx.CheckBox(self, wx.ID_ANY, "Show outline")
+        #  self.check_debug_outline = wxCheckBox(self, wx.ID_ANY, "Show outline")
 
         self.patterns = list()
         self.defaults = list()

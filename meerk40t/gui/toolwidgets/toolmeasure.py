@@ -64,8 +64,12 @@ class MeasureTool(PointListTool):
             )
         gc.SetFont(font, self.scene.colors.color_measure_text)
 
-        matrix = self.parent.matrix
-        linewidth = 2.0 / matrix_scale(matrix)
+        # matrix = self.parent.matrix
+        # linewidth = 2.0 / matrix_scale(matrix)
+        try:
+            linewidth = 2.0 / mat_fact
+        except ZeroDivisionError:
+            linewidth = 2000
         if linewidth < 1:
             linewidth = 1
         try:

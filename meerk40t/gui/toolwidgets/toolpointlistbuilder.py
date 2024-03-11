@@ -182,7 +182,9 @@ class PointListTool(ToolWidget):
                 response = RESPONSE_CONSUME
         elif update_required:
             self.scene.request_refresh()
-            response = RESPONSE_CONSUME
+            # Have we clicked already?
+            if len(self.point_series) > 0:
+                response = RESPONSE_CONSUME
         return response
 
     def end_tool(self):

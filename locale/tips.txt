@@ -74,3 +74,6 @@ Use the Material Manager to share and retrieve settings from the global MeerK40t
 cmd=window open MatManager
 img=https://github.com/meerk40t/meerk40t/assets/2670784/73f4bdf9-974f-4245-8b16-8812aa5f0762
 version=1.0
+
+tip=Do you need to convert a graphic into a vector object? Double click the graphic and use the vectorization panel...
+img=https://github.com/meerk40t/meerk40t/assets/2670784/24f98e75-65ab-42f9-90c0-a9c3a6a6ac38

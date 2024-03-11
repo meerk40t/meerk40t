@@ -1,6 +1,7 @@
 import wx
 from wx import aui
 
+from meerk40t.gui.wxutils import wxCheckBox
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -46,7 +47,7 @@ class SnapOptionPanel(wx.Panel):
             )
         )
 
-        self.check_snap_points = wx.CheckBox(self, wx.ID_ANY, _("Snap to Element"))
+        self.check_snap_points = wxCheckBox(self, wx.ID_ANY, _("Snap to Element"))
         self.check_snap_points.SetToolTip(
             _("Shall the cursor snap to the next element point?")
         )
@@ -59,7 +60,7 @@ class SnapOptionPanel(wx.Panel):
             )
         )
 
-        self.check_snap_grid = wx.CheckBox(self, wx.ID_ANY, _("Snap to Grid"))
+        self.check_snap_grid = wxCheckBox(self, wx.ID_ANY, _("Snap to Grid"))
         self.check_snap_grid.SetToolTip(
             _("Shall the cursor snap to the next grid intersection?")
         )

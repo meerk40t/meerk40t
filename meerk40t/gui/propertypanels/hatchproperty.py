@@ -4,7 +4,7 @@ from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 
 from ...core.units import Angle, Length
 from ...svgelements import Matrix
-from ..wxutils import TextCtrl, set_ctrl_value
+from ..wxutils import TextCtrl, set_ctrl_value, wxCheckBox
 from .attributes import ColorPanel, IdPanel
 
 _ = wx.GetTranslation
@@ -122,7 +122,7 @@ class HatchPropertyPanel(ScrolledPanel):
         self.display_panel = wx.Panel(self, wx.ID_ANY)
         sizer_fill.Add(self.display_panel, 6, wx.EXPAND, 0)
 
-        self.check_classify = wx.CheckBox(
+        self.check_classify = wxCheckBox(
             self, wx.ID_ANY, _("Immediately classify after colour change")
         )
         self.check_classify.SetValue(self.context._auto_classify)
@@ -228,6 +228,13 @@ class HatchPropertyPanel(ScrolledPanel):
     def update_label(self):
         return
 
+    def update(self):
+        self.node.modified()
+        self.hatch_lines = None
+        self.travel_lines = None
+        self.refresh_display()
+        self.context.elements.signal("element_property_reload", self.node)
+
     def callback_color(self):
         self.node.altered()
         self.update_label()
@@ -239,7 +246,7 @@ class HatchPropertyPanel(ScrolledPanel):
             self.context.elements.remove_elements_from_operations(data)
             self.context.elements.classify(data)
             self.context.elements.signal("tree_changed")
-            self.context.elements.signal("element_property_update", self.node)
+            self.context.elements.signal("element_property_reload", self.node)
             mynode.emphasized = wasemph
             self.set_widgets(mynode)
 
@@ -249,7 +256,6 @@ class HatchPropertyPanel(ScrolledPanel):
             if loops == self.node.loops:
                 return
             self.node.loops = loops
-            self.node.modified()
         except ValueError:
             return
         try:
@@ -257,9 +263,7 @@ class HatchPropertyPanel(ScrolledPanel):
             self.slider_loops.SetValue(int(h_loops))
         except ValueError:
             pass
-        self.hatch_lines = None
-        self.travel_lines = None
-        self.refresh_display()
+        self.update()
 
     def on_slider_loops(self, event):
         value = self.slider_loops.GetValue()
@@ -273,12 +277,9 @@ class HatchPropertyPanel(ScrolledPanel):
                 return
             self.node.hatch_distance = dist
             self.node.distance = dist
-            self.node.modified()
-            self.hatch_lines = None
-            self.travel_lines = None
-            self.refresh_display()
         except ValueError:
             pass
+        self.update()
 
     def on_text_angle(self):
         try:
@@ -287,7 +288,6 @@ class HatchPropertyPanel(ScrolledPanel):
                 return
             self.node.hatch_angle = angle
             self.node.angle = angle
-            self.node.modified()
 
         except ValueError:
             return
@@ -300,9 +300,7 @@ class HatchPropertyPanel(ScrolledPanel):
             self.slider_angle.SetValue(int(h_angle))
         except ValueError:
             pass
-        self.hatch_lines = None
-        self.travel_lines = None
-        self.refresh_display()
+        self.update()
 
     def on_slider_angle(self, event):
         value = self.slider_angle.GetValue()
@@ -316,7 +314,6 @@ class HatchPropertyPanel(ScrolledPanel):
                 return
             self.node.hatch_angle_delta = angle
             self.node.delta = angle
-            self.node.modified()
         except ValueError:
             return
         try:
@@ -328,9 +325,7 @@ class HatchPropertyPanel(ScrolledPanel):
             self.slider_angle_delta.SetValue(int(h_angle_delta))
         except ValueError:
             pass
-        self.hatch_lines = None
-        self.travel_lines = None
-        self.refresh_display()
+        self.update()
 
     def on_slider_angle_delta(self, event):
         value = self.slider_angle_delta.GetValue()
@@ -340,10 +335,7 @@ class HatchPropertyPanel(ScrolledPanel):
     def on_combo_fill(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         hatch_type = self.fills[int(self.combo_fill_style.GetSelection())]
         self.node.hatch_type = hatch_type
-        self.node.modified()
-        self.hatch_lines = None
-        self.travel_lines = None
-        self.refresh_display()
+        self.update()
 
     def on_display_paint(self, event=None):
         if self._Buffer is None:

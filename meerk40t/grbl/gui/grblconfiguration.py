@@ -47,6 +47,13 @@ class ConfigurationInterfacePanel(ScrolledPanel):
             )
             sizer_interface_radio.Add(self.radio_tcp, 1, wx.EXPAND, 0)
 
+        if self.context.permit_ws:
+            self.radio_ws = wx.RadioButton(self, wx.ID_ANY, _("WebSocket"))
+            self.radio_ws.SetToolTip(
+                _("Select this if the GRBL device is contacted via WebSocket connection")
+            )
+            sizer_interface_radio.Add(self.radio_ws, 1, wx.EXPAND, 0)
+
         self.radio_mock = wx.RadioButton(self, wx.ID_ANY, _("Mock"))
         self.radio_mock.SetToolTip(
             _("Select this only for debugging without a physical laser available.")
@@ -63,6 +70,11 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         )
         sizer_interface.Add(self.panel_tcp_config, 1, wx.EXPAND, 0)
 
+        self.panel_ws_config = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context, choices="ws"
+        )
+        sizer_interface.Add(self.panel_ws_config, 1, wx.EXPAND, 0)
+
         self.SetSizer(sizer_page_1)
 
         self.Layout()
@@ -71,18 +83,27 @@ class ConfigurationInterfacePanel(ScrolledPanel):
             self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_serial)
         if self.context.permit_tcp:
             self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_tcp)
+        if self.context.permit_ws:
+            self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_ws)
         self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_mock)
         # end wxGlade
         if self.context.permit_serial and self.context.interface == "serial":
             self.radio_serial.SetValue(True)
             self.panel_tcp_config.Hide()
+            self.panel_ws_config.Hide()
         elif self.context.permit_tcp and self.context.interface == "tcp":
             self.panel_serial_settings.Hide()
             self.radio_tcp.SetValue(True)
+            self.panel_ws_config.Hide()
+        elif self.context.permit_ws and self.context.interface == "ws":
+            self.panel_serial_settings.Hide()
+            self.panel_tcp_config.Hide()
+            self.radio_ws.SetValue(True)
         else:
             # Mock
             self.panel_tcp_config.Hide()
             self.panel_serial_settings.Hide()
+            self.panel_ws_config.Hide()
             self.radio_mock.SetValue(True)
 
         self.SetupScrolling()
@@ -90,10 +111,12 @@ class ConfigurationInterfacePanel(ScrolledPanel):
     def pane_show(self):
         self.panel_serial_settings.pane_show()
         self.panel_tcp_config.pane_show()
+        self.panel_ws_config.pane_show()
 
     def pane_hide(self):
         self.panel_serial_settings.pane_hide()
         self.panel_tcp_config.pane_hide()
+        self.panel_ws_config.pane_hide()
 
     def on_radio_interface(
         self, event
@@ -104,6 +127,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
                 self.context.signal("update_interface")
                 self.panel_serial_settings.Show()
                 self.panel_tcp_config.Hide()
+                self.panel_ws_config.Hide()
         except AttributeError:
             pass
         try:
@@ -112,11 +136,23 @@ class ConfigurationInterfacePanel(ScrolledPanel):
                 self.context.signal("update_interface")
                 self.panel_serial_settings.Hide()
                 self.panel_tcp_config.Show()
+                self.panel_ws_config.Hide()
+        except AttributeError:
+            pass
+        
+        try:
+            if self.radio_ws.GetValue():
+                self.context.interface = "ws"
+                self.context.signal("update_interface")
+                self.panel_serial_settings.Hide()
+                self.panel_tcp_config.Hide()
+                self.panel_ws_config.Show()
         except AttributeError:
             pass
         if self.radio_mock.GetValue():
             self.panel_tcp_config.Hide()
             self.panel_serial_settings.Hide()
+            self.panel_ws_config.Hide()
             self.context.interface = "mock"
             self.context.signal("update_interface")
         self.Layout()

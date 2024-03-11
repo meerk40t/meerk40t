@@ -11,7 +11,13 @@ from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import STD_ICON_SIZE, icon_kerf, icons8_detective
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxRadioBox,
+)
 from meerk40t.kernel import lookup_listener, signal_listener
 from meerk40t.svgelements import Color, Matrix, Polyline
 
@@ -38,7 +44,7 @@ class KerfPanel(wx.Panel):
         self.set_power_info()
         self.set_speed_info()
 
-        self.radio_pattern = wx.RadioBox(
+        self.radio_pattern = wxRadioBox(
             self,
             wx.ID_ANY,
             _("Pattern"),
@@ -56,7 +62,7 @@ class KerfPanel(wx.Panel):
         self.text_delta = TextCtrl(self, wx.ID_ANY, limited=True, check="length")
         # self.text_delta.set_range(0, 50)
 
-        self.button_create = wx.Button(self, wx.ID_ANY, _("Create Pattern"))
+        self.button_create = wxButton(self, wx.ID_ANY, _("Create Pattern"))
         self.button_create.SetBitmap(
             icons8_detective.GetBitmap(resize=STD_ICON_SIZE / 2)
         )

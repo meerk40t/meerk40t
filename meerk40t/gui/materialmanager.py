@@ -26,7 +26,14 @@ from .icons import (
     icons8_laserbeam_weak,
 )
 from .mwindow import MWindow
-from .wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, dip_size
+from .wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+)
 
 _ = wx.GetTranslation
 
@@ -39,18 +46,18 @@ class ImportDialog(wx.Dialog):
         wx.Dialog.__init__(self, *args, **kwds)
         self.context = context
         self.txt_filename = wx.TextCtrl(self, wx.ID_ANY)
-        self.btn_file = wx.Button(self, wx.ID_ANY, "...")
-        self.check_consolidate = wx.CheckBox(
+        self.btn_file = wxButton(self, wx.ID_ANY, "...")
+        self.check_consolidate = wxCheckBox(
             self, wx.ID_ANY, _("Consolidate same thickness for material")
         )
-        self.check_lens = wx.CheckBox(self, wx.ID_ANY, _("Compensate Lens-Sizes"))
+        self.check_lens = wxCheckBox(self, wx.ID_ANY, _("Compensate Lens-Sizes"))
         self.txt_lens_old = wx.TextCtrl(self, wx.ID_ANY)
         self.txt_lens_new = wx.TextCtrl(self, wx.ID_ANY)
-        self.check_wattage = wx.CheckBox(self, wx.ID_ANY, _("Compensate Power-Levels"))
+        self.check_wattage = wxCheckBox(self, wx.ID_ANY, _("Compensate Power-Levels"))
         self.txt_wattage_old = wx.TextCtrl(self, wx.ID_ANY)
         self.txt_wattage_new = wx.TextCtrl(self, wx.ID_ANY)
-        self.btn_ok = wx.Button(self, wx.ID_OK, _("OK"))
-        self.btn_cancel = wx.Button(self, wx.ID_CANCEL, _("Cancel"))
+        self.btn_ok = wxButton(self, wx.ID_OK, _("OK"))
+        self.btn_cancel = wxButton(self, wx.ID_CANCEL, _("Cancel"))
 
         self._define_layout()
         self.validate(None)
@@ -102,9 +109,9 @@ class ImportDialog(wx.Dialog):
         )
 
         wattage_param_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        label_old = wx.StaticText(self, wx.ID_ANY, "Old:")
+        label_old = wx.StaticText(self, wx.ID_ANY, _("Old:"))
         unit_old = wx.StaticText(self, wx.ID_ANY, "W")
-        label_new = wx.StaticText(self, wx.ID_ANY, "New:")
+        label_new = wx.StaticText(self, wx.ID_ANY, _("New:"))
         unit_new = wx.StaticText(self, wx.ID_ANY, "W")
         wattage_param_sizer.Add(label_old, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         wattage_param_sizer.Add(self.txt_wattage_old, 0, 0, 0)
@@ -345,7 +352,7 @@ class MaterialPanel(ScrolledPanel):
 
         filter_box.Add(self.combo_lasertype, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.btn_reset = wx.Button(self, wx.ID_ANY, _("Reset Filter"))
+        self.btn_reset = wxButton(self, wx.ID_ANY, _("Reset Filter"))
         filter_box.Add(self.btn_reset, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         main_sizer.Add(filter_box, 0, wx.EXPAND, 0)
         result_box = StaticBoxSizer(
@@ -429,7 +436,7 @@ class MaterialPanel(ScrolledPanel):
         self.txt_entry_title = wx.TextCtrl(self, wx.ID_ANY, "")
         box1.Add(self.txt_entry_title, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.btn_set = wx.Button(self, wx.ID_ANY, _("Set"))
+        self.btn_set = wxButton(self, wx.ID_ANY, _("Set"))
         self.btn_set.SetToolTip(
             _(
                 "Change the name / lasertype of the current entry\nRight-Click: assign lasertype to all visible entries"
@@ -437,7 +444,7 @@ class MaterialPanel(ScrolledPanel):
         )
 
         box1.Add(self.btn_set, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.btn_expand = wx.Button(
+        self.btn_expand = wxButton(
             self,
             wx.ID_ANY,
         )
@@ -538,27 +545,27 @@ class MaterialPanel(ScrolledPanel):
 
         button_box = wx.BoxSizer(wx.VERTICAL)
 
-        self.btn_new = wx.Button(self, wx.ID_ANY, _("Add new"))
+        self.btn_new = wxButton(self, wx.ID_ANY, _("Add new"))
         self.btn_new.SetToolTip(_("Add a new library entry"))
-        self.btn_use_current = wx.Button(self, wx.ID_ANY, _("Get current"))
+        self.btn_use_current = wxButton(self, wx.ID_ANY, _("Get current"))
         self.btn_use_current.SetToolTip(_("Use the currently defined operations"))
-        self.btn_apply = wx.Button(self, wx.ID_ANY, _("Load into Tree"))
+        self.btn_apply = wxButton(self, wx.ID_ANY, _("Load into Tree"))
         self.btn_apply.SetToolTip(
             _("Apply the current library entry to the operations branch")
         )
-        self.btn_simple_apply = wx.Button(self, wx.ID_ANY, _("Use for statusbar"))
+        self.btn_simple_apply = wxButton(self, wx.ID_ANY, _("Use for statusbar"))
         self.btn_simple_apply.SetToolTip(
             _("Use the current library entry for the statusbar icons")
         )
-        self.btn_delete = wx.Button(self, wx.ID_ANY, _("Delete"))
+        self.btn_delete = wxButton(self, wx.ID_ANY, _("Delete"))
         self.btn_delete.SetToolTip(_("Delete the current library entry"))
-        self.btn_duplicate = wx.Button(self, wx.ID_ANY, _("Duplicate"))
+        self.btn_duplicate = wxButton(self, wx.ID_ANY, _("Duplicate"))
         self.btn_duplicate.SetToolTip(_("Duplicate the current library entry"))
-        self.btn_import = wx.Button(self, wx.ID_ANY, _("Import"))
+        self.btn_import = wxButton(self, wx.ID_ANY, _("Import"))
         self.btn_import.SetToolTip(
             _("Import a material library from ezcad or LightBurn")
         )
-        self.btn_share = wx.Button(self, wx.ID_ANY, _("Share"))
+        self.btn_share = wxButton(self, wx.ID_ANY, _("Share"))
         self.btn_share.SetToolTip(
             _("Share the current library entry with the MeerK40t community")
         )
@@ -789,7 +796,10 @@ class MaterialPanel(ScrolledPanel):
             else:
                 this_category_secondary = entry[sort_key_secondary].replace("_", " ")
             if not this_category_primary:
-                this_category_primary = "No " + sort_key_primary
+                # _("No laser")
+                # _("No material")
+                # _("No thickness")
+                this_category_primary = _("No " + sort_key_primary)
             key = entry["section"]
             if (
                 filtername is not None
@@ -988,7 +998,7 @@ class MaterialPanel(ScrolledPanel):
 
                 # Receive and print the response
                 response = client_socket.recv(4096)
-                response = response.decode("utf-8")
+                response = response.decode("utf-8", errors="ignore")
         except Exception:
             response = ""
 
@@ -1581,10 +1591,10 @@ class MaterialPanel(ScrolledPanel):
         #     entry_type = 0
         # We need to create a new one...
         op_info = dict()
-        op_info["material"] = "New material"
+        op_info["material"] = _("New material")
         op_info["laser"] = 0
         op_info["thickness"] = "4mm"
-        op_info["note"] = "You can put additional operation instructions here."
+        op_info["note"] = _("You can put additional operation instructions here.")
         section = entry_txt
 
         if len(list(self.context.elements.ops())) == 0:
@@ -1647,7 +1657,7 @@ class MaterialPanel(ScrolledPanel):
             #     entry_type = 0
             # We need to create a new one...
             op_info = dict()
-            op_info["material"] = "New material"
+            op_info["material"] = _("New material")
             op_info["laser"] = 0
             section = entry_txt
 

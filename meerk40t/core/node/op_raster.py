@@ -122,9 +122,8 @@ class RasterOpNode(Node, Parameters):
         count = 0
         existing = 0
         result = False
-        if (
-            drag_node.type.startswith("elem")
-            and not drag_node._parent.type == "branch reg"
+        if drag_node.type.startswith("elem") and not drag_node.has_ancestor(
+            "branch reg"
         ):
             existing += 1
             # if drag_node.type == "elem image":
@@ -149,7 +148,9 @@ class RasterOpNode(Node, Parameters):
             if modify:
                 self.insert_sibling(drag_node)
             result = True
-        elif drag_node.type in ("file", "group"):
+        elif drag_node.type in ("file", "group") and not drag_node.has_ancestor(
+            "branch reg"
+        ):
             some_nodes = False
             for e in drag_node.flat(types=elem_nodes):
                 existing += 1

@@ -91,7 +91,7 @@ def find_po_files(directory="."):
     found_error = False
     for root, dirs, files in os.walk(directory):
         for file in files:
-            if file.endswith(".po"):
+            if file.endswith(".po") and not file.startswith("delta"):
                 file_path = os.path.join(root, file)
                 if find_erroneous_translations(file_path):
                     found_error = True

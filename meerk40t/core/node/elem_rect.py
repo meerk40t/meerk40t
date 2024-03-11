@@ -261,6 +261,15 @@ class RectNode(Node, Stroked, FunctionalParameter):
             "rect",
             2,
             k,
+            0,
+            self.x,
+            self.y,
+            0,
+            self.x + self.width,
+            self.y + self.height,
+            0,
+            self.x + self.width / 2,
+            self.y + self.height / 2,
         )
 
     @functional_parameter.setter
@@ -277,12 +286,25 @@ class RectNode(Node, Stroked, FunctionalParameter):
             return
         if param[0] != "rect":
             return
+        nx0 = getit(param, 4, self.x)
+        ny0 = getit(param, 5, self.y)
+        nx1 = getit(param, 7, self.x + self.width)
+        ny1 = getit(param, 8, self.y + self.height)
+        cx = self.x + self.width / 2
+        cy = self.y + self.height / 2
+        ncx = getit(param, 10, cx)
+        ncy = getit(param, 11, cy)
+        if ncx != cx or ncy != cy:
+            self.x += ncx - cx
+            self.y += ncy - cy
+        else:
+            self.x = nx0
+            self.y = ny0
+            self.width = abs(nx1 - nx0)
+            self.height = abs(ny1 - ny0)
         dimens = 0.5 * min(self.width, self.height)
         rx = getit(param, 2, 0)
         self.rx = dimens * rx
-        ry = getit(param, 4, None)
-        if ry is None:
-            self.ry = self.rx
-        else:
-            self.ry = dimens * ry
+        self.ry = self.rx
+
         self.altered()

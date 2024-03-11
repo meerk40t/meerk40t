@@ -48,7 +48,7 @@ from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.bedwidget import BedWidget
 from .scenewidgets.gridwidget import GridWidget
-from .wxutils import StaticBoxSizer, dip_size
+from .wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox
 from .zmatrix import ZMatrix
 
 _ = wx.GetTranslation
@@ -74,7 +74,7 @@ class OperationsPanel(wx.Panel):
         self.text_operation_param = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         )
-        self.check_decompile = wx.CheckBox(self, wx.ID_ANY, "D")
+        self.check_decompile = wxCheckBox(self, wx.ID_ANY, "D")
         self.check_decompile.SetToolTip(
             _("Decompile cutplan = make operations visible and editable again")
         )
@@ -800,7 +800,7 @@ class SimulationPanel(wx.Panel, Job):
         self.widget_scene = self.view_pane.scene
 
         # poor mans slide out
-        self.btn_slide_options = wx.Button(self, wx.ID_ANY, "<")
+        self.btn_slide_options = wxButton(self, wx.ID_ANY, "<")
         self.btn_slide_options.Bind(wx.EVT_BUTTON, self.slide_out)
         self.btn_slide_options.SetToolTip(
             _("Show/Hide optimization options for this job.")
@@ -831,10 +831,10 @@ class SimulationPanel(wx.Panel, Job):
         self.panel_optimize.AddPage(self.subpanel_optimize, _("Optimizations"))
         self.panel_optimize.AddPage(self.subpanel_operations, _("Operations"))
         self.panel_optimize.AddPage(self.subpanel_cutcode, _("Cutcode"))
-        self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
+        self.checkbox_optimize = wxCheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
         self.checkbox_optimize.SetValue(self.context.planner.do_optimization)
-        self.btn_redo_it = wx.Button(self, wx.ID_ANY, _("Recalculate"))
+        self.btn_redo_it = wxButton(self, wx.ID_ANY, _("Recalculate"))
         self.btn_redo_it.Bind(wx.EVT_BUTTON, self.on_redo_it)
         self.btn_redo_it.SetToolTip(_("Apply the settings and recalculate the cutplan"))
 
@@ -874,7 +874,7 @@ class SimulationPanel(wx.Panel, Job):
         self.text_time_total_step = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.button_play = wx.Button(self, wx.ID_ANY, "")
+        self.button_play = wxButton(self, wx.ID_ANY, "")
         self.button_play.SetToolTip(_("Start the simulation replay"))
         self.slider_playbackspeed = wx.Slider(self, wx.ID_ANY, 180, 0, 310)
         self.slider_playbackspeed.SetToolTip(_("Set the speed for the simulation"))
@@ -896,7 +896,7 @@ class SimulationPanel(wx.Panel, Job):
             _("Timed Playback-Mode: play will jump from one minute to next")
         )
 
-        self.button_spool = wx.Button(self, wx.ID_ANY, _("Send to Laser"))
+        self.button_spool = wxButton(self, wx.ID_ANY, _("Send to Laser"))
         self.button_spool.SetToolTip(_("Send the current cutplan to the laser."))
         self._slided_in = None
 
@@ -967,8 +967,25 @@ class SimulationPanel(wx.Panel, Job):
         self.on_radio_playback_mode(None)
         # Allow Scene update from now on (are suppressed by default during startup phase)
         self.widget_scene.suppress_changes = False
-
         self.running = False
+
+    def _startup(self):
+        self.slided_in = True
+        self.fit_scene_to_panel()
+
+    def startup_panel(self):
+        # Under Linux the SimulationPanel starts with the wrong zoom factor,
+        # as the panel size has not been established during init,
+        # so we do a delayed startup.
+        # No platform check, as this isn't hurting generally
+        _signal_job = Job(
+            process=self._startup,
+            job_name="simulation-helper",
+            interval=0.5,
+            times=1,
+            run_main=True,
+        )
+        self.context.schedule(_signal_job)
 
     def __set_properties(self):
         self.text_distance_laser.SetToolTip(_("Distance Estimate: while Lasering"))
@@ -1222,9 +1239,10 @@ class SimulationPanel(wx.Panel, Job):
 
     def fit_scene_to_panel(self):
         bbox = self.context.device.view.source_bbox()
-        self.widget_scene.widget_root.focus_viewport_scene(
-            bbox, self.view_pane.Size, 0.1
-        )
+        winsize = self.view_pane.Size
+        if winsize[0] == 0:
+            return
+        self.widget_scene.widget_root.focus_viewport_scene(bbox, winsize, 0.1)
         self.widget_scene.request_refresh()
 
     def set_cutcode_entry(self, cutcode):
@@ -1438,6 +1456,20 @@ class SimulationPanel(wx.Panel, Job):
         self._set_slider_dimensions()
         self.sim_travel.initvars()
         self.update_fields()
+        bb = self.cutplan._previous_bounds
+        if bb is None or math.isinf(bb[0]):
+            self.parent.SetTitle(_("Simulation"))
+        else:
+            wd = bb[2] - bb[0]
+            ht = bb[3] - bb[1]
+            sdimx = Length(
+                wd, preferred_units=self.context.units_name, digits=2
+            ).preferred_length
+            sdimy = Length(
+                ht, preferred_units=self.context.units_name, digits=2
+            ).preferred_length
+            self.parent.SetTitle(_("Simulation") + f" ({sdimx}x{sdimy})")
+        self.startup_panel()
         self.request_refresh()
 
     @signal_listener("plan")
@@ -1656,6 +1688,7 @@ class SimulationPanel(wx.Panel, Job):
         self.button_play.SetBitmap(
             icons8_pause.GetBitmap(resize=get_default_icon_size())
         )
+        self.button_play.SetToolTip(_("Stop the simulation replay"))
         self.context.schedule(self)
         self.running = True
 
@@ -1663,6 +1696,7 @@ class SimulationPanel(wx.Panel, Job):
         self.button_play.SetBitmap(
             icons8_circled_play.GetBitmap(resize=get_default_icon_size())
         )
+        self.button_play.SetToolTip(_("Start the simulation replay"))
         self.context.unschedule(self)
         self.running = False
 
@@ -1947,6 +1981,13 @@ class SimulationTravelWidget(Widget):
             pos = self.pos[-1]
         if pos < 0:
             return
+        gcmat = gc.GetTransform()
+        mat_param = gcmat.Get()
+        gcscale = max(mat_param[0], mat_param[3])
+        if gcscale == 0:
+            gcscale = 0.01
+        linewidth = 1 / gcscale
+
         starts = self.starts[:pos]
         ends = self.ends[:pos]
         if residual > 0 and idx > 0:
@@ -1972,9 +2013,18 @@ class SimulationTravelWidget(Widget):
                 mystarts.append(newstart)
                 myends.append(newend)
                 interim_pen = wx.Pen(wx.GREEN, 1, wx.PENSTYLE_DOT)
+                try:
+                    interim_pen.SetWidth(linewidth)
+                except TypeError:
+                    interim_pen.SetWidth(int(linewidth))
                 gc.SetPen(interim_pen)
                 gc.StrokeLineSegments(mystarts, myends)
-        gc.SetPen(wx.BLACK_DASHED_PEN)
+        mypen = wx.Pen(wx.BLACK, 1, wx.PENSTYLE_LONG_DASH)
+        try:
+            mypen.SetWidth(linewidth)
+        except TypeError:
+            mypen.SetWidth(int(linewidth))
+        gc.SetPen(mypen)
         gc.StrokeLineSegments(starts, ends)
         # for idx, pt_start in enumerate(starts):
         #     pt_end = ends[idx]

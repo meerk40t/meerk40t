@@ -3,6 +3,7 @@ from wx import aui
 
 from .icons import STD_ICON_SIZE, icons8_comments
 from .mwindow import MWindow
+from .wxutils import wxCheckBox
 
 _ = wx.GetTranslation
 
@@ -36,7 +37,7 @@ class NotePanel(wx.Panel):
         self.SetHelpText("notes")
         self.pane = pane
         if not self.pane:
-            self.check_auto_open_notes = wx.CheckBox(
+            self.check_auto_open_notes = wxCheckBox(
                 self, wx.ID_ANY, _("Automatically Open Notes")
             )
         self.text_notes = wx.TextCtrl(

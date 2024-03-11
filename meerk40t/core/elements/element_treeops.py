@@ -390,6 +390,67 @@ def init_tree(kernel):
                 oplist.append(n)
         set_op_output(oplist, False)
 
+
+    def move_op(node, relative: str):
+
+        try:
+            idx = self.op_branch._children.index(node)
+        except IndexError as e:
+            # print (f"threw an error: {e}")
+            return
+        # print (f"Index was {idx}")
+        if relative == "top":
+            # to the top
+            self.op_branch._children.pop(idx)
+            self.op_branch._children.insert(0, node)
+        elif relative == "up":
+            # one up
+            self.op_branch._children.pop(idx)
+            self.op_branch._children.insert(idx - 1, node)
+        elif relative == "down":
+            # one down
+            self.op_branch._children.pop(idx)
+            self.op_branch._children.insert(idx + 1, node)
+        elif relative == "bottom":
+            # to the end
+            self.op_branch._children.pop(idx)
+            self.op_branch._children.append(node)
+        # try:
+        #     idx = self.op_branch._children.index(node)
+        # except IndexError as e:
+        #     print (f"threw an error: {e}")
+        #     return
+        # print (f"Index is now {idx}")
+        self.signal("rebuild_tree")
+
+    @tree_submenu(_("Burning sequence"))
+    @tree_operation(
+        _("Dragging works as well..."), node_type=op_parent_nodes, help="You can as well just rearrange the operations by dragging them to a new place", enable=False
+    )
+    def burn_label(node, **kwargs):
+        return
+
+    @tree_submenu(_("Burning sequence"))
+    @tree_operation(_("Burn first"), node_type=op_parent_nodes, help="")
+    def burn_first(node, **kwargs):
+        move_op(node, "top")
+
+    @tree_submenu(_("Burning sequence"))
+    @tree_operation(_("Burn earlier"), node_type=op_parent_nodes, help="")
+    def burn_earlier(node, **kwargs):
+        move_op(node, "up")
+
+    @tree_submenu(_("Burning sequence"))
+    @tree_operation(_("Burn later"), node_type=op_parent_nodes, help="")
+    def burn_later(node, **kwargs):
+        move_op(node, "down")
+
+    @tree_submenu(_("Burning sequence"))
+    @tree_operation(_("Burn last"), node_type=op_parent_nodes, help="")
+    def burn_last(node, **kwargs):
+        move_op(node, "bottom")
+
+
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Image"), node_type=op_parent_nodes, help="")
     def convert_operation_image(node, **kwargs):
@@ -1928,6 +1989,15 @@ def init_tree(kernel):
         "elem polyline",
     )
 
+    wobbleable_elems = (
+        "elem path",
+        "elem rect",
+        "elem circle",
+        "elem ellipse",
+        "elem polyline",
+        "elem line",
+    )
+
     @tree_submenu(_("Apply special effect"))
     @tree_operation(_("Append Line-fill 0.1mm"), node_type=hatchable_elems, help="")
     def append_element_effect_eulerian(node, pos=None, **kwargs):
@@ -2024,7 +2094,7 @@ def init_tree(kernel):
         _("Append wobble {type} {radius} @{interval}").format(
             type="Circle", radius="0.5mm", interval="0.05mm"
         ),
-        node_type=hatchable_elems,
+        node_type=wobbleable_elems,
         help="",
     )
     def append_element_effect_wobble_c05(node, pos=None, **kwargs):
@@ -2047,7 +2117,7 @@ def init_tree(kernel):
         _("Append wobble {type} {radius} @{interval}").format(
             type="Circle", radius="1mm", interval="0.1mm"
         ),
-        node_type=hatchable_elems,
+        node_type=wobbleable_elems,
         help="",
     )
     def append_element_effect_wobble_c1(node, pos=None, **kwargs):
@@ -2070,7 +2140,7 @@ def init_tree(kernel):
         _("Append wobble {type} {radius} @{interval}").format(
             type="Circle", radius="3mm", interval="0.1mm"
         ),
-        node_type=hatchable_elems,
+        node_type=wobbleable_elems,
         help="",
     )
     def append_element_effect_wobble_c3(node, pos=None, **kwargs):
@@ -2079,6 +2149,29 @@ def init_tree(kernel):
             wobble_type="circle_right",
             wobble_radius="3mm",
             wobble_interval="0.1mm",
+            pos=pos,
+        )
+        for e in list(self.elems(emphasized=True)):
+            group_node.append_child(e)
+        if self.classify_new:
+            self.classify([group_node])
+
+        self.signal("updateelem_tree")
+
+    @tree_submenu(_("Apply special effect"))
+    @tree_operation(
+        _("Append {type} {radius} @{interval}").format(
+            type="Meander", radius="1mm", interval="1.25mm"
+        ),
+        node_type=wobbleable_elems,
+        help="",
+    )
+    def append_element_effect_wobble_m1(node, pos=None, **kwargs):
+        group_node = node.parent.add(
+            type="effect wobble",
+            wobble_type="meander_1",
+            wobble_radius="1mm",
+            wobble_interval="1.25mm",
             pos=pos,
         )
         for e in list(self.elems(emphasized=True)):
@@ -2810,8 +2903,6 @@ def init_tree(kernel):
             newnode = e.replace_node(**node_args)
             newnode.matrix = old_matrix
             newnode.matrix.pre_translate_y(p1.y - p0.y)
-            if anchor != "start":
-                newnode.matrix.pre_translate_x(-1 * (p1.x - p0.x) / 2)
 
             # Now we need to render it...
             # newnode.set_dirty_bounds()
@@ -2821,6 +2912,7 @@ def init_tree(kernel):
             kernel = self.kernel
             for property_op in kernel.lookup_all("path_updater/.*"):
                 property_op(kernel.root, newnode)
+
             if hasattr(newnode, "_cache"):
                 newnode._cache = None
 
@@ -3046,13 +3138,13 @@ def init_tree(kernel):
         with self.static("move_back"):
             drop_node = self.elem_branch
             data = list()
-            for item in list(self.regmarks()):
-                if item.selected:
+            for item in list(self.regmarks_nodes()):
+                # print (item.type, item.emphasized, item.selected, item.highlighted)
+                if item.emphasized:
                     data.append(item)
             if len(data) == 0:
                 data.append(node)
-            for item in data:
-                drop_node.drop(item)
+            self.drag_and_drop(data, drop_node)
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_separator_before()

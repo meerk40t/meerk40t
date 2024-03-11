@@ -49,6 +49,7 @@ from .wxutils import (
     dip_size,
     get_key_name,
     is_navigation_key,
+    wxButton,
 )
 
 _ = wx.GetTranslation
@@ -189,9 +190,9 @@ class TreePanel(wx.Panel):
         self.warn_panel = wx.BoxSizer(wx.HORIZONTAL)
         unassigned_frame = StaticBoxSizer(self, wx.ID_ANY, "Unassigned", wx.HORIZONTAL)
         unburnt_frame = StaticBoxSizer(self, wx.ID_ANY, "Non-burnt", wx.HORIZONTAL)
-        self.btn_fix_assign_create = wx.Button(self, wx.ID_ANY, "Assign (+new)")
-        self.btn_fix_assign_existing = wx.Button(self, wx.ID_ANY, "Assign")
-        self.btn_fix_unburnt = wx.Button(self, wx.ID_ANY, "Enable")
+        self.btn_fix_assign_create = wxButton(self, wx.ID_ANY, "Assign (+new)")
+        self.btn_fix_assign_existing = wxButton(self, wx.ID_ANY, "Assign")
+        self.btn_fix_unburnt = wxButton(self, wx.ID_ANY, "Enable")
         self.btn_fix_assign_create.SetToolTip(
             _("Classify unassigned elements and create operations if necessary")
         )
@@ -295,8 +296,19 @@ class TreePanel(wx.Panel):
         @param event:
         @return:
         """
-        event.Skip()
         keyvalue = get_key_name(event)
+        # There is a menu entry in wxmain that should catch all 'delete' keys
+        # but that is not consistently so, every other key seems to slip through
+        # probably there is an issue there, but we use the opportunity not
+        # only to catch these but to establish a forced delete via ctrl-delete as well
+
+        if keyvalue == "delete":
+            self.context("tree selected delete\n")
+            return
+        if keyvalue == "ctrl+delete":
+            self.context("tree selected remove\n")
+            return
+        event.Skip()
         if is_navigation_key(keyvalue):
             if self._keybind_channel:
                 self._keybind_channel(
@@ -1622,7 +1634,7 @@ class ShadowTree:
                 except AttributeError:
                     text = "{element_type}:{id}"
             # Just for the optical impression (who understands what a "Rect: None" means),
-            # lets replace some of the more obvious ones...
+            # let's replace some of the more obvious ones...
             mymap = node.default_map()
             # We change power to either ppi or percent
             if "power" in mymap and "ppi" in mymap and "percent" in mymap:
@@ -1841,6 +1853,10 @@ class ShadowTree:
             if typename.startswith("op "):
                 result = "op"
             elif typename.startswith("elem "):
+                result = "elem"
+            elif typename.startswith("group"):
+                result = "elem"
+            elif typename.startswith("file"):
                 result = "elem"
             else:
                 result = typename

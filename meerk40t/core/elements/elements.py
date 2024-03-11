@@ -4,7 +4,6 @@ This serves effectively as the datastructure that stores all information about a
 several smaller functional pieces like Penbox and Wordlists.
 """
 
-
 import contextlib
 import os.path
 from copy import copy
@@ -364,6 +363,22 @@ def plugin(kernel, lifecycle=None):
                 )
                 + "\n"
                 + _("Unticked: Show their current value."),
+                "page": "Scene",
+                "section": "Operation",
+            },
+            {
+                "attr": "allow_reg_to_op_dragging",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Allow dragging of regmarks to operations"),
+                "tip": _(
+                    "Ticked: A drag operation of regmark nodes to an operation will move back these nodes to the element branch."
+                )
+                + "\n"
+                + _(
+                    "Unticked: A drag operation of regmark nodes to an operation will be ignored."
+                ),
                 "page": "Scene",
                 "section": "Operation",
             },
@@ -858,7 +873,7 @@ class Elemental(Service):
         # print ("Firstcolor=%s, targetcolor=%s" % (first_color, target_color) )
         # print ("Similar=%s, # data=%d" % (similar, len(data)) )
         if similar:
-            # Now that we have the colors lets iterate through all elements
+            # Now that we have the colors let's iterate through all elements
             fuzzy = self.classify_fuzzy
             fuzzydistance = self.classify_fuzzydistance
             for n in self.flat(types=elem_nodes):
@@ -1316,6 +1331,25 @@ class Elemental(Service):
                 break
         return op_info
 
+    def opnode_label(self, node):
+        if isinstance(node, CutOpNode):
+            # _("Cut ({power}%, {speed}mm/s)")
+            lbl = "Cut ({power}%, {speed}mm/s)"
+        elif isinstance(node, EngraveOpNode):
+            # _("Engrave ({power}%, {speed}mm/s)")
+            lbl = "Engrave ({power}%, {speed}mm/s)"
+        elif isinstance(node, RasterOpNode):
+            # _("Raster ({power}%, {speed}mm/s)")
+            lbl = "Raster ({power}%, {speed}mm/s)"
+        elif isinstance(node, ImageOpNode):
+            # _("Image ({power}%, {speed}mm/s)")
+            lbl = "Image ({power}%, {speed}mm/s)"
+        else:
+            lbl = ""
+        _ = self.kernel.translation
+        slabel = _(lbl).format(power=node.power / 10, speed=node.speed)
+        return slabel
+
     def load_persistent_op_list(self, name, use_settings=None):
         name = self.safe_section_name(name)
         if use_settings is None:
@@ -1397,18 +1431,6 @@ class Elemental(Service):
                 tertiary = 0
             return primary, secondary, tertiary
 
-        def node_label(node):
-            if isinstance(node, CutOpNode):
-                slabel = f"Cut ({node.power / 10:.0f}%, {node.speed}mm/s)"
-            elif isinstance(node, EngraveOpNode):
-                slabel = f"Engrave ({node.power / 10:.0f}%, {node.speed}mm/s)"
-            elif isinstance(node, RasterOpNode):
-                slabel = f"Raster ({node.power / 10:.0f}%, {node.speed}mm/s)"
-            elif isinstance(node, ImageOpNode):
-                slabel = f"Image ({node.power / 10:.0f}%, {node.speed}mm/s)"
-            else:
-                slabel = ""
-            return slabel
 
         def create_cut(oplist):
             # Cut op
@@ -1421,7 +1443,7 @@ class Elemental(Service):
                     idx += 1
                     op_id = f"C{idx:01d}"
                     op = CutOpNode(id=op_id, speed=speed, power=power)
-                    op.label = node_label(op)
+                    op.label = self.opnode_label(op)
                     op.color = Color(red=red, blue=blue, green=green)
                     red, blue, green = next_color(red, blue, green, delta=64)
                     # print(f"Next for cut: {red} {blue} {green}")
@@ -1439,7 +1461,7 @@ class Elemental(Service):
                     idx += 1
                     op_id = f"E{idx:01d}"
                     op = EngraveOpNode(id=op_id, speed=speed, power=power)
-                    op.label = node_label(op)
+                    op.label = self.opnode_label(op)
                     op.color = Color(red=red, blue=blue, green=green)
                     blue, green, red = next_color(blue, green, red, delta=24)
                     # print(f"Next for engrave: {red} {blue} {green}")
@@ -1457,7 +1479,7 @@ class Elemental(Service):
                     idx += 1
                     op_id = f"R{idx:01d}"
                     op = RasterOpNode(id=op_id, speed=speed, power=power)
-                    op.label = node_label(op)
+                    op.label = self.opnode_label(op)
                     op.color = Color(red=red, blue=blue, green=green, delta=60)
                     green, red, blue = next_color(green, red, blue)
                     # print(f"Next for raster: {red} {blue} {green}")
@@ -1475,7 +1497,7 @@ class Elemental(Service):
                     idx += 1
                     op_id = f"I{idx:01d}"
                     op = ImageOpNode(id=op_id, speed=speed, power=power)
-                    op.label = node_label(op)
+                    op.label = self.opnode_label(op)
                     op.color = Color(red=red, blue=blue, green=green, delta=48)
                     green, blue, red = next_color(green, red, blue)
                     # print(f"Next for Image: {red} {blue} {green}")
@@ -1668,44 +1690,44 @@ class Elemental(Service):
         node = Node().create(
             type="op image",
             color="black",
-            label=f"Image ({pwr/10.0:.0f}%, {spd}mm/s)",
             id="I1",
             power=pwr,
             speed=spd,
             raster_step=3,
         )
+        node.label = self.opnode_label(node)
         oplist.append(node)
         pwr = 1000
         spd = 150
         node = Node().create(
             type="op raster",
-            label=f"Raster ({pwr/10.0:.0f}%, {spd}mm/s)",
             id="R1",
             power=pwr,
             speed=spd,
         )
+        node.label = self.opnode_label(node)
         node.allowed_attributes = ["fill"]
         oplist.append(node)
         pwr = 1000
         spd = 35
         node = Node().create(
             type="op engrave",
-            label=f"Engrave ({pwr/10.0:.0f}%, {spd}mm/s)",
             id="E1",
             power=pwr,
             speed=spd,
         )
+        node.label = self.opnode_label(node)
         node.allowed_attributes = ["stroke"]
         oplist.append(node)
         pwr = 1000
         spd = 5
         node = Node().create(
             type="op cut",
-            label=f"Cut ({pwr/10.0:.0f}%, {spd}mm/s)",
             id="C1",
             power=pwr,
             speed=spd,
         )
+        node.label = self.opnode_label(node)
         node.allowed_attributes = ["stroke"]
         oplist.append(node)
         return oplist
@@ -1717,22 +1739,22 @@ class Elemental(Service):
         node = Node().create(
             type="op image",
             color="black",
-            label=f"Image ({pwr/10.0:.0f}%, {spd}mm/s)",
             id="I1",
             power=pwr,
             speed=spd,
             raster_step=3,
         )
+        node.label = self.opnode_label(node)
         oplist.append(node)
         pwr = 1000
         spd = 150
         node = Node().create(
             type="op raster",
-            label=f"Cut ({pwr/10.0:.0f}%, {spd}mm/s)",
             id="R1",
             power=pwr,
             speed=spd,
         )
+        node.label = self.opnode_label(node)
         node.allowed_attributes = ["fill"]
         oplist.append(node)
         pwr = 1000
@@ -1740,11 +1762,11 @@ class Elemental(Service):
         node = Node().create(
             type="op engrave",
             color="blue",
-            label=f"Engrave ({pwr/10.0:.0f}%, {spd}mm/s)",
             id="E1",
             power=pwr,
             speed=spd,
         )
+        node.label = self.opnode_label(node)
         node.allowed_attributes = ["stroke"]
         oplist.append(node)
         pwr = 1000
@@ -1752,11 +1774,11 @@ class Elemental(Service):
         node = Node().create(
             type="op engrave",
             color="green",
-            label=f"Engrave ({pwr/10.0:.0f}%, {spd}mm/s)",
             id="E2",
             power=pwr,
             speed=spd,
         )
+        node.label = self.opnode_label(node)
         node.allowed_attributes = ["stroke"]
         oplist.append(node)
         pwr = 1000
@@ -1764,11 +1786,11 @@ class Elemental(Service):
         node = Node().create(
             type="op engrave",
             color="magenta",
-            label=f"Engrave ({pwr/10.0:.0f}%, {spd}mm/s)",
             id="E3",
             power=pwr,
             speed=spd,
         )
+        node.label = self.opnode_label(node)
         node.allowed_attributes = ["stroke"]
         oplist.append(node)
         pwr = 1000
@@ -1776,11 +1798,11 @@ class Elemental(Service):
         node = Node().create(
             type="op engrave",
             color="cyan",
-            label=f"Engrave ({pwr/10.0:.0f}%, {spd}mm/s)",
             id="E4",
             power=pwr,
             speed=spd,
         )
+        node.label = self.opnode_label(node)
         node.allowed_attributes = ["stroke"]
         oplist.append(node)
         pwr = 1000
@@ -1788,23 +1810,23 @@ class Elemental(Service):
         node = Node().create(
             type="op engrave",
             color="yellow",
-            label=f"Engrave ({pwr/10.0:.0f}%, {spd}mm/s)",
             id="E5",
             power=pwr,
             speed=spd,
         )
+        node.label = self.opnode_label(node)
         node.allowed_attributes = ["stroke"]
         oplist.append(node)
         pwr = 1000
         spd = 5
         node = Node().create(
             type="op cut",
-            label=f"Cut ({pwr/10.0:.0f}%, {spd}mm/s)",
             color="red",
             id="C1",
             power=pwr,
             speed=spd,
         )
+        node.label = self.opnode_label(node)
         node.allowed_attributes = ["stroke"]
         oplist.append(node)
         pwr = 1000
@@ -1812,11 +1834,11 @@ class Elemental(Service):
         node = Node().create(
             type="op cut",
             color="darkred",
-            label=f"Cut ({pwr/10.0:.0f}%, {spd}mm/s)",
             id="C2",
             power=pwr,
             speed=spd,
         )
+        node.label = self.opnode_label(node)
         node.allowed_attributes = ["stroke"]
         oplist.append(node)
         return oplist
@@ -2076,7 +2098,7 @@ class Elemental(Service):
         #                     drop_node.remove_color_attribute("fill")
         #             drop_node.color = col
 
-        #         # Now that we have the colors lets iterate through all elements
+        #         # Now that we have the colors let's iterate through all elements
         #         fuzzy = self.classify_fuzzy
         #         fuzzydistance = self.classify_fuzzydistance
         #         for n in self.flat(types=elem_nodes):
@@ -2098,10 +2120,17 @@ class Elemental(Service):
         #             # print ("Checked %s and will addit=%s" % (n.type, addit))
         #             if addit and n not in data:
         #                 data.append(n)
+        op_treatment = (
+            drop_node.type in op_parent_nodes and self.allow_reg_to_op_dragging
+        )
         for drag_node in data:
             if drop_node is drag_node:
                 # print(f"Drag {drag_node.type} to {drop_node.type} - Drop node was drag node")
                 continue
+            if op_treatment and drag_node.has_ancestor("branch reg"):
+                # We need to first relocate the drag_node to the elem branch
+                # print(f"Relocate {drag_node.type} to elem branch")
+                self.elem_branch.drop(drag_node)
             if drop_node.drop(drag_node, modify=False):
                 # Is the drag node coming from the regmarks branch?
                 # If yes then we might need to classify.

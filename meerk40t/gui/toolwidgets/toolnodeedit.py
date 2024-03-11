@@ -795,6 +795,7 @@ class EditTool(ToolWidget):
         """
         self.scene.pane.tool_active = False
         self.scene.pane.modif_active = False
+        self.scene.pane.suppress_selection = False
         self.p1 = None
         self.p2 = None
         self.move_type = "node"
@@ -2050,6 +2051,21 @@ class EditTool(ToolWidget):
             # print(f"Execute {action[1]}")
             action[0]()
 
+    def _tool_change(self):
+        selected_node = None
+        elements = self.scene.context.elements.elem_branch
+        for node in elements.flat(emphasized=True):
+            if node.type in ("elem path", "elem polyline"):
+                selected_node = node
+                break
+        self.scene.pane.suppress_selection = selected_node is not None
+        if selected_node is None:
+            self.done()
+        else:
+            self.calculate_points(selected_node)
+            self.enable_rules()
+        self.scene.request_refresh()
+
     def signal(self, signal, *args, **kwargs):
         """
         Signal routine for stuff that's passed along within a scene,
@@ -2058,21 +2074,11 @@ class EditTool(ToolWidget):
         # print(f"Signal: {signal}")
         if signal == "tool_changed":
             if len(args) > 0 and len(args[0]) > 1 and args[0][1] == "edit":
-                selected_node = self.scene.context.elements.first_element(
-                    emphasized=True
-                )
-                if selected_node is not None:
-                    self.calculate_points(selected_node)
-                    self.scene.request_refresh()
-                    self.enable_rules()
+                self._tool_change()
             return
         elif signal == "rebuild_tree":
-            selected_node = self.scene.context.elements.first_element(emphasized=True)
-            if selected_node is None:
-                self.done()
-            else:
-                self.calculate_points(selected_node)
-                self.enable_rules()
-            self.scene.request_refresh()
+            self._tool_change()
+        elif signal == "emphasized":
+            self._tool_change()
         if self.element is None:
             return

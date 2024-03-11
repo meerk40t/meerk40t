@@ -3,9 +3,28 @@ import os
 import wx
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
-from meerk40t.gui.icons import STD_ICON_SIZE, get_default_icon_size, icons8_choose_font
+from meerk40t.gui.icons import (
+    STD_ICON_SIZE,
+    get_default_icon_size,
+    icon_kerning_bigger,
+    icon_kerning_smaller,
+    icon_linegap_bigger,
+    icon_linegap_smaller,
+    icon_textalign_center,
+    icon_textalign_left,
+    icon_textalign_right,
+    icon_textsize_down,
+    icon_textsize_up,
+    icons8_choose_font,
+)
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, dip_size
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+    wxToggleButton,
+)
 from meerk40t.kernel.kernel import signal_listener
 from meerk40t.tools.geomstr import TYPE_ARC, TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, Geomstr
 
@@ -55,8 +74,8 @@ class FontGlyphPicker(wx.Dialog):
         mainsizer.Add(self.list_glyphs, 1, wx.EXPAND, 0)
         mainsizer.Add(self.txt_result, 0, wx.EXPAND, 0)
 
-        self.btn_ok = wx.Button(self, wx.ID_OK, _("OK"))
-        self.btn_cancel = wx.Button(self, wx.ID_CANCEL, _("Cancel"))
+        self.btn_ok = wxButton(self, wx.ID_OK, _("OK"))
+        self.btn_cancel = wxButton(self, wx.ID_CANCEL, _("Cancel"))
         box_sizer = wx.BoxSizer(wx.HORIZONTAL)
         box_sizer.Add(self.btn_ok, 0, 0, 0)
         box_sizer.Add(self.btn_cancel, 0, 0, 0)
@@ -341,30 +360,32 @@ class LineTextPropertyPanel(wx.Panel):
         )
         sizer_text.Add(self.text_text, 1, wx.EXPAND, 0)
 
-        text_all_options = wx.BoxSizer(wx.HORIZONTAL)
-
-        align_options = [_("Left"), _("Center"), _("Right")]
-        self.rb_align = wx.RadioBox(
-            self,
-            wx.ID_ANY,
-            "",
-            wx.DefaultPosition,
-            wx.DefaultSize,
-            align_options,
-            len(align_options),
-            wx.RA_SPECIFY_COLS | wx.BORDER_NONE,
-        )
-        self.rb_align.SetToolTip(_("Textalignment for multi-lines"))
-        text_all_options.Add(self.rb_align, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         text_options = StaticBoxSizer(self, wx.ID_ANY, "", wx.HORIZONTAL)
-        text_all_options.Add(text_options, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.btn_bigger = wx.Button(self, wx.ID_ANY, "++")
+        iconsize = dip_size(self, 25, 25)[0]
+
+        align_options = (_("Left"), _("Center"), _("Right"))
+        align_icons = (icon_textalign_left, icon_textalign_center, icon_textalign_right)
+        self.rb_align = []
+        ttip_main = _("Textalignment for multi-lines")
+        for ttip_sub, icon in zip(align_options, align_icons):
+            btn = wxToggleButton(self, wx.ID_ANY)
+            btn.SetToolTip(f"{ttip_main}: {ttip_sub}")
+            btn.SetValue(False)
+            btn.SetBitmap(icon.GetBitmap(resize=iconsize))
+            self.rb_align.append(btn)
+            text_options.Add(btn, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        text_options.AddSpacer(25)
+
+        self.btn_bigger = wxButton(self, wx.ID_ANY)
         self.btn_bigger.SetToolTip(_("Increase the font-size"))
+        self.btn_bigger.SetBitmap(icon_textsize_up.GetBitmap(resize=iconsize))
         text_options.Add(self.btn_bigger, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.btn_smaller = wx.Button(self, wx.ID_ANY, "--")
+        self.btn_smaller = wxButton(self, wx.ID_ANY)
         self.btn_smaller.SetToolTip(_("Decrease the font-size"))
+        self.btn_smaller.SetBitmap(icon_textsize_down.GetBitmap(resize=iconsize))
         text_options.Add(self.btn_smaller, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         text_options.AddSpacer(25)
@@ -376,29 +397,44 @@ class LineTextPropertyPanel(wx.Panel):
             + _("- Right click will reset value to default")
         )
 
-        self.btn_bigger_spacing = wx.Button(self, wx.ID_ANY, "+")
+        self.btn_bigger_spacing = wxButton(self, wx.ID_ANY)
         self.btn_bigger_spacing.SetToolTip(_("Increase the character-gap") + msg)
+        self.btn_bigger_spacing.SetBitmap(
+            icon_kerning_bigger.GetBitmap(resize=iconsize)
+        )
         text_options.Add(self.btn_bigger_spacing, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.btn_smaller_spacing = wx.Button(self, wx.ID_ANY, "-")
+        self.btn_smaller_spacing = wxButton(self, wx.ID_ANY)
         self.btn_smaller_spacing.SetToolTip(_("Decrease the character-gap") + msg)
+        self.btn_smaller_spacing.SetBitmap(
+            icon_kerning_smaller.GetBitmap(resize=iconsize)
+        )
         text_options.Add(self.btn_smaller_spacing, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         text_options.AddSpacer(25)
 
-        self.btn_attrib_lineplus = wx.Button(self, id=wx.ID_ANY, label="v")
-        self.btn_attrib_lineminus = wx.Button(self, id=wx.ID_ANY, label="^")
+        self.btn_attrib_lineplus = wxButton(self, id=wx.ID_ANY)
+        self.btn_attrib_lineminus = wxButton(self, id=wx.ID_ANY)
         text_options.Add(self.btn_attrib_lineplus, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         text_options.Add(self.btn_attrib_lineminus, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_attrib_lineplus.SetToolTip(_("Increase line distance") + msg)
         self.btn_attrib_lineminus.SetToolTip(_("Reduce line distance") + msg)
-        self.check_weld = wx.CheckBox(self, wx.ID_ANY, "")
+        self.btn_attrib_lineplus.SetBitmap(
+            icon_linegap_bigger.GetBitmap(resize=iconsize)
+        )
+        self.btn_attrib_lineminus.SetBitmap(
+            icon_linegap_smaller.GetBitmap(resize=iconsize)
+        )
+        self.check_weld = wxCheckBox(self, wx.ID_ANY, "")
         self.check_weld.SetToolTip(_("Weld overlapping characters together?"))
         text_options.AddSpacer(25)
         text_options.Add(self.check_weld, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         for btn in (
+            self.rb_align[0],
+            self.rb_align[1],
+            self.rb_align[2],
             self.btn_bigger,
             self.btn_smaller,
             self.btn_bigger_spacing,
@@ -424,7 +460,7 @@ class LineTextPropertyPanel(wx.Panel):
         sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
 
         main_sizer.Add(sizer_text, 0, wx.EXPAND, 0)
-        main_sizer.Add(text_all_options, 0, wx.EXPAND, 0)
+        main_sizer.Add(text_options, 0, wx.EXPAND, 0)
         main_sizer.Add(sizer_fonts, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         self.Layout()
@@ -440,7 +476,8 @@ class LineTextPropertyPanel(wx.Panel):
         self.btn_attrib_lineplus.Bind(wx.EVT_RIGHT_DOWN, self.on_linegap_reset)
         self.btn_attrib_lineminus.Bind(wx.EVT_RIGHT_DOWN, self.on_linegap_reset)
         self.check_weld.Bind(wx.EVT_CHECKBOX, self.on_weld)
-        self.rb_align.Bind(wx.EVT_RADIOBOX, self.on_radio_box)
+        for btn in self.rb_align:
+            btn.Bind(wx.EVT_TOGGLEBUTTON, self.on_radio_box)
         self.text_text.Bind(wx.EVT_TEXT, self.on_text_change)
         self.text_text.Bind(wx.EVT_RIGHT_DOWN, self.on_context_menu)
         self.list_fonts.Bind(wx.EVT_LISTBOX, self.on_list_font)
@@ -486,7 +523,8 @@ class LineTextPropertyPanel(wx.Panel):
             idx = vals.index(self.node.mkalign)
         except IndexError:
             idx = 0
-        self.rb_align.SetSelection(idx)
+        for b_idx, btn in enumerate(self.rb_align):
+            btn.SetValue(bool(idx == b_idx))
 
         self.load_directory()
         self.text_text.ChangeValue(str(node.mktext))
@@ -543,7 +581,13 @@ class LineTextPropertyPanel(wx.Panel):
         self.update_node()
 
     def on_radio_box(self, event):
-        new_anchor = event.GetInt()
+        evt_btn = event.GetEventObject()
+        for idx, btn in enumerate(self.rb_align):
+            if btn is evt_btn:
+                new_anchor = idx
+                btn.SetValue(True)
+            else:
+                btn.SetValue(False)
         if new_anchor == 0:
             self.node.mkalign = "start"
         elif new_anchor == 1:
@@ -679,7 +723,7 @@ class PanelFontSelect(wx.Panel):
         sizer_checker = wx.BoxSizer(wx.HORIZONTAL)
         for extension in fontinfo:
             info = fontinfo[extension]
-            checker = wx.CheckBox(self, wx.ID_ANY, info[0])
+            checker = wxCheckBox(self, wx.ID_ANY, info[0])
             checker.SetValue(True)
             checker.Bind(wx.EVT_CHECKBOX, self.on_checker(extension))
             checker.SetToolTip(
@@ -707,25 +751,35 @@ class PanelFontSelect(wx.Panel):
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
         sizer_fonts.Add(sizer_buttons, 0, wx.EXPAND, 0)
 
-        self.btn_bigger = wx.Button(self, wx.ID_ANY, "++")
+        picsize = dip_size(self, 32, 32)
+        icon_size = picsize[0]
+
+        self.btn_bigger = wxButton(self, wx.ID_ANY)
+        self.btn_bigger.SetBitmap(icon_textsize_up.GetBitmap(resize=icon_size))
         self.btn_bigger.SetToolTip(_("Increase the font-size"))
         sizer_buttons.Add(self.btn_bigger, 0, wx.EXPAND, 0)
 
-        self.btn_smaller = wx.Button(self, wx.ID_ANY, "--")
+        self.btn_smaller = wxButton(self, wx.ID_ANY)
+        self.btn_smaller.SetBitmap(icon_textsize_down.GetBitmap(resize=icon_size))
         self.btn_smaller.SetToolTip(_("Decrease the font-size"))
         sizer_buttons.Add(self.btn_smaller, 0, wx.EXPAND, 0)
 
         sizer_buttons.AddSpacer(25)
 
-        self.btn_align_left = wx.Button(self, wx.ID_ANY, "<")
+        self.btn_align_left = wxButton(self, wx.ID_ANY)
+        self.btn_align_left.SetBitmap(icon_textalign_left.GetBitmap(resize=icon_size))
         self.btn_align_left.SetToolTip(_("Align text on the left side"))
         sizer_buttons.Add(self.btn_align_left, 0, wx.EXPAND, 0)
 
-        self.btn_align_center = wx.Button(self, wx.ID_ANY, "|")
+        self.btn_align_center = wxButton(self, wx.ID_ANY)
+        self.btn_align_center.SetBitmap(
+            icon_textalign_center.GetBitmap(resize=icon_size)
+        )
         self.btn_align_center.SetToolTip(_("Align text around the center"))
         sizer_buttons.Add(self.btn_align_center, 0, wx.EXPAND, 0)
 
-        self.btn_align_right = wx.Button(self, wx.ID_ANY, "<")
+        self.btn_align_right = wxButton(self, wx.ID_ANY)
+        self.btn_align_right.SetBitmap(icon_textalign_right.GetBitmap(resize=icon_size))
         self.btn_align_right.SetToolTip(_("Align text on the right side"))
         sizer_buttons.Add(self.btn_align_right, 0, wx.EXPAND, 0)
 
@@ -736,7 +790,7 @@ class PanelFontSelect(wx.Panel):
             self.btn_bigger,
             self.btn_smaller,
         ):
-            btn.SetMaxSize(dip_size(self, 32, -1))
+            btn.SetMaxSize(dip_size(self, icon_size + 4, -1))
 
         lbl_spacer = wx.StaticText(self, wx.ID_ANY, "")
         sizer_buttons.Add(lbl_spacer, 1, 0, 0)
@@ -915,7 +969,7 @@ class PanelFontManager(wx.Panel):
             )
         )
 
-        self.btn_dirselect = wx.Button(self, wx.ID_ANY, "...")
+        self.btn_dirselect = wxButton(self, wx.ID_ANY, "...")
         sizer_directory.Add(self.btn_dirselect, 0, wx.EXPAND, 0)
 
         choices = []
@@ -944,16 +998,16 @@ class PanelFontManager(wx.Panel):
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
         sizer_fonts.Add(sizer_buttons, 0, wx.EXPAND, 0)
 
-        self.btn_add = wx.Button(self, wx.ID_ANY, _("Import"))
+        self.btn_add = wxButton(self, wx.ID_ANY, _("Import"))
         sizer_buttons.Add(self.btn_add, 0, wx.EXPAND, 0)
 
-        self.btn_delete = wx.Button(self, wx.ID_ANY, _("Delete"))
+        self.btn_delete = wxButton(self, wx.ID_ANY, _("Delete"))
         sizer_buttons.Add(self.btn_delete, 0, wx.EXPAND, 0)
 
         lbl_spacer = wx.StaticText(self, wx.ID_ANY, "")
         sizer_buttons.Add(lbl_spacer, 1, 0, 0)
 
-        self.btn_refresh = wx.Button(self, wx.ID_ANY, _("Refresh"))
+        self.btn_refresh = wxButton(self, wx.ID_ANY, _("Refresh"))
         sizer_buttons.Add(self.btn_refresh, 0, wx.EXPAND, 0)
 
         self.webresources = [

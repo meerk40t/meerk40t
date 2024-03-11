@@ -9,6 +9,8 @@ from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icon_rotary
 from meerk40t.gui.mwindow import MWindow
 
+# from meerk40t.gui.wxutils import wxButton, wxCheckBox
+
 _ = wx.GetTranslation
 
 
@@ -19,7 +21,7 @@ _ = wx.GetTranslation
 #         self.rotary = context
 #         self.scene = getattr(context.root, "mainscene", None)
 #
-#         self.checkbox_rotary = wx.CheckBox(self, wx.ID_ANY, _("Enable Rotary"))
+#         self.checkbox_rotary = wxCheckBox(self, wx.ID_ANY, _("Enable Rotary"))
 #         self.Children[0].SetFocus()
 #         self.text_rotary_scalex = TextCtrl(
 #             self,
@@ -37,9 +39,9 @@ _ = wx.GetTranslation
 #             style=wx.TE_PROCESS_ENTER,
 #             nonzero=True,
 #         )
-#         # self.checkbox_rotary_loop = wx.CheckBox(self, wx.ID_ANY, _("Field Loop"))
+#         # self.checkbox_rotary_loop = wxCheckBox(self, wx.ID_ANY, _("Field Loop"))
 #         # self.text_rotary_rotation = wx.TextCtrl(self, wx.ID_ANY, "360.0")
-#         # self.checkbox_rotary_roller = wx.CheckBox(self, wx.ID_ANY, _("Uses Roller"))
+#         # self.checkbox_rotary_roller = wxCheckBox(self, wx.ID_ANY, _("Uses Roller"))
 #         # self.text_rotary_roller_circumference = wx.TextCtrl(self, wx.ID_ANY, "50.0")
 #         # self.text_rotary_object_circumference = wx.TextCtrl(self, wx.ID_ANY, "50.0")
 #

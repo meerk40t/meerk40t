@@ -49,7 +49,8 @@ def read_source():
             if not fname.endswith(".py"):
                 continue
             # debugit = fname.endswith("translate_check.py")
-            with open(fname, mode="r", encoding="utf8", errors="surrogateescape") as f:
+            with open(fname, mode="r", encoding="utf-8", errors="surrogateescape") as f:
+                pfname = os.path.normpath(fname).replace("\\", "/")
                 filecount += 1
                 localline = 0
                 msgid_mode = False
@@ -69,9 +70,28 @@ def read_source():
                         if msgid_mode:
                             if line.startswith(")"):
                                 if msgid:
+                                    #
+                                    idx = 0
+                                    while True:
+                                        idx = msgid.find('"', idx)
+                                        if idx == 0:
+                                            # Starts with a '"'
+                                            msgid = "\\" + msgid
+                                            idx += 1
+                                        elif idx > 0:
+                                            if msgid[idx-1] != "\\":
+                                                msgid = msgid[:idx] + "\\" + msgid[idx:]
+                                                idx += 1
+                                        else:
+                                            break
+                                        idx += 1
+
                                     if msgid not in id_strings_source:
                                         id_strings_source.append(msgid)
-                                        id_usage.append(f"#: {fname}:{localline}")
+                                        id_usage.append(f"#: {pfname}:{localline}")
+                                    else:
+                                        found_index = id_strings_source.index(msgid)
+                                        id_usage[found_index] += f" {pfname}:{localline}"
                                     # print (f"'{orgline}' -> '{msgid}'")
                                 msgid_mode = False
                                 msgid = ""
@@ -163,7 +183,7 @@ def read_po(locale):
     linecount = 0
     for po_file in po_files:
         fname = po_dir + po_file
-        with open(fname, "r") as f:
+        with open(fname, "r", encoding="utf-8", errors="surrogateescape") as f:
             msgid_mode = False
             id_str = ""
             while True:
@@ -219,7 +239,7 @@ def read_po(locale):
 
 def compare(locale, id_strings, id_strings_source, id_usage):
     counts = [0, 0, 0]
-    with open(f"./delta_{locale}.po", "w") as outp:
+    with open(f"./delta_{locale}.po", "w", encoding="utf-8") as outp:
         for idx, key in enumerate(id_strings_source):
             counts[0] += 1
             if key in id_strings:

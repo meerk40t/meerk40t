@@ -75,13 +75,13 @@ def plugin(service, lifecycle):
                         "help": "devicebalor",
                         "action": lambda e: service("full-light\n"),
                     },
-                    {
-                        "identifier": "live-regmark",
-                        "label": _("Regmarks"),
-                        "icon": icon_balor_regmarks,
-                        "help": "devicebalor",
-                        "action": lambda e: service("regmark-light\n"),
-                    },
+                    # {
+                    #     "identifier": "live-regmark",
+                    #     "label": _("Regmarks"),
+                    #     "icon": icon_balor_regmarks,
+                    #     "help": "devicebalor",
+                    #     "action": lambda e: service("regmark-light\n"),
+                    # },
                     {
                         "identifier": "live",
                         "label": _("Live Bounds"),
@@ -159,6 +159,10 @@ def plugin(service, lifecycle):
                 "rule_enabled": lambda cond: bool(service.elements.has_emphasis()),
             },
         )
+
+        from .corscene import register_scene
+
+        register_scene(service)
 
         service.add_service_delegate(BalorGui(service))
 

@@ -5,7 +5,7 @@ import wx
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .icons import icon_about, icon_meerk40t
 from .mwindow import MWindow
-from .wxutils import ScrolledPanel, StaticBoxSizer
+from .wxutils import ScrolledPanel, StaticBoxSizer, wxButton
 
 _ = wx.GetTranslation
 
@@ -160,9 +160,9 @@ class InformationPanel(ScrolledPanel):
             self, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE
         )
         self.os_version.SetMinSize(wx.Size(-1, 5 * 25))
-        self.info_btn = wx.Button(self, wx.ID_ANY, _("Copy to Clipboard"))
+        self.info_btn = wxButton(self, wx.ID_ANY, _("Copy to Clipboard"))
         self.Bind(wx.EVT_BUTTON, self.copy_debug_info, self.info_btn)
-        self.update_btn = wx.Button(self, wx.ID_ANY, _("Check for Updates"))
+        self.update_btn = wxButton(self, wx.ID_ANY, _("Check for Updates"))
         self.Bind(wx.EVT_BUTTON, self.check_for_updates, self.update_btn)
         self.__set_properties()
         self.__do_layout()
@@ -257,7 +257,7 @@ class ComponentPanel(ScrolledPanel):
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
         )
-        self.info_btn = wx.Button(self, wx.ID_ANY, _("Copy to Clipboard"))
+        self.info_btn = wxButton(self, wx.ID_ANY, _("Copy to Clipboard"))
         self.Bind(wx.EVT_BUTTON, self.copy_debug_info, self.info_btn)
         self.content = list()
         self.get_components()

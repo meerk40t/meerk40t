@@ -8,7 +8,14 @@ import wx
 
 from meerk40t.core.units import Angle, Length
 from meerk40t.gui.propertypanels.attributes import IdPanel
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, set_ctrl_value
+from meerk40t.gui.wxutils import (
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+    set_ctrl_value,
+    wxButton,
+    wxCheckBox,
+)
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color
 from meerk40t.tools.geomstr import Geomstr
@@ -32,7 +39,7 @@ class PlacementPanel(wx.Panel):
 
         prop_sizer = wx.BoxSizer(wx.HORIZONTAL)
         first_sizer = StaticBoxSizer(self, wx.ID_ANY, "", wx.HORIZONTAL)
-        self.checkbox_output = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
+        self.checkbox_output = wxCheckBox(self, wx.ID_ANY, _("Enable"))
         self.checkbox_output.SetToolTip(
             _("Enable this operation for inclusion in Execute Job.")
         )
@@ -198,7 +205,7 @@ class PlacementPanel(wx.Panel):
         ).format(area=_("column"), direction="X")
         self.text_alternating_x.SetToolTip(ttip)
         self.slider_alternating_x.SetToolTip(ttip)
-        self.check_alt_x = wx.CheckBox(self, wx.ID_ANY)
+        self.check_alt_x = wxCheckBox(self, wx.ID_ANY)
         ttip = _(
             "Rotate elements every other {area}\n" + "Useful for triangular patterns."
         ).format(area=_("column"))
@@ -209,7 +216,7 @@ class PlacementPanel(wx.Panel):
         ).format(area=_("row"), direction="Y")
         self.text_alternating_y.SetToolTip(ttip)
         self.slider_alternating_y.SetToolTip(ttip)
-        self.check_alt_y = wx.CheckBox(self, wx.ID_ANY)
+        self.check_alt_y = wxCheckBox(self, wx.ID_ANY)
         ttip = _(
             "Rotate elements every other {area}\n" + "Useful for triangular patterns."
         ).format(area=_("row"))
@@ -306,11 +313,11 @@ class PlacementPanel(wx.Panel):
         self.text_dimension = TextCtrl(self, wx.ID_ANY, limited=True, check="length")
         self.text_dimension.SetToolTip(ttip)
 
-        self.btn_generate = wx.Button(self, wx.ID_ANY, _("Define"))
+        self.btn_generate = wxButton(self, wx.ID_ANY, _("Define"))
         self.btn_generate.SetToolTip(
             _("Establishes the parameter for the selected grid-type")
         )
-        self.check_generate = wx.CheckBox(self, wx.ID_ANY)
+        self.check_generate = wxCheckBox(self, wx.ID_ANY)
         self.check_generate.SetToolTip(
             _("If set then Define will create a matching pattern too")
         )

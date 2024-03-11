@@ -12,7 +12,13 @@ from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
 from meerk40t.gui.icons import get_default_icon_size, icons8_detective
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl, dip_size
+from meerk40t.gui.wxutils import (
+    StaticBoxSizer,
+    TextCtrl,
+    dip_size,
+    wxButton,
+    wxCheckBox,
+)
 from meerk40t.kernel import Settings, lookup_listener, signal_listener
 from meerk40t.svgelements import Color, Matrix
 
@@ -37,9 +43,9 @@ class SaveLoadPanel(wx.Panel):
         sizer_name = wx.BoxSizer(wx.HORIZONTAL)
         lbl_info = wx.StaticText(self, wx.ID_ANY, _("Template-Name"))
         self.txt_name = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.btn_save = wx.Button(self, wx.ID_ANY, _("Save"))
-        self.btn_load = wx.Button(self, wx.ID_ANY, _("Load"))
-        self.btn_delete = wx.Button(self, wx.ID_ANY, _("Delete"))
+        self.btn_save = wxButton(self, wx.ID_ANY, _("Save"))
+        self.btn_load = wxButton(self, wx.ID_ANY, _("Load"))
+        self.btn_delete = wxButton(self, wx.ID_ANY, _("Delete"))
         self.btn_load.Enable(False)
         self.btn_save.Enable(False)
         self.btn_delete.Enable(False)
@@ -199,6 +205,8 @@ class TemplatePanel(wx.Panel):
         self.parameters = []
         color_choices = [_("Red"), _("Green"), _("Blue")]
 
+        LABEL_WIDTH = 115
+
         self.combo_ops = wx.ComboBox(
             self, id=wx.ID_ANY, choices=opchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
@@ -232,8 +240,8 @@ class TemplatePanel(wx.Panel):
             )
         )
         self.combo_images.SetSelection(0)
-        self.check_labels = wx.CheckBox(self, wx.ID_ANY, _("Labels"))
-        self.check_values = wx.CheckBox(self, wx.ID_ANY, _("Values"))
+        self.check_labels = wxCheckBox(self, wx.ID_ANY, _("Labels"))
+        self.check_values = wxCheckBox(self, wx.ID_ANY, _("Values"))
 
         self.combo_param_1 = wx.ComboBox(
             self, id=wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
@@ -247,8 +255,6 @@ class TemplatePanel(wx.Panel):
         self.text_delta_1.set_range(0, 50)
         self.unit_param_1a = wx.StaticText(self, wx.ID_ANY, "")
         self.unit_param_1b = wx.StaticText(self, wx.ID_ANY, "")
-        size_it(self.unit_param_1a, 85)
-        size_it(self.unit_param_1b, 85)
 
         self.combo_color_1 = wx.ComboBox(
             self,
@@ -256,7 +262,7 @@ class TemplatePanel(wx.Panel):
             choices=color_choices,
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
-        self.check_color_direction_1 = wx.CheckBox(self, wx.ID_ANY, _("Growing"))
+        self.check_color_direction_1 = wxCheckBox(self, wx.ID_ANY, _("Growing"))
 
         self.combo_param_2 = wx.ComboBox(
             self, id=wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
@@ -270,8 +276,6 @@ class TemplatePanel(wx.Panel):
         self.text_delta_2.set_range(0, 50)
         self.unit_param_2a = wx.StaticText(self, wx.ID_ANY, "")
         self.unit_param_2b = wx.StaticText(self, wx.ID_ANY, "")
-        size_it(self.unit_param_2a, 85)
-        size_it(self.unit_param_2b, 85)
 
         self.combo_color_2 = wx.ComboBox(
             self,
@@ -279,9 +283,9 @@ class TemplatePanel(wx.Panel):
             choices=color_choices,
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
-        self.check_color_direction_2 = wx.CheckBox(self, wx.ID_ANY, _("Growing"))
+        self.check_color_direction_2 = wxCheckBox(self, wx.ID_ANY, _("Growing"))
 
-        self.button_create = wx.Button(self, wx.ID_ANY, _("Create Pattern"))
+        self.button_create = wxButton(self, wx.ID_ANY, _("Create Pattern"))
         self.button_create.SetBitmap(
             icons8_detective.GetBitmap(resize=0.5 * get_default_icon_size())
         )
@@ -293,7 +297,7 @@ class TemplatePanel(wx.Panel):
             self, wx.ID_ANY, _("Operation to test"), wx.VERTICAL
         )
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Operation:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         h1 = wx.BoxSizer(wx.HORIZONTAL)
         h1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         h1.Add(self.combo_ops, 1, wx.EXPAND, 0)
@@ -316,13 +320,13 @@ class TemplatePanel(wx.Panel):
 
         hline_param_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Parameter:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_param_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_param_1.Add(self.combo_param_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_count_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Count:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         self.info_delta_1 = wx.StaticText(self, wx.ID_ANY, "")
 
         hline_count_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -331,21 +335,21 @@ class TemplatePanel(wx.Panel):
 
         hline_min_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Minimum:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_min_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_min_1.Add(self.text_min_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_min_1.Add(self.unit_param_1a, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_max_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Maximum:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_max_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_max_1.Add(self.text_max_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_max_1.Add(self.unit_param_1b, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_dim_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Width:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_dim_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_dim_1.Add(self.text_dim_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
@@ -353,7 +357,7 @@ class TemplatePanel(wx.Panel):
 
         hline_delta_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Delta:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_delta_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_delta_1.Add(self.text_delta_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
@@ -361,7 +365,7 @@ class TemplatePanel(wx.Panel):
 
         hline_color_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Color:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_color_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_color_1.Add(self.combo_color_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_color_1.Add(self.check_color_direction_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -380,13 +384,13 @@ class TemplatePanel(wx.Panel):
 
         hline_param_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Parameter:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_param_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_param_2.Add(self.combo_param_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_count_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Count:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         self.info_delta_2 = wx.StaticText(self, wx.ID_ANY, "")
         hline_count_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_count_2.Add(self.spin_count_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -394,21 +398,21 @@ class TemplatePanel(wx.Panel):
 
         hline_min_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Minimum:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_min_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_min_2.Add(self.text_min_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_min_2.Add(self.unit_param_2a, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_max_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Maximum:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_max_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_max_2.Add(self.text_max_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_max_2.Add(self.unit_param_2b, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_dim_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Height:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_dim_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_dim_2.Add(self.text_dim_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
@@ -416,7 +420,7 @@ class TemplatePanel(wx.Panel):
 
         hline_delta_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Delta:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_delta_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_delta_2.Add(self.text_delta_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
@@ -424,7 +428,7 @@ class TemplatePanel(wx.Panel):
 
         hline_color_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Color:"))
-        size_it(mylbl, 85)
+        size_it(mylbl, LABEL_WIDTH)
         hline_color_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_color_2.Add(self.combo_color_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_color_2.Add(self.check_color_direction_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -490,7 +494,7 @@ class TemplatePanel(wx.Panel):
         )
         self.combo_color_1.SetToolTip(
             _(
-                "Choose the color aspect for the second parameter. NB: the colors for both parameters will be combined"
+                "Choose the color aspect for the first parameter. NB: the colors for both parameters will be combined"
             )
         )
         self.combo_color_2.SetToolTip(

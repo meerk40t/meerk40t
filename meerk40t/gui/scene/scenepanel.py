@@ -1,7 +1,7 @@
 import wx
 
 from meerk40t.gui.wxutils import get_key_name
-
+from meerk40t.gui.scene.scene import RESPONSE_ABORT, RESPONSE_CONSUME, RESPONSE_DROP
 
 class ScenePanel(wx.Panel):
     """
@@ -52,6 +52,7 @@ class ScenePanel(wx.Panel):
         self.last_key = None
         self.last_event = None
         self.last_char = None
+        self._keybind_channel = self.context.channel("keybinds")
 
         try:
             self.scene_panel.Bind(wx.EVT_MAGNIFY, self.on_magnify_mouse)
@@ -117,57 +118,106 @@ class ScenePanel(wx.Panel):
     # while printable characters will issue both
 
     def on_key_down(self, evt):
-        self.last_char = None
+        consumed = False
         literal = get_key_name(evt, True)
+        self.last_char = None
         if (literal != self.last_key) or (self.last_event != "key_down"):
             self.last_key = literal
             self.last_event = "key_down"
-            self.scene.event(
+            # print (f"on_key_down: {literal}")
+            consumed = self.scene.event(
                 window_pos=self.scene.last_position,
                 event_type="key_down",
                 nearest_snap=None,
                 modifiers=literal,
                 keycode=None,
             )
+            if self._keybind_channel:
+                self._keybind_channel(f"scenepanel-on_key_down (rc={consumed}): {literal}")
         self.last_event = "key_down"
-        evt.Skip()
+        if not consumed:
+            ignore = self.scene.pane.tool_active
+            if self._keybind_channel:
+                self._keybind_channel(f"Scene key_down: {literal}.")
+            if not ignore and self.context.bind.trigger(literal):
+                consumed = True
+                if self._keybind_channel:
+                    self._keybind_channel(f"Scene key_down: {literal} executed.")
+            else:
+                if self._keybind_channel:
+                    if ignore:
+                        self._keybind_channel(
+                            f"Scene key_down: {literal} was ignored as tool active."
+                        )
+                    else:
+                        self._keybind_channel(f"Scene key_down: {literal} unfound.")
+        # We need to skip the event to make sure the keypress is recognized properly
+        if not consumed:
+            evt.Skip()
         self.SetFocus()
 
     def on_key(self, evt):
+        consumed = False
         literal = get_key_name(evt, True)
         self.last_char = chr(evt.GetUnicodeKey())
         if self.last_event != "key_up":
-            # Fine we deal with it
-            # print (f"on_key: {chr(evt.GetKeyCode())} {chr(evt.GetUnicodeKey())} - {literal}")
-            self.scene.event(
+            # Fine, we deal with it
+            consumed = self.scene.event(
                 window_pos=self.scene.last_position,
                 event_type="key_up",
                 nearest_snap=None,
                 modifiers=literal,
                 keycode=self.last_char,
             )
+            if self._keybind_channel:
+                self._keybind_channel(f"scenepanel-on_key (rc={consumed}): {literal}, Char: {chr(evt.GetKeyCode())}, Unicode: {chr(evt.GetUnicodeKey())}")
             self.last_event = "key_up"
-        evt.Skip()
+            # self.SetFocus()
+        if not consumed:
+            evt.Skip()
 
     def on_key_up(self, evt):
         # Only key provides the right character representation
+        consumed = False
         literal = get_key_name(evt, True)
         if self.last_event != "key_up":
             if literal or self.last_char:
                 # print (f"on_key_up: {literal}")
-                self.scene.event(
+                consumed = self.scene.event(
                     window_pos=self.scene.last_position,
                     event_type="key_up",
                     nearest_snap=None,
                     modifiers=literal,
                     keycode=None,
                 )
+                if self._keybind_channel:
+                    self._keybind_channel(f"scenepanel-on_key_up (rc={consumed}): {literal}, last_char: {self.last_char}")
                 # After consumption all is done
             self.last_char = None
         # else:
         #     print (f"up: someone dealt with it ({literal}, {chr(evt.GetUnicodeKey())}, {self.last_char})")
         self.last_event = None
-        evt.Skip()
+        if not consumed:
+            ignore = self.scene.pane.tool_active
+            if self._keybind_channel:
+                self._keybind_channel(f"Scene key_up: {literal}.")
+            if not ignore and self.context.bind.untrigger(literal):
+                if self._keybind_channel:
+                    self._keybind_channel(f"Scene key_up: {literal} executed.")
+            else:
+                if self._keybind_channel:
+                    if ignore:
+                        self._keybind_channel(
+                            f"Scene key_up: {literal} was ignored as tool active."
+                        )
+                    else:
+                        self._keybind_channel(f"Scene key_up: {literal} unfound.")
+        try:
+            del self.context.bind.triggered[literal]
+        except KeyError:
+            pass
+        if not consumed:
+            evt.Skip()
 
     def on_size(self, event=None):
         if self.context is None:

@@ -4,6 +4,7 @@ GRBL Device
 Defines the interactions between the device service and the meerk40t's viewport.
 Registers relevant commands and options.
 """
+
 from time import sleep
 
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
@@ -25,6 +26,7 @@ class GRBLDevice(Service, Status):
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
         self.hardware_config = {}
         self.permit_tcp = True
+        self.permit_ws = True
         self.permit_serial = True
 
         Service.__init__(self, kernel, path)
@@ -240,8 +242,9 @@ class GRBLDevice(Service, Status):
                 "object": self,
                 "default": "localhost",
                 "type": str,
+                "label": _("Address"),
                 # "style": "address",
-                "tip": _("What serial interface does this device connect to?"),
+                "tip": _("IP address/host name of the GRBL device"),
             },
             {
                 "attr": "port",
@@ -250,10 +253,35 @@ class GRBLDevice(Service, Status):
                 "type": int,
                 "label": _("Port"),
                 "tip": _("TCP Port of the GRBL device"),
+                "lower": 0,
+                "upper": 65535,
             },
         ]
         if self.permit_tcp:
             self.register_choices("tcp", choices)
+
+            
+        choices = [
+            {
+                "attr": "address",
+                "object": self,
+                "default": "localhost",
+                "type": str,
+                "label": _("Address"),
+                # "style": "address",
+                "tip": _("IP address/host name of the GRBL device"),
+            },
+            {
+                "attr": "port",
+                "object": self,
+                "default": 81,
+                "type": int,
+                "label": _("Port"),
+                "tip": _("TCP Port of the device"),
+            },
+        ]
+        if self.permit_ws:
+            self.register_choices("ws", choices)
 
         choices = [
             {
@@ -261,8 +289,8 @@ class GRBLDevice(Service, Status):
                 "object": self,
                 "default": "serial",
                 "style": "combosmall",
-                "choices": ["serial", "tcp", "mock"],
-                "display": [_("Serial"), _("TCP-Network"), _("mock")],
+                "choices": ["serial", "tcp", "ws", "mock"],
+                "display": [_("Serial"), _("TCP-Network"), _("WebSocket-Network"), _("mock")],
                 "type": str,
                 "label": _("Interface Type"),
                 "tip": _("Select the interface type for the grbl device"),
@@ -817,6 +845,8 @@ class GRBLDevice(Service, Status):
     def location(self):
         if self.permit_tcp and self.interface == "tcp":
             return f"{self.address}:{self.port}"
+        if self.permit_ws and self.interface == "ws":
+            return f"ws://{self.address}:{self.port}"
         elif self.permit_serial and self.interface == "serial":
             return f"{self.serial_port.lower()}:{self.baud_rate}"
         else:

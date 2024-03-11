@@ -1,13 +1,13 @@
 """
-TCP Connection
+WebSocket Connection
 
-Communicate with a TCP network destination with the GRBL driver.
+Communicate with a WebSocket destination with the GRBL driver.
 """
 
-import socket
+import websocket
 
 
-class TCPOutput:
+class WSOutput:
     def __init__(self, service, controller, name=None):
         self.service = service
         self.controller = controller
@@ -23,10 +23,9 @@ class TCPOutput:
     def connect(self):
         try:
             self.controller.log("Attempting to Connect...", type="connection")
-            self._stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            # Make sure port is in a valid range...
-            port = min(65535, max(0, self.service.port))
-            self._stream.connect((self.service.address, port))
+            self._stream = websocket.WebSocket()
+            self._stream.connect("ws://%s:%d" % (self.service.address, self.service.port))
+            # self._stream.run_forever()
             self.service.signal("grbl;status", "connected")
         except TimeoutError:
             self.disconnect()
@@ -34,12 +33,12 @@ class TCPOutput:
         except ConnectionError:
             self.disconnect()
             self.service.signal("grbl;status", "connection error")
-        except (socket.gaierror, OverflowError) as e:
-            self.disconnect()
-            self.service.signal("grbl;status", "address resolve error")
-        except socket.herror as e:
-            self.disconnect()
-            self.service.signal("grbl;status", f"herror: {str(e)}")
+        # except socket.gaierror as e:
+        #     self.disconnect()
+        #     self.service.signal("grbl;status", "address resolve error")
+        # except socket.herror as e:
+        #     self.disconnect()
+        #     self.service.signal("grbl;status", f"herror: {str(e)}")
         except OSError as e:
             self.disconnect()
             self.service.signal("grbl;status", f"Host down {str(e)}")
@@ -64,8 +63,13 @@ class TCPOutput:
 
     def read(self):
         f = self.read_buffer.find(b"\n")
+
         if f == -1:
-            self.read_buffer += self._stream.recv(self._read_buffer_size)
+            d = self._stream.recv()
+            if isinstance(d, str):
+                self.read_buffer += d.encode("latin-1")
+            else:
+                self.read_buffer += d
             f = self.read_buffer.find(b"\n")
             if f == -1:
                 return
@@ -77,5 +81,5 @@ class TCPOutput:
 
     def __repr__(self):
         if self.name is not None:
-            return f"TCPOutput('{self.service.location()}','{self.name}')"
-        return f"TCPOutput('{self.service.location()}')"
+            return f"WSOutput('{self.service.location()}','{self.name}')"
+        return f"WSOutput('{self.service.location()}')"

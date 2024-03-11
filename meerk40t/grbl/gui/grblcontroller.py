@@ -12,7 +12,7 @@ from meerk40t.gui.icons import (
     icons8_disconnected,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import dip_size
+from meerk40t.gui.wxutils import dip_size, wxButton
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -35,7 +35,7 @@ class GRBLControllerPanel(wx.Panel):
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         self.iconsize = 0.75 * get_default_icon_size()
         self.state = None
-        self.button_device_connect = wx.Button(
+        self.button_device_connect = wxButton(
             self, wx.ID_ANY, self.button_connect_string("Connection")
         )
 
@@ -91,7 +91,7 @@ class GRBLControllerPanel(wx.Panel):
             ]
         )
         for entry in self.gcode_commands:
-            btn = wx.Button(self, wx.ID_ANY, entry[1])
+            btn = wxButton(self, wx.ID_ANY, entry[1])
             btn.Bind(wx.EVT_BUTTON, self.send_gcode(entry[0]))
             btn.SetToolTip(entry[2])
             if entry[3] is not None:
@@ -101,7 +101,7 @@ class GRBLControllerPanel(wx.Panel):
                     )
                 )
             sizer_2.Add(btn, 1, wx.EXPAND, 0)
-        self.btn_clear = wx.Button(self, wx.ID_ANY, _("Clear"))
+        self.btn_clear = wxButton(self, wx.ID_ANY, _("Clear"))
         self.btn_clear.SetToolTip(_("Clear log window"))
         self.btn_clear.Bind(wx.EVT_BUTTON, self.on_clear_log)
         sizer_2.Add(self.btn_clear, 0, wx.EXPAND), 0
@@ -132,6 +132,8 @@ class GRBLControllerPanel(wx.Panel):
             iface = "?" if context.serial_port is None else context.serial_port
         elif context.permit_tcp and context.interface == "tcp":
             iface = f"{context.address}:{context.port}"
+        elif context.permit_ws and context.interface == "tcp":
+            iface = f"ws://{context.address}:{context.port}"
         else:
             # Mock
             iface = "Mock"
@@ -296,7 +298,7 @@ class GRBLController(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(499, 357, *args, **kwds)
         self.service = self.context.device
-        self.SetTitle("GRBL Controller")
+        self.SetTitle(_("GRBL Controller"))
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected.GetBitmap())
         self.SetIcon(_icon)

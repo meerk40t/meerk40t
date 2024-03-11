@@ -5,7 +5,7 @@ from glob import glob
 from os.path import basename, exists, join, realpath, splitext
 
 from meerk40t.core.node.elem_path import PathNode
-from meerk40t.core.node.node import Fillrule
+from meerk40t.core.node.node import Fillrule, Linejoin
 from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.kernel import get_safe_path
 from meerk40t.tools.geomstr import BeamTable, Geomstr
@@ -358,6 +358,11 @@ class Meerk40tFonts:
         node.mkfont = fontname
         node._translated_text = mytext
         # _t3 = perf_counter()
+        tlines = mytext.split("\n")
+        tlabel = f"Text: {tlines[0]}"
+        if node.label is None or node.label.startswith("Text: "):
+            node.label = tlabel
+
         node.altered()
         # _t4 = perf_counter()
         # print (f"Readfont: {_t1 -_t0:.2f}s, render: {_t2 -_t1:.2f}s, path: {_t3 -_t2:.2f}s, alter: {_t4 -_t3:.2f}s, total={_t4 -_t0:.2f}s")
@@ -453,6 +458,8 @@ class Meerk40tFonts:
             # Could not parse path.
             pass
 
+        tlines = mytext.split("\n")
+        tlabel = f"Text: {tlines[0]}"
         # Create the node.
         path_node = PathNode(
             geometry=path.geometry,
@@ -460,6 +467,8 @@ class Meerk40tFonts:
             stroke_width=self.context.elements.default_strokewidth,
             fill=self.context.elements.default_fill,
             fillrule=Fillrule.FILLRULE_NONZERO,
+            linejoin=Linejoin.JOIN_BEVEL,
+            label=tlabel,
         )
         path_node.matrix.post_translate(x, y)
         path_node.mkfont = font

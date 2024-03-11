@@ -16,7 +16,7 @@ from .icons import (
     icons8_paste,
 )
 from .mwindow import MWindow
-from .wxutils import StaticBoxSizer, dip_size
+from .wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox, wxRadioBox
 
 _ = wx.GetTranslation
 
@@ -46,13 +46,13 @@ class WordlistMiniPanel(wx.Panel):
         self.context = context
         self.SetHelpText("wordlist")
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.button_edit = wx.Button(self, wx.ID_ANY, _("Edit"))
+        self.button_edit = wxButton(self, wx.ID_ANY, _("Edit"))
         self.button_edit.SetBitmap(
             icons8_curly_brackets.GetBitmap(resize=0.5 * get_default_icon_size())
         )
         self.button_edit.SetToolTip(_("Manages Wordlist-Entries"))
 
-        self.button_next = wx.Button(self, wx.ID_ANY, _("Next"))
+        self.button_next = wxButton(self, wx.ID_ANY, _("Next"))
         self.button_next.SetBitmap(
             icons8_circled_right.GetBitmap(resize=0.5 * get_default_icon_size())
         )
@@ -60,7 +60,7 @@ class WordlistMiniPanel(wx.Panel):
             _("Wordlist: go to next page (right-click to next entry)")
         )
 
-        self.button_prev = wx.Button(self, wx.ID_ANY, _("Prev"))
+        self.button_prev = wxButton(self, wx.ID_ANY, _("Prev"))
         self.button_prev.SetBitmap(
             icons8_circled_left.GetBitmap(resize=0.5 * get_default_icon_size())
         )
@@ -302,28 +302,28 @@ class WordlistPanel(wx.Panel):
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
         sizer_buttons.Add(self.txt_pattern, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.btn_add = wx.Button(self, wx.ID_ANY, _("Add Text"))
+        self.btn_add = wxButton(self, wx.ID_ANY, _("Add Text"))
         self.btn_add.SetToolTip(_("Add another wordlist entry"))
         sizer_buttons.Add(self.btn_add, 0, 0, 0)
 
-        self.btn_add_counter = wx.Button(self, wx.ID_ANY, _("Add Counter"))
+        self.btn_add_counter = wxButton(self, wx.ID_ANY, _("Add Counter"))
         sizer_buttons.Add(self.btn_add_counter, 0, 0, 0)
 
-        self.btn_delete = wx.Button(self, wx.ID_ANY, _("Delete"))
+        self.btn_delete = wxButton(self, wx.ID_ANY, _("Delete"))
         self.btn_delete.SetToolTip(_("Delete the current wordlist entry"))
         sizer_buttons.Add(self.btn_delete, 0, 0, 0)
 
         sizer_exit = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.btn_backup = wx.Button(self, wx.ID_ANY, _("Backup Wordlist"))
+        self.btn_backup = wxButton(self, wx.ID_ANY, _("Backup Wordlist"))
         self.btn_backup.SetToolTip(_("Save current wordlist to disk"))
         sizer_exit.Add(self.btn_backup, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.btn_restore = wx.Button(self, wx.ID_ANY, _("Restore Wordlist"))
+        self.btn_restore = wxButton(self, wx.ID_ANY, _("Restore Wordlist"))
         self.btn_restore.SetToolTip(_("Load wordlist from disk"))
         sizer_exit.Add(self.btn_restore, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.check_autosave = wx.CheckBox(self, wx.ID_ANY, _("Autosave"))
+        self.check_autosave = wxCheckBox(self, wx.ID_ANY, _("Autosave"))
         self.check_autosave.SetToolTip(
             _("All changes to the wordlist will be saved immediately")
         )
@@ -724,15 +724,15 @@ class ImportPanel(wx.Panel):
         self.txt_filename = wx.TextCtrl(self, wx.ID_ANY, "")
         sizer_csv.Add(self.txt_filename, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.btn_fileDialog = wx.Button(self, wx.ID_ANY, "...")
+        self.btn_fileDialog = wxButton(self, wx.ID_ANY, "...")
         self.btn_fileDialog.SetMinSize(dip_size(self, 23, 23))
         sizer_csv.Add(self.btn_fileDialog, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.btn_import = wx.Button(self, wx.ID_ANY, _("Import CSV"))
+        self.btn_import = wxButton(self, wx.ID_ANY, _("Import CSV"))
         sizer_csv.Add(self.btn_import, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_header = wx.BoxSizer(wx.HORIZONTAL)
-        self.rbox_header = wx.RadioBox(
+        self.rbox_header = wxRadioBox(
             self,
             wx.ID_ANY,
             _("What does the first row contain:"),

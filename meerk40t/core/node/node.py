@@ -18,6 +18,7 @@ rasternode: theoretical: would store all the refelems to be rastered. Such that 
 
 Tree Functions are to be stored: tree/command/type. These store many functions like the commands.
 """
+
 import ast
 from copy import copy
 from enum import IntEnum
@@ -469,7 +470,7 @@ class Node:
         if text is None:
             text = "{element_type}:{id}"
         # Just for the optical impression (who understands what a "Rect: None" means),
-        # lets replace some of the more obvious ones...
+        # let's replace some of the more obvious ones...
         mymap = self.default_map()
         for key in mymap:
             if hasattr(self, key) and mymap[key] == "None":
@@ -501,9 +502,7 @@ class Node:
         default_map["desc"] = (
             self.label
             if self.label is not None
-            else str(self.id)
-            if self.id is not None
-            else "-"
+            else str(self.id) if self.id is not None else "-"
         )
         default_map["element_type"] = "Node"
         default_map["node_type"] = self.type
@@ -1097,11 +1096,14 @@ class Node:
         If the node exists elsewhere in the tree it will be removed from that location.
 
         """
+        if new_child is None:
+            return
         new_parent = self
-        source_siblings = new_child.parent.children
+        if new_child.parent is not None:
+            source_siblings = new_child.parent.children
+            source_siblings.remove(new_child)  # Remove child
         destination_siblings = new_parent.children
 
-        source_siblings.remove(new_child)  # Remove child
         new_child.notify_detached(new_child)
 
         destination_siblings.append(new_child)  # Add child.
