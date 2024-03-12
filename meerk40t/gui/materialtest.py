@@ -193,7 +193,6 @@ class TemplatePanel(wx.Panel):
         self.default_op.append(ImageOpNode())
         self.color_scheme_free.append(True)
         op = EngraveOpNode()
-        op.add_node(HatchEffectNode())
         self.default_op.append(op)
         self.color_scheme_free.append(True)
 
@@ -1104,19 +1103,27 @@ class TemplatePanel(wx.Panel):
                         text_op_y.add_reference(node, 0)
                     if optype == 0:  # Cut
                         this_op = copy(self.default_op[optype])
+                        master_op = this_op
                         usefill = False
                     elif optype == 1:  # Engrave
                         this_op = copy(self.default_op[optype])
+                        master_op = this_op
                         usefill = False
                     elif optype == 2:  # Raster
                         this_op = copy(self.default_op[optype])
+                        master_op = this_op
                         usefill = True
                     elif optype == 3:  # Image
                         this_op = copy(self.default_op[optype])
+                        master_op = this_op
                         usefill = False
                     elif optype == 4:  # Hatch
-                        this_op = copy(self.default_op[optype])
-                        usefill = True
+                        master_op = copy(self.default_op[optype])
+                        this_op = HatchEffectNode()
+                        master_op.add_node(this_op)
+
+                        # We need to add a hatch node and make this the target for parameter application
+                        usefill = False
                     else:
                         return
                     this_op.label = s_lbl
@@ -1133,14 +1140,25 @@ class TemplatePanel(wx.Panel):
                         value *= 10.0
                     if param_type_1 == "speed" and self.use_mm_min():
                         value /= 60.0
+                    if hasattr(master_op, param_type_1):
+                        # quick and dirty
+                        if param_type_1 == "passes":
+                            value = int(value)
+                        if param_type_1 == "hatch_distance":
+                            if not str(value).endswith("mm"):
+                                value = f"{value}mm"
+                        setattr(master_op, param_type_1, value)
+                    # else:  # Try setting
+                    #     master_op.settings[param_type_1] = value
                     if hasattr(this_op, param_type_1):
                         # quick and dirty
                         if param_type_1 == "passes":
                             value = int(value)
                         if param_type_1 == "hatch_distance":
-                            value = f"{value}mm"
+                            if not str(value).endswith("mm"):
+                                value = f"{value}mm"
                         setattr(this_op, param_type_1, value)
-                    else:  # Try setting
+                    elif hasattr(this_op, "settings"):  # Try setting
                         this_op.settings[param_type_1] = value
 
                     # Do we need to prep the op?
@@ -1155,13 +1173,22 @@ class TemplatePanel(wx.Panel):
                         value *= 10.0
                     if param_type_2 == "speed" and self.use_mm_min():
                         value /= 60.0
+                    if hasattr(master_op, param_type_2):
+                        # quick and dirty
+                        if param_type_2 == "passes":
+                            value = int(value)
+                        if param_type_2 == "hatch_distance":
+                            if not str(value).endswith("mm"):
+                                value = f"{value}mm"
+                        setattr(master_op, param_type_2, value)
                     if hasattr(this_op, param_type_2):
                         if param_type_2 == "passes":
                             value = int(value)
                         if param_type_2 == "hatch_distance":
-                            value = f"{value}mm"
+                            if not str(value).endswith("mm"):
+                                value = f"{value}mm"
                         setattr(this_op, param_type_2, value)
-                    else:  # Try setting
+                    elif hasattr(this_op, "settings"):  # Try setting
                         this_op.settings[param_type_2] = value
 
                     set_color = make_color(
@@ -1176,7 +1203,7 @@ class TemplatePanel(wx.Panel):
                     )
                     this_op.color = set_color
                     # Add op to tree.
-                    operation_branch.add_node(this_op)
+                    operation_branch.add_node(master_op)
                     # Now add a rectangle to the scene and assign it to the newly created op
                     if usefill:
                         fill_color = set_color
