@@ -154,7 +154,7 @@ class Length:
                 else:
                     raise ValueError("Percent without relative length is meaningless.")
             else:
-                raise ValueError("Units was not recognized")
+                raise ValueError(f"Units '{units}' was not recognized for '{s}'")
             self._amount = scale * amount
             if preferred_units is None:
                 preferred_units = units
