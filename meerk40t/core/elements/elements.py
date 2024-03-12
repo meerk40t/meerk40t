@@ -724,6 +724,24 @@ class Elemental(Service):
             return True
         return False
 
+    def have_burnable_elements(self):
+        canburn = False
+        for node in self.elems():
+            will_be_burnt = False
+            for refnode in node._references:
+                op = refnode.parent
+                if op is not None:
+                    try:
+                        if op.output:
+                            will_be_burnt = True
+                            break
+                    except AttributeError:
+                        pass
+            if will_be_burnt:
+                canburn = True
+                break
+        return canburn
+
     def have_unburnable_elements(self):
         unassigned = False
         nonburnt = False
