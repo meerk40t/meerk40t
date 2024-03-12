@@ -2169,6 +2169,7 @@ class Simulation(MWindow):
                 "icon": icons8_laser_beam_hazard,
                 "tip": _("Simulate the current laser job"),
                 "action": open_simulator,
+                "rule_enabled": lambda cond: kernel.elements.have_burnable_elements(),
                 "size": STD_ICON_SIZE,
                 "priority": 1,
             },

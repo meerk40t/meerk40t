@@ -68,6 +68,7 @@ from .icons import (  # icon_duplicate,; icon_nohatch,
     icons8_finger,
     icons8_flip_horizontal,
     icons8_flip_vertical,
+    icons8_gas_industry,
     icons8_group_objects,
     icons8_measure,
     icons8_node_edit,
@@ -1233,6 +1234,40 @@ class MeerK40t(MWindow):
                 "Path",
             )
             kernel.register("registered_effects/WobbleCircleR", eff)
+
+        def run_job(*args):
+            busy = kernel.busyinfo
+            context = kernel.root
+            opt = kernel.planner.do_optimization
+            busy.start(msg=_("Preparing Laserjob..."))
+            plan = kernel.planner.get_or_make_plan("z")
+            context.setting(bool, "laserpane_hold", False)
+            if plan.plan and context.laserpane_hold:
+                context("planz spool\n")
+            else:
+                if opt:
+                    context(
+                        "planz clear copy preprocess validate blob preopt optimize spool\n"
+                    )
+                else:
+                    context("planz clear copy preprocess validate blob spool\n")
+            if context.auto_spooler:
+                context("window open JobSpooler\n")
+            busy.end()
+
+        kernel.register(
+            "button/jobstart/ExecuteLaser",
+            {
+                "label": _("Start"),
+                "icon": icons8_gas_industry,
+                "tip": _("Burn the current design"),
+                "action": run_job,
+                "rule_enabled": lambda cond: kernel.elements.have_burnable_elements(),
+                "size": STD_ICON_SIZE,
+                "priority": 2,
+            },
+        )
+
 
         bsize_normal = STD_ICON_SIZE
         # bsize_small = STD_ICON_SIZE / 2
