@@ -136,7 +136,10 @@ class ScenePanel(wx.Panel):
                 self._keybind_channel(f"scenepanel-on_key_down (rc={consumed}): {literal}")
         self.last_event = "key_down"
         if not consumed:
-            ignore = self.scene.pane.tool_active
+            if hasattr(self.scene.pane, "tool_active"):
+                ignore = self.scene.pane.tool_active
+            else:
+                ignore = False
             if self._keybind_channel:
                 self._keybind_channel(f"Scene key_down: {literal}.")
             if not ignore and self.context.bind.trigger(literal):
@@ -198,7 +201,10 @@ class ScenePanel(wx.Panel):
         #     print (f"up: someone dealt with it ({literal}, {chr(evt.GetUnicodeKey())}, {self.last_char})")
         self.last_event = None
         if not consumed:
-            ignore = self.scene.pane.tool_active
+            if hasattr(self.scene.pane, "tool_active"):
+                ignore = self.scene.pane.tool_active
+            else:
+                ignore = False
             if self._keybind_channel:
                 self._keybind_channel(f"Scene key_up: {literal}.")
             if not ignore and self.context.bind.untrigger(literal):
