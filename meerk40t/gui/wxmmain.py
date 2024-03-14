@@ -1255,6 +1255,10 @@ class MeerK40t(MWindow):
                 context("window open JobSpooler\n")
             busy.end()
 
+        def run_job_extended(*args):
+            context = kernel.root
+            context("window open ExecuteJob\n")
+
         kernel.register(
             "button/jobstart/ExecuteLaser",
             {
@@ -1262,12 +1266,12 @@ class MeerK40t(MWindow):
                 "icon": icons8_gas_industry,
                 "tip": _("Burn the current design"),
                 "action": run_job,
+                "action_right": run_job_extended,
                 "rule_enabled": lambda cond: kernel.elements.have_burnable_elements(),
                 "size": STD_ICON_SIZE,
                 "priority": 2,
             },
         )
-
 
         bsize_normal = STD_ICON_SIZE
         # bsize_small = STD_ICON_SIZE / 2
