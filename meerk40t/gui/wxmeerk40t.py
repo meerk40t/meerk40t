@@ -47,6 +47,7 @@ from .keymap import Keymap
 from .lasertoolpanel import LaserTool
 from .materialmanager import MaterialManager
 from .materialtest import TemplateTool
+from .boxes import BoxGenerator
 from .notes import Notes
 from .operation_info import OperationInformation
 from .preferences import Preferences
@@ -888,6 +889,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/OperationInfo", OperationInformation)
         kernel.register("window/Lasertool", LaserTool)
         kernel.register("window/Templatetool", TemplateTool)
+        kernel.register("window/Boxgenerator", BoxGenerator)
         kernel.register("window/Hingetool", LivingHingeTool)
         kernel.register("window/Kerftest", KerfTool)
         kernel.register("window/SimpleUI", SimpleUI)
