@@ -490,18 +490,22 @@ class BeamTable:
             hi = len(a)
             while lo < hi:
                 mid = (lo + hi) // 2
-                x_test = float(g.y_intercept(a[mid], scanline.real, scanline.imag))
+                y = a[mid]
+                x_test = float(g.y_intercept(y, scanline.real, scanline.imag))
                 if abs(value - x_test) < 1e-8:
                     x_slope = g.slope(x)
                     if np.isneginf(x_slope):
                         x_slope *= -1
-                    t_slope = g.slope(a[mid])
+                    t_slope = g.slope(y)
                     if np.isneginf(t_slope):
                         t_slope *= -1
                     if x_slope < t_slope:
                         hi = mid
                     else:
-                        lo = mid + 1
+                        if x < y:
+                            hi = mid
+                        else:
+                            lo = mid + 1
                 elif value < x_test:
                     hi = mid
                 else:
