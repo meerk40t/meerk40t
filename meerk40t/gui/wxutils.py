@@ -716,8 +716,11 @@ class TextCtrl(wx.TextCtrl):
                 if c in txt:
                     purenumber = False
                     break
-            if purenumber:
-                units = "deg"
+            if purenumber and hasattr(self.parent, "context"):
+                context = self.parent.context
+                root = context.root
+                root.setting(str, "angle_units", "deg")
+                units = root.angle_units
                 txt = txt.strip() + units
                 self.ChangeValue(txt)
 
