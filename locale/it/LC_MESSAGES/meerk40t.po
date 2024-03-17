@@ -179,20 +179,20 @@ msgstr "Scala l'asse Y"
 #: meerk40t/balormk/device.py:702 meerk40t/grbl/device.py:137
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:496 meerk40t/moshi/device.py:182
 msgid "Flip X"
-msgstr "Capovolgi l'asse X"
+msgstr "Capovolge l'asse X"
 
 #: meerk40t/balormk/device.py:703
 msgid "Flip the X axis for the Balor device"
-msgstr "Capovolgi l'asse X nei dispositivo 'Balor'"
+msgstr "Capovolge l'asse X nei dispositivo 'Balor'"
 
 #: meerk40t/balormk/device.py:713 meerk40t/grbl/device.py:149
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:514 meerk40t/moshi/device.py:194
 msgid "Flip Y"
-msgstr "Capovolgi l'asse Y"
+msgstr "Capovolge l'asse Y"
 
 #: meerk40t/balormk/device.py:714
 msgid "Flip the Y axis for the Balor device"
-msgstr "Capovolgi l'asse Y nei dispositivo 'Balor'"
+msgstr "Capovolge l'asse Y nei dispositivo 'Balor'"
 
 #: meerk40t/balormk/device.py:724 meerk40t/grbl/device.py:161
 #: meerk40t/moshi/device.py:206
@@ -244,20 +244,20 @@ msgstr "Indica il pin dell'interfaccia GPIO a cui è collegato il pedale"
 
 #: meerk40t/balormk/device.py:776
 msgid "Redlight laser"
-msgstr "Laser rosso di puntamento"
+msgstr "Puntatore laser"
 
 #: meerk40t/balormk/device.py:777
 msgid "What pin is your redlight hooked to on the GPIO"
-msgstr "A quale pin dell'interfaccia GPIO è collegato il laser rosso di puntamento"
+msgstr "A quale pin dell'interfaccia GPIO è collegato il puntatore laser"
 
 
 #: meerk40t/balormk/device.py:790
 msgid "Redlight travel speed"
-msgstr "Velocità del laser rosso di puntamento"
+msgstr "Velocità del puntatore"
 
 #: meerk40t/balormk/device.py:791
 msgid "Speed of the galvo when using the red laser."
-msgstr "Velocità del galvo quando si usa il laser rosso di puntamento"
+msgstr "Velocità del galvo quando si usa il puntatore laser"
 
 #: meerk40t/balormk/device.py:798
 msgid "X-Offset"
@@ -265,7 +265,7 @@ msgstr "Offset X"
 
 #: meerk40t/balormk/device.py:799
 msgid "Offset the redlight positions by this amount in x"
-msgstr "Compensa la posizione del laser di puntamento di questa quantità in x"
+msgstr "Compensa la posizione del puntatore laser di questa quantità in x"
 
 #: meerk40t/balormk/device.py:807
 msgid "Y-Offset"
@@ -273,7 +273,7 @@ msgstr "Offset Y"
 
 #: meerk40t/balormk/device.py:808
 msgid "Offset the redlight positions by this amount in y"
-msgstr "Compensa la posizione del laser di puntamento di questa quantità in y"
+msgstr "Compensa la posizione del puntatore laser di questa quantità in y"
 
 #: meerk40t/balormk/device.py:816
 msgid "Angle Offset"
@@ -282,18 +282,18 @@ msgstr "Offset angolare"
 #: meerk40t/balormk/device.py:817
 msgid "Offset the redlight positions by this angle, curving around center"
 msgstr ""
-"Angolo di offset del laser rosso di puntamento (ruotato intorno al centro)"
+"Angolo di offset del puntatore laser (ruotato intorno al centro)"
 
 #: meerk40t/balormk/device.py:827
 msgid "Prefer redlight on"
-msgstr "Preferisci laser rosso di puntamento acceso"
+msgstr "Preferisce il puntatore laser acceso"
 
 #: meerk40t/balormk/device.py:828
 msgid ""
 "Redlight preference will turn toggleable redlights on after a job "
 "completes."
 msgstr ""
-"Questa preimpostazione accende il laser rosso alla fine del lavoro (può"
+"Questa preimpostazione accende il puntatore laser alla fine del lavoro (può"
 " può essere spenta in qualsiasi momento premendo un pulsante)."
 
 #: meerk40t/balormk/device.py:842
@@ -596,7 +596,7 @@ msgstr "invia al laser un comando 'goto'n (vai a)"
 
 #: meerk40t/balormk/device.py:1658
 msgid "Turns redlight on/off"
-msgstr "Attiva/disattiva il laser rossa"
+msgstr "Attiva/disattiva il puntatore laser"
 
 #: meerk40t/balormk/device.py:1680 meerk40t/balormk/device.py:1702
 msgid "Resets the galvo laser"
@@ -3322,7 +3322,7 @@ msgstr "Converti in percorso"
 
 #: meerk40t/core/elements.py:7697 meerk40t/core/elements.py:7715
 msgid "Flip"
-msgstr "Capovolgi"
+msgstr "Capovolge"
 
 #: meerk40t/core/elements.py:7702
 msgid "Horizontally"
@@ -3338,7 +3338,7 @@ msgstr "Verticalmente"
 
 #: meerk40t/core/elements.py:7720
 msgid "Flip Vertically"
-msgstr "Capovolgi verticalmente"
+msgstr "Capovolge verticalmente"
 
 #: meerk40t/core/elements.py:7732 meerk40t/gui/navigationpanels.py:1485
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:160
@@ -3392,7 +3392,7 @@ msgstr "Blocca gli elementi, impedisce le manipolazioni"
 
 #: meerk40t/core/elements.py:7848
 msgid "Toggle visibility of regmarks"
-msgstr "Alterna la visibilità dei Riferimenti"
+msgstr "Attiva/disattiva la vista dei Riferimenti"
 
 #: meerk40t/core/elements.py:7856
 msgid "Move back to elements"
@@ -3444,7 +3444,7 @@ msgstr "Specchia orizzontalmente"
 
 #: meerk40t/core/elements.py:7947
 msgid "Flip vertical"
-msgstr "Capovolgi verticalmente"
+msgstr "Capovolge verticalmente"
 
 #: meerk40t/core/elements.py:7953
 msgid "Rotate 90° CW"
@@ -3496,7 +3496,7 @@ msgid ""
 msgstr ""
 "L'utilizzo di questa opzione può ridurre significativamente il tempo di spostamento tra "
 "elementi con il laser spento, ottimizzando la sequenza con cui gli elementi vengono "
-"bruciati"
+"incisi"
 
 #: meerk40t/core/planner.py:56
 msgid ""
@@ -3550,7 +3550,7 @@ msgstr ""
 "creare una corsa più lunga verso la fine del sottopercorso, evita anche "
 "spostamenti successivi verso o dal punto intermedio. Il tempo di percorrenza totale e "
 "il tempo di percorrenza totale può quindi essere più breve o più lungo. Si possono anche evitare piccole "
-"differenze nella profondità totale della 'bruciatura' nel punto in cui le 'bruciature' si uniscono. "
+"differenze nella profondità totale delle incisioni nel punto in cui le incisioni si uniscono. "
 
 #: meerk40t/core/planner.py:100
 msgid "Merge Passes"
@@ -4262,11 +4262,11 @@ msgstr "abilita la modalità di sospensione"
 
 #: meerk40t/grbl/device.py:138 meerk40t/moshi/device.py:183
 msgid "+X is standard for grbl but sometimes settings can flip that."
-msgstr "+X è lo standard per grbl ma talvolta le impostazioni possono cambiarlo"
+msgstr "+X è lo standard per GRBL ma talvolta le impostazioni possono cambiarlo"
 
 #: meerk40t/grbl/device.py:150 meerk40t/moshi/device.py:195
 msgid "-Y is standard for grbl but sometimes settings can flip that."
-msgstr "-Y è lo standard per grbl ma talvolta le impostazioni possono cambiarlo"
+msgstr "-Y è lo standard per GRBL ma talvolta le impostazioni possono cambiarlo"
 
 #: meerk40t/grbl/device.py:162 meerk40t/lihuiyu/gui/lhydrivergui.py:528
 #: meerk40t/moshi/device.py:207
@@ -4371,19 +4371,19 @@ msgstr "Impossibile salvare: {filename}"
 
 #: meerk40t/grbl/plugin.py:24
 msgid "grbl x-flip"
-msgstr ""
+msgstr "GRBL capovolve X"
 
 #: meerk40t/grbl/plugin.py:27
 msgid "grbl y-flip"
-msgstr ""
+msgstr "GRBL capovolve Y"
 
 #: meerk40t/grbl/plugin.py:44
 msgid "shutdown current grblserver"
-msgstr "spegni il server grbl corrente"
+msgstr "spegni il server GRBL corrente"
 
 #: meerk40t/grbl/plugin.py:48
 msgid "activate the grblserver."
-msgstr "attiva il server grbl"
+msgstr "attiva il server GRBL"
 
 #: meerk40t/grbl/plugin.py:78
 msgid "GRBL Mode."
@@ -5306,7 +5306,7 @@ msgstr "Mostra percorso di spostamento"
 
 #: ./meerk40t\gui\simulation.py:1333
 msgid "Displays the laser travel when not burning"
-msgstr "Visualizza la corsa del laser quando non 'brucia'"
+msgstr "Visualizza la corsa del laser quando non incide"
 
 msgid "Tolerance to decide if a shape is truly inside another one."
 msgstr ""
@@ -5803,7 +5803,7 @@ msgstr "Sottolineato"
 
 #: meerk40t/gui/navigationpanels.py:67
 msgid "Drag"
-msgstr "Sposta gli elementi"
+msgstr "Taglia, sposta gli elementi"
 
 #: meerk40t/gui/navigationpanels.py:74 meerk40t/gui/navigationpanels.py:92
 #: meerk40t/gui/navigationpanels.py:111 meerk40t/gui/navigationpanels.py:129
@@ -7739,8 +7739,8 @@ msgid "Hides/Restores all the visible panes (except scene)"
 msgstr "Nasconde/ripristina tutti i pannelli visibili (tranne la scena)."
 
 #: meerk40t/gui/wxmmain.py:1550
-msgid "c."
-msgstr ""
+msgid "Panes restored."
+msgstr "Pannelli ripristinati"
 
 #: meerk40t/gui/wxmmain.py:1562
 msgid "Panes hidden."
@@ -9984,19 +9984,19 @@ msgstr "Arresto del contorno della traccia..."
 
 #: meerk40t/balormk/gui/gui.py:103
 msgid "Turn light off"
-msgstr "Spegnere la luce"
+msgstr "Spegne puntatore"
 
 #: meerk40t/balormk/gui/gui.py:111
 msgid "Red Dot On"
-msgstr "Punto rosso acceso"
+msgstr "Puntatore acceso"
 
 #: meerk40t/balormk/gui/gui.py:113
 msgid "Turn Redlight On"
-msgstr "Laser a luce rossa acceso"
+msgstr "Accende puntatore"
 
 #: meerk40t/balormk/gui/gui.py:116
 msgid "Red Dot Off"
-msgstr "Punto rosso spento"
+msgstr "Puntatore spento"
 
 #: meerk40t/camera/gui/camerapanel.py:39 meerk40t/camera/gui/camerapanel.py:843
 #: meerk40t/camera/gui/camerapanel.py:848
@@ -10443,7 +10443,7 @@ msgstr "Configurazione dispositivo in uso"
 #: meerk40t/grbl/gui/gui.py:51 meerk40t/lihuiyu/gui/gui.py:83
 #: meerk40t/moshi/gui/gui.py:50
 msgid "Pause the laser"
-msgstr "Metti in pausa il laser"
+msgstr "Mette in pausa il laser"
 
 #: meerk40t/grbl/gui/gui.py:61 meerk40t/lihuiyu/gui/gui.py:93
 #: meerk40t/moshi/gui/gui.py:60
@@ -10479,7 +10479,7 @@ msgstr "Porta per la connessione TCP sul computer server"
 #: meerk40t/lihuiyu/gui/tcpcontroller.py:77
 #: meerk40t/lihuiyu/gui/tcpcontroller.py:81
 msgid "Current number of bytes in the write buffer."
-msgstr "Numero corrente di byte nel buffer di scrittura."
+msgstr "Numero corrente di byte nel buffer di scrittura"
 
 #: meerk40t/grbl/gui/tcpcontroller.py:92
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:231
@@ -12030,8 +12030,8 @@ msgid ""
 "Board Serial Number to be used to identify a specific laser. If the "
 "device fails to match the serial number it will be disconnected."
 msgstr ""
-"Il numero di serie può essere utilizzato per identificare una scheda. Se il dispositivo "
-" non ha un numero di serie corrispondente, la connessione viene interrotta"
+"Il numero di serie può essere utilizzato per identificare una scheda.\nSe il dispositivo "
+"non ha un numero di serie corrispondente, la connessione viene interrotta"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:94
 msgid "Write Buffer"
@@ -12046,7 +12046,7 @@ msgid ""
 "Limit the write buffer to a certain amount. Permits on-the-fly command "
 "production."
 msgstr ""
-"Limita la dimensione del buffer di scrittura, rendendo possibile l'invio di"
+"Limita la dimensione del buffer di scrittura, rendendo possibile l'invio di "
 "comandi"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:123
@@ -12141,9 +12141,9 @@ msgid ""
 "Execute a burn as if there was an m2-nano controller physically connected"
 " by USB."
 msgstr ""
-"Seleziona questa opzione solo per il debug senza un laser fisico disponibile. "
-"Esegue una lavorazione come se ci fosse un controller m2-nano fisicamente collegato"
-" tramite USB"
+"Seleziona questa opzione solo per il debug senza un laser fisico disponibile.\n"
+"Esegue una lavorazione come se ci fosse un controller M2-nano fisicamente collegato "
+"tramite USB"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:685
 msgid "General Options"
@@ -12167,7 +12167,7 @@ msgid ""
 "stuttering, allowing you potentially to burn at higher speeds."
 msgstr ""
 "Il raggruppamento degli impulsi è un mezzo alternativo per ridurre l'incidenza di "
-"'balbettamento', consentendo potenzialmente di 'bruciare' a velocità più elevate"
+"'balbettamento', consentendo potenzialmente di incidere a velocità più elevate"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:702
 msgid ""
@@ -12185,8 +12185,8 @@ msgid ""
 "difference should not be visible even under magnification."
 msgstr ""
 "Ad esempio, verrà 'sparato' 1100 invece di 1010, perché il raggio laser "
-"si sovrappone e poiché la testa si muove al massimo di 1/1000"
-", la differenza non dovrebbe essere visibile"
+"si sovrappone e poiché la testa si muove al massimo di 1/1000, "
+"la differenza non dovrebbe essere visibile\n"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:709
 msgid ""
@@ -12197,10 +12197,16 @@ msgid ""
 "are believed to be small enough to be undetectable, you may wish to leave"
 " this permanently checked."
 msgstr ""
+"Mentre l'opzione Raggruppamento impulsi in Operazioni è impostata per tale operazione "
+"prima che il lavoro venga inviato in spool e non può essere modificato al volo, questo globale"
+"L'opzione Raggruppamento impulsi viene selezionata mentre le istruzioni vengono inviate al laser"
+"e può essere acceso e spento durante il processo di masterizzazione. Perché i cambiamenti "
+"si ritiene che siano abbastanza piccoli da non essere rilevabili, potresti voler andartene"
+"questo è stato controllato in modo permanente."
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:717
 msgid "Strict"
-msgstr "Esattamente"
+msgstr "Rigorosamente"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:719
 msgid ""
@@ -12209,7 +12215,7 @@ msgid ""
 "This may prevent devices like the M2-V4 and earlier from having issues. "
 "Not typically needed."
 msgstr ""
-"Costringe l'apparecchio ad avviare e terminare la 'Modalità velocità programmata' "
+"Costringe la macchina ad avviare e terminare la 'Modalità velocità programmata' "
 "dalla stessa pagina.\n"
 "Questo può risolvere i problemi con schede come la M2-V4 e precedenti.\n"
 "Normalmente non è richiesto"
@@ -12228,7 +12234,7 @@ msgstr ""
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:736
 msgid "Twitch Vectors"
-msgstr "'Vettori Twitch'"
+msgstr "Vettori di contrazione"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:738
 msgid ""
@@ -12239,10 +12245,10 @@ msgid ""
 "noticeable faster travel time. This option allows you to turn on the "
 "previous mode if you experience problems."
 msgstr ""
-"Le contrazioni o gli scatti sono movimenti non necessari in una direzione non desiderata"
-" all'inizio e alla fine di un movimento tra i processi di accensione dei vettori. È più "
-"evidente quando si esegue una serie di piccole operazioni di incisione/taglio (ad esempio, per 'bruciare' i fori "
-" su pelle). Dalla v.0.7.6 e successive, questo fenomeno viene aggirato.\n"
+"Le contrazioni o gli scatti sono movimenti non necessari in una direzione non desiderata "
+"all'inizio e alla fine di un movimento tra i processi di incisione dei vettori. È più "
+"evidente quando si esegue una serie di piccole operazioni di incisione/taglio (ad esempio, per incedere i fori "
+"su pelle). Dalla v.0.7.6 e successive, questo fenomeno viene aggirato.\n"
 "Questa opzione serve per utilizzare il vecchio metodo se l'attuale "
 "dovesse causare problemi (normalmente non è necessario)"
 
@@ -12300,7 +12306,7 @@ msgstr "Velocità:"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:850
 msgid "Fix rated to actual speed"
-msgstr "Fissare la velocità nominale a quella corretta"
+msgstr "Fissa la velocità nominale a quella effettiva"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:853
 #, python-format
@@ -12781,7 +12787,7 @@ msgid "Clear Alarm"
 msgstr "Cancella allarme"
 
 msgid "Send a GRBL Clear Alarm command"
-msgstr "Invia un comando GRBL 'Cancella allarme'"
+msgstr "Invia un comando GRBL Cancella allarme"
 
 msgid "Force connection/disconnection from the device."
 msgstr "Forza l'impostazione/annullamento della connessione per questo dispositivo"
@@ -13259,7 +13265,7 @@ msgid "Information"
 msgstr "Informazioni"
 
 msgid "Outline element(s)..."
-msgstr "Elemento(i) di contorno"
+msgstr "Contorno elemento(i)"
 
 msgid "...with {offset}mm distance"
 msgstr "spaziatura di {offset}mm"
@@ -13677,7 +13683,7 @@ msgstr ""
 msgid ""
 "This will engrave a single point for a given period of time"
 msgstr ""
-"Un singolo punto viene bruciato per un determinato periodo di tempo"
+"Un singolo punto viene inciso per un determinato periodo di tempo"
 
 msgid ""
 "This allows to execute an arbitrary command during the engrave process"
@@ -13914,9 +13920,9 @@ msgid ""
 "Designed for Laser Machines. Assembled in China-Hangzhou. "
 "The most recent and popular revision version is 6C6879-LASER-M2:9."
 msgstr ""
-"L'M2Nano è il controller standard nella maggior parte dei dispositivi K40 "
-"Sulla scheda, perlopiù verde, c'è scritto..."
-"Lihuiyu Studios Labs. Progettato per macchine laser. Assemblato in Cina-Hangzhou"
+"L'M2 Nano è il controller standard nella maggior parte dei dispositivi K40.\n"
+"Sulla scheda, solitamente verde, c'è scritto:\n"
+"Lihuiyu Studios Designed for Laser Machines. Assembled in China-Hangzhou.\n"
 "La versione più comune è la 6C6879-LASER-M2:9"
 
 msgid ""
@@ -13925,20 +13931,20 @@ msgid ""
 "Unlike previous boards the M3 Nano has a hardware pause multi-plexing button and PWM control. "
 "The M3Nano Plus variation replaces the A4988 stepper motor chips with TMC stepper motor chips."
 msgstr ""
-"La versione successiva dell'M2 Nano offre il supporto PWM per la regolazione della potenza del laser. "
-"L'ultima versione del circuito stampato, per lo più di colore viola, è la 6C6879-LASER-M3:10"
+"La versione successiva dell'M2, M3 Nano offre il supporto PWM per la regolazione della potenza del laser.\n"
+"L'ultima versione della scheda, per lo più di colore viola, è la versione 6C6879-LASER-M3:10\n"
 "La versione M3 Nano Plus è dotata di driver stepper TMC al posto dell'A4988"
 
 msgid ""
 "The JCZ Controller is a type of Galvo Laser Controller for several different sources compatible with the EZCad2™ software."
 msgstr ""
-"La scheda JCZ è un controller per laser in fibra controllato dal software EZCad2™"
+"La scheda JCZ è un controller per laser a fibra controllato dal software EZCad2™"
 
 msgid "With specific settings for the UV source. (No specific settings are known)."
-msgstr "Con impostazioni specifiche per la sorgente laser UV (finora non utilizzata)"
+msgstr "Con impostazioni specifiche per una sorgente laser UV (Non sono note impostazioni specifiche)"
 
 msgid "With specific settings for the CO2 source. (No specific settings are known)."
-msgstr "Con impostazioni specifiche per la sorgente laser CO2 (finora non utilizzata)"
+msgstr "Con impostazioni specifiche per una sorgente laser CO2 (Non sono note impostazioni specifiche)"
 
 msgid "With this driver we specifically enable the MOPA feature."
 msgstr "Questo driver attiva la funzione MOPA (lunghezza d'impulso variabile)"
@@ -13972,7 +13978,7 @@ msgid ""
 "these communicate over USB via a CH341 Universal Interface Chip (same chip as M2-Nano). "
 "The boards are usually red and sport two large black heatsinks for their stepper motor chips."
 msgstr ""
-"Le Moshiboard MS10105 (V.4.XX) erano popolari intorno al 2013. Le schede sono per lo più rosse e "
+"Le Moshi board MS10105 (V.4.XX) erano popolari intorno al 2013.\nLe schede sono per lo più rosse e "
 "hanno due grandi dissipatori di calore installati sopra i driver passo-passo"
 
 msgid "&Undo\tCtrl-Z"
@@ -14300,7 +14306,7 @@ msgid ""
 "If for some reason the device needs a different welcome validator than 'Grbl' (default), "
 "for example, somewhat custom grbl-like firmware"
 msgstr ""
-"Un testo di benvenuto diverso da quello standard 'Grbl' può essere memorizzato qui"
+"Un testo di benvenuto diverso da quello standard 'GRBL' può essere memorizzato qui"
 "questo è necessario per alcuni firmware speciali come FluidNC"
 
 msgid "What power level do we cut at?"
@@ -14884,10 +14890,10 @@ msgid ""
 "typically it just maintained the count. However, in some rare cases this may artifact "
 "if the PPI is low enough to see individual dots. This feature allows very fine-grained control."
 msgstr ""
-"L'algoritmo di trasporto PPI non è unico quando si passa da una posizione all'altra. "
-"Di solito viene mantenuto il riporto. In rari casi, quando il valore PPI "
-"diventa così piccolo da poter vedere i singoli punti, questo può portare ad artefatti."
-"Questa impostazione consente un controllo molto granulare su questa caratteristica"
+"L'algoritmo di trasporto PPI nambiguo quando si passa da una posizione all'altra. "
+"Di solito viene mantenuto il conto. In rari casi, quando il valore PPI "
+"diventa così piccolo da poter vedere i singoli punti, questo può portare ad artefatti. "
+"Questa impostazione consente un controllo molto più preciso"
 
 #: ./meerk40t\lihuiyu\device.py:207
 msgid "Sequential: maintain phase between cuts"
@@ -15981,10 +15987,10 @@ msgid ""
 "ie engraving or cutting.\n"
 "You can finetune this in the Warning Sections of this configuration dialog."
 msgstr ""
-"Qual è la massima velocità affidabile a cui il laser può eseguire"
-"può eseguire Processi vettoriali (ad esempio, incisione o taglio).\n"
-"Questi valori, insieme ad alcuni altri, possono essere ulteriormente definiti nella sezione 'Avvertenze' "
-"possono essere definiti in modo ancora più preciso"
+"Imposta la massima velocità affidabile a cui il laser può eseguire"
+"Processi vettoriali (ad esempio, incisione o taglio).\n"
+"Questi valori, insieme ad alcuni altri, possono essere ulteriormente definiti nella sezione Avvertenze "
+"e definiti in modo ancora più preciso"
 
 #: ./meerk40t\grbl\device.py:356
 msgid "Maximum speeds"
@@ -16000,10 +16006,10 @@ msgid ""
 "perform raster or image operations.\n"
 "You can finetune this in the Warning Sections of this configuration dialog."
 msgstr ""
-"Qual è la massima velocità affidabile a cui il laser può eseguire "
-"può eseguire Processi raster (cioè raster o immagini).\n"
-"Questi valori, insieme a diversi altri, possono essere ulteriormente definiti nella sezione 'Avvertenze' "
-"possono essere definiti in modo ancora più preciso"
+"Imposta la massima velocità affidabile a cui il laser può eseguire "
+"Processi raster (cioè raster o immagini).\n"
+"Questi valori, insieme a diversi altri, possono essere ulteriormente definiti nella sezione Avvertenze "
+"e definiti in modo ancora più preciso"
 
 #: ./meerk40t\grbl\device.py:427
 msgid "Reset on connect"
@@ -17386,15 +17392,15 @@ msgstr "Invia il gcode grezzo al dispositivo (tramite il canale realtime)"
 
 #: ./meerk40t\grbl\device.py:534
 msgid "Force grbl validation for the connection"
-msgstr "Forza la validazione grbl per la connessione"
+msgstr "Forza la validazione GRBL per la connessione"
 
 #: ./meerk40t\grbl\device.py:538
 msgid "Forced grbl validation."
-msgstr "Forza la validazione grbl"
+msgstr "Forza la validazione GRBL"
 
 #: ./meerk40t\grbl\device.py:765
 msgid "activate the grbl interpreter."
-msgstr "attiva l'interprete grbl"
+msgstr "attiva l'interprete GRBL"
 
 #: ./meerk40t\grbl\device.py:771
 msgid "Grbl Interpreter attached to {device}"
@@ -17430,7 +17436,7 @@ msgstr "Ortur Laser Master 2 (GRBL)"
 
 #: ./meerk40t\grbl\plugin.py:152
 msgid "Ortur-branded self-assembled grbl diode lasers"
-msgstr "Laser a diodi grbl autoassemblati di marca Ortur"
+msgstr "Laser a diodi GRBL autoassemblati di marca Ortur"
 
 #: ./meerk40t\grbl\plugin.py:192
 msgid "watch server channels"
@@ -17438,7 +17444,7 @@ msgstr "Guarda i canali del server"
 
 #: ./meerk40t\grbl\plugin.py:233
 msgid "starts a grblmock server on port 23 (telnet)"
-msgstr "Avvia un server grblmock sulla porta 23 (telnet)"
+msgstr "Avvia un server GRBLmock sulla porta 23 (telnet)"
 
 #: ./meerk40t\grbl\gui\grblcontroller.py:74
 msgid "Physical Home"
@@ -18146,7 +18152,7 @@ msgstr "Fibra-laser (controllore JCZ) (non MOPA)"
 
 #: ./meerk40t\balormk\plugin.py:34
 msgid "The JCZ Controller is a type of Galvo Laser Controller for several different sources compatible with the EZCad2™ software."
-msgstr "Il controller JCZ è un tipo di controller laser galvanico per diverse sorgenti compatibili con il software EZCad2™"
+msgstr "Il controller JCZ è un tipo di controller per laser galvanometrici per diverse sorgenti. Compatibili con il software EZCad2™"
 
 #: ./meerk40t\balormk\plugin.py:54
 msgid "Fibre-Laser (JCZ-Controller) (MOPA)"
@@ -18170,7 +18176,7 @@ msgstr "Test"
 
 #: ./meerk40t\balormk\gui\balorconfig.py:49
 msgid "Turn red dot on for test purposes"
-msgstr "Accendere il punto rosso a scopo di prova"
+msgstr "Accende il puntatore laser a scopo di prova"
 
 #: ./meerk40t\balormk\gui\balorconfig.py:59
 msgid "Bits"
@@ -18611,6 +18617,30 @@ msgstr "Selezionare questa opzione se il dispositivo GRBL viene contattato trami
 #: meerk40t/grbl/gui/grblcontroller.py:301
 msgid "GRBL Controller"
 msgstr "GRBL Controller"
+
+#: meerk40t/core/elements/element_treeops.py:426 meerk40t/core/elements/element_treeops.py:433 meerk40t/core/elements/element_treeops.py:438 meerk40t/core/elements/element_treeops.py:443 meerk40t/core/elements/element_treeops.py:448
+msgid "Burning sequence"
+msgstr "Sequenza di fuoco"
+
+#: meerk40t/core/elements/element_treeops.py:428
+msgid "Dragging works as well..."
+msgstr "Anche lo spostamento diretto dell'elemento funziona..."
+
+#: meerk40t/core/elements/element_treeops.py:434
+msgid "Burn first"
+msgstr "Incidi per primo"
+
+#: meerk40t/core/elements/element_treeops.py:439
+msgid "Burn earlier"
+msgstr "Incidi prima"
+
+#: meerk40t/core/elements/element_treeops.py:444
+msgid "Burn later"
+msgstr "Incidi dopo"
+
+#: meerk40t/core/elements/element_treeops.py:449
+msgid "Burn last"
+msgstr "Incidi per ultimo"
 
 #: meerk40t/gui/scenewidgets/selectionwidget.py:2190
 msgid "Align Selection"

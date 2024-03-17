@@ -59,9 +59,9 @@ tip=Prova a cliccare con il tasto destro del mouse sulla voce del processo di la
 img=https://user-images.githubusercontent.com/2670784/285616467-75cf67db-d329-4fcc-9a5a-e9635d9aa4e1.png
 cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Operations
 
-tip=MeerK40t dispone di segni, 'crocini di registro' (regmark), una categoria speciale di elementi che non vengono 'laserati', ma che agiscono come una sorta di linea guida visiva per il posizionamento degli oggetti.
-È possibile spostare gli elementi fuori dalla zona dei crocini di registro trascinandoli dentro o fuori dall'area dei crocini di registro nell'albero.
-Gli elementi nell'area di crocini di registro fungono da sfondo e non è più possibile interagire direttamente con essi sulla Scena.
+tip=MeerK40t dispone di segni, Riferimenti (regmark), una categoria speciale di elementi che non vengono 'laserati', ma che agiscono come una sorta di linea guida visiva per il posizionamento degli oggetti.
+È possibile spostare gli elementi fuori dalla zona dei Riferimenti trascinandoli dentro o fuori dall'area dei Riferimenti nell'albero.
+Gli elementi nell'area di Riferimenti fungono da sfondo e non è più possibile interagire direttamente con essi sulla Scena.
 cmd=https://github.com/meerk40t/meerk40t/wiki/Online-Help%3A-TREE#Regmarks
 
 tip=Un oggetto deve essere posizionato con precisione sull'area di lavoro?
