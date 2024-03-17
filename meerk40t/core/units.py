@@ -80,6 +80,15 @@ ACCEPTED_UNITS = (
     "tat",
 )
 
+ACCEPTED_ANGLE_UNITS = (
+    "",
+    "deg",
+    "grad",
+    "rad",
+    "turn",
+    "%",
+)
+
 
 class Length:
     """

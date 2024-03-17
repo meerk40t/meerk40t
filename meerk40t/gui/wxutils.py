@@ -8,7 +8,7 @@ import wx
 import wx.lib.mixins.listctrl as listmix
 from wx.lib.scrolledpanel import ScrolledPanel as SP
 
-from meerk40t.core.units import ACCEPTED_UNITS, Angle, Length
+from meerk40t.core.units import ACCEPTED_UNITS, ACCEPTED_ANGLE_UNITS, Angle, Length
 
 _ = wx.GetTranslation
 
@@ -490,14 +490,7 @@ class TextCtrl(wx.TextCtrl):
         # the same character in the string even if it's unnecessary...
         floatstr = "+-.eE0123456789"
         unitstr = "".join(ACCEPTED_UNITS)
-        angle_units = (
-            "deg",
-            "rad",
-            "grad",
-            "turn",
-            r"%",
-        )
-        anglestr = "".join(angle_units)
+        anglestr = "".join(ACCEPTED_ANGLE_UNITS)
         self.charpattern = ""
         if self._check == "length":
             self.charpattern = floatstr + unitstr
@@ -711,6 +704,23 @@ class TextCtrl(wx.TextCtrl):
                 units = root.units_name
                 if units in ("inch", "inches"):
                     units = "in"
+                txt = txt.strip() + units
+                self.ChangeValue(txt)
+        elif (
+            txt != "" and self._check == "angle" and self.extend_default_units_if_empty
+        ):
+            # Do we have non-existing units provided? --> Change content
+            purenumber = True
+            unitstr = "".join(ACCEPTED_ANGLE_UNITS)
+            for c in unitstr:
+                if c in txt:
+                    purenumber = False
+                    break
+            if purenumber and hasattr(self.parent, "context"):
+                context = self.parent.context
+                root = context.root
+                root.setting(str, "angle_units", "deg")
+                units = root.angle_units
                 txt = txt.strip() + units
                 self.ChangeValue(txt)
 

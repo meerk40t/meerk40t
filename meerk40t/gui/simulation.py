@@ -2149,8 +2149,7 @@ class Simulation(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-        def open_simulator(v=None):
-            opt = kernel.planner.do_optimization
+        def handler(opt):
             optpart = " preopt optimize" if opt else ""
 
             busy = kernel.busyinfo
@@ -2162,6 +2161,13 @@ class Simulation(MWindow):
             )
             busy.end()
 
+        def open_simulator(*args):
+            opt = kernel.planner.do_optimization
+            handler(opt)
+
+        def open_simulator_simple(*args):
+            handler(False)
+
         kernel.register(
             "button/jobstart/Simulation",
             {
@@ -2169,6 +2175,7 @@ class Simulation(MWindow):
                 "icon": icons8_laser_beam_hazard,
                 "tip": _("Simulate the current laser job"),
                 "action": open_simulator,
+                "action_right": open_simulator_simple,
                 "rule_enabled": lambda cond: kernel.elements.have_burnable_elements(),
                 "size": STD_ICON_SIZE,
                 "priority": 1,
