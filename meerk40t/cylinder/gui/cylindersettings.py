@@ -2,7 +2,7 @@
 import wx
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
-from meerk40t.gui.icons import icon_rotary
+from meerk40t.gui.icons import icon_barrel_distortion
 from meerk40t.gui.mwindow import MWindow
 
 _ = wx.GetTranslation
@@ -17,7 +17,7 @@ class CylinderSettings(MWindow):
         self.sizer.Add(self.panel, 1, wx.EXPAND, 0)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icon_rotary.GetBitmap())
+        _icon.CopyFromBitmap(icon_barrel_distortion.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Cylinder-Correction"))
         self.restore_aspect(honor_initial_values=True)

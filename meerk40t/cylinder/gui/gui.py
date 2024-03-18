@@ -12,7 +12,7 @@ def plugin(service, lifecycle):
             "provider/device/balor",
         )
     elif lifecycle == "added":
-        from meerk40t.gui.icons import icon_rotary
+        from meerk40t.gui.icons import icon_barrel_distortion
 
         _ = service._
 
@@ -21,7 +21,7 @@ def plugin(service, lifecycle):
             "button/device/Cylinder",
             {
                 "label": _("Cylinder"),
-                "icon": icon_rotary,
+                "icon": icon_barrel_distortion,
                 "tip": _("Opens Cylinder Window"),
                 "action": lambda v: service.console("window toggle Cylinder\n"),
             },
