@@ -3016,3 +3016,14 @@ icon_linegap_smaller = VectorIcon(
         "M 35, 45 l 5, -5 l 5, 5",
     ),
 )
+
+icon_boxes = VectorIcon(
+    fill=(),
+    stroke=(
+        "M 0 0 h 50 v 10 h -50 v -10",
+        "M 5 10 h 40 v 40 h -40 v -40",
+        "M 15 17.5 h 20 v 5 h -20 v -5",
+        "M 5 40 l 10, 10",
+        "M 45 40 l -10, 10",
+    ),
+)

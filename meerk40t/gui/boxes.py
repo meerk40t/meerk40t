@@ -16,7 +16,7 @@ from ..gui.wxutils import (
     wxRadioBox,
 )
 from ..kernel import signal_listener
-from .icons import STD_ICON_SIZE, get_default_icon_size, icons8_arrange
+from .icons import STD_ICON_SIZE, get_default_icon_size, icon_boxes
 from .mwindow import MWindow
 
 _ = wx.GetTranslation
@@ -43,7 +43,7 @@ class BoxPanel(wx.Panel):
 
         sizer_x.Add(self.label_x, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.text_outer_x = wx.TextCtrl(self, wx.ID_ANY)
+        self.text_outer_x = TextCtrl(self, wx.ID_ANY, limited=True, check="length")
         self.text_outer_x.SetToolTip(_("The total width of your box"))
 
         sizer_x.Add(self.text_outer_x, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -57,7 +57,7 @@ class BoxPanel(wx.Panel):
 
         sizer_y.Add(self.label_y, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.text_outer_y = wx.TextCtrl(self, wx.ID_ANY)
+        self.text_outer_y = TextCtrl(self, wx.ID_ANY, limited=True, check="length")
         self.text_outer_y.SetToolTip(_("The total length of your box"))
 
         sizer_y.Add(self.text_outer_y, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -71,9 +71,7 @@ class BoxPanel(wx.Panel):
 
         sizer_z.Add(self.label_z, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.text_outer_z = wx.TextCtrl(
-            self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0
-        )
+        self.text_outer_z = TextCtrl(self, wx.ID_ANY, limited=True, check="length")
         self.text_outer_z.SetToolTip(_("The height of the box"))
 
         sizer_z.Add(self.text_outer_z, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -91,7 +89,7 @@ class BoxPanel(wx.Panel):
 
         sizer_thick.Add(self.label_thick, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.text_thickness = wx.TextCtrl(self, wx.ID_ANY)
+        self.text_thickness = TextCtrl(self, wx.ID_ANY, limited=True, check="length")
         self.text_thickness.SetToolTip(_("The thickness of the material"))
 
         sizer_thick.Add(self.text_thickness, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -105,8 +103,8 @@ class BoxPanel(wx.Panel):
 
         sizer_fingerjoint.Add(self.label_joint, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.text_joint = wx.TextCtrl(self, wx.ID_ANY)
-        self.text_joint.SetToolTip(_("The thickness of the material"))
+        self.text_joint = TextCtrl(self, wx.ID_ANY, limited=True, check="length")
+        self.text_joint.SetToolTip(_("The length of the tab"))
 
         sizer_fingerjoint.Add(self.text_joint, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -119,8 +117,8 @@ class BoxPanel(wx.Panel):
 
         sizer_kerf.Add(self.label_kerf, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.text_kerf = wx.TextCtrl(self, wx.ID_ANY)
-        self.text_kerf.SetToolTip(_("Kerf tooltip TODO"))
+        self.text_kerf = TextCtrl(self, wx.ID_ANY, limited=True, check="length")
+        self.text_kerf.SetToolTip(_("Width of laserbeam (Kerf)"))
 
         sizer_kerf.Add(self.text_kerf, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -137,7 +135,7 @@ class BoxPanel(wx.Panel):
 
         sizer_columns.Add(self.label_columns, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.text_columns = wx.TextCtrl(self, wx.ID_ANY)
+        self.text_columns = TextCtrl(self, wx.ID_ANY, limited=True, check="int", nonzero=True)
         self.text_columns.SetToolTip(_("Number of columns"))
 
         sizer_columns.Add(self.text_columns, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -151,7 +149,7 @@ class BoxPanel(wx.Panel):
 
         sizer_rows.Add(self.label_rows, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.text_rows = wx.TextCtrl(self, wx.ID_ANY)
+        self.text_rows = TextCtrl(self, wx.ID_ANY, limited=True, check="int", nonzero=True)
         self.text_rows.SetToolTip(_("Number of rows"))
 
         sizer_rows.Add(self.text_rows, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -174,6 +172,8 @@ class BoxPanel(wx.Panel):
 
         self.panel_preview = wx.Panel(self, wx.ID_ANY)
         sizer_main_h.Add(self.panel_preview, 1, wx.EXPAND, 0)
+        for ctrl in (self.text_joint, self.text_kerf, self.text_outer_x, self.text_outer_y, self.text_outer_y, self.text_outer_x, self.text_thickness):
+            ctrl.SetMinSize(wx.Size(80, -1))
 
         self.SetSizer(sizer_main_h)
         self.Layout()
@@ -198,9 +198,10 @@ class BoxGenerator(MWindow):
         self.Layout()
 
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_arrange.GetBitmap())
+        _icon.CopyFromBitmap(icon_boxes.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle(_("Alignment"))
+        self.SetTitle(_("Box-Generator"))
+        self.restore_aspect()
 
     def delegates(self):
         yield self.panel_boxes
