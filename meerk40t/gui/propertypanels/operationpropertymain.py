@@ -287,6 +287,7 @@ class LayerSettingPanel(wx.Panel):
         self.context.elements.signal(
             "element_property_reload", self.operation, "button_layer"
         )
+        self.context.elements.signal("updateop_tree")
 
     def on_check_output(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         if self.operation.output != bool(self.checkbox_output.GetValue()):
@@ -294,6 +295,7 @@ class LayerSettingPanel(wx.Panel):
             self.context.elements.signal(
                 "element_property_reload", self.operation, "check_output"
             )
+        self.context.elements.signal("updateop_tree")
         self.checkbox_visible.Enable(not bool(self.checkbox_output.GetValue()))
 
     def on_check_visible(self, event=None):
