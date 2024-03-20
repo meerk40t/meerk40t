@@ -1,5 +1,3 @@
-from meerk40t.cylinder.gui.cylindersettings import CylinderSettings
-
 
 def plugin(service, lifecycle):
     if lifecycle == "cli":
@@ -12,6 +10,7 @@ def plugin(service, lifecycle):
             "provider/device/balor",
         )
     elif lifecycle == "added":
+        from meerk40t.cylinder.gui.cylindersettings import CylinderSettings
         from meerk40t.gui.icons import icon_barrel_distortion
 
         _ = service._
