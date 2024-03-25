@@ -328,6 +328,7 @@ class TreePanel(wx.Panel):
     def pane_hide(self):
         pass
 
+    @signal_listener("updateop_tree")
     @signal_listener("warn_state_update")
     def on_warn_state_update(self, origin, *args):
         # Updates the warning state, using signal to avoid unnecessary calls

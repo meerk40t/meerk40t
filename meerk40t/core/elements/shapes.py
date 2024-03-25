@@ -1754,6 +1754,7 @@ def init_commands(kernel):
         for node in images:
             node.update(None)
         self.signal("refresh_scene", "Scene")
+        self.signal("modified_by_tool")
         return "elements", data
 
     @self.console_option(
