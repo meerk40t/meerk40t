@@ -244,7 +244,7 @@ class SimpleUI(MWindow):
         self.notebook_main.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
 
         self.Layout()
-        self.restore_aspect()
+        self.restore_aspect(honor_initial_values=True)
         self.on_build()
 
     def on_page_changed(self, event):
