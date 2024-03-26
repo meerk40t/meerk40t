@@ -108,6 +108,42 @@ class CylinderCorrection:
         ]
         service.register_choices("cylinder", choices)
 
+    @lookup_listener("service/device/active")
+    @signal_listener("cylinder_active")
+    @signal_listener("cylinder_x_axis")
+    @signal_listener("cylinder_x_diameter")
+    @signal_listener("cylinder_x_concave")
+    @signal_listener("cylinder_y_axis")
+    @signal_listener("cylinder_y_diameter")
+    @signal_listener("cylinder_y_concave")
+    @signal_listener("cylinder_mirror_distance")
+    def cylinder_settings_changed(self, origin=None, *args):
+        """
+        Cylinder settings were changed. We force the local settings wrap to update.
+
+        @param origin:
+        @param args:
+        @return:
+        """
+        if origin is not None and origin != self.service.path:
+            return
+        device = self.service.device
+        device.driver.cylinder_validate()
+
+    @signal_listener("view;realized")
+    def realize(self, origin=None, *args):
+        """
+        Realization of current device requires that device to be additionally updated with rotary
+        @param origin:
+        @param args:
+        @return:
+        """
+        device = self.service.device
+        try:
+            device.driver.cylinder_validate()
+        except AttributeError:
+            pass
+
     def service_detach(self, *args, **kwargs):
         pass
 
