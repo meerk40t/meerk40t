@@ -615,7 +615,11 @@ class Meerk40tFonts:
             try:
                 for root, dirs, files in os.walk(fontpath):
                     for filename in files:
+                        if not filename:
+                            continue
                         short = basename(filename)
+                        if not short:
+                            continue
                         full_name = join(root, filename)
                         test = filename.lower()
                         for p in font_types:
@@ -648,9 +652,6 @@ class Meerk40tFonts:
                 continue
             # for key, value in found.items():
             #     print(f"{key}: {value} - {fontpath}")
-        for p in self._available_fonts:
-            if p[1] is None:
-                p[1] = "Unknown"
         self._available_fonts.sort(key=lambda e: e[1])
         try:
             with open(cache, "w", encoding="utf-8") as f:
