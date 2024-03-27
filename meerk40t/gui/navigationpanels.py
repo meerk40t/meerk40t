@@ -1321,9 +1321,18 @@ class MovePanel(wx.Panel):
                 y = Length(self.context.elements.length_y("50%"))
             else:
                 y = Length(self.context.elements.length_y("0%"))
-            self.context.root.setting(
+            gotostr = self.context.root.setting(
                 str, f"movepos{idx}", f"{x.length_mm}|{y.length_mm}"
             )
+            if gotostr:
+                substr = gotostr.split("|")
+                if len(substr) < 2:
+                    return
+                try:
+                    x = Length(substr[0])
+                    y = Length(substr[1])
+                except ValueError:
+                    pass
             label = _(
                 "Left click to go to saved position\nRight click to save coordinates"
             )
