@@ -44,6 +44,10 @@ def plugin(kernel, lifecycle):
 
         plugins.append(rotary.plugin)
 
+        from .cylinder import cylinder
+
+        plugins.append(cylinder.plugin)
+
         from .core import core
 
         plugins.append(core.plugin)
