@@ -3,8 +3,9 @@ from functools import lru_cache
 
 
 class CylinderModifier:
-    def __init__(self, wrapped_instance):
+    def __init__(self, wrapped_instance, service):
         self._wrapped_instance = wrapped_instance
+        self.service = service
         self.r = 0x2000
         self.l_x = 0x8000
         self.l_y = 0x8000
