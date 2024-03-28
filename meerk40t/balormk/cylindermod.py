@@ -1,19 +1,20 @@
 import math
+from functools import lru_cache
 
 
 class CylinderModifier:
     def __init__(self, wrapped_instance):
         self._wrapped_instance = wrapped_instance
-        self.r = 0x4000
+        self.r = 0x2000
         self.l_x = 0x8000
         self.l_y = 0x8000
 
+    @lru_cache(maxsize=1024)
     def convert(self, x, y):
-        y -= 0x8000
-        y /= 0x8000
-        y = math.asin(y) / (math.tau / 4)
-        y *= self.r
-        return x, y + 0x8000
+        a = x - 0x8000
+        r = self.r
+        x_prime = r * math.sin(a/r)
+        return x_prime + 0x8000, y
 
     def mark(self, x, y, **kwargs):
         x, y = self.convert(x, y)
