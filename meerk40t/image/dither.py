@@ -12,8 +12,9 @@ from PIL import Image
 
 try:
     from numba import njit
-except ImportError:
+except Exception as e:
     # Jit does not exist, add a dummy decorator and continue.
+    # print (f"Encountered error: {e}")
     def njit(*args, **kwargs):
         def inner(func):
             return func
