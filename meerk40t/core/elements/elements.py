@@ -1138,6 +1138,7 @@ class Elemental(Service):
             # print (f"Translating {q.type} by {dx:.0f}, {dy:.0f}")
             self.translate_node(q, dx, dy)
         self.signal("refresh_scene", "Scene")
+        self.signal("warn_state_update")
 
     def wordlist_delta(self, orgtext, increase):
         newtext = self.mywordlist.wordlist_delta(orgtext, increase)
