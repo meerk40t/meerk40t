@@ -79,7 +79,7 @@ class Node:
     def __init__(self, *args, **kwargs):
         self.type = None
         self.id = None
-        self.label = None
+        self.raw_label = None
         self.lock = False
         self._can_emphasize = True
         self._can_highlight = True
@@ -388,6 +388,35 @@ class Node:
     @formatter.setter
     def formatter(self, formatter):
         self._formatter = formatter
+
+    @property
+    def label(self):
+        x = self.raw_label
+        if x is None:
+            return None
+        start = 0
+        while True:
+            i1 = x.find("{", start)
+            if i1 < 0:
+                break
+            i2 = x.find("}", i1)
+            if i2 < 0:
+                break
+            nd = x[i1 + 1 : i2]
+            nd_val = ""
+            if hasattr(self, nd):
+                n_val = getattr(self, nd, "")
+                if n_val is None:
+                    nd_val = ""
+                else:
+                    nd_val = str(n_val) 
+            x = x[:i1] + nd_val + x[i2+1:]
+            start = i1 + len(nd_val)    
+        return x
+    
+    @label.setter
+    def label(self, valu):
+        self.raw_label = valu
 
     @property
     def points(self):
