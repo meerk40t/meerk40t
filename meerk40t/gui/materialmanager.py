@@ -2231,9 +2231,9 @@ class MaterialPanel(ScrolledPanel):
                             pwr = 1000
                         else:
                             pwr = op.power
-                        s1 = f"{pwr/10.0:.0f}%"
+                        s1 = "{power}"
                     if hasattr(op, "speed") and op.speed is not None:
-                        s2 = f"{op.speed:.0f}mm/s"
+                        s2 = "{speed}mm/s"
                     if s1 or s2:
                         pattern += f" ({s1}{', ' if s1 and s2 else ''}{s2})"
                     op.label = pattern
