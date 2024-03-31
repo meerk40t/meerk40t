@@ -382,10 +382,10 @@ class MaterialPanel(ScrolledPanel):
         self.list_preview.AppendColumn(
             _("Label"), format=wx.LIST_FORMAT_LEFT, width=100
         )
-        self.list_preview.AppendColumn(_("Power"), format=wx.LIST_FORMAT_LEFT, width=50)
-        self.list_preview.AppendColumn(_("Speed"), format=wx.LIST_FORMAT_LEFT, width=50)
+        self.list_preview.AppendColumn(_("Power") +" [ppi]", format=wx.LIST_FORMAT_LEFT, width=50)
+        self.list_preview.AppendColumn(_("Speed") + " [mm/s]", format=wx.LIST_FORMAT_LEFT, width=50)
         self.list_preview.AppendColumn(
-            _("Frequency"), format=wx.LIST_FORMAT_LEFT, width=50
+            _("Frequency") + " [kHz]", format=wx.LIST_FORMAT_LEFT, width=50
         )
         self.list_preview.SetToolTip(_("Click to select / Right click for actions"))
         self.opinfo = {
