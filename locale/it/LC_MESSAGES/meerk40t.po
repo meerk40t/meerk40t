@@ -18564,6 +18564,22 @@ msgstr "Raster ({power}%, {speed}mm/s)"
 msgid "Image ({power}%, {speed}mm/s)"
 msgstr "image ({power}%, {speed}mm/s)"
 
+#: meerk40t/core/elements/elements.py:1418
+msgid "Cut ({percent}, {speed}mm/s)"
+msgstr "Taglio ({percent}, {speed}mm/s)"
+
+#: meerk40t/core/elements/elements.py:1421
+msgid "Engrave ({percent}, {speed}mm/s)"
+msgstr "Incisione ({percent}, {speed}mm/s)"
+
+#: meerk40t/core/elements/elements.py:1424
+msgid "Raster ({percent}, {speed}mm/s)"
+msgstr "Raster ({percent}, {speed}mm/s)"
+
+#: meerk40t/core/elements/elements.py:1427
+msgid "Image ({percent}, {speed}mm/s)"
+msgstr "Image ({percent}, {speed}mm/s)"
+
 #: meerk40t/gui/materialmanager.py:799
 msgid "No laser"
 msgstr "Nessun laser"
