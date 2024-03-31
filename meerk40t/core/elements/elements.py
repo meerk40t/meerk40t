@@ -1352,21 +1352,21 @@ class Elemental(Service):
 
     def opnode_label(self, node):
         if isinstance(node, CutOpNode):
-            # _("Cut ({power}%, {speed}mm/s)")
-            lbl = "Cut ({power}%, {speed}mm/s)"
+            # _("Cut ({percent}, {speed}mm/s)")
+            lbl = "Cut ({percent}, {speed}mm/s)"
         elif isinstance(node, EngraveOpNode):
-            # _("Engrave ({power}%, {speed}mm/s)")
-            lbl = "Engrave ({power}%, {speed}mm/s)"
+            # _("Engrave ({percent}, {speed}mm/s)")
+            lbl = "Engrave ({percent}, {speed}mm/s)"
         elif isinstance(node, RasterOpNode):
-            # _("Raster ({power}%, {speed}mm/s)")
-            lbl = "Raster ({power}%, {speed}mm/s)"
+            # _("Raster ({percent}, {speed}mm/s)")
+            lbl = "Raster ({percent}, {speed}mm/s)"
         elif isinstance(node, ImageOpNode):
-            # _("Image ({power}%, {speed}mm/s)")
-            lbl = "Image ({power}%, {speed}mm/s)"
+            # _("Image ({percent}, {speed}mm/s)")
+            lbl = "Image ({percent}, {speed}mm/s)"
         else:
             lbl = ""
         _ = self.kernel.translation
-        slabel = _(lbl).format(power=node.power / 10, speed=node.speed)
+        slabel = _(lbl) # .format(power=node.power / 10, speed=node.speed)
         return slabel
 
     def load_persistent_op_list(self, name, use_settings=None):

@@ -79,7 +79,7 @@ class Node:
     def __init__(self, *args, **kwargs):
         self.type = None
         self.id = None
-        self.raw_label = None
+        self.label = None
         self.lock = False
         self._can_emphasize = True
         self._can_highlight = True
@@ -93,6 +93,7 @@ class Node:
         self._can_update = True
         self._can_remove = True
         self._is_visible = True
+        self._default_map = dict()
         for k, v in kwargs.items():
             if k.startswith("_"):
                 continue
@@ -389,12 +390,12 @@ class Node:
     def formatter(self, formatter):
         self._formatter = formatter
 
-    @property
-    def label(self):
-        x = self.raw_label
+    def display_label(self):
+        x = self.label
         if x is None:
             return None
         start = 0
+        default_map = self._default_map
         while True:
             i1 = x.find("{", start)
             if i1 < 0:
@@ -404,20 +405,18 @@ class Node:
                 break
             nd = x[i1 + 1 : i2]
             nd_val = ""
-            if hasattr(self, nd):
+            if nd in default_map:
+                n_val = default_map[nd]
+                if n_val is not None:
+                    nd_val = str(n_val) 
+            elif hasattr(self, nd):
                 n_val = getattr(self, nd, "")
-                if n_val is None:
-                    nd_val = ""
-                else:
+                if n_val is not None:
                     nd_val = str(n_val) 
             x = x[:i1] + nd_val + x[i2+1:]
             start = i1 + len(nd_val)    
         return x
     
-    @label.setter
-    def label(self, valu):
-        self.raw_label = valu
-
     @property
     def points(self):
         """
@@ -523,16 +522,18 @@ class Node:
             result = "<invalid pattern>"
         return result
 
-    def default_map(self, default_map=None):
+    def default_map(self, default_map=None, skip_label=False):
         if default_map is None:
-            default_map = dict()
+            default_map = self._default_map
         default_map["id"] = str(self.id) if self.id is not None else "-"
-        default_map["label"] = self.label if self.label is not None else ""
-        default_map["desc"] = (
-            self.label
-            if self.label is not None
-            else str(self.id) if self.id is not None else "-"
-        )
+        if not skip_label:
+            lbl = self.display_label()
+            default_map["label"] = lbl if lbl is not None else ""
+            default_map["desc"] = (
+                lbl
+                if lbl is not None
+                else str(self.id) if self.id is not None else "-"
+            )
         default_map["element_type"] = "Node"
         default_map["node_type"] = self.type
         return default_map

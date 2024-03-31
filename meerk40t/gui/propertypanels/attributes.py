@@ -276,8 +276,9 @@ class IdPanel(wx.Panel):
 
     def on_text_label_change(self):
         try:
-            self.node.raw_label = self.text_label.GetValue()
+            self.node.label = self.text_label.GetValue()
             self.context.elements.signal("element_property_reload", self.node)
+            self.text_label.SetToolTip(self.node.display_label())
         except AttributeError:
             pass
 
@@ -310,7 +311,8 @@ class IdPanel(wx.Panel):
         try:
             if hasattr(self.node, "label") and self.showlabel:
                 vis2 = True
-                self.text_label.SetValue(mklabel(node.raw_label))
+                self.text_label.SetValue(mklabel(node.label))
+                self.text_label.SetToolTip(node.display_label())
             self.text_label.Show(vis2)
             self.sizer_label.Show(vis2)
         except RuntimeError:
