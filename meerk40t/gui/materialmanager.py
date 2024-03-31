@@ -2227,11 +2227,7 @@ class MaterialPanel(ScrolledPanel):
                     s1 = ""
                     s2 = ""
                     if hasattr(op, "power"):
-                        if op.power is None:
-                            pwr = 1000
-                        else:
-                            pwr = op.power
-                        s1 = "{power}"
+                        s1 = "{percent}"
                     if hasattr(op, "speed") and op.speed is not None:
                         s2 = "{speed}mm/s"
                     if s1 or s2:
@@ -2276,20 +2272,32 @@ class MaterialPanel(ScrolledPanel):
 
         op_dict = {
             "type": "op raster",
-            "speed": "140",
+            "speed": "300",
             "power": "1000",
-            "label": "Raster",
+            "label": "Raster ({percent}, {speed}mm/s)",
             "color": "#000000",
         }
         if self.is_balor:
             op_dict["frequency"] = "35"
         item = menu.Append(wx.ID_ANY, _("Add Raster"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, on_menu_popup_newop(op_dict), item)
+
+        op_dict = {
+            "type": "op image",
+            "speed": "300",
+            "power": "1000",
+            "label": "Image ({percent}, {speed}mm/s)",
+            "color": "#000000",
+        }
+        item = menu.Append(wx.ID_ANY, _("Add Image"), "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, on_menu_popup_newop(op_dict), item)
+
+
         op_dict = {
             "type": "op engrave",
             "speed": "50",
             "power": "1000",
-            "label": "Engrave",
+            "label": "Engrave ({percent}, {speed}mm/s)",
             "color": "#0000FF",
         }
         if self.is_balor:
@@ -2300,7 +2308,7 @@ class MaterialPanel(ScrolledPanel):
             "type": "op cut",
             "speed": "5",
             "power": "1000",
-            "label": "Cut",
+            "label": "Cut ({percent}, {speed}mm/s)",
             "color": "#FF0000",
         }
         if self.is_balor:
@@ -2416,16 +2424,36 @@ class MaterialPanel(ScrolledPanel):
                 self.op_data.write_persistent(key, "label", new_data)
             elif col_id == 4:
                 # power
-                self.op_data.write_persistent(key, "power", new_data)
+                try:
+                    if new_data.endswith("%"):
+                        new_data = float(new_data[:-1]) * 10.0
+                    else:
+                        new_data = float(new_data)
+                    self.op_data.write_persistent(key, "power", new_data)
+                    new_data = f"{new_data:.0f}"
+                except ValueError:
+                    event.Veto()
+                    return
             elif col_id == 5:
                 # speed
-                self.op_data.write_persistent(key, "speed", new_data)
+                try:
+                    new_data = float(new_data)
+                    self.op_data.write_persistent(key, "speed", new_data)
+                    new_data = f"{new_data:.1f}"
+                except ValueError:
+                    event.Veto()
+                    return
             elif col_id == 6:
-                # speed
-                self.op_data.write_persistent(key, "frequency", new_data)
+                # frequency
+                try:
+                    new_data = float(new_data)
+                    self.op_data.write_persistent(key, "frequency", new_data)
+                    new_data = f"{new_data:.0f}"
+                except ValueError:
+                    event.Veto()
+                    return
             # Set the new data in the listctrl
             self.op_data.write_configuration()
-
             self.list_preview.SetItem(list_id, col_id, new_data)
 
     def set_parent(self, par_panel):
