@@ -29,13 +29,13 @@ class DefaultOperationWidget(StatusBarWidget):
 
     def node_label(self, node):
         if isinstance(node, CutOpNode):
-            slabel = f"Cut ({node.power/10:.0f}%, {node.speed}mm/s)"
+            slabel = "Cut ({percent}, {speed}mm/s)"
         elif isinstance(node, EngraveOpNode):
-            slabel = f"Engrave ({node.power/10:.0f}%, {node.speed}mm/s)"
+            slabel = "Engrave ({percent}, {speed}mm/s)"
         elif isinstance(node, RasterOpNode):
-            slabel = f"Raster ({node.power/10:.0f}%, {node.speed}mm/s)"
+            slabel = "Raster ({percent}, {speed}mm/s)"
         elif isinstance(node, ImageOpNode):
-            slabel = f"Image ({node.power/10:.0f}%, {node.speed}mm/s)"
+            slabel = "Image ({percent}, {speed}mm/s)"
         else:
             slabel = ""
         slabel = (

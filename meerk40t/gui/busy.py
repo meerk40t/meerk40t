@@ -78,13 +78,15 @@ class BusyInfo:
             )
             self.update_keywords(kwds)
             self.show()
-            self.parent.SetCursor(wx.Cursor(wx.CURSOR_WAIT))
+            if self.parent is not None:
+                self.parent.SetCursor(wx.Cursor(wx.CURSOR_WAIT))
             self.shown = True
 
     def end(self):
         with self.lock:
             self.hide()
-            self.parent.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
+            if self.parent is not None:
+                self.parent.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
             if self.frame:
                 self.frame.Close()
                 del self.frame

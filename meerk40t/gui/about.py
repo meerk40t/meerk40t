@@ -358,7 +358,8 @@ class ComponentPanel(ScrolledPanel):
             entry = ["potracer", "", "", "https://pypi.org/project/potracer/"]
             try:
                 import potrace
-
+                # for e in vars(potrace):
+                #     print (f"var {e} - {getattr(potrace, e)}")
                 if hasattr(potrace, "potracelib_version"):
                     status = _("Present (fast)")
                     entry[0] = "pypotrace"
@@ -530,7 +531,7 @@ class ComponentPanel(ScrolledPanel):
                 except AttributeError:
                     info = "??"
                 status = _("Present")
-            except ImportError:
+            except (ImportError, AttributeError):
                 info = "??"
                 status = _("Missing")
             entry[1] = info

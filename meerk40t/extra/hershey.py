@@ -458,7 +458,7 @@ class Meerk40tFonts:
             pass
 
         tlines = mytext.split("\n")
-        tlabel = f"Text: {tlines[0]}"
+        tlabel = "Text: {mktext}"
         # Create the node.
         path_node = PathNode(
             geometry=path.geometry,
@@ -615,7 +615,11 @@ class Meerk40tFonts:
             try:
                 for root, dirs, files in os.walk(fontpath):
                     for filename in files:
+                        if not filename:
+                            continue
                         short = basename(filename)
+                        if not short:
+                            continue
                         full_name = join(root, filename)
                         test = filename.lower()
                         for p in font_types:
@@ -648,7 +652,6 @@ class Meerk40tFonts:
                 continue
             # for key, value in found.items():
             #     print(f"{key}: {value} - {fontpath}")
-
         self._available_fonts.sort(key=lambda e: e[1])
         try:
             with open(cache, "w", encoding="utf-8") as f:
