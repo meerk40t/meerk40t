@@ -113,7 +113,7 @@ class OpInfoPanel(ScrolledPanel):
                 self.list_operations.GetItemCount(), f"#{idx}"
             )
             self.list_operations.SetItem(list_id, 1, info[0])
-            self.list_operations.SetItem(list_id, 2, mklabel(node.label))
+            self.list_operations.SetItem(list_id, 2, mklabel(node.display_label()))
             self.list_operations.SetItem(list_id, 3, str(len(node.children)))
             self.list_operations.SetItem(list_id, 4, "---")
             self.list_operations.SetItemImage(list_id, info[2])
@@ -262,7 +262,7 @@ class OpInfoPanel(ScrolledPanel):
             self.Bind(wx.EVT_MENU, self.on_tree_popup_mark_elem(""), item)
         else:
             opnode = self.ops[_id]
-            s = mklabel(opnode.label)
+            s = mklabel(opnode.display_label())
             if s == "":
                 s = opnode.type
             item = menu.Append(

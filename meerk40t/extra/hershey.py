@@ -458,7 +458,7 @@ class Meerk40tFonts:
             pass
 
         tlines = mytext.split("\n")
-        tlabel = f"Text: {tlines[0]}"
+        tlabel = "Text: {mktext}"
         # Create the node.
         path_node = PathNode(
             geometry=path.geometry,

@@ -453,7 +453,7 @@ class BasicOpPanel(wx.Panel):
             if op.type.startswith("op "):
                 info = _(op.type[3:].capitalize())
                 if op.label is not None:
-                    info = info[0] + ": " + op.label
+                    info = info[0] + ": " + op.display_label()
                 op_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 self.operation_sizer.Add(op_sizer, 0, wx.EXPAND, 0)
                 btn = wx.StaticBitmap(
