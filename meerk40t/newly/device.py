@@ -487,8 +487,27 @@ class NewlyDevice(Service, Status):
             },
         ]
         self.register_choices("newly-global", choices)
+
+        choices = [
+            {
+                "attr": "coolant",
+                "object": self,
+                "default": "",
+                "type": str,
+                "style": "option",
+                "label": _("Coolant"),
+                "tip": _("Does this device has a method to turn on / off a coolant associated to it?"),
+                "section": "_99_" + _("Coolant Support"),
+                "dynamic": self.kernel.root.coolant.coolant_choice_helper(self),
+                "signals": "coolant_changed"
+            },
+        ]
+        self.register_choices("coolant", choices)
+
         # This device prefers to display power level in percent
         self.setting(bool, "use_percent_for_power_display", True)
+
+        self.kernel.root.coolant.claim_coolant(self, self.coolant)
 
         self.state = 0
         self.view = View(

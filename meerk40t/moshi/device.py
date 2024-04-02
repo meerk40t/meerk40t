@@ -180,6 +180,22 @@ class MoshiDevice(Service, Status):
         ]
         self.register_choices("bed_dim", choices)
 
+        choices = [
+            {
+                "attr": "coolant",
+                "object": self,
+                "default": "",
+                "type": str,
+                "style": "option",
+                "label": _("Coolant"),
+                "tip": _("Does this device has a method to turn on / off a coolant associated to it?"),
+                "section": "_99_" + _("Coolant Support"),
+                "dynamic": self.kernel.root.coolant.coolant_choice_helper(self),
+                "signals": "coolant_changed"
+            },
+        ]
+        self.register_choices("coolant", choices)
+
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
             list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
@@ -214,6 +230,9 @@ class MoshiDevice(Service, Status):
 
         self.driver.out_pipe = self.controller.write
         self.driver.out_real = self.controller.realtime
+
+        self.kernel.root.coolant.claim_coolant(self, self.coolant)
+
         _ = self.kernel.translation
 
         @self.console_command("usb_connect", help=_("Connect USB"))

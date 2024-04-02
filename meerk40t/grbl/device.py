@@ -260,7 +260,7 @@ class GRBLDevice(Service, Status):
         if self.permit_tcp:
             self.register_choices("tcp", choices)
 
-            
+
         choices = [
             {
                 "attr": "address",
@@ -420,6 +420,18 @@ class GRBLDevice(Service, Status):
                 "conditional": (self, "limit_buffer"),
                 "section": "_30_Controller Buffer",
             },
+            {
+                "attr": "coolant",
+                "object": self,
+                "default": "",
+                "type": str,
+                "style": "option",
+                "label": _("Coolant"),
+                "tip": _("Does this device has a method to turn on / off a coolant associated to it?"),
+                "section": "_99_" + _("Coolant Support"),
+                "dynamic": self.kernel.root.coolant.coolant_choice_helper(self),
+                "signals": "coolant_changed"
+            },
         ]
         self.register_choices("grbl-advanced", choices)
 
@@ -530,6 +542,7 @@ class GRBLDevice(Service, Status):
         self.add_service_delegate(self.driver)
 
         self.viewbuffer = ""
+        self.kernel.root.coolant.claim_coolant(self, self.coolant)
 
         _ = self.kernel.translation
 

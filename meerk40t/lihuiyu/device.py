@@ -167,6 +167,21 @@ class LihuiyuDevice(Service, Status):
             },
         ]
         self.register_choices("bed_orientation", choices)
+        choices = [
+            {
+                "attr": "coolant",
+                "object": self,
+                "default": "",
+                "type": str,
+                "style": "option",
+                "label": _("Coolant"),
+                "tip": _("Does this device has a method to turn on / off a coolant associated to it?"),
+                "section": "_99_" + _("Coolant Support"),
+                "dynamic": self.kernel.root.coolant.coolant_choice_helper(self),
+                "signals": "coolant_changed"
+            },
+        ]
+        self.register_choices("coolant", choices)
 
         choices = [
             {
@@ -445,6 +460,8 @@ class LihuiyuDevice(Service, Status):
         self.add_service_delegate(self.controller)
 
         self.driver.out_pipe = self.controller if not self.networked else self.tcp
+
+        self.kernel.root.coolant.claim_coolant(self, self.coolant)
 
         _ = self.kernel.translation
 
