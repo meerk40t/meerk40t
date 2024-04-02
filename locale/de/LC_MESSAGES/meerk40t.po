@@ -16789,20 +16789,20 @@ msgstr "Brenne später"
 msgid "Burn last"
 msgstr "Brenne zuletzt"
 
-msgid "Turns the coolant for the active device on"
+msgid "Turns on the coolant for the active device"
 msgstr "Schaltet die Kühlung für den aktiven Laser an"
 
-msgid "Turns the coolant for the active device off"
+msgid "Turns off the coolant for the active device"
 msgstr "Schaltet die Kühlung für den aktiven Laser aus"
 
 msgid "No coolant method found."
 msgstr "Keine Kühl-Methode gefunden."
 
-msgid "Coolant activated for device {device.label}"
-msgstr "Kühlung für {device.label} eingeschaltet"
+msgid "Coolant activated for device {device_label}"
+msgstr "Kühlung für {device_label} eingeschaltet"
 
-msgid "Coolant deactivated for device {device.label}"
-msgstr "Kühlung für {device.label} ausgeschaltet"
+msgid "Coolant deactivated for device {device_label}"
+msgstr "Kühlung für {device_label} ausgeschaltet"
 
 msgid "Registered coolant-interfaces:"
 msgstr "Registrierte Kühl-Methoden:"
@@ -16815,3 +16815,12 @@ msgstr "Kühlung an"
 
 msgid "Coolant off"
 msgstr "Kühlung aus"
+
+msgid "No coolant method found."
+msgstr "Keine Kühlmethode für den aktiven Laser registriert"
+
+msgid "Please switch the airassist for {laser} on"
+msgstr "Bitte den Airassist für {laser} einschalten!"
+
+msgid "Please switch the airassist for {laser} off"
+msgstr "Bitte den Airassist für {laser} ausschalten!"

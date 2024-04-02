@@ -237,7 +237,7 @@ def plugin(kernel, lifecycle):
             else:
                 channel (_("There are no coolant-interfaces known to MeerK40t"))
 
-        @context.console_command("coolant_on", help=_("Turns the coolant for the active device off"))
+        @context.console_command("coolant_on", help=_("Turns on the coolant for the active device"))
         def turn_coolant_on(command, channel, _, **kwargs):
             try:
                 device = context.device
@@ -257,11 +257,11 @@ def plugin(kernel, lifecycle):
                     except AttributeError:
                         pass
             if found:
-                channel(_(f"Coolant activated for device {device.label}"))
+                channel(_("Coolant activated for device {device_label}").format(device_label=device.label))
             else:
                 channel (_("No coolant method found."))
 
-        @context.console_command("coolant_off", help=_("Turns the coolant for the active device off"))
+        @context.console_command("coolant_off", help=_("Turns off the coolant for the active device"))
         def turn_coolant_off(command, channel, _, **kwargs):
             try:
                 device = context.device
@@ -281,7 +281,7 @@ def plugin(kernel, lifecycle):
                     except AttributeError:
                         pass
             if found:
-                channel(f"Coolant deactivated for device {device.label}")
+                channel(_("Coolant deactivated for device {device_label}").format(device_label=device.label))
             else:
-                channel ("No method found.")
+                channel ("No coolant method found.")
 
