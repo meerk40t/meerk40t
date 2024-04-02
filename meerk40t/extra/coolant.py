@@ -200,14 +200,21 @@ def plugin(kernel, lifecycle):
                 msg = _("Please switch the airassist for {laser} off").format(laser=lasername)
             context.kernel.yesno(msg, caption=_("Air-Assist"))
 
-        def base_coolant_grbl(context, mode):
+        def base_coolant_grbl_m7(context, mode):
+            if mode:
+                context("gcode M8\n")
+            else:
+                context("gcode M9\n")
+
+        def base_coolant_grbl_m8(context, mode):
             if mode:
                 context("gcode M7\n")
             else:
                 context("gcode M9\n")
 
         context.coolant.register_coolant_method("popup", base_coolant_popup, config_function=None, label=_("Warnmessage"))
-        context.coolant.register_coolant_method("gcode", base_coolant_grbl, config_function=None, label=_("GCode M7/M9"), constraints="grbl")
+        context.coolant.register_coolant_method("gcode", base_coolant_grbl_m7, config_function=None, label=_("GCode M7/M9"), constraints="grbl")
+        context.coolant.register_coolant_method("gcode", base_coolant_grbl_m8, config_function=None, label=_("GCode M8/M9"), constraints="grbl")
 
         @context.console_command("coolants", help=_("displays registered coolant methods"))
         def display_coolant(command, channel, _, **kwargs):
