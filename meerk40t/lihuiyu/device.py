@@ -177,7 +177,7 @@ class LihuiyuDevice(Service, Status):
                 "label": _("Coolant"),
                 "tip": _("Does this device has a method to turn on / off a coolant associated to it?"),
                 "section": "_99_" + _("Coolant Support"),
-                "dynamic": self.kernel.root.coolant.coolant_choice_helper(self),
+                "dynamic": lambda x: self.kernel.root.coolant.coolant_choice_helper(self),
                 "signals": "coolant_changed"
             },
         ]
