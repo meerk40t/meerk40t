@@ -1,7 +1,8 @@
 import wx
 
 from meerk40t.gui.icons import (
-    icon_air,
+    icon_air_on,
+    icon_air_off,
     icon_bell,
     icon_close_window,
     icon_console,
@@ -56,8 +57,8 @@ class DefaultActionPanel(wx.Panel):
             ["util output", icon_external],
             ["util input", icon_internal],
             ["util console", icon_console],
-            ["console coolant_on", icon_air],
-            ["console coolant_off", icon_air],
+            ["console coolant_on", icon_air_on],
+            ["console coolant_off", icon_air_off],
         ]
         self.prepend_ops = []
         self.append_ops = []
