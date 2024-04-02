@@ -198,7 +198,7 @@ def plugin(kernel, lifecycle):
                 msg = _("Please switch the airassist for {laser} on").format(laser=lasername)
             else:
                 msg = _("Please switch the airassist for {laser} off").format(laser=lasername)
-            context.kernel.yesno(msg, caption=_("Air-Assist"))
+            context.kernel.yesno(msg, caption=_("Air-Assist"), option_yes=_("OK"), option_no=_("OK"))
 
         def base_coolant_grbl_m7(context, mode):
             if mode:
