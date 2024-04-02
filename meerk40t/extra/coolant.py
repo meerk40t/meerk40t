@@ -157,11 +157,12 @@ class Coolants():
         @return:
         """
         def update(choice_dict):
+            _ = self.kernel.translation
             devname = device.name.lower()
             choices = list()
             display = list()
             choices.append("")
-            display.append("Nothing")
+            display.append(_("Nothing"))
             for cool in self._coolants:
                 relevant = True
                 if cool["constraints"]:
