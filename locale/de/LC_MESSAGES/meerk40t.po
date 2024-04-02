@@ -16824,3 +16824,6 @@ msgstr "Bitte den Airassist für {laser} einschalten!"
 
 msgid "Please switch the airassist for {laser} off"
 msgstr "Bitte den Airassist für {laser} ausschalten!"
+
+msgid "Does this device has a method to turn on / off a coolant associated to it?"
+msgstr "Unterstützt das Gerät das Ein-/Ausschalten einer Kühlung (Airassist)?"
