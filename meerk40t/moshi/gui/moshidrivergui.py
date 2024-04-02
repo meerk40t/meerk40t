@@ -36,7 +36,7 @@ class MoshiDriverGui(MWindow):
             self,
             id=wx.ID_ANY,
             context=self.context,
-            choices="bed_dim",
+            choices=("bed_dim", "coolant"),
         )
         panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
