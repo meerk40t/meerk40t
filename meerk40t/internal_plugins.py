@@ -24,6 +24,10 @@ def plugin(kernel, lifecycle):
 
         plugins.append(basedevice.plugin)
 
+        from .extra.coolant import plugin as coolantplugin
+
+        plugins.append(coolantplugin)
+
         from .lihuiyu import plugin as lihuiyu_driver
 
         plugins.append(lihuiyu_driver.plugin)
@@ -127,10 +131,6 @@ def plugin(kernel, lifecycle):
         from .extra.imageactions import plugin as splitterplugin
 
         plugins.append(splitterplugin)
-
-        from .extra.coolant import plugin as coolantplugin
-
-        plugins.append(coolantplugin)
 
         return plugins
 
