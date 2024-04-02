@@ -213,8 +213,8 @@ def plugin(kernel, lifecycle):
                 context("gcode M9\n")
 
         context.coolant.register_coolant_method("popup", base_coolant_popup, config_function=None, label=_("Warnmessage"))
-        context.coolant.register_coolant_method("gcode", base_coolant_grbl_m7, config_function=None, label=_("GCode M7/M9"), constraints="grbl")
-        context.coolant.register_coolant_method("gcode", base_coolant_grbl_m8, config_function=None, label=_("GCode M8/M9"), constraints="grbl")
+        context.coolant.register_coolant_method("gcode_m7", base_coolant_grbl_m7, config_function=None, label=_("GCode M7/M9"), constraints="grbl")
+        context.coolant.register_coolant_method("gcode_m8", base_coolant_grbl_m8, config_function=None, label=_("GCode M8/M9"), constraints="grbl")
 
         @context.console_command("coolants", help=_("displays registered coolant methods"))
         def display_coolant(command, channel, _, **kwargs):
