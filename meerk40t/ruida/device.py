@@ -230,7 +230,7 @@ class RuidaDevice(Service):
                 "label": _("Coolant"),
                 "tip": _("Does this device has a method to turn on / off a coolant associated to it?"),
                 "section": "_99_" + _("Coolant Support"),
-                "dynamic": lambda x: self.kernel.root.coolant.coolant_choice_helper(self),
+                "dynamic": lambda x: self.cool_helper(),
                 "signals": "coolant_changed"
             },
         ]
@@ -589,3 +589,6 @@ class RuidaDevice(Service):
         @return: the location in device native units for the current known position.
         """
         return self.driver.native_x, self.driver.native_y
+
+    def cool_helper(self):
+        return self.kernel.root.coolant.coolant_choice_helper(self)
