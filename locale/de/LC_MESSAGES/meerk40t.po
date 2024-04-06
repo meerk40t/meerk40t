@@ -3348,6 +3348,10 @@ msgstr "Vertikal"
 msgid "Flip Vertically"
 msgstr "Vertikal vertauschen"
 
+#: meerk40t/gui/statusbarwidgets/statusbar.py:42
+msgid "Left Click: Move to next panel\nRight Click: Move to previous panel"
+msgstr "Links-Click: zum nächsten panel springen\nRechts-Click: zum vorherigen Panel springen"
+
 #: meerk40t/core/elements.py:7732 meerk40t/gui/navigationpanels.py:1485
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:160
 msgid "Scale"
@@ -3360,6 +3364,10 @@ msgstr "Skalieren {scale_percent}%"
 #: meerk40t/core/elements.py:7738
 msgid "Scale Element"
 msgstr "Größe des Elements verändern"
+
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2190
+msgid "Align Selection"
+msgstr "Auswahl ausrichten"
 
 #: meerk40t/core/elements.py:7752 meerk40t/gui/alignment.py:448
 #: meerk40t/gui/statusbarwidgets/selectionwidget.py:25
@@ -16788,3 +16796,81 @@ msgstr "Brenne später"
 #: meerk40t/core/elements/element_treeops.py:449
 msgid "Burn last"
 msgstr "Brenne zuletzt"
+
+#: meerk40t/gui/preferences.py:143
+msgid "Management"
+msgstr "Management"
+
+#: meerk40t/gui/preferences.py:170
+msgid "Choose target directory:"
+msgstr "Zielverzeichnis festlegen:"
+
+#: meerk40t/gui/simpleui.py:63
+msgid "Load Project"
+msgstr "Projekt laden"
+
+#: meerk40t/gui/simpleui.py:148 meerk40t/gui/wxmmain.py:4346
+msgid "Cleaning up..."
+msgstr "Räume auf..."
+
+#: meerk40t/gui/wxmmain.py:1267
+msgid "Burn the current design"
+msgstr "Brenne das aktuelle Design"
+
+#: meerk40t/gui/hersheymanager.py:370
+msgid "Textalignment for multi-lines"
+msgstr "Ausrichtung bei mehrzeiligen Texten"
+
+#: meerk40t/gui/hersheymanager.py:395
+msgid "- Hold shift/ctrl-Key down for bigger change"
+msgstr "- Shift/Ctrl-Taste nutzen für größere Werte"
+
+#: meerk40t/gui/hersheymanager.py:397
+msgid "- Right click will reset value to default"
+msgstr "- Rechtsclick stellt Standardabstand wieder her"
+
+#: meerk40t/gui/hersheymanager.py:421
+msgid "Increase line distance"
+msgstr "Zeilenabstand vergrößern"
+
+#: meerk40t/gui/hersheymanager.py:422
+msgid "Reduce line distance"
+msgstr "Zeilenabstand verringern"
+
+#: meerk40t/gui/hersheymanager.py:771
+msgid "Align text on the left side"
+msgstr "Text linksbündig ausrichten"
+
+#: meerk40t/gui/hersheymanager.py:778
+msgid "Align text around the center"
+msgstr "Text zentrieren"
+
+#: meerk40t/gui/hersheymanager.py:783
+msgid "Align text on the right side"
+msgstr "Text rechtsbündig ausrichten"
+
+#: meerk40t/gui/hersheymanager.py:969 meerk40t/gui/hersheymanager.py:1063
+msgid "Additional directory for userdefined fonts (also used to store some cache files)"
+msgstr ""
+"Zusätzliches Verzeichnis für benutzerdefinierte Zeichensätze.\n"
+"(Hier werden auch einige temporäre Dateien angelegt werden)"
+
+#: meerk40t/gui/hersheymanager.py:1070
+msgid "Invalid directory! Will not be used, please provide a valid path."
+msgstr "Ungültiges Verzeichnis! Bitte einen verfügbaren Pfad wählen."
+
+#: meerk40t/gui/hersheymanager.py:1073
+msgid "This is an invalid directory, do you want to use the default directory?"
+msgstr "Dies ist ein ungültiges Verzeichnis, soll stattdessen das Standard-Verzeichnis verwendet werden?"
+
+#: meerk40t/gui/hersheymanager.py:1073
+msgid "Invalid directory"
+msgstr "Ungültiges Verzeichnis"
+
+#: meerk40t/gui/hersheymanager.py:1127
+msgid "List of available fonts"
+msgstr "Liste der verfügbaren Zeichensätze"
+
+#: meerk40t/gui/hersheymanager.py:1160
+msgid "All files"
+msgstr "Alle Dateien"
