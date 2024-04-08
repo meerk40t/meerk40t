@@ -2094,7 +2094,7 @@ def init_tree(kernel):
     @tree_submenu(_("Apply special effect"))
     @tree_operation(
         _("Append wobble {type} {radius} @{interval}").format(
-            type="Circle", radius="0.5mm", interval="0.05mm"
+            type=_("Circle"), radius="0.5mm", interval="0.05mm"
         ),
         node_type=wobbleable_elems,
         help="",
@@ -2117,7 +2117,7 @@ def init_tree(kernel):
     @tree_submenu(_("Apply special effect"))
     @tree_operation(
         _("Append wobble {type} {radius} @{interval}").format(
-            type="Circle", radius="1mm", interval="0.1mm"
+            type=_("Circle"), radius="1mm", interval="0.1mm"
         ),
         node_type=wobbleable_elems,
         help="",
@@ -2140,7 +2140,7 @@ def init_tree(kernel):
     @tree_submenu(_("Apply special effect"))
     @tree_operation(
         _("Append wobble {type} {radius} @{interval}").format(
-            type="Circle", radius="3mm", interval="0.1mm"
+            type=_("Circle"), radius="3mm", interval="0.1mm"
         ),
         node_type=wobbleable_elems,
         help="",
@@ -2162,8 +2162,8 @@ def init_tree(kernel):
 
     @tree_submenu(_("Apply special effect"))
     @tree_operation(
-        _("Append {type} {radius} @{interval}").format(
-            type="Meander", radius="1mm", interval="1.25mm"
+        _("Append wobble {type} {radius} @{interval}").format(
+            type=_("Meander"), radius="1mm", interval="1.25mm"
         ),
         node_type=wobbleable_elems,
         help="",
