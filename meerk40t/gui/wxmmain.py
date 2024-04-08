@@ -1173,6 +1173,21 @@ class MeerK40t(MWindow):
         def register_effects():
             # Cmd, tip, icon, label, category
             # Hatches
+            # _("Wrap the current node in a hatch")
+            # _("Wrap the current node in a hatch (bidirectional)")
+            # _("Fill (unidirectional)")
+            # _("Fill (bidirectional)")
+            # _("Simple line hatch")
+            # _("Diagonal line hatch")
+            # _("Simple line hatch (bidirectional)")
+            # _("Diagonal line hatch (bidirectional)")
+            # _("Wobble circular (centered)")
+            # _("Wobble circular (left)")
+            # _("Wobble circular (right)")
+            # _("Apply a wobble movement along the path (circular on top of the line)")
+            # _("Apply a wobble movement along the path (circular, at the right side of the line)")
+            # _("Apply a wobble movement along the path (circular, at the left side of the line)")
+
             eff = (
                 "effect-hatch -e scanline",
                 "Wrap the current node in a hatch",
