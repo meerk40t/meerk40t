@@ -3350,7 +3350,7 @@ msgstr "Vertikal vertauschen"
 
 #: meerk40t/gui/statusbarwidgets/statusbar.py:42
 msgid "Left Click: Move to next panel\nRight Click: Move to previous panel"
-msgstr "Links-Click: zum nächsten panel springen\nRechts-Click: zum vorherigen Panel springen"
+msgstr "Links-Click: zum nächsten Panel springen\nRechts-Click: zum vorherigen Panel springen"
 
 #: meerk40t/core/elements.py:7732 meerk40t/gui/navigationpanels.py:1485
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:160
@@ -5527,7 +5527,7 @@ msgstr "Raster"
 
 #: meerk40t/gui/materialtest.py:32
 msgid "Hatch"
-msgstr "Gitter"
+msgstr "Schraffur"
 
 #: meerk40t/gui/materialtest.py:42
 #: meerk40t/gui/propertypanels/imageproperty.py:199
@@ -15551,7 +15551,10 @@ msgstr "Klassifiziere nicht zugeordnete Elemente und nutze nur bestehende Arbeit
 
 #: ./meerk40t\core\elements\element_treeops.py:1798
 msgid "Append wobble {type} {radius} @{interval}"
-msgstr "Wobble-Effekt hinzufügen {type} {radius} @{interval}"
+msgstr "Wobble-Effekt hinzufügen: {type} {radius} @{interval}"
+
+msgid "Meander"
+msgstr "Mäander"
 
 #: ./meerk40t\gui\wxmtree.py:190
 msgid "Reactivate disabled operations that prevent elements from being burnt"
@@ -15604,6 +15607,58 @@ msgstr "Toolbar anpassen"
 #: ./meerk40t\gui\wxmmain.py:1133
 msgid "Wrap the current node in a hatch"
 msgstr "Wende ein Füllmuster auf Element an"
+
+#: meerk40t/gui/wxmmain.py:1177
+msgid "Wrap the current node in a hatch (bidirectional)"
+msgstr "Wende ein Füllmuster auf Element an (bidirektional)"
+
+#: meerk40t/gui/wxmmain.py:1178
+msgid "Fill (unidirectional)"
+msgstr "Füllen (unidirektional)"
+
+#: meerk40t/gui/wxmmain.py:1179
+msgid "Fill (bidirectional)"
+msgstr "Füllen (bidirektional)"
+
+#: meerk40t/gui/wxmmain.py:1180
+msgid "Simple line hatch"
+msgstr "Einfache Schraffur"
+
+#: meerk40t/gui/wxmmain.py:1181
+msgid "Diagonal line hatch"
+msgstr "Diagonale Schraffur"
+
+#: meerk40t/gui/wxmmain.py:1182
+msgid "Simple line hatch (bidirectional)"
+msgstr "Einfache Schraffur (bidirektional)"
+
+#: meerk40t/gui/wxmmain.py:1183
+msgid "Diagonal line hatch (bidirectional)"
+msgstr "Diagonale Schraffur (bidirektional)"
+
+#: meerk40t/gui/wxmmain.py:1184
+msgid "Wobble circular (centered)"
+msgstr "Kreisförmiges Nachfahren (zentriert)"
+
+#: meerk40t/gui/wxmmain.py:1185
+msgid "Wobble circular (left)"
+msgstr "Kreisförmiges Nachfahren (links)"
+
+#: meerk40t/gui/wxmmain.py:1186
+msgid "Wobble circular (right)"
+msgstr "Kreisförmiges Nachfahren (rechts)"
+
+#: meerk40t/gui/wxmmain.py:1187
+msgid "Apply a wobble movement along the path (circular on top of the line)"
+msgstr "Fährt den Pfad kreisend nach (auf der Linie)"
+
+#: meerk40t/gui/wxmmain.py:1188
+msgid "Apply a wobble movement along the path (circular, at the right side of the line)"
+msgstr "Fährt den Pfad kreisend nach (rechts der Linie)"
+
+#: meerk40t/gui/wxmmain.py:1189
+msgid "Apply a wobble movement along the path (circular, at the left side of the line)"
+msgstr "Fährt den Pfad kreisend nach (links der Linie)"
 
 #: ./meerk40t\gui\wxmmain.py:1344
 msgid "Paste"
