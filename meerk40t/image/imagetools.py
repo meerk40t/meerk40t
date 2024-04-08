@@ -2121,6 +2121,7 @@ class ImageLoader:
             raise BadFileError(
                 "Cannot load an .eps file without GhostScript installed"
             ) from e
+        elements_service._loading_cleared = True
         try:
             from PIL import ImageOps
 
