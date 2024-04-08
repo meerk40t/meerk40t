@@ -241,7 +241,7 @@ class BalorDevice(Service, Status):
                 "signals": "balorpin",
             },
             {
-                "attr": "coolant",
+                "attr": "device_coolant",
                 "object": self,
                 "default": "",
                 "type": str,
@@ -768,7 +768,7 @@ class BalorDevice(Service, Status):
             },
         ]
         self.register_choices("balor-corfile", choices)
-        self.kernel.root.coolant.claim_coolant(self, self.coolant)
+        self.kernel.root.coolant.claim_coolant(self, self.device_coolant)
 
         self.state = 0
 

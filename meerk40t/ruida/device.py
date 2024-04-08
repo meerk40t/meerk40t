@@ -222,7 +222,7 @@ class RuidaDevice(Service):
 
         choices = [
             {
-                "attr": "coolant",
+                "attr": "device_coolant",
                 "object": self,
                 "default": "",
                 "type": str,
@@ -279,7 +279,7 @@ class RuidaDevice(Service):
         self.interface_usb = SerialConnection(self)
         self.active_interface = None
 
-        self.kernel.root.coolant.claim_coolant(self, self.coolant)
+        self.kernel.root.coolant.claim_coolant(self, self.device_coolant)
 
         @self.console_command(
             "interface_update",

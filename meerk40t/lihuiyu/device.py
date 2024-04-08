@@ -169,7 +169,7 @@ class LihuiyuDevice(Service, Status):
         self.register_choices("bed_orientation", choices)
         choices = [
             {
-                "attr": "coolant",
+                "attr": "device_coolant",
                 "object": self,
                 "default": "",
                 "type": str,
@@ -461,7 +461,7 @@ class LihuiyuDevice(Service, Status):
 
         self.driver.out_pipe = self.controller if not self.networked else self.tcp
 
-        self.kernel.root.coolant.claim_coolant(self, self.coolant)
+        self.kernel.root.coolant.claim_coolant(self, self.device_coolant)
 
         _ = self.kernel.translation
 

@@ -490,7 +490,7 @@ class NewlyDevice(Service, Status):
 
         choices = [
             {
-                "attr": "coolant",
+                "attr": "device_coolant",
                 "object": self,
                 "default": "",
                 "type": str,
@@ -507,7 +507,7 @@ class NewlyDevice(Service, Status):
         # This device prefers to display power level in percent
         self.setting(bool, "use_percent_for_power_display", True)
 
-        self.kernel.root.coolant.claim_coolant(self, self.coolant)
+        self.kernel.root.coolant.claim_coolant(self, self.device_coolant)
 
         self.state = 0
         self.view = View(

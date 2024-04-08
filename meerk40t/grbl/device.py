@@ -421,7 +421,7 @@ class GRBLDevice(Service, Status):
                 "section": "_30_Controller Buffer",
             },
             {
-                "attr": "coolant",
+                "attr": "device_coolant",
                 "object": self,
                 "default": "",
                 "type": str,
@@ -542,7 +542,7 @@ class GRBLDevice(Service, Status):
         self.add_service_delegate(self.driver)
 
         self.viewbuffer = ""
-        self.kernel.root.coolant.claim_coolant(self, self.coolant)
+        self.kernel.root.coolant.claim_coolant(self, self.device_coolant)
 
         _ = self.kernel.translation
 

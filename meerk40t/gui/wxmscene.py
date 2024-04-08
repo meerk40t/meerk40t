@@ -1256,7 +1256,7 @@ class MeerK40tScenePanel(wx.Panel):
     @signal_listener("coolant_changed")
     def on_coolant_changed(self, origin, *args):
         if hasattr(self.context.device, "coolant"):
-            coolid = self.context.device.coolant
+            coolid = self.context.device.device_coolant
             if coolid == "":
                 coolid = None
             cool = self.context.kernel.root.coolant

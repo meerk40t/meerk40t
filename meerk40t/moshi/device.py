@@ -182,7 +182,7 @@ class MoshiDevice(Service, Status):
 
         choices = [
             {
-                "attr": "coolant",
+                "attr": "device_coolant",
                 "object": self,
                 "default": "",
                 "type": str,
@@ -231,7 +231,7 @@ class MoshiDevice(Service, Status):
         self.driver.out_pipe = self.controller.write
         self.driver.out_real = self.controller.realtime
 
-        self.kernel.root.coolant.claim_coolant(self, self.coolant)
+        self.kernel.root.coolant.claim_coolant(self, self.device_coolant)
 
         _ = self.kernel.translation
 

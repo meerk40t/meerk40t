@@ -424,7 +424,7 @@ class GRBLDriver(Parameters):
                 self._move(*q.end)
             elif isinstance(q, QuadCut):
                 self.move_mode = 1
-                interp = self.service.inter
+                interp = self.service.interp
                 g = Geomstr()
                 g.quad(complex(*q.start), complex(*q.c()), complex(*q.end))
                 for p in list(g.as_equal_interpolated_points(distance=interp))[1:]:
@@ -660,7 +660,7 @@ class GRBLDriver(Parameters):
             onoff = args[0]
             coolid = None
             if hasattr(self.service, "coolant"):
-                coolid = self.service.coolant
+                coolid = self.service.device_coolant
             if not coolid:
                 return
             routine = None
