@@ -1,6 +1,8 @@
 import wx
 
 from meerk40t.gui.icons import (
+    icon_air_on,
+    icon_air_off,
     icon_bell,
     icon_close_window,
     icon_console,
@@ -40,6 +42,8 @@ class DefaultActionPanel(wx.Panel):
             ("Beep", "util console", "beep"),
             ("Interrupt", "util console", 'interrupt "Spooling was interrupted"'),
             ("Console", "util console", ""),
+            ("Coolant on", "util console", "coolant_on"),
+            ("Coolant off", "util console", "coolant_off"),
         )
         self.default_images = [
             ["console home -f", icons8_home_filled],
@@ -53,6 +57,8 @@ class DefaultActionPanel(wx.Panel):
             ["util output", icon_external],
             ["util input", icon_internal],
             ["util console", icon_console],
+            ["console coolant_on", icon_air_on],
+            ["console coolant_off", icon_air_off],
         ]
         self.prepend_ops = []
         self.append_ops = []

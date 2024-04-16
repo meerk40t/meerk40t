@@ -401,7 +401,7 @@ class LihuiyuDriverGui(MWindow):
             self.notebook_main,
             wx.ID_ANY,
             context=self.context,
-            choices=("bed_dim", "bed_orientation"),
+            choices=("bed_dim", "bed_orientation", "coolant"),
         )
 
         panel_interface = ConfigurationInterfacePanel(

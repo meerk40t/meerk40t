@@ -24,6 +24,10 @@ def plugin(kernel, lifecycle):
 
         plugins.append(basedevice.plugin)
 
+        from .extra.coolant import plugin as coolantplugin
+
+        plugins.append(coolantplugin)
+
         from .lihuiyu import plugin as lihuiyu_driver
 
         plugins.append(lihuiyu_driver.plugin)

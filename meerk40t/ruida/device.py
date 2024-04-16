@@ -220,6 +220,22 @@ class RuidaDevice(Service):
         ]
         self.register_choices("serial", choices)
 
+        choices = [
+            {
+                "attr": "device_coolant",
+                "object": self,
+                "default": "",
+                "type": str,
+                "style": "option",
+                "label": _("Coolant"),
+                "tip": _("Does this device has a method to turn on / off a coolant associated to it?"),
+                "section": "_99_" + _("Coolant Support"),
+                "dynamic": self.cool_helper,
+                "signals": "coolant_changed"
+            },
+        ]
+        self.register_choices("coolant", choices)
+
         self.setting(str, "interface", "usb")
         self.setting(int, "packet_count", 0)
         self.setting(str, "serial", None)
@@ -262,6 +278,8 @@ class RuidaDevice(Service):
         self.interface_tcp = TCPConnection(self)
         self.interface_usb = SerialConnection(self)
         self.active_interface = None
+
+        self.kernel.root.coolant.claim_coolant(self, self.device_coolant)
 
         @self.console_command(
             "interface_update",
@@ -571,3 +589,6 @@ class RuidaDevice(Service):
         @return: the location in device native units for the current known position.
         """
         return self.driver.native_x, self.driver.native_y
+
+    def cool_helper(self, choice_dict):
+        self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)
