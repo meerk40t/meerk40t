@@ -33,6 +33,8 @@ class PlacePointNode(Node):
         alternate_rot_x=False,
         alternate_rot_y=False,
         orientation=0,
+        start_index = 0,
+        repetitions = 0,
         **kwargs,
     ):
         self.x = x
@@ -41,6 +43,8 @@ class PlacePointNode(Node):
         self.dy = dy
         self.nx = nx
         self.ny = ny
+        self.start_index = start_index
+        self.repetitions = repetitions
         """
         Orientation defines the sequence of placement points
         0 = standard
@@ -158,6 +162,8 @@ class PlacePointNode(Node):
         self.corner = _valid_int(self.corner, 0, 4)
         self.nx = _valid_int(self.nx, 0, None)
         self.ny = _valid_int(self.ny, 0, None)
+        self.start_index = _valid_int(self.start_index, 0, None)
+        self.repetitions = _valid_int(self.repetitions, 0, None)
 
     def placements(self, context, outline, matrix, plan):
         if outline is None:
@@ -249,13 +255,31 @@ class PlacePointNode(Node):
             func = idx_horizontal
             hither = False
 
+        p_idx = 0
+        p_count = 0
+        s_index = self.start_index
+        if s_index is None:
+            s_index = 0
+        if s_index > max_outer * max_inner - 1:
+            s_index = max_outer * max_inner - 1
+        s_count = self.repetitions
+        if s_count is None or s_count < 0:
+            s_count = 0
+        if s_count == 0:
+            s_count = max_inner * max_outer
+
         for idx_outer in range(max_outer):
             for idx_inner in range(max_inner):
                 if hither and idx_outer % 2 == 1:
                     sorted_idx = func(idx_outer, max_inner - 1 - idx_inner)
                 else:
                     sorted_idx = func(idx_outer, idx_inner)
-                sorted_result.append(result[sorted_idx])
+                # print (f"p_idx={p_idx}, p_count={p_count}, s_index={s_index}, s_count={s_count}")
+                if p_idx >= s_index and p_count < s_count:
+                    sorted_result.append(result[sorted_idx])
+                    p_count += 1
+
+                p_idx += 1
 
         for mat in sorted_result:
             yield mat
