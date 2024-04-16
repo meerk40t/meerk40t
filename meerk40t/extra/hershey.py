@@ -635,6 +635,8 @@ class Meerk40tFonts:
                                     else:
                                         entry = font_types[p]
                                         font_family = entry[0]
+                                    if face_name is None:
+                                        face_name = short
                                     self._available_fonts.append(
                                         (
                                             full_name,
