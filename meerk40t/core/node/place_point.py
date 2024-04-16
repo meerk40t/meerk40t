@@ -174,7 +174,12 @@ class PlacePointNode(Node):
         unit_x = Length(self.x, relative_length=scene_width).units
         unit_y = Length(self.y, relative_length=scene_height).units
         org_x, org_y = matrix.point_in_matrix_space((unit_x, unit_y))
-        dx, dy = matrix.point_in_matrix_space((self.dx, self.dy))
+        unit_x2 = Length(self.x + self.dx, relative_length=scene_width).units
+        unit_y2 = Length(self.y + self.dy, relative_length=scene_height).units
+        odx, ody = matrix.point_in_matrix_space((unit_x2, unit_y2))
+        dx = odx - org_x
+        dy = ody - org_y
+
         ccx = sum([c[0] for c in outline]) / len(outline)
         ccy = sum([c[1] for c in outline]) / len(outline)
         if 0 <= self.corner <= 3:
