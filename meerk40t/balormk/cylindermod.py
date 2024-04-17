@@ -7,6 +7,14 @@ class CylinderModifier:
         self._wrapped_instance = wrapped_instance
         self.service = service
         self.r = 0x2000
+        mirror_distance = service.cylinder_mirror_distance
+        x_axis = service.cylinder_x_axis
+        x_axis_length = service.cylinder_x_diameter
+        x_concave = service.cylinder_x_concave
+
+        y_axis = service.cylinder_y_axis
+        y_axis_length = service.cylinder_y_diameter
+        y_concave = service.cylinder_y_concave
         self.l_x = 0x8000
         self.l_y = 0x8000
 
@@ -14,7 +22,7 @@ class CylinderModifier:
     def convert(self, x, y):
         a = x - 0x8000
         r = self.r
-        x_prime = r * math.sin(a/r)
+        x_prime = r * math.sin(a / r)
         return x_prime + 0x8000, y
 
     def mark(self, x, y, **kwargs):
