@@ -190,6 +190,8 @@ class HingePanel(wx.Panel):
         self.text_width.Bind(wx.EVT_TEXT, self.on_option_update)
         self.text_origin_x.Bind(wx.EVT_TEXT, self.on_option_update)
         self.text_origin_y.Bind(wx.EVT_TEXT, self.on_option_update)
+        # We don't call the update routine for every mouse movement,
+        # just at the end of the sliding action
         self.slider_width.Bind(wx.EVT_SLIDER, self.on_option_update)
         self.slider_height.Bind(wx.EVT_SLIDER, self.on_option_update)
         self.slider_offset_x.Bind(wx.EVT_SLIDER, self.on_option_update)
@@ -700,11 +702,12 @@ class HingePanel(wx.Panel):
     def on_option_update(self, event):
         """
         Generic update within a pattern
-        @param event:
-        @return:
         """
-        if event is not None:
+        if event:
             event.Skip()
+            # Wait until the user has stopped to move the slider
+            if not self.context.process_while_sliding and wx.GetMouseState().LeftIsDown():
+                return
         if self.in_change_event:
             return
         self.in_change_event = True

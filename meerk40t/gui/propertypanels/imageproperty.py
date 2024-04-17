@@ -237,7 +237,7 @@ class CropPanel(wx.Panel):
     def on_slider_left(self, event=None):
         if event:
             # Wait until the user has stopped to move the slider
-            if wx.GetMouseState().LeftIsDown():
+            if not self.context.process_while_sliding and wx.GetMouseState().LeftIsDown():
                 event.Skip()
                 return
         self.cropleft = self.slider_left.GetValue()
@@ -245,7 +245,7 @@ class CropPanel(wx.Panel):
     def on_slider_right(self, event=None):
         if event:
             # Wait until the user has stopped to move the slider
-            if wx.GetMouseState().LeftIsDown():
+            if not self.context.process_while_sliding and wx.GetMouseState().LeftIsDown():
                 event.Skip()
                 return
         self.cropright = self.slider_right.GetValue()
@@ -253,7 +253,7 @@ class CropPanel(wx.Panel):
     def on_slider_top(self, event=None):
         if event:
             # Wait until the user has stopped to move the slider
-            if wx.GetMouseState().LeftIsDown():
+            if not self.context.process_while_sliding and wx.GetMouseState().LeftIsDown():
                 event.Skip()
                 return
         self.croptop = self.slider_top.GetValue()
@@ -261,7 +261,7 @@ class CropPanel(wx.Panel):
     def on_slider_bottom(self, event=None):
         if event:
             # Wait until the user has stopped to move the slider
-            if wx.GetMouseState().LeftIsDown():
+            if not self.context.process_while_sliding and wx.GetMouseState().LeftIsDown():
                 event.Skip()
                 return
         self.cropbottom = self.slider_bottom.GetValue()
@@ -1367,7 +1367,7 @@ class ImagePropertyPanel(ScrolledPanel):
     ):  # wxGlade: GrayscalePanel.<event_handler>
         if event:
             # Wait until the user has stopped to move the slider
-            if wx.GetMouseState().LeftIsDown():
+            if not self.context.process_while_sliding and wx.GetMouseState().LeftIsDown():
                 event.Skip()
                 return
 

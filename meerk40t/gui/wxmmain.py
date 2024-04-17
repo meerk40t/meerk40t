@@ -1135,6 +1135,23 @@ class MeerK40t(MWindow):
                 # "hidden": True,
                 "section": "Misc.",
             },
+            {
+                "attr": "process_while_sliding",
+                "object": context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Process input while moving slider handle"),
+                "tip": _(
+                    "Try to immediately use values while you drag a slider -"
+                )
+                + "\n"
+                + _(
+                    "otherwise they will get applied only after you release the mouse button."
+                ) + "\n" + _("NB: This applies only for time-consuming updates"),
+                "page": "Gui",
+                # "hidden": True,
+                "section": "Misc.",
+            },
         ]
         context.kernel.register_choices("preferences", choices)
 
