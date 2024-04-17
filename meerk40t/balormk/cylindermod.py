@@ -6,22 +6,42 @@ class CylinderModifier:
     def __init__(self, wrapped_instance, service):
         self._wrapped_instance = wrapped_instance
         self.service = service
-        self.r = 0x2000
-        mirror_distance = service.cylinder_mirror_distance
-        x_axis = service.cylinder_x_axis
-        x_axis_length = service.cylinder_x_diameter
-        x_concave = service.cylinder_x_concave
 
-        y_axis = service.cylinder_y_axis
-        y_axis_length = service.cylinder_y_diameter
-        y_concave = service.cylinder_y_concave
+        self.mirror_distance = service.cylinder_mirror_distance
+        self.x_axis = service.cylinder_x_axis
+        self.x_axis_length = service.cylinder_x_diameter
+        self.x_concave = service.cylinder_x_concave
+
+        self.y_axis = service.cylinder_y_axis
+        self.y_axis_length = service.cylinder_y_diameter
+        self.y_concave = service.cylinder_y_concave
+
+        dx, dy = self.service.view.position(self.x_axis_length, 0, vector=True)
+        self.r_x = abs(complex(dx, dy))
+        dx, dy = self.service.view.position(0, self.y_axis_length, vector=True)
+        self.r_y = abs(complex(dx, dy))
         self.l_x = 0x8000
         self.l_y = 0x8000
+
+        @service.console_command(
+            "cylinder",
+            help="Cylinder base command",
+            output_type="cylinder",
+        )
+        def cylinder(command, channel, _, data=None, **kwargs):
+            channel(
+                f"Cylinder Mode X: {self.x_axis}, {self.x_axis_length}, concave: {self.x_concave}."
+            )
+            channel(
+                f"Cylinder Mode Y: {self.y_axis}, {self.y_axis_length}, concave: {self.y_concave}."
+            )
+            channel("Only x axis is used. Updates occur only when toggled off and on. Concave is unused.")
+            return "cylinder", None
 
     @lru_cache(maxsize=1024)
     def convert(self, x, y):
         a = x - 0x8000
-        r = self.r
+        r = self.r_x
         x_prime = r * math.sin(a / r)
         return x_prime + 0x8000, y
 
