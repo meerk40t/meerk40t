@@ -1520,6 +1520,7 @@ class SVGLoader:
             )
         except ParseError as e:
             raise BadFileError(str(e)) from e
+        elements_service._loading_cleared = True
         svg_processor = SVGProcessor(elements_service, True)
         svg_processor.process(svg, pathname)
         svg_processor.cleanup()
@@ -1568,6 +1569,7 @@ class SVGLoaderPlain:
             )
         except ParseError as e:
             raise BadFileError(str(e)) from e
+        elements_service._loading_cleared = True
         svg_processor = SVGProcessor(elements_service, False)
         svg_processor.process(svg, pathname)
         svg_processor.cleanup()

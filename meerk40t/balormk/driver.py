@@ -740,3 +740,23 @@ class BalorDriver:
 
     def set_abort(self):
         self._aborting = True
+
+    def cylinder_validate(self):
+        if self.service.cylinder_active:
+            self._cylinder_wrap()
+        else:
+            self._cylinder_restore()
+
+    def _cylinder_restore(self):
+        if not hasattr(self, "_original_connection"):
+            return
+        oc = getattr(self, "_original_connection")
+        self.connection = oc
+        delattr(self, "_original_connection")
+
+    def _cylinder_wrap(self):
+        if hasattr(self, "_original_connection"):
+            return
+        from .cylindermod import CylinderModifier
+        setattr(self, "_original_connection", self.connection)
+        setattr(self, "connection", CylinderModifier(self.connection, self.service))

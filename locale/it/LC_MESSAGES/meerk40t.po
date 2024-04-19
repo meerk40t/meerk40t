@@ -1050,7 +1050,7 @@ msgid ""
 "Classify elements into operations in reverse order e.g. to match "
 "Inkscape's Object List"
 msgstr ""
-"Classifica gli elementi nei Processi in ordine inverso, ad esempio per "
+"Classifica gli elementi nei processi in ordine inverso, ad esempio per "
 "corrispondere all'Elenco Oggetti di Inkscape"
 
 #: meerk40t/core/elements.py:148
@@ -3496,7 +3496,7 @@ msgid ""
 msgstr ""
 "L'utilizzo di questa opzione può ridurre significativamente il tempo di spostamento tra "
 "elementi con il laser spento, ottimizzando la sequenza con cui gli elementi vengono "
-"incisi"
+"lavorati"
 
 #: meerk40t/core/planner.py:56
 msgid ""
@@ -3504,7 +3504,7 @@ msgid ""
 "order they appear in the Operation tree, and the Merge options will have "
 "no effect on the burn time. "
 msgstr ""
-"Quando questa opzione NON è selezionata, gli elementi vengono processati rigorosamente nell'ordine "
+"Quando questa opzione NON è selezionata, gli elementi vengono processati rigorosamente "
 "nell'ordine in cui appaiono nell'albero dei Processi e le opzioni di unione non avranno "
 "nessun effetto sul tempo di lavorazione "
 
@@ -3515,7 +3515,7 @@ msgid ""
 "moving between burn items."
 msgstr ""
 "Quando questa opzione è selezionata, Meerk40t processa ogni sottopercorso e poi "
-"si sposta invece sul sottopercorso rimanente più vicino, riducendo il tempo impiegato "
+"si sposta sul sottopercorso rimanente più vicino, riducendo il tempo impiegato "
 "a spostarsi tra gli elementi da lavorare"
 
 #: meerk40t/core/planner.py:75
@@ -3529,9 +3529,9 @@ msgid ""
 "shorter separate burns rather than one continuous burn from start to end."
 " "
 msgstr ""
-"Per impostazione predefinita, 'Riduci Tempi di Spostamento' ottimizza il lavoro utilizzando singoli percorsi SVG, "
+"Per impostazione predefinita, Riduci Tempi di Spostamento ottimizza il lavoro utilizzando singoli percorsi SVG, "
 "segmenti, il che significa che i sottopercorsi non chiusi possono essere processati in più "
-"percorsi separati più brevi piuttosto che un unico percorso continuo dall'inizio alla fine"
+"percorsi più brevi separati piuttosto che un unico percorso continuo dall'inizio alla fine"
 
 #: meerk40t/core/planner.py:82
 msgid ""
@@ -3546,9 +3546,8 @@ msgstr ""
 "Questa opzione ha effetto solo sui percorsi non chiusi. Quando questa opzione è selezionata, "
 "i percorsi secondari non chiusi vengono sempre processati in un'unica lavorazione continua dall'inizio "
 "alla fine, anziché far iniziare la lavorazione a metà. "
-"Sebbene questo possa creare un movimento più lungo per il percorso."
-"creare una corsa più lunga verso la fine del sottopercorso, evita anche "
-"spostamenti successivi verso o dal punto intermedio. Il tempo di percorrenza totale e "
+"Sebbene questo possa creare un movimento di percorso più lungo, in tal modo si evitano "
+"spostamenti successivi verso o dal, punto intermedio. Il tempo di percorrenza totale e "
 "il tempo di percorrenza totale può quindi essere più breve o più lungo. Si possono anche evitare piccole "
 "differenze nella profondità totale delle incisioni nel punto in cui le incisioni si uniscono. "
 
@@ -3564,8 +3563,8 @@ msgid ""
 " Meerk40t moves to the next path. "
 msgstr ""
 "Combina più passaggi nella stessa ottimizzazione.\nQuesto comporterà "
-"che ciascun sottopercorso verrà masterizzato più volte di "
-"seguito, masterizzando i percorsi chiusi in tondo e i percorsi non chiusi "
+"che ciascun sottopercorso verrà eseguito più volte di "
+"seguito, lavorando i percorsi chiusi in tondo e i percorsi non chiusi "
 "avanti e indietro, prima che Meerk40t passi al percorso successivo."
 
 #: meerk40t/core/planner.py:109
@@ -3575,7 +3574,7 @@ msgid ""
 "optimisation time. "
 
 msgstr ""
-"Se hai un progetto complesso con molti percorsi e stai masterizzando con "
+"Se hai un progetto complesso con molti percorsi e stai eseguendo un lavoro con "
 "più passaggi, utilizzare questa opzione può ridurre significativamente il "
 "tempo di ottimizzazione."
 
@@ -3586,10 +3585,10 @@ msgid ""
 "and this can result in greater charring or even an increased risk of the "
 "material catching fire."
 msgstr ""
-"Achtung: wo sehr kurze Pfade kurz aufeinanderfolgend gebrannt werden, hat"
-" das Material an diesen Stellen nicht genügend Zeit, zwischen den "
-"Brennvorgängen abzukühlen. Dies kann zu stärkerer Verkohlung führen oder "
-"gar das Risiko erhöhen, dass das Material Feuer fängt."
+"ATTENZIONE: se vengono eseguiti percorsi molto brevi in rapida successione, "
+"il materiale in questi punti non ha abbastanza tempo per raffreddarsi tra un processo e il successivo. "
+"Questo può portare a un aumento della carbonizzazione o "
+"addirittura aumentare il rischio che il materiale prenda fuoco"
 
 #: meerk40t/core/planner.py:128
 msgid "Merge Operations"
@@ -3601,9 +3600,9 @@ msgid ""
 "globally. Operations of different types will be optimised together to "
 "reduce travel time, so vector and raster burns will be mixed. "
 msgstr ""
-"Combina più Processi laser consicutivi e applica l'ottimizzazione alla totalità dei processi"
+"Combina più Processi laser consicutivi e applica l'ottimizzazione alla totalità dei processi "
 "I Processi di tipi diverso verranno ottimizzate insieme per ridurre il tempo di spostamento, "
-"quindi le lavorazioni dei vettori e raster verranno mescolate."
+"quindi le lavorazioni dei vettori e raster verranno mescolate.\n"
 
 #: meerk40t/core/planner.py:135
 msgid ""
@@ -3611,7 +3610,7 @@ msgid ""
 "the same passes merged. If Merge Passes is also checked, then all burns "
 "will be optimised globally."
 msgstr ""
-"Spuntata: tutte le masterizzazioni verranno ottimizzate globalmente\n"
+"Spuntata: tutte le lavorazioni verranno ottimizzate globalmente\n"
 "Non spuntata: i Processi con più di un passaggio avranno i passaggi uniti"
 
 #: meerk40t/core/planner.py:140
@@ -3625,7 +3624,7 @@ msgstr ""
 
 #: meerk40t/core/planner.py:152
 msgid "Burn Inner First"
-msgstr "Taglia prima l’interno"
+msgstr "Lavora prima l’interno"
 
 #: meerk40t/core/planner.py:153
 msgid ""
@@ -3633,7 +3632,7 @@ msgid ""
 "ensure that burns inside a cut-out piece are done before the cut piece "
 "shifts or drops out of the material."
 msgstr ""
-"Fa in modo che le lavorazioni interne vengano eseguite prima di un taglio esterno "
+"Fa in modo che le lavorazioni interne vengano eseguite prima di un lavoro esterno "
 "per evitare che gli eventuali pezzi ritagliati si spostino o cadano."
 
 #: meerk40t/core/planner.py:158
@@ -3648,7 +3647,7 @@ msgid ""
 msgstr ""
 "L'utilizzo di questa opzione aumenta significativamente il tempo di ottimizzazione, le alternative sono: \n"
 "* Deselezionare Taglia prima l'interno se non stai tagliando completamente il materiale \n"
-"* Inserire i percorsi interni in un'operazione(i) separata(e) in precedenza e non utilizzare \n"
+"* Inserire i percorsi interni in un processo(i) separata(e) in precedenza e non utilizzare \n\n"
 "Unisci Processi o Taglia prima l'interno\n"
 "* Se stai utilizzando passaggi multipli, seleziona Unisci passaggi"
 
@@ -3713,12 +3712,12 @@ msgstr "Ridurre i dettagli delle polilinee"
 msgid "Active: reduce the details of polyline elements,\nso that less information needs to be sent to the laser."
 msgstr ""
 "Spuntata: riduce i dettagli degli elementi della polilinea, in modo da ridurre i dati ricevuti dal laser, "
-"che il laser riceva ed elabori meno dati"
+"ed elabori meno dati"
 
 #: ./meerk40t\core\planner.py:272
 msgid "This can reduce the processing and laser time but can as well\ncompromise the quality at higher levels, so use with care and preview in simulation."
 msgstr ""
-"Questo può ridurre il tempo di lavorazione e il tempo del laser, "
+"Questo può ridurre il tempo di lavorazione e il tempo di accensione del laser, "
 "ma può anche compromettere la qualità a livelli più alti, "
 "quindi è bene usarlo con attenzione e fare un'anteprima in simulazione"
 
@@ -5243,7 +5242,7 @@ msgstr "Mantiene la definizione del lavoro durante la preparazione e l'esecuzion
 
 #: meerk40t/gui/laserpanel.py:189
 msgid "Enable/Disable Optimize"
-msgstr "Applicare/ignorare le ottimizzazioni"
+msgstr "Applica o ignora le ottimizzazioni"
 
 #: meerk40t/gui/laserpanel.py:280
 msgid "Enable Arm Requirement"
@@ -6213,12 +6212,12 @@ msgstr ""
 #: meerk40t/gui/opassignment.py:75
 #: meerk40t/gui/statusbarwidgets/opassignwidget.py:49
 msgid "-> OP - the assigned operation will adopt the color of the element"
-msgstr "-> OP \n- l'operazione assegnata adotta il colore dell'elemento\n"
+msgstr "-> OP \n- il processo assegnato adotta il colore dell'elemento\n"
 
 #: meerk40t/gui/opassignment.py:77
 #: meerk40t/gui/statusbarwidgets/opassignwidget.py:51
 msgid "-> Elem - the elements will adopt the color of the assigned operation"
-msgstr "-> Elem \n- l'elemento adotta il colore dell'operazione assegnata\n"
+msgstr "-> Elem \n- l'elemento adotta il colore del processo assegnata\n"
 
 #: meerk40t/gui/opassignment.py:80
 msgid "Assign as well all other elements with the same stroke-color,"
@@ -6697,10 +6696,10 @@ msgid "Timed Playback-Mode: play will jump from one minute to next"
 msgstr "Modalità di riproduzione: temporizzata, mostra la lavorazione di minuto in minuto"
 
 msgid "Modify operation parameter, press Enter to apply"
-msgstr "Modifica il parametro dell'operazione, premi Return per applicare le modifiche"
+msgstr "Modifica il parametro del processo, premi Return per applicare le modifiche"
 
 msgid "Remove operation"
-msgstr "Rimuovere l'operazione di taglio/incisione"
+msgstr "Rimuovere Il processo di taglio/incisione"
 
 msgid "Removes the current operation from the active cutplan"
 msgstr "Rimuove la voce corrente dall'elenco di tutti i processi in corso"
@@ -9964,7 +9963,7 @@ msgstr ""
 
 #: meerk40t/balormk/gui/gui.py:81
 msgid "Trace Hull"
-msgstr "Traccia del contorno"
+msgstr "Traccia il contorno"
 
 #: meerk40t/balormk/gui/gui.py:86
 msgid "Trace Bounds"
@@ -10300,39 +10299,39 @@ msgstr "Parametri:"
 
 #: meerk40t/device/gui/defaultactions.py:137
 msgid "Add the selected operation to the default 'Job Start' list"
-msgstr "Aggiunge l'operazione selezionata alla lista predefinita 'Inizio Lavoro'"
+msgstr "Aggiunge processo selezionata alla lista predefinita 'Inizio Lavoro'"
 
 #: meerk40t/device/gui/defaultactions.py:140
 msgid "Add the selected operation to the default 'Job End' list"
-msgstr "Aggiunge l'operazione selezionata alla lista predefinita 'Fine Lavoro'"
+msgstr "Aggiunge il processo selezionata alla lista predefinita 'Fine Lavoro'"
 
 #: meerk40t/device/gui/defaultactions.py:146
 msgid "Remove the selected operation from the list"
-msgstr "Rimuove l'operazione selezionata dalla lista"
+msgstr "Rimuove il processo selezionata dalla lista"
 
 #: meerk40t/device/gui/defaultactions.py:149
 #: meerk40t/device/gui/defaultactions.py:155
 msgid "Decrease the position of the selected operation"
-msgstr "Riduce la posizione dell'operazione selezionata"
+msgstr "Riduce la posizione del processo selezionato"
 
 #: meerk40t/device/gui/defaultactions.py:152
 #: meerk40t/device/gui/defaultactions.py:158
 msgid "Increase the position of the selected operation"
-msgstr "Aumenta la posizione dell'operazione selezionata"
+msgstr "Aumenta la posizione del processo selezionato"
 
 #: meerk40t/device/gui/defaultactions.py:155
 #: meerk40t/device/gui/defaultactions.py:161
 msgid "Modify the default parameter of the operation to be added"
-msgstr "Modifica il parametro predefinito dell'operazione da aggiungere"
+msgstr "Modifica il parametro predefinito del processo da aggiungere"
 
 #: meerk40t/device/gui/defaultactions.py:164
 msgid "Modify the default parameter of the operation to be added"
-msgstr "Modifica il parametro predefinito dell'operazione da aggiungere"
+msgstr "Modifica il parametro predefinito del processo da aggiungere"
 
 #: meerk40t/device/gui/defaultactions.py:167
 #: meerk40t/device/gui/defaultactions.py:170
 msgid "Modify the parameter of the selected operation"
-msgstr "Modifica il parametro dell'operazione selezionata"
+msgstr "Modifica il parametro del processo selezionata"
 
 msgid "Beep"
 msgstr ""
@@ -10737,7 +10736,7 @@ msgstr "Esegui in loop continuo"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:25
 msgid "Operation job will run forever in a loop"
-msgstr "L'operazione verrà eseguita per sempre in un loop"
+msgstr "Il processo verrà eseguita per sempre in un loop"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:32
 msgid "Loop Parameter"
@@ -10745,7 +10744,7 @@ msgstr "Parametro di loop"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:33
 msgid "Operation job should run set number of times"
-msgstr "L'operazione dovrebbe essere eseguita un numero fisso di volte"
+msgstr "il processo dovrebbe essere eseguito un numero fisso di volte"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:41
 msgid "Loop"
@@ -10760,7 +10759,7 @@ msgstr "volte"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:43
 msgid "How many times should the operation job loop"
-msgstr "Quante volte dovrebbe eseguire l'operazione"
+msgstr "Quante volte dovrebbe eseguire il processo"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:14
 msgid "Change/View color of this layer. When Meerk40t classifies elements to operations,"
@@ -10781,7 +10780,7 @@ msgid ""
 "Cut and Engrave operations are essentially the same except that for a Cut"
 " operation with Cut Outer Paths last, only closed Paths in Cut operations"
 " are considered as being Outer-most."
-msgstr "Tipo di operazione\n"
+msgstr "Tipo di processo\n"
 "\n"
 "Tagliare e incidere sono Processi vettoriali, Raster e Immagine sono Processi raster"
 "\n"
@@ -10801,7 +10800,7 @@ msgid "rather than a new operation of that color being created."
 msgstr "anziché creare un nuovo processo di quel colore"
 
 msgid "Enable this operation for inclusion in Execute Job."
-msgstr "Abilita questa operazione per l'inclusione nell'esecuzione del lavoro."
+msgstr "Abilita questo processo per l'inclusione nell'esecuzione del lavoro."
 
 msgid "Visible"
 msgstr "Visibile"
@@ -10847,10 +10846,10 @@ msgid "How many times to repeat this operation?"
 msgstr "Con quale frequenza deve essere ripetuto questo processo?"
 
 msgid "Setting e.g. passes to 2 is essentially equivalent to Duplicating the operation, "
-msgstr "Impostare ad esempio i passaggi su 2 è essenzialmente equivalente a duplicare l'operazione, "
+msgstr "Impostare ad esempio i passaggi su 2 è essenzialmente equivalente a duplicare il processo, "
 
 msgid "creating a second identical operation with the same settings and same elements."
-msgstr "creando una seconda operazione identica con le stesse impostazioni e gli stessi elementi"
+msgstr "creando un secondo proccesso identico con le stesse impostazioni e gli stessi elementi"
 
 msgid "The number of Operation Passes can be changed extremely easily, "
 msgstr "Il numero di Passaggi Operativi può essere cambiato estremamente facilmente, "
@@ -10859,7 +10858,7 @@ msgid "but you cannot change any of the other settings."
 msgstr "ma non puoi cambiare nessuna delle altre impostazioni"
 
 msgid "Duplicating the Operation gives more flexibility for changing settings, "
-msgstr "Duplicare l'Operazione offre maggiore flessibilità per cambiare le impostazioni, "
+msgstr "Duplicare il Processo offre maggiore flessibilità per cambiare le impostazioni, "
 
 msgid "but is far more cumbersome to change the number of duplications "
 msgstr "ma è molto più complicato cambiare il numero delle duplicazioni "
@@ -11034,7 +11033,7 @@ msgstr "Tempo stimato accensione Laser:"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:655
 msgid "How many elements does this operation contain"
-msgstr "Quanti elementi sono assegnati a questa operazione"
+msgstr "Quanti elementi sono assegnati a questo processo"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:657
 msgid "Estimated time for execution (hh:mm:ss)"
@@ -11047,7 +11046,7 @@ msgstr "Calcolare"
 #: meerk40t/gui/propertypanels/operationpropertymain.py:690
 msgid "Do you really want to reassign elements to this operation?"
 msgstr ""
-"Gli elementi devono essere davvero davvero riclassificati per questa operazione?"
+"Gli elementi devono essere davvero davvero riclassificati per questo processo?"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:692
 msgid "Atttention: This will delete all existing assignments!"
@@ -11790,7 +11789,7 @@ msgstr "Visualizza log del porta USB"
 
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:129
 msgid "Change the currently performed operation."
-msgstr "Cambia l'operazione in corso"
+msgstr "Cambia il processo in corso"
 
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:132
 msgid "Displays the controller's current process."
@@ -12197,10 +12196,10 @@ msgid ""
 "are believed to be small enough to be undetectable, you may wish to leave"
 " this permanently checked."
 msgstr ""
-"Mentre l'opzione Raggruppamento impulsi in Operazioni è impostata per tale operazione "
+"Mentre l'opzione Raggruppamento impulsi in Processi è impostata per tale Processo "
 "prima che il lavoro venga inviato in spool e non può essere modificato al volo, questo globale"
 "L'opzione Raggruppamento impulsi viene selezionata mentre le istruzioni vengono inviate al laser"
-"e può essere acceso e spento durante il processo di masterizzazione. Perché i cambiamenti "
+"e può essere acceso e spento durante il processo di lavorazione. Perché i cambiamenti "
 "si ritiene che siano abbastanza piccoli da non essere rilevabili, potresti voler andartene"
 "questo è stato controllato in modo permanente."
 
@@ -12375,8 +12374,7 @@ msgid ""
 "selects the appropriate setting for the Cut or Raster speed."
 msgstr ""
 "Il controller m2-nano ha quattro impostazioni di accelerazione da cui "
-"seleziona automaticamente le impostazioni appropriate per la masterizzazione e l'incisione"
-"velocità"
+"seleziona automaticamente le impostazioni appropriate per la velocità di taglio o raster"
 
 msgid ""
 "This setting allows you to override the automatic selection and specify "
@@ -12947,10 +12945,10 @@ msgid "Vectorize the given element"
 msgstr "Crea una versione vettoriale dell'immagine"
 
 msgid "Classification is the (automatic) process of assigning an element to an operation."
-msgstr "\nLa classificazione è il processo automatico di assegnazione degli elementi ai Processi"
+msgstr "\nLa classificazione è il processo automatico di assegnazione di un elemento a un processo"
 
 msgid "That link between element and operation is called an assignment."
-msgstr "Il legame tra elemento e operazione si chiama assegnazione\n"
+msgstr "Il legame tra elemento e processo si chiama assegnazione\n"
 
 msgid "Redlight-Offset"
 msgstr "Spostamenti a luce rossa"
@@ -13603,13 +13601,13 @@ msgstr "Asse Z"
 
 msgid "You have unassigned elements, that won't be burned"
 msgstr ""
-"Attenzione: non tutti gli elementi sono lavorabili e quindi non sono laserati"
+"Attenzione: non tutti gli elementi sono lavorabili e quindi non possino essere eseguiti"
 
 msgid "Select unassigned elements"
 msgstr "Seleziona gli elementi non assegnati"
 
 msgid "Select all elements that won't be burned"
-msgstr "Seleziona tutti gli elementi che non sono assegnati a un'operazione"
+msgstr "Seleziona tutti gli elementi che non sono assegnati a un processo"
 
 msgid "Stroke-Width"
 msgstr "Larghezza della linea"
@@ -13662,7 +13660,7 @@ msgid ""
 "This is an operation that will engrave a vector shape\n"
 "filled with a set of vector-patterns like lines"
 msgstr ""
-"Tutti gli elementi contenuti vengono masterizzati come contorni vettoriali"
+"Tutti gli elementi contenuti vengono lavorati come contorni vettoriali"
 "che vengono riempiti con tratteggi vettoriali"
 
 msgid ""
@@ -13997,7 +13995,7 @@ msgid "C&ut\tCtrl-X"
 msgstr "Taglia\tCtrl-X"
 
 msgid "Cut selected elements"
-msgstr "Sposta gli elementi selezionati negli appunti"
+msgstr "Taglia, sposta gli elementi selezionati negli appunti"
 
 msgid "&Copy\tCtrl-C"
 msgstr "Copia\tCtrl-C"
@@ -14607,7 +14605,7 @@ msgid "Show/Hide contained elements"
 msgstr "Mostra/Nasconde gli elementi contenuti"
 
 msgid "Set placement loops"
-msgstr "Imposta di più punti di inizio lavoro"
+msgstr "Imposta più punti di inizio lavoro"
 
 msgid "Loops {loopvalue}"
 msgstr "{loopvalue}x"
@@ -14751,10 +14749,10 @@ msgid "Decompile cutplan = make operations visible and editable again"
 msgstr "Disassembla il piano di taglio = rendere i Processi nuovamente visibili e modificabili"
 
 msgid "Inserts this special operation before the current cutplan entry"
-msgstr "Inserisce questa operazione prima della voce del piano di taglio corrente"
+msgstr "Inserisce questo processo prima della voce del piano di taglio corrente"
 
 msgid "Appends this special operation at the end of the cutplan"
-msgstr "Aggiunge questa operazione alla fine del piano di taglio"
+msgstr "Aggiunge questo processo alla fine del piano di taglio"
 
 msgid "Remove cutcode"
 msgstr "Rimuove il codice di taglio"
@@ -15334,7 +15332,7 @@ msgstr "File di uscita"
 
 #: ./meerk40t\newly\device.py:232
 msgid "File0 is default and instantly executes. The remaining files need to be sent and told to start"
-msgstr "Il file0 è quello predefinito e viene eseguito immediatamente. Gli altri file devono essere avviati manualmente dopo il trasferimento"
+msgstr "Il File0 è quello predefinito e viene eseguito immediatamente. Gli altri file devono essere avviati manualmente dopo il trasferimento"
 
 #: ./meerk40t\newly\device.py:240
 msgid "Automatically Start"
@@ -15344,8 +15342,7 @@ msgstr "Avvio automatico"
 msgid "Automatically start the job when the output file is sent. You can send without execution if this is unchecked."
 msgstr ""
 "Avvia il lavoro immediatamente quando il file di output viene inviato.\n"
-"Se l'opzione è inattiva, il file può essere inviato,\n"
-"senza che venga avviato immediatamente"
+"Se l'opzione è inattiva, il file può essere inviato, senza che venga avviato immediatamente"
 
 #: ./meerk40t\newly\device.py:255
 msgid "Horizontal DPI"
@@ -15700,7 +15697,7 @@ msgid ""
 "but will separately process objects lying apart from each other.\n"
 "Inactive: all objects will be lasered as one single unit."
 msgstr ""
-"Separa gli oggetti non sovrapposti in un'operazione raster\n"
+"Separa gli oggetti non sovrapposti in un'operazione raster\n\n"
 "Spuntata: gli oggetti adiacenti (sovrapposti) vengono laserati come un unico elemento, gli oggetti distanti vengono laserati separatamente\n"
 "Non spuntata: tutti gli oggetti vengono laserati insieme in un unico processo"
 
@@ -18564,22 +18561,6 @@ msgstr "Raster ({power}%, {speed}mm/s)"
 msgid "Image ({power}%, {speed}mm/s)"
 msgstr "image ({power}%, {speed}mm/s)"
 
-#: meerk40t/core/elements/elements.py:1418
-msgid "Cut ({percent}, {speed}mm/s)"
-msgstr "Taglio ({percent}, {speed}mm/s)"
-
-#: meerk40t/core/elements/elements.py:1421
-msgid "Engrave ({percent}, {speed}mm/s)"
-msgstr "Incisione ({percent}, {speed}mm/s)"
-
-#: meerk40t/core/elements/elements.py:1424
-msgid "Raster ({percent}, {speed}mm/s)"
-msgstr "Raster ({percent}, {speed}mm/s)"
-
-#: meerk40t/core/elements/elements.py:1427
-msgid "Image ({percent}, {speed}mm/s)"
-msgstr "Image ({percent}, {speed}mm/s)"
-
 #: meerk40t/gui/materialmanager.py:799
 msgid "No laser"
 msgstr "Nessun laser"
@@ -18636,7 +18617,7 @@ msgstr "GRBL Controller"
 
 #: meerk40t/core/elements/element_treeops.py:426 meerk40t/core/elements/element_treeops.py:433 meerk40t/core/elements/element_treeops.py:438 meerk40t/core/elements/element_treeops.py:443 meerk40t/core/elements/element_treeops.py:448
 msgid "Burning sequence"
-msgstr "Sequenza di fuoco"
+msgstr "Sequenza di lavoro"
 
 #: meerk40t/core/elements/element_treeops.py:428
 msgid "Dragging works as well..."
@@ -18644,20 +18625,23 @@ msgstr "Anche lo spostamento diretto dell'elemento funziona..."
 
 #: meerk40t/core/elements/element_treeops.py:434
 msgid "Burn first"
-msgstr "Incidi per primo"
+msgstr "Lavora per primo"
 
 #: meerk40t/core/elements/element_treeops.py:439
 msgid "Burn earlier"
-msgstr "Incidi prima"
+msgstr "Lavora prima"
 
 #: meerk40t/core/elements/element_treeops.py:444
 msgid "Burn later"
-msgstr "Incidi dopo"
+msgstr "Lavora dopo"
 
 #: meerk40t/core/elements/element_treeops.py:449
 msgid "Burn last"
-msgstr "Incidi per ultimo"
+msgstr "Lavora per ultimo"
 
 #: meerk40t/gui/scenewidgets/selectionwidget.py:2190
 msgid "Align Selection"
 msgstr "Allinea la selezione"
+
+msgid "Burn the current design"
+msgstr "Esegue il lavora del disegno corrente"

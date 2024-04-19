@@ -889,6 +889,7 @@ class EZDLoader:
                 "File format was only partially unrecognized.\n"
                 "Please raise an github issue and submit this file for review.\n"
             )
+        elements_service._loading_cleared = True
 
         ez_processor = EZProcessor(elements_service)
         ez_processor.process(ezfile, pathname)
