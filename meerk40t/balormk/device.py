@@ -240,6 +240,18 @@ class BalorDevice(Service, Status):
                 "subsection": "_30_Pin-Index",
                 "signals": "balorpin",
             },
+            {
+                "attr": "device_coolant",
+                "object": self,
+                "default": "",
+                "type": str,
+                "style": "option",
+                "label": _("Coolant"),
+                "tip": _("Does this device has a method to turn on / off a coolant associated to it?"),
+                "section": "_99_" + _("Coolant Support"),
+                "dynamic": self.cool_helper,
+                "signals": "coolant_changed"
+            },
         ]
         self.register_choices("balor", choices)
 
@@ -756,6 +768,7 @@ class BalorDevice(Service, Status):
             },
         ]
         self.register_choices("balor-corfile", choices)
+        self.kernel.root.coolant.claim_coolant(self, self.device_coolant)
 
         self.state = 0
 
@@ -849,3 +862,6 @@ class BalorDevice(Service, Status):
         else:
             self._simulate = False
             self("stop\n")
+
+    def cool_helper(self, choice_dict):
+        self.kernel.root.coolant.coolant_choice_helper(self)(choice_dict)

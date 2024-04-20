@@ -359,7 +359,10 @@ class GcodeJob:
                     self.program_mode = False
                 elif v == 7:
                     #  Coolant Control: Mist coolant control.
-                    pass
+                    try:
+                        self._driver.signal("coolant", True)
+                    except AttributeError:
+                        pass
                 elif v == 8:
                     # Coolant Control: Flood coolant On
                     try:
