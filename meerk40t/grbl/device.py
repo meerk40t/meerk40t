@@ -100,8 +100,8 @@ class GRBLDevice(Service, Status):
             {
                 "attr": "user_margin_x",
                 "object": self,
-                "default": 0,
-                "type": Length,
+                "default": "0",
+                "type": str,
                 "label": _("X-Margin"),
                 "tip": _(
                     "Margin for the X-axis. This will be a kind of unused space at the left side."
@@ -111,8 +111,8 @@ class GRBLDevice(Service, Status):
             {
                 "attr": "user_margin_y",
                 "object": self,
-                "default": 0,
-                "type": Length,
+                "default": "0",
+                "type": str,
                 "label": _("Y-Margin"),
                 "tip": _(
                     "Margin for the Y-axis. This will be a kind of unused space at the top."
@@ -959,6 +959,11 @@ class GRBLDevice(Service, Status):
             origin_x=home_dx,
             origin_y=home_dy,
         )
+
+        # x, y = self.view.position(0, 0)
+        # print (f"Test for 0,0 gives: {x:.2f}, {y:.2f}")
+        # x, y = self.view.iposition(x, y)
+        # print (f"Reverse gives: {x:.2f}, {y:.2f}")
         self.signal("view;realized")
 
     def cool_helper(self, choice_dict):

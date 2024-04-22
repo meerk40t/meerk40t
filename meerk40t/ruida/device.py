@@ -89,8 +89,8 @@ class RuidaDevice(Service):
             {
                 "attr": "user_margin_x",
                 "object": self,
-                "default": 0,
-                "type": Length,
+                "default": "0",
+                "type": str,
                 "label": _("X-Margin"),
                 "tip": _(
                     "Margin for the X-axis. This will be a kind of unused space at the left side."
@@ -102,8 +102,8 @@ class RuidaDevice(Service):
             {
                 "attr": "user_margin_y",
                 "object": self,
-                "default": 0,
-                "type": Length,
+                "default": "0",
+                "type": str,
                 "label": _("Y-Margin"),
                 "tip": _(
                     "Margin for the Y-axis. This will be a kind of unused space at the top."
