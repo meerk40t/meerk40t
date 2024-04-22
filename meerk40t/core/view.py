@@ -282,7 +282,7 @@ class View:
         """
         off_x = Length(self.margin_x, relative_length=self.width, unitless=1).units
         off_y = Length(self.margin_y, relative_length=self.height, unitless=1).units
-        # print (f"Will apply offset: {off_x}, {off_y}")
+        # print (f"Will apply offset: {off_x}, {off_y} to {x}, {y}")
         if not isinstance(x, (int, float)):
             x = Length(x, relative_length=self.width, unitless=1).units
         if not isinstance(y, (int, float)):
@@ -316,11 +316,12 @@ class View:
         """
         off_x = Length(self.margin_x, relative_length=self.width, unitless=1).units
         off_y = Length(self.margin_y, relative_length=self.height, unitless=1).units
-        unit_x, unit_y = x - off_x, y - off_y
+        unit_x = x - off_x
+        unit_y = y - off_y
         matrix = ~self.matrix
         if vector:
-            return self.matrix.transform_vector([unit_x, unit_y])
-        return self.matrix.point_in_matrix_space([unit_x, unit_y])
+            return matrix.transform_vector([unit_x, unit_y])
+        return matrix.point_in_matrix_space([unit_x, unit_y])
 
     @property
     def matrix(self):
