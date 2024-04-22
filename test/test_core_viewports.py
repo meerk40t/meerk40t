@@ -30,7 +30,9 @@ class TestViewport(unittest.TestCase):
             )
 
             x, y = view.position(0, 0)
+            print(f"Test arbitrary viewport for 0, 0: x={x:.2f}, y={y:.2f}")
             x, y = view.iposition(x, y)
+            print(f"... and back: x={x:.2f}, y={y:.2f}")
             self.assertAlmostEqual(x, 0, delta=10)
             self.assertAlmostEqual(y, 0, delta=10)
 
