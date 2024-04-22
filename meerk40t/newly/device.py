@@ -4,6 +4,7 @@ Newly Device
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.view import View
+from meerk40t.core.units import Length
 from meerk40t.device.mixins import Status
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.newly.driver import NewlyDriver
@@ -137,6 +138,30 @@ class NewlyDevice(Service, Status):
                 "section": "_00_General",
                 "priority": "20",
                 "nonzero": True,
+            },
+            {
+                "attr": "user_margin_x",
+                "object": self,
+                "default": 0,
+                "type": Length,
+                "label": _("X-Margin"),
+                "tip": _(
+                    "Margin for the X-axis. This will be a kind of unused space at the left side."
+                ),
+                "section": "_10_Parameters",
+                "subsection": "_45_User Offset",
+            },
+            {
+                "attr": "user_margin_y",
+                "object": self,
+                "default": 0,
+                "type": Length,
+                "label": _("Y-Margin"),
+                "tip": _(
+                    "Margin for the Y-axis. This will be a kind of unused space at the top."
+                ),
+                "section": "_10_Parameters",
+                "subsection": "_45_User Offset",
             },
             {
                 "attr": "home_corner",
@@ -726,6 +751,8 @@ class NewlyDevice(Service, Status):
     @signal_listener("v_dpi")
     @signal_listener("h_dpi")
     @signal_listener("home_corner")
+    @signal_listener("user_margin_x")
+    @signal_listener("user_margin_y")
     def realize(self, origin=None, *args):
         if origin is not None and origin != self.path:
             return
@@ -750,6 +777,7 @@ class NewlyDevice(Service, Status):
             home_dx = 0.5
             home_dy = 0.5
         self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.set_margins(self.user_margin_x, self.user_margin_y)
         self.view.dpi_x = self.h_dpi
         self.view.dpi_y = self.v_dpi
         self.view.transform(

@@ -187,6 +187,31 @@ class BalorDevice(Service, Status):
                 "subsection": "_10_Axis corrections",
             },
             {
+                "attr": "user_margin_x",
+                "object": self,
+                "default": 0,
+                "type": Length,
+                "label": _("X-Margin"),
+                "tip": _(
+                    "Margin for the X-axis. This will be a kind of unused space at the left side."
+                ),
+                "section": "_10_Parameters",
+                # _("User Offset")
+                "subsection": "_30_User Offset",
+            },
+            {
+                "attr": "user_margin_y",
+                "object": self,
+                "default": 0,
+                "type": Length,
+                "label": _("Y-Margin"),
+                "tip": _(
+                    "Margin for the Y-axis. This will be a kind of unused space at the top."
+                ),
+                "section": "_10_Parameters",
+                "subsection": "_30_User Offset",
+            },
+            {
                 "attr": "interp",
                 "object": self,
                 "default": 5,
@@ -811,6 +836,8 @@ class BalorDevice(Service, Status):
     @signal_listener("flip_x")
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
+    @signal_listener("user_margin_x")
+    @signal_listener("user_margin_y")
     def realize(self, origin=None, *args):
         if origin is not None and origin != self.path:
             return
@@ -819,6 +846,7 @@ class BalorDevice(Service, Status):
         units_per_galvo = unit_size / galvo_range
 
         self.view.set_dims(self.lens_size, self.lens_size)
+        self.view.set_margins(self.user_margin_x, self.user_margin_y)
         self.view.set_native_scale(units_per_galvo, units_per_galvo)
         self.view.transform(
             flip_x=self.flip_x,

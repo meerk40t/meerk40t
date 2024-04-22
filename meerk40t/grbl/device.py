@@ -62,7 +62,7 @@ class GRBLDevice(Service, Status):
                 "type": Length,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
-                "subsection": "Dimensions",
+                "subsection": "_10_Dimensions",
                 "nonzero": True,
             },
             {
@@ -72,7 +72,7 @@ class GRBLDevice(Service, Status):
                 "type": Length,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
-                "subsection": "Dimensions",
+                "subsection": "_10_Dimensions",
                 "nonzero": True,
             },
             {
@@ -84,7 +84,7 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
-                "subsection": "Scale",
+                "subsection": "_20_Scale",
             },
             {
                 "attr": "scale_y",
@@ -95,7 +95,29 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
-                "subsection": "Scale",
+                "subsection": "_20_Scale",
+            },
+            {
+                "attr": "user_margin_x",
+                "object": self,
+                "default": 0,
+                "type": Length,
+                "label": _("X-Margin"),
+                "tip": _(
+                    "Margin for the X-axis. This will be a kind of unused space at the left side."
+                ),
+                "subsection": "_30_User Offset",
+            },
+            {
+                "attr": "user_margin_y",
+                "object": self,
+                "default": 0,
+                "type": Length,
+                "label": _("Y-Margin"),
+                "tip": _(
+                    "Margin for the Y-axis. This will be a kind of unused space at the top."
+                ),
+                "subsection": "_30_User Offset",
             },
             {
                 "attr": "flip_x",
@@ -106,7 +128,7 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "+X is standard for grbl but sometimes settings can flip that."
                 ),
-                "subsection": "_10_Flip Axis",
+                "subsection": "_40_Flip Axis",
             },
             {
                 "attr": "flip_y",
@@ -117,7 +139,7 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "-Y is standard for grbl but sometimes settings can flip that."
                 ),
-                "subsection": "_10_Flip Axis",
+                "subsection": "_40_Flip Axis",
             },
             {
                 "attr": "swap_xy",
@@ -128,7 +150,7 @@ class GRBLDevice(Service, Status):
                 "tip": _(
                     "Swaps the X and Y axis. This happens before the FlipX and FlipY."
                 ),
-                "subsection": "_20_Axis corrections",
+                "subsection": "_50_Axis corrections",
             },
             {
                 "attr": "home_corner",
@@ -146,7 +168,7 @@ class GRBLDevice(Service, Status):
                 ],
                 "label": _("Force Declared Home"),
                 "tip": _("Override native home location"),
-                "subsection": "_30_" + _("Home position"),
+                "subsection": "_60_Home position",
             },
         ]
         self.register_choices("bed_dim", choices)
@@ -890,6 +912,8 @@ class GRBLDevice(Service, Status):
     @signal_listener("flip_x")
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
+    @signal_listener("user_margin_x")
+    @signal_listener("user_margin_y")
     def realize(self, origin=None, *args):
         if origin is not None and origin != self.path:
             return
@@ -914,6 +938,7 @@ class GRBLDevice(Service, Status):
             home_dx = 0.5
             home_dy = 0.5
         self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.set_margins(self.user_margin_x, self.user_margin_y)
         self.view.transform(
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,

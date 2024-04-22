@@ -36,6 +36,8 @@ class View:
         self.dpi_x = dpi_x
         self.dpi_y = dpi_y
         self.dpi = (dpi_x + dpi_y) / 2.0
+        self.margin_x = 0.0
+        self.margin_y = 0.0
         self._source = None
         self._destination = None
         self._matrix = None
@@ -78,6 +80,11 @@ class View:
         self.width = width
         self.height = height
         self.reset()
+
+    def set_margins(self, offset_x, offset_y):
+        self.margin_x = offset_x
+        self.margin_y = offset_y
+        # print (f"Margins were set to {offset_x}, {offset_y}")
 
     def reset(self):
         width = float(Length(self.width))
@@ -273,14 +280,23 @@ class View:
         @param vector:
         @return:
         """
+        off_x = Length(self.margin_x, relative_length=self.width, unitless=1).units
+        off_y = Length(self.margin_y, relative_length=self.height, unitless=1).units
+        # print (f"Will apply offset: {off_x}, {off_y}")
         if not isinstance(x, (int, float)):
             x = Length(x, relative_length=self.width, unitless=1).units
         if not isinstance(y, (int, float)):
             y = Length(y, relative_length=self.height, unitless=1).units
         unit_x, unit_y = x, y
         if vector:
-            return self.matrix.transform_vector([unit_x, unit_y])
-        return self.matrix.point_in_matrix_space([unit_x, unit_y])
+            res = self.matrix.transform_vector([unit_x, unit_y])
+            res[0] = res[0] + off_x
+            res[1] = res[1] + off_y
+            return res
+        res = self.matrix.point_in_matrix_space([unit_x, unit_y])
+        res.x = res.x + off_x
+        res.y = res.y + off_y
+        return res
 
     def scene_position(self, x, y):
         if not isinstance(x, (int, float)):
@@ -300,9 +316,17 @@ class View:
         """
         unit_x, unit_y = x, y
         matrix = ~self.matrix
+        off_x = Length(self.margin_x, relative_length=self.width, unitless=1).units
+        off_y = Length(self.margin_y, relative_length=self.height, unitless=1).units
         if vector:
-            return matrix.transform_vector([unit_x, unit_y])
-        return matrix.point_in_matrix_space([unit_x, unit_y])
+            res = self.matrix.transform_vector([unit_x, unit_y])
+            res[0] = res[0] - off_x
+            res[1] = res[1] - off_y
+            return res
+        res = self.matrix.point_in_matrix_space([unit_x, unit_y])
+        res.x = res.x - off_x
+        res.y = res.y - off_y
+        return res
 
     @property
     def matrix(self):
