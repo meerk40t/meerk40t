@@ -11,7 +11,7 @@ msgstr ""
 "PO-Revision-Date: 23-04-21 06:37UTC\n"
 "Last-Translator: betaeta\n"
 "Language: it\n"
-"Language-Team: Italian\n"
+"Language-Team: CicioniItalian\n"
 "Plural-Forms: nplurals=2; plural=n != 1\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -286,7 +286,7 @@ msgstr ""
 
 #: meerk40t/balormk/device.py:827
 msgid "Prefer redlight on"
-msgstr "Preferisce il puntatore laser acceso"
+msgstr "Puntatore laser acceso"
 
 #: meerk40t/balormk/device.py:828
 msgid ""
@@ -3353,6 +3353,10 @@ msgstr "Scala {scale_percent}%"
 msgid "Scale Element"
 msgstr ""
 
+#: meerk40t/gui/scenewidgets/selectionwidget.py:2190
+msgid "Align Selection"
+msgstr "Allinea la selezione"
+
 #: meerk40t/core/elements.py:7752 meerk40t/gui/alignment.py:448
 #: meerk40t/gui/statusbarwidgets/selectionwidget.py:25
 msgid "Rotate"
@@ -3483,7 +3487,7 @@ msgstr "Apre automaticamente la finestra dello spooler non appena viene eseguito
 
 #: meerk40t/core/planner.py:49
 msgid "Reduce Travel Time"
-msgstr "Riduce i movimenti"
+msgstr "Riduce i tempi di spostamento"
 
 msgid "Reducing Movements"
 msgstr "Riduzione dei movimenti"
@@ -3529,7 +3533,7 @@ msgid ""
 "shorter separate burns rather than one continuous burn from start to end."
 " "
 msgstr ""
-"Per impostazione predefinita, Riduci Tempi di Spostamento ottimizza il lavoro utilizzando singoli percorsi SVG, "
+"Per impostazione predefinita, Riduce Tempi di Spostamento ottimizza il lavoro utilizzando singoli percorsi SVG, "
 "segmenti, il che significa che i sottopercorsi non chiusi possono essere processati in più "
 "percorsi più brevi separati piuttosto che un unico percorso continuo dall'inizio alla fine"
 
@@ -4261,7 +4265,7 @@ msgstr "abilita la modalità di sospensione"
 
 #: meerk40t/grbl/device.py:138 meerk40t/moshi/device.py:183
 msgid "+X is standard for grbl but sometimes settings can flip that."
-msgstr "+X è lo standard per GRBL ma talvolta le impostazioni possono cambiarlo"
+msgstr "+X è lo standard per GRBL ma talvolta le impostazioni possono invertirlo"
 
 #: meerk40t/grbl/device.py:150 meerk40t/moshi/device.py:195
 msgid "-Y is standard for grbl but sometimes settings can flip that."
@@ -6232,7 +6236,7 @@ msgstr "o lo stesso colore di riempimento con un click destro"
 msgid ""
 "When assigning to an operation remove all assignments of the elements to "
 "other operations"
-msgstr "Quando si assegna a Processi tutte le assegnazioni al processo vengono eliminate"
+msgstr "Quando si assegna a processo, tutte le assegnazioni al processo vengono eliminate"
 
 #: meerk40t/gui/opassignment.py:227
 #: meerk40t/gui/statusbarwidgets/opassignwidget.py:299
@@ -8420,7 +8424,7 @@ msgstr "Zoom alla &selezione"
 
 #: meerk40t/gui/wxmtree.py:50 meerk40t/gui/wxmtree.py:300
 msgid "Tree"
-msgstr "Albero lavorazioni"
+msgstr "Albero Processi"
 
 #: meerk40t/gui/wxutils.py:294
 msgid "Other value..."
@@ -8703,7 +8707,7 @@ msgstr ""
 
 #: meerk40t/image/imagetools.py:680
 msgid "Image Contoured."
-msgstr "Immagine sagomata"
+msgstr ""
 
 #: meerk40t/image/imagetools.py:684
 msgid "detail image"
@@ -9706,7 +9710,7 @@ msgstr ""
 
 #: meerk40t/moshi/device.py:362
 msgid "Update moshiboard controller status"
-msgstr ""
+msgstr "Aggiorna lo stato del controller moshiboard"
 
 #: meerk40t/rotary/rotary.py:22
 msgid "Rotary Enabled"
@@ -10385,15 +10389,15 @@ msgstr "Dimensioni"
 
 # ./meerk40t\grbl\gui\grblconfiguration.py:65166
 msgid "Select this if you have a GRBL device running through a serial connection."
-msgstr "Se il laser GRBL è collegato direttamente ad un'interfaccia seriale"
+msgstr "Selezionare questa opzione se il laser GRBL è collegato direttamente ad un'interfaccia seriale"
 
 # ./meerk40t\grbl\gui\grblconfiguration.py:65173
 msgid "Select this if the GRBL device is contacted via TCP connection"
-msgstr "Se il laser GRBL è collegato tramite una connessione di rete TCP"
+msgstr "Selezionare questa opzione se il laser GRBL è collegato tramite una connessione di rete TCP"
 
 # ./meerk40t\grbl\gui\grblconfiguration.py:65179
 msgid "Select this only for debugging without a physical laser available."
-msgstr "Solo per scopi di sviluppo senza avere a disposizione un laser reale"
+msgstr "Selezionare questa opzione solo per scopi di sviluppo senza avere a disposizione un laser reale"
 
 # ./meerk40t\grbl\gui\grblconfiguration.py:65360
 msgid "Could not query laser-data!"
@@ -11626,21 +11630,19 @@ msgstr "Attiva/disattiva le maniglie di distorsione"
 
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:29
 msgid "Cap"
-msgstr ""
+msgstr "Tappo"
 
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:43
 msgid "Set the end of the lines to a butt-shape"
-msgstr ""
-"Utilizza 'butt' = estremità rettangolari rifilate nei punti finali per "
-"linee"
+msgstr "Imposta la fine delle linee nei punti finali"
 
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:51
 msgid "Set the end of the lines to a round-shape"
-msgstr "Utilizza 'round' = estremità arrotondate (oltre i punti finali) per le linee"
+msgstr "Imposta la fine delle linee con una forma rotonda"
 
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:59
 msgid "Set the end of the lines to a square-shape"
-msgstr "Utilizza 'quadrato' = estremità rettangolari (oltre i punti finali) per le linee"
+msgstr "Imposta la fine delle linee con una forma quadrata"
 
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:91
 msgid "Join"
@@ -11648,31 +11650,31 @@ msgstr "Unisci"
 
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:106
 msgid "Set the join of the lines to a bevel-shape"
-msgstr "Usa lo 'smusso'=punte tronche per collegare due linee"
+msgstr "Imposta l'unione delle linee con un angolo smussato"
 
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:114
 msgid "Set the join of lines to a round-shape"
-msgstr "Utilizza le punte 'rotonde'=arrotondate per collegare due linee"
+msgstr "Imposta l'unione delle linee con una forma rotonda"
 
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:122
 msgid "Set the join of lines to a miter-shape"
-msgstr "Usa le punte 'miter'=angolari per collegare due linee"
+msgstr "Imposta l'unione delle linee con una forma ad angolo"
 
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:186
 msgid "Set the fillstyle to non-zero (regular)"
-msgstr "Imposta lo stile di riempimento su un valore predefinito 'non zero'"
+msgstr "Imposta lo stile di riempimento a non zero (regolare)"
 
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:195
 msgid "Set the fillstyle to even-odd (alternating areas)"
-msgstr "Imposta lo stile di riempimento su 'pari-dispari' (aree di riempimento alternate)"
+msgstr "Imposta lo stile di riempimento su pari-dispari (aree alternate)"
 
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:44
 msgid "Clear stroke-color (right click clear fill color)"
-msgstr "Elimina il colore del contorno (Click destro si elimina il colore di riempimento)"
+msgstr "Elimina il colore del contorno (Click destro elimina il colore di riempimento)"
 
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:47
 msgid "Set stroke-color (right click set fill color)"
-msgstr "Imposta il colore del contorno (Click destro si imposta il colore di riempimento)"
+msgstr "Imposta il colore del contorno (Click destro imposta il colore di riempimento)"
 
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:117
 msgid "Stroke:"
@@ -13426,7 +13428,7 @@ msgstr "Protocollo di trasmissione"
 
 msgid "Buffered sends data as long as the planning buffer permits it being sent. Sync requires an 'ok' between each line sent."
 msgstr ""
-"Buffered invia i dati al laser il più rapidamente possibile"
+"Buffered invia i dati al laser il più rapidamente possibile "
 "Sync attende la risposta 'OK' del laser (più sicuro, ma più lento)"
 
 msgid "Protocol"
@@ -13436,10 +13438,10 @@ msgid "Line Ending"
 msgstr "Fine della linea"
 
 msgid "CR for carriage return (\\r), LF for line feed(\\n), CRLF for both"
-msgstr "CR per il ritorno a capo ($0D), LF per l'avanzamento di riga ($0A), CRLF per entrambi i tipi di testo."
+msgstr "CR per il ritorno a capo ($0D)\nLF per l'avanzamento di riga ($0A)\nCRLF per entrambi i tipi di testo"
 
 msgid "What serial interface does this device connect to?"
-msgstr "A quale interfaccia è collegato il laser?"
+msgstr "Nome dell'interfaccia a cui è collegato il laser"
 
 msgid "Device has endstops"
 msgstr "Il dispositivo è dotato di fine corsa"
@@ -13457,7 +13459,7 @@ msgid ""
 "of the current position to help with focusing and positioning. Use with care!"
 msgstr ""
 "Se attivo, il laser può essere acceso a una potenza molto bassa"
-"il punto di impatto del laser diventa visibile senza modificare il materiale,\n"
+"il punto di impatto del laser diventa visibile senza modificare il materiale, "
 "il che facilita la messa a fuoco o il posizionamento del laser.\n"
 "Si prega di utilizzare il laser con buon senso e comprensione, i raggi laser sono pericolosi!"
 
@@ -14304,7 +14306,7 @@ msgid ""
 "If for some reason the device needs a different welcome validator than 'Grbl' (default), "
 "for example, somewhat custom grbl-like firmware"
 msgstr ""
-"Un testo di benvenuto diverso da quello standard 'GRBL' può essere memorizzato qui"
+"Un testo di benvenuto diverso da quello standard 'GRBL' può essere memorizzato qui "
 "questo è necessario per alcuni firmware speciali come FluidNC"
 
 msgid "What power level do we cut at?"
@@ -14815,7 +14817,7 @@ msgid "Elem inherits color"
 msgstr "L'elemento eredita il colore"
 
 msgid "Assign as well all other elements with the same stroke-color"
-msgstr "Assegna anche elementi con lo stesso colore"
+msgstr "Assegna anche tutti gli altri elementi con lo stesso colore del tratto"
 
 msgid "Burn-Operation"
 msgstr "Processi"
@@ -15543,6 +15545,9 @@ msgstr "Classifica gli elementi non assegnati e utilizzare solo i processi di la
 msgid "Append wobble {type} {radius} @{interval}"
 msgstr "Aggiunge l'effetto oscillazione {type} {radius} @{interval}"
 
+msgid "Meander"
+msgstr "Meandro"
+
 #: ./meerk40t\gui\wxmtree.py:190
 msgid "Reactivate disabled operations that prevent elements from being burnt"
 msgstr "Attiva i Processi inattivi senza le quali gli elementi non verrebbero altrimenti attivati"
@@ -15594,6 +15599,58 @@ msgstr "Personalizza la barra degli strumenti"
 #: ./meerk40t\gui\wxmmain.py:1133
 msgid "Wrap the current node in a hatch"
 msgstr "Riempie l'area selezionata con un tratteggio"
+
+#: meerk40t/gui/wxmmain.py:1177
+msgid "Wrap the current node in a hatch (bidirectional)"
+msgstr "Applica un motivo di riempimento all'elemento (bidirezionale)"
+
+#: meerk40t/gui/wxmmain.py:1178
+msgid "Fill (unidirectional)"
+msgstr "Riempimento (unidirezionale)"
+
+#: meerk40t/gui/wxmmain.py:1179
+msgid "Fill (bidirectional)"
+msgstr "Riempimento (bidirezionale)"
+
+#: meerk40t/gui/wxmmain.py:1180
+msgid "Simple line hatch"
+msgstr "Tratteggio semplice"
+
+#: meerk40t/gui/wxmmain.py:1181
+msgid "Diagonal line hatch"
+msgstr "Tratteggio diagonale"
+
+#: meerk40t/gui/wxmmain.py:1182
+msgid "Simple line hatch (bidirectional)"
+msgstr "Tratteggio semplice (bidirezionale)"
+
+#: meerk40t/gui/wxmmain.py:1183
+msgid "Diagonal line hatch (bidirectional)"
+msgstr "Tratteggio diagonale (bidirezionale)"
+
+#: meerk40t/gui/wxmmain.py:1184
+msgid "Wobble circular (centered)"
+msgstr "Tracciamento circolare (centrato)"
+
+#: meerk40t/gui/wxmmain.py:1185
+msgid "Wobble circular (left)"
+msgstr "Tracciamento circolare (sinistra)"
+
+#: meerk40t/gui/wxmmain.py:1186
+msgid "Wobble circular (right)"
+msgstr "Tracciamento circolare (destra)"
+
+#: meerk40t/gui/wxmmain.py:1187
+msgid "Apply a wobble movement along the path (circular on top of the line)"
+msgstr "Traccia il percorso in un cerchio (sulla linea)"
+
+#: meerk40t/gui/wxmmain.py:1188
+msgid "Apply a wobble movement along the path (circular, at the right side of the line)"
+msgstr "Fährt den Pfad kreisend nach (rechts der Linie)"
+
+#: meerk40t/gui/wxmmain.py:1189
+msgid "Apply a wobble movement along the path (circular, at the left side of the line)"
+msgstr "Traccia il percorso in un cerchio (a sinistra della linea)"
 
 #: ./meerk40t\gui\wxmmain.py:1344
 msgid "Paste"
@@ -16016,7 +16073,7 @@ msgstr "Reset quando si collega"
 msgid ""
 "On connection, send the device a softreset message as soon as connection is established."
 msgstr ""
-"Deve essere inviato un comando di softreset quando viene stabilita la connessione?"
+"Invia un comando di softreset quando viene stabilita la connessione"
 
 #: ./meerk40t\grbl\device.py:438
 msgid "Check sequence on connect."
@@ -17149,7 +17206,7 @@ msgstr "Il file di guida offline ({help}) non è stato trovato"
 
 #: ./meerk40t\gui\wxmmain.py:1363
 msgid "(Right click removes the hatch)"
-msgstr "Non mostra le guide di misura"
+msgstr "(Click destro rimuove il riempimento tratteggiato)"
 
 msgid "Generating..."
 msgstr "Generazione in esecuzione..."
@@ -17157,10 +17214,6 @@ msgstr "Generazione in esecuzione..."
 #: ./meerk40t\core\elements\elements.py:375
 msgid "Allow dragging of regmarks to operations"
 msgstr "Consente il trascinamento dei Riferimenti nei Processi"
-
-#: ./meerk40t\gui\wxmmain.py:1363
-msgid "(Right click removes the hatch)"
-msgstr "Non mostra le guide di misura"
 
 #: ./meerk40t\gui\simulation.py:833
 msgid "Cutcode"
@@ -17200,10 +17253,6 @@ msgstr "MeerK40t"
 #: ./meerk40t\gui\preferences.py:170
 msgid "Choose target directory:"
 msgstr "Sceglie la cartella di destinazione:"
-
-#: ./meerk40t\gui\preferences.py:143
-msgid "Management"
-msgstr "Gestione"
 
 #: ./meerk40t\gui\plugin.py:318
 msgid "shuts down the gui and exits"
@@ -17276,27 +17325,6 @@ msgstr "Riavvia"
 #: ./meerk40t\gui\laserpanel.py:75
 msgid "Plan"
 msgstr "Piano"
-
-#: ./meerk40t\gui\hersheymanager.py:1123
-msgid "All files"
-msgstr "Tutti i file"
-
-#: ./meerk40t\gui\hersheymanager.py:1090
-msgid "List of available fonts"
-msgstr "Elenco dei font disponibili"
-
-#: ./meerk40t\gui\hersheymanager.py:1036
-msgid "Invalid directory"
-msgstr "Cartella non valida"
-
-#: ./meerk40t\gui\hersheymanager.py:1036
-msgid "This is an invalid directory, do you want to use the default directory?"
-msgstr "Questa è una cartella non valida, si vuole usare la cartella predefinita?"
-
-#: ./meerk40t\gui\hersheymanager.py:1033
-msgid "Invalid directory! Will not be used, please provide a valid path."
-msgstr "Cartella non valida! Non verrà utilizzata, fornire un percorso valido"
-
 
 #: ./meerk40t\extra\inkscape.py:370
 msgid "Inkscape location: {match}"
@@ -17538,50 +17566,6 @@ msgstr "Ok"
 #: ./meerk40t\gui\dialogoptions.py:74
 msgid "Cancel"
 msgstr "Annulla"
-
-#: ./meerk40t\gui\hersheymanager.py:366
-msgid "Textalignment for multi-lines"
-msgstr "Allineamento del testo per più righe"
-
-#: ./meerk40t\gui\hersheymanager.py:383
-msgid "- Hold shift/ctrl-Key down for bigger change"
-msgstr "- Tenere premuto il tasto shift/ctrl per ottenere una modifica maggiore"
-
-#: ./meerk40t\gui\hersheymanager.py:385
-msgid "- Right click will reset value to default"
-msgstr "- Click destro si ripristina il valore predefinito"
-
-#: ./meerk40t\gui\hersheymanager.py:403
-msgid "Increase line distance"
-msgstr "Aumenta la distanza della linea"
-
-#: ./meerk40t\gui\hersheymanager.py:404
-msgid "Reduce line distance"
-msgstr "Riduce la distanza tra le linee"
-
-#: ./meerk40t\gui\hersheymanager.py:736
-msgid "Align text on the left side"
-msgstr "Allinea il testo a sinistra"
-
-#: ./meerk40t\gui\hersheymanager.py:741
-msgid "Align text around the center"
-msgstr "Allinea il testo al centro"
-
-#: ./meerk40t\gui\hersheymanager.py:746
-msgid "Align text on the right side"
-msgstr "Allinea il testo a destra"
-
-#: ./meerk40t\gui\hersheymanager.py:932
-msgid "Additional directory for userdefined fonts (also used to store some cache files)"
-msgstr "Cartella aggiuntiva per i font definiti dall'utente (utilizzata anche per memorizzare alcuni file di cache)"
-
-#: ./meerk40t\extra\inkscape.py:356
-msgid "Optional: location of inkscape executable"
-msgstr "Opzionale: posizione dell'eseguibile di inkscape"
-
-#: ./meerk40t\core\elements\render.py:325
-msgid "Preserve intermediary objects"
-msgstr "Conservare gli oggetti intermedi"
 
 #: ./meerk40t\core\elements\render.py:330
 msgid "Create an outline path at the inner and outer side of a path"
@@ -18407,10 +18391,6 @@ msgstr "Da Modifica"
 msgid "Unlock Modifications"
 msgstr "Sblocca le modifiche"
 
-#: ./meerk40t\core\elements\element_treeops.py:171
-msgid "Remove effect"
-msgstr "Rimuove l'effetto"
-
 #: ./meerk40t\core\elements\element_treeops.py:545
 msgid "{power}ppi ({power_10}%)"
 msgstr "{power}ppi ({power_10}%)"
@@ -18559,7 +18539,23 @@ msgstr "Raster ({power}%, {speed}mm/s)"
 
 #: meerk40t/core/elements/elements.py:1427
 msgid "Image ({power}%, {speed}mm/s)"
-msgstr "image ({power}%, {speed}mm/s)"
+msgstr "Foto ({power}%, {speed}mm/s)"
+
+#: meerk40t/core/elements/elements.py:1418
+msgid "Cut ({percent}, {speed}mm/s)"
+msgstr "Taglio ({percent}, {speed}mm/s)"
+
+#: meerk40t/core/elements/elements.py:1421
+msgid "Engrave ({percent}, {speed}mm/s)"
+msgstr "Incisione ({percent}, {speed}mm/s)"
+
+#: meerk40t/core/elements/elements.py:1424
+msgid "Raster ({percent}, {speed}mm/s)"
+msgstr "Raster ({percent}, {speed}mm/s)"
+
+#: meerk40t/core/elements/elements.py:1427
+msgid "Image ({percent}, {speed}mm/s)"
+msgstr "Immagine ({percent}, {speed}mm/s)"
 
 #: meerk40t/gui/materialmanager.py:799
 msgid "No laser"
@@ -18590,6 +18586,11 @@ msgstr "Assegna"
 #: translate_check.py:22
 msgid "another test for \"
 msgstr "un altro test per la \"
+
+
+#: meerk40t/core/elements/element_treeops.py:171 meerk40t/core/elements/element_treeops.py:182
+msgid "Remove effect"
+msgstr "Rimuove l'effetto"
 
 #: meerk40t/grbl/device.py:247 meerk40t/grbl/device.py:272
 msgid "IP address/host name of the GRBL device"
@@ -18639,9 +18640,92 @@ msgstr "Lavora dopo"
 msgid "Burn last"
 msgstr "Lavora per ultimo"
 
-#: meerk40t/gui/scenewidgets/selectionwidget.py:2190
-msgid "Align Selection"
-msgstr "Allinea la selezione"
+#: ./meerk40t\gui\preferences.py:143
+msgid "Management"
+msgstr "Gestione"
 
+#: meerk40t/gui/preferences.py:170
+msgid "Choose target directory:"
+msgstr "Imposta la directory di destinazione"
+
+#: meerk40t/gui/simpleui.py:63
+msgid "Load Project"
+msgstr "Carica progetto"
+
+#: meerk40t/gui/simpleui.py:148 meerk40t/gui/wxmmain.py:4346
+msgid "Cleaning up..."
+msgstr "Pulizia..."
+
+#: meerk40t/gui/wxmmain.py:1267
 msgid "Burn the current design"
 msgstr "Esegue il lavora del disegno corrente"
+
+#: ./meerk40t\gui\hersheymanager.py:366
+msgid "Textalignment for multi-lines"
+msgstr "Allineamento del testo per più righe"
+
+#: ./meerk40t\gui\hersheymanager.py:383
+msgid "- Hold shift/ctrl-Key down for bigger change"
+msgstr "- Tenere premuto il tasto shift/ctrl per ottenere una modifica maggiore"
+
+#: ./meerk40t\gui\hersheymanager.py:385
+msgid "- Right click will reset value to default"
+msgstr "- Click destro si ripristina il valore predefinito"
+
+#: ./meerk40t\gui\hersheymanager.py:403
+msgid "Increase line distance"
+msgstr "Aumenta la distanza della linea"
+
+#: ./meerk40t\gui\hersheymanager.py:404
+msgid "Reduce line distance"
+msgstr "Riduce la distanza tra le linee"
+
+#: ./meerk40t\gui\hersheymanager.py:736
+msgid "Align text on the left side"
+msgstr "Allinea il testo a sinistra"
+
+#: ./meerk40t\gui\hersheymanager.py:741
+msgid "Align text around the center"
+msgstr "Allinea il testo al centro"
+
+#: ./meerk40t\gui\hersheymanager.py:746
+msgid "Align text on the right side"
+msgstr "Allinea il testo a destra"
+
+#: ./meerk40t\gui\hersheymanager.py:932
+msgid "Additional directory for userdefined fonts (also used to store some cache files)"
+msgstr "Cartella aggiuntiva per i font definiti dall'utente (utilizzata anche per memorizzare alcuni file di cache)"
+
+#: ./meerk40t\gui\hersheymanager.py:1033
+msgid "Invalid directory! Will not be used, please provide a valid path."
+msgstr "Cartella non valida! Non verrà utilizzata, fornire un percorso valido"
+
+#: ./meerk40t\gui\hersheymanager.py:1036
+msgid "This is an invalid directory, do you want to use the default directory?"
+msgstr "Questa è una cartella non valida, si vuole usare la cartella predefinita?"
+
+#: ./meerk40t\gui\hersheymanager.py:1036
+msgid "Invalid directory"
+msgstr "Cartella non valida"
+
+#: ./meerk40t\gui\hersheymanager.py:1090
+msgid "List of available fonts"
+msgstr "Elenco dei font disponibili"
+
+#: ./meerk40t\gui\hersheymanager.py:1123
+msgid "All files"
+msgstr "Tutti i file"
+
+#: ./meerk40t\extra\inkscape.py:356
+msgid "Optional: location of inkscape executable"
+msgstr "Opzionale: posizione dell'eseguibile di inkscape"
+
+#: ./meerk40t\core\elements\render.py:325
+msgid "Preserve intermediary objects"
+msgstr "Conservare gli oggetti intermedi"
+
+msgid "Left Click: Move to next panel"
+msgstr "Click sinistro: Passa al panello successivo"
+
+msgid "Right Click: Move to previous panel"
+msgstr "Click destro: Passa al pannello precedente"
