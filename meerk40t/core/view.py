@@ -314,19 +314,13 @@ class View:
         @param vector:
         @return:
         """
-        unit_x, unit_y = x, y
-        matrix = ~self.matrix
         off_x = Length(self.margin_x, relative_length=self.width, unitless=1).units
         off_y = Length(self.margin_y, relative_length=self.height, unitless=1).units
+        unit_x, unit_y = x - off_x, y - off_y
+        matrix = ~self.matrix
         if vector:
-            res = self.matrix.transform_vector([unit_x, unit_y])
-            res[0] = res[0] - off_x
-            res[1] = res[1] - off_y
-            return res
-        res = self.matrix.point_in_matrix_space([unit_x, unit_y])
-        res.x = res.x - off_x
-        res.y = res.y - off_y
-        return res
+            return self.matrix.transform_vector([unit_x, unit_y])
+        return self.matrix.point_in_matrix_space([unit_x, unit_y])
 
     @property
     def matrix(self):
