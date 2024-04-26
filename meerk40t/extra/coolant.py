@@ -203,13 +203,13 @@ def plugin(kernel, lifecycle):
 
         def base_coolant_grbl_m7(context, mode):
             if mode:
-                context("gcode M8\n")
+                context("gcode M7\n")
             else:
                 context("gcode M9\n")
 
         def base_coolant_grbl_m8(context, mode):
             if mode:
-                context("gcode M7\n")
+                context("gcode M8\n")
             else:
                 context("gcode M9\n")
 
