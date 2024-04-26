@@ -1366,7 +1366,7 @@ class Elemental(Service):
         else:
             lbl = ""
         _ = self.kernel.translation
-        slabel = _(lbl) # .format(power=node.power / 10, speed=node.speed)
+        slabel = _(lbl)  # .format(power=node.power / 10, speed=node.speed)
         return slabel
 
     def load_persistent_op_list(self, name, use_settings=None):
@@ -1449,7 +1449,6 @@ class Elemental(Service):
             if tertiary > 255:
                 tertiary = 0
             return primary, secondary, tertiary
-
 
         def create_cut(oplist):
             # Cut op
@@ -3911,14 +3910,15 @@ class Elemental(Service):
                 filetypes.append(";".join(exts))
         return "|".join(filetypes)
 
-    def save(self, pathname, version="default"):
+    def save(self, pathname, version="default", temporary=False):
         kernel = self.kernel
         for saver, save_name, sname in kernel.find("save"):
             for description, extension, mimetype, _version in saver.save_types():
                 if pathname.lower().endswith(extension) and _version == version:
                     saver.save(self, pathname, version)
-                    self._filename = pathname
-                    self.signal("file;saved")
+                    if not temporary:
+                        self._filename = pathname
+                        self.signal("file;saved")
                     return True
         return False
 

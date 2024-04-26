@@ -27,7 +27,7 @@ from meerk40t.gui.statusbarwidgets.shapepropwidget import (
 )
 from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
 from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
-from meerk40t.kernel import lookup_listener, signal_listener
+from meerk40t.kernel import Job, get_safe_path, lookup_listener, signal_listener
 
 from ..core.units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from ..svgelements import Color, Matrix, Path
@@ -114,6 +114,86 @@ from .laserrender import (
 from .mwindow import MWindow
 
 _ = wx.GetTranslation
+
+
+class Autosaver:
+    """
+    Minimal autosave functionality.
+    Still missing:
+    - Delete autosave file on successful save (you could call it a feature too...)
+    - Make user aware of an autosaved file at startup
+    """
+
+    def __init__(self, context, *args, **kwargs):
+        self.context = context
+        self.needs_saving = False
+        safe_dir = os.path.realpath(get_safe_path(self.context.kernel.name))
+        self.autosave_file = os.path.join(safe_dir, "_autosave.svg")
+
+        choices = [
+            {
+                "attr": "autosave_active",
+                "object": self.context,
+                "default": True,
+                "type": bool,
+                "label": _("Autosave workspace"),
+                "tip": _(
+                    "If active then the current workspace will be saved every x minutes\nFilename: {file}"
+                ).format(file=self.autosave_file),
+                "page": "Options",
+                "section": "Autosave",
+            },
+            {
+                "attr": "autosave_interval",
+                "object": self.context,
+                "default": 300,
+                "type": int,
+                "label": _("Frequency"),
+                "style": "option",
+                "display": (
+                    _("Every 30 seconds"),
+                    _("Every minute"),
+                    _("Every 5 minutes"),
+                    _("Every 10 minutes"),
+                ),
+                "choices": (30, 60, 300, 600),
+                "tip": _("How often should MeerK40t save the current workspace"),
+                "page": "Options",
+                "section": "Autosave",
+                "conditional": (self.context, "autosave_active"),
+            },
+        ]
+        self.context.kernel.register_choices("preferences", choices)
+        self._job = Job(
+            process=self.autosave_workspace,
+            job_name="autosave_job",
+            interval=self.context.autosave_interval,
+            times=None,  # None equals forever
+            run_main=True,
+        )
+        self.context.schedule(self._job)
+
+    def autosave_workspace(self):
+        #  print (f"Job called: Active: {self.context.autosave_active}, requires saving: {self.needs_saving}")
+        if not self.context.autosave_active:
+            return
+        if not self.needs_saving:
+            return
+        elements = self.context.elements
+        elements.save(self.autosave_file, temporary=True)
+        self.needs_saving = False
+        # print ("Saved...")
+
+    def set_saving_indicator(self, newvalue):
+        # print (f"Saving needed: {newvalue}")
+        self.needs_saving = newvalue
+
+    def reset(self):
+        # print (f"rescheduling job")
+        self.context.unschedule(self._job)
+        self._job.interval = self.context.autosave_interval
+        self._job.reset()
+        self.context.schedule(self._job)
 
 
 class MeerK40t(MWindow):
@@ -230,6 +310,7 @@ class MeerK40t(MWindow):
         self.update_check_at_startup()
         self.tips_at_startup()
         self.parametric_info = None
+        self.autosave = Autosaver(self.context)
 
     def tips_at_startup(self):
         self.context.setting(bool, "show_tips", True)
@@ -1141,13 +1222,13 @@ class MeerK40t(MWindow):
                 "default": False,
                 "type": bool,
                 "label": _("Process input while moving slider handle"),
-                "tip": _(
-                    "Try to immediately use values while you drag a slider -"
-                )
+                "tip": _("Try to immediately use values while you drag a slider -")
                 + "\n"
                 + _(
                     "otherwise they will get applied only after you release the mouse button."
-                ) + "\n" + _("NB: This applies only for time-consuming updates"),
+                )
+                + "\n"
+                + _("NB: This applies only for time-consuming updates"),
                 "page": "Gui",
                 # "hidden": True,
                 "section": "Misc.",
@@ -3944,6 +4025,13 @@ class MeerK40t(MWindow):
     def warning_indicator(self, *args):
         self.warning_routine.warning_indicator()
 
+    @signal_listener("updateop_tree")
+    @signal_listener("tree_changed")
+    @signal_listener("modified_by_tool")
+    @signal_listener("element_property_update")
+    def changes_were_made(self, *args):
+        self.autosave.set_saving_indicator(True)
+
     @signal_listener("restart")
     def on_restart_required(self, *args):
         self.context.kernel.register(
@@ -4002,19 +4090,15 @@ class MeerK40t(MWindow):
 
     def set_needs_save_status(self, newstatus):
         self.needs_saving = newstatus
+        self.autosave.set_saving_indicator(newstatus)
         app = self.context.app.GetTopWindow()
         if isinstance(app, wx.TopLevelWindow):
             app.OSXSetModified(self.needs_saving)
 
-    @signal_listener("altered")
-    @signal_listener("modified")
-    def on_invalidate_save(self, origin, *args):
-        status = True
-        # Let's check whether the list of elements is empty:
-        # if that's the case then we refrain from setting the status
-        if len(self.context.elements.elem_branch.children) == 0:
-            status = False
-        self.set_needs_save_status(status)
+    @signal_listener("autosave_interval")
+    def on_autosave_parameters(self, origin, *args):
+        # Reset scheduler
+        self.autosave.reset()
 
     @signal_listener("altered")
     @signal_listener("modified")
@@ -4031,6 +4115,13 @@ class MeerK40t(MWindow):
                 for info, m, sname in self.context.kernel.find("element_update"):
                     # function, path, shortname
                     self.parametric_info[sname.lower()] = info
+
+        status = True
+        # Let's check whether the list of elements is empty:
+        # if that's the case then we refrain from setting the status
+        if len(self.context.elements.elem_branch.children) == 0:
+            status = False
+        self.set_needs_save_status(status)
 
         # Let's check for the need of parametric updates...
         if len(args) == 0:
