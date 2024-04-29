@@ -30,6 +30,7 @@ from .cutcode.cutgroup import CutGroup
 from .cutcode.cutobject import CutObject
 from .cutcode.rastercut import RasterCut
 from .node.node import Node
+from .node.util_console import ConsoleOperation
 from .units import Length
 
 
@@ -194,6 +195,18 @@ class CutPlan:
                 self.context.elements.mywordlist.move_all_indices(1)
 
             for original_op in original_ops:
+                # First, do we have a valid coolant aka airassist command?
+                if hasattr(original_op, "coolant"):
+                    cool = original_op.coolant
+                    if cool is None:
+                        cool = 0
+                    if cool in (1, 2): # Explicit on / off
+                        if cool == 1:
+                            cmd = "coolant_on"
+                        else:
+                            cmd = "coolant_off"
+                        coolop = ConsoleOperation(command=cmd)
+                        self.plan.append(coolop)
                 try:
                     op = original_op.copy_with_reified_tree()
                 except AttributeError:
