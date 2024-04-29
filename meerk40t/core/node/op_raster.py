@@ -418,15 +418,6 @@ class RasterOpNode(Node, Parameters):
         """
         if len(self.children) == 0:
             return
-        # First, do we have a valid coolant aka airassist command?
-        cool = self.coolant
-        if cool is None:
-            cool = 0
-        if cool in (1, 2):
-            onoff = bool(cool == 1)
-            output = CoolantCut(onoff)
-            output.original_op = self.type
-            yield output
         settings = self.derive()
 
         # Set overscan

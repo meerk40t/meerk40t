@@ -654,6 +654,23 @@ class PassesPanel(wx.Panel):
         self.sizer_kerf.Add(self.text_kerf, 1, wx.EXPAND, 0)
         self.sizer_kerf.Add(self.kerf_label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
+        self.sizer_coolant = StaticBoxSizer(
+            self, wx.ID_ANY, _("Coolant:"), wx.HORIZONTAL
+        )
+        cool_choices = [_("No changes"), _("Turn on"), _("Turn off")]
+        self.combo_coolant = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=cool_choices,
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
+        self.combo_coolant.SetToolTip(
+            _(
+                "Define whether coolant support shall be explicitly turned on or off at the start of the operation, or whether it should be left at its current state."
+            )
+        )
+        self.sizer_coolant.Add(self.combo_coolant, 1, wx.EXPAND, 0)
+
         sizer_passes = StaticBoxSizer(self, wx.ID_ANY, _("Passes:"), wx.HORIZONTAL)
 
         self.check_passes = wxCheckBox(self, wx.ID_ANY, _("Passes"))
@@ -688,12 +705,14 @@ class PassesPanel(wx.Panel):
 
         sizer_main.Add(sizer_passes, 1, wx.EXPAND, 0)
         sizer_main.Add(self.sizer_kerf, 1, wx.EXPAND, 0)
+        sizer_main.Add(self.sizer_coolant, 1, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
 
         self.Layout()
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_passes, self.check_passes)
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_coolant, self.combo_coolant)
 
         self.text_passes.SetActionRoutine(self.on_text_passes)
         self.text_kerf.SetActionRoutine(self.on_text_kerf)
@@ -746,8 +765,35 @@ class PassesPanel(wx.Panel):
         self.text_passes.Enable(on)
         self.sizer_kerf.ShowItems(self.has_kerf)
         self.sizer_kerf.Show(self.has_kerf)
+        if hasattr(self.operation, "coolant"):
+            show_cool = True
+            value = self.operation.coolant
+            if value is None:
+                value = 0
+            self.combo_coolant.SetSelection(value)
+        else:
+            show_cool = False
+        if hasattr(self.context.device, "device_coolant"):
+            enable_cool = True
+            if self.context.device.device_coolant is None:
+                enable_cool = False
+        else:
+            enable_cool = False
+        self.combo_coolant.Enable(enable_cool)
+        self.sizer_coolant.ShowItems(show_cool)
+        self.sizer_coolant.Show(show_cool)
         self.Layout()
         self.Show()
+
+    def on_combo_coolant(self, event=None):
+        value = self.combo_coolant.GetSelection()
+        if value < 0:
+            value = 0
+        self.operation.coolant = value
+        self.context.elements.signal(
+            "element_property_reload", self.operation, "coolant"
+        )
+        event.Skip()
 
     def on_check_passes(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_passes.GetValue()
