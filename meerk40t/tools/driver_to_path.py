@@ -14,6 +14,7 @@ from meerk40t.core.cutcode.outputcut import OutputCut
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.waitcut import WaitCut
+from meerk40t.core.cutcode.coolantcut import CoolantCut
 from meerk40t.core.node.node import Linecap, Linejoin
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
@@ -131,6 +132,8 @@ class PlotterDriver:
         elif isinstance(q, GotoCut):
             pass
         elif isinstance(q, DwellCut):
+            pass
+        elif isinstance(q, CoolantCut):
             pass
         elif isinstance(q, (InputCut, OutputCut)):
             pass

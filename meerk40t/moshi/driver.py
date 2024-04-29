@@ -16,6 +16,7 @@ from ..core.cutcode.outputcut import OutputCut
 from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.waitcut import WaitCut
+from ..core.cutcode.coolantcut import CoolantCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..device.basedevice import (
@@ -324,6 +325,12 @@ class MoshiDriver(Parameters):
                 # self.wait_finish()
                 # self.wait(q.dwell_time)
                 pass
+            elif isinstance(q, CoolantCut):
+                device = self.service
+                if q.on_off:
+                    device.kernel.root.coolant.coolant_on(device)
+                else:
+                    device.kernel.root.coolant.coolant_off(device)
             elif isinstance(q, DwellCut):
                 # Moshi cannot fire in place.
                 pass
