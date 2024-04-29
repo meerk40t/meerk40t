@@ -17,7 +17,6 @@ from meerk40t.core.cutcode.outputcut import OutputCut
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.waitcut import WaitCut
-from meerk40t.core.cutcode.coolantcut import CoolantCut
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.tools.geomstr import Geomstr
@@ -419,12 +418,6 @@ class BalorDriver:
                             # Max power is the percent max power, scaled by the pixel power.
                             con.power(percent_power * on)
                     con.mark(x, y)
-            elif isinstance(q, CoolantCut):
-                device = self.service
-                if q.on_off:
-                    device.kernel.root.coolant.coolant_on(device)
-                else:
-                    device.kernel.root.coolant.coolant_off(device)
             elif isinstance(q, DwellCut):
                 start = q.start
                 con.goto(start[0], start[1])

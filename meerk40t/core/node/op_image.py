@@ -1,7 +1,6 @@
 from math import isnan
 
 from meerk40t.core.cutcode.rastercut import RasterCut
-from meerk40t.core.cutcode.coolantcut import CoolantCut
 from meerk40t.core.elements.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters

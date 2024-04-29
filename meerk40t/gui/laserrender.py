@@ -29,7 +29,6 @@ from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.rastercut import RasterCut
 from ..core.cutcode.waitcut import WaitCut
-from meerk40t.core.cutcode.coolantcut import CoolantCut
 from ..tools.geomstr import (  # , TYPE_RAMP
     TYPE_ARC,
     TYPE_CUBIC,
@@ -632,8 +631,6 @@ class LaserRender:
                         p.MoveToPoint(px + x, py + y)
                     else:
                         p.AddLineToPoint(px + x, py + y)
-            elif isinstance(cut, CoolantCut):
-                pass
             elif isinstance(cut, DwellCut):
                 pass
             elif isinstance(cut, WaitCut):

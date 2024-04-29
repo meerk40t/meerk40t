@@ -6,7 +6,6 @@ from meerk40t.core.node.nutils import path_to_cutobjects
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import UNITS_PER_MM, Length
 from meerk40t.svgelements import Color, Path, Polygon
-from meerk40t.core.cutcode.coolantcut import CoolantCut
 
 class CutOpNode(Node, Parameters):
     """

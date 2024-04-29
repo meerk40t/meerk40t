@@ -16,7 +16,6 @@ from meerk40t.core.cutcode.outputcut import OutputCut
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.waitcut import WaitCut
-from meerk40t.core.cutcode.coolantcut import CoolantCut
 
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
@@ -453,12 +452,6 @@ class GRBLDriver(Parameters):
             elif isinstance(q, GotoCut):
                 start = q.start
                 self._move(start[0], start[1])
-            elif isinstance(q, CoolantCut):
-                device = self.service
-                if q.on_off:
-                    device.kernel.root.coolant.coolant_on(device)
-                else:
-                    device.kernel.root.coolant.coolant_off(device)
             elif isinstance(q, DwellCut):
                 self.dwell(q.dwell_time)
             elif isinstance(q, (InputCut, OutputCut)):
