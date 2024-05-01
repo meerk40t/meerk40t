@@ -1321,7 +1321,7 @@ class TemplatePanel(wx.Panel):
         elif param_unit_2 == "ppi":
             min_value_2 = max(min_value_2, 0)
             max_value_2 = min(max_value_2, 1000)
-        elif param_unit_1 == "%":
+        elif param_unit_2 == "%":
             min_value_2 = max(min_value_2, 0)
             max_value_2 = min(max_value_2, 100)
         else:
