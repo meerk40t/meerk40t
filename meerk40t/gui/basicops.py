@@ -19,6 +19,7 @@ from .icons import (
     icons8_laserbeam_weak,
     icon_air_on,
     icon_air_off,
+    icon_ignore,
 )
 from .wxutils import (
     ScrolledPanel,
@@ -47,9 +48,9 @@ class BasicOpPanel(wx.Panel):
         self.context = context
         # icons for coolant-indicator
         self.cool_icons = {
-            0: icon_air_on.GetBitmap(resize=20, color=wx.YELLOW),
-            1: icon_air_on.GetBitmap(resize=20),
-            2: icon_air_off.GetBitmap(resize=20),
+            0: icon_ignore.GetBitmap(resize=20),
+            1: icon_air_on.GetBitmap(resize=20, color="green"),
+            2: icon_air_off.GetBitmap(resize=20, color="red"),
         }
 
         # Refresh logic
@@ -270,23 +271,20 @@ class BasicOpPanel(wx.Panel):
 
         def on_check_cool(node):
             def handler(event):
-                print(f"Cool for {mynode.type}")
                 cb = event.GetEventObject()
-                newflag = wx.CHK_UNDETERMINED
                 if hasattr(mynode, "coolant"):
-                    value = cb.Get3StateValue()
-                    newflag = value
-                    if value == wx.CHK_UNCHECKED:
-                        mynode.coolant = 2
-                    elif value == wx.CHK_CHECKED:
-                        mynode.coolant = 1
-                    elif value == wx.CHK_UNDETERMINED:
-                        mynode.coolant = 0
+                    value = mynode.coolant
+                    if value is None:
+                        value = 0
+                    value += 1
+                    if value > 2:
+                        value = 0
+                    mynode.coolant = value
                     mynode.updated()
                     ops = [mynode]
                     self.ignore_refill = True
                     self.context.elements.signal("element_property_update", ops)
-                cb.SetValue(newflag)
+                    cb.SetBitmap(self.cool_icons[mynode.coolant])
 
             mynode = node
             return handler
@@ -558,27 +556,27 @@ class BasicOpPanel(wx.Panel):
                 c_show.SetToolTip(
                     info + "\n" + _("Hide all contained elements on scene if not set.")
                 )
+                op_sizer.Add(c_show, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-                c_cool = wx.CheckBox(self.op_panel, id=wx.ID_ANY, style=wx.CHK_3STATE | wx.CHK_ALLOW_3RD_STATE_FOR_USER)
+                if hasattr(op, "is_visible"):
+                    flag = bool(op.is_visible)
+                    c_show.SetValue(flag)
+                else:
+                    showflag = False
+                c_show.Enable(showflag)
+
+
+                c_cool = wx.StaticBitmap(self.op_panel, id=wx.ID_ANY)
                 c_cool.SetMinSize(dip_size(self, 20, -1))
                 c_cool.SetMaxSize(dip_size(self, 20, -1))
 
                 if hasattr(op, "coolant"):
-                    print (f"{op.type} has coolant: {op.coolant}")
                     value = op.coolant
-                    if value is None:
+                    if value is None or value > 2 or value < 0:
                         value = 0
-                    if value == 0:
-                        state = wx.CHK_UNDETERMINED
-                    elif value == 1:
-                        state = wx.CHK_CHECKED
-                    elif value == 2:
-                        state = wx.CHK_UNCHECKED
-                    print(f"Set to {state}")
-                    c_cool.Set3StateValue(state)
+                    c_cool.SetBitmap(self.cool_icons[value])
                     c_cool.Enable(True)
                 else:
-                    print (f"{op.type} has NO COOLANT")
                     c_cool.Enable(False)
                 c_cool.SetToolTip(
                     info
@@ -589,14 +587,7 @@ class BasicOpPanel(wx.Panel):
 
                 self.op_panel.Bind(wx.EVT_CHECKBOX, on_check_output(op, c_show), c_out)
                 self.op_panel.Bind(wx.EVT_CHECKBOX, on_check_show(op), c_show)
-                self.op_panel.Bind(wx.EVT_CHECKBOX, on_check_cool(op), c_cool)
-                if hasattr(op, "is_visible"):
-                    flag = bool(op.is_visible)
-                    c_show.SetValue(flag)
-                else:
-                    showflag = False
-                c_show.Enable(showflag)
-                op_sizer.Add(c_show, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+                c_cool.Bind(wx.EVT_LEFT_DOWN, on_check_cool(op))
 
                 t_power = TextCtrl(
                     self.op_panel,
