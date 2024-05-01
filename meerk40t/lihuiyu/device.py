@@ -46,7 +46,8 @@ class LihuiyuDevice(Service, Status):
                 "tip": _("Width of the laser bed."),
                 "section": "_30_" + _("Laser Parameters"),
                 "nonzero": True,
-                "subsection": _("Bed Dimensions"),
+                # _("Bed Dimensions")
+                "subsection": "_10_Bed Dimensions",
             },
             {
                 "attr": "bedheight",
@@ -57,7 +58,7 @@ class LihuiyuDevice(Service, Status):
                 "tip": _("Height of the laser bed."),
                 "section": "_30_" + _("Laser Parameters"),
                 "nonzero": True,
-                "subsection": _("Bed Dimensions"),
+                "subsection": "_10_Bed Dimensions",
             },
             {
                 "attr": "user_scale_x",
@@ -69,7 +70,8 @@ class LihuiyuDevice(Service, Status):
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
                 "section": "_30_" + _("Laser Parameters"),
-                "subsection": _("User Scale Factor"),
+                # _("User Scale Factor")
+                "subsection": "_20_User Scale Factor",
                 "nonzero": True,
             },
             {
@@ -82,8 +84,33 @@ class LihuiyuDevice(Service, Status):
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
                 "section": "_30_" + _("Laser Parameters"),
-                "subsection": _("User Scale Factor"),
+                "subsection": "_20_User Scale Factor",
                 "nonzero": True,
+            },
+            {
+                "attr": "user_margin_x",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("X-Margin"),
+                "tip": _(
+                    "Margin for the X-axis. This will be a kind of unused space at the left side."
+                ),
+                "section": "_30_" + _("Laser Parameters"),
+                # _("User Offset")
+                "subsection": "_30_User Offset",
+            },
+            {
+                "attr": "user_margin_y",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("Y-Margin"),
+                "tip": _(
+                    "Margin for the Y-axis. This will be a kind of unused space at the top."
+                ),
+                "section": "_30_" + _("Laser Parameters"),
+                "subsection": "_30_User Offset",
             },
         ]
         self.register_choices("bed_dim", choices)
@@ -972,6 +999,8 @@ class LihuiyuDevice(Service, Status):
     @signal_listener("flip_y")
     @signal_listener("home_corner")
     @signal_listener("swap_xy")
+    @signal_listener("user_margin_x")
+    @signal_listener("user_margin_y")
     def realize(self, origin=None, *args):
         if origin is not None and origin != self.path:
             return
@@ -1005,6 +1034,7 @@ class LihuiyuDevice(Service, Status):
             origin_x=home_dx,
             origin_y=home_dy,
         )
+        self.view.set_margins(self.user_margin_x, self.user_margin_y)
         self.signal("view;realized")
 
     def outline_move_relative(self, dx, dy):

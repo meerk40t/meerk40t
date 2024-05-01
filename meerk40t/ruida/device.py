@@ -48,6 +48,8 @@ class RuidaDevice(Service):
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
                 "nonzero": True,
+                "section": "_10_" + _("Configuration"),
+                "subsection": "_10_Bed Dimensions",
             },
             {
                 "attr": "bedheight",
@@ -57,6 +59,8 @@ class RuidaDevice(Service):
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
                 "nonzero": True,
+                "section": "_10_" + _("Configuration"),
+                "subsection": "_10_Bed Dimensions",
             },
             {
                 "attr": "scale_x",
@@ -67,6 +71,8 @@ class RuidaDevice(Service):
                 "tip": _(
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
+                "section": "_10_" + _("Configuration"),
+                "subsection": "_20_User Scale",
             },
             {
                 "attr": "scale_y",
@@ -77,6 +83,33 @@ class RuidaDevice(Service):
                 "tip": _(
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
+                "section": "_10_" + _("Configuration"),
+                "subsection": "_20_User Scale",
+            },
+            {
+                "attr": "user_margin_x",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("X-Margin"),
+                "tip": _(
+                    "Margin for the X-axis. This will be a kind of unused space at the left side."
+                ),
+                # _("User Offset")
+                "section": "_10_" + _("Configuration"),
+                "subsection": "_30_User Offset",
+            },
+            {
+                "attr": "user_margin_y",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("Y-Margin"),
+                "tip": _(
+                    "Margin for the Y-axis. This will be a kind of unused space at the top."
+                ),
+                "section": "_10_" + _("Configuration"),
+                "subsection": "_30_User Offset",
             },
             {
                 "attr": "flip_x",
@@ -86,7 +119,7 @@ class RuidaDevice(Service):
                 "label": _("Flip X"),
                 "tip": _("Flip the X axis for the device"),
                 "section": "_10_" + _("Configuration"),
-                "subsection": "_10_Axis corrections",
+                "subsection": "_40_Axis corrections",
             },
             {
                 "attr": "flip_y",
@@ -96,7 +129,7 @@ class RuidaDevice(Service):
                 "label": _("Flip Y"),
                 "tip": _("Flip the Y axis for the device"),
                 "section": "_10_" + _("Configuration"),
-                "subsection": "_10_Axis corrections",
+                "subsection": "_40_Axis corrections",
             },
             {
                 "attr": "swap_xy",
@@ -541,6 +574,8 @@ class RuidaDevice(Service):
     @signal_listener("flip_y")
     @signal_listener("home_corner")
     @signal_listener("swap_xy")
+    @signal_listener("user_margin_x")
+    @signal_listener("user_margin_y")
     def realize(self, origin=None, *args):
         if origin is not None and origin != self.path:
             return
@@ -565,6 +600,7 @@ class RuidaDevice(Service):
             home_dx = 0.5
             home_dy = 0.5
         self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.set_margins(self.user_margin_x, self.user_margin_y)
         self.view.transform(
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,

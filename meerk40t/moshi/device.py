@@ -107,6 +107,30 @@ class MoshiDevice(Service, Status):
                 "subsection": "_05_Scale",
             },
             {
+                "attr": "user_margin_x",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("X-Margin"),
+                "tip": _(
+                    "Margin for the X-axis. This will be a kind of unused space at the left side."
+                ),
+                "section": "_40_Laser Parameters",
+                "subsection": "_20_User Offset",
+            },
+            {
+                "attr": "user_margin_y",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("Y-Margin"),
+                "tip": _(
+                    "Margin for the Y-axis. This will be a kind of unused space at the top."
+                ),
+                "section": "_40_Laser Parameters",
+                "subsection": "_20_User Offset",
+            },
+            {
                 "attr": "flip_x",
                 "object": self,
                 "default": False,
@@ -114,7 +138,7 @@ class MoshiDevice(Service, Status):
                 "label": _("Flip X"),
                 "tip": _("Flip the X axis for the device"),
                 "section": "_40_Laser Parameters",
-                "subsection": "_10_Flip Axis",
+                "subsection": "_30_Flip Axis",
             },
             {
                 "attr": "flip_y",
@@ -124,7 +148,7 @@ class MoshiDevice(Service, Status):
                 "label": _("Flip Y"),
                 "tip": _("Flip the Y axis for the device"),
                 "section": "_40_Laser Parameters",
-                "subsection": "_10_Flip Axis",
+                "subsection": "_30_Flip Axis",
             },
             {
                 "attr": "swap_xy",
@@ -136,7 +160,7 @@ class MoshiDevice(Service, Status):
                     "Swaps the X and Y axis. This happens before the FlipX and FlipY."
                 ),
                 "section": "_40_Laser Parameters",
-                "subsection": "_10_Flip Axis",
+                "subsection": "_30_Flip Axis",
             },
             {
                 "attr": "home_corner",
@@ -155,7 +179,7 @@ class MoshiDevice(Service, Status):
                 "label": _("Force Declared Home"),
                 "tip": _("Override native home location"),
                 "section": "_40_Laser Parameters",
-                "subsection": "_30_" + _("Home position"),
+                "subsection": "_40_" + _("Home position"),
             },
             {
                 "attr": "interp",
@@ -377,6 +401,8 @@ class MoshiDevice(Service, Status):
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
     @signal_listener("home_corner")
+    @signal_listener("user_margin_x")
+    @signal_listener("user_margin_y")
     def realize(self, origin=None, *args):
         if origin is not None and origin != self.path:
             return
@@ -401,6 +427,7 @@ class MoshiDevice(Service, Status):
             home_dx = 0.5
             home_dy = 0.5
         self.view.set_dims(self.bedwidth, self.bedheight)
+        self.view.set_margins(self.user_margin_x, self.user_margin_y)
         self.view.transform(
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,
