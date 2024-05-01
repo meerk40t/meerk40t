@@ -19,7 +19,6 @@ from ..core.cutcode.inputcut import InputCut
 from ..core.cutcode.outputcut import OutputCut
 from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.waitcut import WaitCut
-from ..core.cutcode.coolantcut import CoolantCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
 from ..device.basedevice import (
@@ -729,12 +728,6 @@ class LihuiyuDriver(Parameters):
             self.plot_start()
             self.wait_finish()
             # We do not have any GPIO-input abilities
-        elif isinstance(plot, CoolantCut):
-            device = self.service
-            if plot.on_off:
-                device.kernel.root.coolant.coolant_on(device)
-            else:
-                device.kernel.root.coolant.coolant_off(device)
         elif isinstance(plot, DwellCut):
             self.plot_start()
             self.rapid_mode()

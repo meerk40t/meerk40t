@@ -1,7 +1,6 @@
 from math import isnan
 
 from meerk40t.core.cutcode.rastercut import RasterCut
-from meerk40t.core.cutcode.coolantcut import CoolantCut
 from meerk40t.core.elements.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
@@ -264,15 +263,6 @@ class ImageOpNode(Node, Parameters):
         Generator of cutobjects for the image operation. This takes any image node children
         and converts them into rastercut cutobjects.
         """
-        # First, do we have a valid coolant aka airassist command?
-        cool = self.coolant
-        if cool is None:
-            cool = 0
-        if cool in (1, 2):
-            onoff = bool(cool == 1)
-            output = CoolantCut(onoff)
-            output.original_op = self.type
-            yield output
         for image_node in self.children:
             # Process each child. All settings are different for each child.
 

@@ -17,7 +17,6 @@ from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.rastercut import RasterCut
 from ..core.cutcode.waitcut import WaitCut
-from ..core.cutcode.coolantcut import CoolantCut
 from ..core.node.util_console import ConsoleOperation
 from ..core.node.util_goto import GotoOperation
 from ..core.node.util_home import HomeOperation
@@ -503,8 +502,6 @@ class CutcodePanel(wx.Panel):
                 res = f"Line: ({e.start[0]:.0f}, {e.start[1]:.0f}) - ({e.end[0]:.0f}, {e.end[1]:.0f})"
             elif isinstance(e, DwellCut):
                 res = f"Dwell: {e.dwell_time}"
-            elif isinstance(e, CoolantCut):
-                res = f"Coolant: {e.on_off}"
             elif isinstance(e, WaitCut):
                 res = f"Wait: {e.dwell_time}"
             elif isinstance(e, HomeCut):

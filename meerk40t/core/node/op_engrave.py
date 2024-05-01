@@ -6,7 +6,6 @@ from meerk40t.core.node.nutils import path_to_cutobjects
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import UNITS_PER_MM
 from meerk40t.svgelements import Color, Path, Polygon
-from meerk40t.core.cutcode.coolantcut import CoolantCut
 
 
 class EngraveOpNode(Node, Parameters):
@@ -287,15 +286,6 @@ class EngraveOpNode(Node, Parameters):
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
-        # First, do we have a valid coolant aka airassist command?
-        cool = self.coolant
-        if cool is None:
-            cool = 0
-        if cool in (1, 2):
-            onoff = bool(cool == 1)
-            output = CoolantCut(onoff)
-            output.original_op = self.type
-            yield output
         settings = self.derive()
         for node in self.children:
             if node.type == "reference":

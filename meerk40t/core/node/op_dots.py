@@ -1,7 +1,6 @@
 from math import isnan
 
 from meerk40t.core.cutcode.dwellcut import DwellCut
-from meerk40t.core.cutcode.coolantcut import CoolantCut
 from meerk40t.core.elements.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
@@ -251,15 +250,6 @@ class DotsOpNode(Node, Parameters):
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
-        # First, do we have a valid coolant aka airassist command?
-        cool = self.coolant
-        if cool is None:
-            cool = 0
-        if cool in (1, 2):
-            onoff = bool(cool == 1)
-            output = CoolantCut(onoff)
-            output.original_op = self.type
-            yield output
         settings = self.derive()
         for point_node in self.children:
             if point_node.type != "elem point":
