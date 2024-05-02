@@ -399,18 +399,9 @@ class LihuiyuDriver(Parameters):
         if self.state == DRIVER_STATE_RAPID:
             self(b"I")
             self(self.CODE_LASER_OFF)
-            if self.service.board == "M3":
-                # The M3-Nano board requires a padding byte
-                # to make sure the command will be sent appropriately
-                # Covers Issue # 2490
-                self(b"S1PF\n")
-            else:
-                self(b"S1P\n")
+            self(b"S1PF\n")
             if not self.service.autolock:
-                if self.service.board == "M3":
-                    self(b"IS2PF\n")
-                else:
-                    self(b"IS2P\n")
+                self(b"IS2PF\n")
         elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
             self(self.CODE_LASER_OFF)
         elif self.state == DRIVER_STATE_FINISH:
@@ -430,18 +421,9 @@ class LihuiyuDriver(Parameters):
         if self.state == DRIVER_STATE_RAPID:
             self(b"I")
             self(self.CODE_LASER_ON)
-            if self.service.board == "M3":
-                # The M3-Nano board requires a padding byte
-                # to make sure the command will be sent appropriately
-                # Covers Issue # 2490
-                self(b"S1PF\n")
-            else:
-                self(b"S1P\n")
+            self(b"S1PF\n")
             if not self.service.autolock:
-                if self.service.board == "M3":
-                    self(b"IS2PF\n")
-                else:
-                    self(b"IS2P\n")
+                self(b"IS2PF\n")
         elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
             self(self.CODE_LASER_ON)
         elif self.state == DRIVER_STATE_FINISH:
@@ -461,18 +443,9 @@ class LihuiyuDriver(Parameters):
         if self.state == DRIVER_STATE_RAPID:
             return
         if self.state == DRIVER_STATE_FINISH:
-            if self.service.board == "M3":
-                # The M3-Nano board requires a padding byte
-                # to make sure the command will be sent appropriately
-                # Covers Issue # 2490
-                self(b"S1PF\n")
-            else:
-                self(b"S1P\n")
+            self(b"S1PF\n")
             if not self.service.autolock:
-                if self.service.board == "M3":
-                    self(b"IS2PF\n")
-                else:
-                    self(b"IS2P\n")
+                self(b"IS2PF\n")
         elif self.state in (
             DRIVER_STATE_PROGRAM,
             DRIVER_STATE_RASTER,
@@ -669,10 +642,7 @@ class LihuiyuDriver(Parameters):
         @return:
         """
         self.rapid_mode()
-        if self.service.board == "M3":
-            self(b"IS1PF\n")
-        else:
-            self(b"IS1P\n")
+        self(b"IS1PF\n")
 
     def unlock_rail(self, abort=False):
         """
@@ -681,10 +651,7 @@ class LihuiyuDriver(Parameters):
         @return:
         """
         self.rapid_mode()
-        if self.service.board == "M3":
-            self(b"IS2PF\n")
-        else:
-            self(b"IS2P\n")
+        self(b"IS2PF\n")
 
     def laser_disable(self, *values):
         self.laser_enabled = False
@@ -1219,15 +1186,9 @@ class LihuiyuDriver(Parameters):
             return
         self(b"I")
         self._goto_xy(dx, dy)
-        if self.service.board == "M3":
-            self(b"S1PF\n")
-        else:
-            self(b"S1P\n")
+        self(b"S1PF\n")
         if not self.service.autolock:
-            if self.service.board == "M3":
-                self(b"IS2PF\n")
-            else:
-                self(b"IS2P\n")
+            self(b"IS2PF\n")
 
     def _goto_relative(self, dx, dy, cut):
         """
