@@ -399,7 +399,13 @@ class LihuiyuDriver(Parameters):
         if self.state == DRIVER_STATE_RAPID:
             self(b"I")
             self(self.CODE_LASER_OFF)
-            self(b"S1P\n")
+            if self.service.board == "M3":
+                # The M3-Nano board requires a padding byte
+                # to make sure the command will be sent appropriately
+                # Covers Issue # 2490
+                self(b"S1PF\n")
+            else:
+                self(b"S1P\n")
             if not self.service.autolock:
                 self(b"IS2P\n")
         elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
@@ -421,7 +427,13 @@ class LihuiyuDriver(Parameters):
         if self.state == DRIVER_STATE_RAPID:
             self(b"I")
             self(self.CODE_LASER_ON)
-            self(b"S1P\n")
+            if self.service.board == "M3":
+                # The M3-Nano board requires a padding byte
+                # to make sure the command will be sent appropriately
+                # Covers Issue # 2490
+                self(b"S1PF\n")
+            else:
+                self(b"S1P\n")
             if not self.service.autolock:
                 self(b"IS2P\n")
         elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
@@ -443,7 +455,13 @@ class LihuiyuDriver(Parameters):
         if self.state == DRIVER_STATE_RAPID:
             return
         if self.state == DRIVER_STATE_FINISH:
-            self(b"S1P\n")
+            if self.service.board == "M3":
+                # The M3-Nano board requires a padding byte
+                # to make sure the command will be sent appropriately
+                # Covers Issue # 2490
+                self(b"S1PF\n")
+            else:
+                self(b"S1P\n")
             if not self.service.autolock:
                 self(b"IS2P\n")
         elif self.state in (
