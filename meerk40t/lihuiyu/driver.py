@@ -399,9 +399,9 @@ class LihuiyuDriver(Parameters):
         if self.state == DRIVER_STATE_RAPID:
             self(b"I")
             self(self.CODE_LASER_OFF)
-            self(b"S1PF\n")
+            self(b"S1P\n")
             if not self.service.autolock:
-                self(b"IS2PF\n")
+                self(b"IS2P\n")
         elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
             self(self.CODE_LASER_OFF)
         elif self.state == DRIVER_STATE_FINISH:
@@ -421,9 +421,9 @@ class LihuiyuDriver(Parameters):
         if self.state == DRIVER_STATE_RAPID:
             self(b"I")
             self(self.CODE_LASER_ON)
-            self(b"S1PF\n")
+            self(b"S1P\n")
             if not self.service.autolock:
-                self(b"IS2PF\n")
+                self(b"IS2P\n")
         elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
             self(self.CODE_LASER_ON)
         elif self.state == DRIVER_STATE_FINISH:
@@ -443,9 +443,9 @@ class LihuiyuDriver(Parameters):
         if self.state == DRIVER_STATE_RAPID:
             return
         if self.state == DRIVER_STATE_FINISH:
-            self(b"S1PF\n")
+            self(b"S1P\n")
             if not self.service.autolock:
-                self(b"IS2PF\n")
+                self(b"IS2P\n")
         elif self.state in (
             DRIVER_STATE_PROGRAM,
             DRIVER_STATE_RASTER,
@@ -642,7 +642,7 @@ class LihuiyuDriver(Parameters):
         @return:
         """
         self.rapid_mode()
-        self(b"IS1PF\n")
+        self(b"IS1P\n")
 
     def unlock_rail(self, abort=False):
         """
@@ -651,7 +651,7 @@ class LihuiyuDriver(Parameters):
         @return:
         """
         self.rapid_mode()
-        self(b"IS2PF\n")
+        self(b"IS2P\n")
 
     def laser_disable(self, *values):
         self.laser_enabled = False
@@ -1186,9 +1186,9 @@ class LihuiyuDriver(Parameters):
             return
         self(b"I")
         self._goto_xy(dx, dy)
-        self(b"S1PF\n")
+        self(b"S1P\n")
         if not self.service.autolock:
-            self(b"IS2PF\n")
+            self(b"IS2P\n")
 
     def _goto_relative(self, dx, dy, cut):
         """
