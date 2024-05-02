@@ -665,7 +665,10 @@ class LihuiyuController:
         # find pipe commands.
         if packet.endswith(b"\n"):
             packet = packet[:-1]
-            if packet.endswith(b"-"):  # wait finish
+            if packet.endswith(b"P"):
+                # This is a special case where the m3nano seems to fail. So we extend the buffer...
+                packet += b"F"
+            elif packet.endswith(b"-"):  # wait finish
                 packet = packet[:-1]
                 post_send_command = self.wait_finished
             elif packet.endswith(b"*"):  # abort
