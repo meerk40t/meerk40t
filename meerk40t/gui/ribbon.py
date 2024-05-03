@@ -1639,7 +1639,9 @@ class Art:
             label_text = list()
         if show_text:
             # if it wasn't a full fit, the new textsize might still be okay to be drawn at the intended position
-            text_edge = min(max(0, start_y + h - y - total_text_height), self.bitmap_text_buffer)
+            text_edge = min(
+                max(0, start_y + h - y - total_text_height), self.bitmap_text_buffer
+            )
 
             y += text_edge
             dc.SetFont(font)

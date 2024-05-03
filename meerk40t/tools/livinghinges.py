@@ -706,7 +706,10 @@ class HingePanel(wx.Panel):
         if event:
             event.Skip()
             # Wait until the user has stopped to move the slider
-            if not self.context.process_while_sliding and wx.GetMouseState().LeftIsDown():
+            if (
+                not self.context.process_while_sliding
+                and wx.GetMouseState().LeftIsDown()
+            ):
                 return
         if self.in_change_event:
             return

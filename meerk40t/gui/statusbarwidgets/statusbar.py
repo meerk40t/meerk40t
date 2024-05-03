@@ -4,6 +4,7 @@ from meerk40t.gui.icons import icons8_circled_right
 
 _ = wx.GetTranslation
 
+
 class CustomStatusBar(wx.StatusBar):
     """
     Overloading of wx.Statusbar to allow some elements on it
@@ -39,7 +40,9 @@ class CustomStatusBar(wx.StatusBar):
             )
             # btn.SetBackgroundColour(wx.RED)
             # btn.SetBitmap(icons8_circled_right.GetBitmap(noadjustment=True, color=Color("red")))
-            btn.SetToolTip(_("Left Click: Move to next panel\nRight Click: Move to previous panel"))
+            btn.SetToolTip(
+                _("Left Click: Move to next panel\nRight Click: Move to previous panel")
+            )
             btn.Show(False)
             btn.Bind(wx.EVT_LEFT_DOWN, self.on_button_next)
             btn.Bind(wx.EVT_RIGHT_DOWN, self.on_button_prev)
@@ -229,7 +232,10 @@ class CustomStatusBar(wx.StatusBar):
                 myrect = self.nextbuttons[pidx].GetRect()
                 myrect.x = panelrect.x + panelrect.width - myrect.width
                 # Center the rect...
-                myrect.y = max(panelrect.y, int(panelrect.y + panelrect.height / 2 - myrect.height/2))
+                myrect.y = max(
+                    panelrect.y,
+                    int(panelrect.y + panelrect.height / 2 - myrect.height / 2),
+                )
                 self.nextbuttons[pidx].SetRect(myrect)
                 panelrect.width -= myrect.width
                 self.nextbuttons[pidx].Show(True)

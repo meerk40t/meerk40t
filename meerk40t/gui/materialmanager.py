@@ -382,8 +382,12 @@ class MaterialPanel(ScrolledPanel):
         self.list_preview.AppendColumn(
             _("Label"), format=wx.LIST_FORMAT_LEFT, width=100
         )
-        self.list_preview.AppendColumn(_("Power") +" [ppi]", format=wx.LIST_FORMAT_LEFT, width=50)
-        self.list_preview.AppendColumn(_("Speed") + " [mm/s]", format=wx.LIST_FORMAT_LEFT, width=50)
+        self.list_preview.AppendColumn(
+            _("Power") + " [ppi]", format=wx.LIST_FORMAT_LEFT, width=50
+        )
+        self.list_preview.AppendColumn(
+            _("Speed") + " [mm/s]", format=wx.LIST_FORMAT_LEFT, width=50
+        )
         self.list_preview.AppendColumn(
             _("Frequency") + " [kHz]", format=wx.LIST_FORMAT_LEFT, width=50
         )
@@ -2291,7 +2295,6 @@ class MaterialPanel(ScrolledPanel):
         }
         item = menu.Append(wx.ID_ANY, _("Add Image"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, on_menu_popup_newop(op_dict), item)
-
 
         op_dict = {
             "type": "op engrave",

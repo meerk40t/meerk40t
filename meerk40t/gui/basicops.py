@@ -12,14 +12,14 @@ from meerk40t.gui.laserrender import swizzlecolor
 from ..kernel import Job, lookup_listener, signal_listener
 from ..svgelements import Color
 from .icons import (
+    icon_air_off,
+    icon_air_on,
+    icon_ignore,
     icon_points,
     icons8_direction,
     icons8_image,
     icons8_laser_beam,
     icons8_laserbeam_weak,
-    icon_air_on,
-    icon_air_off,
-    icon_ignore,
 )
 from .wxutils import (
     ScrolledPanel,
@@ -137,8 +137,6 @@ class BasicOpPanel(wx.Panel):
         self.op_ctrl_list = []
         self.std_color_back = None
         self.std_color_fore = None
-
-
 
     def set_display(self):
         dev = self.context.device
@@ -288,7 +286,6 @@ class BasicOpPanel(wx.Panel):
 
             mynode = node
             return handler
-
 
         def on_speed(node, tbox):
             def handler():
@@ -564,7 +561,6 @@ class BasicOpPanel(wx.Panel):
                 else:
                     showflag = False
                 c_show.Enable(showflag)
-
 
                 c_cool = wx.StaticBitmap(self.op_panel, id=wx.ID_ANY)
                 c_cool.SetMinSize(dip_size(self, 20, -1))

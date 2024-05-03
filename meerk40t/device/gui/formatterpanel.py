@@ -190,8 +190,10 @@ class FormatterPanel(wx.Panel):
 
     def get_node_patterns(self, nodetype):
         from PIL import Image
+
         # Get dictionary with all nodetypes
         from meerk40t.core.node.bootstrap import bootstrap
+
         node = None
         available = ""
         if nodetype in bootstrap:

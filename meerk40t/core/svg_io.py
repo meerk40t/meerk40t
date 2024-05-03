@@ -1477,6 +1477,7 @@ class SVGProcessor:
                     c.insert_sibling(n)
                 c.remove_node()  # Removing group/file node.
 
+
 class SVGLoader:
     """
     SVG loader - loading elements, regmarks and operations

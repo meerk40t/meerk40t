@@ -408,15 +408,15 @@ class Node:
             if nd in default_map:
                 n_val = default_map[nd]
                 if n_val is not None:
-                    nd_val = str(n_val) 
+                    nd_val = str(n_val)
             elif hasattr(self, nd):
                 n_val = getattr(self, nd, "")
                 if n_val is not None:
-                    nd_val = str(n_val) 
-            x = x[:i1] + nd_val + x[i2+1:]
-            start = i1 + len(nd_val)    
+                    nd_val = str(n_val)
+            x = x[:i1] + nd_val + x[i2 + 1 :]
+            start = i1 + len(nd_val)
         return x
-    
+
     @property
     def points(self):
         """
@@ -530,9 +530,7 @@ class Node:
             lbl = self.display_label()
             default_map["label"] = lbl if lbl is not None else ""
             default_map["desc"] = (
-                lbl
-                if lbl is not None
-                else str(self.id) if self.id is not None else "-"
+                lbl if lbl is not None else str(self.id) if self.id is not None else "-"
             )
         default_map["element_type"] = "Node"
         default_map["node_type"] = self.type

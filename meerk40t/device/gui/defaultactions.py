@@ -1,8 +1,8 @@
 import wx
 
 from meerk40t.gui.icons import (
-    icon_air_on,
     icon_air_off,
+    icon_air_on,
     icon_bell,
     icon_close_window,
     icon_console,

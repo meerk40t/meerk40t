@@ -366,7 +366,11 @@ class PlacementPanel(wx.Panel):
         main_sizer.Add(self.helper_sizer, 0, wx.EXPAND, 0)
 
         self.info_label = wx.StaticText(self, wx.ID_ANY)
-        self.info_label.SetFont(wx.Font(8, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.info_label.SetFont(
+            wx.Font(
+                8, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+            )
+        )
         main_sizer.Add(self.info_label, 1, wx.EXPAND, 0)
 
         self.combo_shape.SetSelection(0)
@@ -515,7 +519,6 @@ class PlacementPanel(wx.Panel):
 
                 idx += 1
             label += lbl + "\n"
-
 
         self.info_label.SetLabel(label)
 

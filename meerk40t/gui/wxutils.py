@@ -8,7 +8,7 @@ import wx
 import wx.lib.mixins.listctrl as listmix
 from wx.lib.scrolledpanel import ScrolledPanel as SP
 
-from meerk40t.core.units import ACCEPTED_UNITS, ACCEPTED_ANGLE_UNITS, Angle, Length
+from meerk40t.core.units import ACCEPTED_ANGLE_UNITS, ACCEPTED_UNITS, Angle, Length
 
 _ = wx.GetTranslation
 

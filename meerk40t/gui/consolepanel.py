@@ -218,7 +218,6 @@ class ConsolePanel(wx.ScrolledWindow):
             if context_item != "None" and context_item not in self.command_context:
                 self.command_context.append(context_item)
 
-
     def style_normal(self, style):
         return self.style
 
@@ -490,7 +489,9 @@ class ConsolePanel(wx.ScrolledWindow):
                                 self.text_entry.SetInsertionPointEnd()
                         elif found == 1:
                             # Only set if we did not provide  parameters already
-                            if len(words) == 1 or (len(words) == 2 and context_str != ""):
+                            if len(words) == 1 or (
+                                len(words) == 2 and context_str != ""
+                            ):
                                 self.text_entry.SetValue(f"{context_str}{candidate}")
                                 self.text_entry.SetInsertionPointEnd()
                 # We are consuming the key...
@@ -561,7 +562,9 @@ class ConsolePanel(wx.ScrolledWindow):
             result = []
             try:
                 with open(fname, "rb") as f:
-                    result = tail(f, 3 * limit).decode("utf-8", errors="ignore").splitlines()
+                    result = (
+                        tail(f, 3 * limit).decode("utf-8", errors="ignore").splitlines()
+                    )
             except (PermissionError, OSError):
                 # Could not load
                 pass

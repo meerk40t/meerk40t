@@ -758,5 +758,6 @@ class BalorDriver:
         if hasattr(self, "_original_connection"):
             return
         from .cylindermod import CylinderModifier
+
         setattr(self, "_original_connection", self.connection)
         setattr(self, "connection", CylinderModifier(self.connection, self.service))

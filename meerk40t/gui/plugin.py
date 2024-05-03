@@ -243,9 +243,7 @@ and a wxpython version <= 4.1.1."""
                     dlg.SetMessage(prompt)
                 else:
                     dlg.SetMessage(
-                        prompt
-                        + "\n"
-                        + _("(Yes={yes})").format(yes=option_yes)
+                        prompt + "\n" + _("(Yes={yes})").format(yes=option_yes)
                     )
             else:
                 dlg = wx.MessageDialog(

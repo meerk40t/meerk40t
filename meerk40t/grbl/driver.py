@@ -656,7 +656,7 @@ class GRBLDriver(Parameters):
         @param args:
         @return:
         """
-        if signal=="coolant":
+        if signal == "coolant":
             onoff = args[0]
             coolid = None
             if hasattr(self.service, "coolant"):

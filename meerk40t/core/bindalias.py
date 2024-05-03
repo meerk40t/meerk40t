@@ -176,7 +176,10 @@ DEFAULT_KEYMAP = {
         "",
         "dialog_fill",
     ),
-    "ctrl+i": ("", "element* select^",),
+    "ctrl+i": (
+        "",
+        "element* select^",
+    ),
     "ctrl+d": ("element copy",),
     "ctrl+g": (
         "",
