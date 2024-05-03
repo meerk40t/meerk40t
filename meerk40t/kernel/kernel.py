@@ -3227,15 +3227,18 @@ class Kernel(Settings):
             return "channel", 0
 
         @self.console_argument("channel_name", help=_("name of the channel"))
+        @self.console_option("force", "f", type=bool, action="store_true")
         @self.console_command(
             "open",
             help=_("watch this channel in the console"),
             input_type="channel",
             output_type="channel",
         )
-        def channel_open(channel, _, channel_name, **kwargs):
+        def channel_open(channel, _, channel_name, force=False, **kwargs):
             if channel_name is None:
                 raise CommandSyntaxError(_("channel_name is not specified."))
+            if force is None:
+                force = False
 
             try:
                 v = int(channel_name) - 1
@@ -3248,6 +3251,18 @@ class Kernel(Settings):
             if channel_name == "console":
                 channel(_("Infinite Loop Error."))
             else:
+                if not force and channel_name not in self.channels:
+                    channel(f"There is no channel named '{channel_name}', please use one of the existing channels or use the '-f' parameter to create one from scratch.")
+                    channel(_("----------"))
+                    channel(_("Channels Active:"))
+                    for i, name in enumerate(self.channels):
+                        channel_name = self.channels[name]
+                        is_watched = (
+                            "* " if self._console_channel in channel_name.watchers else "  "
+                        )
+                        channel(f"{is_watched}{i + 1}: {name}")
+                    return "channel", None
+
                 self.channel(channel_name).watch(self._console_channel)
                 channel(_("Watching Channel: {name}").format(name=channel_name))
             return "channel", channel_name
