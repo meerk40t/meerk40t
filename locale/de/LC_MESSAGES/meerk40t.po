@@ -17038,3 +17038,72 @@ msgstr "Ab der wievielten Widerholung soll gestartet werden"
 #: meerk40t/gui/propertypanels/placementproperty.py:205
 msgid "Repetitions to use (0=all)"
 msgstr "Wieviele Wiederholungen sollen genutzt werden (0=alle)"
+
+#: meerk40t/cylinder/cylinder.py:35
+msgid "Cylinder-Correction-Mode active"
+msgstr "Zylinder-Korrektur aktiv"
+
+#: meerk40t/cylinder/cylinder.py:36
+msgid "Is the cylinder correction mode active for this device"
+msgstr "Ist für das aktuelle Gerät die Zylinder-Korrektur aktiv?"
+
+#: meerk40t/cylinder/cylinder.py:43
+msgid "Mirror Distance"
+msgstr "Spiegel-Entfernung"
+
+#: meerk40t/cylinder/cylinder.py:44
+msgid "Distance from cylinder to mirror"
+msgstr "Enntferung von Spiegel zum Objekt"
+
+#: meerk40t/cylinder/cylinder.py:53
+msgid "Axis X"
+msgstr "X-Achse"
+
+#: meerk40t/cylinder/cylinder.py:54
+msgid "Cylinder along X-Axis"
+msgstr "Zylinder entlang der X-Achse"
+
+#: meerk40t/cylinder/cylinder.py:56 meerk40t/cylinder/cylinder.py:66 meerk40t/cylinder/cylinder.py:76
+msgid "X Axis"
+msgstr "X-Achse"
+
+#: meerk40t/cylinder/cylinder.py:63 meerk40t/cylinder/cylinder.py:93
+msgid "Cylinder Diameter"
+msgstr "Zylinder Durchmesser"
+
+#: meerk40t/cylinder/cylinder.py:64 meerk40t/cylinder/cylinder.py:94
+msgid "Diameter of the object being engraved"
+msgstr "DUrchmesser des zu gravierenden Objektes"
+
+#: meerk40t/cylinder/cylinder.py:73 meerk40t/cylinder/cylinder.py:103
+msgid "Cylinder is Concave"
+msgstr "Zylinder ist konkav"
+
+#: meerk40t/cylinder/cylinder.py:74 meerk40t/cylinder/cylinder.py:104
+msgid "Cylinder is concave rather than convex"
+msgstr "Der Zylinder ist konkav (nach innen gewölbt)"
+
+#: meerk40t/cylinder/cylinder.py:83
+msgid "Axis Y"
+msgstr "Y-Achse"
+
+#: meerk40t/cylinder/cylinder.py:84
+msgid "Cylinder along Y-Axis"
+msgstr "Zylinder entlang der Y-Achse"
+
+#: meerk40t/cylinder/cylinder.py:86 meerk40t/cylinder/cylinder.py:96 meerk40t/cylinder/cylinder.py:106
+msgid "Y Axis"
+msgstr "Y-Achse"
+
+#: meerk40t/cylinder/gui/cylindersettings.py:21
+msgid "Cylinder-Correction"
+msgstr "Zylinder-Korrektur"
+
+#: meerk40t/cylinder/gui/gui.py:19
+msgid "Cylinder"
+msgstr "Zylinder"
+
+#: meerk40t/cylinder/gui/gui.py:21
+msgid "Opens Cylinder Window"
+msgstr "Öffnet Zylinder-Korrektur-Fenster"
+
