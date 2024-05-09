@@ -436,15 +436,15 @@ class BasicOpPanel(wx.Panel):
         self.op_ctrl_list.clear()
 
         info_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        check_filtered = wxCheckBox(self.op_panel, wx.ID_ANY)
-        check_filtered.SetToolTip(_("Suppress non-used operations"))
-        check_filtered.SetValue(self.filtered)
-        check_filtered.SetMinSize(
+        self.check_filtered = wxCheckBox(self.op_panel, wx.ID_ANY)
+        self.check_filtered.SetToolTip(_("Suppress non-used operations"))
+        self.check_filtered.SetValue(self.filtered)
+        self.check_filtered.SetMinSize(
             dip_size(self, 25, -1)
         )  # 20 from button + 5 from spacer
-        check_filtered.SetMaxSize(dip_size(self, 25, -1))
-        info_sizer.Add(check_filtered, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        check_filtered.Bind(wx.EVT_CHECKBOX, on_check_filtered)
+        self.check_filtered.SetMaxSize(dip_size(self, 25, -1))
+        info_sizer.Add(self.check_filtered, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.check_filtered.Bind(wx.EVT_CHECKBOX, on_check_filtered)
 
         header = wx.StaticText(self.op_panel, wx.ID_ANY, label="A")
         header.SetMinSize(dip_size(self, 20, -1))
