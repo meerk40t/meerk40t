@@ -17,6 +17,7 @@ from .icons import (
 )
 from .mwindow import MWindow
 from .wxutils import StaticBoxSizer, dip_size, wxButton, wxCheckBox, wxRadioBox
+from ..extra.encode_detect import EncodingDetectFile
 
 _ = wx.GetTranslation
 
@@ -828,13 +829,15 @@ class ImportPanel(wx.Panel):
 
     def preview_it(self):
         filename = self.txt_filename.GetValue()
+
         buffer = ""
         if os.path.exists(filename):
-            try:
-                with open(filename, newline="") as csvfile:
-                    buffer = csvfile.read(1024)
-            except (PermissionError, OSError, FileNotFoundError):
-                pass
+            decoder = EncodingDetectFile()
+            result = decoder.load(filename)
+            if result:
+                encoding, bom_marker, file_content = result
+                buffer = file_content
+
         self.text_preview.SetValue(buffer)
 
 

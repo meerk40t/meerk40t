@@ -9,7 +9,7 @@ import os
 import re
 from copy import copy
 from datetime import datetime
-
+from ..extra.encode_detect import EncodingDetectFile
 
 class Wordlist:
     """
@@ -394,36 +394,44 @@ class Wordlist:
     def load_csv_file(self, filename, force_header=None):
         self.empty_csv()
         headers = []
-        try:
-            with open(filename, newline="") as csvfile:
-                buffer = csvfile.read(1024)
-                if force_header is None:
-                    has_header = csv.Sniffer().has_header(buffer)
-                else:
-                    has_header = force_header
-                # print (f"Header={has_header}, Force={force_header}")
-                dialect = csv.Sniffer().sniff(buffer)
-                csvfile.seek(0)
-                reader = csv.reader(csvfile, dialect)
-                headers = next(reader)
-                if not has_header:
-                    # Use Line as Data and set some default names
-                    for idx, entry in enumerate(headers):
-                        skey = f"Column_{idx + 1}"
-                        self.set_value(skey=skey, value=entry, idx=-1, wtype=1)
-                        headers[idx] = skey.lower()
-                    ct = 1
-                else:
-                    ct = 0
-                for row in reader:
-                    for idx, entry in enumerate(row):
-                        skey = headers[idx].lower()
-                        # Append...
-                        self.set_value(skey=skey, value=entry, idx=-1, wtype=1)
-                    ct += 1
-        except (csv.Error, PermissionError, OSError, FileNotFoundError):
-            ct = 0
-            headers = []
+        decoder = EncodingDetectFile()
+        result = decoder.load(filename)
+        if result:
+            encoding, bom_marker, file_content = result
+
+            try:
+
+                with open(filename, newline="", encoding=encoding) as csvfile:
+                    buffer = csvfile.read(1024)
+                    if force_header is None:
+                        has_header = csv.Sniffer().has_header(buffer)
+                    else:
+                        has_header = force_header
+                    # print (f"Header={has_header}, Force={force_header}")
+                    dialect = csv.Sniffer().sniff(buffer)
+                    csvfile.seek(0)
+                    reader = csv.reader(csvfile, dialect)
+                    headers = next(reader)
+                    if not has_header:
+                        # Use Line as Data and set some default names
+                        for idx, entry in enumerate(headers):
+                            skey = f"Column_{idx + 1}"
+                            self.set_value(skey=skey, value=entry, idx=-1, wtype=1)
+                            headers[idx] = skey.lower()
+                        ct = 1
+                    else:
+                        ct = 0
+                    for row in reader:
+                        for idx, entry in enumerate(row):
+                            skey = headers[idx].lower()
+                            if skey.startswith("\\ufeff"):
+                                skey = skey[7:]
+                            # Append...
+                            self.set_value(skey=skey, value=entry, idx=-1, wtype=1)
+                        ct += 1
+            except (csv.Error, PermissionError, OSError, FileNotFoundError) as e:
+                ct = 0
+                headers = []
         colcount = len(headers)
         return ct, colcount, headers
 
