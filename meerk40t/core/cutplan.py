@@ -200,7 +200,7 @@ class CutPlan:
                     cool = original_op.coolant
                     if cool is None:
                         cool = 0
-                    if cool in (1, 2): # Explicit on / off
+                    if cool in (1, 2):  # Explicit on / off
                         if cool == 1:
                             cmd = "coolant_on"
                         else:

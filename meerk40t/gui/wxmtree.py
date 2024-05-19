@@ -1673,7 +1673,7 @@ class ShadowTree:
                         mymap[key] = value
             try:
                 res = text.format_map(mymap)
-            except KeyError:
+            except (ValueError, KeyError):
                 res = text
             return res
 

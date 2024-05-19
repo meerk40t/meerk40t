@@ -390,9 +390,7 @@ def init_tree(kernel):
                 oplist.append(n)
         set_op_output(oplist, False)
 
-
     def move_op(node, relative: str):
-
         try:
             idx = self.op_branch._children.index(node)
         except IndexError as e:
@@ -425,7 +423,10 @@ def init_tree(kernel):
 
     @tree_submenu(_("Burning sequence"))
     @tree_operation(
-        _("Dragging works as well..."), node_type=op_parent_nodes, help="You can as well just rearrange the operations by dragging them to a new place", enable=False
+        _("Dragging works as well..."),
+        node_type=op_parent_nodes,
+        help="You can as well just rearrange the operations by dragging them to a new place",
+        enable=False,
     )
     def burn_label(node, **kwargs):
         return
@@ -449,7 +450,6 @@ def init_tree(kernel):
     @tree_operation(_("Burn last"), node_type=op_parent_nodes, help="")
     def burn_last(node, **kwargs):
         move_op(node, "bottom")
-
 
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Image"), node_type=op_parent_nodes, help="")
@@ -803,7 +803,6 @@ def init_tree(kernel):
                     data.append(n)
                 self.signal("element_property_reload", data)
                 break
-
 
     def selected_active_ops():
         result = 0

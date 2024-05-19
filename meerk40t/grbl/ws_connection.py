@@ -24,7 +24,9 @@ class WSOutput:
         try:
             self.controller.log("Attempting to Connect...", type="connection")
             self._stream = websocket.WebSocket()
-            self._stream.connect("ws://%s:%d" % (self.service.address, self.service.port))
+            self._stream.connect(
+                "ws://%s:%d" % (self.service.address, self.service.port)
+            )
             # self._stream.run_forever()
             self.service.signal("grbl;status", "connected")
         except TimeoutError:

@@ -1,4 +1,3 @@
-
 import wx
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel

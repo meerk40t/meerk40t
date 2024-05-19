@@ -33,8 +33,8 @@ class PlacePointNode(Node):
         alternate_rot_x=False,
         alternate_rot_y=False,
         orientation=0,
-        start_index = 0,
-        repetitions = 0,
+        start_index=0,
+        repetitions=0,
         **kwargs,
     ):
         self.x = x

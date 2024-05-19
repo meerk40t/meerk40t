@@ -12,14 +12,14 @@ from meerk40t.gui.laserrender import swizzlecolor
 from ..kernel import Job, lookup_listener, signal_listener
 from ..svgelements import Color
 from .icons import (
+    icon_air_off,
+    icon_air_on,
+    icon_ignore,
     icon_points,
     icons8_direction,
     icons8_image,
     icons8_laser_beam,
     icons8_laserbeam_weak,
-    icon_air_on,
-    icon_air_off,
-    icon_ignore,
 )
 from .wxutils import (
     ScrolledPanel,
@@ -137,8 +137,6 @@ class BasicOpPanel(wx.Panel):
         self.op_ctrl_list = []
         self.std_color_back = None
         self.std_color_fore = None
-
-
 
     def set_display(self):
         dev = self.context.device
@@ -289,7 +287,6 @@ class BasicOpPanel(wx.Panel):
             mynode = node
             return handler
 
-
         def on_speed(node, tbox):
             def handler():
                 # print(f"Speed for {mynode.type}")
@@ -439,15 +436,15 @@ class BasicOpPanel(wx.Panel):
         self.op_ctrl_list.clear()
 
         info_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        check_filtered = wxCheckBox(self.op_panel, wx.ID_ANY)
-        check_filtered.SetToolTip(_("Suppress non-used operations"))
-        check_filtered.SetValue(self.filtered)
-        check_filtered.SetMinSize(
+        self.check_filtered = wxCheckBox(self.op_panel, wx.ID_ANY)
+        self.check_filtered.SetToolTip(_("Suppress non-used operations"))
+        self.check_filtered.SetValue(self.filtered)
+        self.check_filtered.SetMinSize(
             dip_size(self, 25, -1)
         )  # 20 from button + 5 from spacer
-        check_filtered.SetMaxSize(dip_size(self, 25, -1))
-        info_sizer.Add(check_filtered, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        check_filtered.Bind(wx.EVT_CHECKBOX, on_check_filtered)
+        self.check_filtered.SetMaxSize(dip_size(self, 25, -1))
+        info_sizer.Add(self.check_filtered, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.check_filtered.Bind(wx.EVT_CHECKBOX, on_check_filtered)
 
         header = wx.StaticText(self.op_panel, wx.ID_ANY, label="A")
         header.SetMinSize(dip_size(self, 20, -1))
@@ -564,7 +561,6 @@ class BasicOpPanel(wx.Panel):
                 else:
                     showflag = False
                 c_show.Enable(showflag)
-
 
                 c_cool = wx.StaticBitmap(self.op_panel, id=wx.ID_ANY)
                 c_cool.SetMinSize(dip_size(self, 20, -1))

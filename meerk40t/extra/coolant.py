@@ -5,7 +5,8 @@ Devices can then claim ownership of such a registered device
 and react on device specific coolant commands
 """
 
-class Coolants():
+
+class Coolants:
     """
     Base class
     """
@@ -22,7 +23,9 @@ class Coolants():
         #     "constraints": constraints,
         # }
 
-    def register_coolant_method(self, cool_id, cool_function, config_function=None, label=None, constraints=None):
+    def register_coolant_method(
+        self, cool_id, cool_function, config_function=None, label=None, constraints=None
+    ):
         """
         Announces the availability of a new coolant method.
         Mainly used from plugins.
@@ -156,6 +159,7 @@ class Coolants():
         @param choice_dict:
         @return:
         """
+
         def update(choice_dict):
             _ = self.kernel.translation
             devname = device.name.lower()
@@ -184,6 +188,7 @@ class Coolants():
 
         return update
 
+
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
         _ = kernel.translation
@@ -196,10 +201,16 @@ def plugin(kernel, lifecycle):
             else:
                 lasername = "your laser"
             if mode:
-                msg = _("Please switch the airassist for {laser} on").format(laser=lasername)
+                msg = _("Please switch the airassist for {laser} on").format(
+                    laser=lasername
+                )
             else:
-                msg = _("Please switch the airassist for {laser} off").format(laser=lasername)
-            context.kernel.yesno(msg, caption=_("Air-Assist"), option_yes=_("OK"), option_no=_("OK"))
+                msg = _("Please switch the airassist for {laser} off").format(
+                    laser=lasername
+                )
+            context.kernel.yesno(
+                msg, caption=_("Air-Assist"), option_yes=_("OK"), option_no=_("OK")
+            )
 
         def base_coolant_grbl_m7(context, mode):
             if mode:
@@ -213,17 +224,33 @@ def plugin(kernel, lifecycle):
             else:
                 context("gcode M9\n")
 
-        context.coolant.register_coolant_method("popup", base_coolant_popup, config_function=None, label=_("Warnmessage"))
-        context.coolant.register_coolant_method("gcode_m7", base_coolant_grbl_m7, config_function=None, label=_("GCode M7/M9"), constraints="grbl")
-        context.coolant.register_coolant_method("gcode_m8", base_coolant_grbl_m8, config_function=None, label=_("GCode M8/M9"), constraints="grbl")
+        context.coolant.register_coolant_method(
+            "popup", base_coolant_popup, config_function=None, label=_("Warnmessage")
+        )
+        context.coolant.register_coolant_method(
+            "gcode_m7",
+            base_coolant_grbl_m7,
+            config_function=None,
+            label=_("GCode M7/M9"),
+            constraints="grbl",
+        )
+        context.coolant.register_coolant_method(
+            "gcode_m8",
+            base_coolant_grbl_m8,
+            config_function=None,
+            label=_("GCode M8/M9"),
+            constraints="grbl",
+        )
 
-        @context.console_command("coolants", help=_("displays registered coolant methods"))
+        @context.console_command(
+            "coolants", help=_("displays registered coolant methods")
+        )
         def display_coolant(command, channel, _, **kwargs):
             # elements = context.elements
             coolant = kernel.root.coolant
             cool = coolant.registered_coolants()
             if len(cool):
-                channel (_("Registered coolant-interfaces:"))
+                channel(_("Registered coolant-interfaces:"))
                 for cool_instance in cool:
                     c_name = cool_instance["id"]
                     c_label = cool_instance["label"]
@@ -233,12 +260,14 @@ def plugin(kernel, lifecycle):
                     if claimed == "":
                         claimed = _("Not used")
 
-                    channel (_("{name}: {devices}").format(name=c_name, devices=claimed))
+                    channel(_("{name}: {devices}").format(name=c_name, devices=claimed))
 
             else:
-                channel (_("There are no coolant-interfaces known to MeerK40t"))
+                channel(_("There are no coolant-interfaces known to MeerK40t"))
 
-        @context.console_command("coolant_on", help=_("Turns on the coolant for the active device"))
+        @context.console_command(
+            "coolant_on", help=_("Turns on the coolant for the active device")
+        )
         def turn_coolant_on(command, channel, _, **kwargs):
             try:
                 device = context.device
@@ -258,11 +287,17 @@ def plugin(kernel, lifecycle):
                     except AttributeError:
                         pass
             if found:
-                channel(_("Coolant activated for device {device_label}").format(device_label=device.label))
+                channel(
+                    _("Coolant activated for device {device_label}").format(
+                        device_label=device.label
+                    )
+                )
             else:
-                channel (_("No coolant method found."))
+                channel(_("No coolant method found."))
 
-        @context.console_command("coolant_off", help=_("Turns off the coolant for the active device"))
+        @context.console_command(
+            "coolant_off", help=_("Turns off the coolant for the active device")
+        )
         def turn_coolant_off(command, channel, _, **kwargs):
             try:
                 device = context.device
@@ -282,7 +317,10 @@ def plugin(kernel, lifecycle):
                     except AttributeError:
                         pass
             if found:
-                channel(_("Coolant deactivated for device {device_label}").format(device_label=device.label))
+                channel(
+                    _("Coolant deactivated for device {device_label}").format(
+                        device_label=device.label
+                    )
+                )
             else:
-                channel ("No coolant method found.")
-
+                channel("No coolant method found.")

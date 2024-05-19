@@ -7,6 +7,7 @@ from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import UNITS_PER_MM, Length
 from meerk40t.svgelements import Color, Path, Polygon
 
+
 class CutOpNode(Node, Parameters):
     """
     Default object defining a cut operation done on the laser.
@@ -28,7 +29,7 @@ class CutOpNode(Node, Parameters):
         # int("2180.534") throws a value error.
         self.kerf = 0.0
         self._device_factor = 1.0
-        self.coolant = 0 # Nothing to do (0/None = keep, 1=turn on, 2=turn off)
+        self.coolant = 0  # Nothing to do (0/None = keep, 1=turn on, 2=turn off)
 
         # Which elements can be added to an operation (manually via DND)?
         self._allowed_elements_dnd = (

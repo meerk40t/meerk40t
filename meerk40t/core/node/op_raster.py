@@ -45,7 +45,7 @@ class RasterOpNode(Node, Parameters):
         # self.allowed_attributes.append("fill")
         # Is this op out of useful bounds?
         self.dangerous = False
-        self.coolant = 0 # Nothing to do (0/None = keep, 1=turn on, 2=turn off)
+        self.coolant = 0  # Nothing to do (0/None = keep, 1=turn on, 2=turn off)
         self.stopop = False
         self.label = "Raster"
 

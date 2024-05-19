@@ -282,7 +282,6 @@ class GRBLDevice(Service, Status):
         if self.permit_tcp:
             self.register_choices("tcp", choices)
 
-
         choices = [
             {
                 "attr": "address",
@@ -312,7 +311,12 @@ class GRBLDevice(Service, Status):
                 "default": "serial",
                 "style": "combosmall",
                 "choices": ["serial", "tcp", "ws", "mock"],
-                "display": [_("Serial"), _("TCP-Network"), _("WebSocket-Network"), _("mock")],
+                "display": [
+                    _("Serial"),
+                    _("TCP-Network"),
+                    _("WebSocket-Network"),
+                    _("mock"),
+                ],
                 "type": str,
                 "label": _("Interface Type"),
                 "tip": _("Select the interface type for the grbl device"),
@@ -449,10 +453,12 @@ class GRBLDevice(Service, Status):
                 "type": str,
                 "style": "option",
                 "label": _("Coolant"),
-                "tip": _("Does this device has a method to turn on / off a coolant associated to it?"),
+                "tip": _(
+                    "Does this device has a method to turn on / off a coolant associated to it?"
+                ),
                 "section": "_99_" + _("Coolant Support"),
                 "dynamic": self.cool_helper,
-                "signals": "coolant_changed"
+                "signals": "coolant_changed",
             },
         ]
         self.register_choices("grbl-advanced", choices)

@@ -16951,6 +16951,14 @@ msgstr "Registrierte Kühl-Methoden:"
 msgid "Configure"
 msgstr "Konfiguration"
 
+#: meerk40t/balormk/device.py:274 meerk40t/grbl/device.py:455 meerk40t/gui/basicops.py:464 meerk40t/lihuiyu/device.py:204 meerk40t/moshi/device.py:214 meerk40t/newly/device.py:523 meerk40t/ruida/device.py:263
+msgid "Coolant"
+msgstr "Kühlung"
+
+#: meerk40t/balormk/device.py:278 meerk40t/grbl/device.py:459 meerk40t/lihuiyu/device.py:208 meerk40t/moshi/device.py:218 meerk40t/newly/device.py:527 meerk40t/ruida/device.py:267
+msgid "Coolant Support"
+msgstr "Kühlung-Support"
+
 msgid "Coolant on"
 msgstr "Kühlung an"
 
@@ -16974,3 +16982,128 @@ msgstr "Keine Unterstützung"
 
 msgid "Warnmessage"
 msgstr "Warn-Meldung"
+
+#: meerk40t/extra/coolant.py:212
+msgid "Air-Assist"
+msgstr "Air-Assist"
+
+#: meerk40t/balormk/device.py:194 meerk40t/grbl/device.py:105 meerk40t/lihuiyu/device.py:95 meerk40t/moshi/device.py:114 meerk40t/newly/device.py:147 meerk40t/ruida/device.py:94
+msgid "X-Margin"
+msgstr "Rand X:"
+
+#: meerk40t/balormk/device.py:197 meerk40t/grbl/device.py:108 meerk40t/lihuiyu/device.py:98 meerk40t/moshi/device.py:117 meerk40t/newly/device.py:150 meerk40t/ruida/device.py:97
+msgid "Margin for the X-axis. This will be a kind of unused space at the left side."
+msgstr "Rand für X-Achse. Dieser Bereich wird auf der linken Seite nicht verwendet."
+
+#: meerk40t/balormk/device.py:199 meerk40t/lihuiyu/device.py:100 meerk40t/ruida/device.py:98
+msgid "User Offset"
+msgstr "Benutzerdefinierter Abstand"
+
+#: meerk40t/balormk/device.py:207 meerk40t/grbl/device.py:116 meerk40t/lihuiyu/device.py:108 meerk40t/moshi/device.py:126 meerk40t/newly/device.py:159 meerk40t/ruida/device.py:107
+msgid "Y-Margin"
+msgstr "Rand Y:"
+
+#: meerk40t/balormk/device.py:210 meerk40t/grbl/device.py:119 meerk40t/lihuiyu/device.py:111 meerk40t/moshi/device.py:129 meerk40t/newly/device.py:162 meerk40t/ruida/device.py:110
+msgid "Margin for the Y-axis. This will be a kind of unused space at the top."
+msgstr "Rand für Y-Achse. Dieser Bereich wird am oberen Rand nicht verwendet."
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:658
+msgid "Coolant:"
+msgstr "Kühlung:"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:660
+msgid "No changes"
+msgstr "Unverändert"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:660
+msgid "Turn on"
+msgstr "Einschalten"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:660
+msgid "Turn off"
+msgstr "Ausschalten"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:670
+msgid "Define whether coolant support shall be explicitly turned on or off at the start of the operation, or whether it should be left at its current state."
+msgstr "Legt fest, ob für diesen Arbeitsvorgang die Kühlung explizit ein- oder ausgeschaltet, oder ob sie im aktuellen Zustand belassen werden soll."
+
+#: meerk40t/gui/propertypanels/placementproperty.py:184
+msgid "Start-Index:"
+msgstr "Startposition:"
+
+#: meerk40t/gui/propertypanels/placementproperty.py:204
+msgid "First repetition to use"
+msgstr "Ab der wievielten Widerholung soll gestartet werden"
+
+#: meerk40t/gui/propertypanels/placementproperty.py:205
+msgid "Repetitions to use (0=all)"
+msgstr "Wieviele Wiederholungen sollen genutzt werden (0=alle)"
+
+#: meerk40t/cylinder/cylinder.py:35
+msgid "Cylinder-Correction-Mode active"
+msgstr "Zylinder-Korrektur aktiv"
+
+#: meerk40t/cylinder/cylinder.py:36
+msgid "Is the cylinder correction mode active for this device"
+msgstr "Ist für das aktuelle Gerät die Zylinder-Korrektur aktiv?"
+
+#: meerk40t/cylinder/cylinder.py:43
+msgid "Mirror Distance"
+msgstr "Spiegel-Entfernung"
+
+#: meerk40t/cylinder/cylinder.py:44
+msgid "Distance from cylinder to mirror"
+msgstr "Enntferung von Spiegel zum Objekt"
+
+#: meerk40t/cylinder/cylinder.py:53
+msgid "Axis X"
+msgstr "X-Achse"
+
+#: meerk40t/cylinder/cylinder.py:54
+msgid "Cylinder along X-Axis"
+msgstr "Zylinder entlang der X-Achse"
+
+#: meerk40t/cylinder/cylinder.py:56 meerk40t/cylinder/cylinder.py:66 meerk40t/cylinder/cylinder.py:76
+msgid "X Axis"
+msgstr "X-Achse"
+
+#: meerk40t/cylinder/cylinder.py:63 meerk40t/cylinder/cylinder.py:93
+msgid "Cylinder Diameter"
+msgstr "Zylinder Durchmesser"
+
+#: meerk40t/cylinder/cylinder.py:64 meerk40t/cylinder/cylinder.py:94
+msgid "Diameter of the object being engraved"
+msgstr "DUrchmesser des zu gravierenden Objektes"
+
+#: meerk40t/cylinder/cylinder.py:73 meerk40t/cylinder/cylinder.py:103
+msgid "Cylinder is Concave"
+msgstr "Zylinder ist konkav"
+
+#: meerk40t/cylinder/cylinder.py:74 meerk40t/cylinder/cylinder.py:104
+msgid "Cylinder is concave rather than convex"
+msgstr "Der Zylinder ist konkav (nach innen gewölbt)"
+
+#: meerk40t/cylinder/cylinder.py:83
+msgid "Axis Y"
+msgstr "Y-Achse"
+
+#: meerk40t/cylinder/cylinder.py:84
+msgid "Cylinder along Y-Axis"
+msgstr "Zylinder entlang der Y-Achse"
+
+#: meerk40t/cylinder/cylinder.py:86 meerk40t/cylinder/cylinder.py:96 meerk40t/cylinder/cylinder.py:106
+msgid "Y Axis"
+msgstr "Y-Achse"
+
+#: meerk40t/cylinder/gui/cylindersettings.py:21
+msgid "Cylinder-Correction"
+msgstr "Zylinder-Korrektur"
+
+#: meerk40t/cylinder/gui/gui.py:19
+msgid "Cylinder"
+msgstr "Zylinder"
+
+#: meerk40t/cylinder/gui/gui.py:21
+msgid "Opens Cylinder Window"
+msgstr "Öffnet Zylinder-Korrektur-Fenster"
+

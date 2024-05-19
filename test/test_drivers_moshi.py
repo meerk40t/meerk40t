@@ -211,5 +211,8 @@ class TestDriverMoshiRotary(unittest.TestCase):
             kernel()
         with open(file1, "rb") as f:
             data = f.read()
+        # print (f"mos_rect: {mos_rect}")
+        # print (f"mos_rect_rotary: {mos_rect_rotary}")
+        # print (f"data: {data}")
         self.assertNotEqual(mos_rect, data)
         self.assertEqual(mos_rect_rotary, data)

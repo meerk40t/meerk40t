@@ -1,4 +1,3 @@
-
 def plugin(service, lifecycle):
     if lifecycle == "cli":
         service.set_feature("cylinder")
@@ -6,9 +5,7 @@ def plugin(service, lifecycle):
         return not service.has_feature("wx")
     if lifecycle == "service":
         # Responding to "service" makes this a service plugin for the specific services created via the provider
-        return (
-            "provider/device/balor",
-        )
+        return ("provider/device/balor",)
     elif lifecycle == "added":
         from meerk40t.cylinder.gui.cylindersettings import CylinderSettings
         from meerk40t.gui.icons import icon_barrel_distortion

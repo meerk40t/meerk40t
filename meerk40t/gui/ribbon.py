@@ -1470,13 +1470,20 @@ class Art:
         #     )
         #     for angle in (0, 90, 180)
         # ]
-        lp_x = int(cx - r)
-        lp_y = int(cy)
-        dp_x = int(cx)
-        dp_y = int(cy + r)
+        lx = x + (x1 - x) / 8
+        rx = x1 - (x1 - x) / 8
+        mx = x + (x1 - x) / 2
+        ty = y + (y1 - y) * 2 / 8
+        by = y1 - (y1 - y) * 2 / 8
+        points = [
+            (int(lx), int(ty)),
+            (int(rx), int(ty)),
+            (int(mx), int(by)),
+            (int(lx), int(ty)),
+        ]
         dc.SetPen(wx.Pen(self.black_color))
         dc.SetBrush(wx.Brush(self.inactive_background))
-        dc.DrawRectangle(lp_x, lp_y, dp_x, dp_y)
+        dc.DrawPolygon(points)
 
     def _paint_dropdown(self, dc: wx.DC, dropdown: DropDown):
         """
@@ -1639,7 +1646,9 @@ class Art:
             label_text = list()
         if show_text:
             # if it wasn't a full fit, the new textsize might still be okay to be drawn at the intended position
-            text_edge = min(max(0, start_y + h - y - total_text_height), self.bitmap_text_buffer)
+            text_edge = min(
+                max(0, start_y + h - y - total_text_height), self.bitmap_text_buffer
+            )
 
             y += text_edge
             dc.SetFont(font)
@@ -1928,11 +1937,14 @@ class Art:
                 sy = available_space
             panel_width += sx
             panel_height += sy
+            # print (f"{panel.label} was {panel.position} will be {x}, {y}, {x + panel_width}, {y + panel_height}")
             panel.position = x, y, x + panel_width, y + panel_height
             panel_max_x, panel_max_y = self.panel_layout(dc, panel)
+            # print (f"Max values: {panel_max_x}, {panel_max_y}")
             # Do we have more space than needed?
             available_space = 0
             if panel._overflow_position is None:
+                recalc = False
                 # print (f"({x}, {y}) - ({x + panel_width},  {y+panel_height}), sx={sx}, sy={sy}")
                 if is_horizontal:
                     available_space = max(
@@ -1941,6 +1953,7 @@ class Art:
                     # print (f"x={x + panel_width}, {panel_max_x} will become: {panel_max_x + self.panel_button_buffer}, available={available_space}")
                     if available_space != 0:
                         panel_width = panel_max_x + self.panel_button_buffer - x
+                        recalc = True
                 else:
                     available_space = max(
                         0, y + panel_height - panel_max_y - self.panel_button_buffer
@@ -1948,7 +1961,10 @@ class Art:
                     # print (f"y={y + panel_height}, {panel_max_y} will become: {panel_max_y + self.panel_button_buffer}, available={available_space}")
                     if available_space != 0:
                         panel_height = panel_max_y + self.panel_button_buffer - y
-                panel.position = x, y, x + panel_width, y + panel_height
+                        recalc = True
+                if recalc:
+                    panel.position = x, y, x + panel_width, y + panel_height
+                    self.panel_layout(dc, panel)
 
             if is_horizontal:
                 x += panel_width
@@ -1998,7 +2014,6 @@ class Art:
         y += self.panel_button_buffer
         panel._overflow.clear()
         panel._overflow_position = None
-        lastbutton = None
         for b, button in enumerate(list(panel.visible_buttons())):
             bitmapsize = button.max_size
             while bitmapsize > button.min_size:
@@ -2018,7 +2033,6 @@ class Art:
         target_width = button_width
         # print(f"Target: {panel.label} - {target_width}x{target_height}")
         for b, button in enumerate(list(panel.visible_buttons())):
-            button.overflow = False
             this_width = target_width
             this_height = target_height
             local_width = 1.25 * button.min_width
@@ -2062,20 +2076,9 @@ class Art:
                         x = panel.position[0] + self.panel_button_buffer
                         y += max_height + self.panel_button_buffer
                         button.position = x, y, x + this_width, y + max_height
-                if is_overflow:
-                    button.overflow = True
-                    panel._overflow.append(button)
-                    if panel._overflow_position is None:
-                        ppx, ppy, ppx1, ppy1 = panel.position
-                        panel._overflow_position = (ppx1 - 15, ppy, ppx1, ppy1)
-                        if (
-                            lastbutton is not None
-                            and lastbutton.position[2] >= ppx1 - 15
-                        ):
-                            # That overlaps, not good, so add this button
-                            # to the overflow area too
-                            lastbutton.overflow = True
-                            panel._overflow.insert(0, lastbutton)
+                if is_overflow and panel._overflow_position is None:
+                    ppx, ppy, ppx1, ppy1 = panel.position
+                    panel._overflow_position = (ppx1 - 15, ppy, ppx1, ppy1)
             else:
                 is_overflow = False
                 if y + this_height > panel.position[3]:
@@ -2100,29 +2103,40 @@ class Art:
                         y = panel.position[1] + self.panel_button_buffer
                         x += max_width + self.panel_button_buffer
                         button.position = x, y, x + max_width, y + this_height
-                if is_overflow:
-                    button.overflow = True
-                    panel._overflow.append(button)
-                    if panel._overflow_position is None:
-                        ppx, ppy, ppx1, ppy1 = panel.position
-                        panel._overflow_position = (ppx, ppy1 - 15, ppx1, ppy1)
-                        if (
-                            lastbutton is not None
-                            and lastbutton.position[3] >= ppy1 - 15
-                        ):
-                            # That overlaps, not good, so add this button
-                            # to the overflow area too
-                            lastbutton.overflow = True
-                            panel._overflow.insert(0, lastbutton)
+                if is_overflow and panel._overflow_position is None:
+                    ppx, ppy, ppx1, ppy1 = panel.position
+                    panel._overflow_position = (ppx, ppy1 - 15, ppx1, ppy1)
 
             # print(f"button: {button.position}")
-            self.button_layout(dc, button)
 
             if is_horizontal:
                 x += this_width
             else:
                 y += this_height
-            lastbutton = button
+        x = 0
+        y = 0
+        for button in panel.visible_buttons():
+            button.overflow = False
+            if button.position[2] > panel.position[2]:
+                button.overflow = True
+            elif button.position[3] > panel.position[3]:
+                button.overflow = True
+            elif is_horizontal and panel._overflow_position is not None and button.position[2] > panel._overflow_position[0]:
+                button.overflow = True
+            elif not is_horizontal and panel._overflow_position is not None and button.position[3] > panel._overflow_position[1]:
+                button.overflow = True
+            # if panel.label == "Create":
+            #     print (f"{button.label}: {button.overflow}, {button.position}, {panel.position}, {panel._overflow_position}")
+            if button.overflow:
+                panel._overflow.append(button)
+            else:
+                x = max(x, button.position[2])
+                y = max(y, button.position[3])
+            self.button_layout(dc, button)
+        if panel._overflow_position is not None:
+            x = max(x, panel._overflow_position[2])
+            y = max(y, panel._overflow_position[3])
+
         return min(x, panel.position[2]), min(y, panel.position[3])
 
     def button_calc(self, dc: wx.DC, button):

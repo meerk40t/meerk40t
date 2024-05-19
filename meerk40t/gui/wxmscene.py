@@ -1459,6 +1459,7 @@ class MeerK40tScenePanel(wx.Panel):
                     self._keybind_channel(f"Scene key_up: {keyvalue} unfound.")
         event.Skip()
 
+
 class SceneWindow(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(1280, 800, *args, **kwds)

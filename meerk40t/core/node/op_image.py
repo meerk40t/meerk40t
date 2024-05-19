@@ -22,7 +22,7 @@ class ImageOpNode(Node, Parameters):
 
         # Is this op out of useful bounds?
         self.dangerous = False
-        self.coolant = 0 # Nothing to do (0/None = keep, 1=turn on, 2=turn off)
+        self.coolant = 0  # Nothing to do (0/None = keep, 1=turn on, 2=turn off)
         self.stopop = True
         self.label = "Image"
 

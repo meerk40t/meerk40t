@@ -358,6 +358,7 @@ class ComponentPanel(ScrolledPanel):
             entry = ["potracer", "", "", "https://pypi.org/project/potracer/"]
             try:
                 import potrace
+
                 # for e in vars(potrace):
                 #     print (f"var {e} - {getattr(potrace, e)}")
                 if hasattr(potrace, "potracelib_version"):

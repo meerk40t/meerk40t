@@ -50,7 +50,9 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         if self.context.permit_ws:
             self.radio_ws = wx.RadioButton(self, wx.ID_ANY, _("WebSocket"))
             self.radio_ws.SetToolTip(
-                _("Select this if the GRBL device is contacted via WebSocket connection")
+                _(
+                    "Select this if the GRBL device is contacted via WebSocket connection"
+                )
             )
             sizer_interface_radio.Add(self.radio_ws, 1, wx.EXPAND, 0)
 
@@ -139,7 +141,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
                 self.panel_ws_config.Hide()
         except AttributeError:
             pass
-        
+
         try:
             if self.radio_ws.GetValue():
                 self.context.interface = "ws"

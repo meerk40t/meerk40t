@@ -292,9 +292,12 @@ class Warnings:
                         if not hasattr(refnode, "node"):
                             continue
                         node = refnode.node
-                        bb = getattr(node, "paint_bounds", None)
-                        if bb is None:
+                        if op.type in ("op cut", "op engrave"):
                             bb = getattr(node, "bounds", None)
+                        else:
+                            bb = getattr(node, "paint_bounds", None)
+                            if bb is None:
+                                bb = getattr(node, "bounds", None)
                         if bb is None:
                             continue
                         if bb[2] > wd or bb[0] < 0 or bb[3] > ht or bb[1] < 0:

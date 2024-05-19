@@ -35,7 +35,9 @@ class CylinderModifier:
             channel(
                 f"Cylinder Mode Y: {self.y_axis}, {self.y_axis_length}, concave: {self.y_concave}."
             )
-            channel("Only x axis is used. Updates occur only when toggled off and on. Concave is unused.")
+            channel(
+                "Only x axis is used. Updates occur only when toggled off and on. Concave is unused."
+            )
             return "cylinder", None
 
     @lru_cache(maxsize=1024)

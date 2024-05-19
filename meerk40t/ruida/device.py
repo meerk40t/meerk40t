@@ -261,10 +261,12 @@ class RuidaDevice(Service):
                 "type": str,
                 "style": "option",
                 "label": _("Coolant"),
-                "tip": _("Does this device has a method to turn on / off a coolant associated to it?"),
+                "tip": _(
+                    "Does this device has a method to turn on / off a coolant associated to it?"
+                ),
                 "section": "_99_" + _("Coolant Support"),
                 "dynamic": self.cool_helper,
-                "signals": "coolant_changed"
+                "signals": "coolant_changed",
             },
         ]
         self.register_choices("coolant", choices)
