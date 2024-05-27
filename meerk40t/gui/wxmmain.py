@@ -1372,6 +1372,15 @@ class MeerK40t(MWindow):
             context = kernel.root
             context("window open ExecuteJob\n")
 
+        def may_run():
+            res = kernel.elements.have_burnable_elements()
+            # Let's check whether we may execute (arm functionality)
+            context = kernel.root
+            if hasattr(context, "_laser_may_run") and not context._laser_may_run:
+                res = False
+            
+            return res
+        
         kernel.register(
             "button/jobstart/ExecuteLaser",
             {
@@ -1380,7 +1389,7 @@ class MeerK40t(MWindow):
                 "tip": _("Burn the current design"),
                 "action": run_job,
                 "action_right": run_job_extended,
-                "rule_enabled": lambda cond: kernel.elements.have_burnable_elements(),
+                "rule_enabled": lambda cond: may_run(),
                 "size": STD_ICON_SIZE,
                 "priority": 2,
             },
