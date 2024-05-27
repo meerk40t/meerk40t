@@ -486,6 +486,8 @@ class LaserPanel(wx.Panel):
     @signal_listener("laserpane_arm")
     def check_laser_arm(self, *args):
         self.context.setting(bool, "laserpane_arm", True)
+        ctxt = self.context.kernel.root
+        ctxt.setting(bool, "_laser_may_run", False)
         if self.context.laserpane_arm:
             if not self.arm_toggle.Shown:
                 self.arm_toggle.Show(True)
@@ -507,6 +509,7 @@ class LaserPanel(wx.Panel):
                     )
                 )
                 self.button_start.Enable(True)
+                ctxt._laser_may_run = True
             else:
                 self.arm_toggle.SetBackgroundColour(
                     self.context.themes.get("arm_bg_inactive")
@@ -526,12 +529,15 @@ class LaserPanel(wx.Panel):
                         resize=self.icon_size,
                     )
                 )
+                ctxt._laser_may_run = False
         else:
             if self.arm_toggle.Shown:
                 self.arm_toggle.Show(False)
                 self.Layout()
             self.button_start.SetBackgroundColour(self.context.themes.get("start_bg"))
             self.button_start.Enable(True)
+            ctxt._laser_may_run = True
+        self.context.signal("icons")
 
     def on_check_arm(self, event):
         self.armed = not self.armed
