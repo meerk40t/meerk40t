@@ -36,7 +36,7 @@ Meerk40t provides a variety of drivers with an extensible framework to provide s
 *   NewlyDraw System 8.1 Lasers
 *   Ruida-Emulation (Middleman between Lightburn and K40)
 
-### Lihuiyu M2-Nano
+### Lihuiyu M2-Nano/M3-Nano
 For the Lihuiyu (stock driver), Meerk40t supports both the windows and libusb connection methods, making it compatible with Whisperer and with the original Chinese software. So MeerK40t can usually run alongside these other pieces of software interchangeably.
 
 ### GRBL
@@ -85,7 +85,7 @@ Open source projects live and die with their support. There are a lots of ways t
 You can find and download all current and historical versions in the [Releases](https://github.com/meerk40t/meerk40t/releases) section.
 
 Currently, primary branches:
-* 0.9 - Active - New features and some underlying architectural changes. Try the latest released version: [0.9.2](https://github.com/meerk40t/meerk40t/releases#latest)
+* 0.9 - Active - New features and some underlying architectural changes. Try the latest released version: [0.9.4](https://github.com/meerk40t/meerk40t/releases#latest)
 * 0.8 - Maintenance - may receive critical bugfixes but no more new features, latest version: [0.8.12](https://github.com/meerk40t/meerk40t/releases/tag/0.8.12000) (Oct 17, 2023)
 * 0.7 - Discontinued - K40 support only (including ruidacontrol emulator for 3rd party lasersoftware integration), latest version [0.7.10](https://github.com/meerk40t/meerk40t/releases/tag/0.7.10000) (June 13, 2023)
 * 0.6 - Discontinued - K40 support only, latest version: [0.6.24](https://github.com/meerk40t/meerk40t/releases/tag/0.6.24) (Oct 11, 2021)
