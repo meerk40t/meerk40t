@@ -21,9 +21,10 @@ class Settings:
     """
 
     def __init__(self, directory, filename, ignore_settings=False, create_backup=False):
-        self._config_file = Path(get_safe_path(directory, create=True)).joinpath(
-            filename
-        )
+        if directory:
+            self._config_file = Path(get_safe_path(directory, create=True)).joinpath(filename)
+        else:
+            self._config_file = filename
         self._config_dict = {}
         self.create_backup = create_backup
         if not ignore_settings:
