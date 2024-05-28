@@ -163,7 +163,7 @@ class ImportDialog(wx.Dialog):
         mydlg = wx.FileDialog(
             self,
             message=_("Choose a library-file"),
-            wildcard="Supported files|*.lib;*.ini;*.clb|EZcad files (*.lib;*.ini)|*.lib;*.ini|Lightburn files (*.clb)|*.clb|All files (*.*)|*.*",
+            wildcard="Supported files|*.lib;*.ini;*.clb;*.cfg|EZcad files (*.lib;*.ini)|*.lib;*.ini|Lightburn files (*.clb)|*.clb|MeerK40t operations (*.cfg)|*.cfg|All files (*.*)|*.*",
             style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW,
         )
         if mydlg.ShowModal() == wx.ID_OK:
@@ -1294,6 +1294,101 @@ class MaterialPanel(ScrolledPanel):
 
         return added
 
+    def import_meerk40t(self, info):
+        filename = info[0]
+        factor = info[7]
+        lens_info = info[2]
+        if lens_info is None:
+            lens_info = ""
+        power_info = info[4]
+        if power_info is None:
+            power_info = ""
+        if not os.path.exists(filename):
+            return False
+        elems = self.context.elements
+        settings = Settings(None, filename, create_backup=False)
+        added = False
+
+        # Load operation list from file and adjust power/speed if needed
+        for section in settings.section_set():
+            if section == "previous":
+                continue
+            target_section = section
+            idx = 0
+            ex_list = list(self.op_data.section_set())
+            while target_section in ex_list:
+                idx += 1
+                target_section = f"{section}-{idx}"
+            # Remember existing ids in operations....
+            uid = {}
+            oplist, opinfo = elems.load_persistent_op_list(
+                section, use_settings=settings
+            )
+            note = ""
+            for op in oplist:
+                added = True
+                powerval = 1000.0
+                speedval = 10.0
+                if hasattr(op, "power") and op.power is not None:
+                    try:
+                        powerval = float(op.power)
+                    except ValueError as e:
+                        if str(op.power).endswith("%"):
+                            try:
+                                powerval = 10.0 * float(str(op.power)[:-1])
+                            except ValueError:
+                                pass
+                if hasattr(op, "speed") and op.speed is not None:
+                    try:
+                        speedval = float(op.speed)
+                    except ValueError:
+                        pass
+                if factor != 1:
+                    old_l = info[1]
+                    new_l = info[2]
+                    factor_l = info[5]
+                    if old_l is not None:
+                        note += f"\\nConverted lens-size {old_l}mm -> {new_l}mm: {factor_l:.2}"
+                    old_l = info[3]
+                    new_l = info[4]
+                    factor_l = info[6]
+                    if old_l is not None:
+                        note += (
+                            f"\\nConverted power {old_l}W -> {new_l}W: {factor_l:.2}"
+                        )
+                if powerval and powerval * factor > 1000:
+                    # Too much, let's reduce speed instead
+                    if speedval:
+                        note += f"\\nNeeded to reduce speed {speedval:.1}mm/s -> {speedval / factor:.2}mm/s"
+                        speedval *= 1 / factor
+                else:
+                    if powerval:
+                        powerval *= factor
+                if powerval:
+                    op.power = powerval
+                if speedval:
+                    op.speed = speedval
+                # op.note = note
+                # Do we have a duplicate id?
+                if op.id in uid or op.id is None or op.id == "":
+                    idx = 1
+                    pattern = op.type[3].upper()
+                    while f"{pattern}{idx}" in uid:
+                        idx += 1
+                    op.id = f"{pattern}{idx}"
+
+                # Add id to list of existing ids
+                uid[op.id] = op
+            elems.save_persistent_operations_list(
+                target_section,
+                oplist=oplist,
+                opinfo=opinfo,
+                inform=False,
+                use_settings=self.op_data,
+            )
+
+        return added
+
     def import_ezcad(self, info):
         # info = (fname, old_lens, new_lens, old_power, new_power, factor_from_lens, factor_from_power, factor, consolidate)
         filename = info[0]
@@ -1542,6 +1637,8 @@ class MaterialPanel(ScrolledPanel):
             added = self.import_lightburn(info)
         elif myfile.endswith(".lib") or myfile.endswith(".ini"):
             added = self.import_ezcad(info)
+        elif myfile.endswith(".cfg"):
+            added = self.import_meerk40t(info)
         else:
             self.invalid_file(myfile)
 

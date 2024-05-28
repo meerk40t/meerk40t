@@ -1424,7 +1424,7 @@ class Elemental(Service):
         settings = self.op_data
         if clear:
             self.clear_operations()
-        operation_branch = self._tree.get(type="branch ops")
+        operation_branch = self.op_branch
         oplist, opinfo = self.load_persistent_op_list(name, use_settings=settings)
         for op in oplist:
             operation_branch.add_node(op)
@@ -1923,33 +1923,33 @@ class Elemental(Service):
         return self._tree.get(type="branch elems")
 
     def ops(self, **kwargs):
-        operations = self._tree.get(type="branch ops")
+        operations = self.op_branch
         for item in operations.flat(depth=1, **kwargs):
             if item.type.startswith("branch") or item.type.startswith("ref"):
                 continue
             yield item
 
     def op_groups(self, **kwargs):
-        operations = self._tree.get(type="branch ops")
+        operations = self.op_branch
         for item in operations.flat(**kwargs):
             if item.type.startswith("branch") or item.type.startswith("ref"):
                 continue
             yield item
 
     def elems(self, **kwargs):
-        elements = self._tree.get(type="branch elems")
+        elements = self.elem_branch
         yield from elements.flat(types=elem_nodes, **kwargs)
 
     def elems_nodes(self, depth=None, **kwargs):
-        elements = self._tree.get(type="branch elems")
+        elements = self.elem_branch
         yield from elements.flat(types=elem_group_nodes, depth=depth, **kwargs)
 
     def regmarks(self, **kwargs):
-        elements = self._tree.get(type="branch reg")
+        elements = self.reg_branch
         yield from elements.flat(types=elem_nodes, **kwargs)
 
     def regmarks_nodes(self, depth=None, **kwargs):
-        elements = self._tree.get(type="branch reg")
+        elements = self.reg_branch
         yield from elements.flat(types=elem_group_nodes, depth=depth, **kwargs)
 
     def placement_nodes(self, depth=None, **kwargs):
@@ -2012,12 +2012,12 @@ class Elemental(Service):
         Add an operation. Wraps it within a node, and appends it to the tree.
         @return:
         """
-        operation_branch = self._tree.get(type="branch ops")
+        operation_branch = self.op_branch
         operation_branch.add_node(op, pos=pos)
         self.signal("add_operation", op)
 
     def add_ops(self, adding_ops):
-        operation_branch = self._tree.get(type="branch ops")
+        operation_branch = self.op_branch
         items = []
         for op in adding_ops:
             operation_branch.add_node(op)
@@ -2026,7 +2026,7 @@ class Elemental(Service):
         return items
 
     def clear_operations(self, fast=False):
-        operations = self._tree.get(type="branch ops")
+        operations = self.op_branch
         operations.remove_all_children(fast=fast)
         if hasattr(operations, "loop_continuous"):
             operations.loop_continuous = False
@@ -2036,11 +2036,11 @@ class Elemental(Service):
         self.signal("operation_removed")
 
     def clear_elements(self, fast=False):
-        elements = self._tree.get(type="branch elems")
+        elements = self.elem_branch
         elements.remove_all_children(fast=fast)
 
     def clear_regmarks(self, fast=False):
-        elements = self._tree.get(type="branch reg")
+        elements = self.reg_branch
         elements.remove_all_children(fast=fast)
 
     def clear_files(self):
@@ -3065,7 +3065,7 @@ class Elemental(Service):
         2. After the last operation of the highest priority existing operation, where `Dots` is the lowest priority and
             Cut is the highest.
         """
-        operations = self._tree.get(type="branch ops").children
+        operations = self.op_branch.children
         for pos, old_op in reversed_enumerate(operations):
             if op.type == old_op.type:
                 return self.add_op(op, pos=pos + 1)
