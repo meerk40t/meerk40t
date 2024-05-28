@@ -1,4 +1,5 @@
 from meerk40t.kernel import signal_listener
+from meerk40t.lihuiyu.gui.lhyextendedinfo import LihuiyuBoardInformation
 
 
 def plugin(service, lifecycle):
@@ -27,6 +28,7 @@ def plugin(service, lifecycle):
         service.register("window/Controller", LihuiyuControllerGui)
         service.register("window/Configuration", LihuiyuDriverGui)
         service.register("window/Acceleration-Chart", LihuiyuAccelerationChart)
+        service.register("window/Board-Information", LihuiyuBoardInformation)
         service.register("window/Network-Controller", TCPController)
 
         service.register("winpath/Controller", service)
