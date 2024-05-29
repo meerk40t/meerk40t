@@ -17107,3 +17107,59 @@ msgstr "Zylinder"
 msgid "Opens Cylinder Window"
 msgstr "Öffnet Zylinder-Korrektur-Fenster"
 
+#: meerk40t/gui/wxmmain.py:139
+msgid "Autosave workspace"
+msgstr "Arbeitsbereich automatisch sichern"
+
+#: meerk40t/gui/wxmmain.py:142
+msgid "If active then the current workspace will be saved every x minutes\nFilename: {file}"
+msgstr "Falls aktiv wird der Arbeitsbereich alle x Minuten gesichert\nDateiname: {file}"
+
+#: meerk40t/gui/wxmmain.py:154
+msgid "Every 30 seconds"
+msgstr "Alle 30 Sekunden"
+
+#: meerk40t/gui/wxmmain.py:155
+msgid "Every minute"
+msgstr "Jede Minute"
+
+#: meerk40t/gui/wxmmain.py:156
+msgid "Every 5 minutes"
+msgstr "Alle 5 Minuten"
+
+#: meerk40t/gui/wxmmain.py:157
+msgid "Every 10 minutes"
+msgstr "Alle 10 Minuten"
+
+#: meerk40t/gui/wxmmain.py:160
+msgid "How often should MeerK40t save the current workspace"
+msgstr "Wie oft soll MeerK40t den aktuellen Arbeitsbereich sichern"
+
+#: meerk40t/gui/wxmmain.py:1224
+msgid "Process input while moving slider handle"
+msgstr "Änderungen während Schieberegler-Bewegung verarbeiten"
+
+#: meerk40t/gui/wxmmain.py:1225
+msgid "Try to immediately use values while you drag a slider -"
+msgstr "Veränderungen während der Schieberegler-Bewegung werden sofort angewandt -"
+
+#: meerk40t/gui/wxmmain.py:1229
+msgid "otherwise they will get applied only after you release the mouse button."
+msgstr "ansonsten werden diese erst nach Loslassen der Maustaste verarbeitet."
+
+#: meerk40t/gui/wxmmain.py:1231
+msgid "NB: This applies only for time-consuming updates"
+msgstr "NB: Dies gilt nur für zeitaufwendige Operationen"
+
+#: meerk40t/image/imagetools.py:69
+msgid "Center image on import"
+msgstr "Bild bei Import zentrieren"
+
+#: meerk40t/image/imagetools.py:72
+msgid "Unset: Places the image at the left upper corner."
+msgstr "Inaktiv: Bild wird in linker oberer Ecke platziert"
+
+#: meerk40t/image/imagetools.py:73
+msgid "Set: Places the image at the center."
+msgstr "Aktiv: Bild wird auf Laserbett zentriert"
+

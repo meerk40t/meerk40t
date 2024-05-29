@@ -61,6 +61,21 @@ def plugin(kernel, lifecycle=None):
             "page": "Input/Output",
             "section": "Input",
         },
+        {
+            "attr": "center_image_on_load",
+            "object": kernel.elements,
+            "default": True,
+            "type": bool,
+            "label": _("Center image on import"),
+            "tip": "\n".join(
+                (
+                    _("Unset: Places the image at the left upper corner."),
+                    _("Set: Places the image at the center."),
+                )
+            ),
+            "page": "Input/Output",
+            "section": "Input",
+        },
     ]
     kernel.register_choices("preferences", choices)
 
@@ -2168,6 +2183,15 @@ class ImageLoader:
             type="elem image",
             dpi=_dpi,
         )
+
+        context.setting(bool, "center_image_on_load", True)
+        if context.center_image_on_load:
+            bb = n.bbox()
+            dx = (context.device.space.width - (bb[2] - bb[0])) / 2
+            dy = (context.device.space.height - (bb[3] - bb[1])) / 2
+
+            n.matrix.post_translate(dx, dy)
+        
         if context.create_image_group:
             file_node.focus()
         else:
