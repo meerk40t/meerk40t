@@ -44,7 +44,7 @@ def plugin(kernel, lifecycle=None):
                 )
             ),
             "page": "Input/Output",
-            "section": "Input",
+            "section": "Images",
         },
         {
             "attr": "create_image_group",
@@ -59,7 +59,17 @@ def plugin(kernel, lifecycle=None):
                 )
             ),
             "page": "Input/Output",
-            "section": "Input",
+            "section": "Images",
+        },
+        {
+            "attr": "scale_oversized_images",
+            "object": kernel.elements,
+            "default": True,
+            "type": bool,
+            "label": _("Scale oversized images"),
+            "tip": _("Set: Will scale down large images so they will fit on the laserbed."),
+            "page": "Input/Output",
+            "section": "Images",
         },
         {
             "attr": "center_image_on_load",
@@ -74,7 +84,7 @@ def plugin(kernel, lifecycle=None):
                 )
             ),
             "page": "Input/Output",
-            "section": "Input",
+            "section": "Images",
         },
     ]
     kernel.register_choices("preferences", choices)
@@ -2183,6 +2193,15 @@ class ImageLoader:
             type="elem image",
             dpi=_dpi,
         )
+
+        context.setting(bool, "scale_oversized_images", True)
+        if context.scale_oversized_images:
+            bb = n.bbox()
+            sx = (bb[2] - bb[0]) / context.device.space.width
+            sy = (bb[3] - bb[1]) / context.device.space.height
+            if sx > 1 or sy > 1:
+                sx = max(sx, sy)
+                n.matrix.post_scale(1 / sx, 1 / sx)
 
         context.setting(bool, "center_image_on_load", True)
         if context.center_image_on_load:

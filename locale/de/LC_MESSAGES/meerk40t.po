@@ -17163,3 +17163,10 @@ msgstr "Inaktiv: Bild wird in linker oberer Ecke platziert"
 msgid "Set: Places the image at the center."
 msgstr "Aktiv: Bild wird auf Laserbett zentriert"
 
+#: meerk40t/image/imagetools.py:69
+msgid "Scale oversized images"
+msgstr "Große Bilder verkleinern"
+
+#: meerk40t/image/imagetools.py:70
+msgid "Set: Will scale down large images so they will fit on the laserbed."
+msgstr "Aktiv: zu große Bilder werden verkleinert, so dass sie auf das Laserbett passen"
