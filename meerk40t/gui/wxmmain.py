@@ -38,6 +38,8 @@ from .icons import (  # icon_duplicate,; icon_nohatch,
     icon_cag_subtract,
     icon_cag_union,
     icon_cag_xor,
+    icon_closed_door,
+    icon_open_door,
     icon_hatch,
     icon_hatch_bidir,
     icon_hatch_diag,
@@ -1381,6 +1383,46 @@ class MeerK40t(MWindow):
             
             return res
         
+        def needs_arming():
+            ctxt = kernel.root
+            ctxt.setting(bool, "laserpane_arm", True)
+            res = ctxt.laserpane_arm
+            return res
+
+        def arm_laser(*args):
+            ctxt = kernel.root
+            ctxt.setting(bool, "_laser_may_run", False)
+            ctxt._laser_may_run = True
+            ctxt.signal("laser_armed", True)
+
+        def disarm_laser(*args):
+            ctxt = kernel.root
+            ctxt.setting(bool, "_laser_may_run", False)
+            ctxt._laser_may_run = False
+            ctxt.signal("laser_armed", False)
+
+        kernel.register(
+            "button/jobstart/ArmLaser",
+            {
+                "label": _("Arm"),
+                "icon": icon_closed_door,
+                "tip": _("Arm the job for execution"),
+                "identifier": "laser_armed",
+                "action": arm_laser,
+                "action_right": disarm_laser,
+                "rule_visible": lambda cond: needs_arming(),
+                "size": STD_ICON_SIZE,
+                "priority": 2,
+                "toggle": {
+                    "label": _("Disarm"),
+                    "action": disarm_laser,
+                    "icon": icon_open_door,
+                    "signal": "laser_armed",
+                    "tip": _("Prevent the laser from accidentally executing"),
+                },
+            },
+        )
+
         kernel.register(
             "button/jobstart/ExecuteLaser",
             {

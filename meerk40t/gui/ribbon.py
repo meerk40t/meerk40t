@@ -272,6 +272,8 @@ class Button:
             "help": self.help,
             "icon": self.icon,
             "client_data": self.client_data,
+            "rule_enabled": self.rule_enabled,
+            "rule_visible": self.rule_visible,
         }
         self._update_button_aspect(key, **kwargs)
 
