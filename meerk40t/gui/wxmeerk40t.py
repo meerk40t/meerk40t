@@ -490,8 +490,16 @@ class wxMeerK40t(wx.App, Module):
         if self.context.kernel._was_restarted:
             return True
         if self.context.single_instance_only and self.instance.IsAnotherRunning():
-            wx.MessageBox("Another instance is running", "ERROR")
-            return False
+            dlg = wx.MessageDialog(
+                None, 
+                "Another instance is running!\nDo you want to run another copy of the app?", 
+                "ERROR", 
+                wx.YES_NO | wx.ICON_QUESTION | wx.NO_DEFAULT,
+            )
+            result = dlg.ShowModal() == wx.ID_YES
+            dlg.Destroy()
+            if not result:
+                return False
         return True
 
     def InitLocale(self):
