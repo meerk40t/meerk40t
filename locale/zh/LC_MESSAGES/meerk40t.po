@@ -12454,20 +12454,16 @@ msgid "Warn level for maximum {unit}"
 msgstr "最大 {unit} 的警告级别"
 
 #: meerk40t/device/gui/warningpanel.py:135
-msgid "Meerk40t can warn you if it believes the values for"
-msgstr "如果设备认为功率和速度的值过于高，它会发出警告："
-
-#: meerk40t/device/gui/warningpanel.py:137
-msgid "power and speed are too ambitious for your machine."
-msgstr "对于您的机器来说，功率和速度过于雄心勃勃。"
-
-#: meerk40t/device/gui/warningpanel.py:139
-msgid "It will display a warning indicator:"
-msgstr "它会显示一个警告指示器："
-
-#: meerk40t/device/gui/warningpanel.py:142
-msgid "in the label of the associated operation-node"
-msgstr "在关联操作节点的标签中"
+msgid ""
+"Meerk40t can warn you if it believes the values for\n"
+"power and speed are too ambitious for your machine.\n"
+"It will display a warning indicator: '❌'\n"
+"in the label of the associated operation-node"
+msgstr ""
+"如果设备认为功率和速度的值过于高，它会发出警告：\n"
+"对于您的机器来说，功率和速度过于雄心勃勃。"
+"它会显示一个警告指示器：'❌'\n"
+"在关联操作节点的标签中"
 
 #: meerk40t/grbl/gui/grblconfiguration.py:25
 msgid "GRBL-Configuration"

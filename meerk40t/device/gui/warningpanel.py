@@ -134,14 +134,12 @@ class WarningPanel(wx.Panel):
         infolabel = wx.StaticText(
             self,
             id=wx.ID_ANY,
-            label=_("Meerk40t can warn you if it believes the values for")
-            + "\n"
-            + _("power and speed are too ambitious for your machine.")
-            + "\n"
-            + _("It will display a warning indicator:")
-            + " '❌'"
-            + "\n"
-            + _("in the label of the associated operation-node"),
+            label=_(
+                "Meerk40t can warn you if it believes the values for\n"
+                + "power and speed are too ambitious for your machine.\n"
+                + "It will display a warning indicator: '❌'\n"
+                + "in the label of the associated operation-node"
+            )
         )
 
         sizer_main.Add(infolabel, 0, 0, 0)

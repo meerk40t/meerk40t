@@ -10377,20 +10377,16 @@ msgid "Warn level for maximum {unit}"
 msgstr "Warngrenze für Maximum {unit}"
 
 #: meerk40t/device/gui/warningpanel.py:135
-msgid "Meerk40t can warn you if it believes the values for"
-msgstr "Meerk40t kann warnen, falls es glaubt, dass die Werte"
-
-#: meerk40t/device/gui/warningpanel.py:137
-msgid "power and speed are too ambitious for your machine."
-msgstr "Leistung und Geschwindigkeit zu ehrgeizig für die Maschine sind."
-
-#: meerk40t/device/gui/warningpanel.py:139
-msgid "It will display a warning indicator:"
-msgstr "Es wird einen Warnindikator anzeigen:"
-
-#: meerk40t/device/gui/warningpanel.py:142
-msgid "in the label of the associated operation-node"
-msgstr "im Beschreibungstext des zugehörigen Arbeitsgang-Knoten"
+msgid ""
+"Meerk40t can warn you if it believes the values for\n"
+"power and speed are too ambitious for your machine.\n"
+"It will display a warning indicator: '❌'\n"
+"in the label of the associated operation-node"
+msgstr ""
+"Meerk40t kann warnen, falls es glaubt, dass die Werte für\n"
+"Leistung und Geschwindigkeit zu ehrgeizig für die Maschine sind.\n"
+"Es wird im Beschreibungstext des zugehörigen Arbeitsgang-Knoten\n"
+"einen Warnindikator anzeigen: '❌'"
 
 #: meerk40t/grbl/gui/grblconfiguration.py:19
 msgid "GRBL-Configuration"
