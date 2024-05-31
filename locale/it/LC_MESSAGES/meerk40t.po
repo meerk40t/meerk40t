@@ -1,3 +1,4 @@
+
 # Italian translations for MeerK40t Translation.
 # This file is distributed under the same license as the MeerK40t project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
@@ -3339,6 +3340,10 @@ msgstr "Verticalmente"
 #: meerk40t/core/elements.py:7720
 msgid "Flip Vertically"
 msgstr "Capovolge verticalmente"
+
+#: meerk40t/gui/statusbarwidgets/statusbar.py:42
+msgid "Left Click: Move to next panel\nRight Click: Move to previous panel"
+msgstr "Click sinistro: Passa al pannello successivo\n Click destro: Passa al pannello precedente"
 
 #: meerk40t/core/elements.py:7732 meerk40t/gui/navigationpanels.py:1485
 #: meerk40t/gui/statusbarwidgets/strokewidget.py:160
@@ -10310,23 +10315,19 @@ msgid "Add the selected operation to the default 'Job End' list"
 msgstr "Aggiunge il processo selezionata alla lista predefinita 'Fine Lavoro'"
 
 #: meerk40t/device/gui/defaultactions.py:146
+#: meerk40t/device/gui/defaultactions.py:149
 msgid "Remove the selected operation from the list"
 msgstr "Rimuove il processo selezionata dalla lista"
 
-#: meerk40t/device/gui/defaultactions.py:149
-#: meerk40t/device/gui/defaultactions.py:155
+#: meerk40t/device/gui/defaultactions.py:152
+#: meerk40t/device/gui/defaultactions.py:158
 msgid "Decrease the position of the selected operation"
 msgstr "Riduce la posizione del processo selezionato"
 
-#: meerk40t/device/gui/defaultactions.py:152
-#: meerk40t/device/gui/defaultactions.py:158
-msgid "Increase the position of the selected operation"
-msgstr "Aumenta la posizione del processo selezionato"
-
 #: meerk40t/device/gui/defaultactions.py:155
 #: meerk40t/device/gui/defaultactions.py:161
-msgid "Modify the default parameter of the operation to be added"
-msgstr "Modifica il parametro predefinito del processo da aggiungere"
+msgid "Increase the position of the selected operation"
+msgstr "Aumenta la posizione del processo selezionato"
 
 #: meerk40t/device/gui/defaultactions.py:164
 msgid "Modify the default parameter of the operation to be added"
@@ -10610,30 +10611,23 @@ msgid "Generate a preview of the result"
 msgstr "Genera un'anteprima del risultato"
 
 msgid ""
-"This parameter determines how to resolve ambiguities during decomposition"
-" of bitmaps into paths.\n"
-"\n"
+"This parameter determines how to resolve ambiguities during decomposition of bitmaps into paths.\n\n"
 "BLACK: prefers to connect black (foreground) components.\n"
 "WHITE: prefers to connect white (background) components.\n"
 "LEFT: always take a left turn.\n"
 "RIGHT: always take a right turn.\n"
-"MINORITY: prefers to connect the color (black or white) that occurs least"
-" frequently in a local neighborhood of the current position.\n"
-"MAJORITY: prefers to connect the color (black or white) that occurs most "
-"frequently in a local neighborhood of the current position.\n"
+"MINORITY: prefers to connect the color (black or white) that occurs least frequently in a local neighborhood of the current position.\n"
+"MAJORITY: prefers to connect the color (black or white) that occurs most frequently in a local neighborhood of the current position.\n"
 "RANDOM: choose randomly."
 msgstr ""
-"Questo parametro determina come risolvere le ambiguità durante la "
-"decomposizione delle bitmap in percorsi.\n"
-"\n"
+"Questo parametro determina come risolvere le ambiguità durante la decomposizione delle bitmap in percorsi.\n\n"
 "BLACK: preferisce connettere i componenti neri (primo piano).\n"
 "WHITE: preferisce connettere i componenti bianchi (sfondo).\n"
 "LEFT: prende sempre una svolta a sinistra.\n"
 "RIGHT: prende sempre una svolta a destra.\n"
-"MINORITY: preferisce connettere il colore (nero o bianco) che si verifica "
-"meno frequentemente in un vicinato locale della posizione corrente.\n"
-"MAJORITY: preferisce connettere il colore (nero o bianco) che si verifica "
-"più frequentemente in un vicinato locale della posizione corrente.\n"
+"MINORITY: preferisce connettere il colore (nero o bianco) che si verifica meno frequentemente in un vicinato locale della posizione corrente.\n"
+"MAJORITY: preferisce connettere il colore (nero o bianco) che si verifica più frequentemente in un vicinato locale della posizione corrente.\n"
+"RANDOM: selezione casuale."
 
 msgid "Suppress speckles of up to this size (default 2 px)"
 msgstr "Elimina schizzi fino a questa dimensione (predefinito 2 px)"
@@ -10988,7 +10982,6 @@ msgstr "Riempimento"
 msgid "If active, then this op will prevent further classification"
 msgstr "Se attiva, questa operazione impedirà ulteriori classificazioni"
 
-#: meerk40t/gui/propertypanels/operationpropertymain.py:87
 #: meerk40t/gui/propertypanels/operationpropertymain.py:158
 msgid "from other ops if it could classify an element by itself."
 msgstr " (se esiste una risposta positiva per questa operazione)"
@@ -11129,7 +11122,6 @@ msgstr "Area"
 msgid "Area (w/wo stroke)"
 msgstr "Area (con/senza bordo)"
 
-#: meerk40t/gui/toolwidgets/toolmeasure.py:138
 msgid "Perimeter"
 msgstr "Perimetro"
 
@@ -18717,95 +18709,246 @@ msgstr "Elenco dei font disponibili"
 msgid "All files"
 msgstr "Tutti i file"
 
-#: ./meerk40t\extra\inkscape.py:356
-msgid "Optional: location of inkscape executable"
-msgstr "Opzionale: posizione dell'eseguibile di inkscape"
+msgid "Turns on the coolant for the active device"
+msgstr "Attiva il refrigeratore per il dispositivo attivo"
 
-#: ./meerk40t\core\elements\render.py:325
-msgid "Preserve intermediary objects"
-msgstr "Conservare gli oggetti intermedi"
+msgid "Turns off the coolant for the active device"
+msgstr "Disattiva il refrigeratore per il dispositivo attivo"
 
-msgid "Left Click: Move to next panel"
-msgstr "Click sinistro: Passa al panello successivo"
+msgid "No coolant method found."
+msgstr "Non è stato trovato alcun metodo di raffreddamento"
 
-msgid "Right Click: Move to previous panel"
-msgstr "Click destro: Passa al pannello precedente"
+msgid "Coolant activated for device {device_label}"
+msgstr "Liquido di raffreddamento attivato per il dispositivo {device_label}"
 
-#: meerk40t/gui/statusbarwidgets/statusbar.py:42
-msgid "Left Click: Move to next panel\nRight Click: Move to previous panel"
-msgstr "Click sinistro: Passa al pannello successivo\n Click destro: Passa al pannello precedente"
+msgid "Coolant deactivated for device {device_label}"
+msgstr "Refrigeratore disattivato per il dispositivo {device_label}"
 
-#: meerk40t/gui/propertypanels/placementproperty.py:205
-msgid "Repetitions to use (0=all)"
-msgstr "Ripetizioni da utilizzare (0=tutto)"
+msgid "Registered coolant-interfaces:"
+msgstr "Interfacce refrigeranti registrate:"
 
-#: meerk40t/gui/propertypanels/placementproperty.py:204
-msgid "First repetition to use"
-msgstr "Prima ripetizione da usare"
+msgid "Configure"
+msgstr "Configurazione"
+
+#: meerk40t/balormk/device.py:249 meerk40t/grbl/device.py:429 meerk40t/lihuiyu/device.py:177 meerk40t/moshi/device.py:190 meerk40t/newly/device.py:498 meerk40t/ruida/device.py:230
+msgid "Coolant"
+msgstr "Refrigerante"
+
+#: meerk40t/balormk/device.py:251 meerk40t/grbl/device.py:431 meerk40t/lihuiyu/device.py:179 meerk40t/moshi/device.py:192 meerk40t/newly/device.py:500 meerk40t/ruida/device.py:232
+msgid "Coolant Support"
+msgstr "Supporto del refrigeratore"
+
+msgid "Coolant on"
+msgstr "Refrigeratore acceso"
+
+msgid "Coolant off"
+msgstr "Refrigeratore spento"
+
+msgid "No coolant method found."
+msgstr "Non è stato trovato alcun metodo di raffreddamento"
+
+msgid "Please switch the airassist for {laser} on"
+msgstr "Attivare l'assistenza ad aria per {laser}"
+
+msgid "Please switch the airassist for {laser} off"
+msgstr "Disattivare l'assistenza ad aria per {laser}"
+
+msgid "Does this device has a method to turn on / off a coolant associated to it?"
+msgstr "Questo dispositivo ha un metodo per attivare/disattivare un refrigeratore ad esso associato?"
+
+msgid "Nothing"
+msgstr "Niente"
+
+msgid "Warnmessage"
+msgstr "Messaggio di avviso"
+
+#: meerk40t/extra/coolant.py:212
+msgid "Air-Assist"
+msgstr "Flusso aria"
+
+#: meerk40t/balormk/device.py:194 meerk40t/grbl/device.py:105 meerk40t/lihuiyu/device.py:95 meerk40t/moshi/device.py:114 meerk40t/newly/device.py:147 meerk40t/ruida/device.py:94
+msgid "X-Margin"
+msgstr "Margine X"
+
+#: meerk40t/balormk/device.py:197 meerk40t/grbl/device.py:108 meerk40t/lihuiyu/device.py:98 meerk40t/moshi/device.py:117 meerk40t/newly/device.py:150 meerk40t/ruida/device.py:97
+msgid "Margin for the X-axis. This will be a kind of unused space at the left side."
+msgstr "Margine per l'asse X. Si tratta di una sorta di spazio inutilizzato sul lato sinistro."
+
+#: meerk40t/balormk/device.py:199 meerk40t/lihuiyu/device.py:100 meerk40t/ruida/device.py:98
+msgid "User Offset"
+msgstr "Offset Utente"
+
+#: meerk40t/balormk/device.py:207 meerk40t/grbl/device.py:116 meerk40t/lihuiyu/device.py:108 meerk40t/moshi/device.py:126 meerk40t/newly/device.py:159 meerk40t/ruida/device.py:107
+msgid "Y-Margin"
+msgstr "Margine Y"
+
+#: meerk40t/balormk/device.py:210 meerk40t/grbl/device.py:119 meerk40t/lihuiyu/device.py:111 meerk40t/moshi/device.py:129 meerk40t/newly/device.py:162 meerk40t/ruida/device.py:110
+msgid "Margin for the Y-axis. This will be a kind of unused space at the top."
+msgstr "Margine per l'asse Y. Si tratta di una sorta di spazio inutilizzato in alto"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:658
+msgid "Coolant:"
+msgstr "Liquido di raffreddamento"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:660
+msgid "No changes"
+msgstr "Nessuna modifica"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:660
+msgid "Turn on"
+msgstr "Accende"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:660
+msgid "Turn off"
+msgstr "Spegne"
+
+#: meerk40t/gui/propertypanels/operationpropertymain.py:670
+msgid "Define whether coolant support shall be explicitly turned on or off at the start of the operation, or whether it should be left at its current state."
+msgstr "Definisce se il supporto del refrigerante deve essere esplicitamente attivato o disattivato all'inizio dell'operazione o se deve essere lasciato allo stato attuale"
 
 #: meerk40t/gui/propertypanels/placementproperty.py:184
 msgid "Start-Index:"
 msgstr "Indice di inizio:"
 
-#: meerk40t/gui/propertypanels/operationpropertymain.py:1269
-msgid "In a raster engrave, the step size is the distance between raster lines in 1/1000\" "
-msgstr "In un'incisione raster, la dimensione del gradino è la distanza tra le linee raster in 1/1000\"
+#: meerk40t/gui/propertypanels/placementproperty.py:204
+msgid "First repetition to use"
+msgstr "Prima ripetizione da usare"
 
-#: meerk40t/gui/wxmmain.py:1231
-msgid "NB: This applies only for time-consuming updates"
-msgstr "NB: Questo vale solo per gli aggiornamenti che richiedono molto tempo"
+#: meerk40t/gui/propertypanels/placementproperty.py:205
+msgid "Repetitions to use (0=all)"
+msgstr "Ripetizioni da utilizzare (0=tutto)"
 
-#: meerk40t/gui/wxmmain.py:1229
-msgid "otherwise they will get applied only after you release the mouse button."
-msgstr "altrimenti verranno applicate solo dopo aver rilasciato il pulsante del mouse"
+#: meerk40t/cylinder/cylinder.py:35
+msgid "Cylinder-Correction-Mode active"
+msgstr "Modalità correzione cilindri attiva"
 
-#: meerk40t/gui/wxmmain.py:1225
-msgid "Try to immediately use values while you drag a slider -"
-msgstr "Cercare di utilizzare immediatamente i valori mentre si trascina un cursore"
+#: meerk40t/cylinder/cylinder.py:36
+msgid "Is the cylinder correction mode active for this device"
+msgstr "La modalità di correzione del cilindro è attiva per questo dispositivo"
 
-#: meerk40t/gui/wxmmain.py:1224
-msgid "Process input while moving slider handle"
-msgstr "Elaborazione dell'input durante lo spostamento della maniglia di scorrimento"
+#: meerk40t/cylinder/cylinder.py:43
+msgid "Mirror Distance"
+msgstr "Distanza dello specchio"
 
-#: meerk40t/gui/wxmmain.py:160
-msgid "How often should MeerK40t save the current workspace"
-msgstr "Con quale frequenza MeerK40t deve salvare l'area di lavoro corrente"
+#: meerk40t/cylinder/cylinder.py:44
+msgid "Distance from cylinder to mirror"
+msgstr "Distanza dal cilindro allo specchio"
 
-#: meerk40t/gui/wxmmain.py:157
-msgid "Every 10 minutes"
-msgstr "Ogni 10 minuti"
+#: meerk40t/cylinder/cylinder.py:53
+msgid "Axis X"
+msgstr "Asse X"
 
-#: meerk40t/gui/wxmmain.py:156
-msgid "Every 5 minutes"
-msgstr "Ogni 5 minuti"
+#: meerk40t/cylinder/cylinder.py:54
+msgid "Cylinder along X-Axis"
+msgstr "Cilindro lungo l'asse X"
 
-#: meerk40t/gui/wxmmain.py:155
-msgid "Every minute"
-msgstr "Ogni minuto"
+#: meerk40t/cylinder/cylinder.py:56 meerk40t/cylinder/cylinder.py:66 meerk40t/cylinder/cylinder.py:76
+msgid "X Axis"
+msgstr "Asse X"
 
-#: meerk40t/gui/wxmmain.py:154
-msgid "Every 30 seconds"
-msgstr "Ogni 30 secondi"
+#: meerk40t/cylinder/cylinder.py:63 meerk40t/cylinder/cylinder.py:93
+msgid "Cylinder Diameter"
+msgstr "Diametro del cilindro"
 
-#: meerk40t/gui/wxmmain.py:142
-msgid "If active then the current workspace will be saved every x minutes\nFilename: {file}"
-msgstr "Se attivo, l'area di lavoro corrente verrà salvata ogni x minuti\nFilename: {file}"
+#: meerk40t/cylinder/cylinder.py:64 meerk40t/cylinder/cylinder.py:94
+msgid "Diameter of the object being engraved"
+msgstr "Diametro dell'oggetto da incidere"
+
+#: meerk40t/cylinder/cylinder.py:73 meerk40t/cylinder/cylinder.py:103
+msgid "Cylinder is Concave"
+msgstr "Il cilindro è concavo"
+
+#: meerk40t/cylinder/cylinder.py:74 meerk40t/cylinder/cylinder.py:104
+msgid "Cylinder is concave rather than convex"
+msgstr "Il cilindro è concavo anziché convesso"
+
+#: meerk40t/cylinder/cylinder.py:83
+msgid "Axis Y"
+msgstr "Asse Y"
+
+#: meerk40t/cylinder/cylinder.py:84
+msgid "Cylinder along Y-Axis"
+msgstr "Cilindro lungo l'asse Y"
+
+#: meerk40t/cylinder/cylinder.py:86 meerk40t/cylinder/cylinder.py:96 meerk40t/cylinder/cylinder.py:106
+msgid "Y Axis"
+msgstr "Asse Y"
+
+#: meerk40t/cylinder/gui/cylindersettings.py:21
+msgid "Cylinder-Correction"
+msgstr "Correzione del cilindro"
+
+#: meerk40t/cylinder/gui/gui.py:19
+msgid "Cylinder"
+msgstr "Cilindro"
+
+#: meerk40t/cylinder/gui/gui.py:21
+msgid "Opens Cylinder Window"
+msgstr ""
 
 #: meerk40t/gui/wxmmain.py:139
 msgid "Autosave workspace"
 msgstr "Salvataggio automatico dell'area di lavoro"
 
-#: meerk40t/gui/plugin.py:248
-msgid "(Yes={yes})"
-msgstr "(Sì={yes})"
+#: meerk40t/gui/wxmmain.py:142
+msgid "If active then the current workspace will be saved every x minutes\nFilename: {file}"
+msgstr "Se attivo, l'area di lavoro corrente verrà salvata ogni x minuti\nFilename: {file}"
 
-#: meerk40t/extra/param_functions.py:1342
-msgid "growingshape sx sy sides iterations"
-msgstr "forma crescente sx sy lati iterazioni"
+#: meerk40t/gui/wxmmain.py:154
+msgid "Every 30 seconds"
+msgstr "Ogni 30 secondi"
 
-#: meerk40t/extra/param_functions.py:1339
-msgid "Delta angle between moves in degrees"
-msgstr "Angolo delta tra gli spostamenti in gradi"
+#: meerk40t/gui/wxmmain.py:155
+msgid "Every minute"
+msgstr "Ogni minuto"
+
+#: meerk40t/gui/wxmmain.py:156
+msgid "Every 5 minutes"
+msgstr "Ogni 5 minuti"
+
+#: meerk40t/gui/wxmmain.py:157
+msgid "Every 10 minutes"
+msgstr "Ogni 10 minuti"
+
+#: meerk40t/gui/wxmmain.py:160
+msgid "How often should MeerK40t save the current workspace"
+msgstr "Con quale frequenza MeerK40t deve salvare l'area di lavoro corrente"
+
+#: meerk40t/gui/wxmmain.py:1224
+msgid "Process input while moving slider handle"
+msgstr "Elaborazione dell'input durante lo spostamento della maniglia di scorrimento"
+
+#: meerk40t/gui/wxmmain.py:1225
+msgid "Try to immediately use values while you drag a slider -"
+msgstr "Cercare di utilizzare immediatamente i valori mentre si trascina un cursore"
+
+#: meerk40t/gui/wxmmain.py:1229
+msgid "otherwise they will get applied only after you release the mouse button."
+msgstr "altrimenti verranno applicate solo dopo aver rilasciato il pulsante del mouse"
+
+#: meerk40t/gui/wxmmain.py:1231
+msgid "NB: This applies only for time-consuming updates"
+msgstr "NB: Questo vale solo per gli aggiornamenti che richiedono molto tempo"
+
+#: meerk40t/image/imagetools.py:69
+msgid "Center image on import"
+msgstr "Centra l'immagine durante l'importazione"
+
+#: meerk40t/image/imagetools.py:72
+msgid "Unset: Places the image at the left upper corner."
+msgstr "Inattivo: l'immagine è posizionata nell'angolo in alto a sinistra."
+
+#: meerk40t/image/imagetools.py:73
+msgid "Set: Places the image at the center."
+msgstr "Attivo: l'immagine è centrata sul letto laser"
+
+#: meerk40t/image/imagetools.py:69
+msgid "Scale oversized images"
+msgstr "Ridurre le dimensioni delle immagini di grandi dimensioni"
+
+#: meerk40t/image/imagetools.py:70
+msgid "Set: Will scale down large images so they will fit on the laserbed."
+msgstr "Attivo: le immagini troppo grandi vengono ridotte in modo che si adattino al piano di lavoro"
 
 #: meerk40t/extra/param_functions.py:1098
 msgid "Just for info: we have missed a couple of vertices..."
@@ -18831,26 +18974,6 @@ msgstr "iterazioni ffrattali"
 msgid "tfractal iterations"
 msgstr "iterazioni tfrattali"
 
-#: meerk40t/extra/coolant.py:285
-msgid "Coolant deactivated for device {device_label}"
-msgstr "Refrigeratore disattivato per il dispositivo {device_label}"
-
-#: meerk40t/extra/coolant.py:265
-msgid "Turns off the coolant for the active device"
-msgstr "Disattiva il refrigeratore per il dispositivo attivo"
-
-#: meerk40t/extra/coolant.py:263
-msgid "No coolant method found."
-msgstr "Non è stato trovato alcun metodo di raffreddamento"
-
-#: meerk40t/extra/coolant.py:261
-msgid "Coolant activated for device {device_label}"
-msgstr "Liquido di raffreddamento attivato per il dispositivo {device_label}"
-
-#: meerk40t/extra/coolant.py:241
-msgid "Turns on the coolant for the active device"
-msgstr "Attiva il refrigeratore per il dispositivo attivo"
-
 #: meerk40t/extra/coolant.py:239
 msgid "There are no coolant-interfaces known to MeerK40t"
 msgstr "Non ci sono interfacce per il refrigeratore note a MeerK40t"
@@ -18862,10 +18985,6 @@ msgstr ""
 #: meerk40t/extra/coolant.py:234
 msgid "Not used"
 msgstr "Non utilizzato"
-
-#: meerk40t/extra/coolant.py:226
-msgid "Registered coolant-interfaces:"
-msgstr "Interfacce refrigeranti registrate:"
 
 #: meerk40t/extra/coolant.py:220
 msgid "displays registered coolant methods"
@@ -18879,154 +18998,45 @@ msgstr ""
 msgid "GCode M8/M9"
 msgstr ""
 
-#: meerk40t/extra/coolant.py:216
-msgid "Warnmessage"
-msgstr "Messaggio di avviso"
+#: ./meerk40t\extra\inkscape.py:356
+msgid "Optional: location of inkscape executable"
+msgstr "Opzionale: posizione dell'eseguibile di inkscape"
 
-#: meerk40t/extra/coolant.py:202
-msgid "Air-Assist"
-msgstr "Assistenza ad aria"
+#: ./meerk40t\core\elements\render.py:325
+msgid "Preserve intermediary objects"
+msgstr "Conservare gli oggetti intermedi"
 
-#: meerk40t/extra/coolant.py:201
-msgid "Please switch the airassist for {laser} off"
-msgstr "Disattivare l'assistenza ad aria per {laser}"
+msgid "Left Click: Move to next panel"
+msgstr "Click sinistro: Passa al panello successivo"
 
-#: meerk40t/extra/coolant.py:199
-msgid "Please switch the airassist for {laser} on"
-msgstr "Attivare l'assistenza ad aria per {laser}"
+#: meerk40t/gui/propertypanels/operationpropertymain.py:1269
+msgid "In a raster engrave, the step size is the distance between raster lines in 1/1000\" "
+msgstr "In un'incisione raster, la dimensione del gradino è la distanza tra le linee raster in 1/1000\"
 
-#: meerk40t/extra/coolant.py:165
-msgid "Nothing"
-msgstr "Niente"
+#: meerk40t/gui/plugin.py:248
+msgid "(Yes={yes})"
+msgstr "(Sì={yes})"
 
-#: meerk40t/cylinder/gui/gui.py:24
-msgid "Opens Cylinder Window"
-msgstr ""
+#: meerk40t/extra/param_functions.py:1342
+msgid "growingshape sx sy sides iterations"
+msgstr "forma crescente sx sy lati iterazioni"
 
-#: meerk40t/cylinder/gui/gui.py:22
-msgid "Cylinder"
-msgstr "Cilindro"
+#: meerk40t/extra/param_functions.py:1339
+msgid "Delta angle between moves in degrees"
+msgstr "Angolo delta tra gli spostamenti in gradi"
 
-#: meerk40t/cylinder/gui/cylindersettings.py:22
-msgid "Cylinder-Correction"
-msgstr "Correzione del cilindro"
-
-#: meerk40t/cylinder/cylinder.py:86 meerk40t/cylinder/cylinder.py:96 meerk40t/cylinder/cylinder.py:106
-msgid "Y Axis"
-msgstr "Asse Y"
-
-#: meerk40t/cylinder/cylinder.py:84
-msgid "Cylinder along Y-Axis"
-msgstr "Cilindro lungo l'asse Y"
-
-#: meerk40t/cylinder/cylinder.py:83
-msgid "Axis Y"
-msgstr "Asse Y"
-
-#: meerk40t/cylinder/cylinder.py:74 meerk40t/cylinder/cylinder.py:104
-msgid "Cylinder is concave rather than convex"
-msgstr "Il cilindro è concavo anziché convesso"
-
-#: meerk40t/cylinder/cylinder.py:73 meerk40t/cylinder/cylinder.py:103
-msgid "Cylinder is Concave"
-msgstr "Il cilindro è concavo"
-
-#: meerk40t/cylinder/cylinder.py:64 meerk40t/cylinder/cylinder.py:94
-msgid "Diameter of the object being engraved"
-msgstr "Diametro dell'oggetto da incidere"
-
-#: meerk40t/cylinder/cylinder.py:63 meerk40t/cylinder/cylinder.py:93
-msgid "Cylinder Diameter"
-msgstr "Diametro del cilindro"
-
-#: meerk40t/cylinder/cylinder.py:56 meerk40t/cylinder/cylinder.py:66 meerk40t/cylinder/cylinder.py:76
-msgid "X Axis"
-msgstr "Asse X"
-
-#: meerk40t/cylinder/cylinder.py:54
-msgid "Cylinder along X-Axis"
-msgstr "Cilindro lungo l'asse X"
-
-#: meerk40t/cylinder/cylinder.py:53
-msgid "Axis X"
-msgstr "Asse X"
-
-#: meerk40t/cylinder/cylinder.py:44
-msgid "Distance from cylinder to mirror"
-msgstr "Distanza dal cilindro allo specchio"
-
-#: meerk40t/cylinder/cylinder.py:43
-msgid "Mirror Distance"
-msgstr "Distanza dello specchio"
-
-#: meerk40t/cylinder/cylinder.py:36
-msgid "Is the cylinder correction mode active for this device"
-msgstr "La modalità di correzione del cilindro è attiva per questo dispositivo"
-
-#: meerk40t/cylinder/cylinder.py:35
-msgid "Cylinder-Correction-Mode active"
-msgstr "Modalità correzione cilindri attiva"
+msgid "Right Click: Move to previous panel"
+msgstr "Click destro: Passa al pannello precedente"
 
 #: meerk40t/core/planner.py:409
 msgid "plan(-selected)<?> copy"
 msgstr "piano(-selected)<?> copia"
 
-#: meerk40t/balormk/device.py:251 meerk40t/grbl/device.py:431 meerk40t/lihuiyu/device.py:179 meerk40t/moshi/device.py:192 meerk40t/newly/device.py:500 meerk40t/ruida/device.py:232
-msgid "Coolant Support"
-msgstr "Supporto del refrigeratore"
-
-#: meerk40t/balormk/device.py:250 meerk40t/grbl/device.py:430 meerk40t/lihuiyu/device.py:178 meerk40t/moshi/device.py:191 meerk40t/newly/device.py:499 meerk40t/ruida/device.py:231
-msgid "Does this device has a method to turn on / off a coolant associated to it?"
-msgstr "Questo dispositivo ha un metodo per attivare/disattivare un refrigeratore ad esso associato?"
-
-#: meerk40t/balormk/device.py:249 meerk40t/grbl/device.py:429 meerk40t/lihuiyu/device.py:177 meerk40t/moshi/device.py:190 meerk40t/newly/device.py:498 meerk40t/ruida/device.py:230
-msgid "Coolant"
-msgstr "Refrigerante"
-
 #: translate_check.py:22
 msgid "another test for \"
 msgstr "un altro test per \"
 
-#: meerk40t/balormk/device.py:194 meerk40t/grbl/device.py:105 meerk40t/lihuiyu/device.py:95 meerk40t/moshi/device.py:114 meerk40t/newly/device.py:147 meerk40t/ruida/device.py:94
-msgid "X-Margin"
-msgstr "Margine X"
-
-#: meerk40t/balormk/device.py:197 meerk40t/grbl/device.py:108 meerk40t/lihuiyu/device.py:98 meerk40t/moshi/device.py:117 meerk40t/newly/device.py:150 meerk40t/ruida/device.py:97
-msgid "Margin for the X-axis. This will be a kind of unused space at the left side."
-msgstr "Margine per l'asse X. Si tratta di una sorta di spazio inutilizzato sul lato sinistro."
-
-#: meerk40t/balormk/device.py:199 meerk40t/lihuiyu/device.py:100 meerk40t/ruida/device.py:98
-msgid "User Offset"
-msgstr "Offset Utente"
-
-#: meerk40t/balormk/device.py:207 meerk40t/grbl/device.py:116 meerk40t/lihuiyu/device.py:108 meerk40t/moshi/device.py:126 meerk40t/newly/device.py:159 meerk40t/ruida/device.py:107
-msgid "Y-Margin"
-msgstr "Margine Y"
-
-#: meerk40t/balormk/device.py:210 meerk40t/grbl/device.py:119 meerk40t/lihuiyu/device.py:111 meerk40t/moshi/device.py:129 meerk40t/newly/device.py:162 meerk40t/ruida/device.py:110
-msgid "Margin for the Y-axis. This will be a kind of unused space at the top."
-msgstr "Margine per l'asse Y. Si tratta di una sorta di spazio inutilizzato in alto"
 
 #: meerk40t/gui/basicops.py:584
 msgid "Set coolant to on/off or leave unchanged (default)"
 msgstr "Imposta il refrigerante su on/off o lasciare invariato (default)"
-
-#: meerk40t/gui/propertypanels/operationpropertymain.py:658
-msgid "Coolant:"
-msgstr "Liquido di raffreddamento"
-
-#: meerk40t/gui/propertypanels/operationpropertymain.py:660
-msgid "No changes"
-msgstr "Nessuna modifica"
-
-#: meerk40t/gui/propertypanels/operationpropertymain.py:660
-msgid "Turn on"
-msgstr "Accende"
-
-#: meerk40t/gui/propertypanels/operationpropertymain.py:660
-msgid "Turn off"
-msgstr "Spegne"
-
-#: meerk40t/gui/propertypanels/operationpropertymain.py:670
-msgid "Define whether coolant support shall be explicitly turned on or off at the start of the operation, or whether it should be left at its current state."
-msgstr "Definisce se il supporto del refrigerante deve essere esplicitamente attivato o disattivato all'inizio dell'operazione o se deve essere lasciato allo stato attuale"
