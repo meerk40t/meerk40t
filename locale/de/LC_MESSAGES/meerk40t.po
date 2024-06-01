@@ -5226,6 +5226,10 @@ msgstr "Laservorgang abbrechen"
 msgid "Arm"
 msgstr "Scharfschalten"
 
+#: meerk40t/gui/laserpanel.py:129
+msgid "Disarm"
+msgstr "Entschärfen"
+
 #: meerk40t/gui/laserpanel.py:130
 msgid "Arm the job for execution"
 msgstr "Schaltet den Job zur Ausführung scharf"
