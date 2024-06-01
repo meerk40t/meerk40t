@@ -4005,6 +4005,7 @@ class MeerK40t(MWindow):
             i = 0
             for lang in self.context.app.supported_languages:
                 language_code, language_name, language_index = lang
+                language_name = language_name.capitalize()
                 m = wxglade_tmp_menu.Append(
                     wx.ID_ANY, language_name, language_name, wx.ITEM_RADIO
                 )
