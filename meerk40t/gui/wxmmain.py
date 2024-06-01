@@ -3156,7 +3156,7 @@ class MeerK40t(MWindow):
                 name = window.name
             except AttributeError:
                 name = suffix_path
-            if not window.window_menu(None):
+            if not hasattr(window, "window_menu") or not window.window_menu(None):
                 continue
             win_caption = ""
             submenu_name = None
