@@ -12085,7 +12085,7 @@ msgid "Board Setup"
 msgstr "Board-Setup"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:488
-msgid "Select the board to use. This has an effects the speedcodes used."
+msgid "Select the board to use. This affects the speedcodes used."
 msgstr ""
 "Wählt das zu verwendende Controller-Board aus. Dies hat einen Einfluss "
 "auf die verwendeten Speedcodes."

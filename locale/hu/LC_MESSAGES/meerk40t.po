@@ -8180,7 +8180,7 @@ msgid "Board"
 msgstr ""
 
 #: meerk40t/lihuiyu/device.py:116
-msgid "Select the board to use. This has an effects the speedcodes used."
+msgid "Select the board to use. This affects the speedcodes used."
 msgstr ""
 "Válassza ki a használni kívánt táblát. Ez hatással van a használt "
 "sebességkódokra."

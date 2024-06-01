@@ -136,7 +136,7 @@ class LihuiyuDevice(Service, Status):
                 "style": "combosmall",
                 "choices": ["M2", "M3", "B2", "M", "M1", "A", "B", "B1"],
                 "tip": _(
-                    "Select the board to use. This has an effects the speedcodes used."
+                    "Select the board to use. This affects the speedcodes used."
                 ),
                 "section": "_10_" + _("Configuration"),
                 "subsection": _("Board Setup"),
