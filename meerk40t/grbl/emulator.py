@@ -205,6 +205,7 @@ class GRBLEmulator:
 
         if isinstance(data, str):
             data = data.encode()
+        # print (f"Write received: {data}")
         for c in data:
             # Process and extract any realtime grbl commands.
             if c == ord("?"):
@@ -230,8 +231,10 @@ class GRBLEmulator:
                     self.job.write(line)
                     try:
                         self.device.spooler.send(self.job, prevent_duplicate=True)
-                    except AttributeError:
+                    except AttributeError as e:
+                        # print (f"Execute encountered error: {e}")
                         self.job.execute(None)
+                    self.reply_code(0)
                 self._buffer.clear()
             elif c == 0x08:
                 # Process Backspaces.
