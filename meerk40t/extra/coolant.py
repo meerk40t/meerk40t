@@ -70,6 +70,7 @@ class Coolants:
                 "config": config_function,
                 "devices": [],
                 "constraints": constraints,
+                "current_state": False,
             }
         )
         return True
@@ -77,15 +78,19 @@ class Coolants:
     def coolant_on(self, device):
         for cool in self._coolants:
             if device in cool["devices"]:
-                routine = cool["function"]
-                routine(device, True)
+                if not cool["current_state"]:
+                    cool["current_state"] = True
+                    routine = cool["function"]
+                    routine(device, True)
                 break
 
     def coolant_off(self, device):
         for cool in self._coolants:
             if device in cool["devices"]:
-                routine = cool["function"]
-                routine(device, False)
+                if cool["current_state"]:
+                    cool["current_state"] = False
+                    routine = cool["function"]
+                    routine(device, False)
                 break
 
     def registered_coolants(self):
@@ -281,11 +286,19 @@ def plugin(kernel, lifecycle):
             found = False
             for cool_instance in cool:
                 if device in cool_instance["devices"]:
-                    try:
-                        cool_instance["function"](device, True)
+                    if cool_instance["current_state"]:
+                        channel(
+                            _("Coolant was already active for device {device_label}").format(
+                                device_label=device.label)
+                        )
                         found = True
-                    except AttributeError:
-                        pass
+                    else:
+                        try:
+                            cool_instance["function"](device, True)
+                            cool_instance["current_state"] = True
+                            found = True
+                        except AttributeError:
+                            pass
             if found:
                 channel(
                     _("Coolant activated for device {device_label}").format(
@@ -311,11 +324,19 @@ def plugin(kernel, lifecycle):
             found = False
             for cool_instance in cool:
                 if device in cool_instance["devices"]:
-                    try:
-                        cool_instance["function"](device, False)
+                    if not cool_instance["current_state"]:
+                        channel(
+                            _("Coolant was already deactived for device {device_label}").format(
+                                device_label=device.label)
+                        )
                         found = True
-                    except AttributeError:
-                        pass
+                    else:
+                        try:
+                            cool_instance["function"](device, False)
+                            cool_instance["current_state"] = False
+                            found = True
+                        except AttributeError:
+                            pass
             if found:
                 channel(
                     _("Coolant deactivated for device {device_label}").format(

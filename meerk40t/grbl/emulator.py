@@ -128,8 +128,8 @@ class GRBLEmulator:
         self.speed_scale = 1.0
         self.rapid_scale = 1.0
         self.power_scale = 1.0
+        self._reply = None
 
-        self.reply = reply
         self.channel = channel
 
         self._grbl_specific = False
@@ -145,7 +145,16 @@ class GRBLEmulator:
             channel=self.channel,
             units_to_device_matrix=units_to_device_matrix,
         )
-        self.job.reply = self.reply
+        self.reply = reply
+
+    @property
+    def reply(self):
+        return self._reply
+
+    @reply.setter
+    def reply(self, value):
+        self._reply = value
+        self.job.reply = value
 
     def __repr__(self):
         return "GRBLInterpreter()"
@@ -205,6 +214,7 @@ class GRBLEmulator:
 
         if isinstance(data, str):
             data = data.encode()
+        # print (f"Write received: {data}")
         for c in data:
             # Process and extract any realtime grbl commands.
             if c == ord("?"):
@@ -223,6 +233,10 @@ class GRBLEmulator:
             elif c in (13, 10):  # "\r","\n"
                 # Process CRLF endlines
                 line = "".join(self._buffer)
+                # GRBL Specific commands, will not be passed to the GCodeJob
+                # and need hence to provide their own reply_code, any command
+                # passed to the GCodeJob will send the reply within the
+                # job execution.
                 if self._grbl_specific:
                     self._grbl_specific = False
                     self.reply_code(self._grbl_special(line))
@@ -230,8 +244,10 @@ class GRBLEmulator:
                     self.job.write(line)
                     try:
                         self.device.spooler.send(self.job, prevent_duplicate=True)
-                    except AttributeError:
+                    except AttributeError as e:
+                        # print (f"Execute encountered error: {e}")
                         self.job.execute(None)
+                    # self.reply_code(0)
                 self._buffer.clear()
             elif c == 0x08:
                 # Process Backspaces.
