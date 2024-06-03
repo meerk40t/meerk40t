@@ -500,7 +500,7 @@ class LaserPanel(wx.Panel):
 
     @signal_listener("laserpane_arm")
     def check_laser_arm(self, *args):
-        
+
         ctxt = self.context.kernel.root
         ctxt.setting(bool, "_laser_may_run", False)
         if self.context.root.laserpane_arm:
@@ -524,6 +524,7 @@ class LaserPanel(wx.Panel):
                     )
                 )
                 self.arm_toggle.SetLabel(_("Disarm"))
+                self.arm_toggle.SetToolTip(_("Prevent the laser from accidentally executing"))
                 self.button_start.Enable(True)
                 ctxt._laser_may_run = True
             else:
@@ -546,6 +547,7 @@ class LaserPanel(wx.Panel):
                     )
                 )
                 self.arm_toggle.SetLabel(_("Arm"))
+                self.arm_toggle.SetToolTip(_("Arm the job for execution"))
                 ctxt._laser_may_run = False
         else:
             if self.arm_toggle.Shown:
