@@ -93,6 +93,15 @@ class Coolants:
                     routine(device, False)
                 break
 
+    def coolant_toggle(self, device):
+        for cool in self._coolants:
+            if device in cool["devices"]:
+                new_state = not cool["current_state"]
+                cool["current_state"] = new_state
+                routine = cool["function"]
+                routine(device, new_state)
+                break
+
     def registered_coolants(self):
         """
         Returns the dictionary of all registered coolants

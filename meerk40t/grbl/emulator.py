@@ -358,7 +358,8 @@ class GRBLEmulator:
                     pass
                 elif c == 0xA1:
                     # Toggle Mist Coolant
-                    pass
+                    # So let's see what we can do:
+                    self.device.kernel.root.coolant.coolant_toggle(self.device)
             elif c == ord("$"):
                 if not self._buffer:
                     # First character is "$" this is special grbl.
