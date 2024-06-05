@@ -39,6 +39,8 @@ from .icons import (  # icon_duplicate,; icon_nohatch,
     icon_cag_union,
     icon_cag_xor,
     icon_closed_door,
+    icon_air_on,
+    icon_air_off,
     icon_open_door,
     icon_hatch,
     icon_hatch_bidir,
@@ -1380,9 +1382,9 @@ class MeerK40t(MWindow):
             context = kernel.root
             if hasattr(context, "_laser_may_run") and not context._laser_may_run:
                 res = False
-            
+
             return res
-        
+
         def needs_arming():
             ctxt = kernel.root
             ctxt.setting(bool, "laserpane_arm", True)
@@ -1434,6 +1436,41 @@ class MeerK40t(MWindow):
                 "rule_enabled": lambda cond: may_run(),
                 "size": STD_ICON_SIZE,
                 "priority": 2,
+            },
+        )
+
+        def has_coolant():
+            # print (f"Checking coolant for: {kernel.device.label} - {getattr(kernel.device, 'device_coolant', 'invalid_attribute')}")
+            if hasattr(kernel.device, "device_coolant"):
+                cool = kernel.root.coolant.get_device_coolant(kernel.device)
+                if cool:
+                    # print (f"Found: {cool['label']} - {kernel.device.device_coolant}")
+                    return True
+            return False
+
+        def coolant_on(*args):
+            cool = kernel.root.coolant.coolant_on(kernel.device)
+
+        def coolant_off(*args):
+            cool = kernel.root.coolant.coolant_off(kernel.device)
+
+        kernel.register(
+            "button/jobstart/Coolant",
+            {
+                "label": _("Coolant"),
+                "icon": icon_air_on,
+                "tip": _("Activate coolant"),
+                "identifier": "toggle_coolant",
+                "action": coolant_on,
+                "rule_visible": lambda cond: has_coolant(),
+                "size": STD_ICON_SIZE,
+                "priority": 4,
+                "toggle": {
+                    "tip": _("Dectivate coolant"),
+                    "icon": icon_air_off,
+                    "action": coolant_off,
+                    "signal": "coolant_set",
+                }
             },
         )
 
@@ -4076,6 +4113,15 @@ class MeerK40t(MWindow):
     @signal_listener("view;realized")
     def warning_indicator(self, *args):
         self.warning_routine.warning_indicator()
+
+    @signal_listener("coolant_changed")
+    def cool_method_changed(self, *args):
+        # We need to reclaim the coolant method after the device_coolant attribute has changed
+        if hasattr(self.context.device, "device_coolant"):
+            cool = self.context.kernel.root.coolant
+            cool.claim_coolant(self.context.device, self.context.device.device_coolant)
+        # And update the icons to get the proper icon states
+        self.context.signal("icons")
 
     @signal_listener("updateop_tree")
     @signal_listener("tree_changed")
