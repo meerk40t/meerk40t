@@ -70,7 +70,7 @@ class Coolants:
                 "config": config_function,
                 "devices": [],
                 "constraints": constraints,
-                "current_state": False,
+                "current_state": [],
             }
         )
         return True
@@ -78,20 +78,43 @@ class Coolants:
     def coolant_on(self, device):
         for cool in self._coolants:
             if device in cool["devices"]:
-                if not cool["current_state"]:
-                    cool["current_state"] = True
+                idx = cool["devices"].index(device)
+                if not cool["current_state"][idx]:
+                    cool["current_state"][idx] = True
                     routine = cool["function"]
                     routine(device, True)
+                    self.kernel.signal("coolant_set", device.label, True)
                 break
 
     def coolant_off(self, device):
         for cool in self._coolants:
             if device in cool["devices"]:
-                if cool["current_state"]:
-                    cool["current_state"] = False
+                idx = cool["devices"].index(device)
+                if cool["current_state"][idx]:
+                    cool["current_state"][idx] = False
                     routine = cool["function"]
                     routine(device, False)
+                    self.kernel.signal("coolant_set", device.label, False)
                 break
+
+    def coolant_toggle(self, device):
+        for cool in self._coolants:
+            if device in cool["devices"]:
+                idx = cool["devices"].index(device)
+                new_state = not cool["current_state"][idx]
+                cool["current_state"][idx] = new_state
+                routine = cool["function"]
+                routine(device, new_state)
+                self.kernel.signal("coolant_set", device.label, new_state)
+                break
+
+    def coolant_state(self, device):
+        for cool in self._coolants:
+            if device in cool["devices"]:
+                idx = cool["devices"].index(device)
+                return cool["current_state"][idx]
+        # Nothing found
+        return False
 
     def registered_coolants(self):
         """
@@ -121,16 +144,19 @@ class Coolants:
                 found = cool["function"]
                 if device not in cool["devices"]:
                     cool["devices"].append(device)
+                    cool["current_state"].append(False)
             else:
                 try:
-                    cool["devices"].remove(device)
+                    idx = cool["devices"].index(device)
+                    cool["devices"].pop(idx)
+                    cool["current_state"].pop(idx)
                 except ValueError:
                     # wasn't inside
                     pass
 
         return found
 
-    def get_device_coolant(self, device, coolant=None):
+    def get_device_function(self, device, coolant=None):
         found = None
         for cool in self._coolants:
             if coolant is None:
@@ -144,16 +170,30 @@ class Coolants:
 
         return found
 
+    def get_device_coolant(self, device, coolant=None):
+        found = None
+        for cool in self._coolants:
+            if coolant is None:
+                if device in cool["devices"]:
+                    found = cool
+                    break
+            else:
+                if cool["id"] == coolant.lower():
+                    found = cool
+                    break
+
+        return found
+
     def get_devices_using(self, coolant_id):
         dev_str = ""
         multiple = False
         for cool in self._coolants:
             if cool["id"] == coolant_id.lower():
-                for dev in cool["devices"]:
+                for idx, dev in enumerate(cool["devices"]):
                     if multiple:
                         dev_str += ", "
                     multiple = True
-                    dev_str += dev.label
+                    dev_str += f"{dev.label} [{'on' if cool['current_state'][idx] else 'off'}]"
                 break
 
         return dev_str
@@ -281,32 +321,7 @@ def plugin(kernel, lifecycle):
                 return
 
             coolant = kernel.root.coolant
-
-            cool = coolant.registered_coolants()
-            found = False
-            for cool_instance in cool:
-                if device in cool_instance["devices"]:
-                    if cool_instance["current_state"]:
-                        channel(
-                            _("Coolant was already active for device {device_label}").format(
-                                device_label=device.label)
-                        )
-                        found = True
-                    else:
-                        try:
-                            cool_instance["function"](device, True)
-                            cool_instance["current_state"] = True
-                            found = True
-                        except AttributeError:
-                            pass
-            if found:
-                channel(
-                    _("Coolant activated for device {device_label}").format(
-                        device_label=device.label
-                    )
-                )
-            else:
-                channel(_("No coolant method found."))
+            coolant.coolant_on(device)
 
         @context.console_command(
             "coolant_off", help=_("Turns off the coolant for the active device")
@@ -319,29 +334,4 @@ def plugin(kernel, lifecycle):
                 return
 
             coolant = kernel.root.coolant
-
-            cool = coolant.registered_coolants()
-            found = False
-            for cool_instance in cool:
-                if device in cool_instance["devices"]:
-                    if not cool_instance["current_state"]:
-                        channel(
-                            _("Coolant was already deactived for device {device_label}").format(
-                                device_label=device.label)
-                        )
-                        found = True
-                    else:
-                        try:
-                            cool_instance["function"](device, False)
-                            cool_instance["current_state"] = False
-                            found = True
-                        except AttributeError:
-                            pass
-            if found:
-                channel(
-                    _("Coolant deactivated for device {device_label}").format(
-                        device_label=device.label
-                    )
-                )
-            else:
-                channel("No coolant method found.")
+            coolant.coolant_off(device)

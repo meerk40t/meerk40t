@@ -145,6 +145,7 @@ def plugin(service, lifecycle):
                     "label": _("Red Dot Off"),
                     "action": lambda v: service("red off\n"),
                     "icon": icons8_flash_off,
+                    "signal": "red_dot",
                 },
             },
         )
