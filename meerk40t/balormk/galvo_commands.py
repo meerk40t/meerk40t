@@ -718,11 +718,13 @@ def plugin(service, lifecycle):
                 service.driver.connection.write_port()
                 service.redlight_preferred = False
                 channel("Turning off redlight.")
+                service.signal("red_dot", False)
             else:
                 service.driver.connection.light_on()
                 service.driver.connection.write_port()
                 channel("Turning on redlight.")
                 service.redlight_preferred = True
+                service.signal("red_dot", True)
         except ConnectionRefusedError:
             service.signal(
                 "warning",
