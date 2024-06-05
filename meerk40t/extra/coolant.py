@@ -70,7 +70,7 @@ class Coolants:
                 "config": config_function,
                 "devices": [],
                 "constraints": constraints,
-                "current_state": False,
+                "current_state": [],
             }
         )
         return True
@@ -78,8 +78,9 @@ class Coolants:
     def coolant_on(self, device):
         for cool in self._coolants:
             if device in cool["devices"]:
-                if not cool["current_state"]:
-                    cool["current_state"] = True
+                idx = cool["devices"].index(device)
+                if not cool["current_state"][idx]:
+                    cool["current_state"][idx] = True
                     routine = cool["function"]
                     routine(device, True)
                     self.kernel.signal("coolant_set", device.label, True)
@@ -88,8 +89,9 @@ class Coolants:
     def coolant_off(self, device):
         for cool in self._coolants:
             if device in cool["devices"]:
-                if cool["current_state"]:
-                    cool["current_state"] = False
+                idx = cool["devices"].index(device)
+                if cool["current_state"][idx]:
+                    cool["current_state"][idx] = False
                     routine = cool["function"]
                     routine(device, False)
                     self.kernel.signal("coolant_set", device.label, False)
@@ -98,12 +100,21 @@ class Coolants:
     def coolant_toggle(self, device):
         for cool in self._coolants:
             if device in cool["devices"]:
-                new_state = not cool["current_state"]
-                cool["current_state"] = new_state
+                idx = cool["devices"].index(device)
+                new_state = not cool["current_state"][idx]
+                cool["current_state"][idx] = new_state
                 routine = cool["function"]
                 routine(device, new_state)
                 self.kernel.signal("coolant_set", device.label, new_state)
                 break
+
+    def coolant_state(self, device):
+        for cool in self._coolants:
+            if device in cool["devices"]:
+                idx = cool["devices"].index(device)
+                return cool["current_state"][idx]
+        # Nothing found
+        return False
 
     def registered_coolants(self):
         """
@@ -133,9 +144,12 @@ class Coolants:
                 found = cool["function"]
                 if device not in cool["devices"]:
                     cool["devices"].append(device)
+                    cool["current_state"].append(False)
             else:
                 try:
-                    cool["devices"].remove(device)
+                    idx = cool["devices"].index(device)
+                    cool["devices"].pop(idx)
+                    cool["current_state"].pop(idx)
                 except ValueError:
                     # wasn't inside
                     pass
@@ -175,11 +189,11 @@ class Coolants:
         multiple = False
         for cool in self._coolants:
             if cool["id"] == coolant_id.lower():
-                for dev in cool["devices"]:
+                for idx, dev in enumerate(cool["devices"]):
                     if multiple:
                         dev_str += ", "
                     multiple = True
-                    dev_str += dev.label
+                    dev_str += f"{dev.label} [{'on' if cool['current_state'][idx] else 'off'}]"
                 break
 
         return dev_str
