@@ -1466,7 +1466,7 @@ class MeerK40t(MWindow):
                 "size": STD_ICON_SIZE,
                 "priority": 4,
                 "toggle": {
-                    "tip": _("Dectivate coolant"),
+                    "tip": _("Deactivate coolant"),
                     "icon": icon_air_off,
                     "action": coolant_off,
                     "signal": "coolant_set",
@@ -4303,6 +4303,10 @@ class MeerK40t(MWindow):
         # A new device might have new default operations...
         self.context.elements.init_default_operations_nodes()
         self.main_statusbar.Signal("default_operations")
+        # Update coolant icon according to current device state
+        cool = self.context.kernel.root.coolant
+        flag = cool.coolant_state(self.context.device)
+        self.context.signal("coolant_set", flag)
 
     @signal_listener("pipe;failing")
     def on_usb_error(self, origin, value):
