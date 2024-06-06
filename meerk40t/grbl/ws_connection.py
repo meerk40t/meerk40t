@@ -22,7 +22,7 @@ class WSOutput:
 
     def connect(self):
         try:
-            self.controller.log("Attempting to Connect...", type="connection")
+            self.controller.log(f"Attempting to connect to ws://{self.service.address}:{self.service.port}...", type="connection")
             self._stream = websocket.WebSocket()
             self._stream.connect(
                 "ws://%s:%d" % (self.service.address, self.service.port)
@@ -32,21 +32,25 @@ class WSOutput:
         except TimeoutError:
             self.disconnect()
             self.service.signal("grbl;status", "timeout connect")
-        except ConnectionError:
+            self.controller.log("Attempt failed due to timeout", type="connection")
+        except ConnectionError as e:
             self.disconnect()
             self.service.signal("grbl;status", "connection error")
+            self.controller.log(f"Attempt failed: {str(e)}", type="connection")
         except IndexError as e:
             self.disconnect()
             self.service.signal("grbl;status", f"handshake error: {str(e)}")
+            self.controller.log(f"Attempt failed due to handshake-error: {str(e)}", type="connection")
         # except socket.gaierror as e:
         #     self.disconnect()
         #     self.service.signal("grbl;status", "address resolve error")
         # except socket.herror as e:
         #     self.disconnect()
         #     self.service.signal("grbl;status", f"herror: {str(e)}")
-        except OSError as e:
+        except (websocket.WebSocketConnectionClosedException, OSError) as e:
             self.disconnect()
             self.service.signal("grbl;status", f"Host down {str(e)}")
+            self.controller.log(f"Attempt failed: Host down {str(e)}", type="connection")
 
     def disconnect(self):
         self.controller.log("Disconnected", type="connection")
@@ -61,7 +65,7 @@ class WSOutput:
         while data:
             try:
                 sent = self._stream.send(data)
-            except OSError as e:
+            except (websocket.WebSocketConnectionClosedException, OSError) as e:
                 self.disconnect()
                 self.service.signal("grbl;status", f"Host down {str(e)}")
                 return
@@ -77,7 +81,7 @@ class WSOutput:
         if f == -1:
             try:
                 d = self._stream.recv()
-            except OSError as e:
+            except (websocket.WebSocketConnectionClosedException, OSError) as e:
                 # Has been closed in the meantime...
                 self.disconnect()
                 self.service.signal("grbl;status", f"Host down {str(e)}")
