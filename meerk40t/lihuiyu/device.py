@@ -1010,6 +1010,21 @@ class LihuiyuDevice(Service, Status):
                 code = b"A%s\n" % challenge
                 self.output.write(code)
 
+        @self.console_command(
+            "get_board_info",
+            help=_("Request M3Nano+ board info"),
+        )
+        def get_board_info(command, channel, _, remainder=None, **kwgs):
+            self.driver.get_board_info()
+
+        @self.console_command(
+            "get_param_info",
+            help=_("Request M3Nano+ board info"),
+        )
+        def get_param_info(command, channel, _, remainder=None, **kwgs):
+            self.driver.get_param_info()
+
+
         @self.console_command("start", help=_("Start Pipe to Controller"))
         def pipe_start(command, channel, _, **kwgs):
             self.controller.update_state("active")

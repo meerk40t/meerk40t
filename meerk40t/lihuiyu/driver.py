@@ -765,6 +765,18 @@ class LihuiyuDriver(Parameters):
             self.plot_data = self.plot_planner.gen()
         self._plotplanner_process()
 
+    def get_board_info(self):
+        try:
+            self.out_pipe.write_raw(b"\xac\x2e", 73 - 27)
+        except AttributeError:
+            pass
+
+    def get_param_info(self):
+        try:
+            self.out_pipe.write_raw(b"\xac\xe0", 251 - 27)
+        except AttributeError:
+            pass
+
     def wait(self, time_in_ms):
         """
         Wait asks that the work be stalled or current process held for the time time_in_ms in ms. If wait_finished is

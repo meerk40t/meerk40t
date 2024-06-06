@@ -539,6 +539,19 @@ class CH341Device:
     def CH341EppWriteAddr(self, buffer):
         return self.CH341WriteData(buffer, cmd=0x13)
 
+    def CH341WriteRead(self, buffer, step, times):
+        if buffer is None:
+            return True
+        t = self.ioctl(
+            CH341_DEVICE_IO,
+            ctypes.pointer(BULK_EXCHANGE(packet=buffer, cmd=0x14, step=step, times=times)),
+            len(buffer) + 0x10,
+            self._pointer_buffer,
+            step * times + 8,
+        )
+        print(t)
+        return self._buffer[0 : self.bytes_returned]
+
     def CH341InitParallel(self, mode=CH341_PARA_MODE_EPP19):
         value = mode << 8
         if mode < 256:
