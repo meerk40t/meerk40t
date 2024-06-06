@@ -22,7 +22,7 @@ class WSOutput:
 
     def connect(self):
         try:
-            self.controller.log(f"Attempting to connect to ws://{self.service.address}:{self.service.port}...", type="connection")
+            self.controller.log(f"Connecting to ws://{self.service.address}:{self.service.port}...", type="connection")
             self._stream = websocket.WebSocket()
             self._stream.connect(
                 "ws://%s:%d" % (self.service.address, self.service.port)

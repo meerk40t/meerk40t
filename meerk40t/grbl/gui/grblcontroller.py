@@ -298,6 +298,10 @@ class GRBLControllerPanel(wx.Panel):
                 self._buffer += f"{data}\n"
             self.service.signal("grbl_controller_update", True)
 
+    @signal_listener("update_interface")
+    def update_button_gui(self, origin, *args):
+        self.on_status(origin, self.state)
+
     @signal_listener("grbl_controller_update")
     def update_text_gui(self, origin, *args):
         with self._buffer_lock:
@@ -353,7 +357,7 @@ class GRBLControllerPanel(wx.Panel):
     def on_status(self, origin, state):
         self.state = state
         self.set_color_according_to_state(state, self.button_device_connect)
-        if state == "uninitialized" or state == "disconnected":
+        if state == "uninitialized" or state == "disconnected" or state is None:
             self.button_device_connect.SetLabel(self.button_connect_string("Connect"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected.GetBitmap(use_theme=False, resize=self.iconsize)

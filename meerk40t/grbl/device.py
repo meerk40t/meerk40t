@@ -267,6 +267,7 @@ class GRBLDevice(Service, Status):
                 "label": _("Address"),
                 # "style": "address",
                 "tip": _("IP address/host name of the GRBL device"),
+                "signals": "update_interface",
             },
             {
                 "attr": "port",
@@ -277,6 +278,7 @@ class GRBLDevice(Service, Status):
                 "tip": _("TCP Port of the GRBL device"),
                 "lower": 0,
                 "upper": 65535,
+                "signals": "update_interface",
             },
         ]
         if self.permit_tcp:
@@ -291,6 +293,7 @@ class GRBLDevice(Service, Status):
                 "label": _("Address"),
                 # "style": "address",
                 "tip": _("IP address/host name of the GRBL device"),
+                "signals": "update_interface",
             },
             {
                 "attr": "port",
@@ -299,6 +302,9 @@ class GRBLDevice(Service, Status):
                 "type": int,
                 "label": _("Port"),
                 "tip": _("TCP Port of the device (usually 81)"),
+                "lower": 0,
+                "upper": 65535,
+                "signals": "update_interface",
             },
         ]
         if self.permit_ws:
