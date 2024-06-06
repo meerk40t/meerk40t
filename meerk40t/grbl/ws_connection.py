@@ -35,6 +35,9 @@ class WSOutput:
         except ConnectionError:
             self.disconnect()
             self.service.signal("grbl;status", "connection error")
+        except IndexError as e:
+            self.disconnect()
+            self.service.signal("grbl;status", f"handshake error: {str(e)}")
         # except socket.gaierror as e:
         #     self.disconnect()
         #     self.service.signal("grbl;status", "address resolve error")
@@ -56,7 +59,12 @@ class WSOutput:
         if isinstance(data, str):
             data = bytes(data, "utf-8")
         while data:
-            sent = self._stream.send(data)
+            try:
+                sent = self._stream.send(data)
+            except OSError as e:
+                self.disconnect()
+                self.service.signal("grbl;status", f"Host down {str(e)}")
+                return
             if sent == len(data):
                 return
             data = data[sent:]
@@ -67,7 +75,13 @@ class WSOutput:
         f = self.read_buffer.find(b"\n")
 
         if f == -1:
-            d = self._stream.recv()
+            try:
+                d = self._stream.recv()
+            except OSError as e:
+                # Has been closed in the meantime...
+                self.disconnect()
+                self.service.signal("grbl;status", f"Host down {str(e)}")
+                return
             if isinstance(d, str):
                 self.read_buffer += d.encode("latin-1")
             else:
