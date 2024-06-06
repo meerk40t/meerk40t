@@ -123,6 +123,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
     def on_radio_interface(
         self, event
     ):  # wxGlade: ConfigurationInterfacePanel.<event_handler>
+        last = self.context.interface
         try:
             if self.radio_serial.GetValue():
                 self.context.interface = "serial"
@@ -134,6 +135,9 @@ class ConfigurationInterfacePanel(ScrolledPanel):
             pass
         try:
             if self.radio_tcp.GetValue():
+                if self.context.port == 81:
+                    self.context.port = 23
+                    self.context.signal("port", self.context.port, self.context)
                 self.context.interface = "tcp"
                 self.context.signal("update_interface")
                 self.panel_serial_settings.Hide()
@@ -144,6 +148,9 @@ class ConfigurationInterfacePanel(ScrolledPanel):
 
         try:
             if self.radio_ws.GetValue():
+                if self.context.port == 23:
+                    self.context.port = 81
+                    self.context.signal("port", self.context.port, self.context)
                 self.context.interface = "ws"
                 self.context.signal("update_interface")
                 self.panel_serial_settings.Hide()

@@ -10408,6 +10408,10 @@ msgstr "Falls der GRBL-Laser direkt an einer seriellen Schnittstelle angeschloss
 msgid "Select this if the GRBL device is contacted via TCP connection"
 msgstr "Falls der GRBL-Laser über eine TCP-Netzwerkverbindung angeschlossen ist"
 
+#: meerk40t/grbl/gui/grblconfiguration.py:55
+msgid "Select this if the GRBL device is contacted via WebSocket connection"
+msgstr "Falls der GRBL-Laser über eine Websocket-Verbindung angesprochen wird"
+
 # ./meerk40t\grbl\gui\grblconfiguration.py:65179
 msgid "Select this only for debugging without a physical laser available."
 msgstr "Nur zu Entwicklungszwecken ohne einen realen Laser verfügbar zu haben"
@@ -10430,7 +10434,7 @@ msgstr "Globale Einstellungen"
 #: meerk40t/lihuiyu/gui/tcpcontroller.py:143
 #: meerk40t/moshi/gui/moshicontrollergui.py:332
 msgid "Connect"
-msgstr "Verbunden"
+msgstr "Verbinden"
 
 #: meerk40t/grbl/gui/grblserialcontroller.py:106
 #: meerk40t/grbl/gui/tcpcontroller.py:136
@@ -10438,11 +10442,31 @@ msgstr "Verbunden"
 #: meerk40t/lihuiyu/gui/tcpcontroller.py:150
 #: meerk40t/moshi/gui/moshicontrollergui.py:346
 msgid "Disconnect"
-msgstr "Getrennt"
+msgstr "Trennen"
 
 #: meerk40t\grbl\device.py
 msgid "Serial"
 msgstr "Serielle Schnittstelle"
+
+#: meerk40t/grbl/device.py:269 meerk40t/grbl/device.py:295
+msgid "IP address/host name of the GRBL device"
+msgstr "IP Adresse/Hostname des GRBL-Controllers"
+
+#: meerk40t/grbl/device.py:278
+msgid "TCP Port of the GRBL device"
+msgstr "TCP-Port des GRBL-Controllers"
+
+#: meerk40t/grbl/device.py:304
+msgid "TCP Port of the device (usually 81)"
+msgstr "TCP-Port des GRBL-Controllers (normalerweise 81)"
+
+#: meerk40t/grbl/device.py:322
+msgid "TCP-Network"
+msgstr "TCP-Verbindung"
+
+#: meerk40t/grbl/device.py:323
+msgid "WebSocket-Network"
+msgstr "WebSocket-Verbindung"
 
 #: meerk40t/grbl/gui/gui.py:31
 msgid "Serial Controller"

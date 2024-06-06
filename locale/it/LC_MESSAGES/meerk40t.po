@@ -18586,7 +18586,7 @@ msgid "IP address/host name of the GRBL device"
 msgstr "Indirizzo IP/nome host dell'apparecchio GRBL"
 
 #: meerk40t/grbl/device.py:280
-msgid "TCP Port of the device"
+msgid "TCP Port of the device (usually 81)"
 msgstr "Porta TCP del dispositivo"
 
 #: meerk40t/grbl/device.py:293
