@@ -298,7 +298,7 @@ class GRBLDevice(Service, Status):
                 "default": 81,
                 "type": int,
                 "label": _("Port"),
-                "tip": _("TCP Port of the device"),
+                "tip": _("TCP Port of the device (usually 81)"),
             },
         ]
         if self.permit_ws:
