@@ -1370,6 +1370,8 @@ class MeerK40t(MWindow):
                     context("planz clear copy preprocess validate blob spool\n")
             if context.auto_spooler:
                 context("window open JobSpooler\n")
+            # And we disarm again
+            disarm_laser()
             busy.end()
 
         def run_job_extended(*args):
