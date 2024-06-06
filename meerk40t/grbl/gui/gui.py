@@ -15,6 +15,7 @@ def plugin(service, lifecycle):
         from meerk40t.grbl.gui.grblconfiguration import GRBLConfiguration
         from meerk40t.grbl.gui.grblcontroller import GRBLController
         from meerk40t.grbl.gui.grblhardwareconfig import GRBLHardwareConfig
+        from meerk40t.grbl.gui.grbloperationconfig import GRBLAdvancedPanel
         from meerk40t.gui.icons import (
             icons8_computer_support,
             icons8_connected,
@@ -33,6 +34,11 @@ def plugin(service, lifecycle):
 
         service.register("window/GrblHardwareConfig", GRBLHardwareConfig)
 
+        service.register("property/RasterOpNode/GRBL", GRBLAdvancedPanel)
+        service.register("property/CutOpNode/GRBL", GRBLAdvancedPanel)
+        service.register("property/EngraveOpNode/GRBL", GRBLAdvancedPanel)
+        service.register("property/ImageOpNode/GRBL", GRBLAdvancedPanel)
+        service.register("property/DotsOpNode/GRBL", GRBLAdvancedPanel)
         _ = service._
 
         service.register(
