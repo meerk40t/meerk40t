@@ -205,6 +205,8 @@ class GRBLControllerPanel(wx.Panel):
             iface = f"{context.address}:{context.port}"
         elif context.permit_ws and context.interface == "tcp":
             iface = f"ws://{context.address}:{context.port}"
+        elif context.permit_ws and context.interface == "ws":
+            iface = f"ws://{context.address}:{context.port}"
         else:
             # Mock
             iface = "Mock"
