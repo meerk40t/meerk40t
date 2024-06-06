@@ -345,10 +345,36 @@ class BULK_OUT(ctypes.Structure):
         ("packet", ctypes.c_byte * 258),
     ]
 
-    def __init__(self, packet: bytes, cmd=0x07):
+    def __init__(self, packet: bytes, cmd=0x07, suffix=None):
         self.command = cmd
         self.size = len(packet)
+        if suffix is not None:
+            packet += suffix
         ctypes.memmove(ctypes.addressof(self.packet), packet, self.size)
+        print(self.packet[:])
+
+
+class BULK_EXCHANGE(ctypes.Structure):
+    """
+    Governs the USB Bulk-Out usb device commands with optional command override. The command tends to govern the type
+    of output write. WriteData(), WriteEppData(), WriteEppAddr() are all bulk out commands with different commands.
+    """
+
+    _fields_ = [
+        ("command", ctypes.c_int),
+        ("size", ctypes.c_int),
+        ("packet", ctypes.c_byte * 2),
+        ("step", ctypes.c_int),
+        ("times", ctypes.c_int),
+    ]
+
+    def __init__(self, packet: bytes, cmd=0x14, step=1, times=0):
+        self.command = cmd
+        self.size = len(packet) + 8
+        ctypes.memmove(ctypes.addressof(self.packet), packet, self.size)
+        print(self.packet[:])
+        self.step = step
+        self.times = times
 
 
 class CH341_DEFAULT(ctypes.Structure):
@@ -634,6 +660,19 @@ if __name__ == "__main__":
             data = device.CH341ReadData(8)
             print(data)
             device.CH341InitParallel()
+
+            device.CH341SetParaMode(0, 1)  #  40, 154, 2525, 0, 0
+            # device.CH341WriteData(b"\xAC\xE0")
+            # device.CH341WriteData(b"\xAC\x2E")
+            # data0 = device.CH341WriteData(b"")
+            # data1 = device.CH341WriteRead(b"\xAC\xE0", 1, 251 - 27)
+            data1 = device.CH341WriteRead(b"\xAC\xE0", 8, 2)
+            # data1 = device.CH341WriteRead(b"", out_buffer_size=251 - 27)
+            # data2 = device.CH341WriteRead(b"", out_buffer_size=73 - 27)
+            print(data1)
+            # print(data2)
+            device.CH341InitParallel()  #  40, 154, 2525, 101, 0
+
             status = device.CH341GetStatus()
             print(status)
             status = device.CH341GetVerIC()
