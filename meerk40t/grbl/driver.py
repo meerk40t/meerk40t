@@ -19,7 +19,7 @@ from meerk40t.core.cutcode.waitcut import WaitCut
 
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
-from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM
+from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM, Length
 from ..device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from ..kernel import signal_listener
 from ..tools.geomstr import Geomstr
@@ -55,6 +55,8 @@ class GRBLDriver(Parameters):
         self.on_value = 0
         self.power_dirty = True
         self.speed_dirty = True
+        # Zaxis should not be used by default, so we set the dirty flag to False
+        self.zaxis_dirty = False
         self.absolute_dirty = True
         self.feedrate_dirty = True
         self.units_dirty = True
@@ -138,6 +140,8 @@ class GRBLDriver(Parameters):
             self.power_dirty = True
         if key == "speed":
             self.speed_dirty = True
+        if key == "zaxis":
+            self.zaxis_dirty = True
         self.settings[key] = value
 
     def status(self):
@@ -705,6 +709,7 @@ class GRBLDriver(Parameters):
     def clear_states(self):
         self.power_dirty = True
         self.speed_dirty = True
+        self.zaxis_dirty = True
         self.absolute_dirty = True
         self.feedrate_dirty = True
         self.units_dirty = True
@@ -729,6 +734,7 @@ class GRBLDriver(Parameters):
 
         self.power_dirty = True
         self.speed_dirty = True
+        self.zaxis_dirty = True
         self.absolute_dirty = True
         self.feedrate_dirty = True
         self.units_dirty = True
@@ -792,6 +798,16 @@ class GRBLDriver(Parameters):
         y /= self.unit_scale
         line.append(f"X{x:.3f}")
         line.append(f"Y{y:.3f}")
+        if self.zaxis_dirty:
+            self.zaxis_dirty = False
+            if self.zaxis is not None:
+                try:
+                    z = float(Length(self.zaxis) / self.service.view.native_scale_x)
+                    z /= self.unit_scale
+                    line.append(f"Z{z:.3f}")
+                except ValueError:
+                    pass
+
         if self.power_dirty:
             if self.power is not None:
                 line.append(f"S{self.power * self.on_value:.1f}")
