@@ -307,6 +307,22 @@ def init_commands(kernel):
         """
         Add an effect hatch object
         """
+
+        # I'd like to get these settings here
+        #   effect_hatch_default_distance
+        #   effect_hatch_default_angle
+
+        # hdistance = self.kernel.device.effect_hatch_default_distance
+        # AttributeError: 'BalorDevice' object has no attribute 'effect_hatch_default_distance'
+
+        # hdistance = kernel.device.effect_hatch_default_distance
+        # AttributeError: 'BalorDevice' object has no attribute 'effect_hatch_default_distance'
+
+        #print(hdistance)
+
+        #print(dir(kernel.device))
+        #['_', '__call__', '__class__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__getstate__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', '_kernel', '_laser_status', '_module_delegate', '_path', '_registered', '_service_lifecycle', '_simulate', '_state', 'abs_path', 'add_service_delegate', 'alias', 'bind', 'calibration_file', 'camera', 'cf_1', 'cf_10', 'cf_11', 'cf_12', 'cf_2', 'cf_3', 'cf_4', 'cf_5', 'cf_6', 'cf_7', 'cf_8', 'cf_9', 'channel', 'clear_persistent', 'close', 'close_subpaths', 'colors', 'console', 'console_argument', 'console_command', 'console_command_remove', 'console_function', 'console_option', 'contexts', 'control_mode', 'cool_helper', 'corfile', 'corfile_enabled', 'current', 'cylinder', 'cylinder_active', 'cylinder_mirror_distance', 'cylinder_x_axis', 'cylinder_x_concave', 'cylinder_x_diameter', 'cylinder_y_axis', 'cylinder_y_concave', 'cylinder_y_diameter', 'dangerlevel_op_cut', 'dangerlevel_op_dots', 'dangerlevel_op_engrave', 'dangerlevel_op_hatch', 'dangerlevel_op_image', 'dangerlevel_op_raster', 'default_fpk', 'default_frequency', 'default_power', 'default_pulse_width', 'default_rapid_speed', 'default_speed', 'delay_distance_long', 'delay_end', 'delay_jump_long', 'delay_jump_short', 'delay_laser_off', 'delay_laser_on', 'delay_mode', 'delay_openmo', 'delay_polygon', 'derive', 'destroy', 'device', 'device_coolant', 'driver', 'elements', 'extension', 'find', 'first_pulse_killer', 'flip_x', 'flip_y', 'flush', 'fly_res_p1', 'fly_res_p2', 'fly_res_p3', 'fly_res_p4', 'footpedal_pin', 'formatter_branch_elems', 'formatter_branch_elems_active', 'formatter_branch_ops', 'formatter_branch_ops_active', 'formatter_branch_reg', 'formatter_branch_reg_active', 'formatter_elem_ellipse', 'formatter_elem_ellipse_active', 'formatter_op_engrave', 'formatter_op_engrave_active', 'fpk2_p1', 'fpk2_p2', 'fpk2_p3', 'fpk2_p4', 'get_context', 'get_open', 'has_feature', 'input_operation_hardware', 'input_passes_required', 'interp', 'job', 'kernel', 'label', 'laser_mode', 'laser_status', 'last_signal', 'lens_size', 'light_pin', 'listen', 'logging', 'lookup', 'lookup_all', 'machine_index', 'match', 'mock', 'name', 'native', 'open', 'open_as', 'opened', 'outline', 'path', 'penbox', 'planner', 'pulse_width_enabled', 'pwm_half_period', 'pwm_pulse_width', 'read_persistent', 'read_persistent_attributes', 'read_persistent_string_dict', 'realize', 'redlight_angle', 'redlight_offset_x', 'redlight_offset_y', 'redlight_preferred', 'redlight_speed', 'register', 'register_choices', 'registered_path', 'root', 'rotary', 'rotary_active', 'rotary_flip_x', 'rotary_flip_y', 'rotary_scale_x', 'rotary_scale_y', 'rotate', 'safe_label', 'schedule', 'service_attach', 'service_detach', 'setting', 'shutdown', 'signal', 'simulate_state', 'source', 'space', 'spooler', 'standby_param_1', 'standby_param_2', 'state', 'subpaths', 'suppress_home', 'swap_xy', 'themes', 'threaded', 'timing_mode', 'unlisten', 'unregister', 'unschedule', 'use_mm_min_for_speed_display', 'use_percent_for_power_display', 'user_margin_x', 'user_margin_y', 'view', 'viewbuffer', 'write_persistent', 'write_persistent_attributes']
+
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0:
