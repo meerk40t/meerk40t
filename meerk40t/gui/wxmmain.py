@@ -1300,7 +1300,7 @@ class MeerK40t(MWindow):
             kernel.register("registered_effects/SimpleWobble", eff)
 
             eff = (
-                f"effect-hatch",  
+                "effect-hatch",  
                 "Wrap the current node in a hatch",
                 icon_hatch,
                 "Hatch",
@@ -1650,7 +1650,7 @@ class MeerK40t(MWindow):
             if first_hatch is None:
                 first_hatch = cmd
             # cmd = "effect-remove\n" + cmd + "\nwindow open Properties"
-            cmd = f"element clipboard copy\nelement clipboard paste\n{cmd}\nwindow open Properties"
+            # cmd = f"element clipboard copy\nelement clipboard paste\n{cmd}\nwindow open Properties"
 
             tip = _(hatch[1]) + rightmsg
             icon = hatch[2]
