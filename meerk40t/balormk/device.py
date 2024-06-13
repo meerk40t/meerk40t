@@ -10,6 +10,7 @@ from meerk40t.core.units import Angle, Length
 from meerk40t.core.view import View
 from meerk40t.device.mixins import Status
 from meerk40t.kernel import Service, signal_listener
+from meerk40t.device.gui.effectspanel import get_effect_choices
 
 
 class BalorDevice(Service, Status):
@@ -281,6 +282,8 @@ class BalorDevice(Service, Status):
             },
         ]
         self.register_choices("balor", choices)
+
+        self.register_choices("balor-effects", get_effect_choices(self))
 
         choices = [
             {

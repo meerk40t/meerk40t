@@ -16,6 +16,7 @@ from ..core.view import View
 from ..device.mixins import Status
 from .controller import GrblController
 from .driver import GRBLDriver
+from meerk40t.device.gui.effectspanel import get_effect_choices
 
 
 class GRBLDevice(Service, Status):
@@ -172,6 +173,8 @@ class GRBLDevice(Service, Status):
             },
         ]
         self.register_choices("bed_dim", choices)
+        self.register_choices("grbl-effects", get_effect_choices(self))
+
         # This device prefers to display power level in percent
         self.setting(bool, "use_percent_for_power_display", True)
         # This device prefers to display speed in mm/min

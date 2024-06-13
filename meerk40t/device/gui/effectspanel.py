@@ -4,8 +4,58 @@ import wx
 #from meerk40t.core.node.image_raster import ImageRasterNode
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.wxutils import dip_size
+from meerk40t.core.units import Angle
 
 _ = wx.GetTranslation
+
+def get_effect_choices(context):
+    return [
+        {
+            "attr": "effect_hatch_default_distance",
+            "object": context,
+            "default": "1.0mm",
+            "type": str,
+            "label": _("Hatch Distance"),
+            "tip": _("Default Hatch Distance"),
+            "section": "Effect Defaults",
+        },
+        {
+            "attr": "effect_hatch_default_angle",
+            "object": context,
+            "default": "0deg",
+            "type": str,
+            "label": _("Hatch Angle"),
+            "tip": _("Default Hatch Angle"),
+            "section": "Effect Defaults",
+        },
+        {
+            "attr": "effect_hatch_default_angle_delta",
+            "object": context,
+            "default": "0deg",
+            "type": str,
+            "label": _("Hatch Angle Delta"),
+            "tip": _("Default Hatch Angle Delta"),
+            "section": "Effect Defaults",
+        },
+        {
+            "attr": "effect_wobble_default_radius",
+            "object": context,
+            "default": "0.5mm",
+            "type": str,
+            "label": _("Wobble Radius"),
+            "tip": _("Default Wobble Radius"),
+            "section": "Effect Defaults",
+        },
+        {
+            "attr": "effect_wobble_default_interval",
+            "object": context,
+            "default": "0.05mm",
+            "type": str,
+            "label": _("Wobble Interval"),
+            "tip": _("Default Wobble Interval"),
+            "section": "Effect Defaults",
+        },
+    ]
 
 
 class EffectsPanel(wx.Panel):
@@ -24,56 +74,20 @@ class EffectsPanel(wx.Panel):
 
         self.data = {}
 
-        self.context.setting(str, "effect_hatch_default_distance", "1.0mm")
-        self.context.setting(str, "effect_hatch_default_angle", "0deg")
+        for choice in get_effect_choices(self.context):
+            self.context.setting(choice["type"], choice["attr"], choice["default"])
 
-        self.context.setting(str, "effect_wobble_default_radius", "0.5mm")
-        self.context.setting(str, "effect_wobble_default_interval", "0.05mm")
+        #self.context.setting(str, "effect_hatch_default_distance", "1.0mm")
+        #self.context.setting(str, "effect_hatch_default_angle", "0deg")
+
+        #self.context.setting(str, "effect_wobble_default_radius", "0.5mm")
+        #self.context.setting(str, "effect_wobble_default_interval", "0.05mm")
         #self.context.setting(str, "effect_wobble_default_speed", "50")
-
-        choices = [
-            {
-                "attr": "effect_hatch_default_distance",
-                "object": self.context,
-                "default": "1.0mm",
-                "type": str,
-                "label": _("Hatch Distance"),
-                "tip": _("Default Hatch Distance"),
-                "section": "Effect Defaults",
-            },
-            {
-                "attr": "effect_hatch_default_angle",
-                "object": self.context,
-                "default": "0deg",
-                "type": str,
-                "label": _("Hatch Angle"),
-                "tip": _("Default Hatch Angle"),
-                "section": "Effect Defaults",
-            },
-            {
-                "attr": "effect_wobble_default_radius",
-                "object": self.context,
-                "default": "0.5mm",
-                "type": str,
-                "label": _("Wobble Radius"),
-                "tip": _("Default Wobble Radius"),
-                "section": "Effect Defaults",
-            },
-            {
-                "attr": "effect_wobble_default_interval",
-                "object": self.context,
-                "default": "0.05mm",
-                "type": str,
-                "label": _("Wobble Interval"),
-                "tip": _("Default Wobble Interval"),
-                "section": "Effect Defaults",
-            },
-        ]
 
         testsize = dip_size(self, 20, 20)
         imgsize = testsize[1]
         epanel = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices=choices
+            self, wx.ID_ANY, context=self.context, choices=get_effect_choices(self.context)
         )
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)

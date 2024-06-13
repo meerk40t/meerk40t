@@ -17,6 +17,7 @@ from ..device.mixins import Status
 from .controller import LihuiyuController
 from .driver import LihuiyuDriver
 from .tcp_connection import TCPOutput
+from meerk40t.device.gui.effectspanel import get_effect_choices
 
 
 class LihuiyuDevice(Service, Status):
@@ -343,6 +344,8 @@ class LihuiyuDevice(Service, Status):
             },
         ]
         self.register_choices("lhy-general", choices)
+
+        self.register_choices("lhy-effects", get_effect_choices(self))
 
         choices = [
             {

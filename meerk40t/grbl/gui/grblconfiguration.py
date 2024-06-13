@@ -3,6 +3,7 @@ import wx
 from meerk40t.device.gui.defaultactions import DefaultActionPanel
 from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
+from meerk40t.device.gui.effectspanel import EffectsPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools
 from meerk40t.gui.mwindow import MWindow
@@ -219,6 +220,8 @@ class GRBLConfiguration(MWindow):
         panel_protocol = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="protocol"
         )
+
+        panel_effects = EffectsPanel(self, id=wx.ID_ANY, context=self.context)
         panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
         panel_formatter = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
@@ -227,6 +230,7 @@ class GRBLConfiguration(MWindow):
         self.panels.append(panel_interface)
         self.panels.append(panel_protocol)
         self.panels.append(panel_global)
+        self.panels.append(panel_effects)
         self.panels.append(panel_warn)
         self.panels.append(panel_actions)
         self.panels.append(panel_formatter)
@@ -235,6 +239,7 @@ class GRBLConfiguration(MWindow):
         self.notebook_main.AddPage(panel_interface, _("Interface"))
         self.notebook_main.AddPage(panel_protocol, _("Protocol"))
         self.notebook_main.AddPage(panel_global, _("Advanced"))
+        self.notebook_main.AddPage(panel_effects, _("Effects"))
         self.notebook_main.AddPage(panel_warn, _("Warning"))
         self.notebook_main.AddPage(panel_actions, _("Default Actions"))
         self.notebook_main.AddPage(panel_formatter, _("Display Options"))

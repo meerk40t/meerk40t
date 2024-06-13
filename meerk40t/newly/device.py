@@ -8,6 +8,7 @@ from meerk40t.core.view import View
 from meerk40t.device.mixins import Status
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.newly.driver import NewlyDriver
+from meerk40t.device.gui.effectspanel import get_effect_choices
 
 
 class NewlyDevice(Service, Status):
@@ -105,6 +106,8 @@ class NewlyDevice(Service, Status):
             },
         ]
         self.register_choices("newly-speedchart", choices)
+
+        self.register_choices("newly-effects", get_effect_choices(self))
 
         choices = [
             {
