@@ -1,6 +1,7 @@
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.view import View
 from meerk40t.kernel import Service, signal_listener
+from meerk40t.device.devicechoices import get_effect_choices
 
 from .mixins import Status
 
@@ -93,54 +94,7 @@ class DummyDevice(Service, Status):
         ]
         self.register_choices("bed_dim", choices)
 
-        choices = [
-            {
-                "attr": "effect_hatch_default_distance",
-                "object": self,
-                "default": "1.0mm",
-                "type": str,
-                "label": _("Hatch Distance"),
-                "tip": _("Default Hatch Distance"),
-                "section": "Effect Defaults",
-            },
-            {
-                "attr": "effect_hatch_default_angle",
-                "object": self,
-                "default": "0deg",
-                "type": str,
-                "label": _("Hatch Angle"),
-                "tip": _("Default Hatch Angle"),
-                "section": "Effect Defaults",
-            },
-            {
-                "attr": "effect_hatch_default_angle_delta",
-                "object": self,
-                "default": "0deg",
-                "type": str,
-                "label": _("Hatch Angle Delta"),
-                "tip": _("Default Hatch Angle Delta"),
-                "section": "Effect Defaults",
-            },
-            {
-                "attr": "effect_wobble_default_radius",
-                "object": self,
-                "default": "0.5mm",
-                "type": str,
-                "label": _("Wobble Radius"),
-                "tip": _("Default Wobble Radius"),
-                "section": "Effect Defaults",
-            },
-            {
-                "attr": "effect_wobble_default_interval",
-                "object": self,
-                "default": "0.05mm",
-                "type": str,
-                "label": _("Wobble Interval"),
-                "tip": _("Default Wobble Interval"),
-                "section": "Effect Defaults",
-            },
-        ]
-        self.register_choices("dummy-effects", choices)
+        self.register_choices("dummy-effects", get_effect_choices(self))
 
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
