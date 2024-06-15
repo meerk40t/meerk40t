@@ -16,7 +16,6 @@ from ..core.view import View
 from ..device.mixins import Status
 from .controller import GrblController
 from .driver import GRBLDriver
-from meerk40t.device.gui.effectspanel import get_effect_choices
 
 
 class GRBLDevice(Service, Status):
@@ -173,7 +172,55 @@ class GRBLDevice(Service, Status):
             },
         ]
         self.register_choices("bed_dim", choices)
-        self.register_choices("grbl-effects", get_effect_choices(self))
+
+        choices = [
+            {
+                "attr": "effect_hatch_default_distance",
+                "object": self,
+                "default": "1.0mm",
+                "type": str,
+                "label": _("Hatch Distance"),
+                "tip": _("Default Hatch Distance"),
+                "section": "Effect Defaults",
+            },
+            {
+                "attr": "effect_hatch_default_angle",
+                "object": self,
+                "default": "0deg",
+                "type": str,
+                "label": _("Hatch Angle"),
+                "tip": _("Default Hatch Angle"),
+                "section": "Effect Defaults",
+            },
+            {
+                "attr": "effect_hatch_default_angle_delta",
+                "object": self,
+                "default": "0deg",
+                "type": str,
+                "label": _("Hatch Angle Delta"),
+                "tip": _("Default Hatch Angle Delta"),
+                "section": "Effect Defaults",
+            },
+            {
+                "attr": "effect_wobble_default_radius",
+                "object": self,
+                "default": "0.5mm",
+                "type": str,
+                "label": _("Wobble Radius"),
+                "tip": _("Default Wobble Radius"),
+                "section": "Effect Defaults",
+            },
+            {
+                "attr": "effect_wobble_default_interval",
+                "object": self,
+                "default": "0.05mm",
+                "type": str,
+                "label": _("Wobble Interval"),
+                "tip": _("Default Wobble Interval"),
+                "section": "Effect Defaults",
+            },
+        ]
+        self.register_choices("grbl-effects", choices)
 
         # This device prefers to display power level in percent
         self.setting(bool, "use_percent_for_power_display", True)
