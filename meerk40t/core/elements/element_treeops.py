@@ -2957,7 +2957,7 @@ def init_tree(kernel):
         node_type=effect_nodes,
         help="Convert effect to path",
     )
-    def convert_to_path(singlenode, **kwargs):
+    def convert_to_path_effect(singlenode, **kwargs):
         elements = self.elem_branch
         for node in list(elements.flat(types=effect_nodes, emphasized=True)):
             if not hasattr(node, "as_geometry"):

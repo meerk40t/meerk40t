@@ -1231,6 +1231,7 @@ class MaterialPanel(ScrolledPanel):
                     )
                     self.op_data.write_persistent(section_name, "label", label)
 
+                    numeric_value = 0
                     for param_node in cutsetting_node:
                         param = param_node.tag.lower()
                         value = param_node.attrib.get("Value", "")
@@ -1427,6 +1428,7 @@ class MaterialPanel(ScrolledPanel):
                 info_box = ""
                 powerval = None
                 speedval = None
+                numeric_value = 0
 
                 while True:
                     line = f.readline()
@@ -1459,7 +1461,7 @@ class MaterialPanel(ScrolledPanel):
                                 if speedval:
                                     if info_box:
                                         info_box += "\\n"
-                                    info_box += f"Needed to reduce speed {numeric_value:.1}mm/s -> {numeric_value * speed_factor:.2}mm/s"
+                                    info_box += f"Needed to reduce speed {speedval:.1}mm/s -> {speedval / factor:.2}mm/s"
                                     speedval *= 1 / factor
                             else:
                                 powerval *= factor
