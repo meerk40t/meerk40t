@@ -1523,7 +1523,8 @@ class Geomstr:
                 complex(x + rx, y),
                 settings=settings,
             )
-            path.line(complex(x + rx, y), complex(x + rx, y), settings=settings)
+            path.close()
+            # path.line(complex(x + rx, y), complex(x + rx, y), settings=settings)
         return path
 
     @classmethod
