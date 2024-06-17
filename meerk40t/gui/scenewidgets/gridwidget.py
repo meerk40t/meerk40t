@@ -29,6 +29,7 @@ class GridWidget(Widget):
         self.primary_grid_line_pen = wx.Pen()
         self.secondary_grid_line_pen = wx.Pen()
         self.circular_grid_line_pen = wx.Pen()
+        self.offset_line_pen = wx.Pen()
         self.last_ticksize = 0
         self.last_w = 0
         self.last_h = 0
@@ -65,6 +66,8 @@ class GridWidget(Widget):
         self.max_angle = tau
         self.os = system()
 
+        # If there is a user margin then display the physical dimensions
+        self.draw_offset_lines = False
         # Stuff related to grids and guides
         self.draw_grid_primary = True
         # Secondary grid, perpendicular, but with definable center and scaling
@@ -132,14 +135,17 @@ class GridWidget(Widget):
         self.set_line_width(self.primary_grid_line_pen, line_width)
         self.set_line_width(self.secondary_grid_line_pen, line_width)
         self.set_line_width(self.circular_grid_line_pen, line_width)
+        self.set_line_width(self.offset_line_pen, line_width)
 
     def set_colors(self):
         self.primary_grid_line_pen.SetColour(self.scene.colors.color_grid)
         self.secondary_grid_line_pen.SetColour(self.scene.colors.color_grid2)
         self.circular_grid_line_pen.SetColour(self.scene.colors.color_grid3)
+        self.offset_line_pen.SetColour(wx.GREEN)
         self.set_line_width(self.primary_grid_line_pen, 1)
         self.set_line_width(self.secondary_grid_line_pen, 1)
         self.set_line_width(self.circular_grid_line_pen, 1)
+        self.set_line_width(self.offset_line_pen, 1)
 
     ###########################
     # CALCULATE GRID LINES
@@ -598,12 +604,32 @@ class GridWidget(Widget):
         # At a matrix scale value of about 17.2 and a corresponding line width of 0.058 everything looks good
         # but one step more with 18.9 and 0.053 the lines degenerate...
         # Interestingly, this does not apply to arcs in a path, they remain at 1 pixel.
+        if self.draw_offset_lines:
+            self._draw_boundary(gc)
         if self.draw_grid_circular:
             self._draw_grid_circular(gc)
         if self.draw_grid_secondary:
             self._draw_grid_secondary(gc)
         if self.draw_grid_primary:
             self._draw_grid_primary(gc)
+
+    def _draw_boundary(self, gc):
+        gc.SetPen(self.offset_line_pen)
+        vw = self.scene.context.device.view
+        margin_x = -1 * float(Length(vw.margin_x))
+        margin_y = -1 * float(Length(vw.margin_y))
+        mx = vw.unit_width
+        my = vw.unit_height
+        ox = margin_x
+        oy = margin_y
+
+        grid_path = gc.CreatePath()
+        grid_path.MoveToPoint(ox, oy)
+        grid_path.AddLineToPoint(ox, my)
+        grid_path.AddLineToPoint(mx, my)
+        grid_path.AddLineToPoint(mx, oy)
+        grid_path.AddLineToPoint(ox, oy)
+        gc.StrokePath(grid_path)
 
     def _draw_grid_primary(self, gc):
         starts, ends = self.primary_grid_lines
