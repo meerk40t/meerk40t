@@ -443,6 +443,19 @@ class Parameters:
         self.__dict__["kerf"] = value
 
     #####################
+    # ZAXIS PROPERTIES
+    #####################
+
+    @property
+    def zaxis(self):
+        return self.settings.get("zaxis")
+
+    @zaxis.setter
+    def zaxis(self, value):
+        self.settings["zaxis"] = value
+        self.__dict__["zaxis"] = value
+
+    #####################
     # HATCH PROPERTIES
     #####################
 
