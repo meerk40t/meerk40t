@@ -393,6 +393,7 @@ class ParameterTool(ToolWidget):
             pass
         self.scene.pane.tool_active = True
         self.scene.pane.modif_active = True
+        self.scene.pane.ignore_snap = False
 
     def update_parameter(self):
         if self.element is None:
@@ -581,6 +582,7 @@ class ParameterTool(ToolWidget):
                             # print(f"Found slider: {slider.identifier}")
                             self.slider_index = idx
                             self.active_slider = slider
+                            self.scene.pane.ignore_snap = True
                             break
                     if self.slider_index >= 0:
                         break
@@ -602,6 +604,8 @@ class ParameterTool(ToolWidget):
                 return RESPONSE_CHAIN
             # print(f"Move: {self.point_index}, {self.slider_index}")
             self.is_moving = True
+            self.scene.pane.ignore_snap = False
+
             if self.point_index >= 0:
                 # We need to reverse the point in the element matrix
                 if nearest_snap is None:
@@ -619,6 +623,7 @@ class ParameterTool(ToolWidget):
                     self.scene.refresh_scene()
             elif self.slider_index >= 0:
                 if self.active_slider is not None:
+                    self.scene.pane.ignore_snap = True
                     self.active_slider.update_according_to_pos(
                         space_pos[0], space_pos[1]
                     )
@@ -637,6 +642,7 @@ class ParameterTool(ToolWidget):
                         self.scene.refresh_scene()
             return RESPONSE_CONSUME
         elif event_type == "leftup":
+            self.scene.pane.ignore_snap = False
             doit = (
                 self.point_index >= 0
                 and self.scene.context.snap_points
@@ -697,6 +703,7 @@ class ParameterTool(ToolWidget):
     def done(self):
         self.scene.pane.tool_active = False
         self.scene.pane.modif_active = False
+        self.scene.pane.ignore_snap = False
         self.scene.pane.suppress_selection = False
         self.reset()
         if self.is_hovering:
@@ -713,6 +720,8 @@ class ParameterTool(ToolWidget):
                 hasattr(node, "functional_parameter")
                 and node.functional_parameter is not None
             ):
+                if node.lock:
+                    continue
                 selected_node = node
                 break
         self.scene.pane.suppress_selection = selected_node is not None
@@ -738,4 +747,5 @@ class ParameterTool(ToolWidget):
     def final(self, context):
         self.scene.pane.tool_active = False
         self.scene.pane.modif_active = False
+        self.scene.pane.ignore_snap = False
         self.scene.pane.suppress_selection = False

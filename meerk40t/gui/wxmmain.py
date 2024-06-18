@@ -1488,6 +1488,8 @@ class MeerK40t(MWindow):
                     hasattr(e, "functional_parameter")
                     and e.functional_parameter is not None
                 ):
+                    if e.lock:
+                        continue
                     result = True
                     break
             return result
@@ -1496,6 +1498,8 @@ class MeerK40t(MWindow):
             result = False
             for e in kernel.elements.elems(emphasized=True):
                 if hasattr(e, "as_geometry"):
+                    if e.lock:
+                        continue
                     result = True
                     break
             return result
@@ -1504,6 +1508,8 @@ class MeerK40t(MWindow):
             result = False
             for e in kernel.elements.elems(emphasized=True):
                 if e.type in ("elem polyline", "elem path"):
+                    if e.lock:
+                        continue
                     result = True
                     break
             return result
