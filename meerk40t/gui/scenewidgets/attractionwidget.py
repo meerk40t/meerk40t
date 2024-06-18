@@ -103,6 +103,9 @@ class AttractionWidget(Widget):
             # Nothing is active that would need snapping.
             return RESPONSE_CHAIN
 
+        if self.scene.pane.ignore_snap:
+            return RESPONSE_CHAIN
+
         self._show_snap_points = True
 
         # Inform profiler
