@@ -51,7 +51,19 @@ class GroupNode(Node):
         default_map["id"] = str(self.id)
         return default_map
 
+    def is_a_child_of(self, node):
+        candidate = self
+        while candidate is not None:
+            if candidate is node:
+                return True
+            candidate = candidate.parent
+        return False
+
     def drop(self, drag_node, modify=True):
+        # Do not allow dragging onto children
+        if self.is_a_child_of(drag_node):
+            return False
+
         if hasattr(drag_node, "as_geometry") or hasattr(drag_node, "as_image"):
             # Dragging element onto a group moves it to the group node.
             if modify:
