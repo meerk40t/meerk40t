@@ -183,7 +183,10 @@ class TextPropertyPanel(ScrolledPanel):
         self.renderer = LaserRender(self.context)
         self.SetHelpText("textproperty")
 
-        self.text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_text = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_MULTILINE
+        )
+        # self.text_text.SetSize(dip_size(self, -1, 100))
         self.node = node
         self.label_fonttest = wx.StaticText(
             self, wx.ID_ANY, "", style=wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE
@@ -274,6 +277,12 @@ class TextPropertyPanel(ScrolledPanel):
         self.button_attrib_strikethrough = wxToggleButton(
             self, id=wx.ID_ANY, label="s", size=dip_size(self, mysize, mysize)
         )
+        self.button_attrib_lineplus = wx.Button(
+            self, id=wx.ID_ANY, label="+", size=dip_size(self, mysize, mysize)
+        )
+        self.button_attrib_lineminus = wx.Button(
+            self, id=wx.ID_ANY, label="-", size=dip_size(self, mysize, mysize)
+        )
 
         self.check_variable = wxCheckBox(self, wx.ID_ANY, _(" Translate Variables"))
         self.check_variable.SetToolTip(_("If active, preview will translate variables"))
@@ -302,6 +311,10 @@ class TextPropertyPanel(ScrolledPanel):
         )
         self.rb_align.Bind(wx.EVT_RADIOBOX, self.on_radio_box)
         self.check_variable.Bind(wx.EVT_CHECKBOX, self.on_text_change)
+        self.Bind(wx.EVT_BUTTON, self.on_linegap_bigger, self.button_attrib_lineplus)
+        self.Bind(wx.EVT_BUTTON, self.on_linegap_smaller, self.button_attrib_lineminus)
+        self.button_attrib_lineplus.Bind(wx.EVT_RIGHT_DOWN, self.on_linegap_reset)
+        self.button_attrib_lineminus.Bind(wx.EVT_RIGHT_DOWN, self.on_linegap_reset)
 
     @staticmethod
     def accepts(node):
@@ -316,6 +329,7 @@ class TextPropertyPanel(ScrolledPanel):
         pass
 
     def set_widgets(self, node):
+        self.Freeze()
         self.panel_id.set_widgets(node)
         self.panel_stroke.set_widgets(node)
         self.panel_fill.set_widgets(node)
@@ -326,27 +340,45 @@ class TextPropertyPanel(ScrolledPanel):
             self.node = node
         try:
             if self.node.text is not None:
-                self.text_text.SetValue(self.node.text)
-                display_string = self.node.text
+                txt = self.node.text  # .replace("\\n", "\n")
+                self.text_text.SetValue(txt)
+                display_string = txt
                 if self.check_variable.GetValue():
                     display_string = self.context.elements.wordlist_translate(
                         display_string,
                         self.node,
                         increment=False,
                     )
-                self.label_fonttest.SetLabelText(display_string)
-                try:
-                    self.label_fonttest.SetFont(self.node.wxfont)
-                except AttributeError:
-                    pass
+                self.update_label()
         except AttributeError:
             pass
         self.text_text.SetFocus()
         self.text_text.SelectAll()
+        self.Thaw()
 
     def __set_properties(self):
         self.button_choose_font.SetSize(self.button_choose_font.GetBestSize())
 
+        self.button_attrib_lineplus.SetFont(
+            wx.Font(
+                9,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+                0,
+                "",
+            )
+        )
+        self.button_attrib_lineminus.SetFont(
+            wx.Font(
+                9,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+                0,
+                "",
+            )
+        )
         self.button_attrib_bold.SetFont(
             wx.Font(
                 9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD, 0, ""
@@ -381,6 +413,14 @@ class TextPropertyPanel(ScrolledPanel):
         self.button_attrib_italic.SetToolTip(_("Toggle italic"))
         self.button_attrib_underline.SetToolTip(_("Toggle underline"))
         self.button_attrib_strikethrough.SetToolTip(_("Toggle strikethrough"))
+        msg = (
+            "\n"
+            + _("- Hold shift/ctrl-Key down for bigger change")
+            + "\n"
+            + _("- Right click will reset value to default")
+        )
+        self.button_attrib_lineplus.SetToolTip(_("Increase line distance") + msg)
+        self.button_attrib_lineminus.SetToolTip(_("Reduce line distance") + msg)
 
         align_options = [_("Left"), _("Center"), _("Right")]
         self.rb_align = wxRadioBox(
@@ -418,6 +458,9 @@ class TextPropertyPanel(ScrolledPanel):
         sizer_attrib.Add(
             self.button_attrib_strikethrough, 0, wx.ALIGN_CENTER_VERTICAL, 0
         )
+        sizer_attrib.AddSpacer(25)
+        sizer_attrib.Add(self.button_attrib_lineplus, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_attrib.Add(self.button_attrib_lineminus, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_anchor = wx.BoxSizer(wx.HORIZONTAL)
         sizer_anchor.Add(self.rb_align, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -532,13 +575,22 @@ class TextPropertyPanel(ScrolledPanel):
         self.label_fonttest.SetWindowStyle(mystyle)
 
         self.rb_align.SetSelection(new_anchor)
-        display_string = self.node.text
+        display_string = self.node.text  # .replace("\\n", "\n")
         if self.check_variable.GetValue():
             display_string = self.context.elements.wordlist_translate(
                 display_string,
                 self.node,
                 increment=False,
             )
+        # We try to vercome the issue that some fonts are clipped
+        # in the display due to their 'invalid' kerning information
+        # by adding spaces in ahead and behind every line...
+        lines = display_string.split("\n")
+        display_string = ""
+        for l in lines:
+            if display_string:
+                display_string += "\n"
+            display_string += " " + l + " "
         self.label_fonttest.SetLabelText(display_string)
         self.label_fonttest.SetForegroundColour(wx.Colour(swizzlecolor(self.node.fill)))
         self.label_fonttest.Refresh()
@@ -560,10 +612,50 @@ class TextPropertyPanel(ScrolledPanel):
         self.refresh()
 
     def refresh(self):
-        self.renderer.measure_text(self.node)
+        # print (self.context.elements.selected_area())
+        self.node.updated()
+        self.node.set_dirty_bounds()
         bb = self.node.bounds
+        self.context.elements.validate_selected_area()
+        # print (self.context.elements.selected_area())
         self.context.elements.signal("element_property_reload", self.node)
         self.context.signal("refresh_scene", "Scene")
+
+    def on_linegap_reset(self, event):
+        if self.node is None:
+            return
+        self.node.mklinegap = 1.1
+        self.refresh()
+
+    def on_linegap_bigger(self, event):
+        if self.node is None:
+            return
+        gap = 0.01
+        if wx.GetKeyState(wx.WXK_SHIFT):
+            gap = 0.1
+        if wx.GetKeyState(wx.WXK_CONTROL):
+            gap = 0.25
+        if self.node.mklinegap is None:
+            self.node.mklinegap = 1.1
+        else:
+            self.node.mklinegap += gap
+        self.refresh()
+
+    def on_linegap_smaller(self, event):
+        if self.node is None:
+            return
+        gap = 0.01
+        if wx.GetKeyState(wx.WXK_SHIFT):
+            gap = 0.1
+        if wx.GetKeyState(wx.WXK_CONTROL):
+            gap = 0.25
+        if self.node.mklinegap is None:
+            self.node.mklinegap = 1.1
+        else:
+            self.node.mklinegap -= gap
+        if self.node.mklinegap < 0:
+            self.node.mklinegap = 0
+        self.refresh()
 
     def on_button_smaller(self, event):
         try:
@@ -602,6 +694,8 @@ class TextPropertyPanel(ScrolledPanel):
     def on_font_choice(self, event):
         lastfont = self.node.wxfont.GetFaceName()
         fface = self.combo_font.GetValue()
+        if lastfont == fface:
+            return
         self.node.wxfont.SetFaceName(fface)
         if not self.node.wxfont.IsOk():
             self.node.wxfont.SetFaceName(lastfont)
@@ -667,7 +761,10 @@ class TextPropertyPanel(ScrolledPanel):
 
     def on_text_change(self, event):  # wxGlade: TextProperty.<event_handler>
         try:
-            self.node.text = self.text_text.GetValue()
+            s = self.text_text.GetValue()  # .replace("\n", "\\n")
+            if self.node.text == s:
+                return
+            self.node.text = s
             self.node.modified()
             self.update_label()
             self.refresh()

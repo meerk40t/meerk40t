@@ -726,7 +726,7 @@ class SVGProcessor:
         if self.requires_classification and self.elements.classify_new:
             self.elements.classify(self.element_list)
 
-    def check_for_mk_path_attributes(self, node, element):
+    def check_for_mk_attributes(self, node, element):
         """
         Checks for some mk special parameters starting with mk. Especially mkparam, and uses this property to fill in
         the functional_parameter attribute for the node.
@@ -755,6 +755,7 @@ class SVGProcessor:
                             setattr(node, prop, value)
                         except (ValueError, SyntaxError):
                             pass
+                        # print (f"{prop}: {lc} -> {getattr(node, prop, 'invalid')}")
 
     def check_for_fill_attributes(self, node, element):
         """
@@ -905,6 +906,7 @@ class SVGProcessor:
             label=label,
             settings=element.values,
         )
+        self.check_for_mk_attributes(node, element)
         e_list.append(node)
 
     def _parse_path(self, element, ident, label, lock, context_node, e_list):
@@ -942,7 +944,7 @@ class SVGProcessor:
         )
         self.check_for_line_attributes(node, element)
         self.check_for_fill_attributes(node, element)
-        self.check_for_mk_path_attributes(node, element)
+        self.check_for_mk_attributes(node, element)
         e_list.append(node)
 
     def _parse_polyline(self, element, ident, label, lock, context_node, e_list):
@@ -968,7 +970,7 @@ class SVGProcessor:
         )
         self.check_for_line_attributes(node, element)
         self.check_for_fill_attributes(node, element)
-        self.check_for_mk_path_attributes(node, element)
+        self.check_for_mk_attributes(node, element)
         if self.precalc_bbox:
             # bounds will be done here, paintbounds won't...
             if element.transform.is_identity():
@@ -1013,6 +1015,7 @@ class SVGProcessor:
             label=label,
             lock=lock,
         )
+        self.check_for_mk_attributes(node, element)
         e_list.append(node)
 
     def _parse_rect(self, element, ident, label, lock, context_node, e_list):
@@ -1033,6 +1036,7 @@ class SVGProcessor:
             shape=element, type="elem rect", id=ident, label=label, lock=lock
         )
         self.check_for_line_attributes(node, element)
+        self.check_for_mk_attributes(node, element)
         if self.precalc_bbox:
             # bounds will be done here, paintbounds won't...
             points = (
@@ -1076,6 +1080,7 @@ class SVGProcessor:
             shape=element, type="elem line", id=ident, label=label, lock=lock
         )
         self.check_for_line_attributes(node, element)
+        self.check_for_mk_attributes(node, element)
         if self.precalc_bbox:
             # bounds will be done here, paintbounds won't...
             points = (
@@ -1202,6 +1207,7 @@ class SVGProcessor:
                     operations=operations,
                     lock=lock,
                 )
+                self.check_for_mk_attributes(node, element)
                 e_list.append(node)
         except OSError:
             pass
