@@ -1508,6 +1508,8 @@ class MeerK40t(MWindow):
             result = False
             for e in kernel.elements.elems(emphasized=True):
                 if e.type in ("elem polyline", "elem path"):
+                    if e.lock:
+                        continue
                     result = True
                     break
             return result
