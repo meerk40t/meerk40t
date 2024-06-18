@@ -720,6 +720,8 @@ class ParameterTool(ToolWidget):
                 hasattr(node, "functional_parameter")
                 and node.functional_parameter is not None
             ):
+                if node.lock:
+                    continue
                 selected_node = node
                 break
         self.scene.pane.suppress_selection = selected_node is not None

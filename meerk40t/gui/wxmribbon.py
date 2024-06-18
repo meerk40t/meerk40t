@@ -480,6 +480,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
         self.apply_enable_rules()
 
     @signal_listener("selected")
+    @signal_listener("element_property_update")
     def on_selected_change(self, origin, node=None, *args):
         self.apply_enable_rules()
 
