@@ -1203,6 +1203,8 @@ class SimulationPanel(wx.Panel, Job):
             self.grid.draw_grid_secondary = not self.grid.draw_grid_secondary
         elif gridtype == "circular":
             self.grid.draw_grid_circular = not self.grid.draw_grid_circular
+        elif gridtype == "offset":
+            self.grid.draw_offset_lines = not self.grid.draw_offset_lines
         self.widget_scene.request_refresh()
 
     def toggle_grid_p(self, event):
@@ -1213,6 +1215,9 @@ class SimulationPanel(wx.Panel, Job):
 
     def toggle_grid_c(self, event):
         self.toggle_grid("circular")
+
+    def toggle_grid_o(self, event):
+        self.toggle_grid("offset")
 
     def toggle_travel_display(self, event):
         self.display_travel = not self.display_travel
@@ -1348,6 +1353,19 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.Bind(wx.EVT_MENU, self.toggle_grid_c, id=id4.GetId())
         menu.Check(id4.GetId(), self.grid.draw_grid_circular)
+        mx = float(Length(self.context.device.view.margin_x))
+        my = float(Length(self.context.device.view.margin_y))
+        # print(self.context.device.view.margin_x, self.context.device.view.margin_y)
+        if mx != 0.0 or my != 0.0:
+            menu.AppendSeparator()
+            id4b = menu.Append(
+                wx.ID_ANY,
+                _("Show physical dimensions"),
+                _("Display the physical dimensions in the Simulation pane"),
+                wx.ITEM_CHECK,
+            )
+            self.Bind(wx.EVT_MENU, self.toggle_grid_o, id=id4b.GetId())
+            menu.Check(id4b.GetId(), self.grid.draw_offset_lines)
         if self.widget_scene.has_background:
             menu.AppendSeparator()
             id5 = menu.Append(wx.ID_ANY, _("Remove Background"), "")

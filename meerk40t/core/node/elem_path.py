@@ -127,7 +127,7 @@ class PathNode(Node, Stroked, FunctionalParameter):
             self._bounds[2] + delta,
             self._bounds[3] + delta,
         )
-        self._points_dirty = True
+        self.set_dirty()
         self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
     def bbox(self, transformed=True, with_stroke=False):

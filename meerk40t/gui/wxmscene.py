@@ -1115,6 +1115,8 @@ class MeerK40tScenePanel(wx.Panel):
                 self.grid.draw_grid_secondary = not self.grid.draw_grid_secondary
             elif gridtype == "circular":
                 self.grid.draw_grid_circular = not self.grid.draw_grid_circular
+            elif gridtype == "offset":
+                self.grid.draw_offset_lines = not self.grid.draw_offset_lines
             self.scene.signal("guide")
             self.scene.signal("grid")
             self.widget_scene.reset_snap_attraction()
@@ -1128,6 +1130,9 @@ class MeerK40tScenePanel(wx.Panel):
 
         def toggle_grid_c(event=None):
             toggle_grid("circular")
+
+        def toggle_grid_o(event=None):
+            toggle_grid("offset")
 
         def remove_background(event=None):
             self.widget_scene._signal_widget(
@@ -1175,6 +1180,24 @@ class MeerK40tScenePanel(wx.Panel):
         )
         self.Bind(wx.EVT_MENU, toggle_grid_c, id=id4.GetId())
         menu.Check(id4.GetId(), self.grid.draw_grid_circular)
+        mx = float(Length(self.context.device.view.margin_x))
+        my = float(Length(self.context.device.view.margin_y))
+        # print(self.context.device.view.margin_x, self.context.device.view.margin_y)
+        if mx != 0.0 or my != 0.0:
+            menu.AppendSeparator()
+            id4b = menu.Append(
+                wx.ID_ANY,
+                _("Show physical dimensions"),
+                _("Display the physical dimensions"),
+                wx.ITEM_CHECK,
+            )
+            self.Bind(wx.EVT_MENU, toggle_grid_o, id=id4b.GetId())
+            menu.Check(id4b.GetId(), self.grid.draw_offset_lines)
+        if self.widget_scene.has_background:
+            menu.AppendSeparator()
+            id5 = menu.Append(wx.ID_ANY, _("Remove Background"), "")
+            self.Bind(wx.EVT_MENU, self.remove_background, id=id5.GetId())
+
         if self.widget_scene.has_background:
             menu.AppendSeparator()
             id5 = menu.Append(wx.ID_ANY, _("Remove Background"), "")
