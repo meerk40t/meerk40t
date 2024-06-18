@@ -1,5 +1,7 @@
 import wx
 
+from meerk40t.core.units import Length
+from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.gui.icons import (
     icon_cap_butt,
     icon_cap_round,
@@ -9,8 +11,10 @@ from meerk40t.gui.icons import (
     icon_join_bevel,
     icon_join_miter,
     icon_join_round,
+    icons8_lock,
+    icons8_unlock,
 )
-
+from meerk40t.gui.wxutils import dip_size, TextCtrl, wxToggleButton
 from .statusbarwidget import StatusBarWidget
 
 _ = wx.GetTranslation
@@ -242,3 +246,169 @@ class FillruleWidget(StatusBarWidget):
 
     def on_fill_nonzero(self, event):
         self.assign_fill("nonzero")
+
+class PositionWidget(StatusBarWidget):
+    """
+    Panel to change / assign the linecap of an element
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def GenerateControls(self, parent, panelidx, identifier, context):
+        super().GenerateControls(parent, panelidx, identifier, context)
+        self.xy_lbl = wx.StaticText(self.parent, wx.ID_ANY, label=_("X, Y"))
+        self.node = None
+        self.t_x = TextCtrl(self.parent, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, check="float")
+        self.t_y = TextCtrl(self.parent, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, check="float")
+        self.unit_lbl = wx.StaticText(self.parent, wx.ID_ANY, label="mm")
+        self.wh_lbl = wx.StaticText(self.parent, wx.ID_ANY, label=_("W, H"))
+        self.t_w = TextCtrl(self.parent, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, check="float")
+        self.t_w.SetToolTip(_(""))
+        self.t_h = TextCtrl(self.parent, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, check="float")
+        self.unit_lbl2 = wx.StaticText(self.parent, wx.ID_ANY, label="mm")
+        self.btn_lock_ratio = wxToggleButton(self.parent, wx.ID_ANY, "")
+        self.btn_lock_ratio.SetValue(True)
+        self.bitmap_locked = icons8_lock.GetBitmap(
+            resize=30, use_theme=False
+        )
+        self.bitmap_unlocked = icons8_unlock.GetBitmap(
+            resize=30, use_theme=False
+        )
+        self.Add(self.xy_lbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.Add(self.t_x, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.Add(self.t_y, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.Add(self.unit_lbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.Add(self.wh_lbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.Add(self.t_w, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.Add(self.t_h, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.Add(self.unit_lbl2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.Add(self.btn_lock_ratio, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        fnt = wx.Font(
+                7,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+        for ctl in (self.t_x, self.t_y, self.t_w, self.t_h,):
+            ctl.SetSize(dip_size(self.parent, -1, 10))
+        for ctl in (self.t_x, self.t_y, self.t_w, self.t_h, self.xy_lbl, self.wh_lbl, self.unit_lbl, self.unit_lbl2):
+            ctl.SetFont(fnt)
+        self.t_x.SetActionRoutine(self.on_text_x_enter)
+        self.t_y.SetActionRoutine(self.on_text_y_enter)
+        self.t_w.SetActionRoutine(self.on_text_w_enter)
+        self.t_h.SetActionRoutine(self.on_text_h_enter)
+        self.btn_lock_ratio.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle_ratio)
+
+    def translate_it(self):
+        if self.node is None:
+            return
+        if not self.node.can_move(self.context.elements.lock_allows_move):
+            return
+        bb = self.node.bounds
+        try:
+            newx = float(Length(self.t_x.GetValue()+self.unit_lbl.GetLabel()))
+            newy = float(Length(self.t_y.GetValue()+self.unit_lbl.GetLabel()))
+        except (ValueError, AttributeError):
+            return
+        dx = newx - bb[0]
+        dy = newy - bb[1]
+        if dx != 0 or dy != 0:
+            self.node.matrix.post_translate(dx, dy)
+            # self.node.modified()
+            self.node.translated(dx, dy)
+            self.context.elements.signal("element_property_update", self.node)
+            self.context.elements.signal("refresh_scene", "Scene")
+
+    def scale_it(self, was_width):
+        if self.node is None:
+            return
+        if not self.node.can_scale:
+            return
+        bb = self.node.bounds
+        keep_ratio = self.btn_lock_ratio.GetValue()
+        try:
+            neww = float(Length(self.t_w.GetValue()+self.unit_lbl.GetLabel()))
+            newh = float(Length(self.t_h.GetValue()+self.unit_lbl.GetLabel()))
+        except (ValueError, AttributeError):
+            return
+        if bb[2] != bb[0]:
+            sx = neww / (bb[2] - bb[0])
+        else:
+            sx = 1
+        if bb[3] != bb[1]:
+            sy = newh / (bb[3] - bb[1])
+        else:
+            sy = 1
+        if keep_ratio:
+            if was_width:
+                sy = sx
+            else:
+                sx = sy
+        if sx != 1.0 or sy != 1.0:
+            self.node.matrix.post_scale(sx, sy, bb[0], bb[1])
+            self.node.scaled(sx=sx, sy=sy, ox=bb[0], oy=bb[1])
+            # self.node.modified()
+            bb = self.node.bounds
+            w = bb[2] - bb[0]
+            h = bb[3] - bb[1]
+            # units = self.context.units_name
+            # if units in ("inch", "inches"):
+            #     units = "in"
+            units = self.unit_lbl.GetLabel()
+            self.t_w.SetValue(
+                f"{Length(amount=w, preferred_units=units, digits=4).preferred}"
+            )
+            self.t_h.SetValue(
+                f"{Length(amount=h, preferred_units=units, digits=4).preferred}"
+            )
+
+            self.context.elements.signal("element_property_update", self.node)
+            self.context.elements.signal("refresh_scene", "Scene")
+
+    def on_toggle_ratio(self, event):
+        if self.btn_lock_ratio.GetValue():
+            self.btn_lock_ratio.SetBitmap(self.bitmap_locked)
+        else:
+            self.btn_lock_ratio.SetBitmap(self.bitmap_unlocked)
+
+    def on_text_x_enter(self):
+        self.translate_it()
+
+    def on_text_y_enter(self):
+        self.translate_it()
+
+    def on_text_w_enter(self):
+        self.scale_it(True)
+
+    def on_text_h_enter(self):
+        self.scale_it(False)
+
+    def set_widgets(self):
+        s_x = ""
+        s_y = ""
+        s_w = ""
+        s_h = ""
+        self.node = None
+        for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+            try:
+                bb = e.bounds
+                s_x = f"{Length(bb[0]).mm:.2f}"
+                s_y = f"{Length(bb[1]).mm:.2f}"
+                s_w = f"{Length(bb[2] - bb[0]).mm:.2f}"
+                s_h = f"{Length(bb[3] - bb[1]).mm:.2f}"
+                self.node = e
+                break
+            except AttributeError:
+                pass
+        self.t_x.SetValue(s_x)
+        self.t_y.SetValue(s_y)
+        self.t_w.SetValue(s_w)
+        self.t_h.SetValue(s_h)
+
+    def Signal(self, signal, *args):
+        if signal == "emphasized":
+            self.set_widgets()
+            self.startup = False
+        if signal == "modified":
+            self.set_widgets()
