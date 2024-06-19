@@ -644,7 +644,7 @@ class PositionWidget(StatusBarWidget):
             return
         self.position_w = w
 
-        if self.position_aspect_ratio:
+        if self.lock_ratio:
             if abs(original) < 1e-8:
                 self.update_position(True)
                 return
@@ -676,7 +676,7 @@ class PositionWidget(StatusBarWidget):
             return
 
         self.position_h = h
-        if self.position_aspect_ratio:
+        if self.lock_ratio:
             if abs(original) < 1e-8:
                 self.update_position(True)
                 return
