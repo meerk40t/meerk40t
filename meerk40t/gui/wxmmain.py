@@ -814,6 +814,7 @@ class MeerK40t(MWindow):
         if self.widgets_created:
             self.main_statusbar.Signal("element_property_update", *args)
 
+    @signal_listener("modified_by_tool")
     @signal_listener("modified")
     def on_element_modified(self, origin, *args):
         if self.widgets_created:
