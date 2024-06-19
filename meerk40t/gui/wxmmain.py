@@ -24,6 +24,7 @@ from meerk40t.gui.statusbarwidgets.shapepropwidget import (
     FillruleWidget,
     LinecapWidget,
     LinejoinWidget,
+    PositionWidget,
 )
 from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
 from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
@@ -368,9 +369,13 @@ class MeerK40t(MWindow):
 
         self.main_statusbar.add_panel_widget(self.status_panel, 0, "status", True)
 
+        self.pos_panel = PositionWidget()
         self.select_panel = SelectionOptionWidget()
         self.snap_panel = SnapOptionsWidget()
         self.info_panel = InformationWidget()
+        self.main_statusbar.add_panel_widget(
+            self.pos_panel, self.idx_selection, "position", True
+        )
         self.main_statusbar.add_panel_widget(
             self.select_panel, self.idx_selection, "selection", False
         )
@@ -414,7 +419,7 @@ class MeerK40t(MWindow):
         self.main_statusbar.add_panel_widget(
             self.burn_panel, self.idx_selection, "burninfo", False
         )
-        self.main_statusbar.activate_panel("snap", True)
+        self.main_statusbar.activate_panel("position", True)
         self.assign_button_panel.show_stuff(False)
 
     def _setup_edit_menu_choice(self):
@@ -809,6 +814,7 @@ class MeerK40t(MWindow):
         if self.widgets_created:
             self.main_statusbar.Signal("element_property_update", *args)
 
+    @signal_listener("modified_by_tool")
     @signal_listener("modified")
     def on_element_modified(self, origin, *args):
         if self.widgets_created:
@@ -840,7 +846,8 @@ class MeerK40t(MWindow):
         # First enable/disable the controls in the statusbar
 
         self.assign_button_panel.show_stuff(value)
-        self.main_statusbar.activate_panel("selection", value, force=True)
+        self.main_statusbar.activate_panel("position", value, force=True)
+        self.main_statusbar.activate_panel("selection", value)
         self.main_statusbar.activate_panel("infos", value)
         self.main_statusbar.activate_panel("color", value)
         self.main_statusbar.activate_panel("stroke", value)
