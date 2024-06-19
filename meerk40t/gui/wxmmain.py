@@ -846,8 +846,8 @@ class MeerK40t(MWindow):
         # First enable/disable the controls in the statusbar
 
         self.assign_button_panel.show_stuff(value)
-        self.main_statusbar.activate_panel("selection", value, force=True)
         self.main_statusbar.activate_panel("position", value, force=True)
+        self.main_statusbar.activate_panel("selection", value)
         self.main_statusbar.activate_panel("infos", value)
         self.main_statusbar.activate_panel("color", value)
         self.main_statusbar.activate_panel("stroke", value)
