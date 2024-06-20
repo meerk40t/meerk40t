@@ -84,10 +84,12 @@ class EditTool(ToolWidget):
         # "key": (routine, info, available for poly, available for path)
         self.commands = {
             "d": (self.delete_nodes, _("Delete"), True, True),
+            "delete": (self.delete_nodes, _("Delete"), True, True),
             "l": (self.convert_to_line, _("Line"), False, True),
             "c": (self.convert_to_curve, _("Curve"), False, True),
             "s": (self.cubic_symmetrical, _("Symmetric"), False, True),
             "i": (self.insert_midpoint, _("Insert"), True, True),
+            "insert": (self.insert_midpoint, _("Insert"), True, True),
             "a": (self.append_line, _("Append"), True, True),
             "b": (self.break_path, _("Break"), False, True),
             "j": (self.join_path, _("Join"), False, True),
@@ -1996,7 +1998,7 @@ class EditTool(ToolWidget):
             #     entry = self.nodes[self.selected_index]
             # else:
             #     entry = None
-            self.perform_action(keycode)
+            self.perform_action(modifiers)
 
             return RESPONSE_CONSUME
 
@@ -2050,6 +2052,8 @@ class EditTool(ToolWidget):
             action = self.commands[code]
             # print(f"Execute {action[1]}")
             action[0]()
+        # else:
+        #     print (f"Did not find {code}")
 
     def _tool_change(self):
         selected_node = None
