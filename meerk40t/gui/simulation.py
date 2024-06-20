@@ -1493,16 +1493,12 @@ class SimulationPanel(wx.Panel, Job):
         print (f"Plan called : {perf_counter()-self.start_time} ({winsize})")
         if plan_name == self.plan_name:
             # This may come too early before all things have been done
-            if winsize[0] == 0: # Still initialising
+            if winsize[0] == 0 and self.retries<10: # Still initialising
                 self.hscene_sizer.Layout()
                 self.view_pane.Show()
                 interval = 0.25
                 self.retries += 1
-                ret = self.retries
-                while ret > 10:
-                    ret = int(ret / 10)
-                    interval += 0.25
-                print (f"Need to resend signal due to invalid window-size, attempt {self.retries}, will wait for {interval:.2f} sec")
+                print (f"Need to resend signal due to invalid window-size, attempt {self.retries}/10, will wait for {interval:.2f} sec")
 
                 _job = Job(
                     process=resend_signal,
