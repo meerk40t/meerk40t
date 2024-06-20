@@ -234,8 +234,6 @@ class InformationPanel(ScrolledPanel):
         if wx.TheClipboard.Open():
             msg = ""
             msg += self.mk_version.GetValue() + "\n"
-            msg += self.py_version.GetValue() + "\n"
-            msg += self.wx_version.GetValue() + "\n"
             msg += self.config_path.GetValue() + "\n"
             msg += self.os_version.GetValue() + "\n"
             # print (msg)
