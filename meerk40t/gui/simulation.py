@@ -1494,6 +1494,8 @@ class SimulationPanel(wx.Panel, Job):
         if plan_name == self.plan_name:
             # This may come too early before all things have been done
             if winsize[0] == 0: # Still initialising
+                self.hscene_sizer.Layout()
+                self.view_pane.Show()
                 interval = 0.25
                 self.retries += 1
                 ret = self.retries
