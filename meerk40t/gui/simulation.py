@@ -931,6 +931,8 @@ class SimulationPanel(wx.Panel, Job):
             self.Bind(wx.EVT_CHECKBOX, self.on_checkbox_optimize, self.checkbox_optimize)
             self.on_checkbox_optimize(None)
 
+        self.Bind(wx.EVT_SIZE, self.on_size)
+
         ##############
         # BUILD SCENE
         ##############
@@ -1163,6 +1165,17 @@ class SimulationPanel(wx.Panel, Job):
         self.slided_in = True  # Hide initially
         self.Layout()
         # end wxGlade
+
+
+    def on_size(self, event):
+        sz = event.GetSize()
+        event.Skip()
+        print (f"Manually forwarding the size: {sz}")
+        self.view_pane.SetSize(wx.Size(sz[0], int(2/3 * sz[1])))
+        self.Layout()
+        sz = self.view_pane.GetSize()
+        print (f"Now pane has: {sz}")
+        self.fit_scene_to_panel()
 
     # Manages the display, non-display of the optimisation-options
     @property
@@ -1520,7 +1533,7 @@ class SimulationPanel(wx.Panel, Job):
                 )
                 self.context.schedule(_job)
                 return
-            
+
             self.retries = 0
             self._refresh_simulated_plan()
 
