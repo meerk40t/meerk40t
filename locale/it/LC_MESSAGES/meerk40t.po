@@ -10373,9 +10373,10 @@ msgid ""
 msgstr ""
 "Meerk40t può avvisarti se ritiene che i valori per la potenza\n"
 "e la velocità siano troppo sostenuti per la tua macchina."
-"Verrà visualizzato un indicatore di avviso: '❌'\n"
-"nell'etichetta del nodo del processo associato\n"
-"(NB: I valori di potenza vanno espressi in PPI)"
+"Verrà visualizzato un indicatore di avviso: '❌'"
+#
+# "nell'etichetta del nodo del processo associato\n"
+# "(NB: I valori di potenza vanno espressi in PPI)"
 
 #: meerk40t/grbl/gui/grblconfiguration.py:19
 msgid "GRBL-Configuration"
