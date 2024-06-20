@@ -755,6 +755,7 @@ class SimulationPanel(wx.Panel, Job):
     ):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
+        self.simplistic = True
         self.parent = args[0]
         self.context = context
         self.SetHelpText("simulate")
@@ -799,45 +800,45 @@ class SimulationPanel(wx.Panel, Job):
         self.view_pane.start_scene()
         self.view_pane.SetCanFocus(False)
         self.widget_scene = self.view_pane.scene
+        if not self.simplistic:
+            # poor mans slide out
+            self.btn_slide_options = wxButton(self, wx.ID_ANY, "<")
+            self.btn_slide_options.Bind(wx.EVT_BUTTON, self.slide_out)
+            self.btn_slide_options.SetToolTip(
+                _("Show/Hide optimization options for this job.")
+            )
+            from copy import copy
 
-        # poor mans slide out
-        self.btn_slide_options = wxButton(self, wx.ID_ANY, "<")
-        self.btn_slide_options.Bind(wx.EVT_BUTTON, self.slide_out)
-        self.btn_slide_options.SetToolTip(
-            _("Show/Hide optimization options for this job.")
-        )
-        from copy import copy
+            prechoices = copy(context.lookup("choices/optimize"))
+            choices = list(map(copy, prechoices))
+            # Clear the page-entry
+            for entry in choices:
+                entry["page"] = ""
+            self.subpanel_optimize = wx.Panel(self, wx.ID_ANY)
+            self.options_optimize = ChoicePropertyPanel(
+                self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False
+            )
+            self.options_optimize.SetupScrolling()
+            self.subpanel_operations = OperationsPanel(
+                self, wx.ID_ANY, context=self.context, cutplan=self.cutplan
+            )
+            self.subpanel_cutcode = CutcodePanel(
+                self, wx.ID_ANY, context=self.context, cutcode=None, plan_name=None
+            )
 
-        prechoices = copy(context.lookup("choices/optimize"))
-        choices = list(map(copy, prechoices))
-        # Clear the page-entry
-        for entry in choices:
-            entry["page"] = ""
-        self.subpanel_optimize = wx.Panel(self, wx.ID_ANY)
-        self.options_optimize = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False
-        )
-        self.options_optimize.SetupScrolling()
-        self.subpanel_operations = OperationsPanel(
-            self, wx.ID_ANY, context=self.context, cutplan=self.cutplan
-        )
-        self.subpanel_cutcode = CutcodePanel(
-            self, wx.ID_ANY, context=self.context, cutcode=None, plan_name=None
-        )
-
-        self.panel_optimize = wx.Notebook(self, wx.ID_ANY)
-        self.subpanel_optimize.Reparent(self.panel_optimize)
-        self.subpanel_operations.Reparent(self.panel_optimize)
-        self.subpanel_cutcode.Reparent(self.panel_optimize)
-        self.panel_optimize.AddPage(self.subpanel_optimize, _("Optimizations"))
-        self.panel_optimize.AddPage(self.subpanel_operations, _("Operations"))
-        self.panel_optimize.AddPage(self.subpanel_cutcode, _("Cutcode"))
-        self.checkbox_optimize = wxCheckBox(self, wx.ID_ANY, _("Optimize"))
-        self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
-        self.checkbox_optimize.SetValue(self.context.planner.do_optimization)
-        self.btn_redo_it = wxButton(self, wx.ID_ANY, _("Recalculate"))
-        self.btn_redo_it.Bind(wx.EVT_BUTTON, self.on_redo_it)
-        self.btn_redo_it.SetToolTip(_("Apply the settings and recalculate the cutplan"))
+            self.panel_optimize = wx.Notebook(self, wx.ID_ANY)
+            self.subpanel_optimize.Reparent(self.panel_optimize)
+            self.subpanel_operations.Reparent(self.panel_optimize)
+            self.subpanel_cutcode.Reparent(self.panel_optimize)
+            self.panel_optimize.AddPage(self.subpanel_optimize, _("Optimizations"))
+            self.panel_optimize.AddPage(self.subpanel_operations, _("Operations"))
+            self.panel_optimize.AddPage(self.subpanel_cutcode, _("Cutcode"))
+            self.checkbox_optimize = wxCheckBox(self, wx.ID_ANY, _("Optimize"))
+            self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
+            self.checkbox_optimize.SetValue(self.context.planner.do_optimization)
+            self.btn_redo_it = wxButton(self, wx.ID_ANY, _("Recalculate"))
+            self.btn_redo_it.Bind(wx.EVT_BUTTON, self.on_redo_it)
+            self.btn_redo_it.SetToolTip(_("Apply the settings and recalculate the cutplan"))
 
         self.slider_progress = wx.Slider(self, wx.ID_ANY, self.max, 0, self.max)
         self.slider_progress.SetFocus()
@@ -924,9 +925,11 @@ class SimulationPanel(wx.Panel, Job):
             wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_time_minutes
         )
         self.view_pane.scene_panel.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
-        self.Bind(wx.EVT_CHECKBOX, self.on_checkbox_optimize, self.checkbox_optimize)
+
         # end wxGlade
-        self.on_checkbox_optimize(None)
+        if not self.simplistic:
+            self.Bind(wx.EVT_CHECKBOX, self.on_checkbox_optimize, self.checkbox_optimize)
+            self.on_checkbox_optimize(None)
 
         ##############
         # BUILD SCENE
@@ -955,8 +958,8 @@ class SimulationPanel(wx.Panel, Job):
             BedWidget(self.widget_scene, name="Simulation")
         )
         self.widget_scene.add_interfacewidget(SimReticleWidget(self.widget_scene, self))
-
-        self.parent.add_module_delegate(self.options_optimize)
+        if not self.simplistic:
+            self.parent.add_module_delegate(self.options_optimize)
         self.context.setting(int, "simulation_mode", 0)
         default = self.context.simulation_mode
         if default == 0:
@@ -970,7 +973,8 @@ class SimulationPanel(wx.Panel, Job):
         self.widget_scene.suppress_changes = False
         # self.Show()
         self.running = False
-        self.slided_in = True
+        if not self.simplistic:
+            self.slided_in = True
         self.start_time = perf_counter()
         print(f"Init done: {perf_counter()-self.start_time}")
 
@@ -1065,36 +1069,39 @@ class SimulationPanel(wx.Panel, Job):
         # |   W    |   |Refresh|
         # +--------+---+-------+
 
-        opt_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.options_optimize.Reparent(self.subpanel_optimize)
-        self.checkbox_optimize.Reparent(self.subpanel_optimize)
-        self.btn_redo_it.Reparent(self.subpanel_optimize)
+        if not self.simplistic:
+            opt_sizer = wx.BoxSizer(wx.VERTICAL)
+            self.options_optimize.Reparent(self.subpanel_optimize)
+            self.checkbox_optimize.Reparent(self.subpanel_optimize)
+            self.btn_redo_it.Reparent(self.subpanel_optimize)
 
-        self.checkbox_optimize.SetMinSize(dip_size(self, -1, 23))
-        opt_sizer.Add(self.options_optimize, 1, wx.EXPAND, 0)
-        opt_sizer.Add(self.checkbox_optimize, 0, wx.EXPAND, 0)
-        opt_sizer.Add(self.btn_redo_it, 0, wx.EXPAND, 0)
-        self.subpanel_optimize.SetSizer(opt_sizer)
-        self.subpanel_optimize.Layout()
+            self.checkbox_optimize.SetMinSize(dip_size(self, -1, 23))
+            opt_sizer.Add(self.options_optimize, 1, wx.EXPAND, 0)
+            opt_sizer.Add(self.checkbox_optimize, 0, wx.EXPAND, 0)
+            opt_sizer.Add(self.btn_redo_it, 0, wx.EXPAND, 0)
+            self.subpanel_optimize.SetSizer(opt_sizer)
+            self.subpanel_optimize.Layout()
 
-        # Linux requires a minimum  height / width to display a text inside a button
-        system = platform.system()
-        if system == "Darwin":
-            mysize = 40
-        elif system == "Windows":
-            mysize = 23
-        elif system == "Linux":
-            mysize = 40
+            # Linux requires a minimum  height / width to display a text inside a button
+            system = platform.system()
+            if system == "Darwin":
+                mysize = 40
+            elif system == "Windows":
+                mysize = 23
+            elif system == "Linux":
+                mysize = 40
+            else:
+                mysize = 20
+            self.btn_slide_options.SetMinSize(dip_size(self, mysize, -1))
+            self.voption_sizer = wx.BoxSizer(wx.VERTICAL)
+            self.voption_sizer.Add(self.panel_optimize, 1, wx.EXPAND, 0)
+
+            self.hscene_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            self.hscene_sizer.Add(self.view_pane, 2, wx.EXPAND, 0)
+            self.hscene_sizer.Add(self.btn_slide_options, 0, wx.EXPAND, 0)
+            self.hscene_sizer.Add(self.voption_sizer, 1, wx.EXPAND, 0)
         else:
-            mysize = 20
-        self.btn_slide_options.SetMinSize(dip_size(self, mysize, -1))
-        self.voption_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.voption_sizer.Add(self.panel_optimize, 1, wx.EXPAND, 0)
-
-        self.hscene_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.hscene_sizer.Add(self.view_pane, 2, wx.EXPAND, 0)
-        self.hscene_sizer.Add(self.btn_slide_options, 0, wx.EXPAND, 0)
-        self.hscene_sizer.Add(self.voption_sizer, 1, wx.EXPAND, 0)
+            self.hscene_sizer = self.view_pane
 
         h_sizer_scroll.Add(self.slider_progress, 1, wx.EXPAND, 0)
 
@@ -1147,7 +1154,6 @@ class SimulationPanel(wx.Panel, Job):
         # sizer_execute.Add(self.combo_device, 0, wx.EXPAND, 0)
         sizer_execute.Add(self.button_spool, 1, wx.EXPAND, 0)
         h_sizer_buttons.Add(sizer_execute, 1, wx.EXPAND, 0)
-
         v_sizer_main.Add(self.hscene_sizer, 1, wx.EXPAND, 0)
         v_sizer_main.Add(h_sizer_scroll, 0, wx.EXPAND, 0)
         v_sizer_main.Add(h_sizer_text_1, 0, wx.EXPAND, 0)
@@ -1166,6 +1172,8 @@ class SimulationPanel(wx.Panel, Job):
     @slided_in.setter
     def slided_in(self, newvalue):
         self._slided_in = newvalue
+        if self.simplistic:
+            return
         if newvalue:
             # Slided in ->
             self.hscene_sizer.Show(sizer=self.voption_sizer, show=False, recursive=True)
@@ -1237,7 +1245,7 @@ class SimulationPanel(wx.Panel, Job):
     def fit_scene_to_panel(self):
         bbox = self.context.device.view.source_bbox()
         winsize = self.view_pane.Size
-        if winsize[0] == 0:
+        if winsize[0] == 0 or winsize[1] == 0:
             return
         self.widget_scene.widget_root.focus_viewport_scene(bbox, winsize, 0.1)
         self.widget_scene.request_refresh()
@@ -1443,8 +1451,9 @@ class SimulationPanel(wx.Panel, Job):
             self.cutplan = self.context.planner.default_plan
         self.plan_name = self.cutplan.name
         self.operations = self.cutplan.plan
-        self.subpanel_cutcode.set_cutcode_entry(None, self.plan_name)
-        self.subpanel_operations.set_cut_plan(self.cutplan)
+        if not self.simplistic:
+            self.subpanel_cutcode.set_cutcode_entry(None, self.plan_name)
+            self.subpanel_operations.set_cut_plan(self.cutplan)
         # for e in self.operations:
         #     print(f"Refresh: {type(e).__name__} {e}")
         #     try:
@@ -1492,10 +1501,10 @@ class SimulationPanel(wx.Panel, Job):
         winsize = self.view_pane.GetSize()
         winsize1 = self.hscene_sizer.GetSize()
         winsize2 = self.GetSize()
-        print (f"Plan called : {perf_counter()-self.start_time} (Pane: {winsize}, Sizer: {winsize1}, Window: {winsize2})")
+        print (f"Plan called : {perf_counter()-self.start_time} (Pane: {winsize}, Sizer: {winsize1}, Window: {winsize2}), Simple-Mode: {self.simplistic}")
         if plan_name == self.plan_name:
             # This may come too early before all things have been done
-            if winsize[0] == 0 and self.retries<10: # Still initialising
+            if (winsize[0] == 0 or winsize[1] == 0) and self.retries<10: # Still initialising
                 self.hscene_sizer.Layout()
                 self.view_pane.Show()
                 interval = 0.25
@@ -1688,7 +1697,8 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.update_fields()
         # self.panel_optimize.pane_show()
-        self.panel_optimize.Show()
+        if not self.simplistic:
+            self.panel_optimize.Show()
 
     def pane_hide(self):
         if self.auto_clear:
@@ -1697,10 +1707,11 @@ class SimulationPanel(wx.Panel, Job):
         self.context.unschedule(self)
         self.running = False
         # self.panel_optimize.pane_hide()
-        try:
-            self.panel_optimize.Hide()
-        except RuntimeError:
-            pass
+        if not self.simplistic:
+            try:
+                self.panel_optimize.Hide()
+            except RuntimeError:
+                pass
 
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, scene_name=None, *args):
