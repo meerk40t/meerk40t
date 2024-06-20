@@ -758,7 +758,7 @@ class SimulationPanel(wx.Panel, Job):
         self.parent = args[0]
         self.context = context
         self.SetHelpText("simulate")
-
+        self.retries = 0
         self.plan_name = plan_name
         self.auto_clear = auto_clear
         # Display travel paths?
@@ -1485,16 +1485,34 @@ class SimulationPanel(wx.Panel, Job):
 
     @signal_listener("plan")
     def on_plan_change(self, origin, plan_name, status):
+        def resend_signal():
+            print (f"Resending signal: {perf_counter()-self.start_time}")
+            self.context.signal("plan", self.plan_name, 1)
+
         winsize = self.view_pane.Size
         print (f"Plan called : {perf_counter()-self.start_time} ({winsize})")
         if plan_name == self.plan_name:
             # This may come too early before all things have been done
             if winsize[0] == 0: # Still initialising
-                print ("Need to resend signal due to invalid window-size")
-                sleep(0.25)
-                self.context.signal("plan", self.plan_name, 1)
+                interval = 0.25
+                self.retries += 1
+                ret = self.retries
+                while ret > 10:
+                    ret = int(ret / 10)
+                    interval += 0.25
+                print (f"Need to resend signal due to invalid window-size, attempt {self.retries}, will wait for {interval:.2f} sec")
+
+                _job = Job(
+                    process=resend_signal,
+                    job_name="resender",
+                    interval=interval,
+                    times=1,
+                    run_main=True,
+                )
+                self.context.schedule(_job)
                 return
             
+            self.retries = 0
             self._refresh_simulated_plan()
 
     @signal_listener("refresh_simulation")
