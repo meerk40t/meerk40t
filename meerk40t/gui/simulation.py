@@ -3,6 +3,7 @@ import platform
 
 import wx
 
+from time import perf_counter, sleep
 from meerk40t.kernel import Job, signal_listener
 
 from ..core.cutcode.cubiccut import CubicCut
@@ -967,25 +968,16 @@ class SimulationPanel(wx.Panel, Job):
         self.on_radio_playback_mode(None)
         # Allow Scene update from now on (are suppressed by default during startup phase)
         self.widget_scene.suppress_changes = False
+        # self.Show()
         self.running = False
+        self.slided_in = True
+        self.start_time = perf_counter()
+        # print(f"Done: {perf_counter()-self.start_time}")
 
     def _startup(self):
+        # print(f"Startup: {perf_counter()-self.start_time}")
         self.slided_in = True
         self.fit_scene_to_panel()
-
-    def startup_panel(self):
-        # Under Linux the SimulationPanel starts with the wrong zoom factor,
-        # as the panel size has not been established during init,
-        # so we do a delayed startup.
-        # No platform check, as this isn't hurting generally
-        _signal_job = Job(
-            process=self._startup,
-            job_name="simulation-helper",
-            interval=0.5,
-            times=1,
-            run_main=True,
-        )
-        self.context.schedule(_signal_job)
 
     def __set_properties(self):
         self.text_distance_laser.SetToolTip(_("Distance Estimate: while Lasering"))
@@ -1439,6 +1431,7 @@ class SimulationPanel(wx.Panel, Job):
         self.interval = factor * 100.0 / float(value)
 
     def _refresh_simulated_plan(self):
+        # print (f"Refresh simulated: {perf_counter()-self.start_time}")
         # Stop animation
         if self.running:
             self._stop()
@@ -1487,12 +1480,20 @@ class SimulationPanel(wx.Panel, Job):
                 ht, preferred_units=self.context.units_name, digits=2
             ).preferred_length
             self.parent.SetTitle(_("Simulation") + f" ({sdimx}x{sdimy})")
-        self.startup_panel()
+        self._startup()
         self.request_refresh()
 
     @signal_listener("plan")
     def on_plan_change(self, origin, plan_name, status):
+        winsize = self.view_pane.Size
+        # print (f"Plan called : {perf_counter()-self.start_time} ({winsize})")
         if plan_name == self.plan_name:
+            # This may come too early before all things have been done
+            if winsize[0] == 0: # Still initialising
+                sleep(0.25)
+                self.context.signal("plan", self.plan_name, 1)
+                return
+            
             self._refresh_simulated_plan()
 
     @signal_listener("refresh_simulation")
@@ -2174,9 +2175,7 @@ class Simulation(MWindow):
             busy.change(msg=_("Preparing simulation..."))
             busy.start()
 
-            kernel.console(
-                f"planz copy preprocess validate blob{optpart}\nwindow toggle Simulation z\n"
-            )
+            kernel.console(f"planz copy preprocess validate blob{optpart}\nwindow toggle Simulation z\n")
             busy.end()
 
         def open_simulator(*args):
