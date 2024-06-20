@@ -1,6 +1,5 @@
 import wx
 
-from meerk40t.kernel.kernel import signal_listener
 from meerk40t.gui.icons import (
     icon_effect_hatch,
     icon_points,
@@ -10,6 +9,7 @@ from meerk40t.gui.icons import (
     icons8_laserbeam_weak,
 )
 from meerk40t.gui.wxutils import TextCtrl, dip_size, wxCheckBox
+from meerk40t.kernel.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -62,8 +62,12 @@ class WarningPanel(wx.Panel):
         hsizer = wx.FlexGridSizer(cols=10, gap=dip_size(self, 2, 0))
         # hsizer.SetCols(9)
         idx = -1
-        self.power_as_percent = self.context.setting(bool, "use_percent_for_power_display", False)
-        self.speed_as_mm_min = self.context.setting(bool, "use_mm_min_for_speed_display", False)
+        self.power_as_percent = self.context.setting(
+            bool, "use_percent_for_power_display", False
+        )
+        self.speed_as_mm_min = self.context.setting(
+            bool, "use_mm_min_for_speed_display", False
+        )
         for key in self.data:
             entry = self.data[key]
 
@@ -161,7 +165,7 @@ class WarningPanel(wx.Panel):
                 + "power and speed are too ambitious for your machine.\n"
                 + "It will display a warning indicator: '❌'\n"
                 + "in the label of the associated operation-node"
-            )
+            ),
         )
 
         sizer_main.Add(infolabel, 0, 0, 0)
@@ -250,8 +254,12 @@ class WarningPanel(wx.Panel):
 
     def update_widgets(self):
         # We intentionally reset the unit labels as a device change or setting change might have happened...
-        self.power_as_percent = self.context.setting(bool, "use_percent_for_power_display", False)
-        self.speed_as_mm_min = self.context.setting(bool, "use_mm_min_for_speed_display", False)
+        self.power_as_percent = self.context.setting(
+            bool, "use_percent_for_power_display", False
+        )
+        self.speed_as_mm_min = self.context.setting(
+            bool, "use_mm_min_for_speed_display", False
+        )
         if self.power_as_percent:
             unit1 = "%"
         else:
@@ -304,7 +312,7 @@ class WarningPanel(wx.Panel):
                 entry["textcontrol_min"].Enable(warning[4])
 
                 entry["checkbox_max"].SetValue(warning[6])
-                entry["textcontrol_max"].SetValue(str(warning[7]* s_factor))
+                entry["textcontrol_max"].SetValue(str(warning[7] * s_factor))
                 entry["textcontrol_max"].Enable(warning[6])
             except KeyError:
                 pass
