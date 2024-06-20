@@ -1489,8 +1489,10 @@ class SimulationPanel(wx.Panel, Job):
             print (f"Resending signal: {perf_counter()-self.start_time}")
             self.context.signal("plan", self.plan_name, 1)
 
-        winsize = self.view_pane.Size
-        print (f"Plan called : {perf_counter()-self.start_time} ({winsize})")
+        winsize = self.view_pane.GetSize()
+        winsize1 = self.hscene_sizer.GetSize()
+        winsize2 = self.GetSize()
+        print (f"Plan called : {perf_counter()-self.start_time} (Pane: {winsize}, Sizer: {winsize1}, Window: {winsize2})")
         if plan_name == self.plan_name:
             # This may come too early before all things have been done
             if winsize[0] == 0 and self.retries<10: # Still initialising
