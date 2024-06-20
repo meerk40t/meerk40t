@@ -972,10 +972,10 @@ class SimulationPanel(wx.Panel, Job):
         self.running = False
         self.slided_in = True
         self.start_time = perf_counter()
-        # print(f"Done: {perf_counter()-self.start_time}")
+        print(f"Init done: {perf_counter()-self.start_time}")
 
     def _startup(self):
-        # print(f"Startup: {perf_counter()-self.start_time}")
+        print(f"Startup: {perf_counter()-self.start_time}")
         self.slided_in = True
         self.fit_scene_to_panel()
 
@@ -1431,7 +1431,7 @@ class SimulationPanel(wx.Panel, Job):
         self.interval = factor * 100.0 / float(value)
 
     def _refresh_simulated_plan(self):
-        # print (f"Refresh simulated: {perf_counter()-self.start_time}")
+        print (f"Refresh simulated: {perf_counter()-self.start_time}")
         # Stop animation
         if self.running:
             self._stop()
@@ -1486,10 +1486,11 @@ class SimulationPanel(wx.Panel, Job):
     @signal_listener("plan")
     def on_plan_change(self, origin, plan_name, status):
         winsize = self.view_pane.Size
-        # print (f"Plan called : {perf_counter()-self.start_time} ({winsize})")
+        print (f"Plan called : {perf_counter()-self.start_time} ({winsize})")
         if plan_name == self.plan_name:
             # This may come too early before all things have been done
             if winsize[0] == 0: # Still initialising
+                print ("Need to resend signal due to invalid window-size")
                 sleep(0.25)
                 self.context.signal("plan", self.plan_name, 1)
                 return
