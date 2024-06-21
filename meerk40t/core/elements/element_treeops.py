@@ -279,7 +279,7 @@ def init_tree(kernel):
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
-    @tree_operation(_("Group elements"), node_type=elem_nodes, help="")
+    @tree_operation(_("Group elements"), node_type=elem_group_nodes, help="")
     def group_elements(node, **kwargs):
         def minimal_parent(data):
             result = None

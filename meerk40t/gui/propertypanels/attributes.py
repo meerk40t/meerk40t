@@ -311,6 +311,7 @@ class IdPanel(wx.Panel):
         # print(f"set_widget for {self.attribute} to {str(node)}")
         vis1 = False
         vis2 = False
+        vis3 = False
         try:
             if hasattr(self.node, "id") and self.showid:
                 vis1 = True
@@ -323,12 +324,14 @@ class IdPanel(wx.Panel):
         try:
             if hasattr(self.node, "label") and self.showlabel:
                 vis2 = True
+                if hasattr(self.node, "label_display"):
+                    vis3 = True
+                    self.check_label.SetValue(bool(self.node.label_display))
                 self.text_label.SetValue(mklabel(node.label))
                 self.text_label.SetToolTip(node.display_label())
-                self.check_label.SetValue(bool(self.node.label_display))
             self.text_label.Show(vis2)
             self.sizer_label.Show(vis2)
-            self.check_label.Show(vis2)
+            self.check_label.Show(vis3)
         except RuntimeError:
             # Could happen if the propertypanel has been destroyed
             pass

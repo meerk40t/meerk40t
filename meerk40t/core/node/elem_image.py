@@ -3,12 +3,13 @@ from copy import copy
 from math import ceil, floor
 
 from meerk40t.core.node.node import Node
+from meerk40t.core.node.mixins import LabelDisplay
 from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.image.imagetools import RasterScripts
 from meerk40t.svgelements import Matrix, Path, Polygon
 
 
-class ImageNode(Node):
+class ImageNode(Node, LabelDisplay):
     """
     ImageNode is the bootstrapped node type for the 'elem image' type.
 

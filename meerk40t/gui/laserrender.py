@@ -285,7 +285,10 @@ class LaserRender:
                 node.draw = self.draw_text_node
             elif node.type == "cutcode":
                 node.draw = self.draw_cutcode_node
+            elif node.type == "group":
+                node.draw = self.draw_nothing
             else:
+                # print (f"This node has no method: {node.type}")
                 return False
         # We have now defined that function, draw it.
         node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
@@ -495,6 +498,19 @@ class LaserRender:
             gc.SetBrush(self.brush)
         else:
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
+
+    def draw_nothing(
+        self,
+        node: Node,
+        gc: wx.GraphicsContext,
+        draw_mode,
+        zoomscale=1.0,
+        alpha=255,
+        x: int = 0,
+        y: int = 0,
+    ):
+        # We don't do anything, just a placeholder
+        return
 
     def draw_cutcode_node(
         self,
@@ -897,8 +913,13 @@ class LaserRender:
         if not node.label:
             return
         try:
-            bbox = node.bbox()
+            if node.type == "group":
+                bbox = node.bbox_group()
+            else:
+                bbox = node.bbox()
+            # print (f"{node.type}: {bbox}")
         except AttributeError:
+            # print (f"This node has no bbox: {self.node.type}")
             return
         gc.PushState()
         cx = bbox[0] + 0.5 * (bbox[2] - bbox[0])
