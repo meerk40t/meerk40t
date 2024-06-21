@@ -245,13 +245,17 @@ class IdPanel(wx.Panel):
         self.showlabel = showlabel
         self.text_id = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_label = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.check_label = wxCheckBox(self, wx.ID_ANY)
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_id_label = wx.BoxSizer(wx.HORIZONTAL)
         self.sizer_id = StaticBoxSizer(self, wx.ID_ANY, _("Id"), wx.VERTICAL)
         self.sizer_id.Add(self.text_id, 1, wx.EXPAND, 0)
         self.sizer_label = StaticBoxSizer(self, wx.ID_ANY, _("Label"), wx.VERTICAL)
-        self.sizer_label.Add(self.text_label, 1, wx.EXPAND, 0)
+        h_label_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        h_label_sizer.Add(self.text_label, 1, wx.EXPAND, 0)
+        h_label_sizer.Add(self.check_label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.sizer_label.Add(h_label_sizer, 1, wx.EXPAND, 0)
         sizer_id_label.Add(self.sizer_id, 1, wx.EXPAND, 0)
         sizer_id_label.Add(self.sizer_label, 1, wx.EXPAND, 0)
         self.icon_display = wx.StaticBitmap(self, wx.ID_ANY)
@@ -265,6 +269,9 @@ class IdPanel(wx.Panel):
         self.Layout()
         self.text_id.SetActionRoutine(self.on_text_id_change)
         self.text_label.SetActionRoutine(self.on_text_label_change)
+        self.check_label.Bind(wx.EVT_CHECKBOX, self.on_check_label)
+        self.check_label.SetToolTip(_("Display label on screen"))
+
         self.set_widgets(self.node)
 
     def on_text_id_change(self):
@@ -281,6 +288,11 @@ class IdPanel(wx.Panel):
             self.text_label.SetToolTip(self.node.display_label())
         except AttributeError:
             pass
+
+    def on_check_label(self, event):
+        self.node.label_display = bool(self.check_label.GetValue())
+        self.context.signal("element_property_update", self.node)
+        self.context.signal("refresh_scene", "Scene")
 
     def pane_hide(self):
         pass
@@ -313,8 +325,10 @@ class IdPanel(wx.Panel):
                 vis2 = True
                 self.text_label.SetValue(mklabel(node.label))
                 self.text_label.SetToolTip(node.display_label())
+                self.check_label.SetValue(bool(self.node.label_display))
             self.text_label.Show(vis2)
             self.sizer_label.Show(vis2)
+            self.check_label.Show(vis2)
         except RuntimeError:
             # Could happen if the propertypanel has been destroyed
             pass

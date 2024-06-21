@@ -511,7 +511,19 @@ class Preferences(MWindow):
                     "signals": ("refresh_scene", "theme"),
                 }
             )
-
+        col = self.context.root.setting(str, "label_display_color", "#ff0000ff")
+        color_choices.append(
+            {
+                "attr": "color_label",
+                "object": self,
+                "default": self.color_label,
+                "type": str,
+                "style": "color",  # hexa representation
+                "label": _("Object-Label"),
+                "section": "Scene",
+                "signals": ("refresh_scene", "theme"),
+            }
+        )
         color_choices.append(
             {
                 "attr": "color_reset",
@@ -576,6 +588,16 @@ class Preferences(MWindow):
             self.notebook_main.SetSelection(self.panel_ids.index(panel))
 
     @property
+    def color_label(self):
+        col = self.context.root.setting(str, "label_display_color", "#ff0000ff")
+        return col
+
+    @color_label.setter
+    def color_label(self, value):
+        if value:
+            self.context.root.label_display_color = value
+
+    @property
     def color_reset(self):
         # Not relevant
         return False
@@ -585,7 +607,9 @@ class Preferences(MWindow):
         if value:
             # We are resetting all GUI.colors
             self.context("scene color unset\n")
+            self.context.root.label_display_color = "#ff0000ff"
             self.context.signal("theme", True)
+            self.context.signal("restart")
 
     @property
     def preset_classify_manual(self):
