@@ -1,7 +1,8 @@
 from meerk40t.core.node.node import Node
+from meerk40t.core.node.mixins import LabelDisplay
 
 
-class GroupNode(Node):
+class GroupNode(Node, LabelDisplay):
     """
     GroupNode is the bootstrapped node type for the group type.
     All group types are bootstrapped into this node object.

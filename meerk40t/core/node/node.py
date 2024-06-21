@@ -80,7 +80,6 @@ class Node:
         self.type = None
         self.id = None
         self.label = None
-        self.label_display = False
         self.lock = False
         self._can_emphasize = True
         self._can_highlight = True
